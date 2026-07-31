@@ -21,7 +21,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerUnlitWgpuMaterial,
+  registerWgpuUnlitMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
@@ -34,7 +34,7 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x0a0c10ff });
-registerUnlitWgpuMaterial(state);
+registerWgpuUnlitMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

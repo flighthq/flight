@@ -27,7 +27,7 @@ import {
   renderGlScene2D,
 } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, registerUnlitGlMaterial } from '@flighthq/scene3d-gl';
+import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import type { Bitmap, GlRenderState, Viewport } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
@@ -115,7 +115,7 @@ invalidateGlRenderStateCache(state);
 // One untouched camera, two aspect ratios, two viewports on the same target. The draw path derives
 // projection aspect from each active region, so the front-facing box stays approximately square in
 // pixels in both a tall and a wide panel instead of stretching with either viewport.
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 const scene3D = createScene3D().root;
 addNodeChild(
   scene3D,

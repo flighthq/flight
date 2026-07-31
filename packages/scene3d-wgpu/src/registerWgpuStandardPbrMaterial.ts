@@ -9,7 +9,7 @@ import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 // Convenience over registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, …); call it once
 // per WgpuRenderState before drawScene3D so meshes carrying StandardPbrMaterials draw. Opt-in by design
 // (no top-level side effect): the render path knows no built-in material until registered.
-export function registerStandardPbrWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuStandardPbrMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, standardPbrWgpuMeshMaterialRenderer);

@@ -23,7 +23,7 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  registerStandardPbrWgpuMaterial,
+  registerWgpuStandardPbrMaterial,
   registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setTextureUvScale,
@@ -41,7 +41,7 @@ document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x002850ff });
 registerWgpuImageTextureResolver(state);
-registerStandardPbrWgpuMaterial(state);
+registerWgpuStandardPbrMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

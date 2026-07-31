@@ -24,7 +24,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // texture / alpha mode, uploads the camera view-projection plus the camera view matrix (u_view, which
 // the vertex scene2d uses to rotate the world-space normal into view space), and the linear tint; draw
 // issues the indexed draw. Lights are ignored — the matcap texture is the prebaked lighting. See
-// registerMatcapGlMaterial to install it.
+// registerGlMatcapMaterial to install it.
 export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -57,7 +57,7 @@ export const matcapGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with MatcapMaterials draw.
-export function registerMatcapGlMaterial(state: GlRenderState): void {
+export function registerGlMatcapMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, MatcapMaterialKind, matcapGlMeshMaterialRenderer);
 }
 

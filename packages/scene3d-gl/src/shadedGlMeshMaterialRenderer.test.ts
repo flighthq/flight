@@ -10,7 +10,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { setGlScene3DTime } from './glScene3DTime';
 import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
-import { registerShadedGlMaterial, shadedGlMeshMaterialRenderer } from './shadedGlMeshMaterialRenderer';
+import { registerGlShadedMaterial, shadedGlMeshMaterialRenderer } from './shadedGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -38,10 +38,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerShadedGlMaterial', () => {
+describe('registerGlShadedMaterial', () => {
   it('installs the renderer for ShadedMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerShadedGlMaterial(state);
+    registerGlShadedMaterial(state);
     expect(getGlMeshMaterialRenderer(state, ShadedMaterialKind)).toBe(shadedGlMeshMaterialRenderer);
   });
 });

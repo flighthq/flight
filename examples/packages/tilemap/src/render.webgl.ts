@@ -9,7 +9,7 @@ import {
   defaultGlTilemapRenderer,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -28,7 +28,7 @@ export const state = createGlRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
 

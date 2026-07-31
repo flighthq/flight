@@ -33,7 +33,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // uber-shader's `phong` variant for the material's diffuse / specular / normal maps and alpha mode,
 // uploads the camera view-projection AND position (the specular term is view-dependent), the packed
 // light block, and the material's linear diffuse + specular colors, shininess, and maps. draw issues
-// the indexed draw. See registerPhongGlMaterial to install it.
+// the indexed draw. See registerGlPhongMaterial to install it.
 export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -61,7 +61,7 @@ export const phongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Phong renderer for PhongMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with PhongMaterials draw.
-export function registerPhongGlMaterial(state: GlRenderState): void {
+export function registerGlPhongMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, PhongMaterialKind, phongGlMeshMaterialRenderer);
 }
 

@@ -69,7 +69,7 @@ export function getWgpuShadedBaseFlags(material: Readonly<ShadedMaterial>): {
 
 // Registers ShadedMaterialKind on one state. Modifier compilers are a separate open registry: call
 // registerBuiltInWgpuModifierSnippets (and/or vendor registrations) explicitly before drawing.
-export function registerShadedWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuShadedMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, ShadedMaterialKind, shadedWgpuMeshMaterialRenderer);

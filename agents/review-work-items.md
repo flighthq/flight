@@ -774,11 +774,11 @@ The `textures` bag maps user-chosen uniform names to `Texture` handles. The rend
 
 ```typescript
 // scene-gl
-export function registerCustomShaderGlMaterial(state: GlRenderState): void;
+export function registerGlCustomShaderMaterial(state: GlRenderState): void;
 export function registerCustomSurfaceGlMaterial(state: GlRenderState): void;
 
 // scene-wgpu
-export function registerCustomShaderWgpuMaterial(state: WgpuRenderState): void;
+export function registerWgpuCustomShaderMaterial(state: WgpuRenderState): void;
 export function registerCustomSurfaceWgpuMaterial(state: WgpuRenderState): void;
 ```
 

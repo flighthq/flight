@@ -25,7 +25,7 @@ import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelud
 // The built-in Emissive forward renderer (WgpuMeshMaterialRenderer for EmissiveMaterialKind) — the WGSL
 // mirror of emissiveGlMeshMaterialRenderer. Self-illuminating, lighting-independent: binds the linear
 // emissive color scaled by emissiveStrength through the shared unlit pipeline (values > 1 drive bloom
-// over the rgba16float scene target). See registerEmissiveWgpuMaterial.
+// over the rgba16float scene target). See registerWgpuEmissiveMaterial.
 export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -69,7 +69,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with EmissiveMaterials draw.
-export function registerEmissiveWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuEmissiveMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveWgpuMeshMaterialRenderer);

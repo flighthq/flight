@@ -12,7 +12,7 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { createRenderTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
 import { defaultWgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite';
-import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 beforeAll(() => installWgpuMock());
 
@@ -38,7 +38,7 @@ describe('drawWgpuSprite', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     registerWgpuRenderTextureResolver(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
     setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {});

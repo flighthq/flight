@@ -22,7 +22,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerStandardGlTextureResolvers,
-  registerUnlitGlMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
@@ -43,7 +43,7 @@ export const width = WIDTH;
 export const height = HEIGHT;
 
 registerStandardGlTextureResolvers(state);
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 
 const lights = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 1 }),

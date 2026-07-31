@@ -7,7 +7,7 @@ import {
   enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
-  registerStandardPbrWgpuMaterial,
+  registerWgpuStandardPbrMaterial,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -23,7 +23,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x07101dff,
 });
 enableFlightDiagnostics(state);
-registerStandardPbrWgpuMaterial(state);
+registerWgpuStandardPbrMaterial(state);
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',

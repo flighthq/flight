@@ -19,7 +19,7 @@ import {
   getBitmapPixelRgb,
   prepareScene3DRender,
   registerStandardGlTextureResolvers,
-  registerUnlitGlMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -33,7 +33,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
 });
 registerStandardGlTextureResolvers(state);
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;

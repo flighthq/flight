@@ -7,7 +7,7 @@ import { NormalMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { normalGlMeshMaterialRenderer, registerNormalGlMaterial } from './normalGlMeshMaterialRenderer';
+import { normalGlMeshMaterialRenderer, registerGlNormalMaterial } from './normalGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -60,10 +60,10 @@ describe('normalGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerNormalGlMaterial', () => {
+describe('registerGlNormalMaterial', () => {
   it('installs the renderer for NormalMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerNormalGlMaterial(state);
+    registerGlNormalMaterial(state);
     expect(getGlMeshMaterialRenderer(state, NormalMaterialKind)).toBe(normalGlMeshMaterialRenderer);
   });
 });

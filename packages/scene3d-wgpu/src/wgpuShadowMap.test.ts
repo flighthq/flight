@@ -9,7 +9,7 @@ import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract
 import type { Camera3D, Scene3DLightsLike, Node3D } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D } from './drawWgpuScene3D';
-import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
+import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
 import { buildWgpuPbrStandardDefineKey } from './standardPbrWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
 import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
@@ -123,7 +123,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
   it('binds a group(3) shadow group on the lit PBR draw that follows', () => {
     const { fake, state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
 
     const scene = createNode3D(Node3DKind);

@@ -12,7 +12,7 @@ import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/type
 import { drawGlScene3D } from './drawGlScene3D';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -32,7 +32,7 @@ const LIGHTS: Scene3DLightsLike = {
 describe('drawGlScene3D', () => {
   it('binds once for a run of subsets sharing a material', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const material = createStandardPbrMaterial();
@@ -50,7 +50,7 @@ describe('drawGlScene3D', () => {
 
   it('invalidates render-gl binding cache after drawing so the present pass re-binds', () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
@@ -69,7 +69,7 @@ describe('drawGlScene3D', () => {
 
   it("declares the bound render target 'linear' (scene materials output linear HDR)", () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
@@ -84,7 +84,7 @@ describe('drawGlScene3D', () => {
 
   it('does not draw a disabled mesh', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -97,7 +97,7 @@ describe('drawGlScene3D', () => {
 
   it('draws each visible mesh subset with its registered material renderer', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -111,7 +111,7 @@ describe('drawGlScene3D', () => {
 
   it('enables GL blend for subsets with alphaMode blend and disables it after', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const blendedMaterial = createStandardPbrMaterial();
@@ -132,7 +132,7 @@ describe('drawGlScene3D', () => {
 
   it('draws opaque subsets before blended subsets regardless of scene order', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     // Add blended first, then opaque — opaque should still draw before blended.
@@ -155,7 +155,7 @@ describe('drawGlScene3D', () => {
 
   it('does not enable GL blend when all subsets are opaque', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -169,7 +169,7 @@ describe('drawGlScene3D', () => {
 
   it('routes a mesh with node alpha below 1 through the blended pass even with an opaque material', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     // Opaque material, but the node is faded (alpha < 1). prepareScene3DRender (run inside drawGlScene3D)
@@ -189,7 +189,7 @@ describe('drawGlScene3D', () => {
 
   it('reuses opaque and blended draw records across frames', () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const opaque = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -215,7 +215,7 @@ describe('drawGlScene3D', () => {
 
   it('keeps a fully-opaque mesh (node alpha 1) in the opaque pass', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -230,7 +230,7 @@ describe('drawGlScene3D', () => {
 
   it('skips a subset whose material has no registered renderer (no fallback)', () => {
     const { state, gl } = makeGlScene3DState();
-    // No registerStandardPbrGlMaterial: nothing resolves.
+    // No registerGlStandardPbrMaterial: nothing resolves.
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
@@ -241,7 +241,7 @@ describe('drawGlScene3D', () => {
 
   it('sorts blended subsets back-to-front by camera depth', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const blendedMaterial = createStandardPbrMaterial();
@@ -267,7 +267,7 @@ describe('drawGlScene3D', () => {
 
   it('draws a ParticleEmitter3D node in the scene via the single drawGlScene3D call', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     // An emitter carries no geometry, so it never appears in the visible-mesh list; drawGlScene3D must
@@ -292,7 +292,7 @@ describe('drawGlScene3D', () => {
 
   it('does not draw an instanced particle pass when the scene has no emitters', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));

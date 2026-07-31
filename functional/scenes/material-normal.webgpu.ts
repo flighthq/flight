@@ -21,7 +21,7 @@ import {
   getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
-  registerNormalWgpuMaterial,
+  registerWgpuNormalMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -41,7 +41,7 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x0a0c10ff });
-registerNormalWgpuMaterial(state);
+registerWgpuNormalMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

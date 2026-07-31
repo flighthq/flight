@@ -7,7 +7,7 @@ import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flight
 import { defaultGlBitmapTextRenderer } from './glBitmapText';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { registerStandardGlMaterial } from './glStandardMaterial';
+import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 // A single-page stub glyph source whose page-0 image carries a drawable host source.
@@ -56,7 +56,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
 
     const { state, gl } = createGlState();
     registerGlImageTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
@@ -68,7 +68,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
     updateBitmapText(text);
     const { state, gl } = createGlState();
     registerGlImageTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     defaultGlBitmapTextRenderer.submit(state, makeProxy(text));
     flushGlQuadBatchWriter(state as never);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe('defaultGlBitmapTextRenderer.submit', () => {
 
     const { state, gl } = createGlState();
     registerGlImageTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     registerGlColorAdjustmentMaterialFeature(state);
     // The resolved color adjustment arrives on the proxy; submit must draw without throwing through the fold.
     defaultGlBitmapTextRenderer.submit(

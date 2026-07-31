@@ -6,7 +6,7 @@ import {
   enableFlightDiagnostics,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerStandardWgpuTextureResolvers,
   registerRenderer,
   renderWgpuBackground,
@@ -25,7 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerStandardWgpuTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 

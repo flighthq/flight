@@ -7,7 +7,7 @@ import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerVertexColorGlMaterial, vertexColorGlMeshMaterialRenderer } from './vertexColorGlMeshMaterialRenderer';
+import { registerGlVertexColorMaterial, vertexColorGlMeshMaterialRenderer } from './vertexColorGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -33,10 +33,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerVertexColorGlMaterial', () => {
+describe('registerGlVertexColorMaterial', () => {
   it('installs the renderer for VertexColorMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerVertexColorGlMaterial(state);
+    registerGlVertexColorMaterial(state);
     expect(getGlMeshMaterialRenderer(state, VertexColorMaterialKind)).toBe(vertexColorGlMeshMaterialRenderer);
   });
 });

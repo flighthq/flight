@@ -192,7 +192,7 @@ export function writeWgpuPbrStandardBlock(
 // pipeline. The five standard maps (base color, metallic-roughness, normal, occlusion, emissive) are
 // sampled when bound — the textured pipeline variant compiles per the `has*Map` flags and the real
 // uploaded views bind into the map slots; an unbound slot falls back to the placeholder. See
-// registerStandardPbrWgpuMaterial to install it.
+// registerWgpuStandardPbrMaterial to install it.
 //
 // Cannot be visually captured in JSDOM (no GPU adapter); the unit test asserts the pipeline/bind/draw
 // call shape against the mock device, mirrored against the verified GL result.

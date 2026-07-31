@@ -19,7 +19,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // independent debug/utility pass material: bind selects the debug program in depth mode, uploads the
 // camera view-projection, and sets the material's [near, far] linearization range; draw issues the
 // indexed draw. The fragment scene2d linearizes window-space depth into eye space and writes it as
-// grayscale LINEAR color. Lights are ignored. See registerDepthGlMaterial to install it.
+// grayscale LINEAR color. Lights are ignored. See registerGlDepthMaterial to install it.
 export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -48,6 +48,6 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with DepthMaterials draw.
-export function registerDepthGlMaterial(state: GlRenderState): void {
+export function registerGlDepthMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, DepthMaterialKind, depthGlMeshMaterialRenderer);
 }

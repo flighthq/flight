@@ -7,7 +7,7 @@ import { MatcapMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { matcapGlMeshMaterialRenderer, registerMatcapGlMaterial } from './matcapGlMeshMaterialRenderer';
+import { matcapGlMeshMaterialRenderer, registerGlMatcapMaterial } from './matcapGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -61,10 +61,10 @@ describe('matcapGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerMatcapGlMaterial', () => {
+describe('registerGlMatcapMaterial', () => {
   it('installs the renderer for MatcapMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerMatcapGlMaterial(state);
+    registerGlMatcapMaterial(state);
     expect(getGlMeshMaterialRenderer(state, MatcapMaterialKind)).toBe(matcapGlMeshMaterialRenderer);
   });
 });

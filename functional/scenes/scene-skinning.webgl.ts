@@ -27,7 +27,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   prepareScene3DSkinning,
-  registerUnlitGlMaterial,
+  registerGlUnlitMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
@@ -58,7 +58,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerUnlitGlMaterial(state);
+registerGlUnlitMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

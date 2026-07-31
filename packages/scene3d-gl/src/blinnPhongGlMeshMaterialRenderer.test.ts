@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
-import { blinnPhongGlMeshMaterialRenderer, registerBlinnPhongGlMaterial } from './blinnPhongGlMeshMaterialRenderer';
+import { blinnPhongGlMeshMaterialRenderer, registerGlBlinnPhongMaterial } from './blinnPhongGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -85,10 +85,10 @@ describe('blinnPhongGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerBlinnPhongGlMaterial', () => {
+describe('registerGlBlinnPhongMaterial', () => {
   it('installs the renderer for BlinnPhongMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerBlinnPhongGlMaterial(state);
+    registerGlBlinnPhongMaterial(state);
     expect(getGlMeshMaterialRenderer(state, BlinnPhongMaterialKind)).toBe(blinnPhongGlMeshMaterialRenderer);
   });
 });

@@ -23,7 +23,7 @@ import { ensureGlWireframeUpload } from './glWireframeUpload';
 // it does not use drawGlMeshSubset: draw binds the wireframe line-index VAO (see glWireframeUpload)
 // and issues a gl.LINES draw over the subset's derived line range. `thickness` > 1 is not honored —
 // WebGL2 fixes line width at 1px on virtually all drivers; the field is documented as best-effort and
-// ignored here. Lights are ignored. See registerWireframeGlMaterial to install it.
+// ignored here. Lights are ignored. See registerGlWireframeMaterial to install it.
 export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -65,7 +65,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with
 // WireframeMaterials draw.
-export function registerWireframeGlMaterial(state: GlRenderState): void {
+export function registerGlWireframeMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, WireframeMaterialKind, wireframeGlMeshMaterialRenderer);
 }
 

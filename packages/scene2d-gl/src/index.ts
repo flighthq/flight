@@ -24,7 +24,7 @@ export {
   registerGlColorAdjustmentMaterialFeature,
   registerGlShapeCommands,
   registerGlVelocityWriter,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   renderGlScene2D,
   renderGlVelocity,
 } from './contract';

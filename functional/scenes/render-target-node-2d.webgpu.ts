@@ -24,7 +24,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerPhongWgpuMaterial,
+  registerWgpuPhongMaterial,
   renderIntoWgpuRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
   ShapeKind,
@@ -48,7 +48,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgpu') throw new Error('render-target-node-2d requires WebGPU');
 const { render, state, width } = target;
 
-registerPhongWgpuMaterial(state);
+registerWgpuPhongMaterial(state);
 
 const scene = createScene3D().root;
 const cube = createMesh(createBoxMeshGeometry(1.3, 1.3, 1.3), [

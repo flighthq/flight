@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { DepthMaterialKind } from '@flighthq/types/contract';
 
-import { depthGlMeshMaterialRenderer, registerDepthGlMaterial } from './depthGlMeshMaterialRenderer';
+import { depthGlMeshMaterialRenderer, registerGlDepthMaterial } from './depthGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -60,10 +60,10 @@ describe('depthGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerDepthGlMaterial', () => {
+describe('registerGlDepthMaterial', () => {
   it('installs the renderer for DepthMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerDepthGlMaterial(state);
+    registerGlDepthMaterial(state);
     expect(getGlMeshMaterialRenderer(state, DepthMaterialKind)).toBe(depthGlMeshMaterialRenderer);
   });
 });

@@ -22,7 +22,7 @@ export {
   enableWgpuRenderCache,
   enableWgpuTextInput,
   refreshWgpuRenderCache,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuColorAdjustmentMaterialFeature,
   registerWgpuShapeCommands,
   registerWgpuVelocityWriter,

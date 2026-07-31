@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 
-import { matcapWgpuMeshMaterialRenderer, registerMatcapWgpuMaterial } from './matcapWgpuMeshMaterialRenderer';
+import { matcapWgpuMeshMaterialRenderer, registerWgpuMatcapMaterial } from './matcapWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -60,10 +60,10 @@ describe('matcapWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerMatcapWgpuMaterial', () => {
+describe('registerWgpuMatcapMaterial', () => {
   it('installs the renderer for MatcapMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerMatcapWgpuMaterial(state);
+    registerWgpuMatcapMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, MatcapMaterialKind)).toBe(matcapWgpuMeshMaterialRenderer);
   });
 });

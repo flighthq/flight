@@ -12,7 +12,7 @@ export function getGlMeshMaterialRenderer(state: GlRenderState, kind: Kind): GlM
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D
 // only draws subsets whose material kind (or StandardMaterialKind) has a renderer here. Call
-// registerStandardPbrGlMaterial for the built-in StandardPbr path. Mirrors registerGlMaterialRenderer
+// registerGlStandardPbrMaterial for the built-in StandardPbr path. Mirrors registerGlMaterialRenderer
 // but writes scene-gl's separate 3D registry.
 export function registerGlMeshMaterialRenderer(
   state: GlRenderState,

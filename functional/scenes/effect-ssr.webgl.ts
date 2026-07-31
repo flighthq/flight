@@ -16,7 +16,7 @@ import {
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -36,7 +36,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

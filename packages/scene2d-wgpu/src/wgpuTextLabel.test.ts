@@ -7,7 +7,7 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
-import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 import type * as WgpuTextLabelModule from './wgpuTextLabel';
 
 // @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
@@ -92,7 +92,7 @@ describe('drawWgpuTextLabel', () => {
   it('returns early when text is empty', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     expect(() => drawWgpuTextLabel(state, makeTextProxy('', makeTextData()))).not.toThrow();
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
@@ -101,7 +101,7 @@ describe('drawWgpuTextLabel', () => {
   it('writes one instance to the quad-batch writer when text has content', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     drawWgpuTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
     submitWgpuRenderPass(state);
@@ -110,7 +110,7 @@ describe('drawWgpuTextLabel', () => {
   it('does not re-rasterize when only alpha changes (content version unchanged)', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     drawWgpuTextLabel(state, proxy);
     const updateSpy = vi.spyOn(getWgpuRenderStateRuntime(state).textureCache, 'get');

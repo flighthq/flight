@@ -1,13 +1,13 @@
 import { getGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { registerStandardGlMaterial, standardGlMaterialRenderer } from './glStandardMaterial';
+import { registerGlStandardMaterial, standardGlMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
-describe('registerStandardGlMaterial', () => {
+describe('registerGlStandardMaterial', () => {
   it('registers the default renderer under StandardMaterialKind', () => {
     const { state } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     expect(getGlMaterialRenderer(state, StandardMaterialKind)).toBe(standardGlMaterialRenderer);
   });
 });

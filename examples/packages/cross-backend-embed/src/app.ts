@@ -20,7 +20,7 @@ import {
   QuadBatchKind,
   registerGlImageTextureResolver,
   registerRenderer,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   renderGlBackground,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
@@ -44,7 +44,7 @@ const producerState = createGlRenderState(producerCanvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerGlImageTextureResolver(producerState);
-registerStandardGlMaterial(producerState);
+registerGlStandardMaterial(producerState);
 registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);
 
 const atlasCanvas = document.createElement('canvas');

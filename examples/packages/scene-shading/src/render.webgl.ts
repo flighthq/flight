@@ -8,7 +8,7 @@ import {
   endGlRenderEffectPipeline,
   prepareScene3DRender,
   registerStandardGlTextureResolvers,
-  registerBlinnPhongGlMaterial,
+  registerGlBlinnPhongMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D } from '@flighthq/sdk/rendering';
@@ -24,7 +24,7 @@ export const state = createGlRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
-registerBlinnPhongGlMaterial(state);
+registerGlBlinnPhongMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

@@ -16,7 +16,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerRenderer,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuCompressedImageTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
@@ -51,7 +51,7 @@ if (!state.device.features.has('texture-compression-bc')) {
 export const scale = pixelRatio;
 export const width = WIDTH;
 export const height = HEIGHT;
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerWgpuImageTextureResolver(state);
 registerWgpuCompressedImageTextureResolver(state);
 registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);

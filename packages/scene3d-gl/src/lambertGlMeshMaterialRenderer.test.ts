@@ -8,7 +8,7 @@ import { LambertMaterialKind } from '@flighthq/types/contract';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { lambertGlMeshMaterialRenderer, registerLambertGlMaterial } from './lambertGlMeshMaterialRenderer';
+import { lambertGlMeshMaterialRenderer, registerGlLambertMaterial } from './lambertGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -83,10 +83,10 @@ describe('lambertGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerLambertGlMaterial', () => {
+describe('registerGlLambertMaterial', () => {
   it('installs the renderer for LambertMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerLambertGlMaterial(state);
+    registerGlLambertMaterial(state);
     expect(getGlMeshMaterialRenderer(state, LambertMaterialKind)).toBe(lambertGlMeshMaterialRenderer);
   });
 });

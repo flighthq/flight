@@ -2,7 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import {
   drawWgpuScene3D,
   registerBuiltInWgpuModifierSnippets,
-  registerShadedWgpuMaterial,
+  registerWgpuShadedMaterial,
   setWgpuScene3DTime,
 } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -49,7 +49,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x05070cff,
 });
 registerWgpuImageTextureResolver(state);
-registerShadedWgpuMaterial(state);
+registerWgpuShadedMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {

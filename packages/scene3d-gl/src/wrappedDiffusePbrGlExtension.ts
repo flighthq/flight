@@ -64,6 +64,6 @@ ${thicknessMap ? 'vec2 flightWrappedDiffuseThicknessUv() { vec2 uv = u_flightWra
   },
 };
 
-export function registerWrappedDiffusePbrGlExtension(state: GlRenderState): void {
+export function registerGlWrappedDiffusePbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
 }

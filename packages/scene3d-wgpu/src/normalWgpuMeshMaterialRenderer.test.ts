@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
-import { normalWgpuMeshMaterialRenderer, registerNormalWgpuMaterial } from './normalWgpuMeshMaterialRenderer';
+import { normalWgpuMeshMaterialRenderer, registerWgpuNormalMaterial } from './normalWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -60,10 +60,10 @@ describe('normalWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerNormalWgpuMaterial', () => {
+describe('registerWgpuNormalMaterial', () => {
   it('installs the renderer for NormalMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerNormalWgpuMaterial(state);
+    registerWgpuNormalMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, NormalMaterialKind)).toBe(normalWgpuMeshMaterialRenderer);
   });
 });

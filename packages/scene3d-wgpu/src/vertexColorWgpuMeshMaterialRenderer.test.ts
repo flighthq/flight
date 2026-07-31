@@ -6,7 +6,7 @@ import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/
 import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
 import {
-  registerVertexColorWgpuMaterial,
+  registerWgpuVertexColorMaterial,
   vertexColorWgpuMeshMaterialRenderer,
 } from './vertexColorWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -36,10 +36,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerVertexColorWgpuMaterial', () => {
+describe('registerWgpuVertexColorMaterial', () => {
   it('installs the renderer for VertexColorMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerVertexColorWgpuMaterial(state);
+    registerWgpuVertexColorMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, VertexColorMaterialKind)).toBe(vertexColorWgpuMeshMaterialRenderer);
   });
 });

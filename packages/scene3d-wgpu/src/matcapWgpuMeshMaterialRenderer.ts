@@ -26,7 +26,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './
 // mirror of matcapGlMeshMaterialRenderer. Lighting-independent material-capture shading: bind selects
 // the matcap pipeline variant for the alpha mode + color format, writes the shared Frame uniform
 // (lights ignored — the matcap texture is the prebaked lighting), and binds the linear tint; draw
-// issues the indexed draw. See registerMatcapWgpuMaterial to install it. The real matcap texture is not
+// issues the indexed draw. See registerWgpuMatcapMaterial to install it. The real matcap texture is not
 // yet sampled on wgpu (hasMatcap stays false; see wgpuMatcapPrelude's note), so the surface renders as
 // the tint alone for now.
 export const matcapWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
@@ -64,7 +64,7 @@ export const matcapWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with MatcapMaterials draw.
-export function registerMatcapWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuMatcapMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, MatcapMaterialKind, matcapWgpuMeshMaterialRenderer);

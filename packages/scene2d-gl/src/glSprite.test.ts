@@ -10,7 +10,7 @@ import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { defaultGlSpriteRenderer, drawGlSprite } from './glSprite';
-import { registerStandardGlMaterial } from './glStandardMaterial';
+import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeSprite(width = 64, height = 48): Sprite {
@@ -54,7 +54,7 @@ describe('drawGlSprite', () => {
   it('writes natural size and uv window into the shared batch', () => {
     const { state } = createGlState();
     registerGlBitmapTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     const sprite = makeSprite(128, 64);
     setTextureUvFromPixelRect(sprite.data.texture!, 16, 8, 32, 16);
     drawGlSprite(state, makeRenderProxy(sprite));
@@ -65,7 +65,7 @@ describe('drawGlSprite', () => {
   it('uses the physical slab once and reflects a render-target sub-view into GL coordinates', () => {
     const { state } = createGlState();
     registerGlRenderTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
     setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
     renderIntoGlRenderTexture(state, renderTexture, () => {});
@@ -80,7 +80,7 @@ describe('drawGlSprite', () => {
   it('resolves and draws the texture on flush', () => {
     const { gl, state } = createGlState();
     registerGlBitmapTextureResolver(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlSprite(state, makeRenderProxy(makeSprite()));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledOnce();

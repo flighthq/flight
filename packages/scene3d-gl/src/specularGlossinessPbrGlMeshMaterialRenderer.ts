@@ -42,7 +42,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 //
 // Colors are decoded to linear on the CPU before the conversion math; sampled albedo/emissive
 // textures are sRgb-decoded in GLSL, so nothing is double-decoded. See
-// registerSpecularGlossinessPbrGlMaterial.
+// registerGlSpecularGlossinessPbrMaterial.
 export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -73,7 +73,7 @@ export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
 // Installs the built-in SpecularGlossiness renderer for SpecularGlossinessPbrMaterialKind on this
 // state. Opt-in (no top-level side effect): drawScene3D only draws SpecularGlossiness subsets once
 // this is called.
-export function registerSpecularGlossinessPbrGlMaterial(state: GlRenderState): void {
+export function registerGlSpecularGlossinessPbrMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, SpecularGlossinessPbrMaterialKind, specularGlossinessPbrGlMeshMaterialRenderer);
 }
 

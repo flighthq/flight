@@ -25,7 +25,7 @@ import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
 // drawWgpuMeshSubset: draw binds the derived line-index buffer (see wgpuWireframeUpload) and issues a
 // line-list indexed draw over the subset's line range. `thickness` > 1 is not honored (WebGPU has no
 // line-width control); the field is documented as best-effort and ignored. Lights are ignored. See
-// registerWireframeWgpuMaterial to install it.
+// registerWgpuWireframeMaterial to install it.
 export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -81,7 +81,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no top-
 // level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
 // WireframeMaterials draw.
-export function registerWireframeWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuWireframeMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, WireframeMaterialKind, wireframeWgpuMeshMaterialRenderer);
 }
 

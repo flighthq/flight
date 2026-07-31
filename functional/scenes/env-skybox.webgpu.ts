@@ -22,7 +22,7 @@ import {
   endWgpuRenderEffectPipeline,
   getBitmapPixel,
   prepareScene3DRender,
-  registerStandardPbrWgpuMaterial,
+  registerWgpuStandardPbrMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
@@ -36,7 +36,7 @@ const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x0a0c10ff });
-registerStandardPbrWgpuMaterial(state);
+registerWgpuStandardPbrMaterial(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',

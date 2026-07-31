@@ -19,7 +19,7 @@ import {
   endWgpuRenderEffectPipeline,
   getBitmapPixelLuminance,
   prepareScene3DRender,
-  registerBlinnPhongWgpuMaterial,
+  registerWgpuBlinnPhongMaterial,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
@@ -36,7 +36,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
 });
-registerBlinnPhongWgpuMaterial(state);
+registerWgpuBlinnPhongMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

@@ -7,7 +7,7 @@ import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWireframeWgpuMaterial, wireframeWgpuMeshMaterialRenderer } from './wireframeWgpuMeshMaterialRenderer';
+import { registerWgpuWireframeMaterial, wireframeWgpuMeshMaterialRenderer } from './wireframeWgpuMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -33,10 +33,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerWireframeWgpuMaterial', () => {
+describe('registerWgpuWireframeMaterial', () => {
   it('installs the renderer for WireframeMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerWireframeWgpuMaterial(state);
+    registerWgpuWireframeMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, WireframeMaterialKind)).toBe(wireframeWgpuMeshMaterialRenderer);
   });
 });

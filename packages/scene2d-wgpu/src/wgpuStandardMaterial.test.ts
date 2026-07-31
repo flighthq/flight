@@ -3,13 +3,13 @@ import { createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey, StandardMaterialKind } from '@flighthq/types/contract';
 
-import { registerStandardWgpuMaterial, standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial, standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
-describe('registerStandardWgpuMaterial', () => {
+describe('registerWgpuStandardMaterial', () => {
   it('registers the default renderer under StandardMaterialKind', () => {
     const state = {} as WgpuRenderState;
     state[EntityRuntimeKey] = createWgpuRenderStateRuntime();
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     expect(getWgpuMaterialRenderer(state, StandardMaterialKind)).toBe(standardWgpuMaterialRenderer);
   });
 });

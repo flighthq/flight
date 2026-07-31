@@ -3,12 +3,12 @@ import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerWrappedDiffusePbrGlExtension, wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
+import { registerGlWrappedDiffusePbrExtension, wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
 
-describe('registerWrappedDiffusePbrGlExtension', () => {
+describe('registerGlWrappedDiffusePbrExtension', () => {
   it('registers the honestly named wrapped-diffuse kind', () => {
     const { state } = makeGlScene3DState();
-    registerWrappedDiffusePbrGlExtension(state);
+    registerGlWrappedDiffusePbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, WrappedDiffusePbrExtensionKind)).toBe(wrappedDiffusePbrGlExtension);
   });
 });

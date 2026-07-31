@@ -3,12 +3,12 @@ import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerSheenPbrGlExtension, sheenPbrGlExtension } from './sheenPbrGlExtension';
+import { registerGlSheenPbrExtension, sheenPbrGlExtension } from './sheenPbrGlExtension';
 
-describe('registerSheenPbrGlExtension', () => {
+describe('registerGlSheenPbrExtension', () => {
   it('registers only the sheen extension kind', () => {
     const { state } = makeGlScene3DState();
-    registerSheenPbrGlExtension(state);
+    registerGlSheenPbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, SheenPbrExtensionKind)).toBe(sheenPbrGlExtension);
   });
 });

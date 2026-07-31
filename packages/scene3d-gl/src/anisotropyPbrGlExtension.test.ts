@@ -1,7 +1,7 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
 
-import { anisotropyPbrGlExtension, registerAnisotropyPbrGlExtension } from './anisotropyPbrGlExtension';
+import { anisotropyPbrGlExtension, registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension';
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -16,10 +16,10 @@ describe('anisotropyPbrGlExtension', () => {
   });
 });
 
-describe('registerAnisotropyPbrGlExtension', () => {
+describe('registerGlAnisotropyPbrExtension', () => {
   it('registers only the anisotropy extension kind', () => {
     const { state } = makeGlScene3DState();
-    registerAnisotropyPbrGlExtension(state);
+    registerGlAnisotropyPbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, AnisotropyPbrExtensionKind)).toBe(anisotropyPbrGlExtension);
   });
 });

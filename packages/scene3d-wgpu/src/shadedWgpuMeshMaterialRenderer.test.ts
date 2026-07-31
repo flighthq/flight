@@ -5,7 +5,7 @@ import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import {
   getWgpuShadedBaseFlags,
-  registerShadedWgpuMaterial,
+  registerWgpuShadedMaterial,
   shadedWgpuMeshMaterialRenderer,
 } from './shadedWgpuMeshMaterialRenderer';
 
@@ -26,10 +26,10 @@ describe('getWgpuShadedBaseFlags', () => {
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
-describe('registerShadedWgpuMaterial', () => {
+describe('registerWgpuShadedMaterial', () => {
   it('installs the renderer for ShadedMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerShadedWgpuMaterial(state);
+    registerWgpuShadedMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, ShadedMaterialKind)).toBe(shadedWgpuMeshMaterialRenderer);
   });
 });

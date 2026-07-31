@@ -52,7 +52,7 @@ import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
 //
 // Colors are decoded to linear on the CPU before the conversion math; the converted standard block
 // re-packs baseColor/emissive to RGBA8 so writeWgpuPbrStandardBlock's CPU decode round-trips. See
-// registerSpecularGlossinessPbrWgpuMaterial.
+// registerWgpuSpecularGlossinessPbrMaterial.
 export const specularGlossinessPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -89,7 +89,7 @@ export const specularGlossinessPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
 // Installs the built-in SpecularGlossiness renderer for SpecularGlossinessPbrMaterialKind on this
 // state. Opt-in (no top-level side effect): drawScene3D only draws SpecularGlossiness subsets once this
 // is called.
-export function registerSpecularGlossinessPbrWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuSpecularGlossinessPbrMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(

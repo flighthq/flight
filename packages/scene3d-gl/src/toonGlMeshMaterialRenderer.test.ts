@@ -7,7 +7,7 @@ import { ToonMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerToonGlMaterial, toonGlMeshMaterialRenderer } from './toonGlMeshMaterialRenderer';
+import { registerGlToonMaterial, toonGlMeshMaterialRenderer } from './toonGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -38,10 +38,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerToonGlMaterial', () => {
+describe('registerGlToonMaterial', () => {
   it('installs the renderer for ToonMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerToonGlMaterial(state);
+    registerGlToonMaterial(state);
     expect(getGlMeshMaterialRenderer(state, ToonMaterialKind)).toBe(toonGlMeshMaterialRenderer);
   });
 });

@@ -38,7 +38,7 @@ export * from './normalGlMeshMaterialRenderer';
 export * from './phongGlMeshMaterialRenderer';
 export * from './presentGlScene3D';
 export * from './prepareGlScene3DForwardLights';
-export * from './registerStandardPbrGlMaterial';
+export * from './registerGlStandardPbrMaterial';
 export * from './shadedGlMeshMaterialRenderer';
 export * from './specularGlossinessPbrGlMeshMaterialRenderer';
 export * from './standardPbrGlMeshMaterialRenderer';

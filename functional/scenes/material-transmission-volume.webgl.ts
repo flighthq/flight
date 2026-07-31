@@ -28,9 +28,9 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerTransmissionVolumePbrGlExtension,
-  registerUnlitGlMaterial,
-  registerExtendedPbrGlMaterial,
+  registerGlTransmissionVolumePbrExtension,
+  registerGlUnlitMaterial,
+  registerGlExtendedPbrMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setGlPbrTransmissionSceneColor,
@@ -51,9 +51,9 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerTransmissionVolumePbrGlExtension(state);
-registerExtendedPbrGlMaterial(state);
-registerUnlitGlMaterial(state);
+registerGlTransmissionVolumePbrExtension(state);
+registerGlExtendedPbrMaterial(state);
+registerGlUnlitMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

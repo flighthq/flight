@@ -35,7 +35,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // variant for the material's diffuse / specular / normal maps and alpha mode, uploads the camera
 // view-projection AND position (the specular term is view-dependent), the packed light block, and the
 // material's linear diffuse + specular colors, shininess, and maps. draw issues the indexed draw. See
-// registerBlinnPhongGlMaterial to install it.
+// registerGlBlinnPhongMaterial to install it.
 export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -64,7 +64,7 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in BlinnPhong renderer for BlinnPhongMaterialKind on this state. Opt-in (no
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with BlinnPhong
 // materials draw.
-export function registerBlinnPhongGlMaterial(state: GlRenderState): void {
+export function registerGlBlinnPhongMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongGlMeshMaterialRenderer);
 }
 

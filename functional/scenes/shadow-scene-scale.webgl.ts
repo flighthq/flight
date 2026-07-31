@@ -24,7 +24,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerBlinnPhongGlMaterial,
+  registerGlBlinnPhongMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
@@ -43,7 +43,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x080a10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerBlinnPhongGlMaterial(state);
+registerGlBlinnPhongMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',

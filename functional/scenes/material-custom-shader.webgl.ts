@@ -18,7 +18,7 @@ import {
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  registerCustomShaderGlMaterial,
+  registerGlCustomShaderMaterial,
   registerGlCustomMaterialShader,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -33,7 +33,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerCustomShaderGlMaterial(state);
+registerGlCustomShaderMaterial(state);
 registerGlCustomMaterialShader(state, 'normal-tint', {
   vertex: `#version 300 es
 precision highp float;

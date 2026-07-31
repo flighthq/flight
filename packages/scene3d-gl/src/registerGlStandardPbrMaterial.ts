@@ -8,6 +8,6 @@ import { standardPbrGlMeshMaterialRenderer } from './standardPbrGlMeshMaterialRe
 // state. Convenience over registerGlMeshMaterialRenderer(state, StandardPbrMaterialKind, …); call
 // it once per GlRenderState before drawScene3D so meshes carrying StandardPbrMaterials draw. Opt-in
 // by design (no top-level side effect): the render path knows no built-in material until registered.
-export function registerStandardPbrGlMaterial(state: GlRenderState): void {
+export function registerGlStandardPbrMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, StandardPbrMaterialKind, standardPbrGlMeshMaterialRenderer);
 }

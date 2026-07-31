@@ -9,7 +9,7 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -29,7 +29,7 @@ export const state = createGlRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);

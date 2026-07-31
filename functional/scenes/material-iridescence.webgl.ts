@@ -22,8 +22,8 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerIridescencePbrGlExtension,
-  registerExtendedPbrGlMaterial,
+  registerGlIridescencePbrExtension,
+  registerGlExtendedPbrMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -43,8 +43,8 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerIridescencePbrGlExtension(state);
-registerExtendedPbrGlMaterial(state);
+registerGlIridescencePbrExtension(state);
+registerGlExtendedPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

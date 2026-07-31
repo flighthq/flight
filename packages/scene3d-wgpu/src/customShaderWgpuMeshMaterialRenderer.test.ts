@@ -10,7 +10,7 @@ import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/type
 import {
   customShaderWgpuMeshMaterialRenderer,
   getWgpuCustomMaterialShaderSource,
-  registerCustomShaderWgpuMaterial,
+  registerWgpuCustomShaderMaterial,
   registerWgpuCustomMaterialShader,
 } from './customShaderWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -188,14 +188,6 @@ describe('getWgpuCustomMaterialShaderSource', () => {
   });
 });
 
-describe('registerCustomShaderWgpuMaterial', () => {
-  it('installs the renderer for CustomShaderMaterialKind', () => {
-    const { state } = makeWgpuScene3DState();
-    registerCustomShaderWgpuMaterial(state);
-    expect(getWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderWgpuMeshMaterialRenderer);
-  });
-});
-
 describe('registerWgpuCustomMaterialShader', () => {
   it('registers WGSL by key with last-write-wins lookup', () => {
     const { state } = makeWgpuScene3DState();
@@ -204,5 +196,13 @@ describe('registerWgpuCustomMaterialShader', () => {
     registerWgpuCustomMaterialShader(state, 'ripple', `${SOURCE}\n// edited`);
     expect(getWgpuCustomMaterialShaderSource(state, 'ripple')).toContain('edited');
     expect(getWgpuCustomMaterialShaderSource(state, 'missing')).toBeNull();
+  });
+});
+
+describe('registerWgpuCustomShaderMaterial', () => {
+  it('installs the renderer for CustomShaderMaterialKind', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuCustomShaderMaterial(state);
+    expect(getWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderWgpuMeshMaterialRenderer);
   });
 });

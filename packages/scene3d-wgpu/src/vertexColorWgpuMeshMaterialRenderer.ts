@@ -22,7 +22,7 @@ import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelud
 // the WGSL mirror of vertexColorGlMeshMaterialRenderer. Lighting-independent: renders the material's
 // linear tint through the shared unlit pipeline. The canonical 48-byte vertex layout has no color0
 // slot on wgpu, so (unlike the GL path) the mesh color0 attribute is not yet multiplied in — the tint
-// alone drives the surface until color0 vertex support lands. See registerVertexColorWgpuMaterial.
+// alone drives the surface until color0 vertex support lands. See registerWgpuVertexColorMaterial.
 export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -61,7 +61,7 @@ export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in VertexColor renderer for VertexColorMaterialKind on this state. Opt-in (no
 // top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with
 // VertexColorMaterials draw.
-export function registerVertexColorWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuVertexColorMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, VertexColorMaterialKind, vertexColorWgpuMeshMaterialRenderer);
 }
 

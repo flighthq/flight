@@ -13,7 +13,7 @@ import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerUnlitGlMaterial, unlitGlMeshMaterialRenderer } from './unlitGlMeshMaterialRenderer';
+import { registerGlUnlitMaterial, unlitGlMeshMaterialRenderer } from './unlitGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -39,10 +39,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerUnlitGlMaterial', () => {
+describe('registerGlUnlitMaterial', () => {
   it('installs the renderer for UnlitMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerUnlitGlMaterial(state);
+    registerGlUnlitMaterial(state);
     expect(getGlMeshMaterialRenderer(state, UnlitMaterialKind)).toBe(unlitGlMeshMaterialRenderer);
   });
 });
@@ -66,7 +66,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     });
     material.baseColorMap.sampler.mipmaps = false;
     advanceVideoTexture(material.baseColorMap);
-    registerUnlitGlMaterial(state);
+    registerGlUnlitMaterial(state);
     registerGlImageTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
     unlitGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
@@ -78,7 +78,7 @@ describe('unlitGlMeshMaterialRenderer', () => {
     const material = createUnlitMaterial();
     material.baseColorMap = createRenderTexture({ height: 16, width: 16 });
     material.baseColorMap.sampler.mipmaps = false;
-    registerUnlitGlMaterial(state);
+    registerGlUnlitMaterial(state);
     registerGlRenderTextureResolver(state);
     getGlRenderStateRuntime(state).anisotropyExt = null;
     const uploads = gl.calls.filter((call) => call.name === 'texImage2D').length;

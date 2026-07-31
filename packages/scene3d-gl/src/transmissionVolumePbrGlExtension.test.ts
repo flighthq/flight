@@ -4,14 +4,14 @@ import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import {
-  registerTransmissionVolumePbrGlExtension,
+  registerGlTransmissionVolumePbrExtension,
   transmissionVolumePbrGlExtension,
 } from './transmissionVolumePbrGlExtension';
 
-describe('registerTransmissionVolumePbrGlExtension', () => {
+describe('registerGlTransmissionVolumePbrExtension', () => {
   it('registers only the transmission-volume kind', () => {
     const { state } = makeGlScene3DState();
-    registerTransmissionVolumePbrGlExtension(state);
+    registerGlTransmissionVolumePbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, TransmissionVolumePbrExtensionKind)).toBe(
       transmissionVolumePbrGlExtension,
     );

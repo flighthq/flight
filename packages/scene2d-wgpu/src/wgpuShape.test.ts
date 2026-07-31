@@ -19,7 +19,7 @@ import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuShapeModule from './wgpuShape';
-import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 // @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape
 // with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
@@ -151,7 +151,7 @@ describe('drawWgpuShape', () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
@@ -186,7 +186,7 @@ describe('drawWgpuShape', () => {
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [] }, makeShapeData()));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
@@ -195,7 +195,7 @@ describe('drawWgpuShape', () => {
   it('returns early without writing to batch when rendererData is null', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, null));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
     submitWgpuRenderPass(state);
@@ -209,7 +209,7 @@ describe('drawWgpuShape', () => {
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
     submitWgpuRenderPass(state);

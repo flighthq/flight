@@ -23,7 +23,7 @@ import {
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerPhongGlMaterial,
+  registerGlPhongMaterial,
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
   ShapeKind,
@@ -47,7 +47,7 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgl') throw new Error('render-target-node-2d requires WebGL');
 const { render, state, width } = target;
 
-registerPhongGlMaterial(state);
+registerGlPhongMaterial(state);
 
 const scene = createScene3D().root;
 const cube = createMesh(createBoxMeshGeometry(1.3, 1.3, 1.3), [

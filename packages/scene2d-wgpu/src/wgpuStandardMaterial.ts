@@ -7,7 +7,7 @@ import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 // Registers the bundled default material under StandardMaterialKind. It is a bundled material like any
 // other — no privileged status in the render path; a node with no material renders only if a renderer
 // is registered for StandardMaterialKind. A user can copy this file and register their own default.
-export function registerStandardWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuStandardMaterial(state: WgpuRenderState): void {
   registerWgpuMaterialRenderer(state, StandardMaterialKind, standardWgpuMaterialRenderer);
 }
 

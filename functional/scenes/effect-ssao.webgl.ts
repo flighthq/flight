@@ -17,7 +17,7 @@ import {
   defaultGlSsaoEffectRunner,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
@@ -38,7 +38,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerGlRenderEffect(state, 'SsaoEffect', defaultGlSsaoEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

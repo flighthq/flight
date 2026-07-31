@@ -24,7 +24,7 @@ import {
   normalizeVector3,
   prepareScene3DRender,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
+  registerGlStandardPbrMaterial,
   renderGlBackground,
   setTextureUvScale,
   setCamera3DViewMatrix4FromLookAt,
@@ -43,7 +43,7 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 registerStandardGlTextureResolvers(state);
-registerStandardPbrGlMaterial(state);
+registerGlStandardPbrMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

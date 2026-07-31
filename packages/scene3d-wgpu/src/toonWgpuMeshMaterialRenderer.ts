@@ -32,7 +32,7 @@ import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude';
 // rgba16float scene target. draw uploads the geometry's GPU buffers lazily (cached by geometry.version),
 // writes the per-draw model + normal matrices into the render-state's uniform ring buffer (group(1),
 // dynamic offset), and issues the indexed draw over the proxy's subset. Depth-test LESS + depth-write
-// on and back-face culling (unless double-sided) are baked on the pipeline. See registerToonWgpuMaterial
+// on and back-face culling (unless double-sided) are baked on the pipeline. See registerWgpuToonMaterial
 // to install it.
 //
 // MAPS NOT SAMPLED YET: baseColorMap and ramp are not uploaded on wgpu, so the define key keeps
@@ -77,7 +77,7 @@ export const toonWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with ToonMaterials draw.
-export function registerToonWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuToonMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, ToonMaterialKind, toonWgpuMeshMaterialRenderer);

@@ -28,7 +28,7 @@ import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 // The built-in Emissive forward renderer (GlMeshMaterialRenderer for EmissiveMaterialKind). Self-
 // illuminating and lighting-independent: bind selects the unlit variant for the emissive map / alpha
 // mode and uploads the linear emissive color scaled by emissiveStrength (values > 1 drive bloom over
-// the rgba16f scene target). Lights are ignored. See registerEmissiveGlMaterial to install it.
+// the rgba16f scene target). Lights are ignored. See registerGlEmissiveMaterial to install it.
 export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -68,7 +68,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in Emissive renderer for EmissiveMaterialKind on this state. Opt-in (no top-
 // level side effect); call once per GlRenderState before drawScene3D so meshes with EmissiveMaterials
 // draw.
-export function registerEmissiveGlMaterial(state: GlRenderState): void {
+export function registerGlEmissiveMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, EmissiveMaterialKind, emissiveGlMeshMaterialRenderer);
 }
 

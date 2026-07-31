@@ -7,7 +7,7 @@ import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import {
   blinnPhongWgpuMeshMaterialRenderer,
-  registerBlinnPhongWgpuMaterial,
+  registerWgpuBlinnPhongMaterial,
 } from './blinnPhongWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
@@ -73,10 +73,10 @@ describe('blinnPhongWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerBlinnPhongWgpuMaterial', () => {
+describe('registerWgpuBlinnPhongMaterial', () => {
   it('installs the renderer for BlinnPhongMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerBlinnPhongWgpuMaterial(state);
+    registerWgpuBlinnPhongMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, BlinnPhongMaterialKind)).toBe(blinnPhongWgpuMeshMaterialRenderer);
   });
 });

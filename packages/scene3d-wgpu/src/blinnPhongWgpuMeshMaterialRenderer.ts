@@ -29,7 +29,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFra
 // the shared Frame uniform (camera position AND view-projection, since the specular term is view-
 // dependent, plus the packed light block), binds the pipeline + Frame group (beginWgpuMeshDraw), then
 // binds the material's linear diffuse + specular colors and shininess at group(2). draw issues the
-// indexed draw. See registerBlinnPhongWgpuMaterial to install it.
+// indexed draw. See registerWgpuBlinnPhongMaterial to install it.
 export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -79,7 +79,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // Registers the built-in BlinnPhong renderer for BlinnPhongMaterialKind on this state. Opt-in (no
 // top-level side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with BlinnPhong
 // materials draw.
-export function registerBlinnPhongWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuBlinnPhongMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, BlinnPhongMaterialKind, blinnPhongWgpuMeshMaterialRenderer);
