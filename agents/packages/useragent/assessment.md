@@ -23,12 +23,9 @@ live source 2026-07-30.
    webkit should always report the AppleWebKit build (consistent with the name, but changes Safari's
    long-standing answer), or the function should be honest that it reports a product version where one
    is available. **A semantics decision, not a sweep** — surfaced rather than taken.
-2. **`parseUserAgentEngineVersion` returns `''` for a legacy EdgeHTML UA.** `Edge/18` matches the
-   blink branch via `edg` but has no `Edg/` token, so the version comes back empty and the engine is
-   misreported. Same defect shape as the iOS one fixed on 2026-07-30, minus the urgency: EdgeHTML is
-   end-of-life. Worth a token or worth explicitly declining to support — currently neither.
-3. **Opera on iOS is untested and its tokens are unhandled.** `OPiOS`/`OPT` reach the correct engine
-   now (they carry an iOS platform token) but nothing pins that, and `/opr/i` would not match either.
+2. ~~**`parseUserAgentEngineVersion` returns `''` for a legacy EdgeHTML UA.**~~ **Fixed 2026-07-31** — and the report understated it. `Edge/18` matched the blink branch, so the ENGINE was misreported as blink, and on a realistic legacy-Edge UA (which carries a `Chrome/64…` token) the version came back as **Chrome's version**, not empty — a wrong answer rather than a missing one. Empty only occurred on the bare form. `parseUserAgentEngine` now recognizes `Edge/<digit>` before the blink branch and reports `'unknown'`: EdgeHTML has no `PlatformEngine` member, adding one is a public type change every exhaustive consumer would handle, and `'unknown'` is the documented answer for an engine this SDK does not model. Saying blink would have a caller apply Chromium workarounds to a browser that never ran Chromium. Modern `Edg/` and `EdgiOS/` are unaffected, pinned by tests.
+
+  _If a first-class EdgeHTML engine value is ever wanted, that is the `PlatformEngine` type change — routed, not taken._
 
 ## Backlog
 
