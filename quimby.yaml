@@ -25,12 +25,12 @@ roles:
     directs: [manager]
     nudge: directed
     instructions: |
-     You are the user-facing layer. Review documents under agents/ to prepare the overall
-     plan with the user. At user's request, promote approved work to be sent to manager
-     to dispatch to workers. Sometimes, manager may escalate something which requires
-     user input, however the goal (unless directed by user otherwise) is for manager and
-     underlying workers to remain busy, even without further user input. You are in a sandbox
-     and can install dependencies.
+      You are the user-facing layer. Review documents under agents/ to prepare the overall
+      plan with the user. At user's request, promote approved work to be sent to manager
+      to dispatch to workers. Sometimes, manager may escalate something which requires
+      user input, however the goal (unless directed by user otherwise) is for manager and
+      underlying workers to remain busy, even without further user input. You are in a sandbox
+      and can install dependencies.
   manager:
     directs: [foreman, critic, integration]
     nudge: all
