@@ -71,6 +71,27 @@ Mocking remains the right tool for genuine **interaction** assertions — which 
 - A revert-and-check or mutation-testing result is only trustworthy after confirming the mutation actually changed the file. The formatter runs between edits in this repo, so a scripted find-and-replace can silently become a no-op once prettier has reflowed the target expression across lines — the probe then reruns against unchanged code and a real fix reads as "not caught." Print or otherwise check a replacement count (or diff the file) before drawing any conclusion from the result.
 - The negative-space twin of the rule above: a probe that reports **no defect** is only trustworthy after confirming it actually exercised the code. An argument-shape mistake (wrong position, wrong count) can silently turn a real probe into a no-op that returns early or does nothing observable — this looks identical to "no defect found." Prefer confirming by construction: assert the function did something observable, not merely that it did not throw. The practical trigger for suspicion: when one member of a structurally identical family of functions behaves differently from its siblings, suspect the harness before believing the result.
 
+## Assertions that cannot fail
+
+Two shapes where the test and the code are each fine but the test still proves nothing. Both are
+invisible on a green run and only show up under mutation.
+
+**A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
+suppresses a key for the lifetime of the process, not the test. So the *second* test to touch a key
+observes nothing regardless of what the code does: a "warns about X" test consumes the key, and a
+separate "stays silent when X does not apply" test then passes even if the guard has stopped checking
+anything at all. It is not enough to avoid duplicating the key across tests — assert both directions in
+a single test, **silence first, while the key is still unconsumed**, then the warning. Anything that
+reports once per process (deprecation notices, warmup warnings) has the same property.
+
+**Verifying a guard's logic is not verifying that anything calls it.** A guard installed through a seam
+has two separable parts: the check, and the call site that is supposed to invoke it. A test that reaches
+in and calls the guard directly — `runtime.someGuard!(state, value)` — exercises the check thoroughly
+and says nothing about the seam. Delete the call site and every such test still passes; the feature is
+dead and fully covered. Drive at least one test through the real entry point instead, in the state that
+should trigger it, so the wiring is asserted and not assumed. The tell is that a test never calls the
+public function the guard exists to protect.
+
 ## What belongs in a unit test vs. elsewhere
 
 - Put unit behavior in a colocated `*.test.ts` in the package that owns it, where `exports:check` binds it to an exported function and a developer changing that code will see it. A compiler-enforced property (e.g. the `Node<Traits>` invariance law) belongs in a colocated test too, asserted with `// @ts-expect-error` — `tsc -b` typechecks `src/*.test.ts`, so the failing-compile case is the assertion.
