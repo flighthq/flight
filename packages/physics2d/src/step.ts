@@ -340,14 +340,21 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   // deliberately untyped and only the kind knows what its numbers mean. With warm starting off the
   // accumulators are cleared instead, so a world told not to use the cache does not quietly keep
   // seeding from it — the previous code left them growing whether the flag was set or not.
-  if (config.warmStarting) {
-    warmStartPhysics2DContacts(world);
-    for (const joint of world.joints) {
-      world.jointSolvers.get(joint.kind)?.warmStart?.(world, joint);
-    }
-  } else {
-    for (const joint of world.joints) {
-      world.jointSolvers.get(joint.kind)?.clearAccumulatedImpulses?.(joint);
+  if (config.warmStarting) warmStartPhysics2DContacts(world);
+  // Warm starting is decided per KIND as well as per world, because it is a capability and not just a
+  // preference. A kind that declares no warmStart is never reapplying its accumulator — the mouse joint
+  // omits it deliberately, since a target that moves between steps invalidates the previous impulse —
+  // so that accumulator has to be cleared even when the world is warm starting. Keying only on the
+  // world flag left the mouse's stale impulse live: after zeroing a body's velocity and moving the
+  // target onto it, the next step still produced motion, contradicting the cold-start contract on the
+  // type. An impulse that is never reapplied must be cleared, or it is neither warm nor cold.
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined) continue;
+    if (config.warmStarting && solver.warmStart !== undefined) {
+      solver.warmStart(world, joint);
+    } else {
+      solver.clearAccumulatedImpulses?.(joint);
     }
   }
   // Joints and contacts share one solve list and one iteration count. Solving them in separate passes
