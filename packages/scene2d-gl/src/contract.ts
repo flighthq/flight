@@ -1,4 +1,5 @@
 export * from './enableGlColorAdjustmentGuards';
+export * from './enableGlStrokePathTessellation';
 export * from './glSprite';
 export * from './glBitmapText';
 export * from './glCache';

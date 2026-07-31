@@ -17,6 +17,7 @@ import {
   enableGlClipSupport,
   enableFlightDiagnostics,
   enableGlRenderCache,
+  enableGlStrokePathTessellation,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -86,6 +87,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   if (options.clip) enableGlClipSupport(state);
   if (options.cache) enableGlRenderCache(state);
   if (options.blend) enableGlBlendModeSupport(state);
+  if (options.strokePathTessellation) enableGlStrokePathTessellation(state);
 
   return registerFunctionalTarget({
     kind: 'webgl',

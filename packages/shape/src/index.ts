@@ -34,6 +34,7 @@ export {
   getShapeCommandCount,
   getShapeFillRegions,
   getShapeStrokeRegions,
+  getShapeStrokeOutlineRegions,
   hasNonSolidShapeFill,
   hasNonSolidShapeStroke,
   hasShapeFill,

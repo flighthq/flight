@@ -19,4 +19,5 @@ export interface FunctionalTargetOptions {
   clip?: boolean;
   cache?: boolean;
   blend?: boolean;
+  strokePathTessellation?: boolean;
 }

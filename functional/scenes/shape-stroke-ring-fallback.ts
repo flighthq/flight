@@ -34,6 +34,7 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  strokePathTessellation: true,
 });
 
 const root = createDisplayObject();
