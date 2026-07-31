@@ -1,5 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
+import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { Image, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
@@ -9,9 +10,10 @@ import {
   computeSpriteLocalBoundsRectangle,
   createSprite,
   createSpriteData,
+  createSpriteRendererData,
   createSpriteRuntime,
   getSpriteRuntime,
-  setSpriteTexture,
+  isSpriteRendererDirty,
 } from './sprite';
 
 describe('cloneSprite', () => {
@@ -79,6 +81,15 @@ describe('createSpriteData', () => {
   });
 });
 
+describe('createSpriteRendererData', () => {
+  it('creates a clean per-state stamp for the current texture', () => {
+    const sprite = createSprite({ data: { texture: texture(16, 16) } });
+    const data = createSpriteRendererData({} as never, sprite);
+
+    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(false);
+  });
+});
+
 describe('createSpriteRuntime', () => {
   it('returns a non-null runtime', () => {
     const runtime = createSpriteRuntime();
@@ -88,6 +99,13 @@ describe('createSpriteRuntime', () => {
   it('uses computeSpriteLocalBoundsRectangle', () => {
     expect(createSpriteRuntime().computeLocalBoundsRectangle).toStrictEqual(computeSpriteLocalBoundsRectangle);
   });
+
+  it('installs the texture-aware local-bounds validity hook', () => {
+    const runtime = createSpriteRuntime();
+    expect(typeof runtime.isLocalBoundsRectangleValid).toBe('function');
+    expect(runtime.localBoundsTexture).toBeNull();
+    expect(runtime.localBoundsTextureVersion).toBe(-1);
+  });
 });
 
 describe('getSpriteRuntime', () => {
@@ -96,34 +114,40 @@ describe('getSpriteRuntime', () => {
   });
 });
 
-describe('setSpriteTexture', () => {
-  it('sets the texture', () => {
-    const sprite = createSprite();
-    const imageTexture = texture(64, 64);
-    setSpriteTexture(sprite, imageTexture);
-    expect(sprite.data.texture).toBe(imageTexture);
-  });
-
-  it('accepts null', () => {
-    const sprite = createSprite({ data: { texture: texture(1, 1) } });
-    setSpriteTexture(sprite, null);
-    expect(sprite.data.texture).toBeNull();
-  });
-
-  it('invalidates local bounds', () => {
-    const sprite = createSprite();
+describe('isSpriteRendererDirty', () => {
+  it('detects same-size bare texture assignment once without node invalidation', () => {
+    const sprite = createSprite({ data: { texture: texture(64, 64) } });
+    const data = createSpriteRendererData({} as never, sprite);
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
-    const idBefore = runtime.localBoundsId;
-    setSpriteTexture(sprite, texture(64, 64));
-    expect(runtime.localBoundsId).not.toBe(idBefore);
+    const contentId = runtime.localContentId;
+
+    sprite.data.texture = texture(64, 64);
+
+    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(true);
+    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(false);
+    expect(runtime.localContentId).toBe(contentId);
   });
 
-  it('invalidates local content', () => {
-    const sprite = createSprite();
+  it('detects a version bump on the same texture identity', () => {
+    const sprite = createSprite({ data: { texture: texture(64, 64) } });
+    const data = createSpriteRendererData({} as never, sprite);
+    sprite.data.texture!.version++;
+
+    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(true);
+  });
+});
+
+describe('Sprite local bounds validity', () => {
+  it('refreshes bounds after bare texture assignment without changing localBoundsId', () => {
+    const sprite = createSprite({ data: { texture: texture(16, 12) } });
+    expect(getNodeLocalBoundsRectangle(sprite)).toMatchObject({ width: 16, height: 12 });
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
-    const idBefore = runtime.localContentId;
-    setSpriteTexture(sprite, texture(64, 64));
-    expect(runtime.localContentId).not.toBe(idBefore);
+    const localBoundsId = runtime.localBoundsId;
+
+    sprite.data.texture = texture(48, 30);
+
+    expect(getNodeLocalBoundsRectangle(sprite)).toMatchObject({ width: 48, height: 30 });
+    expect(runtime.localBoundsId).toBe(localBoundsId);
   });
 });
 

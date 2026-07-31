@@ -11,7 +11,6 @@ import {
   playVideoResource,
   setVideoChannelGain,
   setVideoChannelPlaybackRate,
-  setSpriteTexture,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -104,9 +103,9 @@ function setVideoSources(
   const texture2 = createVideoTexture(resource2);
   const texture3 = createVideoTexture(resource3);
   videoTextures.push(texture1, texture2, texture3);
-  setSpriteTexture(videoNode, texture1);
-  setSpriteTexture(secondVideoNode, texture2);
-  setSpriteTexture(thirdVideoNode, texture3);
+  videoNode.data.texture = texture1;
+  secondVideoNode.data.texture = texture2;
+  thirdVideoNode.data.texture = texture3;
 }
 
 const videoTextures: ReturnType<typeof createVideoTexture>[] = [];

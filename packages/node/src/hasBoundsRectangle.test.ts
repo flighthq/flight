@@ -34,6 +34,14 @@ describe('initBoundsRectangleRuntimeTrait', () => {
     expect(runtime.localBoundsRectangle).toBeNull();
     expect(runtime.worldBoundsRectangle).toBeNull();
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(defaultComputeLocalBoundsRectangle);
+    expect(runtime.isLocalBoundsRectangleValid).toBeNull();
+  });
+
+  it('installs a kind-owned local-bounds validity hook', () => {
+    const isLocalBoundsRectangleValid = vi.fn(() => true);
+    initBoundsRectangleRuntimeTrait(runtime, { isLocalBoundsRectangleValid });
+
+    expect(runtime.isLocalBoundsRectangleValid).toBe(isLocalBoundsRectangleValid);
   });
 });
 

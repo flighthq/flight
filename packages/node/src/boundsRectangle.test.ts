@@ -200,6 +200,24 @@ describe('computeNodeRootLocalBoundsRectangle', () => {
 });
 
 describe('ensureNodeLocalBoundsRectangle', () => {
+  it('recalculates when the kind-owned validity hook rejects an unchanged revision', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    let input = { width: 10 };
+    let stampedInput = input;
+    runtime.computeLocalBoundsRectangle = (out: Rectangle) => {
+      out.width = input.width;
+      stampedInput = input;
+    };
+    runtime.isLocalBoundsRectangleValid = () => stampedInput === input;
+    ensureNodeLocalBoundsRectangle(object);
+
+    input = { width: 20 };
+    ensureNodeLocalBoundsRectangle(object);
+
+    expect(runtime.localBoundsRectangle?.width).toBe(20);
+  });
+
   it('should ensure localBoundsRectangle is defined', () => {
     const object = createTestNode();
     const runtime = getEntityRuntime(object);

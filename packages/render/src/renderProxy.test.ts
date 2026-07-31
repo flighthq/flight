@@ -389,6 +389,23 @@ describe('prepareScene2DRender', () => {
     expect(prepareScene2DRender(state, root)).toBe(false);
   });
 
+  it('returns true when the registered renderer reports an identity-tier change', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const root = createDisplayObject();
+    let rendererDirty = false;
+    registerRenderer(state, root.kind, {
+      createData: () => null,
+      isDirty: () => rendererDirty,
+      submit: vi.fn(),
+    });
+    prepareScene2DRender(state, root);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+
+    rendererDirty = true;
+
+    expect(prepareScene2DRender(state, root)).toBe(true);
+  });
+
   it('accumulates clip depth down a clipped subtree', () => {
     const state = createRenderState();
     const root = createDisplayObject();

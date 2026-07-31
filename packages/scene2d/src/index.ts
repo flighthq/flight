@@ -12,7 +12,6 @@ export {
   getScene2DRoot,
   getScene2DSignals,
   isNode2D,
-  setSpriteTexture,
   setHtmlViewSize,
   setNode2DClip,
   setScene2DSize,

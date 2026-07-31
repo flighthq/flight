@@ -14,6 +14,7 @@ beforeAll(() => installWgpuMock());
 describe('defaultWgpuSpriteRenderer', () => {
   it('has createData and submit functions', () => {
     expect(typeof defaultWgpuSpriteRenderer.createData).toBe('function');
+    expect(typeof defaultWgpuSpriteRenderer.isDirty).toBe('function');
     expect(defaultWgpuSpriteRenderer.submit).toBe(drawWgpuSprite);
   });
 });

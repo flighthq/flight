@@ -4,7 +4,7 @@ import {
   resolveWgpuShader,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
-import { noopRendererData } from '@flighthq/render/contract';
+import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { RenderProxy2D, Scene2DRenderer, Sprite, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
@@ -83,6 +83,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
 
 export const defaultWgpuSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
-  createData: noopRendererData,
+  createData: createSpriteRendererData,
+  isDirty: isSpriteRendererDirty,
   submit: drawWgpuSprite,
 };

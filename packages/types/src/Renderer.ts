@@ -14,5 +14,9 @@ export interface Renderer {
   // Called when the proxy's renderer/data is replaced or the proxy is destroyed. Optional: renderers
   // whose data holds only GC-managed values (or none) omit it. `destroy*` semantics — frees now.
   destroyData?(state: RenderState, data: RendererData): void;
+  // Kind-owned identity check reached through the already-selected renderer before a
+  // requiresInvalidation prepare can skip the node. Implementations keep their comparison stamp in
+  // rendererData, which is per-node and per-state; absent renderers retain the revision-only path.
+  isDirty?(state: RenderState, source: Renderable, data: RendererData | null): boolean;
   submit(state: RenderState, node: RenderProxy): void;
 }

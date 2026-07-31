@@ -128,12 +128,13 @@ export function isRenderProxyDirty(
   const parentDirty =
     parentData !== undefined &&
     (parentData.transformFrameId === currentFrameId || parentData.appearanceFrameId === currentFrameId);
+  const rendererDirty = data.renderer?.isDirty?.(state, source, data.rendererData) ?? false;
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
     data.lastLocalTransformId !== getNodeLocalTransformRevision(source as Node) ||
     data.lastAppearanceId !== getNodeAppearanceRevision(source as Node) ||
     data.lastLocalContentId !== getNodeLocalContentRevision(source as Node);
-  return parentDirty || localDirty;
+  return parentDirty || rendererDirty || localDirty;
 }
 
 export function isRenderProxyVisible(data: RenderProxy2D): boolean {

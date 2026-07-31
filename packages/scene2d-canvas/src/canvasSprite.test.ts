@@ -1,5 +1,5 @@
 import { createImageResource } from '@flighthq/image/contract';
-import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import {
   createPixelArtSampler,
@@ -31,9 +31,24 @@ function makeTexture() {
 }
 
 describe('defaultCanvasSpriteRenderer', () => {
-  it('has submit and createData', () => {
+  it('installs the sprite identity dirty hook with submit and renderer data', () => {
     expect(typeof defaultCanvasSpriteRenderer.submit).toBe('function');
     expect(typeof defaultCanvasSpriteRenderer.createData).toBe('function');
+    expect(typeof defaultCanvasSpriteRenderer.isDirty).toBe('function');
+  });
+
+  it('dirties requiresInvalidation preparation after a same-size bare texture assignment', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'), {
+      sceneGraphSyncPolicy: 'requiresInvalidation',
+    });
+    registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+    const sprite = createSprite({ data: { texture: makeTexture() } });
+    prepareScene2DRender(state, sprite);
+    expect(prepareScene2DRender(state, sprite)).toBe(false);
+
+    sprite.data.texture = makeTexture();
+
+    expect(prepareScene2DRender(state, sprite)).toBe(true);
   });
 });
 
