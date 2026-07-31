@@ -320,6 +320,38 @@ describe('physics2DMouseJointSolver', () => {
     expect(dragged.x).toBeGreaterThan(3);
   });
 
+  // Critic's repro. The mouse joint deliberately declares no warmStart, because a target that moves
+  // between steps invalidates the previous impulse -- the type documents a cold start. But the step only
+  // cleared accumulators when the WORLD had warm starting off, so with it on (the default) the stale
+  // impulse stayed live and kept pushing a body whose target was already on top of it.
+  it('starts cold each step even while the world is warm starting', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);
+    const dragged = box(world, 'dynamic', 0, 0);
+    const joint: Physics2DMouseJoint = {
+      ...baseJoint(Physics2DMouseJointKind, dragged.index, dragged.index),
+      targetX: 5,
+      targetY: 0,
+      maxForce: 1000,
+      stiffness: 5,
+      damping: 0.7,
+    };
+    addPhysics2DJoint(world, joint);
+    run(world, 30);
+
+    // Park the body: stop it dead and put the target exactly where the body already is, so a correct
+    // cold start has nothing left to do.
+    dragged.velocityX = 0;
+    dragged.velocityY = 0;
+    joint.targetX = dragged.x;
+    joint.targetY = dragged.y;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(Math.abs(dragged.velocityX)).toBeLessThan(1e-6);
+    expect(Math.abs(dragged.velocityY)).toBeLessThan(1e-6);
+  });
+
   it('respects its force bound rather than injecting unbounded energy', () => {
     // The reason a mouse joint is soft by construction: a rigid drag lets a user pull a body arbitrarily
     // fast simply by moving the cursor, and the rest of the world absorbs it.
