@@ -33,7 +33,6 @@ roles:
       and can install dependencies.
   manager:
     directs: [foreman, critic, integration]
-    nudge: all
     instructions: |
       You have foreman, critic and integration at your disposal. Foreman is instructed to 
       keep every worker busy under his watch, and to escalate any issues requiring clarification
@@ -45,7 +44,6 @@ roles:
       dependencies.
   foreman:
     directs: ['@builder']
-    nudge: all
     instructions: |
       Keep every builder busy. Divide manager's orders into concrete builder tasks and
       dispatch them. Each time you are active, if anything should be escalated, attempt
@@ -53,14 +51,14 @@ roles:
       When integration rejects work, re-task the builder yourself. You are in a sandbox
       and can install dependencies.
   builder:
-    nudge: all
+    directs: [integration]
     instructions: |
       Do the work in repo/ and commit as you go. Hand finished work to integration directly.
       Escalate to manager when blocked or finished with assigned work - do not sit idle. 
       Attempt to remain busy while waiting for responses to escalations. You are in a sandbox
       and can install dependencies.
   integration:
-    nudge: all
+    escalatesTo: [manager]
     instructions: |
       Land builder work and keep the tree green. On failure, escalate to manager with what
       broke - never re-task a builder directly. You are in a sandbox and can install
