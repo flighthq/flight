@@ -50,6 +50,25 @@ This is the constructive twin of the `no-warning-comments` lint rule: lint close
 - Guards attach via existing nullable hook/runtime slots — never a new branch in a core hot path.
 - **Warn only — no strict/throw mode.** Throwing on misuse changes control flow between dev and prod and violates the sentinel rule. Tests that want hard failure assert on a memory log sink.
 
+### Which guards exist
+
+Per-package enablers are the primitive, and there is deliberately no single global switch that turns
+everything on. But a caller who cannot *find* the enabler for their subsystem will ask for that global —
+which is exactly what a downstream consumer did — so the set is listed here rather than left to a grep:
+
+`enableAudioMixerGuards` · `enableCanvasTextureResolverGuards` · `enableClipGuards` ·
+`enableColorAdjustmentGuards` · `enableDomTextureResolverGuards` · `enableEasingGuards` ·
+`enableEntityRuntimeGuards` · `enableGlColorAdjustmentGuards` · `enableGlPbrExtensionGuards` ·
+`enableGlRenderEffectGuards` · `enableGlRenderStateGuards` · `enableGlRenderTextureGuards` ·
+`enableGlTextureResolverGuards` · `enableInteractionGuards` · `enableRenderRegistryGuards` ·
+`enableShortcutGuards` · `enableSnapshotGuards` · `enableTextureAtlasGuards` ·
+`enableWgpuColorAdjustmentGuards` · `enableWgpuTextureResolverGuards`
+
+For a render session, `enableFlightDiagnostics(state)` in `@flighthq/debug` is the existing convenience
+that composes several of these — an assembly built *from* the primitives, which is allowed, rather than a
+replacement for them. It cannot currently carry every guard: `registerDebugSubsystem` hooks are
+state-less (`enableGuards?: () => void`), so state-scoped guards must still be enabled by name.
+
 ## Emission: through `@flighthq/log`
 
 Guards emit via `@flighthq/log`, not bare `console.warn`:
