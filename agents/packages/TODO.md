@@ -214,7 +214,6 @@ Design calls to settle before building the affected entries:
 
 ### image-codec (solid 70)
 
-- Add registry enumeration
 - Add `explain*` queries for the silent sentinels
 - Test the `decodeImagePremultiplied` auto-detect path
 
