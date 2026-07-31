@@ -16,7 +16,14 @@ import {
   createPath,
   flattenPath,
 } from '@flighthq/path/contract';
-import type { ClipRegion, MatrixLike, Path, PathWinding, RectangleLike } from '@flighthq/types/contract';
+import type {
+  ClipRegion,
+  ClipRegionReleaseGuard,
+  MatrixLike,
+  Path,
+  PathWinding,
+  RectangleLike,
+} from '@flighthq/types/contract';
 
 // Returns a ClipRegion from the pool (as an empty rectangular region at the origin).
 // Every acquireClipRegion must have a matching releaseClipRegion — treat them as paired brackets.
@@ -322,11 +329,26 @@ export function normalizeClipRegion(out: ClipRegion, clip: Readonly<ClipRegion>)
   out.version = (out.version + 1) >>> 0;
 }
 
-// Returns a ClipRegion to the pool. After release the caller must not use the region.
-// Every acquireClipRegion must have a matching releaseClipRegion.
+// Returns a ClipRegion to the pool. Each acquireClipRegion pairs with exactly one releaseClipRegion, and
+// the region must not be touched afterwards.
+//
+// Releasing the same region TWICE is the silent failure this pairing exists to avoid: the region lands in
+// the pool twice, so two later acquires hand out the SAME object and two unrelated clips then alias each
+// other. Nothing throws and nothing looks wrong until the rendering is subtly incorrect. The membership
+// scan that detects it is O(pool) and therefore runs ONLY when the guard is installed — production sees a
+// null slot and pays a single comparison. enableClipGuards turns it into a warning.
 export function releaseClipRegion(clip: ClipRegion): void {
+  if (_releaseGuard !== null && clipRegionPool.includes(clip)) _releaseGuard(clip);
   clipRegionPool.push(clip);
 }
+
+// The diagnostics seam for a double release, not the caller-facing entry point — use enableClipGuards,
+// which installs the @flighthq/log reporter through here. Null uninstalls it.
+export function setClipRegionReleaseGuard(guard: ClipRegionReleaseGuard | null): void {
+  _releaseGuard = guard;
+}
+
+let _releaseGuard: ClipRegionReleaseGuard | null = null;
 
 // Retargets an existing region to a rectangle form in place, avoiding per-frame allocation
 // in animated-clip scenarios. Bumps version.
