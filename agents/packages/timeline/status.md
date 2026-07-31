@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/timeline'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-31
+by: builder3
 ---
 
 # timeline — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-31 — builder3 Recommended sweep completion
+
+Completed all four remaining sweep-safe items from `assessment.md` in `2ce125d53`:
+
+- `updateTimeline` now returns `true` only when the call realizes a new frame (constructs the target, runs its frame script, and emits frame signals), and returns `false` for a repeated/no-change update.
+- The source comment now pins the two clock paths: timed sources advance before realization, while `frameRate: null` sources realize the current frame before advancing the playhead for the next call.
+- Added `getTimelineFrameScriptFrames` as an insertion-ordered snapshot query and `clearTimelineFrameScripts` with the existing null-empty sentinel.
+- Promoted `getTimelineLabels` to the public contract, retaining the shared read-only empty-array sentinel.
+
+Focused verification at implementation time: `npm run test --workspace=packages/timeline` passed 61 tests; `npm run check -- timeline` passed typecheck, lint/format/order, 100% export coverage, type-home, and portability gates.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

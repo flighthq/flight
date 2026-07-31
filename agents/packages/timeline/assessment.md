@@ -1,21 +1,16 @@
 ---
 package: '@flighthq/timeline'
-updated: 2026-07-13
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # timeline — Assessment
 
-Sorted from the 2026-07-13 review (solid — 68/100). The 2026-06-25 merge-gate blockers are resolved (types-first fixed), the movieclip extraction landed (`75c4076b`), and all three previously Approved sweep items are verified done in source. What remains is playback depth (parked on open directions) plus a short sweep-safe list.
+Sorted from the 2026-07-13 review (solid — 68/100). The 2026-06-25 merge-gate blockers are resolved (types-first fixed), the movieclip extraction landed (`75c4076b`), and the 2026-07-31 sweep completed the remaining four charter-decided items. What remains is playback depth parked on open directions.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/timeline`, no cross-package coupling, no open design decision.
-
-1. **Make `updateTimeline` return whether the frame changed.** North star 4 states this outright ("Update returns whether the frame changed"); the function returns `void` today. Return `boolean` from `updateTimeline` (frame realized this update), add the aliased/no-change test cases. Charter-decided, within-package, greenfield signature change with no external consumers beyond movieclip's thin delegate.
-2. **Document the frameRate-null advance ordering.** Between updates in the one-frame-per-update path, `currentFrame` reads one ahead of the realized frame (`lastFrameUpdate`). Add a durable semantic comment on `updateTimeline` stating the two clock paths' ordering and what `currentFrame` means in each. Documentation-only floor; changing the semantics itself is an open direction (review §candidate 3).
-3. **Frame-script bulk queries.** `getTimelineFrameScriptFrames` (or an iteration seam) and `clearTimelineFrameScripts` — completes the CRUD family over the existing `Map`, null-sentinel on empty. Small, additive, no design fork.
-4. **`getTimelineLabels(timeline)` public accessor.** The private helper already exists; labels are reachable only via `timeline.source?.labels` or one-at-a-time lookups. Exposing the read-only list (empty-array sentinel) serves editors/debug UIs without touching the source contract.
+_None. The 2026-07-31 sweep completed every charter-decided item; remaining work needs a direction or crosses package boundaries._
 
 ## Backlog
 
@@ -35,4 +30,5 @@ Parked — with the reason each is not sweep-safe.
 
 ## Approved
 
+- [2026-07-31 · completed] `updateTimeline` boolean change signal; frameRate-null ordering contract; frame-script bulk list/clear queries; public label-list accessor
 - [2026-07-02 · picked] Sweep items 1–3: disposeTimelineSignals, setMovieClipSource dead branch, frame-skip contract comment
