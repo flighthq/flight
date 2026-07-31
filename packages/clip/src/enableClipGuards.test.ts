@@ -17,13 +17,13 @@ function captureLog(run: () => void): readonly LogEntry[] {
 }
 
 describe('disableClipGuards', () => {
-  it('uninstalls the guard so a later double release stays SILENT', () => {
+  it('uninstalls the guard, so a double release goes back to being silent', () => {
     const entries = captureLog(() => {
       enableClipGuards();
       disableClipGuards();
       const region = acquireClipRegion();
       releaseClipRegion(region);
-      releaseClipRegion(region);
+      releaseClipRegion(region); // still corrupts the pool; simply no longer reported
     });
     expect(entries.length).toBe(0);
   });

@@ -1,3 +1,5 @@
+import type { StepPosition } from '@flighthq/types/contract';
+
 import { easeSteps, setEasingStepsGuard } from './easeSteps';
 
 describe('easeSteps', () => {
@@ -65,34 +67,31 @@ describe('easeSteps', () => {
 });
 
 describe('setEasingStepsGuard', () => {
-  it('invokes the installed guard for the degenerate jumpNone, count<2 call', () => {
-    const calls: unknown[] = [];
-    setEasingStepsGuard((count, position) => calls.push([count, position]));
+  it('reports the degenerate jumpNone call that silently returns NaN', () => {
+    const seen: [number, StepPosition][] = [];
+    setEasingStepsGuard((count, position) => seen.push([count, position]));
     try {
-      easeSteps(1, 'jumpNone');
-      expect(calls).toEqual([[1, 'jumpNone']]);
+      // The failure being reported: one step with no edge jump leaves zero jumps to divide by.
+      expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
     } finally {
       setEasingStepsGuard(null);
     }
+    expect(seen).toEqual([[1, 'jumpNone']]);
   });
 
-  it('does not invoke the guard for well-defined calls', () => {
-    const calls: unknown[] = [];
-    setEasingStepsGuard((count, position) => calls.push([count, position]));
+  it('stays silent for well-defined calls, and once uninstalled', () => {
+    const seen: number[] = [];
+    setEasingStepsGuard((count) => seen.push(count));
     try {
-      easeSteps(4, 'jumpNone');
-      easeSteps(1, 'jumpEnd');
-      expect(calls).toEqual([]);
+      easeSteps(2, 'jumpNone')(0.5); // count >= 2 is the documented minimum for jumpNone
+      easeSteps(1, 'jumpEnd')(0.5); // edge-jumping positions are defined for count >= 1
+      easeSteps(1, 'jumpBoth')(0.5);
     } finally {
       setEasingStepsGuard(null);
     }
-  });
-
-  it('stops invoking a previously installed guard once set back to null', () => {
-    const calls: unknown[] = [];
-    setEasingStepsGuard((count, position) => calls.push([count, position]));
-    setEasingStepsGuard(null);
-    easeSteps(1, 'jumpNone');
-    expect(calls).toEqual([]);
+    expect(seen).toEqual([]);
+    // Uninstalled: the degenerate call still returns NaN, but nothing is reported.
+    easeSteps(1, 'jumpNone')(0.5);
+    expect(seen).toEqual([]);
   });
 });

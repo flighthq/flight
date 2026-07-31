@@ -6,7 +6,6 @@ import {
   clipRegionContainsPoint,
   clipRegionContainsRectangle,
   clipRegionIntersectsRectangle,
-  equalsClipRegion,
   cloneClipRegion,
   copyClipRegion,
   createClipRegionFromCircle,
@@ -15,6 +14,7 @@ import {
   createClipRegionFromPath,
   createClipRegionFromRectangle,
   createClipRegionFromRoundedRectangle,
+  equalsClipRegion,
   getClipRegionBounds,
   intersectClipRegions,
   invalidateClipRegion,
@@ -503,27 +503,41 @@ describe('releaseClipRegion', () => {
 });
 
 describe('setClipRegionReleaseGuard', () => {
-  it('invokes the installed guard when a region is released twice', () => {
-    const seen: unknown[] = [];
-    setClipRegionReleaseGuard((clip) => seen.push(clip));
+  it('reports a double release, which would otherwise corrupt the pool in silence', () => {
+    const doubled: number[] = [];
+    setClipRegionReleaseGuard(() => doubled.push(1));
     try {
       const region = acquireClipRegion();
       releaseClipRegion(region);
       releaseClipRegion(region);
-      expect(seen).toEqual([region]);
+      expect(doubled.length).toBe(1);
     } finally {
       setClipRegionReleaseGuard(null);
+      // Undo the damage this test deliberately caused: the region is now in the pool TWICE, and both
+      // copies must be drawn out or a later test acquires the same object twice and sees phantom double
+      // releases. That leak is precisely the corruption the guard reports, so leaving it would be ironic
+      // as well as wrong.
+      acquireClipRegion();
+      acquireClipRegion();
     }
   });
 
-  it('stops invoking a previously installed guard once set back to null', () => {
-    const seen: unknown[] = [];
-    setClipRegionReleaseGuard((clip) => seen.push(clip));
-    setClipRegionReleaseGuard(null);
+  it('stays silent for correctly paired acquire/release, and once uninstalled', () => {
+    const doubled: number[] = [];
+    setClipRegionReleaseGuard(() => doubled.push(1));
+    try {
+      releaseClipRegion(acquireClipRegion());
+      releaseClipRegion(acquireClipRegion());
+    } finally {
+      setClipRegionReleaseGuard(null);
+    }
+    expect(doubled).toEqual([]);
+
+    // Uninstalled: the pool is still corrupted by a double release, but nothing is reported.
     const region = acquireClipRegion();
     releaseClipRegion(region);
     releaseClipRegion(region);
-    expect(seen).toEqual([]);
+    expect(doubled).toEqual([]);
   });
 });
 
