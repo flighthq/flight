@@ -22,6 +22,7 @@ export {
   createPath,
   dashPath,
   decimatePath,
+  explainStrokePathTessellation,
   fitPathCurves,
   flattenPath,
   forEachPathSegment,
@@ -47,6 +48,9 @@ export {
   strokePath,
   tessellatePath,
   tessellatePathTyped,
+  tessellateStrokePath,
   transformPath,
   translatePath,
 } from './contract';
+
+export type { StrokePathTessellationExplanation, StrokePathTessellationReason } from './contract';
