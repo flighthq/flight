@@ -22,9 +22,16 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       metrics: deriveGlyphMetricsFromFontSize(options.fontSize),
       packBottom: padding,
       padding,
+      // Style and weight are forwarded only when supplied, so the rasterizer sees an absent field
+      // rather than an explicit 'normal' it would have defaulted to anyway. Without this the
+      // rasterizer's own fontStyle/fontWeight support was unreachable: it reads them from
+      // GlyphRasterizeOptions, which only this constructor builds, so no caller could ask for a bold
+      // or italic atlas at all.
       rasterizeOptions: {
         fontFamily: options.fontFamily,
         fontSize: options.fontSize,
+        ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
+        ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
       },
       shelves: [],
       bitmap: createBitmap(options.width, options.height),

@@ -1,4 +1,4 @@
-import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, deriveGlyphMetricsFromFontSize, disposeGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
@@ -14,6 +14,56 @@ describe('createGlyphAtlas', () => {
     expect(bitmap.height).toBe(64);
     expect(atlas.runtime.entries.size).toBe(0);
     expect(atlas.runtime.padding).toBe(1);
+  });
+});
+
+describe('createGlyphAtlas font style and weight', () => {
+  afterEach(() => setGlyphRasterizerBackend(null));
+
+  // The rasterizer reads fontStyle/fontWeight from GlyphRasterizeOptions, which only createGlyphAtlas
+  // builds -- so before these were threaded through, a bold or italic atlas could not be requested at
+  // all. The assertion is on what the backend actually receives, not on the options object.
+  it('forwards fontStyle and fontWeight to the rasterizer', () => {
+    let seen: Readonly<GlyphRasterizeOptions> | null = null;
+    setGlyphRasterizerBackend({
+      rasterize: (_codepoint, options) => {
+        seen = options;
+        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
+      },
+    });
+    const atlas = createGlyphAtlas({
+      fontFamily: 'mock',
+      fontSize: 16,
+      fontStyle: 'italic',
+      fontWeight: 'bold',
+      height: 64,
+      width: 64,
+    });
+
+    getGlyphAtlasEntry(atlas, 65);
+
+    expect(seen).not.toBeNull();
+    expect(seen!.fontStyle).toBe('italic');
+    expect(seen!.fontWeight).toBe('bold');
+  });
+
+  // Omitted stays omitted rather than becoming an explicit 'normal', so the rasterizer applies its own
+  // default and a future backend can tell "unset" from "deliberately normal".
+  it('leaves fontStyle and fontWeight absent when not supplied', () => {
+    let seen: Readonly<GlyphRasterizeOptions> | null = null;
+    setGlyphRasterizerBackend({
+      rasterize: (_codepoint, options) => {
+        seen = options;
+        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
+      },
+    });
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 64, width: 64 });
+
+    getGlyphAtlasEntry(atlas, 65);
+
+    expect(seen).not.toBeNull();
+    expect('fontStyle' in seen!).toBe(false);
+    expect('fontWeight' in seen!).toBe(false);
   });
 });
 
@@ -40,13 +90,6 @@ describe('disposeGlyphAtlas', () => {
   });
 });
 
-describe('getGlyphAtlasBitmap', () => {
-  it('returns the atlas backing bitmap', () => {
-    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 32, width: 32 });
-    expect(getGlyphAtlasBitmap(atlas)).toBe(atlas.runtime.bitmap);
-  });
-});
-
 function createMockRasterizerBackend(): { backend: GlyphRasterizerBackend; calls: number[] } {
   const calls: number[] = [];
   const backend: GlyphRasterizerBackend = {
@@ -57,3 +100,10 @@ function createMockRasterizerBackend(): { backend: GlyphRasterizerBackend; calls
   };
   return { backend, calls };
 }
+
+describe('getGlyphAtlasBitmap', () => {
+  it('returns the atlas backing bitmap', () => {
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 32, width: 32 });
+    expect(getGlyphAtlasBitmap(atlas)).toBe(atlas.runtime.bitmap);
+  });
+});

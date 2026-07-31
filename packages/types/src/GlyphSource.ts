@@ -88,6 +88,12 @@ export interface GlyphRasterizerBackend {
 export interface GlyphAtlasOptions {
   fontFamily: string;
   fontSize: number;
+  // Style and weight are per-atlas, not per-glyph: the cache is keyed by codepoint alone, so one atlas
+  // holds one rendering of each character. Bold or italic text needs its own atlas rather than a flag
+  // at draw time — one atlas per (family, size, style, weight) combination the app actually uses.
+  // Backend-interpreted strings, forwarded verbatim to the rasterizer.
+  fontStyle?: string;
+  fontWeight?: string;
   height: number;
   maxGlyphs?: number;
   padding?: number;
