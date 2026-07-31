@@ -47,7 +47,7 @@ export function createImageResourceFromImageElement(img: HTMLImageElement): Imag
   });
 }
 
-export function isImageResourceSameOrigin(url: string): boolean {
+export function isImageUrlSameOrigin(url: string): boolean {
   if (url.startsWith('data:') || url.startsWith('blob:')) return true;
   try {
     return new URL(url, location.href).origin === location.origin;
@@ -88,7 +88,7 @@ export async function loadImageResourceFromBytes(
 
 export async function loadImageResourceFromUrl(
   url: string,
-  crossOrigin?: string,
+  crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<Image> {
   signal?.throwIfAborted();

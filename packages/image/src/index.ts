@@ -7,7 +7,7 @@ export {
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
   isImageResourceEmpty,
-  isImageResourceSameOrigin,
+  isImageUrlSameOrigin,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
