@@ -62,11 +62,18 @@ its distance number:
 `registerWgpu*TextureResolver` functions with no equivalent bundle. Today **9 of 40** wgpu examples register
 any resolver at all. The missing bundle is a suggestion for `render-wgpu`, not a change made here.
 
-**One webgpu entry fails per full run, and it is not the same entry twice.** Run 1 failed `tilemap` (the real
-resolver bug, now fixed); run 2 failed `scene3d` with "verifier did not run", which then passes twice in
-isolation at `webgl·webgpu 0.17`. The full leg runs six concurrent workers, so this reads as webgpu verifier
-flakiness under parallel load rather than a scene defect. It matters for item 3 directly: turning verification
-on more widely would amplify exactly this, so the flakiness wants a cause before the tier wants more coverage.
+**`scene3d`'s verifier does not run under concurrent load — and it is not general webgpu flakiness.** A third
+run corrected an earlier reading of this. Across three full leg runs: run 1 failed `tilemap`/webgpu (the real
+resolver bug, since fixed — not a flake at all); run 2 failed `scene3d`/webgpu with "verifier did not run";
+run 3 failed `scene3d` on **both** `webgl` and `webgpu` with the same message. `scene3d` passes in isolation
+on both backends at `webgl·webgpu 0.17`.
+
+The first characterization — "one webgpu entry per run, never the same twice" — was drawn from two points, one
+of which was a genuine bug rather than a flake, and the third run falsifies it on both counts: the same entry
+failed twice consecutively, and on a non-webgpu backend too. What the data actually supports is narrower and
+more useful: **one specific heavy scene's verifier fails to run when the leg is under six-worker contention**,
+which points at a load-dependent verifier timeout on `scene3d` rather than a diffuse backend flake. That is a
+bounded thing to chase — start with the verifier's time budget against `scene3d`'s cost, not with WebGPU.
 
 **Why capture and validate disagreed about webgpu — and why it turned out to be the argument FOR item 3.**
 On this machine every `capture --tool=examples` webgpu screenshot across nine different scenes carried one
