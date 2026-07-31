@@ -10,19 +10,16 @@ Verified against the live tree (7 source files + textshaper-canvas 2 source file
 
 ## Recommended
 
-Sweep-safe: within-package fixes, no design fork.
+1. **`enableTextShaperGuards` for the pool brackets.** The 2026-07-30 sweep fixed the *corruption* half of the double-release hazard in core: `releaseShapedRun` now ignores a run that is already pooled, so the pool invariant holds whatever the caller does. What is still missing is the *diagnostic* half. Under the inversion rule a caller-facing warning belongs in a separately-importable guard module, and a double release is a real caller bug worth naming even though it no longer corrupts — silently ignoring it means an unbalanced bracket goes unnoticed until the pool stops recycling. A guard could also catch the mirror-image mistake the core cannot see at all: using a run after releasing it. Deferred rather than built because the package has no guard module yet, so this establishes one.
 
-1. **Rename `shapeText` → `measureText`.** Per charter Decision #1. Returns a scalar advance, not shaped glyphs. Update all call sites in textshaper and textshaper-canvas. Update textlayout call sites.
+## Landed
 
-2. **Forward `options` through `shapeTextRunInto`.** Per charter Decision #2 — bug. Add `options?: Readonly<ShapeRunOptions>` parameter and forward to backend.
-
-3. **Drop gratuitous cast in `getFontUnitScale`.** Per charter Decision #3. Replace `(format as { size?: number }).size` with `format.size ?? 12`.
-
-4. **Fix signal type mismatch.** Per charter Decision #4. `onBackendChanged` must be constructed as a proper `Signal`, not a plain object literal.
-
-5. **Normalize unused `format` parameter naming.** Make glyph-introspection wrappers consistently use `_format` for unused params.
-
-6. **Package Map description update.** Per charter Open direction #5.
+1. ~~**Rename `shapeText` to `measureText`.**~~ Landed; `measureText` is the exported name and the call sites in `textshaper-canvas` and `textlayout` follow it.
+2. ~~**Forward `options` through `shapeTextRunInto`.**~~ Landed; the parameter is present and forwarded to the backend.
+3. ~~**Drop gratuitous cast in `getFontUnitScale`.**~~ Landed; reads `format.size ?? 12` directly.
+4. ~~**Fix signal type mismatch.**~~ Landed; `onBackendChanged` is built with `createSignal`.
+5. ~~**Normalize unused `format` parameter naming.**~~ Landed; the glyph-introspection wrappers use `_format` consistently.
+6. ~~**Package Map description update.**~~ Landed.
 
 ## Backlog
 

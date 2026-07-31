@@ -1,8 +1,22 @@
 ---
 package: '@flighthq/textshaper'
-updated: 2026-06-24
+updated: 2026-07-30
 by: ingest:builder-67dc46d64
 ---
+
+## 2026-07-30 -- a double release aliased two acquires onto one buffer (builder)
+
+All six cell items were already landed, so they are retired. The cell held a live defect in the run pool, and the code was already warning about it in prose: `acquireShapedRun` says "Treat as paired brackets: every acquire must have exactly one release". Under the diagnostics rule a comment that warns the caller about misuse is a missing guard, and here the missing guard had teeth.
+
+`releaseShapedRun` pushed unconditionally. Releasing the same run twice left it in the pool twice, so the next two `acquireShapedRun` calls handed **the same object to two callers**, who then shaped into one buffer. Probed and confirmed before fixing: two acquires after a double release were identical. That failure surfaces as wrong glyphs somewhere unrelated, with nothing pointing back at the release that caused it.
+
+Fixed in core rather than only in a guard, because the corruption is the package's problem regardless of who misused it: a `WeakSet` mirrors pool membership, a release of an already-pooled run is ignored, and acquire clears the mark on the way out. O(1) rather than scanning the pool, and weak so a run dropped past the capacity limit stays collectable. The pool invariant -- an entry appears at most once -- now holds whatever the caller does.
+
+Both halves are covered because they fail differently: dropping the release guard aliases two acquires, while dropping the acquire-side clear makes a legitimate re-release look like a double release and silently stops recycling the run. A mutation for each, confirmed applied, failing disjoint tests.
+
+103 -> 106 tests. Left for later and recorded in [assessment](./assessment.md): the *diagnostic* half. Ignoring a double release is right for correctness but silent, so an unbalanced bracket still goes unnoticed; that warning belongs in an `enableTextShaperGuards` module the package does not have yet, which would also catch use-after-release -- something core cannot see at all.
+
+One thing checked and found **not** to be a defect: `textShaperSignals` calls `_signals.onBackendChanged.emit(backend)` directly rather than through `emitSignal`. `emitSignal` is a one-line forward to exactly that field, so the behaviour is identical; it is a style inconsistency with the rest of the SDK, not a bug, and was left alone.
 
 # textshaper — Status Log
 
