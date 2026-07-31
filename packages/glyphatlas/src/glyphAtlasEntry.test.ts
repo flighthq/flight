@@ -217,3 +217,78 @@ function expectNoOverlap(entries: readonly Readonly<GlyphEntry>[]): void {
     }
   }
 }
+
+describe('retained-byte and area budgets', () => {
+  afterEach(() => setGlyphRasterizerBackend(null));
+
+  // A glyph count cannot express memory: the atlas retains each source bitmap to re-blit on repack, so
+  // a few large glyphs cost far more than many small ones. These budgets bound what is retained.
+  it('evicts to stay within the retained-byte budget', () => {
+    const { backend, calls } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
+    setGlyphRasterizerBackend(backend);
+    // 10x10 RGBA = 400 bytes per glyph; a 900-byte budget holds two.
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxBytes: 900, width: 256 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    getGlyphAtlasEntry(atlas, 67);
+
+    expect(atlas.runtime.entries.size).toBe(2);
+    expect(atlas.runtime.retainedBytes).toBeLessThanOrEqual(900);
+    // 65 was least recently used, so it is the one that went.
+    getGlyphAtlasEntry(atlas, 65);
+    expect(calls).toEqual([65, 66, 67, 65]);
+  });
+
+  it('evicts to stay within the occupied-area budget', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxArea: 250, width: 256 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    getGlyphAtlasEntry(atlas, 67);
+
+    expect(atlas.runtime.entries.size).toBe(2);
+    expect(atlas.runtime.occupiedArea).toBeLessThanOrEqual(250);
+  });
+
+  it('leaves both budgets unbounded when they are not set', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 10, width: 10 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, width: 256 });
+
+    for (let cp = 65; cp < 85; cp++) getGlyphAtlasEntry(atlas, cp);
+
+    expect(atlas.runtime.entries.size).toBe(20);
+  });
+
+  // The running totals are maintained at every mutation rather than recomputed, so the thing that can
+  // go wrong is drift: a path that drops a glyph without crediting its cost back. This checks the
+  // totals against the cache they describe after inserts AND evictions have both run.
+  it('keeps the running totals equal to the live cache after eviction', () => {
+    const { backend } = createMockRasterizerBackend((cp) => ({ height: 6 + (cp % 5), width: 6 + (cp % 3) }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 128, maxBytes: 2000, width: 128 });
+
+    for (let cp = 65; cp < 80; cp++) getGlyphAtlasEntry(atlas, cp);
+
+    let bytes = 0;
+    let area = 0;
+    for (const bitmap of atlas.runtime.bitmaps.values()) {
+      bytes += bitmap.pixels.byteLength;
+      area += bitmap.width * bitmap.height;
+    }
+    expect(atlas.runtime.retainedBytes).toBe(bytes);
+    expect(atlas.runtime.occupiedArea).toBe(area);
+  });
+
+  it('admits a single glyph larger than the whole budget rather than evicting forever', () => {
+    const { backend } = createMockRasterizerBackend(() => ({ height: 20, width: 20 }));
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxBytes: 100, width: 256 });
+
+    expect(getGlyphAtlasEntry(atlas, 65)).not.toBeNull();
+    expect(atlas.runtime.entries.size).toBe(1);
+  });
+});
