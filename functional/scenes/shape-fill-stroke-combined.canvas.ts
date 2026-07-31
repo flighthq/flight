@@ -1,10 +1,11 @@
 // shape-fill-stroke-combined — validates that a shape with both a solid fill and a visible stroke
 // renders both layers correctly.
 //
-// Draws a rectangle at (80,80) 200x150 with a green fill and a thick (8px) red stroke. The oracle
+// Draws a green rectangle and then a thick open red line in the same Shape. Keeping the stroke open
+// isolates fill+stroke region composition from closed-ring tessellation. The oracle
 // verifies:
 //   - the interior center is green (fill present),
-//   - a point on the stroke (at the top edge, outside the fill bounds) is red,
+//   - a point on the open stroke above the fill is red,
 //   - a point outside both fill and stroke is background black.
 //
 // Fill+stroke composition is a rendering concern — the stroke must overlay correctly, and the
@@ -15,11 +16,12 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
   appendShapeRectangle,
   createDisplayObject,
   createShape,
   getBitmapPixelRgb,
-  invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -42,11 +44,12 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const shape = createShape();
-appendShapeLineStyle(shape, STROKE, 0xff0000, 1);
 appendShapeBeginFill(shape, 0x00cc00, 1);
 appendShapeRectangle(shape, RX, RY, RW, RH);
 appendShapeEndFill(shape);
-invalidateNodeAppearance(shape);
+appendShapeLineStyle(shape, STROKE, 0xff0000, 1);
+appendShapeMoveTo(shape, RX, RY - STROKE / 2);
+appendShapeLineTo(shape, RX + RW, RY - STROKE / 2);
 addNodeChild(root, shape);
 
 render(root);
@@ -60,7 +63,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     throw new Error(`[shape-fill-stroke-combined] interior expected green, got #${hex(interior)}`);
   }
 
-  const strokeTop = at(RX + RW / 2, RY - STROKE / 2 + 1);
+  const strokeTop = at(RX + RW / 2, RY - STROKE / 2);
   if (!isRed(strokeTop)) {
     throw new Error(`[shape-fill-stroke-combined] stroke top expected red, got #${hex(strokeTop)}`);
   }

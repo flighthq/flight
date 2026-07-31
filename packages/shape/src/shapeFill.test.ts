@@ -151,14 +151,17 @@ describe('getShapeFillRegions', () => {
     expect(getShapeFillRegions(shape.data.commands)).toBeNull();
   });
 
-  it('returns null when a stroke is present', () => {
+  it('resolves solid fills independently of a solid stroke', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 2, 0x000000);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
 
-    expect(getShapeFillRegions(shape.data.commands)).toBeNull();
+    const regions = getShapeFillRegions(shape.data.commands);
+    expect(regions).not.toBeNull();
+    expect(regions).toHaveLength(1);
+    expect(regions![0].color).toBe(0xff0000);
   });
 });
 
@@ -171,9 +174,12 @@ describe('hasNonSolidShapeFill', () => {
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(false);
   });
 
-  it('is true when a bitmap or gradient fill or stroke is present', () => {
+  it('is false for a solid stroke and true for a bitmap or gradient style', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 1, 0);
+    expect(hasNonSolidShapeFill(shape.data.commands)).toBe(false);
+
+    appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(true);
   });
 });

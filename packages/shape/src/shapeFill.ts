@@ -107,10 +107,9 @@ export function getPathCommandOperandCount(verb: number): number {
 // `beginFill … endFill` (or the next fill) span becomes one `ShapeFillRegion` whose `path` carries the
 // geometry (primitives expanded to MOVE/LINE/CURVE verbs, curves kept for the renderer to flatten).
 //
-// Returns `null` when the shape is NOT expressible as plain solid fills — any gradient/bitmap fill or
-// any stroke (lineStyle) present — so the caller falls back to the raster path. This keeps the GPU path
-// to the case it handles exactly (the "jagged circle" fix) without regressing gradients, bitmap fills,
-// or strokes.
+// Returns `null` when the fills are not expressible as plain solid regions (gradient/texture fills or
+// textured triangles). Stroke styles are independent: callers that render both layers resolve them
+// through `getShapeStrokeRegions` and fall back when either layer returns `null`.
 export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
   if (hasNonSolidShapeFill(commands)) return null;
 
@@ -152,19 +151,13 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
   return regions;
 }
 
-// True if the command stream uses any fill or stroke the GPU solid-fill path cannot express.
+// True if the command stream uses a fill the GPU solid-fill path cannot express.
 export function hasNonSolidShapeFill(commands: readonly ShapeCommandToken[]): boolean {
   let i = 0;
   while (i < commands.length) {
     const name = commands[i] as string;
     const argCount = commands[i + 1] as number;
-    if (
-      name === 'beginGradientFill' ||
-      name === 'beginTextureFill' ||
-      name === 'lineStyle' ||
-      name === 'lineGradientStyle' ||
-      name === 'lineTextureStyle'
-    ) {
+    if (name === 'beginGradientFill' || name === 'beginTextureFill') {
       return true;
     }
     if (name === 'drawTriangles' && commands[i + 2 + 2] !== null) {
