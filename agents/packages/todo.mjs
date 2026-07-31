@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { itemHeadlines } from './todo-items.mjs';
+import { getLocalPackageTargetStatus } from './todo-target.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
@@ -98,7 +99,13 @@ for (const name of cells) {
     if (count > 0) openQuestions.push({ name, count });
   }
 
-  if (!existsSync(join(codePackagesDir, name))) {
+  // A residue-only directory (dist, tsbuildinfo, etc.) is not a package. Resolve the charter's named
+  // target and require its manifest so a retired cell cannot be deepened merely because stale build
+  // output left a directory behind. Historical package evidence distinguishes that retired cell from
+  // a legitimate charter whose implementation has not been built yet.
+  const targetStatus = getLocalPackageTargetStatus(codePackagesDir, cellDir, name, charterMeta.package);
+  if (targetStatus === 'stale') continue;
+  if (targetStatus === 'unbuilt') {
     const what = firstProseLine(charter, 'What it is') ?? '(charter stub)';
     chartered.push({ name, what });
     continue;

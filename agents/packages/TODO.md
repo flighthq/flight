@@ -27,7 +27,6 @@ These cells retain their direction/review history, but are not packages to recre
 - **`rive-formats`** → `scene2d-formats`
 - **`skeleton`** → `@flighthq/skeleton3d`
 - **`svg-formats`** → `scene2d-formats`
-- **`tileset`** → `@flighthq/textureatlas + @flighthq/tilemap`
 
 ## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)
 
@@ -402,15 +401,6 @@ Design calls to settle before building the affected entries:
 ### scene3d-wgpu (solid 78)
 
 - Mark the dormant `HAS_UV1` key field as inert in-source
-
-### sprite (solid 78)
-
-- Rewrite the `compactQuadBatch` doc comment to match Decision #1
-- Fix out-param hygiene in `computeSpriteLocalBoundsRectangle`
-- Zero the out in QuadBatch's default bounds method when `runtime.localBoundsRectangle` is null
-- Add `getTilemapTiles` — the clipped row-major blit-out counterpart of `setTilemapTiles`
-- Add `appendQuadBatchInstanceMatrix`
-- Emit `onTilesChanged` from `fillTilemapTiles`
 
 ### textsegment (solid 78)
 
