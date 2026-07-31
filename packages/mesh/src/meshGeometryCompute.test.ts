@@ -1,7 +1,7 @@
 import { createAabb, createBoundingSphere } from '@flighthq/geometry/contract';
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry, invalidateMeshGeometry } from './meshGeometry';
 import {
   computeMeshGeometryBoundingSphere,
   computeMeshGeometryBounds,
@@ -232,8 +232,8 @@ describe('ensureMeshGeometryBounds', () => {
     geometry.vertices[12] = 4;
     expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(1);
 
-    // Bumping the version (what every deform does) is what marks the cache stale.
-    geometry.version++;
+    // The public direct-write escape hatch marks the cache stale.
+    invalidateMeshGeometry(geometry);
     expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(4);
   });
 

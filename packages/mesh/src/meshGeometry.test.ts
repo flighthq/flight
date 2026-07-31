@@ -16,6 +16,7 @@ import {
   getMeshGeometrySkinBindPose,
   getMeshGeometryVertexCount,
   hasMeshGeometrySkin,
+  invalidateMeshGeometry,
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
 } from './meshGeometry';
@@ -193,6 +194,18 @@ describe('hasMeshGeometrySkin', () => {
     };
     const skinned = createMeshGeometry({ layout: skinnedLayout, vertices: new Float32Array(11) });
     expect(hasMeshGeometrySkin(skinned)).toBe(true);
+  });
+});
+
+describe('invalidateMeshGeometry', () => {
+  it('advances the shared upload revision as a wrapping u32', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(1) });
+    invalidateMeshGeometry(geometry);
+    expect(geometry.version).toBe(1);
+
+    geometry.version = 0xffffffff;
+    invalidateMeshGeometry(geometry);
+    expect(geometry.version).toBe(0);
   });
 });
 

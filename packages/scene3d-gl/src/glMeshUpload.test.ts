@@ -1,6 +1,7 @@
 import {
   createBoxMeshGeometry,
   createMeshGeometry,
+  invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
   updateMeshMorph,
 } from '@flighthq/mesh/contract';
@@ -89,7 +90,7 @@ describe('ensureGlMeshUpload', () => {
     expect(upload.indexBuffer).not.toBeNull();
 
     geometry.indices = null;
-    geometry.version++;
+    invalidateMeshGeometry(geometry);
     ensureGlMeshUpload(state, geometry);
 
     expect(upload.indexBuffer).toBeNull();
@@ -112,7 +113,7 @@ describe('ensureGlMeshUpload', () => {
     const { state, gl } = makeGlScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureGlMeshUpload(state, geometry);
-    geometry.version++;
+    invalidateMeshGeometry(geometry);
     const bufferDataCount = gl.calls.filter((c) => c.name === 'bufferData').length;
     const second = ensureGlMeshUpload(state, geometry);
     expect(second).toBe(first);
