@@ -1,4 +1,17 @@
+import { createEntity } from '@flighthq/entity/contract';
 import {
+  copyAllRenderersFromRenderState,
+  getRenderStateRuntime,
+  prepareScene2DRender,
+  registerRenderer,
+} from '@flighthq/render/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+
+import { beginWgpuFrame } from './wgpuBackground';
+import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
+import {
+  copyWgpuRenderStateRegistrations,
+  createWgpuOffscreenRenderState,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuRenderStateRuntime,
@@ -6,9 +19,119 @@ import {
   isWgpuSupported,
 } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { registerWgpuTextureResolver } from './wgpuTextureResolver';
 
 beforeAll(() => {
   installWgpuMock();
+});
+
+describe('copyWgpuRenderStateRegistrations', () => {
+  it('copies late Wgpu registrations only when explicitly requested', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    const resolver = vi.fn(() => null);
+    registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
+
+    expect(getWgpuRenderStateRuntime(offscreen).wgpuTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    copyWgpuRenderStateRegistrations(offscreen, screen);
+    expect(getWgpuRenderStateRuntime(offscreen).wgpuTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+  });
+});
+
+describe('createWgpuOffscreenRenderState', () => {
+  it('shares device resources while snapshotting independent registration policy', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const renderer = { createData: () => null, submit: vi.fn() };
+    const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
+    const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
+    const textureResolver = vi.fn(() => null);
+    const effectRunner = vi.fn();
+    registerRenderer(screen, 'acme.Node', renderer);
+    registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
+    registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
+    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', paddingResolver]]);
+    getWgpuRenderStateRuntime(screen).wgpuRenderEffectRegistry = new Map([['acme.Effect', effectRunner]]);
+    getWgpuRenderStateRuntime(screen).wgpuRenderTextureCache = new WeakMap();
+
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const offscreenRuntime = getWgpuRenderStateRuntime(offscreen);
+
+    expect(offscreen.device).toBe(screen.device);
+    expect(offscreen.canvas).toBe(screen.canvas);
+    expect(offscreenRuntime.pipelineCache).toBe(screenRuntime.pipelineCache);
+    expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
+    expect(offscreenRuntime.wgpuRenderTextureCache).toBe(screenRuntime.wgpuRenderTextureCache);
+    expect(offscreenRuntime.uniformBindGroupLayout).toBe(screenRuntime.uniformBindGroupLayout);
+    expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
+    expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
+    expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
+    expect(offscreenRuntime.wgpuTextureResolverRegistry).not.toBe(screenRuntime.wgpuTextureResolverRegistry);
+    expect(offscreenRuntime.wgpuRenderEffectRegistry).not.toBe(screenRuntime.wgpuRenderEffectRegistry);
+    expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
+      screenRuntime.renderEffectPaddingResolverRegistry,
+    );
+    expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
+    expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
+    expect(offscreenRuntime.wgpuTextureResolverRegistry?.get('acme.Texture')).toBe(textureResolver);
+    expect(offscreenRuntime.wgpuRenderEffectRegistry?.get('acme.Effect')).toBe(effectRunner);
+    expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
+  });
+
+  it('owns an independent encoder and proxy tree', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    const root = createDisplayObject();
+    registerRenderer(offscreen, root.kind, { createData: () => createEntity({}), submit: vi.fn() });
+    prepareScene2DRender(offscreen, root);
+    beginWgpuFrame(screen);
+    beginWgpuFrame(offscreen);
+
+    expect(getRenderStateRuntime(offscreen).renderProxyMap).not.toBe(getRenderStateRuntime(screen).renderProxyMap);
+    expect(getWgpuRenderStateRuntime(offscreen).commandEncoder).not.toBe(
+      getWgpuRenderStateRuntime(screen).commandEncoder,
+    );
+  });
+
+  it('destroys derived renderer data and its own uniform ring without freeing the screen ring', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const root = createDisplayObject();
+    const destroyData = vi.fn();
+    registerRenderer(screen, root.kind, {
+      createData: () => createEntity({}),
+      destroyData,
+      submit: vi.fn(),
+    });
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    prepareScene2DRender(offscreen, root);
+    const screenDestroy = vi.spyOn(getWgpuRenderStateRuntime(screen).uniformBuffer, 'destroy');
+    const offscreenDestroy = vi.spyOn(getWgpuRenderStateRuntime(offscreen).uniformBuffer, 'destroy');
+
+    destroyWgpuRenderState(offscreen);
+
+    expect(destroyData).toHaveBeenCalledOnce();
+    expect(offscreenDestroy).toHaveBeenCalledOnce();
+    expect(screenDestroy).not.toHaveBeenCalled();
+  });
+
+  it('requires explicit re-copy for renderers and padding registered after derivation', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    const renderer = { createData: () => null, submit: vi.fn() };
+    const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
+    registerRenderer(screen, 'acme.LateNode', renderer);
+    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.LateEffect', paddingResolver]]);
+
+    expect(getRenderStateRuntime(offscreen).rendererMap.has('acme.LateNode')).toBe(false);
+    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.has('acme.LateEffect')).not.toBe(true);
+
+    copyAllRenderersFromRenderState(offscreen, screen);
+    copyWgpuRenderStateRegistrations(offscreen, screen);
+    expect(getRenderStateRuntime(offscreen).rendererMap.get('acme.LateNode')).toBe(renderer);
+    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.get('acme.LateEffect')).toBe(
+      paddingResolver,
+    );
+  });
 });
 
 describe('createWgpuRenderState', () => {

@@ -13,6 +13,7 @@ export * from './wgpuRenderState';
 export * from './wgpuRenderTarget';
 export * from './wgpuRenderTargetPool';
 export * from './wgpuRenderTexture';
+export * from './wgpuRenderTexturePool';
 export * from './wgpuScissor';
 export * from './wgpuShader';
 export * from './wgpuShaderBinding';

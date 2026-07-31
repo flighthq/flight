@@ -3,6 +3,7 @@ import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTar
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
@@ -47,6 +48,10 @@ export const defaultWgpuBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect)
   applyBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
   releaseWgpuRenderTarget(ctx.pool, temp);
 };
+
+export function registerWgpuBlurEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+}
 
 function applyWgpuGaussianBlurPass(
   state: WgpuRenderState,

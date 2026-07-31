@@ -6,8 +6,13 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
   bindWgpuRenderTexture,
   destroyWgpuRenderTexture,
+  explainWgpuRenderTexture,
+  getWgpuRenderTextureTarget,
+  invalidateWgpuRenderTexture,
   isWgpuRenderTextureReady,
   renderIntoWgpuRenderTexture,
+  setWgpuRenderTextureGuard,
+  writeWgpuRenderTextureTarget,
 } from './wgpuRenderTexture';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -66,6 +71,39 @@ describe('destroyWgpuRenderTexture', () => {
   });
 });
 
+describe('explainWgpuRenderTexture', () => {
+  it('reports source dimensions and lifecycle status before allocation', async () => {
+    const state = await createWgpuRenderStateForTest();
+    expect(explainWgpuRenderTexture(state, texture())).toEqual({ height: 8, status: 'unrendered', width: 8 });
+  });
+});
+
+describe('getWgpuRenderTextureTarget', () => {
+  it('returns the hidden target only after a completed write', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const renderTexture = texture();
+
+    expect(getWgpuRenderTextureTarget(state, renderTexture)).toBeNull();
+    writeWgpuRenderTextureTarget(state, renderTexture, () => {});
+    expect(getWgpuRenderTextureTarget(state, renderTexture)).not.toBeNull();
+  });
+});
+
+describe('invalidateWgpuRenderTexture', () => {
+  it('makes published content unavailable without destroying its target', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const renderTexture = texture();
+    writeWgpuRenderTextureTarget(state, renderTexture, () => {});
+    const target = getWgpuRenderTextureTarget(state, renderTexture)!;
+    const destroy = vi.spyOn(target.texture, 'destroy');
+
+    invalidateWgpuRenderTexture(state, renderTexture);
+
+    expect(getWgpuRenderTextureTarget(state, renderTexture)).toBeNull();
+    expect(destroy).not.toHaveBeenCalled();
+  });
+});
+
 describe('isWgpuRenderTextureReady', () => {
   it('tracks the successful rendered-content transition', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -92,5 +130,36 @@ describe('renderIntoWgpuRenderTexture', () => {
     expect(getWgpuRenderStateRuntime(state).renderPass).not.toBeNull();
     expect(getWgpuRenderStateRuntime(state).renderPass).not.toBe(enclosingPass);
     submitWgpuRenderPass(state);
+  });
+});
+
+describe('setWgpuRenderTextureGuard', () => {
+  it('installs and removes the lifecycle diagnostic callback', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const renderTexture = texture();
+    const guard = vi.fn();
+
+    setWgpuRenderTextureGuard(state, guard);
+    bindWgpuRenderTexture(state, renderTexture);
+    expect(guard).toHaveBeenCalledOnce();
+
+    setWgpuRenderTextureGuard(state, null);
+    bindWgpuRenderTexture(state, renderTexture);
+    expect(guard).toHaveBeenCalledOnce();
+  });
+});
+
+describe('writeWgpuRenderTextureTarget', () => {
+  it('passes the hidden target to the producer and publishes the completed write', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const renderTexture = texture();
+    const producer = vi.fn();
+
+    writeWgpuRenderTextureTarget(state, renderTexture, producer);
+
+    expect(producer).toHaveBeenCalledOnce();
+    expect(producer.mock.calls[0][0]).toBe(getWgpuRenderTextureTarget(state, renderTexture));
+    expect(renderTexture.version).toBe(1);
+    expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(true);
   });
 });

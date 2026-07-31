@@ -2,7 +2,7 @@
 package: '@flighthq/render-wgpu'
 crate: flighthq-render-wgpu
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-31
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/render-wgpu` is the **WebGPU backend core** of the render layering — the subject-agnostic GPU plumbing for the WebGPU technology, the sibling of `render-gl` (glow/WebGL2) under the backend-agnostic `@flighthq/render`. It owns the render state lifecycle (adapter/device negotiation, canvas-context configuration, the uniform ring buffer), the frame loop (`renderWgpuBackground` / `submitWgpuRenderPass`, MSAA draw-and-resolve, depth-stencil management), the pipeline cache and blend table (keyed on `blendMode-stencilMode-format-sampleCount[-depthwrite]`), the quad draw path, texture upload/binding, offscreen render targets + pool, scissor, the fullscreen pass primitive, the shader/material registries, timestamp profiling, frame-capture readback into a `@flighthq/bitmap` buffer, and a tree-shaken device-lost signal group.
+`@flighthq/render-wgpu` is the **WebGPU backend core** of the render layering — the subject-agnostic GPU plumbing for the WebGPU technology, the sibling of `render-gl` (glow/WebGL2) under the backend-agnostic `@flighthq/render`. It owns the render state lifecycle (adapter/device negotiation, canvas-context configuration, offscreen state derivation, the uniform ring buffer), the frame loop (`renderWgpuBackground` / `submitWgpuRenderPass`, MSAA draw-and-resolve, depth-stencil management), the pipeline cache and blend table (keyed on `blendMode-stencilMode-format-sampleCount[-depthwrite]`), the quad draw path, texture upload/binding, offscreen render targets + device-locked `RenderTexture` leases, scissor, the fullscreen pass primitive, the shader/material registries, timestamp profiling, frame-capture readback into a `@flighthq/bitmap` buffer, and a tree-shaken device-lost signal group.
 
 It is **not** a per-subject renderer. It draws no display objects, sprites, scenes, or filters on its own; those live in the `<subject>-wgpu` leaves (`scene2d-wgpu`, `scene-wgpu`, `filters-wgpu`/`effects-wgpu`) that register against `@flighthq/render` and call into this core. The seam between "subject-agnostic GPU plumbing" (here) and "per-subject draw" (the leaf) is the central boundary this package has to hold — and it is exactly the boundary the review flags as still blurred (scissor, fullscreen-pass, and shader-registry primitives ship here but are wired by the leaves).
 
@@ -47,6 +47,8 @@ It is **not** a per-subject renderer. It draws no display objects, sprites, scen
 - **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
 - **2026-07-02 — Context/device loss: detect and signal minimum.**
 - **2026-07-02 — TS-leads, Rust conforms later.**
+- **2026-07-31 — Offscreen states snapshot pipeline policy while sharing only device resources.**
+- **2026-07-31 — RenderTexture pools are device-locked, explicitly leased, and deterministically destroyed.**
 
 ## Open directions
 

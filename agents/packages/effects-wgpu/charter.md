@@ -2,7 +2,7 @@
 package: '@flighthq/effects-wgpu'
 crate: flighthq-effects-wgpu
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-31
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -17,6 +17,7 @@ status: ./status.md
 
 - the per-`WgpuRenderState` **effect registry** (`registerWgpuRenderEffect`, `getWgpuRenderEffectRunner`, `hasWgpuRenderEffectRunner`) — registry dispatch, last-write-wins, tree-shakable, no monolithic `switch`;
 - the **ping-pong pipeline orchestrator** (`create/begin/end/destroyWgpuRenderEffectPipeline`, `setWgpuRenderEffectVelocityTexture`) that walks a per-frame `RenderEffect[]` across two pooled scratch targets and presents via a fullscreen pass;
+- the explicit **RenderTexture-to-RenderTexture bridge** (`applyWgpuRenderEffectsToRenderTexture`) used by per-node capture lanes, with caller-owned source/destination/scratch leases and deterministic final-destination parity;
 - the per-state **compiled-pipeline cache** (`getWgpuEffectPipeline`);
 - **45 effect runners** (`apply<Name>EffectToWgpu` + `defaultWgpu<Name>EffectRunner`) across seven taxonomy bands (antialiasing, bloom, blur, color, composite, screen-space, stylize), including the advanced `BlendEffect` composite and two industry-grade multi-pass recipes — mip-chain bloom (Karis-average bright-pass, Jimenez-2014 downsample, tent-filter upsample) and three-pass SMAA.
 
@@ -51,6 +52,7 @@ _Proposed from the design + structural forks; not blessed. The open questions th
 ## Decisions
 
 - **2026-07-02 — TS-leads, Rust conforms later.**
+- **2026-07-31 — Per-node effects remain an explicit capture/apply/compose lane over caller-owned leases.**
 
 ## Open directions
 
@@ -62,7 +64,7 @@ Every durable question is open; the charter is silent on all of them. Each is a 
 - **Depth/velocity G-buffer (cross-package keystone).** `endWgpuRenderEffectPipeline` hard-codes `sceneDepthTexture: null`, so SSAO, ScreenSpaceFog, BokehDepthOfField, SSR, MotionBlur, CameraMotionBlur, and TAA run color-only fallbacks. Blessing the `render-wgpu` depth/velocity attachment work (`getWgpuRenderTargetDepthTexture`, a sampleable depth attachment, a velocity bookkeeping pass) is the single highest-leverage unblock — 7 recipes. It crosses the package boundary and needs a symmetric gl/wgpu design. (Relates to fork A: source-data vs. graph participation; fork D: backend seam.)
 - **TAA cross-frame state.** Real TAA needs a retained `historyTarget` on the shared pipeline type (a `@flighthq/types` change touching both gl and wgpu, plus how `destroy*` frees it). The first retained-state effect — a design fork. Until then `applyTaaEffectToWgpu` is a jitter approximation.
 - **Bundle posture.** Is analytical-area SMAA (no ~89KB LUT) and no-`rgba16float`-by-default the blessed default, with HDR/LUT variants as opt-ins? The status proposes `rgba16float` as a future default — a bundle-and-quality tradeoff the charter should rule on. (Relates to the bundle invariant / fork B's tree-shake intent.)
-- **Test floor.** Most per-effect tests are `expect(typeof applyXToWgpu).toBe('function')` smoke tests; only the registry/registrants tests carry real assertions. jsdom cannot run WGSL, and the wgpu functional/parity gates do not yet exist (no functional scenes, no Rust crate). Is "is-a-function + registry assertions" an accepted floor, or should there be a uniform-packing / chain-orchestration unit tier that jsdom _can_ run?
+- **Test floor.** Most per-effect tests are `expect(typeof applyXToWgpu).toBe('function')` smoke tests; registry/registrant and RenderTexture-chain tests carry orchestration assertions, while `per-node-effect-lane` provides a real WebGPU pixel gate for blur. Should every recipe gain a uniform-packing / chain-orchestration unit tier that jsdom can run?
 - **Rust mirror & functional scenes (Gold scope).** `flighthq-effects-wgpu` and `effect-*` functional scenes are deferred until depth/velocity/TAA settle the pipeline shape. When does the port become blessed work, and does the value seam (WGSL as shared string constants) need to be factored first? (Relates to fork D: Wasm `-rs` mixing — effects as data descriptors are a candidate mixable leaf.)
 - **Type homing (cross-package, surfaced).** `RenderEffectPipelineOptions` — a substrate-agnostic type — currently lives in `types/src/GlRenderEffectPipeline.ts` and is imported into the wgpu pipeline type from that gl-named file. Candidate: move it to its own `RenderEffectPipelineOptions.ts` (filename = type name). Low-risk but touches `@flighthq/types`.
 - **Admin-doc gaps (surfaced).** The codebase-map Package Map does not enumerate the `effects` / `effects-gl` / `effects-wgpu` / `effects-canvas` family the way it does `filters` / `filters-gl`; and `render-backend-support.md` documents blend/stroke/text gaps but not post-process _effects_ coverage per backend. Candidate additions that would make the 8-effect gap and the depth-null fallbacks visible at the map level.

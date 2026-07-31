@@ -1,4 +1,14 @@
-import { applyBlurEffectToWgpu, applyGaussianBlurToWgpu, defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
+import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+
+import {
+  applyBlurEffectToWgpu,
+  applyGaussianBlurToWgpu,
+  defaultWgpuBlurEffectRunner,
+  registerWgpuBlurEffect,
+} from './wgpuBlurEffect';
+import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+
+beforeAll(() => installWgpuMock());
 
 describe('applyBlurEffectToWgpu', () => {
   it('is a function', () => {
@@ -15,5 +25,13 @@ describe('applyGaussianBlurToWgpu', () => {
 describe('defaultWgpuBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuBlurEffect', () => {
+  it('registers the default runner under BlurEffect', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuBlurEffect(state);
+    expect(getWgpuRenderEffectRunner(state, 'BlurEffect')).toBe(defaultWgpuBlurEffectRunner);
   });
 });

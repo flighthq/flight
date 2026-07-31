@@ -41,6 +41,7 @@ export * from './wgpuPosterizeEffect';
 export * from './wgpuRadialBlurEffect';
 export * from './wgpuRenderEffectPipeline';
 export * from './wgpuRenderEffectRegistry';
+export * from './wgpuRenderTextureEffect';
 export * from './wgpuScanlinesEffect';
 export * from './wgpuScreenSpaceFogEffect';
 export * from './wgpuSharpenEffect';
