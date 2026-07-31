@@ -176,10 +176,6 @@ Design calls to settle before building the affected entries:
 - `formatTiledTmj` + standalone tileset formatters
 - Diagnostics layer per the inversion rule
 
-### tween (solid 68)
-
-- Pin the `seekTween`-to-end completion behavior with a test + comment
-
 ### collision (solid 70)
 
 - Degenerate-shape hardening tests
@@ -866,7 +862,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 

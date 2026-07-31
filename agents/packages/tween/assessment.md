@@ -6,17 +6,17 @@ basedOn: ./review.md
 
 # tween — Assessment
 
-Sorted from the depth review (76/100, solid), the builder's landed expansion (125 tests across 7 files), and the direction session (2026-07-02). Six decisions blessed. The package is a professional-grade property tweener with broad coverage. The two largest remaining gaps — the value-interpolator seam and the programmatic timeline — are both design decisions now blessed in the charter, ready for implementation. The sweep items are small, self-contained additions.
+Sorted from the depth review (76/100, solid), the landed coverage expansion, and the direction session
+(2026-07-02). Six decisions blessed. The package is a professional-grade property tweener with broad
+coverage. The two largest remaining gaps — the value-interpolator seam and the programmatic timeline —
+are both design decisions now blessed in the charter, ready for implementation. All four sweep items
+have landed.
 
 ## Recommended
 
-Re-verified against live source on 2026-07-31 (10 source files, 7 test files, 118 tests, 26 exports). Three
-of the four items landed; one remains.
-
-1. **Pin the `seekTween`-to-end completion behavior with a test + comment.** Still open. No test asserts
-   either half of the contract — that `seekTween(tween, delay + duration)` and `setTweenProgress(tween, 1)`
-   complete and fire `onComplete`, or that scrubbing to `duration - epsilon` does *not*. It is intended
-   behaviour and an easy footgun, so it wants pinning rather than discovering.
+_None open._ All four sweep items landed and were re-verified against live source on 2026-07-31 (10
+source files, 7 test files, 118 tests, 26 exports); they are recorded under [Landed](#landed) below,
+outside this section so the TODO generator stops reporting them as work.
 
 ## Landed
 
@@ -27,6 +27,10 @@ of the four items landed; one remains.
    through in whatever unit the caller supplies, with no built-in seconds assumption.
 3. ~~**Fix the `Tween.onComplete` doc comment.**~~ Landed. It now reads "Fires once when the tween finishes
    its final cycle (after all repeats)" rather than the copied `onStart` text.
+4. ~~**Pin the `seekTween`-to-end completion behavior with a test + comment.**~~ Landed. `tweenProgress.ts`
+   states the exact-end contract, and its colocated test covers both halves: seeking to `delay + duration`
+   completes and emits `onComplete`, while seeking just before the end does neither. `setTweenProgress(1)`
+   is pinned separately to the same completion behavior.
 
 ## Backlog
 
