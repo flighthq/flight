@@ -294,8 +294,8 @@
       "@flighthq/textshaper/*": ["./packages/textshaper/src/*"],
       "@flighthq/textshaper-canvas": ["./packages/textshaper-canvas/src/index.ts"],
       "@flighthq/textshaper-canvas/*": ["./packages/textshaper-canvas/src/*"],
-      "@flighthq/types": ["./packages/types/src/index.ts"],
-      "@flighthq/types/*": ["./packages/types/src/*"]
+      "@flighthq/types": ["./packages/types/dist/index"],
+      "@flighthq/types/contract": ["./packages/types/dist/contract"]
     },
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"] // Include Vitest globals and WebGPU types for type-checking
   },
