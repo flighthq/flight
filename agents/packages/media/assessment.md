@@ -10,15 +10,14 @@ Verified against the live tree (3 source files, 3 test files, 53 tests, 41 expor
 
 ## Recommended
 
-Sweep-safe: bug fixes within the existing source.
+_None open._ All four items landed and were re-verified against live source on 2026-07-30; they are recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as work. The sweep that verified them found a separate live defect in the mixer's pause/resume scope, since fixed — see [status](./status.md).
 
-1. **Fix `pauseAllAudioMixerChannels` / `resumeAllAudioMixerChannels`.** Per charter Decision #1. These only flip state flags without actually stopping/restarting `AudioBufferSourceNode`. The audio must actually pause.
+## Landed
 
-2. **Add `destroyAudioMixer`.** Per charter Decision #1. No cleanup function exists for the mixer. The `busToMixerRuntimes` map grows unbounded.
-
-3. **Bound `busToMixerRuntimes`.** Per charter Decision #1. The runtime map is never cleaned up.
-
-4. **Package Map description update.** Per charter Open direction #4.
+1. ~~**Fix `pauseAllAudioMixerChannels` / `resumeAllAudioMixerChannels`.**~~ Landed: both now stop and restart the source nodes rather than flipping flags. The 2026-07-30 sweep found and fixed a second defect in the same pair — resume was restoring *every* paused channel, not the ones the mixer paused.
+2. ~~**Add `destroyAudioMixer`.**~~ Landed; stops routed channels, tears down the Web Audio graph, unregisters from the reverse map, and deletes the runtime.
+3. ~~**Bound `busToMixerRuntimes`.**~~ Landed; the reverse map entry is removed when its last mixer unregisters.
+4. ~~**Package Map description update.**~~ Landed.
 
 ## Backlog
 
