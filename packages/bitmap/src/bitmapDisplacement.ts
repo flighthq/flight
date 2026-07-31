@@ -50,20 +50,8 @@ export function displaceBitmap(
       let sampleX = rawSampleX;
       let sampleY = rawSampleY;
 
-      if (rawSampleX < 0 || rawSampleX >= w || rawSampleY < 0 || rawSampleY >= h) {
-        if (edgeMode !== undefined) {
-          const rx = resolveDisplacementEdge(rawSampleX, w, edgeMode);
-          const ry = resolveDisplacementEdge(rawSampleY, h, edgeMode);
-          if (rx === null || ry === null) {
-            out[di] = 0;
-            out[di + 1] = 0;
-            out[di + 2] = 0;
-            out[di + 3] = 0;
-            continue;
-          }
-          sampleX = rx;
-          sampleY = ry;
-        } else if (mode === 'wrap') {
+      if (edgeMode === undefined && (rawSampleX < 0 || rawSampleX >= w || rawSampleY < 0 || rawSampleY >= h)) {
+        if (mode === 'wrap') {
           sampleX = ((rawSampleX % w) + w) % w;
           sampleY = ((rawSampleY % h) + h) % h;
         } else if (mode === 'clamp') {
@@ -87,26 +75,19 @@ export function displaceBitmap(
       const ty = sampleY - y0;
       const sStride = source.bitmap.width;
       const sData = source.bitmap.data;
-      const x0c = source.x + Math.max(0, Math.min(w - 1, x0));
-      const x1c = source.x + Math.max(0, Math.min(w - 1, x0 + 1));
-      const y0c = source.y + Math.max(0, Math.min(h - 1, y0));
-      const y1c = source.y + Math.max(0, Math.min(h - 1, y0 + 1));
-
-      if (x0c < 0 || x0c >= sData.length / 4 || y0c < 0) {
-        out[di] = 0;
-        out[di + 1] = 0;
-        out[di + 2] = 0;
-        out[di + 3] = 0;
-        continue;
-      }
-
-      const i00 = (y0c * sStride + x0c) * 4;
-      const i10 = (y0c * sStride + x1c) * 4;
-      const i01 = (y1c * sStride + x0c) * 4;
-      const i11 = (y1c * sStride + x1c) * 4;
+      const rx0 = edgeMode === undefined ? Math.max(0, Math.min(w - 1, x0)) : resolveDisplacementEdge(x0, w, edgeMode);
+      const rx1 =
+        edgeMode === undefined ? Math.max(0, Math.min(w - 1, x0 + 1)) : resolveDisplacementEdge(x0 + 1, w, edgeMode);
+      const ry0 = edgeMode === undefined ? Math.max(0, Math.min(h - 1, y0)) : resolveDisplacementEdge(y0, h, edgeMode);
+      const ry1 =
+        edgeMode === undefined ? Math.max(0, Math.min(h - 1, y0 + 1)) : resolveDisplacementEdge(y0 + 1, h, edgeMode);
+      const i00 = rx0 === null || ry0 === null ? -1 : ((source.y + ry0) * sStride + source.x + rx0) * 4;
+      const i10 = rx1 === null || ry0 === null ? -1 : ((source.y + ry0) * sStride + source.x + rx1) * 4;
+      const i01 = rx0 === null || ry1 === null ? -1 : ((source.y + ry1) * sStride + source.x + rx0) * 4;
+      const i11 = rx1 === null || ry1 === null ? -1 : ((source.y + ry1) * sStride + source.x + rx1) * 4;
       for (let c = 0; c < 4; c++) {
-        const top = sData[i00 + c] * (1 - tx) + sData[i10 + c] * tx;
-        const bottom = sData[i01 + c] * (1 - tx) + sData[i11 + c] * tx;
+        const top = (i00 < 0 ? 0 : sData[i00 + c]) * (1 - tx) + (i10 < 0 ? 0 : sData[i10 + c]) * tx;
+        const bottom = (i01 < 0 ? 0 : sData[i01 + c]) * (1 - tx) + (i11 < 0 ? 0 : sData[i11 + c]) * tx;
         out[di + c] = Math.round(top * (1 - ty) + bottom * ty);
       }
     }

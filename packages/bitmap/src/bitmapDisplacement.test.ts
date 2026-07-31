@@ -117,6 +117,51 @@ describe('displaceBitmap', () => {
     expect(out[2 * 4 + 3]).toBe(0);
   });
 
+  it("edgeMode 'transparent' treats an out-of-range bilinear tap as transparent", () => {
+    const source = rgbStrip();
+    const map = createBitmap(3, 1);
+    map.data.fill(255);
+    const out = new Uint8ClampedArray(3 * 4);
+    displaceBitmap(out, region(source), {
+      map: region(map),
+      scaleX: 1,
+      scaleY: 0,
+      edgeMode: 'transparent',
+    });
+    // px2 samples halfway between blue and the transparent pixel beyond the edge.
+    expect([...out.slice(2 * 4, 3 * 4)]).toEqual([0, 0, 128, 128]);
+  });
+
+  it("edgeMode 'wrap' wraps each out-of-range bilinear tap", () => {
+    const source = rgbStrip();
+    const map = createBitmap(3, 1);
+    map.data.fill(255);
+    const out = new Uint8ClampedArray(3 * 4);
+    displaceBitmap(out, region(source), {
+      map: region(map),
+      scaleX: 1,
+      scaleY: 0,
+      edgeMode: 'wrap',
+    });
+    // px2 samples halfway between blue at x=2 and wrapped red at x=0.
+    expect([...out.slice(2 * 4, 3 * 4)]).toEqual([128, 0, 128, 255]);
+  });
+
+  it("edgeMode 'mirror' reflects out-of-range bilinear taps", () => {
+    const source = rgbStrip();
+    const map = createBitmap(3, 1);
+    map.data.fill(255);
+    const out = new Uint8ClampedArray(3 * 4);
+    displaceBitmap(out, region(source), {
+      map: region(map),
+      scaleX: 3,
+      scaleY: 0,
+      edgeMode: 'mirror',
+    });
+    // px2 samples halfway between reflected blue at x=2 and green at x=1.
+    expect([...out.slice(2 * 4, 3 * 4)]).toEqual([0, 128, 128, 255]);
+  });
+
   it('samples through the source region offset', () => {
     // 4px [red, green, blue, white]; zero displacement over region (1,0,2,1) copies
     // source pixels 1 and 2 (green, blue), proving the offset is applied.

@@ -199,10 +199,6 @@ Design calls to settle before building the affected entries:
 - `enableAssetGuards` module
 - Residency introspection
 
-### bitmap (solid 72)
-
-- Give `displaceBitmap` an explicit `BitmapEdgeMode`
-
 ### capture (solid 72)
 
 - `explain*` queries for the silent sentinels
@@ -870,7 +866,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `picking` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
@@ -879,5 +875,5 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 - **Needs a direction session (charter stub or never directed):** `application-gl` · `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
 - **Needs a first review (built, no review.md):** `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 - **Needs re-review (work landed after the survey):** `audio (review 2026-07-13 < status 2026-07-30)` · `glyphatlas (review 2026-07-13 < status 2026-07-30)` · `image-codec (review 2026-07-13 < status 2026-07-31)` · `media (review 2026-06-24 < status 2026-07-30)` · `menu (review 2026-07-13 < status 2026-07-30)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `picking (review 2026-07-21 < status 2026-07-31)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shape-formats (review 2026-07-13 < status 2026-07-30)` · `snapshot (review 2026-07-13 < status 2026-07-30)` · `textshaper (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)` · `timeline (review 2026-07-13 < status 2026-07-31)` · `video (review 2026-07-09 < status 2026-07-30)`
-- **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `lighting (assessment 2026-07-22 < review 2026-07-31)` · `scene3d-wgpu (assessment 2026-07-21 < review 2026-07-31)` · `video (assessment 2026-07-03 < review 2026-07-09)`
+- **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `geolocation (assessment 2026-07-07 < review 2026-07-13)` · `haptics (assessment 2026-07-07 < review 2026-07-13)` · `ipc (assessment 2026-07-07 < review 2026-07-13)` · `keyboard (assessment 2026-07-07 < review 2026-07-13)` · `lifecycle (assessment 2026-07-07 < review 2026-07-13)` · `lighting (assessment 2026-07-22 < review 2026-07-31)` · `protocol (assessment 2026-07-07 < review 2026-07-13)` · `scene3d-wgpu (assessment 2026-07-21 < review 2026-07-31)` · `sensors (assessment 2026-07-07 < review 2026-07-13)` · `shell (assessment 2026-07-07 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)`
 - **Open directions awaiting the user:** 596 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `effects-wgpu` (9) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `render` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `application` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
