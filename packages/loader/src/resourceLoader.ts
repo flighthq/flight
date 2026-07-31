@@ -116,6 +116,8 @@ function consumeTokens(bucket: TokenBucket, cost: number): void {
 interface ResourceLoaderInternal extends ResourceLoader {
   cancelled: boolean;
   dedupeMap: Map<string, ResourceLoadHandle<unknown>>;
+  drainRequested: boolean;
+  draining: boolean;
   errorPolicy: 'continue' | 'fail-fast';
   generation: number;
   inFlight: Set<PendingEntry>;
@@ -187,6 +189,8 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
   const out: ResourceLoaderInternal = {
     cancelled: false,
     dedupeMap: new Map(),
+    drainRequested: false,
+    draining: false,
     errorPolicy: opts.errorPolicy ?? 'continue',
     generation: 0,
     inFlight: new Set(),
@@ -500,35 +504,49 @@ function sortPendingByPriority(pending: PendingEntry[]): void {
 }
 
 async function drainQueue(internal: ResourceLoaderInternal, loader: ResourceLoader): Promise<void> {
-  const maxConcurrent = internal.maxConcurrent <= 0 ? Infinity : internal.maxConcurrent;
+  // Several public operations can request a drain while the token bucket has this function suspended
+  // in a refill wait. Keep one active drain per loader and coalesce those calls into another pass;
+  // otherwise every request installs its own timer and competes to dispatch the same pending head.
+  if (internal.draining) {
+    internal.drainRequested = true;
+    return;
+  }
 
-  while (
-    internal.pending.length > 0 &&
-    !internal.paused &&
-    !internal.cancelled &&
-    internal.inFlight.size < maxConcurrent
-  ) {
-    sortPendingByPriority(internal.pending);
-    const entry = internal.pending[0];
-    if (entry === undefined) break;
+  internal.draining = true;
+  try {
+    do {
+      internal.drainRequested = false;
+      while (
+        internal.pending.length > 0 &&
+        !internal.paused &&
+        !internal.cancelled &&
+        (internal.maxConcurrent <= 0 || internal.inFlight.size < internal.maxConcurrent)
+      ) {
+        sortPendingByPriority(internal.pending);
+        const entry = internal.pending[0];
+        if (entry === undefined) break;
 
-    // Token-bucket throttle: if a bytesHint is set and we have a throttle, check available tokens
-    if (internal.throttle !== null && entry.bytesHint > 0) {
-      const waitMs = tokenBucketDelayMs(internal.throttle, entry.bytesHint);
-      if (waitMs > 0) {
-        // Wait for tokens to refill, then try again
-        await delay(waitMs);
-        // Re-check state after the delay
-        if (internal.paused || internal.cancelled || internal.pending.length === 0) break;
-        continue;
+        // Token-bucket throttle: if a bytesHint is set and we have a throttle, check available tokens
+        if (internal.throttle !== null && entry.bytesHint > 0) {
+          const waitMs = tokenBucketDelayMs(internal.throttle, entry.bytesHint);
+          if (waitMs > 0) {
+            // Wait for tokens to refill, then try again
+            await delay(waitMs);
+            // Re-check state after the delay
+            if (internal.paused || internal.cancelled || internal.pending.length === 0) break;
+            continue;
+          }
+          consumeTokens(internal.throttle, entry.bytesHint);
+        }
+
+        internal.pending.shift();
+        internal.inFlight.add(entry);
+        entry.startedAt = Date.now();
+        void runEntry(entry, internal, loader, 0);
       }
-      consumeTokens(internal.throttle, entry.bytesHint);
-    }
-
-    internal.pending.shift();
-    internal.inFlight.add(entry);
-    entry.startedAt = Date.now();
-    void runEntry(entry, internal, loader, 0);
+    } while (internal.drainRequested);
+  } finally {
+    internal.draining = false;
   }
 }
 
