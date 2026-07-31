@@ -507,22 +507,8 @@ for (const pkgDir of packageDirs) {
     `got ${JSON.stringify(pkg.scripts?.['clean:dist'])}`,
   );
 
-  if (name === '@flighthq/types') {
-    check(
-      errors,
-      `${name} compiled public header in tsconfig.base.json paths`,
-      JSON.stringify(tsconfigPaths[name]) === JSON.stringify(['./packages/types/dist/index']),
-    );
-    check(
-      errors,
-      `${name} compiled contract header in tsconfig.base.json paths`,
-      JSON.stringify(tsconfigPaths[`${name}/contract`]) === JSON.stringify(['./packages/types/dist/contract']),
-    );
-    check(errors, `${name} source wildcard absent from tsconfig.base.json paths`, !(`${name}/*` in tsconfigPaths));
-  } else {
-    check(errors, `${name} in tsconfig.base.json paths`, name in tsconfigPaths);
-    check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
-  }
+  check(errors, `${name} in tsconfig.base.json paths`, name in tsconfigPaths);
+  check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
 
   const dirName = pkgDir.split(/[\\/]/).at(-1)!;
 
