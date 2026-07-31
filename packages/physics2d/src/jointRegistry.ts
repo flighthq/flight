@@ -17,15 +17,8 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 // world. The anchors and lever arms swap with the bodies — a joint whose ends were exchanged without its
 // anchors would attach to the wrong points and hold the pair in a pose nobody asked for.
 export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): Physics2DJoint {
-  const first = findPhysics2DBody(world, joint.bodyA);
-  const second = findPhysics2DBody(world, joint.bodyB);
-  // Ask the kind before exchanging anything. The swap below moves only what every joint has — two
-  // body indices and two anchors — so a kind holding state measured from bodyA toward bodyB has to
-  // reverse it, and a kind whose second end is not a body at all must refuse outright. Making that
-  // the kind's decision is the only place it can be correct: the registry cannot know which fields
-  // carry a direction.
-  // Decide whether a swap is pending BEFORE asking the kind: swapEnds both vetoes and transforms, so
-  // calling it when nothing is being exchanged would apply a kind's reversal to ends that never moved.
+  // The kind decides how to reverse itself, because the registry cannot know which of a joint's fields
+  // carry a direction — see _canonicalizePhysics2DJointEnds.
   // Only canonicalize when the kind can be consulted. A joint whose solver is not registered yet is
   // explicitly supported (a scene deserialized ahead of the code that solves it), and swapping it now
   // would exchange the bodies and anchors while its kind-specific direction fields stayed as authored --
