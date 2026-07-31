@@ -204,6 +204,58 @@ describe('sensor reporting between immovable bodies', () => {
     expect(world.contacts).toHaveLength(0);
   });
 
+  // Every existing case above gives each body exactly one collider, which is why the body-level guard
+  // looked sufficient. Owning a sensor ANYWHERE does not make a body's other colliders reportable:
+  // these two static bodies overlap solid-on-solid, and the disjoint trigger volume must not smuggle
+  // that pair past the immovable shortcut.
+  function immovableWithSensorAndSolid(world: Physics2DWorld, x: number): RigidBody2D {
+    const body = createRigidBody2D('static', x, 0);
+    // A trigger volume far away from the solid part, so it overlaps nothing.
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: 99.5, minY: -0.5, maxX: 100.5, maxY: 0.5 }, STONE, true),
+    );
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE, false),
+    );
+    return addPhysics2DBody(world, body);
+  }
+
+  it('reports nothing when the overlapping colliders are both solid and both bodies are immovable', () => {
+    const world = createPhysics2DWorld(0, 0);
+    immovableWithSensorAndSolid(world, 0);
+    immovable(world, 0, false);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(0);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  // The other half of the same class: the sensor collider on that body must still report when it is
+  // the one actually overlapping, so the pair-level test is not just a blanket suppression.
+  it('still reports the sensor collider of a mixed body when that collider overlaps', () => {
+    const world = createPhysics2DWorld(0, 0);
+    immovableWithSensorAndSolid(world, 0);
+    immovable(world, 100, false);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].sensor).toBe(true);
+  });
+
+  // A movable body is unaffected by the immovable test, so its solid contacts still resolve even when
+  // the other body carries a sensor.
+  it('keeps a solid contact when one body can move', () => {
+    const world = createPhysics2DWorld(0, 0);
+    immovableWithSensorAndSolid(world, 0);
+    box(world, 0, 0);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts.some((contact) => !contact.sensor)).toBe(true);
+  });
+
   it('resolves nothing for a static sensor pair — reporting is not colliding', () => {
     const world = createPhysics2DWorld(0, 0);
     const sensor = immovable(world, 0, true);
