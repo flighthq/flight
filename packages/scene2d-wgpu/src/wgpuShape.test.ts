@@ -16,6 +16,7 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
+import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuShapeModule from './wgpuShape';
 import { registerStandardWgpuMaterial } from './wgpuStandardMaterial';
@@ -110,6 +111,7 @@ describe('drawWgpuShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', async () => {
     const state = await createWgpuRenderStateForTest();
+    enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const shape = createShape();
@@ -127,8 +129,27 @@ describe('drawWgpuShape', () => {
     submitWgpuRenderPass(state);
   });
 
+  it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerStandardWgpuMaterial(state);
+    const pass = makeMeshPassSpy();
+    getWgpuRenderStateRuntime(state).renderPass = pass;
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+
+    drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
+
+    expect(pass.drawIndexed).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
+    submitWgpuRenderPass(state);
+  });
+
   it('falls back to the raster quad for a self-intersecting stroke centerline', async () => {
     const state = await createWgpuRenderStateForTest();
+    enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
     registerStandardWgpuMaterial(state);
     const pass = makeMeshPassSpy();

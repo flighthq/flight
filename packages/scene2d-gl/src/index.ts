@@ -15,6 +15,7 @@ export {
   defaultGlTextureShapeCommands,
   defaultGlTilemapRenderer,
   drawGlSprite,
+  enableGlStrokePathTessellation,
   enableGlClipSupport,
   enableGlRenderCache,
   enableGlTextInput,

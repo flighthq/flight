@@ -1,10 +1,10 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { tessellatePath, tessellateStrokePath } from '@flighthq/path/contract';
+import { tessellatePath } from '@flighthq/path/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
-import { getShapeFillRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
+import { getShapeFillRegions, getShapeStrokeOutlineRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
   GlRenderState,
@@ -48,14 +48,18 @@ interface GlShapeData {
   meshes: GlShapeMesh[] | null;
 }
 
-// Resolves every solid fill and solid stroke into one fill-before-stroke source list. Style sentinels
-// are decided here; geometric stroke sentinels are decided by tessellateStrokePath during cache rebuild.
+// Resolves every solid fill and solid stroke into one fill-before-stroke source list. The default lane
+// uses compact fillable open-stroke outlines; the opt-in ring lane retains styled centerlines for the
+// heavier direct stroke tessellator.
 function resolveGlShapeMeshRegions(
   commands: readonly ShapeCommandToken[],
+  strokePathTessellatorEnabled: boolean,
 ): (ShapeFillRegion | ShapeStrokeRegion)[] | null {
   const fillRegions = getShapeFillRegions(commands);
   if (fillRegions === null) return null;
-  const strokeRegions = getShapeStrokeRegions(commands);
+  const strokeRegions = strokePathTessellatorEnabled
+    ? getShapeStrokeRegions(commands)
+    : getShapeStrokeOutlineRegions(commands);
   if (strokeRegions === null) return null;
   const regions: (ShapeFillRegion | ShapeStrokeRegion)[] = [...fillRegions, ...strokeRegions];
   return regions.length > 0 ? regions : null;
@@ -106,10 +110,10 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU mesh path: fills use direct path tessellation; strokes use the dedicated cross-section mesh so
-  // open outlines and hollow closed rings share joins/caps/dashes without hole-fill ambiguity. A
-  // pathological stroke's null mesh deliberately falls through to the Canvas raster path below.
-  const regions = resolveGlShapeMeshRegions(commands);
+  // GPU mesh path: compact open outlines are the default. Explicitly enabling stroke-path
+  // tessellation adds hollow closed rings and pathological-geometry rejection to this state only.
+  const strokePathTessellator = runtime.strokeTessellator;
+  const regions = resolveGlShapeMeshRegions(commands, strokePathTessellator !== null);
   if (regions !== null && regions.length > 0) {
     const meshData = getGlShapeData(renderProxy.rendererData);
     if (meshData.meshVersion !== version) {
@@ -117,9 +121,10 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
       let supported = true;
       for (let i = 0; i < regions.length; i++) {
         const region = regions[i];
-        const mesh = isShapeStrokeRegion(region)
-          ? tessellateStrokePath(region.path, region.style)
-          : tessellatePath(region.path);
+        const mesh =
+          strokePathTessellator !== null && isShapeStrokeRegion(region)
+            ? strokePathTessellator(region.path, region.style)
+            : tessellatePath(region.path);
         if (mesh === null) {
           supported = false;
           break;

@@ -16,6 +16,7 @@ export {
   defaultWgpuTextureShapeCommands,
   defaultWgpuTilemapRenderer,
   drawWgpuSprite,
+  enableWgpuStrokePathTessellation,
   enableWgpuClipSupport,
   enableWgpuRenderCache,
   enableWgpuTextInput,

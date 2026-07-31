@@ -1,4 +1,5 @@
 export * from './enableWgpuColorAdjustmentGuards';
+export * from './enableWgpuStrokePathTessellation';
 export * from './wgpuSprite';
 export * from './wgpuBitmapText';
 export * from './wgpuCache';

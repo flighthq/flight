@@ -14,6 +14,7 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
+import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import type * as GlShapeModule from './glShape';
 import { registerStandardGlMaterial } from './glStandardMaterial';
@@ -108,6 +109,7 @@ describe('drawGlShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', () => {
     const { state, gl } = createGlState();
+    enableGlStrokePathTessellation(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);
     appendShapeRectangle(shape, 8, 8, 32, 24);
@@ -118,8 +120,22 @@ describe('drawGlShape', () => {
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
+  it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', () => {
+    const { state, gl } = createGlState();
+    registerStandardGlMaterial(state);
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+
+    drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
+
+    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
+  });
+
   it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
     const { state, gl } = createGlState();
+    enableGlStrokePathTessellation(state);
     registerStandardGlMaterial(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);

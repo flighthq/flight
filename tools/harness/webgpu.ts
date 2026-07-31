@@ -18,14 +18,14 @@ import {
   enableFlightDiagnostics,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
+  enableWgpuStrokePathTessellation,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
   registerRenderer,
   registerStandardWgpuMaterial,
-  registerWgpuImageTextureResolver,
-  registerWgpuRenderTextureResolver,
+  registerStandardWgpuTextureResolvers,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -57,8 +57,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
-  registerWgpuImageTextureResolver(state);
-  registerWgpuRenderTextureResolver(state);
+  registerStandardWgpuTextureResolvers(state);
   registerStandardWgpuMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
@@ -88,6 +87,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   if (options.clip) enableWgpuClipSupport(state);
   if (options.cache) enableWgpuRenderCache(state);
   if (options.blend) enableWgpuBlendModeSupport(state);
+  if (options.strokePathTessellation) enableWgpuStrokePathTessellation(state);
 
   return registerFunctionalTarget({
     kind: 'webgpu',
