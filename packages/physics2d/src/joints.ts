@@ -300,21 +300,26 @@ export const physics2DRevoluteJointSolver = {
       if (revolute.enableLimit) {
         const bias = state[6];
         const angle = bodyB.angle - bodyA.angle - revolute.referenceAngle;
-        // Each end is a one-sided constraint: it may only push the angle back inside the interval,
-        // never pull it in. Two things make that true together. The non-negative clamp on the running
-        // impulse means a limit can push and never pull. And the bias is the REMAINING ROOM to the
-        // bound, max(C, 0) / dt, not the violation depth: while the angle is inside the interval that
-        // room is large and positive, which drives the desired impulse negative, so the clamp holds
-        // the accumulator at zero and the limit contributes nothing.
+        // Each end is a one-sided constraint: the non-negative clamp on the running impulse lets a
+        // limit push the angle back inside the interval and never pull it in.
         //
-        // Using the violation depth instead — min(C, 0) — zeroes the bias while inside the interval,
-        // and the upper end then reads a positive desired impulse against any forward rotation and
-        // brakes it to a standstill. Measured while building this: a motor at speed 5 held the arm at
-        // exactly zero, spending its whole torque budget every step against a limit it was nowhere
-        // near.
+        // The bias is the SIGNED distance to the bound, C / dt, with no clamp on C — and both clamps
+        // are wrong, in opposite ways:
+        //
+        //   max(C, 0) suppresses correctly but cannot correct. It zeroes the bias exactly when the
+        //   angle is already outside the interval, leaving only the relative-velocity term, so a joint
+        //   authored out of range and sitting still is never pushed back: it stays violated forever.
+        //
+        //   min(C, 0) corrects but cannot suppress. It zeroes the bias while INSIDE the interval, and
+        //   the upper end then reads a positive desired impulse against any forward rotation and brakes
+        //   it to a standstill — a motor at speed 5 held the arm at exactly zero, spending its whole
+        //   torque budget against a limit it was nowhere near.
+        //
+        // Signed C does both. Inside the interval it is positive, which drives the desired impulse
+        // negative and the clamp holds the accumulator at zero, so the limit contributes nothing.
+        // Outside it is negative, which drives the desired impulse positive and pushes the angle back.
         const lowerError = angle - revolute.lowerAngle;
-        const lowerDesired =
-          -angularMass * (bodyB.angularVelocity - bodyA.angularVelocity + Math.max(lowerError, 0) * bias);
+        const lowerDesired = -angularMass * (bodyB.angularVelocity - bodyA.angularVelocity + lowerError * bias);
         const lowerPrevious = state[3];
         const lowerTotal = Math.max(lowerPrevious + lowerDesired, 0);
         state[3] = lowerTotal;
@@ -323,8 +328,7 @@ export const physics2DRevoluteJointSolver = {
         bodyB.angularVelocity += bodyB.inverseInertia * lowerApplied;
 
         const upperError = revolute.upperAngle - angle;
-        const upperDesired =
-          -angularMass * (bodyA.angularVelocity - bodyB.angularVelocity + Math.max(upperError, 0) * bias);
+        const upperDesired = -angularMass * (bodyA.angularVelocity - bodyB.angularVelocity + upperError * bias);
         const upperPrevious = state[4];
         const upperTotal = Math.max(upperPrevious + upperDesired, 0);
         state[4] = upperTotal;
