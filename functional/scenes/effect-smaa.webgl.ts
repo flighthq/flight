@@ -14,11 +14,10 @@ import {
   createSmaaEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
-  defaultGlSmaaEffectRunner,
+  registerGlSmaaEffect,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +38,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'SmaaEffect', defaultGlSmaaEffectRunner);
+registerGlSmaaEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

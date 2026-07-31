@@ -16,14 +16,13 @@ import {
   createGlRenderState,
   createPath,
   createShape,
-  defaultGlBloomEffectRunner,
+  registerGlBloomEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   enableGlClipSupport,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -47,7 +46,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 enableGlClipSupport(state);
-registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+registerGlBloomEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

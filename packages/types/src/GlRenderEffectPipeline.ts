@@ -23,7 +23,7 @@ export interface GlRenderEffectContext {
 
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
-// (e.g. defaultGlBloomEffectRunner); register an alternative under the same key to swap algorithms.
+// (e.g. through registerGlBloomEffect); register an alternative under the same key to swap algorithms.
 export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect: Readonly<RenderEffect>) => void;
 
 // Why an applyGlRenderEffectsToRenderTexture call would not write its destination, as plain data.

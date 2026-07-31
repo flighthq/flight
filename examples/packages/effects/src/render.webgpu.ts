@@ -10,12 +10,11 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
-  defaultWgpuBloomEffectRunner,
-  defaultWgpuToneMapEffectRunner,
-  defaultWgpuVignetteEffectRunner,
-  defaultWgpuWhiteBalanceEffectRunner,
+  registerWgpuBloomEffect,
+  registerWgpuToneMapEffect,
+  registerWgpuVignetteEffect,
+  registerWgpuWhiteBalanceEffect,
   registerWgpuStandardMaterial,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
@@ -36,10 +35,10 @@ enableFlightDiagnostics(state);
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
-registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
-registerWgpuRenderEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
-registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
+registerWgpuBloomEffect(state);
+registerWgpuVignetteEffect(state);
+registerWgpuToneMapEffect(state);
+registerWgpuWhiteBalanceEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state);
 

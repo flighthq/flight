@@ -12,12 +12,11 @@ import {
   createDisplayObject,
   createScanlinesEffect,
   createShape,
-  defaultCanvasScanlinesEffectRunner,
+  registerCanvasScanlinesEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -34,7 +33,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'ScanlinesEffect', defaultCanvasScanlinesEffectRunner);
+registerCanvasScanlinesEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

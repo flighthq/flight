@@ -14,15 +14,14 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuBloomEffectRunner,
+  registerWgpuBloomEffect,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
-  defaultWgpuVignetteEffectRunner,
+  registerWgpuVignetteEffect,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -41,8 +40,8 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
-registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
-registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
+registerWgpuBloomEffect(state);
+registerWgpuVignetteEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba16f' });
 

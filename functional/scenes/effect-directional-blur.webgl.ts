@@ -12,13 +12,12 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
-  defaultGlDirectionalBlurEffectRunner,
+  registerGlDirectionalBlurEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +38,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'DirectionalBlurEffect', defaultGlDirectionalBlurEffectRunner);
+registerGlDirectionalBlurEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 

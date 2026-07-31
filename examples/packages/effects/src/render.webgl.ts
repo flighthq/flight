@@ -11,11 +11,10 @@ import {
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  defaultGlBloomEffectRunner,
-  defaultGlToneMapEffectRunner,
-  defaultGlVignetteEffectRunner,
-  defaultGlWhiteBalanceEffectRunner,
-  registerGlRenderEffect,
+  registerGlBloomEffect,
+  registerGlToneMapEffect,
+  registerGlVignetteEffect,
+  registerGlWhiteBalanceEffect,
   registerGlStandardMaterial,
   registerGlShapeCommands,
   registerRenderer,
@@ -38,10 +37,10 @@ registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
-registerGlRenderEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
-registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
-registerGlRenderEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
+registerGlBloomEffect(state);
+registerGlVignetteEffect(state);
+registerGlToneMapEffect(state);
+registerGlWhiteBalanceEffect(state);
 
 const pipeline = createGlRenderEffectPipeline(state);
 

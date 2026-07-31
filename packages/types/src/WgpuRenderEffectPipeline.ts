@@ -22,7 +22,7 @@ export interface WgpuRenderEffectContext {
 
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
-// (e.g. defaultWgpuBloomEffectRunner); register an alternative under the same key to swap algorithms.
+// (e.g. through registerWgpuBloomEffect); register an alternative under the same key to swap algorithms.
 export type WgpuRenderEffectRunner = (ctx: Readonly<WgpuRenderEffectContext>, effect: Readonly<RenderEffect>) => void;
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders

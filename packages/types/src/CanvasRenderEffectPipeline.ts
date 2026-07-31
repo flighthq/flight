@@ -20,7 +20,7 @@ export interface CanvasRenderEffectContext {
 
 // The Canvas 2D realization registered against an effect `type`. A single function over offscreen
 // canvases — not a multi-method per-node renderer. The built-ins are exported as `default*` named
-// constants (e.g. defaultCanvasBloomEffectRunner); register an alternative under the same key to swap
+// wrappers (e.g. registerCanvasBloomEffect); register an alternative under the same key to swap
 // algorithms.
 export type CanvasRenderEffectRunner = (
   ctx: Readonly<CanvasRenderEffectContext>,

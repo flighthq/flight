@@ -12,12 +12,11 @@ import {
   createCanvasRenderState,
   createDisplayObject,
   createShape,
-  defaultCanvasBloomEffectRunner,
+  registerCanvasBloomEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -34,7 +33,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
+registerCanvasBloomEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

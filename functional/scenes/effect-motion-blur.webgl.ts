@@ -17,7 +17,7 @@ import {
   createShape,
   createVelocityField,
   defaultGlNode2DVelocityWriter,
-  defaultGlMotionBlurEffectRunner,
+  registerGlMotionBlurEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
@@ -25,7 +25,6 @@ import {
   getNodeChildCount,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerGlVelocityWriter,
   registerRenderer,
@@ -51,7 +50,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
+registerGlMotionBlurEffect(state);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);
 
