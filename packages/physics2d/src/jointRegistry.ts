@@ -26,21 +26,35 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
   // carry a direction.
   // Decide whether a swap is pending BEFORE asking the kind: swapEnds both vetoes and transforms, so
   // calling it when nothing is being exchanged would apply a kind's reversal to ends that never moved.
-  const swapPending = first !== null && second !== null && !isPhysics2DPairOrdered(first, second);
-  const solver = getPhysics2DJointSolver(world, joint.kind);
-  if (swapPending && (solver?.swapEnds?.(joint) ?? true)) {
-    const bodyA = joint.bodyA;
-    joint.bodyA = joint.bodyB;
-    joint.bodyB = bodyA;
-    const anchorX = joint.localAnchorAX;
-    const anchorY = joint.localAnchorAY;
-    joint.localAnchorAX = joint.localAnchorBX;
-    joint.localAnchorAY = joint.localAnchorBY;
-    joint.localAnchorBX = anchorX;
-    joint.localAnchorBY = anchorY;
-  }
+  // Only canonicalize when the kind can be consulted. A joint whose solver is not registered yet is
+  // explicitly supported (a scene deserialized ahead of the code that solves it), and swapping it now
+  // would exchange the bodies and anchors while its kind-specific direction fields stayed as authored --
+  // the generic half of a swap with the kind's half missing, which no later registration would repair.
+  // An unregistered joint constrains nothing, so its ordering does not matter until a solver exists;
+  // registerPhysics2DJointSolver canonicalizes what is already in the world at that point.
+  if (getPhysics2DJointSolver(world, joint.kind) !== null) _canonicalizePhysics2DJointEnds(world, joint);
   world.joints.push(joint);
   return joint;
+}
+
+// Exchanges `joint`'s ends when the pair is out of canonical order and the kind consents. The kind is
+// asked only when a swap is actually pending, since swapEnds both vetoes and transforms: calling it
+// otherwise would apply a reversal to ends that never moved.
+function _canonicalizePhysics2DJointEnds(world: Physics2DWorld, joint: Physics2DJoint): void {
+  const first = findPhysics2DBody(world, joint.bodyA);
+  const second = findPhysics2DBody(world, joint.bodyB);
+  if (first === null || second === null || isPhysics2DPairOrdered(first, second)) return;
+  const solver = getPhysics2DJointSolver(world, joint.kind);
+  if (!(solver?.swapEnds?.(joint) ?? true)) return;
+  const bodyA = joint.bodyA;
+  joint.bodyA = joint.bodyB;
+  joint.bodyB = bodyA;
+  const anchorX = joint.localAnchorAX;
+  const anchorY = joint.localAnchorAY;
+  joint.localAnchorAX = joint.localAnchorBX;
+  joint.localAnchorAY = joint.localAnchorBY;
+  joint.localAnchorBX = anchorX;
+  joint.localAnchorBY = anchorY;
 }
 
 // The solver registered for `kind`, or null when none is. A missing solver is an expected condition, not
@@ -66,6 +80,13 @@ export function registerPhysics2DJointSolver(
   solver: Physics2DJointSolver,
 ): void {
   world.jointSolvers.set(kind, solver);
+  // Joints of this kind may already be in the world: addPhysics2DJoint deliberately leaves an
+  // unknown-kind joint in its authored order, because canonicalizing it without the kind's consent
+  // would half-swap it. This is where that deferred work happens, so the outcome no longer depends on
+  // whether the scene or the solver arrived first.
+  for (const joint of world.joints) {
+    if (joint.kind === kind) _canonicalizePhysics2DJointEnds(world, joint);
+  }
 }
 
 // Removes `joint` from `world`. Returns false when the world does not hold it.
