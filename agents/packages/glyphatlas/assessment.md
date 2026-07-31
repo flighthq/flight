@@ -15,7 +15,7 @@ Sweep-safe, within-package:
 3. **Real line metrics from the canvas backend** — surface `fontBoundingBoxAscent/Descent` (falling back to the current heuristic when absent) through `GlyphRasterizedBitmap`/backend metrics so `getGlyphAtlasMetrics` reports measured values. No new dependency; replaces a documented placeholder.
 4. ~~**O(1) LRU**~~ — landed 2026-07-30 (`e0e4515ed`). `GlyphAtlasRuntime.lru` is an insertion-ordered `Map`; touch is delete-then-set, eviction takes the first key. Behaviour-identical, and the ordering semantics are now pinned by tests rather than implied — see [status](./status.md).
 5. **Guards + `explain*`** — `enableGlyphAtlasGuards` (glyph-too-big, rasterizer-null, repack-drop, budget thrash) and `explainGlyphAtlasEntry(atlas, codepoint)` returning plain data on why an entry is null. Straight diagnostics-convention application to existing silent sentinels.
-6. **Style/weight into the atlas config** — thread `fontStyle`/`fontWeight` from `GlyphAtlasOptions` into `rasterizeOptions` (the fields already exist on `GlyphRasterizeOptions`), and document one-atlas-per-style as the model.
+6. ~~**Style/weight into the atlas config**~~ — landed 2026-07-30 (`c1c91a2e2`). `GlyphAtlasOptions` gained optional `fontStyle`/`fontWeight`, forwarded to `rasterizeOptions` only when supplied; one-atlas-per-(family, size, style, weight) is documented on the type. Note this was not a cosmetic threading job: the rasterizer already read both fields, but nothing could set them, so bold and italic atlases were unreachable.
 
 ## Backlog
 

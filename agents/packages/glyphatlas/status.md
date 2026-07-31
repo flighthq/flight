@@ -4,6 +4,16 @@ updated: 2026-07-30
 by: builder2
 ---
 
+## 2026-07-30 -- bold and italic atlases were unreachable (builder)
+
+Item 6 read like a cosmetic threading job and was not. `GlyphRasterizeOptions` already carried `fontStyle`/`fontWeight`, and the web rasterizer already used both to build its `context.font` string -- but `GlyphAtlasOptions` had no such fields, and `createGlyphAtlas` is the only thing that constructs a `GlyphRasterizeOptions`. So the rasterizer's support was live code no caller could reach: there was no way to ask for a bold or italic atlas at all.
+
+Both are now optional on `GlyphAtlasOptions` and forwarded only when supplied, so an omitted field stays absent rather than becoming an explicit `undefined` the rasterizer would have defaulted anyway -- that keeps "unset" distinguishable from "deliberately normal" for a future backend. Tests assert on what the backend actually receives rather than on the options object, since the options object was never the thing that was broken.
+
+Documented the model on the type while there: the cache is keyed by codepoint alone, so one atlas holds one rendering of each character and bold text needs its own atlas rather than a draw-time flag -- one atlas per (family, size, style, weight) the app actually uses.
+
+31 -> 33 tests. Two mutations, each confirmed applied and failing only its own test: dropping the forwarding fails the forwarding test, and forwarding unconditionally fails the absent-when-omitted test.
+
 ## 2026-07-30 -- O(1) LRU recency; the rest of the cell is genuinely open (builder)
 
 Unlike most cells swept this session, this one is real work rather than stale bookkeeping: items 1, 2, 3, 5 and 6 are all still unbuilt in live source. I took item 4 and left the rest, rather than starting several and landing none.
