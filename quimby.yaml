@@ -33,7 +33,7 @@ roles:
      and can install dependencies.
   manager:
     directs: [foreman, critic, integration]
-    nudge: directed
+    nudge: all
     instructions: |
       You have foreman, critic and integration at your disposal. Foreman is instructed to 
       keep every worker busy under his watch, and to escalate any issues requiring clarification
