@@ -1,3 +1,4 @@
+export * from './enableSceneRenderGuards';
 export * from './enableColorAdjustmentGuards';
 export * from './explainScene2DRender';
 export * from './renderAppearance';

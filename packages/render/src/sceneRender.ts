@@ -275,6 +275,13 @@ function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBo
   // plain data — no skinning code reached from here. Fall back to the geometry's own ensured bounds
   // for rigid and morphed meshes (morph writes real vertices, so those bounds are already posed).
   const runtime = getNodeRuntime(mesh as NodeAny) as MeshRuntime;
+  // A skinned mesh with no posed bounds means the deform pass this one documents as a precondition did
+  // not run. Culling then silently uses BIND POSE bounds and a swung limb disappears — a rendering
+  // failure with nothing pointing at the missing pass. The comment above stated that requirement to the
+  // caller; this is the seam that can actually tell them.
+  if (mesh.skin !== null && mesh.skin !== undefined && runtime.deformedLocalBounds == null) {
+    _skinnedBoundsGuard?.(mesh);
+  }
   const bounds = runtime.deformedLocalBounds ?? ensureMeshGeometryBounds(mesh.geometry);
   if (bounds === null) {
     // No bounds at all (empty geometry): cannot cull, so conservatively keep the mesh.
@@ -415,3 +422,12 @@ const scratchProjection = createMatrix4();
 // committed to `out.data` only when it differs, so an unchanged block never bumps `version`. Sized to
 // the full head + MAX_FORWARD_LIGHTS-per-type layout (SCENE_LIGHT_BLOCK_FLOATS).
 const scratchLightData = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
+
+/** Installs the skinned-bounds guard, or clears it with `null`. The seam exists so the message and the
+ *  `@flighthq/log` dependency live in the separately-importable guard module rather than on the cull
+ *  path; not importing that module costs production nothing. Called by `enableSceneRenderGuards`. */
+export function setSkinnedMeshBoundsGuard(guard: ((mesh: Readonly<Mesh>) => void) | null): void {
+  _skinnedBoundsGuard = guard;
+}
+
+let _skinnedBoundsGuard: ((mesh: Readonly<Mesh>) => void) | null = null;
