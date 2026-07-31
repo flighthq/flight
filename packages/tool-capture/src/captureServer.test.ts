@@ -1,4 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+const childProcessMocks = vi.hoisted(() => ({ spawnSync: vi.fn(() => ({ status: 0 })) }));
+
+vi.mock('node:child_process', async (importOriginal) => ({
+  ...(await importOriginal()),
+  spawnSync: childProcessMocks.spawnSync,
+}));
+
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -29,9 +36,28 @@ describe('resolveServer', () => {
 });
 
 describe('resolveStaticServer', () => {
-  // Building and serving a real dist needs a full toolchain and Vite build, so this is exercised end to
-  // end by the capture:* scripts. Here we only assert the entry point is wired.
-  it('is a callable server resolver', () => {
-    expect(typeof resolveStaticServer).toBe('function');
+  it('uses npm rather than treating an inherited npx CLI as the npm CLI', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'capture-static-'));
+    const dist = join(root, 'examples', 'runners', 'web', 'dist');
+    mkdirSync(dist, { recursive: true });
+    writeFileSync(join(dist, 'index.html'), '<h1>built</h1>');
+    const originalNpmExecPath = process.env['npm_execpath'];
+    process.env['npm_execpath'] = '/usr/local/lib/node_modules/npm/bin/npx-cli.js';
+
+    let server;
+    try {
+      server = await resolveStaticServer({ tool: 'examples', root, forceBuild: true });
+      expect(childProcessMocks.spawnSync).toHaveBeenCalledWith(
+        'npm',
+        ['run', 'build', '--workspace=@flighthq/examples'],
+        { cwd: root, stdio: 'inherit', shell: true },
+      );
+      expect(await (await fetch(server.url)).text()).toContain('built');
+    } finally {
+      server?.kill();
+      if (originalNpmExecPath === undefined) delete process.env['npm_execpath'];
+      else process.env['npm_execpath'] = originalNpmExecPath;
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

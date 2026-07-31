@@ -6,7 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { extname, join, relative } from 'node:path';
+import { basename, extname, join, relative } from 'node:path';
 
 import type { Tool } from './captureEntries.js';
 
@@ -34,17 +34,12 @@ export function resolveServer(opts: { tool?: Tool; root: string; externalUrl?: s
   const viteJs = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
   const configPath = join(toolDir, 'vite.config.ts');
 
-  // Run predev (asset download) before starting the server, mirroring what
-  // npm run dev would do. npm_execpath is set by npm and points to the npm
-  // CLI script; fall back to shell npm for direct tsx invocations.
+  // Run predev (asset download) before starting the server, mirroring what npm run dev would do.
   const toolPkg = JSON.parse(readFileSync(join(toolDir, 'package.json'), 'utf-8')) as {
     scripts?: Record<string, string>;
   };
   if (toolPkg.scripts?.predev) {
-    const npmExecPath = process.env['npm_execpath'];
-    const result = npmExecPath
-      ? spawnSync(process.execPath, [npmExecPath, 'run', 'predev'], { cwd: toolDir, stdio: 'inherit' })
-      : spawnSync('npm', ['run', 'predev'], { cwd: toolDir, stdio: 'inherit', shell: true });
+    const result = runNpm(['run', 'predev'], toolDir);
     if (result.status !== 0) throw new Error(`predev failed for ${tool}`);
   }
 
@@ -100,19 +95,9 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
 
   if (!existsSync(distDir) || forceBuild) {
     console.log(`Building tools/${tool}…`);
-    const npmExecPath = process.env['npm_execpath'];
     const workspace = tool === 'examples' ? '@flighthq/examples' : `tools/${tool}`;
     const args = ['run', 'build', `--workspace=${workspace}`];
-    const result = npmExecPath
-      ? spawnSync(process.execPath, [npmExecPath, ...args], {
-          cwd: root,
-          stdio: 'inherit',
-        })
-      : spawnSync('npm', args, {
-          cwd: root,
-          stdio: 'inherit',
-          shell: true,
-        });
+    const result = runNpm(args, root);
     if (result.status !== 0) {
       return Promise.reject(new Error(`Build failed. Run "npm run build:${tool}" to debug.`));
     }
@@ -123,6 +108,16 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
   }
 
   return serveDirectory(distDir);
+}
+
+function runNpm(args: readonly string[], cwd: string) {
+  const npmExecPath = process.env['npm_execpath'];
+  // `npx tsx ...` also sets npm_execpath, but to npx-cli.js. Passing `run build` back to that CLI asks
+  // npx to install the unrelated `run` package. Only an actual npm CLI script is safe to reuse.
+  if (npmExecPath !== undefined && basename(npmExecPath).toLowerCase() === 'npm-cli.js') {
+    return spawnSync(process.execPath, [npmExecPath, ...args], { cwd, stdio: 'inherit' });
+  }
+  return spawnSync('npm', [...args], { cwd, stdio: 'inherit', shell: true });
 }
 
 function serveDirectory(directory: string): Promise<Server> {
