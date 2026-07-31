@@ -3,7 +3,7 @@ import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geom
 import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
-import type { Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DHit } from './pickScene3D';
@@ -16,15 +16,14 @@ import {
   isScene3DHitFrontFacing,
 } from './sceneHitAttributes';
 
-function attributedHit(): Scene3DHit {
+function attributedHit(): Scene3DHit & { node: Mesh } {
   const geometry = createMeshGeometryFromAttributes({
     indices: [0, 1, 2],
     normals: [0, 0, 1, 0, 0, 1, 0, 0, 1],
     positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
     uvs: [0, 0, 1, 0, 0, 1],
   });
-  const hit = createScene3DHit();
-  hit.node = createMesh(geometry, []);
+  const hit = Object.assign(createScene3DHit(), { node: createMesh(geometry, []) });
   hit.triangleIndex = 0;
   hit.u = 0.25;
   hit.v = 0.25;
@@ -32,6 +31,24 @@ function attributedHit(): Scene3DHit {
   hit.normalZ = 1;
   return hit;
 }
+
+describe('empty Scene3DHit attribute queries', () => {
+  it('returns sentinels without changing caller-owned outputs', () => {
+    const hit = createScene3DHit();
+    const uv = { x: 7, y: 8 };
+    const normal = createVector3(7, 8, 9);
+    const tangent = { w: 4, x: 1, y: 2, z: 3 };
+
+    expect(getScene3DHitMaterial(hit)).toBeNull();
+    expect(getScene3DHitSubsetIndex(hit)).toBe(-1);
+    expect(getScene3DHitUv0(uv, hit)).toBe(false);
+    expect(getScene3DHitVertexNormal(normal, hit)).toBe(false);
+    expect(getScene3DHitVertexTangent(tangent, hit)).toBe(false);
+    expect(uv).toEqual({ x: 7, y: 8 });
+    expect(normal).toMatchObject({ x: 7, y: 8, z: 9 });
+    expect(tangent).toEqual({ w: 4, x: 1, y: 2, z: 3 });
+  });
+});
 
 describe('getScene3DHitMaterial', () => {
   it('returns the subset material or null for the default slot', () => {
@@ -127,14 +144,13 @@ describe('isScene3DHitFrontFacing', () => {
   });
 });
 
-function positionOnlyHit(): Scene3DHit {
+function positionOnlyHit(): Scene3DHit & { node: Mesh } {
   const layout: VertexAttributeLayout = {
     attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
     stride: 12,
   };
   const geometry = createMeshGeometry({ layout, vertices: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]) });
-  const hit = createScene3DHit();
-  hit.node = createMesh(geometry, []);
+  const hit = Object.assign(createScene3DHit(), { node: createMesh(geometry, []) });
   hit.triangleIndex = 0;
   hit.u = 1;
   hit.v = 0;

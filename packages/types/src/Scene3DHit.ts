@@ -7,9 +7,10 @@ import type { Mesh } from './Mesh';
 // triangle in index order). `u`/`v`/`w` are the barycentric weights of that triangle's
 // first/second/third vertex, so the hit point is `u*A + v*B + w*C` with `u + v + w === 1`.
 // `normalX`/`normalY`/`normalZ` are the triangle's unit geometric face normal in world space (the
-// normalized cross product of two edges), matching the flat-scalar shape of `pointX/Y/Z`.
+// normalized cross product of two edges), matching the flat-scalar shape of `pointX/Y/Z`. `node` is
+// null on a freshly allocated hit and non-null after a successful pick fills the result.
 export interface Scene3DHit extends Entity {
-  node: Mesh;
+  node: Mesh | null;
   distance: number;
   triangleIndex: number;
   u: number;
