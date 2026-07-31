@@ -102,12 +102,8 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
     // before any collider is inspected silently deleted every sensor overlap between two immovable
     // bodies. A static trigger volume over static scenery is an ordinary thing to build, and it
     // reported nothing at all. Immovable pairs are still skipped, unless one of them senses.
-    if (
-      first.inverseMass === 0 &&
-      second.inverseMass === 0 &&
-      !hasSensorCollider(first) &&
-      !hasSensorCollider(second)
-    ) {
+    const bothImmovable = first.inverseMass === 0 && second.inverseMass === 0;
+    if (bothImmovable && !hasSensorCollider(first) && !hasSensorCollider(second)) {
       continue;
     }
     // A jointed pair almost always overlaps at the anchor, and resolving that contact fights the
@@ -122,6 +118,13 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
       for (let j = 0; j < bodyB.colliders.length; j++) {
         const colliderA = bodyA.colliders[i];
         const colliderB = bodyB.colliders[j];
+        const sensorPair = colliderA.sensor || colliderB.sensor;
+        // The immovable test belongs here, not on the bodies. Owning one sensor anywhere does not make
+        // a body's other colliders reportable: a static body carrying a trigger volume plus ordinary
+        // scenery would otherwise emit solid-vs-solid contacts against other static scenery, which
+        // nothing can ever resolve. Sensors are reported and never resolved, so a sensor pair is the
+        // only pair worth keeping between two bodies that cannot move.
+        if (bothImmovable && !sensorPair) continue;
         if (!collideContactManifold(colliderA.world, colliderB.world, manifoldScratch)) continue;
         mergePhysics2DContact(
           world,
@@ -130,7 +133,7 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
           i,
           j,
           manifoldScratch,
-          colliderA.sensor || colliderB.sensor,
+          sensorPair,
           (colliderA.material.friction + colliderB.material.friction) / 2,
           Math.max(colliderA.material.restitution, colliderB.material.restitution),
         );
