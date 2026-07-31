@@ -1,4 +1,5 @@
-import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
+import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
+import type { CanvasRenderEffectRunner } from '@flighthq/types/contract';
 
 import {
   getCanvasRenderEffectRunner,
@@ -17,20 +18,20 @@ describe('hasCanvasRenderEffectRunner', () => {
     expect(typeof hasCanvasRenderEffectRunner).toBe('function');
   });
   it('returns false when state has no registered runners', () => {
-    const fakeState = {} as CanvasRenderState;
-    expect(hasCanvasRenderEffectRunner(fakeState, 'NotRegisteredEffect')).toBe(false);
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    expect(hasCanvasRenderEffectRunner(state, 'NotRegisteredEffect')).toBe(false);
   });
   it('returns true after registering a runner for the given kind', () => {
-    const fakeState = {} as CanvasRenderState;
+    const state = createCanvasRenderState(document.createElement('canvas'));
     const fakeRunner = (() => {}) as unknown as CanvasRenderEffectRunner;
-    registerCanvasRenderEffect(fakeState, 'HasTestEffect', fakeRunner);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'HasTestEffect')).toBe(true);
+    registerCanvasRenderEffect(state, 'HasTestEffect', fakeRunner);
+    expect(hasCanvasRenderEffectRunner(state, 'HasTestEffect')).toBe(true);
   });
   it('returns false for a different kind on the same state', () => {
-    const fakeState = {} as CanvasRenderState;
+    const state = createCanvasRenderState(document.createElement('canvas'));
     const fakeRunner = (() => {}) as unknown as CanvasRenderEffectRunner;
-    registerCanvasRenderEffect(fakeState, 'OnlyThisEffect', fakeRunner);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'OtherEffect')).toBe(false);
+    registerCanvasRenderEffect(state, 'OnlyThisEffect', fakeRunner);
+    expect(hasCanvasRenderEffectRunner(state, 'OtherEffect')).toBe(false);
   });
 });
 

@@ -1,12 +1,33 @@
+import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
+  copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
+  destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
 } from './canvasRenderState';
+
+describe('copyCanvasRenderStateRegistrations', () => {
+  it('clones Canvas policy registries without retaining a live map link', () => {
+    const source = createCanvasRenderState(document.createElement('canvas'));
+    const target = createCanvasRenderState(document.createElement('canvas'));
+    const runner = vi.fn();
+    getCanvasRenderStateRuntime(source).canvasRenderEffectRegistry = new Map([['acme.Effect', runner]]);
+
+    copyCanvasRenderStateRegistrations(target, source);
+
+    expect(getCanvasRenderStateRuntime(target).canvasRenderEffectRegistry).not.toBe(
+      getCanvasRenderStateRuntime(source).canvasRenderEffectRegistry,
+    );
+    expect(getCanvasRenderStateRuntime(target).canvasRenderEffectRegistry?.get('acme.Effect')).toBe(runner);
+  });
+});
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {
@@ -28,6 +49,24 @@ describe('createCanvasRenderStateRuntime', () => {
     const runtime = createCanvasRenderStateRuntime();
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
+  });
+});
+
+describe('destroyCanvasRenderState', () => {
+  it('destroys renderer data owned by the offscreen traversal state', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    const root = createDisplayObject();
+    const destroyData = vi.fn();
+    registerRenderer(state, root.kind, {
+      createData: () => createEntity({}),
+      destroyData,
+      submit: vi.fn(),
+    });
+    prepareScene2DRender(state, root);
+
+    destroyCanvasRenderState(state);
+
+    expect(destroyData).toHaveBeenCalledOnce();
   });
 });
 

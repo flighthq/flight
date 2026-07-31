@@ -1,6 +1,7 @@
 import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
+import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
 import type { CanvasTextureResolver } from './CanvasTextureResolver';
 import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -56,4 +57,7 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // Per-material-kind canvas renderer registry. Absent (and tree-shaken) until a material renderer
   // is registered.
   materialRendererMap?: Map<Kind, CanvasMaterialRenderer>;
+  // Per-effect-kind Canvas runner registry. Stored in the state runtime so an offscreen state can
+  // snapshot the screen pipeline's registration policy without retaining a live link.
+  canvasRenderEffectRegistry?: Map<string, CanvasRenderEffectRunner>;
 }

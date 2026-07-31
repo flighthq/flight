@@ -102,6 +102,7 @@ export * from './CanvasImageSourceKind';
 export * from './CanvasTextInputOverlay';
 export * from './CanvasEffectSourceMode';
 export * from './CanvasRenderTarget';
+export * from './CanvasRenderTexture';
 export * from './CanvasShapeDrawState';
 export * from './CanvasShapeRegistry';
 export * from './CapacitorApi';

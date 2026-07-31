@@ -1,6 +1,8 @@
 export {
+  applyCanvasRenderEffectsToRenderTexture,
   beginCanvasRenderEffectPipeline,
   createCanvasRenderEffectPipeline,
+  defaultCanvasBlurEffectRunner,
   defaultCanvasBloomEffectRunner,
   defaultCanvasFilmGrainEffectRunner,
   defaultCanvasLensDistortionEffectRunner,
@@ -11,5 +13,6 @@ export {
   defaultCanvasTiltShiftEffectRunner,
   defaultCanvasVignetteEffectRunner,
   endCanvasRenderEffectPipeline,
+  registerCanvasBlurEffect,
   registerCanvasRenderEffect,
 } from './contract';

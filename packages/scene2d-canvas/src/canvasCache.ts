@@ -23,7 +23,11 @@ import type {
 } from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D';
-import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
+import {
+  copyCanvasRenderStateRegistrations,
+  createCanvasRenderState,
+  getCanvasRenderStateRuntime,
+} from './canvasRenderState';
 import { createCanvasRenderTarget, resizeCanvasRenderTarget, setCanvasRenderTransform2D } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
 
@@ -43,15 +47,29 @@ type CanvasRenderStateHandles = CanvasRenderState & {
  * node map, adapter map, and frame counter, so baking never touches the screen state.
  */
 export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRenderState {
+  return createCanvasOffscreenRenderState(screenState);
+}
+
+/**
+ * Creates an independent offscreen pipeline whose Canvas targets remain owned by `screenState`.
+ * Renderers and policy registrations are creation-time snapshots; traversal/proxy state and host
+ * canvases remain independent.
+ */
+export function createCanvasOffscreenRenderState(screenState: CanvasRenderState): CanvasRenderState {
   const screen = getCanvasRenderStateRuntime(screenState);
   const cacheState = createCanvasRenderState(document.createElement('canvas'), {
+    backgroundColor: screenState.backgroundColor,
     imageSmoothingEnabled: screen.imageSmoothingEnabled,
     imageSmoothingQuality: screen.imageSmoothingQuality,
     pixelRatio: screenState.pixelRatio,
     roundPixels: screenState.roundPixels,
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   });
+  cacheState.allowSmoothing = screenState.allowSmoothing;
+  cacheState.renderAlpha = screenState.renderAlpha;
+  cacheState.renderBlendMode = screenState.renderBlendMode;
   copyAllRenderersFromRenderState(cacheState, screenState);
+  copyCanvasRenderStateRegistrations(cacheState, screenState);
   _cacheStateScreen.set(cacheState, screenState);
   return cacheState;
 }

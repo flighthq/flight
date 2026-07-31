@@ -1,4 +1,7 @@
-import { applyBlurEffectToCanvas, defaultCanvasBlurEffectRunner } from './canvasBlurEffect';
+import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
+
+import { applyBlurEffectToCanvas, defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 describe('applyBlurEffectToCanvas', () => {
   it('is a function', () => {
@@ -9,5 +12,13 @@ describe('applyBlurEffectToCanvas', () => {
 describe('defaultCanvasBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultCanvasBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('registerCanvasBlurEffect', () => {
+  it('registers the default runner under the BlurEffect kind', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    registerCanvasBlurEffect(state);
+    expect(getCanvasRenderEffectRunner(state, 'BlurEffect')).toBe(defaultCanvasBlurEffectRunner);
   });
 });

@@ -1,3 +1,4 @@
+import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Canvas 2D runner — the material-renderer
@@ -7,14 +8,14 @@ import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/type
 // algorithms.
 
 export function getCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): CanvasRenderEffectRunner | null {
-  return _registries.get(state)?.get(kind) ?? null;
+  return getCanvasRenderStateRuntime(state).canvasRenderEffectRegistry?.get(kind) ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
 // chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
 // your own policy (warn, filter) rather than relying on silent no-ops.
 export function hasCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): boolean {
-  return _registries.get(state)?.has(kind) ?? false;
+  return getCanvasRenderStateRuntime(state).canvasRenderEffectRegistry?.has(kind) ?? false;
 }
 
 export function registerCanvasRenderEffect(
@@ -22,12 +23,6 @@ export function registerCanvasRenderEffect(
   kind: string,
   runner: CanvasRenderEffectRunner,
 ): void {
-  let registry = _registries.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _registries.set(state, registry);
-  }
-  registry.set(kind, runner);
+  const runtime = getCanvasRenderStateRuntime(state);
+  (runtime.canvasRenderEffectRegistry ??= new Map()).set(kind, runner);
 }
-
-const _registries = new WeakMap<CanvasRenderState, Map<string, CanvasRenderEffectRunner>>();

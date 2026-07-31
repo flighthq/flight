@@ -24,6 +24,7 @@ Where it ends: `@flighthq/effects` owns the renderer-agnostic descriptors and th
 - **Opt-in, registry-driven, tree-shakable.** No monolithic `switch(kind)`, no top-level registration, single `.` export, `sideEffects: false`. Effects register into a per-state registry via category registrars; an app pays only for the effects it registers. (Structural fork B: registry by default.)
 - **Mirror the sibling backends.** Naming, registrar structure, and the support/runner split should be symmetric with `effects-gl`/`effects-wgpu` so the three backends read as one family and a reader who knows one knows all three (`hasCanvasRenderEffectRunner` mirrors `hasGlRenderEffectRunner`, the empty `registerScreenSpace*` mirrors the GL/WGPU no-op, etc.).
 - **Explicit allocation and alias-safety in the pixel path.** Pooled render targets through paired `acquire`/`release` brackets; per-pixel passes that read a source copy before writing (`applySharpen`'s `orig`), so source/dest aliasing is always safe.
+- **One explicit node-effect composition model across backends.** `applyCanvasRenderEffectsToRenderTexture` bridges registered Canvas runners onto screen-owned `RenderTexture` leases, preserving the same source/destination/scratch contract as GL/WGPU while using offscreen Canvas filter/draw passes internally.
 
 ## Boundaries
 
@@ -31,6 +32,7 @@ Where it ends: `@flighthq/effects` owns the renderer-agnostic descriptors and th
 
 - Canvas 2D realizations of the `@flighthq/effects` taxonomy (CSS-filter, draw-op composite, accumulation, and per-pixel passes).
 - The opt-in Canvas post-process pipeline, render-target pool, per-state runner registry, and compositing primitives.
+- Target-to-target application of registered runners for caller-owned per-node capture and explicit Sprite composition.
 - The support map / support-tier lookup that reports each kind's Canvas fidelity tier.
 
 **Non-goals:**

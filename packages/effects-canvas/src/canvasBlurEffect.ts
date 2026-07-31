@@ -1,6 +1,12 @@
-import type { BlurEffect, CanvasRenderEffectRunner, CanvasRenderTarget } from '@flighthq/types/contract';
+import type {
+  BlurEffect,
+  CanvasRenderEffectRunner,
+  CanvasRenderState,
+  CanvasRenderTarget,
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Plain Gaussian blur via the Canvas 2D `blur()` CSS filter — the same primitive the canvas bloom
 // branch uses. Canvas `blur()` is isotropic (a single radius), so the per-axis `blurX`/`blurY` sigmas
@@ -19,3 +25,7 @@ export function applyBlurEffectToCanvas(
 export const defaultCanvasBlurEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyBlurEffectToCanvas(ctx.source, ctx.dest, effect as BlurEffect);
 };
+
+export function registerCanvasBlurEffect(state: CanvasRenderState): void {
+  registerCanvasRenderEffect(state, 'BlurEffect', defaultCanvasBlurEffectRunner);
+}
