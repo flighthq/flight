@@ -28,7 +28,13 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
   // Evicting for the glyph-count budget frees logical cache slots; the freed atlas space is reclaimed
   // lazily by the first repack that placement forces below.
   let needsRepack = false;
-  while (runtime.maxGlyphs > 0 && runtime.entries.size >= runtime.maxGlyphs) {
+  // Evict until the incoming glyph fits every budget, not just the glyph count. Bytes are the budget
+  // that actually bounds memory: the atlas retains each source bitmap to re-blit on repack, so a cache
+  // of large glyphs costs far more than the same count of small ones, and a count cap cannot express
+  // that. The incoming glyph's own cost is included so the budget holds AFTER the insert.
+  const incomingBytes = bitmap.pixels.byteLength;
+  const incomingArea = bitmap.width * bitmap.height;
+  while (_isGlyphAtlasOverBudget(runtime, incomingBytes, incomingArea)) {
     if (!_evictLeastRecentlyUsedGlyph(runtime)) break;
     needsRepack = true;
   }
@@ -59,6 +65,8 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
   };
   runtime.entries.set(codepoint, entry);
   runtime.bitmaps.set(codepoint, bitmap);
+  runtime.retainedBytes += incomingBytes;
+  runtime.occupiedArea += incomingArea;
   runtime.lru.set(codepoint, true);
   _blitGlyphIntoAtlasBitmap(runtime, entry, bitmap);
   return entry;
@@ -85,6 +93,7 @@ function _evictLeastRecentlyUsedGlyph(runtime: GlyphAtlasRuntime): boolean {
   if (oldest.done === true) return false;
   const codepoint = oldest.value;
   runtime.lru.delete(codepoint);
+  _releaseGlyphBudget(runtime, codepoint);
   runtime.entries.delete(codepoint);
   runtime.bitmaps.delete(codepoint);
   return true;
@@ -171,6 +180,7 @@ function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
     const bitmap = runtime.bitmaps.get(codepoint)!;
     const placement = _placeGlyphOnShelf(runtime, bitmap.width, bitmap.height);
     if (placement === null) {
+      _releaseGlyphBudget(runtime, codepoint);
       runtime.entries.delete(codepoint);
       runtime.bitmaps.delete(codepoint);
       runtime.lru.delete(codepoint);
@@ -190,4 +200,26 @@ function _touchGlyphLru(runtime: GlyphAtlasRuntime, codepoint: number): void {
   // actually moves the codepoint to the most-recently-used end.
   runtime.lru.delete(codepoint);
   runtime.lru.set(codepoint, true);
+}
+
+// True when adding a glyph of `incomingBytes`/`incomingArea` would exceed a budget that is set. A
+// budget of 0 means unbounded on that axis. Requires a non-empty cache to be over budget, so a single
+// glyph larger than the whole budget is still admitted rather than evicting forever against itself —
+// the usable-bounds check upstream is what rejects a glyph too large for the atlas.
+function _isGlyphAtlasOverBudget(runtime: GlyphAtlasRuntime, incomingBytes: number, incomingArea: number): boolean {
+  if (runtime.entries.size === 0) return false;
+  if (runtime.maxGlyphs > 0 && runtime.entries.size >= runtime.maxGlyphs) return true;
+  if (runtime.maxBytes > 0 && runtime.retainedBytes + incomingBytes > runtime.maxBytes) return true;
+  if (runtime.maxArea > 0 && runtime.occupiedArea + incomingArea > runtime.maxArea) return true;
+  return false;
+}
+
+// Subtracts a glyph's cost from the running totals. Called before the maps are mutated, since it reads
+// the bitmap it is about to remove — every path that drops a glyph goes through here so the totals
+// cannot drift from the cache they describe.
+function _releaseGlyphBudget(runtime: GlyphAtlasRuntime, codepoint: number): void {
+  const bitmap = runtime.bitmaps.get(codepoint);
+  if (bitmap === undefined) return;
+  runtime.retainedBytes -= bitmap.pixels.byteLength;
+  runtime.occupiedArea -= bitmap.width * bitmap.height;
 }

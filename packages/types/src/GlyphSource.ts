@@ -100,6 +100,13 @@ export interface GlyphAtlasOptions {
   fontStyle?: string;
   fontWeight?: string;
   height: number;
+  // Budgets on what the cache RETAINS, which is what actually bounds memory. `maxBytes` caps the
+  // retained source bitmaps (the atlas keeps each glyph's pixels to re-blit on repack, so they are the
+  // dominant cost and they scale with font size, not glyph count). `maxArea` caps the atlas area those
+  // glyphs occupy. `maxGlyphs` is kept as a secondary count cap for callers who think in glyphs.
+  // 0 or absent means unbounded on that axis; the atlas area always bounds the cache regardless.
+  maxArea?: number;
+  maxBytes?: number;
   maxGlyphs?: number;
   padding?: number;
   width: number;
@@ -131,7 +138,14 @@ export interface GlyphAtlasRuntime {
   // cache. Iteration order is insertion order, so the first key is the eviction candidate. The value
   // carries nothing; only key order matters.
   lru: Map<number, true>;
+  maxArea: number;
+  maxBytes: number;
   maxGlyphs: number;
+  // Running totals for the budgets above, maintained wherever the cache changes rather than recomputed:
+  // every insert, eviction, repack drop, and reset moves them, so a walk is never needed to answer
+  // "is this over budget".
+  occupiedArea: number;
+  retainedBytes: number;
   metrics: GlyphMetrics;
   packBottom: number;
   padding: number;
