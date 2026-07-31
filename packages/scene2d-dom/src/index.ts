@@ -4,7 +4,6 @@ export {
   defaultDomNativeTextRenderer,
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,
-  defaultDomScene2DRenderer,
   defaultDomShapeRenderer,
   defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,

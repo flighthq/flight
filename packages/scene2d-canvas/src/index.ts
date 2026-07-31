@@ -23,7 +23,6 @@ export {
   defaultCanvasQuadBatchRenderer,
   defaultCanvasRichTextRenderer,
   defaultCanvasScale9ShapeRenderer,
-  defaultCanvasScene2DRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasSpriteRenderer,

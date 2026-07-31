@@ -1,7 +1,6 @@
 export {
   createWgpuCacheState,
   createWgpuVelocityTarget,
-  defaultWgpuBitmapTextRenderer,
   defaultWgpuNode2DVelocityWriter,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,

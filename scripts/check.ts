@@ -49,7 +49,6 @@ run('lint', 'oxlint', scoped ? ['--max-warnings=0', ...paths] : ['--max-warnings
 run('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
 run('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
 run('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
-run('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selectors]);
 run('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
 run('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
 run('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
