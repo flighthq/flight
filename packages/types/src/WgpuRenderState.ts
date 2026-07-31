@@ -16,8 +16,9 @@ import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecode
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
+import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
-import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
+import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
 import type { WgpuTextureResolver } from './WgpuTextureResolver';
 
 export interface WgpuRenderState extends RenderState {
@@ -121,6 +122,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   wgpuExternalTextureCache?: WeakMap<ExternalTexture, WgpuTextureEntry>;
   // Render Texture realizations are keyed by Texture because their GPU allocation is state-bound.
   wgpuRenderTextureCache?: WeakMap<RenderTexture, WgpuRenderTextureEntry>;
+  wgpuRenderTextureGuard?: WgpuRenderTextureGuard | null;
+  // Effect dispatch is registration policy, not a device resource. Derived offscreen states receive
+  // a snapshot and may then override it independently.
+  wgpuRenderEffectRegistry?: Map<Kind, WgpuRenderEffectRunner> | null;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;

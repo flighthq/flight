@@ -45,9 +45,11 @@ re-copy — never a live link.
 
 A backend may internally share resources that are pure functions of `(device/context, source data)`
 between states on the same device. GL does this for its binding mirror, pass ownership, compiled
-programs, buffers, uploads, and render-texture realizations. WGPU may analogously share device-scoped
-pipelines and uploads. This backend tier does not weaken the state identity above: transforms,
-registries, proxies, adapters, renderer data, and traversal state remain independent.
+programs, buffers, uploads, and render-texture realizations. WGPU shares immutable layouts, pipelines,
+samplers, uploads, and render-texture realizations while retaining a separate command encoder,
+uniform ring, target stack, and traversal runtime for each state. This backend tier does not weaken
+the state identity above: transforms, registries, proxies, adapters, renderer data, and traversal
+state remain independent.
 
 For GL, `createGlOffscreenRenderState(screenState)` is the canonical derivation primitive.
 `copyAllRenderersFromRenderState` plus `copyGlRenderStateRegistrations` are the explicit later-sync
@@ -57,11 +59,16 @@ render-cache implementation is the in-tree exemplar: it derives an offscreen sta
 adapter map deliberately omits the screen cache adapter, preventing a cache from substituting itself
 while it is being populated.
 
-### Explicit per-node GL effect lane
+`createWgpuOffscreenRenderState(screenState)` is the WGPU counterpart. It snapshots registrations and
+shares only the device tier; `copyWgpuRenderStateRegistrations` plus the generic renderer copy are the
+explicit later-sync verbs. `destroyWgpuRenderState` frees one state's local buffers and renderer data,
+then releases its reference to the shared device tier without destroying the app-owned `GPUDevice`.
 
-Per-node effects use a second, long-lived offscreen state over the screen context. The selected node is
-prepared as that state's root, so no main-scene ancestor proxy is captured or mutated. The root-local
-bounds contract is `computeNodeRootLocalBoundsRectangle`; paired with
+### Explicit per-node GPU effect lane
+
+Per-node effects use a second, long-lived offscreen state over the screen backend. The selected node
+is prepared as that state's root, so no main-scene ancestor proxy is captured or mutated. The
+root-local bounds contract is `computeNodeRootLocalBoundsRectangle`; paired with
 `computeScene2DRenderTargetTransform`, it cancels the root's translation/rotation/scale while retaining
 descendant transforms and negative local extents.
 
@@ -72,18 +79,23 @@ The frame is an explicit sequence:
    registration. Sequential spatial effects add each side, pointwise effects add zero, and a missing
    resolver returns zero plus an explanation and emits only through the opt-in shared registry-miss
    signal seam. Gaussian blur contributes `ceil(3 * sigma)` on its corresponding axis.
-2. Compute current dimensions and acquire `RenderTexture` leases from `GlRenderTexturePool` every
-   frame. Re-acquisition revalidates dimensions; released handles are not sampleable.
+2. Compute current dimensions and acquire `RenderTexture` leases from `GlRenderTexturePool` or
+   device-locked `WgpuRenderTexturePool` every frame. Re-acquisition revalidates dimensions;
+   released handles are not sampleable and a WGPU pool cannot cross devices.
 3. Render the subtree through the offscreen state, then apply registered effects target-to-target,
-   ping-ponging one scratch lease. Keep the displayed result leased until its consumer is done.
+   ping-ponging one scratch lease. WGPU records capture and effect passes between
+   `beginWgpuFrame(offscreenState)` and `submitWgpuRenderPass(offscreenState)` so one derived encoder
+   owns the whole offscreen sequence. Keep the displayed result leased until its consumer is done.
 4. Compose explicitly with `Sprite + RenderTexture`. The source is not a child of the displayed root
    when only the effected result should appear.
 5. `disposeScene2DRender(offscreenState, subtree)` releases per-subtree renderer data.
-   `destroyGlRenderTexturePool` and `destroyGlRenderState` are the whole-pipeline shutdown.
+   `destroy{Gl,Wgpu}RenderTexturePool` and `destroy{Gl,Wgpu}RenderState` are the whole-pipeline
+   shutdown.
 
 There is no public render-proxy surgery, visibility toggle, implicit `filters` property, or composite
 API in this lane. One state belongs to one root policy; the optional GL state guard warns when the same
-state prepares two different roots.
+state prepares two different roots. `per-node-effect-lane` verifies the same explicit capture,
+padding, pooled reuse/resize, blur, and composition contract on WebGL and WebGPU.
 
 **Frame sequence** — a lit 3D frame is the existing render-effect pipeline with a scene drawn into its target:
 

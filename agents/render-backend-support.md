@@ -16,6 +16,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Blend mode `None` (no-blend / source overwrite) | ~ | ~ | ✓ | ✓ | gl/wgpu overwrite (ONE,ZERO); canvas/dom have no per-node equivalent → Normal (identical for opaque) |
 | Clip (rect + contour) | ✓ | ✓ | ✓ | ✓ | opt-in `enable*ClipSupport` |
 | Render cache (`cacheAsBitmap`) | ✓ | ~ | ✓ | ~ | opt-in `enable*RenderCache`; bake reachable outside the frame loop only on canvas/gl (dom/wgpu bake in-frame) |
+| Explicit per-node effect capture + composition | ✗ | ✗ | ✓ | ✓ | Caller-owned offscreen state, pooled `RenderTexture` leases, target-to-target effects, then `Sprite` composition. `per-node-effect-lane` verifies current bounds/padding, resize/reuse, blur, and final composition on gl/wgpu. This is deliberately not a node property. |
 | Stroke caps (none/round/square) | ✓ | ✓ | ✓ | ✓ |  |
 | Stroke joins (miter/bevel/round) | ✓ | ✓ | ✓ | ✓ | gl + wgpu tessellate open strokes and hollow closed rings; pathological centerlines use a tested raster fallback — see gap #2 |
 | Shape solid / gradient / bitmap fill | ✓ | ✓ | ✓ | ✓ | bitmap fill tiles from shape-local origin (0,0), not the rect corner |

@@ -33,11 +33,12 @@ A named function you invoke that visibly allocates a scratch surface and runs pa
 - **Will not build:** a public `getRenderProxy2D`/proxy-surgery lane, visibility dance, or helper that
   renders an unrelated root through the screen pipeline. Proxies and transforms are derived under one
   state/root policy; mutating them leaks runtime internals and can reuse stale ancestor-relative data.
-- **Do instead:** derive one long-lived `createGlOffscreenRenderState(screenState)` for the capture
-  pipeline. It shares only context-owned GL resources, snapshots registrations into independent maps,
-  and owns separate proxies/adapters/renderer data. Render the subtree as that state's root, use
-  `GlRenderTexturePool` leases and explicit target-to-target effects, then compose with
-  `Sprite + RenderTexture`.
+- **Do instead:** derive one long-lived `createGlOffscreenRenderState(screenState)` or
+  `createWgpuOffscreenRenderState(screenState)` for the capture pipeline. It shares only the
+  backend's context/device resource tier, snapshots registrations into independent maps, and owns
+  separate proxies, adapters, renderer data, and pass state. Render the subtree as that state's root,
+  use the matching `GlRenderTexturePool` / `WgpuRenderTexturePool` leases and explicit
+  target-to-target effects, then compose with `Sprite + RenderTexture`.
 
 ### `textField.htmlText` — the auto-parsing markup property
 

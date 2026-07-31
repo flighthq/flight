@@ -1,4 +1,5 @@
 export {
+  applyWgpuRenderEffectsToRenderTexture,
   beginWgpuRenderEffectPipeline,
   createWgpuRenderEffectPipeline,
   defaultWgpuBlendEffectRunner,
@@ -39,6 +40,7 @@ export {
   defaultWgpuWhiteBalanceEffectRunner,
   endWgpuRenderEffectPipeline,
   registerWgpuBlendEffectBackdrop,
+  registerWgpuBlurEffect,
   registerWgpuRenderEffect,
   setWgpuRenderEffectVelocityTexture,
 } from './contract';

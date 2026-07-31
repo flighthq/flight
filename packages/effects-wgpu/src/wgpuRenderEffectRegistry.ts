@@ -1,3 +1,4 @@
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
@@ -7,7 +8,7 @@ import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/co
 // renderEffectRegistry — the same agnostic RenderEffect[] drives both backends through their registries.
 
 export function getWgpuRenderEffectRunner(state: WgpuRenderState, kind: string): WgpuRenderEffectRunner | null {
-  return _registries.get(state)?.get(kind) ?? null;
+  return getWgpuRenderStateRuntime(state).wgpuRenderEffectRegistry?.get(kind) ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Symmetric with
@@ -15,16 +16,10 @@ export function getWgpuRenderEffectRunner(state: WgpuRenderState, kind: string):
 // silently skips unregistered kinds; check up front to apply your own policy (warn, filter)
 // rather than relying on silent no-ops.
 export function hasWgpuRenderEffectRunner(state: WgpuRenderState, kind: string): boolean {
-  return _registries.get(state)?.has(kind) ?? false;
+  return getWgpuRenderStateRuntime(state).wgpuRenderEffectRegistry?.has(kind) ?? false;
 }
 
 export function registerWgpuRenderEffect(state: WgpuRenderState, kind: string, runner: WgpuRenderEffectRunner): void {
-  let registry = _registries.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _registries.set(state, registry);
-  }
-  registry.set(kind, runner);
+  const runtime = getWgpuRenderStateRuntime(state);
+  (runtime.wgpuRenderEffectRegistry ??= new Map()).set(kind, runner);
 }
-
-const _registries = new WeakMap<WgpuRenderState, Map<string, WgpuRenderEffectRunner>>();

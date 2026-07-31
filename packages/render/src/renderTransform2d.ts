@@ -12,7 +12,11 @@ export function updateRenderProxy2DTransform(
   const localTransformId = getNodeLocalTransformRevision(data.source as Node);
   const parentDirty =
     parentData !== undefined && parentData.transformFrameId === getRenderStateRuntime(state).currentFrameId;
-  const localDirty = data.lastLocalTransformId !== localTransformId;
+  // The refresh policy deliberately re-reads every live transform each walk. That includes the
+  // root transform supplied by the render state: offscreen captures can change their projection
+  // while the source node's local transform revision remains unchanged.
+  const localDirty =
+    state.sceneGraphSyncPolicy === 'refreshDerivedState' || data.lastLocalTransformId !== localTransformId;
 
   if (parentDirty || localDirty) {
     recalculateRenderTransform2D(state, data, parentData);
