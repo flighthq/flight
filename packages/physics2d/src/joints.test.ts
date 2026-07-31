@@ -562,6 +562,63 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     expect(arm.angularVelocity).toBeGreaterThan(afterFirst * 5);
   });
 
+  // Critic's repro: a joint authored OUTSIDE its interval. The header says limits clamp the angle into
+  // the interval, and the previous bias (remaining room, clamped at zero) went silent exactly when the
+  // angle was already out of range -- so a violated joint sitting still was never pushed back.
+  it('corrects an angle that is already outside the limit interval', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    arm.angle = 1;
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableLimit: true, lowerAngle: -0.5, upperAngle: 0.5 }),
+    );
+
+    for (let i = 0; i < 30; i++) stepPhysics2D(world, 1 / 60);
+
+    expect(arm.angle).toBeLessThan(1);
+    expect(arm.angle).toBeLessThan(0.6);
+  });
+
+  it('corrects a violation of the lower bound too, not just the upper', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    arm.angle = -1;
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableLimit: true, lowerAngle: -0.5, upperAngle: 0.5 }),
+    );
+
+    for (let i = 0; i < 30; i++) stepPhysics2D(world, 1 / 60);
+
+    expect(arm.angle).toBeGreaterThan(-0.6);
+  });
+
+  // The opposite failure, which the correcting form must not reintroduce: while the angle is INSIDE the
+  // interval the limit has to stay silent, or it brakes a motor nowhere near the bound.
+  it('stays silent while the angle is inside the interval', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        lowerAngle: -3,
+        upperAngle: 3,
+        enableMotor: true,
+        maxMotorTorque: 100,
+        motorSpeed: 5,
+      }),
+    );
+
+    for (let i = 0; i < 20; i++) stepPhysics2D(world, 1 / 60);
+
+    expect(arm.angularVelocity).toBeGreaterThan(1);
+  });
+
   it('stops the arm at the upper limit instead of letting the motor carry it past', () => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
