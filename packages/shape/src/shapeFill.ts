@@ -168,9 +168,8 @@ export function hasNonSolidShapeFill(commands: readonly ShapeCommandToken[]): bo
   return false;
 }
 
-// True if the command stream declares any fill (solid, gradient, or bitmap). Lets the GPU stroke path
-// tell a STROKE-ONLY shape (renderable as outline meshes) from a filled-and-stroked one (which still
-// needs the raster fallback until the GPU fill + stroke paths compose).
+// True if the command stream declares any fill (solid, gradient, or bitmap). Consumers can distinguish
+// stroke-only Shape streams without rebuilding fill geometry.
 export function hasShapeFill(commands: readonly ShapeCommandToken[]): boolean {
   let i = 0;
   while (i < commands.length) {

@@ -8,7 +8,7 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 // (which is resolution-bound, so circles go jagged when scaled up). Each fill region is tessellated to a
 // triangle mesh (CPU, cached by content version in webglShape) and drawn here with a flat-color program,
 // transformed by the node world transform in the vertex shader so it stays crisp at any zoom. Gradient/
-// texture styles and closed stroke rings still take the raster path.
+// texture styles and pathological stroke centerlines still take the raster path.
 
 // Draws the shape's tessellated fill meshes through `binding`. Flushes the quad-batch writer first (these go
 // through a separate program), honors the node blend mode and alpha, and is gated by any active clip
