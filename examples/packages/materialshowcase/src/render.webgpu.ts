@@ -7,6 +7,7 @@ import {
   enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
   prepareScene3DRender,
+  registerStandardWgpuTextureResolvers,
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -37,6 +38,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 registerAllWgpuMaterials(state);
+registerStandardWgpuTextureResolvers(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

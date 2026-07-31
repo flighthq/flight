@@ -8,7 +8,7 @@ import {
   enableWgpuBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerWgpuImageTextureResolver,
+  registerStandardWgpuTextureResolvers,
   registerStandardWgpuMaterial,
   registerRenderer,
   renderWgpuBackground,
@@ -28,7 +28,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerWgpuImageTextureResolver(state);
+registerStandardWgpuTextureResolvers(state);
 registerStandardWgpuMaterial(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
