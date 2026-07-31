@@ -52,8 +52,14 @@ its distance number:
    construction, and forcing repeated redraws did not change the outcome. No new diagnostic crumb was needed
    either — the existing guard already said exactly this, in words, in `logs.jsonl`. The inversion rule
    worked; nobody was reading the log. After the fix, `canvas·webgpu` parity is 0.00.
-2. `bitmapfont-generate` — broken on **both** backends, differently, which is why they diverge by 37.16.
-   Canvas draws solid white boxes where glyphs belong; webgl draws no text at all, only the atlas strip.
+2. `bitmapfont-generate` — the divergence of 37.16 was **webgl drawing no text at all**, only the atlas
+   strip. Canvas's solid white boxes are **not** a defect: under capture the example swaps in
+   `createStubGlyphRasterizerBackend()`, because headless Chromium cannot share document fonts with the
+   OffscreenCanvas rasterizer, and the stub draws a deterministic box per codepoint (`app.ts` says so).
+   Real glyphs render only in an interactive browser. Fixed by builder — gl/wgpu BitmapText renderers
+   existed but were never publicly exported, a stranded capability. **The expected post-fix state is both
+   backends converging on matching boxes, not legible text**; boxes under capture are not evidence of a
+   remaining bug. Whether the stub is the right capture backend for this example is a separate question.
 3. `materialshowcase` — webgl·webgpu diverge by 20.64 against a tolerance of 15. Real, and reported by the
    validate leg; not characterized further here (see the capture-path caveat below).
 
