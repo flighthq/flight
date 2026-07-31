@@ -81,6 +81,7 @@ export interface CaptureValidationResult {
   parityPasses: number;
   parityUncovered: number;
   regressionFailures: number;
+  regressionUncovered: number;
   regressionPasses: number;
   shouldFail: boolean;
   skipped: number;
@@ -98,6 +99,16 @@ export interface CaptureParityCoverage {
   parityComparisons: number;
   parityUncovered: number;
   rendererFilterCount: number;
+}
+
+// What the regression-coverage verdict reads. There is no renderer-filter exemption here, unlike parity:
+// regression compares one renderer against its own committed baseline, so a single-renderer run is still a
+// legitimate comparison rather than a case the tier cannot evaluate.
+export interface CaptureRegressionCoverage {
+  gateRegression: boolean;
+  interrupted: boolean;
+  regressionComparisons: number;
+  regressionUncovered: number;
 }
 
 export interface CaptureValidationCheck {
@@ -369,6 +380,12 @@ export function explainCaptureVerificationStall(
   return `verifier registered but stalled in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
 }
 
+export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCoverage>): boolean {
+  if (!run.gateParity || run.interrupted) return false;
+  if (run.rendererFilterCount === 1) return false;
+  return run.parityComparisons === 0 && run.parityUncovered > 0;
+}
+
 // A tier either has what it needs and gates hard, or it says so loudly — there is no silent
 // degrade-to-success. A gated parity run that compared NOTHING is UNCONFIGURED, not clean, and the
 // green tick it used to print is worse than an absent leg, because an absent leg is visibly absent.
@@ -377,10 +394,9 @@ export function explainCaptureVerificationStall(
 // renderer (the operator disabled parity themselves, so reporting it back at them is noise), and an
 // interrupted run, whose remaining entries never ran at all. A run with nothing uncovered — every
 // entry skipped by policy before parity was reached — is not this failure either.
-export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCoverage>): boolean {
-  if (!run.gateParity || run.interrupted) return false;
-  if (run.rendererFilterCount === 1) return false;
-  return run.parityComparisons === 0 && run.parityUncovered > 0;
+export function isCaptureRegressionCoverageFailure(run: Readonly<CaptureRegressionCoverage>): boolean {
+  if (!run.gateRegression || run.interrupted) return false;
+  return run.regressionComparisons === 0 && run.regressionUncovered > 0;
 }
 
 // Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
@@ -405,6 +421,7 @@ export function isUniformCaptureFingerprint(fingerprint: string): boolean {
 
 interface EntryResult {
   regressionFailures: number;
+  regressionUncovered: number;
   parityFailures: number;
   parityUncovered: number;
   regressionPasses: number;
@@ -426,6 +443,7 @@ async function processEntry(
 ): Promise<EntryResult> {
   const result: EntryResult = {
     regressionFailures: 0,
+    regressionUncovered: 0,
     parityFailures: 0,
     parityUncovered: 0,
     regressionPasses: 0,
@@ -440,6 +458,22 @@ async function processEntry(
   result.output.push(`${pc.dim(`[${entryIndex + 1}/${totalEntries}]`)} ${pc.bold(entry.name)}`);
 
   const renderers = validationRenderers(entry, options.rendererFilter, options.parityGroups);
+
+  // An entry whose renderers are all filtered out otherwise emits NOTHING — no skip line, no parity line,
+  // no failure — so a reader cannot tell "covered and silent" from "never ran". Say it out loud.
+  if (renderers.length === 0) {
+    result.output.push(
+      `  ${pc.dim('·')} ${pc.dim(`no renderer in scope for this leg (entry declares: ${entry.renderers.join(', ') || 'none'})`)}`,
+    );
+    result.checks.push({
+      entry: entry.name,
+      renderers: [],
+      kind: 'load',
+      status: 'skipped',
+      message: `no renderer in scope; entry declares ${entry.renderers.join(', ') || 'none'}`,
+    });
+    return result;
+  }
 
   const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
   const statusLine = (tone: DetailTone, label: string, message: string): string =>
@@ -554,6 +588,7 @@ async function processEntry(
 
     const committed = getBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint');
     if (committed === null) {
+      result.regressionUncovered++;
       result.output.push(statusLine('muted', renderer, 'no fingerprint baseline — skipped'));
       result.skipped++;
       result.checks.push({
@@ -763,6 +798,7 @@ export async function runCaptureValidation(
   let regressionFailures = 0;
   let parityFailures = 0;
   let parityUncovered = 0;
+  let regressionUncovered = 0;
   let regressionPasses = 0;
   let parityPasses = 0;
   let loadFailures = 0;
@@ -817,6 +853,8 @@ export async function runCaptureValidation(
           regressionFailures += result.regressionFailures;
           parityFailures += result.parityFailures;
           parityUncovered += result.parityUncovered;
+          regressionUncovered += result.regressionUncovered;
+          regressionUncovered += result.regressionUncovered;
           regressionPasses += result.regressionPasses;
           parityPasses += result.parityPasses;
           loadFailures += result.loadFailures;
@@ -879,6 +917,14 @@ export async function runCaptureValidation(
     );
     return createResult(loadFailures > 0);
   }
+  // Same doctrine, other tier: a gated regression leg that compared NOTHING is unconfigured, not clean.
+  // Without this the tier reads as a green pass with zero coverage the moment nothing else is red.
+  const regressionCoverageFailed = isCaptureRegressionCoverageFailure({
+    gateRegression: options.gateRegression,
+    interrupted,
+    regressionComparisons: regressionPasses + regressionFailures,
+    regressionUncovered,
+  });
   const parityCoverageFailed = isCaptureParityCoverageFailure({
     gateParity: options.gateParity,
     interrupted,
@@ -886,7 +932,12 @@ export async function runCaptureValidation(
     parityUncovered,
     rendererFilterCount: options.rendererFilter.length,
   });
-  const failed = regressionFailures > 0 || parityFailures > 0 || loadFailures > 0 || parityCoverageFailed;
+  const failed =
+    regressionFailures > 0 ||
+    parityFailures > 0 ||
+    loadFailures > 0 ||
+    parityCoverageFailed ||
+    regressionCoverageFailed;
   console.log(
     '\n' +
       formatSummaryLine(failed, [
@@ -895,11 +946,39 @@ export async function runCaptureValidation(
         formatSummaryCount(parityPasses, 'parity passed', 'pass'),
         formatSummaryCount(parityFailures, 'parity failed', 'fail'),
         formatSummaryCount(parityUncovered, 'parity uncovered', parityCoverageFailed ? 'fail' : 'warn'),
+        formatSummaryCount(regressionUncovered, 'regression uncovered', regressionCoverageFailed ? 'fail' : 'warn'),
         formatSummaryCount(skipped, 'skipped', 'warn'),
         formatSummaryCount(loadFailures, 'load failures', 'fail'),
       ]) +
       note,
   );
+  // Name the entries behind an "N uncovered" count: a bare number tells a reader something is missing but
+  // not what to go look at, and the entries differ in why.
+  for (const [label, uncovered, failedTier] of [
+    ['parity', parityUncovered, parityCoverageFailed],
+    ['regression', regressionUncovered, regressionCoverageFailed],
+  ] as const) {
+    if (uncovered === 0) continue;
+    const names = [
+      ...new Set(
+        checks
+          .filter((check) => check.kind === (label === 'parity' ? 'parity' : 'baseline') && check.status === 'skipped')
+          .map((check) => check.entry),
+      ),
+    ];
+    if (names.length > 0) {
+      const line = `  ${label} uncovered: ${names.join(', ')}`;
+      console.log(failedTier ? pc.red(line) : pc.yellow(line));
+    }
+  }
+
+  if (regressionCoverageFailed) {
+    console.error(
+      pc.red(
+        `\nRegression compared NOTHING across ${regressionUncovered} entr${regressionUncovered === 1 ? 'y' : 'ies'} — this tier is unconfigured, not clean. Re-capture with --update-fingerprints on a leg where the tier is valid, or remove the stale baselines so the gap is honest.`,
+      ),
+    );
+  }
   if (parityCoverageFailed) {
     console.error(
       pc.red(
@@ -929,6 +1008,7 @@ export async function runCaptureValidation(
       parityPasses,
       parityUncovered,
       regressionFailures,
+      regressionUncovered,
       regressionPasses,
       shouldFail,
       skipped,
