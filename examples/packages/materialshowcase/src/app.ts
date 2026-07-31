@@ -600,7 +600,13 @@ const extendedMaterials = new Set<SurfaceMaterial>([
   transmission,
   wrappedDiffuse,
 ]);
-const entries = supportsExtendedPbr ? allEntries : allEntries.filter((entry) => !extendedMaterials.has(entry.material));
+// Keep the shared 13-material taxonomy in identical grid slots on both GPU backends. GL-only PBR
+// extensions follow that common block instead of shifting every later sphere into a different slot;
+// WebGPU omits only the unsupported tail.
+const commonEntries = allEntries.filter((entry) => !extendedMaterials.has(entry.material));
+const entries = supportsExtendedPbr
+  ? [...commonEntries, ...allEntries.filter((entry) => extendedMaterials.has(entry.material))]
+  : commonEntries;
 
 const scene = createNode3D(Node3DKind);
 const meshes: Mesh[] = [];
