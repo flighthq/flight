@@ -3,6 +3,7 @@ import type { ImageEncoder } from '@flighthq/types/contract';
 import {
   clearImageEncoders,
   getImageEncoder,
+  getImageEncoderMimeTypes,
   hasImageEncoder,
   registerImageEncoder,
   unregisterImageEncoder,
@@ -32,6 +33,20 @@ describe('getImageEncoder', () => {
 
   it('returns null when no encoder is registered', () => {
     expect(getImageEncoder('image/png')).toBeNull();
+  });
+});
+
+describe('getImageEncoderMimeTypes', () => {
+  it('returns an empty snapshot before registration', () => {
+    expect(getImageEncoderMimeTypes()).toEqual([]);
+  });
+
+  it('returns an insertion-ordered snapshot isolated from the registry', () => {
+    registerImageEncoder('image/png', fakeEncoder);
+    registerImageEncoder('image/jpeg', fakeEncoder);
+    const mimeTypes = getImageEncoderMimeTypes() as string[];
+    mimeTypes.push('image/webp');
+    expect(getImageEncoderMimeTypes()).toEqual(['image/png', 'image/jpeg']);
   });
 });
 

@@ -8,6 +8,12 @@ export function getImageDecoder(mimeType: string): ImageDecoder | null {
   return decoders.get(mimeType) ?? null;
 }
 
+// Returns an insertion-ordered snapshot of the MIME types with registered decoders. Mutating the
+// returned array cannot change registry state.
+export function getImageDecoderMimeTypes(): readonly string[] {
+  return Array.from(decoders.keys());
+}
+
 export function hasImageDecoder(mimeType: string): boolean {
   return decoders.has(mimeType);
 }

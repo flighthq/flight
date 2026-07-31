@@ -3,6 +3,7 @@ import type { DecodedImage, ImageDecoder } from '@flighthq/types/contract';
 import {
   clearImageDecoders,
   getImageDecoder,
+  getImageDecoderMimeTypes,
   hasImageDecoder,
   registerImageDecoder,
   unregisterImageDecoder,
@@ -36,6 +37,20 @@ describe('getImageDecoder', () => {
 
   it('returns null when no decoder is registered', () => {
     expect(getImageDecoder('image/png')).toBeNull();
+  });
+});
+
+describe('getImageDecoderMimeTypes', () => {
+  it('returns an empty snapshot before registration', () => {
+    expect(getImageDecoderMimeTypes()).toEqual([]);
+  });
+
+  it('returns an insertion-ordered snapshot isolated from the registry', () => {
+    registerImageDecoder('image/png', fakeDecoder);
+    registerImageDecoder('image/jpeg', fakeDecoder);
+    const mimeTypes = getImageDecoderMimeTypes() as string[];
+    mimeTypes.push('image/webp');
+    expect(getImageDecoderMimeTypes()).toEqual(['image/png', 'image/jpeg']);
   });
 });
 
