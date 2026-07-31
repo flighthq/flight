@@ -139,10 +139,17 @@ function parseDragonBonesAnimations(
   const animations: Skeleton2DImportAnimation[] = [];
   if (!Array.isArray(raw)) return animations;
   const unmodeled = new Map<string, number>();
+  let blendTrees = 0;
   let unresolvedBones = 0;
   for (const entry of raw) {
     if (entry === null || typeof entry !== 'object') continue;
     const animation = entry as Record<string, unknown>;
+    // DragonBones 5.6 also stores BLEND TREES under `animation` — `type: 'tree'` with a `timeline` array
+    // instead of the bone/slot arrays a keyframe animation carries. Flight models no blend tree here, so
+    // such an entry yields an empty clip. The name is still emitted (so the rig's animation list stays
+    // complete and honest about what exists) but the emptiness is CRUMBED rather than left silent: an empty
+    // clip that plays and does nothing is exactly the silent sentinel the diagnostics rule exists to catch.
+    if (animation.type === DRAGONBONES_BLEND_TREE_TYPE) blendTrees++;
     const channels: AnimationChannel[] = [];
     if (Array.isArray(animation.bone)) {
       for (const rawTimeline of animation.bone) {
@@ -165,6 +172,15 @@ function parseDragonBonesAnimations(
       clip: createAnimationClip(channels, Number.isFinite(duration) && duration > 0 ? duration : undefined),
       name: typeof animation.name === 'string' ? animation.name : DEFAULT_DRAGONBONES_ANIMATION_NAME,
     });
+  }
+  if (blendTrees > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.blend-tree-animation-unsupported',
+      'parseDragonBonesSkeleton',
+      { animations: blendTrees },
+    );
   }
   for (const [kind, count] of unmodeled) {
     reportImportDiagnostic(
@@ -1014,6 +1030,9 @@ const DEFAULT_DRAGONBONES_FRAME_RATE = 24;
 
 // DragonBones' name for the base skin; an unnamed skin is that one.
 const DEFAULT_DRAGONBONES_SKIN_NAME = 'default';
+
+// DragonBones 5.6 marks a blend-tree animation with this `type`; a keyframe animation carries no `type`.
+const DRAGONBONES_BLEND_TREE_TYPE = 'tree';
 
 // The `tweenEasing` sentinel DragonBones uses for "hold this value to the next key" alongside a literal null.
 const DRAGONBONES_NO_TWEEN = 100;

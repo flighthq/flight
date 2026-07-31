@@ -576,6 +576,30 @@ describe('parseDragonBonesSkeleton', () => {
     expect(kinds).toContain('dragonbones.slot-timeline-unsupported');
   });
 
+  it('Skip-crumbs a 5.6 BLEND TREE animation instead of emitting a silently empty clip', () => {
+    const doc = {
+      armature: [
+        {
+          bone: [{ name: 'root' }],
+          animation: [
+            { name: 'keyframed', bone: [{ name: 'root', rotateFrame: [{ duration: 1, rotate: 10 }] }] },
+            { name: 'blended', type: 'tree', duration: 0, timeline: [{ x: 0 }] },
+          ],
+        },
+      ],
+    };
+    const crumbs = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).filter(
+      (c) => c.kind === 'dragonbones.blend-tree-animation-unsupported',
+    );
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].detail).toMatchObject({ animations: 1 });
+    // The name is still emitted so the rig's animation list stays complete; only the emptiness is reported.
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    expect(result.animations.map((a) => a.name)).toEqual(['keyframed', 'blended']);
+    expect(result.animations[1].clip.channels.length).toBe(0);
+    expect(result.animations[0].clip.channels.length).toBeGreaterThan(0);
+  });
+
   it('emits a bone with an unresolved parent as a root and Skip-crumbs it', () => {
     const doc = { armature: [{ bone: [{ name: 'orphan', parent: 'ghost' }] }] };
     const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
