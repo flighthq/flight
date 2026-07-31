@@ -94,7 +94,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  vi.doUnmock('@flighthq/image');
+  vi.doUnmock('@flighthq/image/contract');
   vi.resetModules();
 });
 

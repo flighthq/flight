@@ -39,8 +39,8 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  vi.doUnmock('@flighthq/net');
-  vi.doUnmock('@flighthq/scene3d-formats');
+  vi.doUnmock('@flighthq/net/contract');
+  vi.doUnmock('@flighthq/scene3d-formats/contract');
   vi.resetModules();
 });
 
