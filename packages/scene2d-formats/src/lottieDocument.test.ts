@@ -1,4 +1,3 @@
-import { createImageResource } from '@flighthq/image/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type {
   Node2D,
@@ -11,6 +10,7 @@ import type {
 import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
+import { createReadyImageResourceForTest } from './testHelper';
 
 describe('applyAnimationClipToLottieDocument', () => {
   it('applies the imported target-bound clip', () => {
@@ -41,9 +41,7 @@ describe('Lottie document conformance census', () => {
   });
 
   it('imports the common layer families and resolves explicit images', () => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 12;
-    image.height = 8;
+    const image = createReadyImageResourceForTest(12, 8);
     const document = createDocument([
       shapeLayer(1, 'shape'),
       { ind: 2, ip: 0, nm: 'solid', op: 60, sc: '#ff0000', sh: 20, sw: 30, ty: 1 },

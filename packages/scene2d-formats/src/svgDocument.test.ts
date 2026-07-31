@@ -1,5 +1,4 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import { createImageResource } from '@flighthq/image/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -7,6 +6,7 @@ import type { Sprite, ImportDiagnostic, RichText, Shape, TextLabel } from '@flig
 import { SpriteKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
+import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
   it('applies object-bounding-box clip and mask content units to target geometry', () => {
@@ -33,9 +33,7 @@ describe('createScene2DFromSvgDocument', () => {
 
   it('applies object-bounding-box clips in image-local geometry', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 20;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>
@@ -80,9 +78,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('composes image geometry before its SVG transform', () => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 20;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
       '<svg><image href="asset.png" x="3" y="4" width="40" height="30" transform="translate(10 20)"/></svg>',
       undefined,
@@ -97,9 +93,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('composes authored geometry before transforms uniformly across element types', () => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 10;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(10, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>
@@ -401,9 +395,7 @@ describe('createScene2DFromSvgDocument', () => {
   });
 
   it('resolves image resources through an explicit no-I/O seam', () => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 20;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
       '<svg><image id="photo" href="asset.png" x="3" y="4" width="40" height="30"/></svg>',
       undefined,
