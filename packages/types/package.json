@@ -26,7 +26,7 @@
     "!dist/**/*.test.d.ts.map"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsx ../../scripts/compiled-package-headers.ts",
     "clean": "tsc -b --clean",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
