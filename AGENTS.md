@@ -112,43 +112,44 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
-- [anti-goals](agents/anti-goals.md) — before "completing" a seemingly-missing feature. Some features are absent on purpose (starting with `displayObject.filters`); the registry, the explicit path to use instead, and when a convenience abstraction is allowed.
-- [commit messages](agents/conventions/commits.md) — before writing a commit. The `type(scope): subject` format and which words are types vs scopes.
-- [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke` / `parity` / `regression` vocabulary.
+- [anti-goals](agents/anti-goals.md) — before "completing" a seemingly-missing feature. Some are absent on purpose (starting with `displayObject.filters`); the registry, the explicit path instead, and when a convenience abstraction is allowed.
+- [commit messages](agents/conventions/commits.md) — before writing a commit. The `type(scope): subject` format, and which words are types vs scopes.
+- [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke`/`parity`/`regression` vocabulary.
 - [commands](agents/commands.md) — the npm-script reference behind the [Checkpoints](#checkpoints) triggers.
 - [packaging & publishing](agents/packaging.md) — the published package shape, enforced by `npm run packages:check`, not memory.
 - [bundle size](agents/bundle-size.md) — the `npm run size` command surface and the import-size rules.
 - [testing conventions](agents/conventions/testing.md) — full testing rules: file/structure conventions, WebGL mock specifics, out-parameter aliasing, and root-level integration tests.
-- [diagnostics](agents/conventions/diagnostics.md) — before adding a warning, a guard, an `explain*` query, or a comment that warns the caller about misuse. The inversion rule (core exposes seams, never messages) and the `enable*Guards` / `explain*` / `@flighthq/log` conventions.
+- [diagnostics](agents/conventions/diagnostics.md) — before adding a warning, a guard, an `explain*` query, or a comment that warns the caller about misuse. The inversion rule (core exposes seams, never messages) and the `enable*Guards` / `explain*` conventions.
 - [invalidation](agents/conventions/invalidation.md) — before adding a `set*` function, an `invalidate*` call, or a `version` field, and when debugging "I changed it and nothing happened." The three-tier doctrine, the recompute-by-default transform policy, and the setter earn-test.
-- [types layout & kind identity](agents/conventions/types-layout.md) — before adding a type or touching kind registration. How `@flighthq/types` is organized and the string-kind identity model.
-- [export lanes](agents/conventions/export-lanes.md) — before adding a package export, wiring one package to another, or reasoning about the `@flighthq/sdk` barrel. The three lanes and the "siblings import `/contract`, `.` is the app boundary" invariant.
-- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. File names and type placement are public API in the port: exported types live in `@flighthq/types`, file names are verb-free concept nouns and globally unique SDK-wide.
-- [portability substrate](agents/portability.md) — before proposing a port language or IR (especially "just use Haxe — it compiles to C++"). Why the substrate is the TS AST plus thin per-target backends, and what the lowerable-TS subset covers.
+- [types layout & kind identity](agents/conventions/types-layout.md) — before adding a type or touching kind registration. How `@flighthq/types` is organized; the string-kind model.
+- [export lanes](agents/conventions/export-lanes.md) — before adding a package export, wiring one package to another, or reasoning about the `@flighthq/sdk` barrel. The three lanes and the "siblings import `/contract`, `.` is the app boundary" rule.
+- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. Names and type placement are public API in the port: exported types live in `@flighthq/types`, file names are verb-free concept nouns, globally unique.
+- [portability substrate](agents/portability.md) — before proposing a port language or IR (especially "just use Haxe — it compiles to C++"). Why the substrate is the TS AST plus thin per-target backends, and what the lowerable subset covers.
 - [package catalog](agents/packages/catalog.md) — what each package owns and where its boundary sits, one paragraph each. The tier below the [Package Map](#package-map) name list.
-- [package map](agents/packages/map.md) — full per-package descriptions and API-surface detail.
-- [feature lookup](agents/feature-lookup.md) — feature keyword → owning package → supported backends.
-- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read the named package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate with `node agents/packages/todo.mjs`.
+- [package map](agents/packages/map.md) — full per-package descriptions and API detail.
+- [feature lookup](agents/feature-lookup.md) — feature keyword → owning package → backends.
+- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read that package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate with `node agents/packages/todo.mjs`.
 
 **Architecture records** — the design decisions behind a subsystem, read before changing its shape:
 
-- [effect / adjustment / material architecture](agents/effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier model: Material (shading input) / Adjustment (pointwise remap that folds into the draw) / Effect (spatial-composite op that chains as passes through an offscreen).
-- [material modifier model](agents/material-modifier-model.md) — **implemented**. Before touching how node color relates to materials, adding a color-remap op, or extending per-object tint. Color adjustment is a registered, tree-shakable material _feature_ orthogonal to the shading family.
-- [texture source model](agents/texture-source-model.md) — **spec, locked 2026-07-30; only M2 implemented**. Before touching `Texture`, `TextureStorage`, `ImageBacking`, `TextureAtlas` internals, or any `create*Texture` / `create*Image*` constructor. Six recorded defects and a staged migration to the flat `Texture`-over-`TextureSource` model.
-- [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. What renders on canvas/dom/gl/wgpu today and the gaps from the [render architecture](agents/render-architecture.md) target.
-- [wgpu 3D parity spec](agents/wgpu-3d-parity-spec.md) — before touching `scene3d-wgpu` / `effects-wgpu` 3D or scoping wgpu parity work. Each item cites the shipped GL file it mirrors.
-- [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer charter on the GL path; GPU morph and composed skin+morph are deferred.
+- [effect / adjustment / material architecture](agents/effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier model: Material (shading input) / Adjustment (pointwise remap, folds into the draw) / Effect (spatial composite, chains as offscreen passes).
+- [material modifier model](agents/material-modifier-model.md) — **implemented**. Before touching how node color relates to materials, adding a color-remap op, or extending per-object tint. Color adjustment is a registered, tree-shakable material _feature_, not a shading family.
+- [texture source model](agents/texture-source-model.md) — **spec, locked 2026-07-30; only M2 implemented**. Before touching `Texture`, `TextureStorage`, `ImageBacking`, `TextureAtlas` internals, or any `create*Texture` / `create*Image*` constructor. Six defects and a staged migration to the flat `Texture`-over-`TextureSource` model.
+- [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. What renders on canvas/dom/gl/wgpu today, and the gaps from the [render architecture](agents/render-architecture.md).
+- [wgpu 3D parity spec](agents/wgpu-3d-parity-spec.md) — before touching `scene3d-wgpu` / `effects-wgpu` 3D or scoping wgpu parity. Each item cites the GL file it mirrors.
+- [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer on the GL path; GPU morph and skin+morph are deferred.
 - [skeleton2d animation model](agents/skeleton2d-animation-model.md) — **proposal**. Before adding a non-bone (slot) timeline or placing constraint solvers.
 
 **Plans and reviews** — the current state of in-flight direction:
 
-- [examples plan](agents/examples-plan.md) — the planned example set, with implementation order and open questions.
-- [quality plan](agents/quality-plan.md) — the direction for API maturity verification, and the unit-versus-functional test guidance.
+- [examples plan](agents/examples-plan.md) — the planned example set, implementation order, and open questions.
+- [quality plan](agents/quality-plan.md) — API maturity verification, and the unit-versus-functional test guidance.
 - [loader progress currencies](agents/loader-progress-currencies.md) — **proposal, awaiting ruling.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, where the two batch-level ones contradict each other, and the recommendation.
-- [test depth review](agents/test-depth-review.md) — the completed unit-test-depth review and its prioritized gap list.
-- [breadth synthesis](agents/breadth-synthesis.md) — cross-report convergences from the four breadth analyses ([adjacent content](agents/breadth-adjacent-content.md), [platform variance](agents/breadth-platform-variance.md), [cloud/distributed](agents/breadth-cloud-distributed.md), [domain deepening](agents/breadth-domain-deepening.md)).
+- [render view model](agents/render-view-model.md) — **proposal, awaiting ruling.** Before touching `ApplicationRenderView`, `application-gl`, or the `render` sub-target Directed item. Extracting a windowless `RenderView` into `render`; why `application-gl` may dissolve.
+- [test depth review](agents/test-depth-review.md) — the completed unit-test-depth review and its gap list.
+- [breadth synthesis](agents/breadth-synthesis.md) — convergences from the four breadth analyses ([adjacent content](agents/breadth-adjacent-content.md), [platform variance](agents/breadth-platform-variance.md), [cloud](agents/breadth-cloud-distributed.md), [domain deepening](agents/breadth-domain-deepening.md)).
 
-**Skills** (`.claude/skills/`) — procedures, _invoked to do_. Claude Code surfaces these by intent; each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
+**Skills** (`.claude/skills/`) — procedures, _invoked to do_. Each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
 - [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, the optional pixel oracle, and the capture→baseline loop.
 - [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the external `flight-reference` examples; watch mode, screenshot baselines, and reading the capture output.

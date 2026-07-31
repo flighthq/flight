@@ -77,6 +77,15 @@ one layer that legitimately sits **above both**, so it is where the two can be j
 
 ## Open directions
 
+0. **This package may not need to exist — proposal awaiting ruling.** Raised 2026-07-31. It was carved
+   out 34 minutes after the feature landed (`f701c9939` → `e20dad1eb`) purely to satisfy
+   arrows-point-downward, so it is a workaround for a misplaced type rather than a domain. If
+   `ApplicationRenderView` loses its welded window, the remainder is a pure rendering primitive that
+   lands in `@flighthq/render`, `render-gl` can own the GL view natively (it no longer needs to know
+   what a window is), and **this package dissolves**. Read [render view model](../../render-view-model.md)
+   before investing in this cell — a review or assessment pass here may be work on a package slated to
+   disappear. The questions below are conditional on this one being answered "keep".
+
 1. **Does this package own the harness entry point, or only the view?** Today it exports the view
    assembly (`createGlApplicationRenderView` / `destroyGlApplicationRenderView`) and nothing that
    starts a loop — so the batteries-included promise is currently unmet here. If the harness lands
