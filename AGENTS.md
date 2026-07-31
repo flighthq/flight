@@ -112,46 +112,46 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
-- [anti-goals](agents/anti-goals.md) — before "completing" a seemingly-missing feature. Some features are absent on purpose (starting with `displayObject.filters`); this is the registry, the explicit path to use instead, and the test for when a convenience abstraction is allowed.
-- [commit messages](agents/conventions/commits.md) — before writing a commit. The `type(scope): subject` format and which words are types versus scopes.
-- [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke` / `parity` / `regression` render-test vocabulary.
-- [commands](agents/commands.md) — the full npm-script reference behind the [Checkpoints](#checkpoints) triggers.
-- [packaging & publishing](agents/packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
+- [anti-goals](agents/anti-goals.md) — before "completing" a seemingly-missing feature. Some features are absent on purpose (starting with `displayObject.filters`); the registry, the explicit path to use instead, and when a convenience abstraction is allowed.
+- [commit messages](agents/conventions/commits.md) — before writing a commit. The `type(scope): subject` format and which words are types vs scopes.
+- [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke` / `parity` / `regression` vocabulary.
+- [commands](agents/commands.md) — the npm-script reference behind the [Checkpoints](#checkpoints) triggers.
+- [packaging & publishing](agents/packaging.md) — the published package shape, enforced by `npm run packages:check`, not memory.
 - [bundle size](agents/bundle-size.md) — the `npm run size` command surface and the import-size rules.
-- [testing conventions](agents/conventions/testing.md) — full testing rules: file/structure conventions, WebGL mock specifics, out-parameter aliasing, and when root-level integration tests are appropriate.
+- [testing conventions](agents/conventions/testing.md) — full testing rules: file/structure conventions, WebGL mock specifics, out-parameter aliasing, and root-level integration tests.
 - [diagnostics](agents/conventions/diagnostics.md) — before adding a warning, a guard, an `explain*` query, or a comment that warns the caller about misuse. The inversion rule (core exposes seams, never messages) and the `enable*Guards` / `explain*` / `@flighthq/log` conventions.
-- [invalidation](agents/conventions/invalidation.md) — before adding a `set*` function, an `invalidate*` call, or a `version` field, and when debugging "I changed it and nothing happened." The three-tier doctrine (compare identities / version payloads / invalidate intermediate renders), the recompute-by-default transform policy, and the setter earn-test.
-- [types layout & kind identity](agents/conventions/types-layout.md) — before adding a type or touching kind registration. How `@flighthq/types` is organized, and the string-kind identity model (no `Symbol()` kinds).
-- [export lanes](agents/conventions/export-lanes.md) — before adding a package export, wiring one package to another, or reasoning about the `@flighthq/sdk` barrel. The three lanes and the load-bearing "siblings import `/contract`, `.` is the app boundary" invariant.
-- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. File names and type placement are public API in the port: all exported types live in `@flighthq/types`, file names are verb-free concept nouns, and file names are globally unique SDK-wide.
-- [portability substrate](agents/portability.md) — before proposing a port language or IR (especially "just use Haxe — it compiles to C++"). Why the substrate is the TS AST plus thin per-target backends, and what the lowerable-TS subset contract covers.
-- [package catalog](agents/packages/catalog.md) — what each package owns and where its boundary sits, one paragraph per package. The tier below the [Package Map](#package-map) name list.
-- [package map](agents/packages/map.md) — full per-package descriptions and API-surface detail, when a paragraph is not enough.
+- [invalidation](agents/conventions/invalidation.md) — before adding a `set*` function, an `invalidate*` call, or a `version` field, and when debugging "I changed it and nothing happened." The three-tier doctrine, the recompute-by-default transform policy, and the setter earn-test.
+- [types layout & kind identity](agents/conventions/types-layout.md) — before adding a type or touching kind registration. How `@flighthq/types` is organized and the string-kind identity model.
+- [export lanes](agents/conventions/export-lanes.md) — before adding a package export, wiring one package to another, or reasoning about the `@flighthq/sdk` barrel. The three lanes and the "siblings import `/contract`, `.` is the app boundary" invariant.
+- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. File names and type placement are public API in the port: exported types live in `@flighthq/types`, file names are verb-free concept nouns and globally unique SDK-wide.
+- [portability substrate](agents/portability.md) — before proposing a port language or IR (especially "just use Haxe — it compiles to C++"). Why the substrate is the TS AST plus thin per-target backends, and what the lowerable-TS subset covers.
+- [package catalog](agents/packages/catalog.md) — what each package owns and where its boundary sits, one paragraph each. The tier below the [Package Map](#package-map) name list.
+- [package map](agents/packages/map.md) — full per-package descriptions and API-surface detail.
 - [feature lookup](agents/feature-lookup.md) — feature keyword → owning package → supported backends.
-- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read the named package's cell (`packages/<name>/`; architecture in [packages/index.md](agents/packages/index.md)). Regenerate with `node agents/packages/todo.mjs`.
+- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read the named package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate with `node agents/packages/todo.mjs`.
 
 **Architecture records** — the design decisions behind a subsystem, read before changing its shape:
 
-- [effect / adjustment / material architecture](agents/effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier model: Material (shading input) / Adjustment (pointwise remap that _fuses_ and _folds_ into the draw) / Effect (spatial-composite op that _chains_ as passes and _bounces_ through an offscreen).
-- [material modifier model](agents/material-modifier-model.md) — **implemented**. Before touching how node color relates to materials, adding a color-remap op, or extending per-object tint. Color adjustment is a tree-shakable registered material _feature_ orthogonal to the shading family, not a family of its own.
-- [texture source model](agents/texture-source-model.md) — **spec, locked 2026-07-30; only M2 implemented**. Before touching `Texture`, `TextureStorage`, `ImageBacking`, `TextureAtlas` internals, or any `create*Texture` / `create*Image*` constructor. Six recorded defects and a staged migration to the flat `Texture`-over-`TextureSource` model (storage layer deleted, `VoxelGrid`, atlas compose semantics).
-- [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. What actually renders on canvas/dom/gl/wgpu today and the known gaps from the [render architecture](agents/render-architecture.md) target.
+- [effect / adjustment / material architecture](agents/effect-adjustment-architecture.md) — before adding an image operation or touching the adjustments/effects boundary. The three-tier model: Material (shading input) / Adjustment (pointwise remap that folds into the draw) / Effect (spatial-composite op that chains as passes through an offscreen).
+- [material modifier model](agents/material-modifier-model.md) — **implemented**. Before touching how node color relates to materials, adding a color-remap op, or extending per-object tint. Color adjustment is a registered, tree-shakable material _feature_ orthogonal to the shading family.
+- [texture source model](agents/texture-source-model.md) — **spec, locked 2026-07-30; only M2 implemented**. Before touching `Texture`, `TextureStorage`, `ImageBacking`, `TextureAtlas` internals, or any `create*Texture` / `create*Image*` constructor. Six recorded defects and a staged migration to the flat `Texture`-over-`TextureSource` model.
+- [render backend support](agents/render-backend-support.md) — before assuming a feature works on a backend, or scoping a functional test's `renderers`. What renders on canvas/dom/gl/wgpu today and the gaps from the [render architecture](agents/render-architecture.md) target.
 - [wgpu 3D parity spec](agents/wgpu-3d-parity-spec.md) — before touching `scene3d-wgpu` / `effects-wgpu` 3D or scoping wgpu parity work. Each item cites the shipped GL file it mirrors.
-- [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer charter, built on the GL path; GPU morph and composed skin+morph are deferred.
+- [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer charter on the GL path; GPU morph and composed skin+morph are deferred.
 - [skeleton2d animation model](agents/skeleton2d-animation-model.md) — **proposal**. Before adding a non-bone (slot) timeline or placing constraint solvers.
 
 **Plans and reviews** — the current state of in-flight direction:
 
-- [examples plan](agents/examples-plan.md) — the new example set: 10 reworked core examples, 17 Flight-specific feature examples, 3 integration demos, with implementation order and open questions.
+- [examples plan](agents/examples-plan.md) — the planned example set, with implementation order and open questions.
 - [quality plan](agents/quality-plan.md) — the direction for API maturity verification, and the unit-versus-functional test guidance.
-- [loader progress currencies](agents/loader-progress-currencies.md) — **proposal, awaiting ruling.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, where the two batch-level ones contradict each other today, and the recommendation.
-- [test depth review](agents/test-depth-review.md) — completed unit-test-depth review across 78 packages, with the prioritized gap list and functional test candidates.
-- [breadth synthesis](agents/breadth-synthesis.md) — cross-report convergences from the four breadth analyses: overlapping domains, genuinely missing primitives, and open design calls. Individual reports: [adjacent content](agents/breadth-adjacent-content.md), [platform variance](agents/breadth-platform-variance.md), [cloud/distributed](agents/breadth-cloud-distributed.md), [domain deepening](agents/breadth-domain-deepening.md).
+- [loader progress currencies](agents/loader-progress-currencies.md) — **proposal, awaiting ruling.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, where the two batch-level ones contradict each other, and the recommendation.
+- [test depth review](agents/test-depth-review.md) — the completed unit-test-depth review and its prioritized gap list.
+- [breadth synthesis](agents/breadth-synthesis.md) — cross-report convergences from the four breadth analyses ([adjacent content](agents/breadth-adjacent-content.md), [platform variance](agents/breadth-platform-variance.md), [cloud/distributed](agents/breadth-cloud-distributed.md), [domain deepening](agents/breadth-domain-deepening.md)).
 
 **Skills** (`.claude/skills/`) — procedures, _invoked to do_. Claude Code surfaces these by intent; each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
-- [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the current `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, the optional pixel oracle, and the capture→baseline loop.
-- [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the external reference examples (`npm run capture:reference -- --filter <name>`, which auto-clones `flight-reference`); watch mode; screenshot baselines; and reading the `screenshot.png` / `logs.jsonl` / `status.json` output.
+- [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, the optional pixel oracle, and the capture→baseline loop.
+- [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the external `flight-reference` examples; watch mode, screenshot baselines, and reading the capture output.
 
 ## Core Patterns
 
@@ -159,13 +159,13 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 A `*Kind` is the identifier for a scene graph primitive or descriptor type. Kinds serve two roles: they are the keys renderers register against (`registerRenderer(state, FooKind, renderer)`), and they enforce scene graph hierarchy — a hierarchy node only accepts children whose kind belongs to the same hierarchy family.
 
-A kind is a plain **string** (`export const BitmapKind = 'Bitmap'`), not a `Symbol()`, so the registry key, the serialized form, and the user-facing vocabulary are one value and a scene round-trips with no symbol↔string seam. Define each kind once, in the package that owns the type, with a canonical PascalCase value; custom kinds carry a vendor prefix (`'acme.Foo'`). Registration is last-write-wins, so a user can override a built-in binding; collisions are avoided by the vendor-prefix convention, not by a guard. Internal `Symbol()` uses that are never serialized — runtime-slot keys, property-key brands, sentinels — stay symbols. Full rules in [types layout & kind identity](agents/conventions/types-layout.md).
+A kind is a plain **string** (`export const BitmapKind = 'Bitmap'`), not a `Symbol()`, so the registry key, the serialized form, and the user-facing vocabulary are one value and a scene round-trips with no symbol↔string seam. Define each kind once, in the package that owns the type, with a canonical PascalCase value; custom kinds carry a vendor prefix (`'acme.Foo'`). Registration is last-write-wins, so a user can override a built-in binding; collisions are avoided by the vendor-prefix convention, not by a guard. Internal `Symbol()` uses that are never serialized stay symbols. Full rules in [types layout & kind identity](agents/conventions/types-layout.md).
 
 ### Entity and Runtime
 
 Public objects are plain entities with data fields. Each entity has a paired, intentionally opaque runtime object holding package-private state: graph state, caches, invalidation IDs, render nodes, child arrays, renderer data. Application code treats runtime state as internal.
 
-Subsystems attach their own state to the runtime object rather than adding fields to the entity: a nullable property the subsystem owns, on the narrowest runtime tier that has the capability (`GraphNodeRuntime.imageCache`, `HasGraphHierarchyRuntime.graphSignals`), initialized to `null`, with a lazy accessor if convenience access is needed. The entity knows nothing about the subsystem. `NodeRuntime` is the base extension point but should stay empty until a subsystem truly applies to every node kind.
+Subsystems attach their own state to the runtime object rather than adding fields to the entity: a nullable property the subsystem owns, on the narrowest runtime tier that has the capability (`GraphNodeRuntime.imageCache`, `HasGraphHierarchyRuntime.graphSignals`), initialized to `null`, with a lazy accessor if needed. The entity knows nothing about the subsystem. `NodeRuntime` is the base extension point but should stay empty until a subsystem truly applies to every node kind.
 
 Some render packages use an `internal.ts` cast (`state as RenderStateInternal`) to expose writable versions of read-only properties. This is legacy — do not extend it; prefer runtime slots.
 
@@ -179,7 +179,7 @@ Use the graph-feature aliases — `HierarchyNode`, `GraphAppearanceNode`, `Trans
 
 Rendering is opt-in and kind-based: concrete renderers are registered against a `*Kind` with `registerRenderer(state, FooKind, renderer)`. A renderer provides `createData(state, source)` (per-node renderer data, `null` if none is needed), `draw(state, renderNode)`, and `drawMask(state, renderNode)` (display objects only).
 
-Before drawing, an update pass must propagate transforms, alpha, visibility, and blend mode from the scene graph into render nodes: call `prepareScene2DRender(state, source)` or `prepareSpriteRender(state, source)` before any draw call. Tests that skip this step see default or stale render node values.
+Before drawing, an update pass must propagate transforms, alpha, visibility, and blend mode from the scene graph into render nodes: call `prepareScene2DRender(state, source)` or `prepareScene3DRender(state, source)` before any draw call. Tests that skip this step see default or stale render node values.
 
 Do not call `registerRenderer` at module top level; expose a `register*` function and let callers opt in.
 
@@ -201,23 +201,23 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 Package names grouped by domain, `@flighthq/` prefix omitted. For what each package owns and where its boundary sits, read the [package catalog](agents/packages/catalog.md); for full per-package detail and API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries exported signatures directly.
 
-Core: `types` (the header layer — every exported type in the SDK), `entity`, `geometry` (rectangles, vectors, matrices, quaternions, bounding volumes, ray intersection, pools), `math` (scalar utilities), `node` (graph hierarchy, transforms, bounds, appearance), `signals`.
+Core: `types` (the header layer — every exported type in the SDK), `entity`, `geometry` (rectangles, vectors, matrices, quaternions, bounding volumes, ray intersection, pools), `math` (scalar utilities), `color` (packed-RGBA pack/unpack, sRGB↔linear, HSL/HSV/OkLab), `node` (graph hierarchy, transforms, bounds, appearance), `signals`.
 
-Scene graph: `scene2d` (`Node2D` nodes rooted at the `Scene2D` world), `text`, `sprite` (sprite/tilemap/quad-batch), `scene3d`, `clip`, `path` (vector-path geometry kernel), `shape` (retained vector command recorder), `interaction` (hit testing, pointer dispatch, overlap), plus the codec neighbors `path-formats` (SVG `d`), `path-boolean` (CSG + offset/simplify), `shape-formats`, `scene2d-formats` (SVG documents), and the standalone `swf` import domain.
+Scene graph: `scene2d` (`Node2D` nodes rooted at the `Scene2D` world, including `Sprite`), `text`, `quadbatch` (packed instanced-quad buffer), `tilemap` (tile-id grid over a tileset), `scene3d`, `clip`, `path` (vector-path geometry kernel), `shape` (retained vector command recorder), `interaction` (hit testing, pointer dispatch, overlap), plus the codec neighbors `path-formats` (SVG `d`), `path-boolean` (CSG + offset/simplify), `shape-formats`, `scene2d-formats` (SVG documents), and the standalone `swf` import domain.
 
 Rendering: `render` (registration, state/queue, update pipeline), the backend cores `render-gl` / `render-wgpu`, the 2D leaf renderers `scene2d-canvas` / `scene2d-dom` / `scene2d-gl` / `scene2d-wgpu`, the 3D forward renderers `scene3d-gl` / `scene3d-wgpu`, the three image-operation tiers `materials` + `shading` (shading input) / `adjustments` (pointwise value remap that folds into the draw) / `effects` (spatial-composite passes) with `effects-gl` / `effects-wgpu` / `effects-canvas` execution, plus `velocity`, `bitmap` (offscreen pixel manipulation), and `capture` (render-verification policy and baselines).
 
-3D data primitives: `mesh`, `lighting`, `texture`, `camera` (3D projection/frustum **and** the 2D `Camera2D` — the former `camera2d` package is absorbed here), `animation`, `skeleton3d`, `picking`, `scene3d-formats` (glTF/USD/OBJ/3DS/MD5/AWD2).
+3D data primitives: `mesh`, `lighting`, `texture`, `camera` (3D projection/frustum **and** the 2D `Camera2D` — the former `camera2d` package is absorbed here) with `camera-controls` (2D follow, 3D orbit/fly), `animation`, `skeleton3d`, `picking`, `scene3d-formats` (glTF/USD/OBJ/3DS/MD5/AWD2).
 
-Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `loader`, `assets`, the codecs `texture-formats` / `textureatlas-formats` / `tilemap-formats`, and the staged scene acquisition layers `scene2d-resources` / `scene3d-resources`.
+Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `textureatlas`, `loader`, `assets`, the codecs `texture-formats` / `textureatlas-formats` / `tilemap-formats`, the staged scene acquisition layers `scene2d-resources` / `scene3d-resources`, and `importdiagnostics` (the shared structured-diagnostics seam for every `*-formats` importer).
 
-Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (headless sim) with `particleemitter` (display node) and `particles-formats`, `timeline` with `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`.
+Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (headless sim) with `particleemitter` (display node) and `particles-formats`, `timeline` with `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`, plus `skeleton2d` + `skeleton2d-formats` (2D bone rigs, alongside the 3D `skeleton3d`).
 
-Game: `collision` (2D narrow-phase SAT + contact manifolds), `spatial` (broadphase index), `flow` (mode/screen state stack), `snapshot` (frozen recoverable state).
+Game: `collision` (2D narrow-phase SAT + contact manifolds), `physics2d` (2D rigid-body dynamics), `spatial` (broadphase index), `flow` (mode/screen state stack), `snapshot` (frozen recoverable state).
 
-Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
+Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `textbidi` (bidi itemization), `text-markup` (markup → rich text), `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
 
-Application: `application` (main loop and windowing), `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `sdk` (convenience barrel).
+Application: `application` (main loop and windowing) with `application-gl` (the WebGL `ApplicationRenderView` assembly), `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `mediasession` (OS now-playing/transport), `sdk` (convenience barrel).
 
 **Platform Integration Suite** — flat free functions over a swappable `*Backend`; the web backend is always available and native hosts replace it via `set*Backend`. Command capabilities expose `get*Backend` / `set*Backend` / `createWeb*Backend`; event capabilities expose a signal entity with `create*` / `attach*` / `detach*` / `dispose*`. Web backends return sentinels rather than throwing.
 
@@ -225,8 +225,8 @@ Application: `application` (main loop and windowing), `intl`, `log`, `debug`, `u
 - UI and shell: `accessibility`, `clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `share`, `haptics`, `geolocation`, `webcam`, `statusbar`.
 - App and process: `app`, `protocol`, `updater`, `ipc`.
 
-Two package families are deliberately outside the `@flighthq/sdk` barrel and are not tree-shakable: host backends (`host-<runtime>`, currently `host-electron`) and the dev/CI tooling suite (`tool-*`, currently `tool-capture`). `scripts/sdk-policy.ts` enforces the exclusion.
+Two package families are deliberately outside the `@flighthq/sdk` barrel and are not tree-shakable: host backends (`host-<runtime>`: `host-electron`, `host-tauri`, `host-capacitor`) and the dev/CI tooling suite (`tool-*`, currently `tool-capture`). `scripts/sdk-policy.ts` enforces the exclusion.
 
 ## Feature Lookup
 
-[feature lookup](agents/feature-lookup.md) maps a feature keyword — shadows, bloom, blend modes, skinning, tilemap, glTF, collision, text input — to the package that owns it and the backends that carry it today. Start there when you know what you want but not where it lives.
+[feature lookup](agents/feature-lookup.md) maps a feature keyword — shadows, bloom, blend modes, skinning, tilemap, glTF, collision, text input — to the package that owns it and the backends carrying it. Start there when you know what you want but not where it lives.
