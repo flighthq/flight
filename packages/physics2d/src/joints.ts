@@ -208,6 +208,20 @@ export const physics2DRevoluteJointSolver = {
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyA === null || bodyB === null) return;
     applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -joint.impulse0, -joint.impulse1);
+    // The motor accumulator persists across steps, so it has to be REAPPLIED here like every other
+    // persisted impulse. Warm-starting only the point pair left it accumulating without ever acting:
+    // the solve clamps the running total against maxMotorTorque * dt, so once it reached that bound it
+    // stayed there and every later step added nothing. A low-torque motor would apply its first
+    // increment and then hold the same value forever, looking like a motor that had reached speed while
+    // the body never moved.
+    // Defaulted rather than compared against 0: a joint deserialized or built without the motor fields
+    // has no motorImpulse at all, and multiplying undefined by an inverse inertia produces NaN, which
+    // then spreads through every subsequent velocity.
+    const motorImpulse = (joint as Physics2DRevoluteJoint).motorImpulse ?? 0;
+    if (motorImpulse !== 0) {
+      bodyA.angularVelocity -= bodyA.inverseInertia * motorImpulse;
+      bodyB.angularVelocity += bodyB.inverseInertia * motorImpulse;
+    }
   },
 
   clearAccumulatedImpulses(joint: Physics2DJoint): void {

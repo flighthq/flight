@@ -522,6 +522,46 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     expect(arm.angularVelocity).toBeLessThan(100);
   });
 
+  // The bound test above passes for a motor that stops acting entirely — every delta of zero is <= the
+  // bound — which is exactly how a saturated accumulator hid. This asserts the motor keeps ACTING, the
+  // property the title of that test claims. The motor impulse persists across steps, so it must be
+  // reapplied in warm start; without that the running total pins at maxMotorTorque * dt on step one and
+  // every later step adds nothing.
+  it('keeps accelerating on later steps rather than pinning after the first', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 0.01, motorSpeed: 100 }),
+    );
+
+    stepPhysics2D(world, 1 / 60);
+    const afterFirst = arm.angularVelocity;
+    stepPhysics2D(world, 1 / 60);
+    const afterSecond = arm.angularVelocity;
+
+    expect(afterFirst).toBeGreaterThan(0);
+    expect(afterSecond).toBeGreaterThan(afterFirst);
+  });
+
+  it('keeps accelerating across many steps toward the target speed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    addPhysics2DJoint(
+      world,
+      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 0.01, motorSpeed: 100 }),
+    );
+
+    stepPhysics2D(world, 1 / 60);
+    const afterFirst = arm.angularVelocity;
+    for (let i = 0; i < 29; i++) stepPhysics2D(world, 1 / 60);
+
+    // Thirty steps of a bounded motor must be meaningfully faster than one, not the same value.
+    expect(arm.angularVelocity).toBeGreaterThan(afterFirst * 5);
+  });
+
   it('stops the arm at the upper limit instead of letting the motor carry it past', () => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
