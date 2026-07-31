@@ -86,8 +86,6 @@ Design calls to settle before building the affected entries:
 ### useragent (partial 42)
 
 - Decide what `parseUserAgentEngineVersion` means on webkit
-- `parseUserAgentEngineVersion` returns `''` for a legacy EdgeHTML UA
-- Opera on iOS is untested and its tokens are unhandled
 
 ### textureatlas (partial 45)
 
