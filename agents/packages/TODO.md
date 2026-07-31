@@ -81,8 +81,6 @@ Design calls to settle before building the affected entries:
 
 ### tray (partial 38)
 
-- Decide whether `TrayIcon` handles should compare by identity
-- Guard `startTrayIconAnimation` against a non-positive interval
 - Web-backend `isDestroyed` returns true for every id, including ids never created
 
 ### useragent (partial 42)

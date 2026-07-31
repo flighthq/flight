@@ -5,19 +5,26 @@ prior single item was already done in the tree.
 
 ## Recommended
 
-1. **Decide whether `TrayIcon` handles should compare by identity** — `createTrayIcon` and
-   `getTrayIcons` each mint fresh `{ id }` objects, so a handle from the list is never `===` a handle
-   the caller created. Every function keys off `.id`, so nothing is broken, but a caller reasonably
-   expects `getTrayIcons().includes(myTray)` to work and it silently does not. Either intern handles
-   per id, or say plainly in the type doc that `TrayIcon` is compared by `id`.
-2. **Guard `startTrayIconAnimation` against a non-positive interval** — `intervalMs <= 0` becomes a
-   `setInterval` firing as fast as the host will schedule it, writing the icon every tick. The
-   diagnostics-inversion answer is a guard module rather than a thrown error, since this is caller
-   misuse rather than an expected failure.
-3. **Web-backend `isDestroyed` returns true for every id, including ids never created** — honest for
+1. **Web-backend `isDestroyed` returns true for every id, including ids never created** — honest for
    "no trays exist on web", but it makes `isTrayDestroyed` unable to distinguish "destroyed" from
-   "never existed" on any backend that behaves the same way. Related to the unknown-key sentinel
-   question the `loader` cell raises; probably wants one answer across the suite.
+   "never existed" on any backend that behaves the same way. **Deliberately not taken 2026-07-31**: this
+   is the same unknown-key sentinel question the `loader` cell raises, and it wants one ruling across
+   the platform suite rather than a tray-local answer. Routed alongside loader's.
+
+## Landed
+
+- ~~**Decide whether `TrayIcon` handles should compare by identity.**~~ Decided and documented
+  2026-07-31: compared by `id`, never by identity, stated on the type with the reasoning for *not*
+  interning — the id is the whole of the identity, a registry would need invalidating on every destroy,
+  and a plain-data handle stays serializable and portable where an interned one does not. A test pins
+  both the failing `includes` form and the working `id` comparison, so it shows the remedy rather than
+  only the trap.
+- ~~**Guard `startTrayIconAnimation` against a non-positive interval.**~~ Landed 2026-07-31 as
+  `enableTrayGuards`, through a `setTrayAnimationGuard` seam so the message and the `@flighthq/log`
+  dependency stay out of the package's hot path. It warns rather than throwing or refusing, per the
+  diagnostics-inversion answer the item itself specified: a zero interval schedules as fast as the host
+  runs timers, so the animation *appears* to work while burning a core, and nothing points at the call
+  that asked for it.
 
 ## Approved
 
