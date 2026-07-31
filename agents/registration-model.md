@@ -43,11 +43,14 @@ One call, no arguments beyond the state. It is a one-liner over door 2 that supp
 string and the built-in runner. This is the shape to reach for when you want a built-in and have no opinion
 about how it is implemented.
 
-**Status, stated plainly: this door is currently built for `Blur` only** — `registerGlBlurEffect` and
-`registerWgpuBlurEffect`, and nothing on canvas. The pattern is settled and proven, but it is implemented
-for one kind out of forty-seven. **Until it is filled in, door 2 is the working path for every other
-built-in**, and you should not read the absence of `registerGlBloomEffect` as GL lacking bloom — see §3,
-which is where this matters most.
+The per-kind wrapper is **pure ergonomics, and that is worth stating because the opposite would be a
+trap**: an audit of the wrappers confirmed each one registers *exactly* what the equivalent generic call
+registers — same kind, same runner, no implicit companions registered on the side. So door 2 does **not**
+under-register a built-in relative to door 1. If you register `'BloomEffect'` yourself with
+`defaultGlBloomEffectRunner`, you have what `registerGlBloomEffect(state)` would have given you, and
+nothing is silently missing. Choose between the doors on ergonomics, not on completeness.
+
+Coverage is filled in on GL; other backends are at varying stages, and §3 is how you tell which.
 
 ### Door 2 — generic, for built-ins today and for your own kinds always
 
@@ -70,24 +73,34 @@ convenience, door 2 plus a public runner is the part, and neither is the "real" 
 
 ## 3. `register*` exists only for real implementations
 
-**The load-bearing rule: a `register*` function exists only where there is a real implementation behind it.
-No stub answers "yes" and then does nothing.** Where the rule holds, absence is not an oversight to wait
-out — it is the answer, and it is a true capability signal you can rely on.
+**The load-bearing rule: a `register*` function exists only where there is a real implementation behind
+it. No stub answers "yes" and then does nothing.** So the question "does the register function exist" is a
+**true capability signal**. Absence is not an oversight to wait out — it is the answer.
 
-**What that means for you today, precisely.** Because door 1 is only built for `Blur` (§2), the function
-whose presence you should test is the **public runner**, not the per-kind registrar:
+This is the property that makes the API self-describing. You do not need permission, a changelog, or a
+support ticket to find out whether a backend can do something: ask the module. If
+`registerGlBloomEffect` exists, GL implements bloom. If the canvas equivalent does not exist, canvas does
+not implement it, and no call you could write would unlock it.
 
-- `defaultGlBloomEffectRunner` exists → GL implements bloom. Register it through door 2.
+**Two artifacts carry the signal, and they agree.** The per-kind registrar is the one to ask about first;
+the public runner is the second reading, and it is the more precise one where a backend's wrappers are
+still being filled in:
+
+- `defaultGlBloomEffectRunner` exists → GL implements bloom.
 - `defaultCanvasBevelEffectRunner` does **not** exist → canvas does not implement bevel. There is nothing to
-  register and nothing coming that a call would unlock.
+  register, and nothing coming that a call would unlock.
+
+The runner cannot drift from the implementation, because it *is* the implementation — which is why the
+counts below are derived from the exported runners rather than from any hand-maintained list.
 
 Derived from source on 2026-07-31, that gives: **GL 47 effect kinds, WGPU 46, canvas 39.** WGPU lacks
 exactly one that GL has (`CustomShader`). Canvas lacks eight: `Bevel`, `Blend`, `Composite`,
 `CustomShader`, `GradientBevel`, `GradientGlow`, `InnerGlow`, `InnerShadow`. Nothing exists on canvas that
 is missing on GL.
 
-When door 1 is filled in for the remaining kinds, the signal moves to the per-kind registrar and both
-readings agree. Until then, read the runner.
+These counts were derived from one clone on 2026-07-31 and the GL per-kind wrappers landed in a series
+that clone did not yet carry, so treat the exact numbers as a cross-check rather than as the register — the
+derivation method is the durable part, and you can rerun it against whatever build you hold.
 
 ## 4. What a missed registration tells you now
 
@@ -164,8 +177,10 @@ or WebGPU for the whole scene instead.
 - Missed registrations are **diagnosable** rather than silent, via per-package `enable*Guards` and `explain*`
   queries (§4) — including the partial-registration case that succeeds while dropping effects.
 - The `register*`-means-real-implementation rule is explicit, so capability is answerable from the API
-  surface (§3) — read the public runner today, the per-kind registrar once door 1 is filled in.
+  surface (§3): if the register function exists, the backend implements the kind, and no stub says otherwise.
+- The per-kind wrappers were audited and register exactly what the generic call does, so door 2 never
+  under-registers a built-in (§2).
 - DOM's batch exclusions are a recorded design position with two sanctioned embed paths (§6), not an
   unfinished area.
-- Still in flight at the time of writing: door 1 for the remaining kinds, the generated capability matrix,
-  and a canvas-backend sweep. None of them change the model above.
+- Still in flight at the time of writing: the generated capability matrix and a canvas-backend sweep.
+  Neither changes the model above.
