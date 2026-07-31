@@ -68,6 +68,14 @@ export function parseUserAgentEngine(ua: string): PlatformEngine {
   // `<Product>iOS` token would have failed the same way.
   if (/iphone|ipad|ipod/i.test(ua)) return 'webkit';
   if (/firefox/i.test(ua)) return 'gecko';
+  // Legacy EdgeHTML Edge (`Edge/18`) is not Blink — Edge only became Chromium at `Edg/79`. It has to be
+  // tested before the blink branch, whose `edg` alternative matches it, and it reports 'unknown' rather
+  // than a fourth engine value because PlatformEngine has no EdgeHTML member and adding one is a public
+  // type change every exhaustive consumer would have to handle. 'unknown' is the documented answer for
+  // an engine this SDK does not model, and it is the honest one: saying blink would have a caller apply
+  // Chromium workarounds to a browser that never ran Chromium. Distinguished from modern Edge by the
+  // trailing `e` — `Edg/` and `EdgiOS/` do not match.
+  if (/edge\/\d/i.test(ua)) return 'unknown';
   if (/chrome|chromium|edg|opr|samsung/i.test(ua)) return 'blink';
   if (/safari|webkit/i.test(ua)) return 'webkit';
   return 'unknown';
