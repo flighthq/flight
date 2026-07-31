@@ -109,6 +109,50 @@ describe('getGlyphAtlasEntry', () => {
     expect(calls).toEqual([65, 66, 67, 66]);
   });
 
+  // Recency is maintained by re-inserting the codepoint, and a Map keeps an existing key in place on
+  // set -- so the delete before it is what actually promotes the entry. Without it recency degenerates
+  // to insertion order and eviction picks the wrong glyph. Three live entries make the order strict
+  // rather than a coin flip between two.
+  it('evicts strictly oldest-first after interleaved touches', () => {
+    const { backend, calls } = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 3, width: 256 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    getGlyphAtlasEntry(atlas, 67);
+    getGlyphAtlasEntry(atlas, 66); // order is now 65, 67, 66
+    getGlyphAtlasEntry(atlas, 65); // order is now 67, 66, 65
+    expect(calls).toEqual([65, 66, 67]);
+
+    getGlyphAtlasEntry(atlas, 68); // evicts 67, the true oldest
+    expect(calls).toEqual([65, 66, 67, 68]);
+
+    getGlyphAtlasEntry(atlas, 66); // still cached
+    getGlyphAtlasEntry(atlas, 65); // still cached
+    expect(calls).toEqual([65, 66, 67, 68]);
+
+    getGlyphAtlasEntry(atlas, 67); // evicted earlier -> re-rasterizes
+    expect(calls).toEqual([65, 66, 67, 68, 67]);
+  });
+
+  // A re-inserted glyph must land at the most-recently-used end, not inherit its old position.
+  it('places a re-rasterized glyph at the most-recently-used end', () => {
+    const { backend, calls } = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(backend);
+    const atlas = createGlyphAtlas({ fontFamily: 'mock', fontSize: 16, height: 256, maxGlyphs: 2, width: 256 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    getGlyphAtlasEntry(atlas, 66);
+    getGlyphAtlasEntry(atlas, 67); // evicts 65
+    getGlyphAtlasEntry(atlas, 65); // re-rasterized, evicts 66, and is now newest
+    expect(calls).toEqual([65, 66, 67, 65]);
+
+    getGlyphAtlasEntry(atlas, 68); // evicts 67, not the just-re-added 65
+    getGlyphAtlasEntry(atlas, 65);
+    expect(calls).toEqual([65, 66, 67, 65, 68]);
+  });
+
   it('keeps rects non-overlapping after eviction and repack', () => {
     const { backend } = createMockRasterizerBackend((cp) => ({ height: 8 + (cp % 6), width: 8 + (cp % 4) }));
     setGlyphRasterizerBackend(backend);

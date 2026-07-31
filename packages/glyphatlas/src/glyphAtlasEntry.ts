@@ -59,7 +59,7 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
   };
   runtime.entries.set(codepoint, entry);
   runtime.bitmaps.set(codepoint, bitmap);
-  runtime.lru.push(codepoint);
+  runtime.lru.set(codepoint, true);
   _blitGlyphIntoAtlasBitmap(runtime, entry, bitmap);
   return entry;
 }
@@ -80,8 +80,11 @@ function _blitGlyphIntoAtlasBitmap(
 // bitmap. Its atlas space is not reclaimed until the next repack. Returns false when nothing is
 // cached.
 function _evictLeastRecentlyUsedGlyph(runtime: GlyphAtlasRuntime): boolean {
-  const codepoint = runtime.lru.shift();
-  if (codepoint === undefined) return false;
+  // Insertion order makes the first key the least recently used, since every touch re-inserts.
+  const oldest = runtime.lru.keys().next();
+  if (oldest.done === true) return false;
+  const codepoint = oldest.value;
+  runtime.lru.delete(codepoint);
   runtime.entries.delete(codepoint);
   runtime.bitmaps.delete(codepoint);
   return true;
@@ -170,8 +173,7 @@ function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
     if (placement === null) {
       runtime.entries.delete(codepoint);
       runtime.bitmaps.delete(codepoint);
-      const lruIndex = runtime.lru.indexOf(codepoint);
-      if (lruIndex !== -1) runtime.lru.splice(lruIndex, 1);
+      runtime.lru.delete(codepoint);
       continue;
     }
     entry.x = placement.x;
@@ -184,7 +186,8 @@ function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
 
 // Moves `codepoint` to the most-recently-used end of the LRU list so eviction takes the oldest first.
 function _touchGlyphLru(runtime: GlyphAtlasRuntime, codepoint: number): void {
-  const index = runtime.lru.indexOf(codepoint);
-  if (index !== -1) runtime.lru.splice(index, 1);
-  runtime.lru.push(codepoint);
+  // Delete before set: re-setting an existing key keeps its original position, so the delete is what
+  // actually moves the codepoint to the most-recently-used end.
+  runtime.lru.delete(codepoint);
+  runtime.lru.set(codepoint, true);
 }
