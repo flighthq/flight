@@ -23,6 +23,7 @@ import type {
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';
+import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
@@ -139,11 +140,15 @@ export function endCanvasRenderEffectPipeline(
       continue;
     }
     const runner = getCanvasRenderEffectRunner(state, operation.kind);
-    if (runner === null) continue;
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    runner({ state, source, dest, pool }, operation);
+    // Registration is the backend's proof that an effect kind is realized. An unregistered effect is
+    // therefore a pipeline-level identity operation: copy the current source into the next target so a
+    // later pass never reads an uninitialized ping-pong target. Keeping this composition rule here
+    // avoids per-kind passthrough registrations that would falsely advertise renderer support.
+    if (runner === null) drawCanvasEffectPass(dest, source, 'none');
+    else runner({ state, source, dest, pool }, operation);
     source = dest;
   }
   flushAdjustments();

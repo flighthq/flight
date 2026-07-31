@@ -1,3 +1,7 @@
+import { createCanvasRenderState } from '@flighthq/scene2d-canvas/contract';
+import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
+
+import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import {
   acquireCanvasRenderTarget,
   beginCanvasRenderEffectPipeline,
@@ -7,6 +11,7 @@ import {
   endCanvasRenderEffectPipeline,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 describe('acquireCanvasRenderTarget', () => {
   it('is a function', () => {
@@ -47,6 +52,39 @@ describe('destroyCanvasRenderEffectPipeline', () => {
 describe('endCanvasRenderEffectPipeline', () => {
   it('is a function', () => {
     expect(typeof endCanvasRenderEffectPipeline).toBe('function');
+  });
+
+  it('writes an unregistered effect destination before chaining and presenting it', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const state = createCanvasRenderState(canvas);
+    const pipeline = createCanvasRenderEffectPipeline(state);
+    beginCanvasRenderEffectPipeline(state, pipeline);
+    const scene = pipeline.sceneTarget!;
+    scene.context.fillStyle = '#ff0000';
+    scene.context.fillRect(0, 0, 4, 4);
+
+    const realizedRunner = vi.fn<CanvasRenderEffectRunner>((ctx) => {
+      drawCanvasEffectPass(ctx.dest, ctx.source, 'none');
+    });
+    registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
+
+    endCanvasRenderEffectPipeline(state, pipeline, [
+      { kind: 'UnregisteredEffect' },
+      { kind: 'RealizedEffect' },
+    ] as RenderEffect[]);
+
+    const [unregisteredDest, realizedDest] = pipeline.pool.free;
+    expect(unregisteredDest).toBeDefined();
+    expect(realizedDest).toBeDefined();
+    expect(unregisteredDest!.context.drawImage).toHaveBeenCalledWith(scene.canvas, 0, 0);
+    expect(realizedRunner).toHaveBeenCalledWith(
+      expect.objectContaining({ source: unregisteredDest, dest: realizedDest }),
+      { kind: 'RealizedEffect' },
+    );
+    expect(realizedDest!.context.drawImage).toHaveBeenCalledWith(unregisteredDest!.canvas, 0, 0);
+    expect(state.context.drawImage).toHaveBeenCalledWith(realizedDest!.canvas, 0, 0);
   });
 });
 
