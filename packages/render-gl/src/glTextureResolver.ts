@@ -1,4 +1,3 @@
-import { emitSignal } from '@flighthq/signals/contract';
 import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
@@ -14,7 +13,6 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-  RenderRegistry,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -73,9 +71,7 @@ export function resolveGlTexture(
   const runtime = getGlRenderStateRuntime(state);
   const resolver = runtime.glTextureResolverRegistry?.get(sourceKind);
   if (resolver === undefined) {
-    if (runtime.registrySignals !== null) {
-      emitSignal(runtime.registrySignals.onRegistryMiss, RenderRegistry.TextureResolver, sourceKind);
-    }
+    runtime.registryMiss?.(3, sourceKind);
     return null;
   }
   return resolver(state, texture, premultiply);

@@ -1,5 +1,4 @@
 import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
-import { clearSignal } from '@flighthq/signals/contract';
 import type { Renderable, RenderState, RenderStateRuntime } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -35,9 +34,10 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderProxyAdapterMap = new WeakMap();
   runtime.renderProxyMap = new WeakMap();
   runtime.renderProxySources = new Set();
-  runtime.registrySignals = null;
+  runtime.registryMiss = null;
   runtime.renderEffectPaddingResolverRegistry = null;
   runtime.renderRootGuard = null;
+  runtime.strokeTessellator = null;
   runtime.rendererMap = new Map();
   runtime.rendererMapId = 0;
   runtime.tempStack = [];
@@ -49,10 +49,8 @@ export function createRenderStateRuntime(): RenderStateRuntime {
 export function destroyRenderState(state: RenderState): void {
   const runtime = getRenderStateRuntime(state);
   for (const source of [...runtime.renderProxySources]) disposeRenderProxyForShutdown(state, source);
-  if (runtime.registrySignals !== null) {
-    clearSignal(runtime.registrySignals.onRegistryMiss);
-    runtime.registrySignals = null;
-  }
+  runtime.registryMiss?.clear();
+  runtime.registryMiss = null;
   runtime.renderEffectPaddingResolverRegistry = null;
   runtime.tempStack.length = 0;
 }

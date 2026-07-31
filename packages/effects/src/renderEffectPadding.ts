@@ -1,5 +1,4 @@
 import { getRenderStateRuntime } from '@flighthq/render/contract';
-import { emitSignal } from '@flighthq/signals/contract';
 import type {
   Kind,
   RenderEffect,
@@ -8,7 +7,6 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
 
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
@@ -19,12 +17,8 @@ export function computeRenderEffectPadding(
 ): RenderEffectPadding {
   const list = Array.isArray(effects) ? effects : [effects];
   const explanation = explainRenderEffectPadding(state, list);
-  const signals = getRenderStateRuntime(state).registrySignals;
-  if (signals !== null) {
-    for (const kind of explanation.missingKinds) {
-      emitSignal(signals.onRegistryMiss, RenderRegistry.EffectPaddingResolver, kind);
-    }
-  }
+  const emitMiss = getRenderStateRuntime(state).registryMiss;
+  if (emitMiss !== null) for (const kind of explanation.missingKinds) emitMiss(0, kind);
   return explanation.padding;
 }
 
