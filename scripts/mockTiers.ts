@@ -46,4 +46,5 @@ export const ISOLATED_MOCK_TEST_FILES: readonly string[] = [
   'packages/scene3d-resources/src/objLoad.test.ts',
   'packages/scene3d-resources/src/resolveScene3DResources.test.ts',
   'packages/scene3d-resources/src/threeDsLoad.test.ts',
+  'packages/tool-capture/src/captureServer.test.ts',
 ];
