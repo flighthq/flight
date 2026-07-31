@@ -15,11 +15,10 @@ See [charter](./charter.md) for blessed direction; evidence in [review](./review
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/image-codec`, no cross-package coupling, no breaking change, no open design fork. AVIF, ICO, and TIFF detection completed 2026-07-31.
+Sweep-safe: within `@flighthq/image-codec`, no cross-package coupling, no breaking change, no open design fork. MIME detection and registry enumeration completed 2026-07-31.
 
-1. **Add registry enumeration**: `getImageDecoderMimeTypes()` / `getImageEncoderMimeTypes()` returning the registered MIME strings. Capability discovery for accept headers/file pickers; read-only additions to the existing registry files, tree-shakable.
-2. **Add `explain*` queries for the silent sentinels** per the diagnostics convention: e.g. `explainImageDecodeFailure(bytes, mimeType?)` and `explainImageEncodeFailure(mimeType)` returning plain data distinguishing unknown-MIME vs. no-codec-registered. Shakeable, no `@flighthq/log` dependency required for the query form.
-3. **Test the `decodeImagePremultiplied` auto-detect path** (currently only the explicit-registration path and null sentinel are covered in `decodeImage.test.ts`). Small coverage close-out.
+1. **Add `explain*` queries for the silent sentinels** per the diagnostics convention: e.g. `explainImageDecodeFailure(bytes, mimeType?)` and `explainImageEncodeFailure(mimeType)` returning plain data distinguishing unknown-MIME vs. no-codec-registered. Shakeable, no `@flighthq/log` dependency required for the query form.
+2. **Test the `decodeImagePremultiplied` auto-detect path** (currently only the explicit-registration path and null sentinel are covered in `decodeImage.test.ts`). Small coverage close-out.
 
 ## Backlog
 

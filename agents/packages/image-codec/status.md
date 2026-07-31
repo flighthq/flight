@@ -5,6 +5,17 @@ updated: 2026-07-31
 
 # image-codec — Status Log
 
+## 2026-07-31 — registry capability enumeration
+
+- Completed registry enumeration in `9b3ab49da` with symmetric public
+  `getImageDecoderMimeTypes` / `getImageEncoderMimeTypes` queries.
+- Both queries return insertion-ordered snapshots, so callers can inspect runtime codec capability
+  without receiving a mutable registry view.
+- Snapshot-isolation tests mutate the returned arrays and confirm subsequent queries still report only
+  registered entries.
+- Focused `npm run check -- image-codec` passed all gates; the package suite passed 47 tests; the API
+  report exposes both `readonly string[]` signatures. No matching size fixture consumes image-codec.
+
 ## 2026-07-31 — image MIME sniffing breadth
 
 - Completed the two MIME-detection Recommended items in `bd2c1a778`.
