@@ -8,7 +8,7 @@ import {
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
-  isImageResourceSameOrigin,
+  isImageUrlSameOrigin,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
@@ -114,21 +114,21 @@ describe('createImageResourceFromImageElement', () => {
   });
 });
 
-describe('isImageResourceSameOrigin', () => {
+describe('isImageUrlSameOrigin', () => {
   it('returns true for data: URLs', () => {
-    expect(isImageResourceSameOrigin('data:image/png;base64,abc')).toBe(true);
+    expect(isImageUrlSameOrigin('data:image/png;base64,abc')).toBe(true);
   });
 
   it('returns true for blob: URLs', () => {
-    expect(isImageResourceSameOrigin('blob:http://localhost/some-id')).toBe(true);
+    expect(isImageUrlSameOrigin('blob:http://localhost/some-id')).toBe(true);
   });
 
   it('returns true for relative URLs (same origin)', () => {
-    expect(isImageResourceSameOrigin('/images/logo.png')).toBe(true);
+    expect(isImageUrlSameOrigin('/images/logo.png')).toBe(true);
   });
 
   it('returns false for a different-origin absolute URL', () => {
-    expect(isImageResourceSameOrigin('https://cdn.other-domain.com/image.png')).toBe(false);
+    expect(isImageUrlSameOrigin('https://cdn.other-domain.com/image.png')).toBe(false);
   });
 });
 
@@ -260,7 +260,7 @@ describe('loadImageResourceFromUrl', () => {
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 
-  it('sets crossOrigin when the crossOrigin parameter is provided', async () => {
+  it.each(['anonymous', 'use-credentials'] as const)('sets crossOrigin to %s when provided', async (crossOrigin) => {
     let capturedImg: HTMLImageElement | undefined;
     const origImage = globalThis.Image;
     globalThis.Image = new Proxy(origImage, {
@@ -271,8 +271,8 @@ describe('loadImageResourceFromUrl', () => {
       },
     }) as typeof Image;
 
-    await loadImageResourceFromUrl('https://cdn.other-domain.com/image.png', 'anonymous');
-    expect(capturedImg?.crossOrigin).toBe('anonymous');
+    await loadImageResourceFromUrl('https://cdn.other-domain.com/image.png', crossOrigin);
+    expect(capturedImg?.crossOrigin).toBe(crossOrigin);
 
     globalThis.Image = origImage;
   });

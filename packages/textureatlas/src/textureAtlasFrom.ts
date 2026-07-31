@@ -56,7 +56,7 @@ export async function loadTextureAtlasFromBytes(
 
 export async function loadTextureAtlasFromUrl(
   url: string,
-  crossOrigin?: string,
+  crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<TextureAtlas> {
   return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(url, crossOrigin, signal));
