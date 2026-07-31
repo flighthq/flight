@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/math'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,14 +10,25 @@ Sorted from `review.md` (solid, 88/100) and the direction session (2026-07-02). 
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/math`, no cross-package coupling, no open design decision.
+_None open._ Re-verified against live source on 2026-07-31 (17 source files, 15 test files, 278 tests,
+67 exports): all six sweep items landed. They are recorded under [Landed](#landed) below, outside this
+section so the TODO generator stops reporting them as work.
 
-- **Fix the `previousPowerOfTwo` doc comment.** It says "Clear all bits below the highest set bit," but the implementation fills all low bits then does `(n + 1) >> 1`. The result is correct; the comment describes a different algorithm and actively misleads. Rewrite to match the implementation.
-- **Remove the duplicate `RandomSource` re-export.** Both `random.ts` and `randomRange.ts` carry `export type { RandomSource }`. The barrel dedupes identical re-exports so it compiles, but it is redundant public surface — keep one home (or none; consumers can import from `@flighthq/types`).
-- **Add an `lcm` overflow doc note.** `(|a| / g) * |b|` divides first (avoids one overflow class) but has no guard for the product exceeding `Number.MAX_SAFE_INTEGER`; large inputs silently lose precision. Add a doc note in the shape of `factorial`'s `Infinity`-above-170 note.
-- **Document `saturate`'s NaN behavior and implement GPU semantics.** Currently `saturate` propagates NaN (same as `clamp`). Per Decision #3, `saturate` should follow GPU `saturate(NaN) = 0`. Add a `value !== value` guard that returns 0, and document the contract explicitly. `clamp` keeps NaN-propagation and documents it.
-- **Update `package.json` description.** Change from "General math utilities: seeded random and power-of-two rounding" to a description reflecting the full scalar toolbox scope. Per Decision #6.
-- **Run `npm run order:check` confirmation.** The review confirmed exports appear alphabetized from the bundle but could not verify the live tree. Confirm and `order:fix` if anything drifted.
+## Landed
+
+- ~~**Fix the `previousPowerOfTwo` doc comment.**~~ Landed. It now describes the behaviour ("Round `n` down
+  to the largest power of two that is `<= n`", with `previousPowerOfTwo(6) → 4`) instead of an algorithm the
+  implementation does not use.
+- ~~**Remove the duplicate `RandomSource` re-export.**~~ Landed. Only `random.ts` re-exports it;
+  `randomRange.ts` no longer does.
+- ~~**Add an `lcm` overflow doc note.**~~ Landed. `lcm`'s comment now states that a very large result may
+  exceed `Number.MAX_SAFE_INTEGER` and lose precision.
+- ~~**Document `saturate`'s NaN behavior and implement GPU semantics.**~~ Landed. `saturate` guards
+  `value !== value` and returns 0, matching GPU `saturate(NaN) = 0`; `clamp` keeps NaN propagation.
+- ~~**Update `package.json` description.**~~ Landed: "Scalar numeric utilities — interpolation, clamping,
+  angles, rounding, randomness, hashing, statistics, and number theory".
+- ~~**Run `npm run order:check` confirmation.**~~ Landed; `order:check` runs in the standard `npm run check`
+  sweep and is green.
 
 ## Backlog
 

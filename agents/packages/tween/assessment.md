@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/tween'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,15 +10,23 @@ Sorted from the depth review (76/100, solid), the builder's landed expansion (12
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/tween` (and one field in `@flighthq/types`), no cross-package coupling, no breaking change, no open design decision.
+Re-verified against live source on 2026-07-31 (10 source files, 7 test files, 118 tests, 26 exports). Three
+of the four items landed; one remains.
 
-1. **Add the `onYoyo` (direction-flip) signal.** `reflect` already flips `tween.reverse` each repeat cycle in `updateTween`. Add a `Tween.onYoyo` signal field in `@flighthq/types` (same pattern as the existing `onStart`), emit it at the flip point, distinct from `onRepeat`. One field + one-line emit + colocated test.
+1. **Pin the `seekTween`-to-end completion behavior with a test + comment.** Still open. No test asserts
+   either half of the contract — that `seekTween(tween, delay + duration)` and `setTweenProgress(tween, 1)`
+   complete and fire `onComplete`, or that scrubbing to `duration - epsilon` does *not*. It is intended
+   behaviour and an easy footgun, so it wants pinning rather than discovering.
 
-2. **Document the unit-agnostic time contract in source.** Time values (`delay`, `repeatDelay`, `duration`, `seekTween`'s `timeSeconds`, `createTweenStagger`'s `each`) pass through unchanged in whatever unit the caller feeds `updateTweens`. Add durable semantic comments at the package boundaries (atop `updateTweens` and `createTween`) stating the unit is caller-defined and must be consistent. (Builder Phase 3 may have partially done this — verify.)
+## Landed
 
-3. **Pin the `seekTween`-to-end completion behavior with a test + comment.** `seekTween(tween, delay+duration)` and `setTweenProgress(tween, 1)` mark the tween complete and fire `onComplete`. This is intended but an easy footgun. Document it on `seekTween`/`setTweenProgress` and add tests asserting both fire-on-exact-end and scrub-to-`duration - epsilon`-does-not-complete.
-
-4. **Fix the `Tween.onComplete` doc comment.** In `types/src/Tween.ts`, `onComplete` carries the `onStart` description copied onto the wrong field. One-line fix.
+1. ~~**Add the `onYoyo` (direction-flip) signal.**~~ Landed. `Tween.onYoyo` is created in `tween.ts`, emitted
+   at the flip in `updateTweens.ts`, and covered by "emits onYoyo on direction flip with reflect".
+2. ~~**Document the unit-agnostic time contract in source.**~~ Landed. `updateTweens.ts` carries the durable
+   comment: time is unit-agnostic, and `deltaTime`, `duration`, `delay`, `repeatDelay` and `each` all pass
+   through in whatever unit the caller supplies, with no built-in seconds assumption.
+3. ~~**Fix the `Tween.onComplete` doc comment.**~~ Landed. It now reads "Fires once when the tween finishes
+   its final cycle (after all repeats)" rather than the copied `onStart` text.
 
 ## Backlog
 

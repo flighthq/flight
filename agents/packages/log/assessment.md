@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/log'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,13 +10,21 @@ Verified against the live tree (1 source file, 1 test file, 114 tests, 61 export
 
 ## Recommended
 
-Sweep-safe: prerequisites to make the package compile plus source style fixes.
+_None open._ Re-verified against live source on 2026-07-31 (3 source files, 1 test file, 115 tests,
+59 exports): all three items landed.
 
-1. **Rebuild missing types in `@flighthq/types`.** Per charter Decision #1. Write 7 types: `LogContext`, `LogDataProvider`, `LogFormatter`, `LogSignals`, `LogSpan`, `LogTimer`, `LogTransportBackend`. One concept per file.
+## Landed
 
-2. **Remove 3 structural divider comments.** Per charter Decision #4.
-
-3. **Package Map description update.** Per charter Open direction #2.
+1. ~~**Rebuild missing types in `@flighthq/types`.**~~ Landed. All seven exist — `LogContext`,
+   `LogDataProvider`, `LogFormatter`, `LogSpan`, `LogTimer` and `LogTransportBackend` in
+   `packages/types/src/Log.ts`, with `LogSignals` in its own file. The original item asked for "one concept
+   per file"; grouping the six related log types in one file is the sanctioned
+   [types-layout](../../conventions/types-layout.md) grouping pattern, not a shortfall, so the item is
+   satisfied rather than partially done.
+2. ~~**Remove 3 structural divider comments.**~~ Landed; no `// ----` or `// ====` dividers remain in
+   `packages/log/src`.
+3. ~~**Package Map description update.**~~ Landed; the catalog entry now describes the leveled structured
+   logging surface rather than a one-liner.
 
 ## Backlog
 

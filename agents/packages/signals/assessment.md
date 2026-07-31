@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/signals'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,10 +10,14 @@ Sorted from `review.md` (solid, 90/100) and the direction session (2026-07-02). 
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/signals`, no cross-package coupling, no open design decision.
+_None open._ Re-verified against live source on 2026-07-31 (7 source files, 5 test files, 39 tests,
+11 exports): both deprecated aliases are gone.
 
-- **Delete `disconnectAllSignals` alias.** `slot.ts` — zero-caller `@deprecated` shim for the rename to `disconnectAllSlots`. Pre-release policy mandates deletion (Decision #4).
-- **Delete `connectSignalAtRate` alias.** `throttle.ts` — zero-caller `@deprecated` shim for the rename to `connectSignalAtFrameRate`. Same policy. Delete the alias, its export, and the alias-only test in `throttle.test.ts`.
+## Landed
+
+- ~~**Delete `disconnectAllSignals` alias.**~~ Landed; no occurrence remains in `packages/signals/src`.
+- ~~**Delete `connectSignalAtRate` alias.**~~ Landed; the alias, its export, and its alias-only test are all
+  gone. `connectSignalAtFrameRate` is the sole name.
 
 ## Backlog
 

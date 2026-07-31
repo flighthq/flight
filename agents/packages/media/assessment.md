@@ -1,16 +1,16 @@
 ---
 package: '@flighthq/media'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # media — Assessment
 
-Verified against the live tree (3 source files, 3 test files, 53 tests, 41 exports), the prior review (64/100), and the direction session (2026-07-02). Four charter decisions blessed. The package has correctness holes and ~14 lost functions.
+Verified against the live tree on 2026-07-31 (6 source files, 4 test files, 65 tests, 42 exports), the prior review (64/100), and the direction session (2026-07-02). Four charter decisions blessed. The package has correctness holes and ~14 lost functions.
 
 ## Recommended
 
-_None open._ All four items landed and were re-verified against live source on 2026-07-30; they are recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as work. The sweep that verified them found a separate live defect in the mixer's pause/resume scope, since fixed — see [status](./status.md).
+_None open._ All four items landed and were re-verified against live source on 2026-07-30, and the counts above were refreshed on 2026-07-31 after the audio-mixer guard landed; they are recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as work. The sweep that verified them found a separate live defect in the mixer's pause/resume scope, since fixed — see [status](./status.md).
 
 ## Landed
 
