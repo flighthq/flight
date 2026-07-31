@@ -49,8 +49,6 @@ export * from './glSharpenEffect';
 export * from './glSketchEffect';
 export * from './glSmaaEffect';
 export * from './glSsaoEffect';
-export * from './glSsrEffect';
-export * from './glTaaEffect';
 export * from './glTiltShiftEffect';
 export * from './glToneMapEffect';
 export * from './glVignetteEffect';

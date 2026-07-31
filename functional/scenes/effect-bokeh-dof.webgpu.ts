@@ -12,14 +12,12 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuBokehDepthOfFieldEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -27,8 +25,8 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column. Wgpu has no depth G-buffer here, so the effect is color-only/uniform:
-// it applies a uniform bokeh blur across the frame rather than a depth-driven circle-of-confusion.
+// WGPU has no realized bokeh depth-of-field capability. The unregistered operation is intentionally
+// skipped so this column records the backend's unsupported result without a misleading whole-frame blur.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -37,7 +35,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerStandardWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'BokehDepthOfFieldEffect', defaultWgpuBokehDepthOfFieldEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -58,8 +55,8 @@ export function render(root: Node2D): void {
 
 registerWgpuFunctionalTarget(state, scale);
 
-// Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away
-// from the center are clearly visible against the straight rectangle edges.
+// Off-center shapes retain the shared scene intent while the missing backend capability stays visible
+// as an unchanged image.
 
 const root = createDisplayObject();
 root.scaleX = scale;

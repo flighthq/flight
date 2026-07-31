@@ -12,20 +12,18 @@ import {
   createDisplayObject,
   createPosterizeEffect,
   createShape,
-  defaultCanvasPosterizeEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same full-frame posterize grade as render.webgl.ts: quantizes each channel to 4 levels,
-// realized through Canvas 2D compositing.
+// Canvas has no realized posterize capability. The unregistered operation is intentionally skipped so
+// this column records the backend's unsupported result without a fake passthrough runner.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -33,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'PosterizeEffect', defaultCanvasPosterizeEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -49,8 +46,8 @@ export function render(root: Node2D): void {
   endCanvasRenderEffectPipeline(state, pipeline, [createPosterizeEffect({ levels: 4 })]);
 }
 
-// Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:
-// quantizes each channel to 4 levels.
+// Distinct saturated-color shapes retain the shared scene intent while the missing backend capability
+// stays visible as an unchanged image.
 
 const root = createDisplayObject();
 root.scaleX = scale;

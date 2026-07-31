@@ -14,19 +14,17 @@ import {
   createSsrEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
-  defaultGlSsrEffectRunner,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// ssr is depth-driven [DEPTH]. Without a sampleable depth buffer in this test, the Gl recipe is a
-// color-only fallback (no reflections traced), passing the scene through.
+// GL has no realized SSR capability. The unregistered operation is intentionally skipped so this
+// column records the backend's unsupported result without a fake identity implementation.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerStandardGlMaterial(state);
-registerGlRenderEffect(state, 'SsrEffect', defaultGlSsrEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -58,9 +55,8 @@ export function render(root: Node2D): void {
   endGlRenderEffectPipeline(state, pipeline, [createSsrEffect({ maxDistance: 0.8, resolution: 0.5, steps: 24 })]);
 }
 
-// A normal scene of bright, saturated shapes on a near-black field. ssr is depth-driven: these tests
-// have no depth buffer, so the recipe is a color-only fallback (no reflections traced), but the scene
-// gives it real content to operate on.
+// Bright, saturated shapes retain the shared scene intent while the missing backend capability stays
+// visible as an unchanged image.
 
 const root = createDisplayObject();
 root.scaleX = scale;

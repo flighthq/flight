@@ -95,6 +95,7 @@ Run these at the points listed. Each check is fast; skipping them causes cascadi
 - **After any edit session, before committing** — `npm run fix` (runs `lint:fix`, `order:fix`, `format`).
 - **After package-level changes** (manifests, workspace references, exports, build targets, side-effect behavior) — `npm run packages:check`. Fix everything it reports before moving on.
 - **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order` (`order:fix` rewrites), and `npm run api` (signatures and naming symmetry).
+- **After adding an effect runner/registrar or a backend leaf renderer** — run `npm run reachability:check`; it hard-gates the exact runner↔registrar inverse and reports non-blocking `.`/`./contract` lane drift. Review intentional drift, then accept it with `npm run reachability:baseline`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding source** — `npm run portable:check` (part of `npm run check`) gates the C++-lowerable subset: no `eval` / `new Function` / `new Proxy` / `Reflect.*` / `with` / `*.prototype` assignment / `structuredClone`. Closures, `async`, generics, `Map`/`Set`, and classes all lower fine and are not gated. An intentional, contained escape goes in the script's `ALLOW` with a reason. See [portability](agents/portability.md).
 - **After changes that may affect tree-shaking** (examples, package exports, barrels, renderer registration, dependencies) — `npm run size`.

@@ -29,7 +29,11 @@ vi.mock('./canvasSourceModeCompositing', () => ({
 }));
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { applyOuterGlowEffectToCanvas, defaultCanvasOuterGlowEffectRunner } from './canvasOuterGlowEffect';
+import {
+  applyOuterGlowEffectToCanvas,
+  defaultCanvasOuterGlowEffectRunner,
+  registerCanvasOuterGlowEffect,
+} from './canvasOuterGlowEffect';
 import { compositeCanvasSourceMode } from './canvasSourceModeCompositing';
 
 describe('applyOuterGlowEffectToCanvas', () => {
@@ -70,6 +74,10 @@ describe('defaultCanvasOuterGlowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultCanvasOuterGlowEffectRunner).toBe('function');
   });
+});
+
+describe('registerCanvasOuterGlowEffect', () => {
+  it('is a function', () => expect(registerCanvasOuterGlowEffect).toBeTypeOf('function'));
 });
 
 beforeEach(() => {

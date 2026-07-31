@@ -1,6 +1,12 @@
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, VignetteEffect } from '@flighthq/types/contract';
+import type {
+  CanvasRenderEffectRunner,
+  CanvasRenderState,
+  CanvasRenderTarget,
+  VignetteEffect,
+} from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Vignette (REAL): draw the scene, then overlay a radial gradient — transparent inside `radius`,
 // ramping to the vignette color over `softness` toward the corners — using the 'multiply' composite op
@@ -50,3 +56,7 @@ export function applyVignetteEffectToCanvas(
 export const defaultCanvasVignetteEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyVignetteEffectToCanvas(ctx.source, ctx.dest, effect as VignetteEffect);
 };
+
+export function registerCanvasVignetteEffect(state: CanvasRenderState): void {
+  registerCanvasRenderEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
+}

@@ -1,5 +1,6 @@
 import type {
   CanvasRenderEffectRunner,
+  CanvasRenderState,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   FilmGrainEffect,
@@ -7,6 +8,7 @@ import type {
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Film grain (REAL): draw the scene, then overlay a tiled noise pattern at `intensity` via the
 // 'overlay' composite op. The noise is generated once into a small scratch canvas (cell size from
@@ -65,3 +67,7 @@ export function applyFilmGrainEffectToCanvas(
 export const defaultCanvasFilmGrainEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as FilmGrainEffect);
 };
+
+export function registerCanvasFilmGrainEffect(state: CanvasRenderState): void {
+  registerCanvasRenderEffect(state, 'FilmGrainEffect', defaultCanvasFilmGrainEffectRunner);
+}
