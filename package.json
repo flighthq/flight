@@ -81,6 +81,7 @@
     "packages:check:json": "tsx ./scripts/packages.ts --json",
     "mocks": "tsx ./scripts/mocks.ts",
     "mocks:check": "tsx ./scripts/mocks.ts --check",
+    "backend-prefix:check": "tsx ./scripts/backendPrefix.ts --check",
     "mocks:json": "tsx ./scripts/mocks.ts --json",
     "portable": "tsx ./scripts/portable.ts",
     "portable:check": "tsx ./scripts/portable.ts --check",

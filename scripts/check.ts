@@ -53,6 +53,7 @@ run('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selec
 run('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
 run('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
 run('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
+run('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 
 if (!scoped) {
   run('api:check', 'tsx', ['scripts/api.ts', '--check']);
