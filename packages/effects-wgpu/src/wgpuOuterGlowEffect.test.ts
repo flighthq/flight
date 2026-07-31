@@ -1,38 +1,43 @@
-vi.hoisted(() => {
+import type * as WgpueffectblitshaderModule from './wgpuEffectBlitShader';
+import type * as WgpuoutergloweffectModule from './wgpuOuterGlowEffect';
+
+// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+let applyWgpuEffectBlitPass: typeof WgpueffectblitshaderModule.applyWgpuEffectBlitPass;
+let applyWgpuEffectErasePass: typeof WgpueffectblitshaderModule.applyWgpuEffectErasePass;
+let applyOuterGlowEffectToWgpu: typeof WgpuoutergloweffectModule.applyOuterGlowEffectToWgpu;
+let defaultWgpuOuterGlowEffectRunner: typeof WgpuoutergloweffectModule.defaultWgpuOuterGlowEffectRunner;
+
+beforeAll(async () => {
   vi.resetModules();
+  vi.doMock('@flighthq/render-wgpu/contract', () => {
+    let nextTargetId = 0;
+    return {
+      acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
+        ...descriptor,
+        id: `scratch-${nextTargetId++}`,
+        texture: {},
+      })),
+      releaseWgpuRenderTarget: vi.fn(),
+    };
+  });
+  vi.doMock('./wgpuEffectBlitShader', () => ({
+    applyWgpuEffectBlitPass: vi.fn(),
+    applyWgpuEffectErasePass: vi.fn(),
+  }));
+  vi.doMock('./wgpuEffectBoxBlur', () => ({
+    applyWgpuEffectBoxBlur: vi.fn(),
+  }));
+  vi.doMock('./wgpuEffectPass', () => ({
+    clearWgpuEffectTarget: vi.fn(),
+  }));
+  vi.doMock('./wgpuEffectTintShader', () => ({
+    applyWgpuEffectTintPass: vi.fn(),
+  }));
+  ({ applyWgpuEffectBlitPass, applyWgpuEffectErasePass } = await import('./wgpuEffectBlitShader'));
+  ({ applyOuterGlowEffectToWgpu, defaultWgpuOuterGlowEffectRunner } = await import('./wgpuOuterGlowEffect'));
 });
-
-vi.mock('@flighthq/render-wgpu/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    releaseWgpuRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./wgpuEffectBlitShader', () => ({
-  applyWgpuEffectBlitPass: vi.fn(),
-  applyWgpuEffectErasePass: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectBoxBlur', () => ({
-  applyWgpuEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectPass', () => ({
-  clearWgpuEffectTarget: vi.fn(),
-}));
-
-vi.mock('./wgpuEffectTintShader', () => ({
-  applyWgpuEffectTintPass: vi.fn(),
-}));
-
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
-import { applyOuterGlowEffectToWgpu, defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
 
 describe('applyOuterGlowEffectToWgpu', () => {
   it('is a function', () => {
@@ -87,7 +92,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  vi.doUnmock('@flighthq/render-wgpu');
+  vi.doUnmock('@flighthq/render-wgpu/contract');
   vi.doUnmock('./wgpuEffectBlitShader');
   vi.doUnmock('./wgpuEffectBoxBlur');
   vi.doUnmock('./wgpuEffectPass');

@@ -1,24 +1,29 @@
-const glMock = vi.hoisted(() => ({
+import type * as GlEffectBoxBlurModule from './glEffectBoxBlur';
+
+// Mocked per file with doMock plus a dynamic import of the subject, not a top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+const glMock = {
   ONE: 1,
   ZERO: 0,
   blendFunc: vi.fn(),
   uniform1f: vi.fn(),
   uniform2f: vi.fn(),
   uniform4f: vi.fn(),
-}));
+};
 
-vi.hoisted(() => {
+let applyGlEffectBoxBlur: typeof GlEffectBoxBlurModule.applyGlEffectBoxBlur;
+
+beforeAll(async () => {
   vi.resetModules();
+  vi.doMock('@flighthq/render-gl/contract', () => ({
+    compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
+    drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
+      setUniforms(glMock as never, {} as never);
+    }),
+  }));
+  ({ applyGlEffectBoxBlur } = await import('./glEffectBoxBlur'));
 });
-
-vi.mock('@flighthq/render-gl/contract', () => ({
-  compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
-  drawGlFullscreenPass: vi.fn((_state, _loc, _textures, _dest, setUniforms) => {
-    setUniforms(glMock as never, {} as never);
-  }),
-}));
-
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 
 describe('applyGlEffectBoxBlur', () => {
   it('is a function', () => {
@@ -44,7 +49,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  vi.doUnmock('@flighthq/render-gl');
+  vi.doUnmock('@flighthq/render-gl/contract');
   vi.resetModules();
 });
 

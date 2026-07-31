@@ -6,7 +6,29 @@ import {
 import { emitSignal } from '@flighthq/signals/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
-import { createGlApplicationRenderView, destroyGlApplicationRenderView } from './glApplicationRenderView';
+import type * as GlapplicationrenderviewModule from './glApplicationRenderView';
+
+// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+let createGlApplicationRenderView: typeof GlapplicationrenderviewModule.createGlApplicationRenderView;
+let destroyGlApplicationRenderView: typeof GlapplicationrenderviewModule.destroyGlApplicationRenderView;
+
+beforeAll(async () => {
+  vi.resetModules();
+  vi.doMock('@flighthq/node/contract', () => ({
+    createViewport: mocks.createViewport,
+  }));
+  vi.doMock('@flighthq/render-gl/contract', () => ({
+    createGlRenderState: mocks.createGlRenderState,
+    createGlRenderTarget: mocks.createGlRenderTarget,
+    destroyGlRenderState: mocks.destroyGlRenderState,
+    destroyGlRenderTarget: mocks.destroyGlRenderTarget,
+    invalidateGlRenderStateCache: mocks.invalidateGlRenderStateCache,
+    resizeGlRenderTarget: mocks.resizeGlRenderTarget,
+  }));
+  ({ createGlApplicationRenderView, destroyGlApplicationRenderView } = await import('./glApplicationRenderView'));
+});
 
 const mocks = vi.hoisted(() => ({
   createGlRenderState: vi.fn(),
@@ -16,19 +38,6 @@ const mocks = vi.hoisted(() => ({
   destroyGlRenderTarget: vi.fn(),
   invalidateGlRenderStateCache: vi.fn(),
   resizeGlRenderTarget: vi.fn(),
-}));
-
-vi.mock('@flighthq/node/contract', () => ({
-  createViewport: mocks.createViewport,
-}));
-
-vi.mock('@flighthq/render-gl/contract', () => ({
-  createGlRenderState: mocks.createGlRenderState,
-  createGlRenderTarget: mocks.createGlRenderTarget,
-  destroyGlRenderState: mocks.destroyGlRenderState,
-  destroyGlRenderTarget: mocks.destroyGlRenderTarget,
-  invalidateGlRenderStateCache: mocks.invalidateGlRenderStateCache,
-  resizeGlRenderTarget: mocks.resizeGlRenderTarget,
 }));
 
 beforeEach(() => {
