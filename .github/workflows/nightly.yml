@@ -12,6 +12,10 @@ name: Nightly quality
 # advances to a commit this workflow actually verified — a develop push mid-run cannot leak
 # in. The push is fast-forward-only by construction: if main has diverged (someone pushed
 # to it directly), the push fails loudly instead of overwriting.
+#
+# Promotion additionally requires that tests.yml itself CONCLUDED SUCCESSFULLY for the pinned commit.
+# Nightly does not re-run those legs, so without that check the promotion gate was only as strong as
+# coverage + api, and a commit whose CI went red could still reach main.
 on:
   schedule:
     - cron: '0 4 * * *'
@@ -75,8 +79,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Reading the pinned commit's CI conclusion needs the Actions API.
+      actions: read
 
     steps:
+      # Nightly deliberately does not repeat the build/test/quality/size and render legs — it trusts
+      # tests.yml to have gated them. That trust was previously UNVERIFIED: `needs` can only see jobs in
+      # this workflow, so a develop commit whose CI went red still satisfied coverage + api and got
+      # promoted. This step closes that hole by asking the Actions API what tests.yml actually concluded
+      # for the pinned SHA.
+      #
+      # It refuses on anything short of an explicit success — a failure, a run still in flight, or NO run
+      # at all. The last case matters most: "no CI ran for this commit" is indistinguishable from "CI has
+      # not started yet", and neither is evidence of green. Absence of a red signal is not a green one.
+      - name: Require a green CI run for the pinned commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          run=$(gh api "repos/${{ github.repository }}/actions/workflows/tests.yml/runs?head_sha=$SHA&per_page=1" \
+            --jq '.workflow_runs[0] | "\(.status) \(.conclusion) \(.html_url)"' 2>/dev/null || true)
+          if [ -z "$run" ] || [ "$run" = "null null null" ]; then
+            echo "::error::No CI (tests.yml) run found for $SHA — refusing to promote a commit whose CI never ran."
+            exit 1
+          fi
+          status=$(echo "$run" | cut -d' ' -f1)
+          conclusion=$(echo "$run" | cut -d' ' -f2)
+          url=$(echo "$run" | cut -d' ' -f3)
+          echo "CI for $SHA: status=$status conclusion=$conclusion ($url)"
+          if [ "$status" != "completed" ] || [ "$conclusion" != "success" ]; then
+            echo "::error::CI for $SHA is $status/$conclusion — refusing to promote. See $url"
+            exit 1
+          fi
+
       # Full history so the local repo contains main's current tip and the remote can
       # validate the push below as a fast-forward.
       - uses: actions/checkout@v4
