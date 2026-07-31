@@ -4,7 +4,9 @@ import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contra
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
 // Map lookup, so there is no monolithic switch and unused effect recipes tree-shake away. Register an
-// alternative runner under the same key to swap algorithms.
+// alternative runner under the same key to swap algorithms. A built-in registerGl<Kind>Effect wrapper
+// is pure ergonomics: it calls this function with the literal kind and public default runner, and
+// installs no padding, shader-source, or backdrop companions.
 
 export function getGlRenderEffectRunner(state: GlRenderState, kind: string): GlRenderEffectRunner | null {
   return getGlRenderStateRuntime(state).glRenderEffectRegistry?.get(kind) ?? null;
