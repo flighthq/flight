@@ -1,3 +1,9 @@
+---
+package: '@flighthq/sensors'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # sensors — Assessment
 
 See [charter](./charter.md) for blessed direction.

@@ -1,3 +1,9 @@
+---
+package: '@flighthq/shell'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # shell — Assessment
 
 See [charter](./charter.md) for blessed direction.

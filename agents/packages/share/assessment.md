@@ -1,3 +1,9 @@
+---
+package: '@flighthq/share'
+updated: 2026-07-30
+basedOn: ./review.md
+---
+
 # share — Assessment
 
 See [charter](./charter.md) for blessed direction.

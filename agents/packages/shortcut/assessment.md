@@ -1,3 +1,9 @@
+---
+package: '@flighthq/shortcut'
+updated: 2026-07-30
+basedOn: ./review.md
+---
+
 # shortcut — Assessment
 
 See [charter](./charter.md) for blessed direction.

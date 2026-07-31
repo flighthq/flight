@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/text-markup` is the **styled-text markup codec** — the explicit, Flight-way realization of styled-text **`htmlText`** markup. It parses an HTML subset (the `htmlText` tag set) into Flight's rich-text data model — a `RichTextContent` plus its `TextFormatRange[]` — which the existing `RichText`/`TextLabel` display nodes already render. A codec neighbor of `@flighthq/textlayout`'s rich-text model, matching `path-formats`/`shape-formats` (markup string ↔ rich-text data).
 
-It replaces the **`textField.htmlText = "…"` magic property** (assign markup, the runtime silently parses + applies it) with an **explicit function you call** — `parseTextMarkup(html)` → data you then hand to a text node. That property is an anti-goal (implicit runtime application, see [anti-goals](../anti-goals.md)); this codec is the sanctioned explicit path.
+It replaces the **`textField.htmlText = "…"` magic property** (assign markup, the runtime silently parses + applies it) with an **explicit function you call** — `parseTextMarkup(html)` → data you then hand to a text node. That property is an anti-goal (implicit runtime application, see [anti-goals](../../anti-goals.md)); this codec is the sanctioned explicit path.
 
 ## North star
 

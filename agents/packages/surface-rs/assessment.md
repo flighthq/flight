@@ -1,3 +1,9 @@
+---
+package: '@flighthq/surface-rs'
+updated: 2026-07-28
+basedOn: ./review.md
+---
+
 # surface-rs — Assessment
 
 See [charter](./charter.md) for blessed direction.

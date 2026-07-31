@@ -94,7 +94,7 @@ Reserved fourth tier: **Material Feature / Modifier** (`@flighthq/shading`, char
 
 **Realization** comes in three shapes — inline contribution (fold into the draw), offscreen pass (bounce), declarative (DOM CSS) — and the **presence** of a `(kind, backend)` realization *is* the support matrix (generating/retiring [render-backend-support](../render-backend-support.md)). One-line rule: **data folds, code bounces.**
 
-**Retires:** `filters`, `filters-gl`, `filters-wgpu`, `filters-canvas`, `filters-css`, `filters-surface`, `filters-math` — contents sort into `adjustments` (pointwise) / `effects` (spatial-composite). **Touches:** filters*, effects*, materials (ColorTransform migrates out), scene2d-gl/sprite (inline realization). **Full design + migration staging:** [effect-adjustment-architecture](../../effect-adjustment-architecture.md). Resolves the filters/effects strand of fork B (the unconsumed `normalizeBitmapFilter`/`getBitmapFilterMargin` dispatchers go away with the package).
+**Retires:** `filters`, `filters-gl`, `filters-wgpu`, `filters-canvas`, `filters-css`, `filters-surface`, `filters-math` — contents sort into `adjustments` (pointwise) / `effects` (spatial-composite). **Touches:** filters*, effects*, materials (ColorTransform migrates out), scene2d-gl/sprite (inline realization). **Full design + migration staging:** [effect-adjustment-architecture](../effect-adjustment-architecture.md). Resolves the filters/effects strand of fork B (the unconsumed `normalizeBitmapFilter`/`getBitmapFilterMargin` dispatchers go away with the package).
 
 ## I. Visual authoring artifacts import as `-formats`, not as a code-layout DSL _(direction set 2026-07-12; packages chartered, unbuilt)_
 

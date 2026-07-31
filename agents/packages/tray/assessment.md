@@ -1,3 +1,9 @@
+---
+package: '@flighthq/tray'
+updated: 2026-07-30
+basedOn: ./review.md
+---
+
 # tray — Assessment
 
 See [charter](./charter.md) for blessed direction. Re-derived against live source 2026-07-30; the
