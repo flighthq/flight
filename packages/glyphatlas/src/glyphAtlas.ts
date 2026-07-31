@@ -17,7 +17,7 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       dirtyMinX: 0,
       dirtyMinY: 0,
       entries: new Map(),
-      lru: [],
+      lru: new Map(),
       maxGlyphs: options.maxGlyphs ?? 0,
       metrics: deriveGlyphMetricsFromFontSize(options.fontSize),
       packBottom: padding,
@@ -52,7 +52,7 @@ export function disposeGlyphAtlas(atlas: GlyphAtlas): void {
   const runtime = atlas.runtime;
   runtime.entries.clear();
   runtime.bitmaps.clear();
-  runtime.lru.length = 0;
+  runtime.lru.clear();
   runtime.shelves.length = 0;
   runtime.packBottom = runtime.padding;
   runtime.dirty = false;

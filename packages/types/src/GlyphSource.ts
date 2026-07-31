@@ -114,7 +114,12 @@ export interface GlyphAtlasRuntime {
   dirtyMinX: number;
   dirtyMinY: number;
   entries: Map<number, GlyphEntry>;
-  lru: number[];
+  // Codepoints in least-recently-used order. A Map rather than an array because recency is maintained
+  // on every cache hit: `delete` then `set` moves a key to the end in O(1), where an array had to scan
+  // itself with indexOf first — a per-glyph cost on the text-rendering hot path that grew with the
+  // cache. Iteration order is insertion order, so the first key is the eviction candidate. The value
+  // carries nothing; only key order matters.
+  lru: Map<number, true>;
   maxGlyphs: number;
   metrics: GlyphMetrics;
   packBottom: number;
