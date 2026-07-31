@@ -50,8 +50,10 @@ describe('captureSnapshot', () => {
 });
 
 describe('captureSnapshot cyclic and shared structure', () => {
-  // structuredClone supports cycles, so the doc's "structured-cloneable data" admits them. The freeze
-  // walk used to recurse until the stack overflowed; Object.isFrozen now doubles as the visited mark.
+  // The package contract is acyclic, so these are not a supported input — they cover incidental
+  // robustness, not a guarantee. Object.isFrozen doubles as the freeze walk's visited mark at no cost,
+  // so capture survives a cycle rather than overflowing; the downstream walks deliberately do not, and
+  // enableSnapshotGuards reports a cyclic source at capture time.
   it('captures a self-referencing object without overflowing the stack', () => {
     const node: Record<string, unknown> = { name: 'root' };
     node['self'] = node;

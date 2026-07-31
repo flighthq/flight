@@ -19,9 +19,11 @@ export function disableSnapshotGuards(): void {
  * leaves with `===`, so two `Map`s holding identical entries — or two `Date`s at the same instant —
  * are reported unequal. State that looks unchanged then pushes a fresh undo entry every frame.
  *
- * **Cycles.** `structuredClone` supports them and `captureSnapshot` handles them, but
- * `equalsSnapshot`, `interpolateSnapshots`, and `restoreSnapshot` all recurse without tracking what
- * they have visited, so a cyclic snapshot overflows the stack in any of the three. `restoreSnapshot`
+ * **Cycles.** The package contract is acyclic plain data, narrower than structured-cloneable on
+ * purpose: `structuredClone` supports cycles and `captureSnapshot` handles them, but `equalsSnapshot`,
+ * `interpolateSnapshots`, and `restoreSnapshot` all recurse without tracking what they have visited,
+ * and adding a visited set would tax every acyclic walk in the per-frame path. So a cycle is programmer
+ * error, and this is where it becomes diagnosable rather than a stack overflow several frames later. `restoreSnapshot`
  * is the one that hides: the first restore into a fresh target clones and succeeds, and only the
  * second — once the target itself holds the cycle — recurses forever. A `RangeError` with no Flight
  * frame in the stack is the least diagnosable failure in the package, which is why it is worth a

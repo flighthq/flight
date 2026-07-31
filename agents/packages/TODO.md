@@ -150,10 +150,8 @@ Design calls to settle before building the affected entries:
 
 ### glyphatlas (solid 68)
 
-- `bakeBitmapFont(atlas): BitmapFont`
-- Byte/area LRU budget
+- `bakeBitmapFont(atlas)` — BLOCKED on a design call, see below
 - Real line metrics from the canvas backend
-- Guards + `explain*`
 
 ### image (solid 68)
 
