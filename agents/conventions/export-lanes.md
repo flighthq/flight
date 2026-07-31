@@ -158,6 +158,14 @@ construction, and it fits the repo's generated-artifact culture (support matrix,
 type-home). It is a clean v2 if the reviewed-report proves too loose — but it adds a
 generator + committed-output check, and is not required for the lane split to land.
 
+## Before promoting a symbol to the public lane
+
+**Grep `index.ts` for the symbol first.** Promoting something already exported is a duplicate-identifier build break, not a fix.
+
+The failure this prevents has already happened twice in one day: `defaultGlBitmapTextRenderer` and `defaultWgpuBitmapTextRenderer` were each promoted independently by two agents who had both spotted the same stranded capability, and neither checked whether it was still stranded. Both packages broke.
+
+The general rule is worth stating beyond export lanes, because several agents can reach the same file: *"I found a defect" and "the defect is still there" are different claims.* Confirm the second before writing the repair. A fix that finds nothing to fix is a no-op at best and a break at worst.
+
 ## Enforcement (what the checks must do)
 
 - **`packages:check`** — (1) accept `./contract` as a declared export target; (2) reject
