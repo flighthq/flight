@@ -47,6 +47,19 @@ Bounded batch content can still participate in a document-shaped DOM scene throu
 
 Do not add a direct-mount opt-in to the Sprite or texture-resolver path; `HtmlView` is the existing, explicit direct-mount primitive. Both embed forms are for bounded payloads inside otherwise document-shaped scenes. Flattening one enormous batch into one canvas also flattens its culling granularity, so if batch content dominates the scene, choose Canvas, WebGL, or WebGPU for the whole scene instead.
 
+### Canvas 2D effect coverage
+
+`@flighthq/effects` defines 53 effect kinds. On Canvas 2D, **8 are actually realized** — Bloom, Blur, DropShadow, FilmGrain, OuterGlow, Pixelate, Scanlines, Vignette. Read the count carefully before scoping a canvas effect test: `effects-canvas` exports 39 runners, but **31 of them are passthrough stubs** that copy source to dest through `passthroughCanvasEffectPass` and change no pixel. A stub registers like a real runner, so `hasCanvasRenderEffectRunner` answers `true` and a caller cannot tell the difference from the outside — the effect simply does nothing. Treat "a canvas runner exists" as no evidence at all; check the file for `passthroughCanvasEffectPass`.
+
+Two effects are **impossible on Canvas 2D**, and are recorded here so they are not repeatedly re-attempted. These are not a statement about the other gaps, which are merely unwritten:
+
+- **`CustomShaderEffect`** — the descriptor's `shaderKey` names a GLSL/WGSL source registered through `registerGlCustomShaderSource`. Canvas 2D has no programmable per-fragment stage to bind one to. Impossible by construction, not unimplemented. A per-pixel JS callback would be a *different* feature with a different descriptor, not a canvas realization of this one.
+- **`ContactShadowsEffect`** — needs a sampleable depth attachment to find contact points, and Canvas 2D has no depth buffer. Worth knowing that gl does not have the real thing either: `applyContactShadowsEffectToGl` currently aliases SSAO's local-occlusion pass, explicitly until the effect pipeline exposes sampleable depth. So this is one gap on canvas and an approximation everywhere else.
+
+Everything else missing on canvas is unwritten rather than blocked, and splits three ways. **Cheap, because the machinery is already there:** `BlendEffect` and `CompositeEffect` (Canvas 2D `globalCompositeOperation` covers the whole `AdvancedBlendMode` set natively — note gap #1 below already claims canvas realizes advanced blend, which is true of the primitive and false of the effect, since no canvas `BlendEffect` runner exists); `InnerGlowEffect` and `InnerShadowEffect` (the real, non-stub OuterGlow and DropShadow runners are the same recipe with inner masking). **Moderate:** `BevelEffect`, `GradientBevelEffect`, `GradientGlowEffect` — blur plus offset plus composite, with `createLinearGradient` for the ramp. **Only via `getImageData` per-pixel JS, correct but slow:** `BarrelDistortionEffect` and `PanniniProjectionEffect` (radial per-pixel remap), and most of the 31 existing stubs.
+
+Five kinds — `AutoExposureEffect`, `BarrelDistortionEffect`, `FilmEmulationEffect`, `PanniniProjectionEffect`, `VolumetricLightEffect` — have **no runner on any backend at all**, only a descriptor and defaults in `@flighthq/effects`. They are not canvas gaps and should not be filed as ones; the open question for them is whether the effect ships at all, on any backend.
+
 ## 3D capability matrix (gl / wgpu only — canvas/dom are 2D)
 
 | Feature | gl | wgpu | Notes / source |
