@@ -13,16 +13,16 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 // canvas-raster-to-texture shortcut (resolution-bound, so circles go jagged when scaled up). Each fill
 // region is tessellated to a triangle mesh (CPU, cached by content version in webgpuShape) and drawn here
 // with a flat-color pipeline, transformed by the node world transform in the vertex shader so it stays
-// crisp at any zoom. Gradient/texture styles and closed stroke rings still take the raster path.
+// crisp at any zoom. Gradient/texture styles and pathological stroke centerlines still take the raster
+// path.
 //
 // The fill is gated by any active contour clip: the pipeline compares stencil 'equal' currentMaskDepth
 // (set per draw via setStencilReference) and writes nothing back, so at depth 0 the cleared stencil (0)
 // passes everywhere and inside a clip only the clip's stamped region passes. Blend state is immutable
 // in WebGPU, so the pipeline cache is keyed by the node's fixed-function BlendMode and target format.
 //
-// Cannot be visually captured headless (no GPU adapter); the unit test asserts the pipeline/draw/uniform
-// call shape against the mock device. Mirror this against the verified webgl result when a GPU is
-// available.
+// The shape-stroke-ring-fallback functional scene exercises this path through the headless software
+// adapter and keeps its closed-ring pixels in parity with Canvas and WebGL.
 
 // Draws the shape's tessellated fill meshes. Flushes the quad-batch writer first (these go through a separate
 // pipeline). Uploads each mesh's geometry and premultiplied color into the shape's reusable per-shape
