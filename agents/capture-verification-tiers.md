@@ -1,9 +1,25 @@
 # Capture Verification Tiers — what each leg checks, and what fails hard
 
-**Status: PROPOSAL, not a decision.** Written by builder2 at chief's request, folding the "examples-parity is
-signal-free" question and the tool-capture verification-policy question into one, because they turned out to
-have the same shape. Nothing here is implemented. Read this before changing a capture leg, a verification
-default, or a CI gate that consumes them.
+**Status: items 1, 2 and 4 IMPLEMENTED; item 3 open and blocked on a live finding (see "What the live leg
+found").** Written by builder2 at chief's request, folding the "examples-parity is signal-free" question and
+the tool-capture verification-policy question into one, because they turned out to have the same shape. Read
+this before changing a capture leg, a verification default, or a CI gate that consumes them.
+
+## The organizing rule (blessed doctrine)
+
+**A tier either has what it needs and gates hard, or it fails loudly saying so. There is no
+silent degrade-to-success.**
+
+A leg that reports success while checking almost nothing is worse than an absent leg, because an absent leg is
+visibly absent. This is the rule the rest of this document exists to apply, and it decides the cases that come
+up in practice:
+
+- A gated check that compared **zero** things fails, and names what it lacked. It does not pass quietly.
+- A known bug is **not** converted into a skip to make a leg green. Naming the bug in the skip reason does not
+  change this — a skip is precisely how a real bug stops being seen. Skips are for legitimate backend
+  differences, which is what the existing `effect-*` entries in `FLIGHT_PARITY_SKIP` are.
+- An exemption must be one the check genuinely cannot evaluate (a run narrowed to a single renderer, an
+  interrupted run), not one that is merely inconvenient.
 
 ## The finding that unifies both halves
 
@@ -16,6 +32,46 @@ simply never given the input it needs, and nothing says so out loud.
 
 The consequence is a leg that reports success while checking almost nothing, which is worse than a leg that
 is absent — an absent leg is visibly absent.
+
+## What the live leg found
+
+Items 1 and 2 shipped together, and the leg went from 107 silent skips to **64 parity comparisons passing,
+3 failing, 1 uncovered**. Everything below was invisible before that.
+
+**The uncovered entry is correct behaviour, not a residual gap.** `cross-backend-embed` ships only a `dom`
+renderer, so under the parity leg's `canvas,webgl,webgpu` filter it has nothing to compare. It warns and does
+not fail the run. This is why the coverage verdict is a **run-level** rule rather than a per-entry one: a
+single-backend scene legitimately compares nothing, while a whole run that compares nothing is unconfigured.
+
+**Three true positives, all pre-existing.** Every one was read from its screenshots rather than trusted from
+its distance number:
+
+1. `tilemap` / webgpu — **root cause found and fixed.** The example never called any
+   `registerWgpu*TextureResolver`, so the tilemap's atlas texture had no resolver and nothing drew. The
+   earlier readiness-gate hypothesis (`isWgpuExternalImageSourceReady` skipping a not-yet-decoded image) is
+   **refuted**: the tileset is an `HTMLCanvasElement` drawn synchronously at module scope, ready by
+   construction, and forcing repeated redraws did not change the outcome. No new diagnostic crumb was needed
+   either — the existing guard already said exactly this, in words, in `logs.jsonl`. The inversion rule
+   worked; nobody was reading the log. After the fix, `canvas·webgpu` parity is 0.00.
+2. `bitmapfont-generate` — broken on **both** backends, differently, which is why they diverge by 37.16.
+   Canvas draws solid white boxes where glyphs belong; webgl draws no text at all, only the atlas strip.
+3. `materialshowcase` — webgl·webgpu diverge by 20.64 against a tolerance of 15. Real, and reported by the
+   validate leg; not characterized further here (see the capture-path caveat below).
+
+**A resolver-registration asymmetry makes case 1 a recurrence generator.** `render-gl` offers
+`registerStandardGlTextureResolvers` as a one-call bundle; `render-wgpu` exposes only the four individual
+`registerWgpu*TextureResolver` functions with no equivalent bundle. Today **9 of 40** wgpu examples register
+any resolver at all. The missing bundle is a suggestion for `render-wgpu`, not a change made here.
+
+**The capture path and the validate path do not agree about webgpu, and item 3 depends on which is right.**
+On this machine every `capture --tool=examples` webgpu screenshot across nine different scenes carries one
+identical hash — a uniform blank frame — while the same scenes render correctly through `validate`, and
+canvas/webgl captures are all distinct. Enabling `--verify` for examples captures (item 3) would therefore
+fail every webgpu example here, for a reason that is not the scene's fault. **Item 3 should not ship until
+this discrepancy is explained**, because it decides whether verification would be measuring the scene or the
+harness. Two incidental facts worth keeping: identical hashes across unrelated scenes is a fast test for
+"the harness, not the scene", and `logs.jsonl` captures only `warn`/`error` — a `console.log` probe records
+nothing.
 
 ## Part A — why all 107 example captures skipped
 
@@ -40,7 +96,8 @@ from one load, so cross-load flakiness cannot affect them.
 ### Options
 
 - **A1 — give examples explicit parity groups.** Uses the documented same-run path, needs no committed
-  artifacts, and keeps examples environment-independent. **Recommended.**
+  artifacts, and keeps examples environment-independent. **Chosen and implemented** — `examples` now shares
+  the `visual` group with `functional` in `getFlightCaptureValidationPreset`.
 - **A2 — make `--no-regression` waive the baseline gate.** Tempting and nearly a one-liner, but it silently
   re-admits backends never proven self-stable, which is the flakiness the policy was written to avoid. It
   would trade a silent skip for a flaky failure. **Not recommended.**
@@ -51,8 +108,10 @@ from one load, so cross-load flakiness cannot affect them.
   discards real signal: smoke proves each backend rendered *something*, parity proves they rendered the *same
   thing*. Those catch different bugs. Prefer A1; take A4 only if A1 proves impractical.
 
-Whichever is chosen, **a leg that skips everything should fail, not pass.** A `--require-coverage`-style
-verdict (fail when zero comparisons ran) would have surfaced this on day one instead of leaving a green tick.
+Whichever is chosen, **a leg that skips everything should fail, not pass.** **Implemented** as
+`isCaptureParityCoverageFailure`, with `explainCaptureParityUncovered` supplying the reason as plain data.
+Verified by A/B against the real leg rather than by unit tests alone: same command and example, only the file
+differing, gave `ok` / exit 0 before and `FAILED` / exit 1 with the reason after.
 
 ## Part B — what verification actually does today
 
