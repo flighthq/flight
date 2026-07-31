@@ -24,6 +24,41 @@ describe('detectEndianness', () => {
   });
 });
 
+describe('legacy EdgeHTML', () => {
+  // Edge only became Chromium at Edg/79. The blink branch's `edg` alternative matches `Edge/18` too, so
+  // EdgeHTML was reported as blink — and a caller gating a Chromium workaround on that would apply it to
+  // a browser that never ran Chromium.
+  const LEGACY_EDGE =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763';
+
+  it('is not reported as blink', () => {
+    expect(parseUserAgentEngine(LEGACY_EDGE)).toBe('unknown');
+  });
+
+  // The realistic UA carries a Chrome token, so before the fix this did not merely come back empty —
+  // it came back with CHROME's version, which is a wrong answer rather than a missing one.
+  it('does not report the embedded Chrome version as its engine version', () => {
+    const engine = parseUserAgentEngine(LEGACY_EDGE);
+    expect(parseUserAgentEngineVersion(LEGACY_EDGE, engine)).toBe('');
+  });
+
+  it('is still not blink without a Chrome token', () => {
+    expect(parseUserAgentEngine('Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Edge/18.17763')).toBe('unknown');
+  });
+
+  // The discriminator is the trailing `e`, so the fix must not catch modern Edge or Edge on iOS.
+  it('leaves modern Chromium Edge reported as blink', () => {
+    const modern =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
+    expect(parseUserAgentEngine(modern)).toBe('blink');
+    expect(parseUserAgentEngineVersion(modern, 'blink')).toBe('120.0.0.0');
+  });
+
+  it('leaves Edge on iOS reported as webkit', () => {
+    expect(parseUserAgentEngine('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) EdgiOS/120.0')).toBe('webkit');
+  });
+});
+
 describe('parseUserAgentArch', () => {
   it('detects arm64 from aarch64 token', () => {
     expect(parseUserAgentArch('Mozilla/5.0 (Linux; aarch64) AppleWebKit/537.36')).toBe('arm64');
