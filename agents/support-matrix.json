@@ -1145,6 +1145,15 @@
       "label": "Per",
       "scenes": [
         {
+          "scene": "per-node-effect-glow-shadow",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "per-node-effect-lane",
           "backends": {
             "canvas": true,
@@ -1235,6 +1244,15 @@
             "dom": false,
             "webgl": true,
             "webgpu": false
+          }
+        },
+        {
+          "scene": "render-texture-sprite-axes",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
           }
         }
       ]
