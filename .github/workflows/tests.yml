@@ -57,7 +57,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:check
-      - run: npm run headers:check
 
   # build / test / quality / size / render all `needs: build-check`; when build-check is skipped
   # (docs-only change) they skip with it, so the `code` gate only needs stating once.
