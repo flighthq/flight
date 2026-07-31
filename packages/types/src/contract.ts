@@ -580,6 +580,8 @@ export * from './StepPosition';
 export * from './StopTweenOptions';
 export * from './Storage';
 export * from './StrokeStyle';
+export * from './StrokePathTessellationExplanation';
+export * from './StrokePathTessellationReason';
 export * from './Bitmap';
 export * from './BitmapReadback';
 export * from './BitmapCompositeMode';
