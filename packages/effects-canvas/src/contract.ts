@@ -2,6 +2,7 @@ export * from './canvasColorMatrixPass';
 export * from './canvasBlendEffect';
 export * from './canvasBloomEffect';
 export * from './canvasBlurEffect';
+export * from './canvasCompositeEffect';
 export * from './canvasDropShadowEffect';
 export * from './canvasEffectCompositing';
 export * from './canvasEffectDropShadowCss';
