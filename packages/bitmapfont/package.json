@@ -36,10 +36,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/glyphatlas": "*",
     "typescript": "^5.3.0"
   },
   "description": "Static bitmap font — an immutable pre-baked atlas + glyph/kerning/metrics tables implementing the GlyphSource seam, the static sibling of the dynamic glyphatlas",

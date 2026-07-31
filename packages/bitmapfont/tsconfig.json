@@ -10,6 +10,12 @@
   },
   "references": [
     {
+      "path": "../glyphatlas"
+    },
+    {
+      "path": "../texture"
+    },
+    {
       "path": "../textureatlas"
     },
     {
