@@ -4,7 +4,7 @@ import { tessellatePath } from '@flighthq/path/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
-import { getShapeFillRegions, getShapeStrokeRegions, hasShapeFill } from '@flighthq/shape/contract';
+import { getShapeFillRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
   Image,
@@ -41,7 +41,7 @@ interface WgpuShapeData {
   lastW: number;
   lastH: number;
   // GPU tessellated-mesh cache, rebuilt when the content revision changes. Null until first resolved;
-  // populated for solid-fill and stroke-only shapes (resolveWgpuShapeMeshRegions), else the raster path runs.
+  // populated only when every fill and stroke resolves to a solid mesh region, otherwise raster runs.
   meshVersion: number;
   meshes: WgpuShapeMesh[] | null;
   // Reusable per-shape GPU buffers for the mesh path, grown on demand and destroyed in destroyData.
@@ -63,12 +63,12 @@ function createWgpuShapeData(_state: RenderState, _source: Renderable): Renderer
     meshVersion: -1,
     meshes: null,
     meshBuffers: {
-      vertexBuffer: null,
-      vertexCapacity: 0,
-      indexBuffer: null,
-      indexCapacity: 0,
-      uniformBuffer: null,
-      bindGroup: null,
+      vertexBuffers: [],
+      vertexCapacities: [],
+      indexBuffers: [],
+      indexCapacities: [],
+      uniformBuffers: [],
+      bindGroups: [],
     },
   });
 }
@@ -85,25 +85,27 @@ function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void 
     runtime.textureSourcePremultipliedTextureCache.delete(shapeData.image);
   }
   const b = shapeData.meshBuffers;
-  b.vertexBuffer?.destroy();
-  b.indexBuffer?.destroy();
-  b.uniformBuffer?.destroy();
-  b.vertexBuffer = null;
-  b.indexBuffer = null;
-  b.uniformBuffer = null;
-  b.bindGroup = null;
+  for (const buffer of b.vertexBuffers) buffer.destroy();
+  for (const buffer of b.indexBuffers) buffer.destroy();
+  for (const buffer of b.uniformBuffers) buffer.destroy();
+  b.vertexBuffers.length = 0;
+  b.vertexCapacities.length = 0;
+  b.indexBuffers.length = 0;
+  b.indexCapacities.length = 0;
+  b.uniformBuffers.length = 0;
+  b.bindGroups.length = 0;
 }
 
-// Chooses the fillable regions to tessellate into GPU meshes for a shape: its solid-fill regions when it
-// is fill-only, or its stroke-outline regions (via getShapeStrokeRegions → strokePath) when it is
-// stroke-only. Returns null when the shape must use the raster fallback — a gradient/bitmap fill or
-// stroke, a closed-primitive (ring) stroke, or a shape that BOTH fills and strokes. Mirrors
-// scene2d-gl/glShape's resolveGlShapeMeshRegions.
+// Resolves every solid fill and open solid stroke into one fill-before-stroke mesh list. Either layer's
+// null sentinel keeps the whole shape on the raster path, preserving gradient/texture styles and closed
+// stroke rings that the direct-fill tessellator cannot express. Mirrors scene2d-gl/glShape.
 function resolveWgpuShapeMeshRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
   const fillRegions = getShapeFillRegions(commands);
-  if (fillRegions !== null) return fillRegions.length > 0 ? fillRegions : null;
-  if (hasShapeFill(commands)) return null;
-  return getShapeStrokeRegions(commands);
+  if (fillRegions === null) return null;
+  const strokeRegions = getShapeStrokeRegions(commands);
+  if (strokeRegions === null) return null;
+  const regions = fillRegions.concat(strokeRegions);
+  return regions.length > 0 ? regions : null;
 }
 
 export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -116,11 +118,10 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU mesh path: solid-fill shapes tessellate to colored meshes (crisp at any zoom), and a STROKE-ONLY
-  // shape offsets its strokes to fillable outlines via getShapeStrokeRegions (real joins/caps/dashing,
-  // resolution-independent — no offscreen raster). Falls through to the canvas-raster path for
-  // gradient/bitmap fills/strokes, closed-primitive (ring) strokes, and filled-and-stroked shapes (the
-  // fill + stroke mesh paths don't compose yet). Mirrors scene2d-gl/glShape.
+  // GPU mesh path: solid fills tessellate to colored meshes and open solid strokes become fillable
+  // outlines via getShapeStrokeRegions (real joins/caps/dashing, resolution-independent). Both layers
+  // compose fill-before-stroke. Gradient/texture styles and closed stroke rings stay on the raster path.
+  // Mirrors scene2d-gl/glShape.
   const regions = resolveWgpuShapeMeshRegions(commands);
   if (regions !== null && regions.length > 0) {
     const meshData = getWgpuRendererData<WgpuShapeData>(renderProxy.rendererData);

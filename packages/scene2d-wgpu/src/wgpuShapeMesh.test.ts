@@ -20,12 +20,12 @@ const TRIANGLE: WgpuShapeMesh = {
 
 function makeBuffers(): WgpuShapeMeshBuffers {
   return {
-    vertexBuffer: null,
-    vertexCapacity: 0,
-    indexBuffer: null,
-    indexCapacity: 0,
-    uniformBuffer: null,
-    bindGroup: null,
+    vertexBuffers: [],
+    vertexCapacities: [],
+    indexBuffers: [],
+    indexCapacities: [],
+    uniformBuffers: [],
+    bindGroups: [],
   };
 }
 
@@ -68,6 +68,20 @@ describe('drawWgpuShapeMeshes', () => {
     expect(pass.drawIndexed).toHaveBeenCalledWith(3);
   });
 
+  it('retains distinct GPU storage for every mesh recorded before submit', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+
+    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE, { ...TRIANGLE, color: 0x0080ff }], buffers);
+
+    expect(buffers.vertexBuffers).toHaveLength(2);
+    expect(buffers.indexBuffers).toHaveLength(2);
+    expect(buffers.uniformBuffers).toHaveLength(2);
+    expect(buffers.vertexBuffers[0]).not.toBe(buffers.vertexBuffers[1]);
+    expect(buffers.indexBuffers[0]).not.toBe(buffers.indexBuffers[1]);
+    expect(buffers.uniformBuffers[0]).not.toBe(buffers.uniformBuffers[1]);
+  });
+
   it('retires grown geometry buffers until the recorded frame is submitted', async () => {
     const state = await makeState();
     const buffers = makeBuffers();
@@ -83,7 +97,8 @@ describe('drawWgpuShapeMeshes', () => {
       indices: new Uint16Array([0, 1, 2, 1, 3, 2]),
     };
 
-    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE, larger], buffers);
+    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE], buffers);
+    drawWgpuShapeMeshes(state, makeProxy(), [larger], buffers);
 
     const retired = getWgpuRenderStateRuntime(state).retiredBuffers!;
     expect(retired).toHaveLength(2);
@@ -132,7 +147,7 @@ describe('drawWgpuShapeMeshes', () => {
 
     drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 0.5), [{ ...TRIANGLE, color: 0xffffff }], buffers);
 
-    const uniformData = writes.get(buffers.uniformBuffer!);
+    const uniformData = writes.get(buffers.uniformBuffers[0]);
     expect(uniformData).toBeDefined();
     // Color occupies floats 12..15 (after the mat3x3f columns): premultiplied (0.5, 0.5, 0.5, 0.5).
     const color = uniformData!.slice(12, 16);
