@@ -13,8 +13,7 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 // canvas-raster-to-texture shortcut (resolution-bound, so circles go jagged when scaled up). Each fill
 // region is tessellated to a triangle mesh (CPU, cached by content version in webgpuShape) and drawn here
 // with a flat-color pipeline, transformed by the node world transform in the vertex shader so it stays
-// crisp at any zoom. Gradient/bitmap fills and strokes still take the raster path (getShapeFillRegions
-// returns null).
+// crisp at any zoom. Gradient/texture styles and closed stroke rings still take the raster path.
 //
 // The fill is gated by any active contour clip: the pipeline compares stencil 'equal' currentMaskDepth
 // (set per draw via setStencilReference) and writes nothing back, so at depth 0 the cleared stencil (0)
@@ -27,9 +26,9 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 // Draws the shape's tessellated fill meshes. Flushes the quad-batch writer first (these go through a separate
 // pipeline). Uploads each mesh's geometry and premultiplied color into the shape's reusable per-shape
-// buffers (grown by recreating when a mesh needs more room) and issues one indexed draw per mesh, gated
-// by the active contour-clip stencil. The shared `matrix` (projection · worldTransform) is identical for
-// every mesh, so it is uploaded once into a single uniform region per mesh alongside that mesh's color.
+// buffer slot (grown by replacement when that region needs more room) and issues one indexed draw per
+// mesh, gated by the active contour-clip stencil. Slots are distinct because queue writes precede render
+// pass submission; reusing one slot would make every recorded draw observe the final mesh upload.
 export function drawWgpuShapeMeshes(
   state: WgpuRenderState,
   renderProxy: RenderProxy2D,
@@ -47,13 +46,11 @@ export function drawWgpuShapeMeshes(
   const device = state.device;
   const queue = device.queue;
 
-  const uniform = ensureShapeMeshUniform(state, pipelineEntry, buffers);
   // Writes the projection·world matrix into uniform columns 0..11 (it shares the same scratch array);
   // the per-mesh color fills 12..15 in the loop below. Same matrix for every mesh of this shape.
   shapeMeshMatrix(state, renderProxy);
 
   pass.setPipeline(pipelineEntry.pipeline);
-  pass.setBindGroup(0, buffers.bindGroup!);
   // The cleared stencil is 0, so at depth 0 'equal 0' passes everywhere; inside a contour clip only its
   // stamped region equals currentMaskDepth, so the fill is confined to the clip.
   pass.setStencilReference(runtime.currentMaskDepth);
@@ -65,8 +62,9 @@ export function drawWgpuShapeMeshes(
     const a = mesh.alpha * nodeAlpha;
     if (a <= 0) continue;
 
-    const vertexBuffer = ensureShapeMeshVertexBuffer(state, buffers, mesh.vertices.byteLength);
-    const indexBuffer = ensureShapeMeshIndexBuffer(state, buffers, mesh.indices.byteLength);
+    const uniform = ensureShapeMeshUniform(state, pipelineEntry, buffers, i);
+    const vertexBuffer = ensureShapeMeshVertexBuffer(state, buffers, i, mesh.vertices.byteLength);
+    const indexBuffer = ensureShapeMeshIndexBuffer(state, buffers, i, mesh.indices.byteLength);
     queue.writeBuffer(vertexBuffer, 0, mesh.vertices.buffer, mesh.vertices.byteOffset, mesh.vertices.byteLength);
     writeShapeMeshIndices(queue, indexBuffer, mesh.indices);
 
@@ -78,8 +76,9 @@ export function drawWgpuShapeMeshes(
     uniform[13] = g * a;
     uniform[14] = b * a;
     uniform[15] = a;
-    queue.writeBuffer(buffers.uniformBuffer!, 0, uniform.buffer, uniform.byteOffset, uniform.byteLength);
+    queue.writeBuffer(buffers.uniformBuffers[i], 0, uniform.buffer, uniform.byteOffset, uniform.byteLength);
 
+    pass.setBindGroup(0, buffers.bindGroups[i]);
     pass.setVertexBuffer(0, vertexBuffer);
     pass.setIndexBuffer(indexBuffer, 'uint16');
     pass.drawIndexed(mesh.indices.length);
@@ -103,22 +102,25 @@ const SHAPE_MESH_UNIFORM_FLOATS = SHAPE_MESH_UNIFORM_BYTES / 4;
 function ensureShapeMeshIndexBuffer(
   state: WgpuRenderState,
   buffers: WgpuShapeMeshBuffers,
+  meshIndex: number,
   byteLength: number,
 ): GPUBuffer {
   // Index buffers must be a multiple of 4 bytes for COPY_DST writes; round up the requested size.
   const size = Math.max(4, (byteLength + 3) & ~3);
-  if (buffers.indexBuffer === null || buffers.indexCapacity < size) {
-    if (buffers.indexBuffer !== null) {
+  let buffer = buffers.indexBuffers[meshIndex];
+  if (buffer === undefined || (buffers.indexCapacities[meshIndex] ?? 0) < size) {
+    if (buffer !== undefined) {
       const runtime = getWgpuRenderStateRuntime(state);
-      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffers.indexBuffer);
+      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
     }
-    buffers.indexBuffer = state.device.createBuffer({
+    buffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     });
-    buffers.indexCapacity = size;
+    buffers.indexBuffers[meshIndex] = buffer;
+    buffers.indexCapacities[meshIndex] = size;
   }
-  return buffers.indexBuffer;
+  return buffer;
 }
 
 // Lazily builds (once per shape) the uniform buffer + bind group, then returns the scratch float view the
@@ -128,15 +130,17 @@ function ensureShapeMeshUniform(
   state: WgpuRenderState,
   pipelineEntry: WgpuShapeMeshPipeline,
   buffers: WgpuShapeMeshBuffers,
+  meshIndex: number,
 ): Float32Array {
-  if (buffers.uniformBuffer === null) {
-    buffers.uniformBuffer = state.device.createBuffer({
+  if (buffers.uniformBuffers[meshIndex] === undefined) {
+    const uniformBuffer = state.device.createBuffer({
       size: SHAPE_MESH_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    buffers.bindGroup = state.device.createBindGroup({
+    buffers.uniformBuffers[meshIndex] = uniformBuffer;
+    buffers.bindGroups[meshIndex] = state.device.createBindGroup({
       layout: pipelineEntry.bindGroupLayout,
-      entries: [{ binding: 0, resource: { buffer: buffers.uniformBuffer } }],
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
     });
   }
   return _shapeMeshUniformScratch;
@@ -196,21 +200,24 @@ function ensureShapeMeshPipeline(state: WgpuRenderState, blendMode: RenderProxy2
 function ensureShapeMeshVertexBuffer(
   state: WgpuRenderState,
   buffers: WgpuShapeMeshBuffers,
+  meshIndex: number,
   byteLength: number,
 ): GPUBuffer {
   const size = Math.max(8, byteLength);
-  if (buffers.vertexBuffer === null || buffers.vertexCapacity < size) {
-    if (buffers.vertexBuffer !== null) {
+  let buffer = buffers.vertexBuffers[meshIndex];
+  if (buffer === undefined || (buffers.vertexCapacities[meshIndex] ?? 0) < size) {
+    if (buffer !== undefined) {
       const runtime = getWgpuRenderStateRuntime(state);
-      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffers.vertexBuffer);
+      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
     }
-    buffers.vertexBuffer = state.device.createBuffer({
+    buffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-    buffers.vertexCapacity = size;
+    buffers.vertexBuffers[meshIndex] = buffer;
+    buffers.vertexCapacities[meshIndex] = size;
   }
-  return buffers.vertexBuffer;
+  return buffer;
 }
 
 // Column-major mat3x3f = projection · worldTransform, mapping shape-local points to clip space exactly as

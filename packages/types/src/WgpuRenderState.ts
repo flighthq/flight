@@ -323,17 +323,17 @@ export interface WgpuScissorRect {
   y: number;
 }
 
-// Per-shape reusable GPU buffers for the tessellated solid-fill path, cached on the shape's
-// rendererData. Grown by recreating when a mesh needs more room; uploaded each draw via writeBuffer;
-// destroyed in destroyData. Avoids per-frame create/destroy churn and the buffer-lifetime hazards it
-// brings.
+// Per-shape reusable GPU buffer slots for the tessellated solid-fill path, cached on rendererData.
+// Each mesh region owns one slot because queue writes occur before the recorded render pass submits;
+// sharing a slot would make every draw observe the final region's geometry and color. Slots grow by
+// replacement and are destroyed with rendererData.
 export interface WgpuShapeMeshBuffers {
-  vertexBuffer: GPUBuffer | null;
-  vertexCapacity: number;
-  indexBuffer: GPUBuffer | null;
-  indexCapacity: number;
-  uniformBuffer: GPUBuffer | null;
-  bindGroup: GPUBindGroup | null;
+  vertexBuffers: GPUBuffer[];
+  vertexCapacities: number[];
+  indexBuffers: GPUBuffer[];
+  indexCapacities: number[];
+  uniformBuffers: GPUBuffer[];
+  bindGroups: GPUBindGroup[];
 }
 
 // Cached flat-color pipeline for the GPU tessellated solid-fill shape path. Position-only vertex

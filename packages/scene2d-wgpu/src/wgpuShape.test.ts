@@ -3,6 +3,15 @@ import type * as FlightNodeModule from '@flighthq/node/contract';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import {
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapeRectangle,
+  createShape,
+} from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -50,6 +59,19 @@ function makeShapeProxy(data: Record<string, unknown> = {}, rendererData: unknow
   } as unknown as RenderProxy2D;
 }
 
+function makeMeshPassSpy(): GPURenderPassEncoder {
+  return {
+    setPipeline: vi.fn(),
+    setBindGroup: vi.fn(),
+    setVertexBuffer: vi.fn(),
+    setIndexBuffer: vi.fn(),
+    setStencilReference: vi.fn(),
+    draw: vi.fn(),
+    drawIndexed: vi.fn(),
+    end: vi.fn(),
+  } as unknown as GPURenderPassEncoder;
+}
+
 describe('defaultWgpuShapeRenderer', () => {
   it('declares BatchFormat.Quad', () => {
     expect(defaultWgpuShapeRenderer.format).toBe(BatchFormat.Quad);
@@ -62,6 +84,29 @@ describe('defaultWgpuShapeRenderer', () => {
 });
 
 describe('drawWgpuShape', () => {
+  it('draws a solid fill and open solid stroke as GPU meshes in one shape', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+    appendShapeEndFill(shape);
+    appendShapeLineStyle(shape, 4, 0xff0000);
+    appendShapeMoveTo(shape, 8, 4);
+    appendShapeLineTo(shape, 40, 4);
+    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+
+    drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
+
+    const pass = getWgpuRenderStateRuntime(state).renderPass as unknown as {
+      drawIndexed: ReturnType<typeof vi.fn>;
+    };
+    expect(pass.drawIndexed).toHaveBeenCalledTimes(2);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+    submitWgpuRenderPass(state);
+  });
+
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
