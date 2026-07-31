@@ -6,6 +6,7 @@ import pc from 'picocolors';
 import type { FunctionDeclaration } from 'ts-morph';
 import { Node, Project } from 'ts-morph';
 
+import { collectEntryPointInventory } from './export-inventory';
 import { matchesPackageName } from './select';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -162,10 +163,12 @@ function collectPackageApi(project: Project, pkg: PackageInfo): ApiPackage {
 
 function collectBarrelFunctions(project: Project, barrelPath: string): ApiFunction[] {
   const sourceFile = project.addSourceFileAtPathIfExists(barrelPath) ?? project.addSourceFileAtPath(barrelPath);
+  const inventory = collectEntryPointInventory(sourceFile);
   const functions: ApiFunction[] = [];
   const seen = new Set<string>();
 
   for (const [name, declarations] of sourceFile.getExportedDeclarations()) {
+    if (!inventory.valueNames.has(name)) continue;
     const declaration = declarations.find(isExportedFunctionLike);
     if (!declaration) continue;
 

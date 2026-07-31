@@ -17,6 +17,8 @@ import readline from 'node:readline';
 
 import { Project } from 'ts-morph';
 
+import { collectEntryPointInventory } from './export-inventory';
+
 const root = process.cwd();
 const targets = readdirSync(join(root, 'packages'))
   .filter((p) => !/^(sdk|types)$/.test(p) && !/^(host|tool)-/.test(p) && !p.endsWith('-rs'))
@@ -31,7 +33,9 @@ interface Pkg {
   name: string;
   all: string[];
   pub: Set<string>;
+  pubValues: Set<string>;
   orig: Set<string>;
+  origValues: Set<string>;
 }
 
 const pkgs: Pkg[] = [];
@@ -39,9 +43,14 @@ for (const name of targets) {
   const contract = project.getSourceFile(join(root, 'packages', name, 'src', 'contract.ts'));
   if (!contract) continue;
   const index = project.getSourceFile(join(root, 'packages', name, 'src', 'index.ts'));
-  const all = [...contract.getExportedDeclarations().keys()].filter((n) => n !== 'default').sort();
-  const pub = new Set(index ? [...index.getExportedDeclarations().keys()].filter((n) => n !== 'default') : []);
-  pkgs.push({ name, all, pub, orig: new Set(pub) });
+  const contractInventory = collectEntryPointInventory(contract);
+  const indexInventory = index === undefined ? null : collectEntryPointInventory(index);
+  const all = [...contractInventory.names].filter((n) => n !== 'default').sort();
+  const pub = new Set(indexInventory === null ? [] : [...indexInventory.names].filter((n) => n !== 'default'));
+  const pubValues = new Set(
+    indexInventory === null ? [] : [...indexInventory.valueNames].filter((n) => n !== 'default'),
+  );
+  pkgs.push({ name, all, pub, pubValues, orig: new Set(pub), origValues: new Set(pubValues) });
 }
 
 function writePackageIndex(pkg: Pkg): void {
@@ -49,7 +58,7 @@ function writePackageIndex(pkg: Pkg): void {
   const body =
     names.length === 0
       ? `export {} from './contract';\n`
-      : `export {\n${names.map((n) => `  ${n},`).join('\n')}\n} from './contract';\n`;
+      : `export {\n${names.map((n) => `  ${pkg.pubValues.has(n) ? '' : 'type '}${n},`).join('\n')}\n} from './contract';\n`;
   writeFileSync(join(root, 'packages', pkg.name, 'src', 'index.ts'), body);
 }
 
@@ -106,7 +115,13 @@ function buildRows(): Row[] {
 }
 
 function dirtyCount(): number {
-  return pkgs.filter((p) => p.pub.size !== p.orig.size || [...p.pub].some((s) => !p.orig.has(s))).length;
+  return pkgs.filter(
+    (p) =>
+      p.pub.size !== p.orig.size ||
+      [...p.pub].some((s) => !p.orig.has(s)) ||
+      p.pubValues.size !== p.origValues.size ||
+      [...p.pubValues].some((s) => !p.origValues.has(s)),
+  ).length;
 }
 
 function render(): void {
@@ -162,8 +177,18 @@ function render(): void {
 }
 
 function toggleSymbol(p: Pkg, name: string): void {
-  if (p.pub.has(name)) p.pub.delete(name);
-  else p.pub.add(name);
+  setSymbol(p, name, !p.pub.has(name));
+}
+
+function setSymbol(p: Pkg, name: string, enabled: boolean): void {
+  if (!enabled) {
+    p.pub.delete(name);
+    p.pubValues.delete(name);
+  } else {
+    p.pub.add(name);
+    const contract = project.getSourceFile(join(root, 'packages', p.name, 'src', 'contract.ts'))!;
+    if (collectEntryPointInventory(contract).valueNames.has(name)) p.pubValues.add(name);
+  }
 }
 
 function onKey(str: string, key: readline.Key): void {
@@ -206,9 +231,7 @@ function onKey(str: string, key: readline.Key): void {
       if (r) {
         const syms = symbolsFor(r.pkg);
         const allOn = syms.every((s) => r.pkg.pub.has(s));
-        for (const s of syms)
-          if (allOn) r.pkg.pub.delete(s);
-          else r.pkg.pub.add(s);
+        for (const s of syms) setSymbol(r.pkg, s, !allOn);
       }
       break;
     case 'v':
@@ -223,9 +246,7 @@ function onKey(str: string, key: readline.Key): void {
         // packages: filter a pattern (e.g. "Data"), then flip the whole matching set in one keypress.
         const visible = buildRows().filter((row) => !row.header);
         const allOn = visible.every((row) => row.pkg.pub.has(row.name!));
-        for (const row of visible)
-          if (allOn) row.pkg.pub.delete(row.name!);
-          else row.pkg.pub.add(row.name!);
+        for (const row of visible) setSymbol(row.pkg, row.name!, !allOn);
       } else if (str === 's') {
         for (const p of pkgs)
           if (p.pub.size !== p.orig.size || [...p.pub].some((s) => !p.orig.has(s))) {
