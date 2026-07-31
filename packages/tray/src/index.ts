@@ -1,4 +1,6 @@
 export {
+  disableTrayGuards,
+  enableTrayGuards,
   createTrayIcon,
   destroyTrayIcon,
   displayTrayBalloon,

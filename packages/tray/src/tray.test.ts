@@ -773,3 +773,22 @@ describe('tray icon animation lifecycle', () => {
     stopTrayIconAnimation(tray);
   });
 });
+
+describe('TrayIcon handle identity', () => {
+  afterEach(() => setTrayBackend(null));
+
+  // Documented contract: handles compare by id, never by identity. Pinned so the doc and the behaviour
+  // cannot drift apart, and so anyone who later interns handles has to change this deliberately rather
+  // than discover it. The working form is the id comparison, and it is asserted alongside the failing
+  // one so the test shows the remedy, not just the trap.
+  it('mints a distinct object per call, so handles compare by id rather than identity', () => {
+    const backend = fakeBackend();
+    setTrayBackend(backend);
+    const tray = createTrayIcon()!;
+
+    const listed = getTrayIcons();
+
+    expect(listed.includes(tray)).toBe(false);
+    expect(listed.some((candidate) => candidate.id === tray.id)).toBe(true);
+  });
+});

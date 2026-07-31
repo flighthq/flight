@@ -184,6 +184,15 @@ export function removeTrayBalloon(tray: TrayIcon): void {
   getTrayBackend().removeBalloon(tray.id);
 }
 
+/** Installs the tray guard, or clears it with `null`. The seam exists so the messages and the
+ *  `@flighthq/log` dependency live in the separately-importable guard module rather than here; not
+ *  importing that module costs production nothing. Called by `enableTrayGuards`, not directly. */
+export function setTrayAnimationGuard(
+  guard: ((tray: TrayIcon, frameCount: number, intervalMs: number) => void) | null,
+): void {
+  _animationGuard = guard;
+}
+
 // Installs a native host tray backend; pass null to fall back to the web default.
 export function setTrayBackend(backend: TrayBackend | null): void {
   _backend = backend;
@@ -244,6 +253,7 @@ export function setTrayPressedIcon(tray: TrayIcon, icon: string): void {
 // Note: interval timing is best-effort; the actual frame rate depends on the host event loop.
 export function startTrayIconAnimation(tray: TrayIcon, frames: readonly string[], intervalMs: number): () => void {
   if (frames.length === 0) return _noopStop;
+  _animationGuard?.(tray, frames.length, intervalMs);
   stopTrayIconAnimation(tray);
   let index = 0;
   setTrayIcon(tray, frames[index]!);
@@ -260,6 +270,14 @@ export function startTrayIconAnimation(tray: TrayIcon, frames: readonly string[]
   };
 }
 
+let _backend: TrayBackend | null = null;
+
+// The interval per animating tray id. Module-scoped like the backend, and correct at that scope: an
+// id is the host's, so one id is one icon is one animation.
+const _animations = new Map<number, ReturnType<typeof setInterval>>();
+
+function _noopStop(): void {}
+
 // Stops the icon animation running on this tray, if any. Idempotent, and safe on a tray that never
 // animated. The named counterpart to startTrayIconAnimation for callers that hold the TrayIcon but
 // not the stop function it returned — which is most of them, since the handle is what gets passed
@@ -271,10 +289,4 @@ export function stopTrayIconAnimation(tray: TrayIcon): void {
   _animations.delete(tray.id);
 }
 
-let _backend: TrayBackend | null = null;
-
-// The interval per animating tray id. Module-scoped like the backend, and correct at that scope: an
-// id is the host's, so one id is one icon is one animation.
-const _animations = new Map<number, ReturnType<typeof setInterval>>();
-
-function _noopStop(): void {}
+let _animationGuard: ((tray: TrayIcon, frameCount: number, intervalMs: number) => void) | null = null;
