@@ -24,7 +24,13 @@ That reproduces the exact reported signature every time (5 loader files, file-le
 
 **Two latent files found while here**, not previously observed failing but the same class: `imageResourceFetch.test.ts` and `resolveScene3DResources.test.ts` carry the same reset-and-re-import hook and also fail under a forced low budget. The suite-wide budget covers them.
 
-**One real defect left unfixed and reported**, orthogonal to the flake: every one of these files unmocks the wrong specifier -- `vi.doMock('@flighthq/net/contract', ...)` paired with `vi.doUnmock('@flighthq/net')`. Different specifiers, so the unmock is a no-op. It is masked because `vi.resetModules()` in the same `afterAll` clears the registry anyway. That makes it a latent trap: anyone deleting that `resetModules()` as redundant would uncover cross-file mock leakage with no failing test to warn them.
+**The wrong-specifier defect, fixed separately in `d47635999` -- and my first description of it was overstated.** Every one of these files paired `vi.doMock('@flighthq/net/contract', ...)` with `vi.doUnmock('@flighthq/net')`. Different specifiers, so the unmock named a module that was never mocked and did nothing. Now corrected in all eight.
+
+I claimed this was a latent trap that `vi.resetModules()` was masking, and that deleting the reset would expose cross-file leakage. **That claim does not hold, and I tested it rather than leaving it asserted.** Stripping the `afterAll` reset and running with the *wrong* specifier still passes the whole 1235-file suite; so does stripping it with the corrected specifier. The `afterAll` pair is belt-and-braces either way.
+
+What actually provides hermeticity is the *`beforeAll`* half: `vi.resetModules()` followed by a per-file `vi.doMock` and a dynamic import, so the subject is re-instantiated against this file's mocks. That is the part the root config's "never top-level hoisted vi.mock" rule protects, and it is exactly what broke when I tried hoisting -- the failure was immediate and repo-wide, not subtle. The `afterAll` cleanup is defensive tidiness on top.
+
+So the fix is worth having -- a `doUnmock` naming a module nothing ever mocked is dead code that reads as protection -- but it is not load-bearing, and the honest verdict is that nothing was at risk.
 
 ## 2026-07-29 — explicit synchronous resolve and progressive update
 
