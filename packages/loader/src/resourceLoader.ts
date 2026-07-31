@@ -1,5 +1,7 @@
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  ResourceLoadBytes,
+  ResourceLoadCounts,
   ResourceLoader,
   ResourceLoaderItemSignals,
   ResourceLoaderOptions,
@@ -171,7 +173,7 @@ export function cancelResourceLoad(loader: ResourceLoader): void {
 
   // Complete immediately if nothing is currently running
   if (internal.inFlight.size === 0) {
-    emitSignal(loader.onProgress, internal.loaded, internal.total);
+    emitSignal(loader.onProgress, getResourceLoadProgress(loader));
     emitSignal(loader.onComplete, internal.reports);
   }
 }
@@ -242,6 +244,50 @@ export function enableResourceLoaderItemSignals(loader: ResourceLoader): Resourc
   return internal.itemSignals;
 }
 
+export function getResourceLoadBytes(loader: Readonly<ResourceLoader>): ResourceLoadBytes {
+  const internal = loader as ResourceLoaderInternal;
+  let bytesLoaded = 0;
+  let bytesTotalKnown = 0;
+  let itemsWithKnownBytes = 0;
+  // Settled items contribute their measured transfer; in-flight and queued contribute what they have
+  // reported and what they declared. A hint counts as known even before the item starts, which is what
+  // lets the known total grow ahead of the bytes rather than lag them.
+  for (const report of internal.reports) {
+    bytesLoaded += report.bytes;
+    if (report.bytes > 0) {
+      bytesTotalKnown += report.bytes;
+      itemsWithKnownBytes++;
+    }
+  }
+  for (const entry of internal.inFlight) {
+    bytesLoaded += entry.bytesLoaded;
+    if (entry.bytesHint > 0) {
+      bytesTotalKnown += entry.bytesHint;
+      itemsWithKnownBytes++;
+    }
+  }
+  for (const entry of internal.pending) {
+    if (entry.bytesHint > 0) {
+      bytesTotalKnown += entry.bytesHint;
+      itemsWithKnownBytes++;
+    }
+  }
+  return { bytesLoaded, bytesTotalKnown, itemsWithKnownBytes };
+}
+
+export function getResourceLoadCounts(loader: Readonly<ResourceLoader>): ResourceLoadCounts {
+  const internal = loader as ResourceLoaderInternal;
+  const settledItems = internal.reports.length;
+  const inFlightItems = internal.inFlight.size;
+  const queuedItems = internal.pending.length;
+  return {
+    settledItems,
+    inFlightItems,
+    queuedItems,
+    totalItems: settledItems + inFlightItems + queuedItems,
+  };
+}
+
 export function getResourceLoadItemStatus(loader: ResourceLoader, key: string): ResourceLoadItemStatus {
   const internal = loader as ResourceLoaderInternal;
   const report = internal.reports.find((r) => r.key === key);
@@ -253,6 +299,17 @@ export function getResourceLoadItemStatus(loader: ResourceLoader, key: string): 
   return 'pending';
 }
 
+// The 0..1 completion fraction, and the single answer to "how far along is this batch" — the same
+// number `onProgress` emits. Weighted by each item's `weight` (default 1), so an unweighted batch is
+// the item fraction and a weighted one reflects the work the caller said each item represents.
+//
+// Weight is the contract currency because it is knowable before the first byte moves: the caller
+// supplies it, so the bar starts at a truthful 0 and never rescales. Bytes cannot play that role —
+// `bytesHint` is optional per item, so a byte denominator grows as headers arrive and the bar slides
+// backwards. Bytes are reporting, via `getResourceLoadBytes`; counts are a separate question, via
+// `getResourceLoadCounts`.
+//
+// Never returns NaN: every division below is guarded by the zero check in front of it.
 export function getResourceLoadProgress(loader: ResourceLoader, group?: string): number {
   const internal = loader as ResourceLoaderInternal;
   if (!internal.started) return 0;
@@ -269,10 +326,15 @@ export function getResourceLoadProgress(loader: ResourceLoader, group?: string):
     return groupReports.length / groupTotal;
   }
 
+  // A batch of nothing is complete rather than un-started: callers await a loader and branch on 1, and
+  // reporting 0 for an empty batch would strand that. Also the only guard against dividing by zero on
+  // `total` below.
   if (internal.total === 0) return 1;
   if (internal.totalWeight > 0) {
     return internal.weightLoaded / internal.totalWeight;
   }
+  // Reached only when every item was explicitly given `weight: 0`, which makes the weighted fraction
+  // undefined; the item fraction is the sensible answer for a batch that declined to weight itself.
   return internal.loaded / internal.total;
 }
 
@@ -424,7 +486,7 @@ export function startResourceLoad(loader: ResourceLoader): void {
   internal.started = true;
 
   if (internal.total === 0) {
-    emitSignal(loader.onProgress, 0, 0);
+    emitSignal(loader.onProgress, getResourceLoadProgress(loader));
     emitSignal(loader.onComplete, []);
     return;
   }
@@ -671,7 +733,7 @@ function _isOrphaned(entry: Readonly<PendingEntry>, internal: Readonly<ResourceL
 
 function checkCompleteAfterCancel(internal: ResourceLoaderInternal, loader: ResourceLoader): void {
   if (internal.inFlight.size === 0) {
-    emitSignal(loader.onProgress, internal.loaded, internal.total);
+    emitSignal(loader.onProgress, getResourceLoadProgress(loader));
     emitSignal(loader.onComplete, internal.reports);
   }
 }
@@ -714,7 +776,7 @@ function delay(ms: number): Promise<void> {
 function settleEntry(entry: PendingEntry, internal: ResourceLoaderInternal, loader: ResourceLoader): void {
   internal.inFlight.delete(entry);
   _countEntrySettled(internal, entry);
-  emitSignal(loader.onProgress, internal.loaded, internal.total);
+  emitSignal(loader.onProgress, getResourceLoadProgress(loader));
 
   releasePendingEntry(entry);
 

@@ -7,6 +7,8 @@ import {
   disposeResourceLoader,
   enableResourceLoaderItemSignals,
   getResourceLoadItemStatus,
+  getResourceLoadBytes,
+  getResourceLoadCounts,
   getResourceLoadProgress,
   pauseResourceLoad,
   queueResourceLoad,
@@ -608,6 +610,113 @@ describe('error policy', () => {
   });
 });
 
+describe('getResourceLoadBytes', () => {
+  it('reports zeros for a loader with nothing queued', () => {
+    expect(getResourceLoadBytes(createResourceLoader())).toEqual({
+      bytesLoaded: 0,
+      bytesTotalKnown: 0,
+      itemsWithKnownBytes: 0,
+    });
+  });
+
+  // The known total is a floor that grows, never a denominator: itemsWithKnownBytes is what tells the
+  // caller how much of the batch it actually covers.
+  it('counts only the items that declared a size toward the known total', () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { bytesHint: 1000, load: () => Promise.resolve('a') });
+    queueResourceLoad(loader, { load: () => Promise.resolve('b') });
+
+    const bytes = getResourceLoadBytes(loader);
+
+    expect(bytes.bytesTotalKnown).toBe(1000);
+    expect(bytes.itemsWithKnownBytes).toBe(1);
+    expect(bytes.bytesLoaded).toBe(0);
+  });
+
+  it('accumulates transferred bytes as items settle', async () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, {
+      bytesHint: 8,
+      load: async (_signal, reportBytes) => {
+        reportBytes(8, 8);
+        return 'a';
+      },
+    });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+
+    expect(getResourceLoadBytes(loader).bytesLoaded).toBe(8);
+  });
+
+  it('stays valid when no item declares a size', async () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { load: () => Promise.resolve('a') });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+
+    const bytes = getResourceLoadBytes(loader);
+    expect(Number.isNaN(bytes.bytesTotalKnown)).toBe(false);
+    expect(bytes.itemsWithKnownBytes).toBe(0);
+  });
+});
+
+describe('getResourceLoadCounts', () => {
+  it('reports zeros for a loader with nothing queued', () => {
+    expect(getResourceLoadCounts(createResourceLoader())).toEqual({
+      settledItems: 0,
+      inFlightItems: 0,
+      queuedItems: 0,
+      totalItems: 0,
+    });
+  });
+
+  it('counts queued items before the load starts', () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { load: () => Promise.resolve('a') });
+    queueResourceLoad(loader, { load: () => Promise.resolve('b') });
+
+    const counts = getResourceLoadCounts(loader);
+
+    expect(counts.queuedItems).toBe(2);
+    expect(counts.totalItems).toBe(2);
+    expect(counts.settledItems).toBe(0);
+  });
+
+  // In-flight and queued are separate numbers because a concurrency limit makes them differ, and a UI
+  // showing "loading 1 of 3" means the in-flight count rather than the queue depth.
+  it('separates in-flight from still-queued under a concurrency limit', async () => {
+    const loader = createResourceLoader({ maxConcurrent: 1 });
+    let release: (() => void) | null = null;
+    queueResourceLoad(loader, { load: () => new Promise<string>((resolve) => (release = () => resolve('a'))) });
+    queueResourceLoad(loader, { load: () => Promise.resolve('b') });
+    queueResourceLoad(loader, { load: () => Promise.resolve('c') });
+    startResourceLoad(loader);
+    await Promise.resolve();
+
+    const counts = getResourceLoadCounts(loader);
+    expect(counts.inFlightItems).toBe(1);
+    expect(counts.queuedItems).toBe(2);
+    expect(counts.totalItems).toBe(3);
+
+    release!();
+    await waitForComplete(loader);
+  });
+
+  it('counts every finished item as settled, including a failure', async () => {
+    const loader = createResourceLoader();
+    queueResourceLoad(loader, { load: () => Promise.resolve('ok') }).promise.catch(() => {});
+    queueResourceLoad(loader, { load: () => Promise.reject(new Error('nope')), retries: 0 }).promise.catch(() => {});
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+
+    const counts = getResourceLoadCounts(loader);
+    expect(counts.settledItems).toBe(2);
+    expect(counts.totalItems).toBe(2);
+    expect(counts.inFlightItems).toBe(0);
+    expect(counts.queuedItems).toBe(0);
+  });
+});
+
 describe('getResourceLoadItemStatus', () => {
   it('returns pending for a queued but unstarted item', () => {
     const loader = createResourceLoader();
@@ -842,9 +951,9 @@ describe('queueResourceLoad', () => {
 
   it('fires onProgress after each item completes', async () => {
     const loader = createResourceLoader({ maxConcurrent: 1 });
-    const progress: Array<[number, number]> = [];
-    connectSignal(loader.onProgress, (loaded, total) => {
-      progress.push([loaded, total]);
+    const progress: number[] = [];
+    connectSignal(loader.onProgress, (fraction) => {
+      progress.push(fraction);
     });
 
     queueResourceLoad(loader, { load: () => Promise.resolve('a') });
@@ -855,7 +964,26 @@ describe('queueResourceLoad', () => {
     await waitForComplete(loader);
 
     expect(progress).toHaveLength(3);
-    expect(progress[2]).toEqual([3, 3]);
+    expect(progress[2]).toBe(1);
+  });
+
+  // The signal and the accessor are one number now. A weighted batch is where they used to diverge:
+  // the signal reported item counts (1 of 2 = 0.5) while the accessor reported weight (0.01).
+  it('emits the same fraction the accessor reports, on a weighted batch', async () => {
+    const loader = createResourceLoader({ maxConcurrent: 1 });
+    const seen: number[] = [];
+    connectSignal(loader.onProgress, (fraction) => {
+      seen.push(fraction);
+      expect(fraction).toBe(getResourceLoadProgress(loader));
+    });
+
+    queueResourceLoad(loader, { load: () => Promise.resolve('small'), weight: 1 });
+    queueResourceLoad(loader, { load: () => Promise.resolve('big'), weight: 99 });
+    startResourceLoad(loader);
+    await waitForComplete(loader);
+
+    expect(seen[0]).toBeCloseTo(0.01, 5);
+    expect(seen[1]).toBe(1);
   });
 
   it('fires onComplete after all items finish', async () => {
@@ -1195,14 +1323,15 @@ describe('startResourceLoad', () => {
     expect(called).toBe(true);
   });
 
-  it('fires onProgress(0, 0) for an empty queue', () => {
+  // A batch of nothing is complete, not un-started: callers await a loader and branch on 1.
+  it('fires onProgress(1) for an empty queue', () => {
     const loader = createResourceLoader();
-    let args: [number, number] | null = null;
-    connectSignal(loader.onProgress, (loaded, total) => {
-      args = [loaded, total];
+    let seen: number | null = null;
+    connectSignal(loader.onProgress, (fraction) => {
+      seen = fraction;
     });
     startResourceLoad(loader);
-    expect(args).toEqual([0, 0]);
+    expect(seen).toBe(1);
   });
 
   it('is a no-op if called a second time in non-streaming mode', () => {
