@@ -63,6 +63,12 @@ its distance number:
 `registerWgpu*TextureResolver` functions with no equivalent bundle. Today **9 of 40** wgpu examples register
 any resolver at all. The missing bundle is a suggestion for `render-wgpu`, not a change made here.
 
+**One webgpu entry fails per full run, and it is not the same entry twice.** Run 1 failed `tilemap` (the real
+resolver bug, now fixed); run 2 failed `scene3d` with "verifier did not run", which then passes twice in
+isolation at `webgl·webgpu 0.17`. The full leg runs six concurrent workers, so this reads as webgpu verifier
+flakiness under parallel load rather than a scene defect. It matters for item 3 directly: turning verification
+on more widely would amplify exactly this, so the flakiness wants a cause before the tier wants more coverage.
+
 **The capture path and the validate path do not agree about webgpu, and item 3 depends on which is right.**
 On this machine every `capture --tool=examples` webgpu screenshot across nine different scenes carries one
 identical hash — a uniform blank frame — while the same scenes render correctly through `validate`, and
