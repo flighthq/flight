@@ -62,6 +62,8 @@ to it; the check will tell you if you forget, and will tell you when a file can 
 
 Mocking remains the right tool for genuine **interaction** assertions — which collaborator a dispatch routed to, and with what arguments — where there is no pure kernel to extract. When you do, put the file in the isolated tier and use a top-level `vi.mock`, per the tier rule above.
 
+**`logOnce` keys are process-scoped, not test-scoped.** A `@flighthq/log`-based guard that warns once per reason suppresses that key for the rest of the process once it has fired — a second test asserting the same key's message will pass or fail purely on file/test order, not on its own behavior. Assert a given `logOnce` key's message in exactly one test: the one that first trips it. Hit twice already (a snapshot guard, then a glyph-atlas guard) — expect it again as more `enable*Guards` modules land.
+
 ## Out-parameter testing
 
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
