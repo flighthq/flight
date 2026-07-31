@@ -1,7 +1,27 @@
 ---
 package: '@flighthq/shape-formats'
-updated: 2026-07-09
+updated: 2026-07-30
 ---
+
+## 2026-07-30 — the parser now rejects what it used to silently corrupt (builder)
+
+`parseShapeJson` documented that it returns `null` for "a malformed argument", but it only ever validated that an entry *looked* like a command and then spread whatever it found into the appender. Probed before fixing; every one of these built a `Shape` rather than returning the sentinel:
+
+- `{"key":"moveTo","args":[]}` — required parameters left undefined, written straight into the command buffer.
+- `{"key":"moveTo","args":["x","y"]}` — strings in numeric slots.
+- `{"key":"moveTo","args":[1,2,3,4]}` — extra arguments dropped without complaint.
+- A `NaN` coordinate — JSON has no NaN literal, so it serializes as `null`, and `null` was accepted as an argument. The shape came back with a null coordinate where a number belonged.
+- `1e999` — parses back as `Infinity`, accepted into the buffer.
+
+Fixed with a table-driven spec mirroring the `appendShape*` signatures one-for-one, taken from `npm run api` rather than inferred. Arity is a range: `required` counts the leading parameters with no default, so a hand-written document may omit trailing optional args and let the appenders' own defaults apply, while the serializer's full-arity output uses the upper bound.
+
+The two tables are self-checking rather than checked by a bespoke test. `isValidShapeCommandArgs` treats a missing spec as invalid, so a key that gained an appender without a spec makes its own command unparseable — and the full-vocabulary round-trip test fails immediately. Verified by mutation: deleting the `drawCircle` spec fails the round-trip and the consistency test, and nothing else.
+
+**The non-finite asymmetry is deliberate.** `formatShapeJson` still writes `null` for a non-finite coordinate — `JSON.stringify` gives no other option — so a shape containing `NaN` now produces a document that will not parse back. That is the honest failure: the alternative is restoring a shape whose geometry silently differs from the one serialized. The `formatShapeJson` comment claimed the round-trip was lossless; it now states the exception.
+
+Round-trip coverage extended to the full non-texture vocabulary (`drawCircle`, `drawEllipse`, `drawRectangle`, `drawRoundRectangle`, both `drawTriangles` forms, `lineGradientStyle`), which is what makes the consistency property above hold for every command rather than the nine it used to cover. Texture commands still *drop* rather than reject on an unresolved reference — a missing asset is not a malformed document, and that distinction predates this work.
+
+14 → 28 tests. Three mutations, each confirmed applied: removing the validation call fails 9 tests, removing one spec entry fails 2, allowing non-finite numbers fails 1 (the `Infinity` case — the NaN-as-`null` case is caught by the type check instead, which is the correct split). One test I wrote was replaced before landing: it claimed to check that both tables share a key set, but would have passed for a key with no spec at all.
 
 # shape-formats — Status
 

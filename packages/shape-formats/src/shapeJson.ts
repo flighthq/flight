@@ -141,8 +141,9 @@ function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonPar
 // after the drop check, so an unresolved texture is still a dropped command rather than a parse failure.
 function isValidShapeCommandArgs(key: string, args: readonly unknown[]): boolean {
   const spec = SHAPE_COMMAND_ARG_SPECS[key];
-  // A key with no spec cannot be reached: the appender lookup above rejects unknown keys first, and
-  // every entry in the appender table has one — asserted by a test over both tables' key sets.
+  // Treating a missing spec as invalid is what makes the two tables self-checking: a key that gained
+  // an appender without a spec would make its own command unparseable, so the full-vocabulary
+  // round-trip test fails the moment they drift apart.
   if (spec === undefined) return false;
   if (args.length < spec.required || args.length > spec.types.length) return false;
   for (let i = 0; i < args.length; i++) {
