@@ -21,6 +21,7 @@ import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
 import { runCaptureValidation } from './captureValidation.js';
+import { resolveCaptureWorkerCount } from './captureWorkerCount.js';
 import type {
   CaptureWorkflowCaptureOptions,
   CaptureWorkflowOptions,
@@ -48,6 +49,8 @@ Every command writes a versioned aggregate JSON report beneath its artifact dire
 validation options:
   --report --update-fingerprints --no-regression --no-parity
   --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
+
+FLIGHT_CAPTURE_WORKER_COUNT pins worker concurrency when --parallel is omitted.
 
 benchmark options:
   --warmup <n> --iterations <n> --samples <n> --sample-duration <ms> --benchmark-reference <renderer>
@@ -172,7 +175,7 @@ function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions 
     rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
     extraWait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
     captureFrames: parseNonNegativeInteger(frames?.split(',')[0], 0),
-    workerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'parallel'), 6)),
+    workerCount: captureWorkerCount(argv),
     sequential: hasFlag(argv, 'sequential'),
     updateBaseline: hasFlag(argv, 'update-baseline'),
     failOnChanged: hasFlag(argv, 'fail-on-changed'),
@@ -201,7 +204,7 @@ function validationOptions(
     regressionTolerance: parseNumber(flag(argv, 'regression-tolerance')),
     parityTolerance: parseNumber(flag(argv, 'parity-tolerance')),
     sequential: hasFlag(argv, 'sequential'),
-    workerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'parallel'), 6)),
+    workerCount: captureWorkerCount(argv),
     fingerprintSkip: manifest?.validation?.fingerprintSkip ?? (manifest === null ? preset.fingerprintSkip : []),
     paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? preset.paritySkip : {}),
     parityGroups: manifest?.validation?.parityGroups ?? (manifest === null ? preset.parityGroups : undefined),
@@ -289,6 +292,12 @@ async function main(): Promise<void> {
   if (command === 'batch') process.exit(await batch(argv));
   console.error(USAGE);
   process.exit(2);
+}
+
+function captureWorkerCount(argv: readonly string[]): number {
+  // The resolver's four-worker EXPEDIENT keeps today's capture legs usable under both CPU starvation
+  // and workspace-mount descriptor bursts; available parallelism, not four itself, is the sizing rule.
+  return resolveCaptureWorkerCount(flag(argv, 'parallel'), process.env['FLIGHT_CAPTURE_WORKER_COUNT']);
 }
 
 function parseNonNegativeInteger(value: string | undefined, fallback: number): number {
