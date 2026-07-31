@@ -1,4 +1,5 @@
 export {
+  createBitmapFontFromGlyphAtlas,
   createBitmapFont,
   createGlyphSourceFromBitmapFont,
   getBitmapFontGlyph,
