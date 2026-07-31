@@ -2,7 +2,7 @@
 package: '@flighthq/application'
 crate: flighthq-application
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-31
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -15,6 +15,8 @@ status: ./status.md
 `@flighthq/application` is the **application entry-point and orchestration layer** — the main loop (start/stop/pause/resume/step, frame-rate control, fixed-timestep accumulator, FPS metrics, swappable `LoopBackend`) plus windowing (`ApplicationWindow` with full state/control, multi-window registry, pointer-lock, swappable `WindowBackend`). 70 exports across 2 source files, 133 tests. Dependencies: `signals`, `types`.
 
 Application is an entry-point package that helps orchestrate windowing, input, and other subsystems. It is a strong candidate for spawning new packages or refactoring to reduce down to more primitive packages — the 48-export windowing surface and the 22-export loop surface may be primitives that have not been extracted yet.
+
+It also owns **`ApplicationRenderView`** — the batteries-included harness that gets a caller from "I have a page" to "I have a main loop and a render-ready surface" in one step. See the harness decision below; the GL realization lives in the neighbor package `@flighthq/application-gl`.
 
 ## North star
 
@@ -54,6 +56,12 @@ Application is an entry-point package that helps orchestrate windowing, input, a
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **[2026-07-31] `ApplicationRenderView` is a batteries-included harness, not just a struct that links four objects.** Its purpose is to get a caller from "I have a page" to "I have a main loop and a render-ready surface" in one step, so examples and functional scenes can open with the harness and then say only what makes them different. The linking contract (window + `RenderState` + `RenderTarget` + device-pixel `Viewport`, all four independently accessible) is the _mechanism_; the batteries — a running loop and a surface you can draw to immediately — are the _point_.
+
+  **Why:** The verbosity Flight accepts elsewhere is bought with clarity: spelling out renderer registration and the update pass shows the user where work and memory go. Bootstrap verbosity buys nothing. Every example repeating canvas creation, device-pixel-ratio math, backing-store sync, and an `enterFrame` closure is not teaching the reader anything about the feature being demonstrated — it is noise that hides the feature. The harness is the one place a convenience assembly is _earned_, because it removes ceremony without hiding a semantic the caller needs to control. Note this does not weaken the explicit-lifecycle north star: the caller still names the harness, still starts the loop, and still reaches every underlying object.
+
+  **Status when recorded:** the assembly half exists and is tested — `createApplicationRenderView` / `attachApplicationRenderView` / `synchronizeApplicationRenderView` here, and `createGlApplicationRenderView` / `destroyGlApplicationRenderView` in `@flighthq/application-gl` (canvas backing-store sync, state, target, viewport, resize). The harness half is unmet: nothing composes the loop with the view, and adoption is effectively zero. Measured 2026-07-31 across the 41 example packages — **39 files hand-roll `requestAnimationFrame`, 50 hand-roll canvas creation, 1 uses `startApplicationLoop`, and 0 use `createGlApplicationRenderView`** (its only consumer anywhere is the single functional scene `application-render-view.webgl.ts`). Treat the Directed item "Build `ApplicationRenderView`" as _built as an assembly, unbuilt as a harness_; the remaining work is loop composition and example adoption, not re-implementing the link.
+
 ## Open directions
 
 1. **Windowing extraction.** Should `window.ts` (48 exports) extract to `@flighthq/window`? The attach/detach/set/get pattern generates many exports from a coherent surface. 48 exports is large but may be bedrock — splitting would just be blood from a stone. Evaluate once the types are rebuilt and the package compiles.
@@ -62,4 +70,8 @@ Application is an entry-point package that helps orchestrate windowing, input, a
 
 3. **Relationship to input, render, media.** Application is the entry point that wires these together. How much orchestration logic should live here vs in each subsystem?
 
-4. **Package Map update.** Expand the current entry.
+4. ~~**Package Map update.** Expand the current entry.~~ — **closed 2026-07-31.** The `AGENTS.md` Package Map entry now reads `application` (main loop and windowing) with `application-gl` (the WebGL `ApplicationRenderView` assembly); `application-gl` was absent from the map entirely until then.
+
+5. **Where does the harness entry point live, and what is it called?** The batteries-included decision above fixes the _intent_ but not the _shape_, and the shape is constrained: "keep package arrows pointing downward" forbids `render-gl` importing `application`, so the composition point cannot sit in a render backend. `@flighthq/application-gl` already sits above both and is the natural home, but that makes the loop-plus-surface entry point backend-specific (`application-wgpu` would mirror it). The fork: one backend-specific harness per backend, or a backend-agnostic harness in `application` that takes an already-built view? Also open — does the harness _own_ the loop (start it for you) or merely hand you one, and does it return an Entity per the `create*` invariant?
+
+6. **Which examples adopt the harness, and is adoption mandatory?** 39 of 41 example packages hand-roll their bootstrap today. Converting them is mechanical but wide, and the [examples plan](../../examples-plan.md) is already reworking that set — these should be sequenced together rather than colliding. Should new examples be _required_ to use the harness (making hand-rolled bootstrap a review finding), or is it opt-in for the ones where ceremony actually obscures the feature?
