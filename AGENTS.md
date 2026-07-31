@@ -141,7 +141,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [wgpu 3D parity spec](agents/wgpu-3d-parity-spec.md) — before touching `scene3d-wgpu` / `effects-wgpu` 3D or scoping wgpu parity. Each item cites the GL file it mirrors.
 - [morph-target animation](agents/morph-target-animation.md) — before adding vertex-deformation animation or touching the morph path. The blend-shape deformer on the GL path; GPU morph and skin+morph are deferred.
 - [skeleton2d animation model](agents/skeleton2d-animation-model.md) — **proposal**. Before adding a non-bone (slot) timeline or placing constraint solvers.
-- [capture verification tiers](agents/capture-verification-tiers.md) — **proposal**. Before changing a capture leg, a verification default, or a CI gate that reads them.
+- [capture verification tiers](agents/capture-verification-tiers.md) — **proposal**. Before changing a capture leg or verification default.
 
 **Plans and reviews** — the current state of in-flight direction:
 
