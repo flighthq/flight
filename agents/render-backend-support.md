@@ -26,11 +26,22 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Text background / border box | ✓ | ✓ | ✓ | ✓ |  |
 | Text alignment (center/right) | ✓ | ✓ | ✓ | ✓ | single-line and multiline both render (gap #7 fixed) |
 | Sprite (image/video Texture) | ✓ | ✓ | ✓ | ✓ | one textured quad; still and dynamic host-image backings share the node |
-| Sprite (produced Texture) | ✓ | ✗ | ✓ | ✓ | Canvas/GL/WebGPU realize state-owned render targets; DOM has no subtree rasterization path |
-| QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | no DOM renderer for the multi-quad atlas primitives |
+| Sprite (produced Texture) | ✓ | ✗ | ✓ | ✓ | Canvas/GL/WebGPU realize state-owned render targets; DOM has no subtree rasterization path. Use one of the sanctioned canvas-embedding paths below for bounded produced content. |
+| QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | Declared DOM gap, not a bespoke-renderer roadmap; use bounded canvas embedding where appropriate (below). |
 | Scale9 (nine-slice) | ✓ | ✓ | ✓ | ✓ | dom needed a barrel fix (now exported) |
 | Video-backed Texture | ✓ | ✓ | ✓ | ✓ | `Sprite` displays the same video-backed `Texture` on every backend; GL/WebGPU use version-gated uploads, Canvas draws the current frame, and DOM mounts the actual video element. Materials consume the same texture slot. |
 | Compressed textures (BCn/ETC/ASTC/PVRTC/ATF native upload) | ✗ | ✗ | ✓ | ✓ | GL and WebGPU both expose opt-in container upload + RGBA decoder seams and their normal 2D `ImageResource` binders consume compressed-only resources once registered. WebGPU enables the adapter's BC/ETC2/ASTC device features and uploads those families natively; PVRTC and unavailable families decode to RGBA. Native low-level upload covers 2D, cubemap, and 2D array; the display binder and decode fallback are 2D. `compressed-texture` proves exact GL/WebGPU raster parity. Basis-Universal transcode remains spec-only ([basis-transcode.md](basis-transcode.md)). |
+
+### DOM backend identity and cross-backend embedding
+
+DOM support is measured by renderer identity, not by matching another backend's leaf count: **the browser is the renderer**, and one scene node maps to one native element. `scene2d-dom` therefore carries `Sprite`, `NativeText`, `RichText`, `TextLabel`, `Shape`, and `Scale9Shape`, plus the browser-specific `HtmlView` and `TextInput` paths. That is the intended leaf set. Batch kinds (`QuadBatch`, `Tilemap`, `BitmapText`, and `ParticleEmitter2D`) are declared DOM gaps, not a roadmap for bespoke DOM batch renderers. A general canvas-island renderer assembly is demoted to "probably never," not planned work.
+
+Bounded batch content can still participate in a document-shaped DOM scene through two existing, parallel APIs. Choose between them by asking whether the embed must remain portable across consumer backends:
+
+- **Portable embed:** wrap the producer canvas with `createImageResourceFromCanvas(producerCanvas)`, put that resource in a `Texture`, and display it with a `Sprite`. Every renderer backend produces a canvas element, while DOM/Canvas copy it and GL/WebGPU upload it. The producer owns the pixels and render cadence; the consumer owns placement. Bump the `ImageResource.version` whenever the producer invalidates its pixels. If the producer is WebGL, `drawImage` readback requires either `preserveDrawingBuffer: true` or a same-task copy before the drawing buffer is discarded; missing both can produce a silently black Sprite.
+- **Live DOM embed:** create an `HtmlView` whose `data.element` is the producer canvas. DOM mounts that element directly, so compositing is live and zero-copy, native DOM events remain on the canvas, and there is no drawing-buffer readback hazard. This path is deliberately DOM-only: the node kind records the scene's DOM commitment. The user owns the element and must keep it single-consumer; one element cannot be mounted in two places.
+
+Do not add a direct-mount opt-in to the Sprite or texture-resolver path; `HtmlView` is the existing, explicit direct-mount primitive. Both embed forms are for bounded payloads inside otherwise document-shaped scenes. Flattening one enormous batch into one canvas also flattens its culling granularity, so if batch content dominates the scene, choose Canvas, WebGL, or WebGPU for the whole scene instead.
 
 ## 3D capability matrix (gl / wgpu only — canvas/dom are 2D)
 

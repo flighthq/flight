@@ -1,10 +1,11 @@
 export {
   createDomRenderState,
-  defaultDomSpriteRenderer,
+  defaultDomHtmlViewRenderer,
   defaultDomNativeTextRenderer,
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,
   defaultDomShapeRenderer,
+  defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,

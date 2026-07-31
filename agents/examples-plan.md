@@ -66,6 +66,7 @@ These exercise features no existing example covers.
 | `clock` | Hierarchical clocks with pause/scale | `application` | Parent clock controlling child clocks, time scaling |
 | `spatial` | Broadphase spatial query visualization | `game` | Uniform grid, pair queries, region/point/ray queries |
 | `movieclip` | Timeline-driven frame animation | `animation` | Frame labels, frame scripts, goto/play/stop |
+| `cross-backend-embed` | Cross-backend batch embedding in a DOM scene | `rendering` | One GL QuadBatch producer consumed side by side as a portable Sprite canvas resource and a live HtmlView canvas mount, with ownership and cadence explicit |
 
 ### Tier 3: Integration demos (new, larger scope)
 
@@ -79,7 +80,7 @@ These combine multiple features into a realistic scenario.
 
 ## Implementation Order
 
-1. **Tier 2 first.** These are the gap — features that have never been demonstrated. Implement in SDK-group order: scene3d → effects → adjustments → collision → spring → camera2d → flowstates → textinput → interaction → snapshot → pathboolean → motionpath → formatloading → skeleton → clock → spatial → movieclip.
+1. **Tier 2 first.** These are the gap — features that have never been demonstrated. Implement in SDK-group order: scene3d → effects → adjustments → cross-backend-embed → collision → spring → camera2d → flowstates → textinput → interaction → snapshot → pathboolean → motionpath → formatloading → skeleton → clock → spatial → movieclip.
 2. **Tier 1 rework.** Replace the OpenFL ports with Flight-native versions. The existing code is a useful reference but naming and structure should match Flight conventions.
 3. **Tier 3 integration demos.** Only after Tier 1 and 2 are solid.
 
