@@ -1,6 +1,7 @@
 import {
   createResourceLoader,
   disposeResourceLoader,
+  getResourceLoadCounts,
   queueResourceLoad,
   startResourceLoad,
 } from '@flighthq/loader/contract';
@@ -128,8 +129,13 @@ export async function loadAssetGroup(
   const loader = createResourceLoader();
   const progress = options?.progress;
   if (progress !== undefined) {
-    connectSignal(loader.onProgress, (loaded: number, total: number) => {
-      emitSignal(progress, { loaded, total });
+    // AssetLoadProgress is defined in counts ("`loaded` members settled of `total` scheduled"), so it
+    // reads them from the counts query rather than from onProgress, which carries the 0..1 weighted
+    // fraction. Taking the fraction's argument as a count is exactly the conflation the loader's two
+    // currencies were separated to prevent.
+    connectSignal(loader.onProgress, () => {
+      const counts = getResourceLoadCounts(loader);
+      emitSignal(progress, { loaded: counts.settledItems, total: counts.totalItems });
     });
   }
 

@@ -4,6 +4,8 @@ export {
   disposeResourceLoader,
   enableResourceLoaderItemSignals,
   getResourceLoadItemStatus,
+  getResourceLoadBytes,
+  getResourceLoadCounts,
   getResourceLoadProgress,
   pauseResourceLoad,
   queueResourceLoad,
