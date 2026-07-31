@@ -5,15 +5,16 @@ import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/type
 // pattern one tier up, and the Canvas parallel of registerGlRenderEffect. Registration is opt-in
 // (import a runner only to register it) and dispatch is a Map lookup, so there is no monolithic switch
 // and unused effect recipes tree-shake away. Register an alternative runner under the same key to swap
-// algorithms.
+// algorithms. A built-in registerCanvas<Kind>Effect wrapper is pure ergonomics: it calls this function
+// with the literal kind and public default runner, and installs no padding or shader companions.
 
 export function getCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): CanvasRenderEffectRunner | null {
   return getCanvasRenderStateRuntime(state).canvasRenderEffectRegistry?.get(kind) ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
-// chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
-// your own policy (warn, filter) rather than relying on silent no-ops.
+// chain before dispatching. The pipeline preserves unregistered operations as initialized identity
+// passes; check up front to apply your own policy (warn, filter) rather than relying on that fallback.
 export function hasCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): boolean {
   return getCanvasRenderStateRuntime(state).canvasRenderEffectRegistry?.has(kind) ?? false;
 }
