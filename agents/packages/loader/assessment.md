@@ -19,19 +19,39 @@ are untouched. See the charter decision for the shape and why the reporter is at
 
 ## Recommended
 
-1. **Reconcile the three progress currencies.** This is now sharper, not solved: `onProgress` emits
-   ITEM counts, `getResourceLoadProgress` returns a WEIGHT-weighted fraction, and bytes are a third
-   currency reachable only per-item. A caller wiring a progress bar picks one and gets a different
-   curve from the other two. Byte progress deliberately did **not** touch `onProgress` — changing what
-   its two numbers mean is a breaking semantic change, not a wiring fix — so the divergence is
-   unchanged in kind and merely more visible. **Wants a ruling**: either a single declared currency
-   with the others derived, or an explicit statement in the header that the three answer different
-   questions.
-2. **Bound `drainQueue` re-entrancy.** Unchanged from 2026-07-30: `settleEntry`, `resumeResourceLoad`,
-   `setResourceLoaderConcurrency`, and streaming `queueResourceLoad` all start a drain, and the loop
-   awaits inside the token-bucket branch, so two concurrent drains can each observe a free slot and
-   both dispatch. Reachable by inspection; I could not produce it in a test, which is why it is still
-   a finding rather than a fix.
+_None open._ Both prior items are closed; see [Landed](#landed) and [Investigated](#investigated).
+
+## Landed
+
+- ~~**Reconcile the three progress currencies.**~~ Ruled by chief and implemented 2026-07-31.
+  `onProgress` now emits the 0..1 weighted fraction — literally `getResourceLoadProgress(loader)` at every
+  emit site, so the signal and the accessor cannot diverge by construction. Counts and bytes became
+  named queries (`getResourceLoadCounts`, `getResourceLoadBytes`) so a caller has to say which currency
+  it means. `packages/loader/README.md` carries the three currencies, the byte-accurate recipe, and the
+  contract-currency-must-be-knowable-before-work-starts principle.
+
+## Investigated
+
+- **`drainQueue` re-entrancy — investigated 2026-07-31 and NOT reproducible as stated; retired.** The
+  finding was that four call sites start a drain and the loop awaits inside the token-bucket branch, so
+  "two concurrent drains can each observe a free slot and both dispatch". The concurrency bound in fact
+  holds, for a structural reason: the `inFlight.size < maxConcurrent` test is part of the `while`
+  condition, the only `await` in the loop is followed by `continue` — which returns to that condition —
+  and the dispatch (`pending.shift()` then `inFlight.add`) is synchronous after it with no await in
+  between. There is no window where one drain has passed the guard and another can slip through.
+
+  Tried to break it empirically as well as by reading: a throttled loader (the only configuration that
+  reaches the awaiting branch at all — without `maxBytesPerSecond` the loop never yields), in streaming
+  mode, hammered across the delay window from every entry point that starts a drain, including repeated
+  `setResourceLoaderConcurrency` and `queueResourceLoad`. Peak in-flight never exceeded the configured
+  bound.
+
+  **One residual, smaller than the original claim and not a correctness break:** two drains parked in
+  `delay` can both wake, both re-read `tokenBucketDelayMs` as 0, and both `consumeTokens`, transiently
+  over-drawing the byte bucket by one entry. That overspends the *rate* slightly; it does not exceed
+  concurrency and it self-corrects as the bucket refills. Recorded rather than fixed, since a guard for
+  it would cost every drain to smooth a transient in an optional throttle.
+
 
 ## Backlog
 
