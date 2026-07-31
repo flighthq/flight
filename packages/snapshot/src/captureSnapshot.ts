@@ -7,9 +7,17 @@ import type { Snapshot } from '@flighthq/types/contract';
  *  affects the snapshot, and vice versa. The freeze makes it a fixed point-in-time value safe to
  *  store in an undo stack, send over the wire, or interpolate toward.
  *
- *  `source` must be plain, structured-cloneable data (numbers, strings, booleans, arrays, nested
- *  objects). Passing a class instance, function, or other non-cloneable value is programmer error and
- *  throws via `structuredClone`.
+ *  `source` must be plain, **acyclic**, structured-cloneable data (numbers, strings, booleans, arrays,
+ *  nested objects). Passing a class instance, function, or other non-cloneable value is programmer
+ *  error and throws via `structuredClone`.
+ *
+ *  Acyclic is a narrower contract than structured-cloneable, and deliberately so. `structuredClone`
+ *  itself handles cycles, and capture handles them too — but `equalsSnapshot`, `interpolateSnapshots`,
+ *  and `restoreSnapshot` walk a snapshot without tracking what they have visited, and giving them a
+ *  visited set would tax every acyclic walk in the common per-frame netcode path to serve a shape
+ *  almost no game state has. So a cycle is programmer error here, not a supported input. Import
+ *  `enableSnapshotGuards` to have it reported at capture time, where it is diagnosable, rather than as
+ *  a stack overflow several frames later.
  */
 export function captureSnapshot<T>(source: Readonly<T>): Snapshot<T> {
   _captureGuard?.(source);
