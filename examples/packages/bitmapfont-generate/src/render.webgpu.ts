@@ -1,13 +1,13 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  BitmapTextKind,
   SpriteKind,
   createWgpuCanvasElement,
   createWgpuRenderState,
   enableFlightDiagnostics,
+  defaultWgpuBitmapTextRenderer,
   defaultWgpuSpriteRenderer,
-  defaultWgpuQuadBatchRenderer,
   prepareScene2DRender,
-  QuadBatchKind,
   registerStandardWgpuTextureResolvers,
   registerStandardWgpuMaterial,
   registerRenderer,
@@ -30,7 +30,7 @@ enableFlightDiagnostics(state);
 registerStandardWgpuTextureResolvers(state);
 registerStandardWgpuMaterial(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
-registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
+registerRenderer(state, BitmapTextKind, defaultWgpuBitmapTextRenderer);
 
 export const scale = pixelRatio;
 
