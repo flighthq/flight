@@ -49,11 +49,11 @@ export function findNodeByName<Traits extends object = NodeTraits>(
  */
 export function forEachNodeAncestor<Traits extends object = NodeTraits>(
   source: Readonly<Node<Traits>>,
-  callback: (node: Node<Traits>) => boolean,
+  callback: (node: Node<Traits>) => boolean | void,
 ): void {
   let current = getNodeParent(source as Node<Traits>);
   while (current !== null) {
-    if (!callback(current)) return;
+    if (callback(current) === false) return;
     current = getNodeParent(current);
   }
 }

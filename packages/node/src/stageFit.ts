@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import type {
+  BoundsNodeAny,
   HasBoundsRectangleRuntime,
   MatrixLike,
   NodeTraits,
@@ -61,13 +62,11 @@ export function computeScene2DFitTransform<Traits extends object = NodeTraits>(
   let contentHeight = 0;
 
   if (scene2d.root !== null) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const runtime = getNodeRuntime(scene2d.root as any) as unknown as Partial<HasBoundsRectangleRuntime> | undefined;
+    const runtime = getNodeRuntime(scene2d.root) as Partial<HasBoundsRectangleRuntime>;
     if (runtime?.computeLocalBoundsRectangle !== undefined) {
       _tempRectangle.width = 0;
       _tempRectangle.height = 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      runtime.computeLocalBoundsRectangle(_tempRectangle, scene2d.root as any);
+      runtime.computeLocalBoundsRectangle(_tempRectangle, scene2d.root as BoundsNodeAny);
       contentWidth = _tempRectangle.width;
       contentHeight = _tempRectangle.height;
     }
