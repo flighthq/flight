@@ -132,7 +132,7 @@ describe('drawWgpuShape', () => {
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
-    registerStandardWgpuMaterial(state);
+    registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
