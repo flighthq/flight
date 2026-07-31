@@ -114,6 +114,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
+- [registration model](agents/registration-model.md) — before answering a consumer question about registration or backend capability. The two public doors, the register-means-real-implementation rule, and the DOM batch-kind exclusions.
 - [anti-goals](agents/anti-goals.md) — before "completing" a seemingly-missing feature. Some are absent on purpose (starting with `displayObject.filters`); the registry, the explicit path instead, and when a convenience abstraction is allowed.
 - [commit messages](agents/conventions/commits.md) — before writing a commit. The `type(scope): subject` format, and which words are types vs scopes.
 - [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke`/`parity`/`regression` vocabulary.
