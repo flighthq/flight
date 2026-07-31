@@ -2,10 +2,14 @@
 // suite with `isolate: false` — one shared module registry per worker, for a ~15x speedup — and the
 // property that makes it safe is that every file scopes its own mocks. Two rules carry that:
 //
-//   hoisted-mock  A top-level `vi.mock()` is hoisted above the file's imports and registered for the
-//                 whole worker, not this file, so it leaks into every later file that imports the same
-//                 module. The sanctioned form is `vi.doMock()` inside `beforeAll` plus a dynamic
-//                 import of the subject.
+//   hoisted-mock  A top-level `vi.mock()` is hoisted above the file's imports. Under the SHARED
+//                 registry it registers for the whole worker, not this file, so it leaks into every
+//                 later file importing that module — forbidden there. It is fine in the isolated tier,
+//                 where the registry is per-file. The rule is about the registry, not the API.
+//   untiered-mock A file that mocks modules but is not in the isolated tier, so it is running under the
+//                 shared registry where its mocks can leak.
+//   stale-tier    A file listed in the isolated tier that no longer mocks anything, so it is paying for
+//                 isolation it does not need — demote it.
 //   orphan-unmock A `vi.doUnmock('x')` whose specifier no other call in the file ever mocked. It
 //                 unmocks nothing, which is worse than absent: it reads as cleanup that is happening.
 //
@@ -18,9 +22,13 @@ import { join, relative } from 'node:path';
 
 import pc from 'picocolors';
 
-type Rule = 'hoisted-mock' | 'orphan-unmock';
+import { ISOLATED_MOCK_TEST_FILES } from '../vitest.tiers';
+
+type Rule = 'hoisted-mock' | 'orphan-unmock' | 'stale-tier' | 'untiered-mock';
 
 const RULE_MESSAGE: Record<Rule, string> = {
+  'stale-tier': 'listed in vitest.tiers.ts but mocks nothing — demote it to the shared tier',
+  'untiered-mock': 'mocks a module but is not in vitest.tiers.ts — its mocks leak under the shared registry',
   'hoisted-mock':
     'top-level vi.mock() — hoists above imports and leaks across files under isolate:false; use vi.doMock() in beforeAll plus a dynamic import',
   'orphan-unmock': 'vi.doUnmock() names a specifier this file never mocked — it unmocks nothing',
@@ -56,6 +64,7 @@ interface Violation {
   rule: Rule;
 }
 
+const tier = new Set(ISOLATED_MOCK_TEST_FILES);
 const violations: Violation[] = [];
 let allowed = 0;
 
@@ -89,10 +98,19 @@ for (const path of testFiles) {
     violations.push({ path: rel, line: lineOf(text, index), rule });
   };
 
-  for (const m of text.matchAll(HOISTED)) record('hoisted-mock', m.index);
+  const hoisted = Array.from(text.matchAll(HOISTED));
+  const doMocks = Array.from(text.matchAll(DO_MOCK));
+  const isolated = tier.has(rel);
+  const mocksModules = hoisted.length > 0 || doMocks.length > 0;
 
-  const mocked = new Set(Array.from(text.matchAll(DO_MOCK), (m) => m[1]));
-  for (const m of text.matchAll(HOISTED)) mocked.add(m[1]);
+  // Hoisted mocks are a violation only where the registry is shared.
+  if (!isolated) for (const m of hoisted) record('hoisted-mock', m.index);
+  // Both directions of the tier boundary, so membership is checked rather than remembered.
+  if (mocksModules && !isolated) record('untiered-mock', (hoisted[0] ?? doMocks[0])!.index);
+  if (isolated && !mocksModules) record('stale-tier', 0);
+
+  const mocked = new Set(doMocks.map((m) => m[1]));
+  for (const m of hoisted) mocked.add(m[1]);
   for (const m of text.matchAll(DO_UNMOCK)) {
     if (!mocked.has(m[1])) record('orphan-unmock', m.index);
   }
@@ -107,7 +125,7 @@ if (jsonMode) {
 
 if (violations.length === 0) {
   console.log(
-    `${pc.green('OK')} ${pc.bold('Test mocks are per-file and self-consistent')} ${pc.dim(`(${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
+    `${pc.green('OK')} ${pc.bold('Test mocks are tier-correct and self-consistent')} ${pc.dim(`(${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
   );
   process.exit(0);
 }

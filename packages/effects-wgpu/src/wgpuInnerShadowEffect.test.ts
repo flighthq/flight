@@ -1,49 +1,41 @@
-import type * as WgpueffectblitshaderModule from './wgpuEffectBlitShader';
-import type * as WgpueffectboxblurModule from './wgpuEffectBoxBlur';
-import type * as WgpueffecttintshaderModule from './wgpuEffectTintShader';
-import type * as WgpuinnershadoweffectModule from './wgpuInnerShadowEffect';
-
-// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
-// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
-// every file in the worker rather than this one -- see the rule in the root vitest config.
-let applyWgpuEffectBlitPass: typeof WgpueffectblitshaderModule.applyWgpuEffectBlitPass;
-let applyWgpuEffectBoxBlur: typeof WgpueffectboxblurModule.applyWgpuEffectBoxBlur;
-let applyWgpuEffectInnerClipPass: typeof WgpueffecttintshaderModule.applyWgpuEffectInnerClipPass;
-let applyInnerShadowEffectToWgpu: typeof WgpuinnershadoweffectModule.applyInnerShadowEffectToWgpu;
-let defaultWgpuInnerShadowEffectRunner: typeof WgpuinnershadoweffectModule.defaultWgpuInnerShadowEffectRunner;
-
-beforeAll(async () => {
+vi.hoisted(() => {
   vi.resetModules();
-  vi.doMock('@flighthq/render-wgpu/contract', () => {
-    let nextTargetId = 0;
-    return {
-      acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-        ...descriptor,
-        id: `scratch-${nextTargetId++}`,
-        texture: {},
-      })),
-      releaseWgpuRenderTarget: vi.fn(),
-    };
-  });
-  vi.doMock('./wgpuEffectBlitShader', () => ({
-    applyWgpuEffectBlitOffsetPass: vi.fn(),
-    applyWgpuEffectBlitPass: vi.fn(),
-  }));
-  vi.doMock('./wgpuEffectBoxBlur', () => ({
-    applyWgpuEffectBoxBlur: vi.fn(),
-  }));
-  vi.doMock('./wgpuEffectPass', () => ({
-    clearWgpuEffectTarget: vi.fn(),
-  }));
-  vi.doMock('./wgpuEffectTintShader', () => ({
-    applyWgpuEffectInnerClipPass: vi.fn(),
-    applyWgpuEffectInvertTintPass: vi.fn(),
-  }));
-  ({ applyWgpuEffectBlitPass } = await import('./wgpuEffectBlitShader'));
-  ({ applyWgpuEffectBoxBlur } = await import('./wgpuEffectBoxBlur'));
-  ({ applyWgpuEffectInnerClipPass } = await import('./wgpuEffectTintShader'));
-  ({ applyInnerShadowEffectToWgpu, defaultWgpuInnerShadowEffectRunner } = await import('./wgpuInnerShadowEffect'));
 });
+
+vi.mock('@flighthq/render-wgpu/contract', () => {
+  let nextTargetId = 0;
+  return {
+    acquireWgpuRenderTarget: vi.fn((_state, _pool, descriptor) => ({
+      ...descriptor,
+      id: `scratch-${nextTargetId++}`,
+      texture: {},
+    })),
+    releaseWgpuRenderTarget: vi.fn(),
+  };
+});
+
+vi.mock('./wgpuEffectBlitShader', () => ({
+  applyWgpuEffectBlitOffsetPass: vi.fn(),
+  applyWgpuEffectBlitPass: vi.fn(),
+}));
+
+vi.mock('./wgpuEffectBoxBlur', () => ({
+  applyWgpuEffectBoxBlur: vi.fn(),
+}));
+
+vi.mock('./wgpuEffectPass', () => ({
+  clearWgpuEffectTarget: vi.fn(),
+}));
+
+vi.mock('./wgpuEffectTintShader', () => ({
+  applyWgpuEffectInnerClipPass: vi.fn(),
+  applyWgpuEffectInvertTintPass: vi.fn(),
+}));
+
+import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
+import { applyWgpuEffectInnerClipPass } from './wgpuEffectTintShader';
+import { applyInnerShadowEffectToWgpu, defaultWgpuInnerShadowEffectRunner } from './wgpuInnerShadowEffect';
 
 describe('applyInnerShadowEffectToWgpu', () => {
   it('is a function', () => {
@@ -121,15 +113,6 @@ describe('defaultWgpuInnerShadowEffectRunner', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-afterAll(() => {
-  vi.doUnmock('@flighthq/render-wgpu/contract');
-  vi.doUnmock('./wgpuEffectBlitShader');
-  vi.doUnmock('./wgpuEffectBoxBlur');
-  vi.doUnmock('./wgpuEffectPass');
-  vi.doUnmock('./wgpuEffectTintShader');
-  vi.resetModules();
 });
 
 function createState(): never {

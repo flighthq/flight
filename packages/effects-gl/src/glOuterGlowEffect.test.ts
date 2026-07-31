@@ -1,41 +1,35 @@
-import type * as GleffectblitshaderModule from './glEffectBlitShader';
-import type * as GloutergloweffectModule from './glOuterGlowEffect';
-
-// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
-// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
-// every file in the worker rather than this one -- see the rule in the root vitest config.
-let applyGlEffectBlitPass: typeof GleffectblitshaderModule.applyGlEffectBlitPass;
-let applyGlEffectErasePass: typeof GleffectblitshaderModule.applyGlEffectErasePass;
-let applyOuterGlowEffectToGl: typeof GloutergloweffectModule.applyOuterGlowEffectToGl;
-let defaultGlOuterGlowEffectRunner: typeof GloutergloweffectModule.defaultGlOuterGlowEffectRunner;
-
-beforeAll(async () => {
+vi.hoisted(() => {
   vi.resetModules();
-  vi.doMock('@flighthq/render-gl/contract', () => {
-    let nextTargetId = 0;
-    return {
-      acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-        ...descriptor,
-        id: `scratch-${nextTargetId++}`,
-        texture: {},
-      })),
-      clearGlRenderTarget: vi.fn(),
-      releaseGlRenderTarget: vi.fn(),
-    };
-  });
-  vi.doMock('./glEffectBlitShader', () => ({
-    applyGlEffectBlitPass: vi.fn(),
-    applyGlEffectErasePass: vi.fn(),
-  }));
-  vi.doMock('./glEffectBoxBlur', () => ({
-    applyGlEffectBoxBlur: vi.fn(),
-  }));
-  vi.doMock('./glEffectTintShader', () => ({
-    applyGlEffectTintPass: vi.fn(),
-  }));
-  ({ applyGlEffectBlitPass, applyGlEffectErasePass } = await import('./glEffectBlitShader'));
-  ({ applyOuterGlowEffectToGl, defaultGlOuterGlowEffectRunner } = await import('./glOuterGlowEffect'));
 });
+
+vi.mock('@flighthq/render-gl/contract', () => {
+  let nextTargetId = 0;
+  return {
+    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
+      ...descriptor,
+      id: `scratch-${nextTargetId++}`,
+      texture: {},
+    })),
+    clearGlRenderTarget: vi.fn(),
+    releaseGlRenderTarget: vi.fn(),
+  };
+});
+
+vi.mock('./glEffectBlitShader', () => ({
+  applyGlEffectBlitPass: vi.fn(),
+  applyGlEffectErasePass: vi.fn(),
+}));
+
+vi.mock('./glEffectBoxBlur', () => ({
+  applyGlEffectBoxBlur: vi.fn(),
+}));
+
+vi.mock('./glEffectTintShader', () => ({
+  applyGlEffectTintPass: vi.fn(),
+}));
+
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
+import { applyOuterGlowEffectToGl, defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
 
 describe('applyOuterGlowEffectToGl', () => {
   it('is a function', () => {
@@ -87,14 +81,6 @@ describe('defaultGlOuterGlowEffectRunner', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-afterAll(() => {
-  vi.doUnmock('@flighthq/render-gl/contract');
-  vi.doUnmock('./glEffectBlitShader');
-  vi.doUnmock('./glEffectBoxBlur');
-  vi.doUnmock('./glEffectTintShader');
-  vi.resetModules();
 });
 
 function createState(): never {
