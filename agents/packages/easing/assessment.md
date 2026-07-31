@@ -6,29 +6,43 @@ basedOn: ./review.md
 
 # easing — Assessment
 
-> **2026-07-31 correction.** `easeStep` never existed in tracked package source; do not
-> execute the recommendation or approval below that assumes it does. `easeSteps` is the
-> actual CSS steps API.
-
-Sorted from the depth review (96/100, authoritative), the builder's landed expansion, and the direction session (2026-07-02). Five decisions blessed. The package is near-complete — a full Penner family, CSS/shader curves, combinators, parametric factories, piecewise splicing, LUT sampling, and numerical derivative. The remaining work is small polish (3 items), the spring family (blocked on physics taxonomy), and the Rust conformance pass (explicitly batched).
+Sorted from the depth review (96/100, authoritative), the builder's landed expansion, and the direction session (2026-07-02). Five decisions blessed. Re-verified against the live tree on 2026-07-31 (22 source files, 20 test files, 152 tests, 48 exports): all three sweep items have landed, so the open work is now only the parked backlog — the spring family (blocked on physics taxonomy), the Rust conformance pass (explicitly batched), and two cross-cutting doc items.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/easing` and its `@flighthq/types` header entries, no cross-package coordination, no breaking change, no open design decision.
+_None open._ All three sweep items landed and were re-verified against live source on 2026-07-31; they are
+recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as
+work.
 
-1. **Tighten the `easeStep` doc-comment's CSS mapping.** The comment equates `easeStep(0)` with `step-start` and `easeStep(1)` with `step-end`, but `t >= threshold ? 1 : 0` makes `easeStep(0)` output 1 for all `t ≥ 0` and `easeStep(1)` output 0 until `t = 1`. The behavior is fine; the equivalence claim is imprecise. Reword to describe the actual threshold semantics.
+## Landed
 
-2. **Name `easeSmoothstepRange`'s return type in `@flighthq/types`.** It returns an anonymous `(x: number) => number` whose domain is `[edge0, edge1]`, not a normalized `EasingFunction`. Introduce a named header type (e.g. `ScalarRemap = (x: number) => number`) so every export's shape stays navigable from the header alone.
+1. ~~**Tighten the `easeStep` doc-comment's CSS mapping.**~~ Landed, and the item is now obsolete in its
+   original terms: there is no `easeStep`. The export is `easeSteps(count, position)`, a full CSS `steps()`
+   implementation over a `StepPosition`, so the `t >= threshold ? 1 : 0` behaviour the item described no
+   longer exists to document. Its current comment is accurate and goes further than the item asked, naming
+   the silent `easeSteps(1, 'jumpNone')` NaN edge and routing it through the guard seam that
+   `enableEasingGuards` turns into a warning.
 
-3. **Refresh the Package Map line for `@flighthq/easing`.** "easing functions for use with tween or any animation system" no longer hints at the combinator / factory / piecewise / LUT / derivative surface. One-line description refresh in `agents/index.md`.
+2. ~~**Name `easeSmoothstepRange`'s return type in `@flighthq/types`.**~~ Landed. `ScalarRemap = (x: number)
+   => number` lives in `packages/types/src/ScalarRemap.ts` and is exported from both type lanes;
+   `easeSmoothstepRange(edge0, edge1): ScalarRemap`.
+
+3. ~~**Refresh the Package Map line for `@flighthq/easing`.**~~ Landed. The catalog entry now reads "timing
+   curves: Penner/CSS/shader families, combinators, parametric factories, piecewise splicing, LUT sampling,
+   numerical derivative", which carries the surface the old one-liner omitted.
 
 ## Backlog
 
 Parked — each with the reason it is not sweep-safe.
 
-- **Spring / physics easing family.** _Parked — cross-package design._ Blessed (Decision #1): normalized `[0,1]→[0,1]` spring in easing, unbounded integrator in tween. Implementation blocked on the broader physics taxonomy review (Open direction #1) — simple easing vs arcade physics vs rigid body decomposition needs a future cross-package review before building.
+- **Spring / physics easing family.** _Resolved differently — no longer parked, and no longer easing's._ The
+  2026-07-02 shape (a normalized `[0,1]→[0,1]` `easeSpring` inside easing, unbounded integrator in tween) was
+  superseded: `@flighthq/spring` now exists as its own package, carrying plain-data damped-harmonic springs
+  over a closed-form analytic integrator. Easing exports no `easeSpring` and should not grow one — a spring
+  is duration-less and overshoot-capable, which is precisely what a fixed-duration easing curve is not.
 
-- **Spring presets** (`easeGentleSpring`, `easeWobblySpring`, etc.). _Parked — blocked on spring._ One-liners once `easeSpring` exists.
+- **Spring presets** (`easeGentleSpring`, `easeWobblySpring`, etc.). _Dropped with the item above._ Presets, if
+  wanted, belong beside the solver in `@flighthq/spring`, not as easing curves.
 
 - **`@flighthq/easing-formats` neighbor.** _Parked — gated on consumer._ Blessed (Decision #3): CSS `<easing-function>` parse/serialize stays permanently out of the tree-shakable core. Build only when a real consumer appears. Content is thin today (CSS easing strings are the primary format).
 
