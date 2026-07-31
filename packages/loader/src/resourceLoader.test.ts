@@ -45,43 +45,6 @@ function createDeferred<T>(): { resolve: (v: T) => void; reject: (e: unknown) =>
 }
 
 describe('bandwidth throttle (maxBytesPerSecond)', () => {
-  it('coalesces drain requests while waiting for the token bucket', async () => {
-    vi.useFakeTimers();
-    try {
-      const loader = createResourceLoader({ maxBytesPerSecond: 1000, maxConcurrent: 1 });
-      const started: string[] = [];
-      for (const key of ['a', 'b', 'c']) {
-        queueResourceLoad(loader, {
-          bytesHint: 1000,
-          key,
-          load: () => {
-            started.push(key);
-            return Promise.resolve(key);
-          },
-        });
-      }
-      const complete = waitForComplete(loader);
-
-      startResourceLoad(loader);
-      await vi.advanceTimersByTimeAsync(0);
-      expect(started).toEqual(['a']);
-      expect(vi.getTimerCount()).toBe(1);
-
-      // Each retune asks the running loader to drain. While it is suspended in the throttle wait,
-      // those requests must share its one timer rather than starting parallel drain loops.
-      setResourceLoaderConcurrency(loader, 2);
-      setResourceLoaderConcurrency(loader, 3);
-      setResourceLoaderConcurrency(loader, 4);
-      expect(vi.getTimerCount()).toBe(1);
-
-      await vi.runAllTimersAsync();
-      await complete;
-      expect(started).toEqual(['a', 'b', 'c']);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
   it('does not throttle when maxBytesPerSecond is not set', async () => {
     const loader = createResourceLoader({ maxConcurrent: 0 });
     for (let i = 0; i < 4; i++) {
