@@ -23,7 +23,7 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  registerBlinnPhongWgpuMaterial,
+  registerWgpuBlinnPhongMaterial,
   registerWgpuImageTextureResolver,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -43,7 +43,7 @@ document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x002850ff });
 registerWgpuImageTextureResolver(state);
-registerBlinnPhongWgpuMaterial(state);
+registerWgpuBlinnPhongMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,

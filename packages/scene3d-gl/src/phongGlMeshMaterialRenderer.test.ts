@@ -8,7 +8,7 @@ import { PhongMaterialKind } from '@flighthq/types/contract';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { phongGlMeshMaterialRenderer, registerPhongGlMaterial } from './phongGlMeshMaterialRenderer';
+import { phongGlMeshMaterialRenderer, registerGlPhongMaterial } from './phongGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -85,10 +85,10 @@ describe('phongGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerPhongGlMaterial', () => {
+describe('registerGlPhongMaterial', () => {
   it('installs the renderer for PhongMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerPhongGlMaterial(state);
+    registerGlPhongMaterial(state);
     expect(getGlMeshMaterialRenderer(state, PhongMaterialKind)).toBe(phongGlMeshMaterialRenderer);
   });
 });

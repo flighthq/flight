@@ -6,7 +6,7 @@ import {
   enableFlightDiagnostics,
   defaultGlSpriteRenderer,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerRenderer,
   registerStandardGlTextureResolvers,
   renderGlBackground,
@@ -25,7 +25,7 @@ export const state = createGlRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 

@@ -28,7 +28,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFra
 // color format, writes the shared Frame uniform (camera + the packed light block), binds the pipeline
 // + Frame group (beginWgpuMeshDraw), then binds the material's linear diffuse color at group(2). draw
 // issues the indexed draw. Lambert has no view-dependent term, so the classic prelude compiles out its
-// specular branch (the specular color it binds is unused). See registerLambertWgpuMaterial to install.
+// specular branch (the specular color it binds is unused). See registerWgpuLambertMaterial to install.
 export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -76,7 +76,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with LambertMaterials draw.
-export function registerLambertWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuLambertMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, LambertMaterialKind, lambertWgpuMeshMaterialRenderer);

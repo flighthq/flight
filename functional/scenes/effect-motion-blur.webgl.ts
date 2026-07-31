@@ -24,7 +24,7 @@ import {
   getNodeChildAt,
   getNodeChildCount,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerGlVelocityWriter,
@@ -50,7 +50,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);

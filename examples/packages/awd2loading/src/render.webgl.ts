@@ -10,7 +10,7 @@ import {
   registerStandardGlTextureResolvers,
   renderGlBackground,
 } from '@flighthq/sdk';
-import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerShadedGlMaterial } from '@flighthq/sdk/rendering';
+import { drawGlScene3D, registerBuiltInGlModifierSnippets, registerGlShadedMaterial } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);
@@ -23,7 +23,7 @@ const state = createGlRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
-registerShadedGlMaterial(state);
+registerGlShadedMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

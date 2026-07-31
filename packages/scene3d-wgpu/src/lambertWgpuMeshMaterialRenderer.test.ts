@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { LambertMaterialKind } from '@flighthq/types/contract';
 
-import { lambertWgpuMeshMaterialRenderer, registerLambertWgpuMaterial } from './lambertWgpuMeshMaterialRenderer';
+import { lambertWgpuMeshMaterialRenderer, registerWgpuLambertMaterial } from './lambertWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -68,10 +68,10 @@ describe('lambertWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerLambertWgpuMaterial', () => {
+describe('registerWgpuLambertMaterial', () => {
   it('installs the renderer for LambertMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerLambertWgpuMaterial(state);
+    registerWgpuLambertMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, LambertMaterialKind)).toBe(lambertWgpuMeshMaterialRenderer);
   });
 });

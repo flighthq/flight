@@ -17,7 +17,7 @@ import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import type * as GlShapeModule from './glShape';
-import { registerStandardGlMaterial } from './glStandardMaterial';
+import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 
@@ -122,7 +122,7 @@ describe('drawGlShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', () => {
     const { state, gl } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);
     appendShapeRectangle(shape, 8, 8, 32, 24);
@@ -136,7 +136,7 @@ describe('drawGlShape', () => {
   it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
     const { state, gl } = createGlState();
     enableGlStrokePathTessellation(state);
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);
     appendShapePath(
@@ -158,14 +158,14 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when commands array is empty', () => {
     const { state } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
@@ -178,14 +178,14 @@ describe('drawGlShape', () => {
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', () => {
     const { state } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalled();
@@ -193,7 +193,7 @@ describe('drawGlShape', () => {
 
   it('writes correct size into instance data', () => {
     const { state } = createGlState();
-    registerStandardGlMaterial(state);
+    registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     const d = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(d[6]).toBe(64); // width from mocked bounds

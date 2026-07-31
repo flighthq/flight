@@ -10,7 +10,7 @@ import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/type
 
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { presentGlScene3D } from './presentGlScene3D';
-import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -62,7 +62,7 @@ const LIGHTS: Scene3DLightsLike = {
 describe('presentGlScene3D', () => {
   it('renders into the target then presents to the canvas (default framebuffer)', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const target = makeTarget();
@@ -78,7 +78,7 @@ describe('presentGlScene3D', () => {
 
   it('clears the background color and the depth buffer before drawing', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
@@ -94,7 +94,7 @@ describe('presentGlScene3D', () => {
 
   it('presents to the canvas after the scene draw, so the encode reads the rendered target', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const target = makeTarget();
@@ -112,7 +112,7 @@ describe('presentGlScene3D', () => {
 
   it('ends the target pass when scene drawing throws', () => {
     const { state, gl } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     Object.assign(gl, {

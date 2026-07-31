@@ -32,7 +32,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // `lambert` variant for the material's diffuse map / alpha mode, uploads the camera view-projection
 // and the packed light block, and the material's linear diffuse color. draw issues the indexed draw.
 // Lambert has no view-dependent term, so it skips the camera position; the shared classic prelude
-// compiles out the specular branch for the `lambert` model. See registerLambertGlMaterial to install.
+// compiles out the specular branch for the `lambert` model. See registerGlLambertMaterial to install.
 export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -58,7 +58,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
-export function registerLambertGlMaterial(state: GlRenderState): void {
+export function registerGlLambertMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, LambertMaterialKind, lambertGlMeshMaterialRenderer);
 }
 

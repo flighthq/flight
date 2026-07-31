@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
-import { emissiveWgpuMeshMaterialRenderer, registerEmissiveWgpuMaterial } from './emissiveWgpuMeshMaterialRenderer';
+import { emissiveWgpuMeshMaterialRenderer, registerWgpuEmissiveMaterial } from './emissiveWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -55,10 +55,10 @@ describe('emissiveWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerEmissiveWgpuMaterial', () => {
+describe('registerWgpuEmissiveMaterial', () => {
   it('installs the renderer for EmissiveMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerEmissiveWgpuMaterial(state);
+    registerWgpuEmissiveMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, EmissiveMaterialKind)).toBe(emissiveWgpuMeshMaterialRenderer);
   });
 });

@@ -61,6 +61,6 @@ float flightDistributionGgxAnisotropic(float nDotH, float tDotH, float bDotH, fl
   },
 };
 
-export function registerAnisotropyPbrGlExtension(state: GlRenderState): void {
+export function registerGlAnisotropyPbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, AnisotropyPbrExtensionKind, anisotropyPbrGlExtension);
 }

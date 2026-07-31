@@ -15,7 +15,7 @@ import {
 } from './enableGlScene3DForwardLightSelectionGuards';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { prepareGlScene3DForwardLights } from './prepareGlScene3DForwardLights';
-import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
 
 function camera(): Camera3D {
   const result = createCamera3D({
@@ -47,7 +47,7 @@ describe('areGlScene3DForwardLightSelectionGuardsEnabled', () => {
 describe('enableGlScene3DForwardLightSelectionGuards', () => {
   it('warns when excess punctual lights draw without a prepared selection', () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     enableGlScene3DForwardLightSelectionGuards(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
@@ -65,7 +65,7 @@ describe('enableGlScene3DForwardLightSelectionGuards', () => {
 
   it('stays silent when the explicit per-object selection is supplied', () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     enableGlScene3DForwardLightSelectionGuards(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));

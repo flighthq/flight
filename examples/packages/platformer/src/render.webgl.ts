@@ -9,7 +9,7 @@ import {
   defaultGlTextLabelRenderer,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -31,7 +31,7 @@ export const state = createGlRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);

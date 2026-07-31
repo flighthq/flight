@@ -24,7 +24,7 @@ import {
   prepareScene2DRender,
   QuadBatchKind,
   registerRenderer,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerStandardWgpuTextureResolvers,
   registerWgpuShapeCommands,
   renderWgpuBackground,
@@ -58,7 +58,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   enableFlightDiagnostics(state);
   registerStandardWgpuTextureResolvers(state);
-  registerStandardWgpuMaterial(state);
+  registerWgpuStandardMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuFrameCapture(state);

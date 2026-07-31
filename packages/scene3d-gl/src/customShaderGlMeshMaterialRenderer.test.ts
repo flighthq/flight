@@ -8,7 +8,7 @@ import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 import {
   customShaderGlMeshMaterialRenderer,
   getGlCustomMaterialShaderSource,
-  registerCustomShaderGlMaterial,
+  registerGlCustomShaderMaterial,
   registerGlCustomMaterialShader,
 } from './customShaderGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -142,14 +142,6 @@ describe('getGlCustomMaterialShaderSource', () => {
   });
 });
 
-describe('registerCustomShaderGlMaterial', () => {
-  it('installs the renderer for CustomShaderMaterialKind', () => {
-    const { state } = makeGlScene3DState();
-    registerCustomShaderGlMaterial(state);
-    expect(getGlMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderGlMeshMaterialRenderer);
-  });
-});
-
 describe('registerGlCustomMaterialShader', () => {
   it('stores shader source retrievable by key', () => {
     const { state } = makeGlScene3DState();
@@ -165,5 +157,13 @@ describe('registerGlCustomMaterialShader', () => {
     registerGlCustomMaterialShader(state, 'key', a);
     registerGlCustomMaterialShader(state, 'key', b);
     expect(getGlCustomMaterialShaderSource(state, 'key')).toBe(b);
+  });
+});
+
+describe('registerGlCustomShaderMaterial', () => {
+  it('installs the renderer for CustomShaderMaterialKind', () => {
+    const { state } = makeGlScene3DState();
+    registerGlCustomShaderMaterial(state);
+    expect(getGlMeshMaterialRenderer(state, CustomShaderMaterialKind)).toBe(customShaderGlMeshMaterialRenderer);
   });
 });

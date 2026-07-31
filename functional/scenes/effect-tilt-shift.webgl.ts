@@ -17,7 +17,7 @@ import {
   defaultGlTiltShiftEffectRunner,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
@@ -38,7 +38,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerGlRenderEffect(state, 'TiltShiftEffect', defaultGlTiltShiftEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });

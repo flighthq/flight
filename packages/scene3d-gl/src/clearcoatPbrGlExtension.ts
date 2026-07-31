@@ -73,7 +73,7 @@ float flightClearcoatRoughnessSample() { return ${roughnessMap ? 'texture(u_flig
   },
 };
 
-export function registerClearcoatPbrGlExtension(state: GlRenderState): void {
+export function registerGlClearcoatPbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, ClearcoatPbrExtensionKind, clearcoatPbrGlExtension);
 }
 

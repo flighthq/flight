@@ -64,6 +64,6 @@ vec3 flightIridescentFresnel(float cosTheta, vec3 baseF0, float thicknessNm, flo
   },
 };
 
-export function registerIridescencePbrGlExtension(state: GlRenderState): void {
+export function registerGlIridescencePbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, IridescencePbrExtensionKind, iridescencePbrGlExtension);
 }

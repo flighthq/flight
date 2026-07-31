@@ -22,7 +22,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // optional tangent-space normal map plus its scale; draw issues the indexed draw. The fragment scene2d
 // transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space),
 // optionally perturbs it through a TBN-built normal map, and encodes it as `n * 0.5 + 0.5` LINEAR
-// color. Lights are ignored. See registerNormalGlMaterial to install it.
+// color. Lights are ignored. See registerGlNormalMaterial to install it.
 export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -53,6 +53,6 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with NormalMaterials draw.
-export function registerNormalGlMaterial(state: GlRenderState): void {
+export function registerGlNormalMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, NormalMaterialKind, normalGlMeshMaterialRenderer);
 }

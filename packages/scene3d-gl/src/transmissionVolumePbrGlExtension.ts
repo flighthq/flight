@@ -83,6 +83,6 @@ ${thicknessMap ? 'vec2 flightTransmissionThicknessUv() { vec2 uv = u_flightTrans
   },
 };
 
-export function registerTransmissionVolumePbrGlExtension(state: GlRenderState): void {
+export function registerGlTransmissionVolumePbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, TransmissionVolumePbrExtensionKind, transmissionVolumePbrGlExtension);
 }

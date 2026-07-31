@@ -83,13 +83,6 @@ export function getGlCustomMaterialShaderSource(
   return _customMaterialShaders.get(state)?.get(shaderKey) ?? null;
 }
 
-// Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this
-// state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so
-// meshes carrying CustomShaderMaterials draw.
-export function registerCustomShaderGlMaterial(state: GlRenderState): void {
-  registerGlMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
-}
-
 // Registers a vertex + fragment shader source pair under `shaderKey` for this state, so a
 // CustomShaderMaterial naming that key compiles and runs it. The vertex scene2d receives the
 // standard mesh attributes (a_position loc 0, a_normal loc 1, a_tangent loc 2, a_uv0 loc 3)
@@ -113,6 +106,13 @@ export function registerGlCustomMaterialShader(
     _customMaterialShaders.set(state, registry);
   }
   registry.set(shaderKey, source);
+}
+
+// Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this
+// state. Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so
+// meshes carrying CustomShaderMaterials draw.
+export function registerGlCustomShaderMaterial(state: GlRenderState): void {
+  registerGlMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderGlMeshMaterialRenderer);
 }
 function ensureGlCustomShaderProgram(
   state: GlRenderState,

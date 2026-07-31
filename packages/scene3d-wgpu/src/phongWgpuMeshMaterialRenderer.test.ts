@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { PhongMaterialKind } from '@flighthq/types/contract';
 
-import { phongWgpuMeshMaterialRenderer, registerPhongWgpuMaterial } from './phongWgpuMeshMaterialRenderer';
+import { phongWgpuMeshMaterialRenderer, registerWgpuPhongMaterial } from './phongWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -70,10 +70,10 @@ describe('phongWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerPhongWgpuMaterial', () => {
+describe('registerWgpuPhongMaterial', () => {
   it('installs the renderer for PhongMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerPhongWgpuMaterial(state);
+    registerWgpuPhongMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, PhongMaterialKind)).toBe(phongWgpuMeshMaterialRenderer);
   });
 });

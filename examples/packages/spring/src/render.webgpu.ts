@@ -6,7 +6,7 @@ import {
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
@@ -26,7 +26,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 

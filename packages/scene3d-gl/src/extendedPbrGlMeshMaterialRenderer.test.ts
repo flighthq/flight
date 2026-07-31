@@ -3,7 +3,7 @@ import { createExtendedPbrMaterial } from '@flighthq/materials/contract';
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
-import { extendedPbrGlMeshMaterialRenderer, registerExtendedPbrGlMaterial } from './extendedPbrGlMeshMaterialRenderer';
+import { extendedPbrGlMeshMaterialRenderer, registerGlExtendedPbrMaterial } from './extendedPbrGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -31,10 +31,10 @@ describe('extendedPbrGlMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerExtendedPbrGlMaterial', () => {
+describe('registerGlExtendedPbrMaterial', () => {
   it('registers the one generic material renderer', () => {
     const { state } = makeGlScene3DState();
-    registerExtendedPbrGlMaterial(state);
+    registerGlExtendedPbrMaterial(state);
     expect(getGlMeshMaterialRenderer(state, ExtendedPbrMaterialKind)).toBe(extendedPbrGlMeshMaterialRenderer);
   });
 });

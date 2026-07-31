@@ -26,7 +26,7 @@ import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelud
 // The built-in Unlit forward renderer (WgpuMeshMaterialRenderer for UnlitMaterialKind) — the WGSL
 // mirror of unlitGlMeshMaterialRenderer. Lighting-independent flat color: bind selects the unlit
 // pipeline variant for the alpha mode + color format, writes the shared Frame uniform (lights ignored),
-// and binds the linear base color; draw issues the indexed draw. See registerUnlitWgpuMaterial.
+// and binds the linear base color; draw issues the indexed draw. See registerWgpuUnlitMaterial.
 export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -62,7 +62,7 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with UnlitMaterials draw.
-export function registerUnlitWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuUnlitMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuRenderTextureResolver(state);

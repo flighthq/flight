@@ -22,7 +22,7 @@ import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 // Lighting-independent: the unlit shader's VERTEX_COLOR variant multiplies the mesh's interpolated
 // color0 attribute by the linear tint. Geometry without a color0 attribute leaves the attribute
 // unbound (its default), so a tinted black surface results — author color0 (or import it via glTF)
-// to drive this material. Lights are ignored. See registerVertexColorGlMaterial to install it.
+// to drive this material. Lights are ignored. See registerGlVertexColorMaterial to install it.
 export const vertexColorGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -59,7 +59,7 @@ export const vertexColorGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // Registers the built-in VertexColor renderer for VertexColorMaterialKind on this state. Opt-in (no
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with
 // VertexColorMaterials draw.
-export function registerVertexColorGlMaterial(state: GlRenderState): void {
+export function registerGlVertexColorMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, VertexColorMaterialKind, vertexColorGlMeshMaterialRenderer);
 }
 

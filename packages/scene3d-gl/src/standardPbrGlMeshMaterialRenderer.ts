@@ -24,7 +24,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // geometry's GPU buffers lazily (cached by geometry.version), sets the per-draw model + normal
 // matrices from the proxy, and issues the indexed draw over the proxy's subset with depth-test LESS +
 // depth-write on and back-face culling unless the material is double-sided. See
-// registerStandardPbrGlMaterial to install it.
+// registerGlStandardPbrMaterial to install it.
 export const standardPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,

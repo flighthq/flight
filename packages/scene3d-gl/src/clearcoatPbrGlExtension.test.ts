@@ -1,7 +1,7 @@
 import { createClearcoatPbrExtension } from '@flighthq/materials/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
-import { clearcoatPbrGlExtension, registerClearcoatPbrGlExtension } from './clearcoatPbrGlExtension';
+import { clearcoatPbrGlExtension, registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension';
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -16,10 +16,10 @@ describe('clearcoatPbrGlExtension', () => {
   });
 });
 
-describe('registerClearcoatPbrGlExtension', () => {
+describe('registerGlClearcoatPbrExtension', () => {
   it('registers only the clearcoat extension kind', () => {
     const { state } = makeGlScene3DState();
-    registerClearcoatPbrGlExtension(state);
+    registerGlClearcoatPbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, ClearcoatPbrExtensionKind)).toBe(clearcoatPbrGlExtension);
   });
 });

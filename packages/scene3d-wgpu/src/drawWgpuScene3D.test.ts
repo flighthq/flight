@@ -13,7 +13,7 @@ import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';
-import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
+import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
@@ -36,7 +36,7 @@ const LIGHTS: Scene3DLightsLike = {
 describe('drawWgpuScene3D', () => {
   it('draws each visible mesh subset with its registered material renderer', () => {
     const { fake, state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -50,7 +50,7 @@ describe('drawWgpuScene3D', () => {
 
   it('skips a subset whose material has no registered renderer (no fallback)', () => {
     const { fake, state } = makeWgpuScene3DState();
-    // No registerStandardPbrWgpuMaterial: nothing resolves.
+    // No registerWgpuStandardPbrMaterial: nothing resolves.
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
@@ -61,7 +61,7 @@ describe('drawWgpuScene3D', () => {
 
   it('binds once for a run of subsets sharing a material', () => {
     const { fake, state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const material = createStandardPbrMaterial();
@@ -79,7 +79,7 @@ describe('drawWgpuScene3D', () => {
 
   it('does not draw a disabled mesh', () => {
     const { fake, state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
@@ -92,7 +92,7 @@ describe('drawWgpuScene3D', () => {
 
   it('partitions opaque and blended subsets into distinct pipeline runs', () => {
     const { state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     const blendedMaterial = createStandardPbrMaterial();
     blendedMaterial.alphaMode = 'blend';
@@ -112,7 +112,7 @@ describe('drawWgpuScene3D', () => {
 
   it('routes resolved node alpha through the blended pass and draw proxy', () => {
     const { state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     mesh.alpha = 0.5;
@@ -128,7 +128,7 @@ describe('drawWgpuScene3D', () => {
 
   it('sorts blended subsets back-to-front by projected depth', () => {
     const { state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     const material = createStandardPbrMaterial();
     material.alphaMode = 'blend';
@@ -148,7 +148,7 @@ describe('drawWgpuScene3D', () => {
 
   it('sorts blended subsets back-to-front with an orthographic camera', () => {
     const { state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     const material = createStandardPbrMaterial();
     material.alphaMode = 'blend';
@@ -172,7 +172,7 @@ describe('drawWgpuScene3D', () => {
 
   it('reuses opaque and blended draw records across frames', () => {
     const { state } = makeWgpuScene3DState();
-    registerStandardPbrWgpuMaterial(state);
+    registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     const opaque = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     const material = createStandardPbrMaterial();

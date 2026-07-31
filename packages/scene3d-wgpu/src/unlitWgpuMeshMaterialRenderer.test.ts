@@ -7,7 +7,7 @@ import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contr
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
-import { registerUnlitWgpuMaterial, unlitWgpuMeshMaterialRenderer } from './unlitWgpuMeshMaterialRenderer';
+import { registerWgpuUnlitMaterial, unlitWgpuMeshMaterialRenderer } from './unlitWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -35,10 +35,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerUnlitWgpuMaterial', () => {
+describe('registerWgpuUnlitMaterial', () => {
   it('installs the renderer for UnlitMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerUnlitWgpuMaterial(state);
+    registerWgpuUnlitMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, UnlitMaterialKind)).toBe(unlitWgpuMeshMaterialRenderer);
   });
 });

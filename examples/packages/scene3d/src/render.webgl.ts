@@ -8,7 +8,7 @@ import {
   endGlRenderEffectPipeline,
   prepareScene3DRender,
   registerStandardGlTextureResolvers,
-  registerStandardPbrGlMaterial,
+  registerGlStandardPbrMaterial,
   renderGlBackground,
 } from '@flighthq/sdk';
 import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/sdk/rendering';
@@ -24,7 +24,7 @@ export const state = createGlRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
-registerStandardPbrGlMaterial(state);
+registerGlStandardPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

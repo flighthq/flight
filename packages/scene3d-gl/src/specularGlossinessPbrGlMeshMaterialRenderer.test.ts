@@ -9,7 +9,7 @@ import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import {
-  registerSpecularGlossinessPbrGlMaterial,
+  registerGlSpecularGlossinessPbrMaterial,
   specularGlossinessPbrGlMeshMaterialRenderer,
 } from './specularGlossinessPbrGlMeshMaterialRenderer';
 
@@ -39,10 +39,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerSpecularGlossinessPbrGlMaterial', () => {
+describe('registerGlSpecularGlossinessPbrMaterial', () => {
   it('installs the renderer for SpecularGlossinessPbrMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerSpecularGlossinessPbrGlMaterial(state);
+    registerGlSpecularGlossinessPbrMaterial(state);
     expect(getGlMeshMaterialRenderer(state, SpecularGlossinessPbrMaterialKind)).toBe(
       specularGlossinessPbrGlMeshMaterialRenderer,
     );

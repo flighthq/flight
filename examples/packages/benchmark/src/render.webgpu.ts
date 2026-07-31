@@ -9,7 +9,7 @@ import {
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
   registerStandardWgpuTextureResolvers,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -28,7 +28,7 @@ export const state = await createWgpuRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardWgpuTextureResolvers(state);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 

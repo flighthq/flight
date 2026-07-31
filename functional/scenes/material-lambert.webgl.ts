@@ -20,7 +20,7 @@ import {
   getBitmapPixelLuminance,
   normalizeVector3,
   prepareScene3DRender,
-  registerLambertGlMaterial,
+  registerGlLambertMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
@@ -40,7 +40,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerLambertGlMaterial(state);
+registerGlLambertMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

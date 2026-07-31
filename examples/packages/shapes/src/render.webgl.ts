@@ -7,7 +7,7 @@ import {
   defaultGlShapeRenderer,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -28,7 +28,7 @@ export const state = createGlRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 

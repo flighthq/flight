@@ -63,6 +63,6 @@ float flightDistributionCharlie(float nDotH, float roughnessValue) {
   },
 };
 
-export function registerSheenPbrGlExtension(state: GlRenderState): void {
+export function registerGlSheenPbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, SheenPbrExtensionKind, sheenPbrGlExtension);
 }

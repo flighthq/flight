@@ -16,7 +16,7 @@ import {
   defaultGlVignetteEffectRunner,
   defaultGlWhiteBalanceEffectRunner,
   registerGlRenderEffect,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -35,7 +35,7 @@ export const state = createGlRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);

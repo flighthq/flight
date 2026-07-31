@@ -18,7 +18,7 @@ import {
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   prepareScene3DRender,
-  registerCustomShaderWgpuMaterial,
+  registerWgpuCustomShaderMaterial,
   registerWgpuCustomMaterialShader,
   renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -34,7 +34,7 @@ export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
 });
-registerCustomShaderWgpuMaterial(state);
+registerWgpuCustomShaderMaterial(state);
 registerWgpuCustomMaterialShader(
   state,
   'normal-tint',

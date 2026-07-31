@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { DepthMaterialKind } from '@flighthq/types/contract';
 
-import { depthWgpuMeshMaterialRenderer, registerDepthWgpuMaterial } from './depthWgpuMeshMaterialRenderer';
+import { depthWgpuMeshMaterialRenderer, registerWgpuDepthMaterial } from './depthWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -60,10 +60,10 @@ describe('depthWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('registerDepthWgpuMaterial', () => {
+describe('registerWgpuDepthMaterial', () => {
   it('installs the renderer for DepthMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerDepthWgpuMaterial(state);
+    registerWgpuDepthMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, DepthMaterialKind)).toBe(depthWgpuMeshMaterialRenderer);
   });
 });

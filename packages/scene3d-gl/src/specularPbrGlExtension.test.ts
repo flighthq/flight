@@ -3,12 +3,12 @@ import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerSpecularPbrGlExtension, specularPbrGlExtension } from './specularPbrGlExtension';
+import { registerGlSpecularPbrExtension, specularPbrGlExtension } from './specularPbrGlExtension';
 
-describe('registerSpecularPbrGlExtension', () => {
+describe('registerGlSpecularPbrExtension', () => {
   it('registers only the specular extension kind', () => {
     const { state } = makeGlScene3DState();
-    registerSpecularPbrGlExtension(state);
+    registerGlSpecularPbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, SpecularPbrExtensionKind)).toBe(specularPbrGlExtension);
   });
 });

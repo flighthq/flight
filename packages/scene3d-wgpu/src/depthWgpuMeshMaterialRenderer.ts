@@ -20,7 +20,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './
 // debug pipeline in depth mode for the color format, writes the shared Frame uniform (lights ignored),
 // and binds the material's [near, far] linearization range; draw issues the indexed draw. The fragment
 // scene2d linearizes window-space depth into eye space and writes it as grayscale LINEAR color. See
-// registerDepthWgpuMaterial to install it.
+// registerWgpuDepthMaterial to install it.
 export const depthWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -55,7 +55,7 @@ export const depthWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with DepthMaterials draw.
-export function registerDepthWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuDepthMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, DepthMaterialKind, depthWgpuMeshMaterialRenderer);
 }
 

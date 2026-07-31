@@ -2,7 +2,7 @@ import { createScene3D } from '@flighthq/scene3d';
 import {
   drawGlScene3D,
   registerBuiltInGlModifierSnippets,
-  registerShadedGlMaterial,
+  registerGlShadedMaterial,
   setGlScene3DTime,
 } from '@flighthq/scene3d-gl';
 import type { Camera3D, GlRenderEffectPipeline, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
@@ -65,7 +65,7 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 registerStandardGlTextureResolvers(state);
-registerShadedGlMaterial(state);
+registerGlShadedMaterial(state);
 registerBuiltInGlModifierSnippets(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

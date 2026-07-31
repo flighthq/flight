@@ -14,7 +14,7 @@ import {
   enableGlScene3DColorSpaceGuards,
 } from './enableGlScene3DColorSpaceGuards';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -43,7 +43,7 @@ describe('areGlScene3DColorSpaceGuardsEnabled', () => {
 describe('enableGlScene3DColorSpaceGuards', () => {
   it('warns once when a scene is drawn directly to the canvas (no target to encode)', () => {
     const { state } = makeGlScene3DState();
-    registerStandardPbrGlMaterial(state);
+    registerGlStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 

@@ -3,7 +3,7 @@ import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { iridescencePbrGlExtension, registerIridescencePbrGlExtension } from './iridescencePbrGlExtension';
+import { iridescencePbrGlExtension, registerGlIridescencePbrExtension } from './iridescencePbrGlExtension';
 
 describe('iridescencePbrGlExtension', () => {
   it('contributes thin-film surface source', () => {
@@ -15,10 +15,10 @@ describe('iridescencePbrGlExtension', () => {
   });
 });
 
-describe('registerIridescencePbrGlExtension', () => {
+describe('registerGlIridescencePbrExtension', () => {
   it('registers only the iridescence extension kind', () => {
     const { state } = makeGlScene3DState();
-    registerIridescencePbrGlExtension(state);
+    registerGlIridescencePbrExtension(state);
     expect(getGlPbrExtensionRegistration(state, IridescencePbrExtensionKind)).toBe(iridescencePbrGlExtension);
   });
 });

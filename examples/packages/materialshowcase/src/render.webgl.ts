@@ -12,27 +12,27 @@ import {
 } from '@flighthq/sdk';
 import {
   drawGlScene3D,
-  registerAnisotropyPbrGlExtension,
-  registerBlinnPhongGlMaterial,
-  registerClearcoatPbrGlExtension,
-  registerDepthGlMaterial,
-  registerEmissiveGlMaterial,
-  registerExtendedPbrGlMaterial,
-  registerIridescencePbrGlExtension,
-  registerLambertGlMaterial,
-  registerMatcapGlMaterial,
-  registerNormalGlMaterial,
-  registerPhongGlMaterial,
-  registerSheenPbrGlExtension,
-  registerSpecularGlossinessPbrGlMaterial,
-  registerSpecularPbrGlExtension,
-  registerStandardPbrGlMaterial,
-  registerWrappedDiffusePbrGlExtension,
-  registerToonGlMaterial,
-  registerTransmissionVolumePbrGlExtension,
-  registerUnlitGlMaterial,
-  registerVertexColorGlMaterial,
-  registerWireframeGlMaterial,
+  registerGlAnisotropyPbrExtension,
+  registerGlBlinnPhongMaterial,
+  registerGlClearcoatPbrExtension,
+  registerGlDepthMaterial,
+  registerGlEmissiveMaterial,
+  registerGlExtendedPbrMaterial,
+  registerGlIridescencePbrExtension,
+  registerGlLambertMaterial,
+  registerGlMatcapMaterial,
+  registerGlNormalMaterial,
+  registerGlPhongMaterial,
+  registerGlSheenPbrExtension,
+  registerGlSpecularGlossinessPbrMaterial,
+  registerGlSpecularPbrExtension,
+  registerGlStandardPbrMaterial,
+  registerGlWrappedDiffusePbrExtension,
+  registerGlToonMaterial,
+  registerGlTransmissionVolumePbrExtension,
+  registerGlUnlitMaterial,
+  registerGlVertexColorMaterial,
+  registerGlWireframeMaterial,
 } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -71,25 +71,25 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 function registerAllGlMaterials(target: GlRenderState): void {
-  registerAnisotropyPbrGlExtension(target);
-  registerBlinnPhongGlMaterial(target);
-  registerClearcoatPbrGlExtension(target);
-  registerDepthGlMaterial(target);
-  registerEmissiveGlMaterial(target);
-  registerExtendedPbrGlMaterial(target);
-  registerIridescencePbrGlExtension(target);
-  registerLambertGlMaterial(target);
-  registerMatcapGlMaterial(target);
-  registerNormalGlMaterial(target);
-  registerPhongGlMaterial(target);
-  registerSheenPbrGlExtension(target);
-  registerSpecularGlossinessPbrGlMaterial(target);
-  registerSpecularPbrGlExtension(target);
-  registerStandardPbrGlMaterial(target);
-  registerWrappedDiffusePbrGlExtension(target);
-  registerToonGlMaterial(target);
-  registerTransmissionVolumePbrGlExtension(target);
-  registerUnlitGlMaterial(target);
-  registerVertexColorGlMaterial(target);
-  registerWireframeGlMaterial(target);
+  registerGlAnisotropyPbrExtension(target);
+  registerGlBlinnPhongMaterial(target);
+  registerGlClearcoatPbrExtension(target);
+  registerGlDepthMaterial(target);
+  registerGlEmissiveMaterial(target);
+  registerGlExtendedPbrMaterial(target);
+  registerGlIridescencePbrExtension(target);
+  registerGlLambertMaterial(target);
+  registerGlMatcapMaterial(target);
+  registerGlNormalMaterial(target);
+  registerGlPhongMaterial(target);
+  registerGlSheenPbrExtension(target);
+  registerGlSpecularGlossinessPbrMaterial(target);
+  registerGlSpecularPbrExtension(target);
+  registerGlStandardPbrMaterial(target);
+  registerGlWrappedDiffusePbrExtension(target);
+  registerGlToonMaterial(target);
+  registerGlTransmissionVolumePbrExtension(target);
+  registerGlUnlitMaterial(target);
+  registerGlVertexColorMaterial(target);
+  registerGlWireframeMaterial(target);
 }

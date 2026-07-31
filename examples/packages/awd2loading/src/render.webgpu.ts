@@ -13,7 +13,7 @@ import {
 import {
   drawWgpuScene3D,
   registerBuiltInWgpuModifierSnippets,
-  registerShadedWgpuMaterial,
+  registerWgpuShadedMaterial,
 } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -25,7 +25,7 @@ export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x07101bff,
 });
 enableFlightDiagnostics(state);
-registerShadedWgpuMaterial(state);
+registerWgpuShadedMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 
 const pipeline: WgpuRenderEffectPipeline = createWgpuRenderEffectPipeline(state, {

@@ -13,7 +13,7 @@ import {
 // It is a bundled material like any other — it has no privileged status in the render path; a node
 // with no material renders only if a renderer is registered for StandardMaterialKind. A user can copy
 // this file, swap the shader, and register their own default the same way.
-export function registerStandardGlMaterial(state: GlRenderState): void {
+export function registerGlStandardMaterial(state: GlRenderState): void {
   registerGlMaterialRenderer(state, StandardMaterialKind, standardGlMaterialRenderer);
 }
 

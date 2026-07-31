@@ -117,13 +117,6 @@ export function getWgpuCustomMaterialShaderSource(
   return _customMaterialShaders.get(state)?.get(shaderKey) ?? null;
 }
 
-// Installs CustomShaderMaterialKind in this state's WGPU mesh-material registry.
-export function registerCustomShaderWgpuMaterial(state: WgpuRenderState): void {
-  registerWgpuBitmapTextureResolver(state);
-  registerWgpuImageTextureResolver(state);
-  registerWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderWgpuMeshMaterialRenderer);
-}
-
 // Registers a complete WGSL module for a CustomShaderMaterial shaderKey.
 //
 // Fixed ABI:
@@ -150,6 +143,13 @@ export function registerWgpuCustomMaterialShader(
     _customMaterialShaders.set(state, registry);
   }
   registry.set(shaderKey, wgslSource);
+}
+
+// Installs CustomShaderMaterialKind in this state's WGPU mesh-material registry.
+export function registerWgpuCustomShaderMaterial(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
+  registerWgpuImageTextureResolver(state);
+  registerWgpuMeshMaterialRenderer(state, CustomShaderMaterialKind, customShaderWgpuMeshMaterialRenderer);
 }
 
 function compileCustomMaterialPipeline(

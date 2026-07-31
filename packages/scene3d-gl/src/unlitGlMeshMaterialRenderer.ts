@@ -30,7 +30,7 @@ import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-
 // independent flat color: bind selects the unlit variant for the material's base-color map / alpha
 // mode, uploads the camera view-projection and the linear base color, and draw issues the indexed
-// draw. Lights are ignored. See registerUnlitGlMaterial to install it.
+// draw. Lights are ignored. See registerGlUnlitMaterial to install it.
 export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -62,7 +62,7 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Unlit renderer for UnlitMaterialKind on this state. Opt-in (no top-level
 // side effect); call once per GlRenderState before drawScene3D so meshes with UnlitMaterials draw.
-export function registerUnlitGlMaterial(state: GlRenderState): void {
+export function registerGlUnlitMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, UnlitMaterialKind, unlitGlMeshMaterialRenderer);
 }
 

@@ -7,7 +7,7 @@ import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerWireframeGlMaterial, wireframeGlMeshMaterialRenderer } from './wireframeGlMeshMaterialRenderer';
+import { registerGlWireframeMaterial, wireframeGlMeshMaterialRenderer } from './wireframeGlMeshMaterialRenderer';
 
 function makeCamera(): Camera3D {
   return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
@@ -33,10 +33,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerWireframeGlMaterial', () => {
+describe('registerGlWireframeMaterial', () => {
   it('installs the renderer for WireframeMaterialKind', () => {
     const { state } = makeGlScene3DState();
-    registerWireframeGlMaterial(state);
+    registerGlWireframeMaterial(state);
     expect(getGlMeshMaterialRenderer(state, WireframeMaterialKind)).toBe(wireframeGlMeshMaterialRenderer);
   });
 });

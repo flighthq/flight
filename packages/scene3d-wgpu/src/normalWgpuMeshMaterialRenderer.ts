@@ -26,7 +26,7 @@ import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './
 // scene2d transforms the geometric normal by the normal matrix (so the visualized normal is WORLD-space)
 // and encodes it as `n * 0.5 + 0.5` LINEAR color. The tangent-space normal map is NOT sampled on wgpu
 // yet — hasNormalMap stays false and the shared placeholder texture is bound (mirrors the documented map
-// gap on the rest of the wgpu side; see wgpuDebugPrelude). See registerNormalWgpuMaterial to install it.
+// gap on the rest of the wgpu side; see wgpuDebugPrelude). See registerWgpuNormalMaterial to install it.
 export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,
@@ -64,7 +64,7 @@ export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
 // Registers the built-in Normal renderer for NormalMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per WgpuRenderState before drawWgpuScene3D so meshes with NormalMaterials draw.
-export function registerNormalWgpuMaterial(state: WgpuRenderState): void {
+export function registerWgpuNormalMaterial(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);
   registerWgpuImageTextureResolver(state);
   registerWgpuMeshMaterialRenderer(state, NormalMaterialKind, normalWgpuMeshMaterialRenderer);

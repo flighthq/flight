@@ -22,7 +22,7 @@ import {
   endGlRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   registerGlBlendEffectBackdrop,
   registerGlRenderEffect,
   registerGlShapeCommands,
@@ -55,7 +55,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
-registerStandardGlMaterial(state);
+registerGlStandardMaterial(state);
 registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {

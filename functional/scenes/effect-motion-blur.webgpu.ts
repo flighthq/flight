@@ -24,7 +24,7 @@ import {
   getNodeChildAt,
   getNodeChildCount,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
@@ -49,7 +49,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerWgpuVelocityWriter(state, ShapeKind, defaultWgpuNode2DVelocityWriter);

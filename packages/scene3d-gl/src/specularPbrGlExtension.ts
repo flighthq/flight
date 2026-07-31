@@ -52,6 +52,6 @@ ${colorMap ? 'vec2 flightSpecularColorUv() { vec2 uv = u_flightSpecularColorMapU
   },
 };
 
-export function registerSpecularPbrGlExtension(state: GlRenderState): void {
+export function registerGlSpecularPbrExtension(state: GlRenderState): void {
   registerGlPbrExtension(state, SpecularPbrExtensionKind, specularPbrGlExtension);
 }

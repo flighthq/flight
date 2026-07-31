@@ -6,7 +6,7 @@ import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy 
 import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
-  registerSpecularGlossinessPbrWgpuMaterial,
+  registerWgpuSpecularGlossinessPbrMaterial,
   specularGlossinessPbrWgpuMeshMaterialRenderer,
 } from './specularGlossinessPbrWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -38,10 +38,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerSpecularGlossinessPbrWgpuMaterial', () => {
+describe('registerWgpuSpecularGlossinessPbrMaterial', () => {
   it('installs the renderer for SpecularGlossinessPbrMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerSpecularGlossinessPbrWgpuMaterial(state);
+    registerWgpuSpecularGlossinessPbrMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, SpecularGlossinessPbrMaterialKind)).toBe(
       specularGlossinessPbrWgpuMeshMaterialRenderer,
     );

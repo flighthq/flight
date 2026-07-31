@@ -22,7 +22,7 @@ import {
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  registerStandardPbrGlMaterial,
+  registerGlStandardPbrMaterial,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
@@ -43,7 +43,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerStandardPbrGlMaterial(state);
+registerGlStandardPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

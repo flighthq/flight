@@ -25,7 +25,7 @@ import {
   registerStandardGlTextureResolvers,
   registerGlShapeCommands,
   registerRenderer,
-  registerStandardGlMaterial,
+  registerGlStandardMaterial,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -61,7 +61,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 
   enableFlightDiagnostics(state);
   registerStandardGlTextureResolvers(state);
-  registerStandardGlMaterial(state);
+  registerGlStandardMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

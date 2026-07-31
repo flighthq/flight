@@ -17,7 +17,7 @@ import {
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerRenderer,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
@@ -36,7 +36,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerWgpuRenderEffect(state, 'LensFlareEffect', defaultWgpuLensFlareEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba16f' });

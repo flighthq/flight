@@ -5,7 +5,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
-import { registerToonWgpuMaterial, toonWgpuMeshMaterialRenderer } from './toonWgpuMeshMaterialRenderer';
+import { registerWgpuToonMaterial, toonWgpuMeshMaterialRenderer } from './toonWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
@@ -37,10 +37,10 @@ function makeProxy(): Scene3DRenderProxy {
   };
 }
 
-describe('registerToonWgpuMaterial', () => {
+describe('registerWgpuToonMaterial', () => {
   it('installs the toon renderer for ToonMaterialKind', () => {
     const { state } = makeWgpuScene3DState();
-    registerToonWgpuMaterial(state);
+    registerWgpuToonMaterial(state);
     expect(getWgpuMeshMaterialRenderer(state, ToonMaterialKind)).toBe(toonWgpuMeshMaterialRenderer);
   });
 });

@@ -40,6 +40,6 @@ export const extendedPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   },
 };
 
-export function registerExtendedPbrGlMaterial(state: GlRenderState): void {
+export function registerGlExtendedPbrMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, ExtendedPbrMaterialKind, extendedPbrGlMeshMaterialRenderer);
 }

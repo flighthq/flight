@@ -13,19 +13,19 @@ import {
 } from '@flighthq/sdk';
 import {
   drawWgpuScene3D,
-  registerBlinnPhongWgpuMaterial,
-  registerDepthWgpuMaterial,
-  registerEmissiveWgpuMaterial,
-  registerLambertWgpuMaterial,
-  registerMatcapWgpuMaterial,
-  registerNormalWgpuMaterial,
-  registerPhongWgpuMaterial,
-  registerSpecularGlossinessPbrWgpuMaterial,
-  registerStandardPbrWgpuMaterial,
-  registerToonWgpuMaterial,
-  registerUnlitWgpuMaterial,
-  registerVertexColorWgpuMaterial,
-  registerWireframeWgpuMaterial,
+  registerWgpuBlinnPhongMaterial,
+  registerWgpuDepthMaterial,
+  registerWgpuEmissiveMaterial,
+  registerWgpuLambertMaterial,
+  registerWgpuMatcapMaterial,
+  registerWgpuNormalMaterial,
+  registerWgpuPhongMaterial,
+  registerWgpuSpecularGlossinessPbrMaterial,
+  registerWgpuStandardPbrMaterial,
+  registerWgpuToonMaterial,
+  registerWgpuUnlitMaterial,
+  registerWgpuVertexColorMaterial,
+  registerWgpuWireframeMaterial,
 } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -60,17 +60,17 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 function registerAllWgpuMaterials(target: WgpuRenderState): void {
-  registerBlinnPhongWgpuMaterial(target);
-  registerDepthWgpuMaterial(target);
-  registerEmissiveWgpuMaterial(target);
-  registerLambertWgpuMaterial(target);
-  registerMatcapWgpuMaterial(target);
-  registerNormalWgpuMaterial(target);
-  registerPhongWgpuMaterial(target);
-  registerSpecularGlossinessPbrWgpuMaterial(target);
-  registerStandardPbrWgpuMaterial(target);
-  registerToonWgpuMaterial(target);
-  registerUnlitWgpuMaterial(target);
-  registerVertexColorWgpuMaterial(target);
-  registerWireframeWgpuMaterial(target);
+  registerWgpuBlinnPhongMaterial(target);
+  registerWgpuDepthMaterial(target);
+  registerWgpuEmissiveMaterial(target);
+  registerWgpuLambertMaterial(target);
+  registerWgpuMatcapMaterial(target);
+  registerWgpuNormalMaterial(target);
+  registerWgpuPhongMaterial(target);
+  registerWgpuSpecularGlossinessPbrMaterial(target);
+  registerWgpuStandardPbrMaterial(target);
+  registerWgpuToonMaterial(target);
+  registerWgpuUnlitMaterial(target);
+  registerWgpuVertexColorMaterial(target);
+  registerWgpuWireframeMaterial(target);
 }

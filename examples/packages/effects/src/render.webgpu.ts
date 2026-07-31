@@ -14,7 +14,7 @@ import {
   defaultWgpuToneMapEffectRunner,
   defaultWgpuVignetteEffectRunner,
   defaultWgpuWhiteBalanceEffectRunner,
-  registerStandardWgpuMaterial,
+  registerWgpuStandardMaterial,
   registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   registerRenderer,
@@ -33,7 +33,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardWgpuMaterial(state);
+registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);

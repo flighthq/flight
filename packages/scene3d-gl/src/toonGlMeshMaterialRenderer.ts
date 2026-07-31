@@ -36,7 +36,7 @@ import { ensureGlToonProgram } from './glToonPrelude';
 // stepped floor over `steps`); output is LINEAR color for the rgba16f scene target. draw uploads the
 // geometry's GPU buffers lazily (cached by geometry.version), sets the per-draw model + normal
 // matrices from the proxy, and issues the indexed draw over the proxy's subset with depth-test LESS +
-// depth-write on and back-face culling unless the material is double-sided. See registerToonGlMaterial
+// depth-write on and back-face culling unless the material is double-sided. See registerGlToonMaterial
 // to install it.
 export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
@@ -65,7 +65,7 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
-export function registerToonGlMaterial(state: GlRenderState): void {
+export function registerGlToonMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, ToonMaterialKind, toonGlMeshMaterialRenderer);
 }
 

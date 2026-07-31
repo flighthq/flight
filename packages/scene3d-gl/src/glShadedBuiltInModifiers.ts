@@ -422,7 +422,7 @@ export const vertexDisplaceGlModifierSnippet: GlModifierSnippet = {
 };
 
 // Registers the three built-in GL modifier snippets on this state. Opt-in (no top-level side effect)
-// and separate from registerShadedGlMaterial so a plain ShadedMaterial pays nothing for modifier
+// and separate from registerGlShadedMaterial so a plain ShadedMaterial pays nothing for modifier
 // snippets it does not use — a caller registers this once alongside any vendor-prefixed snippets
 // before drawing a ShadedMaterial that carries modifiers.
 export function registerBuiltInGlModifierSnippets(state: GlRenderState): void {

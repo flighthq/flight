@@ -40,7 +40,7 @@ import { ensureGlShadedProgram } from './glShadedPrelude';
 // stack's feature-set define-key), uploads the camera view-projection + position, the packed light
 // block, the base diffuse/specular/normal uniforms and maps, the per-frame `time`, then each
 // modifier's uniforms. A plain ShadedMaterial (empty modifier stack) compiles the lean base variant
-// and skips the modifier bind entirely. See registerShadedGlMaterial to install it, and
+// and skips the modifier bind entirely. See registerGlShadedMaterial to install it, and
 // registerBuiltInGlModifierSnippets to enable the built-in modifiers.
 export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
@@ -74,7 +74,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 // top-level side effect); call once per GlRenderState before drawScene3D so meshes with ShadedMaterials
 // draw. Enable the built-in modifiers separately with registerBuiltInGlModifierSnippets — a plain
 // ShadedMaterial needs only this registration.
-export function registerShadedGlMaterial(state: GlRenderState): void {
+export function registerGlShadedMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, ShadedMaterialKind, shadedGlMeshMaterialRenderer);
 }
 

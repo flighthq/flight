@@ -12,7 +12,7 @@ export function getWgpuMeshMaterialRenderer(state: WgpuRenderState, kind: Kind):
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D only
 // draws subsets whose material kind (or StandardMaterialKind) has a renderer here. Call
-// registerStandardPbrWgpuMaterial for the built-in StandardPbr path. Mirrors registerWgpuMaterialRenderer
+// registerWgpuStandardPbrMaterial for the built-in StandardPbr path. Mirrors registerWgpuMaterialRenderer
 // but writes scene-wgpu's separate 3D registry.
 export function registerWgpuMeshMaterialRenderer(
   state: WgpuRenderState,

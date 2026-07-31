@@ -23,7 +23,7 @@ import {
   ImageChannel,
   normalizeVector3,
   prepareScene3DRender,
-  registerBlinnPhongGlMaterial,
+  registerGlBlinnPhongMaterial,
   registerStandardGlTextureResolvers,
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
@@ -44,7 +44,7 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 registerStandardGlTextureResolvers(state);
-registerBlinnPhongGlMaterial(state);
+registerGlBlinnPhongMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
