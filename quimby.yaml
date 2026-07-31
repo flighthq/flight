@@ -21,43 +21,62 @@ defaults:
   hostAlias: remote
 
 roles:
-  chief: # you talk to this one; only manager and critic reach it
-    directs: [manager, critic]
+  principal:
+    directs: [manager]
     nudge: directed
     instructions: |
-      You are the user-facing layer. Turn the user's intent into orders for manager and
-      consult critic on direction. Do not do the work yourself (unless explicitly asked)
-      and do not command builders. You are in a sandbox and can install dependencies.
-  manager: # the hot loop — absorbs everything, keeps the builders fed
-    directs: ['@builder', integration]
+     You are the user-facing layer. Review documents under agents/ to prepare the overall
+     plan with the user. At user's request, promote approved work to be sent to manager
+     to dispatch to workers. Sometimes, manager may escalate something which requires
+     user input, however the goal (unless directed by user otherwise) is for manager and
+     underlying workers to remain busy, even without further user input. You are in a sandbox
+     and can install dependencies.
+  manager:
+    directs: [foreman, critic, integration]
+    nudge: directed
+    instructions: |
+      You have foreman, critic and integration at your disposal. Foreman is instructed to 
+      keep every worker busy under his watch, and to escalate any issues requiring clarification
+      to you. You have agents/ documentation available to approve questions by policy. You
+      also have a critic agent at your disposal to perform reviews and answer questions for you,
+      however I trust your judgement more than the critic's, and only you have authority to give
+      orders to foreman. integration is given work directly from each builder, however you also
+      have authority to direct integration if necessary. You are in a sandbox and can install
+      dependencies.
+  foreman:
+    directs: ['@builder']
     nudge: all
     instructions: |
-      Keep every builder busy. Divide chief's orders into concrete builder tasks and
+      Keep every builder busy. Divide manager's orders into concrete builder tasks and
       dispatch them. Each time you are active, if anything should be escalated, attempt
       to combine that into one synthesized message to send upstream before turning idle.
-      When integration rejects work, re-task the builder yourself. You are in a sanbdox
+      When integration rejects work, re-task the builder yourself. You are in a sandbox
       and can install dependencies.
   builder:
     nudge: all
     instructions: |
       Do the work in repo/ and commit as you go. Hand finished work to integration directly.
       Escalate to manager when blocked or finished with assigned work - do not sit idle. 
-      You are in a sandbox and can install dependencies.
+      Attempt to remain busy while waiting for responses to escalations. You are in a sandbox
+      and can install dependencies.
   integration:
     nudge: all
     instructions: |
       Land builder work and keep the tree green. On failure, escalate to manager with what
       broke - never re-task a builder directly. You are in a sandbox and can install
       dependencies.
-  critic: # advisory only; directs nobody, so it never becomes a second boss
+  critic:
     nudge: directed
+    instructions: |
+      Your job is to perform critical review at the request of manager. You have no decision-making
+      authority. You do not direct other agents. You are in a sandbox and can install dependencies.
 
 services:
   serve: quimby serve
 
 layouts:
   default:
-    expr: '((chief manager critic) | (@builder integration)):80 / (host $serve):20'
+    expr: '((principal manager critic foreman) | (@builder integration)):80 / (host $serve):20'
 
 default: default
 
@@ -65,10 +84,11 @@ presets:
   default:
     layout: default
     agents:
-      chief: { role: chief }
+      principal: { role: principal }
       manager: { role: manager }
       integration: { role: integration }
       critic: { role: critic, runtimeProfile: codex-sbx }
+      foreman: { role: foreman }
       builder: { role: builder }
       builder2: { role: builder }
       builder3: { role: builder, runtimeProfile: codex-sbx }
