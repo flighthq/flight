@@ -8,29 +8,24 @@ basedOn: ./review.md
 
 Sorted from the depth review (88/100 — "clearest AAA package"), verified against the live tree (44 source files, 42 test files, 369 tests, 104 exports, re-verified 2026-07-31), and the direction session (2026-07-02). Seven charter decisions blessed — most significantly the unified sampling contract (all geometric/sampling ops accept explicit `BitmapEdgeMode` + `BitmapResizeMode`) and the `BitmapConvolutionEdge` → `BitmapEdgeMode` consolidation.
 
-The package is mature and well-tested. The major remaining work is the sampling contract unification (touching ~6 geometric ops) and the edge-mode type consolidation.
+The package is mature and well-tested. The sampling contract is unified across the geometric operations, and the edge-mode type consolidation is complete.
 
 ## Recommended
 
-Re-verified against live source on 2026-07-31. Three of the four items landed; one is partially done and
-the remainder is stated precisely rather than left as the original four-function item.
-
-1. **Give `displaceBitmap` an explicit `BitmapEdgeMode`.** The only surviving part of the original
-   "add `BitmapEdgeMode` to the geometric ops missing it" item. `resizeBitmap` (via
-   `BitmapResizeOptions.edgeMode`, defaulting to `'clamp'`), `rotateBitmap` and `transformBitmap` all take
-   one now; `displaceBitmap` still takes only `BitmapDisplacementMapOptions`, which carries no edge mode, so
-   its boundary behaviour is fixed and undocumented while every neighbouring op is caller-controlled.
+No unresolved implementation item remains from the approved sampling-contract sweep.
 
 ## Landed
 
-1. ~~**Collapse `BitmapConvolutionEdge` into `BitmapEdgeMode`.**~~ Landed. The type no longer exists anywhere
+1. ~~**Give `displaceBitmap` an explicit `BitmapEdgeMode`.**~~ Landed. `BitmapDisplacementMapOptions.edgeMode`
+   exposes the same four modes as the neighboring geometric operations, and bilinear sampling resolves
+   every boundary tap through that mode; colocated tests cover clamp, mirror, transparent, and wrap.
+2. ~~**Collapse `BitmapConvolutionEdge` into `BitmapEdgeMode`.**~~ Landed. The type no longer exists anywhere
    in `packages/`.
-2. ~~**Add `BitmapEdgeMode` parameter to geometric ops missing it.**~~ Landed for `resizeBitmap`,
-   `rotateBitmap` and `transformBitmap`; `displaceBitmap` remains, carried above as item 1 rather than left
-   inside a mostly-landed item.
-3. ~~**Add `BitmapResizeMode` parameter to geometric ops missing it.**~~ Landed. `rotateBitmap` and
+3. ~~**Add `BitmapEdgeMode` parameter to geometric ops missing it.**~~ Landed for `resizeBitmap`,
+   `rotateBitmap`, `transformBitmap`, and `displaceBitmap`.
+4. ~~**Add `BitmapResizeMode` parameter to geometric ops missing it.**~~ Landed. `rotateBitmap` and
    `transformBitmap` both take `sampleMode: BitmapResizeMode = 'bilinear'`.
-4. ~~**Update Package Map description for bitmap.**~~ Landed; the catalog entry now enumerates the full
+5. ~~**Update Package Map description for bitmap.**~~ Landed; the catalog entry now enumerates the full
    scope (lifecycle, pixel access, compositing, geometric transforms, filters, color ops, fill, analysis,
    fingerprinting).
 
