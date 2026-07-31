@@ -2,6 +2,21 @@
 
 The full npm-script reference: what each command does, and the long-form version of the checkpoint triggers summarized in [`AGENTS.md`](../AGENTS.md#checkpoints). Script naming follows the `action:subject:modifier` grammar in [npm script naming](conventions/npm-scripts.md).
 
+### `npm run mocks` / `mocks:check` / `mocks:json`
+
+Enforces the per-file mock scoping the root `vitest.config.ts` declares. The unit suite runs
+`isolate: false` -- one shared module registry per worker, for a ~15x speedup -- and that is only safe
+because each file scopes its own mocks. Two rules:
+
+- **hoisted-mock** -- a top-level `vi.mock()` hoists above the file's imports and registers for the
+  whole worker, so it leaks into every later file importing that module. Use `vi.doMock()` inside
+  `beforeAll` plus a dynamic import of the subject.
+- **orphan-unmock** -- a `vi.doUnmock('x')` naming a specifier the file never mocked. It unmocks
+  nothing, which is worse than absent: it reads as cleanup that is happening.
+
+Intentional escapes go in `ALLOW` in `scripts/mocks.ts` with a reason, the same shape as
+`portable:check`. Runs as part of `npm run check`.
+
 ## Orientation commands
 
 - `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.
