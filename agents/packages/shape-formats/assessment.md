@@ -10,12 +10,13 @@ See [charter](./charter.md) for blessed direction and [review](./review.md) for 
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/shape-formats`, no cross-package coupling, no breaking change, no open design fork.
+1. **`explainShapeJsonParse` diagnostics query — still open, but the prescription needs re-confirming before it is built.** The item predates the `ImportDiagnostic` crumb system, which has since become the way format parsers report what they dropped: `@flighthq/importdiagnostics` exists, `ImportDiagnostic` is in `@flighthq/types`, and four `-formats` packages have adopted it (`scene3d-formats` 9 sites, `particles-formats` 8, `skeleton2d-formats` 3, `scene2d-formats` 2) with more under active review. `shape-formats` is simply not migrated yet. Building a bespoke `explain*` here now would add public surface that the migration would then have to remove, so this needs a ruling: does a `-formats` parser report through crumbs, through `explain*`, or both — and if both, which failures belong to which? The AGENTS.md inversion rule ("every silent sentinel gets a shakeable `explain*`") and the crumb convention both plausibly claim this, which is exactly why it should not be guessed. Raised 2026-07-30 during the sweep that closed the other three items.
 
-1. **Arity + positional-type validation in `parseShapeJson`** — validate each entry's arg count and per-position type (number/string/boolean/array/matrix/bitmap/null-allowed) against the known `ShapeCommandRegistry` tuple shapes before replaying, returning `null` on mismatch. Closes the corrupt-shape hole (review Gap 1) and *completes* the charter's own 2026-07-09 "sentinel `null` on malformed input" Decision — no new design needed.
-2. **Complete the round-trip test to the full command vocabulary** — extend `createEveryNonBitmapCommandShape` (or add cases) so `drawCircle`, `drawEllipse`, `drawRectangle`, `drawRoundRectangle`, `drawTriangles`, and `lineGradientStyle` are byte-for-byte round-tripped, making the test name true (review Gap 2). Add wrong-arity/wrong-type malformed cases alongside.
-3. **`explainShapeJsonParse` diagnostics query** — a shakeable `explain*` companion returning plain data (reason code, offending command index/key) for every `null` path, plus a count/list of dropped bitmap-bearing commands, per the diagnostics inversion rule (review Gap 3). Separately importable; costs the codec's bundle nothing.
-4. **Non-finite number handling** — decide-and-implement the local rule within the existing strict contract: reject non-finite arg values on parse (they arrive as `null` in slots typed as number). Format-side, either pass through (garbage-in) or guard via the explain layer; the parse-side rejection is the sweep-safe half (review Gap 4).
+## Landed
+
+- ~~**Arity + positional-type validation in `parseShapeJson`.**~~ Landed 2026-07-30 (`7d1c8836a`) as a table-driven spec mirroring the `appendShape*` signatures one-for-one, with `required`/maximum arity so a hand-written document may omit trailing optional args and let the appenders' own defaults apply.
+- ~~**Complete the round-trip test to the full command vocabulary.**~~ Landed. `createEveryNonBitmapCommandShape` now exercises `drawCircle`, `drawEllipse`, `drawRectangle`, `drawRoundRectangle`, both `drawTriangles` forms (with and without indices/uv), and `lineGradientStyle`, alongside malformed-arity and wrong-type cases.
+- ~~**Non-finite number handling.**~~ Landed as scoped: the parse-side rejection. Format-side is now documented rather than guarded — see [status](./status.md) for why that asymmetry is the honest one.
 
 ## Backlog
 
