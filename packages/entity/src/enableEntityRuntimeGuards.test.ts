@@ -23,6 +23,18 @@ function messageOf(entry: Readonly<LogEntry>): string {
   return typeof data === 'string' ? data : String(data.message);
 }
 
+describe('disableEntityRuntimeGuards', () => {
+  it('uninstalls both the proxies and the reporter', () => {
+    const entries = captureLog(() => {
+      enableEntityRuntimeGuards();
+      disableEntityRuntimeGuards();
+      createGuardedEntity(createEntity())[EntityRuntimeKey] = undefined;
+    });
+    expect(entries.length).toBe(0);
+    expect(areEntityRuntimeGuardsEnabled()).toBe(false);
+  });
+});
+
 describe('enableEntityRuntimeGuards', () => {
   it('WARNS through the log sink on a direct runtime-slot write', () => {
     const entries = captureLog(() => {

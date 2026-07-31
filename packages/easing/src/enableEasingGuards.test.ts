@@ -21,6 +21,18 @@ function messageOf(entry: Readonly<LogEntry>): string {
   return typeof data === 'string' ? data : String(data.message);
 }
 
+describe('disableEasingGuards', () => {
+  it('uninstalls the guard, returning the degenerate call to silence', () => {
+    const entries = captureLog(() => {
+      enableEasingGuards();
+      disableEasingGuards();
+      // Still NaN — disabling removes the reporting, not the sharp edge.
+      expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
+    });
+    expect(entries.length).toBe(0);
+  });
+});
+
 describe('enableEasingGuards', () => {
   it('WARNS on the degenerate jumpNone step count that silently returns NaN', () => {
     const entries = captureLog(() => {
