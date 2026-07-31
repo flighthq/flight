@@ -1,6 +1,8 @@
 # Per-Package Artifact Contract
 
-The contract a future `docs:packages:check` enforces and every skill references. It governs only the **envelope** — file presence, front matter, and the append-only ledgers. The prose body of every file is free. See [`index.md`](index.md) for the architecture.
+The contract `npm run docs:check` enforces (`scripts/docs.ts`, also run as a gate inside `npm run check`) and every skill references. It governs only the **envelope** — file presence, front matter, and the append-only ledgers. The prose body of every file is free. See [`index.md`](index.md) for the architecture. The same script carries a second, unrelated surface — the self-declared size budgets in [commands](../commands.md) — so a red `docs:check` is not necessarily a cell violation; read which check named it.
+
+The checker splits its findings by who can act on them. **Failures** are unambiguous envelope violations — a missing `package` key, a malformed date, a broken relative link, a repeated ordinal — and gate the build. **Warnings** are drift that needs a human ruling and never gate: a charter missing its `North star` cannot be fixed by an agent, because charter direction comes from the user alone. Run `npm run docs:check -- --verbose` to list every warning individually rather than grouped by shape.
 
 ## Folder & file naming
 
