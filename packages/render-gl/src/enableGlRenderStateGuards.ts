@@ -3,6 +3,8 @@ import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { GlRenderState, Renderable, RenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import { getGlRenderStateRuntime } from './glRenderState';
+
 export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
   return getRenderStateRuntime(state).renderRootGuard === warnOnSecondRenderRoot;
 }
@@ -12,6 +14,33 @@ export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
 // rendered root its own createGlOffscreenRenderState-derived state.
 export function enableGlRenderStateGuards(state: GlRenderState): void {
   getRenderStateRuntime(state).renderRootGuard = warnOnSecondRenderRoot;
+  getGlRenderStateRuntime(state).bindingCacheGuard = warnOnForeignGlBinding;
+}
+
+// render-gl skips a redundant `useProgram` by trusting its cached binding slot, which is sound only
+// while render-gl is the sole writer of GL state on the context. A sibling renderer issuing raw GL —
+// scene3d-gl's mesh, skybox, shadow and IBL passes all call `gl.useProgram` directly — invalidates that
+// assumption, and `invalidateGlRenderStateCache` is the contract for restoring it.
+//
+// Verified here by asking GL what is ACTUALLY bound. That is a synchronous driver query and far too
+// expensive for a draw path, which is exactly why it lives behind an opt-in guard rather than in the
+// skip itself. Without it the first symptom is a GL error raised against a later uniform call, blaming
+// render-gl for a binding some other renderer changed.
+function warnOnForeignGlBinding(state: GlRenderState, expectedProgram: WebGLProgram): void {
+  const actual = state.gl.getParameter(state.gl.CURRENT_PROGRAM) as WebGLProgram | null;
+  if (actual === expectedProgram) return;
+  logOnce(
+    'render-gl:foreign-gl-binding',
+    LogLevel.Warn,
+    {
+      message:
+        'useGlProgram: the GL program actually bound is not the one render-gl cached, so a guest renderer ' +
+        'wrote GL state without restoring it. Call invalidateGlRenderStateCache(state) before returning ' +
+        'control to render-gl, or the next draw skips a bind it needs and GL rejects a later uniform.',
+      state,
+    },
+    'render-gl',
+  );
 }
 
 function warnOnSecondRenderRoot(state: RenderState, root: Renderable): void {
