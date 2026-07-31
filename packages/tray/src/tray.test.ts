@@ -24,6 +24,7 @@ import {
   onTrayEvent,
   popupTrayContextMenu,
   removeTrayBalloon,
+  setTrayAnimationGuard,
   setTrayBackend,
   setTrayIcon,
   setTrayIconContextMenu,
@@ -537,6 +538,42 @@ describe('removeTrayBalloon', () => {
 
   it('is a no-op on web', () => {
     expect(() => removeTrayBalloon({ id: 0 })).not.toThrow();
+  });
+});
+
+describe('setTrayAnimationGuard', () => {
+  afterEach(() => {
+    setTrayAnimationGuard(null);
+    setTrayBackend(null);
+  });
+
+  // The seam keeps the message and the @flighthq/log dependency in the separately-importable guard
+  // module; startTrayIconAnimation only calls whatever is installed.
+  it('reports the frame count and interval for each animation start', () => {
+    setTrayBackend(fakeBackend());
+    const seen: Array<[number, number]> = [];
+    setTrayAnimationGuard((_tray, frameCount, intervalMs) => seen.push([frameCount, intervalMs]));
+    const tray = createTrayIcon()!;
+
+    stopTrayIconAnimation(tray);
+    startTrayIconAnimation(tray, ['a', 'b', 'c'], 0);
+    stopTrayIconAnimation(tray);
+
+    expect(seen).toEqual([[3, 0]]);
+  });
+
+  it('stops reporting once cleared with null', () => {
+    setTrayBackend(fakeBackend());
+    let calls = 0;
+    setTrayAnimationGuard(() => (calls += 1));
+    const tray = createTrayIcon()!;
+    startTrayIconAnimation(tray, ['a'], 5);
+    stopTrayIconAnimation(tray);
+    setTrayAnimationGuard(null);
+    startTrayIconAnimation(tray, ['a'], 5);
+    stopTrayIconAnimation(tray);
+
+    expect(calls).toBe(1);
   });
 });
 
