@@ -1,9 +1,20 @@
 ---
 package: '@flighthq/image-codec'
-updated: 2026-07-09
+updated: 2026-07-31
 ---
 
 # image-codec — Status Log
+
+## 2026-07-31 — image MIME sniffing breadth
+
+- Completed the two MIME-detection Recommended items in `bd2c1a778`.
+- `detectImageMimeType` now recognizes AVIF image and sequence brands (`avif` / `avis`) in a bounded
+  ISO-BMFF `ftyp` box, including compatible-brand entries rather than only the major brand.
+- Added the standard ICO signature as `image/x-icon` and both TIFF byte orders as `image/tiff`.
+- Pinned malformed/non-AVIF `ftyp` rejection so the detector does not accept a brand outside the
+  declared box or infer every ISO-BMFF file as AVIF.
+- Focused `npm run check -- image-codec` passed all seven gates, and the package test suite passed 43
+  tests across seven files.
 
 ## 2026-07-09 — first build ("Bronze" scope shipped)
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/image-codec'
-updated: 2026-07-21
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -15,13 +15,11 @@ See [charter](./charter.md) for blessed direction; evidence in [review](./review
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/image-codec`, no cross-package coupling, no breaking change, no open design fork.
+Sweep-safe: within `@flighthq/image-codec`, no cross-package coupling, no breaking change, no open design fork. AVIF, ICO, and TIFF detection completed 2026-07-31.
 
-1. **Add AVIF sniffing to `detectImageMimeType`** (ISO-BMFF `ftyp` box with `avif`/`avis` brand). Closes the registered-but-unsniffable hole: `registerWebImageDecoders` registers `image/avif` but auto-detect dispatch can never reach it. Pure additive branch in the sniffer + tests.
-2. **Broaden the sniff set to ICO (`00 00 01 00`) and TIFF (`II*\0` / `MM\0*`)** while in the file — standard WHATWG image-sniffing entries; additive, null behavior unchanged for unknown headers.
-3. **Add registry enumeration**: `getImageDecoderMimeTypes()` / `getImageEncoderMimeTypes()` returning the registered MIME strings. Capability discovery for accept headers/file pickers; read-only additions to the existing registry files, tree-shakable.
-4. **Add `explain*` queries for the silent sentinels** per the diagnostics convention: e.g. `explainImageDecodeFailure(bytes, mimeType?)` and `explainImageEncodeFailure(mimeType)` returning plain data distinguishing unknown-MIME vs. no-codec-registered. Shakeable, no `@flighthq/log` dependency required for the query form.
-5. **Test the `decodeImagePremultiplied` auto-detect path** (currently only the explicit-registration path and null sentinel are covered in `decodeImage.test.ts`). Small coverage close-out.
+1. **Add registry enumeration**: `getImageDecoderMimeTypes()` / `getImageEncoderMimeTypes()` returning the registered MIME strings. Capability discovery for accept headers/file pickers; read-only additions to the existing registry files, tree-shakable.
+2. **Add `explain*` queries for the silent sentinels** per the diagnostics convention: e.g. `explainImageDecodeFailure(bytes, mimeType?)` and `explainImageEncodeFailure(mimeType)` returning plain data distinguishing unknown-MIME vs. no-codec-registered. Shakeable, no `@flighthq/log` dependency required for the query form.
+3. **Test the `decodeImagePremultiplied` auto-detect path** (currently only the explicit-registration path and null sentinel are covered in `decodeImage.test.ts`). Small coverage close-out.
 
 ## Backlog
 
