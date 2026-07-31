@@ -8,6 +8,10 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../types" }],
+  "references": [
+    {
+      "path": "../types"
+    }
+  ],
   "include": ["src"]
 }

@@ -23,3 +23,9 @@ export interface ClipRegion {
   winding: PathWinding;
   version: number;
 }
+
+// Reports a ClipRegion released twice — the region would enter the pool twice and two later acquires would
+// alias one object. Installed by `enableClipGuards` in @flighthq/clip through that package's
+// `setClipRegionReleaseGuard` seam; a null slot is the production default, and the O(pool) membership scan
+// that detects the condition runs only while a guard is installed.
+export type ClipRegionReleaseGuard = (clip: Readonly<ClipRegion>) => void;
