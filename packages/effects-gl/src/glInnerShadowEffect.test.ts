@@ -1,40 +1,49 @@
-vi.hoisted(() => {
+import type * as ContractModule from '@flighthq/render-gl/contract';
+
+import type * as GleffectblitshaderModule from './glEffectBlitShader';
+import type * as GleffectboxblurModule from './glEffectBoxBlur';
+import type * as GlinnershadoweffectModule from './glInnerShadowEffect';
+
+// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+let drawGlFullscreenPass: typeof ContractModule.drawGlFullscreenPass;
+let applyGlEffectBlitPass: typeof GleffectblitshaderModule.applyGlEffectBlitPass;
+let applyGlEffectBoxBlur: typeof GleffectboxblurModule.applyGlEffectBoxBlur;
+let applyInnerShadowEffectToGl: typeof GlinnershadoweffectModule.applyInnerShadowEffectToGl;
+let defaultGlInnerShadowEffectRunner: typeof GlinnershadoweffectModule.defaultGlInnerShadowEffectRunner;
+
+beforeAll(async () => {
   vi.resetModules();
+  vi.doMock('@flighthq/render-gl/contract', () => {
+    let nextTargetId = 0;
+    return {
+      acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
+        ...descriptor,
+        id: `scratch-${nextTargetId++}`,
+        texture: {},
+      })),
+      clearGlRenderTarget: vi.fn(),
+      compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
+      drawGlFullscreenPass: vi.fn(),
+      releaseGlRenderTarget: vi.fn(),
+    };
+  });
+  vi.doMock('./glEffectBlitShader', () => ({
+    applyGlEffectBlitOffsetPass: vi.fn(),
+    applyGlEffectBlitPass: vi.fn(),
+  }));
+  vi.doMock('./glEffectBoxBlur', () => ({
+    applyGlEffectBoxBlur: vi.fn(),
+  }));
+  vi.doMock('./glEffectTintShader', () => ({
+    applyGlEffectInvertTintPass: vi.fn(),
+  }));
+  ({ drawGlFullscreenPass } = await import('@flighthq/render-gl/contract'));
+  ({ applyGlEffectBlitPass } = await import('./glEffectBlitShader'));
+  ({ applyGlEffectBoxBlur } = await import('./glEffectBoxBlur'));
+  ({ applyInnerShadowEffectToGl, defaultGlInnerShadowEffectRunner } = await import('./glInnerShadowEffect'));
 });
-
-vi.mock('@flighthq/render-gl/contract', () => {
-  let nextTargetId = 0;
-  return {
-    acquireGlRenderTarget: vi.fn((_state, _pool, descriptor) => ({
-      ...descriptor,
-      id: `scratch-${nextTargetId++}`,
-      texture: {},
-    })),
-    clearGlRenderTarget: vi.fn(),
-    compileGlFullscreenProgram: vi.fn(() => ({ program: {}, vao: {} })),
-    drawGlFullscreenPass: vi.fn(),
-    releaseGlRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./glEffectBlitShader', () => ({
-  applyGlEffectBlitOffsetPass: vi.fn(),
-  applyGlEffectBlitPass: vi.fn(),
-}));
-
-vi.mock('./glEffectBoxBlur', () => ({
-  applyGlEffectBoxBlur: vi.fn(),
-}));
-
-vi.mock('./glEffectTintShader', () => ({
-  applyGlEffectInvertTintPass: vi.fn(),
-}));
-
-import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { applyInnerShadowEffectToGl, defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
 
 describe('applyInnerShadowEffectToGl', () => {
   it('is a function', () => {
@@ -125,7 +134,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  vi.doUnmock('@flighthq/render-gl');
+  vi.doUnmock('@flighthq/render-gl/contract');
   vi.doUnmock('./glEffectBlitShader');
   vi.doUnmock('./glEffectBoxBlur');
   vi.doUnmock('./glEffectTintShader');

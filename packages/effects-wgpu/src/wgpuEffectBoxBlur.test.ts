@@ -1,23 +1,30 @@
+import type * as WgpueffectboxblurModule from './wgpuEffectBoxBlur';
+import type * as WgpueffectpassModule from './wgpuEffectPass';
+
+// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+let applyWgpuEffectBoxBlur: typeof WgpueffectboxblurModule.applyWgpuEffectBoxBlur;
+let createWgpuEffectPipeline: typeof WgpueffectpassModule.createWgpuEffectPipeline;
+let drawWgpuEffectPass: typeof WgpueffectpassModule.drawWgpuEffectPass;
+
+beforeAll(async () => {
+  vi.resetModules();
+  vi.doMock('./wgpuEffectPass', () => ({
+    createWgpuEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
+    drawWgpuEffectPass: vi.fn((_state, _source, _dest, _pipeline, setUniforms) => {
+      const f32 = new Float32Array(16);
+      const i32 = new Int32Array(f32.buffer);
+      setUniforms(f32, i32);
+      mockState.uniformSnapshots.push(Array.from(f32));
+    }),
+  }));
+  ({ applyWgpuEffectBoxBlur } = await import('./wgpuEffectBoxBlur'));
+  ({ createWgpuEffectPipeline, drawWgpuEffectPass } = await import('./wgpuEffectPass'));
+});
 const mockState = vi.hoisted(() => ({
   uniformSnapshots: [] as number[][],
 }));
-
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
-vi.mock('./wgpuEffectPass', () => ({
-  createWgpuEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
-  drawWgpuEffectPass: vi.fn((_state, _source, _dest, _pipeline, setUniforms) => {
-    const f32 = new Float32Array(16);
-    const i32 = new Int32Array(f32.buffer);
-    setUniforms(f32, i32);
-    mockState.uniformSnapshots.push(Array.from(f32));
-  }),
-}));
-
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
 
 describe('applyWgpuEffectBoxBlur', () => {
   it('is a function', () => {

@@ -1,36 +1,44 @@
-vi.hoisted(() => {
+import type * as CanvasdropshadoweffectModule from './canvasDropShadowEffect';
+import type * as CanvaseffectcompositingModule from './canvasEffectCompositing';
+import type * as CanvassourcemodecompositingModule from './canvasSourceModeCompositing';
+
+// Mocked per file with doMock plus dynamic imports of the subject, not top-level hoisted vi.mock.
+// The suite runs isolate:false over a shared module registry, so a hoisted mock is registered for
+// every file in the worker rather than this one -- see the rule in the root vitest config.
+let applyDropShadowEffectToCanvas: typeof CanvasdropshadoweffectModule.applyDropShadowEffectToCanvas;
+let defaultCanvasDropShadowEffectRunner: typeof CanvasdropshadoweffectModule.defaultCanvasDropShadowEffectRunner;
+let drawCanvasEffectPass: typeof CanvaseffectcompositingModule.drawCanvasEffectPass;
+let compositeCanvasSourceMode: typeof CanvassourcemodecompositingModule.compositeCanvasSourceMode;
+
+beforeAll(async () => {
   vi.resetModules();
+  vi.doMock('./canvasEffectCompositing', () => ({
+    drawCanvasEffectPass: vi.fn(),
+  }));
+  vi.doMock('./canvasRenderEffectPipeline', () => {
+    let nextTargetId = 0;
+    return {
+      acquireCanvasRenderTarget: vi.fn((_pool, width, height) => ({
+        id: `scratch-${nextTargetId++}`,
+        canvas: {},
+        context: {},
+        width,
+        height,
+      })),
+      createCanvasRenderTargetPool: vi.fn(() => ({ free: [], inUse: [] })),
+      releaseCanvasRenderTarget: vi.fn(),
+    };
+  });
+  vi.doMock('./canvasSourceModeCompositing', () => ({
+    clearCanvasTarget: vi.fn(),
+    compositeCanvasImage: vi.fn(),
+    compositeCanvasSourceMode: vi.fn(),
+    drawCanvasTintedAlphaMask: vi.fn(),
+  }));
+  ({ applyDropShadowEffectToCanvas, defaultCanvasDropShadowEffectRunner } = await import('./canvasDropShadowEffect'));
+  ({ drawCanvasEffectPass } = await import('./canvasEffectCompositing'));
+  ({ compositeCanvasSourceMode } = await import('./canvasSourceModeCompositing'));
 });
-
-vi.mock('./canvasEffectCompositing', () => ({
-  drawCanvasEffectPass: vi.fn(),
-}));
-
-vi.mock('./canvasRenderEffectPipeline', () => {
-  let nextTargetId = 0;
-  return {
-    acquireCanvasRenderTarget: vi.fn((_pool, width, height) => ({
-      id: `scratch-${nextTargetId++}`,
-      canvas: {},
-      context: {},
-      width,
-      height,
-    })),
-    createCanvasRenderTargetPool: vi.fn(() => ({ free: [], inUse: [] })),
-    releaseCanvasRenderTarget: vi.fn(),
-  };
-});
-
-vi.mock('./canvasSourceModeCompositing', () => ({
-  clearCanvasTarget: vi.fn(),
-  compositeCanvasImage: vi.fn(),
-  compositeCanvasSourceMode: vi.fn(),
-  drawCanvasTintedAlphaMask: vi.fn(),
-}));
-
-import { applyDropShadowEffectToCanvas, defaultCanvasDropShadowEffectRunner } from './canvasDropShadowEffect';
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { compositeCanvasSourceMode } from './canvasSourceModeCompositing';
 
 describe('applyDropShadowEffectToCanvas', () => {
   it('is a function', () => {
