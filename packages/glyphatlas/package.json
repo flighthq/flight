@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/types": "*"
   },

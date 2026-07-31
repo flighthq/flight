@@ -1,3 +1,5 @@
+export * from './enableGlyphAtlasGuards';
+export * from './explainGlyphAtlasEntry';
 export * from './glyphAtlas';
 export * from './glyphAtlasDirty';
 export * from './glyphAtlasEntry';

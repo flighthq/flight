@@ -1,4 +1,7 @@
 export {
+  disableGlyphAtlasGuards,
+  enableGlyphAtlasGuards,
+  explainGlyphAtlasEntry,
   clearGlyphAtlasDirty,
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,

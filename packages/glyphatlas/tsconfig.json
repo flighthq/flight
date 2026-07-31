@@ -16,6 +16,9 @@
       "path": "../bitmap"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../types"
     }
   ],

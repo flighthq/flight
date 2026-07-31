@@ -3,7 +3,7 @@ import type { GlyphEntry, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+import { getGlyphAtlasEntry, setGlyphAtlasEntryGuard } from './glyphAtlasEntry';
 import { createStubGlyphRasterizerBackend, setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('getGlyphAtlasEntry', () => {
@@ -290,5 +290,48 @@ describe('retained-byte and area budgets', () => {
 
     expect(getGlyphAtlasEntry(atlas, 65)).not.toBeNull();
     expect(atlas.runtime.entries.size).toBe(1);
+  });
+});
+
+describe('setGlyphAtlasEntryGuard', () => {
+  afterEach(() => {
+    setGlyphAtlasEntryGuard(null);
+    setGlyphRasterizerBackend(null);
+  });
+
+  // The seam keeps the messages and the @flighthq/log dependency in the separately-importable guard
+  // module; this hot path only calls whatever is installed.
+  it('reports the reason and codepoint for each blocked lookup', () => {
+    const seen: Array<[string, number]> = [];
+    setGlyphAtlasEntryGuard((reason, codepoint) => seen.push([reason, codepoint]));
+    setGlyphRasterizerBackend({ rasterize: () => null });
+
+    getGlyphAtlasEntry(createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 }), 0x41);
+
+    expect(seen).toEqual([['rasterizer-returned-null', 0x41]]);
+  });
+
+  it('stays silent for a lookup that succeeds', () => {
+    const seen: string[] = [];
+    setGlyphAtlasEntryGuard((reason) => seen.push(reason));
+    const { backend } = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(backend);
+
+    getGlyphAtlasEntry(createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 }), 65);
+
+    expect(seen).toEqual([]);
+  });
+
+  it('stops reporting once cleared with null', () => {
+    let calls = 0;
+    setGlyphAtlasEntryGuard(() => (calls += 1));
+    setGlyphRasterizerBackend({ rasterize: () => null });
+    const atlas = createGlyphAtlas({ fontFamily: 'm', fontSize: 16, height: 64, width: 64 });
+
+    getGlyphAtlasEntry(atlas, 65);
+    setGlyphAtlasEntryGuard(null);
+    getGlyphAtlasEntry(atlas, 66);
+
+    expect(calls).toBe(1);
   });
 });

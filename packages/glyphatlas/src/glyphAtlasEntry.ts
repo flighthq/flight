@@ -17,13 +17,19 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
   }
 
   const bitmap = getGlyphRasterizerBackend().rasterize(codepoint, runtime.rasterizeOptions);
-  if (bitmap === null) return null;
+  if (bitmap === null) {
+    _entryGuard?.('rasterizer-returned-null', codepoint);
+    return null;
+  }
 
   // A glyph larger than the usable atlas area can never be placed, however much is evicted.
   const padding = runtime.padding;
   const usableWidth = runtime.bitmap.width - 2 * padding;
   const usableHeight = runtime.bitmap.height - 2 * padding;
-  if (bitmap.width > usableWidth || bitmap.height > usableHeight) return null;
+  if (bitmap.width > usableWidth || bitmap.height > usableHeight) {
+    _entryGuard?.('glyph-larger-than-atlas', codepoint);
+    return null;
+  }
 
   // Evicting for the glyph-count budget frees logical cache slots; the freed atlas space is reclaimed
   // lazily by the first repack that placement forces below.
@@ -180,6 +186,7 @@ function _repackGlyphAtlas(runtime: GlyphAtlasRuntime): void {
     const bitmap = runtime.bitmaps.get(codepoint)!;
     const placement = _placeGlyphOnShelf(runtime, bitmap.width, bitmap.height);
     if (placement === null) {
+      _entryGuard?.('repack-dropped', codepoint);
       _releaseGlyphBudget(runtime, codepoint);
       runtime.entries.delete(codepoint);
       runtime.bitmaps.delete(codepoint);
@@ -223,3 +230,12 @@ function _releaseGlyphBudget(runtime: GlyphAtlasRuntime, codepoint: number): voi
   runtime.retainedBytes -= bitmap.pixels.byteLength;
   runtime.occupiedArea -= bitmap.width * bitmap.height;
 }
+
+/** Installs the glyph-atlas guard, or clears it with `null`. The seam exists so the messages and the
+ *  `@flighthq/log` dependency live in the separately-importable guard module rather than on this hot
+ *  path; not importing that module costs production nothing. Called by `enableGlyphAtlasGuards`. */
+export function setGlyphAtlasEntryGuard(guard: ((reason: string, codepoint: number) => void) | null): void {
+  _entryGuard = guard;
+}
+
+let _entryGuard: ((reason: string, codepoint: number) => void) | null = null;
