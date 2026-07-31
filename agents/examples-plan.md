@@ -2,6 +2,16 @@
 
 The existing 17 examples are OpenFL ports. They live on in `flight-reference` for side-by-side comparison but should be replaced in this repo with examples designed to exercise and illustrate Flight's actual feature surface.
 
+## Queued: loading-screen example (chief, 2026-07-30)
+
+Commissioned with the loader progress-currencies ruling. The loader's progress surface has never had a
+real consumer -- the cross-check for that ruling found exactly two call sites repo-wide, neither a UI --
+so this example exists to give it one. It should show all three currencies doing their own job: the
+0..1 weighted fraction driving the bar, `getResourceLoadCounts` driving a "3 of 12 files" line, and
+`getResourceLoadBytes` driving a "12.4 MB" readout that never presents partial knowledge as a
+denominator. It should also demonstrate the documented recipe -- passing byte sizes as weights so the
+bar is byte-accurate -- since that is the answer to "why is there no byte-total estimator in core".
+
 ## Design Principles
 
 - Each example should demonstrate a clear capability or SDK group, not just port a legacy demo.
