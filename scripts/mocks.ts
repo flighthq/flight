@@ -22,7 +22,7 @@ import { join, relative } from 'node:path';
 
 import pc from 'picocolors';
 
-import { ISOLATED_MOCK_TEST_FILES } from '../vitest.tiers';
+import { ISOLATED_MOCK_TEST_FILES } from './mockTiers';
 
 type Rule = 'hoisted-mock' | 'orphan-unmock' | 'stale-tier' | 'untiered-mock';
 
@@ -137,7 +137,7 @@ for (const v of violations) {
   console.log(`  ${pc.yellow('!')} ${pc.white(`${v.path}:${v.line}`)} ${pc.dim(RULE_MESSAGE[v.rule])}`);
 }
 console.log(
-  `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/mocks.ts with a reason. See the mock rules in vitest.config.ts.')}`,
+  `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/mocks.ts with a reason. Tier membership lives in scripts/mockTiers.ts; the rules are in vitest.config.ts.')}`,
 );
 process.exit(checkMode ? 1 : 0);
 

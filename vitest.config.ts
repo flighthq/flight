@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
+import { ISOLATED_MOCK_TEST_FILES } from './scripts/mockTiers.js';
 import baseConfig from './vitest.config.base.js';
-import { ISOLATED_MOCK_TEST_FILES } from './vitest.tiers.js';
 
 // One master config for the fast run: unit tests share a single jsdom environment per
 // worker (isolate:false) instead of one environment per file — the full suite's cost is per-file
