@@ -3,6 +3,12 @@
   "entries": [
     {
       "packageName": "effects-canvas",
+      "symbol": "defaultCanvasBlendEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "defaultCanvasBloomEffectRunner",
       "dot": true,
       "contract": true
@@ -46,6 +52,12 @@
     {
       "packageName": "effects-canvas",
       "symbol": "defaultCanvasVignetteEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasBlendEffect",
       "dot": true,
       "contract": true
     },
