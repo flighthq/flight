@@ -1,5 +1,11 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Bitmap } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  GlyphAtlas,
+  GlyphAtlasOptions,
+  GlyphMetrics,
+  GlyphRasterizeOptions,
+} from '@flighthq/types/contract';
 
 import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
