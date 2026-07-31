@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/picking'
-updated: 2026-07-22
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -14,17 +14,8 @@ None remaining.
 
 ## Recommended
 
-1. **Make `Scene3DHit.node` type-honest.** `Scene3DHit.node` (in `@flighthq/types`) is declared non-null
-   `Mesh`, but `createSceneHit()` initializes it `null as unknown as Mesh` (`pickScene.ts`). A fresh
-   hit — the documented `out` for `pickScene` and a reused slot in `pickSceneAll`'s output array —
-   therefore exposes `node === null` under a type that promises `Mesh`; any consumer reading `.node`
-   without checking the return dereferences null with no type warning. Miss-handling is otherwise correct
-   (on a miss the `null` return is the sentinel and `out` is left untouched), so the fix is just to type
-   `node: Mesh | null`, matching the struct's other `-1`/`null` sentinels and dropping the
-   `as unknown as` cast. Sweep-safe across `types` + `picking`.
-
-Beyond that, the meaningful corrections touch scene preparation, mesh deformation, materials, or future
-instancing/LOD contracts.
+_None. The type-honesty correction is complete; remaining meaningful corrections touch scene preparation,
+mesh deformation, materials, or future instancing/LOD contracts._
 
 ## Depth gaps
 
@@ -53,6 +44,8 @@ instancing/LOD contracts.
 
 ## Approved
 
+- [2026-07-31 · completed] `Scene3DHit.node` is honestly `Mesh | null`; fresh-hit attribute queries
+  return their existing sentinels without changing caller-owned outputs.
 - [2026-07-21 · completed] `Scene3DHit` extends Entity and `createSceneHit` uses `createEntity`, preserving
   caller-owned reuse and flat result fields.
 - [2026-07-21 · completed] Narrow-phase triangle decoding now consumes mesh's shared logical-triangle
