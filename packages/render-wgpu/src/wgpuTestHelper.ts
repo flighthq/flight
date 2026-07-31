@@ -125,6 +125,21 @@ function makeAdapter(): GPUAdapter {
   } as unknown as GPUAdapter;
 }
 
+// JSDOM does not decode image elements, so a bare <img> remains incomplete even when its layout
+// width and height are assigned. Use this fixture when a test needs to exercise a successful external
+// image upload; readiness-failure tests should keep constructing the incomplete element directly.
+export function createReadyImageElementForTest(width = 1, height = 1): HTMLImageElement {
+  const image = document.createElement('img');
+  image.width = width;
+  image.height = height;
+  Object.defineProperties(image, {
+    complete: { configurable: true, value: true },
+    naturalHeight: { configurable: true, value: height },
+    naturalWidth: { configurable: true, value: width },
+  });
+  return image;
+}
+
 export async function createWgpuRenderStateForTest(): Promise<WgpuRenderState> {
   const canvas = document.createElement('canvas');
   canvas.width = 800;

@@ -1,4 +1,5 @@
 import { isWgpuExternalImageSourceReady } from './wgpuExternalImageSource';
+import { createReadyImageElementForTest } from './wgpuTestHelper';
 
 describe('isWgpuExternalImageSourceReady', () => {
   it('accepts a readable canvas with enough pixels', () => {
@@ -6,6 +7,11 @@ describe('isWgpuExternalImageSourceReady', () => {
     canvas.width = 4;
     canvas.height = 4;
     expect(isWgpuExternalImageSourceReady(canvas, 4, 4)).toBe(true);
+  });
+
+  it('accepts a decoded image with enough pixels', () => {
+    const image = createReadyImageElementForTest(4, 4);
+    expect(isWgpuExternalImageSourceReady(image, 4, 4)).toBe(true);
   });
 
   it('rejects zero extents and undersized sources', () => {
