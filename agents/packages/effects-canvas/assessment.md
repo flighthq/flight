@@ -1,10 +1,16 @@
 ---
 package: '@flighthq/effects-canvas'
-updated: 2026-06-24
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # Assessment: @flighthq/effects-canvas
+
+> **Superseded 2026-07-31.** Do not execute the recommendations below against the current
+> package. Canvas now ships only eight genuine runner/registrar pairs, and unsupported
+> modules were deleted rather than retained as passthrough stubs. The support-map/query
+> names in this assessment never existed in package source; the aggregate registrar names
+> existed but were retired. The charter is the current direction record.
 
 The review verdict is **solid — 88/100**: infrastructure is real, the catalog is 34/44 implemented, and the 10 passthroughs each have a documented hard-input reason. What remains is mostly cleanup, honesty/symmetry of the catalog, and a few items that need a charter or cross-package decision. The charter is still a stub, so the design forks below are routed to its **Open directions** (noted here, not acted on) rather than into Recommended.
 

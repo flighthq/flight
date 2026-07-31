@@ -1,12 +1,22 @@
 ---
 package: '@flighthq/effects-canvas'
-updated: 2026-06-24
+updated: 2026-07-31
 by: ingest:builder-67dc46d64
 ---
 
 # effects-canvas — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-31 · capability correction] — verified
+
+Canvas currently has eight genuine runner/registrar pairs: Bloom, Blur, DropShadow,
+FilmGrain, OuterGlow, Pixelate, Scanlines, and Vignette. Unsupported runner/apply modules
+were deleted in `6ecb599d8`; an unregistered kind is skipped. The batch/category
+registration APIs in the older entry existed but were retired in `2a7ac8bff`.
+`CANVAS_RENDER_EFFECT_SUPPORT` and `getCanvasRenderEffectSupport` never existed in package
+source and must not be treated as APIs. The source-derived reachability inventory is the
+current capability record.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

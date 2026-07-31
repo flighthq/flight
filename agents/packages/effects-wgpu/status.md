@@ -1,12 +1,20 @@
 ---
 package: '@flighthq/effects-wgpu'
-updated: 2026-06-24
+updated: 2026-07-31
 by: ingest:builder-67dc46d64
 ---
 
 # effects-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-31 · capability correction] — verified
+
+WGPU currently has 44 genuine per-kind runner/registrar pairs, but not the historical set
+listed below. Identity TAA/SSR and the depthless whole-frame BokehDepthOfField blur were
+deleted in `6ecb599d8`, while genuine kinds landed elsewhere. The batch/category registrar
+APIs in older entries existed but were retired in `2a7ac8bff`. Use the source-derived
+reachability inventory for the current capability set.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

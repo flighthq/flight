@@ -2,7 +2,7 @@
 package: '@flighthq/effects-gl'
 status: solid
 score: 84
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - source
@@ -10,6 +10,12 @@ ingested:
 ---
 
 # effects-gl — Review
+
+> **2026-07-31 correction.** This review records a superseded implementation. GL currently
+> has 46 genuine runner/registrar pairs. The unconditional-identity TAA and SSR modules were
+> deleted in `6ecb599d8`, so neither is a current capability. The batch/category registrar
+> APIs described below existed but were retired in `2a7ac8bff`; registration is now per
+> kind. Use the charter and source-derived reachability inventory for the current set.
 
 > Survey layer. Evidence is the incoming bundle `builder-67dc46d64` (`head/packages/effects-gl/`
 >

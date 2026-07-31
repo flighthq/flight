@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/lighting'
-updated: 2026-06-24
+updated: 2026-07-31
 by: ingest:builder-67dc46d64
 ---
 
 # lighting — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-31 · prose-name correction] — verified
+
+The per-light photometric getters/setters claimed in the 2026-06-24 entry never existed in
+tracked package source. Current source exposes the generic `convertLightIntensity`,
+`getLightLinearIntensity`, and `applyLightExposure` helpers added on 2026-07-17. Proposed
+geometry-aware per-light conversions remain proposals, not APIs.
+`createColorFromKelvin` did exist here, moved to `@flighthq/color` in `134e5ff5d`, and was
+renamed there to the current `colorFromKelvin` in `26f8f8081`.
+The historical `selectForwardLights` name became `selectScene3DForwardLights` in the Scene3D
+naming sweep (`1e25f317a`).
 
 ## 2026-07-17 — builder2 (SDK-blocking issue #7: linear-HDR intensity helpers)
 

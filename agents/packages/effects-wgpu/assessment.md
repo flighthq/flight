@@ -1,10 +1,16 @@
 ---
 package: '@flighthq/effects-wgpu'
-updated: 2026-06-24
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # effects-wgpu — Assessment
+
+> **Superseded 2026-07-31.** The present 44-kind set differs from the one assessed below:
+> TAA, SSR, and the misnamed BokehDepthOfField implementation were deleted, genuine kinds
+> landed elsewhere, and aggregate registrar APIs were retired. Do not execute backlog or
+> recommendations that assume those old capabilities. The charter is the current direction
+> record.
 
 The review verdict is `solid — 88/100`: a mature WGSL backend in near-perfect structural lockstep with `effects-gl` (44 runners over identical kinds, registry dispatch, pooled ping-pong pipeline, two flagship multi-pass recipes). The distance-to-AAA is dominated by items that are either cross-package (depth/velocity G-buffers, TAA history), design forks (the missing-effect scope, the parity-vs-best-recipe bar), or gated on render infrastructure that does not yet exist (functional /parity gates, the Rust mirror). That pushes almost everything into Backlog or the charter's Open directions; only the within-package, non-design test-floor work is sweep-safe.
 
