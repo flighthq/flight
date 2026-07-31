@@ -5,7 +5,6 @@ export {
   defaultGlNode2DVelocityWriter,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
-  defaultGlBitmapTextRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlScale9ShapeRenderer,
