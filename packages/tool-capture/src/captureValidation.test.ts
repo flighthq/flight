@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   explainCaptureParityUncovered,
+  isCaptureRegressionCoverageFailure,
   isUniformCaptureFingerprint,
   explainCaptureVerificationStall,
   isCaptureParityCoverageFailure,
@@ -87,6 +88,33 @@ describe('isCaptureParityCoverageFailure', () => {
 
   it('does not fire when nothing wanted a comparison in the first place', () => {
     expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 0 })).toBe(false);
+  });
+});
+
+describe('isCaptureRegressionCoverageFailure', () => {
+  const UNCOVERED = {
+    gateRegression: true,
+    interrupted: false,
+    regressionComparisons: 0,
+    regressionUncovered: 100,
+  };
+
+  it('FAILS a gated regression leg that compared nothing, the inert-tier defect', () => {
+    // 0 passed / 0 failed / 100 skipped used to read as a clean pass.
+    expect(isCaptureRegressionCoverageFailure(UNCOVERED)).toBe(true);
+  });
+
+  it('passes as soon as one comparison actually ran', () => {
+    expect(isCaptureRegressionCoverageFailure({ ...UNCOVERED, regressionComparisons: 1 })).toBe(false);
+  });
+
+  it('does not fire when regression is not being gated, or when the run was interrupted', () => {
+    expect(isCaptureRegressionCoverageFailure({ ...UNCOVERED, gateRegression: false })).toBe(false);
+    expect(isCaptureRegressionCoverageFailure({ ...UNCOVERED, interrupted: true })).toBe(false);
+  });
+
+  it('does not fire when nothing wanted a comparison', () => {
+    expect(isCaptureRegressionCoverageFailure({ ...UNCOVERED, regressionUncovered: 0 })).toBe(false);
   });
 });
 
