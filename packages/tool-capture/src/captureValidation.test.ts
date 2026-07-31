@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   explainCaptureParityUncovered,
+  isUniformCaptureFingerprint,
   explainCaptureVerificationStall,
   isCaptureParityCoverageFailure,
   runCaptureValidation,
@@ -86,6 +87,23 @@ describe('isCaptureParityCoverageFailure', () => {
 
   it('does not fire when nothing wanted a comparison in the first place', () => {
     expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 0 })).toBe(false);
+  });
+});
+
+describe('isUniformCaptureFingerprint', () => {
+  it('rejects a fingerprint whose cells are all identical, the blank frame a stability check cannot catch', () => {
+    // The real shape that was blessed once: every cell the same colour.
+    expect(isUniformCaptureFingerprint('16:' + 'eeddcc'.repeat(256))).toBe(true);
+  });
+
+  it('accepts a frame that varies anywhere, including in only one cell', () => {
+    expect(isUniformCaptureFingerprint('16:' + 'eeddcc'.repeat(255) + '112233')).toBe(false);
+    expect(isUniformCaptureFingerprint('16:112233' + 'eeddcc'.repeat(255))).toBe(false);
+  });
+
+  it('treats a single-cell or empty payload as uniform, since it can distinguish nothing', () => {
+    expect(isUniformCaptureFingerprint('1:aabbcc')).toBe(true);
+    expect(isUniformCaptureFingerprint('16:')).toBe(true);
   });
 });
 
