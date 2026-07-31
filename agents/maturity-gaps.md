@@ -217,7 +217,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Darken/Lighten (MIN/MAX) | Can't fold `(1-src.a)` on gl/wgpu → transparent surround darkens/clips backdrop at edges | gl/wgpu | MAJOR |
 | Group/container `blendMode` | Whole-subtree flatten unverified/likely absent; no render-to-texture group-blend path found | all | MAJOR |
 | Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
-| wgpu 2D-blend parity covered | RESOLVED — all six fixed Shape states plus Bitmap Multiply are asserted in `node-blend-modes.webgpu.ts` | wgpu | RESOLVED |
+| wgpu 2D-blend parity covered | RESOLVED — cross-backend Normal/Add parity is asserted in `node-blend-modes.webgpu.ts`; all six fixed Shape states plus Bitmap Multiply remain asserted in the WebGPU-only `node-blend-modes-fixed.webgpu.ts` suite | wgpu | RESOLVED |
 | Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
 | cacheAsBitmap out-of-frame | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `scene2d-cache` raster proof; DOM still bakes in-frame | dom | MINOR |
 

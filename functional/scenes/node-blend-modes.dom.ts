@@ -1,16 +1,14 @@
 // node-blend-modes — validates that a node's blendMode changes how it composites against what is beneath it.
-// Backend support for blend modes is uneven: Canvas (globalCompositeOperation) and DOM (CSS
-// mix-blend-mode) support the full separable set; WebGL uses fixed-function blend state and supports
-// Normal/Layer + Add (additive); WebGPU bakes blend into the immutable render pipeline and currently does
-// not honor per-node blendMode at all. So the mode whose effect is real on every backend that supports
-// blending is Add — this test runs on canvas/dom/webgl (see package.json `renderers`; webgpu is excluded
-// because it ignores blendMode) and asserts Add.
+// Backend support for blend modes is uneven: Canvas and DOM support the full separable set, while the
+// GPU backends realize a fixed subset. Normal and Add are common to every backend, so this scene keeps
+// one identical cross-backend layout for their parity comparison.
 //
 // The proof is a same-source-color comparison: the SAME overlay color is drawn over a gray base twice,
 // once in Normal mode and once in Add mode. Normal shows the overlay color opaquely; Add sums it with the
 // base, so the Add region is markedly brighter than the Normal region. A renderer that ignored blendMode
 // would draw both regions identically, failing the test. (The full Multiply/Screen/Darken/... equations,
-// which only Canvas/DOM implement, are covered by node-blend-modes-advanced.)
+// which only Canvas/DOM implement, are covered by node-blend-modes-advanced; the wider WebGPU fixed
+// subset is covered by node-blend-modes-fixed.)
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,

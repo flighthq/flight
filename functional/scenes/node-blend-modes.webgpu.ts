@@ -1,48 +1,41 @@
+// Cross-backend blend parity fixture: every backend draws the same Normal control and Add probe.
+// The wider WebGPU fixed-function state coverage lives in node-blend-modes-fixed.webgpu.ts so its
+// backend-only grid is not incorrectly compared against this common layout.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  SpriteKind,
   BlendMode,
-  createSprite,
   createDisplayObject,
-  createImageResourceFromCanvas,
   createShape,
-  createTexture,
   getBitmapPixelRgb,
   invalidateNodeAppearance,
-  invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
-// WebGPU parity column for the complete fixed-function node BlendMode set. Six tessellated Shape
-// probes cover every state, and a Bitmap Multiply probe exercises the sprite-batch pipeline separately.
+const WIDTH = 800;
+const HEIGHT = 600;
+
 const BASE_GRAY = 0x808080;
-const BAND_X = 40;
-const BAND_Y = 50;
-const BAND_W = 720;
-const BAND_H = 500;
-const OVERLAY_W = 140;
-const OVERLAY_H = 80;
-const PROBES: readonly (readonly [number, number, number, BlendMode, number])[] = [
-  [100, 100, 0x505050, BlendMode.Normal, 80],
-  [330, 100, 0x505050, BlendMode.Add, 208],
-  [560, 100, 0x808080, BlendMode.Multiply, 64],
-  [100, 260, 0x808080, BlendMode.Screen, 192],
-  [330, 260, 0x404040, BlendMode.Darken, 64],
-  [560, 260, 0xc0c0c0, BlendMode.Lighten, 192],
-];
-const BITMAP_X = 100;
-const BITMAP_Y = 420;
+const OVERLAY = 0x505050;
+const BAND_X = 100;
+const BAND_Y = 200;
+const BAND_W = 600;
+const BAND_H = 200;
+const OVERLAY_Y = 240;
+const OVERLAY_H = 120;
+const OVERLAY_W = 180;
+const NORMAL_X = 180;
+const ADD_X = 440;
 
 const { render, width } = await createFunctionalTarget({
-  width: 800,
-  height: 600,
+  width: WIDTH,
+  height: HEIGHT,
   background: 0x000000ff,
-  kinds: [SpriteKind, ShapeKind],
+  kinds: [ShapeKind],
   blend: true,
 });
 
@@ -52,59 +45,51 @@ appendShapeBeginFill(base, BASE_GRAY, 1);
 appendShapeRectangle(base, BAND_X, BAND_Y, BAND_W, BAND_H);
 appendShapeEndFill(base);
 addNodeChild(root, base);
-for (const [x, y, color, mode] of PROBES) addOverlay(x, y, color, mode);
-addMultiplyBitmap();
+addOverlay(NORMAL_X, BlendMode.Normal);
+addOverlay(ADD_X, BlendMode.Add);
 render(root);
 
-function addOverlay(x: number, y: number, color: number, blendMode: BlendMode): void {
+function addOverlay(x: number, blendMode: BlendMode): void {
   const overlay = createShape();
-  appendShapeBeginFill(overlay, color, 1);
-  appendShapeRectangle(overlay, x, y, OVERLAY_W, OVERLAY_H);
+  appendShapeBeginFill(overlay, OVERLAY, 1);
+  appendShapeRectangle(overlay, x, OVERLAY_Y, OVERLAY_W, OVERLAY_H);
   appendShapeEndFill(overlay);
   overlay.blendMode = blendMode;
   invalidateNodeAppearance(overlay);
   addNodeChild(root, overlay);
 }
 
-function addMultiplyBitmap(): void {
-  const source = document.createElement('canvas');
-  source.width = OVERLAY_W;
-  source.height = OVERLAY_H;
-  const context = source.getContext('2d')!;
-  context.fillStyle = '#808080';
-  context.fillRect(0, 0, source.width, source.height);
-  const bitmap = createSprite();
-  bitmap.data.texture = createTexture({
-    dimension: '2d',
-    source: createImageResourceFromCanvas(source),
-  });
-  bitmap.blendMode = BlendMode.Multiply;
-  bitmap.x = BITMAP_X;
-  bitmap.y = BITMAP_Y;
-  invalidateNodeAppearance(bitmap);
-  invalidateNodeLocalTransform(bitmap);
-  addNodeChild(root, bitmap);
-}
-
 export function assertRender(frame: Readonly<Bitmap>): void {
   const s = frame.width / width;
   const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const overlayCenterY = OVERLAY_Y + OVERLAY_H / 2;
   const baseLuma = luma(at(BAND_X + 20, BAND_Y + 20));
   if (baseLuma < 100 || baseLuma > 160) {
     throw new Error(`[node-blend-modes] base gray luma ${baseLuma.toFixed(0)} not near 128`);
   }
-  for (const [x, y, , mode, expected] of PROBES) {
-    const actual = luma(at(x + OVERLAY_W / 2, y + OVERLAY_H / 2));
-    if (Math.abs(actual - expected) > 28) {
-      throw new Error(`[node-blend-modes] ${mode} luma ${actual.toFixed(0)} not near ${expected}`);
-    }
+  const normalLuma = luma(at(NORMAL_X + OVERLAY_W / 2, overlayCenterY));
+  if (normalLuma > baseLuma - 20) {
+    throw new Error(
+      `[node-blend-modes] Normal overlay luma ${normalLuma.toFixed(0)} not darker than base ${baseLuma.toFixed(0)}`,
+    );
   }
-  const bitmapMultiply = luma(at(BITMAP_X + OVERLAY_W / 2, BITMAP_Y + OVERLAY_H / 2));
-  if (Math.abs(bitmapMultiply - 64) > 28) {
-    throw new Error(`[node-blend-modes] Bitmap Multiply luma ${bitmapMultiply.toFixed(0)} not near 64`);
+  const addLuma = luma(at(ADD_X + OVERLAY_W / 2, overlayCenterY));
+  if (addLuma < baseLuma + 40) {
+    throw new Error(
+      `[node-blend-modes] Add overlay luma ${addLuma.toFixed(0)} not brighter than base ${baseLuma.toFixed(0)}`,
+    );
+  }
+  if (addLuma < normalLuma + 80) {
+    throw new Error(
+      `[node-blend-modes] Add (${addLuma.toFixed(0)}) not far brighter than Normal (${normalLuma.toFixed(0)}) for the same source color`,
+    );
   }
 }
 
+function channel(rgb: number, shift: number): number {
+  return (rgb >> shift) & 255;
+}
+
 function luma(rgb: number): number {
-  return 0.299 * ((rgb >> 16) & 255) + 0.587 * ((rgb >> 8) & 255) + 0.114 * (rgb & 255);
+  return 0.299 * channel(rgb, 16) + 0.587 * channel(rgb, 8) + 0.114 * channel(rgb, 0);
 }
