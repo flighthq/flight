@@ -97,6 +97,34 @@ Throws stay reserved for programmer error, so they are rare and cheap — keep m
   each guard's fire/silent test pair uses a memory sink, enforced by `exports:check` like any other
   export.
 
+## Core-tier packages and the guard exception
+
+A guard module in a **core-tier** package may import `@flighthq/log`, even though the dependency-layer rule
+otherwise forbids core → feature. This is a deliberate, narrow exception [chief ruling 2026-07-31], and the
+reasoning matters more than the permission, because it is what stops the exception from being generalized.
+
+**Why the two rules coexist rather than conflict.** The layer rule protects two things: core's runtime bundle
+weight, and its dependency-free portability. A guard module threatens neither, because it is *shakeable* — it
+is separately importable, the package is `sideEffects: false`, and it is never referenced from a runtime path.
+A build that does not import the guard never pulls `@flighthq/log`; a build that does import it asked for
+diagnostics and has already accepted the logger. So the exception costs exactly the thing the rule was
+protecting: nothing.
+
+**The exception is file-scoped and machine-enforced, not a blanket allowance.** `packages:check` permits the
+manifest dependency and then separately asserts that `@flighthq/log` is imported *only* from
+`enable*Guards`-named files in that package (`getCoreGuardImportViolations` in `scripts/package-layers.ts`).
+A core runtime file importing the logger fails the check by name and path. Without that pairing the manifest
+allowance would quietly widen into "core may depend on log", which is the thing the layer rule exists to stop.
+
+**What this replaces.** Before the ruling, a core package that wanted a guard had two bad options: emit through
+a bespoke channel, or route through a caller-supplied reporter that duplicates what `@flighthq/log` already
+abstracts. `@flighthq/entity` had taken the first — a raw `console.warn` behind an `eslint-disable` — which
+bypassed the sink, the levels, and the once-per-cause dedupe every other guard gets. It now uses the standard
+convention like any other package.
+
+**Applies to core only.** Feature, backend, and application tiers already permit the dependency outright; they
+need no exception and should not cite this one.
+
 ## Documentation durability (the rot side)
 
 Weight problems are solved by the import boundaries above; rot problems are solved by making CI *execute* the docs. Prefer forms in this order: **types** (checked every compile) → **tests-as-docs** (executed every CI) → **`@example` blocks with a CI extraction+typecheck gate** (a plain `@example` rots like any comment) → **thin READMEs generated from `api:json`** → **invariant comments** (the existing Source Style rule — invariants only, no narration). Warn strings in guard modules are documentation too, and they are fine precisely because they are shakeable.

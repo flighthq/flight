@@ -1,4 +1,4 @@
-import type { Entity, EntityRuntime } from '@flighthq/types/contract';
+import type { Entity, EntityRuntime, EntityRuntimeWriteGuard } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Returns true if entity runtime guards have been enabled via enableEntityRuntimeGuards.
@@ -14,15 +14,11 @@ export function createGuardedEntity<Type extends object>(entity: Type & Entity):
   return new Proxy(entity, {
     set(target, prop, value) {
       if (prop === EntityRuntimeKey && _guardsEnabled) {
-        // Allow writes from trusted paths by checking the stack. Since we cannot reliably
-        // inspect the stack in all environments, we emit a warning and allow the write.
-        // In practice, ensureEntityRuntime and attachEntityBinding are the only callers that
-        // should write to this slot.
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[entity] Direct write to EntityRuntimeKey detected. Use ensureEntityRuntime or attachEntityBinding instead.',
-          entity,
-        );
+        // The write is reported and then ALLOWED: the stack cannot be inspected reliably across
+        // environments, so trusted callers (ensureEntityRuntime, attachEntityBinding) cannot be told apart
+        // from a raw poke. Reporting goes through the seam rather than the console so it uses the standard
+        // sink — see enableEntityRuntimeGuards.
+        _writeGuard?.('runtime-slot');
       }
       (target as unknown as Record<PropertyKey, unknown>)[prop] = value;
       return true;
@@ -38,11 +34,7 @@ export function createGuardedEntityRuntime(runtime: EntityRuntime): EntityRuntim
   return new Proxy(runtime, {
     set(target, prop, value) {
       if (prop === 'binding' && _guardsEnabled) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[entity] Direct write to EntityRuntime.binding detected. Use attachEntityBinding or detachEntityBinding instead.',
-          runtime,
-        );
+        _writeGuard?.('binding-slot');
       }
       (target as unknown as Record<PropertyKey, unknown>)[prop] = value;
       return true;
@@ -50,16 +42,18 @@ export function createGuardedEntityRuntime(runtime: EntityRuntime): EntityRuntim
   });
 }
 
-// Opt-in development guard mode. When enabled, direct writes to the EntityRuntimeKey slot
-// that bypass ensureEntityRuntime / attachEntityBinding will warn in the console, making
-// "writes landed on the wrong entity or raw slot poke" bugs visible early.
-//
-// This function is a no-op in production if the calling module is never imported — it is
-// fully tree-shakable, never called at module top level, and has no effect on
-// "sideEffects": false.
-export function enableEntityRuntimeGuards(): void {
-  if (typeof Proxy === 'undefined') return;
-  _guardsEnabled = true;
+// Turns the guarding PROXIES on or off. This is the machinery seam, not the caller-facing entry point —
+// use enableEntityRuntimeGuards, which switches this on and installs the reporter together.
+export function setEntityRuntimeGuardMode(enabled: boolean): void {
+  if (enabled && typeof Proxy === 'undefined') return;
+  _guardsEnabled = enabled;
+}
+
+// The diagnostics seam for a direct slot write. Null uninstalls it, and null is what a build that never
+// imports the guard module sees — which is why this file needs no logger and stays inside the core layer.
+export function setEntityRuntimeWriteGuard(guard: EntityRuntimeWriteGuard | null): void {
+  _writeGuard = guard;
 }
 
 let _guardsEnabled = false;
+let _writeGuard: EntityRuntimeWriteGuard | null = null;

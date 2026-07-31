@@ -210,6 +210,28 @@ export function getPackageLayerCoverageViolations(workspacePackageNames: Iterabl
   return violations;
 }
 
+// The one sanctioned crossing of the layer rule: a CORE package may depend on `@flighthq/log`, solely so
+// its `enable*Guards` module can report through the standard sink instead of a bespoke one.
+//
+// The rule and this exception coexist because a guard module is SHAKEABLE. The layer rule exists to keep
+// core's runtime bundle light and its dependency graph portable; a guard module is separately importable
+// and `sideEffects: false`, so it is tree-shaken out of every build that does not import it. Only a caller
+// who deliberately asks for diagnostics pulls `@flighthq/log` in — and that caller asked. The manifest
+// allowance below is therefore paired with `getCoreGuardImportViolations`, which enforces that the import
+// appears ONLY in guard-module files; without that pairing this would silently widen into a blanket
+// permission. [chief ruling 2026-07-31]
+export const CORE_GUARD_LOG_DEPENDENCY = '@flighthq/log';
+
+// Whether `file` is a guard module — the only place a core package may import `@flighthq/log`.
+export function isGuardModuleFile(file: string): boolean {
+  const base = file.replace(/\\/g, '/').split('/').pop() ?? '';
+  return /^enable[A-Za-z0-9]*Guards\.ts$/.test(base);
+}
+
+export function isCorePackage(packageName: string): boolean {
+  return packageLayerByName.get(packageName) === 'core';
+}
+
 export function getPackageLayerDependencyViolation(
   packageName: string,
   dependencyName: string,
@@ -218,9 +240,68 @@ export function getPackageLayerDependencyViolation(
   const dependencyLayer = packageLayerByName.get(dependencyName);
   if (packageLayer === undefined || dependencyLayer === undefined) return null;
   if (allowedDependencyLayers[packageLayer].has(dependencyLayer)) return null;
+  // File-scoped guard exception; `getCoreGuardImportViolations` keeps it honest.
+  if (packageLayer === 'core' && dependencyName === CORE_GUARD_LOG_DEPENDENCY) return null;
 
   return {
     label: `${dependencyName} obeys the ${packageLayer} dependency-layer rule`,
     detail: `${packageName} (${packageLayer}) -> ${dependencyName} (${dependencyLayer}) is forbidden: ${layerRuleDescriptions[packageLayer]}`,
   };
+}
+
+// Whether `file` is a package barrel. A barrel re-exports the guard module by design; that is not the
+// guard entering the runtime graph, because `sideEffects: false` lets an unused re-export shake out.
+function isBarrelFile(file: string): boolean {
+  const base = file.replace(/\\/g, '/').split('/').pop() ?? '';
+  return base === 'index.ts' || base === 'contract.ts';
+}
+
+// Enforces that a core package's `@flighthq/log` dependency is used ONLY by its guard modules. This is what
+// makes the exception file-scoped rather than a blanket allowance: a core runtime file importing the logger
+// would put feature-tier weight in the always-loaded graph, which is exactly what the layer rule prevents.
+export function getCoreGuardImportViolations(
+  packageName: string,
+  importsByFile: ReadonlyMap<string, readonly string[]>,
+): PackageLayerViolation[] {
+  if (!isCorePackage(packageName)) return [];
+  const violations: PackageLayerViolation[] = [];
+  for (const [file, imports] of importsByFile) {
+    if (isGuardModuleFile(file)) continue;
+    if (
+      !imports.some(
+        (specifier) => specifier === CORE_GUARD_LOG_DEPENDENCY || specifier.startsWith(`${CORE_GUARD_LOG_DEPENDENCY}/`),
+      )
+    ) {
+      continue;
+    }
+    violations.push({
+      label: `${packageName} confines its ${CORE_GUARD_LOG_DEPENDENCY} import to guard modules`,
+      detail: `${file} imports ${CORE_GUARD_LOG_DEPENDENCY}, but a core package may only do so from an enable*Guards module — the exception is file-scoped precisely so the logger stays out of the always-loaded runtime graph`,
+    });
+  }
+  return violations;
+}
+
+// Asserts that no core RUNTIME file imports its own package's guard module. This is the structural reason
+// the layer exception costs nothing: if no runtime path references the guard, a bundle that does not
+// explicitly import it cannot pull it in — and therefore cannot pull @flighthq/log in either. Barrels are
+// exempt, since a re-export shakes out when unused; guard modules may reference each other.
+export function getCoreGuardRuntimeImportViolations(
+  packageName: string,
+  localImportsByFile: ReadonlyMap<string, readonly string[]>,
+): PackageLayerViolation[] {
+  if (!isCorePackage(packageName)) return [];
+  const violations: PackageLayerViolation[] = [];
+  for (const [file, imports] of localImportsByFile) {
+    if (isGuardModuleFile(file) || isBarrelFile(file)) continue;
+    for (const specifier of imports) {
+      const target = `${specifier.replace(/\\/g, '/').split('/').pop() ?? ''}.ts`;
+      if (!isGuardModuleFile(target)) continue;
+      violations.push({
+        label: `${packageName} keeps its guard module out of the runtime graph`,
+        detail: `${file} imports ${specifier}, but a core runtime file must not reference its own enable*Guards module — that would pull @flighthq/log into every bundle and make the layer exception real weight instead of shakeable`,
+      });
+    }
+  }
+  return violations;
 }
