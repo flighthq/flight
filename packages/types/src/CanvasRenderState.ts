@@ -2,6 +2,7 @@ import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
+import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolver } from './CanvasTextureResolver';
 import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -60,4 +61,8 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // Per-effect-kind Canvas runner registry. Stored in the state runtime so an offscreen state can
   // snapshot the screen pipeline's registration policy without retaining a live link.
   canvasRenderEffectRegistry?: Map<string, CanvasRenderEffectRunner>;
+  // Backdrop targets a BlendEffect can name through its `backdropKey`, so the advanced-blend recipe can
+  // read a layer it did not produce. The registry holds the target only and never owns or frees it.
+  // Absent until a backdrop is registered, so a scene using no advanced blend carries no map.
+  canvasBlendEffectBackdrops?: Map<string, CanvasRenderTarget>;
 }

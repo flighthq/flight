@@ -1,4 +1,5 @@
 export * from './canvasColorMatrixPass';
+export * from './canvasBlendEffect';
 export * from './canvasBloomEffect';
 export * from './canvasBlurEffect';
 export * from './canvasDropShadowEffect';
