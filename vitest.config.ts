@@ -20,6 +20,15 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       isolate: false,
+      // The per-file mock idiom above has a cost the default 10s hook budget does not cover under load.
+      // `vi.resetModules()` plus a dynamic re-import rebuilds the subject's whole transitive graph, and
+      // for the widest subjects (the @flighthq/scene3d-resources loaders) that measured 2-4s per file
+      // on an *idle* machine — bisected with --hookTimeout. Sixteen workers competing for CPU is enough
+      // to push that past 10s, which surfaced as a setup failure with zero test failures, on a
+      // different subset of files each run. Raising the budget is the right lever rather than trimming
+      // the hook: the reset-and-re-import is what makes each file hermetic under `isolate: false`, so
+      // the cost is buying the shared-registry speedup, not waste.
+      hookTimeout: 60_000,
       unstubGlobals: true,
       include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
       exclude: [
