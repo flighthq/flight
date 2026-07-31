@@ -36,6 +36,31 @@ describe('acquireWgpuRenderTexture', () => {
     expect(explainWgpuRenderTexture(state, second)).toEqual({ width: 80, height: 48, status: 'ready' });
   });
 
+  it('resets a released slab view before exposing the next logical target', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTexturePool();
+    const slabView = acquireWgpuRenderTexture(state, pool, { width: 720, height: 480 });
+    slabView.flipX = true;
+    slabView.flipY = true;
+    slabView.uvOffset.x = 140 / 720;
+    slabView.uvOffset.y = 160 / 480;
+    slabView.uvRotation = Math.PI / 2;
+    slabView.uvScale.x = 100 / 720;
+    slabView.uvScale.y = 80 / 480;
+    releaseWgpuRenderTexture(state, pool, slabView);
+
+    const logicalTarget = acquireWgpuRenderTexture(state, pool, { width: 100, height: 80 });
+
+    expect(logicalTarget).toBe(slabView);
+    expect(logicalTarget).toMatchObject({
+      flipX: false,
+      flipY: false,
+      uvOffset: { x: 0, y: 0 },
+      uvRotation: 0,
+      uvScale: { x: 1, y: 1 },
+    });
+  });
+
   it('does not allow a pool to cross GPU devices', async () => {
     const a = await createWgpuRenderStateForTest();
     const b = await createWgpuRenderStateForTest();

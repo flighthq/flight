@@ -1,5 +1,10 @@
-import { getGlRenderStateRuntime, registerGlBitmapTextureResolver } from '@flighthq/render-gl/contract';
-import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import {
+  getGlRenderStateRuntime,
+  registerGlBitmapTextureResolver,
+  registerGlRenderTextureResolver,
+  renderIntoGlRenderTexture,
+} from '@flighthq/render-gl/contract';
+import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { Bitmap, RenderProxy2D, Sprite } from '@flighthq/types/contract';
 import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
@@ -55,6 +60,21 @@ describe('drawGlSprite', () => {
     drawGlSprite(state, makeRenderProxy(sprite));
     const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(Array.from(data.slice(6, 12))).toEqual([32, 16, 0.125, 0.125, 0.375, 0.375]);
+  });
+
+  it('uses the physical slab once and reflects a render-target sub-view into GL coordinates', () => {
+    const { state } = createGlState();
+    registerGlRenderTextureResolver(state);
+    registerStandardGlMaterial(state);
+    const renderTexture = createRenderTexture({ height: 480, width: 720 });
+    setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
+    renderIntoGlRenderTexture(state, renderTexture, () => {});
+    const sprite = { data: { texture: renderTexture } } as Sprite;
+
+    drawGlSprite(state, makeRenderProxy(sprite));
+
+    const data = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
+    expect(data.slice(6, 12)).toEqual(new Float32Array([100, 80, 140 / 720, 1 - 160 / 480, 240 / 720, 1 - 240 / 480]));
   });
 
   it('resolves and draws the texture on flush', () => {
