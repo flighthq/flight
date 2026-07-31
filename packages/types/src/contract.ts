@@ -256,6 +256,7 @@ export * from './GltfSchema';
 export * from './GlWireframeProgram';
 export * from './GlobalShortcutExplanation';
 export * from './GlyphExtents';
+export * from './GlyphAtlasEntryExplanation';
 export * from './GlyphSource';
 export * from './GodRaysEffect';
 export * from './GradientBevelEffect';
