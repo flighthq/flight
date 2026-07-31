@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, LensDirtEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Lens dirt: procedural soft smudges that brighten where the scene is bright — a cheap bloom-dirt overlay.
 export function applyLensDirtEffectToGl(
@@ -24,6 +25,10 @@ export function applyLensDirtEffectToGl(
 export const defaultGlLensDirtEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
 };
+
+export function registerGlLensDirtEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'LensDirtEffect', defaultGlLensDirtEffectRunner);
+}
 
 const LENS_DIRT_FRAGMENT_SRC = `#version 300 es
 precision highp float;

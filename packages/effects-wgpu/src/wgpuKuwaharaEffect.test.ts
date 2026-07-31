@@ -1,4 +1,8 @@
-import { applyKuwaharaEffectToWgpu, defaultWgpuKuwaharaEffectRunner } from './wgpuKuwaharaEffect';
+import {
+  applyKuwaharaEffectToWgpu,
+  defaultWgpuKuwaharaEffectRunner,
+  registerWgpuKuwaharaEffect,
+} from './wgpuKuwaharaEffect';
 
 describe('applyKuwaharaEffectToWgpu', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyKuwaharaEffectToWgpu', () => {
 describe('defaultWgpuKuwaharaEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuKuwaharaEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuKuwaharaEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuKuwaharaEffect).toBeTypeOf('function');
   });
 });

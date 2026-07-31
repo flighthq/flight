@@ -1,4 +1,4 @@
-import { applyFxaaEffectToGl, defaultGlFxaaEffectRunner } from './glFxaaEffect';
+import { applyFxaaEffectToGl, defaultGlFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
 
 describe('applyFxaaEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +9,11 @@ describe('applyFxaaEffectToGl', () => {
 describe('defaultGlFxaaEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlFxaaEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlFxaaEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlFxaaEffect).toBeTypeOf('function');
   });
 });

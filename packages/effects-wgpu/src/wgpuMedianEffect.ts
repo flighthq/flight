@@ -2,6 +2,7 @@ import type { MedianEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderT
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Largest median-filter radius the WebGPU path supports (radius 2 → a 5×5, 25-sample window). The cap
 // is the fixed sort-array size in the shader; sorts each channel independently with insertion sort.
@@ -29,6 +30,10 @@ export function applyMedianEffectToWgpu(
 export const defaultWgpuMedianEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyMedianEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as MedianEffect);
 };
+
+export function registerWgpuMedianEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'MedianEffect', defaultWgpuMedianEffectRunner);
+}
 
 // Uniforms layout (16 bytes): offset 0 texelSize (vec2f), offset 8 radius (i32), offset 12 _pad (i32).
 const MEDIAN_WGSL = /* wgsl */ `

@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
@@ -28,6 +29,10 @@ export function applyLensDistortionEffectToWgpu(
 export const defaultWgpuLensDistortionEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
+
+export function registerWgpuLensDistortionEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'LensDistortionEffect', defaultWgpuLensDistortionEffectRunner);
+}
 
 const LENS_DISTORTION_FRAGMENT_WGSL = /* wgsl */ `
 struct Uniforms {

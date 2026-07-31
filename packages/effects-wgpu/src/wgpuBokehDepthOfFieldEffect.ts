@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Bokeh depth-of-field: a disc-shaped blur. The real DoF computes a per-pixel circle of confusion from a
 // sampleable depth texture (focusDistance/focusRange) and scales the disc radius by it — but Wgpu does
@@ -34,6 +35,10 @@ export function applyBokehDepthOfFieldEffectToWgpu(
 export const defaultWgpuBokehDepthOfFieldEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyBokehDepthOfFieldEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BokehDepthOfFieldEffect);
 };
+
+export function registerWgpuBokehDepthOfFieldEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BokehDepthOfFieldEffect', defaultWgpuBokehDepthOfFieldEffectRunner);
+}
 
 // Slot layout: [0]=maxBlur, [1]=pad, [2..3]=resolution (vec2 aligned to 8 bytes). With no depth source
 // the circle of confusion is fixed at 1.0, so the disc samples the full maxBlur radius everywhere.

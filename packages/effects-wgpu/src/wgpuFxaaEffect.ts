@@ -2,6 +2,7 @@ import type { FxaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTar
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 // recipe. Reads `tex`; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
@@ -25,6 +26,10 @@ export function applyFxaaEffectToWgpu(
 export const defaultWgpuFxaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyFxaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
+
+export function registerWgpuFxaaEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'FxaaEffect', defaultWgpuFxaaEffectRunner);
+}
 
 // Slots [0..1]=resolution (vec2f), [2]=edgeThreshold; the trailing scalar fits in the same 16-byte block.
 const FXAA_FRAGMENT_WGSL = /* wgsl */ `

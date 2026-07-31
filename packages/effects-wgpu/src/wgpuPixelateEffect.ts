@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
 export function applyPixelateEffectToWgpu(
@@ -28,6 +29,10 @@ export function applyPixelateEffectToWgpu(
 export const defaultWgpuPixelateEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyPixelateEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
+
+export function registerWgpuPixelateEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'PixelateEffect', defaultWgpuPixelateEffectRunner);
+}
 
 // Slot layout: [0]=size, [1]=pad, [2..3]=resolution.
 const PIXELATE_FRAGMENT_WGSL = /* wgsl */ `

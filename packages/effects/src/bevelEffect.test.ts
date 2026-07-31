@@ -1,4 +1,6 @@
-import { createBevelEffect } from './bevelEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import { createBevelEffect, getBevelEffectPadding, registerBevelEffectPaddingResolver } from './bevelEffect';
 
 describe('createBevelEffect', () => {
   it('tags the intent type', () => {
@@ -10,5 +12,26 @@ describe('createBevelEffect', () => {
       sourceMode: 'knockout',
       strength: 2,
     });
+  });
+});
+
+describe('getBevelEffectPadding', () => {
+  it('adds the directional offset only to the reached sides of the Gaussian footprint', () => {
+    expect(getBevelEffectPadding(createBevelEffect({ angle: 180, blurX: 2, blurY: 3, distance: 5 }))).toEqual({
+      bottom: 9,
+      left: 11,
+      right: 6,
+      top: 9,
+    });
+  });
+});
+
+describe('registerBevelEffectPaddingResolver', () => {
+  it('registers the bevel footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerBevelEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('BevelEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

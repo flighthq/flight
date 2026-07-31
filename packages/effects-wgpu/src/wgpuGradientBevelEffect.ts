@@ -13,6 +13,7 @@ import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
 import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -128,6 +129,10 @@ export function applyGradientBevelEffectToWgpu(
 export const defaultWgpuGradientBevelEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
+
+export function registerWgpuGradientBevelEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
+}
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded value

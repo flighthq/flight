@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 // apart. When radial, the offset scales with distance from the optical center (true lens behavior);
@@ -34,6 +35,10 @@ export function applyChromaticAberrationEffectToWgpu(
 export const defaultWgpuChromaticAberrationEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyChromaticAberrationEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
+
+export function registerWgpuChromaticAberrationEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'ChromaticAberrationEffect', defaultWgpuChromaticAberrationEffectRunner);
+}
 
 // Slot layout: [0]=intensity, [1]=radial flag (1.0/0.0).
 const CHROMATIC_ABERRATION_FRAGMENT_WGSL = /* wgsl */ `

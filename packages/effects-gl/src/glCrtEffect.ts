@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { CrtEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.
@@ -28,6 +29,10 @@ export function applyCrtEffectToGl(
 export const defaultGlCrtEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyCrtEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CrtEffect);
 };
+
+export function registerGlCrtEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'CrtEffect', defaultGlCrtEffectRunner);
+}
 
 const CRT_FRAGMENT_SRC = `#version 300 es
 precision highp float;

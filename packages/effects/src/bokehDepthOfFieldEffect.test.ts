@@ -1,4 +1,10 @@
-import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createBokehDepthOfFieldEffect,
+  getBokehDepthOfFieldEffectPadding,
+  registerBokehDepthOfFieldEffectPaddingResolver,
+} from './bokehDepthOfFieldEffect';
 
 describe('createBokehDepthOfFieldEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +17,26 @@ describe('createBokehDepthOfFieldEffect', () => {
       focusRange: 0.2,
       maxBlur: 4,
     });
+  });
+});
+
+describe('getBokehDepthOfFieldEffectPadding', () => {
+  it('uses the maximum disc radius on every side', () => {
+    expect(getBokehDepthOfFieldEffectPadding(createBokehDepthOfFieldEffect({ maxBlur: 4.2 }))).toEqual({
+      bottom: 5,
+      left: 5,
+      right: 5,
+      top: 5,
+    });
+  });
+});
+
+describe('registerBokehDepthOfFieldEffectPaddingResolver', () => {
+  it('registers the bokeh footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerBokehDepthOfFieldEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('BokehDepthOfFieldEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
 // `strength`, normalized by the sample count. Single-pass reference recipe, the Wgpu mirror of
@@ -33,6 +34,10 @@ export function applyRadialBlurEffectToWgpu(
 export const defaultWgpuRadialBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyRadialBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
+
+export function registerWgpuRadialBlurEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'RadialBlurEffect', defaultWgpuRadialBlurEffectRunner);
+}
 
 // Slot layout: [0]=center.x, [1]=center.y, [2]=strength, [3]=samples.
 const RADIAL_BLUR_FRAGMENT_WGSL = /* wgsl */ `

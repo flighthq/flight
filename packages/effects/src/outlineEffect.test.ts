@@ -1,4 +1,6 @@
-import { createOutlineEffect } from './outlineEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import { createOutlineEffect, getOutlineEffectPadding, registerOutlineEffectPaddingResolver } from './outlineEffect';
 
 describe('createOutlineEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +13,26 @@ describe('createOutlineEffect', () => {
       thickness: 1.5,
       color: 0x000000ff,
     });
+  });
+});
+
+describe('getOutlineEffectPadding', () => {
+  it('uses the Sobel sampling thickness on every side', () => {
+    expect(getOutlineEffectPadding(createOutlineEffect({ thickness: 1.5 }))).toEqual({
+      bottom: 2,
+      left: 2,
+      right: 2,
+      top: 2,
+    });
+  });
+});
+
+describe('registerOutlineEffectPaddingResolver', () => {
+  it('registers the outline footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerOutlineEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('OutlineEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

@@ -32,7 +32,11 @@ vi.mock('./wgpuEffectTintShader', () => ({
   applyWgpuEffectTintPass: vi.fn(),
 }));
 
-import { applyDropShadowEffectToWgpu, defaultWgpuDropShadowEffectRunner } from './wgpuDropShadowEffect';
+import {
+  applyDropShadowEffectToWgpu,
+  defaultWgpuDropShadowEffectRunner,
+  registerWgpuDropShadowEffect,
+} from './wgpuDropShadowEffect';
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 
 describe('applyDropShadowEffectToWgpu', () => {
@@ -98,3 +102,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerWgpuDropShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuDropShadowEffect).toBeTypeOf('function');
+  });
+});

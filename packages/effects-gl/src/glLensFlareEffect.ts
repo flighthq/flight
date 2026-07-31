@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, LensFlareEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
 // pass, then accumulate ghosts and a halo from it). Here, on each fragment, we sample the source's
@@ -30,6 +31,10 @@ export function applyLensFlareEffectToGl(
 export const defaultGlLensFlareEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyLensFlareEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
+
+export function registerGlLensFlareEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'LensFlareEffect', defaultGlLensFlareEffectRunner);
+}
 
 const LENS_FLARE_FRAGMENT_SRC = `#version 300 es
 precision highp float;

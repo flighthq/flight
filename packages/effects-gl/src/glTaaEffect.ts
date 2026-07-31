@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, TaaEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
 // reproject and accumulate prior frames; neither is available in the single-frame effect context, so
@@ -19,6 +20,10 @@ export function applyTaaEffectToGl(
 export const defaultGlTaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyTaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as TaaEffect);
 };
+
+export function registerGlTaaEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'TaaEffect', defaultGlTaaEffectRunner);
+}
 
 function _noopSetUniforms(): void {}
 

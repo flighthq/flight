@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the darkening.
 export function applyScanlinesEffectToGl(
@@ -22,6 +23,10 @@ export function applyScanlinesEffectToGl(
 export const defaultGlScanlinesEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
+
+export function registerGlScanlinesEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'ScanlinesEffect', defaultGlScanlinesEffectRunner);
+}
 
 const SCANLINES_FRAGMENT_SRC = `#version 300 es
 precision highp float;

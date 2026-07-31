@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the darkening.
 export function applyScanlinesEffectToWgpu(
@@ -27,6 +28,10 @@ export function applyScanlinesEffectToWgpu(
 export const defaultWgpuScanlinesEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
+
+export function registerWgpuScanlinesEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'ScanlinesEffect', defaultWgpuScanlinesEffectRunner);
+}
 
 // Slot layout: [0]=count, [1]=intensity.
 const SCANLINES_FRAGMENT_WGSL = /* wgsl */ `

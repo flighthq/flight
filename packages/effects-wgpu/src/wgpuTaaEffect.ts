@@ -2,6 +2,7 @@ import type { TaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarg
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
 // reproject and accumulate prior frames; neither is available in the single-frame effect context, so
@@ -19,6 +20,10 @@ export function applyTaaEffectToWgpu(
 export const defaultWgpuTaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyTaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as TaaEffect);
 };
+
+export function registerWgpuTaaEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'TaaEffect', defaultWgpuTaaEffectRunner);
+}
 
 function _noopSetUniforms(): void {}
 

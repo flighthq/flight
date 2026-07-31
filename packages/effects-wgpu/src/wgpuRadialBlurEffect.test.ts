@@ -1,4 +1,8 @@
-import { applyRadialBlurEffectToWgpu, defaultWgpuRadialBlurEffectRunner } from './wgpuRadialBlurEffect';
+import {
+  applyRadialBlurEffectToWgpu,
+  defaultWgpuRadialBlurEffectRunner,
+  registerWgpuRadialBlurEffect,
+} from './wgpuRadialBlurEffect';
 
 describe('applyRadialBlurEffectToWgpu', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyRadialBlurEffectToWgpu', () => {
 describe('defaultWgpuRadialBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuRadialBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuRadialBlurEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuRadialBlurEffect).toBeTypeOf('function');
   });
 });

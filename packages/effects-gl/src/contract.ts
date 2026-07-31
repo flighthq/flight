@@ -2,6 +2,7 @@ export * from './glColorMatrixPass';
 export * from './glBevelEffect';
 export * from './glBlendEffect';
 export * from './glCompositeEffect';
+export * from './glContactShadowsEffect';
 export * from './glBloomEffect';
 export * from './glBlurEffect';
 export * from './glBokehDepthOfFieldEffect';

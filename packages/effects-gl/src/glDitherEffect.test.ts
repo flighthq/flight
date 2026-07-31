@@ -1,4 +1,4 @@
-import { applyDitherEffectToGl, defaultGlDitherEffectRunner } from './glDitherEffect';
+import { applyDitherEffectToGl, defaultGlDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
 
 describe('applyDitherEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +9,11 @@ describe('applyDitherEffectToGl', () => {
 describe('defaultGlDitherEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlDitherEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlDitherEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlDitherEffect).toBeTypeOf('function');
   });
 });

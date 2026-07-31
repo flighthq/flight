@@ -1,4 +1,10 @@
-import { createInnerShadowEffect } from './innerShadowEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createInnerShadowEffect,
+  getInnerShadowEffectPadding,
+  registerInnerShadowEffectPaddingResolver,
+} from './innerShadowEffect';
 
 describe('createInnerShadowEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +17,28 @@ describe('createInnerShadowEffect', () => {
 
   it('carries source mode', () => {
     expect(createInnerShadowEffect({ sourceMode: 'hide' })).toMatchObject({ sourceMode: 'hide' });
+  });
+});
+
+describe('getInnerShadowEffectPadding', () => {
+  it('preserves the directional exterior samples needed by the clipped inner pass', () => {
+    expect(
+      getInnerShadowEffectPadding(createInnerShadowEffect({ angle: 90, blurX: 2, blurY: 3, distance: 5 })),
+    ).toEqual({
+      bottom: 14,
+      left: 6,
+      right: 6,
+      top: 9,
+    });
+  });
+});
+
+describe('registerInnerShadowEffectPaddingResolver', () => {
+  it('registers the inner-shadow footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerInnerShadowEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('InnerShadowEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

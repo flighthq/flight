@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, HalftoneEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Halftone: sample luminance, then carve a rotated dot grid whose dot radius tracks darkness — the
 // classic print/comic screen. `scale` sets the cell size, `angle` rotates the grid.
@@ -24,6 +25,10 @@ export function applyHalftoneEffectToGl(
 export const defaultGlHalftoneEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyHalftoneEffectToGl(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
+
+export function registerGlHalftoneEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'HalftoneEffect', defaultGlHalftoneEffectRunner);
+}
 
 const HALFTONE_FRAGMENT_SRC = `#version 300 es
 precision highp float;

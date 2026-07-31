@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { CustomShaderEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Runs a user-authored fragment shader as a fullscreen post-process pass. The descriptor carries a
 // `shaderKey` — a reference into the per-state custom-shader registry populated by
@@ -67,6 +68,10 @@ export const defaultGlCustomShaderEffectRunner: GlRenderEffectRunner = (ctx, eff
 // applyCustomShaderEffectToGl.
 export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string): string | null {
   return _customShaders.get(state)?.get(shaderKey) ?? null;
+}
+
+export function registerGlCustomShaderEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'CustomShaderEffect', defaultGlCustomShaderEffectRunner);
 }
 
 // Registers a fragment shader source under `shaderKey` for this state, so a CustomShaderEffect naming

@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // White balance: warm/cool temperature and magenta/green tint channel shift.
 export function applyWhiteBalanceEffectToWgpu(
@@ -27,6 +28,10 @@ export function applyWhiteBalanceEffectToWgpu(
 export const defaultWgpuWhiteBalanceEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyWhiteBalanceEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
+
+export function registerWgpuWhiteBalanceEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
+}
 
 // Slot layout: [0]=temperature, [1]=tint.
 const WHITE_BALANCE_FRAGMENT_WGSL = /* wgsl */ `

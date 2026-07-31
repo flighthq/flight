@@ -2,6 +2,7 @@ import type { SsrEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarg
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
@@ -21,6 +22,10 @@ export function applySsrEffectToWgpu(
 export const defaultWgpuSsrEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applySsrEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SsrEffect);
 };
+
+export function registerWgpuSsrEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'SsrEffect', defaultWgpuSsrEffectRunner);
+}
 
 const SSR_FRAGMENT_WGSL = /* wgsl */ `
 struct Uniforms {

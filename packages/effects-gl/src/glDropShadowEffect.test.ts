@@ -29,7 +29,11 @@ vi.mock('./glEffectTintShader', () => ({
   applyGlEffectTintPass: vi.fn(),
 }));
 
-import { applyDropShadowEffectToGl, defaultGlDropShadowEffectRunner } from './glDropShadowEffect';
+import {
+  applyDropShadowEffectToGl,
+  defaultGlDropShadowEffectRunner,
+  registerGlDropShadowEffect,
+} from './glDropShadowEffect';
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 
 describe('applyDropShadowEffectToGl', () => {
@@ -95,3 +99,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerGlDropShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlDropShadowEffect).toBeTypeOf('function');
+  });
+});

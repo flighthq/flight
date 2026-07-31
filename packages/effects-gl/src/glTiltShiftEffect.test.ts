@@ -1,4 +1,8 @@
-import { applyTiltShiftEffectToGl, defaultGlTiltShiftEffectRunner } from './glTiltShiftEffect';
+import {
+  applyTiltShiftEffectToGl,
+  defaultGlTiltShiftEffectRunner,
+  registerGlTiltShiftEffect,
+} from './glTiltShiftEffect';
 
 describe('applyTiltShiftEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyTiltShiftEffectToGl', () => {
 describe('defaultGlTiltShiftEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlTiltShiftEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlTiltShiftEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlTiltShiftEffect).toBeTypeOf('function');
   });
 });

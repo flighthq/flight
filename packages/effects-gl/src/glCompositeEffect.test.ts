@@ -4,6 +4,7 @@ import {
   applyCompositeEffectToGl,
   defaultGlCompositeEffectRunner,
   getCompositeEffectOperatorIndex,
+  registerGlCompositeEffect,
 } from './glCompositeEffect';
 
 // The pure operator→index mapping is asserted here; the compile/draw path is exercised pixel-for-pixel by
@@ -35,5 +36,11 @@ describe('getCompositeEffectOperatorIndex', () => {
 
   it('falls back to SourceOver (0) for an unknown (vendor) operator', () => {
     expect(getCompositeEffectOperatorIndex('acme.custom')).toBe(0);
+  });
+});
+
+describe('registerGlCompositeEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlCompositeEffect).toBeTypeOf('function');
   });
 });

@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, OutlineEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.
@@ -32,6 +33,10 @@ export function applyOutlineEffectToGl(
 export const defaultGlOutlineEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyOutlineEffectToGl(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
+
+export function registerGlOutlineEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'OutlineEffect', defaultGlOutlineEffectRunner);
+}
 
 const OUTLINE_FRAGMENT_SRC = `#version 300 es
 precision highp float;

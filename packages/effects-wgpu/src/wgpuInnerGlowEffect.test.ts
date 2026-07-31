@@ -34,7 +34,11 @@ vi.mock('./wgpuEffectTintShader', () => ({
 import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { applyWgpuEffectInnerClipPass } from './wgpuEffectTintShader';
-import { applyInnerGlowEffectToWgpu, defaultWgpuInnerGlowEffectRunner } from './wgpuInnerGlowEffect';
+import {
+  applyInnerGlowEffectToWgpu,
+  defaultWgpuInnerGlowEffectRunner,
+  registerWgpuInnerGlowEffect,
+} from './wgpuInnerGlowEffect';
 
 describe('applyInnerGlowEffectToWgpu', () => {
   it('is a function', () => {
@@ -126,3 +130,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerWgpuInnerGlowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuInnerGlowEffect).toBeTypeOf('function');
+  });
+});

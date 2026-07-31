@@ -12,6 +12,7 @@ import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
 // additively composite back. The multi-pass reference recipe — it acquires intermediate targets from
@@ -61,6 +62,10 @@ export function applyBloomEffectToWgpu(
 export const defaultWgpuBloomEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyBloomEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
+
+export function registerWgpuBloomEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
+}
 
 // The composite pipeline reads two textures (scene = group 1, blurred = group 2) so it uses the
 // dual-source filter primitive; cached per state alongside the single-source pipelines.

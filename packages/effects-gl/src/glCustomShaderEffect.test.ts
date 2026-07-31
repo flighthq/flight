@@ -5,6 +5,7 @@ import {
   defaultGlCustomShaderEffectRunner,
   getGlCustomShaderSource,
   registerGlCustomShaderSource,
+  registerGlCustomShaderEffect,
 } from './glCustomShaderEffect';
 
 // The source registry is a plain WeakMap keyed by the render state, with no GL calls, so a bare
@@ -48,6 +49,12 @@ describe('getGlCustomShaderSource', () => {
     const b = makeState();
     registerGlCustomShaderSource(a, 'ripple', FRAGMENT_SRC);
     expect(getGlCustomShaderSource(b, 'ripple')).toBeNull();
+  });
+});
+
+describe('registerGlCustomShaderEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlCustomShaderEffect).toBeTypeOf('function');
   });
 });
 

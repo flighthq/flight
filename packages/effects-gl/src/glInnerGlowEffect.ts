@@ -17,6 +17,7 @@ import type {
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectInvertTintPass } from './glEffectTintShader';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
 // implicitly clear their destination. Reusing a scratch target without clearing first means
@@ -103,6 +104,10 @@ export function applyInnerGlowEffectToGl(
 export const defaultGlInnerGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
+
+export function registerGlInnerGlowEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'InnerGlowEffect', defaultGlInnerGlowEffectRunner);
+}
 
 function applyGlInnerClipPass(
   state: GlRenderState,

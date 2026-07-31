@@ -1,4 +1,4 @@
-import { applyTaaEffectToWgpu, defaultWgpuTaaEffectRunner } from './wgpuTaaEffect';
+import { applyTaaEffectToWgpu, defaultWgpuTaaEffectRunner, registerWgpuTaaEffect } from './wgpuTaaEffect';
 
 describe('applyTaaEffectToWgpu', () => {
   it('is a function', () => {
@@ -9,5 +9,11 @@ describe('applyTaaEffectToWgpu', () => {
 describe('defaultWgpuTaaEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuTaaEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuTaaEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuTaaEffect).toBeTypeOf('function');
   });
 });

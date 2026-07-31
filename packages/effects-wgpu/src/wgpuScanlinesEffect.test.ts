@@ -1,4 +1,8 @@
-import { applyScanlinesEffectToWgpu, defaultWgpuScanlinesEffectRunner } from './wgpuScanlinesEffect';
+import {
+  applyScanlinesEffectToWgpu,
+  defaultWgpuScanlinesEffectRunner,
+  registerWgpuScanlinesEffect,
+} from './wgpuScanlinesEffect';
 
 describe('applyScanlinesEffectToWgpu', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyScanlinesEffectToWgpu', () => {
 describe('defaultWgpuScanlinesEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuScanlinesEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuScanlinesEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuScanlinesEffect).toBeTypeOf('function');
   });
 });

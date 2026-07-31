@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Lens dirt: procedural soft smudges that brighten where the scene is bright — a cheap bloom-dirt overlay.
 export function applyLensDirtEffectToWgpu(
@@ -29,6 +30,10 @@ export function applyLensDirtEffectToWgpu(
 export const defaultWgpuLensDirtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
 };
+
+export function registerWgpuLensDirtEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'LensDirtEffect', defaultWgpuLensDirtEffectRunner);
+}
 
 // Slot layout: [0]=intensity, [1]=threshold, [2]=seed.
 const LENS_DIRT_FRAGMENT_WGSL = /* wgsl */ `

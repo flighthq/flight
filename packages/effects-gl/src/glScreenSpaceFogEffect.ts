@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Screen-space fog: blends the scene toward an unpacked fog color by distance. When the scene supplied a
 // sampleable DEPTH texture (`depthTexture`), this is the real recipe — fog factor = 1 - exp(-density *
@@ -42,6 +43,10 @@ export function applyScreenSpaceFogEffectToGl(
 export const defaultGlScreenSpaceFogEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyScreenSpaceFogEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneDepthTexture, effect as ScreenSpaceFogEffect);
 };
+
+export function registerGlScreenSpaceFogEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'ScreenSpaceFogEffect', defaultGlScreenSpaceFogEffectRunner);
+}
 
 const SCREEN_SPACE_FOG_FRAGMENT_SRC = `#version 300 es
 precision highp float;

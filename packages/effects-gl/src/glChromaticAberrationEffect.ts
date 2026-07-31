@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 // apart. When radial, the offset scales with distance from the optical center (true lens behavior);
@@ -29,6 +30,10 @@ export function applyChromaticAberrationEffectToGl(
 export const defaultGlChromaticAberrationEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyChromaticAberrationEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
+
+export function registerGlChromaticAberrationEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'ChromaticAberrationEffect', defaultGlChromaticAberrationEffectRunner);
+}
 
 const CHROMATIC_ABERRATION_FRAGMENT_SRC = `#version 300 es
 precision highp float;

@@ -34,7 +34,11 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { applyInnerShadowEffectToGl, defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
+import {
+  applyInnerShadowEffectToGl,
+  defaultGlInnerShadowEffectRunner,
+  registerGlInnerShadowEffect,
+} from './glInnerShadowEffect';
 
 describe('applyInnerShadowEffectToGl', () => {
   it('is a function', () => {
@@ -135,3 +139,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerGlInnerShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlInnerShadowEffect).toBeTypeOf('function');
+  });
+});

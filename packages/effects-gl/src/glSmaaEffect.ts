@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SmaaEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 // blend-weight passes against precomputed area/search lookup textures; this single-pass approximation
@@ -23,6 +24,10 @@ export function applySmaaEffectToGl(
 export const defaultGlSmaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applySmaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
+
+export function registerGlSmaaEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'SmaaEffect', defaultGlSmaaEffectRunner);
+}
 
 const SMAA_FRAGMENT_SRC = `#version 300 es
 precision highp float;

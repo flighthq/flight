@@ -9,6 +9,7 @@ import type {
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Advanced-blend composite pass: sample the incoming layer (`u_texture0`, the effect's `source`) and a
 // registered backdrop (`u_texture1`), compute the destination-reading / non-separable blend named by the
@@ -60,6 +61,10 @@ export function getBlendEffectModeIndex(mode: AdvancedBlendMode): number {
 export function getGlBlendEffectBackdrop(state: GlRenderState, backdropKey: string | null): WebGLTexture | null {
   if (backdropKey === null) return null;
   return _backdrops.get(state)?.get(backdropKey) ?? null;
+}
+
+export function registerGlBlendEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
 }
 
 // Registers a backdrop texture under `backdropKey` for this state, so a BlendEffect naming that key

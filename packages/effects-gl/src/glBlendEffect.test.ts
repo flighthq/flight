@@ -6,6 +6,7 @@ import {
   defaultGlBlendEffectRunner,
   getBlendEffectModeIndex,
   getGlBlendEffectBackdrop,
+  registerGlBlendEffect,
   registerGlBlendEffectBackdrop,
   unregisterGlBlendEffectBackdrop,
 } from './glBlendEffect';
@@ -83,6 +84,12 @@ describe('getGlBlendEffectBackdrop', () => {
     const b = makeState();
     registerGlBlendEffectBackdrop(a, 'scene', makeTexture());
     expect(getGlBlendEffectBackdrop(b, 'scene')).toBeNull();
+  });
+});
+
+describe('registerGlBlendEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlBlendEffect).toBeTypeOf('function');
   });
 });
 

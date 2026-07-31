@@ -1,4 +1,10 @@
-import { createDisplacementEffect } from './displacementEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createDisplacementEffect,
+  getDisplacementEffectPadding,
+  registerDisplacementEffectPaddingResolver,
+} from './displacementEffect';
 
 describe('createDisplacementEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +17,26 @@ describe('createDisplacementEffect', () => {
       frequency: 14,
       seed: 2,
     });
+  });
+});
+
+describe('getDisplacementEffectPadding', () => {
+  it('covers the shader maximum two-axis sine warp', () => {
+    expect(getDisplacementEffectPadding(createDisplacementEffect({ intensity: 5 }))).toEqual({
+      bottom: 5,
+      left: 8,
+      right: 8,
+      top: 5,
+    });
+  });
+});
+
+describe('registerDisplacementEffectPaddingResolver', () => {
+  it('registers the displacement footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerDisplacementEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('DisplacementEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

@@ -17,6 +17,7 @@ import type {
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectInvertTintPass } from './glEffectTintShader';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
 // implicitly clear their destination. Reusing a scratch target without clearing first means
@@ -111,6 +112,10 @@ export function applyInnerShadowEffectToGl(
 export const defaultGlInnerShadowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyInnerShadowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerShadowEffect);
 };
+
+export function registerGlInnerShadowEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'InnerShadowEffect', defaultGlInnerShadowEffectRunner);
+}
 
 function applyGlInnerClipPass(
   state: GlRenderState,

@@ -1,6 +1,6 @@
 import type { BlurEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
 
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // Plain separable Gaussian blur intent. `blurX`/`blurY` are the per-axis Gaussian standard deviations
 // in pixels; the backends realize them as a two-pass separable blur bouncing through an offscreen
@@ -10,9 +10,7 @@ export function createBlurEffect(options: Readonly<Omit<BlurEffect, 'kind'>> = {
 }
 
 export function getBlurEffectPadding(effect: Readonly<BlurEffect>): RenderEffectPadding {
-  const horizontal = Math.ceil(Math.max(0, effect.blurX ?? 4) * 3);
-  const vertical = Math.ceil(Math.max(0, effect.blurY ?? 4) * 3);
-  return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
+  return getGaussianRenderEffectPadding(effect.blurX ?? 4, effect.blurY ?? 4);
 }
 
 export function registerBlurEffectPaddingResolver(state: RenderState): void {
