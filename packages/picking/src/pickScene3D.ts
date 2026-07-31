@@ -35,7 +35,7 @@ import type {
 export function createScene3DHit(): Scene3DHit {
   return createEntity({
     distance: 0,
-    node: null as unknown as Mesh,
+    node: null,
     normalX: 0,
     normalY: 0,
     normalZ: 0,

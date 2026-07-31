@@ -81,6 +81,8 @@ describe('createScene3DHit', () => {
     const hit = createScene3DHit();
 
     expect(EntityRuntimeKey in hit).toBe(true);
+    expectTypeOf(hit.node).toEqualTypeOf<Mesh | null>();
+    expect(hit.node).toBeNull();
     expect(hit.triangleIndex).toBe(-1);
     expect(hit.distance).toBe(0);
     expect(hit.normalX).toBe(0);

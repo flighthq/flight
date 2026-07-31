@@ -11,20 +11,25 @@ import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@fli
 
 // Returns the authored material at the hit subset, or null for an absent/out-of-range/default slot.
 export function getScene3DHitMaterial(hit: Readonly<Scene3DHit>): Material | null {
-  const subsetIndex = getScene3DHitSubsetIndex(hit);
-  return subsetIndex < 0 ? null : (hit.node.materials[subsetIndex] ?? null);
+  const node = hit.node;
+  if (node === null) return null;
+  const subsetIndex = getMeshGeometryTriangleSubsetIndex(node.geometry, hit.triangleIndex);
+  return subsetIndex < 0 ? null : (node.materials[subsetIndex] ?? null);
 }
 
 // Returns the material/subset slot owning the hit triangle, or -1 when no declared subset contains
 // it. This is computed on demand so the nearest-hit core remains flat and small.
 export function getScene3DHitSubsetIndex(hit: Readonly<Scene3DHit>): number {
-  return getMeshGeometryTriangleSubsetIndex(hit.node.geometry, hit.triangleIndex);
+  const node = hit.node;
+  return node === null ? -1 : getMeshGeometryTriangleSubsetIndex(node.geometry, hit.triangleIndex);
 }
 
 // Interpolates uv0 from the hit triangle's current geometry. Returns false without changing `out`
 // when the triangle or channel is unavailable.
 export function getScene3DHitUv0(out: Vector2Like, hit: Readonly<Scene3DHit>): boolean {
-  const geometry = hit.node.geometry;
+  const node = hit.node;
+  if (node === null) return false;
+  const geometry = node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexUv0(_uv0, geometry, _triangle.i0)) return false;
   if (!getMeshGeometryVertexUv0(_uv1, geometry, _triangle.i1)) return false;
@@ -38,7 +43,9 @@ export function getScene3DHitUv0(out: Vector2Like, hit: Readonly<Scene3DHit>): b
 // non-uniform scale remains correct. This is distinct from Scene3DHit.normal*, the geometric face
 // normal used for culling. Returns false without changing `out` when unavailable or degenerate.
 export function getScene3DHitVertexNormal(out: Vector3Like, hit: Readonly<Scene3DHit>): boolean {
-  const geometry = hit.node.geometry;
+  const node = hit.node;
+  if (node === null) return false;
+  const geometry = node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexNormal(_normal0, geometry, _triangle.i0)) return false;
   if (!getMeshGeometryVertexNormal(_normal1, geometry, _triangle.i1)) return false;
@@ -47,8 +54,8 @@ export function getScene3DHitVertexNormal(out: Vector3Like, hit: Readonly<Scene3
   const nx = hit.u * _normal0.x + hit.v * _normal1.x + hit.w * _normal2.x;
   const ny = hit.u * _normal0.y + hit.v * _normal1.y + hit.w * _normal2.y;
   const nz = hit.u * _normal0.z + hit.v * _normal1.z + hit.w * _normal2.z;
-  ensureNodeWorldMatrix4(hit.node);
-  if (!inverseMatrix4(_inverseWorld, getNodeWorldMatrix4(hit.node))) return false;
+  ensureNodeWorldMatrix4(node);
+  if (!inverseMatrix4(_inverseWorld, getNodeWorldMatrix4(node))) return false;
   const m = _inverseWorld.m;
   return writeNormalized(
     out,
@@ -65,7 +72,9 @@ export function getScene3DHitVertexTangent(
   out: { w: number; x: number; y: number; z: number },
   hit: Readonly<Scene3DHit>,
 ): boolean {
-  const geometry = hit.node.geometry;
+  const node = hit.node;
+  if (node === null) return false;
+  const geometry = node.geometry;
   if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, hit.triangleIndex)) return false;
   if (!getMeshGeometryVertexTangent(_tangent0, geometry, _triangle.i0)) return false;
   if (!getMeshGeometryVertexTangent(_tangent1, geometry, _triangle.i1)) return false;
@@ -76,7 +85,7 @@ export function getScene3DHitVertexTangent(
   const ty = hit.u * _tangent0.y + hit.v * _tangent1.y + hit.w * _tangent2.y;
   const tz = hit.u * _tangent0.z + hit.v * _tangent1.z + hit.w * _tangent2.z;
   const tw = hit.u * _tangent0.w + hit.v * _tangent1.w + hit.w * _tangent2.w;
-  const m = getNodeWorldMatrix4(hit.node).m;
+  const m = getNodeWorldMatrix4(node).m;
   let wx = m[0] * tx + m[4] * ty + m[8] * tz;
   let wy = m[1] * tx + m[5] * ty + m[9] * tz;
   let wz = m[2] * tx + m[6] * ty + m[10] * tz;
