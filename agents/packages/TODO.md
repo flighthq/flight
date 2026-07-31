@@ -26,7 +26,6 @@ These cells retain their direction/review history, but are not packages to recre
 - **`lottie-formats`** → `scene2d-formats`
 - **`rive-formats`** → `scene2d-formats`
 - **`skeleton`** → `@flighthq/skeleton3d`
-- **`sprite`** → `@flighthq/scene2d + @flighthq/quadbatch + @flighthq/tilemap + @flighthq/particleemitter`
 - **`svg-formats`** → `scene2d-formats`
 
 ## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)
@@ -43,11 +42,10 @@ Deliberately not-yet-built cells; the charter reserves the name and records when
 
 ## Create — ranked candidate queue (from register.md)
 
-Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, unified `camera`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton3d`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`).
+Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, unified `camera`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton3d`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`). What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
 
-**Struck 2026-07-31** — verified against `packages/` and found already built while still listed as queue items: the whole text itemization cluster `textsegment` / `textbidi` / `text-markup` (old tier 1), both host backends `host-tauri` / `host-capacitor` (old tier 3), and `mediasession` (old tier 4). The one unbuilt member of the old text tier, `textshaper-harfbuzz`, is a **rust-intended** cell — named and scoped here, implemented in `flight-rs` — so it is not local work and does not belong in this queue at all. What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
-
-1. **3D bedrock deepening** — execute in dependency order, with exhaustive GL behavior proof at each wave:
+1. **Text itemization + shaping cluster** — the typography bottleneck, now unblocked (the shaper seam is glyph-bearing and bitmap text just landed). `textsegment` (grapheme/word/line segmentation; upstream `unicode-segmentation`) and `textbidi` (bidi itemization; upstream `unicode-bidi`) are the itemize layers correct international layout sits on; `textshaper-harfbuzz` (GSUB/GPOS shaping — the TS backend seam + registrar is local, the heavy rustybuzz impl → `flight-rs` like `surface-rs`); `text-markup` (markup → rich-text `-formats`).
+2. **3D bedrock deepening** — execute in dependency order, with exhaustive GL behavior proof at each wave:
    1. **Frame/target contract:** integrate `ApplicationRenderView`, partial-target viewport/scissor and
       composable Extended PBR; finish truthful render-target storage axes, float capability negotiation,
       MSAA resolve isolation, deterministic GL teardown, and the HDR/output-transform contract.
@@ -68,9 +66,10 @@ Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is
    Commission WGPU parity only after each GL contract has raster evidence. A general render graph,
    occlusion system, reversed-Z, full mesh simplification, and physics3d remain later layers rather than
    prerequisites for these atoms.
-2. **Platform-suite opportunistic** — clean cells like clipboard/dialog: `biometrics`, `purchase`, `calendar`, `contacts`.
-3. **Infra / tooling** — `devtools`, `testing`. The `tool-*` suite has begun (`tool-capture`); `testing`/`devtools` may land as `tool-*` cells rather than SDK packages.
-4. **`compute-wgpu`** — GPU compute backend (enables GPU particles/physics later).
+3. **Host backends** — mechanical, mirror `host-electron`: `host-tauri`, `host-capacitor`.
+4. **Platform-suite opportunistic** — clean cells like clipboard/dialog: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`.
+5. **Infra / tooling** — `devtools`, `testing`. The `tool-*` suite has begun (`tool-capture`); `testing`/`devtools` may land as `tool-*` cells rather than SDK packages.
+6. **`compute-wgpu`** — GPU compute backend (enables GPU particles/physics later).
 
 Design calls to settle before building the affected entries:
 
@@ -79,11 +78,6 @@ Design calls to settle before building the affected entries:
 - **The `animation`/`skeleton3d`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
 
 ## Deepen — Recommended items by package (weakest first)
-
-### loader (partial 38)
-
-- Reconcile the three progress currencies
-- Bound `drainQueue` re-entrancy
 
 ### tray (partial 38)
 
@@ -132,10 +126,6 @@ Design calls to settle before building the affected entries:
 
 - `explainShapeJsonParse` diagnostics query — still open, but the prescription needs re-confirming before it is built
 
-### snapshot (partial 63)
-
-- Decide whether `equalsSnapshot`, `interpolateSnapshots`, and `restoreSnapshot` support cycles or reject them
-
 ### spatial (solid 66)
 
 - De-allocate the pair enumeration's cell scan
@@ -147,11 +137,6 @@ Design calls to settle before building the affected entries:
 ### textshaper (partial 66)
 
 - `enableTextShaperGuards` for the pool brackets
-
-### glyphatlas (solid 68)
-
-- `bakeBitmapFont(atlas)` — BLOCKED on a design call, see below
-- Real line metrics from the canvas backend
 
 ### image (solid 68)
 
@@ -925,14 +910,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `media` · `motionpath` · `scene3d` · `timeline` · `picking` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `scene2d-resources` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `picking` · `particleemitter` · `xml` · `skeleton3d` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `scene2d-resources` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
-- **Needs a direction session (charter stub or never directed):** `application-gl` · `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+- **Needs a direction session (charter stub or never directed):** `future` · `textshaper-canvas` · `textureatlas-formats` · `xml`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 - **Needs re-review (work landed after the survey):** `audio (review 2026-07-13 < status 2026-07-30)` · `glyphatlas (review 2026-07-13 < status 2026-07-30)` · `image-codec (review 2026-07-13 < status 2026-07-31)` · `media (review 2026-06-24 < status 2026-07-30)` · `menu (review 2026-07-13 < status 2026-07-30)` · `particles-formats (review 2026-07-13 < status 2026-07-25)` · `picking (review 2026-07-21 < status 2026-07-31)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `scene2d-wgpu (review 2026-06-24 < status 2026-06-25)` · `scene3d-formats (review 2026-07-09 < status 2026-07-29)` · `shape-formats (review 2026-07-13 < status 2026-07-30)` · `snapshot (review 2026-07-13 < status 2026-07-30)` · `textshaper (review 2026-06-25 < status 2026-07-30)` · `texture (review 2026-06-25 < status 2026-07-22)` · `timeline (review 2026-07-13 < status 2026-07-31)` · `video (review 2026-07-09 < status 2026-07-30)`
 - **Needs assess refresh (review newer than assessment):** `assets (assessment 2026-07-21 < review 2026-07-22)` · `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 600 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `render` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `application` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 597 across 132 charters — most-loaded: `scene3d` (14) · `render-gl` (12) · `scene2d-gl` (12) · `scene2d` (11) · `effects-wgpu` (10) · `lighting` (10) · `scene2d-dom` (10) · `scene3d-gl` (10) · `spritesheet-formats` (10) · `mesh` (9) · `render-wgpu` (9) · `scene2d-canvas` (9) · `skeleton3d` (9) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene2d-wgpu` (8) · `scene3d-wgpu` (8) · `render` (7) · `scene3d-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `spatial` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
