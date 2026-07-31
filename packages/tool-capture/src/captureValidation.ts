@@ -174,8 +174,19 @@ function addPair(
   if (dist !== null) pairs.push({ a, b, label: `${group === '' ? '' : `${group}:`}${a}·${b}`, dist, tolerance });
 }
 
-// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
-// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
+// Why an entry produced no parity pair. Each case has a different remedy, and a bare "0 comparisons"
+// sends a reader to the wrong one: an ineligible backend needs a parity group or a committed baseline,
+// while a single eligible backend has nothing to disagree with and needs a second one in scope.
+export function explainCaptureParityUncovered(eligibleCount: number, hasGroups: boolean): string {
+  if (eligibleCount === 0) {
+    return hasGroups
+      ? 'no renderer in any parity group is eligible'
+      : 'no renderer is parity-eligible — declare a parity group, or commit a fingerprint baseline';
+  }
+  if (eligibleCount === 1) return 'only one parity-eligible renderer — nothing to compare it against';
+  return 'every eligible pair is excluded by a parity skip';
+}
+
 async function loadFingerprint(
   context: BrowserContext,
   baseUrl: string,
@@ -210,6 +221,7 @@ async function loadFingerprint(
     // null mid-readback and misreport every webgpu test as "verifier did not run" (canvas/WebGL win the
     // race because their readback is synchronous). So wait until the fingerprint is populated OR an error
     // overlay appears, then read the result. Poll on a timer (the capture harness halts rAF).
+    const waitStartedAt = performance.now();
     await page
       .waitForFunction(
         () => {
@@ -217,9 +229,10 @@ async function loadFingerprint(
           return v?.state === 'passed' || v?.state === 'failed' || document.getElementById('ft-error') !== null;
         },
         null,
-        { timeout: 15_000, polling: 100 },
+        { timeout: CAPTURE_VERIFICATION_TIMEOUT_MS, polling: 100 },
       )
       .catch(() => {});
+    const waitedMs = Math.round(performance.now() - waitStartedAt);
     const verification = await page
       .evaluate(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification ?? null)
       .catch(() => null);
@@ -245,7 +258,12 @@ async function loadFingerprint(
     const detail = verification?.error || pageError || overlay;
     if (BACKEND_UNAVAILABLE.test(detail))
       return { fingerprint: null, reason: `backend unavailable (${detail})`, unavailable: true, aborted: false };
-    return { fingerprint: null, reason: detail || 'verifier did not run', unavailable: false, aborted: false };
+    return {
+      fingerprint: null,
+      reason: detail || explainCaptureVerificationStall(verification, waitedMs),
+      unavailable: false,
+      aborted: false,
+    };
   } catch (err) {
     // A closed browser/page is the interrupt tearing things down — report it as an abort, not a failure.
     if (isBrowserClosedError(err))
@@ -322,17 +340,35 @@ async function captureDomFingerprint(page: Page): Promise<string | null> {
   }
 }
 
-// Why an entry produced no parity pair. Each case has a different remedy, and a bare "0 comparisons"
-// sends a reader to the wrong one: an ineligible backend needs a parity group or a committed baseline,
-// while a single eligible backend has nothing to disagree with and needs a second one in scope.
-export function explainCaptureParityUncovered(eligibleCount: number, hasGroups: boolean): string {
-  if (eligibleCount === 0) {
-    return hasGroups
-      ? 'no renderer in any parity group is eligible'
-      : 'no renderer is parity-eligible — declare a parity group, or commit a fingerprint baseline';
+// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
+// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
+// Why a verification wait ended without a fingerprint, as a reason a reader can act on. The bare
+// "verifier did not run" it replaces named a symptom shared by causes with opposite remedies, and left
+// the one number that decides between them — how long it actually waited — unrecorded.
+//
+// This exists because a gate that silently fails to run is the same inert-gate class as a check that
+// silently passes: the leg reports a failure nobody can diagnose, so it gets re-run rather than fixed.
+// Measured for context: the heaviest example scene verifies in ~4.1-6.2s across 6 to 16 workers, even
+// with a full monorepo check and test suite running alongside — about 42% of the budget at worst. So a
+// stall at or near the full budget is NOT the scene being slow, and the reason says so rather than
+// leaving the next reader to assume it and raise the timeout.
+export function explainCaptureVerificationStall(
+  verification: Readonly<{ fingerprint?: string | null; state?: string }> | null,
+  waitedMs: number,
+): string {
+  const budget = `waited ${waitedMs}ms of ${CAPTURE_VERIFICATION_TIMEOUT_MS}ms`;
+  if (verification === null || verification === undefined) {
+    return `verifier never registered — no __ftVerification on the page (${budget}); the page's module likely failed to run`;
   }
-  if (eligibleCount === 1) return 'only one parity-eligible renderer — nothing to compare it against';
-  return 'every eligible pair is excluded by a parity skip';
+  if (verification.state === undefined) {
+    return `verifier object present but carries no state (${budget}); suspect a capture-protocol mismatch`;
+  }
+  if (verification.state === 'passed') {
+    return `verifier passed but produced no fingerprint (${budget}); the readback completed empty`;
+  }
+  // Registered and still non-terminal: it started and never finished, which is a stall rather than a
+  // scene that is merely expensive.
+  return `verifier registered but stalled in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
 }
 
 // A tier either has what it needs and gates hard, or it says so loudly — there is no silent
@@ -867,3 +903,7 @@ export async function runCaptureValidation(
     return result;
   }
 }
+
+// How long a verification wait may take before it is treated as stalled. Shared by the wait and by the
+// reason it produces, so the two can never disagree about what the budget was.
+const CAPTURE_VERIFICATION_TIMEOUT_MS = 15_000;
