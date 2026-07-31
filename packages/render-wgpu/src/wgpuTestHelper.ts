@@ -96,7 +96,7 @@ function makePipelineLayout(): GPUPipelineLayout {
 function makeDevice(): GPUDevice {
   return {
     features: new Set(),
-    limits: { minUniformBufferOffsetAlignment: 256 },
+    limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     createBindGroup: () => makeBindGroup(),
     createBindGroupLayout: () => makeBindGroupLayout(),
     createBuffer: () => makeBuffer(),
