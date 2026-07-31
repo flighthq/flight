@@ -78,9 +78,7 @@ When a feature's familiar API would require hidden state, eager side effects, or
 
 ## Bundle Size Discipline
 
-This SDK should behave like a hardware store: a user can import one small tool without pulling in the whole building. Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger unless the size tradeoff is intentional and measured. Verify with `npm run size` after changes to examples, exports, barrels, renderer registration, or dependencies — the command surface (filters, JSON output, baselines) and the full rule are in [bundle size](agents/bundle-size.md).
-
-The store sells both the screw and the lawnmower — granular primitives and assembled conveniences — and the invariant is that **an assembly never inflates the cost of a primitive**, _within_ a unit as much as across packages. When a feature would grow the baseline for everyone who imports a function, sell it as a separately-importable primitive or pass instead.
+An assembly never inflates the bundle cost of a primitive. Keep optional features separately importable, and run `npm run size` after changes that may affect tree-shaking. The full rule, rationale, and command surface are in [bundle size](agents/bundle-size.md).
 
 ## Composition and Complexity
 
@@ -98,15 +96,15 @@ Run these at the points listed; skipping them causes cascading failures slower t
 - **After adding an effect runner/registrar or a backend leaf renderer** — run `npm run reachability:check`; it hard-gates the exact runner↔registrar inverse and reports non-blocking `.`/`./contract` lane drift. Review intentional drift, then accept it with `npm run reachability:baseline`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`. The backend token prefixes the type; see [file naming](agents/conventions/file-naming.md).
-- **After adding source** — `npm run portable:check` (part of `npm run check`) gates the C++-lowerable subset: no `eval` / `new Function` / `new Proxy` / `Reflect.*` / `with` / `*.prototype` assignment / `structuredClone`. Closures, `async`, generics, `Map`/`Set`, and classes all lower fine and are not gated. An intentional, contained escape goes in the script's `ALLOW` with a reason. See [portability](agents/portability.md).
+- **After adding source** — `npm run portable:check`; see the lowerable subset and escape process in [commands](agents/commands.md#checkpoints-in-detail) and [portability](agents/portability.md).
 - **After changes that may affect tree-shaking** (examples, package exports, barrels, renderer registration, dependencies) — `npm run size`.
 - **After adding, removing, or re-capturing functional baselines** — `npm run support` regenerates the backend support matrix from `functional/baselines/` ground truth. `support:check` fails if the committed matrix is stale.
 - **While iterating** — the closest meaningful tests (a touched test file, a package workspace, a Vitest project filter), then `npm run check <package>` and `npm run test <package>` for the package you touched.
-- **Before handoff** — the bare whole-repo `npm run check` and `npm run test`, both. `check` is the static/type/structural sweep; `test` is the unit tests. The full render matrix (`test:browser`, `capture:check`, the nightly/release jobs) is CI's job — do not run it to "verify broad work."
+- **Before handoff** — the bare whole-repo `npm run check` and `npm run test`, both. The full render matrix is CI's job; see [commands](agents/commands.md#checkpoints-in-detail).
 - **When your change touches rendering** — the render gate relevant to it, scoped to the affected scene. `test:functional:smoke` / `:parity` are environment-independent and yours to run; `test:functional:regression` is only valid where its baselines were captured.
 - **When adding a new package** — copy the package shape from a nearby package, then `npm run packages:check`. A package may spawn focused neighbor packages with a `-subpackage` suffix (`@flighthq/spritesheet-formats` alongside `@flighthq/spritesheet`) when the scope is clearly bounded and the split keeps both tree-shakable.
 
-Orientation while working: `npm run api <query>` filters exported signatures by package or `--function` name (`api:json` for tooling), and `npm run dev:functional` / `dev:examples` / `dev:gallery` launch the live browser servers for visual and behavioral checks jsdom cannot give you.
+The API-query and live-server command surface is in [commands](agents/commands.md#orientation-commands).
 
 ## Domain Conventions
 
