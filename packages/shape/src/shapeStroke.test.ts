@@ -1,4 +1,4 @@
-import { tessellatePath } from '@flighthq/path/contract';
+import { tessellateStrokePath } from '@flighthq/path/contract';
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -25,25 +25,21 @@ function strokedCorner(join: 'bevel' | 'miter' | 'round', thickness = 20) {
 }
 
 describe('getShapeStrokeRegions', () => {
-  it('offsets a solid stroke span into one fillable outline region carrying its color + alpha', () => {
+  it('resolves a solid stroke span into one styled centerline carrying its color + alpha', () => {
     const regions = strokedCorner('miter');
     expect(regions).not.toBeNull();
     expect(regions!.length).toBe(1);
     expect(regions![0].color).toBe(0x112233);
     expect(regions![0].alpha).toBe(0.5);
-    // A real outline: closed contour(s) with MOVE + fill geometry, not empty.
+    expect(regions![0].style).toMatchObject({ width: 20, join: 'miter', cap: 'butt' });
     expect(regions![0].path.commands.length).toBeGreaterThan(0);
     expect(regions![0].path.commands[0]).toBe(PathCommand.MOVE_TO);
   });
 
-  it('differentiates join styles (miter vs bevel vs round produce distinct outlines)', () => {
-    const miter = strokedCorner('miter')![0].path.data.length;
-    const bevel = strokedCorner('bevel')![0].path.data.length;
-    const round = strokedCorner('round')![0].path.data.length;
-    // The corner geometry differs per join: bevel cuts the corner, round arcs it (more points), miter
-    // extends it. If joins were ignored (the old raster-clip bug) these would be identical.
-    expect(miter).not.toBe(bevel);
-    expect(round).toBeGreaterThan(bevel);
+  it('preserves miter, bevel, and round styles for the shared stroke tessellator', () => {
+    expect(strokedCorner('miter')![0].style.join).toBe('miter');
+    expect(strokedCorner('bevel')![0].style.join).toBe('bevel');
+    expect(strokedCorner('round')![0].style.join).toBe('round');
   });
 
   it('emits no region for a cleared stroke (lineStyle thickness 0) and for a stroke-free shape', () => {
@@ -73,36 +69,51 @@ describe('getShapeStrokeRegions', () => {
     expect(regions![1].color).toBe(0x00ff00);
   });
 
-  it('tessellates an OPEN stroke outline into a fillable (non-empty) mesh', () => {
-    const outline = strokedCorner('miter')![0].path;
-    // The V's outline is a simple polygon: ear-clipping fills it (indices > 0). A closed stroke's ring
-    // could not be direct-filled, which is why closed strokes defer (next test).
-    const mesh = tessellatePath(outline);
-    expect(mesh.indices.length).toBeGreaterThan(0);
+  it('tessellates an open styled centerline into a non-empty mesh', () => {
+    const region = strokedCorner('miter')![0];
+    const mesh = tessellateStrokePath(region.path, region.style);
+    expect(mesh).not.toBeNull();
+    expect(mesh!.indices.length).toBeGreaterThan(0);
   });
 
-  it('defers a CLOSED stroke (rectangle) to the raster path — a ring is not direct-fillable (null)', () => {
+  it('resolves and tessellates a closed rectangle as a hollow ring', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000, 1, false, 'normal', 'none', 'miter', 4);
     appendShapeRectangle(shape, 10, 10, 100, 50);
-    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+    const region = getShapeStrokeRegions(shape.data.commands)![0];
+    expect(tessellateStrokePath(region.path, region.style)).not.toBeNull();
   });
 
-  it('defers a stroked drawPath carrying a CLOSE verb (null)', () => {
+  it('resolves a stroked drawPath carrying a CLOSE verb', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 6, 0x0000ff, 1, false, 'normal', 'none', 'miter', 4);
     // A triangle subpath closed by an explicit CLOSE verb — a ring, not an open stroke.
     const verbs = [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE];
     appendShapePath(shape, verbs, [0, 0, 40, 0, 20, 30], 'nonZero');
-    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+    const region = getShapeStrokeRegions(shape.data.commands)![0];
+    expect(tessellateStrokePath(region.path, region.style)).not.toBeNull();
   });
 
-  it('defers a stroked return-to-start polygon (appendShapePolygon) even without a CLOSE verb (null)', () => {
+  it('resolves a stroked return-to-start polygon without a CLOSE verb', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 6, 0x0000ff, 1, false, 'normal', 'none', 'miter', 4);
     // appendShapePolygon re-emits the first point as a trailing lineTo (return-to-start), no CLOSE verb.
     appendShapePolygon(shape, [0, 0, 50, 0, 25, 40]);
-    expect(getShapeStrokeRegions(shape.data.commands)).toBeNull();
+    const region = getShapeStrokeRegions(shape.data.commands)![0];
+    expect(tessellateStrokePath(region.path, region.style)).not.toBeNull();
+  });
+
+  it('keeps a pathological centerline as a region so the renderer can select raster fallback', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 6, 0x0000ff, 1, false, 'normal', 'none', 'miter', 4);
+    appendShapePath(
+      shape,
+      [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+      [0, 0, 40, 40, 0, 40, 40, 0],
+      'nonZero',
+    );
+    const region = getShapeStrokeRegions(shape.data.commands)![0];
+    expect(tessellateStrokePath(region.path, region.style)).toBeNull();
   });
 
   it('ignores an UNSTROKED closed primitive and still strokes a later open line (span-aware)', () => {

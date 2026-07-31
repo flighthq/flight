@@ -1,6 +1,6 @@
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { tessellatePath } from '@flighthq/path/contract';
+import { tessellatePath, tessellateStrokePath } from '@flighthq/path/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
@@ -16,6 +16,7 @@ import type {
   Shape,
   ShapeCommandToken,
   ShapeFillRegion,
+  ShapeStrokeRegion,
 } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
@@ -47,15 +48,16 @@ interface GlShapeData {
   meshes: GlShapeMesh[] | null;
 }
 
-// Resolves every solid fill and open solid stroke into one fill-before-stroke mesh list. Either layer's
-// null sentinel keeps the whole shape on the raster path, preserving gradient/texture styles and closed
-// stroke rings that the direct-fill tessellator cannot express.
-function resolveGlShapeMeshRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
+// Resolves every solid fill and solid stroke into one fill-before-stroke source list. Style sentinels
+// are decided here; geometric stroke sentinels are decided by tessellateStrokePath during cache rebuild.
+function resolveGlShapeMeshRegions(
+  commands: readonly ShapeCommandToken[],
+): (ShapeFillRegion | ShapeStrokeRegion)[] | null {
   const fillRegions = getShapeFillRegions(commands);
   if (fillRegions === null) return null;
   const strokeRegions = getShapeStrokeRegions(commands);
   if (strokeRegions === null) return null;
-  const regions = fillRegions.concat(strokeRegions);
+  const regions: (ShapeFillRegion | ShapeStrokeRegion)[] = [...fillRegions, ...strokeRegions];
   return regions.length > 0 ? regions : null;
 }
 
@@ -104,26 +106,38 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
-  // GPU mesh path: solid fills tessellate to colored meshes and open solid strokes become fillable
-  // outlines via getShapeStrokeRegions (real joins/caps/dashing, resolution-independent). Both layers
-  // compose fill-before-stroke. Gradient/texture styles and closed stroke rings stay on the raster path.
+  // GPU mesh path: fills use direct path tessellation; strokes use the dedicated cross-section mesh so
+  // open outlines and hollow closed rings share joins/caps/dashes without hole-fill ambiguity. A
+  // pathological stroke's null mesh deliberately falls through to the Canvas raster path below.
   const regions = resolveGlShapeMeshRegions(commands);
   if (regions !== null && regions.length > 0) {
     const meshData = getGlShapeData(renderProxy.rendererData);
     if (meshData.meshVersion !== version) {
-      meshData.meshes = regions.map((region) => {
-        const mesh = tessellatePath(region.path);
-        return {
+      const meshes: GlShapeMesh[] = [];
+      let supported = true;
+      for (let i = 0; i < regions.length; i++) {
+        const region = regions[i];
+        const mesh = isShapeStrokeRegion(region)
+          ? tessellateStrokePath(region.path, region.style)
+          : tessellatePath(region.path);
+        if (mesh === null) {
+          supported = false;
+          break;
+        }
+        meshes.push({
           vertices: new Float32Array(mesh.vertices),
           indices: new Uint16Array(mesh.indices),
           color: region.color,
           alpha: region.alpha,
-        };
-      });
+        });
+      }
+      meshData.meshes = supported ? meshes : null;
       meshData.meshVersion = version;
     }
-    drawGlShapeMeshes(state, renderProxy, meshData.meshes ?? []);
-    return;
+    if (meshData.meshes !== null) {
+      drawGlShapeMeshes(state, renderProxy, meshData.meshes);
+      return;
+    }
   }
 
   const material = renderProxy.material;
@@ -189,6 +203,10 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   packGlQuadBatchMaterialInstance(state, renderProxy.materialData, startCount);
   recordGlQuadBatchColorScaleBias(state, renderProxy.colorMatrix ?? renderProxy.colorScaleBias, startCount);
   runtime.quadBatchWriterCount++;
+}
+
+function isShapeStrokeRegion(region: ShapeFillRegion | ShapeStrokeRegion): region is ShapeStrokeRegion {
+  return 'style' in region;
 }
 
 export const defaultGlShapeRenderer: Scene2DRenderer = {

@@ -6,6 +6,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
+  appendShapePath,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
@@ -13,7 +14,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuShapeModule from './wgpuShape';
@@ -104,6 +105,50 @@ describe('drawWgpuShape', () => {
     };
     expect(pass.drawIndexed).toHaveBeenCalledTimes(2);
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+    submitWgpuRenderPass(state);
+  });
+
+  it('draws a closed solid stroke ring as one GPU mesh', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+
+    drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
+
+    const pass = getWgpuRenderStateRuntime(state).renderPass as unknown as {
+      drawIndexed: ReturnType<typeof vi.fn>;
+    };
+    expect(pass.drawIndexed).toHaveBeenCalledTimes(1);
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+    submitWgpuRenderPass(state);
+  });
+
+  it('falls back to the raster quad for a self-intersecting stroke centerline', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerStandardWgpuMaterial(state);
+    const pass = makeMeshPassSpy();
+    getWgpuRenderStateRuntime(state).renderPass = pass;
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapePath(
+      shape,
+      [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+      [8, 8, 40, 40, 8, 40, 40, 8],
+      'nonZero',
+    );
+    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+    const proxy = makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData);
+
+    drawWgpuShape(state, proxy);
+    drawWgpuShape(state, proxy);
+
+    expect(pass.drawIndexed).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(2);
     submitWgpuRenderPass(state);
   });
 
