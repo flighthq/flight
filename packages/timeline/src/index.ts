@@ -1,5 +1,6 @@
 export {
   addTimelineFrameScript,
+  clearTimelineFrameScripts,
   createTimeline,
   createTimelineSource,
   disposeTimelineSignals,
@@ -7,6 +8,8 @@ export {
   findTimelineLabel,
   getTimelineCurrentLabel,
   getTimelineFrameScript,
+  getTimelineFrameScriptFrames,
+  getTimelineLabels,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
   nextFrameTimeline,
