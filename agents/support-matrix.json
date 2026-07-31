@@ -1560,6 +1560,15 @@
             "webgl": true,
             "webgpu": true
           }
+        },
+        {
+          "scene": "shape-stroke-ring-fallback",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
         }
       ]
     },
