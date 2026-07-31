@@ -2,6 +2,30 @@
 
 Continuity log for `@flighthq/scene3d-resources`. See [charter](charter.md).
 
+## 2026-07-30 -- the full-suite setup flake: diagnosed, reproduced deterministically, fixed (builder)
+
+Chief-raised: three independent agents had seen a varying subset of the loader tests fail at setup under a full-repo run, always with zero test failures, always passing in isolation.
+
+**Mechanism.** A `beforeAll` hook exceeding the 10s default budget. Confirmed by forcing it -- `--hookTimeout=1` produces the exact reported signature: `FAIL <file> [ <file> ]`, zero test failures, tests skipped, error pointing at `beforeAll`. Then bisected the real cost on an *idle* machine: the hook passes at 4000ms and fails at 2000ms, so it needs 2-4s per file. Against a 10s budget that is ~3x headroom, and sixteen workers competing for CPU spends it -- which is exactly why the failing subset differed every run and why isolation always passed.
+
+**Why the hook is expensive.** Each file calls `vi.resetModules()` and then dynamically imports the subject, rebuilding its whole transitive graph. For these loaders that graph is wide (`@flighthq/net`, `@flighthq/scene3d-formats`, the scene-document layer).
+
+**A wrong turn worth recording.** I first converted the six files to hoisted `vi.mock` + static import, which removes the hook entirely -- the package then passed at `--hookTimeout=1` and it looked like a clean win. It was not. Repeated full-suite runs then failed *differently*: real test failures, `TypeError: Cannot read properties of undefined (reading 'ok')`, because `sendNetRequest` was bound to another file's mock. The root `vitest.config.ts` says so outright: the suite runs `isolate: false` for a ~15x speedup, and under a shared module registry the per-file `doMock` + dynamic import is what keeps each file hermetic -- "never top-level hoisted vi.mock, which leaks across files". The expensive hook is load-bearing. All eight conversions reverted.
+
+**Fix.** `hookTimeout: 60_000` in the root config. The lever is the budget, not the hook: the reset-and-re-import buys the shared-registry speedup, so trimming it would trade a 15x suite win for a few seconds of setup.
+
+**Repro loop** -- the deliverable chief asked for. `--hookTimeout` converts a load-dependent flake into a deterministic one:
+
+    npx vitest run --config vitest.config.ts --hookTimeout=2000 packages/scene3d-resources/src/
+
+That reproduces the exact reported signature every time (5 loader files, file-level FAIL, zero test failures). Raise the number to measure current headroom; the suite default is now 60s.
+
+**Verification.** Before: 2 failures across 3 full-suite runs. After: 5 consecutive clean runs, 1235 files / 13442 tests, `npm run check` clean.
+
+**Two latent files found while here**, not previously observed failing but the same class: `imageResourceFetch.test.ts` and `resolveScene3DResources.test.ts` carry the same reset-and-re-import hook and also fail under a forced low budget. The suite-wide budget covers them.
+
+**One real defect left unfixed and reported**, orthogonal to the flake: every one of these files unmocks the wrong specifier -- `vi.doMock('@flighthq/net/contract', ...)` paired with `vi.doUnmock('@flighthq/net')`. Different specifiers, so the unmock is a no-op. It is masked because `vi.resetModules()` in the same `afterAll` clears the registry anyway. That makes it a latent trap: anyone deleting that `resetModules()` as redundant would uncover cross-file mock leakage with no failing test to warn them.
+
 ## 2026-07-29 — explicit synchronous resolve and progressive update
 
 Split the previously overloaded `resolveScene3DResources` policy atom. Resolve now synchronously returns
