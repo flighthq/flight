@@ -80,6 +80,7 @@
     "packages:check": "tsx ./scripts/packages.ts",
     "packages:check:json": "tsx ./scripts/packages.ts --json",
     "mocks": "tsx ./scripts/mocks.ts",
+    "docs:check": "tsx ./scripts/docs.ts --check",
     "mocks:check": "tsx ./scripts/mocks.ts --check",
     "backend-prefix:check": "tsx ./scripts/backendPrefix.ts --check",
     "mocks:json": "tsx ./scripts/mocks.ts --json",

@@ -57,6 +57,7 @@ run('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 
 if (!scoped) {
   run('api:check', 'tsx', ['scripts/api.ts', '--check']);
+  run('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
   run('support:check', 'tsx', ['scripts/support.ts', '--check']);
 }
 

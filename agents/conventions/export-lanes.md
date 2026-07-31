@@ -87,7 +87,10 @@ public subset.
 
 `contract` is the **only** blessed subpath. Any other subpath (a file-mirroring
 `@flighthq/x/renderProxy`) stays banned — that is what the original ground rule rightly
-prevented, and the check keeps rejecting it. A fully-public package still carries both
+prevented, and the check keeps rejecting it. The ban costs nothing to obey: because every
+package declares `"sideEffects": false`, a file-mirroring subpath buys no bundle savings a
+bare `.` import does not already give, and all it adds is a published API coupled to an
+internal file name — so renaming a file becomes a breaking change for no gain. A fully-public package still carries both
 files: `contract.ts` = `export *`, `index.ts` = the full promoted list. That is not
 ceremony — `index.ts` _is_ the package's public-API manifest (see below).
 
