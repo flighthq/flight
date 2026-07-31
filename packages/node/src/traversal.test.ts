@@ -112,7 +112,6 @@ describe('forEachNodeAncestor', () => {
     const visited: Node<NodeTraits>[] = [];
     forEachNodeAncestor(grandchild, (n) => {
       visited.push(n);
-      return true;
     });
     expect(visited).toEqual([childA, root]);
   });

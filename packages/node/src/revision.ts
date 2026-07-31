@@ -88,7 +88,7 @@ export function invalidateNodeLocalContent<Traits extends object>(target: Node<T
 }
 
 /**
- * Target object's own transform (x, y, rotation, scaleX, scaleY) changed.
+ * Target object's own transform (x, y, rotation, scaleX, scaleY, skewX, skewY, or pivot) changed.
  */
 export function invalidateNodeLocalTransform<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
