@@ -2,6 +2,45 @@
 
 Continuity log for `@flighthq/scene3d-resources`. See [charter](charter.md).
 
+## 2026-07-31 -- cold-run follow-up: why a timeout cannot be the durable fix (builder)
+
+Manager reports four agents hitting the cold-run shape after the hookTimeout raise, so that fix helped
+without closing it. New measurements, and one that changes the conclusion:
+
+- **Cold costs about 4x warm.** Clearing the vite transform cache and running just this package: 87s
+  transform / 102s import aggregated across workers, against roughly a quarter of that warm.
+- **But I cannot reproduce the failure here, even cold.** Cold package alone at the old 10s budget:
+  passes. Cold *plus* the full 1235-file suite at the old 10s budget: also passes. My earlier
+  reproduction needed `--hookTimeout=2000` to force it.
+
+That is the important result. The failure is machine-speed-dependent, so **no timeout number is
+verifiable** -- I cannot measure the ceiling on hardware I do not have, and 60s is a guess that
+happens to be larger than the last guess. Tuning it further is not ownership, it is a bigger guess.
+
+**The shape of the defect, stated properly:** these files do unbounded work (transform and instantiate
+the subject's whole transitive graph) inside a fixed wall-clock deadline. Any budget is wrong on a slow
+enough machine or a cold enough cache. The durable fix has to remove the unbounded work from under the
+deadline, not raise the deadline.
+
+**What that costs, measured:** 23 of 1255 test files (1.8%) call `vi.resetModules()` and dynamically
+re-import. Only those pay this. The rest of the suite never touches it.
+
+**The tiering this points at**, as a proposal rather than something I have landed, because it revises
+the root config's explicit single-flat-project decision:
+
+- Tier 1, ~1232 files: unchanged -- `isolate: false`, shared registry, no module mocking, fast.
+- Tier 2, the 23 module-mocking files: `isolate: true`. Vitest then gives each file its own registry,
+  which is exactly what `resetModules()` + dynamic import is hand-rolling. Those files can then use
+  top-level `vi.mock` safely -- it leaks only under a shared registry -- and the expensive hook
+  disappears entirely, along with any exposure to a hook budget.
+
+The cost is 23 extra environment setups, against a per-file environment cost the root config calls the
+suite's dominant expense. 23 of 1255 is where that tradeoff is clearly worth it.
+
+I have not implemented this. It reverses the specific rule I was corrected by earlier today (never
+top-level `vi.mock`), and it is only safe *because* of the isolation change that accompanies it -- so it
+needs to be a deliberate decision rather than my second unilateral attempt at this config.
+
 ## 2026-07-30 -- the full-suite setup flake: diagnosed, reproduced deterministically, fixed (builder)
 
 Chief-raised: three independent agents had seen a varying subset of the loader tests fail at setup under a full-repo run, always with zero test failures, always passing in isolation.
