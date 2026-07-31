@@ -1,4 +1,6 @@
 export {
+  disableSceneRenderGuards,
+  enableSceneRenderGuards,
   createRenderCache,
   destroyRenderState,
   disposeScene2DRender,

@@ -25,7 +25,15 @@ import {
   setNodeLocalMatrix4,
 } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
-import type { Camera3D, Material, MeshGeometry, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
+import type {
+  Mesh,
+  Skin,
+  Camera3D,
+  Material,
+  MeshGeometry,
+  Scene3DLightBlock,
+  Scene3DLightsLike,
+} from '@flighthq/types/contract';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -35,7 +43,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { createRenderState } from './renderState';
-import { packScene3DLightBlock, prepareScene3DRender } from './sceneRender';
+import { packScene3DLightBlock, prepareScene3DRender, setSkinnedMeshBoundsGuard } from './sceneRender';
 
 function boundedBox(): MeshGeometry {
   const geometry = createBoxMeshGeometry(2, 2, 2);
@@ -413,5 +421,45 @@ describe('prepareScene3DRender', () => {
     invalidateNodeLocalTransform(mesh);
     prepareScene3DRender(state, scene, camera, emptyLights());
     expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
+  });
+});
+
+describe('setSkinnedMeshBoundsGuard', () => {
+  afterEach(() => setSkinnedMeshBoundsGuard(null));
+
+  // The seam keeps the message and the @flighthq/log dependency in the separately-importable guard
+  // module; the cull path only calls whatever is installed.
+  it('reports the skinned mesh that reached culling without posed bounds', () => {
+    const seen: Mesh[] = [];
+    setSkinnedMeshBoundsGuard((mesh) => seen.push(mesh as Mesh));
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createMesh(boundedBox(), [null]);
+    mesh.skin = {} as Skin;
+    addNodeChild(scene, mesh);
+
+    prepareScene3DRender(state, scene, frontCamera(), {
+      ambient: createAmbientLight(),
+      directional: createDirectionalLight(),
+    });
+
+    expect(seen).toEqual([mesh]);
+  });
+
+  it('stops reporting once cleared with null', () => {
+    let calls = 0;
+    setSkinnedMeshBoundsGuard(() => (calls += 1));
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const mesh = createMesh(boundedBox(), [null]);
+    mesh.skin = {} as Skin;
+    addNodeChild(scene, mesh);
+    const lights = { ambient: createAmbientLight(), directional: createDirectionalLight() };
+
+    prepareScene3DRender(state, scene, frontCamera(), lights);
+    setSkinnedMeshBoundsGuard(null);
+    prepareScene3DRender(state, scene, frontCamera(), lights);
+
+    expect(calls).toBe(1);
   });
 });
