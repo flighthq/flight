@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   explainCaptureParityUncovered,
+  explainCaptureVerificationStall,
   isCaptureParityCoverageFailure,
   runCaptureValidation,
 } from './captureValidation';
@@ -32,6 +33,30 @@ describe('explainCaptureParityUncovered', () => {
 
   it('blames the skip list when several backends were eligible and still produced no pair', () => {
     expect(explainCaptureParityUncovered(3, false)).toContain('parity skip');
+  });
+});
+
+describe('explainCaptureVerificationStall', () => {
+  it('distinguishes a verifier that never registered from one that started and stalled', () => {
+    // Opposite remedies: the first is a page/module failure, the second a readback that never finished.
+    // The bare "verifier did not run" it replaces covered both.
+    expect(explainCaptureVerificationStall(null, 15_000)).toContain('never registered');
+    expect(explainCaptureVerificationStall({ state: 'running' }, 15_000)).toContain('stalled');
+  });
+
+  it('reports what it waited AGAINST the budget, the number that decides if cost is the cause', () => {
+    const reason = explainCaptureVerificationStall({ state: 'running' }, 15_000);
+    expect(reason).toContain('15000ms of 15000ms');
+    // A short wait is a different story from one that burned the whole budget, and the reason shows it.
+    expect(explainCaptureVerificationStall({ state: 'running' }, 900)).toContain('900ms of 15000ms');
+  });
+
+  it('names the empty-readback case, which looks like success until the fingerprint is read', () => {
+    expect(explainCaptureVerificationStall({ fingerprint: null, state: 'passed' }, 4_000)).toContain('no fingerprint');
+  });
+
+  it('flags a stateless verifier object as a protocol mismatch rather than a stall', () => {
+    expect(explainCaptureVerificationStall({}, 4_000)).toContain('protocol');
   });
 });
 

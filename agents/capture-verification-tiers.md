@@ -68,6 +68,43 @@ its distance number:
 `registerWgpu*TextureResolver` functions with no equivalent bundle. Today **9 of 40** wgpu examples register
 any resolver at all. The missing bundle is a suggestion for `render-wgpu`, not a change made here.
 
+## The scene3d verifier stall — measured
+
+Chased on foreman's ruling, measurement first rather than a hypothesis. **Result: the budget is right and
+the scene is not too expensive, so cost does not explain the failure.** Verification wall-time for
+`scene3d`, the most expensive example, against the 15,000 ms budget:
+
+| Condition | webgl | webgpu | Budget used |
+|---|---|---|---|
+| isolation (1 entry) | 3,397 ms | 4,347 ms | 29% |
+| full leg, 6 workers (3 runs) | 4,065–4,693 ms | 4,528–4,968 ms | ≤33% |
+| full leg, 16 workers | 6,062 ms | 5,674 ms | 40% |
+| full leg + whole-repo `check` + full `test` alongside | 5,125 ms | 6,233 ms | **42% (worst observed)** |
+
+Page load is not a factor either: `goto` for `scene3d` measured 15–102 ms. Contention scales the cost
+gently and sub-linearly — nearly tripling the workers and saturating the CPU with an unrelated build moved
+it from ~4.3 s to ~6.2 s, still 2.4× inside the budget.
+
+**So the failure is a discrete stall, not slowness**, and raising the timeout would be the wrong fix — it
+would buy nothing against a verifier that never reaches a terminal state at all. Five instrumented runs
+(three at 6 workers, one at 16, one under a saturated CPU) produced **zero** reproductions, against two
+failures in the two runs before instrumentation, so the rate is low and it was not reproduced under
+deliberately worse conditions than the ones that produced it.
+
+What shipped, since the cause could not be named from behaviour alone: `explainCaptureVerificationStall`
+replaces the bare `verifier did not run` sentinel. That string named a symptom shared by causes with
+opposite remedies — a verifier that never registered (page/module failure) versus one that registered and
+stalled mid-readback — and it discarded the single number that decides whether cost is even a candidate:
+how long it actually waited. The reason now distinguishes never-registered, stalled-non-terminal,
+passed-but-empty, and protocol-mismatch, and always reports waited-versus-budget. **A gate that silently
+fails to run is the same inert-gate class as a check that silently passes**: the leg reported a failure
+nobody could diagnose, so it got re-run instead of fixed. The next occurrence explains itself.
+
+**Can the leg be widened safely? Yes, on this evidence.** At 16 workers with a full `check` and `test`
+running alongside, the heaviest scene still used 42% of its budget and no entry failed across 108
+measurements per run. Widening is bounded by the stall, not by the budget — and the stall is now
+diagnosable rather than silent.
+
 **`scene3d`'s verifier does not run under concurrent load — and it is not general webgpu flakiness.** A third
 run corrected an earlier reading of this. Across three full leg runs: run 1 failed `tilemap`/webgpu (the real
 resolver bug, since fixed — not a flake at all); run 2 failed `scene3d`/webgpu with "verifier did not run";
