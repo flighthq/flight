@@ -1,3 +1,9 @@
+---
+package: '@flighthq/ipc'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # ipc — Assessment
 
 See [charter](./charter.md) for blessed direction.

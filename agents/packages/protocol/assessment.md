@@ -1,3 +1,9 @@
+---
+package: '@flighthq/protocol'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # protocol — Assessment
 
 See [charter](./charter.md) for blessed direction.

@@ -1,3 +1,9 @@
+---
+package: '@flighthq/lifecycle'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # lifecycle — Assessment
 
 See [charter](./charter.md) for blessed direction.

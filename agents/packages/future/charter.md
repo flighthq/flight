@@ -1,5 +1,8 @@
 ---
+package: '@flighthq/future'
+crate: flighthq-future
 draft: true
+lastDirection: null
 status: unblessed — design draft pending user ratification
 ---
 

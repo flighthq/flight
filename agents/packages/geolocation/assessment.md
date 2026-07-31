@@ -1,3 +1,9 @@
+---
+package: '@flighthq/geolocation'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # geolocation — Assessment
 
 See [charter](./charter.md) for blessed direction.

@@ -1,24 +1,24 @@
 # Flight Codebase Map
 
-This repository is a TypeScript monorepo for a tree-shakable graphics and application SDK. It spans a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and a full application layer. The goal is a complete graphics-and-application feature set — reachable in full — exposed through explicit, side-effect-free APIs over plain data, without implicit, stateful runtime behavior. It is written with AI code agents and a future C/C++ port of this codebase in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
+This repository is a TypeScript monorepo for a tree-shakable graphics and application SDK. It spans a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and a full application layer. The goal is a complete graphics-and-application feature set — reachable in full — exposed through explicit, side-effect-free APIs over plain data, without implicit, stateful runtime behavior. It is written with AI code agents and a future C/C++ port in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
 
-This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, package manifests, and generated API output. Use this file for project-level rules and architecture that are hard to infer from one or two files. Read it once at the start of each session; revisit the relevant section when a task touches package shape, exports, examples, rendering, graph internals, or publishing.
+This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, manifests, and generated API output. Use this file for project-level rules and architecture that are hard to infer from one or two files. Read it once at the start of each session; revisit the relevant section when a task touches package shape, exports, examples, rendering, graph internals, or publishing.
 
 **This file is read in full at the start of every agent session, and must stay under 40,000 characters** — enforced by `npm run docs:check`, which warns within 2% of the limit. That budget is what keeps it a map. Detail belongs in the linked docs under [`agents/`](agents/): when a section here grows past a trigger plus the rule it enforces, move the elaboration into the domain doc that owns it and leave the pointer. Prose added here is paid for by every session, whether or not the task touches that domain.
 
 ## Pre-Release Status and API Philosophy
 
-Flight has not shipped to public users. There are no published consumers, no migration paths to maintain, and no backwards-compatibility obligations. Every API decision is foundational, not incremental. When something is wrong, rename it, restructure it, or remove it — do not accumulate workarounds for past choices.
+Flight has not shipped to public users. There are no published consumers, no migration paths, and no backwards-compatibility obligations. Every API decision is foundational, not incremental. When something is wrong, rename it, restructure it, or remove it — do not accumulate workarounds for past choices.
 
-Agent sessions are a direct part of shaping this API. The goal is not to implement tickets against a fixed design; it is to work toward a mature, deliberate golden path where every exported name, parameter order, and module boundary is something worth keeping. Treat naming, module shape, and API symmetry as first-class outputs of any task, not cosmetic concerns to defer.
+Agent sessions are a direct part of shaping this API. The goal is not to implement tickets against a fixed design; it is to work toward a mature golden path where every exported name, parameter order, and module boundary is worth keeping. Treat naming, module shape, and API symmetry as first-class outputs of any task, not cosmetic concerns to defer.
 
-The cellular architecture supports this directly. Each package and feature area is designed to grow — more renderers, more filter types, more graph families — without coupling to the rest of the SDK. A well-bounded feature is one a user can import in isolation and understand in full. The module graph and tree-shaking are not just performance concerns; they enforce that each feature stands on its own. If adding something forces a user to pull in unrelated weight, that is a design signal: the boundary is wrong or the abstraction is premature.
+The cellular architecture supports this directly. Each package grows — more renderers, more filter types, more graph families — without coupling to the rest of the SDK. A well-bounded feature is one a user can import in isolation and understand in full; the module graph and tree-shaking enforce that. If adding something forces a user to pull in unrelated weight, the boundary is wrong or the abstraction is premature. See [Composition and Complexity](#composition-and-complexity).
 
-Approach every feature as if it is the final shape. Pre-release is the time to get this right.
+Approach every feature as if it is the final shape. Pre-release is when to get this right.
 
 Unless a task specifies otherwise, the goal when working on a feature area is to bring it to AAA completeness — implemented using industry-recognized terms and patterns, canonical in scope and naming. When a package is labeled `particles`, an agent should expect to find — and build toward — everything a developer would look for in a mature particles library: emitters, spawn rules, lifetime, forces, blending, pooling, and so on. This applies throughout the codebase. Packages are meant to be mature sub-libraries, not thin stubs. A feature area that is partially built is unfinished work, not a design choice.
 
-When gaps in completeness are identified during a task, the default is to add them to the current task list and address them within the session. Gaps that cross package boundaries, require a design decision, or are too large for the current scope should be surfaced to the user as a suggestion rather than acted on autonomously.
+When gaps in completeness are identified during a task, the default is to add them to the current task list and address them in-session. Gaps that cross package boundaries, require a design decision, or are too large for the current scope are surfaced to the user as a suggestion rather than acted on autonomously.
 
 ## Design posture
 
@@ -86,7 +86,7 @@ The store sells both the screw and the lawnmower — granular primitives and ass
 
 **Complexity is a decomposition smell.** A primitive is simple; a larger thing should be _simple by composition_ of primitives — a 2×4 with a bolt and nut is still simple. When a unit feels complex or bloated, the cause is usually missing primitives _underneath_ that it is silently bundling. The fix is to **extract the missing primitive, not to manage the complexity**: a `scene` that packs mesh, texture, camera, and material is complex until those become their own primitives, after which `scene` is a simple composition of them. Before absorbing complexity into a unit, look for the layer that wants to be extracted. But decomposition has a floor: stop at **bedrock**, the irreducible primitive. Splitting something already simple — a screw into half-screws — is _blood from a stone_: more packages and surface for no gain. The craft is placing each cut between "decompose further" and "this is bedrock."
 
-This is the same force as the cellular architecture (a feature you can import in isolation and understand in full) and the bundle invariant above (an assembly never costs more than its parts) — one principle seen from three sides. A monolithic function that bundles features as config-gated branches is the within-unit form of the smell.
+This is the same force as the cellular architecture and the bundle invariant above — one principle seen from three sides. A monolithic function that bundles features as config-gated branches is the within-unit form of the smell: the branches are primitives not yet extracted.
 
 ## Checkpoints
 
@@ -123,15 +123,15 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [bundle size](agents/bundle-size.md) — the `npm run size` command surface and the import-size rules.
 - [testing conventions](agents/conventions/testing.md) — full testing rules: file/structure conventions, WebGL mock specifics, out-parameter aliasing, and root-level integration tests.
 - [diagnostics](agents/conventions/diagnostics.md) — before adding a warning, a guard, an `explain*` query, or a comment that warns the caller about misuse. The inversion rule (core exposes seams, never messages) and the `enable*Guards` / `explain*` conventions.
-- [invalidation](agents/conventions/invalidation.md) — before adding a `set*` function, an `invalidate*` call, or a `version` field, and when debugging "I changed it and nothing happened." The three-tier doctrine, the recompute-by-default transform policy, and the setter earn-test.
+- [invalidation](agents/conventions/invalidation.md) — before adding a `set*` function, an `invalidate*` call, or a `version` field, and when debugging "I changed it and nothing happened." The three-tier doctrine, recompute-by-default transforms, the setter earn-test.
 - [types layout & kind identity](agents/conventions/types-layout.md) — before adding a type or touching kind registration. How `@flighthq/types` is organized; the string-kind model.
 - [export lanes](agents/conventions/export-lanes.md) — before adding a package export, wiring one package to another, or reasoning about the `@flighthq/sdk` barrel. The three lanes and the "siblings import `/contract`, `.` is the app boundary" rule.
-- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. Names and type placement are public API in the port: exported types live in `@flighthq/types`, file names are verb-free concept nouns, globally unique.
+- [file naming & type home](agents/conventions/file-naming.md) — before adding a source file, an exported type, or renaming files. Names and type placement are public API in the port: exported types live in `@flighthq/types`; file names are verb-free concept nouns, globally unique.
 - [portability substrate](agents/portability.md) — before proposing a port language or IR (especially "just use Haxe — it compiles to C++"). Why the substrate is the TS AST plus thin per-target backends, and what the lowerable subset covers.
 - [package catalog](agents/packages/catalog.md) — what each package owns and where its boundary sits, one paragraph each. The tier below the [Package Map](#package-map) name list.
 - [package map](agents/packages/map.md) — full per-package descriptions and API detail.
-- [feature lookup](agents/feature-lookup.md) — feature keyword → owning package → backends.
-- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read that package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate with `node agents/packages/todo.mjs`.
+- [feature lookup](agents/feature-lookup.md) — keyword → owning package → backends.
+- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read that package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate: `node agents/packages/todo.mjs`.
 
 **Architecture records** — the design decisions behind a subsystem, read before changing its shape:
 
@@ -147,7 +147,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 **Plans and reviews** — the current state of in-flight direction:
 
 - [examples plan](agents/examples-plan.md) — the planned example set, implementation order, and open questions.
-- [quality plan](agents/quality-plan.md) — API maturity verification, and the unit-versus-functional test guidance.
+- [quality plan](agents/quality-plan.md) — API maturity verification, and unit-versus-functional test guidance.
 - [loader progress currencies](agents/loader-progress-currencies.md) — **proposal, awaiting ruling.** Before touching `onProgress`, `getResourceLoadProgress`, `weight`, or `bytesHint`. The three currencies, where the two batch-level ones contradict each other, and the recommendation.
 - [render view model](agents/render-view-model.md) — **proposal, awaiting ruling.** Before touching `ApplicationRenderView`, `application-gl`, or the `render` sub-target Directed item. Extracting a windowless `RenderView` into `render`; why `application-gl` may dissolve.
 - [test depth review](agents/test-depth-review.md) — the completed unit-test-depth review and its gap list.

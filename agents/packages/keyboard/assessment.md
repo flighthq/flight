@@ -1,3 +1,9 @@
+---
+package: '@flighthq/keyboard'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # keyboard — Assessment
 
 See [charter](./charter.md) for blessed direction.

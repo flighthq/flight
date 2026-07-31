@@ -1,3 +1,9 @@
+---
+package: '@flighthq/webcam'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # webcam — Assessment
 
 See [charter](./charter.md) for blessed direction.

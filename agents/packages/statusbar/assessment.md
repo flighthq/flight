@@ -1,3 +1,9 @@
+---
+package: '@flighthq/statusbar'
+updated: 2026-07-31
+basedOn: ./review.md
+---
+
 # statusbar — Assessment
 
 See [charter](./charter.md) for blessed direction.

@@ -1,3 +1,9 @@
+---
+package: '@flighthq/movieclip'
+updated: 2026-07-07
+basedOn: null
+---
+
 # movieclip — Assessment
 
 See [charter](./charter.md) for blessed direction.

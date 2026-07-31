@@ -1,3 +1,9 @@
+---
+package: '@flighthq/haptics'
+updated: 2026-07-07
+basedOn: ./review.md
+---
+
 # haptics — Assessment
 
 See [charter](./charter.md) for blessed direction.

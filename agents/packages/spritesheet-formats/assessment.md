@@ -1,3 +1,9 @@
+---
+package: '@flighthq/spritesheet-formats'
+updated: 2026-07-30
+basedOn: ./review.md
+---
+
 # spritesheet-formats — Assessment
 
 See [charter](./charter.md) for blessed direction.

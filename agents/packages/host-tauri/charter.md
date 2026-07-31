@@ -10,7 +10,7 @@ status: ./status.md
 
 # host-tauri — Charter
 
-See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions, and [`host-electron`](host-electron/charter.md) for the sibling-adapter template this mirrors.
+See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions, and [`host-electron`](../host-electron/charter.md) for the sibling-adapter template this mirrors.
 
 ## What it is
 
