@@ -340,8 +340,6 @@ async function captureDomFingerprint(page: Page): Promise<string | null> {
   }
 }
 
-// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
-// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
 // Why a verification wait ended without a fingerprint, as a reason a reader can act on. The bare
 // "verifier did not run" it replaces named a symptom shared by causes with opposite remedies, and left
 // the one number that decides between them — how long it actually waited — unrecorded.
@@ -383,6 +381,26 @@ export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCovera
   if (!run.gateParity || run.interrupted) return false;
   if (run.rendererFilterCount === 1) return false;
   return run.parityComparisons === 0 && run.parityUncovered > 0;
+}
+
+// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
+// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
+// True when every cell of a coarse fingerprint carries the same value — a blank or flat-filled frame.
+//
+// This is a WRITE-SIDE gate, not a render check: a uniform frame may be a legitimate render (a solid
+// background scene), but it is never worth BLESSING as a regression baseline, because it cannot
+// distinguish a working scene from a broken one. Refusing it costs a real flat scene its regression
+// coverage and costs a broken one nothing — the asymmetry is the point.
+//
+// Format: "<cellSize>:<hex cells>", so the payload after the colon is split into fixed-width cells.
+export function isUniformCaptureFingerprint(fingerprint: string): boolean {
+  const payload = fingerprint.slice(fingerprint.indexOf(':') + 1);
+  if (payload.length <= CAPTURE_FINGERPRINT_CELL_CHARS) return true;
+  const first = payload.slice(0, CAPTURE_FINGERPRINT_CELL_CHARS);
+  for (let i = CAPTURE_FINGERPRINT_CELL_CHARS; i < payload.length; i += CAPTURE_FINGERPRINT_CELL_CHARS) {
+    if (payload.slice(i, i + CAPTURE_FINGERPRINT_CELL_CHARS) !== first) return false;
+  }
+  return true;
 }
 
 interface EntryResult {
@@ -497,6 +515,26 @@ async function processEntry(
           status: 'skipped',
           message: note,
           ...(selfDistance === null ? {} : { distance: selfDistance, threshold: options.stabilityEpsilon }),
+        });
+        continue;
+      }
+      // A uniform fingerprint is every cell identical — a blank or flat-filled frame. The stability check
+      // above CANNOT catch it: a frame that renders blank every time has a self-distance of zero, the most
+      // stable result possible, so it sails through and gets blessed as ground truth. That has already
+      // happened once in this repo (a WebGPU capture on a software adapter that cannot present to the
+      // swapchain), and a blank baseline is worse than no baseline, because every later run then compares
+      // against the blank and passes.
+      if (isUniformCaptureFingerprint(fingerprint)) {
+        const note =
+          'not baselined — uniform frame (every cell identical); a blank capture must not become ground truth';
+        result.output.push(statusLine('skip', renderer, note));
+        result.skipped++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'baseline',
+          status: 'skipped',
+          message: note,
         });
         continue;
       }
@@ -907,3 +945,6 @@ export async function runCaptureValidation(
 // How long a verification wait may take before it is treated as stalled. Shared by the wait and by the
 // reason it produces, so the two can never disagree about what the budget was.
 const CAPTURE_VERIFICATION_TIMEOUT_MS = 15_000;
+
+// Hex characters per fingerprint cell (one RGB triplet).
+const CAPTURE_FINGERPRINT_CELL_CHARS = 6;
