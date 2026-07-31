@@ -1,3 +1,4 @@
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
   applyAnimationClipToSkeleton2D,
@@ -598,6 +599,91 @@ describe('parseDragonBonesSkeleton', () => {
     expect(result.animations.map((a) => a.name)).toEqual(['keyframed', 'blended']);
     expect(result.animations[1].clip.channels.length).toBe(0);
     expect(result.animations[0].clip.channels.length).toBeGreaterThan(0);
+  });
+
+  it('HONORS a bezier curve frame, whose control points are already normalized', () => {
+    // DragonBones writes 4 values in the unit square — unlike Spine's absolute per-component form — so the
+    // curve maps straight onto easeCubicBezier with no rebasing.
+    const doc = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              name: 'a',
+              bone: [
+                {
+                  name: 'b',
+                  rotateFrame: [
+                    { duration: 10, rotate: 0, curve: [0.42, 0, 1, 1] },
+                    { duration: 0, rotate: 90 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
+    const pose = cloneSkeleton2D(result.skeleton);
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
+    expect(pose.bones[0].rotation).toBeCloseTo(90 * easeCubicBezier(0.42, 0, 1, 1)(0.5), 4);
+    expect(pose.bones[0].rotation).toBeLessThan(40); // materially different from the linear 45
+  });
+
+  it('no longer Skip-crumbs a curve, but still crumbs a QUADRATIC tweenEasing', () => {
+    const curved = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              name: 'a',
+              bone: [{ name: 'b', rotateFrame: [{ duration: 10, rotate: 0, curve: [0.42, 0, 1, 1] }, { rotate: 90 }] }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(
+      collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(curved), sink)).map((c) => c.kind),
+    ).not.toContain('dragonbones.tween-easing-unsupported');
+
+    // The quadratic variants have no corpus coverage, so they stay reported rather than guessed.
+    const quad = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [
+            {
+              name: 'a',
+              bone: [{ name: 'b', rotateFrame: [{ duration: 10, rotate: 0, tweenEasing: 0.5 }, { rotate: 90 }] }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(
+      collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(quad), sink)).map((c) => c.kind),
+    ).toContain('dragonbones.tween-easing-unsupported');
+  });
+
+  it('leaves an uncurved DragonBones timeline with no segment easings', () => {
+    const doc = {
+      frameRate: 10,
+      armature: [
+        {
+          bone: [{ name: 'b' }],
+          animation: [{ name: 'a', bone: [{ name: 'b', rotateFrame: [{ duration: 10, rotate: 0 }, { rotate: 90 }] }] }],
+        },
+      ],
+    };
+    const track = parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track;
+    expect(track.segmentEasings).toBeNull();
   });
 
   it('emits a bone with an unresolved parent as a root and Skip-crumbs it', () => {

@@ -1,12 +1,14 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
-  AttachmentSkin2D,
   AnimationInterpolation,
   Attachment2D,
+  AttachmentSkin2D,
   Bone2D,
+  EasingFunction,
   ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
@@ -284,6 +286,7 @@ function addDragonBonesSlotColorChannel(
   const track = createAnimationTrack({
     components: 4,
     interpolation: dragonBonesInterpolation(frames, undefined),
+    segmentEasings: buildDragonBonesSegmentEasings(frames),
     times,
     values,
   });
@@ -350,6 +353,7 @@ function addDragonBonesVectorChannel(
     dragonBonesInterpolation(frames, diagnostics),
     boneIndex,
     path,
+    buildDragonBonesSegmentEasings(frames),
   );
 }
 
@@ -404,9 +408,12 @@ function addDragonBonesRotateChannels(
     rotations.push(rotation);
     shears.push(0, skew);
   }
-  addDragonBonesBoneChannel(channels, times, rotations, 1, interpolation, boneIndex, Skeleton2DAnimationPath.Rotation);
+  const easings = buildDragonBonesSegmentEasings(frames);
+  const rotationPath = Skeleton2DAnimationPath.Rotation;
+  addDragonBonesBoneChannel(channels, times, rotations, 1, interpolation, boneIndex, rotationPath, easings);
   if (skewed) {
-    addDragonBonesBoneChannel(channels, times, shears, 2, interpolation, boneIndex, Skeleton2DAnimationPath.Shear);
+    const shearPath = Skeleton2DAnimationPath.Shear;
+    addDragonBonesBoneChannel(channels, times, shears, 2, interpolation, boneIndex, shearPath, easings);
   }
 }
 
@@ -421,8 +428,9 @@ function addDragonBonesBoneChannel(
   interpolation: AnimationInterpolation,
   boneIndex: number,
   path: Skeleton2DAnimationPath,
+  segmentEasings: (EasingFunction | null)[] | null = null,
 ): void {
-  const track = createAnimationTrack({ components, interpolation, times: times.slice(), values });
+  const track = createAnimationTrack({ components, interpolation, segmentEasings, times: times.slice(), values });
   channels.push(createAnimationChannel(track, { boneIndex, path }));
 }
 
@@ -472,8 +480,10 @@ function dragonBonesFrames(raw: unknown, diagnostics?: ImportDiagnostic[]): Read
 // One AnimationTrack carries a single interpolation, so a DragonBones frame list is Step only when EVERY
 // tweening segment is a no-tween frame, and Linear otherwise. Only frames before the last one open a segment
 // — DragonBones gives the final frame TweenType.None itself — so a trailing frame's easing never decides the
-// track. Quadratic (`tweenEasing` ≠ 0) and bezier (`curve`) easings are recognized-but-unmodeled: they
-// collapse to Linear and Skip-crumb once per frame list.
+// track. A bezier `curve` IS honored (see buildDragonBonesSegmentEasings); the QUADRATIC `tweenEasing`
+// variants are not, and still collapse to Linear with a Skip crumb — the corpus contains no non-zero
+// tweenEasing at all, so implementing them would be format semantics written from memory rather than
+// verified against a real rig.
 function dragonBonesInterpolation(
   frames: readonly Readonly<Record<string, unknown>>[],
   diagnostics?: ImportDiagnostic[],
@@ -483,8 +493,7 @@ function dragonBonesInterpolation(
   for (let i = 0; i + 1 < frames.length; i++) {
     const frame = frames[i];
     if (!isDragonBonesFrameStepped(frame)) stepped = false;
-    if ('curve' in frame) approximated++;
-    else {
+    if (!('curve' in frame)) {
       const easing = frame.tweenEasing;
       if (typeof easing === 'number' && easing !== 0 && easing !== DRAGONBONES_NO_TWEEN) approximated++;
     }
@@ -499,6 +508,47 @@ function dragonBonesInterpolation(
     );
   }
   return stepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
+}
+
+// Converts DragonBones' per-frame bezier `curve` into one `EasingFunction` per INTERVAL. Returns `null` when
+// no interval is curved, so a linear timeline allocates nothing.
+//
+// DragonBones stores FOUR control values ALREADY NORMALIZED to the unit square — unlike Spine, which writes
+// absolute time/value units and four numbers PER COMPONENT. So there is no rebasing to do here and no
+// dominant-component question: one curve covers the whole frame and maps straight onto the CSS-style cubic
+// bezier `easeCubicBezier` expects. Verified against the MIT DragonBones corpus — every curve across all
+// three rigs is exactly 4 values, all within [0,1].
+//
+// The x components are still clamped, for the same reason as the Spine path: the solver inverts x, which is
+// only defined while x stays monotonic over [0,1]. y is left free so an overshoot curve keeps its shape.
+function buildDragonBonesSegmentEasings(
+  frames: readonly Readonly<Record<string, unknown>>[],
+): (EasingFunction | null)[] | null {
+  const segments = frames.length - 1;
+  if (segments < 1) return null;
+  const easings: (EasingFunction | null)[] = [];
+  let curved = false;
+  for (let i = 0; i < segments; i++) {
+    const curve = frames[i].curve;
+    if (!Array.isArray(curve) || curve.length < 4) {
+      easings.push(null);
+      continue;
+    }
+    curved = true;
+    easings.push(
+      easeCubicBezier(
+        clampDragonBonesUnit(numberOr(curve[0], 0)),
+        numberOr(curve[1], 0),
+        clampDragonBonesUnit(numberOr(curve[2], 1)),
+        numberOr(curve[3], 1),
+      ),
+    );
+  }
+  return curved ? easings : null;
+}
+
+function clampDragonBonesUnit(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 // Whether a frame holds its value to the next key instead of tweening. DragonBones spells "no tween" as
