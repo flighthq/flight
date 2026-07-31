@@ -2,6 +2,7 @@ import type { Node2D, Timeline } from '@flighthq/types/contract';
 
 import {
   addTimelineFrameScript,
+  clearTimelineFrameScripts,
   createTimeline,
   createTimelineSource,
   disposeTimelineSignals,
@@ -9,6 +10,8 @@ import {
   findTimelineLabel,
   getTimelineCurrentLabel,
   getTimelineFrameScript,
+  getTimelineFrameScriptFrames,
+  getTimelineLabels,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
   nextFrameTimeline,
@@ -74,6 +77,25 @@ describe('addTimelineFrameScript', () => {
     addTimelineFrameScript(t, 'run', (_target, f) => fired.push(f));
     gotoAndStopTimeline(t, 3);
     expect(fired).toEqual([3]);
+  });
+});
+
+describe('clearTimelineFrameScripts', () => {
+  it('is an idempotent no-op when no scripts are attached', () => {
+    const t = make();
+    clearTimelineFrameScripts(t);
+    expect(t.frameScripts).toBeNull();
+  });
+
+  it('clears every attached script and restores the null storage sentinel', () => {
+    const t = make();
+    addTimelineFrameScript(t, 1, () => {});
+    addTimelineFrameScript(t, 3, () => {});
+    clearTimelineFrameScripts(t);
+    expect(t.frameScripts).toBeNull();
+    expect(getTimelineFrameScriptFrames(t)).toEqual([]);
+    expect(getTimelineFrameScript(t, 1)).toBeNull();
+    expect(getTimelineFrameScript(t, 3)).toBeNull();
   });
 });
 
@@ -300,6 +322,37 @@ describe('getTimelineFrameScript', () => {
   });
 });
 
+describe('getTimelineFrameScriptFrames', () => {
+  it('returns an empty-array sentinel when no scripts are attached', () => {
+    expect(getTimelineFrameScriptFrames(make())).toEqual([]);
+  });
+
+  it('returns a snapshot of authored frames in insertion order', () => {
+    const t = make();
+    addTimelineFrameScript(t, 3, () => {});
+    addTimelineFrameScript(t, 1, () => {});
+    const frames = getTimelineFrameScriptFrames(t) as number[];
+    expect(frames).toEqual([3, 1]);
+    frames.push(2);
+    expect(getTimelineFrameScriptFrames(t)).toEqual([3, 1]);
+  });
+});
+
+describe('getTimelineLabels', () => {
+  it('returns an empty-array sentinel when the timeline has no labels', () => {
+    expect(getTimelineLabels(createTimeline())).toEqual([]);
+  });
+
+  it('returns the source label list as a read-only view', () => {
+    const labels = [
+      { name: 'idle', frame: 1 },
+      { name: 'run', frame: 3 },
+    ];
+    const t = make({ labels });
+    expect(getTimelineLabels(t)).toBe(labels);
+  });
+});
+
 describe('gotoAndPlayTimeline', () => {
   it('seeks to frame and starts playing', () => {
     const t = make();
@@ -438,16 +491,37 @@ describe('updateTimeline', () => {
   it('fires constructFrame for frame 1 on first update even when stopped', () => {
     const frames: number[] = [];
     const t = make({ constructFrame: (f) => frames.push(f) });
-    updateTimeline(t, 0);
+    expect(updateTimeline(t, 0)).toBe(true);
     expect(frames).toEqual([1]);
   });
 
   it('does not double-fire constructFrame on repeated stopped updates', () => {
     const frames: number[] = [];
     const t = make({ constructFrame: (f) => frames.push(f) });
-    updateTimeline(t, 0);
-    updateTimeline(t, 0);
+    expect(updateTimeline(t, 0)).toBe(true);
+    expect(updateTimeline(t, 0)).toBe(false);
     expect(frames).toEqual([1]);
+  });
+
+  it('returns false when a timed update accumulates time without realizing another frame', () => {
+    const t = make({ frameRate: 10 }); // 100ms/frame
+    playTimeline(t);
+    expect(updateTimeline(t, 0)).toBe(true); // realizes the initial frame
+    expect(updateTimeline(t, 50)).toBe(false);
+    expect(updateTimeline(t, 50)).toBe(true);
+  });
+
+  it('reports the realized frame before frameRate-null advances its next-call playhead', () => {
+    const frames: number[] = [];
+    const t = make({ frameRate: null, constructFrame: (f) => frames.push(f) });
+    playTimeline(t);
+    expect(updateTimeline(t, 0)).toBe(true);
+    expect(t.lastFrameUpdate).toBe(1);
+    expect(t.currentFrame).toBe(2);
+    expect(updateTimeline(t, 0)).toBe(true);
+    expect(t.lastFrameUpdate).toBe(2);
+    expect(t.currentFrame).toBe(3);
+    expect(frames).toEqual([1, 2]);
   });
 
   it('advances one frame per update when frameRate is null', () => {

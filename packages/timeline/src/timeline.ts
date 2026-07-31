@@ -14,6 +14,10 @@ export function addTimelineFrameScript(timeline: Timeline, frame: number | strin
   (timeline.frameScripts ??= new Map()).set(resolved, script);
 }
 
+export function clearTimelineFrameScripts(timeline: Timeline): void {
+  timeline.frameScripts = null;
+}
+
 export function createTimeline(obj?: Partial<Timeline>): Timeline {
   return {
     source: obj?.source ?? null,
@@ -80,6 +84,16 @@ export function getTimelineFrameScript(timeline: Readonly<Timeline>, frame: numb
   return timeline.frameScripts.get(resolved) ?? null;
 }
 
+// Lists authored script frames in their insertion order. Returns a shared empty-array sentinel when
+// none are attached; the returned non-empty array is a snapshot and cannot mutate the timeline's Map.
+export function getTimelineFrameScriptFrames(timeline: Readonly<Timeline>): readonly number[] {
+  return timeline.frameScripts === null ? EMPTY_FRAMES : [...timeline.frameScripts.keys()];
+}
+
+export function getTimelineLabels(timeline: Readonly<Timeline>): readonly TimelineLabel[] {
+  return timeline.source?.labels ?? EMPTY_LABELS;
+}
+
 export function gotoAndPlayTimeline(timeline: Timeline, frame: number | string): void {
   playTimeline(timeline);
   seekTimeline(timeline, resolveFrame(timeline, frame));
@@ -117,17 +131,23 @@ export function stopTimeline(timeline: Timeline): void {
   timeline.isPlaying = false;
 }
 
-export function updateTimeline(timeline: Timeline, deltaTime: number): void {
+// Returns whether this call realized a new frame (constructFrame/scripts/signals), not merely whether
+// the numeric playhead was advanced. Timed sources advance before realization, so currentFrame is the
+// realized frame on return. A frameRate-null source realizes currentFrame first and then advances its
+// playhead for the next call, so currentFrame reads one ahead of lastFrameUpdate between updates.
+export function updateTimeline(timeline: Timeline, deltaTime: number): boolean {
   const frameRate = getTimelineFrameRate(timeline);
   if (timeline.isPlaying && frameRate !== null) {
     timeline.currentFrame = advanceFrame(timeline, deltaTime);
   }
-  fireConstructFrame(timeline);
+  const changed = fireConstructFrame(timeline);
   if (timeline.isPlaying && frameRate === null) {
     timeline.currentFrame = advanceFrame(timeline, deltaTime);
   }
+  return changed;
 }
 
+const EMPTY_FRAMES: readonly number[] = [];
 const EMPTY_LABELS: readonly TimelineLabel[] = [];
 
 function noopConstructFrame(): void {}
@@ -189,10 +209,10 @@ function createTimelineSignals(): TimelineSignals {
 // since the last update. When advanceFrame jumps across skipped frames, only the landing frame is
 // constructed here; the intervening frames' scripts and enter/exit signals are not run (landing-frame-only,
 // matching Flash). frameEvent.previousFrame carries the prior landing frame, which may be many frames back.
-function fireConstructFrame(timeline: Timeline): void {
+function fireConstructFrame(timeline: Timeline): boolean {
   const previous = timeline.lastFrameUpdate;
   const current = timeline.currentFrame;
-  if (current === previous) return;
+  if (current === previous) return false;
 
   const signals = timeline.signals;
   const target = timeline.target;
@@ -207,14 +227,11 @@ function fireConstructFrame(timeline: Timeline): void {
     if (script !== undefined && target !== null) script(target, current);
   }
   if (signals !== null) emitSignal(signals.onFrameConstructed, frameEvent);
+  return true;
 }
 
 function getTimelineFrameRate(timeline: Readonly<Timeline>): number | null {
   return timeline.source?.frameRate ?? null;
-}
-
-function getTimelineLabels(timeline: Readonly<Timeline>): readonly TimelineLabel[] {
-  return timeline.source?.labels ?? EMPTY_LABELS;
 }
 
 function getTimelineTotalFrames(timeline: Readonly<Timeline>): number {
