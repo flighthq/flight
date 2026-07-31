@@ -22,6 +22,7 @@ import {
   isClipRegionRectangular,
   normalizeClipRegion,
   releaseClipRegion,
+  setClipRegionReleaseGuard,
   setClipRegionToRectangle,
   transformClipRegion,
   unionClipRegions,
@@ -498,6 +499,31 @@ describe('releaseClipRegion', () => {
     const reused = acquireClipRegion();
     expect(reused).toBe(clip);
     releaseClipRegion(reused);
+  });
+});
+
+describe('setClipRegionReleaseGuard', () => {
+  it('invokes the installed guard when a region is released twice', () => {
+    const seen: unknown[] = [];
+    setClipRegionReleaseGuard((clip) => seen.push(clip));
+    try {
+      const region = acquireClipRegion();
+      releaseClipRegion(region);
+      releaseClipRegion(region);
+      expect(seen).toEqual([region]);
+    } finally {
+      setClipRegionReleaseGuard(null);
+    }
+  });
+
+  it('stops invoking a previously installed guard once set back to null', () => {
+    const seen: unknown[] = [];
+    setClipRegionReleaseGuard((clip) => seen.push(clip));
+    setClipRegionReleaseGuard(null);
+    const region = acquireClipRegion();
+    releaseClipRegion(region);
+    releaseClipRegion(region);
+    expect(seen).toEqual([]);
   });
 });
 

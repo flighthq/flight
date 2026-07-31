@@ -16,6 +16,19 @@ function captureLog(run: () => void): readonly LogEntry[] {
   }
 }
 
+describe('disableClipGuards', () => {
+  it('uninstalls the guard so a later double release stays SILENT', () => {
+    const entries = captureLog(() => {
+      enableClipGuards();
+      disableClipGuards();
+      const region = acquireClipRegion();
+      releaseClipRegion(region);
+      releaseClipRegion(region);
+    });
+    expect(entries.length).toBe(0);
+  });
+});
+
 describe('enableClipGuards', () => {
   it('WARNS when a region is released twice, which would otherwise alias silently', () => {
     const entries = captureLog(() => {

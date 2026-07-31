@@ -1,4 +1,4 @@
-import { easeSteps } from './easeSteps';
+import { easeSteps, setEasingStepsGuard } from './easeSteps';
 
 describe('easeSteps', () => {
   it('jumpEnd holds at 0 first and reaches 1 only at t=1', () => {
@@ -61,5 +61,38 @@ describe('easeSteps', () => {
       expect(value).toBeGreaterThanOrEqual(prev);
       prev = value;
     }
+  });
+});
+
+describe('setEasingStepsGuard', () => {
+  it('invokes the installed guard for the degenerate jumpNone, count<2 call', () => {
+    const calls: unknown[] = [];
+    setEasingStepsGuard((count, position) => calls.push([count, position]));
+    try {
+      easeSteps(1, 'jumpNone');
+      expect(calls).toEqual([[1, 'jumpNone']]);
+    } finally {
+      setEasingStepsGuard(null);
+    }
+  });
+
+  it('does not invoke the guard for well-defined calls', () => {
+    const calls: unknown[] = [];
+    setEasingStepsGuard((count, position) => calls.push([count, position]));
+    try {
+      easeSteps(4, 'jumpNone');
+      easeSteps(1, 'jumpEnd');
+      expect(calls).toEqual([]);
+    } finally {
+      setEasingStepsGuard(null);
+    }
+  });
+
+  it('stops invoking a previously installed guard once set back to null', () => {
+    const calls: unknown[] = [];
+    setEasingStepsGuard((count, position) => calls.push([count, position]));
+    setEasingStepsGuard(null);
+    easeSteps(1, 'jumpNone');
+    expect(calls).toEqual([]);
   });
 });
