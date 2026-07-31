@@ -1,5 +1,6 @@
 export * from './createEasingSamples';
 export * from './easeBack';
+export * from './enableEasingGuards';
 export * from './easeBounce';
 export * from './easeCircular';
 export * from './easeCombinators';

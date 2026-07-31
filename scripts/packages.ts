@@ -6,7 +6,12 @@ import pc from 'picocolors';
 import * as ts from 'typescript';
 
 import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
-import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers';
+import {
+  getCoreGuardImportViolations,
+  getCoreGuardRuntimeImportViolations,
+  getPackageLayerCoverageViolations,
+  getPackageLayerDependencyViolation,
+} from './package-layers';
 import { getPackageLockWorkspaceViolations, type PackageLockJson, type WorkspaceManifest } from './package-lock-policy';
 import { isSdkBarrelExcludedPackage } from './sdk-policy';
 
@@ -232,6 +237,36 @@ function scanFlightImportSpecifiers(files: string[]): Set<string> {
     }
   }
   return imports;
+}
+
+// The same scan as scanFlightImports, but keyed BY FILE — the core guard exception is file-scoped, so
+// enforcing it needs to know which file an import came from, not just that the package imports it.
+// Relative (same-package) import specifiers keyed by file — used to prove guard modules stay out of the
+// runtime graph, which the @flighthq-scoped scan cannot see.
+function scanLocalImportsByFile(files: string[]): Map<string, string[]> {
+  const byFile = new Map<string, string[]>();
+  for (const filePath of files) {
+    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
+    const specifiers: string[] = [];
+    for (const statement of sourceFile.statements) {
+      const moduleSpecifier =
+        (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) && statement.moduleSpecifier;
+      if (moduleSpecifier && ts.isStringLiteral(moduleSpecifier) && moduleSpecifier.text.startsWith('.')) {
+        specifiers.push(moduleSpecifier.text);
+      }
+    }
+    if (specifiers.length > 0) byFile.set(relative(root, filePath), specifiers);
+  }
+  return byFile;
+}
+
+function scanFlightImportsByFile(files: string[]): Map<string, string[]> {
+  const byFile = new Map<string, string[]>();
+  for (const filePath of files) {
+    const specifiers = [...scanFlightImportSpecifiers([filePath])];
+    if (specifiers.length > 0) byFile.set(relative(root, filePath), specifiers);
+  }
+  return byFile;
 }
 
 function scanFlightImports(files: string[]): Set<string> {
@@ -601,6 +636,12 @@ for (const pkgDir of packageDirs) {
     const violation = getPackageLayerDependencyViolation(name, dep);
     if (violation !== null) errors.push(violation);
   }
+
+  // The core guard exception is file-scoped: a core package may import @flighthq/log, but only from an
+  // enable*Guards module. Without this the manifest allowance would silently become a blanket one.
+  errors.push(...getCoreGuardImportViolations(name, scanFlightImportsByFile(srcFiles)));
+  // ...and that no core runtime file pulls its own guard module into the always-loaded graph.
+  errors.push(...getCoreGuardRuntimeImportViolations(name, scanLocalImportsByFile(srcFiles)));
 
   for (const imp of [...sourceImports].sort()) {
     if (imp === name) continue;
