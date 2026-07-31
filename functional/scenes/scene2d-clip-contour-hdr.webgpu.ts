@@ -16,7 +16,7 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuBloomEffectRunner,
+  registerWgpuBloomEffect,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   enableWgpuClipSupport,
@@ -24,7 +24,6 @@ import {
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -44,7 +43,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
 enableWgpuClipSupport(state);
-registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
+registerWgpuBloomEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba16f' });
 

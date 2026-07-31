@@ -14,12 +14,11 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
-  defaultWgpuSsaoEffectRunner,
+  registerWgpuSsaoEffect,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -37,7 +36,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
-registerWgpuRenderEffect(state, 'SsaoEffect', defaultWgpuSsaoEffectRunner);
+registerWgpuSsaoEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
 

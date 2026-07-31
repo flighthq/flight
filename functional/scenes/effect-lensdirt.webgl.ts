@@ -12,13 +12,12 @@ import {
   createGlRenderState,
   createLensDirtEffect,
   createShape,
-  defaultGlLensDirtEffectRunner,
+  registerGlLensDirtEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -38,7 +37,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'LensDirtEffect', defaultGlLensDirtEffectRunner);
+registerGlLensDirtEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 

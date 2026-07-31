@@ -12,14 +12,13 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuCrtEffectRunner,
+  registerWgpuCrtEffect,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -37,7 +36,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
-registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
+registerWgpuCrtEffect(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 

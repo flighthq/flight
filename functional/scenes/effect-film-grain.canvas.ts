@@ -12,12 +12,11 @@ import {
   createDisplayObject,
   createFilmGrainEffect,
   createShape,
-  defaultCanvasFilmGrainEffectRunner,
+  registerCanvasFilmGrainEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -34,7 +33,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x808080ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'FilmGrainEffect', defaultCanvasFilmGrainEffectRunner);
+registerCanvasFilmGrainEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

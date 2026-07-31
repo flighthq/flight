@@ -16,7 +16,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   createWgpuVelocityTarget,
-  defaultWgpuMotionBlurEffectRunner,
+  registerWgpuMotionBlurEffect,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
   endWgpuRenderEffectPipeline,
@@ -24,7 +24,6 @@ import {
   prepareScene2DRender,
   registerRenderer,
   registerWgpuImageTextureResolver,
-  registerWgpuRenderEffect,
   registerWgpuVelocityWriter,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -44,7 +43,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerWgpuImageTextureResolver(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
-registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
+registerWgpuMotionBlurEffect(state);
 registerWgpuVelocityWriter(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DVelocityWriter);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });

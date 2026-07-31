@@ -14,10 +14,9 @@ import {
   createVignetteEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasVignetteEffectRunner,
+  registerCanvasVignetteEffect,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -34,7 +33,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
+registerCanvasVignetteEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

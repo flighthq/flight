@@ -15,7 +15,7 @@ import {
   createGlRenderState,
   createGlRenderTarget,
   createShape,
-  defaultGlBlendEffectRunner,
+  registerGlBlendEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
@@ -24,7 +24,6 @@ import {
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerGlBlendEffectBackdrop,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -56,7 +55,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
+registerGlBlendEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

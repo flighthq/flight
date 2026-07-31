@@ -14,11 +14,10 @@ import {
   createSharpenEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
-  defaultGlSharpenEffectRunner,
+  registerGlSharpenEffect,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -38,7 +37,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
-registerGlRenderEffect(state, 'SharpenEffect', defaultGlSharpenEffectRunner);
+registerGlSharpenEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 

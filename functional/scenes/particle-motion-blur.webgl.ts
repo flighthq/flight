@@ -16,14 +16,13 @@ import {
   createTexture,
   createTextureAtlas,
   createVelocityField,
-  defaultGlMotionBlurEffectRunner,
+  registerGlMotionBlurEffect,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
-  registerGlRenderEffect,
   registerGlVelocityWriter,
   registerRenderer,
   renderGlBackground,
@@ -46,7 +45,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerStandardGlTextureResolvers(state);
 registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
-registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
+registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });

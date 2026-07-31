@@ -14,13 +14,12 @@ import {
   createDisplayObject,
   createShape,
   createVignetteEffect,
-  defaultCanvasBloomEffectRunner,
+  registerCanvasBloomEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasVignetteEffectRunner,
+  registerCanvasVignetteEffect,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -37,8 +36,8 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
-registerCanvasRenderEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
+registerCanvasBloomEffect(state);
+registerCanvasVignetteEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

@@ -87,3 +87,9 @@ beforeEach(() => {
 function createTarget(id: string, width = 32, height = 16): never {
   return { id, canvas: {}, context: {}, width, height } as never;
 }
+
+describe('registerCanvasOuterGlowEffect', () => {
+  it('is a function', () => {
+    expect(typeof registerCanvasOuterGlowEffect).toBe('function');
+  });
+});
