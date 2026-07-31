@@ -9,6 +9,7 @@ import {
   captureUrl,
   getCaptureOutputPaths,
   isTransientCaptureError,
+  isVerifiedCaptureTool,
 } from './captureEntry';
 
 describe('buildCaptureObserveDiagnostics', () => {
@@ -155,5 +156,21 @@ describe('isTransientCaptureError', () => {
     expect(isTransientCaptureError('page.goto: Timeout 15000ms exceeded')).toBe(true);
     expect(isTransientCaptureError('Execution context was destroyed')).toBe(true);
     expect(isTransientCaptureError('[mesh] expected red, got blue')).toBe(false);
+  });
+});
+
+describe('isVerifiedCaptureTool', () => {
+  it('verifies the monorepo subjects whose pages register an in-page verifier', () => {
+    // Examples earn this for a reason of their own: a software WebGPU adapter cannot present to the
+    // swapchain, so an unverified screenshot is blank for every scene alike.
+    expect(isVerifiedCaptureTool('examples')).toBe(true);
+    expect(isVerifiedCaptureTool('functional')).toBe(true);
+  });
+
+  it('leaves an external subject to opt in explicitly', () => {
+    // reference pages only register a target once their harness does; defaulting them on would fail
+    // every capture waiting for a verifier that never arrives.
+    expect(isVerifiedCaptureTool('reference')).toBe(false);
+    expect(isVerifiedCaptureTool('unknown-subject')).toBe(false);
   });
 });

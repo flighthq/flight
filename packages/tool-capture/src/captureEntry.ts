@@ -261,9 +261,16 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   } = opts;
   const { displayLabel } = opts;
   // The in-page render verifier drives the surface readback (__ftRenderImage) that avoids Docker's
-  // compositor-only black WebGL screenshots. It is implicit for the functional tool; an external subject
-  // (reference) opts in via `verify` once its pages register a functional target.
-  const verify = opts.verify ?? tool === 'functional';
+  // compositor-only black WebGL screenshots. It is implicit for the monorepo's own subjects; an external
+  // subject (reference) opts in via `verify` once its pages register a functional target.
+  //
+  // Examples are verified for the same reason functional scenes are, plus one specific to them: a
+  // software WebGPU adapter cannot present to the swapchain, so a plain Playwright screenshot of an
+  // examples page is blank for EVERY scene — nine unrelated scenes produced one identical hash while the
+  // same scenes read back correctly through the verifier. Without verification an examples capture means
+  // "the page loaded and a screenshot was taken", which a black frame passes; with it, the capture reads
+  // the surface the scene actually rendered.
+  const verify = opts.verify ?? isVerifiedCaptureTool(tool);
   let anyFailed = false;
   let anyChanged = false;
 
@@ -1150,3 +1157,11 @@ export function isTransientCaptureError(message: string): boolean {
     message,
   );
 }
+
+// Subjects whose pages register an in-page render verifier, so a capture can read back the rendered
+// surface instead of trusting the compositor. `reference` is external and opts in explicitly via `verify`.
+export function isVerifiedCaptureTool(tool: string): boolean {
+  return VERIFIED_CAPTURE_TOOLS.has(tool);
+}
+
+const VERIFIED_CAPTURE_TOOLS: ReadonlySet<string> = new Set(['examples', 'functional']);

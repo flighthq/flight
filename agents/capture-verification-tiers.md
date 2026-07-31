@@ -1,7 +1,6 @@
 # Capture Verification Tiers — what each leg checks, and what fails hard
 
-**Status: items 1, 2 and 4 IMPLEMENTED; item 3 open and blocked on a live finding (see "What the live leg
-found").** Written by builder2 at chief's request, folding the "examples-parity is signal-free" question and
+**Status: items 1-4 IMPLEMENTED.** Written by builder2 at chief's request, folding the "examples-parity is signal-free" question and
 the tool-capture verification-policy question into one, because they turned out to have the same shape. Read
 this before changing a capture leg, a verification default, or a CI gate that consumes them.
 
@@ -69,15 +68,24 @@ isolation at `webgl·webgpu 0.17`. The full leg runs six concurrent workers, so 
 flakiness under parallel load rather than a scene defect. It matters for item 3 directly: turning verification
 on more widely would amplify exactly this, so the flakiness wants a cause before the tier wants more coverage.
 
-**The capture path and the validate path do not agree about webgpu, and item 3 depends on which is right.**
-On this machine every `capture --tool=examples` webgpu screenshot across nine different scenes carries one
-identical hash — a uniform blank frame — while the same scenes render correctly through `validate`, and
-canvas/webgl captures are all distinct. Enabling `--verify` for examples captures (item 3) would therefore
-fail every webgpu example here, for a reason that is not the scene's fault. **Item 3 should not ship until
-this discrepancy is explained**, because it decides whether verification would be measuring the scene or the
-harness. Two incidental facts worth keeping: identical hashes across unrelated scenes is a fast test for
-"the harness, not the scene", and `logs.jsonl` captures only `warn`/`error` — a `console.log` probe records
-nothing.
+**Why capture and validate disagreed about webgpu — and why it turned out to be the argument FOR item 3.**
+On this machine every `capture --tool=examples` webgpu screenshot across nine different scenes carried one
+identical hash — a uniform blank frame — while the same scenes read back correctly through `validate` and
+every canvas/webgl capture was distinct. The cause is stated plainly in `captureEntry.ts`: a software WebGPU
+adapter cannot present to the swapchain, so a plain Playwright screenshot is blank regardless of what the
+scene drew. `validate` never screenshots — it reads the surface back in-page (a `mapAsync` GPU readback for
+WebGPU), which is why it saw the real frames.
+
+The first reading of this was that verification would measure the harness rather than the scene, and that
+item 3 should wait. **That was wrong, and inverted.** Verification is the readback path: `verify` defaulted
+to `tool === 'functional'`, so examples never took it and fell through to the unpresentable screenshot.
+Turning it on does not expose examples to the blank-frame problem — it is the fix for it. Enabling it made
+`clock`/webgpu render correctly on the capture path, and the full smoke leg then passed 132 captures across
+dom/canvas/webgl/webgpu with zero failures, confirming every example already registers a verifier and that
+no backend was left behind.
+
+Two incidental facts worth keeping: identical hashes across unrelated scenes is a fast test for "the harness,
+not the scene", and `logs.jsonl` captures only `warn`/`error` — a `console.log` probe records nothing.
 
 ## Part A — why all 107 example captures skipped
 
@@ -123,9 +131,9 @@ differing, gave `ok` / exit 0 before and `FAILED` / exit 1 with the reason after
 
 Three findings, one of which corrects the record:
 
-- **Examples are never render-verified.** `captureEntry.ts`: `const verify = opts.verify ?? tool === 'functional'`.
-  No examples script passes `--verify`, so the entire verification block — including its throws — is skipped
-  for all 107 entries. An examples capture passes on "the page loaded and a screenshot was taken".
+- **Examples were never render-verified** — `const verify = opts.verify ?? tool === 'functional'`, and no
+  examples script passed `--verify`, so the whole verification block including its throws was skipped for all
+  107 entries. **Fixed** (item 3); the default now covers examples too.
 - **The verify-timeout path does hard-fail for functional.** I could not reproduce a timeout false-green
   there: `waitForRenderVerification` swallows the Playwright timeout, but the caller then throws on
   `state === 'failed'` *and* on `state !== 'passed'`, which covers the null a timeout produces. So the
@@ -154,10 +162,10 @@ everything and pass* — and that is the whole defect.
 1. Make a zero-comparison parity run **fail**. Smallest change, highest value: it converts today's silent
    green into a loud "this leg is unconfigured", and would have caught this without anyone reading the code.
 2. Give examples parity groups (A1), so the leg has real input.
-3. Decide render verification for examples deliberately: either enable `--verify` for the examples smoke leg
-   — closing the black-frame hole — or record explicitly that examples are load-gated only, so the gap is a
-   documented choice rather than an accident of a default. **Prefer enabling it**; a black frame passing a
-   render check is precisely the false-green class this whole question started from.
+3. Decide render verification for examples deliberately. **Implemented by enabling it**: `isVerifiedCaptureTool`
+   now covers `examples` alongside `functional`, so an examples capture means "rendered and verified" rather
+   than "the page loaded and a screenshot was taken". `reference` stays opt-in, since its pages only register
+   a target once its own harness does.
 
 ## Scope
 
