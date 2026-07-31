@@ -11,6 +11,12 @@ Refreshed against the 2026-07-13 review (solid — 88). All three previously-Rec
 ## Directed
 
 1. **Build `ApplicationRenderView` as the explicit 95% assembly.** It links an `ApplicationWindow`, `RenderState`, `RenderTarget`, and device-pixel `Viewport` while keeping all four independently accessible. Window resize updates the common target/state/viewport case; callers attach additional resize work through the existing signal rather than a kitchen-sink callback surface.
+
+   > **[2026-07-31 · principal] Read this as built-as-assembly, unbuilt-as-harness — do not start by rewriting the link.** The assembly described above **already exists and is tested**: `createApplicationRenderView` / `attachApplicationRenderView` / `synchronizeApplicationRenderView` here, and `createGlApplicationRenderView` / `destroyGlApplicationRenderView` in `@flighthq/application-gl` (canvas backing-store sync, state, target, viewport, resize, GL cache invalidation).
+   >
+   > What is **not** built is the batteries-included half the user named on 2026-07-31: getting a caller from "I have a page" to "I have a main loop and a render-ready surface" in one step. Nothing composes the loop with the view, and adoption is ~zero — across the 41 example packages, **39 files hand-roll `requestAnimationFrame`, 50 hand-roll canvas creation, 1 uses `startApplicationLoop`, 0 use `createGlApplicationRenderView`**; its only consumer repo-wide is the functional scene `application-render-view.webgl.ts`.
+   >
+   > The remaining work is **loop composition and example adoption**. Both charters record the direction ([`application`](./charter.md) Decisions, [`application-gl`](../application-gl/charter.md) North star), and the entry-point shape is an **open fork awaiting the user** — see Open direction 5 in the `application` charter. Do not pick the shape unilaterally.
 2. **Keep package arrows pointing downward.** The shared view contract belongs in `@flighthq/types`; generic attach/resize observation belongs here. A render backend must not import `@flighthq/application` merely to offer a backend assembly helper. Prefer a caller composition or a high-level application helper that depends only on lower layers.
 3. **Lead with GL and defer WGPU assembly parity.** Settle the window/target/state/viewport contract and its GL behavior first. Do not use a premature WGPU factory to harden an unvalidated cross-backend contract.
 4. **Make synchronization idempotent and window-authoritative.** Do not assign the canvas backing size
