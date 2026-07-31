@@ -4,6 +4,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
+  appendShapePath,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
@@ -11,7 +12,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import type * as GlShapeModule from './glShape';
@@ -103,6 +104,40 @@ describe('drawGlShape', () => {
 
     expect(gl.drawElements).toHaveBeenCalledTimes(2);
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+  });
+
+  it('draws a closed solid stroke ring as one GPU mesh', () => {
+    const { state, gl } = createGlState();
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+
+    drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
+
+    expect(gl.drawElements).toHaveBeenCalledTimes(1);
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
+  });
+
+  it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
+    const { state, gl } = createGlState();
+    registerStandardGlMaterial(state);
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapePath(
+      shape,
+      [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+      [8, 8, 40, 40, 8, 40, 40, 8],
+      'nonZero',
+    );
+
+    const rendererData = makeShapeData();
+    const proxy = makeShapeNode({ commands: shape.data.commands, version: 1 }, rendererData);
+
+    drawGlShape(state, proxy);
+    drawGlShape(state, proxy);
+
+    expect(gl.drawElements).not.toHaveBeenCalled();
+    expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(2);
   });
 
   it('returns early without writing to batch when commands array is empty', () => {

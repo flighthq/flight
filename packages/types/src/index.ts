@@ -501,6 +501,7 @@ export * from './Shape';
 export * from './ShapeCommand';
 export * from './ShapedRun';
 export * from './ShapeFillRegion';
+export * from './ShapeStrokeRegion';
 export * from './ShapeJson';
 export * from './Share';
 export * from './ShareFile';
