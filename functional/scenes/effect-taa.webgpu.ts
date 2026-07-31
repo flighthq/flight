@@ -14,12 +14,10 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
-  defaultWgpuTaaEffectRunner,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -27,7 +25,8 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu taa: temporal, needs history + motion vectors; with neither here it is a PASSTHROUGH.
+// WGPU has no realized TAA capability. The unregistered operation is intentionally skipped so this
+// column records the backend's unsupported result without a fake identity implementation.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -36,7 +35,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerStandardWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'TaaEffect', defaultWgpuTaaEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
 

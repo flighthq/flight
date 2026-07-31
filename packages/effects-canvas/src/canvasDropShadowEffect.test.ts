@@ -28,7 +28,11 @@ vi.mock('./canvasSourceModeCompositing', () => ({
   drawCanvasTintedAlphaMask: vi.fn(),
 }));
 
-import { applyDropShadowEffectToCanvas, defaultCanvasDropShadowEffectRunner } from './canvasDropShadowEffect';
+import {
+  applyDropShadowEffectToCanvas,
+  defaultCanvasDropShadowEffectRunner,
+  registerCanvasDropShadowEffect,
+} from './canvasDropShadowEffect';
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { compositeCanvasSourceMode } from './canvasSourceModeCompositing';
 
@@ -70,6 +74,10 @@ describe('defaultCanvasDropShadowEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultCanvasDropShadowEffectRunner).toBe('function');
   });
+});
+
+describe('registerCanvasDropShadowEffect', () => {
+  it('is a function', () => expect(registerCanvasDropShadowEffect).toBeTypeOf('function'));
 });
 
 beforeEach(() => {

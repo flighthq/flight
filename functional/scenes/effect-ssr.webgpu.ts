@@ -14,12 +14,10 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
-  defaultWgpuSsrEffectRunner,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -27,8 +25,8 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu ssr: depth-driven, but no depth buffer is bound here, so this is a color-only fallback —
-// no screen-space reflections are traced.
+// WGPU has no realized SSR capability. The unregistered operation is intentionally skipped so this
+// column records the backend's unsupported result without a fake identity implementation.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -37,7 +35,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerStandardWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'SsrEffect', defaultWgpuSsrEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
 
@@ -56,9 +53,8 @@ export function render(root: Node2D): void {
 
 registerWgpuFunctionalTarget(state, scale);
 
-// A normal scene of bright, saturated shapes on a near-black field. ssr is depth-driven: these tests
-// have no depth buffer, so the recipe is a color-only fallback (no reflections traced), but the scene
-// gives it real content to operate on.
+// Bright, saturated shapes retain the shared scene intent while the missing backend capability stays
+// visible as an unchanged image.
 
 const root = createDisplayObject();
 root.scaleX = scale;

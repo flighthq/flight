@@ -2,12 +2,14 @@ import { computeBloomBlurRadius } from '@flighthq/effects/contract';
 import type {
   BloomEffect,
   CanvasRenderEffectRunner,
+  CanvasRenderState,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasRenderEffectPipeline';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Bloom (REAL): bright-pass → blur the bright branch → additively composite back. Multi-pass: it
 // acquires a scratch canvas from the pool, isolates bright pixels by pushing contrast hard so dim
@@ -57,3 +59,7 @@ export function applyBloomEffectToCanvas(
 export const defaultCanvasBloomEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyBloomEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
+
+export function registerCanvasBloomEffect(state: CanvasRenderState): void {
+  registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
+}

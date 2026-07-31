@@ -1,5 +1,6 @@
 import type {
   CanvasRenderEffectRunner,
+  CanvasRenderState,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
   OuterGlowEffect,
@@ -12,6 +13,7 @@ import {
   createCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasRenderEffectPipeline';
+import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -53,6 +55,10 @@ export function applyOuterGlowEffectToCanvas(
 export const defaultCanvasOuterGlowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
+
+export function registerCanvasOuterGlowEffect(state: CanvasRenderState): void {
+  registerCanvasRenderEffect(state, 'OuterGlowEffect', defaultCanvasOuterGlowEffectRunner);
+}
 
 function applyOuterGlowEffectToCanvasWithPool(
   source: Readonly<CanvasRenderTarget>,

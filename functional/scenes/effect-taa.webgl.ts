@@ -14,19 +14,17 @@ import {
   createTaaEffect,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
-  defaultGlTaaEffectRunner,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerStandardGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// taa is a temporal effect [TEMPORAL] needing a history buffer + motion vectors. With neither present
-// in this single-frame test, the Gl runner is a PASSTHROUGH — the scene renders unchanged.
+// GL has no realized TAA capability. The unregistered operation is intentionally skipped so this
+// column records the backend's unsupported result without a fake identity implementation.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerStandardGlMaterial(state);
-registerGlRenderEffect(state, 'TaaEffect', defaultGlTaaEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,

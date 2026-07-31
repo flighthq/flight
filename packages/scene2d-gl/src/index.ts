@@ -1,6 +1,7 @@
 export {
   createGlCacheState,
   createGlVelocityTarget,
+  defaultGlBitmapTextRenderer,
   defaultGlNode2DVelocityWriter,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,

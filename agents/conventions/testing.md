@@ -13,6 +13,12 @@
 - Run `npm run test --workspace=packages/<name>` for a single package.
 - While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood. Broad runs are confidence gates; focused tests are the normal editing loop. Do not use broad test runs as a substitute for reading the nearby source and tests.
 
+## Capability reachability
+
+`npm run reachability:check` has two intentionally different strengths. Its hard, source-derived half fails when a real built-in effect runner has no matching per-kind registrar, when a registrar has no matching runner, or when a wrapper does not front its named runner. These are judgment-free capability invariants: an unmatched runner is stranded implementation, and an unmatched registrar is a false capability claim.
+
+Export-lane placement is curated rather than inferred. The same command compares relevant runtime values and backend leaf defaults against `scripts/reachability-baseline.json`, but lane drift is informational and never fails the build. Review each `.`/`./contract` move as a tuning decision; when it is deliberate, run `npm run reachability:baseline` to update the whole-repo baseline. Do not turn current lane placement back into a hard rule.
+
 ## WebGL specifics
 
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.

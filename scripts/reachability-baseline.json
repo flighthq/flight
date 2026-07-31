@@ -1,0 +1,1451 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasBloomEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasDropShadowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasFilmGrainEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasOuterGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasPixelateEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasScanlinesEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasVignetteEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasBloomEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasDropShadowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasFilmGrainEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasOuterGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasPixelateEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasRenderEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasScanlinesEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasVignetteEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlBevelEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlBlendEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlBloomEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlBokehDepthOfFieldEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlCameraMotionBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlChromaticAberrationEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlCompositeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlContactShadowsEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlConvolutionEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlCrtEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlCustomShaderEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlDirectionalBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlDisplacementEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlDitherEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlDropShadowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlFilmGrainEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlFxaaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlGlitchEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlGodRaysEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlGradientBevelEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlGradientGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlHalftoneEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlInnerGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlInnerShadowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlKuwaharaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlLensDirtEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlLensDistortionEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlLensFlareEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlMedianEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlMotionBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlOuterGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlOutlineEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlPixelateEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlPosterizeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlRadialBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlScanlinesEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlScreenSpaceFogEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlSharpenEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlSketchEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlSmaaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlSsaoEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlTiltShiftEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlToneMapEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlVignetteEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "defaultGlWhiteBalanceEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBlendEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBloomEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlBokehDepthOfFieldEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlCameraMotionBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlChromaticAberrationEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlCompositeEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlContactShadowsEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlConvolutionEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlCrtEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlCustomShaderEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlDirectionalBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlDisplacementEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlDitherEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlDropShadowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlFilmGrainEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlFxaaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlGlitchEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlGodRaysEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlGradientBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlGradientGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlHalftoneEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlInnerGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlInnerShadowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlKuwaharaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlLensDirtEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlLensDistortionEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlLensFlareEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlMedianEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlMotionBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlOuterGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlOutlineEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlPixelateEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlPosterizeEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlRadialBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlRenderEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlScanlinesEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlScreenSpaceFogEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlSharpenEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlSketchEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlSmaaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlSsaoEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlTiltShiftEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlToneMapEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlVignetteEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-gl",
+      "symbol": "registerGlWhiteBalanceEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuBevelEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuBlendEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuBloomEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuCameraMotionBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuChromaticAberrationEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuCompositeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuContactShadowsEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuConvolutionEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuCrtEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuDirectionalBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuDisplacementEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuDitherEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuDropShadowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuFilmGrainEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuFxaaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuGlitchEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuGodRaysEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuGradientBevelEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuGradientGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuHalftoneEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuInnerGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuInnerShadowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuKuwaharaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuLensDirtEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuLensDistortionEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuLensFlareEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuMedianEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuMotionBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuOuterGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuOutlineEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuPixelateEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuPosterizeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuRadialBlurEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuScanlinesEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuScreenSpaceFogEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuSharpenEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuSketchEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuSmaaEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuSsaoEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuTiltShiftEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuToneMapEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuVignetteEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "defaultWgpuWhiteBalanceEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuBlendEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuBloomEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuCameraMotionBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuChromaticAberrationEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuCompositeEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuContactShadowsEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuConvolutionEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuCrtEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuDirectionalBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuDisplacementEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuDitherEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuDropShadowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuFilmGrainEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuFxaaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuGlitchEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuGodRaysEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuGradientBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuGradientGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuHalftoneEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuInnerGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuInnerShadowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuKuwaharaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuLensDirtEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuLensDistortionEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuLensFlareEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuMedianEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuMotionBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuOuterGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuOutlineEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuPixelateEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuPosterizeEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuRadialBlurEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuRenderEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuScanlinesEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuScreenSpaceFogEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuSharpenEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuSketchEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuSmaaEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuSsaoEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuTiltShiftEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuToneMapEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuVignetteEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-wgpu",
+      "symbol": "registerWgpuWhiteBalanceEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasBitmapTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasParticleEmitter2DRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasQuadBatchRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasRichTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasScale9ShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasScene2DRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasSpriteRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasTextLabelRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasTilemapRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomHtmlViewRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomNativeTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomRichTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomScale9ShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomScene2DRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomSpriteRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomTextLabelRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlBitmapTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlParticleEmitter2DRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlQuadBatchRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlRichTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlScale9ShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlScene2DRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlSpriteRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlTextLabelRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlTilemapRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuBitmapTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuParticleEmitter2DRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuQuadBatchRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuRichTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuScale9ShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuScene2DRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuSpriteRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuTextLabelRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuTilemapRenderer",
+      "dot": true,
+      "contract": true
+    }
+  ]
+}

@@ -48,8 +48,6 @@ describe('GL effect registration', () => {
     ['SketchEffect', 'registerGlSketchEffect', 'defaultGlSketchEffectRunner'],
     ['SmaaEffect', 'registerGlSmaaEffect', 'defaultGlSmaaEffectRunner'],
     ['SsaoEffect', 'registerGlSsaoEffect', 'defaultGlSsaoEffectRunner'],
-    ['SsrEffect', 'registerGlSsrEffect', 'defaultGlSsrEffectRunner'],
-    ['TaaEffect', 'registerGlTaaEffect', 'defaultGlTaaEffectRunner'],
     ['TiltShiftEffect', 'registerGlTiltShiftEffect', 'defaultGlTiltShiftEffectRunner'],
     ['ToneMapEffect', 'registerGlToneMapEffect', 'defaultGlToneMapEffectRunner'],
     ['VignetteEffect', 'registerGlVignetteEffect', 'defaultGlVignetteEffectRunner'],

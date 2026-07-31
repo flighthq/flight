@@ -14,17 +14,16 @@ import {
   createTiltShiftEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasTiltShiftEffectRunner,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same tilt-shift intent as render.webgl.ts.
+// Canvas has no realized tilt-shift capability. The unregistered operation is intentionally skipped
+// so this column records the backend's unsupported result without a fake passthrough runner.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -32,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'TiltShiftEffect', defaultCanvasTiltShiftEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -48,8 +46,8 @@ export function render(root: Node2D): void {
   endCanvasRenderEffectPipeline(state, pipeline, [createTiltShiftEffect({ center: 0.5, width: 0.25, blur: 6 })]);
 }
 
-// Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away
-// from the center are clearly visible against the straight rectangle edges.
+// Off-center shapes retain the shared scene intent while the missing backend capability stays visible
+// as an unchanged image.
 
 const root = createDisplayObject();
 root.scaleX = scale;

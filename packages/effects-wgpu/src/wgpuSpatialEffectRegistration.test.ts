@@ -14,7 +14,6 @@ describe('WGPU effect registration', () => {
     ['BlendEffect', 'registerWgpuBlendEffect', 'defaultWgpuBlendEffectRunner'],
     ['BloomEffect', 'registerWgpuBloomEffect', 'defaultWgpuBloomEffectRunner'],
     ['BlurEffect', 'registerWgpuBlurEffect', 'defaultWgpuBlurEffectRunner'],
-    ['BokehDepthOfFieldEffect', 'registerWgpuBokehDepthOfFieldEffect', 'defaultWgpuBokehDepthOfFieldEffectRunner'],
     ['CameraMotionBlurEffect', 'registerWgpuCameraMotionBlurEffect', 'defaultWgpuCameraMotionBlurEffectRunner'],
     [
       'ChromaticAberrationEffect',
@@ -55,8 +54,6 @@ describe('WGPU effect registration', () => {
     ['SketchEffect', 'registerWgpuSketchEffect', 'defaultWgpuSketchEffectRunner'],
     ['SmaaEffect', 'registerWgpuSmaaEffect', 'defaultWgpuSmaaEffectRunner'],
     ['SsaoEffect', 'registerWgpuSsaoEffect', 'defaultWgpuSsaoEffectRunner'],
-    ['SsrEffect', 'registerWgpuSsrEffect', 'defaultWgpuSsrEffectRunner'],
-    ['TaaEffect', 'registerWgpuTaaEffect', 'defaultWgpuTaaEffectRunner'],
     ['TiltShiftEffect', 'registerWgpuTiltShiftEffect', 'defaultWgpuTiltShiftEffectRunner'],
     ['ToneMapEffect', 'registerWgpuToneMapEffect', 'defaultWgpuToneMapEffectRunner'],
     ['VignetteEffect', 'registerWgpuVignetteEffect', 'defaultWgpuVignetteEffectRunner'],
