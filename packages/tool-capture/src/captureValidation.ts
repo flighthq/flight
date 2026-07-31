@@ -854,7 +854,6 @@ export async function runCaptureValidation(
           parityFailures += result.parityFailures;
           parityUncovered += result.parityUncovered;
           regressionUncovered += result.regressionUncovered;
-          regressionUncovered += result.regressionUncovered;
           regressionPasses += result.regressionPasses;
           parityPasses += result.parityPasses;
           loadFailures += result.loadFailures;
@@ -872,6 +871,7 @@ export async function runCaptureValidation(
         regressionFailures += result.regressionFailures;
         parityFailures += result.parityFailures;
         parityUncovered += result.parityUncovered;
+        regressionUncovered += result.regressionUncovered;
         regressionPasses += result.regressionPasses;
         parityPasses += result.parityPasses;
         loadFailures += result.loadFailures;
