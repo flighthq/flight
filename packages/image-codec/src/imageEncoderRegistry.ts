@@ -8,6 +8,12 @@ export function getImageEncoder(mimeType: string): ImageEncoder | null {
   return encoders.get(mimeType) ?? null;
 }
 
+// Returns an insertion-ordered snapshot of the MIME types with registered encoders. Mutating the
+// returned array cannot change registry state.
+export function getImageEncoderMimeTypes(): readonly string[] {
+  return Array.from(encoders.keys());
+}
+
 export function hasImageEncoder(mimeType: string): boolean {
   return encoders.has(mimeType);
 }
