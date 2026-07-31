@@ -33,4 +33,42 @@ describe('releaseShapedRun', () => {
     const run = acquireShapedRun();
     expect(() => releaseShapedRun(run)).not.toThrow();
   });
+
+  // A pool entry must appear at most once. Honouring a second release put the run in twice, so the
+  // next two acquires handed one object to two callers who then shaped into the same buffer -- the
+  // failure shows up as wrong glyphs somewhere else entirely.
+  it('ignores a second release of the same run, so two acquires stay distinct', () => {
+    const run = acquireShapedRun();
+    releaseShapedRun(run);
+    releaseShapedRun(run);
+
+    const first = acquireShapedRun();
+    const second = acquireShapedRun();
+
+    expect(first).not.toBe(second);
+  });
+
+  // The membership record has to be cleared on the way out, or a run legitimately re-released after a
+  // later acquire is mistaken for a double release and silently dropped from the pool.
+  it('accepts a release again after the run has been re-acquired', () => {
+    const run = acquireShapedRun();
+    releaseShapedRun(run);
+    const reacquired = acquireShapedRun();
+    expect(reacquired).toBe(run);
+
+    releaseShapedRun(reacquired);
+    expect(acquireShapedRun()).toBe(run);
+  });
+
+  it('keeps distinct runs distinct through an acquire-release cycle', () => {
+    const first = acquireShapedRun();
+    const second = acquireShapedRun();
+    releaseShapedRun(first);
+    releaseShapedRun(second);
+
+    const a = acquireShapedRun();
+    const b = acquireShapedRun();
+
+    expect(a).not.toBe(b);
+  });
 });
