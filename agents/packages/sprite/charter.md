@@ -6,6 +6,7 @@ lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+absorbed: "@flighthq/scene2d + @flighthq/quadbatch + @flighthq/tilemap + @flighthq/particleemitter"
 ---
 
 # sprite — Charter
