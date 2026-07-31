@@ -2,6 +2,7 @@ import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createBoxMeshGeometry,
   createMeshGeometry,
+  invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
   updateMeshMorph,
 } from '@flighthq/mesh/contract';
@@ -53,11 +54,11 @@ describe('ensureWgpuMeshUpload', () => {
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(writesAfterFirst);
   });
 
-  it('re-uploads when geometry.version changes', () => {
+  it('re-uploads after direct geometry edits are invalidated', () => {
     const { state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();
     const first = ensureWgpuMeshUpload(state, geometry);
-    geometry.version++;
+    invalidateMeshGeometry(geometry);
     const second = ensureWgpuMeshUpload(state, geometry);
     expect(second).not.toBe(first);
     expect(second!.version).toBe(geometry.version);

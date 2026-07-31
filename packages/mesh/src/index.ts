@@ -57,6 +57,7 @@ export {
   getVertexAttributeFloatOffset,
   hasMeshGeometrySkin,
   indexMeshGeometryVertices,
+  invalidateMeshGeometry,
   mergeMeshGeometries,
   offsetMeshGeometryUvs,
   refreshMeshGeometryBounds,

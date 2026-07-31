@@ -137,6 +137,13 @@ export function hasMeshGeometrySkin(geometry: Readonly<MeshGeometry>): boolean {
   return false;
 }
 
+// Marks direct writes to the shared vertex/index payload visible to bounds and every backend upload
+// cache. Mesh package mutators advance this version themselves; callers need this escape hatch only
+// after mutating the public typed arrays directly.
+export function invalidateMeshGeometry(geometry: MeshGeometry): void {
+  geometry.version = (geometry.version + 1) >>> 0;
+}
+
 // Stores (or clears, with null) the CPU-morph base pose on the geometry's runtime. Called once by the
 // morph deform glue when a morphed geometry is first captured; pass null to force a recapture (e.g.
 // after the vertex layout or base data changes). Sibling of setMeshGeometrySkinBindPose.
