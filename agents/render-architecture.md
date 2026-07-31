@@ -64,7 +64,12 @@ shares only the device tier; `copyWgpuRenderStateRegistrations` plus the generic
 explicit later-sync verbs. `destroyWgpuRenderState` frees one state's local buffers and renderer data,
 then releases its reference to the shared device tier without destroying the app-owned `GPUDevice`.
 
-### Explicit per-node GPU effect lane
+`createCanvasOffscreenRenderState(screenState)` provides the same pipeline-policy separation for
+Canvas. It owns a fresh host canvas, context, proxy tree, and registration snapshots while resolving
+produced `RenderTexture` targets through the screen state. `copyCanvasRenderStateRegistrations` is
+the explicit later-sync verb; `destroyCanvasRenderState` releases traversal-owned renderer data.
+
+### Explicit per-node effect lane
 
 Per-node effects use a second, long-lived offscreen state over the screen backend. The selected node
 is prepared as that state's root, so no main-scene ancestor proxy is captured or mutated. The
@@ -79,23 +84,26 @@ The frame is an explicit sequence:
    registration. Sequential spatial effects add each side, pointwise effects add zero, and a missing
    resolver returns zero plus an explanation and emits only through the opt-in shared registry-miss
    signal seam. Gaussian blur contributes `ceil(3 * sigma)` on its corresponding axis.
-2. Compute current dimensions and acquire `RenderTexture` leases from `GlRenderTexturePool` or
-   device-locked `WgpuRenderTexturePool` every frame. Re-acquisition revalidates dimensions;
-   released handles are not sampleable and a WGPU pool cannot cross devices.
+2. Compute current dimensions and acquire `RenderTexture` leases from screen-locked
+   `CanvasRenderTexturePool`, `GlRenderTexturePool`, or device-locked `WgpuRenderTexturePool` every
+   frame. Re-acquisition revalidates dimensions; released handles are not sampleable and pools cannot
+   cross their screen/context/device owner. `withCanvasRenderTextures` brackets temporary source and
+   scratch ownership while a displayed destination remains manually leased.
 3. Render the subtree through the offscreen state, then apply registered effects target-to-target,
-   ping-ponging one scratch lease. WGPU records capture and effect passes between
+   ping-ponging one scratch lease. Canvas runners draw between offscreen canvases with their existing
+   CSS-filter/compositing mechanics. WGPU records capture and effect passes between
    `beginWgpuFrame(offscreenState)` and `submitWgpuRenderPass(offscreenState)` so one derived encoder
    owns the whole offscreen sequence. Keep the displayed result leased until its consumer is done.
 4. Compose explicitly with `Sprite + RenderTexture`. The source is not a child of the displayed root
    when only the effected result should appear.
 5. `disposeScene2DRender(offscreenState, subtree)` releases per-subtree renderer data.
-   `destroy{Gl,Wgpu}RenderTexturePool` and `destroy{Gl,Wgpu}RenderState` are the whole-pipeline
-   shutdown.
+   `destroy{Canvas,Gl,Wgpu}RenderTexturePool` and `destroy{Canvas,Gl,Wgpu}RenderState` are the
+   whole-pipeline shutdown.
 
 There is no public render-proxy surgery, visibility toggle, implicit `filters` property, or composite
 API in this lane. One state belongs to one root policy; the optional GL state guard warns when the same
 state prepares two different roots. `per-node-effect-lane` verifies the same explicit capture,
-padding, pooled reuse/resize, blur, and composition contract on WebGL and WebGPU.
+padding, pooled reuse/resize, blur, and composition contract on Canvas, WebGL, and WebGPU.
 
 **Frame sequence** — a lit 3D frame is the existing render-effect pipeline with a scene drawn into its target:
 

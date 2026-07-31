@@ -1,11 +1,26 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
+  copyRenderStateRegistrations,
   createRenderState as _createRenderState,
   createRenderStateRuntime,
+  destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
 import type { CanvasRenderOptions, CanvasRenderState, CanvasRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+// Explicit snapshot re-copy for policy that is meaningful to a derived Canvas pipeline. Resource
+// caches remain state-local; registrations are cloned so later changes do not leak across states.
+export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, source: CanvasRenderState): void {
+  const targetRuntime = getCanvasRenderStateRuntime(target);
+  const sourceRuntime = getCanvasRenderStateRuntime(source);
+  target.applyBlendMode = source.applyBlendMode;
+  target.canvasCssFilterResolver = source.canvasCssFilterResolver;
+  targetRuntime.canvasTextureResolverRegistry = copyMap(sourceRuntime.canvasTextureResolverRegistry);
+  targetRuntime.materialRendererMap = copyMap(sourceRuntime.materialRendererMap);
+  targetRuntime.canvasRenderEffectRegistry = copyMap(sourceRuntime.canvasRenderEffectRegistry);
+  copyRenderStateRegistrations(target, source);
+}
 
 export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
@@ -50,8 +65,16 @@ export function createCanvasRenderStateRuntime(): CanvasRenderStateRuntime {
   return createRenderStateRuntime() as CanvasRenderStateRuntime;
 }
 
+export function destroyCanvasRenderState(state: CanvasRenderState): void {
+  destroyRenderState(state);
+}
+
 // Resolves the package-private 2D-canvas runtime attached to a CanvasRenderState. Mutable by design:
 // the render path writes its fields every frame.
 export function getCanvasRenderStateRuntime(state: CanvasRenderState): CanvasRenderStateRuntime {
   return state[EntityRuntimeKey] as CanvasRenderStateRuntime;
+}
+
+function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | undefined {
+  return source === null || source === undefined ? undefined : new Map(source);
 }

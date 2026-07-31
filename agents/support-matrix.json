@@ -1147,7 +1147,7 @@
         {
           "scene": "per-node-effect-lane",
           "backends": {
-            "canvas": false,
+            "canvas": true,
             "dom": false,
             "webgl": true,
             "webgpu": false

@@ -30,6 +30,7 @@ export * from './canvasPosterizeEffect';
 export * from './canvasRadialBlurEffect';
 export * from './canvasRenderEffectPipeline';
 export * from './canvasRenderEffectRegistry';
+export * from './canvasRenderTextureEffect';
 export * from './canvasScanlinesEffect';
 export * from './canvasScreenSpaceFogEffect';
 export * from './canvasSharpenEffect';

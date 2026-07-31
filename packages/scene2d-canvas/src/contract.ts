@@ -18,6 +18,7 @@ export * from './canvasQuadBatch';
 export * from './canvasRenderState';
 export * from './canvasRenderTarget';
 export * from './canvasRenderTexture';
+export * from './canvasRenderTexturePool';
 export * from './canvasRenderTextureResolver';
 export * from './canvasRichText';
 export * from './canvasScale9Mapper';

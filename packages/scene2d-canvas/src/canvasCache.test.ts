@@ -4,6 +4,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
   createCanvasCacheState,
+  createCanvasOffscreenRenderState,
   defaultCanvasRenderCacheRenderer,
   destroyCanvasRenderCacheTarget,
   enableCanvasRenderCache,
@@ -13,7 +14,11 @@ import {
   refreshCanvasRenderCache,
   releaseCanvasRenderCache,
 } from './canvasCache';
-import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
+import {
+  copyCanvasRenderStateRegistrations,
+  createCanvasRenderState,
+  getCanvasRenderStateRuntime,
+} from './canvasRenderState';
 
 function makeCanvasState(options = {}) {
   const canvas = document.createElement('canvas');
@@ -44,6 +49,34 @@ describe('createCanvasCacheState', () => {
     expect(getCanvasRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
       getCanvasRenderStateRuntime(screen).renderProxyMap,
     );
+  });
+
+  it('snapshots registration policy and requires explicit re-copy for later entries', () => {
+    const screen = makeCanvasState();
+    const screenRuntime = getCanvasRenderStateRuntime(screen);
+    const firstRunner = vi.fn();
+    const laterRunner = vi.fn();
+    screenRuntime.canvasRenderEffectRegistry = new Map([['acme.First', firstRunner]]);
+    const cacheState = createCanvasCacheState(screen);
+    const cacheRuntime = getCanvasRenderStateRuntime(cacheState);
+
+    expect(cacheRuntime.canvasRenderEffectRegistry).not.toBe(screenRuntime.canvasRenderEffectRegistry);
+    expect(cacheRuntime.canvasRenderEffectRegistry?.get('acme.First')).toBe(firstRunner);
+
+    screenRuntime.canvasRenderEffectRegistry.set('acme.Later', laterRunner);
+    expect(cacheRuntime.canvasRenderEffectRegistry?.has('acme.Later')).toBe(false);
+
+    copyCanvasRenderStateRegistrations(cacheState, screen);
+    expect(getCanvasRenderStateRuntime(cacheState).canvasRenderEffectRegistry?.get('acme.Later')).toBe(laterRunner);
+  });
+});
+
+describe('createCanvasOffscreenRenderState', () => {
+  it('creates an independent host canvas linked to the screen target owner', () => {
+    const screen = makeCanvasState();
+    const offscreen = createCanvasOffscreenRenderState(screen);
+    expect(offscreen.canvas).not.toBe(screen.canvas);
+    expect(getCanvasRenderCacheScreenState(offscreen)).toBe(screen);
   });
 });
 

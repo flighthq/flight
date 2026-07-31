@@ -1,4 +1,7 @@
 {
+  "canvas": {
+    "sha256": "7fc2859766deb9b72a988eb20d4913b4dec8ad0437ad9291981fa8903648c06e"
+  },
   "webgl": {
     "sha256": "dbc5d022908e58d6b946831387cd55868172c657f809d81e31d79b74aac2d06c"
   }
