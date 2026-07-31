@@ -3,6 +3,7 @@ import type {
   CollisionContactManifold,
   Physics2DContact,
   Physics2DContactPoint,
+  Physics2DJoint,
   Physics2DWorld,
   RigidBody2D,
   SpatialAabb,
@@ -10,6 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform';
+import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
@@ -318,8 +320,14 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   const bodies = world.bodies;
   const config = world.config;
 
+  // Sleep is decided HERE — after the contact set is current, before anything integrates. The placement
+  // is what makes every wake transition cost zero steps. A body woken by a force, by a new neighbour, or
+  // by the caller writing a velocity is awake in time to be integrated by this same step; deciding after
+  // integration instead would skip it once and move it a step late.
+  updatePhysics2DSleep(world, dt);
+
   for (const body of bodies) {
-    if (body.type !== 'dynamic') continue;
+    if (body.type !== 'dynamic' || body.sleeping) continue;
     body.velocityX += (body.forceX * body.inverseMass + world.gravityX * body.gravityScale) * dt;
     body.velocityY += (body.forceY * body.inverseMass + world.gravityY * body.gravityScale) * dt;
     body.angularVelocity += body.torque * body.inverseInertia * dt;
@@ -333,6 +341,7 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
 
   preparePhysics2DConstraints(world, dt);
   for (const joint of world.joints) {
+    if (!isPhysics2DJointAwake(world, joint)) continue;
     world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
   }
   // Joints warm-start alongside contacts, which is what the impulse block on Physics2DJoint has always
@@ -351,6 +360,9 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   for (const joint of world.joints) {
     const solver = world.jointSolvers.get(joint.kind);
     if (solver === undefined) continue;
+    // A joint between two sleeping ends must not warm-start: reapplying its impulse hands a sleeper
+    // velocity it will never integrate, and the next step's stillness test reads that as motion.
+    if (!isPhysics2DJointAwake(world, joint)) continue;
     if (config.warmStarting && solver.warmStart !== undefined) {
       solver.warmStart(world, joint);
     } else {
@@ -362,13 +374,19 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   // a whole pass to themselves between joint iterations.
   for (let iteration = 0; iteration < config.velocityIterations; iteration++) {
     for (const joint of world.joints) {
+      if (!isPhysics2DJointAwake(world, joint)) continue;
       world.jointSolvers.get(joint.kind)?.solve(world, joint);
     }
     solvePhysics2DContactsOnce(world);
   }
 
+  // The sleeping skip here is a COST saving, not a behavioural one, and the distinction is worth having
+  // in writing: a sleeping body's velocity is zeroed when it falls asleep and nothing can hand it more
+  // (any awake neighbour puts it in an awake island before this point), so integrating it would move it
+  // by exactly zero. What the skip buys is that a settled thousand-body pile costs no integration work
+  // at all, which is the entire reason sleep exists. Removing it changes no observable result.
   for (const body of bodies) {
-    if (body.type === 'static') continue;
+    if (body.type === 'static' || body.sleeping) continue;
     body.x += body.velocityX * dt;
     body.y += body.velocityY * dt;
     body.angle += body.angularVelocity * dt;
@@ -397,6 +415,15 @@ function createPhysics2DContactPoint(): Physics2DContactPoint {
     tangentMass: 0,
     bias: 0,
   };
+}
+
+// Whether a joint still has an end the solver can move. Mirrors the contact-side test in the solver:
+// two sleeping ends, or a sleeper anchored to static scenery, constrain nothing this step.
+function isPhysics2DJointAwake(world: Readonly<Physics2DWorld>, joint: Readonly<Physics2DJoint>): boolean {
+  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  const bodyB = findPhysics2DBody(world, joint.bodyB);
+  if (bodyA === null || bodyB === null) return false;
+  return isRigidBody2DPairAwake(bodyA, bodyB);
 }
 
 // Whether any of the body's colliders senses rather than collides. Cheap enough to ask per pair: a

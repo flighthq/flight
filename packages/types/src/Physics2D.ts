@@ -114,6 +114,15 @@ export interface RigidBody2D {
   angularDamping: number;
   gravityScale: number;
 
+  // A sleeping body is skipped by integration and by the solver: it holds its pose, spends no
+  // iterations, and its contacts contribute nothing. Sleep is decided per ISLAND rather than per body,
+  // because a body resting on a moving neighbour is not at rest — the island is the unit that can
+  // truthfully be called still. Static bodies are never asleep or awake; they simply do not move.
+  sleeping: boolean;
+  // Seconds this body has been continuously below both sleep thresholds. Reset the moment it exceeds
+  // either, so the timer measures an unbroken stretch of stillness rather than a total.
+  sleepTimer: number;
+
   colliders: Physics2DCollider[];
 }
 
@@ -192,6 +201,17 @@ export interface Physics2DContact {
 // restitution is dropped, without which a ball bounces forever at ever smaller amplitudes and never
 // comes to rest.
 export interface Physics2DSolverConfig {
+  // Sleeping trades simulation cost for the fact that a settled stack does not need re-solving every
+  // step. `allowSleeping` turns the whole mechanism off for a world that would rather burn the time
+  // than risk a body that should have woken. A body counts as still while its linear speed is under
+  // `sleepLinearThreshold` and its angular speed under `sleepAngularThreshold`; the island sleeps once
+  // EVERY member has been still continuously for `timeToSleep` seconds. Requiring the whole island
+  // prevents the visible failure where a settled crate sleeps while the crate it leans on is still
+  // sliding out from under it.
+  allowSleeping: boolean;
+  sleepLinearThreshold: number;
+  sleepAngularThreshold: number;
+  timeToSleep: number;
   velocityIterations: number;
   positionIterations: number;
   penetrationSlop: number;
