@@ -59,7 +59,7 @@ export const supportsExtendedPbr = true;
 export const supportsVertexColor0 = true;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);

@@ -42,7 +42,7 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   environment: Readonly<Environment>,
 ): void {
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);

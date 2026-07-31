@@ -1,3 +1,4 @@
+import { srgbChannelToLinear } from '@flighthq/color/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { renderGlBackground } from './glBackground';
@@ -50,5 +51,19 @@ describe('renderGlBackground', () => {
     const { state, gl } = createGlState({ backgroundColorRgba: [0.5, 0.25, 0.75, 0.8] });
     renderGlBackground(state);
     expect(gl.clearColor).toHaveBeenCalledWith(0.5, 0.25, 0.75, 0.8);
+  });
+
+  it('decodes an sRGB background when the active target stores linear scene color', () => {
+    const { state, gl } = createGlState({ backgroundColorRgba: [0.5, 0.25, 0.75, 0.8] });
+    getGlRenderStateRuntime(state).currentRenderTarget = { colorSpace: 'linear' } as never;
+
+    renderGlBackground(state);
+
+    expect(gl.clearColor).toHaveBeenCalledWith(
+      srgbChannelToLinear(0.5),
+      srgbChannelToLinear(0.25),
+      srgbChannelToLinear(0.75),
+      0.8,
+    );
   });
 });

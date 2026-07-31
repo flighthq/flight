@@ -35,7 +35,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   state.gl.depthMask(true);
   state.gl.clearDepth(1);

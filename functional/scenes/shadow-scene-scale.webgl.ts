@@ -94,7 +94,7 @@ const shadowCamera = createCamera3D({
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
 drawGlScene3DShadowMap(state, scene, shadowCamera);
 
-beginGlRenderEffectPipeline(state, pipeline);
+beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);

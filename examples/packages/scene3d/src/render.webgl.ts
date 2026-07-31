@@ -44,7 +44,7 @@ export function render(
   prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3DShadowMap(state, scene, shadowCamera);
 
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);

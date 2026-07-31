@@ -4,6 +4,7 @@ import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createScene3DLights,
   addNodeChild,
+  beginWgpuRenderEffectPipeline,
   beginWgpuFrame,
   configureDirectionalShadowCamera3D,
   createAabb,
@@ -18,7 +19,9 @@ import {
   createSphereMeshGeometry,
   createVector3,
   createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
   createWgpuRenderState,
+  endWgpuRenderEffectPipeline,
   getNode3DWorldBounds,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
@@ -41,6 +44,12 @@ export const state = await createWgpuRenderState(canvas, {
 });
 registerBlinnPhongWgpuMaterial(state);
 
+const pipeline = createWgpuRenderEffectPipeline(state, {
+  sampleCount: 4,
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+});
+
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
@@ -55,8 +64,10 @@ export function render(
   beginWgpuFrame(state);
   drawWgpuScene3DShadowMap(state, scene, shadowCamera);
   renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(state, scene, camera, lights);
+  endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);
 }
 
