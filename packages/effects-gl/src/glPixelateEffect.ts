@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, PixelateEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
 export function applyPixelateEffectToGl(
@@ -21,6 +22,10 @@ export function applyPixelateEffectToGl(
 export const defaultGlPixelateEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyPixelateEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
+
+export function registerGlPixelateEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'PixelateEffect', defaultGlPixelateEffectRunner);
+}
 
 const PIXELATE_FRAGMENT_SRC = `#version 300 es
 precision highp float;

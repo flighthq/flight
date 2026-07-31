@@ -2,6 +2,7 @@ import type { SmaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTar
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 // blend-weight passes against precomputed area/search lookup textures; this single-pass approximation
@@ -26,6 +27,10 @@ export function applySmaaEffectToWgpu(
 export const defaultWgpuSmaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applySmaaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
+
+export function registerWgpuSmaaEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'SmaaEffect', defaultWgpuSmaaEffectRunner);
+}
 
 // Slots [0..1]=resolution (vec2f), [2]=threshold; the trailing scalar fits in the same 16-byte block.
 const SMAA_FRAGMENT_WGSL = /* wgsl */ `

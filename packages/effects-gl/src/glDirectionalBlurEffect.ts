@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe. u_resolution converts the texel length into UV space.
@@ -31,6 +32,10 @@ export function applyDirectionalBlurEffectToGl(
 export const defaultGlDirectionalBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyDirectionalBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
+
+export function registerGlDirectionalBlurEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'DirectionalBlurEffect', defaultGlDirectionalBlurEffectRunner);
+}
 
 const DIRECTIONAL_BLUR_FRAGMENT_SRC = `#version 300 es
 precision highp float;

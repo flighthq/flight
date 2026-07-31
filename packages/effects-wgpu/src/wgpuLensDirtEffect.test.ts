@@ -1,4 +1,8 @@
-import { applyLensDirtEffectToWgpu, defaultWgpuLensDirtEffectRunner } from './wgpuLensDirtEffect';
+import {
+  applyLensDirtEffectToWgpu,
+  defaultWgpuLensDirtEffectRunner,
+  registerWgpuLensDirtEffect,
+} from './wgpuLensDirtEffect';
 
 describe('applyLensDirtEffectToWgpu', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyLensDirtEffectToWgpu', () => {
 describe('defaultWgpuLensDirtEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultWgpuLensDirtEffectRunner).toBe('function');
+  });
+});
+
+describe('registerWgpuLensDirtEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuLensDirtEffect).toBeTypeOf('function');
   });
 });

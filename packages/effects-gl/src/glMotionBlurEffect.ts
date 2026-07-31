@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, MotionBlurEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF). When the scene
 // produced a per-pixel velocity buffer (`velocityTexture`, rgba16f screen-space velocity in pixels in the
@@ -33,6 +34,10 @@ export function applyMotionBlurEffectToGl(
 export const defaultGlMotionBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
+
+export function registerGlMotionBlurEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
+}
 
 const MOTION_BLUR_FRAGMENT_SRC = `#version 300 es
 precision highp float;

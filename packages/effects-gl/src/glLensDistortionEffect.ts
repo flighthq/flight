@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
@@ -28,6 +29,10 @@ export function applyLensDistortionEffectToGl(
 export const defaultGlLensDistortionEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
+
+export function registerGlLensDistortionEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'LensDistortionEffect', defaultGlLensDistortionEffectRunner);
+}
 
 const LENS_DISTORTION_FRAGMENT_SRC = `#version 300 es
 precision highp float;

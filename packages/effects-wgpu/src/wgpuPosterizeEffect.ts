@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Posterize: floor each channel to `levels` discrete steps.
 export function applyPosterizeEffectToWgpu(
@@ -25,6 +26,10 @@ export function applyPosterizeEffectToWgpu(
 export const defaultWgpuPosterizeEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
+
+export function registerWgpuPosterizeEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'PosterizeEffect', defaultWgpuPosterizeEffectRunner);
+}
 
 // Slot layout: [0]=levels.
 const POSTERIZE_FRAGMENT_WGSL = /* wgsl */ `

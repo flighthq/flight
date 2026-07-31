@@ -1,4 +1,8 @@
-import { applyDirectionalBlurEffectToGl, defaultGlDirectionalBlurEffectRunner } from './glDirectionalBlurEffect';
+import {
+  applyDirectionalBlurEffectToGl,
+  defaultGlDirectionalBlurEffectRunner,
+  registerGlDirectionalBlurEffect,
+} from './glDirectionalBlurEffect';
 
 describe('applyDirectionalBlurEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyDirectionalBlurEffectToGl', () => {
 describe('defaultGlDirectionalBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlDirectionalBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlDirectionalBlurEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlDirectionalBlurEffect).toBeTypeOf('function');
   });
 });

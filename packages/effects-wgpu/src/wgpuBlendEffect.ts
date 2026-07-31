@@ -9,6 +9,7 @@ import type {
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Advanced-blend composite pass: reads the incoming layer and an explicitly registered backdrop,
 // applies the same W3C straight-color blend math as glBlendEffect, then writes premultiplied
@@ -55,6 +56,10 @@ export function getWgpuBlendEffectBackdrop(
 // to -1, whose shader fallback is Normal source color.
 export function getWgpuBlendEffectModeIndex(mode: AdvancedBlendMode): number {
   return BLEND_MODE_INDEX[mode] ?? -1;
+}
+
+export function registerWgpuBlendEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
 }
 
 // Registers a borrowed render target as a named backdrop. Last write wins; the registry never owns or

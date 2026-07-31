@@ -18,6 +18,7 @@ import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitSha
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
 import { applyGlEffectTintPass } from './glEffectTintShader';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded
@@ -123,6 +124,10 @@ export function applyGradientBevelEffectToGl(
 export const defaultGlGradientBevelEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
+
+export function registerGlGradientBevelEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'GradientBevelEffect', defaultGlGradientBevelEffectRunner);
+}
 
 function applyBevelApplyPass(
   state: GlRenderState,

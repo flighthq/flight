@@ -32,7 +32,11 @@ vi.mock('./wgpuEffectTintShader', () => ({
 }));
 
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
-import { applyOuterGlowEffectToWgpu, defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
+import {
+  applyOuterGlowEffectToWgpu,
+  defaultWgpuOuterGlowEffectRunner,
+  registerWgpuOuterGlowEffect,
+} from './wgpuOuterGlowEffect';
 
 describe('applyOuterGlowEffectToWgpu', () => {
   it('is a function', () => {
@@ -97,3 +101,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerWgpuOuterGlowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuOuterGlowEffect).toBeTypeOf('function');
+  });
+});

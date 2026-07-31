@@ -2,6 +2,7 @@ import type { CrtEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarg
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.
@@ -29,6 +30,10 @@ export function applyCrtEffectToWgpu(
 export const defaultWgpuCrtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyCrtEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CrtEffect);
 };
+
+export function registerWgpuCrtEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
+}
 
 // Slot layout: [0]=curvature, [1]=scanlineIntensity, [2]=vignette, [3]=aberration, [4..5]=resolution.
 const CRT_FRAGMENT_WGSL = /* wgsl */ `

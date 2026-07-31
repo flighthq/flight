@@ -2,6 +2,7 @@ import type { GlitchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderT
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
@@ -30,6 +31,10 @@ export function applyGlitchEffectToWgpu(
 export const defaultWgpuGlitchEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyGlitchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
+
+export function registerWgpuGlitchEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'GlitchEffect', defaultWgpuGlitchEffectRunner);
+}
 
 // Slot layout: [0]=intensity, [1]=blockSize, [2]=colorShift, [3]=seed, [4..5]=resolution.
 const GLITCH_FRAGMENT_WGSL = /* wgsl */ `

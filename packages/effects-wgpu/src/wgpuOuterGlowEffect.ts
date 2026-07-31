@@ -11,6 +11,7 @@ import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectB
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -64,3 +65,7 @@ export function applyOuterGlowEffectToWgpu(
 export const defaultWgpuOuterGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
+
+export function registerWgpuOuterGlowEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'OuterGlowEffect', defaultWgpuOuterGlowEffectRunner);
+}

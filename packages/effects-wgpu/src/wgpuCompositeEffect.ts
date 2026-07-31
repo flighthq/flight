@@ -10,6 +10,7 @@ import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/co
 
 import { getWgpuBlendEffectBackdrop } from './wgpuBlendEffect';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Porter-Duff coverage composite over the same named backdrop registry as BlendEffect. Both inputs are
 // premultiplied, so one Fa/Fb pair applies to RGB and alpha exactly as compositeOperatorMath specifies.
@@ -40,6 +41,10 @@ export const defaultWgpuCompositeEffectRunner: WgpuRenderEffectRunner = (context
 
 export function getWgpuCompositeEffectOperatorIndex(operator: CompositeOperator): number {
   return COMPOSITE_OPERATOR_INDEX[operator] ?? 0;
+}
+
+export function registerWgpuCompositeEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'CompositeEffect', defaultWgpuCompositeEffectRunner);
 }
 
 function getWgpuCompositeEffectPipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {

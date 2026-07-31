@@ -1,4 +1,10 @@
-import { createGradientBevelEffect } from './gradientBevelEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createGradientBevelEffect,
+  getGradientBevelEffectPadding,
+  registerGradientBevelEffectPaddingResolver,
+} from './gradientBevelEffect';
 
 describe('createGradientBevelEffect', () => {
   it('tags the intent type', () => {
@@ -17,5 +23,30 @@ describe('createGradientBevelEffect', () => {
         strength: 2,
       }),
     ).toMatchObject({ sourceMode: 'hide', strength: 2 });
+  });
+});
+
+describe('getGradientBevelEffectPadding', () => {
+  it('adds the directional offset only to the reached sides of the Gaussian footprint', () => {
+    const effect = createGradientBevelEffect({
+      alphas: [1, 1],
+      angle: -90,
+      blurX: 2,
+      blurY: 3,
+      colors: [0xff0000, 0x00ff00],
+      distance: 5,
+      ratios: [0, 255],
+    });
+    expect(getGradientBevelEffectPadding(effect)).toEqual({ bottom: 9, left: 6, right: 6, top: 14 });
+  });
+});
+
+describe('registerGradientBevelEffectPaddingResolver', () => {
+  it('registers the gradient-bevel footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerGradientBevelEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('GradientBevelEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

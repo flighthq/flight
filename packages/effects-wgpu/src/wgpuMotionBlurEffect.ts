@@ -7,6 +7,7 @@ import type {
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu
 // mirror of effects-gl's applyMotionBlurEffectToGl. When the scene produced a per-pixel velocity
@@ -68,6 +69,10 @@ export function applyMotionBlurEffectToWgpu(
 export const defaultWgpuMotionBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
+
+export function registerWgpuMotionBlurEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
+}
 
 // Motion blur needs two source bindings (color = group 1, velocity = group 2), so it uses the
 // dual-source filter primitive; cached per state alongside the single-source effect pipelines.

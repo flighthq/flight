@@ -18,6 +18,7 @@ import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitSha
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
 import { applyGlEffectTintPass } from './glEffectTintShader';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Uses the blurred alpha (unit 0) to index into a gradient ramp texture (unit 1).
 // Outputs the gradient-colored glow at the correct intensity per pixel.
@@ -90,6 +91,10 @@ export function applyGradientGlowEffectToGl(
 export const defaultGlGradientGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
+
+export function registerGlGradientGlowEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'GradientGlowEffect', defaultGlGradientGlowEffectRunner);
+}
 
 function applyGradientLookupPass(
   state: GlRenderState,

@@ -1,6 +1,7 @@
 import {
   applyChromaticAberrationEffectToGl,
   defaultGlChromaticAberrationEffectRunner,
+  registerGlChromaticAberrationEffect,
 } from './glChromaticAberrationEffect';
 
 describe('applyChromaticAberrationEffectToGl', () => {
@@ -12,5 +13,11 @@ describe('applyChromaticAberrationEffectToGl', () => {
 describe('defaultGlChromaticAberrationEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlChromaticAberrationEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlChromaticAberrationEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlChromaticAberrationEffect).toBeTypeOf('function');
   });
 });

@@ -2,6 +2,7 @@ import type { SketchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderT
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 // scales how dark the strokes get.
@@ -24,6 +25,10 @@ export function applySketchEffectToWgpu(
 export const defaultWgpuSketchEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applySketchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
+
+export function registerWgpuSketchEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
+}
 
 // Slot layout: [0]=strength, [1]=pad, [2..3]=resolution.
 const SKETCH_FRAGMENT_WGSL = /* wgsl */ `

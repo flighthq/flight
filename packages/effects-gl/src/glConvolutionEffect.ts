@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { ConvolutionEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Largest kernel the WebGL path supports (a 7×7). The cap is the fixed uniform-array size in the
 // fragment shader; larger kernels are unsupported on this backend.
@@ -53,6 +54,10 @@ export function applyConvolutionEffectToGl(
 export const defaultGlConvolutionEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyConvolutionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ConvolutionEffect);
 };
+
+export function registerGlConvolutionEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'ConvolutionEffect', defaultGlConvolutionEffectRunner);
+}
 
 // Sums the kernel weights; returns 1 when the sum is 0 (e.g. an edge-detect kernel) so the divide is safe.
 function getAutoDivisor(matrix: ReadonlyArray<number>, length: number): number {

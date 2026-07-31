@@ -1,4 +1,8 @@
-import { applyCameraMotionBlurEffectToGl, defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffect';
+import {
+  applyCameraMotionBlurEffectToGl,
+  defaultGlCameraMotionBlurEffectRunner,
+  registerGlCameraMotionBlurEffect,
+} from './glCameraMotionBlurEffect';
 
 describe('applyCameraMotionBlurEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyCameraMotionBlurEffectToGl', () => {
 describe('defaultGlCameraMotionBlurEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlCameraMotionBlurEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlCameraMotionBlurEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlCameraMotionBlurEffect).toBeTypeOf('function');
   });
 });

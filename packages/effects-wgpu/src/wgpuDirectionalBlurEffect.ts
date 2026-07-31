@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe, the Wgpu mirror of effects-gl's
@@ -33,6 +34,10 @@ export function applyDirectionalBlurEffectToWgpu(
 export const defaultWgpuDirectionalBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyDirectionalBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
+
+export function registerWgpuDirectionalBlurEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);
+}
 
 // Slot layout: [0]=angle, [1]=length, [2]=samples, [3]=pad, [4]=resolution.x, [5]=resolution.y.
 const DIRECTIONAL_BLUR_FRAGMENT_WGSL = /* wgsl */ `

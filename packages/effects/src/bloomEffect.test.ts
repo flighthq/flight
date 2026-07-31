@@ -1,4 +1,13 @@
-import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold, createBloomEffect } from './bloomEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  computeBloomBlurRadius,
+  computeBloomIntensity,
+  computeBloomThreshold,
+  createBloomEffect,
+  getBloomEffectPadding,
+  registerBloomEffectPaddingResolver,
+} from './bloomEffect';
 
 describe('computeBloomBlurRadius', () => {
   it('defaults to 8 when radius is unset', () => {
@@ -37,5 +46,26 @@ describe('createBloomEffect', () => {
 
   it('carries options', () => {
     expect(createBloomEffect({ threshold: 0.5, intensity: 2 })).toMatchObject({ threshold: 0.5, intensity: 2 });
+  });
+});
+
+describe('getBloomEffectPadding', () => {
+  it('uses a three-sigma footprint for the blurred bright branch', () => {
+    expect(getBloomEffectPadding(createBloomEffect({ radius: 2 }))).toEqual({
+      bottom: 6,
+      left: 6,
+      right: 6,
+      top: 6,
+    });
+  });
+});
+
+describe('registerBloomEffectPaddingResolver', () => {
+  it('registers the bloom footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerBloomEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('BloomEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

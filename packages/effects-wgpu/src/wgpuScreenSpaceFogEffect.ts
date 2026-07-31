@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
 // reads a sampleable DEPTH texture per fragment — fog = 1 - exp(-density * remap(depth, near, far)) — but
@@ -41,6 +42,10 @@ export function applyScreenSpaceFogEffectToWgpu(
 export const defaultWgpuScreenSpaceFogEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyScreenSpaceFogEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
 };
+
+export function registerWgpuScreenSpaceFogEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'ScreenSpaceFogEffect', defaultWgpuScreenSpaceFogEffectRunner);
+}
 
 // Slot layout: [0]=density, [1..3]=pad, [4..6]=fog color rgb. The std140-style struct aligns the vec3
 // color to a 16-byte boundary, so the JS writes skip slots [1..3].

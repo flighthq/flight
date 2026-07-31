@@ -29,7 +29,11 @@ vi.mock('./glEffectTintShader', () => ({
 }));
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyOuterGlowEffectToGl, defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
+import {
+  applyOuterGlowEffectToGl,
+  defaultGlOuterGlowEffectRunner,
+  registerGlOuterGlowEffect,
+} from './glOuterGlowEffect';
 
 describe('applyOuterGlowEffectToGl', () => {
   it('is a function', () => {
@@ -94,3 +98,9 @@ function createPool(): never {
 function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
+
+describe('registerGlOuterGlowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlOuterGlowEffect).toBeTypeOf('function');
+  });
+});

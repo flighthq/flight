@@ -13,6 +13,7 @@ import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
 import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -89,6 +90,10 @@ export function applyGradientGlowEffectToWgpu(
 export const defaultWgpuGradientGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
+
+export function registerWgpuGradientGlowEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'GradientGlowEffect', defaultWgpuGradientGlowEffectRunner);
+}
 
 // Uses the blurred alpha (group 1) to index into a gradient ramp texture (group 2).
 const GRADIENT_LOOKUP_FRAGMENT_WGSL = /* wgsl */ `

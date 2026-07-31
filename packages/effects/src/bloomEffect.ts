@@ -1,4 +1,6 @@
-import type { BloomEffect } from '@flighthq/types/contract';
+import type { BloomEffect, RenderEffect, RenderEffectPadding, RenderState } from '@flighthq/types/contract';
+
+import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
 // Wgpu bloom recipes derive identical bright-pass cutoff, additive strength, and blur radius from the
@@ -18,4 +20,17 @@ export function computeBloomThreshold(effect: Readonly<BloomEffect>): number {
 
 export function createBloomEffect(options: Readonly<Omit<BloomEffect, 'kind'>> = {}): BloomEffect {
   return { kind: 'BloomEffect', ...options };
+}
+
+export function getBloomEffectPadding(effect: Readonly<BloomEffect>): RenderEffectPadding {
+  const radius = computeBloomBlurRadius(effect);
+  return getGaussianRenderEffectPadding(radius, radius);
+}
+
+export function registerBloomEffectPaddingResolver(state: RenderState): void {
+  registerRenderEffectPaddingResolver(state, 'BloomEffect', resolveBloomEffectPadding);
+}
+
+function resolveBloomEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+  return getBloomEffectPadding(effect as Readonly<BloomEffect>);
 }

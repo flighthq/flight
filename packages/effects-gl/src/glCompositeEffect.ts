@@ -10,6 +10,7 @@ import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/co
 
 import { getGlBlendEffectBackdrop } from './glBlendEffect';
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Porter-Duff composite pass: sample the incoming layer (`u_texture0`, the effect's `source`) and a
 // registered backdrop (`u_texture1`), combine them with the coverage factors of the effect's `operator`
@@ -52,6 +53,10 @@ export const defaultGlCompositeEffectRunner: GlRenderEffectRunner = (ctx, effect
 // the COMPOSITE_FRAGMENT_SRC branch order; an unknown (vendor) operator maps to 0 (SourceOver).
 export function getCompositeEffectOperatorIndex(operator: CompositeOperator): number {
   return COMPOSITE_OPERATOR_INDEX[operator] ?? 0;
+}
+
+export function registerGlCompositeEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'CompositeEffect', defaultGlCompositeEffectRunner);
 }
 
 // CompositeOperator → shader branch index. Kept in lockstep with the if-chain in COMPOSITE_FRAGMENT_SRC

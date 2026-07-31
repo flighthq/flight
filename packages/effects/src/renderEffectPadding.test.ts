@@ -7,6 +7,8 @@ import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffec
 import {
   computeRenderEffectPadding,
   explainRenderEffectPadding,
+  getDirectionalRenderEffectPadding,
+  getGaussianRenderEffectPadding,
   registerRenderEffectPaddingResolver,
 } from './renderEffectPadding';
 
@@ -69,6 +71,32 @@ describe('explainRenderEffectPadding', () => {
       padding: { bottom: 9, left: 6, right: 6, top: 9 },
       status: 'missing-resolver',
     });
+  });
+});
+
+describe('getDirectionalRenderEffectPadding', () => {
+  it('adds positive screen-space offsets only to the reached sides', () => {
+    expect(getDirectionalRenderEffectPadding(2, 3, 4.25, 5.5)).toEqual({
+      bottom: 15,
+      left: 6,
+      right: 11,
+      top: 9,
+    });
+  });
+
+  it('adds negative screen-space offsets only to left and top', () => {
+    expect(getDirectionalRenderEffectPadding(1, 1, -2.5, -4.25)).toEqual({
+      bottom: 3,
+      left: 6,
+      right: 3,
+      top: 8,
+    });
+  });
+});
+
+describe('getGaussianRenderEffectPadding', () => {
+  it('uses a sanitized three-sigma extent on each axis', () => {
+    expect(getGaussianRenderEffectPadding(2.1, -4)).toEqual({ bottom: 0, left: 7, right: 7, top: 0 });
   });
 });
 

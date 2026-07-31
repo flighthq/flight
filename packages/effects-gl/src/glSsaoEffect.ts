@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SsaoEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
 // sampleable DEPTH texture and accumulates occlusion over `samples` kernel offsets within `radius`,
@@ -27,6 +28,10 @@ export function applySsaoEffectToGl(
 export const defaultGlSsaoEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applySsaoEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
+
+export function registerGlSsaoEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'SsaoEffect', defaultGlSsaoEffectRunner);
+}
 
 const SSAO_FRAGMENT_SRC = `#version 300 es
 precision highp float;

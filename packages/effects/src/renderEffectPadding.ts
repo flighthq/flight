@@ -58,6 +58,31 @@ export function explainRenderEffectPadding(
   };
 }
 
+// Adds a screen-space Y-down offset to a Gaussian footprint without wasting the opposite inset.
+export function getDirectionalRenderEffectPadding(
+  blurX: number,
+  blurY: number,
+  offsetX: number,
+  offsetY: number,
+): RenderEffectPadding {
+  const gaussian = getGaussianRenderEffectPadding(blurX, blurY);
+  const dx = Math.abs(offsetX) < 1e-10 ? 0 : offsetX;
+  const dy = Math.abs(offsetY) < 1e-10 ? 0 : offsetY;
+  return {
+    bottom: Math.ceil(gaussian.bottom + Math.max(0, dy)),
+    left: Math.ceil(gaussian.left + Math.max(0, -dx)),
+    right: Math.ceil(gaussian.right + Math.max(0, dx)),
+    top: Math.ceil(gaussian.top + Math.max(0, -dy)),
+  };
+}
+
+// Converts Gaussian standard deviations into the three-sigma footprint used by the per-node lane.
+export function getGaussianRenderEffectPadding(blurX: number, blurY: number): RenderEffectPadding {
+  const horizontal = Math.ceil(Math.max(0, blurX) * 3);
+  const vertical = Math.ceil(Math.max(0, blurY) * 3);
+  return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
+}
+
 export function registerRenderEffectPaddingResolver(
   state: RenderState,
   kind: Kind,

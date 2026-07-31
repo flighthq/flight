@@ -5,6 +5,7 @@ import {
   defaultWgpuCompositeEffectRunner,
   getWgpuCompositeEffectOperatorIndex,
   WGPU_COMPOSITE_FRAGMENT_WGSL,
+  registerWgpuCompositeEffect,
 } from './wgpuCompositeEffect';
 
 describe('applyCompositeEffectToWgpu', () => {
@@ -27,6 +28,12 @@ describe('getWgpuCompositeEffectOperatorIndex', () => {
     expect(getWgpuCompositeEffectOperatorIndex(CompositeOperator.DestinationOut)).toBe(5);
     expect(getWgpuCompositeEffectOperatorIndex(CompositeOperator.Clear)).toBe(10);
     expect(getWgpuCompositeEffectOperatorIndex('acme.Custom')).toBe(0);
+  });
+});
+
+describe('registerWgpuCompositeEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuCompositeEffect).toBeTypeOf('function');
   });
 });
 

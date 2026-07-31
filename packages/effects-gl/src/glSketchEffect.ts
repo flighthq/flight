@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SketchEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 // scales how dark the strokes get.
@@ -22,6 +23,10 @@ export function applySketchEffectToGl(
 export const defaultGlSketchEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applySketchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
+
+export function registerGlSketchEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'SketchEffect', defaultGlSketchEffectRunner);
+}
 
 const SKETCH_FRAGMENT_SRC = `#version 300 es
 precision highp float;

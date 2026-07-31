@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, SsrEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
@@ -21,6 +22,10 @@ export function applySsrEffectToGl(
 export const defaultGlSsrEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applySsrEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SsrEffect);
 };
+
+export function registerGlSsrEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'SsrEffect', defaultGlSsrEffectRunner);
+}
 
 const SSR_FRAGMENT_SRC = `#version 300 es
 precision highp float;

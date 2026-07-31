@@ -1,4 +1,10 @@
-import { createDirectionalBlurEffect } from './directionalBlurEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createDirectionalBlurEffect,
+  getDirectionalBlurEffectPadding,
+  registerDirectionalBlurEffectPaddingResolver,
+} from './directionalBlurEffect';
 
 describe('createDirectionalBlurEffect', () => {
   it('tags the intent type', () => {
@@ -7,5 +13,26 @@ describe('createDirectionalBlurEffect', () => {
 
   it('carries options', () => {
     expect(createDirectionalBlurEffect({ angle: 1, length: 8 })).toMatchObject({ angle: 1, length: 8 });
+  });
+});
+
+describe('getDirectionalBlurEffectPadding', () => {
+  it('projects the centered half-length onto both axes', () => {
+    expect(getDirectionalBlurEffectPadding(createDirectionalBlurEffect({ angle: Math.PI / 2, length: 9 }))).toEqual({
+      bottom: 5,
+      left: 0,
+      right: 0,
+      top: 5,
+    });
+  });
+});
+
+describe('registerDirectionalBlurEffectPaddingResolver', () => {
+  it('registers the directional-blur footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerDirectionalBlurEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('DirectionalBlurEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

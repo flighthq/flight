@@ -6,6 +6,7 @@ import {
   defaultWgpuBlendEffectRunner,
   getWgpuBlendEffectBackdrop,
   getWgpuBlendEffectModeIndex,
+  registerWgpuBlendEffect,
   registerWgpuBlendEffectBackdrop,
   unregisterWgpuBlendEffectBackdrop,
   WGPU_BLEND_FRAGMENT_WGSL,
@@ -71,6 +72,12 @@ describe('getWgpuBlendEffectModeIndex', () => {
     expect(new Set(indices).size).toBe(indices.length);
     expect(indices).not.toContain(-1);
     expect(getWgpuBlendEffectModeIndex('acme.Unknown')).toBe(-1);
+  });
+});
+
+describe('registerWgpuBlendEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuBlendEffect).toBeTypeOf('function');
   });
 });
 

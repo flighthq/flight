@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // God rays: radial light scattering from a screen-space light position (centerX, centerY). Marches
 // SAMPLES steps along the ray from each fragment toward the light, accumulating color with per-step
@@ -34,6 +35,10 @@ export function applyGodRaysEffectToGl(
 export const defaultGlGodRaysEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyGodRaysEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
+
+export function registerGlGodRaysEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'GodRaysEffect', defaultGlGodRaysEffectRunner);
+}
 
 function buildGodRaysFragment(samples: number): string {
   return GOD_RAYS_FRAGMENT_HEAD + samples.toFixed(1) + GOD_RAYS_FRAGMENT_TAIL;

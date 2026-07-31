@@ -1,4 +1,10 @@
-import { createInnerGlowEffect } from './innerGlowEffect';
+import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
+
+import {
+  createInnerGlowEffect,
+  getInnerGlowEffectPadding,
+  registerInnerGlowEffectPaddingResolver,
+} from './innerGlowEffect';
 
 describe('createInnerGlowEffect', () => {
   it('tags the intent type', () => {
@@ -11,5 +17,26 @@ describe('createInnerGlowEffect', () => {
 
   it('carries source mode', () => {
     expect(createInnerGlowEffect({ sourceMode: 'hide' })).toMatchObject({ sourceMode: 'hide' });
+  });
+});
+
+describe('getInnerGlowEffectPadding', () => {
+  it('uses a three-sigma Gaussian footprint', () => {
+    expect(getInnerGlowEffectPadding(createInnerGlowEffect({ blurX: 2, blurY: 3 }))).toEqual({
+      bottom: 9,
+      left: 6,
+      right: 6,
+      top: 9,
+    });
+  });
+});
+
+describe('registerInnerGlowEffectPaddingResolver', () => {
+  it('registers the inner-glow footprint on only the supplied state', () => {
+    const state = createRenderState();
+    const other = createRenderState();
+    registerInnerGlowEffectPaddingResolver(state);
+    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('InnerGlowEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
   });
 });

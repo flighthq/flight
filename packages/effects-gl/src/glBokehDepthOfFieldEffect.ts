@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Bokeh depth-of-field: a disc-shaped blur. When the scene supplied a sampleable depth texture
 // (ctx.sceneDepthTexture), it computes a per-pixel circle of confusion from focusDistance/focusRange and
@@ -42,6 +43,10 @@ export const defaultGlBokehDepthOfFieldEffectRunner: GlRenderEffectRunner = (ctx
     effect as BokehDepthOfFieldEffect,
   );
 };
+
+export function registerGlBokehDepthOfFieldEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'BokehDepthOfFieldEffect', defaultGlBokehDepthOfFieldEffectRunner);
+}
 
 const BOKEH_DOF_FRAGMENT_SRC = `#version 300 es
 precision highp float;

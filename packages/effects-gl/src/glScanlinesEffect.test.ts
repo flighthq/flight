@@ -1,4 +1,8 @@
-import { applyScanlinesEffectToGl, defaultGlScanlinesEffectRunner } from './glScanlinesEffect';
+import {
+  applyScanlinesEffectToGl,
+  defaultGlScanlinesEffectRunner,
+  registerGlScanlinesEffect,
+} from './glScanlinesEffect';
 
 describe('applyScanlinesEffectToGl', () => {
   it('is a function', () => {
@@ -9,5 +13,11 @@ describe('applyScanlinesEffectToGl', () => {
 describe('defaultGlScanlinesEffectRunner', () => {
   it('is a function', () => {
     expect(typeof defaultGlScanlinesEffectRunner).toBe('function');
+  });
+});
+
+describe('registerGlScanlinesEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerGlScanlinesEffect).toBeTypeOf('function');
   });
 });

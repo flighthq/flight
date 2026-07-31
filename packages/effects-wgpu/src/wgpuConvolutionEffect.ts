@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Largest kernel the WebGPU path supports (a 7×7 = 49 elements). The uniform struct packs to 244
 // bytes, within the effect-pass 256-byte slot.
@@ -59,6 +60,10 @@ export function applyConvolutionEffectToWgpu(
 export const defaultWgpuConvolutionEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyConvolutionEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ConvolutionEffect);
 };
+
+export function registerWgpuConvolutionEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'ConvolutionEffect', defaultWgpuConvolutionEffectRunner);
+}
 
 // Sums the kernel weights; returns 1 when the sum is 0 (e.g. an edge-detect kernel) so the divide is safe.
 function getAutoDivisor(matrix: ReadonlyArray<number>, length: number): number {

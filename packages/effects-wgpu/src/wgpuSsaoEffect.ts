@@ -2,6 +2,7 @@ import type { SsaoEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTar
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
 // sampleable DEPTH texture and accumulates occlusion over `samples` kernel offsets within `radius`,
@@ -28,6 +29,10 @@ export function applySsaoEffectToWgpu(
 export const defaultWgpuSsaoEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applySsaoEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
+
+export function registerWgpuSsaoEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'SsaoEffect', defaultWgpuSsaoEffectRunner);
+}
 
 // Slot layout: [0]=radius, [1]=intensity, [2]=resolution.x, [3]=resolution.y.
 const SSAO_FRAGMENT_WGSL = /* wgsl */ `

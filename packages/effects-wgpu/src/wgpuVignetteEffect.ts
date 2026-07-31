@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 // falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
@@ -42,6 +43,10 @@ export function applyVignetteEffectToWgpu(
 export const defaultWgpuVignetteEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyVignetteEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
+
+export function registerWgpuVignetteEffect(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
+}
 
 // Slot layout: [0]=intensity, [1]=radius, [2]=softness, [3]=pad, [4..7]=color rgba. The std140-style
 // struct aligns the vec4 color to a 16-byte boundary, so the JS writes skip slot [3].

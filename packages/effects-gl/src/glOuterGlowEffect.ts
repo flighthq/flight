@@ -10,6 +10,7 @@ import type {
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectTintPass } from './glEffectTintShader';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then composite the source over the glow.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -69,3 +70,7 @@ export function applyOuterGlowEffectToGl(
 export const defaultGlOuterGlowEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
+
+export function registerGlOuterGlowEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'OuterGlowEffect', defaultGlOuterGlowEffectRunner);
+}

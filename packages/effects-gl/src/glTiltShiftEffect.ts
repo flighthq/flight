@@ -2,6 +2,7 @@ import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderEffectRunner, GlRenderState, GlRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
+import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
 // `center` on Y with height `width`; blur strength ramps with distance outside the band. Blur is
@@ -27,6 +28,10 @@ export function applyTiltShiftEffectToGl(
 export const defaultGlTiltShiftEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToGl(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
+
+export function registerGlTiltShiftEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'TiltShiftEffect', defaultGlTiltShiftEffectRunner);
+}
 
 const TILT_SHIFT_FRAGMENT_SRC = `#version 300 es
 precision highp float;
