@@ -58,7 +58,8 @@ for (let i = 0; i < 3; i++) {
 
 const atlas = createTextureAtlas({
   texture: createTexture({
-    storage: { dimension: '2d', image: createImageResourceFromCanvas(atlasCanvas) },
+    dimension: '2d',
+    source: createImageResourceFromCanvas(atlasCanvas),
   }),
 });
 for (let i = 0; i < 3; i++) addTextureAtlasRegion(atlas, i * QUAD_SIZE, 0, QUAD_SIZE, QUAD_SIZE);
@@ -75,7 +76,7 @@ addNodeChild(producerRoot, batch);
 const root = createDisplayObject();
 const producerImage = createImageResourceFromCanvas(producerCanvas);
 const portableSprite = createSprite();
-portableSprite.data.texture = createTexture({ storage: { dimension: '2d', image: producerImage } });
+portableSprite.data.texture = createTexture({ dimension: '2d', source: producerImage });
 portableSprite.x = 24;
 portableSprite.y = 92;
 invalidateNodeLocalTransform(portableSprite);
