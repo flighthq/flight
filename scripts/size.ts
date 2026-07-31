@@ -142,7 +142,11 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
   const exampleNames = [...new Set(cases.map((tc) => tc.name))];
   const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
   const maxNameLen = Math.max(0, ...exampleNames.map((n) => n.length));
-  const w = { name: maxNameLen + 5, render: 8, size: 10, base: 10 };
+  const maxRenderLen = Math.max(
+    8,
+    ...cases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
+  );
+  const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 10 };
   const expectedByExample = new Map<string, number>();
   const resultsByExample = new Map<string, Readonly<SizeResult>[]>();
 
@@ -169,7 +173,8 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
       const baselineStr = pc.dim((r.baselineKBStr ? '~' + r.baselineKBStr + ' KB' : '—').padEnd(w.base));
       const flag = r.passed ? '' : '  ' + pc.red('✗');
 
-      return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
+      const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
+      return `${nameCell}  ${pc.dim(renderLabel.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
     });
 
     console.log(lines.join('\n') + '\n');
