@@ -131,7 +131,7 @@
   "materialshowcase:webgpu": 44444,
   "awd2loading:webgl": 38415,
   "awd2loading:webgpu": 39245,
-  "flight-diagnostics-enabled:canvas": 2132,
-  "flight-diagnostics-release:canvas": 689,
+  "flight-diagnostics:canvas": 689,
+  "flight-diagnostics:canvas:diagnostics": 2132,
   "log-console:canvas": 334
 }

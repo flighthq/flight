@@ -12,6 +12,8 @@ This SDK should behave like a hardware store: a user can import one small tool w
 - `npm run size:baseline` — rewrite the size baseline after an intentional, measured change.
 - `npm run size flight-diagnostics log-console` — build the release-stub/diagnostics pair, report
   the diagnostics gzip delta, and measure the log emitter plus console sink.
+  The release build owns the canonical `flight-diagnostics:canvas` baseline key; the un-stubbed
+  build is its mechanically derived `flight-diagnostics:canvas:diagnostics` variant.
 
 ## The discipline these numbers protect
 
@@ -19,5 +21,5 @@ This SDK should behave like a hardware store: a user can import one small tool w
 - In examples, prefer small package imports when the example intentionally demonstrates low-level or tree-shaken usage. Use `@flighthq/sdk` only for examples meant to demonstrate application-level convenience.
 - Example render adapters enable authoring diagnostics. The size build replaces only that
   `enableFlightDiagnostics(state)` call with a no-op, so ordinary baselines continue to measure the
-  release import graph; the `flight-diagnostics-enabled` fixture preserves the call and console to
-  track its explicit overhead.
+  release import graph; the diagnostics variant preserves the call and console to track its explicit
+  overhead.

@@ -1,5 +1,9 @@
 {
   "name": "flight-diagnostics-enabled",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "flightSize": {
+    "name": "flight-diagnostics",
+    "variant": "diagnostics"
+  }
 }

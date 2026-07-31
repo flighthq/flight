@@ -14,11 +14,13 @@ export interface SizeCase {
   name: string;
   render: Render;
   root: string;
+  variant: string | null;
 }
 
 export interface SizeResult {
   name: string;
   render: Render;
+  variant: string | null;
   gzipSize: number;
   gzipKB: string;
   baselineKB: number | null;
@@ -64,22 +66,45 @@ function collectSizeCasesFromDirectory(
   exampleFilters: string[],
   renderFilters: string[],
 ): SizeCase[] {
-  return readdirSync(directory, { withFileTypes: true })
+  const cases = readdirSync(directory, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(resolve(directory, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .flatMap(({ name }) =>
-      RENDERERS.filter((render) => existsSync(resolve(directory, name, `src/render.${render}.ts`)))
-        .map((render) => ({ name, render, root: resolve(directory, name) as SizeCase['root'] }))
+    .flatMap(({ name: directoryName }) => {
+      const root = resolve(directory, directoryName);
+      const metadata = readSizeFixtureMetadata(root);
+      const name = metadata?.name ?? directoryName;
+      const variant = metadata?.variant ?? null;
+      return RENDERERS.filter((render) => existsSync(resolve(root, `src/render.${render}.ts`)))
+        .map((render) => ({ name, render, root, variant }))
         .filter((tc) => {
-          const normalizedName = tc.name.toLowerCase();
+          const normalizedName = `${tc.name}${tc.variant === null ? '' : `:${tc.variant}`}`.toLowerCase();
           const normalizedRender = tc.render.toLowerCase();
           const exampleMatches =
             exampleFilters.length === 0 || exampleFilters.some((query) => normalizedName.includes(query));
           const renderMatches =
             renderFilters.length === 0 || renderFilters.some((query) => normalizedRender.includes(query));
           return exampleMatches && renderMatches;
-        }),
-    );
+        });
+    });
+  return cases.sort((a, b) => {
+    const nameOrder = a.name.localeCompare(b.name);
+    if (nameOrder !== 0) return nameOrder;
+    const renderOrder = RENDERERS.indexOf(a.render) - RENDERERS.indexOf(b.render);
+    if (renderOrder !== 0) return renderOrder;
+    if (a.variant === null) return b.variant === null ? 0 : -1;
+    if (b.variant === null) return 1;
+    return a.variant.localeCompare(b.variant);
+  });
+}
+
+function readSizeFixtureMetadata(root: string): { name: string; variant?: string } | null {
+  const contents = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as {
+    flightSize?: { name?: unknown; variant?: unknown };
+  };
+  const name = contents.flightSize?.name;
+  const variant = contents.flightSize?.variant;
+  if (typeof name !== 'string' || name.length === 0) return null;
+  return typeof variant === 'string' && variant.length !== 0 ? { name, variant } : { name };
 }
 
 export function readBaseline(baselineFile: string): Record<string, number> {
@@ -91,11 +116,17 @@ export function writeBaseline(baselineFile: string, pendingBaseline: Record<stri
   writeFileSync(baselineFile, JSON.stringify(pendingBaseline, null, 2) + '\n');
 }
 
-export async function buildSample(root: string, render: Render, pruneSdkImports = false): Promise<string> {
+export async function buildSample(
+  root: string,
+  render: Render,
+  pruneSdkImports = false,
+  variant: string | null = null,
+): Promise<string> {
   const sampleName = basename(root);
-  const preserveConsole = sampleName === 'flight-diagnostics-enabled' || sampleName === 'log-console';
+  const diagnosticsEnabled = variant === FLIGHT_DIAGNOSTICS_VARIANT;
+  const preserveConsole = diagnosticsEnabled || sampleName === 'log-console';
   const plugins = [
-    createSizeDebugStub(sampleName !== 'flight-diagnostics-enabled'),
+    createSizeDebugStub(!diagnosticsEnabled),
     ...(pruneSdkImports ? [(await import('./size-import-pruner')).createSizeImportPruner()] : []),
   ];
   const result = await build(
@@ -169,7 +200,7 @@ export async function buildSamples(
       while (nextIndex < cases.length) {
         const index = nextIndex++;
         const sizeCase = cases[index];
-        const code = await buildSample(sizeCase.root, sizeCase.render, pruneSdkImports);
+        const code = await buildSample(sizeCase.root, sizeCase.render, pruneSdkImports, sizeCase.variant);
         codeByCase[index] = code;
         onBuilt?.(index, code);
       }
@@ -184,9 +215,16 @@ export function getGzipSize(code: string): number {
 }
 
 export function getFlightDiagnosticsSizeDelta(results: readonly Readonly<SizeResult>[]): number | null {
-  const release = results.find((result) => result.key === 'flight-diagnostics-release:canvas');
-  const enabled = results.find((result) => result.key === 'flight-diagnostics-enabled:canvas');
+  const release = results.find((result) => result.key === FLIGHT_DIAGNOSTICS_BASE_KEY);
+  const enabled = results.find(
+    (result) => result.key === `${FLIGHT_DIAGNOSTICS_BASE_KEY}:${FLIGHT_DIAGNOSTICS_VARIANT}`,
+  );
   return release === undefined || enabled === undefined ? null : enabled.gzipSize - release.gzipSize;
+}
+
+export function getSizeCaseKey(sizeCase: Readonly<Pick<SizeCase, 'name' | 'render' | 'variant'>>): string {
+  const baseKey = `${sizeCase.name}:${sizeCase.render}`;
+  return sizeCase.variant === null ? baseKey : `${baseKey}:${sizeCase.variant}`;
 }
 
 export function formatSizeResult(
@@ -227,9 +265,9 @@ export async function runSizeChecks({
   const results = new Array<SizeResult>(cases.length);
   let nextResultIndex = 0;
   await buildSamples(cases, (index, code) => {
-    const { name, render } = cases[index];
+    const { name, render, variant } = cases[index];
     const gzipSize = getGzipSize(code);
-    const key = `${name}:${render}`;
+    const key = getSizeCaseKey(cases[index]);
     const baselineSize = baseline[key] ?? null;
     const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
@@ -238,6 +276,7 @@ export async function runSizeChecks({
     const result = {
       name,
       render,
+      variant,
       gzipSize,
       gzipKB,
       baselineKB,
@@ -258,5 +297,7 @@ export async function runSizeChecks({
 }
 
 const MAX_PARALLEL_BUILDS = 2;
+const FLIGHT_DIAGNOSTICS_BASE_KEY = 'flight-diagnostics:canvas';
+const FLIGHT_DIAGNOSTICS_VARIANT = 'diagnostics';
 // Building only one or two filtered cases is faster than initializing the SDK export map.
 const MIN_PRUNED_BUILD_COUNT = 3;

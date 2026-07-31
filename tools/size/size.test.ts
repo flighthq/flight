@@ -11,6 +11,7 @@ import {
   formatSizeResult,
   getFlightDiagnosticsSizeDelta,
   getGzipSize,
+  getSizeCaseKey,
   parseFilter,
   readBaseline,
 } from '../../scripts/size-runner';
@@ -34,7 +35,11 @@ const results: SizeResult[] = [];
 const exampleNames = [...new Set(testCases.map((tc) => tc.name))];
 const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
 const maxNameLen = Math.max(...exampleNames.map((n) => n.length));
-const w = { name: maxNameLen + 5, render: 8, size: 10, base: 10 };
+const maxRenderLen = Math.max(
+  8,
+  ...testCases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
+);
+const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 10 };
 
 function printGroup(name: string): void {
   const group = results.filter((r) => r.name === name);
@@ -49,7 +54,8 @@ function printGroup(name: string): void {
     const baselineStr = pc.dim((r.baselineKBStr ? '~' + r.baselineKBStr + ' KB' : '—').padEnd(w.base));
     const flag = r.passed ? '' : '  ' + pc.red('✗');
 
-    return `${nameCell}  ${pc.dim(r.render.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
+    const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
+    return `${nameCell}  ${pc.dim(renderLabel.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
   });
 
   console.log(lines.join('\n') + '\n');
@@ -70,6 +76,7 @@ describe('bundle size checks', () => {
     const cases = results.map((r) => ({
       example: r.name,
       render: r.render,
+      variant: r.variant,
       gzipKB: parseFloat(r.gzipKB),
       baselineKB: r.baselineKB,
       deltaPercent: r.delta != null ? parseFloat(r.delta.replace('%', '')) : null,
@@ -97,15 +104,27 @@ describe('bundle size checks', () => {
   test('build selected samples', async () => {
     const codeByCase = await buildSamples(testCases);
 
-    for (const [index, { name, render }] of testCases.entries()) {
+    for (const [index, { name, render, variant }] of testCases.entries()) {
       const code = codeByCase[index];
       const gzipSize = getGzipSize(code);
-      const key = `${name}:${render}`;
+      const key = getSizeCaseKey(testCases[index]);
       const baselineSize = baseline[key] ?? null;
       const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
       pendingBaseline[key] = gzipSize;
-      results.push({ name, render, gzipSize, gzipKB, baselineKB, baselineKBStr, delta, passed, threshold, key });
+      results.push({
+        name,
+        render,
+        variant,
+        gzipSize,
+        gzipKB,
+        baselineKB,
+        baselineKBStr,
+        delta,
+        passed,
+        threshold,
+        key,
+      });
 
       if (!updateBaseline && threshold != null) {
         const thresholdKB = (threshold / 1024).toFixed(2);
@@ -117,11 +136,31 @@ describe('bundle size checks', () => {
   });
 
   test('keeps enabled flight diagnostics as an explicit positive delta over the release stub', () => {
-    const includesDiagnosticsPair =
-      testCases.some((item) => item.name === 'flight-diagnostics-release') &&
-      testCases.some((item) => item.name === 'flight-diagnostics-enabled');
+    const diagnosticsCases = testCases.filter((item) => item.name === 'flight-diagnostics');
+    const includesDiagnosticsPair = diagnosticsCases.length === 2;
     if (!includesDiagnosticsPair) return;
     expect(getFlightDiagnosticsSizeDelta(results)).toBeGreaterThan(0);
+  });
+
+  test('orders the canonical release target before its diagnostics variant', () => {
+    const diagnosticsCases = testCases.filter((item) => item.name === 'flight-diagnostics');
+    if (diagnosticsCases.length !== 2) return;
+    expect(diagnosticsCases.map((item) => item.variant)).toEqual([null, 'diagnostics']);
+  });
+
+  test('preserves the declared renderer order', () => {
+    const adjustmentCases = testCases.filter((item) => item.name === 'adjustments');
+    if (adjustmentCases.length === 0) return;
+    expect(adjustmentCases.map((item) => item.render)).toEqual(['dom', 'canvas', 'webgl', 'webgpu']);
+  });
+
+  test('uses the canonical release key plus one diagnostics suffix', () => {
+    expect(getSizeCaseKey({ name: 'flight-diagnostics', render: 'canvas', variant: null })).toBe(
+      'flight-diagnostics:canvas',
+    );
+    expect(getSizeCaseKey({ name: 'flight-diagnostics', render: 'canvas', variant: 'diagnostics' })).toBe(
+      'flight-diagnostics:canvas:diagnostics',
+    );
   });
 
   test('replaces the authoring diagnostics call in release builds', () => {

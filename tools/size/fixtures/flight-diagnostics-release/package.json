@@ -1,5 +1,8 @@
 {
   "name": "flight-diagnostics-release",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "flightSize": {
+    "name": "flight-diagnostics"
+  }
 }
