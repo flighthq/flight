@@ -70,6 +70,14 @@ Mocking remains the right tool for genuine **interaction** assertions — which 
 
 - A revert-and-check or mutation-testing result is only trustworthy after confirming the mutation actually changed the file. The formatter runs between edits in this repo, so a scripted find-and-replace can silently become a no-op once prettier has reflowed the target expression across lines — the probe then reruns against unchanged code and a real fix reads as "not caught." Print or otherwise check a replacement count (or diff the file) before drawing any conclusion from the result.
 - The negative-space twin of the rule above: a probe that reports **no defect** is only trustworthy after confirming it actually exercised the code. An argument-shape mistake (wrong position, wrong count) can silently turn a real probe into a no-op that returns early or does nothing observable — this looks identical to "no defect found." Prefer confirming by construction: assert the function did something observable, not merely that it did not throw. The practical trigger for suspicion: when one member of a structurally identical family of functions behaves differently from its siblings, suspect the harness before believing the result.
+- A green test run is not a compile guarantee. `npm run test` does not typecheck, so a package can pass its full suite while failing to build (a missing type import, for example). Attestation requires `npm run check` — not `npm run test` alone.
+
+## Review lenses
+
+Named failure shapes worth checking for directly, distinct from each other:
+
+- **Comment-vs-code**: a comment stating a behavioral contract is a claim to verify, not context to trust. Check it against the code it describes rather than assuming it still holds.
+- **Stranded capability**: a capability implemented at one layer but unreachable from the layer above it — each layer alone reads complete, so isolated review misses the gap. Distinct from comment-vs-code (a wrong claim) and the probe-arity rule above (a wrong verification): this one is true code and honest comments with a missing path between them. Thread each capability end-to-end from the public surface down; don't audit layers in isolation.
 
 ## Assertions that cannot fail
 
