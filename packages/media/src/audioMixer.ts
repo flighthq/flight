@@ -42,6 +42,7 @@ export function createAudioMixer(context: AudioContext, options?: Readonly<Audio
   };
   mixerRuntimes.set(mixer, {
     activeChannels: new Set(),
+    channelsPausedByMixer: new Set(),
     buses: new Map(),
     busGainNodes: new Map(),
     busOutputNodes: new Map(),
@@ -97,20 +98,27 @@ export function getAudioMixerActiveChannels(mixer: Readonly<AudioMixer>): readon
 export function pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  // Actually stop each source node (not just flip the flag) so audio halts on pause.
+  // Actually stop each source node (not just flip the flag) so audio halts on pause. Only channels
+  // that were playing are recorded: one already paused by the caller is not this mixer's to resume.
   for (const channel of runtime.activeChannels) {
-    if (channel.state === 'playing') pauseAudioChannel(channel);
+    if (channel.state !== 'playing') continue;
+    pauseAudioChannel(channel);
+    runtime.channelsPausedByMixer.add(channel);
   }
 }
 
 export function resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
-  // Restart the source node for channels this mixer paused; bus routing survives the restart
-  // because the channel's destination node is preserved across stop/start.
-  for (const channel of runtime.activeChannels) {
+  // Restart the source node for channels this mixer paused; bus routing survives the restart because
+  // the channel's destination node is preserved across stop/start. Resuming every paused channel
+  // instead would resurrect one the caller had deliberately paused on its own — a mixer-wide pause and
+  // resume around a menu would silently un-pause it. The state re-check covers a channel resumed or
+  // stopped individually while the mixer was paused.
+  for (const channel of runtime.channelsPausedByMixer) {
     if (channel.state === 'paused') resumeAudioChannel(channel);
   }
+  runtime.channelsPausedByMixer.clear();
 }
 
 export function routeAudioChannelToMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel, bus: AudioBus): void {
@@ -175,12 +183,17 @@ export function stopAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
     channel.currentTime = 0;
   }
   runtime.activeChannels.clear();
+  // Bookkeeping, not a behavioural guard: resume already re-checks that a channel is still paused, so
+  // a stopped channel would be skipped anyway. Clearing keeps the record from retaining channels the
+  // mixer no longer owns for the rest of its life.
+  runtime.channelsPausedByMixer.clear();
 }
 
 export function unrouteAudioChannelFromMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
   runtime.activeChannels.delete(channel);
+  runtime.channelsPausedByMixer.delete(channel);
   runtime.channelToBus.delete(channel);
   // Reconnect the channel output to the context destination so it keeps playing if still active.
   connectAudioChannelToNode(channel, runtime.context.destination);
@@ -188,6 +201,9 @@ export function unrouteAudioChannelFromMixerBus(mixer: Readonly<AudioMixer>, cha
 
 interface AudioMixerRuntime {
   activeChannels: Set<AudioChannel>;
+  // The channels this mixer itself paused, so a mixer-wide resume restores exactly those and leaves a
+  // channel the caller paused on its own still paused.
+  channelsPausedByMixer: Set<AudioChannel>;
   buses: Map<string, AudioBus>;
   busGainNodes: Map<AudioBus, GainNode>;
   busOutputNodes: Map<AudioBus, StereoPannerNode>;

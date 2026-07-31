@@ -1,6 +1,6 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 
-import { playAudioResource } from './audioChannel';
+import { pauseAudioChannel, playAudioResource } from './audioChannel';
 import {
   addAudioBusToMixer,
   createAudioBus,
@@ -200,6 +200,84 @@ describe('resumeAllAudioMixerChannels', () => {
     expect(channel!.state).toBe('playing');
     // A fresh source node is created on resume (the paused one was stopped and discarded).
     expect(createdSourceNodes.length).toBeGreaterThan(1);
+  });
+});
+
+describe('resumeAllAudioMixerChannels scope', () => {
+  function playRouted(mixer: ReturnType<typeof createAudioMixer>, bus: ReturnType<typeof createAudioBus>) {
+    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()))!;
+    routeAudioChannelToMixerBus(mixer, channel, bus);
+    return channel;
+  }
+
+  function mixerWithBus() {
+    const mixer = createAudioMixer(ctx);
+    const bus = createAudioBus({ name: 'sfx' });
+    addAudioBusToMixer(mixer, bus);
+    return { bus, mixer };
+  }
+
+  // A mixer-wide pause/resume around a menu must not resurrect a channel the caller had paused on its
+  // own. Resuming every paused channel — rather than the ones this mixer paused — silently did.
+  it('leaves a channel the caller paused independently still paused', () => {
+    const { bus, mixer } = mixerWithBus();
+    const mixerPaused = playRouted(mixer, bus);
+    const callerPaused = playRouted(mixer, bus);
+
+    pauseAudioChannel(callerPaused);
+    pauseAllAudioMixerChannels(mixer);
+    resumeAllAudioMixerChannels(mixer);
+
+    expect(mixerPaused.state).toBe('playing');
+    expect(callerPaused.state).toBe('paused');
+  });
+
+  it('resumes the channels it paused', () => {
+    const { bus, mixer } = mixerWithBus();
+    const channel = playRouted(mixer, bus);
+
+    pauseAllAudioMixerChannels(mixer);
+    expect(channel.state).toBe('paused');
+    resumeAllAudioMixerChannels(mixer);
+
+    expect(channel.state).toBe('playing');
+  });
+
+  // Each transition that takes a channel away from the mixer must also drop it from the paused-by-mixer
+  // record, or a later resume restarts something the mixer no longer owns.
+  it('does not resume a channel unrouted while the mixer was paused', () => {
+    const { bus, mixer } = mixerWithBus();
+    const channel = playRouted(mixer, bus);
+
+    pauseAllAudioMixerChannels(mixer);
+    unrouteAudioChannelFromMixerBus(mixer, channel);
+    resumeAllAudioMixerChannels(mixer);
+
+    expect(channel.state).toBe('paused');
+  });
+
+  it('does not resume a channel stopped while the mixer was paused', () => {
+    const { bus, mixer } = mixerWithBus();
+    const channel = playRouted(mixer, bus);
+
+    pauseAllAudioMixerChannels(mixer);
+    stopAllAudioMixerChannels(mixer);
+    resumeAllAudioMixerChannels(mixer);
+
+    expect(channel.state).toBe('stopped');
+  });
+
+  // The record is consumed by the resume, so a second resume has nothing of its own to restart.
+  it('does not re-resume on a second call after the caller paused again', () => {
+    const { bus, mixer } = mixerWithBus();
+    const channel = playRouted(mixer, bus);
+
+    pauseAllAudioMixerChannels(mixer);
+    resumeAllAudioMixerChannels(mixer);
+    pauseAudioChannel(channel);
+    resumeAllAudioMixerChannels(mixer);
+
+    expect(channel.state).toBe('paused');
   });
 });
 
