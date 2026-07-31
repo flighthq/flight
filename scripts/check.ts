@@ -38,6 +38,7 @@ run('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
 run('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
 run('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
 run('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
+run('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
 
 if (!scoped) {
   run('api:check', 'tsx', ['scripts/api.ts', '--check']);
