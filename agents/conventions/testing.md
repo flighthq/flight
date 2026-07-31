@@ -23,20 +23,44 @@ Export-lane placement is curated rather than inferred. The same command compares
 
 - `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
 
-## Module mocks under the non-isolated suite
+## Module mocks: which tier a test file runs in
 
-The suite runs **non-isolated** (`isolate: false` in the root `vitest.config.ts` — one module registry per worker, not one environment per file). Module mocks still work, but only if the file is written so the mock is in place *before* the module graph is instantiated. Two rules, both required:
+The unit suite runs in **two tiers**, and the mocking rule differs between them because it is a rule
+about the module *registry*, not about the `vi.mock` API.
 
-1. **Declare every `vi.mock` before the first `import` of the module under test.** An ESM binding that has already been instantiated cannot be retroactively rebound.
-2. **`vi.resetModules()` in a `vi.hoisted` block**, and unmock plus reset again in `afterAll`, so a registry primed by an earlier file in the same worker does not leak in — or leak out.
+- **Shared tier** (the default, `isolate: false`) — one module registry per worker rather than one
+  environment per file. This is where the suite's speed comes from: per-file environment setup, not
+  test logic, dominates its cost.
+- **Isolated tier** (`isolate: true`) — every file that mocks a module, listed in
+  `scripts/mockTiers.ts`. Each file gets its own registry from the platform.
 
-The effects backends are the reference pattern: `canvasDropShadowEffect.test.ts`, `glOuterGlowEffect.test.ts`, `wgpuEffectTintShader.test.ts` and their siblings all mock relative modules and are stable, because they follow both rules.
+**A top-level `vi.mock` is hoisted above the file's imports and registers against whichever registry
+the file is running in.** That single fact produces both halves of the rule:
 
-Get either rule wrong and the failure is silent and inverted: the test passes in isolation *and* package-scoped, and fails only in the full suite, so it reads as flakiness rather than as a defect in the test. `canvasColorMatrixPass.test.ts` was the worked example — it imported the module under test on line 1, before declaring the mock, and never reset modules, so a sibling that had already loaded the real compositing module won the registry and the real implementation ran against the test's placeholder arguments.
+- **Forbidden in the shared tier.** The registration lands on the worker's shared registry, so it
+  applies to every *later* file in that worker that imports the same module. The leak is silent and
+  inverted: the mocking file passes, and some unrelated file fails — or worse, silently exercises a
+  mock it never asked for.
+- **Correct in the isolated tier.** The registry is per-file, so there is nothing to leak into. This
+  is the sanctioned form there, and the reference pattern: `glEffectBoxBlur.test.ts`,
+  `wgpuEffectTintShader.test.ts`, `canvasDropShadowEffect.test.ts` and their siblings.
+
+Do not hand-roll isolation to get a mock into the shared tier. Calling `vi.resetModules()` and then
+dynamically re-importing the subject inside `beforeAll` does work, but it rebuilds that subject's whole
+transitive module graph on every run — unbounded work inside a fixed hook deadline, which is wrong on
+any machine slow enough or any cache cold enough. That pattern produced a flake four agents chased
+across two days, presenting as a setup failure with zero test failures on a different subset of files
+each run. If a file needs a module mock, it belongs in the isolated tier.
+
+**The tier boundary is machine-checked, not remembered.** `npm run mocks:check` (part of
+`npm run check`) reads the same `scripts/mockTiers.ts` the config does and enforces it in both
+directions: a file that mocks but is not tiered, a tiered file that no longer mocks, and a
+`vi.doUnmock` naming a specifier the file never mocked. Add a file to the tier list when you add a mock
+to it; the check will tell you if you forget, and will tell you when a file can be demoted.
 
 **Prefer extracting the pure kernel over mocking at all.** A test that reaches for a module mock to capture a callback is usually telling you the unit bundles a pure function it has not exported. That was the actual defect in `canvasColorMatrixPass.ts`: the per-pixel matrix math was a closure inside the pass, and the mock existed only to get at it. Exporting `applyColorMatrixToImageDataBytes` made the math directly testable, and the pass itself is now verified with plain stub objects for the two canvas contexts — no module substitution, no order dependence, faster, and it gained multi-pixel coverage that the mock shape made awkward.
 
-Mocking remains the right tool for genuine **interaction** assertions — which collaborator a dispatch routed to, and with what arguments — where there is no pure kernel to extract. Follow both rules above when you do.
+Mocking remains the right tool for genuine **interaction** assertions — which collaborator a dispatch routed to, and with what arguments — where there is no pure kernel to extract. When you do, put the file in the isolated tier and use a top-level `vi.mock`, per the tier rule above.
 
 ## Out-parameter testing
 
