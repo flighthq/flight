@@ -81,6 +81,7 @@ Named failure shapes worth checking for directly, distinct from each other:
 
 - **Comment-vs-code**: a comment stating a behavioral contract is a claim to verify, not context to trust. Check it against the code it describes rather than assuming it still holds.
 - **Stranded capability**: a capability implemented at one layer but unreachable from the layer above it — each layer alone reads complete, so isolated review misses the gap. Distinct from comment-vs-code (a wrong claim) and the probe-arity rule above (a wrong verification): this one is true code and honest comments with a missing path between them. Thread each capability end-to-end from the public surface down; don't audit layers in isolation.
+- **A grep result is a lead, not a verdict, when contracts delegate across package boundaries.** A comment or symbol that looks wrong in the file you're reading may be correct one package away — `glMeshProgram.ts` claiming "throws on a compile or link failure" with no `throw` anywhere in the file looked like a false claim, and was actually correct: it delegates to `createGlProgram` in `render-gl`, which throws via `compileGlShader`/`linkGlProgram`. Follow the call chain before calling anything a defect; pattern-matching alone cannot close this out.
 
 ## Assertions that cannot fail
 
