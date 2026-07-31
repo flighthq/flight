@@ -2,6 +2,7 @@ import type { CollisionShape, Physics2DCollider, Physics2DMassData, RigidBody2D 
 import { describe, expect, it } from 'vitest';
 
 import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
+import { createRigidBody2D } from './world';
 
 function collider(local: CollisionShape, density = 1): Physics2DCollider {
   return {
@@ -12,30 +13,13 @@ function collider(local: CollisionShape, density = 1): Physics2DCollider {
   };
 }
 
+// The constructor, not a literal that happens to match the fields: a body grows fields (sleep state, for
+// one) and a literal silently goes stale the moment it does.
 function body(colliders: Physics2DCollider[], type: RigidBody2D['type'] = 'dynamic'): RigidBody2D {
-  return {
-    index: 0,
-    type,
-    x: 0,
-    y: 0,
-    angle: 0,
-    velocityX: 0,
-    velocityY: 0,
-    angularVelocity: 0,
-    forceX: 0,
-    forceY: 0,
-    torque: 0,
-    mass: 0,
-    inverseMass: 0,
-    inertia: 0,
-    inverseInertia: 0,
-    centerX: 0,
-    centerY: 0,
-    linearDamping: 0,
-    angularDamping: 0,
-    gravityScale: 1,
-    colliders,
-  };
+  const created = createRigidBody2D(type, 0, 0);
+  created.index = 0;
+  created.colliders.push(...colliders);
+  return created;
 }
 
 function massData(): Physics2DMassData {

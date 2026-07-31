@@ -1,5 +1,6 @@
 import type { Physics2DContact, Physics2DContactPoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 
+import { isRigidBody2DPairAwake } from './islands';
 import { findPhysics2DBody } from './world';
 
 // Applies equal and opposite impulses at the pair's contact point. The angular term is the lever arm
@@ -128,6 +129,7 @@ export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;
+    if (!isRigidBody2DPairAwake(bodyA, bodyB)) continue;
     solvePhysics2DContact(contact, bodyA, bodyB);
   }
 }
@@ -148,6 +150,7 @@ export function warmStartPhysics2DContacts(world: Physics2DWorld): void {
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;
+    if (!isRigidBody2DPairAwake(bodyA, bodyB)) continue;
 
     const normalX = contact.normalX;
     const normalY = contact.normalY;

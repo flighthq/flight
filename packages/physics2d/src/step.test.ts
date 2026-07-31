@@ -584,3 +584,162 @@ describe('stepPhysics2D with joints', () => {
     expect(world.contacts).toHaveLength(0);
   });
 });
+
+describe('stepPhysics2D with sleeping', () => {
+  it('settles a resting crate to sleep and then holds its pose exactly', () => {
+    const world = createPhysics2DWorld();
+    ground(world);
+    const crate = box(world, 0, 2);
+    runSteps(world, 240);
+    expect(crate.sleeping).toBe(true);
+
+    const restingY = crate.y;
+    runSteps(world, 120);
+
+    // Not "close to" — a sleeping body is skipped by integration outright, so its pose is bit-identical.
+    // Even the residual sink of a solved-but-still contact is gone.
+    expect(crate.y).toBe(restingY);
+    expect(crate.velocityY).toBe(0);
+  });
+
+  it('wakes a sleeping crate when another body lands on it', () => {
+    const world = createPhysics2DWorld();
+    ground(world);
+    const settled = box(world, 0, 2);
+    runSteps(world, 240);
+    expect(settled.sleeping).toBe(true);
+
+    box(world, 0, 4);
+    runSteps(world, 60);
+
+    expect(settled.sleeping).toBe(false);
+  });
+
+  it('wakes a sleeping crate in the same step a force is applied to it', () => {
+    // The zero-latency wake is what the sleep update's placement inside the step buys. Deciding sleep
+    // after integration instead would skip this step and start moving one frame late — and because the
+    // step clears forces at the end, a single-step push would be swallowed entirely.
+    const world = createPhysics2DWorld();
+    ground(world);
+    const crate = box(world, 0, 2);
+    runSteps(world, 240);
+    expect(crate.sleeping).toBe(true);
+
+    crate.forceX = 500;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(crate.sleeping).toBe(false);
+    expect(crate.velocityX).toBeGreaterThan(0);
+  });
+
+  it('holds a jointed body still once its island sleeps', () => {
+    // Covers the joint half of the solver skip, which the contact tests cannot reach. A joint keeps a
+    // converged impulse across steps like a contact does, so warm-starting a pair that is asleep hands
+    // a sleeper velocity it will never integrate — and the next stillness test reads that as motion.
+    // The pendulum then twitches itself awake every step and never rests.
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Distance', physics2DDistanceJointSolver);
+    const anchorBody = createRigidBody2D('static', 0, 4);
+    const anchor = addPhysics2DBody(world, anchorBody);
+    const bob = box(world, 0, 2);
+    addPhysics2DJoint(world, {
+      kind: 'Distance',
+      bodyA: anchor.index,
+      bodyB: bob.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+      length: 2,
+      stiffness: 0,
+      damping: 0,
+    } as never);
+    runSteps(world, 600);
+    expect(bob.sleeping).toBe(true);
+
+    const restingY = bob.y;
+    runSteps(world, 120);
+
+    expect(bob.y).toBe(restingY);
+    expect(bob.sleeping).toBe(true);
+  });
+
+  it('never leaves a sleeping body holding velocity, however it came to rest', () => {
+    // The invariant that licenses skipping a sleeper's integration. Sleep is only safe to implement as
+    // "do not integrate" if a sleeping body has nothing left to integrate; a sleeper carrying residual
+    // velocity would be motion the simulation has silently paused rather than resolved.
+    //
+    // Sampled across a scene that settles, is landed on, and settles again, so it covers the sleep,
+    // wake-on-new-contact, and re-sleep transitions rather than a single moment.
+    const world = createPhysics2DWorld();
+    ground(world);
+    const settled = box(world, 0, 2);
+    runSteps(world, 240);
+    expect(settled.sleeping).toBe(true);
+    box(world, 0.1, 4);
+
+    let sleepingSamples = 0;
+    for (let i = 0; i < 600; i++) {
+      stepPhysics2D(world, 1 / 60);
+      for (const body of world.bodies) {
+        if (!body.sleeping) continue;
+        sleepingSamples++;
+        expect(body.velocityX).toBe(0);
+        expect(body.velocityY).toBe(0);
+        expect(body.angularVelocity).toBe(0);
+      }
+    }
+
+    // Guards the guard: assertions inside a conditional prove nothing if the condition never held.
+    expect(sleepingSamples).toBeGreaterThan(0);
+  });
+
+  it('invokes no joint solver callback for a pair whose every end is asleep', () => {
+    // The joint half of the skip as WIRING rather than as physics. Whether a particular solver's maths
+    // happens to produce a zero impulse at rest is that solver's business; the contract is that a joint
+    // with no movable end is not consulted at all, which is what a custom kind can assert directly.
+    const calls: string[] = [];
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Recording', {
+      prepare: () => calls.push('prepare'),
+      warmStart: () => calls.push('warmStart'),
+      solve: () => calls.push('solve'),
+      clearAccumulatedImpulses: () => calls.push('clear'),
+    });
+    ground(world);
+    const left = box(world, -1, 2);
+    const right = box(world, 1, 2);
+    addPhysics2DJoint(world, {
+      kind: 'Recording',
+      bodyA: left.index,
+      bodyB: right.index,
+      collideConnected: true,
+    } as never);
+    runSteps(world, 240);
+    expect(left.sleeping).toBe(true);
+    expect(right.sleeping).toBe(true);
+
+    calls.length = 0;
+    runSteps(world, 30);
+
+    expect(calls).toEqual([]);
+  });
+
+  it('never sleeps a resting crate when allowSleeping is off', () => {
+    const world = createPhysics2DWorld();
+    world.config.allowSleeping = false;
+    ground(world);
+    const crate = box(world, 0, 2);
+    runSteps(world, 240);
+
+    expect(crate.sleeping).toBe(false);
+  });
+});

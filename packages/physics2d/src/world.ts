@@ -39,6 +39,11 @@ export function createPhysics2DCollider(
 // outward when a deep overlap is corrected all at once.
 export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
   return {
+    // Box2D's long-standing defaults: still below 0.01 m/s and 2 deg/s, asleep after half a second.
+    allowSleeping: true,
+    sleepLinearThreshold: 0.01,
+    sleepAngularThreshold: (2 * Math.PI) / 180,
+    timeToSleep: 0.5,
     velocityIterations: 10,
     positionIterations: 3,
     penetrationSlop: 0.005,
@@ -91,6 +96,8 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
     linearDamping: 0,
     angularDamping: 0,
     gravityScale: 1,
+    sleeping: false,
+    sleepTimer: 0,
     colliders: [],
   };
 }
