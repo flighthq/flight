@@ -1,11 +1,11 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import { createImageResource } from '@flighthq/image/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import type { Node2D, ImportDiagnostic, RichText, Shape } from '@flighthq/types/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
+import { createReadyImageResourceForTest } from './testHelper';
 
 describe('SVG conformance matrix', () => {
   it.each([
@@ -45,9 +45,7 @@ describe('SVG conformance matrix', () => {
       kind: 'nested-use',
     },
   ])('composes geometry before transforms for $kind', ({ element, expectedY, kind }) => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 10;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(10, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>
@@ -92,9 +90,7 @@ describe('SVG conformance matrix', () => {
       width: 100,
     },
   ])('maps objectBoundingBox clip units for $kind', ({ target, width }) => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 20;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>
@@ -173,9 +169,7 @@ describe('SVG conformance matrix', () => {
     },
   ])('maps objectBoundingBox mask content for $kind', ({ target, width }) => {
     const diagnostics: ImportDiagnostic[] = [];
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 20;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>
@@ -431,9 +425,7 @@ describe('SVG conformance matrix', () => {
     { kind: 'symbol', path: [0, 0], target: '<use href="#hiddenSymbol"/>' },
     { kind: 'nested-use', path: [0, 0], target: '<use href="#hiddenNested"/>' },
   ])('suppresses display none for $kind', ({ path, target }) => {
-    const image = createImageResource(globalThis.document.createElement('canvas'));
-    image.width = 10;
-    image.height = 10;
+    const image = createReadyImageResourceForTest(10, 10);
     const root = createScene2DFromSvgDocument(
       `
         <svg>

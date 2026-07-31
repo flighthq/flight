@@ -53,7 +53,7 @@ export function isImageResourceEmpty(resource: Readonly<Image>): boolean {
 function updateImageResourceSize(resource: Image): void {
   const element = resource.source;
   if (element === null) return;
-  if (element instanceof HTMLVideoElement) {
+  if (typeof HTMLVideoElement !== 'undefined' && element instanceof HTMLVideoElement) {
     resource.width = element.videoWidth;
     resource.height = element.videoHeight;
   } else {
