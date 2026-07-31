@@ -1,4 +1,12 @@
-import type { AudioBus, AudioBusOptions, AudioChannel, AudioMixer, AudioMixerOptions } from '@flighthq/types/contract';
+import type {
+  AudioBus,
+  AudioBusMixerGuard,
+  AudioBusMixerOperation,
+  AudioBusOptions,
+  AudioChannel,
+  AudioMixer,
+  AudioMixerOptions,
+} from '@flighthq/types/contract';
 
 import { connectAudioChannelToNode, pauseAudioChannel, resumeAudioChannel, stopAudioChannel } from './audioChannel';
 
@@ -135,24 +143,40 @@ export function routeAudioChannelToMixerBus(mixer: Readonly<AudioMixer>, channel
   }
 }
 
+// Sets the bus gain and pushes it to the gain node of every mixer holding this bus, found by reverse
+// lookup through busToMixerRuntimes.
+//
+// A bus that belongs to NO mixer has no node to push to, so the new value is stored and returned while
+// nothing becomes audible. That is a silent no-op the return value cannot express — it reports the value
+// that was set, not whether anything is listening — so it routes through the guard seam instead of relying
+// on a comment telling callers to add the bus first.
 export function setAudioBusGain(bus: AudioBus, value: number): number {
   bus.gain = value;
-  // Update the bus gain node for all mixers that contain this bus.
-  // Since we store gain nodes per-bus inside each mixer runtime, iterate the known runtimes.
-  // The caller must have already added the bus to a mixer via addAudioBusToMixer or routeAudioChannelToMixerBus.
-  // We use a reverse lookup via busGainNodes — walk active mixers via the busGainNodes map on each runtime.
+  reportUnmixedBus(bus, 'gain');
   updateBusGainNode(bus);
   return bus.gain;
 }
 
+// The diagnostics seam for a bus-property write that cannot reach any audio node, not the caller-facing
+// entry point — use enableAudioMixerGuards, which installs the @flighthq/log reporter through here. Null
+// uninstalls it, and a null slot is the production default: the reverse-map lookup that detects the case
+// runs only while a guard is installed.
+export function setAudioBusMixerGuard(guard: AudioBusMixerGuard | null): void {
+  _unmixedBusGuard = guard;
+}
+
+// Same unmixed-bus caveat as setAudioBusGain: muting a bus no mixer holds changes nothing audible.
 export function setAudioBusMuted(bus: AudioBus, muted: boolean): boolean {
   bus.muted = muted;
+  reportUnmixedBus(bus, 'mute');
   updateBusGainNode(bus);
   return bus.muted;
 }
 
+// Same unmixed-bus caveat as setAudioBusGain: panning a bus no mixer holds changes nothing audible.
 export function setAudioBusPan(bus: AudioBus, value: number): number {
   bus.pan = clamp(value, -1, 1);
+  reportUnmixedBus(bus, 'pan');
   updateBusPannerNode(bus);
   return bus.pan;
 }
@@ -187,16 +211,6 @@ export function stopAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   // a stopped channel would be skipped anyway. Clearing keeps the record from retaining channels the
   // mixer no longer owns for the rest of its life.
   runtime.channelsPausedByMixer.clear();
-}
-
-export function unrouteAudioChannelFromMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel): void {
-  const runtime = mixerRuntimes.get(mixer);
-  if (runtime === undefined) return;
-  runtime.activeChannels.delete(channel);
-  runtime.channelsPausedByMixer.delete(channel);
-  runtime.channelToBus.delete(channel);
-  // Reconnect the channel output to the context destination so it keeps playing if still active.
-  connectAudioChannelToNode(channel, runtime.context.destination);
 }
 
 interface AudioMixerRuntime {
@@ -240,6 +254,25 @@ function unregisterBusFromReverseMap(bus: AudioBus, runtime: AudioMixerRuntime):
   runtimes.delete(runtime);
   if (runtimes.size === 0) busToMixerRuntimes.delete(bus);
 }
+
+export function unrouteAudioChannelFromMixerBus(mixer: Readonly<AudioMixer>, channel: AudioChannel): void {
+  const runtime = mixerRuntimes.get(mixer);
+  if (runtime === undefined) return;
+  runtime.activeChannels.delete(channel);
+  runtime.channelsPausedByMixer.delete(channel);
+  runtime.channelToBus.delete(channel);
+  // Reconnect the channel output to the context destination so it keeps playing if still active.
+  connectAudioChannelToNode(channel, runtime.context.destination);
+}
+
+// Reports a write to a bus that belongs to no mixer. Cheap by construction — the Map lookup happens only
+// when a guard is installed.
+function reportUnmixedBus(bus: Readonly<AudioBus>, operation: AudioBusMixerOperation): void {
+  if (_unmixedBusGuard === null) return;
+  if (busToMixerRuntimes.get(bus) === undefined) _unmixedBusGuard(operation, bus);
+}
+
+let _unmixedBusGuard: AudioBusMixerGuard | null = null;
 
 function updateBusGainNode(bus: AudioBus): void {
   const runtimes = busToMixerRuntimes.get(bus);

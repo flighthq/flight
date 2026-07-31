@@ -12,6 +12,7 @@ import {
   resumeAllAudioMixerChannels,
   routeAudioChannelToMixerBus,
   setAudioBusGain,
+  setAudioBusMixerGuard,
   setAudioBusMuted,
   setAudioBusPan,
   setAudioMixerMasterGain,
@@ -297,6 +298,43 @@ describe('setAudioBusGain', () => {
     const bus = createAudioBus();
     expect(setAudioBusGain(bus, 0.5)).toBe(0.5);
     expect(bus.gain).toBe(0.5);
+  });
+});
+
+describe('setAudioBusMixerGuard', () => {
+  it('reports a bus-property write that reaches no mixer, for each setter', () => {
+    const seen: string[] = [];
+    setAudioBusMixerGuard((operation) => seen.push(operation));
+    try {
+      // A bus that was never added to a mixer: every setter stores its value and returns it, but no
+      // audio node exists to receive it.
+      const orphan = createAudioBus({ name: 'orphan' });
+      expect(setAudioBusGain(orphan, 0.25)).toBe(0.25);
+      setAudioBusMuted(orphan, true);
+      setAudioBusPan(orphan, -1);
+    } finally {
+      setAudioBusMixerGuard(null);
+    }
+    expect(seen).toEqual(['gain', 'mute', 'pan']);
+  });
+
+  it('stays silent for a bus that belongs to a mixer, and once uninstalled', () => {
+    const seen: string[] = [];
+    setAudioBusMixerGuard((operation) => seen.push(operation));
+    try {
+      const mixer = createAudioMixer(ctx);
+      const bus = createAudioBus({ name: 'music' });
+      addAudioBusToMixer(mixer, bus);
+      setAudioBusGain(bus, 0.5);
+      setAudioBusMuted(bus, true);
+      setAudioBusPan(bus, 0.5);
+      expect(seen).toEqual([]);
+    } finally {
+      setAudioBusMixerGuard(null);
+    }
+    // Uninstalled: the orphan write is still a silent no-op, but nothing is reported.
+    setAudioBusGain(createAudioBus({ name: 'orphan2' }), 0.75);
+    expect(seen).toEqual([]);
   });
 });
 
