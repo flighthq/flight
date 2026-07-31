@@ -26,6 +26,37 @@ export interface GlRenderEffectContext {
 // (e.g. defaultGlBloomEffectRunner); register an alternative under the same key to swap algorithms.
 export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect: Readonly<RenderEffect>) => void;
 
+// Why an applyGlRenderEffectsToRenderTexture call would not write its destination, as plain data.
+//
+//   complete              every requested effect has a runner; the destination gets written
+//   no-effects            an empty chain — a legitimate no-op, NOT a registration miss
+//   source-unavailable    the source RenderTexture has no realized GL target yet
+//   unregistered-effects  effects were requested and NONE has a runner; the call returns false and
+//                         DEST IS NEVER WRITTEN, so a sprite sampling it reads a never-written texture
+//   partial-registration  some effects have runners and some do not; the call succeeds while SILENTLY
+//                         DROPPING the unregistered ones, so the output is wrong rather than absent
+//
+// The last two are the expensive pair: both are correct-by-contract and neither is distinguishable
+// from working code without a crumb.
+export type GlRenderEffectApplicationStatus =
+  | 'complete'
+  | 'no-effects'
+  | 'partial-registration'
+  | 'source-unavailable'
+  | 'unregistered-effects';
+
+export interface GlRenderEffectApplicationExplanation {
+  readonly registeredCount: number;
+  readonly requestedCount: number;
+  readonly status: GlRenderEffectApplicationStatus;
+  readonly unregisteredKinds: readonly string[];
+}
+
+export type GlRenderEffectApplicationGuard = (
+  state: GlRenderState,
+  explanation: Readonly<GlRenderEffectApplicationExplanation>,
+) => void;
+
 export interface RenderEffectPipelineOptions {
   // MSAA on the scene target so going offscreen for effects keeps edge AA. Default 1.
   sampleCount?: number;

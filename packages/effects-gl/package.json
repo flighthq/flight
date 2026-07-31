@@ -39,6 +39,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/types": "*"
   },

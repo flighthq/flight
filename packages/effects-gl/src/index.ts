@@ -1,6 +1,9 @@
 export {
   applyBlurEffectToGlRenderTextures,
   applyGaussianBlurToGlRenderTextures,
+  disableGlRenderEffectGuards,
+  enableGlRenderEffectGuards,
+  explainGlRenderEffectApplication,
   applyGlRenderEffectsToRenderTexture,
   beginGlRenderEffectPipeline,
   createGlRenderEffectPipeline,
