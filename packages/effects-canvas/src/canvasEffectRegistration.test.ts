@@ -6,6 +6,7 @@ import * as publicEffects from './index';
 
 describe('Canvas effect registration', () => {
   it.each([
+    ['BlendEffect', 'registerCanvasBlendEffect', 'defaultCanvasBlendEffectRunner'],
     ['BloomEffect', 'registerCanvasBloomEffect', 'defaultCanvasBloomEffectRunner'],
     ['BlurEffect', 'registerCanvasBlurEffect', 'defaultCanvasBlurEffectRunner'],
     ['DropShadowEffect', 'registerCanvasDropShadowEffect', 'defaultCanvasDropShadowEffectRunner'],
