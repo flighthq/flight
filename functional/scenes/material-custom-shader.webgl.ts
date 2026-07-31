@@ -105,9 +105,13 @@ render(scene, camera, createScene3DLights({ ambient: null, directional: null }))
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
   const cy = Math.floor(bitmap.height / 2);
+  const background = getBitmapPixelLuminance(bitmap, 0, 0);
   const center = getBitmapPixelLuminance(bitmap, cx, cy);
   const centerRgb = getBitmapPixelRgb(bitmap, cx, cy);
   const edgeRgb = getBitmapPixelRgb(bitmap, cx + Math.floor(bitmap.width * 0.07), cy);
+  if (background >= 24) {
+    throw new Error(`[material-custom-shader] linear target gamma-lifted the sRGB background (${background})`);
+  }
   if (center <= 24) throw new Error(`[material-custom-shader] blank custom material (${center})`);
   if (centerRgb === edgeRgb) {
     throw new Error('[material-custom-shader] custom normal-matrix shading did not vary across the sphere');

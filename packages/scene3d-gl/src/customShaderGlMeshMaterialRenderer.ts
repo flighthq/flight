@@ -98,7 +98,7 @@ export function registerCustomShaderGlMaterial(state: GlRenderState): void {
 // so a mat4 declaration raises a silent GL_INVALID_OPERATION and the mesh draws nothing;
 // enableGlScene3DCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
 // alphaMode is 'blend', drawGlScene3D composites with glBlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), so
-// the fragment scene2d must output straight (non-premultiplied) alpha. Last write wins for the source
+// the fragment shader must output linear scene color with straight (non-premultiplied) alpha. Last write wins for the source
 // lookup, but the compiled program is cached
 // by shaderKey, so re-registering a different source under the same key keeps running the
 // already-compiled program. Register edited source under a new key to force a recompile.
