@@ -3,6 +3,7 @@ export {
   createWgpuVelocityTarget,
   defaultWgpuBitmapTextRenderer,
   defaultWgpuNode2DVelocityWriter,
+  defaultWgpuBitmapTextRenderer,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
   defaultWgpuQuadBatchRenderer,
