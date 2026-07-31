@@ -21,4 +21,4 @@ export * from './wgpuShaderRegistry';
 export * from './wgpuSurface';
 export * from './wgpuTextureUpload';
 export * from './wgpuTextureResolver';
-export { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+export { createReadyImageElementForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';

@@ -3,7 +3,7 @@ import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import { createReadyImageElementForTest, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
@@ -56,10 +56,7 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
 
 function makeAtlasEmitter(regionWidth: number, regionHeight: number): ParticleEmitter3D {
   const emitter = makeEmitterWithParticles(1);
-  const img = document.createElement('img');
-  const image = createImageResource(img);
-  image.width = 128;
-  image.height = 128;
+  const image = createImageResource(createReadyImageElementForTest(128, 128));
   emitter.data.atlas = {
     regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight } as TextureAtlasRegion],
     texture: createTexture({ dimension: '2d', source: image }),
