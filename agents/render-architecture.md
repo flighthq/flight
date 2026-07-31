@@ -122,6 +122,12 @@ target → dark). Chosen over a `RenderEffectPipelineOptions.inputColorSpace` fl
 declaration is one source of truth the pipeline obeys — structurally immune to a caller setting the
 pipeline inconsistently with the content.
 
+Effect-pipeline producers declare that target space when the frame begins:
+`begin{Gl,Wgpu}RenderEffectPipeline(state, pipeline, 'linear')` for 3D, with the default `'srgb'` kept
+for 2D. This declaration happens before the scene-target clear so a packed sRGB background is decoded
+when stored alongside linear scene color, then encoded exactly once with the rest of the target at
+present. A reused pipeline is redeclared every frame and cannot inherit the preceding producer's space.
+
 **North star (chartered later, NOT now):** a fully unified linear pipeline (2D decodes to linear
 internally, one encode at present) removes the flag entirely. Deferred because it would tax every
 2D-only app with a linear intermediate + resolve pass it doesn't need *and* change 2D blend/composite

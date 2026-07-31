@@ -127,7 +127,7 @@ const lights = createScene3DLights({
   spot: spotLights,
 });
 
-beginGlRenderEffectPipeline(state, pipeline);
+beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);

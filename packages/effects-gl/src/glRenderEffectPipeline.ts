@@ -26,6 +26,7 @@ import type {
   GlRenderTarget,
   RenderEffect,
   RenderEffectPipelineOptions,
+  RenderTargetColorSpace,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass';
@@ -38,21 +39,32 @@ import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 // ping-ponging pooled targets, then presents to the canvas. The default render loop imports none of
 // this. The effect list is per-frame data; only the scene target and pool are retained.
 
-export function beginGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
+export function beginGlRenderEffectPipeline(
+  state: GlRenderState,
+  pipeline: GlRenderEffectPipeline,
+  colorSpace: RenderTargetColorSpace = 'srgb',
+): void {
   const w = state.canvas.width;
   const h = state.canvas.height;
   const { sampleCount, format, depth } = pipeline.options;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createGlRenderTarget(state, { width: w, height: h, sampleCount, format, depth });
+    pipeline.sceneTarget = createGlRenderTarget(state, {
+      width: w,
+      height: h,
+      sampleCount,
+      format,
+      depth,
+      colorSpace,
+    });
   } else {
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
-  // Reset the declared color space each frame so the frame's producer re-declares it: drawGlScene3D stamps
-  // 'linear' while it draws (the present then encodes once); a 2D display-object frame leaves it 'srgb'
-  // (plain-copy present, byte-identical to before this seam existed). A reused pipeline never carries a
-  // stale space from a prior frame's content.
-  pipeline.sceneTarget.colorSpace = 'srgb';
+  // Declare the producer's space before the pass opens. A background clear happens before the first
+  // scene draw, so the target must already say whether renderGlBackground should decode its packed
+  // sRGB input into linear storage. The explicit frame value also prevents a reused pipeline from
+  // carrying the previous producer's color space.
+  pipeline.sceneTarget.colorSpace = colorSpace;
   // Preserve, don't clear: the frame's scene render fills the target (matching the pre-pass behavior),
   // and the current 2D render transform is inherited — begin no longer sets it.
   beginGlRenderPass(state, pipeline.sceneTarget, { preserveColor: true, preserveDepth: true });

@@ -59,7 +59,7 @@ export const width = 800;
 export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);

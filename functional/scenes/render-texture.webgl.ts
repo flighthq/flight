@@ -104,7 +104,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   format: 'rgba16f',
   sampleCount: 4,
 });
-beginGlRenderEffectPipeline(state, pipeline);
+beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 drawGlScene3D(state, consumerScene, consumerCamera, lights);

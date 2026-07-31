@@ -75,7 +75,7 @@ export function render(
   drawGlScene3DShadowMap(state, scene, shadowCamera);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
-  beginGlRenderEffectPipeline(state, pipeline);
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);
   const gl = state.gl;
   gl.depthMask(true);
