@@ -7,8 +7,8 @@ import {
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
+  registerStandardWgpuTextureResolvers,
   registerRenderer,
-  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
@@ -26,7 +26,7 @@ export const state = await createWgpuRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardWgpuMaterial(state);
-registerWgpuImageTextureResolver(state);
+registerStandardWgpuTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 
 export const scale = pixelRatio;

@@ -9,6 +9,7 @@ import {
   defaultWgpuTilemapRenderer,
   prepareScene2DRender,
   registerStandardWgpuMaterial,
+  registerStandardWgpuTextureResolvers,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -27,6 +28,7 @@ export const state = await createWgpuRenderState(canvas, {
 enableFlightDiagnostics(state);
 
 registerStandardWgpuMaterial(state);
+registerStandardWgpuTextureResolvers(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
 

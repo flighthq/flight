@@ -8,7 +8,7 @@ import {
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
-  registerWgpuImageTextureResolver,
+  registerStandardWgpuTextureResolvers,
   registerStandardWgpuMaterial,
   registerWgpuShapeCommands,
   registerRenderer,
@@ -35,7 +35,7 @@ registerStandardWgpuMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
-registerWgpuImageTextureResolver(state);
+registerStandardWgpuTextureResolvers(state);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
