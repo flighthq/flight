@@ -214,11 +214,22 @@ export const physics2DRevoluteJointSolver = {
     // stayed there and every later step added nothing. A low-torque motor would apply its first
     // increment and then hold the same value forever, looking like a motor that had reached speed while
     // the body never moved.
+    //
+    // Gated on the CURRENT enableMotor, not on the value being non-zero. A cached impulse is only valid
+    // while the thing that produced it is still running: `solve` skips a disabled motor, so reapplying
+    // its last impulse here would exert torque no solver ever asks for and nothing ever cancels — a
+    // disabled motor that keeps turning the joint forever. Clearing rather than merely skipping means a
+    // motor switched back on starts from rest instead of resuming a stale accumulator from whenever it
+    // was last enabled.
+    //
     // Defaulted rather than compared against 0: a joint deserialized or built without the motor fields
     // has no motorImpulse at all, and multiplying undefined by an inverse inertia produces NaN, which
     // then spreads through every subsequent velocity.
-    const motorImpulse = (joint as Physics2DRevoluteJoint).motorImpulse ?? 0;
-    if (motorImpulse !== 0) {
+    const revolute = joint as Physics2DRevoluteJoint;
+    const motorImpulse = revolute.motorImpulse ?? 0;
+    if (!revolute.enableMotor) {
+      revolute.motorImpulse = 0;
+    } else if (motorImpulse !== 0) {
       bodyA.angularVelocity -= bodyA.inverseInertia * motorImpulse;
       bodyB.angularVelocity += bodyB.inverseInertia * motorImpulse;
     }

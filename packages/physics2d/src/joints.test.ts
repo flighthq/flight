@@ -594,6 +594,74 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     expect(arm.angularVelocity).toBeGreaterThan(afterFirst * 5);
   });
 
+  // A cached impulse is only valid while the thing that produced it is still running. `solve` skips a
+  // disabled motor, so warm start must skip it too — otherwise the last impulse is reapplied every step
+  // with nothing to cancel it, and a switched-off motor keeps turning the joint forever.
+  it('exerts no torque once the motor is disabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    const joint = revoluteJoint(anchor.index, arm.index, {
+      enableMotor: true,
+      maxMotorTorque: 1,
+      motorSpeed: 10,
+    });
+    addPhysics2DJoint(world, joint);
+    stepPhysics2D(world, 1 / 60);
+
+    joint.enableMotor = false;
+    arm.angularVelocity = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(arm.angularVelocity).toBe(0);
+  });
+
+  it('stays still across many steps with the motor disabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    const joint = revoluteJoint(anchor.index, arm.index, {
+      enableMotor: true,
+      maxMotorTorque: 1,
+      motorSpeed: 10,
+    });
+    addPhysics2DJoint(world, joint);
+    for (let i = 0; i < 5; i++) stepPhysics2D(world, 1 / 60);
+
+    joint.enableMotor = false;
+    arm.angularVelocity = 0;
+    for (let i = 0; i < 20; i++) stepPhysics2D(world, 1 / 60);
+
+    expect(arm.angularVelocity).toBe(0);
+  });
+
+  // Clearing rather than merely skipping: a motor switched back on starts from rest, not from whatever
+  // the accumulator held when it was last enabled.
+  it('starts from rest when the motor is re-enabled rather than resuming a stale accumulator', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const { anchor, arm } = hinged(world);
+    const joint = revoluteJoint(anchor.index, arm.index, {
+      enableMotor: true,
+      maxMotorTorque: 1,
+      motorSpeed: 10,
+    });
+    addPhysics2DJoint(world, joint);
+    for (let i = 0; i < 5; i++) stepPhysics2D(world, 1 / 60);
+
+    joint.enableMotor = false;
+    stepPhysics2D(world, 1 / 60);
+    expect(joint.motorImpulse).toBe(0);
+
+    joint.enableMotor = true;
+    arm.angularVelocity = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    // Acts again, and from a cold accumulator: one step of a 1 N·m budget, not a resumed total.
+    expect(arm.angularVelocity).toBeGreaterThan(0);
+    expect(Math.abs(joint.motorImpulse)).toBeLessThanOrEqual((1 / 60) * 1 * 1.0000001);
+  });
+
   // Critic's repro: a joint authored OUTSIDE its interval. The header says limits clamp the angle into
   // the interval, and the previous bias (remaining room, clamped at zero) went silent exactly when the
   // angle was already out of range -- so a violated joint sitting still was never pushed back.
