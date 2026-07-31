@@ -134,6 +134,12 @@ This is consistent with how the codebase already treats types (one navigable hea
 keeps promotion to public an explicit, reviewable one-line diff — exactly the "every
 exported name is worth keeping" discipline the pre-release philosophy asks for.
 
+**Promotion preflight:** before promoting a contract-only symbol, grep the package's
+`index.ts` for that symbol. If it is already present, it is already public: a
+stranded-capability fix that finds nothing stranded is a no-op, not a fix. Do not add a
+second export for the same name; duplicate named exports fail typecheck and obscure the
+fact that the requested lane change had already landed.
+
 Curation is interactive: **`npm run api:curate`** opens a terminal UI over every package's
 contract surface — scroll, press space to toggle a symbol public/contract (or `a` for a whole
 package), `s` to write the touched `index.ts` files. It only edits the allowlists, so the
