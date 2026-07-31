@@ -502,3 +502,24 @@ describe('setSpatialIndexingGuard', () => {
     expect(grid.insertSpatialObject(2, { minX: 0, minY: 0, maxX: 10, maxY: 10 })).toBe(true);
   });
 });
+
+describe('updateSpatialObject', () => {
+  it('refreshes exact bounds without retaining the caller object when the covered cells stay unchanged', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 1, minY: 1, maxX: 18, maxY: 18 });
+    const updated = { minX: 4, minY: 4, maxX: 19, maxY: 19 };
+
+    expect(grid.updateSpatialObject(1, updated)).toBe(true);
+    updated.minX = -100;
+    updated.minY = -100;
+    updated.maxX = 100;
+    updated.maxY = 100;
+
+    const oldPoint: SpatialObjectId[] = [];
+    grid.querySpatialPoint(2, 2, oldPoint);
+    expect(oldPoint).toEqual([]);
+    const newPoint: SpatialObjectId[] = [];
+    grid.querySpatialPoint(5, 5, newPoint);
+    expect(newPoint).toEqual([1]);
+  });
+});

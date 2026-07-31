@@ -55,8 +55,7 @@ export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexB
       return _insertIntoGrid(grid, id, bounds);
     },
     updateSpatialObject(id, bounds) {
-      _removeFromGrid(grid, id);
-      return _insertIntoGrid(grid, id, bounds);
+      return _updateGridObject(grid, id, bounds);
     },
     removeSpatialObject(id) {
       _removeFromGrid(grid, id);
@@ -231,6 +230,40 @@ function _insertIntoGrid(grid: UniformGrid, id: SpatialObjectId, bounds: Readonl
     if (cy1 > grid.maxCellY) grid.maxCellY = cy1;
   }
   return true;
+}
+
+// Updates an object's private AABB copy without touching its cell sets when both the old and new
+// bounds take the ordinary indexing path and cover exactly the same cells. Small per-frame movement
+// usually stays inside this range, so its dominant cost becomes four field writes instead of a
+// remove-and-reinsert walk. Every mode or range transition keeps using the shared slow path below.
+function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean {
+  const previous = grid.bounds.get(id);
+  if (
+    previous !== undefined &&
+    !grid.overflow.has(id) &&
+    Number.isFinite(bounds.minX) &&
+    Number.isFinite(bounds.minY) &&
+    Number.isFinite(bounds.maxX) &&
+    Number.isFinite(bounds.maxY)
+  ) {
+    const cs = grid.cellSize;
+    const spanned = _spannedCellCount(cs, bounds);
+    if (
+      spanned <= MAX_INDEXED_CELLS_PER_OBJECT &&
+      _cellIndex(previous.minX, cs) === _cellIndex(bounds.minX, cs) &&
+      _cellIndex(previous.minY, cs) === _cellIndex(bounds.minY, cs) &&
+      _cellIndex(previous.maxX, cs) === _cellIndex(bounds.maxX, cs) &&
+      _cellIndex(previous.maxY, cs) === _cellIndex(bounds.maxY, cs)
+    ) {
+      previous.minX = bounds.minX;
+      previous.minY = bounds.minY;
+      previous.maxX = bounds.maxX;
+      previous.maxY = bounds.maxY;
+      return true;
+    }
+  }
+  _removeFromGrid(grid, id);
+  return _insertIntoGrid(grid, id, bounds);
 }
 
 // Reports whether an AABB contains the point (`x`,`y`), reusing the geometry rectangle helper.

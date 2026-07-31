@@ -138,7 +138,6 @@ Design calls to settle before building the affected entries:
 
 ### spatial (solid 66)
 
-- `updateSpatialObject` fast path
 - De-allocate the pair enumeration's cell scan
 - Finish the guard coverage `setSpatialIndexingGuard` opened
 - Brute-force property tests
