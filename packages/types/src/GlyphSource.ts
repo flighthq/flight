@@ -80,6 +80,11 @@ export interface GlyphRasterizeOptions {
 // for an unrenderable codepoint (or when no canvas is available), never throwing.
 export interface GlyphRasterizerBackend {
   rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
+  // Font-level line metrics, when the backend can measure them. Optional so existing backends stay
+  // valid: an atlas whose backend does not implement it, or which returns null, keeps the font-size
+  // heuristic from deriveGlyphMetricsFromFontSize. Measured once per atlas rather than per glyph,
+  // because these describe the font at a size, not any particular character.
+  measureMetrics?(options: Readonly<GlyphRasterizeOptions>): GlyphMetrics | null;
 }
 
 // Construction options for a dynamic glyph atlas. `width`/`height` size the atlas bitmap; the font

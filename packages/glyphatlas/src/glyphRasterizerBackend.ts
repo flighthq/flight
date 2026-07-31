@@ -1,4 +1,9 @@
-import type { GlyphRasterizedBitmap, GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type {
+  GlyphMetrics,
+  GlyphRasterizedBitmap,
+  GlyphRasterizeOptions,
+  GlyphRasterizerBackend,
+} from '@flighthq/types/contract';
 
 // Builds a deterministic, font-independent rasterizer backend for headless/jsdom use. Every codepoint
 // rasterizes to a solid opaque-white box sized from the requested `fontSize` (never a font lookup, never
@@ -35,6 +40,28 @@ export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
 // null rather than throwing; a native host installs its own backend via `setGlyphRasterizerBackend`.
 export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend {
   return {
+    // Real font metrics from the canvas, rather than a fraction of the font size. fontBoundingBox*
+    // describes the font's own ascent and descent at this size, which is what line layout needs; the
+    // actualBoundingBox* fields describe only the sampled string's ink and would vary by which
+    // characters were measured. Returns null when the platform omits fontBoundingBox* (Firefox before
+    // 116, older Safari) so the caller keeps its heuristic rather than inventing a number.
+    measureMetrics(options): GlyphMetrics | null {
+      const context = _acquireGlyphRasterContext();
+      if (context === null) return null;
+      _applyGlyphRasterFont(context, options);
+      const metrics = context.measureText('Hg');
+      const ascent = metrics.fontBoundingBoxAscent;
+      const descent = metrics.fontBoundingBoxDescent;
+      // Guarded on a positive ascent rather than on the fields being present. A platform without
+      // fontBoundingBox* support reports them as 0 rather than undefined (jsdom does exactly this), and
+      // a font with zero ascent does not exist — so 0 means "not measured", and returning it would give
+      // the atlas zero line height instead of falling back to the heuristic. The comparison also
+      // rejects NaN, since every comparison with NaN is false.
+      if (!(ascent > 0) || !(descent >= 0)) return null;
+      // The canvas exposes no line gap, so the shared metric stays 0 and callers space lines by
+      // ascent + descent. Reporting a guess here would be worse than reporting none.
+      return { ascent, descent, lineGap: 0 };
+    },
     rasterize(codepoint, options): GlyphRasterizedBitmap | null {
       const context = _acquireGlyphRasterContext();
       if (context === null) return null;
@@ -86,9 +113,7 @@ function _rasterizeGlyphOnContext(
   options: Readonly<GlyphRasterizeOptions>,
 ): GlyphRasterizedBitmap | null {
   const text = String.fromCodePoint(codepoint);
-  const fontStyle = options.fontStyle ?? 'normal';
-  const fontWeight = options.fontWeight ?? 'normal';
-  context.font = `${fontStyle} ${fontWeight} ${options.fontSize}px ${options.fontFamily}`;
+  _applyGlyphRasterFont(context, options);
   context.textBaseline = 'alphabetic';
   context.textAlign = 'left';
 
@@ -108,7 +133,7 @@ function _rasterizeGlyphOnContext(
   canvas.width = width;
   canvas.height = height;
   // font resets when the canvas is resized, so restore it before drawing.
-  context.font = `${fontStyle} ${fontWeight} ${options.fontSize}px ${options.fontFamily}`;
+  _applyGlyphRasterFont(context, options);
   context.textBaseline = 'alphabetic';
   context.textAlign = 'left';
   context.clearRect(0, 0, width, height);
@@ -124,4 +149,15 @@ function _rasterizeGlyphOnContext(
     pixels: new Uint8ClampedArray(image.data),
     width,
   };
+}
+
+// Sets the canvas font from the atlas's rasterize options. Shared so measurement and rasterization can
+// never disagree about which font they are describing.
+function _applyGlyphRasterFont(
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  options: Readonly<GlyphRasterizeOptions>,
+): void {
+  const fontStyle = options.fontStyle ?? 'normal';
+  const fontWeight = options.fontWeight ?? 'normal';
+  context.font = `${fontStyle} ${fontWeight} ${options.fontSize}px ${options.fontFamily}`;
 }

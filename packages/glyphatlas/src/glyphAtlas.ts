@@ -1,6 +1,8 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Bitmap } from '@flighthq/types/contract';
 
+import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
+
 // Allocates a dynamic glyph atlas: an empty `width x height` atlas bitmap, an empty codepoint→entry
 // cache, and a fresh incremental shelf packer. Glyphs are added lazily by `getGlyphAtlasEntry`;
 // nothing is rasterized here. `padding` defaults to 1px of gutter between glyphs and from the edges;
@@ -8,6 +10,13 @@ import type { GlyphAtlas, GlyphAtlasOptions, GlyphMetrics, Bitmap } from '@fligh
 // eviction. Line metrics are derived from `fontSize` for now (see `deriveGlyphMetricsFromFontSize`).
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
   const padding = options.padding ?? 1;
+  // Built before the runtime so the metrics probe sees the same font the glyphs will rasterize with.
+  const rasterizeOptions: GlyphRasterizeOptions = {
+    fontFamily: options.fontFamily,
+    fontSize: options.fontSize,
+    ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
+    ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
+  };
   return {
     runtime: {
       bitmaps: new Map(),
@@ -19,20 +28,10 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       entries: new Map(),
       lru: new Map(),
       maxGlyphs: options.maxGlyphs ?? 0,
-      metrics: deriveGlyphMetricsFromFontSize(options.fontSize),
+      metrics: _resolveGlyphAtlasMetrics(rasterizeOptions),
       packBottom: padding,
       padding,
-      // Style and weight are forwarded only when supplied, so the rasterizer sees an absent field
-      // rather than an explicit 'normal' it would have defaulted to anyway. Without this the
-      // rasterizer's own fontStyle/fontWeight support was unreachable: it reads them from
-      // GlyphRasterizeOptions, which only this constructor builds, so no caller could ask for a bold
-      // or italic atlas at all.
-      rasterizeOptions: {
-        fontFamily: options.fontFamily,
-        fontSize: options.fontSize,
-        ...(options.fontStyle !== undefined ? { fontStyle: options.fontStyle } : {}),
-        ...(options.fontWeight !== undefined ? { fontWeight: options.fontWeight } : {}),
-      },
+      rasterizeOptions,
       shelves: [],
       bitmap: createBitmap(options.width, options.height),
     },
@@ -69,4 +68,13 @@ export function disposeGlyphAtlas(atlas: GlyphAtlas): void {
 // `getGlyphAtlasDirtyRegion` to upload only the changed sub-rect.
 export function getGlyphAtlasBitmap(atlas: Readonly<GlyphAtlas>): Bitmap {
   return atlas.runtime.bitmap;
+}
+
+// Asks the active backend to measure the font, falling back to the size heuristic when it cannot.
+// Metrics are resolved once at construction rather than per query: they describe the font at a size,
+// which does not change over the atlas's life, and a backend measurement can touch a canvas.
+function _resolveGlyphAtlasMetrics(rasterizeOptions: Readonly<GlyphRasterizeOptions>): GlyphMetrics {
+  const backend = getGlyphRasterizerBackend();
+  const measured = backend.measureMetrics?.(rasterizeOptions) ?? null;
+  return measured ?? deriveGlyphMetricsFromFontSize(rasterizeOptions.fontSize);
 }
