@@ -117,9 +117,11 @@ export function drawWgpuRichTextWithOverlay(
   const ph = _offscreenCanvas!.height;
   let entry = richData.entry;
   if (entry === null || richData.w !== pw || richData.h !== ph) {
+    const nextEntry = createWgpuTextureEntry(state, pw, ph, _offscreenCanvas!);
+    if (nextEntry === null) return;
     entry?.texture.destroy();
-    entry = createWgpuTextureEntry(state, pw, ph, _offscreenCanvas!);
-    richData.entry = entry;
+    entry = nextEntry;
+    richData.entry = nextEntry;
     richData.w = pw;
     richData.h = ph;
   } else {

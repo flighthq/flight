@@ -169,8 +169,10 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   if (w <= 0 || h <= 0) return;
 
   if (version !== shapeData.lastContentId || w !== shapeData.lastW || h !== shapeData.lastH) {
-    shapeData.canvas.width = w;
-    shapeData.canvas.height = h;
+    // Reassigning either canvas dimension resets its 2D context even when the value is unchanged.
+    // Animated shapes invalidate their commands every frame, so resize only when their bounds change.
+    if (shapeData.canvas.width !== w) shapeData.canvas.width = w;
+    if (shapeData.canvas.height !== h) shapeData.canvas.height = h;
     const ctx = shapeData.ctx;
     ctx.clearRect(0, 0, w, h);
     ctx.save();
@@ -192,6 +194,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
   const textureEntry = bindWgpuImageResourceTexture(state, shapeData.image, false, true);
+  if (textureEntry === null) return;
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareWgpuQuadBatchWrite(
     state,

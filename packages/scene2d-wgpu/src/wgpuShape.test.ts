@@ -145,10 +145,20 @@ describe('drawWgpuShape', () => {
     const proxy = makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData);
 
     drawWgpuShape(state, proxy);
+    const canvas = (rendererData as unknown as { canvas: HTMLCanvasElement }).canvas;
+    let canvasWidth = canvas.width;
+    let canvasHeight = canvas.height;
+    const setWidth = vi.fn((value: number) => (canvasWidth = value));
+    const setHeight = vi.fn((value: number) => (canvasHeight = value));
+    Object.defineProperty(canvas, 'width', { configurable: true, get: () => canvasWidth, set: setWidth });
+    Object.defineProperty(canvas, 'height', { configurable: true, get: () => canvasHeight, set: setHeight });
+    (proxy.source as unknown as { data: { version: number } }).data.version = 2;
     drawWgpuShape(state, proxy);
 
     expect(pass.drawIndexed).not.toHaveBeenCalled();
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(2);
+    expect(setWidth).not.toHaveBeenCalled();
+    expect(setHeight).not.toHaveBeenCalled();
     submitWgpuRenderPass(state);
   });
 

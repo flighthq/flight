@@ -36,6 +36,25 @@ describe('uploadWgpuTextureElement', () => {
       [4, 4, 1],
     );
   });
+
+  it('skips a copy with a zero-sized extent', () => {
+    const device = makeDevice();
+    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 0, 4, {} as GPUCopyExternalImageSource);
+    expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
+  });
+
+  it('skips a copy while a 2D canvas context is lost', () => {
+    const device = makeDevice();
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const getContext = vi
+      .spyOn(canvas, 'getContext')
+      .mockReturnValue({ isContextLost: () => true } as unknown as GPUCanvasContext);
+    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 4, 4, canvas);
+    expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
+    getContext.mockRestore();
+  });
 });
 
 describe('uploadWgpuTextureImageResource', () => {

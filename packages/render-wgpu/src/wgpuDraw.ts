@@ -17,6 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import { isWgpuExternalImageSourceReady } from './wgpuExternalImageSource';
 import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
@@ -50,8 +51,8 @@ export function bindWgpuImageResourceTexture(
   image: Readonly<Image>,
   generateMips = false,
   premultiply = false,
-): WgpuTextureEntry {
-  return bindWgpuTextureSourceTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry)!;
+): WgpuTextureEntry | null {
+  return bindWgpuTextureSourceTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry);
 }
 
 function bindWgpuTextureSourceTexture(
@@ -69,7 +70,7 @@ function bindWgpuTextureSourceTexture(
   if (cached !== undefined && cached.version === image.version) return cached;
 
   const built = upload(state, image, generateMips, premultiply);
-  if (built === null) return null;
+  if (built === null) return cached ?? null;
   if (cached !== undefined) {
     cached.texture.destroy();
     cached.texture = built.texture;
@@ -97,7 +98,7 @@ export function bindWgpuTexture(
   state: WgpuRenderState,
   imageSource: CanvasImageSource,
   generateMips = false,
-): WgpuTextureEntry {
+): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.textureCache.get(imageSource);
   if (cached !== undefined) return cached;
@@ -124,6 +125,8 @@ export function bindWgpuTexture(
     width = imageSource.width || 1;
     height = imageSource.height || 1;
   }
+
+  if (!isWgpuExternalImageSourceReady(imageSource as GPUCopyExternalImageSource, width, height)) return null;
 
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
@@ -248,12 +251,13 @@ export function createWgpuTextureEntry(
   width: number,
   height: number,
   canvas: HTMLCanvasElement,
-): WgpuTextureEntry {
+): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
   const { textureBindGroupLayout } = runtime;
   const w = Math.max(1, width);
   const h = Math.max(1, height);
+  if (!isWgpuExternalImageSourceReady(canvas, w, h)) return null;
 
   const texture = device.createTexture({
     size: [w, h, 1],
@@ -432,6 +436,7 @@ export function updateWgpuTextureEntry(
   const { device } = state;
   const w = Math.max(1, canvas.width);
   const h = Math.max(1, canvas.height);
+  if (!isWgpuExternalImageSourceReady(canvas, w, h)) return;
 
   device.queue.copyExternalImageToTexture(
     { source: canvas, flipY: false },
@@ -515,12 +520,13 @@ function uploadWgpuImageResourceEntry(
   image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
-): WgpuTextureEntry {
+): WgpuTextureEntry | null {
   const resource = image as Readonly<Image>;
   const runtime = getWgpuRenderStateRuntime(state);
   const { device } = state;
   const width = resource.width || 1;
   const height = resource.height || 1;
+  if (!isWgpuExternalImageSourceReady(resource.source as GPUCopyExternalImageSource, width, height)) return null;
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
     size: [width, height, 1],

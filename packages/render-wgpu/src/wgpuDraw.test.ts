@@ -1,7 +1,7 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CompressedImage, Image, Texture } from '@flighthq/types/contract';
+import type { Bitmap, CompressedImage, Image, Texture, WgpuTextureEntry } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,
@@ -36,6 +36,11 @@ import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper'
 beforeAll(() => {
   installWgpuMock();
 });
+
+function requireTextureEntry(entry: WgpuTextureEntry | null): WgpuTextureEntry {
+  if (entry === null) throw new Error('Expected a ready WebGPU texture entry');
+  return entry;
+}
 
 function bitmap(size: number, version: number): Bitmap {
   return {
@@ -142,6 +147,46 @@ describe('bindWgpuImageResourceTexture', () => {
     bindWgpuImageResourceTexture(state, image);
     expect(copy).toHaveBeenCalled();
   });
+
+  it('skips an initial upload when the canvas has no pixels', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
+    const canvas = document.createElement('canvas');
+    canvas.width = 0;
+    canvas.height = 4;
+    const image = {
+      source: canvas,
+      width: 0,
+      height: 4,
+      kind: ImageTextureSourceKind,
+      version: 1,
+    } as unknown as Image;
+    expect(bindWgpuImageResourceTexture(state, image)).toBeNull();
+    expect(copy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the previous upload while a 2D canvas context is lost', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const image = {
+      source: canvas,
+      width: 4,
+      height: 4,
+      kind: ImageTextureSourceKind,
+      version: 1,
+    } as unknown as Image;
+    const entry = requireTextureEntry(bindWgpuImageResourceTexture(state, image));
+    const getContext = vi
+      .spyOn(canvas, 'getContext')
+      .mockReturnValue({ isContextLost: () => true } as unknown as GPUCanvasContext);
+    image.version = 2;
+    expect(bindWgpuImageResourceTexture(state, image)).toBe(entry);
+    expect(copy).toHaveBeenCalledTimes(1);
+    getContext.mockRestore();
+  });
 });
 
 describe('bindWgpuTexture', () => {
@@ -150,7 +195,7 @@ describe('bindWgpuTexture', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 8;
     canvas.height = 8;
-    const entry = bindWgpuTexture(state, canvas);
+    const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(entry).toBeDefined();
     expect(entry.texture).toBeDefined();
     expect(bindWgpuTexture(state, canvas)).toBe(entry);
@@ -254,7 +299,7 @@ describe('createWgpuTextureEntry', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = createWgpuTextureEntry(state, 4, 4, canvas);
+    const entry = requireTextureEntry(createWgpuTextureEntry(state, 4, 4, canvas));
     expect(entry.texture).toBeDefined();
     expect(entry.bindGroup).toBeDefined();
   });
@@ -276,7 +321,7 @@ describe('drawWgpuQuad', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = bindWgpuTexture(state, canvas);
+    const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(() => drawWgpuQuad(state, renderProxy, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
     submitWgpuRenderPass(state);
   });
@@ -292,7 +337,7 @@ describe('drawWgpuQuadWithTransform', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = bindWgpuTexture(state, canvas);
+    const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     const t = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
     expect(() => drawWgpuQuadWithTransform(state, renderProxy, t, entry, 0, 0, 4, 4, 0, 0, 1, 1)).not.toThrow();
     submitWgpuRenderPass(state);
@@ -368,7 +413,7 @@ describe('submitWgpuQuadDraw', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = bindWgpuTexture(state, canvas);
+    const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
     submitWgpuRenderPass(state);
   });
@@ -378,7 +423,7 @@ describe('submitWgpuQuadDraw', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = bindWgpuTexture(state, canvas);
+    const entry = requireTextureEntry(bindWgpuTexture(state, canvas));
     expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
   });
 });
@@ -389,7 +434,7 @@ describe('updateWgpuTextureEntry', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const entry = createWgpuTextureEntry(state, 4, 4, canvas);
+    const entry = requireTextureEntry(createWgpuTextureEntry(state, 4, 4, canvas));
     expect(() => updateWgpuTextureEntry(state, entry, canvas)).not.toThrow();
   });
 });

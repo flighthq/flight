@@ -105,8 +105,10 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     // GPU textures are fixed-size: recreate the entry when the field size changes, otherwise reupload
     // the canvas pixels into the existing entry.
     if (shapeData.entry === null || shapeData.lastW !== w || shapeData.lastH !== h) {
+      const nextEntry = createWgpuTextureEntry(state, w, h, shapeData.canvas);
+      if (nextEntry === null) return;
       shapeData.entry?.texture.destroy();
-      shapeData.entry = createWgpuTextureEntry(state, w, h, shapeData.canvas);
+      shapeData.entry = nextEntry;
     } else {
       updateWgpuTextureEntry(state, shapeData.entry, shapeData.canvas);
     }
