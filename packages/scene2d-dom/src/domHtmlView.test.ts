@@ -3,13 +3,13 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createHtmlView } from '@flighthq/scene2d/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
 
-import { defaultHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';
+import { defaultDomHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, HtmlViewKind, defaultHtmlViewRenderer);
+  registerRenderer(state, HtmlViewKind, defaultDomHtmlViewRenderer);
   return state;
 }
 
@@ -19,10 +19,10 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultHtmlViewRenderer', () => {
+describe('defaultDomHtmlViewRenderer', () => {
   it('has submit, and createData', () => {
-    expect(typeof defaultHtmlViewRenderer.submit).toBe('function');
-    expect(typeof defaultHtmlViewRenderer.createData).toBe('function');
+    expect(typeof defaultDomHtmlViewRenderer.submit).toBe('function');
+    expect(typeof defaultDomHtmlViewRenderer.createData).toBe('function');
   });
 });
 

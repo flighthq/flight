@@ -1,0 +1,16 @@
+{
+  "name": "cross-backend-embed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  },
+  "scripts": {
+    "dev": "npm run dev:dom",
+    "dev:dom": "cross-env RENDER=dom vite",
+    "build": "npm run build:dom",
+    "build:dom": "cross-env RENDER=dom vite build",
+    "test": "npm run build",
+    "preview": "vite preview"
+  }
+}
