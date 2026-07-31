@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/text'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -15,6 +15,11 @@ is now `(layout, x, y)`; builder3's textlayout sweep removed the parameter. Veri
 source, not assumed.
 
 ## Recommended
+
+Re-verified against live source on 2026-07-31 (7 source files, 5 test files, 195 tests, 75 exports). The
+single item is unchanged and still open: all five setters assign and invalidate unconditionally
+(`setRichTextDefaultTextFormat` is three lines — assign, `invalidateRichTextContent`, return), and no ruling
+on object-setter comparison has been recorded in [invalidation](../../conventions/invalidation.md).
 
 1. **`setRichTextContent`, `setRichTextDefaultTextFormat`, `setRichTextFormatRange`,
    `setTextLabelFormat` and `setNativeTextStyle` invalidate unconditionally.** The string setters are

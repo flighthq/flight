@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/sdk'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,16 @@ Verified against the live tree (1 source file, 1 test file, 22 tests, 96 re-expo
 
 ## Recommended
 
-1. **Add completeness check to `packages:check`.** Per charter Decision #2. Ensure every eligible package is re-exported from the sdk barrel. Read inclusion policy from `scripts/sdk-policy.ts`.
+_None open._ Re-verified against live source on 2026-07-31 (15 source files, 1 test file, 20 tests; the
+package is a barrel and exports no functions of its own).
+
+## Landed
+
+1. ~~**Add completeness check to `packages:check`.**~~ Landed. `scripts/packages.ts` imports
+   `isSdkBarrelExcludedPackage` from `scripts/sdk-policy.ts` and requires every eligible package to appear
+   both as an `export *` line in `packages/sdk/src/index.ts` and as a `"*"` dependency in
+   `packages/sdk/package.json`, while excluded packages must appear in neither. It runs as part of
+   `npm run packages:check`, so barrel drift is caught rather than reviewed for.
 
 ## Backlog
 

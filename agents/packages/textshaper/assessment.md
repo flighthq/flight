@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/textshaper'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -9,6 +9,12 @@ basedOn: ./review.md
 Verified against the live tree (7 source files + textshaper-canvas 2 source files, ~102 tests, ~20 exports) and the direction session (2026-07-02). Six charter decisions blessed. Types are present in `@flighthq/types` (stale review was false alarm). Depth review: 66/100.
 
 ## Recommended
+
+Re-verified against live source on 2026-07-31 (10 source files, 8 test files, 106 tests, 28 exports). The
+item is unchanged and still open: `packages/textshaper/src` contains no `enable*Guards` module, so the
+package still has no diagnostic half. Since this assessment was written the guard convention has been
+exercised repeatedly elsewhere (`enableClipGuards`, `enableEasingGuards`, `enableAudioMixerGuards`,
+`enableGlRenderEffectGuards`), so the shape to copy is now well established rather than novel.
 
 1. **`enableTextShaperGuards` for the pool brackets.** The 2026-07-30 sweep fixed the *corruption* half of the double-release hazard in core: `releaseShapedRun` now ignores a run that is already pooled, so the pool invariant holds whatever the caller does. What is still missing is the *diagnostic* half. Under the inversion rule a caller-facing warning belongs in a separately-importable guard module, and a double release is a real caller bug worth naming even though it no longer corrupts — silently ignoring it means an unbalanced bracket goes unnoticed until the pool stops recycling. A guard could also catch the mirror-image mistake the core cannot see at all: using a run after releasing it. Deferred rather than built because the package has no guard module yet, so this establishes one.
 

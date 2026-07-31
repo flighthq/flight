@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/spritesheet'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -10,15 +10,21 @@ Sorted from the depth review (80/100, solid), verified against the live tree (15
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/spritesheet` and `@flighthq/types`, no open design decision beyond what the charter has already blessed.
+Re-verified against live source on 2026-07-31 (9 source files, 7 test files, 124 tests, 28 exports). One of
+the four items landed; three remain, and the seek defect is confirmed still live — `seekSpritesheetPlayerToFrame`
+still passes its clamped DISPLAY-frame index straight into `resolveVirtualIndexStartTime`, and the file's own
+comment ("seek to the first virtual index that produces this display frame") describes a conversion the code
+does not perform.
 
 1. **Fix `seekSpritesheetPlayerToFrame` for non-forward directions.** It passes a display-frame index to `resolveVirtualIndexStartTime` which expects a virtual index. For `forward` the two coincide (the only tested case); for `reverse`/`pingpong`/`pingpong_reverse` the synced `elapsed` is wrong, so the next `updateSpritesheetPlayer` jumps to a different frame. Convert the requested display frame to its virtual index before syncing `elapsed`, and set both `frameIndex` and `elapsed` consistently. Pure correctness fix at an already-owned seam.
 
 2. **Add non-forward-direction tests for the seek path.** The seek bug is latent because tests only exercise `forward`. Add `reverse`/`pingpong`/`pingpong_reverse` cases asserting that `seekSpritesheetPlayerToFrame` followed by one zero-delta `updateSpritesheetPlayer` keeps the seeked frame. Colocated in `spritesheetPlayer.test.ts`.
 
-3. **Migrate `SpritesheetData`/`SpritesheetAnimationData`/`SpritesheetFrameData` to `@flighthq/types`.** Per Decision #1. Move the descriptor types from `packages/spritesheet/src/spritesheetData.ts` to `@flighthq/types`. Update imports in spritesheet and spritesheet-formats. Run `npm run packages:check`.
+3. **Migrate `loop: boolean` to `repeatCount: number` on `SpritesheetAnimation`.** Per Decision #3. In `@flighthq/types`, change `SpritesheetAnimation.loop: boolean` to `repeatCount: number` (`-1` = infinite, `0` = play once, `N` = N additional repeats). Update `createSpritesheetAnimation`, `createSpritesheetFromData`, `createSpritesheetAnimationFromFrameNames`, and the player's loop-detection logic. Update all tests. Breaking type change — do this before any consumer ships.
 
-4. **Migrate `loop: boolean` to `repeatCount: number` on `SpritesheetAnimation`.** Per Decision #3. In `@flighthq/types`, change `SpritesheetAnimation.loop: boolean` to `repeatCount: number` (`-1` = infinite, `0` = play once, `N` = N additional repeats). Update `createSpritesheetAnimation`, `createSpritesheetFromData`, `createSpritesheetAnimationFromFrameNames`, and the player's loop-detection logic. Update all tests. Breaking type change — do this before any consumer ships.
+## Landed
+
+1. ~~**Migrate `SpritesheetData`/`SpritesheetAnimationData`/`SpritesheetFrameData` to `@flighthq/types`.**~~ Landed; the descriptors live in `packages/types/src/SpritesheetData.ts` and the spritesheet packages import them from the header.
 
 ## Backlog
 
