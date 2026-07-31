@@ -12,6 +12,7 @@
     { "path": "../adjustments" },
     { "path": "../effects" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../render-gl" },
     { "path": "../types" }
   ],

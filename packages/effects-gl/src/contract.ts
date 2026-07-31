@@ -1,3 +1,4 @@
+export * from './enableGlRenderEffectGuards';
 export * from './glColorMatrixPass';
 export * from './glBevelEffect';
 export * from './glBlendEffect';

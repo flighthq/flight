@@ -8,11 +8,15 @@ import {
   isGlRenderTextureReady,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderEffectRunner, GlRenderState, RenderEffect } from '@flighthq/types/contract';
 
 import { applyGaussianBlurToGlRenderTextures } from './glBlurEffect';
 import { getGlRenderEffectRunner, registerGlRenderEffect } from './glRenderEffectRegistry';
-import { applyGlRenderEffectsToRenderTexture } from './glRenderTextureEffect';
+import {
+  applyGlRenderEffectsToRenderTexture,
+  explainGlRenderEffectApplication,
+  setGlRenderEffectApplicationGuard,
+} from './glRenderTextureEffect';
 
 describe('applyGaussianBlurToGlRenderTextures', () => {
   it('publishes destination and scratch RenderTextures after the two Gaussian target passes', () => {
@@ -73,6 +77,50 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
   });
 });
 
+describe('explainGlRenderEffectApplication', () => {
+  it('separates an empty chain from one whose effects are all unregistered', () => {
+    const state = createState();
+    // Both return false from the apply path, but only the second is a registration miss.
+    expect(explainGlRenderEffectApplication(state, [], true).status).toBe('no-effects');
+    expect(explainGlRenderEffectApplication(state, effects(['test.explain-a']), true).status).toBe(
+      'unregistered-effects',
+    );
+  });
+
+  it('reports partial registration, the case that SUCCEEDS while dropping effects', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'test.explain-b', () => {});
+    const explanation = explainGlRenderEffectApplication(state, effects(['test.explain-b', 'test.explain-c']), true);
+    expect(explanation).toEqual({
+      registeredCount: 1,
+      requestedCount: 2,
+      status: 'partial-registration',
+      unregisteredKinds: ['test.explain-c'],
+    });
+  });
+
+  it('blames an unrealized source ahead of registration, since it explains a false return either way', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'test.explain-d', () => {});
+    expect(explainGlRenderEffectApplication(state, effects(['test.explain-d']), false).status).toBe(
+      'source-unavailable',
+    );
+  });
+
+  it('reports a fully registered chain as complete', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'test.explain-e', () => {});
+    expect(explainGlRenderEffectApplication(state, effects(['test.explain-e']), true).status).toBe('complete');
+  });
+});
+
+function createState(): GlRenderState {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 24;
+  return createGlRenderState(canvas);
+}
+
 describe('offscreen effect registration snapshots', () => {
   it('copies registered runners at derivation and requires explicit re-copy for later runners', () => {
     const screen = createState();
@@ -90,9 +138,27 @@ describe('offscreen effect registration snapshots', () => {
   });
 });
 
-function createState(): GlRenderState {
-  const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 24;
-  return createGlRenderState(canvas);
+describe('setGlRenderEffectApplicationGuard', () => {
+  it('reports only the sentinel outcomes, and stops once cleared', () => {
+    const state = createState();
+    const seen: string[] = [];
+    setGlRenderEffectApplicationGuard(state, (_s, explanation) => seen.push(explanation.status));
+    const pool = createGlRenderTexturePool();
+    const source = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    const dest = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    const scratch = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    writeGlRenderTextureTarget(state, source, () => {});
+
+    applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects(['test.guard-a']));
+    applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, []);
+    expect(seen).toEqual(['unregistered-effects']);
+
+    setGlRenderEffectApplicationGuard(state, null);
+    applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects(['test.guard-b']));
+    expect(seen).toEqual(['unregistered-effects']);
+  });
+});
+
+function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>> {
+  return kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
 }
