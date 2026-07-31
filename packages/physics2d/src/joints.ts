@@ -85,7 +85,12 @@ export const physics2DDistanceJointSolver = {
       jointScratch[2] = 0;
     }
     distance.rAX = joint.rAX;
-    writeJointState(distance, [jointScratch[0], jointScratch[1], jointScratch[2], axisScratch[0], axisScratch[1]]);
+    const distanceState = acquireJointState(distance, 5);
+    distanceState[0] = jointScratch[0]!;
+    distanceState[1] = jointScratch[1]!;
+    distanceState[2] = jointScratch[2]!;
+    distanceState[3] = axisScratch[0]!;
+    distanceState[4] = axisScratch[1]!;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -145,7 +150,12 @@ export const physics2DMouseJointSolver = {
     // maxForce is a force; joint.impulse0/1 accumulate an impulse. Clamping one against the other was
     // a unit error worth a factor of 1/dt — at dt 0.01 the bound admitted a hundred times the force it
     // named. Convert once here, where dt is in hand, rather than in solve, which does not receive it.
-    writeJointState(mouse, [inverseGamma, biasFactor, dt * mouse.maxForce, 0, 0]);
+    const mouseState = acquireJointState(mouse, 5);
+    mouseState[0] = inverseGamma;
+    mouseState[1] = biasFactor;
+    mouseState[2] = dt * mouse.maxForce;
+    mouseState[3] = 0;
+    mouseState[4] = 0;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -237,15 +247,14 @@ export const physics2DRevoluteJointSolver = {
     // by zero.
     const inverseInertiaSum = bodyA.inverseInertia + bodyB.inverseInertia;
     const angularMass = inverseInertiaSum > 0 ? 1 / inverseInertiaSum : 0;
-    writeJointState(joint, [
-      errorX * (BAUMGARTE / dt),
-      errorY * (BAUMGARTE / dt),
-      angularMass,
-      0,
-      0,
-      dt * revolute.maxMotorTorque,
-      1 / dt,
-    ]);
+    const revoluteState = acquireJointState(joint, 7);
+    revoluteState[0] = errorX * (BAUMGARTE / dt);
+    revoluteState[1] = errorY * (BAUMGARTE / dt);
+    revoluteState[2] = angularMass;
+    revoluteState[3] = 0;
+    revoluteState[4] = 0;
+    revoluteState[5] = dt * revolute.maxMotorTorque;
+    revoluteState[6] = 1 / dt;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -359,7 +368,12 @@ export const physics2DRopeJointSolver = {
     // Slack: no constraint at all this step, which is what a rope IS. Marked by a zero effective mass so
     // the iterations skip it without a second flag to keep in sync.
     const active = excess > 0;
-    writeJointState(rope, [active && mass > 0 ? 1 / mass : 0, active ? excess * (BAUMGARTE / dt) : 0, 0, unitX, unitY]);
+    const ropeState = acquireJointState(rope, 5);
+    ropeState[0] = active && mass > 0 ? 1 / mass : 0;
+    ropeState[1] = active ? excess * (BAUMGARTE / dt) : 0;
+    ropeState[2] = 0;
+    ropeState[3] = unitX;
+    ropeState[4] = unitY;
     if (!active) joint.impulse0 = 0;
   },
 
@@ -421,13 +435,12 @@ export const physics2DWeldJointSolver = {
     const errorY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
     const angleError = bodyB.angle - bodyA.angle - weld.referenceAngle;
     const angularMass = bodyA.inverseInertia + bodyB.inverseInertia;
-    writeJointState(weld, [
-      errorX * (BAUMGARTE / dt),
-      errorY * (BAUMGARTE / dt),
-      angleError * (BAUMGARTE / dt),
-      angularMass > 0 ? 1 / angularMass : 0,
-      0,
-    ]);
+    const weldState = acquireJointState(weld, 5);
+    weldState[0] = errorX * (BAUMGARTE / dt);
+    weldState[1] = errorY * (BAUMGARTE / dt);
+    weldState[2] = angleError * (BAUMGARTE / dt);
+    weldState[3] = angularMass > 0 ? 1 / angularMass : 0;
+    weldState[4] = 0;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -525,14 +538,20 @@ function axisRelativeVelocity(
 // costs nothing — but allocating a fresh one per joint per step made the step's allocation profile scale
 // with the joint count, which is exactly the hidden per-frame allocation the package's own charter
 // forbids.
-function writeJointState(joint: Physics2DJoint, values: readonly number[]): void {
+// Returns this joint's reusable per-step scratch, sized to `length`, for the caller to write into by
+// index. It deliberately does not take the values: a `(joint, [a, b, c])` signature allocates the
+// literal at every call site on every step, so the array the joint reuses was only ever the
+// destination — the source was fresh garbage each frame, one array per joint per step. Handing the
+// destination back is what makes the prepare pass allocation-free, and it matches the SDK's
+// write-into-out convention rather than returning a new value.
+function acquireJointState(joint: Physics2DJoint, length: number): number[] {
   let state = jointStateScratch.get(joint);
   if (state === undefined) {
     state = [];
     jointStateScratch.set(joint, state);
   }
-  state.length = values.length;
-  for (let i = 0; i < values.length; i++) state[i] = values[i];
+  state.length = length;
+  return state;
 }
 
 // Per-step solver state, keyed by joint. A Map rather than fields on the joint because the numbers each
