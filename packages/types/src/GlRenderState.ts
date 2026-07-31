@@ -74,6 +74,9 @@ export interface GlColorAdjustmentMaterialFeature {
 // frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
 export interface GlRenderStateRuntime extends RenderStateRuntime {
+  // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
+  // rebind. Null in production, so the check costs nothing and the message lives in the guard module.
+  bindingCacheGuard: ((state: GlRenderState, expectedProgram: WebGLProgram) => void) | null;
   // Active GPU bindings tracked to avoid redundant state changes. Internal — formerly public on the
   // GlRenderState entity.
   currentBlendMode: BlendMode | null;

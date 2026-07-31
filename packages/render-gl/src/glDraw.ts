@@ -410,7 +410,14 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
   if (runtime.currentProgram !== program) {
     state.gl.useProgram(program);
     runtime.currentProgram = program;
+    return;
   }
+  // The skip below is the cache being trusted: render-gl believes this program is already bound. That
+  // is only sound while render-gl is the sole writer of GL state on the context, which is exactly the
+  // integration contract invalidateGlRenderStateCache exists to restore. The guard verifies it; without
+  // it the first symptom is a GL error raised against a LATER uniform call, naming render-gl rather
+  // than the guest renderer that actually dirtied the binding.
+  runtime.bindingCacheGuard?.(state, program);
 }
 
 // Resolves and caches EXT_texture_filter_anisotropic on the runtime: anisotropyExt is undefined until

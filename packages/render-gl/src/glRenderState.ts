@@ -176,6 +176,8 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
     });
   }
   runtime.currentRenderTarget = null;
+  // Per-state, not shared on the context tier: guards are installed per render state.
+  runtime.bindingCacheGuard = null;
   return runtime;
 }
 
