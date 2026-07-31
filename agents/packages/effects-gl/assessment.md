@@ -1,10 +1,15 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-07-21
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # effects-gl — Assessment
+
+> **Superseded 2026-07-31.** Do not execute recommendations that assume identity TAA/SSR
+> runners, a 44-runner catalog, or batch/category registration APIs. GL now has 46 genuine
+> per-kind runner/registrar pairs; TAA and SSR were deleted, and aggregate registrars were
+> retired. The charter is the current direction record.
 
 > Recommendation layer over `review.md` (survey of bundle `builder-67dc46d64`) and the absorbed `reviews/maturation/depth/effects-gl.md` roadmap. `Recommended` is strictly sweep-safe (within-package, no cross-package coupling, no breaking change, no open design decision) so "do all recommended" is always safe to bless. Design forks and cross-package items are noted for the charter's **Open directions**, not placed here. `Approved` stays empty until a verbal gate.
 >

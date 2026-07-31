@@ -2,7 +2,7 @@
 package: '@flighthq/effects-canvas'
 status: solid
 score: 88
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - reviews/depth/effects-canvas.md
@@ -11,6 +11,16 @@ ingested:
 ---
 
 # Review: @flighthq/effects-canvas
+
+> **2026-07-31 correction.** This review records a superseded implementation. The current
+> package has eight realized runner/registrar pairs: Bloom, Blur, DropShadow, FilmGrain,
+> OuterGlow, Pixelate, Scanlines, and Vignette. The other Canvas effect modules and their
+> apply functions were removed in `6ecb599d8`; unsupported kinds are absent rather than
+> passthrough runners. The category/register-all functions described below did exist, but
+> were retired in `2a7ac8bff`. `CANVAS_RENDER_EFFECT_SUPPORT` and
+> `getCanvasRenderEffectSupport` never existed in package source; those names were
+> documentation defects. Use the charter and source-derived reachability inventory for the
+> current capability set.
 
 ## Verdict
 

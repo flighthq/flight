@@ -2,7 +2,7 @@
 package: '@flighthq/scene3d-wgpu'
 status: solid
 score: 78
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - reviews/depth/scene-wgpu.md
@@ -11,6 +11,12 @@ ingested:
 ---
 
 # Review: @flighthq/scene3d-wgpu
+
+> **2026-07-31 correction.** `getWgpuForwardLightsPreludeWgsl` and the claimed
+> `wgpuForwardLightsPrelude.ts` module never existed in tracked package source. Current
+> forward-light preparation is exposed through `prepareWgpuScene3DForwardLights`, while
+> shader preludes are package-private modules. Treat the getter claims below as
+> documentation defects, not current or retired API.
 
 ## Verdict
 

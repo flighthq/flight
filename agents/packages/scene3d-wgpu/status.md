@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/scene3d-wgpu'
-updated: 2026-06-24
+updated: 2026-07-31
 by: ingest:builder-67dc46d64
 ---
 
 # scene-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-31 · prose-name correction] — verified
+
+`getWgpuForwardLightsPreludeWgsl` and `wgpuForwardLightsPrelude.ts`, claimed in the older
+entry below, never existed in tracked package source. The current public preparation API is
+`prepareWgpuScene3DForwardLights`; shader prelude modules remain package-private.
 
 ## 2026-07-03 — inline TODO relocation (lint sweep)
 

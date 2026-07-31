@@ -2,7 +2,7 @@
 package: '@flighthq/lighting'
 status: solid
 score: 88
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - reviews/depth/lighting.md
@@ -12,6 +12,15 @@ ingested:
 ---
 
 # Review: @flighthq/lighting
+
+> **2026-07-31 correction.** The per-light photometric getters/setters claimed below
+> (`getPointLightCandela`, `setSpotLightLumens`, and their siblings) never existed in
+> tracked package source. Current source instead exposes generic `convertLightIntensity`,
+> `getLightLinearIntensity`, and `applyLightExposure` helpers. Treat the per-light names as
+> documentation defects, not retired APIs. The separate `createColorFromKelvin` helper did
+> exist here, moved to `@flighthq/color` in `134e5ff5d`, and was renamed there to
+> `colorFromKelvin` in `26f8f8081`. Likewise, the old `selectForwardLights` name became
+> `selectScene3DForwardLights` during the Scene3D naming sweep (`1e25f317a`).
 
 Evidence source: incoming bundle `builder-67dc46d64` (`67dc46d64:packages/lighting/`, `67dc46d64:packages/types/src/*Light*.ts`), verified against `changes.patch`.
 

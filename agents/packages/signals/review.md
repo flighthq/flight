@@ -2,7 +2,7 @@
 package: '@flighthq/signals'
 status: solid
 score: 90
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - reviews/depth/signals.md
@@ -10,6 +10,13 @@ ingested:
 ---
 
 # signals — Review
+
+> **2026-07-31 correction.** The connection-handle/scope surface claimed below never
+> existed in tracked package source. In particular, `connectSignalOnce`,
+> `getSignalConnections`, `disconnectSignalConnection`, and
+> `isSignalConnectionActive` are documentation defects rather than retired APIs. Current
+> one-shot behavior is selected with `connectSignal(..., { once: true })`; use the
+> source-derived API inventory for the present surface.
 
 > Evidence: `incoming/builder-67dc46d64/head/packages/signals/` (source + tests), `incoming/builder-67dc46d64/changes.patch` (delta), with cross-package types in `head/packages/types/src/Signal*.ts`. Findings cited as `67dc46d64:<path>`.
 

@@ -2,7 +2,7 @@
 package: '@flighthq/easing'
 status: authoritative
 score: 96
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - reviews/depth/easing.md
@@ -11,6 +11,11 @@ ingested:
 ---
 
 # Review: @flighthq/easing
+
+> **2026-07-31 correction.** The `easeStep` function claimed below never existed in tracked
+> package source; the real CSS primitive is `easeSteps`. The source-derived API inventory
+> and an exact history search both confirm the distinction. Treat the `easeStep` findings as
+> documentation defects, not as a removed or pending API.
 
 ## Verdict
 

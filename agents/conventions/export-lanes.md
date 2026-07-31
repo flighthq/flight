@@ -182,12 +182,11 @@ contract); genuinely-public leaf packages keep `index = export * from './contrac
 Remaining cultivation is incremental and non-blocking (the gate does not require it) — the
 public surface can be narrowed further per package over time using the audience test.
 
-Known follow-ups (tracked, non-blocking): the effects registration convenience layer
-(`registerDefaultGlRenderEffects` / `registerAllCanvasRenderEffects` and the per-category
-bundles) is the same closed-set-over-open-registry anti-goal as the retired renderer
-aggregates, but it is contract-only and its one external consumer is the effects showcase
-example — retire it into explicit `registerRenderEffects`-style batches in a focused pass. A
-self-import guard (a package file importing its own `@flighthq/<pkg>` barrel) would catch the
+The effects register-all/category aggregates were retired in `2a7ac8bff`; every realized
+backend runner now has a matching per-kind registrar. Source-derived reachability hard-gates
+that exact inverse and correct mapping, while dot/contract placement remains a curated,
+non-blocking tracked baseline. A self-import guard (a package file importing its own
+`@flighthq/<pkg>` barrel) would catch the
 class of circular-init bug fixed in `nodeTransform2d` and the test breakages cultivation
 exposed; worth adding to `packages:check`.
 

@@ -1,10 +1,14 @@
 ---
 package: '@flighthq/easing'
-updated: 2026-07-02
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
 # easing — Assessment
+
+> **2026-07-31 correction.** `easeStep` never existed in tracked package source; do not
+> execute the recommendation or approval below that assumes it does. `easeSteps` is the
+> actual CSS steps API.
 
 Sorted from the depth review (96/100, authoritative), the builder's landed expansion, and the direction session (2026-07-02). Five decisions blessed. The package is near-complete — a full Penner family, CSS/shader curves, combinators, parametric factories, piecewise splicing, LUT sampling, and numerical derivative. The remaining work is small polish (3 items), the spring family (blocked on physics taxonomy), and the Rust conformance pass (explicitly batched).
 

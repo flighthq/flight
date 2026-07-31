@@ -2,7 +2,7 @@
 package: '@flighthq/effects-gl'
 crate: flighthq-effects-gl
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-31
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -25,11 +25,11 @@ It is the GL sibling of `effects-wgpu` and `effects-canvas`: same effect descrip
 
 _Proposed from the package design + the SDK-wide forks; edit or reject in review._
 
-1. **One runner per effect, registered — never a switch.** Each effect is a self-contained `apply<Name>EffectToGl` + `defaultGl<Name>EffectRunner` pair with its fragment source colocated, wired through a per-state registry so an unused effect tree-shakes out. This is fork B (registry by default) for the GPU-effect family.
+1. **One real runner per registered effect — never a switch.** Each effect is a self-contained `apply<Name>EffectToGl` + `defaultGl<Name>EffectRunner` pair with its fragment source colocated, wired through a per-state registry so an unused effect tree-shakes out. A fake identity runner is absent rather than hidden on another lane.
 2. **The backend differs, the intent does not.** Effect descriptor types live in `@flighthq/types`; substrate-agnostic parameter math lives in `@flighthq/effects`. `effects-gl` consumes those and adds only the GL realization, so GL, WGPU, canvas, and the future Rust backend derive identical results from the same descriptor. (Open: whether consuming the shared math is a contract requirement — see Open directions.)
 3. **Explicit GPU lifecycle.** The pipeline allocates and frees deterministically — `create/destroy` for owned GPU resources (`destroy*`, not `dispose*`), `acquire/release` brackets balanced on every pooled target, program/uniform caches keyed to the object they outlive. No hidden allocation per frame.
-4. **Names tell the truth about what runs.** A runner named for a canonical algorithm should run that algorithm; an honest stand-in pending a missing seam should be visibly marked as such. (Open: how — see Open directions.)
-5. **Symmetric with its sibling backends.** The taxonomy, registrar shape, and kind enumeration stay aligned with `effects-wgpu`/`effects-canvas` so a scene authored against the effect descriptors renders the same set of effects on any backend.
+4. **Names tell the truth about what runs.** A registered runner performs the named, parameter-responsive effect. GL TAA and SSR were unconditional identity copies and are therefore absent.
+5. **Symmetric invariants, substrate-specific sets.** GL, WGPU, and Canvas use the same registry and naming shape, while each backend exposes only its realized kinds. Symmetry never requires a fake counterpart.
 
 ## Boundaries
 
@@ -39,7 +39,7 @@ _Proposed; edit in review._
 
 - A GL fragment-shader recipe per render effect, across the antialiasing / bloom-optical / blur / color-tone / screen-space-atmospheric / stylize bands.
 - The post-process pipeline: MSAA-aware HDR scene target, ping-pong pooled targets, final GL→GL present blit, and the seams that feed effects (depth, velocity).
-- The per-state effect registry, batch registrars, kind enumeration, program cache, and uniform-location cache.
+- The per-state effect registry, matching per-kind registrars, program cache, and uniform-location cache.
 - Consuming descriptor types from `@flighthq/types` and shared effect math from `@flighthq/effects`.
 
 **Non-goals**
@@ -53,16 +53,18 @@ _Proposed; edit in review._
 ## Decisions
 
 - **2026-07-02 — TS-leads, Rust conforms later.**
+- **2026-07-31 — GL has 46 realized built-ins.** TAA and SSR identity implementations were deleted in full; every remaining default runner has exactly one matching per-kind registrar.
+- **2026-07-31 — Export lanes are curated.** The reachability baseline reports dot/contract moves without making current placement a hard invariant.
 
 ## Open directions
 
 Every candidate question the review surfaced, plus the structural forks that touch this package. These are for you to settle; an agent asks here rather than assuming.
 
-1. **Naming honesty for stand-ins (central design fork).** `Ssr` (passthrough), `Taa` (passthrough), `Ssao` (luminance stand-in, not depth-driven), and `Smaa` (single-pass edge blur, not the multi-pass recipe) preserve the pipeline stage but do not run their named algorithm. Keep them under canonical names with honest stand-in comments (current state), or relocate the not-yet-real ones to an `experimental`/`stub` namespace until the G-buffer/history seam lands? The status doc explicitly escalates this; it wants a Boundaries/Decisions ruling. (Relates to North star #4.)
+1. **Fidelity threshold for lower-quality realizations.** SSAO and SMAA are parameter-responsive GL recipes but intentionally lower quality than depth-driven/multi-pass reference algorithms. Define the evidence threshold that separates an acceptable realization from a wrong effect; unconditional identity is already settled as absent.
 2. **Canonical bloom math home (fork C — within-unit duplication).** `glBloomEffect.ts` reimplements mip-count and soft-knee math inline instead of consuming the shared `@flighthq/effects` helpers (`computeBloomMipCount`/`computeBloomMipWeights`/`computeBloomThresholdKnee`) added in the same bundle — and the two **disagree** (clamp + `/4` on mip count; scaled-vs-unscaled knee). This guarantees GL↔WGPU↔(future Rust) bloom divergence. Should _all_ bloom backends be required to consume the shared helpers (making divergence a contract/lint failure), and **which derivation is canonical** — the `effects` one or the GL one? (Relates to North star #2.)
 3. **Backend-parity test scope.** There are no `tests/functional/effect-*-gl` scenes proving GL output agrees with canvas/wgpu; the colocated tests verify wiring, not pixels. Is carrying parity scenes part of "done" for `effects-gl`, or is that owned by the functional-test harness layer? This settles whether the missing parity coverage is a gap _in this package_.
 4. **Chain orchestration ownership (fork — cross-package).** No `validateGlRenderEffectChain` / `orderGlRenderEffectChain` / tone-map-last helper exists; the pipeline silently skips unregistered kinds. Where does chain validation/ordering live — a `RenderEffectChainHint` type in `@flighthq/types`/`@flighthq/effects` consumed here, or a helper in `render-gl`? (Mirrors the `filters-gl` ruling that the chain applier is out of scope for the leaf-shader package.)
-5. **G-buffer / history-target seam (the single unblocking dependency).** Real SSR/SSAO/TAA all converge on one cross-package decision in `render-gl`: the retained-target shape (depth/normal G-buffer + a per-pipeline history target). `sceneDepthTexture`/`sceneVelocityTexture` seams exist; the history target does not. Worth treating as one dependency rather than three separate effect TODOs — and it gates the resolution of Open direction #1.
-6. **Taxonomy reconciliation (low urgency).** GL keeps four-band back-compat aliases over the canonical six-band registrars, and `BloomEffect`/`DitherEffect` band placement differs from earlier history. Bless the six-band taxonomy as canonical and drop the aliases, or keep them? No runtime impact (last-write-wins).
+5. **G-buffer quality seam.** A sampleable depth/normal G-buffer would improve the realized depth-sensitive effects. Treat it as a quality upgrade across the GPU backends, not permission to restore deleted TAA/SSR stubs.
+6. **Per-kind discoverability.** The register-all/category aggregates were retired. Decide whether generated documentation from the source-derived runner set is sufficient or whether a separate query API has a real consumer.
 7. **Standard GPU-effects maturity items (deferred, cross-package).** Context-loss recovery, `rgba16f` fallback, and effect-chain fusion are normal maturity work for a GPU effects backend; all are deferred and depend on `render-gl`. Park or schedule?
-8. **Admin-doc gaps surfaced by the review.** The Package Map (`agents/index.md`) has no entry for `effects-gl` (nor `effects`, `effects-wgpu`, `effects-canvas`), and `render-backend-support.md` does not record that GL effects exist but Ssr/Taa/Ssao/Smaa are stand-ins. Worth a doc revision so a scoping agent does not assume real depth-driven AO/reflections on GL. (Not a code question, but it touches this package's discoverability.)
+8. **Admin-doc maintenance.** Generate backend-capability prose from the same runner inventory used by reachability where practical; hand-maintained counts and aggregate names have repeatedly drifted.

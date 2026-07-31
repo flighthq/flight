@@ -2,7 +2,7 @@
 package: '@flighthq/effects-wgpu'
 status: solid
 score: 88
-updated: 2026-06-24
+updated: 2026-07-31
 ingested:
   - status.md
   - source
@@ -10,6 +10,13 @@ ingested:
 ---
 
 # effects-wgpu — Review
+
+> **2026-07-31 correction.** This review records a superseded implementation. WGPU still
+> has 44 realized kinds, but it is not the historical 44-kind set: identity TAA/SSR and the
+> depthless whole-frame BokehDepthOfField blur were deleted in `6ecb599d8`, while genuine
+> kinds landed elsewhere. Batch/category registrar APIs were retired in `2a7ac8bff`;
+> registration is per kind. Use the charter and source-derived reachability inventory for
+> the current set.
 
 ## Verdict
 

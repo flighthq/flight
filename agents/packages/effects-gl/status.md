@@ -1,12 +1,19 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-06-24
+updated: 2026-07-31
 by: ingest:builder-67dc46d64
 ---
 
 # effects-gl — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-07-31 · capability correction] — verified
+
+GL currently has 46 genuine per-kind runner/registrar pairs. The TAA and SSR modules in
+older entries were unconditional identity copies and were deleted in `6ecb599d8`; they are
+not current capabilities. The batch/category registrar APIs below existed but were retired
+in `2a7ac8bff`. Use the source-derived reachability inventory for the current set.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
