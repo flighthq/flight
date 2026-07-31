@@ -1,9 +1,9 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
-import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { getTextureHeight, getTextureSourceKind, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
@@ -35,6 +35,13 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   let v1 = v0 + texture.uvScale.y;
   if (texture.flipX) [u0, u1] = [u1, u0];
   if (texture.flipY) [v0, v1] = [v1, v0];
+  // Texture view coordinates are top-origin, while GL render attachments are bottom-origin. Reflect
+  // both endpoints so a sub-view keeps selecting the same logical rows (a swap alone only works for
+  // the full [0, 1] view).
+  if (getTextureSourceKind(texture) === RenderTargetTextureSourceKind) {
+    v0 = 1 - v0;
+    v1 = 1 - v1;
+  }
 
   const instanceIndex = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(

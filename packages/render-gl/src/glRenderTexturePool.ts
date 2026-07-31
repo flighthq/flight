@@ -1,4 +1,4 @@
-import { createRenderTexture } from '@flighthq/texture/contract';
+import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   GlRenderState,
   GlRenderTexturePool,
@@ -18,6 +18,7 @@ export function acquireGlRenderTexture(
   assertUsablePool(state, pool);
   const renderTexture = pool.free.pop() ?? createRenderTexture(descriptor);
   applyRenderTargetDescriptor(renderTexture.source, descriptor);
+  resetTextureUvTransform(renderTexture);
   renderTexture.colorSpace = descriptor.colorSpace ?? 'srgb';
   invalidateGlRenderTexture(state, renderTexture);
   pool.leased.add(renderTexture);

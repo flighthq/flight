@@ -1,4 +1,4 @@
-import { createRenderTexture } from '@flighthq/texture/contract';
+import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
   CanvasRenderTexturePool,
@@ -19,6 +19,7 @@ export function acquireCanvasRenderTexture(
   assertUsablePool(state, pool);
   const renderTexture = pool.free.pop() ?? createRenderTexture(descriptor);
   applyRenderTargetDescriptor(renderTexture.source, descriptor);
+  resetTextureUvTransform(renderTexture);
   renderTexture.colorSpace = descriptor.colorSpace ?? 'srgb';
   invalidateCanvasRenderTexture(state, renderTexture);
   pool.leased.add(renderTexture);
