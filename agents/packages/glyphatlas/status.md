@@ -1,8 +1,20 @@
 ---
 package: '@flighthq/glyphatlas'
-updated: 2026-07-17
+updated: 2026-07-30
 by: builder2
 ---
+
+## 2026-07-30 -- O(1) LRU recency; the rest of the cell is genuinely open (builder)
+
+Unlike most cells swept this session, this one is real work rather than stale bookkeeping: items 1, 2, 3, 5 and 6 are all still unbuilt in live source. I took item 4 and left the rest, rather than starting several and landing none.
+
+`GlyphAtlasRuntime.lru` was a `number[]` maintained with `indexOf` + `splice`. Every cache *hit* paid that scan -- `getGlyphAtlasEntry` touches recency on the hit path, so the cost was per glyph per frame during text rendering and grew with the cache. It is now an insertion-ordered `Map<number, true>`: touch is delete-then-set, eviction reads the first key, and the repack drop path deletes directly. The value is unused; only key order matters.
+
+Checked before changing anything, and recorded as a negative: **the `lru`/`entries` pair was not desynced.** Every mutation site keeps them in step -- hit touches, insert sets, evict deletes both, the repack drop path removes from both, and reset clears both -- and `lru` has no consumer outside the package. A parallel index next to a map is the usual place a desync hides, so it was worth confirming rather than assuming.
+
+The subtlety worth pinning is that `Map.set` on an *existing* key does **not** move it to the end, so the `delete` before it is the entire mechanism -- drop it and recency silently degenerates to insertion order, evicting the wrong glyph while every existing test still passes on the happy path. Two tests now cover it: strict oldest-first eviction across three live entries with interleaved touches, and a re-rasterized glyph landing at the most-recently-used end rather than inheriting its old position. Mutations confirm both: removing the delete fails two tests, and evicting from the newest end instead of the oldest fails three.
+
+29 -> 31 tests. Still open in this cell: `bakeBitmapFont` (1), the byte/area budget (2), real canvas line metrics replacing the documented placeholder (3), guards + `explain*` (5), and threading style/weight into the atlas config (6).
 
 # glyphatlas — Status Log
 
