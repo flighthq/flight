@@ -26,6 +26,7 @@ export {
   registerWgpuCompressedImageTextureResolver,
   registerWgpuImageTextureResolver,
   registerWgpuRenderTextureResolver,
+  registerStandardWgpuTextureResolvers,
   registerWgpuTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,

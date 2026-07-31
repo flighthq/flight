@@ -1,14 +1,17 @@
 import type { BlendMode } from './BlendMode';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
+import type { Path } from './Path';
+import type { PathMesh } from './PathMesh';
 import type { Renderable } from './Renderable';
 import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
 import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
-import type { RenderRegistrySignals } from './RenderRegistrySignals';
+import type { RenderRegistry, RenderRegistrySignals } from './RenderRegistrySignals';
 import type { Scene2DClipHooks } from './Scene2DRenderer';
+import type { StrokeStyle } from './StrokeStyle';
 
 /**
  * Controls whether a subsystem refreshes derived scene graph state from raw
@@ -53,15 +56,25 @@ export interface RenderStateRuntime extends EntityRuntime {
   // WeakMap alone cannot support deterministic shutdown. This companion set contains exactly the
   // sources with live proxies so destroyRenderState can run every renderer's destroyData hook.
   renderProxySources: Set<Renderable>;
-  // Opt-in, shakeable registry-miss seam. Dispatch chokepoints emit only when this group has been
-  // enabled; warning policy and message strings live in guard packages.
-  registrySignals: RenderRegistrySignals | null;
+  // Opt-in, shakeable registry-miss seam. Core dispatch retains only this nullable callback; the
+  // signal allocation/emission and warning policy live in the separately imported diagnostics lane.
+  registryMiss:
+    | (((registry: RenderRegistry, kind: Kind) => void) & {
+        clear(): void;
+        readonly signals: RenderRegistrySignals;
+      })
+    | null;
   // Directional effect footprint policy is state-scoped like every other kind-keyed handler
   // registry. Absent until the first explicit registration.
   renderEffectPaddingResolverRegistry?: Map<Kind, RenderEffectPaddingResolver> | null;
   // Optional backend guard reached before a root walk. Backends use this to diagnose pipeline-policy
   // mistakes without adding their warning dependency to the substrate-independent render path.
   renderRootGuard: ((state: RenderState, root: Renderable) => void) | null;
+  // The heavier closed-ring/self-intersection stroke kernel is explicitly enabled per state. The
+  // default shape lane keeps its compact open-outline tessellator and rasterizes closed strokes.
+  strokeTessellator:
+    | ((path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number) => PathMesh | null)
+    | null;
   rendererMap: Map<Kind, Renderer>;
   rendererMapId: number;
   tempStack: Renderable[];

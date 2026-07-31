@@ -1,4 +1,3 @@
-import { emitSignal } from '@flighthq/signals/contract';
 import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   Bitmap,
@@ -15,13 +14,18 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-  RenderRegistry,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
 import { bindWgpuBitmapTexture, bindWgpuCompressedImageTexture, bindWgpuImageResourceTexture } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture';
+
+export function registerStandardWgpuTextureResolvers(state: WgpuRenderState): void {
+  registerWgpuBitmapTextureResolver(state);
+  registerWgpuImageTextureResolver(state);
+  registerWgpuRenderTextureResolver(state);
+}
 
 export function registerWgpuBitmapTextureResolver(state: WgpuRenderState): void {
   registerWgpuTextureResolver(state, BitmapTextureSourceKind, resolveWgpuBitmapTexture);
@@ -65,9 +69,7 @@ export function resolveWgpuTexture(
   const runtime = getWgpuRenderStateRuntime(state);
   const resolver = runtime.wgpuTextureResolverRegistry?.get(sourceKind);
   if (resolver === undefined) {
-    if (runtime.registrySignals !== null) {
-      emitSignal(runtime.registrySignals.onRegistryMiss, RenderRegistry.TextureResolver, sourceKind);
-    }
+    runtime.registryMiss?.(3, sourceKind);
     return null;
   }
   return resolver(state, texture, premultiply);

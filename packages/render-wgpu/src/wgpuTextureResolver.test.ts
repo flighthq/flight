@@ -16,6 +16,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuCompressedImageTextureResolver,
   registerWgpuRenderTextureResolver,
+  registerStandardWgpuTextureResolvers,
   registerWgpuTextureResolver,
   resolveWgpuTexture,
 } from './wgpuTextureResolver';
@@ -77,6 +78,18 @@ function renderTexture(): RenderTexture {
   });
   return texture as RenderTexture;
 }
+
+describe('registerStandardWgpuTextureResolvers', () => {
+  it('registers bitmap, image, and render texture sources without compressed images', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerStandardWgpuTextureResolvers(state);
+    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
+      BitmapTextureSourceKind,
+      ImageTextureSourceKind,
+      RenderTargetTextureSourceKind,
+    ]);
+  });
+});
 
 describe('registerWgpuBitmapTextureResolver', () => {
   it('registers only the Bitmap source key', async () => {
