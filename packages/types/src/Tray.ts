@@ -60,6 +60,12 @@ export interface TrayEventData {
   type: TrayEventType;
 }
 
+// A handle to one system tray icon. **Compared by `id`, never by identity.** `createTrayIcon` and
+// `getTrayIcons` each mint a fresh object around the same id, so two handles for the same tray are
+// never `===` — `getTrayIcons().includes(myTray)` is always false, and `find((t) => t.id === myTray.id)`
+// is the working form. Handles are deliberately not interned: the id is the whole of the identity, a
+// registry would have to be invalidated on every destroy, and a plain-data handle stays trivially
+// serializable and portable, which an interned one does not.
 export interface TrayIcon {
   id: number;
 }
