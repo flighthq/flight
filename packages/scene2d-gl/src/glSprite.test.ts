@@ -40,6 +40,7 @@ function makeRenderProxy(sprite: Sprite): RenderProxy2D {
 describe('defaultGlSpriteRenderer', () => {
   it('declares the quad format and submit function', () => {
     expect(defaultGlSpriteRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof defaultGlSpriteRenderer.isDirty).toBe('function');
     expect(defaultGlSpriteRenderer.submit).toBe(drawGlSprite);
   });
 });

@@ -25,6 +25,7 @@ function drawElement(source: CanvasImageSource): HTMLElement | null {
 describe('defaultDomSpriteRenderer', () => {
   it('has submit and createData functions', () => {
     expect(typeof defaultDomSpriteRenderer.createData).toBe('function');
+    expect(typeof defaultDomSpriteRenderer.isDirty).toBe('function');
     expect(defaultDomSpriteRenderer.submit).toBe(drawDomSprite);
   });
 });

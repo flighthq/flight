@@ -1,6 +1,6 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { noopRendererData } from '@flighthq/render/contract';
+import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
@@ -69,6 +69,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
 
 export const defaultGlSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
-  createData: noopRendererData,
+  createData: createSpriteRendererData,
+  isDirty: isSpriteRendererDirty,
   submit: drawGlSprite,
 };

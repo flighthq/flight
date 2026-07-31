@@ -10,12 +10,15 @@ export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Rea
 
 export function initBoundsRectangleRuntimeTrait(
   target: HasBoundsRectangleRuntime,
-  methods?: Readonly<Partial<MethodsOf<HasBoundsRectangleRuntime>>>,
+  methods?: Readonly<
+    Partial<MethodsOf<HasBoundsRectangleRuntime> & Pick<HasBoundsRectangleRuntime, 'isLocalBoundsRectangleValid'>>
+  >,
 ): void {
   target.boundsRectangle = null;
   target.localBoundsRectangle = null;
   target.worldBoundsRectangle = null;
   target.computeLocalBoundsRectangle = methods?.computeLocalBoundsRectangle ?? defaultComputeLocalBoundsRectangle;
+  target.isLocalBoundsRectangleValid = methods?.isLocalBoundsRectangleValid ?? null;
 }
 
 export function initBoundsRectangleTrait(

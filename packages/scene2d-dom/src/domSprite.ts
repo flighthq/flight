@@ -1,4 +1,4 @@
-import { createEntity } from '@flighthq/entity/contract';
+import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
@@ -20,8 +20,13 @@ interface DomSpriteData extends RendererData {
   video: HTMLVideoElement | null;
 }
 
-function createDomSpriteData(_state: RenderState, _source: Renderable): DomSpriteData {
-  return createEntity({ canvas: null, context: null, image: null, video: null });
+function createDomSpriteData(state: RenderState, source: Renderable): DomSpriteData {
+  const data = createSpriteRendererData(state, source) as DomSpriteData;
+  data.canvas = null;
+  data.context = null;
+  data.image = null;
+  data.video = null;
+  return data;
 }
 
 export function drawDomSprite(state: DomRenderState, renderProxy: RenderProxy2D): void {
@@ -132,5 +137,6 @@ function renderSpriteAsVideo(
 
 export const defaultDomSpriteRenderer: Scene2DRenderer = {
   createData: createDomSpriteData,
+  isDirty: isSpriteRendererDirty,
   submit: drawDomSprite,
 };

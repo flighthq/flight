@@ -83,7 +83,7 @@ export function computeNodeRootLocalBoundsRectangle<Traits extends object>(
 
 export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: BoundsNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
-  if (runtime.localBoundsUsingLocalBoundsId !== runtime.localBoundsId) {
+  if (!isNodeLocalBoundsRectangleValid(target, runtime)) {
     recomputeLocalBoundsRectangle(target, runtime);
   }
 }
@@ -91,6 +91,7 @@ export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: Bo
 export function ensureNodeParentBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
   if (
+    !isNodeLocalBoundsRectangleValid(target, runtime) ||
     runtime.boundsUsingLocalBoundsId !== runtime.localBoundsId ||
     runtime.boundsUsingLocalTransformId !== runtime.localTransformId
   ) {
@@ -100,7 +101,9 @@ export function ensureNodeParentBoundsRectangle<Traits extends object>(target: S
 
 export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime & HasTransform2DRuntime;
-  const localBoundsInvalid = runtime.worldBoundsUsingLocalBoundsId !== runtime.localBoundsId;
+  const localBoundsInvalid =
+    !isNodeLocalBoundsRectangleValid(target, runtime) ||
+    runtime.worldBoundsUsingLocalBoundsId !== runtime.localBoundsId;
   const hasChildren = getNodeChildCount(target) !== 0;
   let forceRecompute = false;
   if (!hasChildren && !localBoundsInvalid) {
@@ -177,6 +180,16 @@ function recomputeNodeBoundsRectangle<Traits extends object>(
   matrixTransformRectangle(runtime.boundsRectangle, getNodeLocalMatrix(target), getNodeLocalBoundsRectangle(target));
   runtime.boundsUsingLocalBoundsId = runtime.localBoundsId;
   runtime.boundsUsingLocalTransformId = runtime.localTransformId;
+}
+
+function isNodeLocalBoundsRectangleValid<Traits extends object>(
+  target: BoundsNode<Traits>,
+  runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime,
+): boolean {
+  return (
+    runtime.localBoundsUsingLocalBoundsId === runtime.localBoundsId &&
+    (runtime.isLocalBoundsRectangleValid?.(target) ?? true)
+  );
 }
 
 function mergeRootLocalBounds<Traits extends object>(

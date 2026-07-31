@@ -1,4 +1,4 @@
-import { noopRendererData } from '@flighthq/render/contract';
+import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
@@ -33,6 +33,7 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
 }
 
 export const defaultCanvasSpriteRenderer: Scene2DRenderer = {
-  createData: noopRendererData,
+  createData: createSpriteRendererData,
+  isDirty: isSpriteRendererDirty,
   submit: drawCanvasSprite,
 };

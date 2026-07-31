@@ -61,6 +61,25 @@ nothing is needed at all (tiers 1–2). `setSpriteTexture` is removed under this
 backend reads the content revision it bumped, and assignment is auto-detected. Setters are never
 gates — data fields stay public and assignable; a setter is a named carrier of non-trivial work.
 
+## Kind-owned extension seams
+
+Identity-tier inputs that sit outside the generic node revision axes extend an existing pull or
+kind-dispatch seam; they never add a kind branch to the graph walk.
+
+- Bounds kinds install the nullable `HasBoundsRectangleRuntime.isLocalBoundsRectangleValid` hook.
+  Every local/parent/world bounds pull consults it after the generic `localBoundsId` stamp matches.
+  The kind compares and stamps only the extra identities or versions its bounds derive from; null is
+  the default and costs kinds with no extra input one nullable check.
+- Renderers install the optional `Renderer.isDirty` hook. It runs through the already-selected
+  kind renderer before `requiresInvalidation` may skip a node, with the comparison stamp held in
+  that node's per-state `rendererData`. A renderer with no extra identity input omits the hook and
+  retains the revision-only behavior.
+
+Sprite is the reference implementation for both seams: its bounds runtime stamps the current
+Texture identity/version, while every backend Sprite renderer stamps the same pair independently in
+its per-state renderer data. Thus a different-size assignment refreshes bounds and a same-size bare
+assignment still makes `prepareScene2DRender` report a dirty tree without `setSpriteTexture`.
+
 ## Guards are the footgun answer
 
 Every mandatory pairing — mutate→invalidate (tier 3), kind→register-resolver, scene→prepare,

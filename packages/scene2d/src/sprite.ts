@@ -1,13 +1,17 @@
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import { createEntity } from '@flighthq/entity/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   MethodsOf,
   Node,
   PartialNode,
   Rectangle,
+  Renderable,
+  RendererData,
+  RenderState,
   Sprite,
   SpriteData,
   SpriteRuntime,
+  Texture,
 } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
@@ -18,9 +22,13 @@ export function cloneSprite(source: Readonly<Sprite>): Sprite {
 }
 
 export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const texture = (source.data as SpriteData).texture;
+  const sprite = source as Readonly<Sprite>;
+  const texture = sprite.data.texture;
   out.width = texture === null ? 0 : Math.max(0, getTextureWidth(texture)) * Math.abs(texture.uvScale.x);
   out.height = texture === null ? 0 : Math.max(0, getTextureHeight(texture)) * Math.abs(texture.uvScale.y);
+  const runtime = getNode2DRuntime(sprite) as SpriteRuntime;
+  runtime.localBoundsTexture = texture;
+  runtime.localBoundsTextureVersion = texture?.version ?? -1;
 }
 
 export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
@@ -33,20 +41,54 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
   };
 }
 
+// Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
+// attached to that state's render proxy, so separate render pipelines compare independently.
+export function createSpriteRendererData(_state: RenderState, source: Renderable): RendererData {
+  const texture = (source as Sprite).data.texture;
+  return createEntity({ textureIdentity: texture, textureVersion: texture?.version ?? -1 });
+}
+
 export function createSpriteRuntime(): SpriteRuntime {
-  return createNode2DRuntime(defaultMethods) as SpriteRuntime;
+  const runtime = createNode2DRuntime(defaultMethods) as SpriteRuntime;
+  runtime.localBoundsTexture = null;
+  runtime.localBoundsTextureVersion = -1;
+  return runtime;
 }
 
 export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRuntime> {
   return getNode2DRuntime(source) as SpriteRuntime;
 }
 
-export function setSpriteTexture(source: Sprite, value: SpriteData['texture']): void {
-  source.data.texture = value;
-  invalidateNodeLocalContent(source);
-  invalidateNodeLocalBounds(source);
+// Detects Texture identity/version changes before requiresInvalidation can skip a Sprite. Each
+// backend opts into this through its registered renderer; the generic walk never knows SpriteKind.
+export function isSpriteRendererDirty(
+  _state: RenderState,
+  source: Renderable,
+  rendererData: RendererData | null,
+): boolean {
+  if (rendererData === null) return false;
+  const data = rendererData as SpriteIdentityRendererData;
+  const texture = (source as Sprite).data.texture;
+  const version = texture?.version ?? -1;
+  const dirty = data.textureIdentity !== texture || data.textureVersion !== version;
+  data.textureIdentity = texture;
+  data.textureVersion = version;
+  return dirty;
 }
 
-const defaultMethods: Partial<MethodsOf<SpriteRuntime>> = {
+function isSpriteLocalBoundsRectangleValid(source: Readonly<Node>): boolean {
+  const sprite = source as Readonly<Sprite>;
+  const runtime = getNode2DRuntime(sprite) as SpriteRuntime;
+  const texture = sprite.data.texture;
+  return runtime.localBoundsTexture === texture && runtime.localBoundsTextureVersion === (texture?.version ?? -1);
+}
+
+const defaultMethods: Partial<MethodsOf<SpriteRuntime> & Pick<SpriteRuntime, 'isLocalBoundsRectangleValid'>> = {
   computeLocalBoundsRectangle: computeSpriteLocalBoundsRectangle,
+  isLocalBoundsRectangleValid: isSpriteLocalBoundsRectangleValid,
+};
+
+type SpriteIdentityRendererData = RendererData & {
+  textureIdentity: Texture | null;
+  textureVersion: number;
 };
