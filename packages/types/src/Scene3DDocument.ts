@@ -84,8 +84,21 @@ export interface Scene3DDocumentCamera {
 }
 
 // One standalone, placed light. Like a camera, a light is not a scene node: it carries a `descriptor` (an
-// ambient/directional/point/spot/etc. `Light`) with its placement baked into `transform`, plus an optional
-// `node` index for the animated-placement case.
+// ambient/directional/point/spot/etc. `Light`) plus a `transform`, and an optional `node` index for the
+// animated-placement case.
+//
+// PLACEMENT CONVENTION (glTF `KHR_lights_punctual`, adopted SDK-wide so every importer agrees): the
+// descriptor holds the light in its OWN LOCAL SPACE and `transform` places and orients it. A directional
+// or spot light therefore aims down the canonical local -Z axis, and its real-world aim is the transform's
+// rotation applied to that axis; a point light sits at the local origin and is placed by the transform's
+// translation. A format that states a world-space aim (AWD does) converts it INTO the transform at import,
+// rather than writing it onto the descriptor.
+//
+// This is the one place the document stage differs from the draw stage. `DirectionalLight.direction` is a
+// WORLD-space vector everywhere a renderer consumes it — `Scene3DLights` and `packScene3DLightBlock` take
+// lights already resolved. A document light is pre-composition, so a consumer building a draw argument out
+// of this table composes `transform` into the descriptor first (rotate the local axis by
+// `transform.rotation`; offset the local position by `transform.position`).
 export interface Scene3DDocumentLight {
   descriptor: Light;
   name?: string;

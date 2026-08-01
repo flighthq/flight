@@ -8,6 +8,7 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
   normalizeVector3,
+  setQuaternionFromUnitVectors,
 } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -136,8 +137,9 @@ export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?:
 // and the skeleton block (type 101). Mesh instances reference geometry and material blocks by block ID;
 // materials reference texture blocks the same way.
 //
-// Each AWD light block fills the document's `lights` placement table. One AWD light is a compound — a
-// punctual term plus its own ambient term on the same entity — so it imports as a DirectionalLight or
+// Each AWD light block fills the document's `lights` placement table, in the document's local-descriptor +
+// `transform` convention (see Scene3DDocumentLight). One AWD light is a compound — a punctual term plus
+// its own ambient term on the same entity — so it imports as a DirectionalLight or
 // PointLight PLUS a sibling AmbientLight whenever the file gave it a non-zero ambient; see
 // buildAwdDocumentLights. Light-picker blocks are read but never built from: Away3D scopes lights per
 // MATERIAL through a picker, and Flight's light set is a scene-wide per-draw argument, so a file whose
@@ -2185,9 +2187,10 @@ function resolveAwdTexture(
 // would tint the wrong term, and dropping it would lose the fill the author set.
 //
 // `node` binds the light to the document node its AWD parent block produced, so an animated parent carries
-// the light with it. A directional light's `transform` stays IDENTITY: its aim is the world-space
-// `direction` on the descriptor, exactly as Away3D reads it, and baking the block matrix in as well would
-// invite a consumer to rotate an already-world-space vector twice.
+// the light with it. Placement follows the document convention (see Scene3DDocumentLight): the descriptor
+// holds the light in its own LOCAL space and `transform` places and orients it. AWD states a directional
+// aim as a world-space vector, so that vector becomes the transform's rotation off the canonical -Z axis
+// rather than being written onto the descriptor.
 function buildAwdDocumentLights(
   light: Readonly<ParsedLight>,
   nodeIndex: number | undefined,
@@ -2199,22 +2202,24 @@ function buildAwdDocumentLights(
   if (light.lightType === AWD2_LIGHT_TYPE_DIRECTIONAL) {
     // AWD aims its lights in a LEFT-handed space; the whole file is converted to Flight's right-handed one
     // by negating z, the same single-axis flip readAwdTransform applies to every placement matrix.
-    const direction = createVector3(light.directionX, light.directionY, -light.directionZ);
-    normalizeVector3(direction, direction);
+    const aim = createVector3(light.directionX, light.directionY, -light.directionZ);
+    normalizeVector3(aim, aim);
+    transform = createTransform3D();
+    setQuaternionFromUnitVectors(transform.rotation, DOCUMENT_LIGHT_LOCAL_AXIS, aim);
     descriptor = createDirectionalLight({
       castsShadow: light.castsShadow,
       color: getAwdLightRgba(light.rgb),
-      direction,
+      direction: DOCUMENT_LIGHT_LOCAL_AXIS,
       intensity: light.diffuse,
     });
-    transform = createTransform3D();
   } else if (light.lightType === AWD2_LIGHT_TYPE_POINT) {
+    // The point light's placement is the block matrix, carried on `transform`; the descriptor's own
+    // `position` stays at the local origin, which is where the convention puts an unplaced light.
     transform = awdTransformToTransform3D(light.transform);
     descriptor = createPointLight({
       castsShadow: light.castsShadow,
       color: getAwdLightRgba(light.rgb),
       intensity: light.diffuse,
-      position: createVector3(transform.position.x, transform.position.y, transform.position.z),
       // Away3D's falloff runs from `radius` (full brightness) to `fallOff` (zero); Flight's `range` is the
       // single cutoff distance, so the END maps and the START has nowhere to go.
       range: light.fallOff,
@@ -2250,6 +2255,11 @@ function buildAwdDocumentLights(
     });
   }
 }
+
+// The canonical local aim every placed document light is authored against: -Z, with the light's own
+// `transform` supplying the orientation (see Scene3DDocumentLight). Read-only — createDirectionalLight
+// clones the direction it is given, and setQuaternionFromUnitVectors only reads its `from`.
+const DOCUMENT_LIGHT_LOCAL_AXIS = createVector3(0, 0, -1);
 
 // Packs an AWD light's 24-bit 0xrrggbb color into a Flight 0xrrggbbaa one. A light has no alpha channel in
 // either model, so the imported color is always fully opaque.

@@ -1,4 +1,5 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -20,6 +21,7 @@ import type {
   Mesh,
   PointLight,
   Scene3DAnimationTarget,
+  Scene3DDocumentLight,
   Node3D,
   ShadedMaterial,
 } from '@flighthq/types/contract';
@@ -1758,6 +1760,16 @@ describe('parseAwd2', () => {
   });
 });
 
+// The world-space aim a consumer resolves from a document directional light: the canonical local -Z axis
+// rotated by the light's `transform`, which is exactly the composition Scene3DDocumentLight's convention
+// asks of a caller. Asserting through it is what proves the file's aim survived the import — reading the
+// descriptor's own direction would only ever show -Z. Rounded so exact-value comparisons stay readable.
+function aimOf(light: Readonly<Scene3DDocumentLight>): number[] {
+  const aim = createVector3(0, 0, -1);
+  rotateVector3ByQuaternion(aim, aim, light.transform.rotation);
+  return [aim.x, aim.y, aim.z].map((value) => Math.round(value * 1e6) / 1e6 + 0);
+}
+
 describe('parseAwd2 lights', () => {
   it('imports a directional light and splits its ambient term into a sibling AmbientLight', () => {
     const diagnostics: ImportDiagnostic[] = [];
@@ -1789,9 +1801,11 @@ describe('parseAwd2 lights', () => {
     expect(sun.color).toBe(0xff8040ff);
     expect(sun.intensity).toBeCloseTo(0.7, 6);
     expect(sun.castsShadow).toBe(false);
-    expect(sun.direction.x).toBeCloseTo(0, 6);
-    expect(sun.direction.y).toBeCloseTo(-1, 6);
-    expect(sun.direction.z).toBeCloseTo(0, 6);
+    // Per the document convention the descriptor aims down canonical local -Z; the aim is the transform.
+    expect(sun.direction.x).toBe(0);
+    expect(sun.direction.y).toBe(0);
+    expect(sun.direction.z).toBe(-1);
+    expect(aimOf(directional)).toEqual([0, -1, 0]);
 
     const ambient = document.lights[1];
     expect(ambient.name).toBe('Sun Ambient');
@@ -1812,26 +1826,29 @@ describe('parseAwd2 lights', () => {
       ]),
     );
 
-    const sun = document.lights[0].descriptor as DirectionalLight;
-    expect(sun.direction.x).toBeCloseTo(0, 6);
-    expect(sun.direction.y).toBeCloseTo(-0.6, 6);
-    expect(sun.direction.z).toBeCloseTo(-0.8, 6);
+    // AWD's world-space aim becomes the transform's rotation off local -Z, not a descriptor direction.
+    expect(aimOf(document.lights[0])).toEqual([0, -0.6, -0.8]);
   });
 
-  // A directional light's aim is a WORLD-space vector on the descriptor, so its placement matrix stays
-  // identity — Away3D ignores that matrix for directional lights too, and carrying it would invite a
-  // consumer to rotate an already-world-space direction a second time.
-  it('leaves a directional light placement identity even when the block carries a rotation', () => {
+  // A directional light's aim comes from its AWD properties, never from the block's placement matrix —
+  // Away3D applies that matrix to POINT lights only. So a block carrying both keeps the property aim and
+  // stays at the origin, rather than compounding the two into a doubly-rotated light.
+  it('aims a directional light from its properties and ignores the block placement matrix', () => {
     const document = parseAwd2(
       buildSingleLightAwd(
         AWD2_LIGHT_TYPE_DIRECTIONAL,
-        [[AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-1)]],
+        [
+          [AWD2_LIGHT_PROP_DIRECTION_X, propFloat32(0)],
+          [AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-1)],
+          [AWD2_LIGHT_PROP_DIRECTION_Z, propFloat32(0)],
+        ],
         'Sun',
         [0, 1, 0, -1, 0, 0, 0, 0, 1, 5, 6, 7],
       ),
     );
 
     const placement = document.lights[0].transform;
+    expect(aimOf(document.lights[0])).toEqual([0, -1, 0]);
     expect(placement.position.x).toBe(0);
     expect(placement.position.y).toBe(0);
     expect(placement.position.z).toBe(0);
@@ -1863,9 +1880,10 @@ describe('parseAwd2 lights', () => {
     expect(sun.intensity).toBe(1);
     expect(sun.castsShadow).toBe(false);
     // AWD's default aim is (0, -1, 1) left-handed, which is (0, -1, -1) normalized in Flight's space.
-    expect(sun.direction.x).toBeCloseTo(0, 6);
-    expect(sun.direction.y).toBeCloseTo(-Math.SQRT1_2, 6);
-    expect(sun.direction.z).toBeCloseTo(-Math.SQRT1_2, 6);
+    const [x, y, z] = aimOf(document.lights[0]);
+    expect(x).toBeCloseTo(0, 6);
+    expect(y).toBeCloseTo(-Math.SQRT1_2, 6);
+    expect(z).toBeCloseTo(-Math.SQRT1_2, 6);
   });
 
   it('marks a light that carries a shadow mapper as casting a shadow', () => {
@@ -1899,11 +1917,15 @@ describe('parseAwd2 lights', () => {
     expect(lamp.color).toBe(0x00ff00ff);
     expect(lamp.intensity).toBe(2);
     expect(lamp.range).toBe(40);
+    // Per the document convention the descriptor sits at the local origin and `transform` places it.
+    expect(lamp.position.x).toBe(0);
+    expect(lamp.position.y).toBe(0);
+    expect(lamp.position.z).toBe(0);
     // AWD is left-handed: the placement's z flips with the rest of the file's transforms.
-    expect(lamp.position.x).toBeCloseTo(3, 6);
-    expect(lamp.position.y).toBeCloseTo(4, 6);
-    expect(lamp.position.z).toBeCloseTo(-5, 6);
-    expect(document.lights[0].transform.position.z).toBeCloseTo(-5, 6);
+    const placement = document.lights[0].transform;
+    expect(placement.position.x).toBeCloseTo(3, 6);
+    expect(placement.position.y).toBeCloseTo(4, 6);
+    expect(placement.position.z).toBeCloseTo(-5, 6);
   });
 
   // Away3D's falloff runs from `radius` (full brightness) to `fallOff` (zero). Flight's `range` is the
