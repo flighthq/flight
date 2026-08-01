@@ -1,4 +1,5 @@
-import { addNodeChild, getNodeRuntime, setNodeLocalMatrix } from '@flighthq/node/contract';
+import { createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
+import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
 import {
   createScene2DDocument,
   createScene2DSlotReference,
@@ -7,6 +8,9 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   BoundsNodeAny,
+  MovieClip,
+  MovieClipData,
+  Node2D,
   Node2DData,
   Node2DRuntime,
   Rectangle,
@@ -14,6 +18,8 @@ import type {
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
+  TimelineLabel,
+  TimelineSource,
 } from '@flighthq/types/contract';
 
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
@@ -30,22 +36,25 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   const body = new SwfReader(source, SWF_PREFIX_LENGTH, fileLength);
   const stageBounds = readSwfRectangle(body);
   if (stageBounds === null) return null;
-  body.readUint16();
+  // Header FrameRate is 8.8 fixed and governs every timeline in the file; the authored FrameCount that
+  // follows it is advisory, so the real root frame count comes from the ShowFrame tags themselves.
+  const frameRate = body.readUint16() / FIXED_8_8_ONE;
   body.readUint16();
   if (!body.valid) return null;
 
   const parsed = readSwfTags(body);
   if (parsed === null) return null;
 
-  const root = createSwfDisplayObject(stageBounds);
   const references: Scene2DContentReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
+    frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
     remainingNodes: MAX_INSTANTIATED_NODES,
   };
-  if (!appendSwfPlacements(root, parsed.placements, parsed, references, instantiation, 0)) return null;
+  const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, references, instantiation, 0);
+  if (root === null) return null;
 
   return createScene2DDocument(root, references, 'swf');
 }
@@ -70,9 +79,13 @@ interface SwfRectangle {
   y: number;
 }
 
-interface SwfDisplayObjectData extends Node2DData {
+interface SwfAuthoredBoundsData {
   authoredBounds: SwfRectangle;
 }
+
+interface SwfDisplayObjectData extends Node2DData, SwfAuthoredBoundsData {}
+
+interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
 
 interface SwfPlacement {
   characterId: number;
@@ -82,26 +95,35 @@ interface SwfPlacement {
   name: string | null;
 }
 
+// One SWF timeline: the full display list of every frame it shows, in ShowFrame order, plus the frame
+// labels declared against those frames. Frames are complete snapshots rather than the authored deltas, so
+// a seek to any frame is a plain lookup and never has to replay the frames before it.
+interface SwfTimeline {
+  frames: Map<number, SwfPlacement>[];
+  labels: TimelineLabel[];
+}
+
 interface SwfTagResult {
   characterBounds: Map<number, SwfRectangle>;
   linkages: Map<number, string>;
-  placements: Map<number, SwfPlacement>;
-  sprites: Map<number, SwfSpriteDefinition>;
-}
-
-interface SwfSpriteDefinition {
-  placements: Map<number, SwfPlacement>;
+  sprites: Map<number, SwfTimeline>;
+  timeline: SwfTimeline;
 }
 
 interface SwfParseState {
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
   linkages: Map<number, string>;
-  sprites: Map<number, SwfSpriteDefinition>;
+  // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
+  // every ShowFrame that follows. This budget is what the whole document has left to spend on those
+  // snapshots, shared across the root timeline and every sprite in it.
+  remainingFrameEntries: number;
+  sprites: Map<number, SwfTimeline>;
 }
 
 interface SwfInstantiationState {
   activeSymbols: Set<number>;
+  frameRate: number | null;
   remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
@@ -124,6 +146,17 @@ class SwfReader {
     if (this.bitPosition === 0) return;
     this.bitPosition = 0;
     this.pos++;
+  }
+
+  // SWF EncodedU32: seven value bits per byte, least significant group first, at most five bytes.
+  readEncodedUint32(): number {
+    let value = 0;
+    for (let i = 0; i < ENCODED_UINT32_MAX_BYTES; i++) {
+      const byte = this.readUint8();
+      value += (byte & 0x7f) * 2 ** (7 * i);
+      if ((byte & 0x80) === 0) break;
+    }
+    return value;
   }
 
   readSignedBits(count: number): number {
@@ -191,9 +224,27 @@ function matchesSwfDocument(source: Uint8Array, context: Readonly<Scene2DDocumen
   return source[0] === FWS_SIGNATURE || source[0] === CWS_SIGNATURE || source[0] === ZWS_SIGNATURE;
 }
 
-function appendSwfPlacements(
-  parent: ReturnType<typeof createDisplayObject>,
-  placements: ReadonlyMap<number, SwfPlacement>,
+// Instantiates one SWF timeline as a MovieClip that plays it. Every node the timeline can ever show is
+// allocated here, once per depth+character instance across every frame, so the enumerable slot manifest
+// covers the whole timeline and not only its opening frame. Playback then only attaches, detaches,
+// reorders, and re-transforms those nodes. Returns null for the rejection cases the document reports as
+// its null sentinel: a symbol that contains itself, nesting past the depth bound, or a graph that would
+// exceed the instantiated-node budget.
+function createSwfTimelineNode(
+  timeline: Readonly<SwfTimeline>,
+  bounds: SwfRectangle | null,
+  parsed: Readonly<SwfTagResult>,
+  references: Scene2DContentReference[],
+  state: SwfInstantiationState,
+  depth: number,
+): MovieClip | null {
+  const clip = createSwfMovieClip(bounds);
+  return populateSwfTimelineNode(clip, timeline, parsed, references, state, depth) ? clip : null;
+}
+
+function populateSwfTimelineNode(
+  clip: MovieClip,
+  timeline: Readonly<SwfTimeline>,
   parsed: Readonly<SwfTagResult>,
   references: Scene2DContentReference[],
   state: SwfInstantiationState,
@@ -201,43 +252,120 @@ function appendSwfPlacements(
 ): boolean {
   if (depth > MAX_SPRITE_NESTING) return false;
 
-  const ordered = [...placements.values()].sort((a, b) => a.depth - b.depth);
-  for (const placement of ordered) {
-    const sprite = parsed.sprites.get(placement.characterId);
-    if (!placement.name && sprite === undefined) continue;
-    if (state.remainingNodes === 0) return false;
-    state.remainingNodes--;
+  const nodes = new Map<number, Node2D>();
+  const frames: Readonly<SwfPlacement>[][] = [];
 
-    const target = createSwfDisplayObject(resolveSwfCharacterBounds(parsed, placement.characterId, state, 0));
-    setNodeLocalMatrix(target, placement.matrix);
-    addNodeChild(parent, target);
-    if (placement.name) {
-      references.push(
-        createScene2DSlotReference(
-          placement.name,
-          target,
-          placement.directLinkage ?? parsed.linkages.get(placement.characterId) ?? null,
-        ),
-      );
-    }
+  for (const frame of timeline.frames) {
+    const ordered = [...frame.values()].sort(compareSwfPlacementDepth);
+    frames.push(ordered);
+    for (const placement of ordered) {
+      const key = createSwfInstanceKey(placement);
+      if (nodes.has(key)) continue;
+      const sprite = parsed.sprites.get(placement.characterId);
+      if (!placement.name && sprite === undefined) continue;
+      if (state.remainingNodes === 0) return false;
+      state.remainingNodes--;
 
-    if (sprite !== undefined) {
-      if (state.activeSymbols.has(placement.characterId)) return false;
-      state.activeSymbols.add(placement.characterId);
-      const appended = appendSwfPlacements(target, sprite.placements, parsed, references, state, depth + 1);
-      state.activeSymbols.delete(placement.characterId);
-      if (!appended) return false;
+      // The node and its slot reference exist before the symbol behind it is populated, so a manifest lists
+      // a container ahead of the named descendants it carries.
+      const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
+      const target = sprite === undefined ? createSwfDisplayObject(targetBounds) : createSwfMovieClip(targetBounds);
+      nodes.set(key, target);
+      if (placement.name) {
+        references.push(
+          createScene2DSlotReference(
+            placement.name,
+            target,
+            placement.directLinkage ?? parsed.linkages.get(placement.characterId) ?? null,
+          ),
+        );
+      }
+
+      if (sprite !== undefined) {
+        if (state.activeSymbols.has(placement.characterId)) return false;
+        state.activeSymbols.add(placement.characterId);
+        const populated = populateSwfTimelineNode(target as MovieClip, sprite, parsed, references, state, depth + 1);
+        state.activeSymbols.delete(placement.characterId);
+        if (!populated) return false;
+      }
     }
   }
+
+  setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, state.frameRate));
   return true;
 }
 
+// Exposes a parsed SWF timeline as the TimelineSource a MovieClip plays. The node set was allocated by
+// createSwfTimelineNode before this source exists, so constructFrame allocates nothing: it attaches the
+// frame's instances in depth order, detaches the ones that frame does not place, and writes each placement
+// matrix. A detached instance keeps its node, so a slot reference target stays valid while its instance is
+// off-frame and a loop back to frame 1 restores the same nodes rather than replacing them. The node set
+// belongs to one placed instance of the symbol, so this source belongs to that instance too rather than
+// being shared across every instance of it.
+function createSwfTimelineSource(
+  frames: readonly (readonly Readonly<SwfPlacement>[])[],
+  nodes: ReadonlyMap<number, Node2D>,
+  labels: readonly TimelineLabel[],
+  frameRate: number | null,
+): TimelineSource {
+  const attached: Node2D[] = [];
+  const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
+  return {
+    totalFrames: frames.length,
+    labels,
+    frameRate,
+    constructFrame(target: Node2D, frame: number): void {
+      const placements = frames[frame - 1];
+      if (placements === undefined) return;
+
+      let count = 0;
+      let ordered = true;
+      for (const placement of placements) {
+        const node = nodes.get(createSwfInstanceKey(placement));
+        if (node === undefined) continue;
+        if (attached[count] !== node) ordered = false;
+        count++;
+      }
+
+      if (!ordered || count !== attached.length) {
+        for (const node of attached) removeNodeChild(target, node);
+        attached.length = 0;
+        for (const placement of placements) {
+          const node = nodes.get(createSwfInstanceKey(placement));
+          if (node === undefined) continue;
+          addNodeChild(target, node);
+          attached.push(node);
+        }
+      }
+
+      for (const placement of placements) {
+        const node = nodes.get(createSwfInstanceKey(placement));
+        // Placement records are immutable once parsed, so an unchanged matrix is the same object and the
+        // transform does not have to be rewritten or invalidated on every frame the instance survives.
+        if (node === undefined || appliedMatrices.get(node) === placement.matrix) continue;
+        setNodeLocalMatrix(node, placement.matrix);
+        appliedMatrices.set(node, placement.matrix);
+      }
+    },
+  };
+}
+
+function compareSwfPlacementDepth(a: Readonly<SwfPlacement>, b: Readonly<SwfPlacement>): number {
+  return a.depth - b.depth;
+}
+
 function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
-  const bounds = (source.data as SwfDisplayObjectData).authoredBounds;
+  const bounds = (source.data as SwfAuthoredBoundsData).authoredBounds;
   out.x = bounds.x;
   out.y = bounds.y;
   out.width = bounds.width;
   out.height = bounds.height;
+}
+
+// Instance identity within one timeline. A move keeps its depth and character so it keeps its node across
+// frames, while a replacement at the same depth is a different instance and gets a node of its own.
+function createSwfInstanceKey(placement: Readonly<SwfPlacement>): number {
+  return placement.depth * SWF_INSTANCE_KEY_SCALE + placement.characterId;
 }
 
 function createSwfDisplayObject(bounds: SwfRectangle | null): ReturnType<typeof createDisplayObject> {
@@ -247,6 +375,15 @@ function createSwfDisplayObject(bounds: SwfRectangle | null): ReturnType<typeof 
     (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
   }
   return target;
+}
+
+function createSwfMovieClip(bounds: SwfRectangle | null): MovieClip {
+  const clip = createMovieClip();
+  if (bounds !== null) {
+    (clip.data as SwfMovieClipData).authoredBounds = { ...bounds };
+    (getNodeRuntime(clip) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return clip;
 }
 
 function mergeSwfRectangles(a: SwfRectangle, b: Readonly<SwfRectangle>): SwfRectangle {
@@ -270,12 +407,16 @@ function resolveSwfCharacterBounds(
   if (sprite === undefined || depth > MAX_SPRITE_NESTING || state.resolvingBounds.has(characterId)) return null;
 
   state.resolvingBounds.add(characterId);
+  // A symbol's authored extent covers everything it can show, so this unions every frame's placements
+  // rather than only the first frame's: the node's local bounds do not change as its playhead moves.
   let bounds: SwfRectangle | null = null;
-  for (const placement of sprite.placements.values()) {
-    const childBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, depth + 1);
-    if (childBounds === null) continue;
-    const transformed = transformSwfRectangle(childBounds, placement.matrix);
-    bounds = bounds === null ? transformed : mergeSwfRectangles(bounds, transformed);
+  for (const frame of sprite.frames) {
+    for (const placement of frame.values()) {
+      const childBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, depth + 1);
+      if (childBounds === null) continue;
+      const transformed = transformSwfRectangle(childBounds, placement.matrix);
+      bounds = bounds === null ? transformed : mergeSwfRectangles(bounds, transformed);
+    }
   }
   state.resolvingBounds.delete(characterId);
   state.resolvedBounds.set(characterId, bounds);
@@ -402,21 +543,23 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
     linkages: new Map<number, string>(),
-    sprites: new Map<number, SwfSpriteDefinition>(),
+    remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
+    sprites: new Map<number, SwfTimeline>(),
   };
-  const placements = readSwfTimeline(reader, state);
-  if (placements === null) return null;
+  const timeline = readSwfTimeline(reader, state);
+  if (timeline === null) return null;
   return {
     characterBounds: state.characterBounds,
     linkages: state.linkages,
-    placements,
     sprites: state.sprites,
+    timeline,
   };
 }
 
-function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, SwfPlacement> | null {
+function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
   const placements = new Map<number, SwfPlacement>();
-  let firstFrame: Map<number, SwfPlacement> | null = null;
+  const frames: Map<number, SwfPlacement>[] = [];
+  const labels: TimelineLabel[] = [];
   let foundEnd = false;
 
   while (reader.pos < reader.end && reader.valid) {
@@ -434,7 +577,13 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
       break;
     }
     if (code === TAG_SHOW_FRAME) {
-      firstFrame ??= new Map(placements);
+      state.remainingFrameEntries -= placements.size + 1;
+      if (state.remainingFrameEntries < 0) return null;
+      frames.push(new Map(placements));
+    } else if (code === TAG_FRAME_LABEL) {
+      addSwfTimelineLabel(labels, frames.length + 1, body.readString());
+    } else if (code === TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA) {
+      readSwfSceneAndFrameLabelData(body, labels);
     } else if (code === TAG_PLACE_OBJECT) {
       readLegacyPlaceObject(body, placements);
     } else if (code === TAG_PLACE_OBJECT_2) {
@@ -463,11 +612,11 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
       if (!body.valid || spriteId === 0 || state.definedCharacters.has(spriteId)) return null;
       state.definedCharacters.add(spriteId);
       const spriteReader = new SwfReader(body.source, body.pos, body.end);
-      const spritePlacements = readSwfTimeline(spriteReader, state);
-      if (spritePlacements === null || spriteReader.pos !== spriteReader.end) {
+      const spriteTimeline = readSwfTimeline(spriteReader, state);
+      if (spriteTimeline === null || spriteReader.pos !== spriteReader.end) {
         return null;
       }
-      state.sprites.set(spriteId, { placements: spritePlacements });
+      state.sprites.set(spriteId, spriteTimeline);
     } else if (code === TAG_PLACE_OBJECT_3 || code === TAG_PLACE_OBJECT_4) {
       readPlaceObject(body, placements, true);
     }
@@ -475,7 +624,40 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): Map<number, S
   }
 
   if (!reader.valid || !foundEnd) return null;
-  return firstFrame ?? placements;
+  // A timeline that never shows a frame still has the one display list its tags built.
+  if (frames.length === 0) frames.push(placements);
+  return {
+    frames,
+    // A label declared after the last ShowFrame names a frame the timeline never reaches.
+    labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
+  };
+}
+
+function addSwfTimelineLabel(labels: TimelineLabel[], frame: number, name: string): void {
+  if (!name || labels.some((label) => label.frame === frame && label.name === name)) return;
+  labels.push({ frame, name });
+}
+
+function compareSwfTimelineLabelFrame(a: Readonly<TimelineLabel>, b: Readonly<TimelineLabel>): number {
+  return a.frame - b.frame;
+}
+
+// DefineSceneAndFrameLabelData carries the whole root timeline's scene and label tables in one record, so
+// a file that uses it declares no FrameLabel tags. Its frame offsets are zero-based. The scene table is
+// read to reach the label table that follows it; scene names are a separate authoring concept from a frame
+// label and are not imported as one.
+function readSwfSceneAndFrameLabelData(body: SwfReader, labels: TimelineLabel[]): void {
+  const sceneCount = body.readEncodedUint32();
+  for (let i = 0; i < sceneCount && body.valid; i++) {
+    body.readEncodedUint32();
+    body.readString();
+  }
+  const labelCount = body.readEncodedUint32();
+  for (let i = 0; i < labelCount && body.valid; i++) {
+    const frame = body.readEncodedUint32();
+    const name = body.readString();
+    if (body.valid) addSwfTimelineLabel(labels, frame + 1, name);
+  }
 }
 
 function isSwfBoundedDefinitionTag(code: number): boolean {
@@ -652,6 +834,8 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 }
 
 const CWS_SIGNATURE = 0x43;
+const ENCODED_UINT32_MAX_BYTES = 5;
+const FIXED_8_8_ONE = 0x100;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
 const IDENTITY_MATRIX: SwfMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
@@ -667,11 +851,14 @@ const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
+const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
 const MIN_SWF_LENGTH = 12;
 const S_SIGNATURE = 0x53;
+const SWF_INSTANCE_KEY_SCALE = 0x10000;
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
+const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS_JPEG_2 = 21;
 const TAG_DEFINE_BITS_JPEG_3 = 35;
 const TAG_DEFINE_BITS_JPEG_4 = 90;
@@ -689,6 +876,7 @@ const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_EXPORT_ASSETS = 56;
+const TAG_FRAME_LABEL = 43;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
