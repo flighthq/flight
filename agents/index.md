@@ -53,6 +53,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [render backend support](render-backend-support.md) — the narrative behind the generated [support matrix](support-matrix.md).
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
 - [skeleton2d animation model](skeleton2d-animation-model.md) — slot timelines and where constraints live.
+- [texture color space](texture-color-space-model.md) — **unratified.** the decode landed, the encode did not.
 - [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
 - [texture / surface / resource](texture-surface-resource.md) — the boundary between the three.
 - [basis transcode](basis-transcode.md) — Basis-Universal texture transcode.
