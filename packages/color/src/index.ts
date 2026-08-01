@@ -2,6 +2,7 @@ export {
   allocateHslColor,
   allocateHsvColor,
   allocateLinearColor,
+  clampLinearRgb,
   colorFromKelvin,
   computeRgbHexString,
   getColorAlpha,

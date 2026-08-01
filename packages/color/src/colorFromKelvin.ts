@@ -1,7 +1,7 @@
 // Converts a color temperature in Kelvin to a packed sRgb-albedo RGBA color (0xrrggbbaa).
 // Uses the Tanner Helland piecewise approximation (accurate to within ±1% for 1000 K–40000 K),
 // the same algorithm used in Blender, three.js, and Filament's color-temperature helper.
-// Returns opaque white (0xffffffff) for temperatures outside the 1000–40000 K range.
+// Temperatures outside the 1000–40000 K range clamp to the nearest supported endpoint.
 //
 // Common temperatures: 1800 K = candlelight, 3000 K = warm bulb, 5500 K = noon sunlight,
 // 6500 K = D65 white, 10000 K = overcast sky.
