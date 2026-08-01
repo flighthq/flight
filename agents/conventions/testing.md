@@ -12,6 +12,7 @@
 
 - Run `npm run test --workspace=packages/<name>` for a single package.
 - While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood. Broad runs are confidence gates; focused tests are the normal editing loop. Do not use broad test runs as a substitute for reading the nearby source and tests.
+- A test selector or name filter that runs nothing is unconfigured, not clean. Targeted `npm run test` invocations fail loudly when no test files match or when matched files execute zero tests; a green zero-work pass is the same inert-gate defect as zero-comparison parity or regression coverage.
 
 ## Capability reachability
 
