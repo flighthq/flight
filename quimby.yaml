@@ -32,7 +32,7 @@ roles:
       underlying workers to remain busy, even without further user input. You are in a sandbox
       and can install dependencies.
   manager:
-    directs: [foreman, critic, integration]
+    directs: [foreman, auditor, integration]
     instructions: |
       You have foreman, critic and integration at your disposal. Foreman is instructed to 
       keep every worker busy under his watch, and to escalate any issues requiring clarification
