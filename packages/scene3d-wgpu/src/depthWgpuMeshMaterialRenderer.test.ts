@@ -43,6 +43,13 @@ describe('depthWgpuMeshMaterialRenderer', () => {
     expect(fake.calls.filter((c) => c.name === 'setBindGroup').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('bind disables back-face culling for a double-sided material', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    depthWgpuMeshMaterialRenderer.bind(state, createDepthMaterial({ doubleSided: true }), NO_LIGHTS, makeCamera());
+    const call = fake.calls.find((c) => c.name === 'createRenderPipeline');
+    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive.cullMode).toBe('none');
+  });
+
   it('draw issues an indexed draw over the subset after bind', () => {
     const { fake, state } = makeWgpuScene3DState();
     const proxy = makeProxy();

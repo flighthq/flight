@@ -34,7 +34,12 @@ export const depthWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const depth = material as Readonly<DepthMaterial> | null;
     const format = stateRuntime.currentColorFormat ?? state.format;
-    const pipeline = ensureWgpuDebugPipeline(state, { hasNormalMap: false, mode: 'depth' }, format);
+    const pipeline = ensureWgpuDebugPipeline(
+      state,
+      { hasNormalMap: false, mode: 'depth' },
+      format,
+      depth?.doubleSided ?? false,
+    );
     writeWgpuFrameUniform(state, camera, _lights);
 
     let group: GPUBindGroup;

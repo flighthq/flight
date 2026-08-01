@@ -39,7 +39,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const wireframe = material as Readonly<WireframeMaterial> | null;
     const format = stateRuntime.currentColorFormat ?? state.format;
-    const pipeline = ensureWgpuWireframePipeline(state, format);
+    const pipeline = ensureWgpuWireframePipeline(state, format, wireframe?.alphaMode === 'mask');
     writeWgpuFrameUniform(state, camera, _lights);
 
     let group: GPUBindGroup;
@@ -47,7 +47,7 @@ export const wireframeWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
       group = bindWgpuWireframeColor(state, pipeline, FALLBACK_MATERIAL, WHITE);
     } else {
       unpackColorToLinear(_scratch, wireframe.color);
-      group = bindWgpuWireframeColor(state, pipeline, wireframe, _scratch);
+      group = bindWgpuWireframeColor(state, pipeline, wireframe, _scratch, wireframe.alphaCutoff);
     }
 
     beginWgpuMeshDraw(state, pipeline);

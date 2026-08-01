@@ -50,6 +50,13 @@ describe('wireframeGlMeshMaterialRenderer', () => {
     expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
   });
 
+  it('bind selects the masked program and uploads alphaCutoff', () => {
+    const { state, gl } = makeGlScene3DState();
+    const material = createWireframeMaterial({ alphaCutoff: 0.25, alphaMode: 'mask' });
+    wireframeGlMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.25)).toBe(true);
+  });
+
   it('draw issues a LINES draw over the derived line range', () => {
     const { state, gl } = makeGlScene3DState();
     const proxy = makeProxy();

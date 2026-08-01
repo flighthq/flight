@@ -6,12 +6,13 @@ import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // the model + view-projection matrices and outputs a single flat LINE color. It has no lighting and
 // no maps — the WireframeMaterial draws mesh edges as GL lines (see glWireframeUpload for the derived
 // line-index buffer), so the fragment scene2d only needs the line color (decoded to linear on the CPU).
-// There are no feature variants, so a single program is cached per state under the `wireframe:` key.
-// Compiles the wireframe shader, links it, and resolves its uniform locations. Pure GL work — no
-// caching — used by ensureGlWireframeProgram.
-export function compileGlWireframeProgram(gl: WebGL2RenderingContext): GlWireframeProgram {
-  const program = compileGlProgram(gl, getGlWireframeVertexSource(), getGlWireframeFragmentSource());
+// Base and alpha-mask variants cache separately under the `wireframe:` key. Compiles the wireframe
+// shader, links it, and resolves its uniform locations. Pure GL work — no caching — used by
+// ensureGlWireframeProgram.
+export function compileGlWireframeProgram(gl: WebGL2RenderingContext, alphaMaskEnabled = false): GlWireframeProgram {
+  const program = compileGlProgram(gl, getGlWireframeVertexSource(), getGlWireframeFragmentSource(alphaMaskEnabled));
   return {
+    locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locColor: gl.getUniformLocation(program, 'u_color'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: null,
@@ -22,13 +23,15 @@ export function compileGlWireframeProgram(gl: WebGL2RenderingContext): GlWirefra
 
 // Resolves the wireframe program, compiling and caching it on first use through the shared scene
 // program cache under the `wireframe:` family namespace.
-export function ensureGlWireframeProgram(state: GlRenderState): GlWireframeProgram {
-  return ensureGlScene3DProgram(state, 'wireframe:', (gl) => compileGlWireframeProgram(gl));
+export function ensureGlWireframeProgram(state: GlRenderState, alphaMaskEnabled = false): GlWireframeProgram {
+  return ensureGlScene3DProgram(state, `wireframe:${alphaMaskEnabled ? 'mask' : 'base'}`, (gl) =>
+    compileGlWireframeProgram(gl, alphaMaskEnabled),
+  );
 }
 
 // The wireframe fragment source: outputs the flat linear line color.
-export function getGlWireframeFragmentSource(): string {
-  return WIREFRAME_FRAGMENT;
+export function getGlWireframeFragmentSource(alphaMaskEnabled = false): string {
+  return `#version 300 es\n${alphaMaskEnabled ? '#define ALPHA_MASK\n' : ''}${WIREFRAME_FRAGMENT}`;
 }
 
 // The wireframe vertex source: position → clip space.
@@ -47,10 +50,13 @@ void main() {
 }
 `;
 
-const WIREFRAME_FRAGMENT = `#version 300 es
-precision highp float;
+const WIREFRAME_FRAGMENT = `precision highp float;
 
 uniform vec4 u_color;
+
+#ifdef ALPHA_MASK
+uniform float u_alphaCutoff;
+#endif
 
 uniform float u_objectAlpha;
 
@@ -58,6 +64,9 @@ out vec4 fragColor;
 
 void main() {
   fragColor = u_color;
+#ifdef ALPHA_MASK
+  if (fragColor.a < u_alphaCutoff) discard;
+#endif
   fragColor.a *= u_objectAlpha;
 }
 `;

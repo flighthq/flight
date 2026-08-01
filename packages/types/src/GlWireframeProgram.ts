@@ -1,8 +1,9 @@
 import type { GlMeshProgram } from './GlMeshProgram';
 
 // A compiled wireframe program. Extends GlMeshProgram (model + view-projection; locNormalMatrix is
-// null — wireframe has no normals) with the single line-color uniform.
+// null — wireframe has no normals) with line-color and optional alpha-cutoff uniforms.
 export interface GlWireframeProgram extends GlMeshProgram {
+  locAlphaCutoff: WebGLUniformLocation | null;
   locColor: WebGLUniformLocation | null;
 }
 

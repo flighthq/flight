@@ -4,6 +4,7 @@ import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@f
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
+  AlphaType,
   Camera3D,
   ColorScaleBias,
   Material,
@@ -115,6 +116,7 @@ export function drawWgpuScene3D(
   // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
+  runtime.activeAlphaType = null;
   runtime.activeBlendMode = null;
   runtime.activeBlendedRun = false;
   runtime.activeColorAdjustmentRun = false;
@@ -145,6 +147,7 @@ function drawEntries(
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i] as DrawEntry;
+    runtime.activeAlphaType = blended ? getMaterialAlphaType(entry.material) : null;
     runtime.activeBlendMode = blended ? getMaterialBlendMode(entry.material) : null;
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
@@ -196,6 +199,15 @@ function isBlendedMaterial(material: Readonly<Material>): boolean {
 function getMaterialBlendMode(material: Readonly<Material>): BlendMode {
   const surface = material as Readonly<SurfaceMaterial>;
   return surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
+}
+
+// Node fading an otherwise opaque/masked surface produces straight output in the built-in shaders, so
+// only a material-authored blend run adopts the SurfaceMaterial declaration. Missing/unknown trailers
+// retain the constructors' straight-alpha default.
+function getMaterialAlphaType(material: Readonly<Material>): AlphaType {
+  const surface = material as Readonly<SurfaceMaterial>;
+  if (surface.alphaMode !== 'blend') return 'straight';
+  return surface.alphaType === 'opaque' || surface.alphaType === 'premultiplied' ? surface.alphaType : 'straight';
 }
 
 function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {

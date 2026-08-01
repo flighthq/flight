@@ -43,7 +43,12 @@ export const normalWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     // normalMap is not yet uploaded on wgpu, so the map variant is never selected — keep hasNormalMap
     // false and bind the shared placeholder. This will flip to follow normal.normalMap when wgpu texture
     // upload lands, matching the GL renderer's behavior.
-    const pipeline = ensureWgpuDebugPipeline(state, { hasNormalMap: false, mode: 'normal' }, format);
+    const pipeline = ensureWgpuDebugPipeline(
+      state,
+      { hasNormalMap: false, mode: 'normal' },
+      format,
+      normal?.doubleSided ?? false,
+    );
     writeWgpuFrameUniform(state, camera, _lights);
 
     let group: GPUBindGroup;

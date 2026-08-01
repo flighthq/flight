@@ -128,8 +128,9 @@ export function getWgpuCustomMaterialShaderSource(
 //   binding 2*N and texture_2d<f32> at binding 2*N+1.
 //
 // Entry points are `vs_main` and `fs_main`; attributes use locations 0 position, 1 normal, 2 tangent,
-// and 3 uv. Fragment outputs are linear scene color; alpha-blended materials must return straight
-// (not premultiplied) fragment alpha. The
+// and 3 uv. Fragment outputs are linear scene color; alpha-blended materials must return output matching
+// their alphaType declaration. For alphaMode 'mask', the complete native module owns the cutoff discard
+// (pass alphaCutoff through the custom uniforms bag when needed); the fixed ABI cannot inject it. The
 // registry follows the GL lifetime rule: last source write wins before compilation, while an already
 // compiled shaderKey remains cached; use a new key to compile edited WGSL.
 export function registerWgpuCustomMaterialShader(

@@ -90,8 +90,10 @@ export function getGlCustomMaterialShaderSource(
 // `mat4 u_model`, `mat3 u_normalMatrix` (NOT mat4 — the renderer uploads it with glUniformMatrix3fv,
 // so a mat4 declaration raises a silent GL_INVALID_OPERATION and the mesh draws nothing;
 // enableGlScene3DCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
-// alphaMode is 'blend', drawGlScene3D composites with glBlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), so
-// the fragment shader must output linear scene color with straight (non-premultiplied) alpha. Last write wins for the source
+// alphaMode is 'blend', drawGlScene3D selects straight or premultiplied Normal factors from the
+// material's alphaType, so the fragment shader must output linear scene color matching that declaration.
+// For alphaMode 'mask', the native shader owns the cutoff discard (pass alphaCutoff through the custom
+// uniforms bag when needed); the fixed ABI cannot inject a discard into caller-authored source. Last write wins for the source
 // lookup, but the compiled program is cached
 // by shaderKey, so re-registering a different source under the same key keeps running the
 // already-compiled program. Register edited source under a new key to force a recompile.
