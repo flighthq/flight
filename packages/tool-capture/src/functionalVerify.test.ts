@@ -18,6 +18,7 @@ interface VerificationWindowLike {
   __ftVerification?: unknown;
   __ftRenderImage?: unknown;
   __ftBenchmarkTarget?: { run(): void | Promise<void> };
+  __ftCaptureTimeoutMs?: number;
   __ftRealRequestAnimationFrame?: (callback: FrameRequestCallback) => number;
 }
 
@@ -25,6 +26,26 @@ interface VerificationWindowLike {
 // The verifier reads the harness-stashed rAF, so replacing that one covers the path it actually takes.
 function stubNeverFiringAnimationFrames(): void {
   (window as unknown as VerificationWindowLike).__ftRealRequestAnimationFrame = () => 0;
+}
+
+// Drives the frame wait to its deadline under fake timers and asserts the bound it actually used. The
+// elapsed time is the assertion: advancing just short of the expected deadline must not settle it.
+async function expectFrameWaitTimeout(expectedMs: number): Promise<void> {
+  vi.useFakeTimers();
+  try {
+    const run = runRenderVerification({}, 'webgl');
+    const rejected = expect(run).rejects.toThrow(
+      new RegExp(`stalled in stage awaitingFrame: no animation frame within ${expectedMs}ms`),
+    );
+    let settled = false;
+    void run.catch(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(expectedMs - 1);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+  } finally {
+    vi.useRealTimers();
+  }
 }
 
 function verification(): Record<string, unknown> {
@@ -38,6 +59,7 @@ afterEach(() => {
   w.__ftRenderImage = undefined;
   w.__ftBenchmarkTarget = undefined;
   w.__ftRealRequestAnimationFrame = undefined;
+  w.__ftCaptureTimeoutMs = undefined;
 });
 
 // A minimal DOM target — the only backend snapshot/verification handles without a real GPU context.
@@ -123,19 +145,29 @@ describe('runRenderVerification', () => {
 
   it('fails by name when the animation frame never arrives, naming the stage it sat in', async () => {
     stubNeverFiringAnimationFrames();
-    vi.useFakeTimers();
-    try {
-      const run = runRenderVerification({}, 'webgl');
-      const rejected = expect(run).rejects.toThrow(/stalled in stage awaitingFrame: no animation frame within 4000ms/);
-      await vi.advanceTimersByTimeAsync(4_000);
-      await rejected;
-    } finally {
-      vi.useRealTimers();
-    }
+
+    // No injected budget: the wait falls back to the runner's default ceiling and takes its share of it.
+    await expectFrameWaitTimeout(4_000);
 
     // The failure is terminal and carries its location — the runner's outer wait would otherwise have
     // reported the bare `state: pending` this replaces.
     expect(verification()).toMatchObject({ state: 'failed', stage: 'awaitingFrame' });
+  });
+
+  it('scales its wait with the budget the runner injected', async () => {
+    // The regression this prevents: the runner raised its budget for a contended machine and the page's
+    // own bounds stayed pinned to the old ceiling, turning slow-but-working captures into hard failures.
+    stubNeverFiringAnimationFrames();
+    (window as unknown as VerificationWindowLike).__ftCaptureTimeoutMs = 45_000;
+
+    await expectFrameWaitTimeout(12_000);
+  });
+
+  it('ignores an injected budget that is not a usable number', async () => {
+    stubNeverFiringAnimationFrames();
+    (window as unknown as VerificationWindowLike).__ftCaptureTimeoutMs = 0;
+
+    await expectFrameWaitTimeout(4_000);
   });
 });
 
