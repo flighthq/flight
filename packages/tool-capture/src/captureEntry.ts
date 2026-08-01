@@ -23,6 +23,7 @@ import { formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
+import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
 
 export interface CaptureStatus {
@@ -343,7 +344,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     });
 
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: getCaptureTimeoutMs() });
       let earlyObserveIntercept: { coverage: number; dataUrl: string } | null = null;
       let observeTimedOut = false;
       if (!verify) {
@@ -383,7 +384,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
             null,
             {
               polling: 100,
-              timeout: 15_000,
+              timeout: getCaptureTimeoutMs(),
             },
           );
         }
@@ -789,7 +790,7 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
         return verification.fingerprint !== null && typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
       },
       null,
-      { polling: 100, timeout: 15_000 },
+      { polling: 100, timeout: getCaptureTimeoutMs() },
     )
     .catch(() => {});
 
@@ -987,7 +988,7 @@ async function captureUrlAttempt(
     });
   });
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: getCaptureTimeoutMs() });
     await page.evaluate(() => {
       requestAnimationFrame(() => requestAnimationFrame(() => {}));
     });
