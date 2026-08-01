@@ -165,7 +165,7 @@ describe('bindWgpuImageResourceTexture', () => {
     expect(copy).not.toHaveBeenCalled();
   });
 
-  it('keeps the previous upload while a 2D canvas context is lost', async () => {
+  it('keeps the previous upload when the browser cannot snapshot the current source', async () => {
     const state = await createWgpuRenderStateForTest();
     const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
     const canvas = document.createElement('canvas');
@@ -179,13 +179,12 @@ describe('bindWgpuImageResourceTexture', () => {
       version: 1,
     } as unknown as Image;
     const entry = requireTextureEntry(bindWgpuImageResourceTexture(state, image));
-    const getContext = vi
-      .spyOn(canvas, 'getContext')
-      .mockReturnValue({ isContextLost: () => true } as unknown as GPUCanvasContext);
+    copy.mockImplementation(() => {
+      throw new TypeError('Failed to copy content from external image.');
+    });
     image.version = 2;
     expect(bindWgpuImageResourceTexture(state, image)).toBe(entry);
-    expect(copy).toHaveBeenCalledTimes(1);
-    getContext.mockRestore();
+    expect(copy).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -227,6 +226,12 @@ describe('bindWgpuTexture', () => {
 
 describe('bindWgpuVideoTexture', () => {
   function videoTexture(version: number, readyState = 4, width = 320, height = 240): Texture {
+    const source = document.createElement('video');
+    Object.defineProperties(source, {
+      readyState: { configurable: true, value: readyState, writable: true },
+      videoHeight: { configurable: true, value: height, writable: true },
+      videoWidth: { configurable: true, value: width, writable: true },
+    });
     return {
       sampler: {
         anisotropy: 1,
@@ -238,7 +243,7 @@ describe('bindWgpuVideoTexture', () => {
       },
       dimension: '2d',
       source: {
-        source: { readyState, videoHeight: height, videoWidth: width } as HTMLVideoElement,
+        source,
         version,
       },
       version,

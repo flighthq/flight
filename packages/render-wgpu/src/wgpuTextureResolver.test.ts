@@ -124,11 +124,13 @@ describe('registerWgpuImageTextureResolver', () => {
 
   it('resolves a host video through the image source kind', async () => {
     const state = await createWgpuRenderStateForTest();
-    const image = imageResource({
-      readyState: 4,
-      videoHeight: 8,
-      videoWidth: 8,
-    } as HTMLVideoElement);
+    const source = document.createElement('video');
+    Object.defineProperties(source, {
+      readyState: { value: 4 },
+      videoHeight: { value: 8 },
+      videoWidth: { value: 8 },
+    });
+    const image = imageResource(source);
     const texture = textureWithImage(image);
     registerWgpuImageTextureResolver(state);
     expect(resolveWgpuTexture(state, texture)).not.toBeNull();
