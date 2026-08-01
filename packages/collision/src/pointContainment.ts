@@ -1,6 +1,8 @@
 import type { CollisionShape } from '@flighthq/types/contract';
 
-const EPS = 1e-9;
+import { getCollisionPolygonValidationStatus } from './collisionShapeValidation';
+
+const RELATIVE_EPSILON = 1e-9;
 
 // Whether the point (`x`,`y`) lies inside a collider. Boundary-inclusive: a point exactly on the
 // edge of any shape counts as contained. For the area-less kinds this degrades to an on-shape test —
@@ -25,13 +27,14 @@ export function getCollisionShapeContainsPoint(shape: Readonly<CollisionShape>, 
       return Math.abs(localX) <= shape.halfW && Math.abs(localY) <= shape.halfH;
     }
     case 'polygon':
+      if (getCollisionPolygonValidationStatus(shape.points) !== null) return false;
       return isPointInConvexPolygon(x, y, shape.points, shape.points.length >> 1);
     case 'segment': {
       const dx = shape.x1 - shape.x0;
       const dy = shape.y1 - shape.y0;
       const lengthSquared = dx * dx + dy * dy;
       let t = 0;
-      if (lengthSquared > EPS) {
+      if (lengthSquared > 0) {
         t = ((x - shape.x0) * dx + (y - shape.y0) * dy) / lengthSquared;
         t = t < 0 ? 0 : t > 1 ? 1 : t;
       }
@@ -39,12 +42,14 @@ export function getCollisionShapeContainsPoint(shape: Readonly<CollisionShape>, 
       const closestY = shape.y0 + t * dy;
       const ddx = x - closestX;
       const ddy = y - closestY;
-      return ddx * ddx + ddy * ddy <= EPS;
+      const epsilon = relativeEpsilon(Math.sqrt(lengthSquared));
+      return ddx * ddx + ddy * ddy <= epsilon * epsilon;
     }
     case 'point': {
       const dx = x - shape.x;
       const dy = y - shape.y;
-      return dx * dx + dy * dy <= EPS;
+      const epsilon = Number.EPSILON * Math.max(1, Math.abs(x), Math.abs(y), Math.abs(shape.x), Math.abs(shape.y));
+      return dx * dx + dy * dy <= epsilon * epsilon;
     }
     default:
       return false;
@@ -54,6 +59,7 @@ export function getCollisionShapeContainsPoint(shape: Readonly<CollisionShape>, 
 // Convex point-in-polygon by sign consistency of the edge cross products. Winding-agnostic: the
 // point is inside when it lies on the same side of (or on) every edge. `pn` is the vertex count.
 function isPointInConvexPolygon(x: number, y: number, px: readonly number[], pn: number): boolean {
+  const epsilon = relativeEpsilon(getPolygonExtent(px, pn));
   let positive = false;
   let negative = false;
   for (let i = 0; i < pn; i++) {
@@ -63,9 +69,30 @@ function isPointInConvexPolygon(x: number, y: number, px: readonly number[], pn:
     const x1 = px[j << 1];
     const y1 = px[(j << 1) + 1];
     const cross = (x1 - x0) * (y - y0) - (y1 - y0) * (x - x0);
-    if (cross > EPS) positive = true;
-    else if (cross < -EPS) negative = true;
+    const edgeEpsilon = Math.hypot(x1 - x0, y1 - y0) * epsilon;
+    if (cross > edgeEpsilon) positive = true;
+    else if (cross < -edgeEpsilon) negative = true;
     if (positive && negative) return false;
   }
   return true;
+}
+
+function getPolygonExtent(points: readonly number[], count: number): number {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const x = points[i << 1];
+    const y = points[(i << 1) + 1];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  return Math.max(maxX - minX, maxY - minY);
+}
+
+function relativeEpsilon(extent: number): number {
+  return extent > 0 ? extent * RELATIVE_EPSILON : Number.EPSILON;
 }

@@ -2,7 +2,27 @@ import type { CollisionShape } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCollisionManifold } from './manifold';
-import { testCollision } from './testCollision';
+import { setCollisionTestGuard, testCollision } from './testCollision';
+
+afterEach(() => {
+  setCollisionTestGuard(null);
+});
+
+describe('setCollisionTestGuard', () => {
+  it('installs and removes the invalid-input diagnostics seam', () => {
+    const seenKinds: string[] = [];
+    const out = createCollisionManifold();
+    const valid: CollisionShape = { kind: 'circle', radius: 1, x: 0, y: 0 };
+    const degenerate: CollisionShape = { kind: 'circle', radius: 0, x: 0, y: 0 };
+    setCollisionTestGuard((a, b) => seenKinds.push(a.kind, b.kind));
+    testCollision(degenerate, valid, out);
+    expect(seenKinds).toEqual(['circle', 'circle']);
+
+    setCollisionTestGuard(null);
+    testCollision(degenerate, valid, out);
+    expect(seenKinds).toHaveLength(2);
+  });
+});
 
 describe('testCollision', () => {
   it('dispatches a circle-circle pair to the same result as the direct test', () => {
@@ -56,5 +76,22 @@ describe('testCollision', () => {
     expect(testCollision(segment, circle, out)).toBe(false);
     expect(testCollision(circle, point, out)).toBe(false);
     expect(out.overlapping).toBe(false);
+  });
+
+  it('fully clears one reused manifold across hit, miss, unsupported, and hit calls', () => {
+    const out = createCollisionManifold();
+    const circle: CollisionShape = { kind: 'circle', radius: 2, x: 0, y: 0 };
+    expect(testCollision(circle, { kind: 'circle', radius: 2, x: 1, y: 0 }, out)).toBe(true);
+    expect(out).toMatchObject({ depth: 3, normalX: -1, normalY: 0, overlapping: true });
+
+    expect(testCollision(circle, { kind: 'circle', radius: 2, x: 10, y: 0 }, out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+
+    expect(testCollision({ kind: 'point', x: 0, y: 0 }, circle, out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+
+    expect(testCollision(circle, { kind: 'aabb', maxX: 1, maxY: 1, minX: -1, minY: -1 }, out)).toBe(true);
+    expect(out.overlapping).toBe(true);
+    expect(out.depth).toBeGreaterThan(0);
   });
 });

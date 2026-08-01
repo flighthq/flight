@@ -1,4 +1,9 @@
-import type { CollisionManifold, CollisionShape, CollisionShapeKind } from '@flighthq/types/contract';
+import type {
+  CollisionManifold,
+  CollisionShape,
+  CollisionShapeKind,
+  CollisionTestGuard,
+} from '@flighthq/types/contract';
 
 import { clearCollisionManifold } from './manifold';
 import {
@@ -14,6 +19,11 @@ import {
   testPolygonPolygonCollision,
 } from './shapeCollision';
 
+// Installs the optional diagnostics seam consulted before testCollision dispatches its shape pair.
+export function setCollisionTestGuard(guard: CollisionTestGuard | null): void {
+  collisionTestGuard = guard;
+}
+
 // Generic narrow-phase test: dispatches on the two shapes' `kind`s to the matching per-pair test and
 // writes the manifold pushing **A out of B**. Shapes are canonically ordered by kind rank before
 // dispatch so only the ten manifold-bearing pairs (circle/aabb/obb/polygon) need explicit branches;
@@ -26,6 +36,8 @@ export function testCollision(
   b: Readonly<CollisionShape>,
   out: CollisionManifold,
 ): boolean {
+  if (collisionTestGuard !== null) collisionTestGuard(a, b);
+
   const rankA = shapeKindRank(a.kind);
   const rankB = shapeKindRank(b.kind);
   if (rankA < 0 || rankB < 0) {
@@ -109,3 +121,5 @@ function shapeKindRank(kind: CollisionShapeKind): number {
       return -1;
   }
 }
+
+let collisionTestGuard: CollisionTestGuard | null = null;

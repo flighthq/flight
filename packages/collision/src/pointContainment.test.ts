@@ -36,6 +36,20 @@ describe('getCollisionShapeContainsPoint', () => {
     expect(getCollisionShapeContainsPoint(hex, 0, 3)).toBe(false);
   });
 
+  it('rejects polygons with fewer than three vertices', () => {
+    const polygon: CollisionShape = { kind: 'polygon', points: [0, 0, 1, 1] };
+    expect(getCollisionShapeContainsPoint(polygon, 0.5, 0.5)).toBe(false);
+  });
+
+  it('keeps containment proportional for a tiny polygon', () => {
+    const polygon: CollisionShape = {
+      kind: 'polygon',
+      points: [0, 0, 1e-6, 0, 1e-6, 1e-6, 0, 1e-6],
+    };
+    expect(getCollisionShapeContainsPoint(polygon, 0.5e-6, 0.5e-6)).toBe(true);
+    expect(getCollisionShapeContainsPoint(polygon, 2e-6, 0.5e-6)).toBe(false);
+  });
+
   it('tests a point lying on a segment', () => {
     const segment: CollisionShape = { kind: 'segment', x0: 0, y0: 0, x1: 10, y1: 0 };
     expect(getCollisionShapeContainsPoint(segment, 5, 0)).toBe(true);
@@ -47,6 +61,15 @@ describe('getCollisionShapeContainsPoint', () => {
     const point: CollisionShape = { kind: 'point', x: 3, y: 4 };
     expect(getCollisionShapeContainsPoint(point, 3, 4)).toBe(true);
     expect(getCollisionShapeContainsPoint(point, 3, 5)).toBe(false);
+  });
+
+  it('treats zero-radius circles and zero-length segments as point-like', () => {
+    const circle: CollisionShape = { kind: 'circle', radius: 0, x: 3, y: 4 };
+    const segment: CollisionShape = { kind: 'segment', x0: 3, x1: 3, y0: 4, y1: 4 };
+    expect(getCollisionShapeContainsPoint(circle, 3, 4)).toBe(true);
+    expect(getCollisionShapeContainsPoint(circle, 3, 4.001)).toBe(false);
+    expect(getCollisionShapeContainsPoint(segment, 3, 4)).toBe(true);
+    expect(getCollisionShapeContainsPoint(segment, 3, 4.001)).toBe(false);
   });
 
   it('returns false for an unknown kind', () => {
