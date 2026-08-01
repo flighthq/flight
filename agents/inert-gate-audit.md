@@ -59,7 +59,7 @@ the bare command includes them. That is a documented scope distinction, not an i
 
 | Leg | Protected subject | Failure-verified/how or limitation |
 | --- | --- | --- |
-| `changes` | Run code legs for all changes except Markdown and `agents/**` | Structural: all-except path filter; action failure is job failure. Docs/agent-only changes intentionally skip all downstream checks. |
+| `changes` | Run code legs for all changes except Markdown and `agents/**` | **Inert for two subjects — see the follow-up finding below.** The all-except filter is structural and its action failure is a job failure, but the exclusions are not purely a cost optimization: `docs:check` and the agent-tooling sources both live inside the excluded set. |
 | `build-check` | Package policy plus all TypeScript project checks | Active: the package/type compound mutation failed. Every ordinary verification leg needs this job. |
 | `build` | Root TS build and emitted packages | Active by `tsc -b`; compile failure is nonzero. It reruns after snapshot version stamping inside `edge-publish`. |
 | `harness-build` · functional | Functional Vite harness bundles | Active build command; a clean build is required before success. |
@@ -73,6 +73,36 @@ the bare command includes them. That is a documented scope distinction, not an i
 | `render-test` · examples smoke | Example build/load and page/console/network errors | Partially active, but non-blank verification is off. The no-op renderer mutation exited 0. |
 | `render-test` · examples parity | Example verifier load plus cross-backend parity | Load/blank failures are active, but parity is inert: zero current eligible pairs because all matching fingerprints are missing. |
 | `edge-publish` | Build and publish `edge`/`next` snapshot | Publication is active, but its dependency set is only `build` plus `test-fast`; six other verification families cannot block it. |
+
+### Follow-up finding: a gate can be live and still never run on its subject
+
+Audited at `5eba48616`, after the table above. The original audit asked, for each stage, _does it fail when
+its subject is broken?_ — and answered yes for all eleven `scripts/check.ts` stages. It did not ask the
+prior question: _does it run when its subject changes?_ Two gates fail that second question, and no amount
+of mutation-proving the stage would have revealed it.
+
+**P1 — `docs:check` is excluded from CI by its own subject.** The chain is `changes` → `code` = `**` minus
+`**/*.md` minus `agents/**`; `build-check` runs `if code == 'true'`; `quality` needs `build-check` and is
+the only path to `npm run check`, which contains `docs:check`. But `docs:check`'s entire subject _is_
+`AGENTS.md` and the `agents/**` cells. A commit touching only those produces `code == 'false'` and runs
+nothing, so the gate's coverage is anti-correlated with its subject: the docs-only changes most likely to
+break docs are exactly the ones never checked. Measured over the 40 commits ending at `5eba48616`,
+**12 (30%) trigger zero CI legs**, including `f839a2252`, which introduced an `AGENTS.md` line claiming the
+texture model had "only M2 implemented" while the linked doc said M2–M5 had landed. **RECOMMENDATION:**
+give `changes` a second `docs` output and a `docs` job that runs `docs:check` without depending on
+`build-check`, so docs-only commits stay cheap but are still gated.
+
+That victim also shows the two defects are independent and both required: even had `quality` run,
+`docs:check` has no staleness rule, so it would have passed. Fixing the filter makes the gate fire; it does
+not by itself make it catch this. Any new AGENTS.md content rule is born inert until the filter is fixed.
+
+**P1 — `agents/**` holds executable tooling with no automated coverage of any kind.** The exclusion reads as
+a docs exclusion, but the path also contains `todo.mjs`, `scaffold.mjs`, `bless-queue.mjs`, `todo-items.mjs`,
+and `todo-target.mjs` — the tooling agents run to find work. These are excluded from the CI path filter
+_and_ independently ignored by the linter (`.oxlintrc.json` ignores `agents/**`) _and_ outside the
+`tsconfig.json` include list. Three independent exclusions, so fixing any one leaves them uncovered.
+**RECOMMENDATION:** treat the executable subset as code — narrow the CI filter exclusion to `agents/**/*.md`
+rather than `agents/**`, and take the linter exclusion down to match.
 
 ## Nightly CI (`nightly.yml`)
 
