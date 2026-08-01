@@ -1,10 +1,15 @@
 export {
-  createBitmapFontFromGlyphAtlas,
   createBitmapFont,
+  createBitmapFontFromGlyphAtlas,
   createGlyphSourceFromBitmapFont,
+  disableBitmapFontGuards,
+  enableBitmapFontGuards,
+  explainBitmapFontGlyph,
   getBitmapFontGlyph,
   getBitmapFontKerning,
   getBitmapFontMetrics,
   getBitmapFontPage,
   getBitmapFontPages,
+  hasBitmapFontGlyph,
+  summarizeBitmapFont,
 } from './contract';

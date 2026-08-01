@@ -9,6 +9,8 @@ import {
   getBitmapFontMetrics,
   getBitmapFontPage,
   getBitmapFontPages,
+  hasBitmapFontGlyph,
+  setBitmapFontGuard,
 } from './bitmapFont';
 
 describe('createBitmapFont', () => {
@@ -82,6 +84,68 @@ describe('getBitmapFontKerning', () => {
   });
 });
 
+describe('getBitmapFontKerning supplementary planes', () => {
+  // The old key was `(left << 16) | right`, and JavaScript's bitwise operators truncate to 32 bits, so a
+  // supplementary-plane codepoint did not overflow — it WRAPPED, landing on another pair's key. These
+  // are the two aliases that produced, verified arithmetically against the old packing before the fix.
+  const ALIASES = [
+    { name: 'U+10000 aliased U+0000', supplementary: 0x10000, basic: 0x0000 },
+    { name: 'U+1F600 aliased U+F600', supplementary: 0x1f600, basic: 0xf600 },
+  ];
+
+  for (const { name, supplementary, basic } of ALIASES) {
+    it(`keeps a supplementary-plane pair distinct where ${name}`, () => {
+      // Both pairs share a right glyph and differ only in the left, so a colliding key would make the
+      // second write overwrite the first and BOTH lookups would return -9.
+      const font = createBitmapFont({
+        ...sampleFontData(),
+        kerning: [
+          { amount: -4, left: basic, right: 65 },
+          { amount: -9, left: supplementary, right: 65 },
+        ],
+      });
+
+      expect(font.kerning.size).toBe(2);
+      expect(getBitmapFontKerning(font, basic, 65)).toBe(-4);
+      expect(getBitmapFontKerning(font, supplementary, 65)).toBe(-9);
+    });
+  }
+
+  it('keeps a supplementary-plane RIGHT glyph out of the left field', () => {
+    // The right codepoint occupied the low 16 bits, so anything above U+FFFF carried into the left
+    // glyph's field and reported another pair's adjustment.
+    const font = createBitmapFont({
+      ...sampleFontData(),
+      kerning: [
+        { amount: -3, left: 65, right: 0x10041 },
+        { amount: -7, left: 66, right: 0x41 },
+      ],
+    });
+
+    expect(getBitmapFontKerning(font, 65, 0x10041)).toBe(-3);
+    expect(getBitmapFontKerning(font, 66, 0x41)).toBe(-7);
+  });
+
+  it('addresses the whole Unicode range up to its last codepoint', () => {
+    const font = createBitmapFont({
+      ...sampleFontData(),
+      kerning: [{ amount: -5, left: 0x10ffff, right: 0x10ffff }],
+    });
+
+    // The largest key this packing produces; still an exact integer well inside the 2^53 range.
+    expect(getBitmapFontKerning(font, 0x10ffff, 0x10ffff)).toBe(-5);
+    expect(Number.isSafeInteger([...font.kerning.keys()][0])).toBe(true);
+  });
+
+  it('still returns 0 for a pair the font does not carry', () => {
+    // Guards the guard: the tests above would pass just as well against a packing that returned a
+    // distinct key for everything AND matched nothing.
+    const font = createBitmapFont(sampleFontData());
+
+    expect(getBitmapFontKerning(font, 0x10000, 65)).toBe(0);
+  });
+});
+
 describe('getBitmapFontMetrics', () => {
   it('returns the font line metrics', () => {
     const font = createBitmapFont(sampleFontData());
@@ -103,16 +167,6 @@ describe('getBitmapFontPage', () => {
   });
 });
 
-describe('getBitmapFontPages', () => {
-  it('returns the page-indexed atlas list', () => {
-    const page0 = createTextureAtlas();
-    const page1 = createTextureAtlas();
-    const font = createBitmapFont({ ...sampleFontData(), pages: [page0, page1] });
-
-    expect(getBitmapFontPages(font)).toEqual([page0, page1]);
-  });
-});
-
 function sampleFontData(): BitmapFontData {
   return {
     glyphs: [
@@ -125,3 +179,73 @@ function sampleFontData(): BitmapFontData {
     pages: [createTextureAtlas()],
   };
 }
+
+describe('getBitmapFontPages', () => {
+  it('returns the page-indexed atlas list', () => {
+    const page0 = createTextureAtlas();
+    const page1 = createTextureAtlas();
+    const font = createBitmapFont({ ...sampleFontData(), pages: [page0, page1] });
+
+    expect(getBitmapFontPages(font)).toEqual([page0, page1]);
+  });
+});
+
+describe('hasBitmapFontGlyph', () => {
+  it('reports coverage without the caller naming the null sentinel', () => {
+    const font = createBitmapFont(sampleFontData());
+
+    expect(hasBitmapFontGlyph(font, 65)).toBe(true);
+    expect(hasBitmapFontGlyph(font, 0x1f600)).toBe(false);
+  });
+
+  it('agrees with getBitmapFontGlyph on every codepoint it is asked about', () => {
+    const font = createBitmapFont(sampleFontData());
+
+    for (const codepoint of [65, 66, 86, 0, 67, 0x10000]) {
+      expect(hasBitmapFontGlyph(font, codepoint)).toBe(getBitmapFontGlyph(font, codepoint) !== null);
+    }
+  });
+});
+
+describe('setBitmapFontGuard', () => {
+  afterEach(() => {
+    setBitmapFontGuard(null);
+  });
+
+  it('reports the repair with the codepoint and the index that was out of range', () => {
+    // The seam, tested apart from the wording. enableBitmapFontGuards owns the message; this owns that
+    // the core calls out at all and hands over enough to identify the glyph — remove the call and the
+    // guard module has nothing to say however well written it is.
+    const calls: [string, number, number][] = [];
+    setBitmapFontGuard((reason, codepoint, page) => calls.push([reason, codepoint, page]));
+
+    createBitmapFont({
+      ...sampleFontData(),
+      glyphs: [{ advance: 9, bearingX: 1, bearingY: 8, codepoint: 0x41, height: 8, page: 7, width: 7, x: 0, y: 0 }],
+    });
+
+    expect(calls).toEqual([['page-out-of-range', 0x41, 7]]);
+  });
+
+  it('stays quiet for a glyph whose page exists', () => {
+    const calls: unknown[] = [];
+    setBitmapFontGuard((...args) => calls.push(args));
+
+    createBitmapFont(sampleFontData());
+
+    expect(calls).toEqual([]);
+  });
+
+  it('uninstalls the guard when passed null', () => {
+    const calls: unknown[] = [];
+    setBitmapFontGuard((...args) => calls.push(args));
+    setBitmapFontGuard(null);
+
+    createBitmapFont({
+      ...sampleFontData(),
+      glyphs: [{ advance: 9, bearingX: 1, bearingY: 8, codepoint: 0x41, height: 8, page: 7, width: 7, x: 0, y: 0 }],
+    });
+
+    expect(calls).toEqual([]);
+  });
+});

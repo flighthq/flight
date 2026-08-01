@@ -13,6 +13,9 @@
       "path": "../glyphatlas"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../texture"
     },
     {

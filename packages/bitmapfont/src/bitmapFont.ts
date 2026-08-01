@@ -1,7 +1,7 @@
 import type { BitmapFont, BitmapFontData, GlyphEntry, GlyphMetrics, TextureAtlas } from '@flighthq/types/contract';
 
 // Builds an immutable static bitmap font from plain data: the glyph list becomes a
-// `codepoint → GlyphEntry` map, the kerning pairs become a `(left << 16) | right → amount` map, and
+// `codepoint → GlyphEntry` map, the kerning pairs become a `left * 0x110000 + right → amount` map, and
 // the page-indexed atlas list, line metrics, and encoding (default `raster`) are carried as-is. Each
 // glyph's `page` (default 0) indexes `data.pages`; an out-of-range page is clamped to 0 so the glyph
 // is still placed (on the primary page) rather than dropped — a bad page index is a source-data
@@ -17,7 +17,7 @@ export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
       bearingX: glyph.bearingX,
       bearingY: glyph.bearingY,
       height: glyph.height,
-      page: page >= 0 && page < pageCount ? page : 0,
+      page: resolveBitmapFontGlyphPage(glyph.codepoint, page, pageCount),
       width: glyph.width,
       x: glyph.x,
       y: glyph.y,
@@ -72,9 +72,48 @@ export function getBitmapFontPages(font: Readonly<BitmapFont>): readonly Texture
   return font.pages;
 }
 
-// Packs an adjacent glyph pair into the single-number kerning-map key `(left << 16) | right`. Both
-// codepoints are assumed to lie in the Basic Multilingual Plane (< 0x10000); supplementary-plane
-// pairs are outside this table's addressable range.
-function packBitmapFontKerningKey(left: number, right: number): number {
-  return (left << 16) | right;
+// Whether the font carries a glyph for `codepoint`. Distinct from `getBitmapFontGlyph(...) !== null`
+// only in intent, but that intent is the point: a caller choosing a fallback font, or filtering a string
+// to what this font can draw, asks a question about coverage and should not have to name the sentinel to
+// get an answer. Cheap enough for a per-character loop — one map lookup, no allocation.
+export function hasBitmapFontGlyph(font: Readonly<BitmapFont>, codepoint: number): boolean {
+  return font.glyphs.has(codepoint);
 }
+
+// Installs the caller-facing guard invoked when `createBitmapFont` silently repairs source data. The
+// core carries the seam and never the message: `@flighthq/bitmapfont` has no dependency on
+// `@flighthq/log`, and the wording lives in the separately-importable `enableBitmapFontGuards`.
+export function setBitmapFontGuard(guard: ((reason: string, codepoint: number, page: number) => void) | null): void {
+  _guard = guard;
+}
+
+// The page a glyph is placed on. An out-of-range index is clamped to the primary page so the glyph is
+// still drawn — a bad page index is a source-data defect the font should survive rather than a reason to
+// lose a glyph — but the clamp is reported through the guard seam, because a silently relocated glyph
+// renders the wrong pixels and looks like a packing bug rather than a bad font file.
+function resolveBitmapFontGlyphPage(codepoint: number, page: number, pageCount: number): number {
+  if (page >= 0 && page < pageCount) return page;
+  _guard?.('page-out-of-range', codepoint, page);
+  return 0;
+}
+
+// Packs an adjacent glyph pair into the single-number kerning-map key `left * 0x110000 + right`.
+//
+// Multiplication rather than `(left << 16) | right`, because Unicode does not fit in 16 bits and the
+// shift silently ALIASED rather than failing. JavaScript's bitwise operators truncate to 32 bits, so a
+// supplementary-plane left glyph wrapped into another pair's key: U+10000 followed by 'A' produced the
+// same key as U+0000 followed by 'A', and U+1F600 the same as U+F600. A font with emoji kerning would
+// return the wrong adjustment for an unrelated BMP pair, which is worse than returning none.
+//
+// `0x110000` is the Unicode codepoint space (U+0000..U+10FFFF inclusive), so every pair maps to a
+// distinct key. The largest key is 0x10FFFF * 0x110000 + 0x10FFFF, about 1.24e12 — comfortably inside
+// the 2^53 range where a double holds every integer exactly, so this stays exact arithmetic and never
+// touches the 32-bit bitwise path. A C++ port would use a 64-bit integer key for the same reason.
+function packBitmapFontKerningKey(left: number, right: number): number {
+  return left * UNICODE_CODEPOINT_SPACE + right;
+}
+
+// U+0000..U+10FFFF inclusive — the stride that keeps one pair's key out of the next pair's range.
+const UNICODE_CODEPOINT_SPACE = 0x110000;
+
+let _guard: ((reason: string, codepoint: number, page: number) => void) | null = null;
