@@ -1,6 +1,7 @@
 export {
   computeTextureContainerLevels,
   detectTextureContainer,
+  explainTextureContainerParse,
   getTextureContainerLevelByteLength,
   parseAtf,
   parseBasis,

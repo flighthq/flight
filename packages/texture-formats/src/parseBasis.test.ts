@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseBasis } from './parseBasis';
+import { getBasisParseFailureReason, parseBasis } from './parseBasis';
 
 interface BasisSlice {
   imageIndex: number;
@@ -53,6 +53,12 @@ function buildBasis(opts: BasisOptions): Uint8Array {
   }
   return bytes;
 }
+
+describe('getBasisParseFailureReason', () => {
+  it('reports a truncated detected header', () => {
+    expect(getBasisParseFailureReason(new Uint8Array([0x73, 0x42]))).toBe('header-truncated');
+  });
+});
 
 describe('parseBasis', () => {
   it('parses a single-slice ETC1S image', () => {

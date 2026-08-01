@@ -140,10 +140,6 @@ Design calls to settle before building the affected entries:
 - Justify or remove the identity descriptor table
 - Guard module `enablePermissionGuards`
 
-### texture-formats (solid 68)
-
-- Add `explain*` diagnostics for parse rejection
-
 ### tilemap-formats (solid 68)
 
 - Model object `rotation` and `visible`
@@ -160,11 +156,6 @@ Design calls to settle before building the affected entries:
 - Deterministic MTV tie-break
 - `enableCollisionGuards` + `explainCollisionTest`
 - Aliasing tests for `out` manifolds
-
-### image-codec (solid 70)
-
-- Add `explain*` queries for the silent sentinels
-- Test the `decodeImagePremultiplied` auto-detect path
 
 ### assets (solid 72)
 
@@ -833,7 +824,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `spatial` · `textshaper` · `glyphatlas` · `image` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `spritesheet` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `spatial` · `textshaper` · `glyphatlas` · `image` · `motionpath` · `scene3d` · `texture-formats` · `timeline` · `tween` · `image-codec` · `picking` · `bitmap` · `particleemitter` · `spritesheet` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 

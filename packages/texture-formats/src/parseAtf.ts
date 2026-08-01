@@ -1,6 +1,7 @@
 import type { TextureContainer } from '@flighthq/types/contract';
 import type { TextureContainerFormat } from '@flighthq/types/contract';
 import type { TextureContainerLevel } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 
 import {
   createByteReader,
@@ -8,6 +9,12 @@ import {
   readByteReaderU24BigEndian,
   readByteReaderU32BigEndian,
 } from './byteReader';
+
+export function getAtfParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
+  const failure: ParseFailure = { reason: null };
+  const containers = parseAtfInternal(bytes, failure);
+  return containers === null ? failure.reason : null;
+}
 
 // Parses an ATF (Adobe Texture Format) container into an ARRAY of peer `TextureContainer`s, or returns
 // `null` if the bytes are not ATF, are truncated, or carry an unsupported ATF format code. ATF is the
@@ -37,11 +44,15 @@ import {
 // 4/5/13 with alpha); the raw-BGRA codes (0/1) and the JPEG-XR/LZMA-wrapped variants are unsupported and
 // return `null`.
 export function parseAtf(bytes: Readonly<Uint8Array>): TextureContainer[] | null {
-  if (!hasAtfSignature(bytes)) return null;
+  return parseAtfInternal(bytes);
+}
+
+function parseAtfInternal(bytes: Readonly<Uint8Array>, failure?: ParseFailure): TextureContainer[] | null {
+  if (!hasAtfSignature(bytes)) return reject(failure, 'container-unrecognized');
 
   const versioned = bytes[6] === atfNewVersionMarker;
   const headerOffset = versioned ? atfNewHeaderOffset : atfLegacyHeaderOffset;
-  if (bytes.byteLength < headerOffset + 4) return null;
+  if (bytes.byteLength < headerOffset + 4) return reject(failure, 'header-truncated');
 
   // `version` selects the block-length width (u24 for the legacy version-0 layout, u32 otherwise) and
   // whether an ETC2 slot follows the DXT/ETC1/PVRTC trio.
@@ -51,7 +62,7 @@ export function parseAtf(bytes: Readonly<Uint8Array>): TextureContainer[] | null
   // carries before walking any block.
   const lengthReader = createByteReader(bytes, versioned ? 8 : 3);
   const payloadLength = versioned ? readByteReaderU32BigEndian(lengthReader) : readByteReaderU24BigEndian(lengthReader);
-  if (headerOffset + payloadLength > bytes.byteLength) return null;
+  if (headerOffset + payloadLength > bytes.byteLength) return reject(failure, 'level-range-out-of-bounds');
 
   const typeFormatByte = bytes[headerOffset];
   const log2Width = bytes[headerOffset + 1];
@@ -60,9 +71,13 @@ export function parseAtf(bytes: Readonly<Uint8Array>): TextureContainer[] | null
 
   const formatCode = typeFormatByte & atfFormatCodeMask;
   const alpha = atfAlphaFormatCodes.has(formatCode);
-  if (!alpha && !atfOpaqueFormatCodes.has(formatCode)) return null; // raw-BGRA / JPEG-XR / LZMA — unsupported
-  if (log2Width > atfMaxLog2Dimension || log2Height > atfMaxLog2Dimension) return null;
-  if (mipCount < 1) return null;
+  if (!alpha && !atfOpaqueFormatCodes.has(formatCode)) {
+    return reject(failure, 'format-unsupported'); // raw-BGRA / JPEG-XR / LZMA — unsupported
+  }
+  if (log2Width > atfMaxLog2Dimension || log2Height > atfMaxLog2Dimension) {
+    return reject(failure, 'structure-invalid');
+  }
+  if (mipCount < 1) return reject(failure, 'structure-invalid');
 
   const cube = (typeFormatByte & atfCubeFlag) !== 0;
   const faces = cube ? 6 : 1;
@@ -83,9 +98,9 @@ export function parseAtf(bytes: Readonly<Uint8Array>): TextureContainer[] | null
   for (let side = 0; side < faces; side += 1) {
     for (let level = 0; level < mipCount; level += 1) {
       for (let slot = 0; slot < slotCount; slot += 1) {
-        if (!hasByteReaderBytes(reader, lengthWidth)) return null;
+        if (!hasByteReaderBytes(reader, lengthWidth)) return reject(failure, 'level-range-out-of-bounds');
         const blockLength = version === 0 ? readByteReaderU24BigEndian(reader) : readByteReaderU32BigEndian(reader);
-        if (!hasByteReaderBytes(reader, blockLength)) return null;
+        if (!hasByteReaderBytes(reader, blockLength)) return reject(failure, 'level-range-out-of-bounds');
         if (blockLength === 0) continue; // absent encoding for this (side, level)
         const byteOffset = reader.offset;
         reader.offset += blockLength;
@@ -119,13 +134,22 @@ export function parseAtf(bytes: Readonly<Uint8Array>): TextureContainer[] | null
       width,
     });
   }
-  if (containers.length === 0) return null;
+  if (containers.length === 0) return reject(failure, 'structure-invalid');
   return containers;
 }
 
+interface ParseFailure {
+  reason: TextureContainerParseFailureReason | null;
+}
+
+function reject(failure: ParseFailure | undefined, reason: TextureContainerParseFailureReason): null {
+  if (failure !== undefined) failure.reason = reason;
+  return null;
+}
+
 function hasAtfSignature(bytes: Readonly<Uint8Array>): boolean {
-  // 'ATF' — 0x41 0x54 0x46. Seven bytes is the shortest header that can carry the version marker at 6.
-  return bytes.byteLength >= 7 && bytes[0] === 0x41 && bytes[1] === 0x54 && bytes[2] === 0x46;
+  // 'ATF' — 0x41 0x54 0x46. Header length is validated separately after container detection.
+  return bytes.byteLength >= 3 && bytes[0] === 0x41 && bytes[1] === 0x54 && bytes[2] === 0x46;
 }
 
 const atfCubeFlag = 0x80;

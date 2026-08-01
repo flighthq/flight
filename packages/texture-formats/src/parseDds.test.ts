@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseDds } from './parseDds';
+import { getDdsParseFailureReason, parseDds } from './parseDds';
 
 function fourCC(text: string): number {
   return (
@@ -65,6 +65,12 @@ function buildDds(opts: DdsOptions): Uint8Array {
   }
   return bytes;
 }
+
+describe('getDdsParseFailureReason', () => {
+  it('reports a truncated detected header', () => {
+    expect(getDdsParseFailureReason(new Uint8Array([0x44, 0x44, 0x53, 0x20]))).toBe('header-truncated');
+  });
+});
 
 describe('parseDds', () => {
   it('parses a single-mip BC1 (DXT1) texture', () => {

@@ -1,6 +1,7 @@
 import type { TextureContainer } from '@flighthq/types/contract';
 import type { TextureContainerFormat } from '@flighthq/types/contract';
 import type { TextureContainerLevel } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 import type { TextureContainerSupercompression } from '@flighthq/types/contract';
 
 import {
@@ -10,6 +11,12 @@ import {
   readByteReaderU64,
   skipByteReader,
 } from './byteReader';
+
+export function getKtx2ParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
+  const failure: ParseFailure = { reason: null };
+  const container = parseKtx2Internal(bytes, failure);
+  return container === null ? failure.reason : null;
+}
 
 // Parses a KTX2 container (Khronos KTX 2.0) into a `TextureContainer`, or returns `null` if the bytes
 // are not KTX2, are truncated, or carry a `vkFormat`/supercompression this package does not map yet.
@@ -24,10 +31,14 @@ import {
 // sub-images and normalized from KTX2's mip-major file order into TextureContainer's canonical
 // layer → face → mip order.
 export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null {
-  if (!hasKtx2Identifier(bytes)) return null;
+  return parseKtx2Internal(bytes);
+}
+
+function parseKtx2Internal(bytes: Readonly<Uint8Array>, failure?: ParseFailure): TextureContainer | null {
+  if (!hasKtx2Identifier(bytes)) return reject(failure, 'container-unrecognized');
 
   // 12 id + 68 header/index (17 u32 = 68 bytes) before the level index at offset 80.
-  if (bytes.byteLength < ktx2LevelIndexOffset) return null;
+  if (bytes.byteLength < ktx2LevelIndexOffset) return reject(failure, 'header-truncated');
 
   const reader = createByteReader(bytes, 12);
   const vkFormat = readByteReaderU32(reader);
@@ -42,10 +53,10 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
   // dfd/kvd/sgd index (2 u32 + 2 u32 + 2 u64 = 32 bytes) — not needed to locate levels.
 
   const supercompression = ktx2Supercompression[supercompressionScheme];
-  if (supercompression === undefined) return null;
+  if (supercompression === undefined) return reject(failure, 'format-unsupported');
 
   const format = mapKtx2Format(vkFormat, supercompressionScheme);
-  if (format === null) return null;
+  if (format === null) return reject(failure, 'format-unsupported');
 
   const width = Math.max(1, pixelWidth);
   const height = Math.max(1, pixelHeight);
@@ -55,7 +66,7 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
   const levelCountPresent = Math.max(1, levelCount);
 
   reader.offset = ktx2LevelIndexOffset;
-  if (!hasByteReaderBytes(reader, levelCountPresent * 24)) return null;
+  if (!hasByteReaderBytes(reader, levelCountPresent * 24)) return reject(failure, 'level-range-out-of-bounds');
 
   const fileOrderLevels: TextureContainerLevel[] = [];
   const imagesPerLevel = layers * faces;
@@ -63,7 +74,7 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
     const byteOffset = readByteReaderU64(reader);
     const byteLength = readByteReaderU64(reader);
     skipByteReader(reader, 8); // uncompressedByteLength
-    if (byteOffset + byteLength > bytes.byteLength) return null;
+    if (byteOffset + byteLength > bytes.byteLength) return reject(failure, 'level-range-out-of-bounds');
 
     const mipWidth = Math.max(1, width >> mip);
     const mipHeight = Math.max(1, height >> mip);
@@ -109,6 +120,15 @@ export function parseKtx2(bytes: Readonly<Uint8Array>): TextureContainer | null 
     supercompression,
     width,
   };
+}
+
+interface ParseFailure {
+  reason: TextureContainerParseFailureReason | null;
+}
+
+function reject(failure: ParseFailure | undefined, reason: TextureContainerParseFailureReason): null {
+  if (failure !== undefined) failure.reason = reason;
+  return null;
 }
 
 function hasKtx2Identifier(bytes: Readonly<Uint8Array>): boolean {

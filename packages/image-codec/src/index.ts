@@ -5,6 +5,8 @@ export {
   decodeImagePremultiplied,
   detectImageMimeType,
   encodeImage,
+  explainImageDecodeFailure,
+  explainImageEncodeFailure,
   getImageDecoder,
   getImageDecoderMimeTypes,
   getImageEncoder,

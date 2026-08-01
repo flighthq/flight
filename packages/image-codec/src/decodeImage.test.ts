@@ -53,7 +53,14 @@ describe('decodeImagePremultiplied', () => {
       fakeDecoded(),
     );
     registerImageDecoder('image/png', decoder);
-    await decodeImagePremultiplied(pngBytes);
+    await decodeImagePremultiplied(pngBytes, 'image/png');
+    expect(decoder).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
+  });
+
+  it('auto-detects the MIME type when omitted', async () => {
+    const decoder = vi.fn(async () => fakeDecoded());
+    registerImageDecoder('image/png', decoder);
+    expect(await decodeImagePremultiplied(pngBytes)).toEqual(fakeDecoded());
     expect(decoder).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
   });
 
