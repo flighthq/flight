@@ -30,6 +30,28 @@ describe('formatStatusLine', () => {
   });
 });
 
+describe('formatStatusLine changed tone', () => {
+  it('gives a drifted hash a DIFFERENT glyph from a clean pass', () => {
+    // The whole point: a reader scanning a wall of ticks must be able to see this one without reading
+    // the message. Same-glyph-different-text is what let a changed hash read as unremarkable.
+    const clean = strip(formatStatusLine('pass', 'canvas', 6, ''));
+    const drifted = strip(formatStatusLine('changed', 'canvas', 6, 'changed (hash differs from baseline)'));
+    expect(clean).toContain('✓');
+    expect(drifted).not.toContain('✓');
+    expect(drifted).toContain('±');
+  });
+
+  it('keeps the drift message visible rather than dimming it away like a routine pass', () => {
+    expect(strip(formatStatusLine('changed', 'canvas', 6, 'changed (hash differs from baseline)'))).toContain(
+      'changed (hash differs from baseline)',
+    );
+  });
+
+  it('does not borrow the failure glyph, since a changed hash is not a failure', () => {
+    expect(strip(formatStatusLine('changed', 'canvas', 6, 'x'))).not.toContain('✗');
+  });
+});
+
 describe('formatSummaryCount', () => {
   it('formats a value/label pair', () => {
     expect(strip(formatSummaryCount(3, 'captured', 'pass'))).toBe('3 captured');

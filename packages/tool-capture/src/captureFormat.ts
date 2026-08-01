@@ -3,7 +3,11 @@
 
 import pc from 'picocolors';
 
-export type DetailTone = 'pass' | 'fail' | 'skip' | 'muted';
+// 'changed' is a PASS that still carries news: the capture succeeded, so it must not read as a failure,
+// but it must not wear the same tick a clean match wears either. A reader scanning a wall of ✓ for
+// trouble will not find a difference encoded only in the message text, which is how a drifted hash kept
+// reading as an unremarkable green line.
+export type DetailTone = 'pass' | 'changed' | 'fail' | 'skip' | 'muted';
 
 // An indented detail line under an entry's [N/M] header: a status glyph, the renderer/check label
 // padded to a shared column width, then an optional message. Low-level layout — the caller has already
@@ -49,9 +53,10 @@ export function formatSummaryLine(failed: boolean, counts: readonly string[]): s
   return `${verdict}   ${counts.join('   ')}`;
 }
 
-const TONE_GLYPH: Record<DetailTone, string> = { pass: '✓', fail: '✗', skip: '⊘', muted: '·' };
+const TONE_GLYPH: Record<DetailTone, string> = { pass: '✓', changed: '±', fail: '✗', skip: '⊘', muted: '·' };
 const TONE_PAINT: Record<DetailTone, (s: string) => string> = {
   pass: pc.green,
+  changed: pc.yellow,
   fail: pc.red,
   skip: pc.yellow,
   muted: pc.dim,

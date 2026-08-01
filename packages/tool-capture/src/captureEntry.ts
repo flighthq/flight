@@ -13,14 +13,13 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import type { BrowserContext, Page } from '@playwright/test';
-import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
-import { formatDetailLine, formatStatusLine } from './captureFormat.js';
+import { formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
@@ -556,21 +555,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
 
       if (changed === true) anyChanged = true;
-      // A successful capture whose hash drifted is still a pass (it rendered), but the drift is the one
-      // thing worth seeing — green renderer, yellow note — so it does not use the dimmed pass message.
-      if (changed === true) {
-        console.log(
-          formatDetailLine(
-            pc.green('✓'),
-            label(renderer),
-            labelWidth,
-            pc.yellow('changed (hash differs from baseline)'),
-            pc.green,
-          ),
-        );
-      } else {
-        console.log(statusLine('pass', renderer, ''));
-      }
+      // A successful capture whose hash drifted is still a PASS — it rendered, and a smoke leg captures
+      // rather than compares, so this must not fail the run. What changes is only the GLYPH: it carries
+      // the strongest signal on the line rather than the capture outcome alone, because a drift encoded
+      // only in the message text reads as an ordinary green tick to anyone scanning for trouble.
+      console.log(
+        changed === true
+          ? statusLine('changed', renderer, 'changed (hash differs from baseline)')
+          : statusLine('pass', renderer, ''),
+      );
 
       const status: CaptureStatus = {
         protocolVersion: CAPTURE_PROTOCOL_VERSION,
