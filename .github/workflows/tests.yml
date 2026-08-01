@@ -224,7 +224,22 @@ jobs:
       # for the smoke check (which resolves packages from source via the dev server).
       - run: npm run build
       - run: npx playwright install --with-deps chromium
+      # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
+      #
+      # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism
+      # minus headroom, capped) puts six concurrent WebGPU devices on a single software GPU. The legs
+      # then overshoot the per-wait budget by ~26% (18901ms against 15000ms) — a contention signature,
+      # not a slow scene, since the same scenes verify in ~4-6s when they are not queueing for the
+      # adapter. Two workers keeps the runner busy without stacking devices on it.
+      #
+      # Wait budget: raised because the measured overshoots (18901ms, 17330ms) sit just past the
+      # default, so the default leaves no room for a runner that is merely having a bad minute. This
+      # buys headroom for contention; it does not paper over a stall, which the reason text still
+      # distinguishes by reporting how long the wait actually had.
       - run: npm run ${{ matrix.check }}
+        env:
+          FLIGHT_CAPTURE_WORKER_COUNT: 2
+          FLIGHT_CAPTURE_TIMEOUT_MS: 45000
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
