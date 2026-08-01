@@ -1,7 +1,8 @@
-import { getBitmapFontMetrics } from '@flighthq/bitmapfont/contract';
+import { getBitmapFontMetrics, unpackBitmapFontKerningKey } from '@flighthq/bitmapfont/contract';
 import type {
   BitmapFont,
   BitmapFontCharRecord,
+  BitmapFontKerningPair,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
   BitmapFontParseOptions,
@@ -54,9 +55,8 @@ export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
   lines.push(`kernings count=${kernKeys.length}`);
   for (const key of kernKeys) {
     const amount = font.kerning.get(key) as number;
-    const first = key >>> 16;
-    const second = key & 0xffff;
-    lines.push(`kerning first=${first} second=${second} amount=${amount}`);
+    unpackBitmapFontKerningKey(key, _kerningPair);
+    lines.push(`kerning first=${_kerningPair.left} second=${_kerningPair.right} amount=${amount}`);
   }
 
   return lines.join('\n') + '\n';
@@ -160,3 +160,7 @@ function readFntNumber(value: string | undefined): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
+
+// Scratch target for the kerning-key unpack in `formatBitmapFontFnt`'s emit loop — read and stringified
+// before the next iteration overwrites it, so it never outlives one line.
+const _kerningPair: BitmapFontKerningPair = { left: 0, right: 0 };

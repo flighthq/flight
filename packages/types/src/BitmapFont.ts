@@ -14,8 +14,9 @@ export type BitmapFontEncoding = 'msdf' | 'raster' | 'sdf';
 // `pages.length === 1`. It is the static implementation of the `GlyphSource` seam (see
 // `createGlyphSourceFromBitmapFont`), the sibling of the dynamic `@flighthq/glyphatlas`. Build one
 // with `createBitmapFont`; nothing mutates it after creation. `kerning` is keyed by the packed pair
-// key `(left << 16) | right` (both codepoints in the Basic Multilingual Plane), holding the
-// horizontal adjustment in pixels.
+// key `left * 0x110000 + right` — the full Unicode codepoint space, not a 16-bit shift — holding the
+// horizontal adjustment in pixels. Build and read that key with `packBitmapFontKerningKey` /
+// `unpackBitmapFontKerningKey`; the arithmetic is theirs to own, not a callsite's to re-derive.
 export interface BitmapFont {
   encoding: BitmapFontEncoding;
   glyphs: Map<number, GlyphEntry>;
@@ -55,9 +56,17 @@ export interface BitmapFontGlyphData {
 
 // One kerning pair in a `BitmapFontData` construction input: the horizontal `amount` (pixels) applied
 // between an adjacent `left`/`right` codepoint pair. `createBitmapFont` packs each into the font's
-// kerning map under the key `(left << 16) | right`.
+// kerning map under the key `packBitmapFontKerningKey(left, right)`.
 export interface BitmapFontKerningData {
   amount: number;
+  left: number;
+  right: number;
+}
+
+// The adjacent glyph pair a kerning key encodes — the `out` target `unpackBitmapFontKerningKey` writes
+// the two codepoints into, so reading a font's kerning keys back allocates nothing per pair. Carries no
+// `amount`: the key identifies the pair, the map value carries the adjustment.
+export interface BitmapFontKerningPair {
   left: number;
   right: number;
 }

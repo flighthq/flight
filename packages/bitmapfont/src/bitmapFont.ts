@@ -1,4 +1,11 @@
-import type { BitmapFont, BitmapFontData, GlyphEntry, GlyphMetrics, TextureAtlas } from '@flighthq/types/contract';
+import type {
+  BitmapFont,
+  BitmapFontData,
+  BitmapFontKerningPair,
+  GlyphEntry,
+  GlyphMetrics,
+  TextureAtlas,
+} from '@flighthq/types/contract';
 
 // Builds an immutable static bitmap font from plain data: the glyph list becomes a
 // `codepoint → GlyphEntry` map, the kerning pairs become a `left * 0x110000 + right → amount` map, and
@@ -80,24 +87,8 @@ export function hasBitmapFontGlyph(font: Readonly<BitmapFont>, codepoint: number
   return font.glyphs.has(codepoint);
 }
 
-// Installs the caller-facing guard invoked when `createBitmapFont` silently repairs source data. The
-// core carries the seam and never the message: `@flighthq/bitmapfont` has no dependency on
-// `@flighthq/log`, and the wording lives in the separately-importable `enableBitmapFontGuards`.
-export function setBitmapFontGuard(guard: ((reason: string, codepoint: number, page: number) => void) | null): void {
-  _guard = guard;
-}
-
-// The page a glyph is placed on. An out-of-range index is clamped to the primary page so the glyph is
-// still drawn — a bad page index is a source-data defect the font should survive rather than a reason to
-// lose a glyph — but the clamp is reported through the guard seam, because a silently relocated glyph
-// renders the wrong pixels and looks like a packing bug rather than a bad font file.
-function resolveBitmapFontGlyphPage(codepoint: number, page: number, pageCount: number): number {
-  if (page >= 0 && page < pageCount) return page;
-  _guard?.('page-out-of-range', codepoint, page);
-  return 0;
-}
-
-// Packs an adjacent glyph pair into the single-number kerning-map key `left * 0x110000 + right`.
+// Packs an adjacent glyph pair into the single-number kerning-map key `left * 0x110000 + right`. The
+// inverse is `unpackBitmapFontKerningKey`; the two are one primitive and must move together.
 //
 // Multiplication rather than `(left << 16) | right`, because Unicode does not fit in 16 bits and the
 // shift silently ALIASED rather than failing. JavaScript's bitwise operators truncate to 32 bits, so a
@@ -109,8 +100,38 @@ function resolveBitmapFontGlyphPage(codepoint: number, page: number, pageCount: 
 // distinct key. The largest key is 0x10FFFF * 0x110000 + 0x10FFFF, about 1.24e12 — comfortably inside
 // the 2^53 range where a double holds every integer exactly, so this stays exact arithmetic and never
 // touches the 32-bit bitwise path. A C++ port would use a 64-bit integer key for the same reason.
-function packBitmapFontKerningKey(left: number, right: number): number {
+export function packBitmapFontKerningKey(left: number, right: number): number {
   return left * UNICODE_CODEPOINT_SPACE + right;
+}
+
+// Installs the caller-facing guard invoked when `createBitmapFont` silently repairs source data. The
+// core carries the seam and never the message: `@flighthq/bitmapfont` has no dependency on
+// `@flighthq/log`, and the wording lives in the separately-importable `enableBitmapFontGuards`.
+export function setBitmapFontGuard(guard: ((reason: string, codepoint: number, page: number) => void) | null): void {
+  _guard = guard;
+}
+
+// Recovers the adjacent glyph pair a kerning key encodes, into `out`. The exact inverse of
+// `packBitmapFontKerningKey`, and the reason a codec walking `font.kerning.keys()` never hand-rolls the
+// arithmetic: a `>>> 16` / `& 0xffff` inverse reads a 0x110000-radix key as a 16-bit one, emitting
+// garbage codepoints for ordinary BMP pairs and truncating every key past 2^32 outright.
+//
+// Division and remainder, not shifts, for the same exactness reason the pack multiplies — the key
+// leaves the 32-bit range well inside the supported codepoint space.
+export function unpackBitmapFontKerningKey(key: number, out: BitmapFontKerningPair): BitmapFontKerningPair {
+  out.left = Math.floor(key / UNICODE_CODEPOINT_SPACE);
+  out.right = key % UNICODE_CODEPOINT_SPACE;
+  return out;
+}
+
+// The page a glyph is placed on. An out-of-range index is clamped to the primary page so the glyph is
+// still drawn — a bad page index is a source-data defect the font should survive rather than a reason to
+// lose a glyph — but the clamp is reported through the guard seam, because a silently relocated glyph
+// renders the wrong pixels and looks like a packing bug rather than a bad font file.
+function resolveBitmapFontGlyphPage(codepoint: number, page: number, pageCount: number): number {
+  if (page >= 0 && page < pageCount) return page;
+  _guard?.('page-out-of-range', codepoint, page);
+  return 0;
 }
 
 // U+0000..U+10FFFF inclusive — the stride that keeps one pair's key out of the next pair's range.
