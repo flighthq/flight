@@ -86,9 +86,12 @@ The frame is an explicit sequence:
   `height = contentHeight + top + bottom`.
 - The caller draws the content **offset by `(padding.left, padding.top)`** inside that grown target, so the
   padded band is empty space for the effect to expand into.
-- **No runner insets by its own padding.** No effect runner on any backend reads padding at all; it is a
-  caller-side allocation concern, consumed before the runner is invoked. A runner reads the whole source
-  texture and writes the whole destination.
+- **No runner insets by its own padding.** No effect runner on any backend consumes `RenderEffectPadding`
+  at all; it is a caller-side allocation concern, resolved before the runner is invoked. A runner reads the
+  whole source texture and writes the whole destination. (Grepping `padding` in `effects-gl`/`-wgpu`/
+  `-canvas` does hit matches, but every one is either GPU **uniform-buffer alignment** padding — an
+  unrelated meaning — or a registry comment stating the registrar installs *no* padding companion. Neither
+  is an inset.)
 - Padding is **per-effect and summed per side across a chain** — `computeRenderEffectPadding` accumulates
   each member's directional padding (`left += …`), it does not take a maximum. A pointwise effect
   contributes zero.
