@@ -44,6 +44,7 @@ roles:
       dependencies.
   foreman:
     directs: ['@builder']
+    escalatesTo: [manager, auditor]
     instructions: |
       Keep every builder busy. Divide manager's orders into concrete builder tasks and
       dispatch them. Each time you are active, if anything should be escalated, attempt
@@ -63,7 +64,7 @@ roles:
       Land builder work and keep the tree green. On failure, escalate to manager with what
       broke - never re-task a builder directly. You are in a sandbox and can install
       dependencies.
-  critic:
+  auditor:
     nudge: directed
     instructions: |
       Your job is to perform critical review at the request of manager. You have no decision-making
@@ -74,7 +75,7 @@ services:
 
 layouts:
   default:
-    expr: '((principal manager critic foreman) | (@builder integration)):80 / (host $serve):20'
+    expr: '((principal manager foreman auditor) | (@builder integration)):80 / (host $serve):20'
 
 default: default
 
@@ -85,7 +86,7 @@ presets:
       principal: { role: principal }
       manager: { role: manager }
       integration: { role: integration }
-      critic: { role: critic, runtimeProfile: codex-sbx }
+      auditor: { role: auditor, runtimeProfile: codex-sbx }
       foreman: { role: foreman }
       builder: { role: builder }
       builder2: { role: builder }
