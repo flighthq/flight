@@ -1,5 +1,86 @@
-# Flight Codebase Map
+# The `agents/` Library
 
-The canonical codebase map now lives at the repository root: **[`AGENTS.md`](../AGENTS.md)** — read it there.
+The codebase map is **[`AGENTS.md`](../AGENTS.md)** at the repository root — read that first; it is the
+one file every agent reads in full. This file is the **index of everything the map does not carry**.
 
-This file remains as a pointer so existing references to `agents/index.md` still resolve. The `agents/` directory continues to hold the detailed reference docs (conventions, package cells, plans) that the map links to.
+The split is deliberate. `AGENTS.md` is read in full by every agent on every task — the one fixing a
+single bug, the one dividing work among builders, the one integrating, the one setting direction. So it
+holds only what an agent could violate _without knowing it had entered the domain_. Everything else lives
+here and is read on purpose: material for one role, background behind a decision, and the current state
+of work in flight.
+
+**Status lives in the doc, not in the index.** Each document below states its own status in its own
+header, where the reader who opens it will see it. Do not copy that status into this file or into
+`AGENTS.md` — a second copy goes stale silently and is then trusted. Where a design is unratified in a
+way that changes whether an agent may build on it, `AGENTS.md` says so with the stable word
+`unratified` and nothing more specific.
+
+## Reached from a rule in the map
+
+These are linked at the point of the rule they serve, which is the placement that matters. Listed here
+only so the library is complete.
+
+**Conventions** (`agents/conventions/`) — [commits](conventions/commits.md),
+[diagnostics](conventions/diagnostics.md), [export lanes](conventions/export-lanes.md),
+[file naming & type home](conventions/file-naming.md), [invalidation](conventions/invalidation.md),
+[naming](conventions/naming.md), [npm scripts](conventions/npm-scripts.md),
+[testing](conventions/testing.md), [types layout & kind identity](conventions/types-layout.md).
+
+**Rule references** — [anti-goals](anti-goals.md), [bundle size](bundle-size.md),
+[commands](commands.md), [feature lookup](feature-lookup.md), [packaging](packaging.md),
+[portability substrate](portability.md), [registration model](registration-model.md).
+
+**Package knowledge** — [package cells](packages/index.md) (the per-package
+charter / review / assessment / status architecture), [catalog](packages/catalog.md),
+[map](packages/map.md), [register](packages/register.md),
+[structural forks](packages/structural-forks.md).
+
+## Architecture records
+
+The design behind a subsystem, read before changing its shape. The ones with a live trigger — "before
+touching X" — are also listed in `AGENTS.md`; the rest are background you reach from here.
+
+- [3D materials & lighting](3d-materials-architecture.md) — the canonical 3D material and light model.
+- [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
+- [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
+- [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
+- [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
+- [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
+- [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
+- [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
+- [read integrity](read-integrity.md) — the axes a format reader must hold.
+- [render architecture](render-architecture.md) — the render and scene architecture in full.
+- [render backend support](render-backend-support.md) — the narrative behind the generated [support matrix](support-matrix.md).
+- [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
+- [skeleton2d animation model](skeleton2d-animation-model.md) — slot timelines and where constraints live.
+- [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
+- [texture / surface / resource](texture-surface-resource.md) — the boundary between the three.
+- [basis transcode](basis-transcode.md) — Basis-Universal texture transcode.
+- [wgpu 3D parity spec](wgpu-3d-parity-spec.md) — each item cites the GL file it mirrors.
+
+## Plans, reviews, and direction
+
+Material for a direction-setting or planning role. A builder scoped to one package does not need these,
+which is why they are not in the map.
+
+- [examples plan](examples-plan.md) — the planned example set and implementation order.
+- [quality plan](quality-plan.md) — API maturity verification, unit vs functional test guidance.
+- [maturity gaps](maturity-gaps.md) — production-readiness gaps across the SDK.
+- [port readiness](port-readiness.md) — the roadmap toward the C/C++ port (draft).
+- [review work items](review-work-items.md) — outstanding items raised by review passes.
+- [sdk blocking issues](sdk-blocking-issues.md) — what blocks AwayJS example parity.
+- [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
+- [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
+- [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
+- [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
+- [breadth synthesis](breadth-synthesis.md) — convergences across the four breadth reviews:
+  [adjacent content](breadth-adjacent-content.md), [platform variance](breadth-platform-variance.md),
+  [cloud & distributed](breadth-cloud-distributed.md), [domain deepening](breadth-domain-deepening.md).
+
+## Generated views — do not edit, and do not commit what is ignored
+
+- [support matrix](support-matrix.md) — what renders on which backend, generated from
+  `functional/baselines/` ground truth by `npm run support`. Gated by `support:check`.
+- `packages/TODO.md` — the work index, weakest first. **Gitignored**: run
+  `node agents/packages/todo.mjs` to write it, then read only the named cell. It is a pure view over the
+  cells, so generate it rather than merging it.
