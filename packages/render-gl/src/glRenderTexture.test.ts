@@ -6,6 +6,7 @@ import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
 import { getGlRenderStateRuntime } from './glRenderState';
 import {
   bindGlRenderTexture,
+  clearGlRenderTexture,
   destroyGlRenderTexture,
   explainGlRenderTexture,
   getGlRenderTextureColorSpace,
@@ -36,6 +37,19 @@ describe('bindGlRenderTexture', () => {
     const { state } = createRenderTextureState();
     expect(bindGlRenderTexture(state, createRenderTexture({ height: 8, width: 8 }))).toBeNull();
     expect(getGlRenderStateRuntime(state).currentTexture).toBeNull();
+  });
+});
+
+describe('clearGlRenderTexture', () => {
+  it('clears and publishes the hidden target through the RenderTexture handle', () => {
+    const { state, gl } = createRenderTextureState();
+    const renderTexture = createRenderTexture({ height: 8, width: 8 });
+
+    clearGlRenderTexture(state, renderTexture);
+
+    expect(gl.clear).toHaveBeenCalledWith(gl.COLOR_BUFFER_BIT);
+    expect(isGlRenderTextureReady(state, renderTexture)).toBe(true);
+    expect(renderTexture.version).toBe(1);
   });
 });
 

@@ -1,12 +1,17 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-07-22
-by: review3
+updated: 2026-07-31
+by: builder4
 ---
 
 # render-gl — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-31 — explicit RenderTexture clearing
+
+- Added caller-owned transparent clearing for the public RenderTexture workflow.
+- Recorded wart (no action): `drawGlFullscreenPass` sets its blend equation and factors twice but never owns the BLEND enable bit; changing that ownership affects its shared call surface and needs separate design and reproduction.
 
 ## 2026-07-22 — compressed texture shape boundary
 

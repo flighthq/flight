@@ -31,6 +31,8 @@ export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect
 //   complete              every requested effect has a runner; the destination gets written
 //   no-effects            an empty chain — a legitimate no-op, NOT a registration miss
 //   source-unavailable    the source RenderTexture has no realized GL target yet
+//   stale-destination     the call cannot run and a previously published destination therefore keeps
+//                         pixels from an older application instead of receiving a replacement
 //   unregistered-effects  effects were requested and NONE has a runner; the call returns false and
 //                         DEST IS NEVER WRITTEN, so a sprite sampling it reads a never-written texture
 //   partial-registration  some effects have runners and some do not; the call succeeds while SILENTLY
@@ -43,6 +45,7 @@ export type GlRenderEffectApplicationStatus =
   | 'no-effects'
   | 'partial-registration'
   | 'source-unavailable'
+  | 'stale-destination'
   | 'unregistered-effects';
 
 export interface GlRenderEffectApplicationExplanation {

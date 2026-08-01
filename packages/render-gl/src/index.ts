@@ -4,6 +4,7 @@ export {
   bindGlImageResourceTexture,
   bindGlRenderTexture,
   bindGlTexture,
+  clearGlRenderTexture,
   copyGlRenderStateRegistrations,
   createGlCanvasElement,
   createExternalGlTexture,

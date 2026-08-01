@@ -10,6 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { applyGlSamplerState } from './glDraw';
+import { clearGlRenderTarget } from './glFullscreenPass';
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket';
@@ -40,6 +41,18 @@ export function bindGlRenderTexture(
   runtime.currentTextureStraightAlpha = false;
   applyGlSamplerState(state, runtime, texture, sampler ?? renderTexture.sampler);
   return texture;
+}
+
+/** Clears a RenderTexture to transparent, publishes it as ready, and restores the caller's GL state. */
+export function clearGlRenderTexture(state: GlRenderState, renderTexture: RenderTexture): void {
+  writeGlRenderTextureTarget(state, renderTexture, (target) => {
+    pushGlRenderState(state);
+    try {
+      clearGlRenderTarget(state, target);
+    } finally {
+      popGlRenderState(state);
+    }
+  });
 }
 
 export function destroyGlRenderTexture(state: GlRenderState, renderTexture: Readonly<RenderTexture>): void {

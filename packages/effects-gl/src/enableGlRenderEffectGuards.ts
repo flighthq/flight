@@ -28,6 +28,8 @@ function getGlRenderEffectApplicationMessage(explanation: Readonly<GlRenderEffec
       return `applyGlRenderEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerGlRenderEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
     case 'source-unavailable':
       return 'applyGlRenderEffectsToRenderTexture: the source render Texture has no realized GL target, so the call returned false and the destination was NOT written — render into the source before applying effects';
+    case 'stale-destination':
+      return 'applyGlRenderEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
     default:
       return `applyGlRenderEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerGlRenderEffect(state, kind, runner)`;
   }

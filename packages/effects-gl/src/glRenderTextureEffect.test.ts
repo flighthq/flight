@@ -1,5 +1,6 @@
 import {
   acquireGlRenderTexture,
+  clearGlRenderTexture,
   copyGlRenderStateRegistrations,
   createGlOffscreenRenderState,
   createGlRenderState,
@@ -75,6 +76,50 @@ describe('applyGlRenderEffectsToRenderTexture', () => {
     );
     expect(isGlRenderTextureReady(state, dest)).toBe(false);
   });
+
+  it('is byte-stable across constant-input frames only when reused destinations are cleared', () => {
+    const state = createState();
+    const pool = createGlRenderTexturePool();
+    const source = acquireGlRenderTexture(state, pool, { width: 1, height: 1 });
+    const dest = acquireGlRenderTexture(state, pool, { width: 1, height: 1 });
+    const scratch = acquireGlRenderTexture(state, pool, { width: 1, height: 1 });
+    const constantSource = Uint8Array.from([64, 32, 16, 128]);
+    let destinationPixel: Uint8Array = new Uint8Array(4);
+    let clearObserved = false;
+    vi.mocked(state.gl.clear).mockImplementation(() => {
+      clearObserved = true;
+    });
+    registerGlRenderEffect(state, 'test.constant-frame', () => {
+      if (clearObserved) {
+        destinationPixel.fill(0);
+        clearObserved = false;
+      }
+      destinationPixel = compositePremultipliedPixel(destinationPixel, constantSource);
+    });
+    writeGlRenderTextureTarget(state, source, () => {});
+    const effect = effects(['test.constant-frame']);
+
+    const clearedFrames = Array.from({ length: 4 }, () => {
+      clearGlRenderTexture(state, dest);
+      expect(applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effect)).toBe(true);
+      return Array.from(destinationPixel);
+    });
+
+    destinationPixel.fill(0);
+    clearObserved = false;
+    const accumulatedFrames = Array.from({ length: 4 }, () => {
+      expect(applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effect)).toBe(true);
+      return Array.from(destinationPixel);
+    });
+
+    expect(clearedFrames).toEqual(Array.from({ length: 4 }, () => [64, 32, 16, 128]));
+    expect(accumulatedFrames).toEqual([
+      [64, 32, 16, 128],
+      [96, 48, 24, 192],
+      [112, 56, 28, 224],
+      [120, 60, 30, 240],
+    ]);
+  });
 });
 
 describe('explainGlRenderEffectApplication', () => {
@@ -111,6 +156,17 @@ describe('explainGlRenderEffectApplication', () => {
     const state = createState();
     registerGlRenderEffect(state, 'test.explain-e', () => {});
     expect(explainGlRenderEffectApplication(state, effects(['test.explain-e']), true).status).toBe('complete');
+  });
+
+  it('reports a ready destination as stale when a failed call cannot replace it', () => {
+    const state = createState();
+    expect(explainGlRenderEffectApplication(state, effects(['test.explain-f']), true, true).status).toBe(
+      'stale-destination',
+    );
+    registerGlRenderEffect(state, 'test.explain-g', () => {});
+    expect(explainGlRenderEffectApplication(state, effects(['test.explain-g']), false, true).status).toBe(
+      'stale-destination',
+    );
   });
 });
 
@@ -157,8 +213,34 @@ describe('setGlRenderEffectApplicationGuard', () => {
     applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects(['test.guard-b']));
     expect(seen).toEqual(['unregistered-effects']);
   });
+
+  it('reports a previously published destination as stale when no runner can replace it', () => {
+    const state = createState();
+    const seen: string[] = [];
+    setGlRenderEffectApplicationGuard(state, (_s, explanation) => seen.push(explanation.status));
+    const pool = createGlRenderTexturePool();
+    const source = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    const dest = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    const scratch = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
+    writeGlRenderTextureTarget(state, source, () => {});
+    writeGlRenderTextureTarget(state, dest, () => {});
+
+    expect(applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects(['test.guard-stale']))).toBe(
+      false,
+    );
+    expect(seen).toEqual(['stale-destination']);
+  });
 });
 
 function effects(kinds: readonly string[]): ReadonlyArray<Readonly<RenderEffect>> {
   return kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
+}
+
+function compositePremultipliedPixel(destination: Uint8Array, source: Uint8Array): Uint8Array {
+  const result = new Uint8Array(4);
+  const destinationScale = 1 - source[3] / 255;
+  for (let channel = 0; channel < 4; channel++) {
+    result[channel] = Math.round(source[channel] + destination[channel] * destinationScale);
+  }
+  return result;
 }

@@ -23,8 +23,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // The effects-owned blur primitive — the shared gaussian pass BloomEffect and the plain BlurEffect both
 // use, so the effects backend owns its blur outright rather than delegating to a filters backend.
 
-// Applies a `BlurEffect` descriptor to `source`, writing to `dest`. `temp` is a ping-pong scratch
-// target distinct from both `source` and `dest`.
+// Applies a `BlurEffect` descriptor to `source`, compositing into `dest`. Neither `dest` nor the
+// distinct ping-pong `temp` target is cleared by this entry point.
 export function applyBlurEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -35,6 +35,8 @@ export function applyBlurEffectToGl(
   applyGaussianBlurToGl(state, source, dest, temp, { blurX: effect.blurX, blurY: effect.blurY });
 }
 
+// RenderTexture-facing BlurEffect apply. It composites and never clears; clear reused `dest` and
+// `temp` first with `clearGlRenderTexture` when each frame should replace the previous result.
 export function applyBlurEffectToGlRenderTextures(
   state: GlRenderState,
   source: Readonly<RenderTexture>,
@@ -45,10 +47,10 @@ export function applyBlurEffectToGlRenderTextures(
   return applyGaussianBlurToGlRenderTextures(state, source, dest, temp, effect);
 }
 
-// Applies a faithful separable Gaussian blur to `source`, writing to `dest`. `blurX`/`blurY` are the
+// Applies a faithful separable Gaussian blur to `source`, compositing into `dest`. `blurX`/`blurY` are the
 // Gaussian standard deviations in pixels (default 4). Runs two unconditional separable passes,
-// source → temp (X) then temp → dest (Y); a zero-radius axis copies through unchanged, so the result
-// always lands in `dest` without a separate blit. `temp` is a ping-pong scratch distinct from both.
+// source → temp (X) then temp → dest (Y); neither destination is cleared. `temp` is a ping-pong
+// scratch distinct from both.
 export function applyGaussianBlurToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -64,8 +66,9 @@ export function applyGaussianBlurToGl(
   applyGlGaussianBlurPass(state, temp, dest, sigmaY, radiusY, 0, 1);
 }
 
-// RenderTexture-facing target-to-target apply. The hidden GlRenderTargets never leave this backend
-// wrapper; success publishes both writes and increments their content versions.
+// RenderTexture-facing target-to-target apply. Both passes composite and never clear; callers reusing
+// `dest` or `temp` across frames must first clear them with `clearGlRenderTexture`. The hidden
+// GlRenderTargets never leave this backend wrapper; success publishes both writes.
 export function applyGaussianBlurToGlRenderTextures(
   state: GlRenderState,
   source: Readonly<RenderTexture>,
