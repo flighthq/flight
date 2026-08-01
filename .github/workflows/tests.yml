@@ -206,12 +206,19 @@ jobs:
         include:
           - label: functional · smoke
             check: test:functional:smoke
+            args: ''
           - label: functional · parity
             check: test:functional:parity
-          - label: examples · smoke
+            args: ''
+          - label: examples · smoke · dom/canvas/webgl
             check: test:examples:smoke
+            args: --renderer=dom,canvas,webgl
+          - label: examples · smoke · webgpu
+            check: test:examples:smoke
+            args: --renderer=webgpu --parallel 1 --retries 2
           - label: examples · parity
             check: test:examples:parity
+            args: ''
 
     steps:
       - uses: actions/checkout@v4
@@ -236,7 +243,11 @@ jobs:
       # default, so the default leaves no room for a runner that is merely having a bad minute. This
       # buys headroom for contention; it does not paper over a stall, which the reason text still
       # distinguishes by reporting how long the wait actually had.
-      - run: npm run ${{ matrix.check }}
+      #
+      # WebGPU serialization: the runner has one SwiftShader adapter, and concurrent devices can
+      # starve frame-capture buffer readback. The examples smoke check therefore keeps the
+      # non-adapter-bound backends parallel in one leg and runs WebGPU alone with `--parallel 1`.
+      - run: npm run ${{ matrix.check }} -- ${{ matrix.args }}
         env:
           FLIGHT_CAPTURE_WORKER_COUNT: 2
           FLIGHT_CAPTURE_TIMEOUT_MS: 45000
