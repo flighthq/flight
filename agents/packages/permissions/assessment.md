@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/permissions'
-updated: 2026-07-13
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
@@ -8,14 +8,34 @@ basedOn: ./review.md
 
 ## Recommended
 
-Sweep-safe, within-package, no design fork:
+_None open._ All six items landed on 2026-08-01 and are recorded under [Landed](#landed) below, outside this
+section so the TODO generator stops reporting them as work.
 
-1. **`getPermissionStates(names)` batch query** — charter Open direction 2, explicitly gestured; a thin `Promise.all` over `getPermissionState`, pure convenience, no seam change.
-2. **`screen-wake-lock` request router** — `navigator.wakeLock.request('screen')` then immediate release, mirroring the getUserMedia stop-tracks pattern already blessed in the Decision; the trigger has no lasting side effect, so it fits the established router model without a scope ruling.
-3. **`midi` request router** — `navigator.requestMIDIAccess()` observing grant/deny (access object discarded), same prompt-only pattern as geolocation's discarded position.
-4. **`explainPermissionState` query** — shakeable plain-data disambiguator for the triple-overloaded `'prompt'` sentinel (undecided vs unqueryable name vs absent API), per the diagnostics inversion rule; the backend already knows which branch it took, so this is a pure companion probe.
-5. **Justify or remove the identity descriptor table** — `_permissionQueryDescriptors` maps every name to itself; either add the durable comment naming the future divergence it anticipates or drop it until one exists.
-6. **Guard module `enablePermissionGuards`** — opt-in `@flighthq/log` warning when `requestPermission` falls back to a plain query (name with no request path), so the silent degradation is discoverable in dev.
+## Landed
+
+1. ~~**`getPermissionStates(names)` batch query.**~~ Landed. Returns results in **input order as a parallel
+   array**, not a keyed record: a caller may legitimately pass the same name twice, and an array preserves
+   that where a record would silently collapse it. Queries run concurrently; a state read never throws, so
+   neither does the batch.
+2. ~~**`screen-wake-lock` request router.**~~ Landed. Takes the lock and **releases it immediately**, the
+   same shape as getUserMedia's stop-tracks — holding it would be a lasting side effect the caller never
+   asked for, which would break the observation-only router model.
+3. ~~**`midi` request router.**~~ Landed via `navigator.requestMIDIAccess()`, access object discarded, the
+   same prompt-only pattern as geolocation's discarded position. Deliberately does **not** request sysex:
+   that is a strictly larger prompt than the `'midi'` name denotes.
+4. ~~**`explainPermissionState` query.**~~ Landed. Disambiguates the triple-overloaded `'prompt'` into
+   `decided` / `undecided` / `unqueryable` / `unsupported`. It reports `undecided` or `decided` for a custom
+   backend rather than guessing: only the built-in web backend can distinguish "the API rejected this name"
+   from "there is no API", because only it knows whether `navigator.permissions` exists.
+5. ~~**Justify or remove the identity descriptor table.**~~ **Removed.** `_permissionQueryDescriptors` mapped
+   all ten names to themselves, and `getPermissionQueryDescriptorName` fell back to the name for anything
+   unlisted — so every branch returned its input and the table could not change behaviour. It was removed
+   rather than justified because no divergence exists to anticipate today; pre-release policy is to delete
+   rather than carry a placeholder. If a backend ever needs a different descriptor name, the lookup returns
+   at the single call site in `readWebPermissionState`.
+6. ~~**Guard module `enablePermissionGuards`.**~~ Landed. Warns once per name, through `@flighthq/log`, when
+   `requestPermission` finds no request path and degrades to a plain state query — the failure where nothing
+   throws, a plausible state comes back, and the OS prompt the caller was waiting for never appears.
 
 ## Backlog
 

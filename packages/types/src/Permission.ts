@@ -31,3 +31,24 @@ export interface PermissionBackend {
   // sentinel rather than throwing.
   request(name: PermissionName): Promise<PermissionState>;
 }
+
+// Why a permission read produced the state it did. `'prompt'` is triple-overloaded on the web — the user
+// has not decided, the name is not queryable, or the Permissions API is absent entirely — and those three
+// have different remedies: wait for a request, use a different name, or stop asking on this platform.
+// The backend already knows which branch it took; this reports it as plain data rather than a message.
+//
+//   decided        the state is a real answer from the platform ('granted' or 'denied')
+//   undecided      queryable and genuinely not yet decided — a request would prompt
+//   unqueryable    the Permissions API exists but rejected this descriptor name
+//   unsupported    no Permissions API on this platform; the state is a per-name fallback
+export type PermissionStateSource = 'decided' | 'undecided' | 'unqueryable' | 'unsupported';
+
+export interface PermissionStateExplanation {
+  readonly name: PermissionName;
+  readonly source: PermissionStateSource;
+  readonly state: PermissionState;
+}
+
+// Reports a `requestPermission` call that had no concrete request path and silently degraded to a plain
+// state query — the prompt the caller expected never appeared. Installed by enablePermissionGuards.
+export type PermissionRequestFallbackGuard = (name: PermissionName, state: PermissionState) => void;

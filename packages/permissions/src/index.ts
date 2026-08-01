@@ -1,1 +1,8 @@
-export { getPermissionState, requestPermission } from './contract';
+export {
+  disablePermissionGuards,
+  enablePermissionGuards,
+  explainPermissionState,
+  getPermissionState,
+  getPermissionStates,
+  requestPermission,
+} from './contract';

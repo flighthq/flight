@@ -3,10 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createWebPermissionBackend,
+  explainPermissionState,
   getPermissionBackend,
   getPermissionState,
+  getPermissionStates,
   requestPermission,
   setPermissionBackend,
+  setPermissionRequestFallbackGuard,
 } from './permission';
 
 // A recording mock backend: relays a fixed state and captures the last name each method saw.
@@ -149,10 +152,95 @@ describe('createWebPermissionBackend', () => {
   });
 
   it('request falls back to a state query for a name with no request path', async () => {
+    // 'push' has no concrete web trigger; midi and screen-wake-lock now do, so they are no longer
+    // examples of this branch.
     const query = vi.fn(async () => ({ state: 'granted' }));
     vi.stubGlobal('navigator', { permissions: { query } });
+    expect(await createWebPermissionBackend().request('push')).toBe('granted');
+    expect(query).toHaveBeenCalledWith({ name: 'push' });
+  });
+
+  it('request routes midi through requestMIDIAccess, discarding the access object', async () => {
+    const requestMIDIAccess = vi.fn(async () => ({ inputs: 'discarded' }));
+    vi.stubGlobal('navigator', { requestMIDIAccess });
     expect(await createWebPermissionBackend().request('midi')).toBe('granted');
-    expect(query).toHaveBeenCalledWith({ name: 'midi' });
+    expect(requestMIDIAccess).toHaveBeenCalledOnce();
+  });
+
+  it('request reports midi denial rather than throwing', async () => {
+    vi.stubGlobal('navigator', {
+      requestMIDIAccess: async () => {
+        throw new Error('denied');
+      },
+    });
+    expect(await createWebPermissionBackend().request('midi')).toBe('denied');
+  });
+
+  it('request takes a screen wake lock and RELEASES it immediately', async () => {
+    const release = vi.fn(async () => {});
+    const request = vi.fn(async () => ({ release }));
+    vi.stubGlobal('navigator', { wakeLock: { request } });
+    expect(await createWebPermissionBackend().request('screen-wake-lock')).toBe('granted');
+    expect(request).toHaveBeenCalledWith('screen');
+    // Holding the lock would be a lasting side effect the caller never asked for.
+    expect(release).toHaveBeenCalledOnce();
+  });
+
+  it('request resolves to a sentinel when the wake-lock API is absent, and denied when it rejects', async () => {
+    vi.stubGlobal('navigator', {});
+    expect(await createWebPermissionBackend().request('screen-wake-lock')).toBe('prompt');
+    vi.stubGlobal('navigator', {
+      wakeLock: {
+        request: async () => {
+          throw new Error('denied');
+        },
+      },
+    });
+    expect(await createWebPermissionBackend().request('screen-wake-lock')).toBe('denied');
+  });
+});
+
+describe('explainPermissionState', () => {
+  afterEach(() => {
+    setPermissionBackend(null);
+    vi.unstubAllGlobals();
+  });
+
+  it('separates the three meanings of a bare prompt: undecided, unqueryable, and unsupported', async () => {
+    // No Permissions API at all.
+    vi.stubGlobal('navigator', {});
+    expect(await explainPermissionState('camera')).toMatchObject({ source: 'unsupported', state: 'prompt' });
+
+    // Present but rejects this descriptor name.
+    vi.stubGlobal('navigator', {
+      permissions: {
+        query: () => Promise.reject(new Error('bad name')),
+      },
+    });
+    setPermissionBackend(null);
+    expect(await explainPermissionState('acme.unknown')).toMatchObject({ source: 'unqueryable' });
+
+    // Present, queryable, genuinely not decided.
+    vi.stubGlobal('navigator', { permissions: { query: () => Promise.resolve({ state: 'prompt' }) } });
+    setPermissionBackend(null);
+    expect(await explainPermissionState('camera')).toMatchObject({ source: 'undecided', state: 'prompt' });
+  });
+
+  it('reports a definite answer as decided, and carries the name through', async () => {
+    vi.stubGlobal('navigator', { permissions: { query: () => Promise.resolve({ state: 'granted' }) } });
+    expect(await explainPermissionState('geolocation')).toEqual({
+      name: 'geolocation',
+      source: 'decided',
+      state: 'granted',
+    });
+  });
+
+  it('describes a custom backend without claiming branches it cannot observe', async () => {
+    // A host backend has no Permissions API to inspect, so unqueryable/unsupported are not assertable.
+    setPermissionBackend(fakeBackend('prompt'));
+    expect(await explainPermissionState('camera')).toMatchObject({ source: 'undecided' });
+    setPermissionBackend(fakeBackend('denied'));
+    expect(await explainPermissionState('camera')).toMatchObject({ source: 'decided', state: 'denied' });
   });
 });
 
@@ -178,6 +266,27 @@ describe('getPermissionState', () => {
   });
 });
 
+describe('getPermissionStates', () => {
+  afterEach(() => setPermissionBackend(null));
+
+  it('resolves in INPUT order, preserving a repeated name rather than collapsing it', async () => {
+    const states: Record<string, PermissionState> = { camera: 'granted', microphone: 'denied' };
+    setPermissionBackend({
+      getState: (name: PermissionName) => Promise.resolve(states[name] ?? 'prompt'),
+      request: () => Promise.resolve('prompt' as PermissionState),
+    });
+
+    expect(await getPermissionStates(['microphone', 'camera', 'microphone'])).toEqual(['denied', 'granted', 'denied']);
+  });
+
+  it('returns an empty array for no names, without touching the backend', async () => {
+    const backend = fakeBackend('granted');
+    setPermissionBackend(backend);
+    expect(await getPermissionStates([])).toEqual([]);
+    expect(backend.lastGetState).toBeNull();
+  });
+});
+
 describe('requestPermission', () => {
   it('dispatches to the active backend and relays the resolved state', async () => {
     const backend = fakeBackend('granted');
@@ -196,5 +305,35 @@ describe('setPermissionBackend', () => {
     const restored = getPermissionBackend();
     expect(restored).not.toBe(backend);
     expect(restored.getState).toBeInstanceOf(Function);
+  });
+});
+
+describe('setPermissionRequestFallbackGuard', () => {
+  afterEach(() => {
+    setPermissionRequestFallbackGuard(null);
+    setPermissionBackend(null);
+    vi.unstubAllGlobals();
+  });
+
+  it('reports only the names that silently degraded to a query, and stops once cleared', async () => {
+    const seen: string[] = [];
+    // No request path for 'push'; 'notifications' has one via Notification.requestPermission.
+    vi.stubGlobal('navigator', { permissions: { query: () => Promise.resolve({ state: 'prompt' }) } });
+    vi.stubGlobal('Notification', {
+      permission: 'default',
+      requestPermission: () => Promise.resolve('granted'),
+    });
+    setPermissionRequestFallbackGuard((name) => seen.push(name));
+
+    expect(await requestPermission('push')).toBe('prompt');
+    expect(seen).toEqual(['push']);
+
+    // A name WITH a router prompts for real and must not be reported as a fallback.
+    expect(await requestPermission('notifications')).toBe('granted');
+    expect(seen).toEqual(['push']);
+
+    setPermissionRequestFallbackGuard(null);
+    await requestPermission('push');
+    expect(seen).toEqual(['push']);
   });
 });
