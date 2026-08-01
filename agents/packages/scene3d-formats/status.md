@@ -597,9 +597,15 @@ renorm is mandatory.
 
 **BREAKING (intra-package):** `parseAwdSkeletonAnimation(bytes, joints, warnings) → AnimationClip` — now
 MD5-symmetric, binds channels to the caller's joints so anim/skeleton/skin share ONE hierarchy (was
-`{clip, skeleton}`; only its own tests called it). App flow: `scene = createScene3DFromAwd(bytes)` →
-find skinned mesh → `parseAwdSkeletonAnimation(bytes, mesh.skin.skeleton.joints)`. Flag for downstream
-(flight-reference) AWD usage.
+`{clip, skeleton}`; only its own tests called it). Flag for downstream (flight-reference) AWD usage.
+
+**App flow — CURRENT NAMES.** `scene = createScene3DFromAwd2(bytes)` → find the skinned mesh →
+`parseAwd2SkeletonAnimations(bytes, mesh.skin.skeleton.joints)`. The names in the entry above are the
+pre-split ones and no longer exist in source; they were renamed in the API split recorded earlier in this
+log, and this line is restated here because a consumer greps the newest entry, not the oldest. Note the
+animation entry point is PLURAL. Animation is deliberately a second call and is not part of the scene
+constructor, so a scene carrying no animations is the designed shape rather than a parse failure — and
+`Scene3D.animations` is a `Record<string, AnimationClip>`, not an array, so it has no `.length`.
 
 **Needs host visual gate (unverifiable in-sandbox):** the skinned *render* (shambler deforming), and
 specifically **animated deformation correctness** — the AWD joint matrices are kept in the existing

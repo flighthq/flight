@@ -20,7 +20,7 @@ import type {
   Node3D,
   ShadedMaterial,
 } from '@flighthq/types/contract';
-import { ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';
@@ -1632,6 +1632,354 @@ describe('parseAwd2', () => {
   });
 });
 
+describe('parseAwd2 unhandled blocks', () => {
+  // One block of `blockType` in `namespace`, carrying `payload` bytes the parser will not look at.
+  function fileWithBlocks(
+    blocks: ReadonlyArray<{ blockId: number; blockType: number; namespace?: number }>,
+  ): Uint8Array {
+    const parts: Uint8Array[] = [];
+    for (const block of blocks) {
+      parts.push(buildBlockHeader(block.blockId, block.blockType, 4, 0, block.namespace ?? AWD2_NAMESPACE_CORE));
+      parts.push(new Uint8Array(4));
+    }
+    const body = concatBytes(...parts);
+    return concatBytes(buildAwdHeader(body.length), body);
+  }
+
+  it('reports a CORE block type the dispatch does not name', () => {
+    // The silence this replaces was the real defect: the offset advanced, the block vanished, and a file
+    // using a format feature nobody has written was indistinguishable from a file that uses none.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: 41 }]), diagnostics);
+
+    expect(diagnostics).toEqual([
+      {
+        detail: { blockType: 41, count: 1, firstBlockId: 7, namespace: AWD2_NAMESPACE_CORE },
+        kind: 'awd2.block-unhandled',
+        origin: 'parseAwd2',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
+  });
+
+  it('reports a block in a namespace that is not CORE', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(fileWithBlocks([{ blockId: 3, blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, namespace: 5 }]), diagnostics);
+
+    // Reported even though the TYPE is one we handle, because in another namespace it is somebody else's
+    // block that merely shares a number.
+    expect(diagnostics.map((d) => d.detail)).toEqual([
+      { blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, count: 1, firstBlockId: 3, namespace: 5 },
+    ]);
+  });
+
+  it('reports one diagnostic per distinct block type, with the count and the first block id', () => {
+    // An unknown type usually repeats once per object in the file. Reporting each occurrence would bury
+    // every other diagnostic; the count is what tells a reader how much of the file was dropped.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      fileWithBlocks([
+        { blockId: 10, blockType: 41 },
+        { blockId: 11, blockType: 41 },
+        { blockId: 12, blockType: 51 },
+        { blockId: 13, blockType: 41 },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.map((d) => d.detail)).toEqual([
+      { blockType: 41, count: 3, firstBlockId: 10, namespace: AWD2_NAMESPACE_CORE },
+      { blockType: 51, count: 1, firstBlockId: 12, namespace: AWD2_NAMESPACE_CORE },
+    ]);
+  });
+
+  it('reports nothing for skeleton pose and skeleton animation blocks', () => {
+    // These are consumed by the SECOND walk (buildAwdDocumentAnimations), which re-reads the block stream
+    // once the joint nodes exist. The first walk passing over them is deferral, not a gap — reporting
+    // them would put a false Drop on every skinned AWD file, including ones that import perfectly.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      fileWithBlocks([
+        { blockId: 20, blockType: AWD2_BLOCK_SKELETON_POSE },
+        { blockId: 21, blockType: AWD2_BLOCK_SKELETON_ANIMATION },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
+  });
+
+  it('reports nothing for a file whose blocks the dispatch all handles', () => {
+    // Guards the guard: if this fired on ordinary content the diagnostic would be noise, and every test
+    // above would pass just as well against a parser that reported unconditionally.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(SKINNED_TRIANGLE_AWD, diagnostics);
+
+    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
+  });
+});
+
+// Wraps ONE block of `blockType` at a deliberately short declared length so the parser truncates INSIDE
+// it: the block carries only `fullBody`'s first `cut` bytes as its declared blockLength, and the AWD body
+// is sized to exactly that block — so the walk advances to the body end after the single truncated block
+// (one crumb, no trailing garbage parse). `cut` is the byte count of the fields BEFORE the truncated one.
+function truncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
+  const body = concatBytes(buildBlockHeader(1, blockType, cut), fullBody.slice(0, cut));
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
+// A VALID skeleton block followed by ONE truncated pose/animation block. Pose/animation blocks are not
+// parsed by parseAwd2's first walk, so the ONLY thing that parses them on the createScene3DFromAwd2 document
+// path is buildAwdDocumentAnimations — the exact call the sink-threading repair targeted. The valid
+// skeleton drives that second walk (and means no no-skeleton-blocks crumb is emitted), so the truncated
+// block's crumb is the sole diagnostic: this fixture regression-guards the repaired path directly.
+function docPathTruncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
+  const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+  const body = concatBytes(
+    buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
+    skel,
+    buildBlockHeader(2, blockType, cut),
+    fullBody.slice(0, cut),
+  );
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
+// Bodies whose first-walk block types are parsed by createScene3DFromAwd2/parseAwd2 directly. Field cut
+// offsets come from each parse function's documented layout (empty names keep every length deterministic).
+const CONTAINER_BODY = buildContainerBody('', 0, IDENTITY_TRANSFORM);
+const MESH_INSTANCE_BODY = buildMeshInstanceBody('', 0, IDENTITY_TRANSFORM, 1);
+const MATERIAL_BODY_T = buildMaterialBody('', AWD2_MATERIAL_TYPE_COLOR, []);
+const TEXTURE_BODY_T = buildTextureBody('', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+const SKELETON_BODY_T = buildSkeletonBody('', [{ name: '', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+
+// (blockType, body, cut) → the exact Drop crumb the createScene3DFromAwd2 first walk records. Every field
+// variant of every per-block "truncated" kind, locking kind + severity + true origin + detail.field.
+const CREATE_PATH_TRUNCATIONS: Array<{
+  blockType: number;
+  body: Uint8Array;
+  bytes?: number;
+  cut: number;
+  field: string;
+  kind: string;
+  origin: string;
+}> = [
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 0,
+    field: 'parentId',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 4,
+    field: 'transform',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_CONTAINER,
+    body: CONTAINER_BODY,
+    cut: 52,
+    field: 'name',
+    kind: 'awd2.container-truncated',
+    origin: 'parseContainerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 0,
+    field: 'parentId',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 4,
+    field: 'transform',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 52,
+    field: 'name',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MESH_INSTANCE,
+    body: MESH_INSTANCE_BODY,
+    cut: 54,
+    field: 'geometryId',
+    kind: 'awd2.mesh-instance-truncated',
+    origin: 'parseMeshInstanceBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MATERIAL,
+    body: MATERIAL_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.material-truncated',
+    origin: 'parseMaterialBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_MATERIAL,
+    body: MATERIAL_BODY_T,
+    cut: 2,
+    field: 'type',
+    kind: 'awd2.material-truncated',
+    origin: 'parseMaterialBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    cut: 2,
+    field: 'payload',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_TEXTURE,
+    body: TEXTURE_BODY_T,
+    bytes: FAKE_PNG_BYTES.length,
+    cut: 7,
+    field: 'data',
+    kind: 'awd2.texture-truncated',
+    origin: 'parseTextureBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 2,
+    field: 'jointCount',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 8,
+    field: 'jointFields',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 12,
+    field: 'jointName',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON,
+    body: SKELETON_BODY_T,
+    cut: 14,
+    field: 'jointTransform',
+    kind: 'awd2.skeleton-truncated',
+    origin: 'parseSkeletonBlock',
+  },
+];
+
+// Pose/animation blocks are NOT parsed by the first walk; parseAwd2SkeletonAnimations is their reporting
+// site (it also returns {} with a no-skeleton-blocks crumb, which expectOneCrumb ignores by kind).
+const POSE_BODY_T = buildSkeletonPoseBody('', [IDENTITY_TRANSFORM]);
+const ANIM_BODY_T = buildSkeletonAnimationBody('', [{ duration: 100, poseBlockId: 1 }]);
+const ANIM_PATH_TRUNCATIONS: Array<{
+  blockType: number;
+  body: Uint8Array;
+  cut: number;
+  field: string;
+  kind: string;
+  origin: string;
+}> = [
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 2,
+    field: 'jointCount',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 8,
+    field: 'hasTransform',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_POSE,
+    body: POSE_BODY_T,
+    cut: 9,
+    field: 'jointTransform',
+    kind: 'awd2.skeleton-pose-truncated',
+    origin: 'parseSkeletonPoseBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 2,
+    field: 'frameCount',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 8,
+    field: 'poseBlockId',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
+    body: ANIM_BODY_T,
+    cut: 12,
+    field: 'poseDuration',
+    kind: 'awd2.skeleton-animation-truncated',
+    origin: 'parseSkeletonAnimationBlock',
+  },
+];
+
 describe('parseAwd2SkeletonAnimations', () => {
   it('rejects a version-3 (AWD3) file by version with an empty map and an AWD3-naming diagnostic', () => {
     const awd3 = buildAwdHeader(0, 0, 0, 3);
@@ -2046,267 +2394,6 @@ describe('parseAwd2SkeletonAnimations', () => {
     expect(sampleX(clips.attack)).toBeCloseTo(9);
   });
 });
-
-// Wraps ONE block of `blockType` at a deliberately short declared length so the parser truncates INSIDE
-// it: the block carries only `fullBody`'s first `cut` bytes as its declared blockLength, and the AWD body
-// is sized to exactly that block — so the walk advances to the body end after the single truncated block
-// (one crumb, no trailing garbage parse). `cut` is the byte count of the fields BEFORE the truncated one.
-function truncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
-  const body = concatBytes(buildBlockHeader(1, blockType, cut), fullBody.slice(0, cut));
-  return concatBytes(buildAwdHeader(body.length), body);
-}
-
-// A VALID skeleton block followed by ONE truncated pose/animation block. Pose/animation blocks are not
-// parsed by parseAwd2's first walk, so the ONLY thing that parses them on the createScene3DFromAwd2 document
-// path is buildAwdDocumentAnimations — the exact call the sink-threading repair targeted. The valid
-// skeleton drives that second walk (and means no no-skeleton-blocks crumb is emitted), so the truncated
-// block's crumb is the sole diagnostic: this fixture regression-guards the repaired path directly.
-function docPathTruncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
-  const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
-  const body = concatBytes(
-    buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length),
-    skel,
-    buildBlockHeader(2, blockType, cut),
-    fullBody.slice(0, cut),
-  );
-  return concatBytes(buildAwdHeader(body.length), body);
-}
-
-// Bodies whose first-walk block types are parsed by createScene3DFromAwd2/parseAwd2 directly. Field cut
-// offsets come from each parse function's documented layout (empty names keep every length deterministic).
-const CONTAINER_BODY = buildContainerBody('', 0, IDENTITY_TRANSFORM);
-const MESH_INSTANCE_BODY = buildMeshInstanceBody('', 0, IDENTITY_TRANSFORM, 1);
-const MATERIAL_BODY_T = buildMaterialBody('', AWD2_MATERIAL_TYPE_COLOR, []);
-const TEXTURE_BODY_T = buildTextureBody('', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
-const SKELETON_BODY_T = buildSkeletonBody('', [{ name: '', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
-
-// (blockType, body, cut) → the exact Drop crumb the createScene3DFromAwd2 first walk records. Every field
-// variant of every per-block "truncated" kind, locking kind + severity + true origin + detail.field.
-const CREATE_PATH_TRUNCATIONS: Array<{
-  blockType: number;
-  body: Uint8Array;
-  bytes?: number;
-  cut: number;
-  field: string;
-  kind: string;
-  origin: string;
-}> = [
-  {
-    blockType: AWD2_BLOCK_CONTAINER,
-    body: CONTAINER_BODY,
-    cut: 0,
-    field: 'parentId',
-    kind: 'awd2.container-truncated',
-    origin: 'parseContainerBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_CONTAINER,
-    body: CONTAINER_BODY,
-    cut: 4,
-    field: 'transform',
-    kind: 'awd2.container-truncated',
-    origin: 'parseContainerBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_CONTAINER,
-    body: CONTAINER_BODY,
-    cut: 52,
-    field: 'name',
-    kind: 'awd2.container-truncated',
-    origin: 'parseContainerBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MESH_INSTANCE,
-    body: MESH_INSTANCE_BODY,
-    cut: 0,
-    field: 'parentId',
-    kind: 'awd2.mesh-instance-truncated',
-    origin: 'parseMeshInstanceBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MESH_INSTANCE,
-    body: MESH_INSTANCE_BODY,
-    cut: 4,
-    field: 'transform',
-    kind: 'awd2.mesh-instance-truncated',
-    origin: 'parseMeshInstanceBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MESH_INSTANCE,
-    body: MESH_INSTANCE_BODY,
-    cut: 52,
-    field: 'name',
-    kind: 'awd2.mesh-instance-truncated',
-    origin: 'parseMeshInstanceBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MESH_INSTANCE,
-    body: MESH_INSTANCE_BODY,
-    cut: 54,
-    field: 'geometryId',
-    kind: 'awd2.mesh-instance-truncated',
-    origin: 'parseMeshInstanceBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MATERIAL,
-    body: MATERIAL_BODY_T,
-    cut: 0,
-    field: 'name',
-    kind: 'awd2.material-truncated',
-    origin: 'parseMaterialBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_MATERIAL,
-    body: MATERIAL_BODY_T,
-    cut: 2,
-    field: 'type',
-    kind: 'awd2.material-truncated',
-    origin: 'parseMaterialBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_TEXTURE,
-    body: TEXTURE_BODY_T,
-    cut: 0,
-    field: 'name',
-    kind: 'awd2.texture-truncated',
-    origin: 'parseTextureBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_TEXTURE,
-    body: TEXTURE_BODY_T,
-    cut: 2,
-    field: 'payload',
-    kind: 'awd2.texture-truncated',
-    origin: 'parseTextureBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_TEXTURE,
-    body: TEXTURE_BODY_T,
-    bytes: FAKE_PNG_BYTES.length,
-    cut: 7,
-    field: 'data',
-    kind: 'awd2.texture-truncated',
-    origin: 'parseTextureBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON,
-    body: SKELETON_BODY_T,
-    cut: 0,
-    field: 'name',
-    kind: 'awd2.skeleton-truncated',
-    origin: 'parseSkeletonBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON,
-    body: SKELETON_BODY_T,
-    cut: 2,
-    field: 'jointCount',
-    kind: 'awd2.skeleton-truncated',
-    origin: 'parseSkeletonBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON,
-    body: SKELETON_BODY_T,
-    cut: 8,
-    field: 'jointFields',
-    kind: 'awd2.skeleton-truncated',
-    origin: 'parseSkeletonBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON,
-    body: SKELETON_BODY_T,
-    cut: 12,
-    field: 'jointName',
-    kind: 'awd2.skeleton-truncated',
-    origin: 'parseSkeletonBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON,
-    body: SKELETON_BODY_T,
-    cut: 14,
-    field: 'jointTransform',
-    kind: 'awd2.skeleton-truncated',
-    origin: 'parseSkeletonBlock',
-  },
-];
-
-// Pose/animation blocks are NOT parsed by the first walk; parseAwd2SkeletonAnimations is their reporting
-// site (it also returns {} with a no-skeleton-blocks crumb, which expectOneCrumb ignores by kind).
-const POSE_BODY_T = buildSkeletonPoseBody('', [IDENTITY_TRANSFORM]);
-const ANIM_BODY_T = buildSkeletonAnimationBody('', [{ duration: 100, poseBlockId: 1 }]);
-const ANIM_PATH_TRUNCATIONS: Array<{
-  blockType: number;
-  body: Uint8Array;
-  cut: number;
-  field: string;
-  kind: string;
-  origin: string;
-}> = [
-  {
-    blockType: AWD2_BLOCK_SKELETON_POSE,
-    body: POSE_BODY_T,
-    cut: 0,
-    field: 'name',
-    kind: 'awd2.skeleton-pose-truncated',
-    origin: 'parseSkeletonPoseBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_POSE,
-    body: POSE_BODY_T,
-    cut: 2,
-    field: 'jointCount',
-    kind: 'awd2.skeleton-pose-truncated',
-    origin: 'parseSkeletonPoseBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_POSE,
-    body: POSE_BODY_T,
-    cut: 8,
-    field: 'hasTransform',
-    kind: 'awd2.skeleton-pose-truncated',
-    origin: 'parseSkeletonPoseBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_POSE,
-    body: POSE_BODY_T,
-    cut: 9,
-    field: 'jointTransform',
-    kind: 'awd2.skeleton-pose-truncated',
-    origin: 'parseSkeletonPoseBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
-    body: ANIM_BODY_T,
-    cut: 0,
-    field: 'name',
-    kind: 'awd2.skeleton-animation-truncated',
-    origin: 'parseSkeletonAnimationBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
-    body: ANIM_BODY_T,
-    cut: 2,
-    field: 'frameCount',
-    kind: 'awd2.skeleton-animation-truncated',
-    origin: 'parseSkeletonAnimationBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
-    body: ANIM_BODY_T,
-    cut: 8,
-    field: 'poseBlockId',
-    kind: 'awd2.skeleton-animation-truncated',
-    origin: 'parseSkeletonAnimationBlock',
-  },
-  {
-    blockType: AWD2_BLOCK_SKELETON_ANIMATION,
-    body: ANIM_BODY_T,
-    cut: 12,
-    field: 'poseDuration',
-    kind: 'awd2.skeleton-animation-truncated',
-    origin: 'parseSkeletonAnimationBlock',
-  },
-];
 
 describe('registerAwd2Decompressor', () => {
   // A trivial reversible "codec": the compressed body is a 4-byte marker followed by the real block
