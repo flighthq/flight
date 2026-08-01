@@ -19,7 +19,7 @@
     "**/worktrees/**",
     "**/docs/**",
     "incoming/**",
-    "agents/**"
+    "agents/**/*.md"
   ],
   "rules": {
     "no-console": "warn",
@@ -77,6 +77,12 @@
       "rules": {
         "no-console": "off",
         "import/no-relative-parent-imports": "off"
+      }
+    },
+    {
+      "files": ["agents/**"],
+      "rules": {
+        "no-console": "off"
       }
     },
     {
