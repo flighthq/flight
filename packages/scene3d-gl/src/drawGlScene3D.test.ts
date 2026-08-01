@@ -8,6 +8,7 @@ import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/par
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -128,6 +129,21 @@ describe('drawGlScene3D', () => {
     expect(disableCalls.some((c) => c.args[0] === 0x0be2)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'blendFunc')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
+  });
+
+  it('applies the surface material blendMode for a blended subset', () => {
+    const { state, gl } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+
+    const scene = createNode3D(Node3DKind);
+    const material = createStandardPbrMaterial({ alphaMode: 'blend', blendMode: BlendMode.Add });
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
+
+    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+
+    expect(
+      gl.calls.some((call) => call.name === 'blendFunc' && call.args[0] === gl.ONE && call.args[1] === gl.ONE),
+    ).toBe(true);
   });
 
   it('draws opaque subsets before blended subsets regardless of scene order', () => {

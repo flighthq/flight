@@ -3,6 +3,7 @@ import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareGlRenderTargetColorSpace,
+  enableGlBlendModeSupport,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
@@ -26,7 +27,7 @@ import type {
   SurfaceMaterial,
   GlScene3DDrawEntry,
 } from '@flighthq/types/contract';
-import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';
@@ -52,8 +53,8 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 //   Pass 1 (opaque): every subset whose material alphaMode is 'opaque' or 'mask', in scene-graph
 //     order. Depth writes are on. No blending.
 //   Pass 2 (blended): every subset whose material alphaMode is 'blend', sorted back-to-front by the
-//     mesh's world-space Z in view space (the mesh origin's projected depth). GL blending is enabled
-//     with SRC_ALPHA / ONE_MINUS_SRC_ALPHA for this pass and disabled after.
+//     mesh's world-space Z in view space (the mesh origin's projected depth). GL blending is enabled,
+//     each material's blendMode selects its fixed-function equation, and blending is disabled after.
 //
 // Subsets sharing the same resolved renderer + material are drawn under a single bind (the seam's
 // "contiguous run" contract): bind uploads the shared camera + light + material state once, then draw
@@ -208,7 +209,6 @@ export function drawGlScene3D(
 
     const gl = state.gl;
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     boundMaterial = undefined;
     boundLightBlock = null;
@@ -234,6 +234,7 @@ export function drawGlScene3D(
         colorAdjusted !== boundColorAdjustment ||
         colorMatrix !== boundColorMatrix
       ) {
+        applyGlSurfaceBlendMode(state, entry.material);
         runtime.activeColorAdjustmentRun = colorAdjusted;
         runtime.activeColorMatrixRun = colorMatrix;
         runtime.activeSkinnedRun = skinned;
@@ -281,6 +282,26 @@ export function drawGlScene3D(
 // requiring an import of SurfaceMaterial here.
 function isBlendedMaterial(material: Readonly<Material>): boolean {
   return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+
+// Applies a material's fixed-function blend equation at the same run boundary as its renderer bind.
+// Normal retains the established straight-alpha mesh path. Other modes use render-gl's canonical,
+// overridable registry, shared with the 2D renderer; enable it lazily for a state that has not opted in
+// elsewhere. A faded opaque/masked material uses Normal because blendMode is only meaningful when the
+// material itself declares alphaMode 'blend'.
+function applyGlSurfaceBlendMode(state: GlRenderState, material: Readonly<Material>): void {
+  const surface = material as Readonly<SurfaceMaterial>;
+  const blendMode =
+    surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
+  const runtime = getGlRenderStateRuntime(state);
+  if (blendMode === BlendMode.Normal) {
+    runtime.currentBlendMode = null;
+    state.gl.blendEquation(state.gl.FUNC_ADD);
+    state.gl.blendFunc(state.gl.SRC_ALPHA, state.gl.ONE_MINUS_SRC_ALPHA);
+    return;
+  }
+  if (state.applyBlendMode === null) enableGlBlendModeSupport(state);
+  state.applyBlendMode!(state, blendMode);
 }
 
 function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {

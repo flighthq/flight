@@ -1,5 +1,10 @@
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuBlendState,
+  getWgpuRenderStateRuntime,
+  getWgpuSampler,
+  resolveWgpuTexture,
+} from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
@@ -13,7 +18,7 @@ import type {
   Node3D,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { ParticleEmitter3DKind } from '@flighthq/types/contract';
+import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,
@@ -107,32 +112,19 @@ interface WgpuParticle3DResources {
   textureLayout: GPUBindGroupLayout;
 }
 
-// Maps a ParticleBlendMode to a WebGPU blend state. The fragment outputs premultiplied rgb, so 'normal'
-// is the premultiplied over-blend (one / one-minus-src-alpha), 'add' is a straight one/one sum, matching
-// scene-gl's applyGlParticleBlendMode. Color and alpha use the same factors (GL blendFunc sets both).
+// ParticleBlendMode uses serialized lowercase spellings; translate them to the canonical fixed-function
+// BlendMode family so particles and surface meshes share render-wgpu's one blend-state table.
 function wgpuParticleBlendState(mode: ParticleBlendMode): GPUBlendState {
-  let src: GPUBlendFactor;
-  let dst: GPUBlendFactor;
   switch (mode) {
     case 'add':
-      src = 'one';
-      dst = 'one';
-      break;
+      return getWgpuBlendState(BlendMode.Add);
     case 'multiply':
-      src = 'dst';
-      dst = 'one-minus-src-alpha';
-      break;
+      return getWgpuBlendState(BlendMode.Multiply);
     case 'screen':
-      src = 'one';
-      dst = 'one-minus-src';
-      break;
+      return getWgpuBlendState(BlendMode.Screen);
     default:
-      src = 'one';
-      dst = 'one-minus-src-alpha';
-      break;
+      return getWgpuBlendState(BlendMode.Normal);
   }
-  const component: GPUBlendComponent = { operation: 'add', srcFactor: src, dstFactor: dst };
-  return { color: component, alpha: component };
 }
 
 function collectParticleEmitter3DNodes(node: Readonly<NodeAny>, out: ParticleEmitter3D[]): void {

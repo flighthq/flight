@@ -14,7 +14,12 @@ import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuMaterialBinding,
 } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ImageTextureSourceKind, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
+import {
+  BitmapTextureSourceKind,
+  BlendMode,
+  ImageTextureSourceKind,
+  SCENE_LIGHT_BLOCK_FLOATS,
+} from '@flighthq/types/contract';
 
 import {
   beginWgpuMeshDraw,
@@ -225,6 +230,27 @@ describe('createWgpuMeshPipeline', () => {
       color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'src-alpha' },
     });
     expect(descriptor.depthStencil!.depthWriteEnabled).toBe(false);
+  });
+
+  it('uses the active surface blend mode for a blended variant', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    getWgpuScene3DRuntime(state).activeBlendMode = BlendMode.Add;
+    const module = state.device.createShaderModule({ code: '' });
+    const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
+    createWgpuMeshPipeline(state, {
+      blended: true,
+      doubleSided: false,
+      format: 'bgra8unorm',
+      materialBindGroupLayout,
+      module,
+    });
+
+    const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
+    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toEqual({
+      alpha: { dstFactor: 'one', operation: 'add', srcFactor: 'one' },
+      color: { dstFactor: 'one', operation: 'add', srcFactor: 'one' },
+    });
   });
 
   it('keeps blending disabled and depth writes enabled for an opaque variant', () => {
@@ -496,7 +522,29 @@ describe('ensureWgpuScene3DPipeline', () => {
     expect(variants).toEqual([false, true]);
     expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
       'fam:bgra8unorm|-|opaque|rigid',
-      'fam:bgra8unorm|-|blend|rigid',
+      'fam:bgra8unorm|-|blend:Normal|rigid',
+    ]);
+  });
+
+  it('caches distinct blended equations as separate immutable pipeline variants', () => {
+    const { state } = makeWgpuScene3DState();
+    let compiles = 0;
+    const compile = () => {
+      compiles++;
+      return makePipeline(state);
+    };
+    const runtime = getWgpuScene3DRuntime(state);
+    runtime.activeBlendedRun = true;
+    runtime.activeBlendMode = BlendMode.Add;
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    runtime.activeBlendMode = BlendMode.Multiply;
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+
+    expect(compiles).toBe(2);
+    expect(Array.from(runtime.pipelineCache.keys())).toEqual([
+      'fam:bgra8unorm|-|blend:Add|rigid',
+      'fam:bgra8unorm|-|blend:Multiply|rigid',
     ]);
   });
 

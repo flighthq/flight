@@ -1,3 +1,4 @@
+import type { BlendMode } from './BlendMode';
 import type { CustomShaderMaterial } from './CustomShaderMaterial';
 import type { Kind } from './Entity';
 import type { Matrix4 } from './Matrix4';
@@ -72,6 +73,10 @@ export interface WgpuScene3DDrawEntry {
 // sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuScene3DRuntime
 // is created lazily per state by getWgpuScene3DRuntime.
 export interface WgpuScene3DRuntime {
+  // The material blend equation for the active transparent run. Null for opaque runs; faded opaque
+  // materials use BlendMode.Normal. WebGPU bakes this into the pipeline, so it is part of the shared
+  // pipeline-cache identity alongside the transparent/opaque and skin variants.
+  activeBlendMode: BlendMode | null;
   // Whether the run currently being bound uses the blended pipeline variant. drawWgpuScene3D sets this
   // before bind(); each family's ensure function folds it into the immutable pipeline state/cache key.
   activeBlendedRun: boolean;
