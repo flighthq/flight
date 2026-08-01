@@ -11,8 +11,8 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // element overload for a `source`, or the raw-pixel overload for a data-only face (a generated
 // Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The upload is
 // keyed by identity: re-uploaded only when the cached texture is absent (a changed cube must drop the
-// cache first via destroyGlEnvironment). sRGB faces are decoded to linear by the shaders that sample
-// them, matching the renderer's sRGB-passthrough convention.
+// cache first via destroyGlEnvironment). Texture.colorSpace selects the cube's GPU internal format,
+// so hardware sampling performs sRGB-to-linear decode only for an sRGB cube.
 export function ensureGlEnvironmentSourceCube(
   state: GlRenderState,
   environment: Readonly<Environment>,
@@ -25,10 +25,11 @@ export function ensureGlEnvironmentSourceCube(
   const sources = cube.sources;
 
   const gl = state.gl;
+  const internalFormat = cube.colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA;
   const texture = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
   for (let face = 0; face < 6; face++) {
-    uploadGlEnvironmentImage(gl, getGlCubeFaceTarget(gl, face), sources[face]!);
+    uploadGlEnvironmentImage(gl, getGlCubeFaceTarget(gl, face), sources[face]!, internalFormat);
   }
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -38,6 +39,7 @@ export function ensureGlEnvironmentSourceCube(
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 
   runtime.environmentSourceCube = texture;
+  runtime.environmentSourceCubeColorSpace = cube.colorSpace;
   return texture;
 }
 
@@ -58,11 +60,17 @@ export function updateGlEnvironmentCubeFace(
   face: number,
   image: Readonly<TextureSource>,
 ): boolean {
-  const texture = getGlScene3DRuntime(state).environmentSourceCube;
+  const runtime = getGlScene3DRuntime(state);
+  const texture = runtime.environmentSourceCube;
   if (texture === null) return false;
   const gl = state.gl;
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-  uploadGlEnvironmentImage(gl, getGlCubeFaceTarget(gl, face), image);
+  uploadGlEnvironmentImage(
+    gl,
+    getGlCubeFaceTarget(gl, face),
+    image,
+    runtime.environmentSourceCubeColorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
+  );
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
   return true;
 }
@@ -80,11 +88,16 @@ function hasGlCubeFacePixels(cube: Readonly<Texture>): boolean {
   return true;
 }
 
-function uploadGlEnvironmentImage(gl: WebGL2RenderingContext, target: number, image: Readonly<TextureSource>): void {
+function uploadGlEnvironmentImage(
+  gl: WebGL2RenderingContext,
+  target: number,
+  image: Readonly<TextureSource>,
+  internalFormat: number = gl.RGBA,
+): void {
   if (image.kind === BitmapTextureSourceKind) {
     const bitmap = image as Readonly<Bitmap>;
-    uploadGlTextureData(gl, target, bitmap.width, bitmap.height, bitmap.data);
+    uploadGlTextureData(gl, target, bitmap.width, bitmap.height, bitmap.data, internalFormat);
   } else {
-    uploadGlTextureImageResource(gl, target, image as Readonly<Image>);
+    uploadGlTextureImageResource(gl, target, image as Readonly<Image>, internalFormat);
   }
 }

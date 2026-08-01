@@ -23,11 +23,9 @@ import type {
 // _pad } — radiance is already linear and premultiplied by intensity at pack time, so the shader
 // never decodes sRgb. u_directionalCount / u_ambientCount (0 or 1) gate each term's contribution.
 //
-// Color spaces: sampled albedo/color textures (baseColor, emissive, sheenColor, specularColor,
-// subsurfaceColor) are sRgb-encoded and decoded in GLSL via srgbToLinear. Data maps (normal,
-// metallic-roughness, occlusion, clearcoat, anisotropy, iridescence-thickness, thickness,
-// transmission) are linear and read raw. Packed material colors are decoded to linear on the CPU
-// with unpackColorToLinear before upload, so the shader never double-decodes them.
+// Color spaces: every resolved Texture chooses a linear or sRGB GPU internal format from its
+// colorSpace descriptor, so sampling color maps returns linear values while data maps remain raw.
+// Packed material colors are decoded to linear on the CPU with unpackColorToLinear before upload.
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
@@ -281,13 +279,6 @@ out vec4 fragColor;
 
 const float PI = 3.14159265359;
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
 float distributionGgx(float nDotH, float roughness) {
   float a = roughness * roughness;
   float a2 = a * a;
@@ -369,7 +360,7 @@ void main() {
   vec4 baseColor = u_baseColor;
 #ifdef HAS_BASE_COLOR_MAP
   vec4 sampled = texture(u_baseColorMap, v_uv0);
-  baseColor.rgb *= srgbToLinear(sampled.rgb);
+  baseColor.rgb *= sampled.rgb;
   baseColor.a *= sampled.a;
 #endif
 
@@ -480,7 +471,7 @@ ${PBR_EXTENSION_SURFACE}
 
   vec3 emissive = u_emissive;
 #ifdef HAS_EMISSIVE_MAP
-  emissive *= srgbToLinear(texture(u_emissiveMap, v_uv0).rgb);
+  emissive *= texture(u_emissiveMap, v_uv0).rgb;
 #endif
   radiance += emissive * u_emissiveStrength;
 

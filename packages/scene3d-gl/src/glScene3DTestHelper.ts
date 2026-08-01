@@ -78,6 +78,8 @@ export function makeFakeGl2(options?: {
     MAX_TEXTURE_IMAGE_UNITS: 0x8872,
     MAX_VERTEX_UNIFORM_VECTORS: 0x8dfb,
     RGBA32F: 0x8814,
+    RGBA: 0x1908,
+    SRGB8_ALPHA8: 0x8c43,
     NEAREST: 0x2600,
     LINEAR: 0x2601,
     LINEAR_MIPMAP_LINEAR: 0x2703,
@@ -194,7 +196,9 @@ export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: Fa
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
     textureSourcePremultipliedTextureCache: new WeakMap(),
+    textureSourcePremultipliedSrgbTextureCache: new WeakMap(),
     textureSourceStraightTextureCache: new WeakMap(),
+    textureSourceStraightSrgbTextureCache: new WeakMap(),
     // Fullscreen-pass scratch, so tests can drive present/resolve passes (drawGlFullscreenPass) that
     // read the quad buffers and the default-shader slot alongside the mesh path.
     quadVertexBuffer: {} as WebGLBuffer,

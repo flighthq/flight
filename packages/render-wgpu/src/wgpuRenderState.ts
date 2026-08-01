@@ -185,9 +185,12 @@ export async function createWgpuRenderState(
   runtime.linearSampler = linearSampler;
   runtime.nearestSampler = nearestSampler;
   runtime.samplerCache = new Map();
+  runtime.mipmapPipelineCache = new Map();
   runtime.textureCache = new WeakMap();
   runtime.textureSourcePremultipliedTextureCache = new WeakMap();
+  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
   runtime.textureSourceStraightTextureCache = new WeakMap();
+  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
   runtime.defaultBitmapShader = null;
 
   runtime.particleInstanceBuffer = null;
@@ -299,7 +302,8 @@ export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderSta
 // keep their own pre-created linear/nearest samplers; this backs every non-default combination.
 export function getWgpuSampler(
   state: WgpuRenderState,
-  filter: GPUFilterMode,
+  minFilter: GPUFilterMode,
+  magFilter: GPUFilterMode,
   wrapU: TextureWrap,
   wrapV: TextureWrap,
   mipmapFilter?: GPUMipmapFilterMode,
@@ -307,22 +311,24 @@ export function getWgpuSampler(
 ): GPUSampler {
   const runtime = getWgpuRenderStateRuntime(state);
   const anisotropy = Math.max(1, Math.floor(maxAnisotropy));
-  const effectiveFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : filter;
+  const effectiveMinFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : minFilter;
+  const effectiveMagFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : magFilter;
   const effectiveMipmapFilter = anisotropy > 1 ? 'linear' : mipmapFilter;
   // Pack the sampler config into a single NUMBER key rather than a template string — this runs on every
   // material bind (per frame), so a per-call string allocation would be hidden GC pressure in the hot
-  // loop. filter (1 bit) | wrapU (2) | wrapV (2) | mipmap (2) | anisotropy (shifted above them).
+  // loop. min (1 bit) | mag (1) | wrapU (2) | wrapV (2) | mipmap (2) | anisotropy above them.
   const key =
-    SAMPLER_FILTER_BITS[effectiveFilter] |
-    (SAMPLER_WRAP_BITS[wrapU] << 1) |
-    (SAMPLER_WRAP_BITS[wrapV] << 3) |
-    ((effectiveMipmapFilter === undefined ? 0 : SAMPLER_MIPMAP_BITS[effectiveMipmapFilter]) << 5) |
-    (anisotropy << 7);
+    SAMPLER_FILTER_BITS[effectiveMinFilter] |
+    (SAMPLER_FILTER_BITS[effectiveMagFilter] << 1) |
+    (SAMPLER_WRAP_BITS[wrapU] << 2) |
+    (SAMPLER_WRAP_BITS[wrapV] << 4) |
+    ((effectiveMipmapFilter === undefined ? 0 : SAMPLER_MIPMAP_BITS[effectiveMipmapFilter]) << 6) |
+    (anisotropy << 8);
   let sampler = runtime.samplerCache.get(key);
   if (sampler === undefined) {
     const descriptor: GPUSamplerDescriptor = {
-      minFilter: effectiveFilter,
-      magFilter: effectiveFilter,
+      minFilter: effectiveMinFilter,
+      magFilter: effectiveMagFilter,
       addressModeU: wrapU,
       addressModeV: wrapV,
     };
@@ -443,12 +449,14 @@ const WGPU_DEVICE_RUNTIME_KEYS = [
   'linearSampler',
   'nearestSampler',
   'samplerCache',
-  'mipmapPipeline',
-  'mipmapBindGroupLayout',
+  'mipmapPipelineCache',
   'textureCache',
   'textureSourcePremultipliedTextureCache',
+  'textureSourcePremultipliedSrgbTextureCache',
   'textureSourceStraightTextureCache',
+  'textureSourceStraightSrgbTextureCache',
   'videoTextureCache',
+  'videoSrgbTextureCache',
   'wgpuExternalTextureCache',
   'wgpuRenderTextureCache',
   'sceneMeshUploadCache',

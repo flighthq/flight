@@ -83,12 +83,14 @@ function resolveGlBitmapTexture(
   premultiply: boolean,
 ): WebGLTexture | null {
   const bitmap = getTextureSource(texture) as Readonly<Bitmap> | null;
-  return bitmap === null ? null : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply);
+  return bitmap === null
+    ? null
+    : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply, texture.colorSpace);
 }
 
 function resolveGlCompressedImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
   const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
-  return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler);
+  return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler, null, texture.colorSpace);
 }
 
 function resolveGlImageTexture(
@@ -97,7 +99,9 @@ function resolveGlImageTexture(
   premultiply: boolean,
 ): WebGLTexture | null {
   const image = getTextureSource(texture) as Readonly<Image> | null;
-  return image === null ? null : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply);
+  return image === null
+    ? null
+    : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply, texture.colorSpace);
 }
 
 function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {

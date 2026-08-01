@@ -218,13 +218,6 @@ uniform float u_objectAlpha;
 
 out vec4 fragColor;
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
 // The classic shading for ONE light: Lambert diffuse plus the optional Phong/BlinnPhong specular
 // lobe. Every light type (directional, point, spot) routes through this one BRDF so they never fork
 // the shading model — the caller supplies the surface->light direction and the light's (attenuated,
@@ -237,7 +230,7 @@ vec3 shadeClassicLight(vec3 normal, vec3 lightDir, vec3 lightColor, vec3 diffuse
     vec3 viewDir = normalize(u_cameraPosition - v_worldPosition);
     vec3 specularColor = u_specular.rgb;
   #ifdef HAS_SPECULAR_MAP
-    specularColor *= srgbToLinear(texture(u_specularMap, v_uv0).rgb);
+    specularColor *= texture(u_specularMap, v_uv0).rgb;
   #endif
   #ifdef LIGHTING_PHONG
     // Phong: reflection-vector specular.
@@ -259,7 +252,7 @@ void main() {
   vec4 diffuse = u_diffuse;
 #ifdef HAS_DIFFUSE_MAP
   vec4 sampledDiffuse = texture(u_diffuseMap, v_uv0);
-  diffuse.rgb *= srgbToLinear(sampledDiffuse.rgb);
+  diffuse.rgb *= sampledDiffuse.rgb;
   diffuse.a *= sampledDiffuse.a;
 #endif
 

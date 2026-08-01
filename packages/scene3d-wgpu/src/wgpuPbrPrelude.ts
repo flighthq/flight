@@ -247,13 +247,6 @@ struct VertexOutput {
   return out;
 }
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-fn srgbToLinear(c : vec3f) -> vec3f {
-  let lo = c / 12.92;
-  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
-  return select(lo, hi, c > vec3f(0.04045));
-}
-
 fn distributionGgx(nDotH : f32, roughness : f32) -> f32 {
   let a = roughness * roughness;
   let a2 = a * a;
@@ -425,7 +418,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
     let sampled = textureSample(baseColorTexture, baseColorSampler, in.uv);
-    baseColor = vec4f(baseColor.rgb * srgbToLinear(sampled.rgb), baseColor.a * sampled.a);
+    baseColor = vec4f(baseColor.rgb * sampled.rgb, baseColor.a * sampled.a);
   }
 
   // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
@@ -565,7 +558,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
 
   var emissive = material.emissive.rgb;
   if (HAS_EMISSIVE_MAP) {
-    emissive = emissive * srgbToLinear(textureSample(emissiveTexture, emissiveSampler, in.uv).rgb);
+    emissive = emissive * textureSample(emissiveTexture, emissiveSampler, in.uv).rgb;
   }
   radiance = radiance + emissive;
 

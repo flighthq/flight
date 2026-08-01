@@ -408,6 +408,9 @@ describe('createScene3DFromObj', () => {
     expect((getTestTextureResource(scene.resources, material.normalMap!) as ExternalImageResourceReference).uri).toBe(
       'normal.png',
     );
+    expect(material.diffuseMap!.colorSpace).toBe('srgb');
+    expect(material.specularMap!.colorSpace).toBe('srgb');
+    expect(material.normalMap!.colorSpace).toBe('linear');
     expect(getTextureSource(material.diffuseMap!)).toBeNull();
   });
 

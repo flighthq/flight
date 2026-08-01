@@ -11,9 +11,8 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // copyExternalImageToTexture for a `source`, or queue.writeTexture for a data-only face (a generated
 // Bitmap, e.g. the skybox's rotateBitmap180 path, which never allocates a canvas). The WGSL mirror of
 // scene-gl's ensureGlEnvironmentSourceCube. The upload is keyed by identity: re-uploaded only when the
-// cached view is absent (a changed cube must drop the cache first via destroyWgpuScene3DIbl). The faces are
-// stored sRGB-encoded (rgba8unorm) and decoded to linear by the bake/skybox shaders that sample them,
-// matching scene-gl's sRGB-passthrough convention (the GL path uploads UNSIGNED_BYTE + decodes in-shader).
+// cached view is absent (a changed cube must drop the cache first via destroyWgpuScene3DIbl).
+// Texture.colorSpace selects rgba8unorm or rgba8unorm-srgb, so hardware sampling performs the decode.
 // Returns the cube-dimension GPUTextureView the bake + skybox sample. The source cube is a non-GC GPU
 // resource freed by destroyWgpuScene3DIbl.
 export function ensureWgpuEnvironmentSourceCube(
@@ -30,9 +29,10 @@ export function ensureWgpuEnvironmentSourceCube(
   // Cube textures must be square; every face shares the +X face's dimensions (a well-formed cube).
   const size = sources[0]!.width;
   const device = state.device;
+  const format: GPUTextureFormat = cube.colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [size, size, 6],
-    format: ENVIRONMENT_CUBE_FORMAT,
+    format,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
@@ -90,7 +90,3 @@ function uploadWgpuEnvironmentImage(
     uploadWgpuTextureImageResource(device, texture, [0, 0, face], image as Readonly<Image>);
   }
 }
-
-// The source radiance cube is stored sRGB-encoded (not rgba8unorm-srgb): the bake/skybox shaders decode it
-// to linear themselves via srgbToLinear, exactly as scene-gl's shaders do, so the two backends agree.
-const ENVIRONMENT_CUBE_FORMAT: GPUTextureFormat = 'rgba8unorm';

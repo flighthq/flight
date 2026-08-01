@@ -15,11 +15,12 @@ export function uploadGlTextureData(
   width: number,
   height: number,
   data: Readonly<Uint8ClampedArray<ArrayBuffer>>,
+  internalFormat: number = gl.RGBA,
 ): void {
   gl.texImage2D(
     target,
     0,
-    gl.RGBA,
+    internalFormat,
     width,
     height,
     0,
@@ -31,11 +32,21 @@ export function uploadGlTextureData(
 
 // Uploads a decoded DOM element (image, canvas, ImageBitmap, VideoFrame) through the TexImageSource
 // overload — the web fast-path, a zero-CPU-copy GPU DMA. Absent on non-web hosts, which carry only `data`.
-export function uploadGlTextureElement(gl: WebGL2RenderingContext, target: number, source: TexImageSource): void {
-  gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+export function uploadGlTextureElement(
+  gl: WebGL2RenderingContext,
+  target: number,
+  source: TexImageSource,
+  internalFormat: number = gl.RGBA,
+): void {
+  gl.texImage2D(target, 0, internalFormat, gl.RGBA, gl.UNSIGNED_BYTE, source);
 }
 
 // Uploads a host-backed Image through the decoded-element fast path.
-export function uploadGlTextureImageResource(gl: WebGL2RenderingContext, target: number, image: Readonly<Image>): void {
-  uploadGlTextureElement(gl, target, image.source as TexImageSource);
+export function uploadGlTextureImageResource(
+  gl: WebGL2RenderingContext,
+  target: number,
+  image: Readonly<Image>,
+  internalFormat: number = gl.RGBA,
+): void {
+  uploadGlTextureElement(gl, target, image.source as TexImageSource, internalFormat);
 }

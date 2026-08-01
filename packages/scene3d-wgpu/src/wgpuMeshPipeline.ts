@@ -721,14 +721,15 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
 export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
   if (texture === null) return getWgpuRenderStateRuntime(state).linearSampler;
   const sampler = texture.sampler;
-  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const useMips = sampler.mipmaps && sampler.minFilter !== 'linear' && sampler.minFilter !== 'nearest';
   const mipmapFilter: GPUMipmapFilterMode | undefined = useMips
     ? sampler.minFilter.endsWith('nearest')
       ? 'nearest'
       : 'linear'
     : undefined;
-  return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
+  return getWgpuSampler(state, minFilter, magFilter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
 }
 
 // Produces the distinct HAS_SKIN vertex variant. The palette stays in group(1), beside Draw, so lit
@@ -956,7 +957,7 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
 
 // The shared WGSL prelude every family module prepends after its const-flag block: the Frame + Draw
 // uniform structs and their group(0)/group(1) bindings, the VertexOutput, the vs_main entry, and the
-// srgbToLinear helper. A family appends its own group(2) Material block + fs_main. Keeping the Frame/
+// vertex transform. A family appends its own group(2) Material block + fs_main. Keeping the Frame/
 // Draw structs here keeps them in lockstep with writeWgpuFrameUniform / writeWgpuDrawUniform. Mirrors
 // scene-gl's shared vertex body + GL_MESH_LIGHT_BLOCK_GLSL.
 export const WGPU_MESH_PRELUDE_WGSL = /* wgsl */ `
@@ -1024,12 +1025,6 @@ struct VertexOutput {
   return out;
 }
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-fn srgbToLinear(c : vec3f) -> vec3f {
-  let lo = c / 12.92;
-  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
-  return select(lo, hi, c > vec3f(0.04045));
-}
 `;
 
 // Writes the per-frame Frame uniform (camera view-projection + world position + the packed light

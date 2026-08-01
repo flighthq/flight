@@ -92,6 +92,7 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       blendedDrawList: [],
       blendedPool: [],
       environmentSourceCube: null,
+      environmentSourceCubeColorSpace: 'linear',
       ibl: null,
       iblBakeFramebuffer: null,
       materialRegistry: new Map(),

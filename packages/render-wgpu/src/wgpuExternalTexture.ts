@@ -55,7 +55,8 @@ export function disposeExternalWgpuTexture(state: WgpuRenderState, texture: Read
 
 function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): GPUSampler {
   const sampler = texture.sampler;
-  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const mipmapFilter: GPUMipmapFilterMode | undefined = sampler.mipmaps
     ? sampler.minFilter.endsWith('mipmap-nearest')
       ? 'nearest'
@@ -63,7 +64,7 @@ function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Textur
         ? 'linear'
         : undefined
     : undefined;
-  return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
+  return getWgpuSampler(state, minFilter, magFilter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
 }
 
 function resolveExternalWgpuTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {

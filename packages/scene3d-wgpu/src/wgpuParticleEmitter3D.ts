@@ -366,10 +366,11 @@ function drawParticleEmitter3DNode(
           atlasTexture !== null
             ? getWgpuSampler(
                 state,
+                atlasTexture.sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear',
                 atlasTexture.sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear',
                 atlasTexture.sampler.wrapU,
                 atlasTexture.sampler.wrapV,
-                atlasTexture.sampler.mipmaps
+                atlasTexture.sampler.mipmaps && atlasTexture.sampler.minFilter.includes('mipmap')
                   ? atlasTexture.sampler.minFilter.endsWith('nearest')
                     ? 'nearest'
                     : 'linear'

@@ -86,35 +86,38 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   pipelineCache: Map<string, GPURenderPipeline>;
 
   // Samplers. linear/nearest are the clamp-to-edge defaults for the 2D bitmap path; material textures
-  // that tile or mip go through samplerCache, keyed by a NUMBER that bit-packs filter/wrapU/wrapV/mipmap/
-  // anisotropy (getWgpuSampler) — a number, not a template string, so the per-bind lookup that runs every
+  // that tile or mip go through samplerCache, keyed by a NUMBER that bit-packs min/mag/wrapU/wrapV/
+  // mipmap/anisotropy (getWgpuSampler) — a number, not a template string, so the per-bind lookup that runs every
   // frame allocates nothing. A GPUSampler's address mode, mip filter, and anisotropy are immutable and
   // must be chosen at bind-group creation.
   linearSampler: GPUSampler;
   nearestSampler: GPUSampler;
   samplerCache: Map<number, GPUSampler>;
 
-  // Lazily-built downsample render pipeline and its bind-group layout for GPU mip-chain generation.
+  // Lazily-built downsample render pipelines and bind-group layouts for GPU mip-chain generation.
   // WebGPU has no generateMipmap, so a mipmapped material texture's lower levels are rendered by
-  // repeatedly downsampling the level above through this pipeline. Null until the first such upload.
-  mipmapPipeline?: GPURenderPipeline | null;
-  mipmapBindGroupLayout?: GPUBindGroupLayout | null;
+  // repeatedly downsampling the level above. The format-keyed cache keeps linear and sRGB target
+  // pipelines distinct. Empty until the first such upload.
+  mipmapPipelineCache: Map<GPUTextureFormat, { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline }>;
 
   // Raw-element texture cache: a canvas/video/image element uploaded directly, keyed by the element.
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
   // Premultiplied texture realizations for TextureSource siblings. Keyed by stable entity identity and
   // guarded by content version so mutable Bitmaps re-upload in place.
   textureSourcePremultipliedTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
+  textureSourcePremultipliedSrgbTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
   // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
   textureSourceStraightTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
+  textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
   // Optional block-compressed upload and CPU-decode seams. The uploader is installed explicitly so
   // ordinary bitmap bundles do not retain the format table; the decoder is consulted only when the
   // device lacks the container's native family.
   compressedTextureDecoder?: WgpuCompressedTextureDecoder | null;
   compressedTextureUpload?: WgpuCompressedTextureUploader | null;
-  // Dynamic host-video cache. The GPU texture persists across frames; uploadedVersion gates the
-  // expensive external-image copy, while width/height detect mid-stream resolution changes.
+  // Dynamic host-video caches split by GPU color interpretation. The GPU texture persists across
+  // frames; uploadedVersion gates the copy, while width/height detect resolution changes.
   videoTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
+  videoSrgbTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
   // Open, state-scoped Texture source registry keyed by the source's declared string kind.
   // Map.set is last-write-wins; undefined until first registration.
   wgpuTextureResolverRegistry?: Map<TextureSourceKind, WgpuTextureResolver> | null;

@@ -161,7 +161,7 @@ export function ensureWgpuClassicPipeline(
 }
 
 // The full WGSL module source for a define key: the const-flag block (lighting model first) + the
-// shared mesh prelude (Frame/Draw/vs_main/srgbToLinear) + the classic material block + fs_main.
+// shared mesh prelude (Frame/Draw/vs_main) + the classic material block + fs_main.
 export function getWgpuClassicModuleSourceForKey(
   key: Readonly<WgpuClassicDefineKey>,
   skinned = false,
@@ -311,7 +311,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   var diffuse = material.diffuse;
   if (HAS_DIFFUSE_MAP) {
     let sampled = textureSample(diffuseTexture, diffuseSampler, in.uv);
-    diffuse = vec4f(diffuse.rgb * srgbToLinear(sampled.rgb), diffuse.a * sampled.a);
+    diffuse = vec4f(diffuse.rgb * sampled.rgb, diffuse.a * sampled.a);
   }
 
   // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
@@ -346,7 +346,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   var specularColor = material.specular.rgb;
   if (HAS_SPECULAR_MAP) {
     let sampledSpecular = textureSample(specularTexture, specularSampler, in.uv);
-    specularColor = specularColor * srgbToLinear(sampledSpecular.rgb);
+    specularColor = specularColor * sampledSpecular.rgb;
   }
 
   var radiance = vec3f(0.0);

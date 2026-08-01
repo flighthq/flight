@@ -123,7 +123,7 @@ export function ensureWgpuToonPipeline(
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
-// Draw/vs_main/srgbToLinear) + the Toon material block + fs_main.
+// Draw/vs_main) + the Toon material block + fs_main.
 export function getWgpuToonModuleSourceForKey(
   key: Readonly<WgpuToonDefineKey>,
   skinned = false,
@@ -195,7 +195,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
     let sampled = textureSample(baseColorTexture, materialSampler, in.uv);
-    baseColor = vec4f(baseColor.rgb * srgbToLinear(sampled.rgb), baseColor.a * sampled.a);
+    baseColor = vec4f(baseColor.rgb * sampled.rgb, baseColor.a * sampled.a);
   }
 
   if (ALPHA_MASK && baseColor.a < material.params.y) {

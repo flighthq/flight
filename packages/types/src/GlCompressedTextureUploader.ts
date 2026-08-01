@@ -1,5 +1,6 @@
 import type { CompressedImage } from './CompressedImage';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
+import type { TextureColorSpace } from './Texture';
 
 // The opt-in seam that uploads a CompressedImage's payload to the currently-bound GL
 // texture. Installed per render state by registerGlCompressedTextureUpload; unset until then, so a
@@ -14,4 +15,5 @@ export type GlCompressedTextureUploader = (
   gl: WebGL2RenderingContext,
   image: Readonly<CompressedImage>,
   decode: GlCompressedTextureDecoder | null,
+  colorSpace?: TextureColorSpace,
 ) => boolean;

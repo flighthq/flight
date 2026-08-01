@@ -233,6 +233,7 @@ describe('bindWgpuVideoTexture', () => {
       videoWidth: { configurable: true, value: width, writable: true },
     });
     return {
+      colorSpace: 'srgb',
       sampler: {
         anisotropy: 1,
         magFilter: 'linear',
@@ -276,6 +277,18 @@ describe('bindWgpuVideoTexture', () => {
     const second = bindWgpuVideoTexture(state, video)!;
     expect(second).not.toBe(first);
     expect(destroy).toHaveBeenCalled();
+  });
+
+  it('realizes distinct linear and sRGB textures for one video source', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    const video = videoTexture(1);
+    const srgb = bindWgpuVideoTexture(state, video);
+    expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm-srgb' }));
+    video.colorSpace = 'linear';
+    const linear = bindWgpuVideoTexture(state, video);
+    expect(linear).not.toBe(srgb);
+    expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm' }));
   });
 
   it('destroys and removes an uploaded video texture', async () => {

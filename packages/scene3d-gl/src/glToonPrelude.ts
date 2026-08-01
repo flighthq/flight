@@ -130,19 +130,11 @@ uniform float u_objectAlpha;
 
 out vec4 fragColor;
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting. u_baseColor is already
-// linear (decoded on the CPU at bind), so only sampled textures need decoding.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
 void main() {
   vec4 baseColor = u_baseColor;
 #ifdef HAS_BASE_COLOR_MAP
   vec4 sampled = texture(u_baseColorMap, v_uv0);
-  baseColor.rgb *= srgbToLinear(sampled.rgb);
+  baseColor.rgb *= sampled.rgb;
   baseColor.a *= sampled.a;
 #endif
 

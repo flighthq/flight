@@ -1124,6 +1124,7 @@ describe('createScene3DFromAwd2', () => {
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.normalMap).not.toBeNull();
+    expect(material.normalMap!.colorSpace).toBe('linear');
     expect(getTextureSource(material.normalMap!)).toBeNull(); // referenced, not decoded
     const ref = getTestTextureResource(scene.resources, material.normalMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');

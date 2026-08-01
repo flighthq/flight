@@ -672,6 +672,19 @@ describe('getWgpuMaterialSampler', () => {
     expect(getWgpuMaterialSampler(state, texture)).toBe(sampler);
   });
 
+  it('preserves independent minification and magnification filters', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const texture = createTexture({ dimension: '2d', source: {} as Image });
+    texture.sampler.minFilter = 'nearest';
+    texture.sampler.magFilter = 'linear';
+
+    getWgpuMaterialSampler(state, texture);
+
+    expect(fake.calls.filter((c) => c.name === 'createSampler').at(-1)?.args[0]).toEqual(
+      expect.objectContaining({ minFilter: 'nearest', magFilter: 'linear' }),
+    );
+  });
+
   it('drops the mip filter when the map disables mipmaps (distinct packed key from the mipmapped default)', () => {
     const { state } = makeWgpuScene3DState();
     const noMip = createTexture({ dimension: '2d', source: {} as Image });
@@ -862,7 +875,7 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('struct Frame');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('struct Draw');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('fn vs_main');
-    expect(WGPU_MESH_PRELUDE_WGSL).toContain('srgbToLinear');
+    expect(WGPU_MESH_PRELUDE_WGSL).not.toContain('srgbToLinear');
   });
 
   it('applies the uv transform in the shared vertex scene2d', () => {

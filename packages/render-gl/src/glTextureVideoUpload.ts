@@ -16,6 +16,7 @@ export function uploadGlTextureVideoFrame(
   gl: WebGL2RenderingContext,
   image: Readonly<Image>,
   uploadedVersion: number,
+  internalFormat: number = gl.RGBA,
 ): number {
   if (image.version === uploadedVersion) return uploadedVersion;
   const element = image.source as HTMLVideoElement | null;
@@ -24,6 +25,6 @@ export function uploadGlTextureVideoFrame(
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) {
     return uploadedVersion;
   }
-  uploadGlTextureElement(gl, gl.TEXTURE_2D, element as unknown as TexImageSource);
+  uploadGlTextureElement(gl, gl.TEXTURE_2D, element as unknown as TexImageSource, internalFormat);
   return image.version;
 }

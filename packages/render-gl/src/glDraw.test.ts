@@ -555,6 +555,32 @@ describe('bindGlVideoTexture', () => {
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });
 
+  it('realizes distinct linear and sRGB textures for one video source', () => {
+    const { state, gl } = createGlState();
+    const vt = videoTexture(1);
+    vt.colorSpace = 'srgb';
+    const srgb = bindGlVideoTexture(state, vt);
+    expect(gl.texImage2D).toHaveBeenLastCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.SRGB8_ALPHA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      (getTextureSource(vt) as Image).source,
+    );
+    vt.colorSpace = 'linear';
+    const linear = bindGlVideoTexture(state, vt);
+    expect(linear).not.toBe(srgb);
+    expect(gl.texImage2D).toHaveBeenLastCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      (getTextureSource(vt) as Image).source,
+    );
+  });
+
   it('does not upload when the element has no decoded frame yet', () => {
     const { state, gl } = createGlState();
     bindGlVideoTexture(state, videoTexture(1, 1, 0, 0));

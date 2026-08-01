@@ -30,7 +30,7 @@ export const specularPbrGlExtension: GlPbrExtensionRegistration = {
     return {
       applySurface: `
   float flightSpecularFactor = u_flightSpecular * ${factorMap ? 'texture(u_flightSpecularMap, flightSpecularUv()).a' : '1.0'};
-  vec3 flightSpecularColor = u_flightSpecularColor * ${colorMap ? 'srgbToLinear(texture(u_flightSpecularColorMap, flightSpecularColorUv()).rgb)' : 'vec3(1.0)'};
+  vec3 flightSpecularColor = u_flightSpecularColor * ${colorMap ? 'texture(u_flightSpecularColorMap, flightSpecularColorUv()).rgb' : 'vec3(1.0)'};
   f0 = mix(min(0.04 * flightSpecularColor, vec3(1.0)) * flightSpecularFactor, albedo, metallic);`,
       contributeIbl: '',
       contributePunctual: '',

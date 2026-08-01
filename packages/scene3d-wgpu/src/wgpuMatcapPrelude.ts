@@ -20,7 +20,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 // lighting-independent Matcap (material-capture) material: a matcap is a prebaked-lit sphere texture
 // sampled by the VIEW-SPACE normal projected to 2D (uv = viewNormal.xy * 0.5 + 0.5), giving full
 // stylized "lighting" with no scene lights. The output is LINEAR — the sampled matcap rgb would be
-// sRgb-decoded in the shader and multiplied by the linear `tint` (already sRgb-decoded on the CPU via
+// decoded by its sRGB GPU texture format and multiplied by the linear `tint` (decoded on the CPU via
 // unpackColorToLinear, so the shader never decodes the tint again). The effect pipeline owns
 // tonemap/gamma. WGSL has no preprocessor, so each feature flag is a `const … : bool` the pipeline
 // compiler folds (matcap / alpha-mask variants are const-branches of one module, never separate files).
@@ -128,7 +128,7 @@ export function ensureWgpuMatcapPipeline(
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
-// Draw/vs_main/srgbToLinear) + the matcap material block + fs_main.
+// Draw/vs_main) + the matcap material block + fs_main.
 export function getWgpuMatcapModuleSourceForKey(key: Readonly<WgpuMatcapDefineKey>): string {
   return (
     `const ALPHA_MASK : bool = ${key.alphaMaskEnabled ? 'true' : 'false'};\n` +
@@ -163,7 +163,7 @@ struct MatcapMaterial {
     let viewNormal = normalize(reflect(-viewDir, worldNormal));
     let matcapUv = viewNormal.xy * 0.5 + 0.5;
     let sampled = textureSample(matcapTexture, materialSampler, matcapUv);
-    color = vec4f(color.rgb * srgbToLinear(sampled.rgb), color.a * sampled.a);
+    color = vec4f(color.rgb * sampled.rgb, color.a * sampled.a);
   }
   if (ALPHA_MASK && color.a < material.params.x) {
     discard;

@@ -265,6 +265,18 @@ describe('prepareScene3DRender', () => {
     if (camera.projection.kind === 'perspective') expect(camera.projection.aspect).toBe(1);
   });
 
+  it('consumes camera jitter in the prepared view-projection', () => {
+    const state = createRenderState();
+    const scene = createNode3D(Node3DKind);
+    const camera = frontCamera();
+    const baseXOffset = prepareScene3DRender(state, scene, camera, emptyLights()).viewProjection.m[8];
+
+    camera.jitter.x = 0.125;
+    const jitteredXOffset = prepareScene3DRender(state, scene, camera, emptyLights()).viewProjection.m[8];
+
+    expect(jitteredXOffset).toBeCloseTo(baseXOffset - 0.125);
+  });
+
   it('culls a mesh placed far behind the camera', () => {
     const state = createRenderState();
     const scene = createNode3D(Node3DKind);

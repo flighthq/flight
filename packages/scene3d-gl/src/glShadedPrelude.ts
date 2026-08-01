@@ -314,13 +314,6 @@ uniform float u_objectAlpha;
 
 out vec4 fragColor;
 
-// sRgb albedo texels are gamma-encoded; decode to linear before lighting.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
 // Deterministic 2D value noise, declared in the base so any Effect-slot modifier (the procedural
 // dissolve mask) can call it without redeclaring a function — a GLSL compiler drops it when no
 // modifier references it, so a plain ShadedMaterial pays nothing for it.
@@ -359,7 +352,7 @@ void main() {
   vec4 diffuse = u_diffuse;
 #ifdef HAS_DIFFUSE_MAP
   vec4 sampledDiffuse = texture(u_diffuseMap, v_uv0);
-  diffuse.rgb *= srgbToLinear(sampledDiffuse.rgb);
+  diffuse.rgb *= sampledDiffuse.rgb;
   diffuse.a *= sampledDiffuse.a;
 #endif
 
@@ -386,7 +379,7 @@ void main() {
 
   vec3 specularColor = u_specular.rgb;
 #ifdef HAS_SPECULAR_MAP
-  specularColor *= srgbToLinear(texture(u_specularMap, v_uv0).rgb);
+  specularColor *= texture(u_specularMap, v_uv0).rgb;
 #endif
   float shininess = u_shininess;
 

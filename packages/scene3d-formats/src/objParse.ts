@@ -14,6 +14,7 @@ import type {
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
   Texture,
+  TextureColorSpace,
   ObjMaterial,
   ObjMaterialLibrary,
 } from '@flighthq/types/contract';
@@ -451,11 +452,11 @@ function flushGroup(
 function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scene3DDocument): BlinnPhongMaterial {
   const result = createBlinnPhongMaterial({
     diffuse: packObjColor(material.diffuse, material.dissolve),
-    diffuseMap: externalObjTexture(material.mapDiffuse, document),
-    normalMap: externalObjTexture(material.mapBump, document),
+    diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
+    normalMap: externalObjTexture(material.mapBump, document, 'linear'),
     shininess: material.specularExponent,
     specular: packObjColor(material.specular, 1),
-    specularMap: externalObjTexture(material.mapSpecular, document),
+    specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
   });
   // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
   // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only.
@@ -464,8 +465,15 @@ function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scen
 }
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
-function externalObjTexture(uri: string | null, document: Scene3DDocument): Texture | null {
-  return uri === null ? null : createExternalTextureRef(uri, null, document.resources);
+function externalObjTexture(
+  uri: string | null,
+  document: Scene3DDocument,
+  colorSpace: TextureColorSpace,
+): Texture | null {
+  if (uri === null) return null;
+  const texture = createExternalTextureRef(uri, null, document.resources);
+  texture.colorSpace = colorSpace;
+  return texture;
 }
 
 // Packs an MTL sRGB-space [r,g,b] triple (each in [0,1]) plus an alpha into a 0xRRGGBBAA integer.

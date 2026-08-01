@@ -271,9 +271,6 @@ const float PI = 3.14159265359;
 vec3 faceDirection() {
   return normalize(u_faceForward + v_uv.x * u_faceRight + v_uv.y * u_faceUp);
 }
-vec3 srgbToLinear(vec3 c) {
-  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
-}
 `;
 
 // Diffuse irradiance: cosine-weighted hemisphere integral of the environment around the texel normal.
@@ -292,7 +289,7 @@ void main() {
     for (float theta = 0.0; theta < 0.5 * PI; theta += delta) {
       vec3 tangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
       vec3 sampleVec = tangent.x * right + tangent.y * up + tangent.z * N;
-      irradiance += srgbToLinear(texture(u_envCube, sampleVec).rgb) * cos(theta) * sin(theta);
+      irradiance += texture(u_envCube, sampleVec).rgb * cos(theta) * sin(theta);
       samples += 1.0;
     }
   }
@@ -339,11 +336,11 @@ void main() {
     vec3 L = normalize(2.0 * dot(V, H) * H - V);
     float nDotL = max(dot(N, L), 0.0);
     if (nDotL > 0.0) {
-      prefiltered += srgbToLinear(texture(u_envCube, L).rgb) * nDotL;
+      prefiltered += texture(u_envCube, L).rgb * nDotL;
       totalWeight += nDotL;
     }
   }
-  fragColor = vec4(totalWeight > 0.0 ? prefiltered / totalWeight : srgbToLinear(texture(u_envCube, N).rgb), 1.0);
+  fragColor = vec4(totalWeight > 0.0 ? prefiltered / totalWeight : texture(u_envCube, N).rgb, 1.0);
 }
 `;
 

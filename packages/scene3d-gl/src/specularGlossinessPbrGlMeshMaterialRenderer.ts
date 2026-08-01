@@ -41,7 +41,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // diffuse/emissive/normal/occlusion maps pass straight through to the standard block.
 //
 // Colors are decoded to linear on the CPU before the conversion math; sampled albedo/emissive
-// textures are sRgb-decoded in GLSL, so nothing is double-decoded. See
+// textures select their sample-time decode through Texture.colorSpace, so nothing is double-decoded. See
 // registerGlSpecularGlossinessPbrMaterial.
 export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(

@@ -205,10 +205,11 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
         binding: 1,
         resource: getWgpuSampler(
           state,
+          atlas.texture.sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear',
           atlas.texture.sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear',
           atlas.texture.sampler.wrapU,
           atlas.texture.sampler.wrapV,
-          atlas.texture.sampler.mipmaps
+          atlas.texture.sampler.mipmaps && atlas.texture.sampler.minFilter.includes('mipmap')
             ? atlas.texture.sampler.minFilter.endsWith('nearest')
               ? 'nearest'
               : 'linear'

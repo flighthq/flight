@@ -13,6 +13,7 @@ import type { ModifierRegistry } from './ModifierRegistry';
 import type { PbrExtension } from './PbrExtension';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
+import type { TextureColorSpace } from './Texture';
 
 // The active directional shadow for this state, set by drawGlScene3DShadowMap and read by the lit bind
 // (bindGlMeshLightBlock) so every lit family samples the same shadow map. Null = no shadow this frame.
@@ -95,6 +96,7 @@ export interface GlScene3DRuntime {
   // pose or collapse to the origin, a silent-black footgun the missing call is the fix for.
   deformGuard?: ((mesh: Mesh) => void) | null;
   environmentSourceCube: WebGLTexture | null;
+  environmentSourceCubeColorSpace: TextureColorSpace;
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;

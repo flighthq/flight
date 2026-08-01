@@ -1,7 +1,6 @@
-import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera/contract';
-import { createMatrix4 } from '@flighthq/geometry/contract';
+import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { Camera3D, Environment, Matrix4, WgpuRenderState } from '@flighthq/types/contract';
+import type { Camera3D, Environment, WgpuRenderState } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -31,9 +30,9 @@ export function drawWgpuEnvironmentSkybox(
   const format = stateRuntime.currentColorFormat ?? state.format;
   const sky = ensureWgpuSkyboxPipeline(state, format);
 
-  getCamera3DInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
+  if (!updateCamera3DInverseViewProjection(camera, aspect)) return;
   const u = _skyScratch;
-  const m = _inverseViewProjection.m;
+  const m = camera.inverseViewProjection.m;
   for (let i = 0; i < 16; i++) u[i] = m[i];
   u[16] = environment.intensity;
   u[17] = 0;
@@ -133,7 +132,6 @@ const SKYBOX_DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 // Skybox uniform: mat4x4f inverse view-projection (64) + vec4f params (16, x = intensity) = 80 bytes.
 const SKYBOX_UNIFORM_BYTES = 80;
 
-const _inverseViewProjection: Matrix4 = createMatrix4();
 const _skyScratch = new Float32Array(SKYBOX_UNIFORM_BYTES / 4);
 const _skyboxes = new WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuSkybox>>();
 const _skyboxSamplers = new WeakMap<WgpuRenderState, GPUSampler>();
@@ -164,12 +162,6 @@ struct VertexOutput {
   return out;
 }
 
-fn srgbToLinear(c : vec3f) -> vec3f {
-  let lo = c / 12.92;
-  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
-  return select(lo, hi, c > vec3f(0.04045));
-}
-
 @fragment fn fs_main(in : VertexOutput) -> @location(0) vec4f {
   // Reconstruct the world-space ray through this pixel from the near- and far-plane unprojections. The
   // projection is GL-convention (clip z in -1..1), so unproject at z = -1 (near) and z = +1 (far),
@@ -177,7 +169,7 @@ fn srgbToLinear(c : vec3f) -> vec3f {
   let nearW = sky.inverseViewProjection * vec4f(in.ndc, -1.0, 1.0);
   let farW = sky.inverseViewProjection * vec4f(in.ndc, 1.0, 1.0);
   let dir = normalize(farW.xyz / farW.w - nearW.xyz / nearW.w);
-  let color = srgbToLinear(textureSampleLevel(envCube, envSampler, dir, 0.0).rgb) * sky.params.x;
+  let color = textureSampleLevel(envCube, envSampler, dir, 0.0).rgb * sky.params.x;
   return vec4f(color, 1.0);
 }
 `;

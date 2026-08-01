@@ -105,14 +105,7 @@ uniform float u_objectAlpha;
 
 out vec4 fragColor;
 
-// sRgb texels are gamma-encoded; decode to linear before use. u_tint is already linear (decoded on
-// the CPU at bind), so only the sampled matcap needs decoding.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
+// Texture.colorSpace selects the GPU format, so sampled matcap color is already linear here.
 void main() {
   vec4 color = u_tint;
 #ifdef HAS_MATCAP
@@ -120,7 +113,7 @@ void main() {
   vec3 viewNormal = normalize(v_viewNormal);
   vec2 matcapUv = viewNormal.xy * 0.5 + 0.5;
   vec4 sampled = texture(u_matcap, matcapUv);
-  color.rgb *= srgbToLinear(sampled.rgb);
+  color.rgb *= sampled.rgb;
   color.a *= sampled.a;
 #endif
 #ifdef ALPHA_MASK

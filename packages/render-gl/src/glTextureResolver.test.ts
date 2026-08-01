@@ -108,6 +108,33 @@ describe('registerGlImageTextureResolver', () => {
     expect(gl.texImage2D).toHaveBeenCalledOnce();
   });
 
+  it('realizes linear and sRGB interpretations as distinct GPU textures', () => {
+    const { state, gl } = createGlState();
+    const texture = textureWithImage(imageResource());
+    registerGlImageTextureResolver(state);
+
+    const srgb = resolveGlTexture(state, texture);
+    expect(gl.texImage2D).toHaveBeenLastCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.SRGB8_ALPHA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      expect.anything(),
+    );
+    texture.colorSpace = 'linear';
+    const linear = resolveGlTexture(state, texture);
+    expect(linear).not.toBe(srgb);
+    expect(gl.texImage2D).toHaveBeenLastCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      expect.anything(),
+    );
+  });
+
   it('returns null for an unbound image source', () => {
     const { state } = createGlState();
     registerGlImageTextureResolver(state);
@@ -130,7 +157,14 @@ describe('registerGlImageTextureResolver', () => {
 
     expect(first).not.toBeNull();
     expect(second).toBe(first);
-    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video.source);
+    expect(gl.texImage2D).toHaveBeenCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.SRGB8_ALPHA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      video.source,
+    );
     expect(gl.texImage2D).toHaveBeenCalledTimes(uploads);
   });
 });

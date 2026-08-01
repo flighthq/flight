@@ -2,6 +2,7 @@ import type {
   CompressedImage,
   TextureContainer,
   TextureContainerFormat,
+  TextureColorSpace,
   WgpuCompressedTextureDecoder,
   WgpuCompressedTextureSupport,
   WgpuRenderState,
@@ -67,6 +68,7 @@ export function uploadWgpuCompressedTextureContainer(
   container: Readonly<TextureContainer>,
   payload: Readonly<Uint8Array>,
   decode?: WgpuCompressedTextureDecoder,
+  colorSpace?: TextureColorSpace,
 ): GPUTexture | null {
   if (
     container.supercompression !== 'None' ||
@@ -79,7 +81,7 @@ export function uploadWgpuCompressedTextureContainer(
     return null;
   }
 
-  const native = getWgpuCompressedTextureFormat(state.device, container.format);
+  const native = getWgpuCompressedTextureFormatForColorSpace(state.device, container.format, colorSpace);
   if (native !== null) {
     const info = getCompressedFormatInfo(container.format)!;
     const texture = state.device.createTexture({
@@ -121,7 +123,7 @@ export function uploadWgpuCompressedTextureContainer(
   }
   const texture = state.device.createTexture({
     size: [container.width, container.height, 1],
-    format: 'rgba8unorm',
+    format: colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
     mipLevelCount: container.mipLevels,
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
   });
@@ -141,11 +143,12 @@ function uploadWgpuCompressedImage(
   state: WgpuRenderState,
   image: Readonly<CompressedImage>,
   decode: WgpuCompressedTextureDecoder | null,
+  colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry | null {
   const compressed = image.compressed;
   const container = compressed.container;
   if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return null;
-  const native = getWgpuCompressedTextureFormat(state.device, container.format) !== null;
+  const native = getWgpuCompressedTextureFormatForColorSpace(state.device, container.format, colorSpace) !== null;
   const fallback =
     decode === null
       ? undefined
@@ -153,7 +156,7 @@ function uploadWgpuCompressedImage(
           const rgba = decode(format, width, height, data);
           return rgba !== null ? premultiplyRgba8(rgba) : null;
         };
-  const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, fallback);
+  const texture = uploadWgpuCompressedTextureContainer(state, container, compressed.payload, fallback, colorSpace);
   if (texture === null) return null;
   const view = texture.createView();
   const runtime = getWgpuRenderStateRuntime(state);
@@ -194,6 +197,28 @@ function getCompressedFormatInfo(format: TextureContainerFormat): WgpuCompressed
   };
 }
 
+function getWgpuCompressedTextureFormatForColorSpace(
+  device: GPUDevice,
+  format: TextureContainerFormat,
+  colorSpace: TextureColorSpace | undefined,
+): GPUTextureFormat | null {
+  const resolved = colorSpace === undefined ? format : getTextureContainerFormatForColorSpace(format, colorSpace);
+  const native = getWgpuCompressedTextureFormat(device, resolved);
+  if (native !== null && colorSpace === 'srgb' && format.startsWith('astc')) {
+    return `${native}-srgb` as GPUTextureFormat;
+  }
+  return native;
+}
+
+function getTextureContainerFormatForColorSpace(
+  format: TextureContainerFormat,
+  colorSpace: TextureColorSpace,
+): TextureContainerFormat {
+  const pair = SRGB_FORMAT_PAIRS[format];
+  if (pair === undefined) return format;
+  return colorSpace === 'srgb' ? pair[1] : pair[0];
+}
+
 const fixed = (
   format: GPUTextureFormat,
   bytesPerBlock: number,
@@ -227,4 +252,24 @@ const FIXED_FORMATS: Partial<Record<TextureContainerFormat, WgpuCompressedFormat
   eacR11Snorm: fixed('eac-r11snorm', 8),
   eacRg11: fixed('eac-rg11unorm', 16),
   eacRg11Snorm: fixed('eac-rg11snorm', 16),
+};
+
+const SRGB_FORMAT_PAIRS: Partial<
+  Record<TextureContainerFormat, readonly [TextureContainerFormat, TextureContainerFormat]>
+> = {
+  bc1: ['bc1', 'bc1Srgb'],
+  bc1Srgb: ['bc1', 'bc1Srgb'],
+  bc2: ['bc2', 'bc2Srgb'],
+  bc2Srgb: ['bc2', 'bc2Srgb'],
+  bc3: ['bc3', 'bc3Srgb'],
+  bc3Srgb: ['bc3', 'bc3Srgb'],
+  bc7: ['bc7', 'bc7Srgb'],
+  bc7Srgb: ['bc7', 'bc7Srgb'],
+  etc1: ['etc1', 'etc2RgbSrgb'],
+  etc2Rgb: ['etc2Rgb', 'etc2RgbSrgb'],
+  etc2RgbSrgb: ['etc2Rgb', 'etc2RgbSrgb'],
+  etc2RgbA1: ['etc2RgbA1', 'etc2RgbA1Srgb'],
+  etc2RgbA1Srgb: ['etc2RgbA1', 'etc2RgbA1Srgb'],
+  etc2Rgba: ['etc2Rgba', 'etc2RgbaSrgb'],
+  etc2RgbaSrgb: ['etc2Rgba', 'etc2RgbaSrgb'],
 };

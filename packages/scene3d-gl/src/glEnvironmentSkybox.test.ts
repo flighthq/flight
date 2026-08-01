@@ -1,5 +1,6 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
-import type { Environment } from '@flighthq/types/contract';
+import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -20,5 +21,35 @@ describe('drawGlEnvironmentSkybox', () => {
     const before = gl.calls.length;
     expect(() => drawGlEnvironmentSkybox(state, environment, camera, 1)).not.toThrow();
     expect(gl.calls.length).toBe(before);
+  });
+
+  it('refreshes and uploads Camera3D.inverseViewProjection', () => {
+    const { state, gl } = makeGlScene3DState();
+    const face = {
+      data: new Uint8ClampedArray(4 * 4 * 4),
+      height: 4,
+      kind: BitmapTextureSourceKind,
+      width: 4,
+    } as Bitmap;
+    const environment = {
+      environment: {
+        colorSpace: 'srgb',
+        dimension: 'cube',
+        sampler: {},
+        sources: [face, face, face, face, face, face],
+      } as unknown as Texture,
+      intensity: 1,
+    } as Environment;
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    camera.inverseViewProjection.m[0] = 42;
+    drawGlEnvironmentSkybox(state, environment, camera, 1);
+    expect(camera.inverseViewProjection.m[0]).not.toBe(42);
+    expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv' && c.args[2] === camera.inverseViewProjection.m)).toBe(
+      true,
+    );
   });
 });
