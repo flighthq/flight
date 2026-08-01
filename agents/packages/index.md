@@ -66,9 +66,9 @@ Every `Approved` entry carries a **provenance stamp** — date plus whether it w
 
 ## Prior pipelines (removed)
 
-The `reviews/` tree (depth, breadth, maturation, alignment) and the `tools/agents/proposals/` pipeline were point-in-time staging areas whose findings have been migrated into this `packages/` structure — per-package cells, [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and [`TODO.md`](TODO.md). Both were removed from the repository on 2026-07-03; their content is recoverable from git history. **The only durable structure is `packages/`.**
+The `reviews/` tree (depth, breadth, maturation, alignment) and the `tools/agents/proposals/` pipeline were point-in-time staging areas whose findings have been migrated into this `packages/` structure — per-package cells, [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and `TODO.md`. Both were removed from the repository on 2026-07-03; their content is recoverable from git history. **The only durable structure is `packages/`.**
 
-Every cell carries a charter and assessment, every built package's cell carries a review (only the chartered-unbuilt candidates have none yet). The generated cross-package view is [`TODO.md`](TODO.md) (via `todo.mjs`) — the one-file index of actionable and surveyed work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Directed`, `Recommended`, and `Depth gaps` items). **Agents looking for work start at `TODO.md`** and read only the named cell for detail.
+Every cell carries a charter and assessment, every built package's cell carries a review (only the chartered-unbuilt candidates have none yet). The generated cross-package view is `TODO.md` (via `todo.mjs`) — the one-file index of actionable and surveyed work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Directed`, `Recommended`, and `Depth gaps` items). **Agents looking for work run `node agents/packages/todo.mjs`, start at `TODO.md`**, and read only the named cell for detail. It is a pure view over the cells and is **not committed** — generate it, never merge it.
 
 ## File layout
 
@@ -81,7 +81,7 @@ Every cell carries a charter and assessment, every built package's cell carries 
     register.md                 ← every package's decomposition state (blessed/built-unblessed/recommended)
     scaffold.mjs                ← idempotent generator: creates each package folder + stubs
     todo.mjs                    ← generates TODO.md from cell front matter + assessments + register
-    TODO.md                     ← generated one-file index of actionable work (do not edit by hand)
+    TODO.md                     ← generated one-file index of actionable work (gitignored; generate, don't edit)
     <name>/
       charter.md                ← durable, you-sourced (seeded from the prior review's domain line)
       status.md                 ← continuity / handoff log
