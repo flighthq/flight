@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/font'
-updated: 2026-07-13
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
@@ -12,27 +12,20 @@ The review's central finding is unchanged: the dual entity model (`Font` string 
 
 ## Recommended
 
-**The carried-over loader-test item is done** (2026-07-30). What it actually needed was narrower than
-the entry read: `fontFrom.test.ts` already covered `document.fonts.add` registration, multi-source
-`format()` composition, and failure paths — it was `fontResourceFrom.test.ts`, the half the entry
-called "markedly thinner", that had the gaps. Brought to parity: constructor family/source assertions
-on every loader, byte-slicing out of a larger backing buffer (tested on both implementations, since
-they are separate copies of the same arithmetic), the composed multi-source `src` string, first-face
-selection, and a failure path per loader. The new assertions were mutation-checked — breaking the
-slice, the assignment order, the `format()` composition, and the first-face pick each fails a test.
+_None open._ Re-verified against live source on 2026-08-01 (8 source files, 8 test files, 73 tests,
+16 main exports). The remaining loader items are recorded under [Landed](#landed), outside this section
+so the TODO generator stops reporting them as work.
 
-Two things surfaced while doing it, both recorded rather than swept:
+## Landed
 
-1. **`Font` and `FontResource` carry two separate copies of the same load logic.** `loadFontFromUrls`
-   and `loadFontResourceFromUrls` (and the bytes/name/url pairs) differ only in what they return and
-   where they attach the face; the `src` composition and the byte slicing are duplicated verbatim.
-   The tests now cover both copies precisely because a regression in one would otherwise go unseen.
-   That duplication is the Font/FontResource merge already in Backlog — this is more evidence for it,
-   not a separate item, and deduplicating before that merge is ruled on would be wasted work.
-2. **The failure contract is now pinned but was never stated.** `out.face` is assigned only after the
-   load resolves, so a failed *reload* leaves the resource on its previous face rather than blanking
-   it. That is the better behavior and is now both tested and commented in the source — but it was
-   accidental rather than chosen, and is worth confirming as intended when the merge is designed.
+1. ~~**Deduplicate the `Font` and `FontResource` load logic.**~~ Landed. Both public loader families now
+   adapt one internal browser-loader quartet; byte slicing, shorthand lookup, URL-source composition,
+   `FontFace.load()`, and post-load registration each have a single implementation. The distinct public
+   return/attachment models remain unchanged pending the charter's entity-unification decision.
+2. ~~**State the pinned failure contract.**~~ Landed. Public JSDoc now says loaders propagate rejection,
+   failed new-face loads are not registered, and `FontResource` changes `out.face` only after success so
+   a failed reload preserves its previously working face. The name lookup also documents that no result
+   leaves the current face unchanged.
 
 ## Backlog
 
@@ -50,3 +43,4 @@ Parked — each with the reason it is not sweep-safe.
 ## Approved
 
 - [2026-07-02 · picked] Sweep items 1–2: DRY inferFontFormat, ArrayBuffer → Uint8Array rename
+- [2026-08-01 · picked] Deduplicate Font/FontResource browser loading and document failure behavior

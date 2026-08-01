@@ -105,11 +105,6 @@ Design calls to settle before building the affected entries:
 - Surface page/meta data — but it needs somewhere to go first
 - Add serializers — blocked on item 1
 
-### font (partial 52)
-
-- `Font` and `FontResource` carry two separate copies of the same load logic
-- The failure contract is now pinned but was never stated
-
 ### spritesheet-formats (partial 58)
 
 - Decide whether an overlapping detector should be resolvable without relying on order
@@ -858,7 +853,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
