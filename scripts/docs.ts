@@ -211,15 +211,18 @@ function checkLinks(): void {
   }
 }
 
-// Gates rather than warns. The baseline is zero, so any hit is a regression introduced by one edit and
-// is cheap to fix at that moment; as a warning it would join 146 others that already need a human
-// ruling, and be read as background noise.
+// Warns rather than gates, which is a deliberate reversal. Gating looked right in isolation — the
+// baseline is zero, so any hit is a one-edit regression. But 20 of the 30 commits in history that add a
+// pointer entry would have failed it, and `docs:check` feeds `quality`, so at that rate the gate would
+// itself have become a recurring reason CI is red and commits stop promoting. A one-word style rule must
+// not stop the line. Moving it earlier does not help either: a pre-commit hook blocks the commit
+// instead. So it reports, and a reviewer rules on what it finds.
 function checkMapStatus(): void {
   for (const budget of DOC_BUDGETS) {
     const path = join(REPO_ROOT, budget.path);
     if (!existsSync(path)) continue;
     for (const claim of findMapStatusClaims(readFileSync(path, 'utf8'))) {
-      fail(
+      warn(
         `${budget.path}: pointer entry '${claim.entry}' reports progress (${claim.words.join(', ')}) — ` +
           `status belongs in the linked doc's own header, not in the map every agent reads in full`,
       );
