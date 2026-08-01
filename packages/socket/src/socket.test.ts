@@ -19,6 +19,7 @@ import {
   getSocketReadyState,
   sendSocketMessage,
   setSocketBackend,
+  setSocketGuard,
 } from './socket';
 
 interface FakeSocket {
@@ -63,7 +64,10 @@ function fakeBackend(): FakeSocket {
   return state;
 }
 
-afterEach(() => setSocketBackend(null));
+afterEach(() => {
+  setSocketBackend(null);
+  setSocketGuard(null);
+});
 
 describe('attachSocket', () => {
   it('resumes delivery after a detach', () => {
@@ -77,6 +81,20 @@ describe('attachSocket', () => {
     attachSocket(socket);
     fake.sink.handleSocketOpen();
     expect(opens).toBe(1);
+  });
+
+  it('cannot resume delivery after terminal disposal', () => {
+    const fake = fakeBackend();
+    setSocketBackend(fake.backend);
+    const socket = createSocket({ url: 'ws://x' });
+    const signals = enableSocketSignals(socket);
+    let opens = 0;
+    connectSignal(signals.onSocketOpen, () => opens++);
+    disposeSocket(socket);
+    attachSocket(socket);
+    fake.sink.handleSocketOpen();
+    expect(opens).toBe(0);
+    expect(socket.runtime.delivering).toBe(false);
   });
 });
 
@@ -109,6 +127,16 @@ describe('closeSocket', () => {
     closeSocket(socket);
     fake.sink.handleSocketClose({ code: 1000, reason: '', wasClean: true });
     closeSocket(socket);
+    expect(fake.closes).toHaveLength(1);
+  });
+
+  it('stays closed and does not close the connection again after disposal', () => {
+    const fake = fakeBackend();
+    setSocketBackend(fake.backend);
+    const socket = createSocket({ url: 'ws://x' });
+    disposeSocket(socket);
+    closeSocket(socket);
+    expect(getSocketReadyState(socket)).toBe('closed');
     expect(fake.closes).toHaveLength(1);
   });
 });
@@ -296,6 +324,8 @@ describe('disposeSocket', () => {
     fake.sink.handleSocketOpen();
     disposeSocket(socket);
     expect(fake.closes).toHaveLength(1);
+    expect(socket.runtime.connection).toBeNull();
+    expect(getSocketReadyState(socket)).toBe('closed');
     fake.sink.handleSocketMessage({ data: 'x', binary: false });
     expect(messages).toBe(0);
   });
@@ -321,6 +351,17 @@ describe('enableSocketSignals', () => {
     setSocketBackend(fake.backend);
     const socket = createSocket({ url: 'ws://x' });
     expect(socket.runtime.signals).toBeNull();
+  });
+
+  it('returns an inert stable group without reviving a disposed socket', () => {
+    const fake = fakeBackend();
+    setSocketBackend(fake.backend);
+    const socket = createSocket({ url: 'ws://x' });
+    disposeSocket(socket);
+    const first = enableSocketSignals(socket);
+    expect(enableSocketSignals(socket)).toBe(first);
+    expect(socket.runtime.delivering).toBe(false);
+    expect(getSocketReadyState(socket)).toBe('closed');
   });
 });
 
@@ -369,13 +410,37 @@ describe('sendSocketMessage', () => {
     expect(fake.sent).toEqual([]);
   });
 
-  it('propagates a false send result from the connection', () => {
+  it('returns false after disposal without reaching the released connection', () => {
+    const fake = fakeBackend();
+    setSocketBackend(fake.backend);
+    const socket = createSocket({ url: 'ws://x' });
+    fake.sink.handleSocketOpen();
+    disposeSocket(socket);
+    expect(sendSocketMessage(socket, 'ping')).toBe(false);
+    expect(fake.sent).toEqual([]);
+  });
+
+  it('returns false for an open state whose backend supplied no connection', () => {
+    const fake = fakeBackend();
+    fake.openReturnsNull = true;
+    setSocketBackend(fake.backend);
+    const socket = createSocket({ url: 'tcp://x' });
+    fake.sink.handleSocketOpen();
+    expect(getSocketReadyState(socket)).toBe('open');
+    expect(sendSocketMessage(socket, 'ping')).toBe(false);
+  });
+
+  it('forwards binary data by identity and propagates false without mutating the readonly socket', () => {
     const fake = fakeBackend();
     fake.sendReturns = false;
     setSocketBackend(fake.backend);
     const socket = createSocket({ url: 'ws://x' });
     fake.sink.handleSocketOpen();
-    expect(sendSocketMessage(socket, 'ping')).toBe(false);
+    Object.freeze(socket.runtime);
+    Object.freeze(socket);
+    const frame = new Uint8Array([1, 2, 3]).buffer;
+    expect(sendSocketMessage(socket, frame)).toBe(false);
+    expect(fake.sent[0]).toBe(frame);
   });
 });
 
@@ -388,6 +453,34 @@ describe('setSocketBackend', () => {
     const web = getSocketBackend();
     expect(web).not.toBe(fake.backend);
     expect(typeof web.openSocket).toBe('function');
+  });
+});
+
+describe('setSocketGuard', () => {
+  it('installs and removes the core notice hook', () => {
+    const notices: string[] = [];
+    setSocketGuard((notice) => notices.push(`${notice.operation}:${notice.reason}`));
+    const unsupported = fakeBackend();
+    unsupported.openReturnsNull = true;
+    setSocketBackend(unsupported.backend);
+    createSocket({ url: 'tcp://x' });
+
+    const supported = fakeBackend();
+    setSocketBackend(supported.backend);
+    const socket = createSocket({ url: 'ws://x' });
+    disposeSocket(socket);
+    closeSocket(socket);
+    sendSocketMessage(socket, 'x');
+    enableSocketSignals(socket);
+    setSocketGuard(null);
+    closeSocket(socket);
+
+    expect(notices).toEqual([
+      'createSocket:no-connection',
+      'closeSocket:disposed',
+      'sendSocketMessage:disposed',
+      'enableSocketSignals:disposed',
+    ]);
   });
 });
 

@@ -84,6 +84,9 @@ export interface SocketRuntime {
   readyState: SocketReadyState;
   // False stops backend events from reaching the signals (set by detachSocket/disposeSocket).
   delivering: boolean;
+  // True is the terminal entity state. Unlike delivering=false (a resumable detach), disposal cannot
+  // be reversed by attachSocket and is observable by diagnostics/opt-in guards.
+  disposed: boolean;
 }
 
 // Persistent-connection transport entity. `url` is the requested endpoint; all live state lives on
@@ -93,3 +96,30 @@ export interface Socket {
   url: string;
   runtime: SocketRuntime;
 }
+
+// Plain-data diagnosis for sendSocketMessage's deterministic false paths. A null explanation means
+// the socket can reach its backend; that backend may still reject the frame with its own false result.
+export type SocketSendFailureExplanation =
+  | { readonly reason: 'disposed'; readonly readyState: 'closed'; readonly url: string }
+  | { readonly reason: 'no-connection'; readonly readyState: SocketReadyState; readonly url: string }
+  | {
+      readonly reason: 'not-open';
+      readonly readyState: Exclude<SocketReadyState, 'open'>;
+      readonly url: string;
+    };
+
+// Notice emitted through the optional core hook installed by enableSocketGuards. The hook stays null
+// in production unless the separate guard module is explicitly enabled.
+export type SocketGuardNotice =
+  | {
+      readonly operation: 'createSocket';
+      readonly reason: 'no-connection';
+      readonly socket: Readonly<Socket>;
+    }
+  | {
+      readonly operation: 'closeSocket' | 'enableSocketSignals' | 'sendSocketMessage';
+      readonly reason: 'disposed';
+      readonly socket: Readonly<Socket>;
+    };
+
+export type SocketGuard = (notice: Readonly<SocketGuardNotice>) => void;

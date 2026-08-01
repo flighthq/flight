@@ -5,6 +5,7 @@ import type {
   SocketCloseInfo,
   SocketConnection,
   SocketEventSink,
+  SocketGuard,
   SocketMessage,
   SocketOptions,
   SocketReadyState,
@@ -13,8 +14,10 @@ import type {
 } from '@flighthq/types/contract';
 
 // Resumes delivery of backend events to the socket's signals (idempotent). Pair with detachSocket.
-// createSocket leaves a new socket attached, so this is only needed to resume after detachSocket.
+// createSocket leaves a new socket attached, so this is only needed to resume after detachSocket. A
+// disposed socket is terminal and cannot be reattached.
 export function attachSocket(socket: Socket): void {
+  if (socket.runtime.disposed) return;
   socket.runtime.delivering = true;
 }
 
@@ -23,6 +26,10 @@ export function attachSocket(socket: Socket): void {
 // This is the connection command, distinct from disposeSocket (which releases the entity to GC).
 export function closeSocket(socket: Socket, code?: number, reason?: string): void {
   const runtime = socket.runtime;
+  if (runtime.disposed) {
+    _guard?.({ operation: 'closeSocket', reason: 'disposed', socket });
+    return;
+  }
   if (runtime.readyState === 'closing' || runtime.readyState === 'closed') return;
   runtime.readyState = 'closing';
   runtime.connection?.closeSocketConnection(code, reason);
@@ -39,9 +46,11 @@ export function createSocket(options: Readonly<SocketOptions>): Socket {
     signals: null,
     readyState: 'connecting',
     delivering: true,
+    disposed: false,
   };
   const socket: Socket = { url: options.url, runtime };
   runtime.connection = getSocketBackend().openSocket(options, makeSocketEventSink(runtime));
+  if (runtime.connection === null) _guard?.({ operation: 'createSocket', reason: 'no-connection', socket });
   return socket;
 }
 
@@ -87,16 +96,23 @@ export function detachSocket(socket: Socket): void {
 // delivery, and drops the signal group. Distinct from closeSocket — dispose is entity teardown, close
 // is the connection command. After dispose the socket is inert and should not be reused.
 export function disposeSocket(socket: Socket): void {
+  if (socket.runtime.disposed) return;
   closeSocket(socket);
   detachSocket(socket);
-  socket.runtime.signals = null;
+  const runtime = socket.runtime;
+  runtime.connection = null;
+  runtime.signals = null;
+  runtime.readyState = 'closed';
+  runtime.disposed = true;
 }
 
 // Opts the socket into its typed event signals, allocating the group on first call and returning it
 // (idempotent — a later call returns the same group). A bare socket that never calls this keeps
-// runtime.signals null and pays no signal allocation or dispatch cost.
+// runtime.signals null and pays no signal allocation or dispatch cost. On a disposed socket the group
+// remains inert; the optional guard reports the misuse while retaining this function's return shape.
 export function enableSocketSignals(socket: Socket): SocketSignals {
   const runtime = socket.runtime;
+  if (runtime.disposed) _guard?.({ operation: 'enableSocketSignals', reason: 'disposed', socket });
   if (runtime.signals === null) {
     runtime.signals = {
       onSocketOpen: createSignal<() => void>(),
@@ -119,10 +135,15 @@ export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState 
   return socket.runtime.readyState;
 }
 
-// Sends a text or binary frame over the live connection. Returns false — a sentinel, not a throw —
-// when the socket is not open or has no connection.
+// Sends a text or binary frame over the live connection without mutating or copying either argument.
+// Returns false — a sentinel, not a throw — when the socket is disposed, not open, has no connection,
+// or the backend rejects the send. explainSocketSendFailure diagnoses the deterministic preflight paths.
 export function sendSocketMessage(socket: Readonly<Socket>, data: string | ArrayBuffer): boolean {
   const runtime = socket.runtime;
+  if (runtime.disposed) {
+    _guard?.({ operation: 'sendSocketMessage', reason: 'disposed', socket });
+    return false;
+  }
   if (runtime.readyState !== 'open' || runtime.connection === null) return false;
   return runtime.connection.sendSocketFrame(data);
 }
@@ -132,7 +153,14 @@ export function setSocketBackend(backend: SocketBackend | null): void {
   _backend = backend;
 }
 
+// Installs the diagnostics hook used by the separately imported enableSocketGuards module. Null is
+// the production default and removes all guard-path work except the branch.
+export function setSocketGuard(guard: SocketGuard | null): void {
+  _guard = guard;
+}
+
 let _backend: SocketBackend | null = null;
+let _guard: SocketGuard | null = null;
 
 // Builds the backend→entity sink bound to one socket's runtime: it updates readyState and emits the
 // opt-in signals. Every handler is a no-op once the runtime stops delivering (detach/dispose), so a
