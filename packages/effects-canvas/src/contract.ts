@@ -7,6 +7,8 @@ export * from './canvasDropShadowEffect';
 export * from './canvasEffectCompositing';
 export * from './canvasEffectDropShadowCss';
 export * from './canvasFilmGrainEffect';
+export * from './canvasInnerGlowEffect';
+export * from './canvasInnerShadowEffect';
 export * from './canvasOuterGlowEffect';
 export * from './canvasPixelateEffect';
 export * from './canvasRenderEffectPipeline';
