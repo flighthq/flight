@@ -173,4 +173,9 @@ tools/site/
 # retired proposal pipeline (June 2026; superseded by packages/ assessments + TODO.md)
 /agents/proposals/
 
+# the work index is a pure view over the cells, derived in ~200ms by todo.mjs and read only by
+# agents inside a clone. Committing it made every agent that regenerated it rewrite 852 lines —
+# 22 whole-file rewrites in one day, each conflicting with every other. Generate, don't merge.
+/agents/packages/TODO.md
+
 .quimby

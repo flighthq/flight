@@ -129,7 +129,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [package catalog](agents/packages/catalog.md) — what each package owns and where its boundary sits, one paragraph each. The tier below the [Package Map](#package-map) name list.
 - [package map](agents/packages/map.md) — full per-package descriptions and API detail.
 - [feature lookup](agents/feature-lookup.md) — keyword → owning package → backends.
-- [package TODO index](agents/packages/TODO.md) — the generated index of actionable work, weakest first. Start here when looking for work, then read that package's cell (architecture in [packages/index.md](agents/packages/index.md)). Regenerate: `node agents/packages/todo.mjs`.
+- **package TODO index** — the index of actionable work, weakest first. Generated, never committed: run `node agents/packages/todo.mjs` to write `agents/packages/TODO.md`, then start there and read only the named cell (architecture in [packages/index.md](agents/packages/index.md)).
 
 **Architecture records** — the design decisions behind a subsystem, read before changing its shape:
 

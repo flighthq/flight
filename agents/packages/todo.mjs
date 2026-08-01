@@ -6,6 +6,13 @@
 // assessment `Directed`, `Recommended`, and `Depth gaps` sections) plus register.md's
 // hand-ranked Build queue. TODO.md is a generated view — never edit it by hand; edit the cells or
 // the register and regenerate.
+//
+// TODO.md is GITIGNORED, deliberately. It holds no information the cells do not already carry, and
+// committing it made every agent told to regenerate it rewrite all ~850 lines: 22 whole-file
+// rewrites on 2026-07-31 alone, each one conflicting with every other agent's. A derived file that
+// costs 200ms to rebuild should be rebuilt, not merged. That is also why the `Generated <date>`
+// stamp below is safe to keep — as a committed file it guaranteed a daily phantom diff, but as a
+// local artifact it is the useful signal of how stale your copy is.
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

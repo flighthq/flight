@@ -35,13 +35,13 @@ Plus the triad **plurality guard**: a `-formats`/`-backend` cell only when the s
 ## Standing decomposition directions — ✅ both executed (2026-07)
 
 - **`useragent`** — ✅ built (package + Rust crate): pure UA-string → identity-tokens value-leaf, depends only on `types`, used by the _web backends_ of `device` and `platform` (UA parsing is a web-backend concern; native reads the OS). Wasm-mixable (fork D). Depth review 2026-07-03: partial 42 — two unmerged parser families, browser-product axis missing.
-- **`resources` → dissolve into per-subject triads.** ✅ Fully executed: `resources` is gone; `image` / `audio` / `video` / `font` / `textureatlas` / `tileset` all exist as packages. The follow-on reconciliation (gathering `media` playback, `bitmap` ops, `texture` GPU upload, text-shaping's font consumption into their subject homes) remains open — and the 2026-07-03 depth reviews show the new subject homes landed correct but thin (`audio` 18, `video` 15, `font` 33, `tileset` 25, `textureatlas` 45): the dissolution created the right cells, not yet mature ones. Per-package next moves: [`TODO.md`](TODO.md).
+- **`resources` → dissolve into per-subject triads.** ✅ Fully executed: `resources` is gone; `image` / `audio` / `video` / `font` / `textureatlas` / `tileset` all exist as packages. The follow-on reconciliation (gathering `media` playback, `bitmap` ops, `texture` GPU upload, text-shaping's font consumption into their subject homes) remains open — and the 2026-07-03 depth reviews show the new subject homes landed correct but thin (`audio` 18, `video` 15, `font` 33, `tileset` 25, `textureatlas` 45): the dissolution created the right cells, not yet mature ones. Per-package next moves: `TODO.md` (`node agents/packages/todo.mjs`).
 
 ## Landed candidates (recommended → built, as of 2026-07-03)
 
 Eight June candidates are now real: `animation`, `skeleton3d` (originally `skeleton`), `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `scene2d-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
 
-**Chartered, not yet built** — eight cells carry a blessed charter with no code behind them, the ready-to-build queue: `capture`, `clock`, `image-codec`, `movieclip`, `particleemitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in [`TODO.md`](TODO.md).)
+**Chartered, not yet built** — eight cells carry a blessed charter with no code behind them, the ready-to-build queue: `capture`, `clock`, `image-codec`, `movieclip`, `particleemitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in `TODO.md`.)
 
 ## Build queue — recommended order (regenerated 2026-07-31)
 
