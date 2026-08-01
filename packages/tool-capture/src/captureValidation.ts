@@ -376,8 +376,11 @@ export function explainCaptureVerificationStall(
     return `verifier passed but produced no fingerprint (${budget}); the readback completed empty`;
   }
   // Registered and still non-terminal: it started and never finished, which is a stall rather than a
-  // scene that is merely expensive.
-  return `verifier registered but stalled in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
+  // scene that is merely expensive. The STAGE is the actionable half — 'awaitingFrame' means a presented
+  // frame never arrived (page/scheduler), 'readingBack' means the GPU readback never resolved (driver).
+  const stage = (verification as { stage?: string }).stage;
+  const where = stage === undefined ? '' : ` at stage "${stage}"`;
+  return `verifier registered but stalled${where} in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
 }
 
 export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCoverage>): boolean {

@@ -106,6 +106,7 @@ export function publishFunctionalRenderSync(render: string): boolean {
     coverage,
     fingerprint: formatBitmapFingerprint(createBitmapFingerprint(bitmap, FINGERPRINT_GRID)),
     state: 'passed',
+    stage: 'done',
     error: null,
   };
   (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(bitmap);
@@ -164,6 +165,7 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     coverage: null,
     fingerprint: null,
     state: 'pending',
+    stage: 'awaitingFrame',
     error: null,
   };
   (window as VerificationWindow).__ftVerification = result;
@@ -175,15 +177,18 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
       const element = target.state.element;
       const hasContent = element.childElementCount > 0 || (element.textContent ?? '').trim() !== '';
       if (!hasContent) throw new Error(`[verify:${render}] blank render: no DOM output produced`);
+      result.stage = 'done';
       result.state = 'passed';
       return;
     }
 
     await waitForPresentedFrame();
 
+    result.stage = 'readingBack';
     const bitmap = await snapshotFunctionalRender();
     if (bitmap === null) throw new Error(`[verify:${render}] blank render: no readable render bitmap`);
 
+    result.stage = 'measuring';
     const background = getBitmapPixel(bitmap, 0, 0);
     const coverage = getBitmapCoverage(bitmap, background, BACKGROUND_CHANNEL_TOLERANCE);
     const fingerprint = formatBitmapFingerprint(createBitmapFingerprint(bitmap, FINGERPRINT_GRID));
@@ -193,10 +198,13 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
       throw new Error(`[verify:${render}] blank render: coverage ${coverage.toFixed(5)} below ${minCoverage}`);
     }
 
+    result.stage = 'asserting';
     await testModule.assertRender?.(bitmap);
+    result.stage = 'encoding';
     (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(getFunctionalRenderImageBitmap() ?? bitmap);
     result.coverage = coverage;
     result.fingerprint = fingerprint;
+    result.stage = 'done';
     result.state = 'passed';
   } catch (error) {
     result.error = error instanceof Error ? error.message : String(error);
