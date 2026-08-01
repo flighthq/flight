@@ -51,12 +51,22 @@ types 113/122/254/255, unrelated to lighting.
 `parseAwd2` + `createScene3DFromDocument`, reading both descriptors out of `document.lights` — the first
 consumer of that table anywhere in the repo.
 
-**Open, NOT resolved here (needs a ruling, crosses packages):** nothing converts a document light table into
-a `Scene3DLights` draw argument, so the example hand-rolls the selection. And the two formats that fill
-`lights` disagree on what `DirectionalLight.direction` means — glTF writes a LOCAL (0,0,-1) with the
-orientation in `transform`, AWD writes the WORLD direction with an identity transform. `DirectionalLight`'s
-own doc says world-space; `Scene3DDocumentLight`'s says placement is baked into `transform`. A shared
-document→lights bridge cannot be written correctly until that is settled.
+**PLACEMENT CONVENTION RULED (user, 2026-08-01): glTF wins, as the industry-standard definition.** A
+document light's descriptor holds the light in its OWN LOCAL space and `transform` places and orients it —
+directional/spot aim down canonical local -Z, point sits at the local origin. AWD states a world-space aim,
+so the importer converts that INTO the transform's rotation rather than writing it onto the descriptor.
+glTF's importer already obeyed this and was left untouched.
+
+The convention is now written down on `Scene3DDocumentLight`, with the document-stage exception noted on
+`DirectionalLight` and `PointLight` themselves — the ambiguity that let two importers diverge was that
+`DirectionalLight` said world-space while `Scene3DDocumentLight` said placement lives in `transform`, and
+both were readable as authoritative. Document stage is PRE-composition; everything a renderer consumes
+(`Scene3DLights`, `packScene3DLightBlock`) is world-space, and the caller composes at that seam.
+
+**Still open, deliberately not built:** no `createScene3DLightsFromDocument` bridge exists, so the
+awd2loading example composes the aim itself (one `rotateVector3ByQuaternion` off the local axis) and selects
+its own lights. That is house-style-explicit for an example, but every consumer will repeat it — the bridge
+is now unblocked and wants a home in `@flighthq/scene3d` next to `createScene3DFromDocument`.
 
 ## 2026-07-29 — md2 read-integrity: the parser family is closed (builder, review-directed)
 

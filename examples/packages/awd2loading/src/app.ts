@@ -3,8 +3,10 @@ import type {
   DirectionalLight,
   ImportDiagnostic,
   Mesh,
+  Scene3DDocumentLight,
   Scene3DLightsLike,
   ShadedMaterial,
+  Transform3D,
 } from '@flighthq/sdk';
 import {
   AmbientLightKind,
@@ -22,6 +24,7 @@ import {
   invalidateNodeLocalTransform,
   parseAwd2,
   registerBuiltInModifiers,
+  rotateVector3ByQuaternion,
   setQuaternionFromEuler,
   ShadedMaterialKind,
 } from '@flighthq/sdk';
@@ -88,9 +91,22 @@ updateOrbitCameraController(cameraController, camera, 1);
 // ambient fill on the same entity. The importer splits that into the two descriptors Flight models
 // separately, so both are read straight out of the document rather than re-authored here. The two point
 // lights stay hand-authored, showing imported and app-authored lights composing in one draw.
+const importedDirectional = findImportedLight<DirectionalLight>(DirectionalLightKind);
+const importedAmbient = findImportedLight<AmbientLight>(AmbientLightKind);
+
+// A document light is stored PRE-COMPOSITION: the descriptor holds the light in its own local space and
+// the document light's `transform` places it (the glTF KHR_lights_punctual convention). A renderer takes
+// world space, so the aim is resolved here — the canonical local -Z axis rotated by that transform. An
+// ambient light has no placement to compose, which is why only the directional one needs this step.
+rotateVector3ByQuaternion(
+  importedDirectional.direction,
+  importedDirectional.direction,
+  findImportedLightTransform(DirectionalLightKind).rotation,
+);
+
 const lights: Scene3DLightsLike = {
-  ambient: findImportedLight<AmbientLight>(AmbientLightKind),
-  directional: findImportedLight<DirectionalLight>(DirectionalLightKind),
+  ambient: importedAmbient,
+  directional: importedDirectional,
   point: [
     createPointLight({
       color: 0x4bdcffff,
@@ -186,9 +202,19 @@ function queueCaptureFramesAfterWarmup(framesRemaining: number): void {
 // The first document light of `kind`. A Scene3DDocument's light table is a flat list of placed
 // descriptors, and Scene3DLights takes at most one directional and one ambient, so the caller selects.
 function findImportedLight<T>(kind: string): T {
+  return findImportedDocumentLight(kind).descriptor as T;
+}
+
+// The placement of the first document light of `kind` — the half of a document light that is NOT the
+// descriptor, and the half a draw argument has to compose in.
+function findImportedLightTransform(kind: string): Transform3D {
+  return findImportedDocumentLight(kind).transform;
+}
+
+function findImportedDocumentLight(kind: string): Scene3DDocumentLight {
   const light = awdDocument.lights.find((candidate) => candidate.descriptor.kind === kind);
   if (light === undefined) throw new Error(`The AWD2 fixture did not import a ${kind}`);
-  return light.descriptor as T;
+  return light;
 }
 
 function findImportedMesh(): Mesh {
