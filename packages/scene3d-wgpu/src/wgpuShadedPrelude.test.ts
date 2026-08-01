@@ -428,10 +428,13 @@ describe('shaded binding cache', () => {
 });
 
 function makeImageResource(): Image {
+  const source = document.createElement('canvas');
+  source.width = 1;
+  source.height = 1;
   return {
     height: 1,
     kind: ImageTextureSourceKind,
-    source: {} as CanvasImageSource,
+    source,
     version: 0,
     width: 1,
   } as unknown as Image;

@@ -33,8 +33,14 @@ describe('bindWgpuUnlitVideoSurface', () => {
   it('uploads the ready video frame into the same unlit material layout', () => {
     const { fake, state } = makeWgpuScene3DState();
     const pipeline = compileWgpuUnlitPipeline(state, { ...FLAT, hasColorMap: true }, 'bgra8unorm');
+    const element = document.createElement('video');
+    Object.defineProperties(element, {
+      readyState: { value: 4 },
+      videoHeight: { value: 120 },
+      videoWidth: { value: 160 },
+    });
     const video = createVideoTexture({
-      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      element,
       objectUrl: null,
     });
     advanceVideoTexture(video);
