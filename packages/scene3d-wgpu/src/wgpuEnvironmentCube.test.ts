@@ -10,10 +10,13 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 // and the "no complete cube" sentinel path callers depend on to no-op — mirroring scene-gl's cube test.
 
 function completeEnvironment(): Environment {
+  const source = document.createElement('canvas');
+  source.width = 4;
+  source.height = 4;
   const face = {
     height: 4,
     kind: ImageTextureSourceKind,
-    source: {} as CanvasImageSource,
+    source,
     width: 4,
   } as unknown as Image;
   const cube = {

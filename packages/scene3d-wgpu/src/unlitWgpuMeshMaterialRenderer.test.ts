@@ -55,8 +55,14 @@ describe('unlitWgpuMeshMaterialRenderer', () => {
   it('uploads a ready dynamic video map into the color-map slot', () => {
     const { fake, state } = makeWgpuScene3DState();
     const material = createUnlitMaterial();
+    const element = document.createElement('video');
+    Object.defineProperties(element, {
+      readyState: { value: 4 },
+      videoHeight: { value: 120 },
+      videoWidth: { value: 160 },
+    });
     material.baseColorMap = createVideoTexture({
-      element: { readyState: 4, videoHeight: 120, videoWidth: 160 } as HTMLVideoElement,
+      element,
       objectUrl: null,
     });
     advanceVideoTexture(material.baseColorMap);

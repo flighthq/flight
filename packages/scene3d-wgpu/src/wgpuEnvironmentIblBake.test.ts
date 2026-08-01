@@ -11,10 +11,13 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 // scene-gl's bake test.
 
 function completeEnvironment(): Environment {
+  const source = document.createElement('canvas');
+  source.width = 4;
+  source.height = 4;
   const face = {
     height: 4,
     kind: ImageTextureSourceKind,
-    source: {} as CanvasImageSource,
+    source,
     width: 4,
   } as unknown as Image;
   const cube = {
