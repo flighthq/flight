@@ -131,8 +131,31 @@ item 3 should wait. **That was wrong, and inverted.** Verification is the readba
 to `tool === 'functional'`, so examples never took it and fell through to the unpresentable screenshot.
 Turning it on does not expose examples to the blank-frame problem — it is the fix for it. Enabling it made
 `clock`/webgpu render correctly on the capture path, and the full smoke leg then passed 132 captures across
-dom/canvas/webgl/webgpu with zero failures, confirming every example already registers a verifier and that
-no backend was left behind.
+dom/canvas/webgl/webgpu with zero failures.
+
+**That last sentence was originally offered as proof that every example registers a verifier and no backend
+was left behind. It was not proof, and the claim is corrected here.** Those 132 captures ran on a leg where
+verification was still inert: the `verify` default added to `captureEntry` was never reached, because three
+call sites decided verification first and passed an explicit boolean — `captureSuite.ts`, which governs the
+smoke leg, read a hardcoded `subject === 'functional'`. A leg that never verified cannot testify about
+verifiers. The conclusion happened to be right; the evidence for it was not.
+
+Re-measured on the fixed leg, where all 132 captures now emit a real `verifying render…` line:
+
+| backend | entries | verified | failed |
+|---|---|---|---|
+| canvas | 28 | 28 | 0 |
+| webgl | 40 | 40 | 0 |
+| webgpu | 40 | 40 | 2 transient, both passed on retry |
+| dom | 24 | 23 | 1 |
+
+**dom is not short** — all 24 dom entries do register and reach the verifier, so the original conclusion
+holds on real evidence now. The single dom failure is `formatloading`, reported as
+`[verify:dom] blank render: no DOM output produced`; it passed when re-run alone, so on the evidence so far
+it is load-dependent rather than a deterministic break, and it is stated here as one observation rather
+than a diagnosis. The two webgpu entries (`crossfade`, `effects`) hit
+`render verifier did not reach a terminal state` and succeeded on retry — the same stall class as
+`scene3d`, now visible on the smoke leg because verification finally runs there.
 
 Two incidental facts worth keeping: identical hashes across unrelated scenes is a fast test for "the harness,
 not the scene", and `logs.jsonl` captures only `warn`/`error` — a `console.log` probe records nothing.
