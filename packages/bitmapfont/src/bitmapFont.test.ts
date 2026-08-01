@@ -10,7 +10,9 @@ import {
   getBitmapFontPage,
   getBitmapFontPages,
   hasBitmapFontGlyph,
+  packBitmapFontKerningKey,
   setBitmapFontGuard,
+  unpackBitmapFontKerningKey,
 } from './bitmapFont';
 
 describe('createBitmapFont', () => {
@@ -207,6 +209,30 @@ describe('hasBitmapFontGlyph', () => {
   });
 });
 
+describe('packBitmapFontKerningKey', () => {
+  it('gives every distinct pair a distinct key across the full codepoint space', () => {
+    const pairs: readonly (readonly [number, number])[] = [
+      [65, 86],
+      [0, 65],
+      [0x10000, 65],
+      [0x1f600, 0xf600],
+      [0xf600, 0x1f600],
+      [0x10ffff, 0x10ffff],
+    ];
+
+    const keys = pairs.map(([left, right]) => packBitmapFontKerningKey(left, right));
+    expect(new Set(keys).size).toBe(pairs.length);
+  });
+
+  it('stays inside exact-integer range at the largest pair', () => {
+    // 0x10FFFF * 0x110000 + 0x10FFFF ≈ 1.24e12, well under 2^53 — the reason the key is arithmetic
+    // rather than a 32-bit shift.
+    const key = packBitmapFontKerningKey(0x10ffff, 0x10ffff);
+
+    expect(Number.isSafeInteger(key)).toBe(true);
+  });
+});
+
 describe('setBitmapFontGuard', () => {
   afterEach(() => {
     setBitmapFontGuard(null);
@@ -247,5 +273,55 @@ describe('setBitmapFontGuard', () => {
     });
 
     expect(calls).toEqual([]);
+  });
+});
+
+describe('unpackBitmapFontKerningKey', () => {
+  it('recovers the pair a key was packed from', () => {
+    // The pairs are the ones a 16-bit inverse (`key >>> 16` / `key & 0xffff`) reads back wrong: an
+    // ordinary BMP pair whose key is not shift-shaped, a supplementary-plane left glyph, and a pair
+    // whose key leaves the 32-bit range the shift operators truncate to.
+    const pairs: readonly (readonly [number, number])[] = [
+      [65, 86],
+      [0, 0],
+      [0x41, 0x10ffff],
+      [0x1f600, 0x41],
+      [0x4e00, 0x4e8c],
+      [0x10ffff, 0x10ffff],
+    ];
+
+    for (const [left, right] of pairs) {
+      const key = packBitmapFontKerningKey(left, right);
+      expect(unpackBitmapFontKerningKey(key, { left: 0, right: 0 })).toEqual({ left, right });
+    }
+  });
+
+  it('recovers a pair whose key exceeds 2^32', () => {
+    const key = packBitmapFontKerningKey(0x1f600, 0x41);
+    expect(key).toBeGreaterThan(0x1_0000_0000);
+
+    const pair = unpackBitmapFontKerningKey(key, { left: 0, right: 0 });
+
+    expect(pair).toEqual({ left: 0x1f600, right: 0x41 });
+    // What the truncating inverse this replaced would have produced from the same key.
+    expect(pair.left).not.toBe(key >>> 16);
+  });
+
+  it('writes into the out object the caller supplied and returns it', () => {
+    const out = { left: -1, right: -1 };
+
+    const returned = unpackBitmapFontKerningKey(packBitmapFontKerningKey(0x10000, 0x41), out);
+
+    expect(returned).toBe(out);
+    expect(out).toEqual({ left: 0x10000, right: 0x41 });
+  });
+
+  it('reuses one out object across keys without carrying state between calls', () => {
+    const out = { left: 0, right: 0 };
+
+    unpackBitmapFontKerningKey(packBitmapFontKerningKey(0x10ffff, 0x10ffff), out);
+    unpackBitmapFontKerningKey(packBitmapFontKerningKey(0, 0), out);
+
+    expect(out).toEqual({ left: 0, right: 0 });
   });
 });

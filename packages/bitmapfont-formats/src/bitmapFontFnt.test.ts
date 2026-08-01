@@ -32,6 +32,17 @@ const FNT_TEXT = [
   'kerning first=65 second=86 amount=-2',
 ].join('\n');
 
+const FNT_ASTRAL = [
+  'info face="Test" size=32 unicode=1',
+  'common lineHeight=32 base=26 scaleW=64 scaleH=64 pages=1 packed=0',
+  'page id=0 file="test_0.png"',
+  'chars count=2',
+  'char id=128512 x=0 y=0 width=7 height=8 xoffset=1 yoffset=0 xadvance=9 page=0 chnl=15',
+  'char id=65 x=8 y=0 width=6 height=8 xoffset=0 yoffset=0 xadvance=8 page=0 chnl=15',
+  'kernings count=1',
+  'kerning first=128512 second=65 amount=-3',
+].join('\n');
+
 describe('formatBitmapFontFnt', () => {
   it('round-trips a parsed font through parse → format → parse', () => {
     const options = pageOptions();
@@ -45,6 +56,20 @@ describe('formatBitmapFontFnt', () => {
     expect(getBitmapFontGlyph(reparsed!, 86)).toEqual(getBitmapFontGlyph(font!, 86));
     expect(getBitmapFontKerning(reparsed!, 65, 86)).toBe(-2);
     expect(getBitmapFontMetrics(reparsed!)).toEqual(getBitmapFontMetrics(font!));
+  });
+
+  it('round-trips kerning for a supplementary-plane pair', () => {
+    // The round-trip alone cannot catch a wrong inverse if both sides share it, so this asserts the
+    // emitted codepoints directly: the pair a 16-bit unpack would truncate outright.
+    const options = pageOptions();
+    const font = parseBitmapFontFnt(FNT_ASTRAL, options);
+    expect(font).not.toBeNull();
+
+    const text = formatBitmapFontFnt(font!);
+    expect(text).toContain('kerning first=128512 second=65 amount=-3');
+
+    const reparsed = parseBitmapFontFnt(text, options);
+    expect(getBitmapFontKerning(reparsed!, 0x1f600, 65)).toBe(-3);
   });
 
   it('emits an empty page file reference (the atlas is a live resource, not a path)', () => {
