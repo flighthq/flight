@@ -39,7 +39,14 @@ export function acquireWgpuFrameCaptureTexture(state: Readonly<WgpuRenderState>)
 // throws otherwise (calling it without enabling capture is API misuse). Only maps the retained buffer —
 // no GPU work is queued here, since later-task GPU work is unreliable on the adapters this exists for.
 // Allocates the returned Bitmap; the capture buffer is retained and reused across frames.
-export async function createBitmapFromWgpuRenderState(state: Readonly<WgpuRenderState>): Promise<Bitmap> {
+//
+// `timeoutMs` bounds the buffer map (pass 0 to wait indefinitely, the pre-bound behaviour). The default
+// is deliberately generous: a readback that takes seconds is a loaded machine, while one that never
+// settles is the failure this bounds, and only the caller knows which budget it is working inside.
+export async function createBitmapFromWgpuRenderState(
+  state: Readonly<WgpuRenderState>,
+  timeoutMs = DEFAULT_MAP_TIMEOUT_MS,
+): Promise<Bitmap> {
   const runtime = getWgpuRenderStateRuntime(state);
   const buffer = runtime.frameCaptureBuffer;
   if (buffer === null || buffer === undefined) {
@@ -52,7 +59,7 @@ export async function createBitmapFromWgpuRenderState(state: Readonly<WgpuRender
   const height = runtime.frameCaptureHeight;
   const bytesPerRow = runtime.frameCaptureBytesPerRow;
 
-  await buffer.mapAsync(GPUMapMode.READ);
+  await mapWgpuCaptureBuffer(buffer, timeoutMs);
   const mapped = new Uint8Array(buffer.getMappedRange());
 
   const bitmap = createBitmap(width, height);
@@ -122,3 +129,33 @@ export function encodeWgpuFrameCapture(state: Readonly<WgpuRenderState>, encoder
 
   encoder.copyTextureToBuffer({ texture }, { buffer: runtime.frameCaptureBuffer, bytesPerRow }, [width, height, 1]);
 }
+
+// Maps the retained capture buffer, giving up by name after `timeoutMs` (0 waits indefinitely).
+// `mapAsync` carries no timeout and no reject path of its own: on the contended software adapters this
+// capture path exists for, the promise can simply never settle, and an unbounded await is indistinguishable
+// from a caller that stopped running. A late resolution after the deadline leaves the buffer mapped, which
+// is why the timeout is a hard end for this capture and not something to retry against the same buffer.
+async function mapWgpuCaptureBuffer(buffer: GPUBuffer, timeoutMs: number): Promise<void> {
+  const mapping = buffer.mapAsync(GPUMapMode.READ);
+  if (timeoutMs <= 0) return mapping;
+
+  // The race abandons `mapping` on timeout; adopt its eventual rejection here so it is never unhandled.
+  mapping.catch(() => {});
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expiry = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`createBitmapFromWgpuRenderState: frame capture buffer did not map within ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    await Promise.race([mapping, expiry]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Generous by design: this bounds a driver that has stopped answering, not a slow one. Callers working
+// inside a tighter budget (the capture harness) pass their own.
+const DEFAULT_MAP_TIMEOUT_MS = 10_000;
