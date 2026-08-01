@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseKtx2 } from './parseKtx2';
+import { getKtx2ParseFailureReason, parseKtx2 } from './parseKtx2';
 
 const ktx2Magic = [0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -45,6 +45,12 @@ function buildKtx2(opts: Ktx2Options): Uint8Array {
   }
   return bytes;
 }
+
+describe('getKtx2ParseFailureReason', () => {
+  it('reports a truncated detected header', () => {
+    expect(getKtx2ParseFailureReason(new Uint8Array(ktx2Magic))).toBe('header-truncated');
+  });
+});
 
 describe('parseKtx2', () => {
   it('parses a single-mip uncompressed 2D texture', () => {

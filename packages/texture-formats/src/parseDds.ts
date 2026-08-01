@@ -1,8 +1,15 @@
 import type { TextureContainer } from '@flighthq/types/contract';
 import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 
 import { createByteReader, hasByteReaderBytes, readByteReaderU32, skipByteReader } from './byteReader';
 import { computeTextureContainerLevels } from './textureLevelLayout';
+
+export function getDdsParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
+  const failure: ParseFailure = { reason: null };
+  const container = parseDdsInternal(bytes, failure);
+  return container === null ? failure.reason : null;
+}
 
 // Parses a DDS container (DirectDraw Bitmap) into a `TextureContainer`, or returns `null` if the bytes
 // are not DDS, are truncated, or carry a pixel format this package does not map (e.g. a legacy 16/24-bit
@@ -16,8 +23,12 @@ import { computeTextureContainerLevels } from './textureLevelLayout';
 // `computeTextureContainerLevels`): sub-images are nested layer → face → mip, matching D3D subresource
 // order (a cubemap's 6 faces each hold a full mip chain).
 export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
-  if (!hasDdsMagic(bytes)) return null;
-  if (bytes.byteLength < ddsDataOffset) return null;
+  return parseDdsInternal(bytes);
+}
+
+function parseDdsInternal(bytes: Readonly<Uint8Array>, failure?: ParseFailure): TextureContainer | null {
+  if (!hasDdsMagic(bytes)) return reject(failure, 'container-unrecognized');
+  if (bytes.byteLength < ddsDataOffset) return reject(failure, 'header-truncated');
 
   const reader = createByteReader(bytes, 4);
   skipByteReader(reader, 4); // dwSize
@@ -39,7 +50,9 @@ export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
 
   reader.offset = 112; // dwCaps2
   const caps2 = readByteReaderU32(reader);
-  if ((caps2 & ddsCaps2Volume) !== 0 || dwDepth > 1) return null; // volume textures not modeled yet
+  if ((caps2 & ddsCaps2Volume) !== 0 || dwDepth > 1) {
+    return reject(failure, 'format-unsupported'); // volume textures not modeled yet
+  }
 
   let format: TextureContainerFormat | null;
   let cube = (caps2 & ddsCaps2Cubemap) !== 0;
@@ -47,7 +60,9 @@ export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
   let dataOffset = ddsDataOffset;
 
   if ((pfFlags & ddsPfFourCC) !== 0 && fourCC === ddsFourCcDx10) {
-    if (!hasByteReaderBytes(createByteReader(bytes, ddsDataOffset), 20)) return null;
+    if (!hasByteReaderBytes(createByteReader(bytes, ddsDataOffset), 20)) {
+      return reject(failure, 'header-truncated');
+    }
     const dx10 = createByteReader(bytes, ddsDataOffset);
     const dxgiFormat = readByteReaderU32(dx10);
     skipByteReader(dx10, 4); // resourceDimension
@@ -64,7 +79,7 @@ export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
   } else {
     format = null;
   }
-  if (format === null) return null;
+  if (format === null) return reject(failure, 'format-unsupported');
 
   const width = Math.max(1, dwWidth);
   const height = Math.max(1, dwHeight);
@@ -72,7 +87,9 @@ export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
   const mipLevels = Math.max(1, dwMipMapCount);
 
   const layout = computeTextureContainerLevels(format, width, height, mipLevels, layers, faces, dataOffset);
-  if (layout === null || layout.endOffset > bytes.byteLength) return null;
+  if (layout === null || layout.endOffset > bytes.byteLength) {
+    return reject(failure, 'level-range-out-of-bounds');
+  }
 
   return {
     depth: 1,
@@ -85,6 +102,15 @@ export function parseDds(bytes: Readonly<Uint8Array>): TextureContainer | null {
     supercompression: 'None',
     width,
   };
+}
+
+interface ParseFailure {
+  reason: TextureContainerParseFailureReason | null;
+}
+
+function reject(failure: ParseFailure | undefined, reason: TextureContainerParseFailureReason): null {
+  if (failure !== undefined) failure.reason = reason;
+  return null;
 }
 
 function hasDdsMagic(bytes: Readonly<Uint8Array>): boolean {

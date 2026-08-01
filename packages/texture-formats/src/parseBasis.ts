@@ -1,6 +1,7 @@
 import type { TextureContainer } from '@flighthq/types/contract';
 import type { TextureContainerFormat } from '@flighthq/types/contract';
 import type { TextureContainerLevel } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 
 import {
   createByteReader,
@@ -10,6 +11,12 @@ import {
   readByteReaderU32,
   readByteReaderU8,
 } from './byteReader';
+
+export function getBasisParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
+  const failure: ParseFailure = { reason: null };
+  const container = parseBasisInternal(bytes, failure);
+  return container === null ? failure.reason : null;
+}
 
 // Parses a Basis Universal `.basis` container into a `TextureContainer`, or returns `null` if the bytes
 // are not a `.basis` file, are truncated, or carry an unknown texture format.
@@ -25,23 +32,29 @@ import {
 // faces per layer, and volume images become depth slices. Video frames are rejected because the common
 // container descriptor cannot preserve their temporal/conditional-replenishment semantics truthfully.
 export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null {
-  if (!hasBasisSignature(bytes)) return null;
-  if (bytes.byteLength < basisHeaderMinSize) return null;
+  return parseBasisInternal(bytes);
+}
+
+function parseBasisInternal(bytes: Readonly<Uint8Array>, failure?: ParseFailure): TextureContainer | null {
+  if (!hasBasisSignature(bytes)) return reject(failure, 'container-unrecognized');
+  if (bytes.byteLength < basisHeaderMinSize) return reject(failure, 'header-truncated');
 
   const header = createByteReader(bytes, basisTotalSlicesOffset);
   const totalSlices = readByteReaderU24(header); // m_total_slices (offset 14)
   const totalImages = readByteReaderU24(header); // m_total_images (offset 17)
   const format = basisTexFormat[bytes[basisTexFormatOffset]]; // m_tex_format (offset 20)
-  if (format === undefined) return null;
-  if (totalSlices === 0) return null;
+  if (format === undefined) return reject(failure, 'format-unsupported');
+  if (totalSlices === 0) return reject(failure, 'structure-invalid');
   const shape = getBasisTextureShape(bytes[basisTexTypeOffset], totalImages);
-  if (shape === null) return null;
+  if (shape === null) return reject(failure, 'format-unsupported');
 
   const sliceDescReader = createByteReader(bytes, basisSliceDescOffsetField);
   const sliceDescOffset = readByteReaderU32(sliceDescReader);
 
   const table = createByteReader(bytes, sliceDescOffset);
-  if (!hasByteReaderBytes(table, totalSlices * basisSliceDescSize)) return null;
+  if (!hasByteReaderBytes(table, totalSlices * basisSliceDescSize)) {
+    return reject(failure, 'level-range-out-of-bounds');
+  }
 
   const levels: TextureContainerLevel[] = [];
   let baseWidth = 0;
@@ -58,7 +71,7 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
     const byteOffset = readByteReaderU32(table);
     const byteLength = readByteReaderU32(table);
     readByteReaderU16(table); // m_slice_data_crc16
-    if (byteOffset + byteLength > bytes.byteLength) return null;
+    if (byteOffset + byteLength > bytes.byteLength) return reject(failure, 'level-range-out-of-bounds');
 
     if (imageIndex === 0 && levelIndex === 0) {
       baseWidth = width;
@@ -79,6 +92,15 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
     supercompression: 'None',
     width: baseWidth || (levels[0]?.width ?? 0),
   };
+}
+
+interface ParseFailure {
+  reason: TextureContainerParseFailureReason | null;
+}
+
+function reject(failure: ParseFailure | undefined, reason: TextureContainerParseFailureReason): null {
+  if (failure !== undefined) failure.reason = reason;
+  return null;
 }
 
 function getBasisTextureShape(

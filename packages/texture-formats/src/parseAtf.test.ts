@@ -1,7 +1,7 @@
 import type { TextureContainer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseAtf } from './parseAtf';
+import { getAtfParseFailureReason, parseAtf } from './parseAtf';
 import { selectTextureContainer } from './selectTextureContainer';
 
 interface AtfOptions {
@@ -79,6 +79,12 @@ function expectLevelRangesInBounds(containers: readonly TextureContainer[], byte
     previousEnd = end;
   }
 }
+
+describe('getAtfParseFailureReason', () => {
+  it('reports a truncated detected header', () => {
+    expect(getAtfParseFailureReason(new Uint8Array([0x41, 0x54, 0x46]))).toBe('header-truncated');
+  });
+});
 
 describe('parseAtf', () => {
   it('parses a cross-platform ATF as one peer container per populated GPU-format slot', () => {

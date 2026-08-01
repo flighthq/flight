@@ -15,10 +15,19 @@ See [charter](./charter.md) for blessed direction; evidence in [review](./review
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/image-codec`, no cross-package coupling, no breaking change, no open design fork. MIME detection and registry enumeration completed 2026-07-31.
+_None open._ Re-verified against live source on 2026-07-31 (9 source files, 9 test files, 53 tests).
+Both close-out items landed and are recorded under [Landed](#landed), outside this section so the TODO
+generator stops reporting them as work.
 
-1. **Add `explain*` queries for the silent sentinels** per the diagnostics convention: e.g. `explainImageDecodeFailure(bytes, mimeType?)` and `explainImageEncodeFailure(mimeType)` returning plain data distinguishing unknown-MIME vs. no-codec-registered. Shakeable, no `@flighthq/log` dependency required for the query form.
-2. **Test the `decodeImagePremultiplied` auto-detect path** (currently only the explicit-registration path and null sentinel are covered in `decodeImage.test.ts`). Small coverage close-out.
+## Landed
+
+1. ~~**Add `explain*` queries for the silent sentinels.**~~ Landed.
+   `explainImageDecodeFailure(bytes, mimeType?)` distinguishes an undetected MIME type from a missing
+   registered decoder, and `explainImageEncodeFailure(mimeType)` reports a missing encoder. Both are
+   separately importable, return plain data, do not invoke codecs, and preserve the async dispatchers'
+   existing `null` contracts. The decode distinction is mutation-proven.
+2. ~~**Test the `decodeImagePremultiplied` auto-detect path.**~~ Landed. The explicit MIME dispatch and
+   omitted-MIME detection paths now have separate named cases, both pinning the premultiplication option.
 
 ## Backlog
 

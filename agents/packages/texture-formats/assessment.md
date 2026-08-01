@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/texture-formats'
-updated: 2026-07-21
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -14,9 +14,18 @@ basedOn: ./review.md
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/texture-formats`, no cross-package coupling, no breaking public-API change, no open design fork.
+_None open._ Re-verified against live source on 2026-07-31 (9 source files, 9 test files, 79 tests).
+The diagnostics item landed and is recorded under [Landed](#landed), outside this section so the TODO
+generator stops reporting it as work.
 
-1. **Add `explain*` diagnostics for parse rejection.** Per the diagnostics inversion rule every silent `null` needs a shakeable companion — e.g. `explainTextureContainerParse(bytes)` returning plain data (which container was detected, and the rejection reason: truncated header, unmapped vkFormat/DXGI/FourCC code, level range overrun, unsupported ATF format code). Separately importable so parsers stay lean.
+## Landed
+
+1. ~~**Add `explain*` diagnostics for parse rejection.**~~ Landed. The separately importable
+   `explainTextureContainerParse(bytes)` query returns plain data distinguishing an unrecognized
+   container, truncated header, unsupported mapped format, invalid structure, and an out-of-bounds level
+   range. It delegates to the same ATF/Basis/DDS/KTX2 parser branches without changing their `null`
+   sentinel contracts. Colocated tests cover all four container delegates and mutation-prove the format
+   distinction.
 
 ## Backlog
 
