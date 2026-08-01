@@ -5,7 +5,22 @@ import type {
   PackedRectangle,
   PackResult,
   RectangleId,
+  BinPackHeuristic,
 } from '@flighthq/types/contract';
+
+// Fraction of the reported bin actually covered by placements, in [0, 1]. Placed area over
+// `width · height`; 0 for an empty or zero-extent result rather than NaN, since "nothing packed" is an
+// expected outcome and not a division error the caller should have to guard.
+//
+// Measures the REPORTED extent, so power-of-two or square rounding shows up as the padding waste it is —
+// which is usually the number a caller comparing packings wants to see.
+export function getPackResultOccupancy(result: Readonly<PackResult>): number {
+  const area = result.width * result.height;
+  if (area <= 0) return 0;
+  let placed = 0;
+  for (const placement of result.placements) placed += placement.width * placement.height;
+  return placed / area;
+}
 
 // Places a set of rectangles without overlap into a bin using the MaxRects algorithm with the
 // Best-Short-Side-Fit (BSSF) heuristic, and reports each placement, the used bin extent, and any ids
@@ -29,11 +44,12 @@ export function packRectangles(
   const padding = options?.padding ?? 0;
   const border = options?.border ?? 0;
   const allowRotation = options?.allowRotation ?? false;
+  const heuristic = options?.heuristic ?? 'bestShortSideFit';
   const growable = options?.growable ?? true;
   const powerOfTwo = options?.powerOfTwo ?? false;
   const square = options?.square ?? false;
-  const maxWidth = options?.maxWidth ?? DEFAULT_MAX_EXTENT;
-  const maxHeight = options?.maxHeight ?? DEFAULT_MAX_EXTENT;
+  const maxWidth = options?.maxWidth ?? BIN_PACK_DEFAULT_MAX_EXTENT;
+  const maxHeight = options?.maxHeight ?? BIN_PACK_DEFAULT_MAX_EXTENT;
 
   if (rects.length === 0) {
     return {
@@ -44,7 +60,26 @@ export function packRectangles(
     };
   }
 
-  const sorted = sortRectanglesForPacking(rects);
+  // A rectangle with a non-positive side has no placeable area, and placing one produced real nonsense:
+  // a placement reporting `width: -8` that also overlapped its neighbour, because a negative extent
+  // consumes no space in the free-rectangle split. `unpacked` is the existing sentinel for "could not be
+  // placed", so degenerate input goes there rather than into the output as a malformed placement.
+  const degenerate: RectangleId[] = [];
+  const placeable: Readonly<PackableRectangle>[] = [];
+  for (const rect of rects) {
+    if (rect.width > 0 && rect.height > 0) placeable.push(rect);
+    else degenerate.push(rect.id);
+  }
+  if (placeable.length === 0) {
+    return {
+      placements: [],
+      width: finalizeExtent(0, powerOfTwo),
+      height: finalizeExtent(0, powerOfTwo),
+      unpacked: degenerate,
+    };
+  }
+
+  const sorted = sortRectanglesForPacking(placeable);
 
   // The smallest bin each dimension must reach for a rectangle to fit at all, accounting for the
   // border on both sides. A rectangle wider than `maxWidth` (and, if rotatable, taller than
@@ -67,7 +102,7 @@ export function packRectangles(
   let binWidth = growable ? Math.min(Math.max(seed, needWidth), maxWidth) : maxWidth;
   let binHeight = growable ? Math.min(Math.max(seed, needHeight), maxHeight) : maxHeight;
 
-  let attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation);
+  let attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation, heuristic);
   while (attempt.unpacked.length > 0 && growable && (binWidth < maxWidth || binHeight < maxHeight)) {
     if (binWidth <= binHeight && binWidth < maxWidth) {
       binWidth = Math.min(binWidth * 2, maxWidth);
@@ -76,10 +111,15 @@ export function packRectangles(
     } else {
       binWidth = Math.min(binWidth * 2, maxWidth);
     }
-    attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation);
+    attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation, heuristic);
   }
 
-  return finalizeResult(attempt, border, powerOfTwo, square);
+  return finalizeResult(
+    { placements: attempt.placements, unpacked: [...degenerate, ...attempt.unpacked] },
+    border,
+    powerOfTwo,
+    square,
+  );
 }
 
 // A free rectangle of unoccupied bin space, in the packer's internal "effective" coordinate space
@@ -141,7 +181,9 @@ function finalizeResult(
   }
 
   return {
-    placements: packed.placements.map((placement) => ({ ...placement })),
+    // packIntoBin builds this array fresh and never retains it, so copying the ARRAY is enough to hand
+    // the caller an owned, mutable list; cloning each placement object again was pure allocation slack.
+    placements: [...packed.placements],
     width,
     height,
     unpacked: [...packed.unpacked],
@@ -165,10 +207,11 @@ function findBestPlacement(
   pieceWidth: number,
   pieceHeight: number,
   allowRotation: boolean,
+  heuristic: BinPackHeuristic,
 ): Placement | null {
   let best: Placement | null = null;
-  let bestShort = Number.POSITIVE_INFINITY;
-  let bestLong = Number.POSITIVE_INFINITY;
+  let bestPrimary = Number.POSITIVE_INFINITY;
+  let bestSecondary = Number.POSITIVE_INFINITY;
 
   for (const node of free) {
     // Two candidate orientations: unrotated, then (optionally) the 90° turn.
@@ -181,11 +224,16 @@ function findBestPlacement(
       const leftoverVertical = node.height - height;
       const shortSide = Math.min(leftoverHorizontal, leftoverVertical);
       const longSide = Math.max(leftoverHorizontal, leftoverVertical);
+      // Both heuristics rank on a primary score and break ties on a secondary one; only which is which
+      // differs. Area-fit still falls back to the short side, so a tie in leftover area resolves the same
+      // way short-side-fit would rather than by free-rectangle order alone.
+      const primary = heuristic === 'bestAreaFit' ? node.width * node.height - width * height : shortSide;
+      const secondary = heuristic === 'bestAreaFit' ? shortSide : longSide;
 
-      if (best === null || shortSide < bestShort || (shortSide === bestShort && longSide < bestLong)) {
+      if (best === null || primary < bestPrimary || (primary === bestPrimary && secondary < bestSecondary)) {
         best = { x: node.x, y: node.y, footprintWidth: width, footprintHeight: height, rotated: rotated === 1 };
-        bestShort = shortSide;
-        bestLong = longSide;
+        bestPrimary = primary;
+        bestSecondary = secondary;
       }
     }
   }
@@ -217,6 +265,7 @@ function packIntoBin(
   padding: number,
   border: number,
   allowRotation: boolean,
+  heuristic: BinPackHeuristic,
 ): { placements: PackedRectangle[]; unpacked: RectangleId[] } {
   const usableWidth = binWidth - 2 * border + padding;
   const usableHeight = binHeight - 2 * border + padding;
@@ -234,7 +283,7 @@ function packIntoBin(
   for (const rect of sorted) {
     const pieceWidth = rect.width + padding;
     const pieceHeight = rect.height + padding;
-    const placement = findBestPlacement(free, pieceWidth, pieceHeight, allowRotation);
+    const placement = findBestPlacement(free, pieceWidth, pieceHeight, allowRotation, heuristic);
     if (placement === null) {
       unpacked.push(rect.id);
       continue;
@@ -337,4 +386,7 @@ function compareRectangleId(a: RectangleId, b: RectangleId): number {
 
 // The default width/height cap when `maxWidth`/`maxHeight` are unset — large enough to be effectively
 // unbounded for typical inputs while keeping growth from running away.
-const DEFAULT_MAX_EXTENT = 16384;
+// The cap applied when the caller names none — large enough to read as "unbounded" for typical inputs
+// while still bounding the growth loop. Exported because a caller computing its own usable region (or
+// explaining a failure) must use the same number the packer did.
+export const BIN_PACK_DEFAULT_MAX_EXTENT = 16384;

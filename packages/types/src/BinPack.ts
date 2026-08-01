@@ -49,6 +49,15 @@ export interface BinPackOptions {
   // When true, the packer may rotate a rectangle 90° if that orientation fits better; the placement
   // reports `rotated: true` and swapped `width`/`height`. Default: false.
   allowRotation?: boolean;
+  // Which fit is preferred when several free rectangles can hold the piece.
+  //
+  //   bestShortSideFit  smallest leftover SHORT side — hugs one edge tightly, the classic MaxRects
+  //                     default and the best all-round choice for mixed sizes.
+  //   bestAreaFit       smallest leftover AREA — prefers the tightest overall cell, which packs
+  //                     similarly-sized pieces more densely but can strand thin slivers.
+  //
+  // Default: 'bestShortSideFit', so an existing packing is unchanged by this option appearing.
+  heuristic?: BinPackHeuristic;
   // When true, the bin starts small and grows toward `maxWidth`/`maxHeight` to fit everything. When
   // false, the bin is fixed at `maxWidth`/`maxHeight` and rectangles that do not fit go to
   // `unpacked`. Default: true.
@@ -63,4 +72,29 @@ export interface PackResult {
   width: number;
   height: number;
   unpacked: RectangleId[];
+}
+
+// The placement-scoring rule used when several free rectangles can hold a piece. A closed two-member
+// union rather than a registry: this is scored in the packer's innermost loop, where an indirect call
+// per candidate would cost more than the choice is worth. If Skyline or Guillotine strategies arrive,
+// they replace this option with a seam rather than extending it.
+export type BinPackHeuristic = 'bestAreaFit' | 'bestShortSideFit';
+
+// Why one rectangle could not be placed. The `unpacked` list carries ids only; this is the shakeable
+// companion query that says which of three unrelated causes applied, because they have different fixes.
+//
+//   oversized        larger than the usable region in BOTH orientations — no bin size within the caps
+//                    would hold it, so raise the cap or shrink the piece
+//   regionCollapsed  the caps leave no usable region at all (border consumes maxWidth or maxHeight),
+//                    so nothing could be placed regardless of size
+//   binExhausted     it fits in principle, but the bin filled up first — a fixed bin that is too small,
+//                    or growth already at the cap
+export type UnpackedRectangleReason = 'binExhausted' | 'oversized' | 'regionCollapsed';
+
+export interface UnpackedRectangleExplanation {
+  readonly id: RectangleId;
+  readonly reason: UnpackedRectangleReason;
+  // The usable extent the piece was measured against, after border is removed from the caps.
+  readonly usableWidth: number;
+  readonly usableHeight: number;
 }

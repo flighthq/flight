@@ -1,7 +1,42 @@
 import type { PackableRectangle, PackedRectangle } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { packRectangles } from './packRectangles';
+import { BIN_PACK_DEFAULT_MAX_EXTENT, getPackResultOccupancy, packRectangles } from './packRectangles';
+
+describe('BIN_PACK_DEFAULT_MAX_EXTENT', () => {
+  it('is the cap the packer actually applies when the caller names none', () => {
+    // A rectangle one unit past the default must not fit; one exactly at it must.
+    expect(packRectangles([{ id: 'over', width: BIN_PACK_DEFAULT_MAX_EXTENT + 1, height: 4 }]).unpacked).toEqual([
+      'over',
+    ]);
+    expect(packRectangles([{ id: 'at', width: BIN_PACK_DEFAULT_MAX_EXTENT, height: 4 }]).unpacked).toEqual([]);
+  });
+});
+
+function isPowerOfTwo(value: number): boolean {
+  return value > 0 && (value & (value - 1)) === 0;
+}
+
+function rectanglesOverlap(a: Readonly<PackedRectangle>, b: Readonly<PackedRectangle>): boolean {
+  return !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
+}
+
+describe('getPackResultOccupancy', () => {
+  it('reports covered fraction of the REPORTED extent, so rounding waste is visible', () => {
+    const exact = packRectangles([{ id: 'a', width: 16, height: 16 }]);
+    expect(getPackResultOccupancy(exact)).toBe(1);
+    // powerOfTwo rounds 24 up to 32, and the occupancy must show that as waste rather than hide it.
+    const rounded = packRectangles([{ id: 'a', width: 24, height: 24 }], { powerOfTwo: true });
+    expect(rounded.width).toBe(32);
+    expect(getPackResultOccupancy(rounded)).toBeCloseTo((24 * 24) / (32 * 32), 10);
+  });
+
+  it('returns 0 rather than NaN for an empty result, since nothing-packed is expected', () => {
+    const empty = packRectangles([]);
+    expect(empty.width * empty.height).toBe(0);
+    expect(getPackResultOccupancy(empty)).toBe(0);
+  });
+});
 
 describe('packRectangles', () => {
   it('places ~20 varied rectangles with no pairwise overlap, inside the bin, at their input size', () => {
@@ -180,10 +215,114 @@ describe('packRectangles', () => {
   });
 });
 
-function isPowerOfTwo(value: number): boolean {
-  return value > 0 && (value & (value - 1)) === 0;
-}
+describe('packRectangles edge cases', () => {
+  it('rejects zero and negative dimensions to unpacked rather than placing a degenerate rect', () => {
+    const result = packRectangles([
+      { id: 'zeroW', width: 0, height: 10 },
+      { id: 'zeroH', width: 10, height: 0 },
+      { id: 'negative', width: -8, height: 10 },
+      { id: 'ok', width: 10, height: 10 },
+    ]);
+    expect(result.placements.map((p) => p.id)).toEqual(['ok']);
+    expect([...result.unpacked].sort()).toEqual(['negative', 'zeroH', 'zeroW']);
+  });
 
-function rectanglesOverlap(a: Readonly<PackedRectangle>, b: Readonly<PackedRectangle>): boolean {
-  return !(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y);
-}
+  it('treats duplicate ids as distinct rectangles, placing both without overlap', () => {
+    const result = packRectangles([
+      { id: 'same', width: 10, height: 10 },
+      { id: 'same', width: 10, height: 10 },
+    ]);
+    expect(result.placements).toHaveLength(2);
+    const [a, b] = result.placements;
+    expect(a.x !== b.x || a.y !== b.y).toBe(true);
+  });
+
+  it('places non-integer sizes without rounding them', () => {
+    const result = packRectangles([{ id: 'frac', width: 10.5, height: 4.25 }]);
+    expect(result.placements[0]).toMatchObject({ width: 10.5, height: 4.25 });
+  });
+
+  it('sends everything to unpacked when border collapses the usable region', () => {
+    const result = packRectangles([{ id: 'a', width: 4, height: 4 }], {
+      maxWidth: 10,
+      maxHeight: 10,
+      border: 6, // 2*6 = 12 > 10, so there is no usable region at all
+      growable: false,
+    });
+    expect(result.placements).toEqual([]);
+    expect(result.unpacked).toEqual(['a']);
+  });
+
+  it('keeps padding larger than the pieces from overlapping them', () => {
+    const result = packRectangles(
+      [
+        { id: 'a', width: 2, height: 2 },
+        { id: 'b', width: 2, height: 2 },
+      ],
+      { padding: 20 },
+    );
+    expect(result.placements).toHaveLength(2);
+    const [a, b] = result.placements;
+    const gapX = Math.abs(a.x - b.x) >= 2 + 20;
+    const gapY = Math.abs(a.y - b.y) >= 2 + 20;
+    expect(gapX || gapY).toBe(true);
+  });
+});
+
+describe('packRectangles properties', () => {
+  // Deterministic LCG: seeded so a failure is reproducible from the seed alone, and no Math.random —
+  // which the portability gate forbids and which would make a red run unreproducible anyway.
+  function makeRandom(seed: number): () => number {
+    let state = seed >>> 0;
+    return () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 0x100000000;
+    };
+  }
+
+  it('holds its invariants across 40 seeded inputs and both heuristics', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const random = makeRandom(seed);
+      const count = 1 + Math.floor(random() * 25);
+      const rects: PackableRectangle[] = [];
+      for (let i = 0; i < count; i++) {
+        rects.push({ id: i, width: 1 + Math.floor(random() * 60), height: 1 + Math.floor(random() * 60) });
+      }
+      const padding = Math.floor(random() * 4);
+      const border = Math.floor(random() * 4);
+      const heuristic = seed % 2 === 0 ? 'bestAreaFit' : 'bestShortSideFit';
+      const options = { padding, border, heuristic, allowRotation: seed % 3 === 0 } as const;
+
+      const result = packRectangles(rects, options);
+      const label = `seed ${seed} (${heuristic})`;
+
+      // Every input is accounted for exactly once.
+      expect(result.placements.length + result.unpacked.length, label).toBe(rects.length);
+
+      for (const placement of result.placements) {
+        // Inside the bin, honouring the border on every side.
+        expect(placement.x >= border, label).toBe(true);
+        expect(placement.y >= border, label).toBe(true);
+        expect(placement.x + placement.width <= result.width - border, label).toBe(true);
+        expect(placement.y + placement.height <= result.height - border, label).toBe(true);
+      }
+
+      // Pairwise non-overlap, with padding respected as a real gap.
+      for (let i = 0; i < result.placements.length; i++) {
+        for (let j = i + 1; j < result.placements.length; j++) {
+          const a = result.placements[i];
+          const b = result.placements[j];
+          const apart =
+            a.x + a.width + padding <= b.x ||
+            b.x + b.width + padding <= a.x ||
+            a.y + a.height + padding <= b.y ||
+            b.y + b.height + padding <= a.y;
+          expect(apart, `${label}: ${String(a.id)} vs ${String(b.id)}`).toBe(true);
+        }
+      }
+
+      // Deterministic: the same input re-packs identically.
+      expect(packRectangles(rects, options), label).toEqual(result);
+    }
+  });
+});
