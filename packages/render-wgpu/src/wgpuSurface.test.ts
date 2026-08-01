@@ -96,4 +96,46 @@ describe('encodeWgpuFrameCapture', () => {
     encodeWgpuFrameCapture(state, encoder);
     expect(copied).toBe(false);
   });
+
+  it('skips the copy while a readback holds the buffer, and resumes once it lets go', async () => {
+    // The writer/reader handshake over the single retained buffer: an animating scene must not keep
+    // enqueueing copies into a buffer a readback has mapped or is waiting to map.
+    const state = await createWgpuRenderStateForTest();
+    enableWgpuFrameCapture(state);
+    acquireWgpuFrameCaptureTexture(state);
+    const runtime = getWgpuRenderStateRuntime(state);
+    let mapState: GPUBufferMapState = 'unmapped';
+    installCaptureBuffer(state, () => Promise.resolve());
+    Object.defineProperty(runtime.frameCaptureBuffer, 'mapState', { get: () => mapState });
+
+    let copies = 0;
+    const encoder = { copyTextureToBuffer: () => copies++ } as unknown as GPUCommandEncoder;
+
+    mapState = 'pending';
+    encodeWgpuFrameCapture(state, encoder);
+    mapState = 'mapped';
+    encodeWgpuFrameCapture(state, encoder);
+    expect(copies).toBe(0);
+
+    mapState = 'unmapped';
+    encodeWgpuFrameCapture(state, encoder);
+    expect(copies).toBe(1);
+  });
+
+  it('still copies when the implementation reports no map state at all', async () => {
+    // Fails safe in the direction that keeps capturing: an undefined mapState must not read as "busy"
+    // and silence every copy for the rest of the run.
+    const state = await createWgpuRenderStateForTest();
+    enableWgpuFrameCapture(state);
+    acquireWgpuFrameCaptureTexture(state);
+    installCaptureBuffer(state, () => Promise.resolve());
+    Object.defineProperty(getWgpuRenderStateRuntime(state).frameCaptureBuffer, 'mapState', {
+      get: () => undefined,
+    });
+
+    let copies = 0;
+    encodeWgpuFrameCapture(state, { copyTextureToBuffer: () => copies++ } as unknown as GPUCommandEncoder);
+
+    expect(copies).toBe(1);
+  });
 });
