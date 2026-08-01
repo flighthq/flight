@@ -1,0 +1,79 @@
+import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { CollisionShape, LogEntry } from '@flighthq/types/contract';
+
+import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards';
+import { createCollisionManifold } from './manifold';
+import { testCollision } from './testCollision';
+
+function captureLog(run: () => void): readonly LogEntry[] {
+  const sink = createMemoryLogSink(8);
+  addLogSink(sink.sink);
+  try {
+    run();
+    return getMemoryLogSinkEntries(sink);
+  } finally {
+    removeLogSink(sink.sink);
+  }
+}
+
+afterEach(() => {
+  disableCollisionGuards();
+});
+
+describe('areCollisionGuardsEnabled', () => {
+  it('reports the current module guard state', () => {
+    expect(areCollisionGuardsEnabled()).toBe(false);
+    enableCollisionGuards();
+    expect(areCollisionGuardsEnabled()).toBe(true);
+  });
+});
+
+describe('disableCollisionGuards', () => {
+  it('uninstalls the guard', () => {
+    enableCollisionGuards();
+    disableCollisionGuards();
+    const entries = captureLog(() => {
+      testCollision(
+        { kind: 'circle', radius: 0, x: 0, y: 0 },
+        { kind: 'circle', radius: 1, x: 0, y: 0 },
+        createCollisionManifold(),
+      );
+    });
+    expect(entries).toHaveLength(0);
+  });
+});
+
+describe('enableCollisionGuards', () => {
+  it('stays silent for supported inputs, then warns once for a degenerate shape through testCollision', () => {
+    enableCollisionGuards();
+    const out = createCollisionManifold();
+    const valid: CollisionShape = { kind: 'circle', radius: 1, x: 0, y: 0 };
+    const entries = captureLog(() => {
+      testCollision(valid, { kind: 'circle', radius: 1, x: 4, y: 0 }, out);
+      testCollision({ kind: 'point', x: 0, y: 0 }, valid, out);
+      testCollision({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
+      testCollision({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].channel).toBe('collision');
+    expect(entries[0].data).toMatchObject({ kind: 'circle', shapeIndex: 0, status: 'degenerate-shape' });
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('explainCollisionTest');
+  });
+
+  it('warns for a non-convex polygon and identifies its argument index', () => {
+    enableCollisionGuards();
+    const entries = captureLog(() => {
+      testCollision(
+        { kind: 'circle', radius: 1, x: 0, y: 0 },
+        { kind: 'polygon', points: [0, 0, 2, 0, 1, 1, 2, 2, 0, 2] },
+        createCollisionManifold(),
+      );
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].data).toMatchObject({
+      kind: 'polygon',
+      shapeIndex: 1,
+      status: 'non-convex-polygon',
+    });
+  });
+});

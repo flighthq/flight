@@ -83,6 +83,27 @@ export interface CollisionManifold {
   depth: number;
 }
 
+// Plain-data answer to "why did testCollision return false?". `shapeIndex` identifies invalid or
+// unsupported input (0 for A, 1 for B); it is null for an ordinary separated pair or an overlap.
+export interface CollisionTestExplanation {
+  readonly kind: CollisionShapeKind | null;
+  readonly overlapping: boolean;
+  readonly shapeIndex: 0 | 1 | null;
+  readonly status: CollisionTestStatus;
+}
+
+// The result classification shared by explainCollisionTest and the opt-in guard seam.
+export type CollisionTestStatus =
+  | 'degenerate-shape'
+  | 'non-convex-polygon'
+  | 'overlapping'
+  | 'separated'
+  | 'unsupported-shape-kind';
+
+// Installed by enableCollisionGuards and consulted only by the generic testCollision dispatcher.
+// Direct typed pair functions remain the allocation-free hot path.
+export type CollisionTestGuard = (a: Readonly<CollisionShape>, b: Readonly<CollisionShape>) => void;
+
 // One point of contact between two overlapping shapes. (`x`,`y`) is the world-space anchor and
 // `depth` is that point's own penetration along the manifold normal — points on the same manifold
 // generally penetrate by different amounts, which is what lets a solver correct a tilted resting

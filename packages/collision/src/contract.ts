@@ -1,5 +1,7 @@
 export * from './collideContactManifold';
 export * from './contactManifold';
+export * from './enableCollisionGuards';
+export * from './explainCollisionTest';
 export * from './manifold';
 export * from './pointContainment';
 export * from './segmentCollision';

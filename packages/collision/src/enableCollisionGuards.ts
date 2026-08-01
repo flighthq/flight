@@ -1,0 +1,54 @@
+import { logOnce } from '@flighthq/log/contract';
+import type { CollisionShape, CollisionTestExplanation } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
+
+import { getCollisionShapeValidationStatus } from './collisionShapeValidation';
+import { setCollisionTestGuard } from './testCollision';
+
+export function areCollisionGuardsEnabled(): boolean {
+  return collisionGuardsEnabled;
+}
+
+export function disableCollisionGuards(): void {
+  setCollisionTestGuard(null);
+  collisionGuardsEnabled = false;
+}
+
+// Installs opt-in diagnostics for invalid generic manifold inputs. Direct typed pair functions stay
+// logger-free, and applications that omit this module shed both the message text and @flighthq/log.
+export function enableCollisionGuards(): void {
+  setCollisionTestGuard(warnOnInvalidCollisionShapes);
+  collisionGuardsEnabled = true;
+}
+
+function warnOnInvalidCollisionShapes(a: Readonly<CollisionShape>, b: Readonly<CollisionShape>): void {
+  const statusA = getCollisionShapeValidationStatus(a);
+  if (statusA === 'degenerate-shape' || statusA === 'non-convex-polygon') {
+    warnOnInvalidCollisionShape({ kind: a.kind, overlapping: false, shapeIndex: 0, status: statusA });
+    return;
+  }
+  const statusB = getCollisionShapeValidationStatus(b);
+  if (statusB === 'degenerate-shape' || statusB === 'non-convex-polygon') {
+    warnOnInvalidCollisionShape({ kind: b.kind, overlapping: false, shapeIndex: 1, status: statusB });
+  }
+}
+
+function warnOnInvalidCollisionShape(explanation: Readonly<CollisionTestExplanation>): void {
+  const message =
+    explanation.status === 'non-convex-polygon'
+      ? 'testCollision: a polygon is non-convex and cannot produce a supported manifold — call explainCollisionTest(a, b) and replace the reported shape with a convex polygon.'
+      : 'testCollision: a shape is degenerate and cannot produce a manifold — call explainCollisionTest(a, b) and replace the reported shape with a finite positive-area collider.';
+  logOnce(
+    `collision:${explanation.status}:${explanation.shapeIndex}:${explanation.kind}`,
+    LogLevel.Warn,
+    {
+      kind: explanation.kind,
+      message,
+      shapeIndex: explanation.shapeIndex,
+      status: explanation.status,
+    },
+    'collision',
+  );
+}
+
+let collisionGuardsEnabled = false;

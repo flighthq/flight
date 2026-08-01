@@ -72,6 +72,25 @@ describe('testAabbAabbCollision', () => {
     expect(out.normalY).toBe(0);
     expect(out.depth).toBe(0);
   });
+
+  it('rejects boxes with a zero-width or zero-height extent', () => {
+    const out = createCollisionManifold();
+    out.overlapping = true;
+    out.normalX = 1;
+    out.depth = 4;
+    expect(
+      testAabbAabbCollision({ minX: 1, minY: 0, maxX: 1, maxY: 2 }, { minX: 0, minY: 0, maxX: 2, maxY: 2 }, out),
+    ).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  });
+
+  it('prefers +X when both separation axes and directions tie', () => {
+    const out = createCollisionManifold();
+    const box = { minX: -1, minY: -1, maxX: 1, maxY: 1 };
+    expect(testAabbAabbCollision(box, box, out)).toBe(true);
+    expect(out.normalX).toBe(1);
+    expect(out.normalY).toBe(0);
+  });
 });
 
 describe('testAabbObbCollision', () => {
@@ -190,6 +209,23 @@ describe('testCircleCircleCollision', () => {
     expect(out.normalY).toBe(0);
     expect(out.depth).toBeCloseTo(4);
   });
+
+  it('rejects a zero-radius circle and clears the output', () => {
+    const out = createCollisionManifold();
+    out.overlapping = true;
+    out.normalX = -1;
+    out.depth = 2;
+    expect(testCircleCircleCollision({ x: 0, y: 0, radius: 0 }, { x: 0, y: 0, radius: 1 }, out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  });
+
+  it('keeps a directional normal for proportionally tiny circles', () => {
+    const out = createCollisionManifold();
+    expect(testCircleCircleCollision({ x: 0, y: 0, radius: 1e-12 }, { x: 1e-12, y: 0, radius: 1e-12 }, out)).toBe(true);
+    expect(out.normalX).toBe(-1);
+    expect(out.normalY).toBe(0);
+    expect(out.depth).toBeCloseTo(1e-12, 20);
+  });
 });
 
 describe('testCircleObbCollision', () => {
@@ -253,6 +289,13 @@ describe('testCirclePolygonCollision', () => {
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(true);
     expect(out.overlapping).toBe(true);
     expect(out.depth).toBeCloseTo(6); // 5 to the nearest edge + radius 1
+  });
+
+  it('prefers +X for a centered circle whose edge axes tie', () => {
+    const out = createCollisionManifold();
+    expect(testCirclePolygonCollision({ x: 0, y: 0, radius: 1 }, square(-5, -5, 10), out)).toBe(true);
+    expect(out.normalX).toBe(1);
+    expect(out.normalY).toBe(0);
   });
 
   it('is separated when far from the polygon', () => {
@@ -325,5 +368,42 @@ describe('testPolygonPolygonCollision', () => {
   it('treats edge-touching as not overlapping (exclusive)', () => {
     const out = createCollisionManifold();
     expect(testPolygonPolygonCollision(square(0, 0, 2), square(2, 0, 2), out)).toBe(false);
+  });
+
+  it('rejects polygons with fewer than three vertices', () => {
+    const out = createCollisionManifold();
+    out.overlapping = true;
+    expect(testPolygonPolygonCollision({ points: [0, 0, 1, 1] }, square(0, 0, 2), out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  });
+
+  it('chooses the same +X MTV for coincident squares regardless of start vertex and winding', () => {
+    const out = createCollisionManifold();
+    const variants: CollisionPolygon[] = [
+      { points: [-1, -1, 1, -1, 1, 1, -1, 1] },
+      { points: [1, 1, 1, -1, -1, -1, -1, 1] },
+      { points: [-1, 1, 1, 1, 1, -1, -1, -1] },
+    ];
+    for (const polygon of variants) {
+      expect(testPolygonPolygonCollision(variants[0], polygon, out)).toBe(true);
+      expect(out.normalX).toBe(1);
+      expect(out.normalY).toBe(0);
+      expect(out.depth).toBeCloseTo(2);
+    }
+  });
+
+  it('is translation-stable at large world coordinates', () => {
+    const out = createCollisionManifold();
+    const origin = 1e15;
+    const a: CollisionPolygon = {
+      points: [origin, origin, origin + 10, origin, origin + 10, origin + 10, origin, origin + 10],
+    };
+    const b: CollisionPolygon = {
+      points: [origin + 8, origin, origin + 18, origin, origin + 18, origin + 10, origin + 8, origin + 10],
+    };
+    expect(testPolygonPolygonCollision(a, b, out)).toBe(true);
+    expect(out.normalX).toBe(-1);
+    expect(out.normalY).toBe(0);
+    expect(out.depth).toBeCloseTo(2);
   });
 });

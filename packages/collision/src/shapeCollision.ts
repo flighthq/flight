@@ -7,6 +7,7 @@ import type {
   CollisionPolygon,
 } from '@flighthq/types/contract';
 
+import { getCollisionPolygonValidationStatus } from './collisionShapeValidation';
 import { writeAabbVertices, writeObbVertices } from './convexVertices';
 import { clearCollisionManifold } from './manifold';
 
@@ -23,7 +24,7 @@ import { clearCollisionManifold } from './manifold';
 // Polygons are assumed convex; `points` is a flat `[x0,y0,...]` list. Winding does not matter — the
 // core orients the manifold by comparing shape centroids.
 
-const EPS = 1e-9;
+const RELATIVE_EPSILON = 1e-9;
 
 // Axis-aligned box vs axis-aligned box. Direct min-overlap test (no SAT needed): the only candidate
 // separating axes are X and Y, and the manifold uses whichever has the smaller penetration.
@@ -32,6 +33,7 @@ export function testAabbAabbCollision(
   b: Readonly<CollisionAabb>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidAabb(a) || !isValidAabb(b)) return clearInvalidCollisionManifold(out);
   const aMinX = a.minX;
   const aMinY = a.minY;
   const aMaxX = a.maxX;
@@ -54,7 +56,7 @@ export function testAabbAabbCollision(
     return false;
   }
 
-  if (overlapX < overlapY) {
+  if (overlapX <= overlapY) {
     out.normalX = penLeftX < penRightX ? -1 : 1;
     out.normalY = 0;
     out.depth = overlapX;
@@ -73,6 +75,7 @@ export function testAabbObbCollision(
   b: Readonly<CollisionObb>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidAabb(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   writeAabbVertices(a, scratchA);
   writeObbVertices(b, scratchB);
   return satConvexOverlap(scratchA, 4, scratchB, 4, out);
@@ -84,6 +87,9 @@ export function testAabbPolygonCollision(
   b: Readonly<CollisionPolygon>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidAabb(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+    return clearInvalidCollisionManifold(out);
+  }
   writeAabbVertices(a, scratchA);
   const bPoints = b.points;
   return satConvexOverlap(scratchA, 4, bPoints, bPoints.length >> 1, out);
@@ -96,6 +102,7 @@ export function testCircleAabbCollision(
   b: Readonly<CollisionAabb>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidCircle(a) || !isValidAabb(b)) return clearInvalidCollisionManifold(out);
   return circleAabbOverlap(a.x, a.y, a.radius, b.minX, b.minY, b.maxX, b.maxY, out);
 }
 
@@ -106,6 +113,7 @@ export function testCircleCircleCollision(
   b: Readonly<CollisionCircle>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidCircle(a) || !isValidCircle(b)) return clearInvalidCollisionManifold(out);
   const ax = a.x;
   const ay = a.y;
   const bx = b.x;
@@ -121,7 +129,7 @@ export function testCircleCircleCollision(
   }
 
   const dist = Math.sqrt(distSquared);
-  if (dist > EPS) {
+  if (dist > relativeEpsilon(radiusSum)) {
     const inv = 1 / dist;
     out.normalX = dx * inv;
     out.normalY = dy * inv;
@@ -142,6 +150,7 @@ export function testCircleObbCollision(
   b: Readonly<CollisionObb>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidCircle(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   const cx = a.x;
   const cy = a.y;
   const radius = a.radius;
@@ -172,6 +181,9 @@ export function testCirclePolygonCollision(
   b: Readonly<CollisionPolygon>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidCircle(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+    return clearInvalidCollisionManifold(out);
+  }
   const points = b.points;
   return satCircleConvexOverlap(a.x, a.y, a.radius, points, points.length >> 1, out);
 }
@@ -182,6 +194,7 @@ export function testObbObbCollision(
   b: Readonly<CollisionObb>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidObb(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   writeObbVertices(a, scratchA);
   writeObbVertices(b, scratchB);
   return satConvexOverlap(scratchA, 4, scratchB, 4, out);
@@ -193,6 +206,9 @@ export function testObbPolygonCollision(
   b: Readonly<CollisionPolygon>,
   out: CollisionManifold,
 ): boolean {
+  if (!isValidObb(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+    return clearInvalidCollisionManifold(out);
+  }
   writeObbVertices(a, scratchA);
   const bPoints = b.points;
   return satConvexOverlap(scratchA, 4, bPoints, bPoints.length >> 1, out);
@@ -204,6 +220,12 @@ export function testPolygonPolygonCollision(
   b: Readonly<CollisionPolygon>,
   out: CollisionManifold,
 ): boolean {
+  if (
+    getCollisionPolygonValidationStatus(a.points) !== null ||
+    getCollisionPolygonValidationStatus(b.points) !== null
+  ) {
+    return clearInvalidCollisionManifold(out);
+  }
   const aPoints = a.points;
   const bPoints = b.points;
   return satConvexOverlap(aPoints, aPoints.length >> 1, bPoints, bPoints.length >> 1, out);
@@ -226,8 +248,9 @@ function circleAabbOverlap(
   const dx = cx - closestX;
   const dy = cy - closestY;
   const distSquared = dx * dx + dy * dy;
+  const epsilon = relativeEpsilon(Math.max(maxX - minX, maxY - minY, radius));
 
-  if (distSquared > EPS * EPS) {
+  if (distSquared > epsilon * epsilon) {
     // Center outside the box: separate along the closest-point direction.
     const dist = Math.sqrt(distSquared);
     if (dist >= radius) {
@@ -247,12 +270,12 @@ function circleAabbOverlap(
   const right = maxX - cx;
   const bottom = cy - minY;
   const top = maxY - cy;
-  let min = left;
-  let normalX = -1;
+  let min = right;
+  let normalX = 1;
   let normalY = 0;
-  if (right < min) {
-    min = right;
-    normalX = 1;
+  if (left < min) {
+    min = left;
+    normalX = -1;
     normalY = 0;
   }
   if (bottom < min) {
@@ -265,8 +288,8 @@ function circleAabbOverlap(
     normalX = 0;
     normalY = 1;
   }
-  out.normalX = normalX;
-  out.normalY = normalY;
+  out.normalX = normalX === 0 ? 0 : normalX;
+  out.normalY = normalY === 0 ? 0 : normalY;
   out.depth = min + radius;
   out.overlapping = true;
   return true;
@@ -283,6 +306,7 @@ function satCircleConvexOverlap(
   pn: number,
   out: CollisionManifold,
 ): boolean {
+  const epsilon = relativeEpsilon(Math.max(getPolygonExtent(px, pn), radius));
   let minOverlap = Infinity;
   let normalX = 0;
   let normalY = 0;
@@ -296,15 +320,16 @@ function satCircleConvexOverlap(
     scratchAxis.x = y1 - y0;
     scratchAxis.y = -(x1 - x0);
     const len = normalizeVector2(scratchAxis, scratchAxis);
-    if (len < EPS) continue;
+    if (len <= epsilon) continue;
+    canonicalizeScratchAxis();
     const axisX = scratchAxis.x;
     const axisY = scratchAxis.y;
     const overlap = circlePolygonAxisOverlap(axisX, axisY, cx, cy, radius, px, pn);
-    if (overlap <= 0) {
+    if (overlap <= epsilon) {
       clearCollisionManifold(out);
       return false;
     }
-    if (overlap < minOverlap) {
+    if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
       minOverlap = overlap;
       normalX = axisX;
       normalY = axisY;
@@ -330,15 +355,16 @@ function satCircleConvexOverlap(
   scratchAxis.x = cx - nearestX;
   scratchAxis.y = cy - nearestY;
   const vertexAxisLen = normalizeVector2(scratchAxis, scratchAxis);
-  if (vertexAxisLen > EPS) {
+  if (vertexAxisLen > epsilon) {
+    canonicalizeScratchAxis();
     const axisX = scratchAxis.x;
     const axisY = scratchAxis.y;
     const overlap = circlePolygonAxisOverlap(axisX, axisY, cx, cy, radius, px, pn);
-    if (overlap <= 0) {
+    if (overlap <= epsilon) {
       clearCollisionManifold(out);
       return false;
     }
-    if (overlap < minOverlap) {
+    if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
       minOverlap = overlap;
       normalX = axisX;
       normalY = axisY;
@@ -350,21 +376,23 @@ function satCircleConvexOverlap(
     return false;
   }
 
+  const originX = px[0];
+  const originY = px[1];
   let centroidX = 0;
   let centroidY = 0;
   for (let i = 0; i < pn; i++) {
-    centroidX += px[i << 1];
-    centroidY += px[(i << 1) + 1];
+    centroidX += px[i << 1] - originX;
+    centroidY += px[(i << 1) + 1] - originY;
   }
   centroidX /= pn;
   centroidY /= pn;
-  if (normalX * (cx - centroidX) + normalY * (cy - centroidY) < 0) {
+  if (normalX * (cx - originX - centroidX) + normalY * (cy - originY - centroidY) < -epsilon) {
     normalX = -normalX;
     normalY = -normalY;
   }
 
-  out.normalX = normalX;
-  out.normalY = normalY;
+  out.normalX = normalX === 0 ? 0 : normalX;
+  out.normalY = normalY === 0 ? 0 : normalY;
   out.depth = minOverlap;
   out.overlapping = true;
   return true;
@@ -381,14 +409,16 @@ function circlePolygonAxisOverlap(
   px: ArrayLike<number>,
   pn: number,
 ): number {
+  const originX = px[0];
+  const originY = px[1];
   let minP = Infinity;
   let maxP = -Infinity;
   for (let i = 0; i < pn; i++) {
-    const d = px[i << 1] * axisX + px[(i << 1) + 1] * axisY;
+    const d = (px[i << 1] - originX) * axisX + (px[(i << 1) + 1] - originY) * axisY;
     if (d < minP) minP = d;
     if (d > maxP) maxP = d;
   }
-  const c = cx * axisX + cy * axisY;
+  const c = (cx - originX) * axisX + (cy - originY) * axisY;
   const cMin = c - radius;
   const cMax = c + radius;
   // Separation penetration (min of the two push directions), not the intersection length.
@@ -406,41 +436,44 @@ function satConvexOverlap(
   bn: number,
   out: CollisionManifold,
 ): boolean {
+  const epsilon = relativeEpsilon(Math.max(getPolygonExtent(ax, an), getPolygonExtent(bx, bn)));
   minOverlapAxis.overlap = Infinity;
   minOverlapAxis.x = 0;
   minOverlapAxis.y = 0;
-  if (!accumulatePolygonAxes(ax, an, ax, an, bx, bn, out)) return false;
-  if (!accumulatePolygonAxes(bx, bn, ax, an, bx, bn, out)) return false;
+  if (!accumulatePolygonAxes(ax, an, ax, an, bx, bn, epsilon, out)) return false;
+  if (!accumulatePolygonAxes(bx, bn, ax, an, bx, bn, epsilon, out)) return false;
   if (minOverlapAxis.overlap === Infinity) {
     clearCollisionManifold(out);
     return false;
   }
 
+  const originX = ax[0];
+  const originY = ax[1];
   let aCentroidX = 0;
   let aCentroidY = 0;
   for (let i = 0; i < an; i++) {
-    aCentroidX += ax[i << 1];
-    aCentroidY += ax[(i << 1) + 1];
+    aCentroidX += ax[i << 1] - originX;
+    aCentroidY += ax[(i << 1) + 1] - originY;
   }
   aCentroidX /= an;
   aCentroidY /= an;
   let bCentroidX = 0;
   let bCentroidY = 0;
   for (let i = 0; i < bn; i++) {
-    bCentroidX += bx[i << 1];
-    bCentroidY += bx[(i << 1) + 1];
+    bCentroidX += bx[i << 1] - originX;
+    bCentroidY += bx[(i << 1) + 1] - originY;
   }
   bCentroidX /= bn;
   bCentroidY /= bn;
 
   let normalX = minOverlapAxis.x;
   let normalY = minOverlapAxis.y;
-  if (normalX * (aCentroidX - bCentroidX) + normalY * (aCentroidY - bCentroidY) < 0) {
+  if (normalX * (aCentroidX - bCentroidX) + normalY * (aCentroidY - bCentroidY) < -epsilon) {
     normalX = -normalX;
     normalY = -normalY;
   }
-  out.normalX = normalX;
-  out.normalY = normalY;
+  out.normalX = normalX === 0 ? 0 : normalX;
+  out.normalY = normalY === 0 ? 0 : normalY;
   out.depth = minOverlapAxis.overlap;
   out.overlapping = true;
   return true;
@@ -456,6 +489,7 @@ function accumulatePolygonAxes(
   an: number,
   bx: ArrayLike<number>,
   bn: number,
+  epsilon: number,
   out: CollisionManifold,
 ): boolean {
   for (let i = 0; i < sn; i++) {
@@ -467,15 +501,16 @@ function accumulatePolygonAxes(
     scratchAxis.x = y1 - y0;
     scratchAxis.y = -(x1 - x0);
     const len = normalizeVector2(scratchAxis, scratchAxis);
-    if (len < EPS) continue;
+    if (len <= epsilon) continue;
+    canonicalizeScratchAxis();
     const axisX = scratchAxis.x;
     const axisY = scratchAxis.y;
     const overlap = polygonAxisOverlap(axisX, axisY, ax, an, bx, bn);
-    if (overlap <= 0) {
+    if (overlap <= epsilon) {
       clearCollisionManifold(out);
       return false;
     }
-    if (overlap < minOverlapAxis.overlap) {
+    if (isPreferredAxis(overlap, axisX, axisY, minOverlapAxis.overlap, minOverlapAxis.x, minOverlapAxis.y, epsilon)) {
       minOverlapAxis.overlap = overlap;
       minOverlapAxis.x = axisX;
       minOverlapAxis.y = axisY;
@@ -494,17 +529,19 @@ function polygonAxisOverlap(
   bx: ArrayLike<number>,
   bn: number,
 ): number {
+  const originX = ax[0];
+  const originY = ax[1];
   let minA = Infinity;
   let maxA = -Infinity;
   for (let i = 0; i < an; i++) {
-    const d = ax[i << 1] * axisX + ax[(i << 1) + 1] * axisY;
+    const d = (ax[i << 1] - originX) * axisX + (ax[(i << 1) + 1] - originY) * axisY;
     if (d < minA) minA = d;
     if (d > maxA) maxA = d;
   }
   let minB = Infinity;
   let maxB = -Infinity;
   for (let i = 0; i < bn; i++) {
-    const d = bx[i << 1] * axisX + bx[(i << 1) + 1] * axisY;
+    const d = (bx[i << 1] - originX) * axisX + (bx[(i << 1) + 1] - originY) * axisY;
     if (d < minB) minB = d;
     if (d > maxB) maxB = d;
   }
@@ -512,6 +549,80 @@ function polygonAxisOverlap(
   const penLow = maxA - minB;
   const penHigh = maxB - minA;
   return penLow < penHigh ? penLow : penHigh;
+}
+
+function canonicalizeScratchAxis(): void {
+  if (scratchAxis.x < -RELATIVE_EPSILON || (Math.abs(scratchAxis.x) <= RELATIVE_EPSILON && scratchAxis.y < 0)) {
+    scratchAxis.x = -scratchAxis.x;
+    scratchAxis.y = -scratchAxis.y;
+  }
+}
+
+function clearInvalidCollisionManifold(out: CollisionManifold): false {
+  clearCollisionManifold(out);
+  return false;
+}
+
+function getPolygonExtent(points: ArrayLike<number>, count: number): number {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const x = points[i << 1];
+    const y = points[(i << 1) + 1];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  return Math.max(maxX - minX, maxY - minY);
+}
+
+function isPreferredAxis(
+  overlap: number,
+  axisX: number,
+  axisY: number,
+  currentOverlap: number,
+  currentX: number,
+  currentY: number,
+  epsilon: number,
+): boolean {
+  if (overlap < currentOverlap - epsilon) return true;
+  if (Math.abs(overlap - currentOverlap) > epsilon) return false;
+  if (axisX > currentX + RELATIVE_EPSILON) return true;
+  return Math.abs(axisX - currentX) <= RELATIVE_EPSILON && axisY > currentY;
+}
+
+function isValidAabb(shape: Readonly<CollisionAabb>): boolean {
+  return (
+    Number.isFinite(shape.minX) &&
+    Number.isFinite(shape.minY) &&
+    Number.isFinite(shape.maxX) &&
+    Number.isFinite(shape.maxY) &&
+    shape.maxX > shape.minX &&
+    shape.maxY > shape.minY
+  );
+}
+
+function isValidCircle(shape: Readonly<CollisionCircle>): boolean {
+  return Number.isFinite(shape.x) && Number.isFinite(shape.y) && Number.isFinite(shape.radius) && shape.radius > 0;
+}
+
+function isValidObb(shape: Readonly<CollisionObb>): boolean {
+  return (
+    Number.isFinite(shape.x) &&
+    Number.isFinite(shape.y) &&
+    Number.isFinite(shape.halfW) &&
+    Number.isFinite(shape.halfH) &&
+    Number.isFinite(shape.rotation) &&
+    shape.halfW > 0 &&
+    shape.halfH > 0
+  );
+}
+
+function relativeEpsilon(extent: number): number {
+  return extent > 0 ? extent * RELATIVE_EPSILON : Number.EPSILON;
 }
 
 const scratchA = new Float64Array(8);
