@@ -1,6 +1,6 @@
 ---
 package: "@flighthq/scene3d-formats"
-updated: "2026-07-29"
+updated: "2026-08-01"
 by: builder
 ---
 
@@ -10,6 +10,53 @@ by: builder
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-08-01 — AWD2 lights: blocks 41 and 51 are no longer dropped (builder, user-directed)
+
+A downstream report on `shambler.awd`: the file carries lighting, `Scene3DDocument` already models lights,
+and the AWD2 parser named neither the light block (41) nor the light-picker block (51) — both fell into the
+unhandled-block tally and `document.lights` came back empty.
+
+**The compound-light split is the design call.** An AWD light is ONE entity carrying TWO terms: a punctual
+term (`color` × `diffuse`, aimed or placed) and its own ambient fill (`ambientColor` × `ambient`). Flight
+models those as separate descriptors, so one block imports as a DirectionalLight/PointLight **plus** a
+sibling AmbientLight named `<light> Ambient`, emitted only when the file gave it a non-zero ambient. Folding
+the ambient into the punctual color would tint the wrong term; dropping it would lose the author's fill.
+
+**Property semantics are verified, not recalled.** The key→meaning map (3 color, 4 specular, 5 diffuse, 7
+ambientColor, 8 ambient, 9 shadow-mapper, 21/22/23 direction, 1/2 radius/falloff) was read off AwayJS's own
+`AWDParser.ts` in `.cache/flight-reference/node_modules/@awayjs/parsers`, then confirmed against the
+shambler bytes. Property width is taken from each record's own byte-length prefix rather than the file's
+wide-properties flag — the record is self-describing, so a mixed-width or flag-disagreeing file still reads.
+
+**A directional light's placement stays identity.** Its aim is the world-space `direction` on the
+descriptor, which is exactly how Away3D reads it (`parseLight` applies the block matrix for POINT lights
+only). Baking the matrix in as well would invite a consumer to rotate an already-world-space vector twice.
+
+**Pickers are read, never built from.** Away3D scopes lights per MATERIAL through a picker; Flight's light
+set is a scene-wide per-draw argument. So a picker is parsed only to detect the loss: a file whose pickers
+do not all select every light records `awd2.light-scope-dropped`. A file with NO picker reports nothing —
+it expressed no scoping to drop, and the document's light table is inert until a caller draws with it.
+
+Losses recorded, all aggregated one-crumb-per-kind with `buildAwdDocumentLights` as origin:
+`awd2.light-radius-dropped` (Away3D's falloff START, no home in Flight's single `range` cutoff),
+`awd2.light-specular-dropped` (a specular scale pulled apart from diffuse), `awd2.light-unsupported-type`.
+
+**Verified against the real asset.** `shambler.awd` now imports 2 lights — a DirectionalLight (0.7
+intensity, direction (0.6601, -0.7071, -0.2534) after the left-to-right-handed z flip, white) and its split
+AmbientLight (0.3) — with **zero** light diagnostics. Its 4 remaining `awd2.block-unhandled` crumbs are
+types 113/122/254/255, unrelated to lighting.
+
+`examples/packages/awd2loading` now authors a light block into its synthetic fixture and consumes it via
+`parseAwd2` + `createScene3DFromDocument`, reading both descriptors out of `document.lights` — the first
+consumer of that table anywhere in the repo.
+
+**Open, NOT resolved here (needs a ruling, crosses packages):** nothing converts a document light table into
+a `Scene3DLights` draw argument, so the example hand-rolls the selection. And the two formats that fill
+`lights` disagree on what `DirectionalLight.direction` means — glTF writes a LOCAL (0,0,-1) with the
+orientation in `transform`, AWD writes the WORLD direction with an identity transform. `DirectionalLight`'s
+own doc says world-space; `Scene3DDocumentLight`'s says placement is baked into `transform`. A shared
+document→lights bridge cannot be written correctly until that is settled.
 
 ## 2026-07-29 — md2 read-integrity: the parser family is closed (builder, review-directed)
 

@@ -1,10 +1,19 @@
 // AWD2 core constants used by this tiny, authored fixture. Keeping the binary construction here makes the
 // example self-contained and avoids redistributing an asset exported by Away3D or another third party.
+const AWD2_BLOCK_LIGHT = 41;
 const AWD2_BLOCK_MATERIAL = 81;
 const AWD2_BLOCK_MESH_INSTANCE = 23;
 const AWD2_BLOCK_TRIANGLE_GEOMETRY = 1;
 const AWD2_DATA_FLOAT32 = 7;
 const AWD2_DATA_UINT16 = 5;
+const AWD2_LIGHT_PROP_AMBIENT = 8;
+const AWD2_LIGHT_PROP_AMBIENT_COLOR = 7;
+const AWD2_LIGHT_PROP_COLOR = 3;
+const AWD2_LIGHT_PROP_DIFFUSE = 5;
+const AWD2_LIGHT_PROP_DIRECTION_X = 21;
+const AWD2_LIGHT_PROP_DIRECTION_Y = 22;
+const AWD2_LIGHT_PROP_DIRECTION_Z = 23;
+const AWD2_LIGHT_TYPE_DIRECTIONAL = 2;
 const AWD2_MATERIAL_PROP_COLOR = 1;
 const AWD2_MATERIAL_TYPE_COLOR = 1;
 const AWD2_NAMESPACE_CORE = 0;
@@ -61,6 +70,7 @@ export function createSyntheticAwd2(): Uint8Array {
   ]);
   const material = buildMaterialBody('Cerulean');
   const mesh = buildMeshBody('AWD2 cube', 1, 2);
+  const light = buildLightBody('Key');
   const body = concatBytes(
     buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geometry.length),
     geometry,
@@ -68,6 +78,8 @@ export function createSyntheticAwd2(): Uint8Array {
     material,
     buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, mesh.length),
     mesh,
+    buildBlockHeader(4, AWD2_BLOCK_LIGHT, light.length),
+    light,
   );
   return concatBytes(buildFileHeader(body.length), body);
 }
@@ -134,6 +146,49 @@ function buildMaterialBody(name: string): Uint8Array {
     property,
     buildEmptyAttributeList(),
   );
+}
+
+// One AWD directional light. AWD models a light as a single entity carrying BOTH a directional term
+// (color × diffuse, aimed by properties 21/22/23) and its own ambient fill (ambientColor × ambient), which
+// is why the importer returns two Flight descriptors for this one block. The aim is written in AWD's
+// LEFT-handed space, so the +0.5 z here arrives as -0.5 in the right-handed scene.
+function buildLightBody(name: string): Uint8Array {
+  const sceneHeader = new Uint8Array(4 + 12 * 4);
+  const view = new DataView(sceneHeader.buffer);
+  view.setUint32(0, 0, true);
+  for (let i = 0; i < identityTransform.length; i++) view.setFloat32(4 + i * 4, identityTransform[i], true);
+  return concatBytes(
+    sceneHeader,
+    buildString(name),
+    new Uint8Array([AWD2_LIGHT_TYPE_DIRECTIONAL]),
+    buildPropertyList([
+      { key: AWD2_LIGHT_PROP_COLOR, uint32: 0xffe2c3 },
+      { float32: 2.2, key: AWD2_LIGHT_PROP_DIFFUSE },
+      { key: AWD2_LIGHT_PROP_AMBIENT_COLOR, uint32: 0x688bc0 },
+      { float32: 0.22, key: AWD2_LIGHT_PROP_AMBIENT },
+      { float32: -0.65, key: AWD2_LIGHT_PROP_DIRECTION_X },
+      { float32: -0.9, key: AWD2_LIGHT_PROP_DIRECTION_Y },
+      { float32: 0.5, key: AWD2_LIGHT_PROP_DIRECTION_Z },
+    ]),
+    buildEmptyAttributeList(),
+  );
+}
+
+// An AWD typed-property list: a uint32 total byte length, then `uint16 key, uint32 fieldLength, <value>`
+// per record. Each record declares its own width, which is how one list mixes uint32 and float32 values.
+function buildPropertyList(properties: ReadonlyArray<{ float32?: number; key: number; uint32?: number }>): Uint8Array {
+  const result = new Uint8Array(4 + properties.length * 10);
+  const view = new DataView(result.buffer);
+  view.setUint32(0, properties.length * 10, true);
+  let offset = 4;
+  for (const property of properties) {
+    view.setUint16(offset, property.key, true);
+    view.setUint32(offset + 2, 4, true);
+    if (property.uint32 === undefined) view.setFloat32(offset + 6, property.float32 ?? 0, true);
+    else view.setUint32(offset + 6, property.uint32, true);
+    offset += 10;
+  }
+  return result;
 }
 
 function buildMeshBody(name: string, geometryId: number, materialId: number): Uint8Array {
