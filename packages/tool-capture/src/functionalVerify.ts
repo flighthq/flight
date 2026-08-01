@@ -25,6 +25,13 @@ const DEFAULT_MIN_COVERAGE = 0.0008;
 const BACKGROUND_CHANNEL_TOLERANCE = 6;
 const FINGERPRINT_GRID = 16;
 
+// Both budgets are the verifier's own, and both must expire inside the runner's 15s outer wait
+// (captureEntry.ts) — a bound that fires after it is never seen, and the run reports the bare stalled
+// `pending` it was meant to replace. Worst case here is one full frame wait followed by a stalled
+// readback, so they are sized to sum below that ceiling with room left to publish the failure.
+const PRESENTED_FRAME_TIMEOUT_MS = 4_000;
+const WGPU_READBACK_TIMEOUT_MS = 8_000;
+
 export type FunctionalRenderOracle = (bitmap: Readonly<Bitmap>) => void | Promise<void>;
 
 export interface FunctionalCanvasTarget {
@@ -182,7 +189,14 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
       return;
     }
 
-    await waitForPresentedFrame();
+    // Every backend but webgpu reads pixels back out of the canvas, so it waits for the browser to hand
+    // over an animation frame first. The webgpu path does not: frame capture redirects the frame into an
+    // offscreen texture that submitWgpuRenderPass copies into the retained capture buffer in the same
+    // frame (wgpuSurface.ts), so the pixels this verifier reads are already resident before it runs.
+    // Waiting buys nothing there and costs a dependency on the browser still scheduling frames for a
+    // canvas it never presents — a dependency that holds locally and is exactly what stalls under a
+    // contended CI adapter.
+    if (render !== 'webgpu') await waitForPresentedFrame(render, PRESENTED_FRAME_TIMEOUT_MS);
 
     result.stage = 'readingBack';
     const bitmap = await snapshotFunctionalRender();
@@ -216,7 +230,7 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
 export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  if (target?.kind === 'webgpu') return createBitmapFromWgpuRenderState(target.state);
+  if (target?.kind === 'webgpu') return createBitmapFromWgpuRenderState(target.state, WGPU_READBACK_TIMEOUT_MS);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   if (target?.kind === 'webgl') target.state.gl.finish();
@@ -271,9 +285,28 @@ function findRenderCanvas(): HTMLCanvasElement | null {
   return best;
 }
 
-function waitForPresentedFrame(): Promise<void> {
+// Waits for two animation frames, or fails by name once `timeoutMs` passes. The wait itself is not
+// guaranteed to end: the harness stashes the real rAF here precisely because the page's own rAF stops
+// firing at the halt frame, and a browser under a contended software adapter can stop delivering frames
+// for a canvas nothing composites. Without the bound the verifier sits in `awaitingFrame` until the
+// runner's outer wait gives up and reports the useless `state: pending` — the bound turns that into a
+// failure that names the await it died in, and a failure can pass on retry where a hang cannot.
+function waitForPresentedFrame(render: string, timeoutMs: number): Promise<void> {
   const raf = (window as VerificationWindow).__ftRealRequestAnimationFrame ?? window.requestAnimationFrame.bind(window);
-  return new Promise((resolve) => {
-    raf(() => raf(() => resolve()));
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`[verify:${render}] stalled in stage awaitingFrame: no animation frame within ${timeoutMs}ms`));
+    }, timeoutMs);
+    raf(() =>
+      raf(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      }),
+    );
   });
 }
