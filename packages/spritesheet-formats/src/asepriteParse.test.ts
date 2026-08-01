@@ -174,6 +174,7 @@ describe('parseAsepriteSpritesheet', () => {
     const data = parseAsepriteSpritesheet(HASH_JSON);
     expect(data.animations).toHaveLength(2);
     expect(data.animations[0].name).toBe('run');
+    expect(data.animations[0].repeatCount).toBe(-1);
     expect(data.animations[1].name).toBe('jump');
   });
 

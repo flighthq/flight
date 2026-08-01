@@ -6,7 +6,8 @@ export interface SpritesheetAnimation extends Entity {
   frameDuration: number;
   frameDurations: number[] | null;
   direction: SpritesheetAnimationDirection;
-  loop: boolean;
+  /** Additional repetitions after the first playthrough. `-1` repeats indefinitely. */
+  repeatCount: number;
   originX: number;
   originY: number;
 }

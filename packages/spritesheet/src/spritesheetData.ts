@@ -10,10 +10,10 @@ export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimatio
     frameDuration: obj?.frameDuration ?? 100,
     frameDurations: obj?.frameDurations ?? null,
     frameNames: obj?.frameNames ?? [],
-    loop: obj?.loop ?? true,
     name: obj?.name ?? '',
     originX: obj?.originX ?? 0,
     originY: obj?.originY ?? 0,
+    repeatCount: obj?.repeatCount ?? -1,
   };
 }
 

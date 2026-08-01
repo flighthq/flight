@@ -64,7 +64,7 @@ describe('createSpritesheetFromData', () => {
           frameDuration: 100,
           frameDurations: [80, 120],
           frameNames: ['f0', 'f1'],
-          loop: true,
+          repeatCount: 3,
         }),
       ],
       frames: [createSpritesheetFrameData({ name: 'f0' }), createSpritesheetFrameData({ name: 'f1' })],
@@ -77,7 +77,7 @@ describe('createSpritesheetFromData', () => {
     expect(walk.direction).toBe('pingpong');
     expect(walk.frameDurations).toEqual([80, 120]);
     expect(walk.frames).toEqual([0, 1]);
-    expect(walk.loop).toBe(true);
+    expect(walk.repeatCount).toBe(3);
   });
 
   it('carries pivot and rotated onto runtime frames', () => {

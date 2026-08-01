@@ -56,8 +56,8 @@ function animationFromTag(
     frameDuration: firstDuration,
     frameDurations: uniform ? null : durations,
     frameNames: tagFrameNames,
-    loop: true,
     name: tag.name,
+    repeatCount: -1,
   });
 }
 

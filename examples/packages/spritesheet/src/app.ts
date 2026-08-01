@@ -105,14 +105,14 @@ const allFrameIndices = Array.from({ length: FRAME_COUNT }, (_, i) => i);
 const spinAnimation = createSpritesheetAnimation({
   frameDuration: 80,
   frames: allFrameIndices,
-  loop: true,
+  repeatCount: -1,
 });
 
 const pingpongAnimation = createSpritesheetAnimation({
   direction: 'pingpong',
   frameDuration: 120,
   frames: allFrameIndices,
-  loop: true,
+  repeatCount: -1,
 });
 
 // Applies the current player frame's atlas region to a Sprite's sourceRectangle.

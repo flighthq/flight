@@ -1,30 +1,36 @@
 ---
 package: '@flighthq/spritesheet'
-updated: 2026-07-31
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
 # spritesheet — Assessment
 
-Sorted from the depth review (80/100, solid), verified against the live tree (15 player exports, 134 tests), and the direction session (2026-07-02). Eight decisions blessed. The package is a near-complete sprite-animation runtime. The remaining work splits cleanly: a seek correctness fix + type migration (sweep-safe), and larger design items (frame events, repeatCount migration, bitmap binding, pivot consumption, clock integration) that are blessed but scope beyond a sweep.
+Sorted from the depth review (80/100, solid), the live tree, and the direction session (2026-07-02).
+Eight decisions blessed. The package is a near-complete sprite-animation runtime; all four approved
+sweep items have landed, leaving the larger design items parked below.
 
 ## Recommended
 
-Re-verified against live source on 2026-07-31 (9 source files, 7 test files, 124 tests, 28 exports). One of
-the four items landed; three remain, and the seek defect is confirmed still live — `seekSpritesheetPlayerToFrame`
-still passes its clamped DISPLAY-frame index straight into `resolveVirtualIndexStartTime`, and the file's own
-comment ("seek to the first virtual index that produces this display frame") describes a conversion the code
-does not perform.
-
-1. **Fix `seekSpritesheetPlayerToFrame` for non-forward directions.** It passes a display-frame index to `resolveVirtualIndexStartTime` which expects a virtual index. For `forward` the two coincide (the only tested case); for `reverse`/`pingpong`/`pingpong_reverse` the synced `elapsed` is wrong, so the next `updateSpritesheetPlayer` jumps to a different frame. Convert the requested display frame to its virtual index before syncing `elapsed`, and set both `frameIndex` and `elapsed` consistently. Pure correctness fix at an already-owned seam.
-
-2. **Add non-forward-direction tests for the seek path.** The seek bug is latent because tests only exercise `forward`. Add `reverse`/`pingpong`/`pingpong_reverse` cases asserting that `seekSpritesheetPlayerToFrame` followed by one zero-delta `updateSpritesheetPlayer` keeps the seeked frame. Colocated in `spritesheetPlayer.test.ts`.
-
-3. **Migrate `loop: boolean` to `repeatCount: number` on `SpritesheetAnimation`.** Per Decision #3. In `@flighthq/types`, change `SpritesheetAnimation.loop: boolean` to `repeatCount: number` (`-1` = infinite, `0` = play once, `N` = N additional repeats). Update `createSpritesheetAnimation`, `createSpritesheetFromData`, `createSpritesheetAnimationFromFrameNames`, and the player's loop-detection logic. Update all tests. Breaking type change — do this before any consumer ships.
+_None open._ Re-verified against live source on 2026-08-01 (9 source files, 7 test files, 130 tests,
+28 exports). The completed items are recorded under [Landed](#landed), outside this section so the TODO
+generator stops reporting them as work.
 
 ## Landed
 
 1. ~~**Migrate `SpritesheetData`/`SpritesheetAnimationData`/`SpritesheetFrameData` to `@flighthq/types`.**~~ Landed; the descriptors live in `packages/types/src/SpritesheetData.ts` and the spritesheet packages import them from the header.
+2. ~~**Fix `seekSpritesheetPlayerToFrame` for non-forward directions.**~~ Landed. The display frame is
+   converted to the first virtual occurrence before its start time is resolved, keeping `frameIndex` and
+   `elapsed` consistent for reverse and both pingpong directions. A mutation restoring the old direct-index
+   behavior fails the reverse regression test.
+3. ~~**Add non-forward-direction seek tests.**~~ Landed. Reverse, pingpong, and pingpong-reverse cases
+   assert the chosen virtual start and remain on the requested display frame after a zero-delta update.
+4. ~~**Replace `loop` with `repeatCount`.**~~ Landed across runtime/data types, constructors, hydration,
+   format importers, example callers, and playback. `-1` repeats indefinitely, `0` plays once, and `N`
+   completes after `N+1` total cycles; tests pin defaults, finite completion/signals, and importer output.
+5. ~~**Use direction-aware per-frame durations.**~~ Landed while testing the same virtual/display seam.
+   The cumulative duration table now indexes `frameDurations` through the canonical direction mapping,
+   so reverse and pingpong-reverse hold the displayed frame for its own duration rather than its mirror's.
 
 ## Backlog
 

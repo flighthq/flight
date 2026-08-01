@@ -188,6 +188,7 @@ describe('parseTexturePackerSpritesheet', () => {
     expect(data.animations).toHaveLength(1);
     expect(data.animations[0].name).toBe('idle');
     expect(data.animations[0].direction).toBe('forward');
+    expect(data.animations[0].repeatCount).toBe(-1);
   });
 
   it('maps animation frameNames to the correct frames', () => {

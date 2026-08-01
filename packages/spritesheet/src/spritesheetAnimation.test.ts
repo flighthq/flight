@@ -17,19 +17,19 @@ describe('createSpritesheetAnimation', () => {
 
     expect(anim.frameDuration).toBe(0);
     expect(anim.frames).toEqual([]);
-    expect(anim.loop).toBe(false);
     expect(anim.originX).toBe(0);
     expect(anim.originY).toBe(0);
+    expect(anim.repeatCount).toBe(0);
   });
 
   it('applies partial overrides', () => {
-    const anim = createSpritesheetAnimation({ frameDuration: 100, loop: true, frames: [0, 1, 2] });
+    const anim = createSpritesheetAnimation({ frameDuration: 100, frames: [0, 1, 2], repeatCount: 2 });
 
     expect(anim.frameDuration).toBe(100);
-    expect(anim.loop).toBe(true);
     expect(anim.frames).toEqual([0, 1, 2]);
     expect(anim.originX).toBe(0);
     expect(anim.originY).toBe(0);
+    expect(anim.repeatCount).toBe(2);
   });
 
   it('uses a provided frames array directly', () => {
@@ -82,11 +82,11 @@ describe('createSpritesheetAnimationFromFrameNames', () => {
     const anim = createSpritesheetAnimationFromFrameNames(sheet, 'walk_', {
       direction: 'pingpong',
       frameDuration: 80,
-      loop: true,
+      repeatCount: -1,
     });
     expect(anim!.direction).toBe('pingpong');
     expect(anim!.frameDuration).toBe(80);
-    expect(anim!.loop).toBe(true);
+    expect(anim!.repeatCount).toBe(-1);
   });
 
   it('returns null when no frames match the pattern', () => {

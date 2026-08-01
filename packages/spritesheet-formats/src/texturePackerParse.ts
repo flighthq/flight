@@ -43,8 +43,8 @@ function animationsFromFrameTags(tags: TexturePackerFrameTag[], frameNames: stri
       direction: tag.direction ?? 'forward',
       frameDuration: 100,
       frameNames: frameNames.slice(tag.from, tag.to + 1),
-      loop: true,
       name: tag.name,
+      repeatCount: -1,
     }),
   );
 }

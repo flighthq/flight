@@ -5,7 +5,8 @@ export interface SpritesheetAnimationData {
   frameDuration: number;
   frameDurations: number[] | null;
   frameNames: string[];
-  loop: boolean;
+  /** Additional repetitions after the first playthrough. `-1` repeats indefinitely. */
+  repeatCount: number;
   name: string;
   originX: number;
   originY: number;
