@@ -97,13 +97,20 @@ anything at all. It is not enough to avoid duplicating the key across tests — 
 a single test, **silence first, while the key is still unconsumed**, then the warning. Anything that
 reports once per process (deprecation notices, warmup warnings) has the same property.
 
-**Verifying a guard's logic is not verifying that anything calls it.** A guard installed through a seam
-has two separable parts: the check, and the call site that is supposed to invoke it. A test that reaches
-in and calls the guard directly — `runtime.someGuard!(state, value)` — exercises the check thoroughly
-and says nothing about the seam. Delete the call site and every such test still passes; the feature is
-dead and fully covered. Drive at least one test through the real entry point instead, in the state that
-should trigger it, so the wiring is asserted and not assumed. The tell is that a test never calls the
-public function the guard exists to protect.
+**Verifying a guard's logic — or a policy default's condition — is not verifying that anything calls
+it.** A guard installed through a seam, and a policy default like `isVerifiedCaptureTool(subject)`, have
+the same shape: a check, and the call site(s) that are supposed to invoke it rather than reimplement it
+inline. A test that reaches in and calls the guard or predicate directly — `runtime.someGuard!(state,
+value)`, or `isVerifiedCaptureTool('examples') === true` — exercises the check thoroughly and says
+nothing about the seam. Delete the call site, or let one of several call sites reimplement the same
+condition inline instead of calling the predicate, and every such test still passes; the feature is dead,
+or silently bypassed at exactly the call site that mattered, and fully covered regardless. This is not
+hypothetical: `captureSuite.ts` once hardcoded its own verify-on condition instead of calling
+`isVerifiedCaptureTool`, and the test asserting the predicate's return value stayed green while the leg
+it was supposed to gate verified nothing. Drive at least one test through the real entry point instead,
+in the state that should trigger it, so the wiring is asserted and not assumed. The tell is that a test
+never calls the public function the guard or default exists to protect — or that more than one call site
+is free to reimplement the same condition inline. A default that call sites can bypass is not a default.
 
 ## What belongs in a unit test vs. elsewhere
 
