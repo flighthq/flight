@@ -18,8 +18,9 @@ export function generateWgpuMipmaps(
   if (levelCount <= 1) return;
   const { device } = state;
   const runtime = getWgpuRenderStateRuntime(state);
-  const pipeline = ensureWgpuMipmapPipeline(state, format);
-  const layout = runtime.mipmapBindGroupLayout as GPUBindGroupLayout;
+  const cached = ensureWgpuMipmapPipeline(state, format);
+  const pipeline = cached.pipeline;
+  const layout = cached.bindGroupLayout;
   const encoder = device.createCommandEncoder();
   for (let level = 1; level < levelCount; level++) {
     const srcView = texture.createView({ baseMipLevel: level - 1, mipLevelCount: 1 });
@@ -50,11 +51,15 @@ export function getWgpuMipLevelCount(width: number, height: number): number {
 
 // Lazily builds and caches the downsample pipeline (fullscreen triangle → sample the source level →
 // write the destination level) and its texture+sampler bind-group layout on the runtime, reused across
-// every mip generation on this state. The target format matches the material texture format
-// (rgba8unorm); material uploads are the only mip consumer, so one cached pipeline suffices.
-function ensureWgpuMipmapPipeline(state: WgpuRenderState, format: GPUTextureFormat): GPURenderPipeline {
+// every mip generation on this state. Pipelines are keyed by target format because linear and sRGB
+// material textures require distinct render-pipeline targets.
+function ensureWgpuMipmapPipeline(
+  state: WgpuRenderState,
+  format: GPUTextureFormat,
+): { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline } {
   const runtime = getWgpuRenderStateRuntime(state);
-  if (runtime.mipmapPipeline != null) return runtime.mipmapPipeline;
+  const cached = runtime.mipmapPipelineCache.get(format);
+  if (cached !== undefined) return cached;
   const { device } = state;
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [
@@ -69,9 +74,9 @@ function ensureWgpuMipmapPipeline(state: WgpuRenderState, format: GPUTextureForm
     fragment: { module, entryPoint: 'fs_main', targets: [{ format }] },
     primitive: { topology: 'triangle-list' },
   });
-  runtime.mipmapBindGroupLayout = bindGroupLayout;
-  runtime.mipmapPipeline = pipeline;
-  return pipeline;
+  const result = { bindGroupLayout, pipeline };
+  runtime.mipmapPipelineCache.set(format, result);
+  return result;
 }
 
 const MIPMAP_WGSL = /* wgsl */ `

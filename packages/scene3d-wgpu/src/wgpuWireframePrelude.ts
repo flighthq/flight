@@ -93,7 +93,7 @@ export function ensureWgpuWireframePipeline(
   );
 }
 
-// The full WGSL module source: the shared mesh prelude (Frame/Draw/vs_main/srgbToLinear) + the
+// The full WGSL module source: the shared mesh prelude (Frame/Draw/vs_main) + the
 // wireframe color uniform + fs_main.
 export function getWgpuWireframeModuleSource(alphaMaskEnabled = false): string {
   return (

@@ -6,8 +6,8 @@ import type { VoxelGrid } from './VoxelGrid';
 
 // How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
 // (decoded to linear on read); data maps — normal, metallic-roughness, occlusion — are
-// 'linear' and must not be gamma-decoded. This is the single per-texture color-space flag the
-// material seam relies on; without it every textured material is gamma-wrong.
+// 'linear' and must not be gamma-decoded. GPU realizers consume this field by choosing the matching
+// sample format; shaders therefore receive linear values without per-material decode branches.
 export type TextureColorSpace = 'linear' | 'srgb';
 
 // Six source slots in canonical GPU cube-face order (+X, -X, +Y, -Y, +Z, -Z). Null remains a

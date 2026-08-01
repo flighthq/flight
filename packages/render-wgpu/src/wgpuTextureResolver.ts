@@ -81,7 +81,9 @@ function resolveWgpuBitmapTexture(
   premultiply: boolean,
 ): WgpuTextureEntry | null {
   const bitmap = getTextureSource(texture) as Readonly<Bitmap> | null;
-  return bitmap === null ? null : bindWgpuBitmapTexture(state, bitmap, texture.sampler.mipmaps, premultiply);
+  return bitmap === null
+    ? null
+    : bindWgpuBitmapTexture(state, bitmap, texture.sampler.mipmaps, premultiply, texture.colorSpace);
 }
 
 function resolveWgpuCompressedImageTexture(
@@ -89,7 +91,7 @@ function resolveWgpuCompressedImageTexture(
   texture: Readonly<TextureLike>,
 ): WgpuTextureEntry | null {
   const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
-  return image === null ? null : bindWgpuCompressedImageTexture(state, image);
+  return image === null ? null : bindWgpuCompressedImageTexture(state, image, texture.colorSpace);
 }
 
 function resolveWgpuImageTexture(
@@ -98,7 +100,9 @@ function resolveWgpuImageTexture(
   premultiply: boolean,
 ): WgpuTextureEntry | null {
   const image = getTextureSource(texture) as Readonly<Image> | null;
-  return image === null ? null : bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply);
+  return image === null
+    ? null
+    : bindWgpuImageResourceTexture(state, image, texture.sampler.mipmaps, premultiply, texture.colorSpace);
 }
 
 function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<TextureLike>): WgpuTextureEntry | null {

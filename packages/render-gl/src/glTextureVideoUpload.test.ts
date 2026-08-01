@@ -5,6 +5,7 @@ import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 function makeGl(): WebGL2RenderingContext {
   return {
     RGBA: 0x1908,
+    SRGB8_ALPHA8: 0x8c43,
     UNSIGNED_BYTE: 0x1401,
     TEXTURE_2D: 0x0de1,
     texImage2D: vi.fn(),
@@ -26,6 +27,20 @@ describe('uploadGlTextureVideoFrame', () => {
     const uploaded = uploadGlTextureVideoFrame(gl, image, -1);
     expect(uploaded).toBe(3);
     expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image.source);
+  });
+
+  it('threads an explicit sRGB internal format to the video upload', () => {
+    const gl = makeGl();
+    const image = makeVideoImage(3);
+    uploadGlTextureVideoFrame(gl, image, -1, gl.SRGB8_ALPHA8);
+    expect(gl.texImage2D).toHaveBeenCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.SRGB8_ALPHA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      image.source,
+    );
   });
 
   it('skips the upload and returns the same id when the frame has not advanced', () => {

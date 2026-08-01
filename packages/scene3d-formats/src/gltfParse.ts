@@ -881,8 +881,8 @@ function gltfMaterialToPbr(
 // Resolves a glTF material texture reference to a Flight Texture carrying an Unresolved resource ref
 // plus its sampled state: a `data:` URI or bufferView-embedded image becomes an Embedded ref (bytes in
 // hand), an external URI becomes an External ref against `options.basePath`. The referenced glTF
-// `sampler` (wrap/filter) maps onto the Texture's Sampler + wrap; `colorSpace` sets whether the shader
-// gamma-decodes it (srgb for color maps, linear for data maps); a KHR_texture_transform on the
+// `sampler` (wrap/filter) maps onto the Texture's Sampler + wrap; `colorSpace` selects the GPU
+// sample-time decode (sRGB for color maps, linear for data maps); a KHR_texture_transform on the
 // textureInfo sets the Texture's uvOffset/uvRotation/uvScale. Returns null when the reference or its
 // image cannot be resolved.
 function resolveGltfTexture(

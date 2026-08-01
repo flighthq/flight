@@ -200,8 +200,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Premultiplied texture realizations for TextureSource siblings. Keyed by stable entity identity and
   // guarded by content version so mutable Bitmaps re-upload in place.
   textureSourcePremultipliedTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
+  textureSourcePremultipliedSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
   // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
   textureSourceStraightTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
+  textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
   // Open, state-scoped Texture source registry keyed by the source's declared string kind.
   // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
   glTextureResolverRegistry?: Map<TextureSourceKind, GlTextureResolver> | null;
@@ -222,9 +224,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // (opt-in), so a state that only ever draws Image/Bitmap sources never pulls the ~40-format
   // compressed-container upload path into the bundle. Undefined until registered.
   compressedTextureUpload?: GlCompressedTextureUploader | null;
-  // Dynamic host-video cache keyed by the shared Image source. `uploadedVersion` tracks the
-  // last decoded frame copied to GL, so differently sampled Textures share one upload.
+  // Dynamic host-video caches keyed by source identity and split by GPU color interpretation.
+  // `uploadedVersion` tracks the last decoded frame copied to GL.
   videoTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
+  videoSrgbTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;
   // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
   // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
   // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.

@@ -44,8 +44,11 @@ describe('drawWgpuEnvironmentSkybox', () => {
 
   it('binds the cube + uniform and draws the fullscreen backdrop', () => {
     const { fake, state } = makeWgpuScene3DState();
-    drawWgpuEnvironmentSkybox(state, completeEnvironment(), makeCamera(), 1);
+    const camera = makeCamera();
+    camera.inverseViewProjection.m[0] = 42;
+    drawWgpuEnvironmentSkybox(state, completeEnvironment(), camera, 1);
 
+    expect(camera.inverseViewProjection.m[0]).not.toBe(42);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 1)).toBe(true);
     expect(fake.calls.some((c) => c.name === 'draw' && c.args[0] === 3)).toBe(true);

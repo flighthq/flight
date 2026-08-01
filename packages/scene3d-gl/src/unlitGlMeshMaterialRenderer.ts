@@ -1,6 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getGlRenderTextureColorSpace, resolveGlTexture } from '@flighthq/render-gl/contract';
-import { getTextureSourceKind } from '@flighthq/texture/contract';
+import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   LinearColor,
   Camera3D,
@@ -8,13 +7,12 @@ import type {
   GlRenderState,
   Material,
   MeshGeometry,
-  RenderTexture,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   UnlitMaterial,
   GlUnlitDefineKey,
 } from '@flighthq/types/contract';
-import { RenderTargetTextureSourceKind, UnlitMaterialKind } from '@flighthq/types/contract';
+import { UnlitMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {
@@ -68,15 +66,9 @@ export function registerGlUnlitMaterial(state: GlRenderState): void {
 
 function defineKeyForMaterial(state: GlRenderState, material: Readonly<UnlitMaterial> | null): GlUnlitDefineKey {
   const colorMap = material?.baseColorMap ?? null;
-  const sourceKind = colorMap === null ? null : getTextureSourceKind(colorMap);
-  const renderTexture = sourceKind === RenderTargetTextureSourceKind;
   const colorMapReady = colorMap !== null && resolveGlTexture(state, colorMap) !== null;
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
-    colorMapLinear:
-      renderTexture &&
-      colorMapReady &&
-      getGlRenderTextureColorSpace(state, colorMap as Readonly<RenderTexture>) === 'linear',
     hasColorMap: colorMapReady,
     hasUvTransform: colorMapReady && hasGlUvTransform(colorMap),
     vertexColor: false,

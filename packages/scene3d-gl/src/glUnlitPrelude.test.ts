@@ -117,26 +117,21 @@ describe('bindGlUnlitSurface', () => {
 
 describe('buildGlUnlitDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlUnlitDefineKey(FLAT)).toBe('------');
+    expect(buildGlUnlitDefineKey(FLAT)).toBe('-----');
     expect(
       buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, hasUvTransform: true, vertexColor: true }),
-    ).toBe('mc-vu-');
-    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('---v--');
+    ).toBe('mcvu-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v--');
   });
 
   it('encodes a non-identity uv transform with a u slot and keys it distinctly', () => {
-    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).toBe('----u-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).toBe('---u-');
     expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 
   it('encodes the skinned variant with a trailing k and keys it distinctly', () => {
     expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true }).endsWith('k')).toBe(true);
     expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
-  });
-
-  it('keys a linear render map separately from an sRGB map', () => {
-    expect(buildGlUnlitDefineKey({ ...FLAT, colorMapLinear: true, hasColorMap: true })).toBe('-cl---');
-    expect(buildGlUnlitDefineKey({ ...FLAT, colorMapLinear: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 });
 

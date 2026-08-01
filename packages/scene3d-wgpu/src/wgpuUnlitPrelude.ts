@@ -167,7 +167,7 @@ export function ensureWgpuUnlitPipeline(
 }
 
 // The full WGSL module source for a define key: the const-flag block + the shared mesh prelude (Frame/
-// Draw/vs_main/srgbToLinear) + the unlit material block + fs_main.
+// Draw/vs_main) + the unlit material block + fs_main.
 export function getWgpuUnlitModuleSourceForKey(
   key: Readonly<WgpuUnlitDefineKey>,
   skinned = false,
@@ -199,7 +199,7 @@ struct UnlitMaterial {
   var color = material.color;
   if (HAS_COLOR_MAP) {
     let sampled = textureSample(colorTexture, materialSampler, in.uv);
-    color = vec4f(color.rgb * srgbToLinear(sampled.rgb), color.a * sampled.a);
+    color = vec4f(color.rgb * sampled.rgb, color.a * sampled.a);
   }
   if (ALPHA_MASK && color.a < material.params.y) {
     discard;

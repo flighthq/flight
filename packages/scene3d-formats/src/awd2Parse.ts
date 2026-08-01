@@ -1851,6 +1851,7 @@ function resolveAwdMaterial(
     parsed.normalTextureId !== 0
       ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, diagnostics)
       : null;
+  if (normalTexture !== null) normalTexture.colorSpace = 'linear';
 
   // A method-bearing material imports its base only (see the header note) — record a diagnostic rather than silently drop.
   if (parsed.numMethods > 0) {

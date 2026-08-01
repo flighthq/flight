@@ -7,6 +7,7 @@ import type {
   TextureSource,
   Image,
   Texture,
+  TextureColorSpace,
   RenderProxy,
   RenderProxy2D,
   WgpuTextureSourceTextureEntry,
@@ -31,15 +32,17 @@ export function bindWgpuBitmapTexture(
   bitmap: Readonly<Bitmap>,
   generateMips = false,
   premultiply = false,
+  colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry {
-  return bindWgpuTextureSourceTexture(state, bitmap, generateMips, premultiply, uploadWgpuBitmapEntry)!;
+  return bindWgpuTextureSourceTexture(state, bitmap, generateMips, premultiply, colorSpace, uploadWgpuBitmapEntry)!;
 }
 
 export function bindWgpuCompressedImageTexture(
   state: WgpuRenderState,
   image: Readonly<CompressedImage>,
+  colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry | null {
-  return bindWgpuTextureSourceTexture(state, image, false, false, uploadWgpuCompressedImageEntry);
+  return bindWgpuTextureSourceTexture(state, image, false, false, colorSpace, uploadWgpuCompressedImageEntry);
 }
 
 // Uploads and caches the WebGPU texture for an Image. Bitmap and CompressedImage use sibling
@@ -51,8 +54,16 @@ export function bindWgpuImageResourceTexture(
   image: Readonly<Image>,
   generateMips = false,
   premultiply = false,
+  colorSpace: TextureColorSpace = 'linear',
 ): WgpuTextureEntry | null {
-  return bindWgpuTextureSourceTexture(state, image, generateMips, premultiply, uploadWgpuImageResourceEntry);
+  return bindWgpuTextureSourceTexture(
+    state,
+    image,
+    generateMips,
+    premultiply,
+    colorSpace,
+    uploadWgpuImageResourceEntry,
+  );
 }
 
 function bindWgpuTextureSourceTexture(
@@ -60,16 +71,21 @@ function bindWgpuTextureSourceTexture(
   image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
   upload: WgpuTextureSourceUpload,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const cache = premultiply
-    ? runtime.textureSourcePremultipliedTextureCache
-    : runtime.textureSourceStraightTextureCache;
+    ? colorSpace === 'srgb'
+      ? runtime.textureSourcePremultipliedSrgbTextureCache
+      : runtime.textureSourcePremultipliedTextureCache
+    : colorSpace === 'srgb'
+      ? runtime.textureSourceStraightSrgbTextureCache
+      : runtime.textureSourceStraightTextureCache;
   const cached = cache.get(image);
   if (cached !== undefined && cached.version === image.version) return cached;
 
-  const built = upload(state, image, generateMips, premultiply);
+  const built = upload(state, image, generateMips, premultiply, colorSpace);
   if (built === null) return cached ?? null;
   if (cached !== undefined) {
     cached.texture.destroy();
@@ -201,7 +217,10 @@ export function bindWgpuVideoTexture(
   if (element === null || element.readyState < 2 || element.videoWidth <= 0 || element.videoHeight <= 0) return null;
 
   const runtime = getWgpuRenderStateRuntime(state);
-  const cache = (runtime.videoTextureCache ??= new WeakMap());
+  const cache =
+    videoTexture.colorSpace === 'srgb'
+      ? (runtime.videoSrgbTextureCache ??= new WeakMap())
+      : (runtime.videoTextureCache ??= new WeakMap());
   const width = element.videoWidth;
   const height = element.videoHeight;
   const sampler = getWgpuVideoSampler(state, videoTexture);
@@ -210,7 +229,7 @@ export function bindWgpuVideoTexture(
     entry?.texture.destroy();
     const texture = state.device.createTexture({
       size: [width, height, 1],
-      format: 'rgba8unorm',
+      format: videoTexture.colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
     const view = texture.createView();
@@ -303,12 +322,16 @@ export function createWgpuTextureEntry(
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
   const image = getTextureSource(videoTexture) as Image | null;
   if (image == null) return false;
-  const cache = getWgpuRenderStateRuntime(state).videoTextureCache;
-  const entry = cache?.get(image);
-  if (entry === undefined) return false;
-  entry.texture.destroy();
-  cache!.delete(image);
-  return true;
+  const runtime = getWgpuRenderStateRuntime(state);
+  let destroyed = false;
+  for (const cache of [runtime.videoTextureCache, runtime.videoSrgbTextureCache]) {
+    const entry = cache?.get(image);
+    if (entry === undefined) continue;
+    entry.texture.destroy();
+    cache!.delete(image);
+    destroyed = true;
+  }
+  return destroyed;
 }
 
 function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
@@ -323,11 +346,12 @@ function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView,
 
 function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): GPUSampler {
   const sampler = videoTexture.sampler;
-  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   // A live frame carries base level only; mip-aware filters collapse to their base filter rather than
   // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
   // dirty gate.
-  return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
+  return getWgpuSampler(state, minFilter, magFilter, sampler.wrapU, sampler.wrapV, undefined, sampler.anisotropy);
 }
 
 export function drawWgpuQuad(
@@ -489,6 +513,7 @@ function uploadWgpuBitmapEntry(
   image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ): WgpuTextureEntry {
   const bitmap = image as Readonly<Bitmap>;
   const runtime = getWgpuRenderStateRuntime(state);
@@ -496,16 +521,17 @@ function uploadWgpuBitmapEntry(
   const width = bitmap.width || 1;
   const height = bitmap.height || 1;
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
-    format: 'rgba8unorm',
+    format,
     mipLevelCount,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
   const transform = premultiply && bitmap.alphaType !== 'premultiplied';
   const data = transform ? premultiplyStraightRgba8(bitmap.data) : bitmap.data;
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
-  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
+  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, format);
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
   const bindGroup = device.createBindGroup({
@@ -521,6 +547,9 @@ function uploadWgpuBitmapEntry(
 function uploadWgpuCompressedImageEntry(
   state: WgpuRenderState,
   image: Readonly<TextureSource>,
+  _generateMips: boolean,
+  _premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
   return (
@@ -528,6 +557,7 @@ function uploadWgpuCompressedImageEntry(
       state,
       image as Readonly<CompressedImage>,
       runtime.compressedTextureDecoder ?? null,
+      colorSpace,
     ) ?? null
   );
 }
@@ -537,6 +567,7 @@ function uploadWgpuImageResourceEntry(
   image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
   const resource = image as Readonly<Image>;
   const runtime = getWgpuRenderStateRuntime(state);
@@ -545,9 +576,10 @@ function uploadWgpuImageResourceEntry(
   const height = resource.height || 1;
   if (!isWgpuExternalImageSourceReady(resource.source as GPUCopyExternalImageSource, width, height)) return null;
   const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
-    format: 'rgba8unorm',
+    format,
     mipLevelCount,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
@@ -562,7 +594,7 @@ function uploadWgpuImageResourceEntry(
     texture.destroy();
     return null;
   }
-  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
+  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, format);
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
   const bindGroup = device.createBindGroup({
@@ -580,4 +612,5 @@ type WgpuTextureSourceUpload = (
   image: Readonly<TextureSource>,
   generateMips: boolean,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ) => WgpuTextureEntry | null;

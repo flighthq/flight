@@ -106,7 +106,7 @@ export function ensureWgpuDebugPipeline(
 }
 
 // The full WGSL module source for a define key: the const-flag block (MODE discriminator + normal-map
-// flag) + the shared mesh prelude (Frame/Draw/vs_main/srgbToLinear) + the debug material block +
+// flag) + the shared mesh prelude (Frame/Draw/vs_main) + the debug material block +
 // fs_main.
 export function getWgpuDebugModuleSourceForKey(key: Readonly<WgpuDebugDefineKey>): string {
   return (

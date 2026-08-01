@@ -89,6 +89,23 @@ describe('getCamera3DViewProjectionMatrix4', () => {
     }
   });
 
+  it('applies the camera jitter as an NDC projection offset', () => {
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    const base = createMatrix4();
+    getCamera3DViewProjectionMatrix4(base, camera, 1);
+
+    setCamera3DJitter(camera, 0.25, -0.5);
+    const jittered = createMatrix4();
+    getCamera3DViewProjectionMatrix4(jittered, camera, 1);
+
+    expect(jittered.m[8]).toBeCloseTo(base.m[8] - 0.25);
+    expect(jittered.m[9]).toBeCloseTo(base.m[9] + 0.5);
+  });
+
   it('is safe when out aliases the camera view', () => {
     const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
     const camera = createCamera3D({ far: 100, near: 0.1, projection });
@@ -181,35 +198,32 @@ describe('setCamera3DViewMatrix4FromMatrix4', () => {
 });
 
 describe('updateCamera3DInverseViewProjection', () => {
-  it('stores the inverse view-projection into camera.inverseViewProjection and returns true', () => {
-    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
-    const camera = createCamera3D({ far: 100, near: 0.1, projection });
-    setCamera3DViewMatrix4FromLookAt(camera, createVector3(1, 2, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+  it('refreshes the required cache from the jittered projection', () => {
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    setCamera3DJitter(camera, 0.25, -0.5);
+    expect(updateCamera3DInverseViewProjection(camera, 1.5)).toBe(true);
 
-    const result = updateCamera3DInverseViewProjection(camera, 1.5);
-    expect(result).toBe(true);
-
-    // Compute expected inverse independently.
     const vp = createMatrix4();
     getCamera3DViewProjectionMatrix4(vp, camera, 1.5);
     const expected = createMatrix4();
     inverseMatrix4(expected, vp);
-
-    for (let i = 0; i < 16; i++) {
-      expect(camera.inverseViewProjection.m[i]).toBeCloseTo(expected.m[i]);
-    }
+    for (let i = 0; i < 16; i++) expect(camera.inverseViewProjection.m[i]).toBeCloseTo(expected.m[i]);
   });
 
-  it('returns false and leaves inverseViewProjection untouched for a non-invertible matrix', () => {
-    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
-    const camera = createCamera3D({ far: 100, near: 0.1, projection });
-    camera.near = 1;
-    camera.far = 1; // Degenerate.
-    // Store a known value so we can confirm it was not overwritten.
+  it('leaves the last valid cache untouched for a non-invertible projection', () => {
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
     camera.inverseViewProjection.m[0] = 42;
-
-    const result = updateCamera3DInverseViewProjection(camera, 1);
-    expect(result).toBe(false);
+    camera.near = 1;
+    camera.far = 1;
+    expect(updateCamera3DInverseViewProjection(camera, 1)).toBe(false);
     expect(camera.inverseViewProjection.m[0]).toBe(42);
   });
 });

@@ -140,7 +140,9 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   // is owned by the opt-in registerGlColorAdjustmentMaterialFeature, so a state that never tints carries none of it.
   runtime.textureCache = new WeakMap();
   runtime.textureSourcePremultipliedTextureCache = new WeakMap();
+  runtime.textureSourcePremultipliedSrgbTextureCache = new WeakMap();
   runtime.textureSourceStraightTextureCache = new WeakMap();
+  runtime.textureSourceStraightSrgbTextureCache = new WeakMap();
   runtime.quadVertexBuffer = quadVertexBuffer;
   runtime.quadIndexBuffer = quadIndexBuffer;
   runtime.quadVertexData = new Float32Array(16);
@@ -337,10 +339,13 @@ const GL_CONTEXT_RUNTIME_KEYS = [
   'shaderLoc',
   'textureCache',
   'textureSourcePremultipliedTextureCache',
+  'textureSourcePremultipliedSrgbTextureCache',
   'textureSourceStraightTextureCache',
+  'textureSourceStraightSrgbTextureCache',
   'glExternalTextureCache',
   'glRenderTextureCache',
   'videoTextureCache',
+  'videoSrgbTextureCache',
   'mipmappedTextures',
   'anisotropyExt',
   'maxAnisotropy',

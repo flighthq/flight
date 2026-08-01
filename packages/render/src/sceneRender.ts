@@ -384,7 +384,20 @@ function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D
       camera.far,
     );
   }
+  applyScene3DProjectionJitter(scratchProjection, camera.jitter.x, camera.jitter.y);
   multiplyMatrix4(out, scratchProjection, camera.view);
+}
+
+function applyScene3DProjectionJitter(out: Matrix4, x: number, y: number): void {
+  const m = out.m;
+  m[0] += x * m[3];
+  m[4] += x * m[7];
+  m[8] += x * m[11];
+  m[12] += x * m[15];
+  m[1] += y * m[3];
+  m[5] += y * m[7];
+  m[9] += y * m[11];
+  m[13] += y * m[15];
 }
 
 function resolveScene3DViewportAspect(camera: Readonly<Camera3D>, viewportAspect: number | undefined): number {

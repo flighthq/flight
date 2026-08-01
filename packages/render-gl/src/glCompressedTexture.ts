@@ -5,6 +5,7 @@ import type {
   GlRenderState,
   TextureContainer,
   TextureContainerFormat,
+  TextureColorSpace,
 } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -236,6 +237,7 @@ export function uploadGlCompressedTextureContainer(
   container: Readonly<TextureContainer>,
   payload: Readonly<Uint8Array>,
   decode?: GlCompressedTextureDecoder,
+  colorSpace?: TextureColorSpace,
 ): boolean {
   // This atom realizes 2D, one cubemap, or a 2D array. A volume needs TEXTURE_3D allocation and
   // depth-slice layout; a cubemap array needs a distinct target/extension. Reject those shapes before
@@ -246,7 +248,12 @@ export function uploadGlCompressedTextureContainer(
   // or transcode through the deferred seam first.
   if (container.supercompression !== 'None') return false;
 
-  const nativeFormat = getGlCompressedTextureFormat(gl, container.format);
+  const uploadFormat =
+    colorSpace === undefined ? container.format : getTextureContainerFormatForColorSpace(container.format, colorSpace);
+  const nativeFormat =
+    colorSpace === 'srgb' && isAstcFormat(container.format)
+      ? getGlAstcSrgbFormat(gl, container.format)
+      : getGlCompressedTextureFormat(gl, uploadFormat);
   const faces = container.faces;
   const layers = container.layers;
   const mipLevels = container.mipLevels;
@@ -295,13 +302,40 @@ export function uploadGlCompressedTextureContainer(
     const view = new Uint8Array(payload.buffer, payload.byteOffset + entry.byteOffset, entry.byteLength);
     const rgba = decode(container.format, entry.width, entry.height, view);
     if (rgba === null) return false;
-    gl.texImage2D(gl.TEXTURE_2D, mip, gl.RGBA, entry.width, entry.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      mip,
+      colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
+      entry.width,
+      entry.height,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      rgba,
+    );
   }
   return true;
 }
 
 function isAstcFormat(format: TextureContainerFormat): boolean {
   return format.startsWith('astc');
+}
+
+function getGlAstcSrgbFormat(gl: WebGL2RenderingContext, format: TextureContainerFormat): number {
+  const ext = gl.getExtension('WEBGL_compressed_texture_astc') as Record<string, number> | null;
+  const match = /^astc(\d+)x(\d+)$/.exec(format);
+  if (ext === null || match === null) return -1;
+  const value = ext[`COMPRESSED_SRGB8_ALPHA8_ASTC_${match[1]}x${match[2]}_KHR`];
+  return typeof value === 'number' ? value : -1;
+}
+
+function getTextureContainerFormatForColorSpace(
+  format: TextureContainerFormat,
+  colorSpace: TextureColorSpace = 'linear',
+): TextureContainerFormat {
+  const pair = SRGB_FORMAT_PAIRS[format];
+  if (pair === undefined) return format;
+  return colorSpace === 'srgb' ? pair[1] : pair[0];
 }
 
 function isSupportedGlCompressedTextureContainerShape(container: Readonly<TextureContainer>): boolean {
@@ -316,6 +350,7 @@ function uploadGlCompressedImage(
   gl: WebGL2RenderingContext,
   image: Readonly<CompressedImage>,
   decode: GlCompressedTextureDecoder | null,
+  colorSpace: TextureColorSpace = 'linear',
 ): boolean {
   const compressed = image.compressed;
   const container = compressed.container;
@@ -323,5 +358,25 @@ function uploadGlCompressedImage(
   // resources require their own entity/binder families; forwarding one here would address an unbound
   // target even though the low-level container uploader supports caller-bound cube and 2D-array targets.
   if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return false;
-  return uploadGlCompressedTextureContainer(gl, container, compressed.payload, decode ?? undefined);
+  return uploadGlCompressedTextureContainer(gl, container, compressed.payload, decode ?? undefined, colorSpace);
 }
+
+const SRGB_FORMAT_PAIRS: Partial<
+  Record<TextureContainerFormat, readonly [TextureContainerFormat, TextureContainerFormat]>
+> = {
+  bc1: ['bc1', 'bc1Srgb'],
+  bc1Srgb: ['bc1', 'bc1Srgb'],
+  bc2: ['bc2', 'bc2Srgb'],
+  bc2Srgb: ['bc2', 'bc2Srgb'],
+  bc3: ['bc3', 'bc3Srgb'],
+  bc3Srgb: ['bc3', 'bc3Srgb'],
+  bc7: ['bc7', 'bc7Srgb'],
+  bc7Srgb: ['bc7', 'bc7Srgb'],
+  etc1: ['etc1', 'etc2RgbSrgb'],
+  etc2Rgb: ['etc2Rgb', 'etc2RgbSrgb'],
+  etc2RgbSrgb: ['etc2Rgb', 'etc2RgbSrgb'],
+  etc2RgbA1: ['etc2RgbA1', 'etc2RgbA1Srgb'],
+  etc2RgbA1Srgb: ['etc2RgbA1', 'etc2RgbA1Srgb'],
+  etc2Rgba: ['etc2Rgba', 'etc2RgbaSrgb'],
+  etc2RgbaSrgb: ['etc2Rgba', 'etc2RgbaSrgb'],
+};

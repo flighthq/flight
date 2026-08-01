@@ -92,6 +92,8 @@ export function getGlCustomMaterialShaderSource(
 // enableGlScene3DCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
 // alphaMode is 'blend', drawGlScene3D selects straight or premultiplied Normal factors from the
 // material's alphaType, so the fragment shader must output linear scene color matching that declaration.
+// Texture uniforms sample according to each Texture.colorSpace GPU realization; do not decode an sRGB
+// texture again in caller-authored GLSL.
 // For alphaMode 'mask', the native shader owns the cutoff discard (pass alphaCutoff through the custom
 // uniforms bag when needed); the fixed ABI cannot inject a discard into caller-authored source. Last write wins for the source
 // lookup, but the compiled program is cached

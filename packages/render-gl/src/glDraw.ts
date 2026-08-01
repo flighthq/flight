@@ -7,6 +7,7 @@ import type {
   GlRenderState,
   GlRenderStateRuntime,
   TextureSource,
+  TextureColorSpace,
   Image,
   SamplerLike,
   TextureLike,
@@ -87,8 +88,18 @@ export function bindGlBitmapTexture(
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
   premultiply = false,
+  colorSpace: TextureColorSpace = 'linear',
 ): WebGLTexture {
-  return bindGlTextureSourceTexture(state, bitmap, sampler, smoothingOverride, premultiply, false, uploadGlBitmap);
+  return bindGlTextureSourceTexture(
+    state,
+    bitmap,
+    sampler,
+    smoothingOverride,
+    premultiply,
+    false,
+    colorSpace,
+    uploadGlBitmap,
+  );
 }
 
 export function bindGlCompressedImageTexture(
@@ -96,8 +107,18 @@ export function bindGlCompressedImageTexture(
   image: Readonly<CompressedImage>,
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
+  colorSpace: TextureColorSpace = 'linear',
 ): WebGLTexture {
-  return bindGlTextureSourceTexture(state, image, sampler, smoothingOverride, false, true, uploadGlCompressedImage);
+  return bindGlTextureSourceTexture(
+    state,
+    image,
+    sampler,
+    smoothingOverride,
+    false,
+    true,
+    colorSpace,
+    uploadGlCompressedImage,
+  );
 }
 
 // Binds (uploading + caching on first use, re-uploading when the host image changes) the GL texture for
@@ -117,6 +138,7 @@ export function bindGlImageResourceTexture(
   sampler?: Readonly<SamplerLike> | null,
   smoothingOverride?: boolean | null,
   premultiply = false,
+  colorSpace: TextureColorSpace = 'linear',
 ): WebGLTexture {
   return bindGlTextureSourceTexture(
     state,
@@ -125,6 +147,7 @@ export function bindGlImageResourceTexture(
     smoothingOverride,
     premultiply,
     false,
+    colorSpace,
     uploadGlImageResource,
   );
 }
@@ -136,13 +159,18 @@ function bindGlTextureSourceTexture(
   smoothingOverride: boolean | null | undefined,
   premultiply: boolean,
   straightAlpha: boolean,
+  colorSpace: TextureColorSpace,
   upload: GlTextureSourceUpload,
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const cache = premultiply
-    ? runtime.textureSourcePremultipliedTextureCache
-    : runtime.textureSourceStraightTextureCache;
+    ? colorSpace === 'srgb'
+      ? runtime.textureSourcePremultipliedSrgbTextureCache
+      : runtime.textureSourcePremultipliedTextureCache
+    : colorSpace === 'srgb'
+      ? runtime.textureSourceStraightSrgbTextureCache
+      : runtime.textureSourceStraightTextureCache;
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, version: -1 };
@@ -152,7 +180,7 @@ function bindGlTextureSourceTexture(
   runtime.currentTexture = entry.texture;
   runtime.currentTextureStraightAlpha = straightAlpha;
   if (entry.version !== image.version) {
-    upload(state, image, premultiply);
+    upload(state, image, premultiply, colorSpace);
     entry.version = image.version;
   }
   applyGlSamplerState(state, runtime, entry.texture, sampler ?? null, smoothingOverride ?? null);
@@ -210,8 +238,8 @@ export function bindGlTexture(
 // Binds the GL texture for a video-backed Texture and re-uploads the source element's current frame
 // only when its Image `version` has advanced — the dynamic, per-frame sibling of
 // bindGlImageResourceTexture (settled Image) and bindGlTexture (raw element). The GL texture is
-// cached by the Image source in the runtime's videoTextureCache (lazily created), so two
-// sampled Textures share one upload while their samplers remain draw-local.
+// cached by Image identity plus Texture.colorSpace, so two sampled Textures share one upload only
+// when they request the same GPU interpretation while their samplers remain draw-local.
 // Leaves the texture bound at the active unit for the caller to sample. Callers advance the source
 // version via advanceVideoTexture when the element reports a fresh decoded frame; this reads the current frame
 // through uploadGlTextureElement's zero-copy element fast-path.
@@ -223,7 +251,10 @@ export function bindGlVideoTexture(
   const image = getTextureSource(texture) as Image;
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const cache = (runtime.videoTextureCache ??= new WeakMap());
+  const cache =
+    texture.colorSpace === 'srgb'
+      ? (runtime.videoSrgbTextureCache ??= new WeakMap())
+      : (runtime.videoTextureCache ??= new WeakMap());
   let entry = cache.get(image);
   if (entry === undefined) {
     entry = { texture: gl.createTexture()!, uploadedVersion: -1 };
@@ -234,7 +265,12 @@ export function bindGlVideoTexture(
   runtime.currentTextureStraightAlpha = false;
   // Straight-alpha element under premultiplied blend would blow out RGB; match the bitmap/element path.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-  entry.uploadedVersion = uploadGlTextureVideoFrame(gl, image, entry.uploadedVersion);
+  entry.uploadedVersion = uploadGlTextureVideoFrame(
+    gl,
+    image,
+    entry.uploadedVersion,
+    texture.colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
+  );
   applyGlSamplerState(state, runtime, entry.texture, sampler ?? texture.sampler);
   return entry.texture;
 }
@@ -363,27 +399,55 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   if (runtime.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
 }
 
-function uploadGlBitmap(state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean): void {
+function uploadGlBitmap(
+  state: GlRenderState,
+  image: Readonly<TextureSource>,
+  premultiply: boolean,
+  colorSpace: TextureColorSpace,
+): void {
   const bitmap = image as Readonly<Bitmap>;
   const gl = state.gl;
   const transform = premultiply && bitmap.alphaType !== 'premultiplied';
   const data = transform ? premultiplyStraightRgba8(bitmap.data) : bitmap.data;
-  uploadGlTextureData(gl, gl.TEXTURE_2D, bitmap.width, bitmap.height, data);
+  uploadGlTextureData(
+    gl,
+    gl.TEXTURE_2D,
+    bitmap.width,
+    bitmap.height,
+    data,
+    colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
+  );
 }
 
-function uploadGlCompressedImage(state: GlRenderState, image: Readonly<TextureSource>): void {
+function uploadGlCompressedImage(
+  state: GlRenderState,
+  image: Readonly<TextureSource>,
+  _premultiply: boolean,
+  colorSpace: TextureColorSpace,
+): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.compressedTextureUpload?.(
     state.gl,
     image as Readonly<CompressedImage>,
     runtime.compressedTextureDecoder ?? null,
+    colorSpace,
   );
 }
 
-function uploadGlImageResource(state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean): void {
+function uploadGlImageResource(
+  state: GlRenderState,
+  image: Readonly<TextureSource>,
+  premultiply: boolean,
+  colorSpace: TextureColorSpace,
+): void {
   const gl = state.gl;
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
-  uploadGlTextureElement(gl, gl.TEXTURE_2D, (image as Readonly<Image>).source as TexImageSource);
+  uploadGlTextureElement(
+    gl,
+    gl.TEXTURE_2D,
+    (image as Readonly<Image>).source as TexImageSource,
+    colorSpace === 'srgb' ? gl.SRGB8_ALPHA8 : gl.RGBA,
+  );
 }
 
 // Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs
@@ -400,7 +464,12 @@ function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>
   return out;
 }
 
-type GlTextureSourceUpload = (state: GlRenderState, image: Readonly<TextureSource>, premultiply: boolean) => void;
+type GlTextureSourceUpload = (
+  state: GlRenderState,
+  image: Readonly<TextureSource>,
+  premultiply: boolean,
+  colorSpace: TextureColorSpace,
+) => void;
 
 export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
   const runtime = getGlRenderStateRuntime(state);

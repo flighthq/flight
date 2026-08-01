@@ -355,7 +355,7 @@ struct VertexOutput {
 }
 `;
 
-// Shared bake fragment helpers (source cube bindings + srgb decode + face direction), the WGSL mirror of
+// Shared bake fragment helpers (source cube bindings + face direction), the WGSL mirror of
 // scene-gl's BAKE_COMMON. The source cube is sampled at level 0 (it has no baked mip chain).
 const BAKE_COMMON_WGSL = /* wgsl */ `
 const PI : f32 = 3.14159265359;
@@ -365,12 +365,6 @@ const PI : f32 = 3.14159265359;
 
 fn faceDirection(uv : vec2f) -> vec3f {
   return normalize(face.faceForward.xyz + uv.x * face.faceRight.xyz + uv.y * face.faceUp.xyz);
-}
-
-fn srgbToLinear(c : vec3f) -> vec3f {
-  let lo = c / 12.92;
-  let hi = pow((c + vec3f(0.055)) / 1.055, vec3f(2.4));
-  return select(lo, hi, c > vec3f(0.04045));
 }
 
 fn radicalInverse(bitsIn : u32) -> f32 {
@@ -427,7 +421,7 @@ const IRRADIANCE_FRAGMENT_WGSL =
       if (theta >= 0.5 * PI) { break; }
       let tangent = vec3f(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
       let sampleVec = tangent.x * right + tangent.y * realUp + tangent.z * N;
-      irradiance = irradiance + srgbToLinear(textureSampleLevel(envCube, envSampler, sampleVec, 0.0).rgb) * cos(theta) * sin(theta);
+      irradiance = irradiance + textureSampleLevel(envCube, envSampler, sampleVec, 0.0).rgb * cos(theta) * sin(theta);
       samples = samples + 1.0;
       theta = theta + delta;
     }
@@ -453,14 +447,14 @@ const PREFILTERED_FRAGMENT_WGSL =
     let L = normalize(2.0 * dot(V, H) * H - V);
     let nDotL = max(dot(N, L), 0.0);
     if (nDotL > 0.0) {
-      prefiltered = prefiltered + srgbToLinear(textureSampleLevel(envCube, envSampler, L, 0.0).rgb) * nDotL;
+      prefiltered = prefiltered + textureSampleLevel(envCube, envSampler, L, 0.0).rgb * nDotL;
       totalWeight = totalWeight + nDotL;
     }
   }
   if (totalWeight > 0.0) {
     return vec4f(prefiltered / totalWeight, 1.0);
   }
-  return vec4f(srgbToLinear(textureSampleLevel(envCube, envSampler, N, 0.0).rgb), 1.0);
+  return vec4f(textureSampleLevel(envCube, envSampler, N, 0.0).rgb, 1.0);
 }
 `;
 

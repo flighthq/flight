@@ -30,13 +30,13 @@ export const sheenPbrGlExtension: GlPbrExtensionRegistration = {
     return {
       applySurface: '',
       contributeIbl: `
-  vec3 flightSheenColor = u_flightSheenColor * ${colorMap ? 'srgbToLinear(texture(u_flightSheenColorMap, flightSheenColorUv()).rgb)' : 'vec3(1.0)'};
+  vec3 flightSheenColor = u_flightSheenColor * ${colorMap ? 'texture(u_flightSheenColorMap, flightSheenColorUv()).rgb' : 'vec3(1.0)'};
   float flightSheenRoughness = clamp(u_flightSheenRoughness * ${roughnessMap ? 'texture(u_flightSheenRoughnessMap, flightSheenRoughnessUv()).a' : '1.0'}, 0.07, 1.0);
   vec3 flightSheenR = reflect(-V, N);
   ambient += flightSheenColor * textureLod(u_iblPrefiltered, flightSheenR, flightSheenRoughness * u_iblMaxMip).rgb *
     (1.0 - max(max(F.r, F.g), F.b)) * occ * u_iblIntensity;`,
       contributePunctual: `
-  vec3 flightSheenColor = u_flightSheenColor * ${colorMap ? 'srgbToLinear(texture(u_flightSheenColorMap, flightSheenColorUv()).rgb)' : 'vec3(1.0)'};
+  vec3 flightSheenColor = u_flightSheenColor * ${colorMap ? 'texture(u_flightSheenColorMap, flightSheenColorUv()).rgb' : 'vec3(1.0)'};
   float flightSheenRoughness = clamp(u_flightSheenRoughness * ${roughnessMap ? 'texture(u_flightSheenRoughnessMap, flightSheenRoughnessUv()).a' : '1.0'}, 0.07, 1.0);
   float flightSheenD = flightDistributionCharlie(nDotH, flightSheenRoughness);
   float flightSheenV = 1.0 / max(4.0 * (nDotL + nDotV - nDotL * nDotV), 1e-4);

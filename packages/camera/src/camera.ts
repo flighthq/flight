@@ -12,10 +12,10 @@ import { setProjectionMatrix4 } from './projection';
 
 // Allocates a 3D camera. The camera stores its projection descriptor, a world->view Matrix4
 // (`view`, initialized to identity), the clip-plane distances `near`/`far`, the per-frame
-// sub-pixel NDC `jitter` (consumed by TAA, initialized to zero), and a cached
-// `inverseViewProjection` (consumed by TAA / velocity / fog / depth-of-field, initialized to
-// identity). The view matrix is canonical: the camera has no separate Transform3D — a Matrix4 is
-// the only world->view representation.
+// sub-pixel NDC `jitter` (applied to every projection, initialized to zero), and the last
+// `inverseViewProjection` computed for a reconstruction pass (initialized to identity). The view
+// matrix is canonical: the camera has no separate Transform3D — a Matrix4 is the only world->view
+// representation.
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   return createEntity({
     far: opts.far,
@@ -29,12 +29,11 @@ export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
 
 // Writes the inverse of the camera's view-projection matrix into `out` and returns true, or
 // returns false (writing NaN into `out`) when the view-projection is non-invertible. `aspect`
-// is the viewport width / height. This is the matrix the existing TAA / velocity / fog /
-// depth-of-field effects consume to reconstruct world position from NDC.
+// is the viewport width / height. Skybox and other world-position reconstruction passes use this
+// calculation to refresh Camera3D.inverseViewProjection immediately before consuming it.
 //
 // Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
-// aliases the camera's own `inverseViewProjection` or `view`. Use
-// `updateCamera3DInverseViewProjection` instead to safely update the cached field.
+// aliases the camera's own `inverseViewProjection` or `view`.
 export function getCamera3DInverseViewProjectionMatrix4(
   out: Matrix4Like,
   camera: Readonly<Camera3D>,
@@ -52,6 +51,7 @@ export function getCamera3DInverseViewProjectionMatrix4(
 // aliases the camera's own `view`.
 export function getCamera3DViewProjectionMatrix4(out: Matrix4Like, camera: Readonly<Camera3D>, aspect: number): void {
   setProjectionMatrix4(__scratchProjection, camera.projection, aspect, camera.near, camera.far);
+  applyCamera3DProjectionJitter(__scratchProjection, camera.jitter.x, camera.jitter.y);
   multiplyMatrix4(out, __scratchProjection, camera.view);
 }
 
@@ -70,8 +70,8 @@ export function setCamera3DAspect(camera: Camera3D, aspect: number): void {
   projection.halfWidth = projection.halfHeight * aspect;
 }
 
-// Sets the camera's per-frame sub-pixel jitter offset (in NDC), in place. TAA reads this when
-// building the jittered projection matrix.
+// Sets the camera's per-frame sub-pixel jitter offset (in NDC), in place. Every view-projection
+// helper applies it to clip X/Y before the perspective divide.
 export function setCamera3DJitter(camera: Camera3D, x: number, y: number): void {
   camera.jitter.x = x;
   camera.jitter.y = y;
@@ -97,19 +97,29 @@ export function setCamera3DViewMatrix4FromMatrix4(camera: Camera3D, view: Readon
   camera.view.m.set(view.m);
 }
 
-// Recomputes and stores the inverse view-projection into camera.inverseViewProjection for the
-// given aspect. Returns true on success or false when the matrix is non-invertible (leaving the
-// cached field untouched). `aspect` is viewport width / height.
-//
-// Call this once per frame after setting the view matrix and before any effects that read
-// camera.inverseViewProjection (TAA, velocity, fog, depth-of-field).
-export function updateCamera3DInverseViewProjection(camera: Camera3D, aspect: number): boolean {
-  // Write into a scratch first so the cache is never clobbered with NaN on failure.
+// Refreshes the camera's required inverse-view-projection cache for the supplied viewport aspect.
+// Returns true on success or false when projection×view is non-invertible, leaving the prior valid
+// cache untouched. Reconstruction consumers call this immediately before reading the field so it
+// cannot silently drift after mutable camera inputs change.
+export function updateCamera3DInverseViewProjection(camera: Readonly<Camera3D>, aspect: number): boolean {
   const ok = getCamera3DInverseViewProjectionMatrix4(__scratchInverse, camera, aspect);
-  if (ok) {
-    camera.inverseViewProjection.m.set(__scratchInverse.m);
-  }
+  if (ok) camera.inverseViewProjection.m.set(__scratchInverse.m);
   return ok;
+}
+
+// Applies an NDC translation to a projection matrix: clip.xy += jitter * clip.w. Expressing it as
+// row operations handles perspective (offset in m[8]/m[9]) and orthographic (m[12]/m[13]) matrices
+// uniformly.
+function applyCamera3DProjectionJitter(out: Matrix4Like, x: number, y: number): void {
+  const m = out.m;
+  m[0] += x * m[3];
+  m[4] += x * m[7];
+  m[8] += x * m[11];
+  m[12] += x * m[15];
+  m[1] += y * m[3];
+  m[5] += y * m[7];
+  m[9] += y * m[11];
+  m[13] += y * m[15];
 }
 
 // Scratch matrices reused by the view-projection helpers. Single-threaded; not re-entrant.

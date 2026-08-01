@@ -1,7 +1,6 @@
-import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera/contract';
-import { createMatrix4 } from '@flighthq/geometry/contract';
+import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import type { Camera3D, Environment, GlRenderState, Matrix4 } from '@flighthq/types/contract';
+import type { Camera3D, Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 
@@ -23,7 +22,7 @@ export function drawGlEnvironmentSkybox(
   const gl = state.gl;
   const sky = ensureGlSkybox(state);
 
-  getCamera3DInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
+  if (!updateCamera3DInverseViewProjection(camera, aspect)) return;
 
   const prevDepthTest = gl.getParameter(gl.DEPTH_TEST) as boolean;
   gl.depthMask(false);
@@ -31,7 +30,7 @@ export function drawGlEnvironmentSkybox(
   gl.disable(gl.BLEND);
 
   gl.useProgram(sky.program);
-  gl.uniformMatrix4fv(sky.locInverseViewProjection, false, _inverseViewProjection.m);
+  gl.uniformMatrix4fv(sky.locInverseViewProjection, false, camera.inverseViewProjection.m);
   gl.uniform1f(sky.locIntensity, environment.intensity);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, cube);
@@ -83,7 +82,6 @@ function linkGlSkyboxProgram(gl: WebGL2RenderingContext): WebGLProgram {
   return createGlProgram(gl, SKYBOX_VERTEX, SKYBOX_FRAGMENT, 'Skybox');
 }
 
-const _inverseViewProjection: Matrix4 = createMatrix4();
 const _quad = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
 const _skyboxes = new WeakMap<GlRenderState, GlSkybox>();
 
@@ -105,16 +103,12 @@ uniform mat4 u_inverseViewProjection;
 uniform float u_intensity;
 out vec4 fragColor;
 
-vec3 srgbToLinear(vec3 c) {
-  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
-}
-
 void main() {
   // Reconstruct the world-space ray through this pixel from the near- and far-plane unprojections.
   vec4 nearW = u_inverseViewProjection * vec4(v_ndc, -1.0, 1.0);
   vec4 farW = u_inverseViewProjection * vec4(v_ndc, 1.0, 1.0);
   vec3 dir = normalize(farW.xyz / farW.w - nearW.xyz / nearW.w);
-  vec3 color = srgbToLinear(texture(u_envCube, dir).rgb) * u_intensity;
+  vec3 color = texture(u_envCube, dir).rgb * u_intensity;
   fragColor = vec4(color, 1.0);
 }
 `;

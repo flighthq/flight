@@ -32,8 +32,8 @@ export const GL_PBR_EXTENSION_TEXTURE_UNIT = 6;
 // standard texture unit (0–4). StandardPbr passes the material itself (it IS a properties block);
 // every extension renderer passes `material.standard`. A null block uploads neutral defaults (white
 // base color, dielectric, fully rough) so a missing material renders plausibly. Packed colors are
-// decoded to linear on the CPU here; sampled albedo/emissive textures are sRgb-decoded in GLSL, so
-// nothing is double-decoded. The alpha-cutoff uniform is NOT part of the block — it lives on the
+// decoded to linear on the CPU here; Texture.colorSpace selects the GPU sample-time decode for maps,
+// so nothing is double-decoded. The alpha-cutoff uniform is NOT part of the block — it lives on the
 // SurfaceMaterial trailer, so each renderer uploads it from the material after this call. Call
 // after beginGlMeshDraw has selected the program.
 export function bindGlPbrStandardBlock(

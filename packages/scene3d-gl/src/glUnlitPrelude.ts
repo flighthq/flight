@@ -35,9 +35,9 @@ export function bindGlUnlitSurface(
 // A short, stable, order-independent string identity for an unlit define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.colorMapLinear ? 'l' : '-'}${
-    key.vertexColor ? 'v' : '-'
-  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}${
+    key.hasUvTransform ? 'u' : '-'
+  }${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -85,7 +85,6 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   let defines = '#version 300 es\n';
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasColorMap) defines += '#define HAS_COLOR_MAP\n';
-  if (key.colorMapLinear) defines += '#define COLOR_MAP_LINEAR\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
   if (key.hasSkin) defines += '#define HAS_SKIN\n';
@@ -139,14 +138,7 @@ uniform float u_objectAlpha;
 
 out vec4 fragColor;
 
-// sRgb texels are gamma-encoded; decode to linear before use. u_color is already linear (decoded on
-// the CPU at bind), so only the sampled color-map needs decoding.
-vec3 srgbToLinear(vec3 c) {
-  vec3 lo = c / 12.92;
-  vec3 hi = pow((c + 0.055) / 1.055, vec3(2.4));
-  return mix(lo, hi, step(0.04045, c));
-}
-
+// Texture.colorSpace selects the GPU format, so sampled color is already linear here.
 void main() {
   vec4 color = u_color;
 #ifdef VERTEX_COLOR
@@ -154,11 +146,7 @@ void main() {
 #endif
 #ifdef HAS_COLOR_MAP
   vec4 sampled = texture(u_colorMap, v_uv0);
-#ifdef COLOR_MAP_LINEAR
   color.rgb *= sampled.rgb;
-#else
-  color.rgb *= srgbToLinear(sampled.rgb);
-#endif
   color.a *= sampled.a;
 #endif
 #ifdef ALPHA_MASK

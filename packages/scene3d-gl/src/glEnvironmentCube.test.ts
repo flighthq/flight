@@ -45,10 +45,19 @@ describe('ensureGlEnvironmentSourceCube', () => {
     // The raw-pixel overload passes width/height/border and the data buffer (9 args), not an element (6 args).
     for (const upload of uploads) {
       expect(upload.args.length).toBe(9);
+      expect(upload.args[2]).toBe(gl.SRGB8_ALPHA8);
       expect(upload.args[3]).toBe(4);
       expect(upload.args[4]).toBe(4);
       expect(upload.args[8]).toBeInstanceOf(Uint8ClampedArray);
     }
+  });
+
+  it('uses a linear internal format for a linear source cube', () => {
+    const { state, gl } = makeGlScene3DState();
+    const environment = dataOnlyEnvironment(4);
+    environment.environment!.colorSpace = 'linear';
+    ensureGlEnvironmentSourceCube(state, environment);
+    expect(gl.calls.filter((c) => c.name === 'texImage2D').every((c) => c.args[2] === gl.RGBA)).toBe(true);
   });
 });
 

@@ -397,7 +397,8 @@ function createWgpuTextureSamplerBindGroup(
   view: GPUTextureView,
   sampler: Readonly<SamplerLike>,
 ): GPUBindGroup {
-  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const mipmapFilter: GPUFilterMode | undefined =
     sampler.mipmaps && sampler.minFilter.includes('mipmap')
       ? sampler.minFilter.endsWith('nearest')
@@ -410,7 +411,15 @@ function createWgpuTextureSamplerBindGroup(
       { binding: 0, resource: view },
       {
         binding: 1,
-        resource: getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy),
+        resource: getWgpuSampler(
+          state,
+          minFilter,
+          magFilter,
+          sampler.wrapU,
+          sampler.wrapV,
+          mipmapFilter,
+          sampler.anisotropy,
+        ),
       },
     ],
   });
