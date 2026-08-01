@@ -37,6 +37,39 @@ export function compositeCanvasSourceMode(
   compositeCanvasImage(dest, source, 0, 0, sourceMode === 'knockout' ? 'destination-out' : 'source-over');
 }
 
+// The complement of drawCanvasTintedAlphaMask: tint everywhere the source is NOT, with alpha
+// proportional to the inverted source alpha. This is what makes an INNER effect inner — the glow or
+// shadow originates outside the silhouette and is later blurred across the boundary and clipped back to
+// the shape, so the light appears to fall inward from the edge. Blurring the shape's own silhouette
+// instead produces an outer effect no amount of clipping can turn inward.
+//
+// Realized as a full-target fill knocked out by the source rather than a per-pixel inversion, which is
+// the same result without a getImageData round trip.
+export function drawCanvasInvertedTintedAlphaMask(
+  dest: Readonly<CanvasRenderTarget>,
+  source: Readonly<CanvasRenderTarget>,
+  color: number,
+  alpha: number,
+  strength: number,
+  offsetX = 0,
+  offsetY = 0,
+): void {
+  const ctx = dest.context;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.filter = 'none';
+  ctx.clearRect(0, 0, dest.width, dest.height);
+  ctx.fillStyle = cssRgbaFromColor(color, Math.min(1, alpha * strength));
+  ctx.fillRect(0, 0, dest.width, dest.height);
+  // Knocking out with the source is the inversion. An offset here shifts which side of the boundary the
+  // tint survives on, which is how an inner shadow gets its direction.
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.drawImage(source.canvas, offsetX, offsetY);
+  ctx.restore();
+}
+
 export function drawCanvasTintedAlphaMask(
   dest: Readonly<CanvasRenderTarget>,
   source: Readonly<CanvasRenderTarget>,
