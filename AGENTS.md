@@ -114,7 +114,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 - A rule stated above carries its own pointer at the point of the rule. That placement beats a second copy in a list, so rules are **not** repeated down here.
 - Anything whose audience is one role — plans, reviews, in-flight direction, open questions — goes in [`agents/index.md`](agents/index.md), not here.
-- **How far along a piece of work is never belongs here.** Each linked doc carries its own status header; a copy in this file is a second source that goes stale silently and is then trusted by every session. Progress lives in the doc, the package cell's `status.md`, or the generated work index — never in the map.
+- **How far along a piece of work is never belongs here.** Each linked doc carries its own status header; a copy in this file is a second source that goes stale silently and is then trusted by every session. Progress lives in the doc, the package cell's `status.md`, or the generated work index — never in the map. Gated by `npm run docs:check`; `unratified` is the one allowed marker, because it changes what an agent may do rather than reporting how far along the work is.
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 

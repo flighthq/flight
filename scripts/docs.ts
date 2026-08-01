@@ -39,9 +39,23 @@ export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 40_000, path: 'AGENTS
 // cut, instead of when every section would have to.
 export const DOC_BUDGET_WARN_FRACTION = 0.02;
 
+// Words that report how far along a piece of work is. AGENTS.md is read in full by every agent on
+// every task, so a pointer entry carrying progress becomes a second source of truth beside the linked
+// doc's own status header — and the copy goes stale silently, then gets trusted. This has already
+// happened: the map claimed the texture model had "only M2 implemented" while the doc said M2–M5 had
+// landed. `unratified` is deliberately absent, and is the blessed way to say a design is not settled:
+// it changes what an agent may DO rather than reporting progress, so it does not rot.
+export const MAP_STATUS_WORDS =
+  /\b(?:awaiting|completed|deferred|implemented|in[-\s]flight|in[-\s]progress|incomplete|landed|not yet|partially|partly|proposals?|proposed|shipped|so far|to date|unimplemented|wip)\b|\d{4}-\d{2}-\d{2}/gi;
+
 export interface DocBudget {
   limit: number;
   path: string;
+}
+
+export interface MapStatusClaim {
+  entry: string;
+  words: readonly string[];
 }
 
 export interface DocBudgetReport {
@@ -53,6 +67,26 @@ export interface DocBudgetReport {
 
 // `over` fails the gate; `near` warns and passes; `ok` is silent.
 export type DocBudgetStatus = 'near' | 'ok' | 'over';
+
+// Scans only the link-led pointer entries (`- [name](path) — trigger`) under Domain Conventions, which
+// is where every historical violation sat. Deliberately not the whole file: the surrounding rules are
+// allowed to say "implemented" or "partially built" because they state a standard rather than report
+// progress — a file-wide scan flags the AAA-completeness rule and the transient-notes rule, and a check
+// that cries wolf on its own doctrine gets muted. Entry prose is scanned with code spans and link
+// targets removed, so a path or a fenced literal never trips it.
+export function findMapStatusClaims(mapText: string): readonly MapStatusClaim[] {
+  const section = readSection(mapText, 'Domain Conventions');
+  if (section === null) return [];
+
+  const claims: MapStatusClaim[] = [];
+  for (const line of section.split('\n')) {
+    if (!line.startsWith('- [')) continue;
+    const prose = line.replaceAll(/`[^`]*`/g, '').replaceAll(/\]\([^)]*\)/g, ']');
+    const words = [...prose.matchAll(MAP_STATUS_WORDS)].map((match) => match[0]);
+    if (words.length > 0) claims.push({ entry: line.slice(3).split(']')[0], words });
+  }
+  return claims;
+}
 
 export function getDocBudgetStatus(length: number, limit: number): DocBudgetStatus {
   if (length > limit) return 'over';
@@ -177,6 +211,22 @@ function checkLinks(): void {
   }
 }
 
+// Gates rather than warns. The baseline is zero, so any hit is a regression introduced by one edit and
+// is cheap to fix at that moment; as a warning it would join 146 others that already need a human
+// ruling, and be read as background noise.
+function checkMapStatus(): void {
+  for (const budget of DOC_BUDGETS) {
+    const path = join(REPO_ROOT, budget.path);
+    if (!existsSync(path)) continue;
+    for (const claim of findMapStatusClaims(readFileSync(path, 'utf8'))) {
+      fail(
+        `${budget.path}: pointer entry '${claim.entry}' reports progress (${claim.words.join(', ')}) — ` +
+          `status belongs in the linked doc's own header, not in the map every agent reads in full`,
+      );
+    }
+  }
+}
+
 // A numbered section that repeats an ordinal reads as two items with the same number, and cross-
 // references elsewhere ("Open direction 5") then point at both. Cheap to detect, easy to miss by eye.
 function checkOrdinals(cell: string, charterText: string): void {
@@ -214,6 +264,7 @@ function fail(message: string): void {
 function main(): void {
   reportBudgets();
   checkLinks();
+  checkMapStatus();
   checkCells();
   reportWarnings();
 
