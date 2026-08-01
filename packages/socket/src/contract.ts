@@ -1,1 +1,3 @@
+export * from './enableSocketGuards';
+export * from './explainSocketSendFailure';
 export * from './socket';

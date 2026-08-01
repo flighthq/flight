@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/socket'
-updated: 2026-07-13
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -8,13 +8,24 @@ basedOn: ./review.md
 
 ## Recommended
 
-Sweep-safe, within-package, no design fork:
+_None open._ Re-verified against live source on 2026-07-31 (3 source files, 3 test files, 43 tests).
+All five sweep items landed and are recorded under [Landed](#landed), outside this section so the TODO
+generator stops reporting them as work.
 
-1. **Fix `disposeSocket` terminal state** — set `runtime.readyState = 'closed'` in dispose (after the close command), so a disposed socket never reports `'closing'` forever. Behavioral truthfulness fix, entity-local, plus tests.
-2. **`explainSocketSendFailure(socket)` query** — shakeable plain-data explainer for the false-send sentinel (no connection / not open / disposed), per the diagnostics inversion rule.
-3. **`enableSocketGuards` module** — opt-in warnings via `@flighthq/log` for misuse the sentinels hide: send/close/enable-signals on a disposed socket, createSocket that yielded a null connection (unsupported transport). Separately importable.
-4. **Test the disposed-socket surfaces** — send-after-dispose, close-after-dispose, enableSocketSignals-after-dispose; the current suite covers fresh-socket dispose but not post-dispose command behavior.
-5. **Alias/`Readonly` audit on `sendSocketMessage`** — it takes `Readonly<Socket>` but mutates nothing; confirm and keep, adding a doc-comment test for the false-propagation path with a half-open backend (mostly covered; extend to the null-connection case explicitly).
+## Landed
+
+1. ~~**Fix `disposeSocket` terminal state.**~~ Landed. Disposal now closes the connection, clears its
+   handle, prevents reattachment, and truthfully records the terminal `closed` state.
+2. ~~**`explainSocketSendFailure(socket)` query.**~~ Landed. The plain-data query distinguishes terminal
+   disposal, no connection, and each non-open phase without invoking or mutating the backend.
+3. ~~**`enableSocketGuards` module.**~~ Landed. The separately imported, opt-in guard warns once for an
+   unsupported connection and for send/close/enable-signals commands on a disposed socket; core stays
+   silent by default.
+4. ~~**Test the disposed-socket surfaces.**~~ Landed. Reattach, close, send, signal enablement, late event
+   delivery, connection release, and readiness are covered after disposal.
+5. ~~**Alias/`Readonly` audit on `sendSocketMessage`.**~~ Landed. The command remains read-only, forwards
+   binary data by identity, propagates an open backend's false result, and explicitly covers an open
+   state with a null connection.
 
 ## Backlog
 
