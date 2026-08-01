@@ -13,6 +13,9 @@
       "path": "../loader"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../signals"
     },
     {

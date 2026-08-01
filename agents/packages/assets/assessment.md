@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/assets'
-updated: 2026-07-21
+updated: 2026-07-31
 basedOn: ./review.md
 ---
 
@@ -14,11 +14,21 @@ basedOn: ./review.md
 
 ## Recommended
 
-Sweep-safe, within `@flighthq/assets`, no design fork:
+_None open._ Re-verified against live source on 2026-07-31 (3 source files, 3 test files, 32 tests).
+All three sweep items landed and are recorded under [Landed](#landed), outside this section so the TODO
+generator stops reporting them as work.
 
-1. **`explainAssetLoad(library, id)` diagnostic query** — a shakeable plain-data query returning why an id is not resident (no descriptor / no adapter for its type / load in flight / never acquired / freed at zero), per the diagnostics inversion rule; every silent sentinel (`getAsset` null, refcount 0) gets an `explain*`. — review.md gap 3.
-2. **`enableAssetGuards` module** — move the inline misuse-guidance strings in `acquireAsset`'s rejections into a separately-importable guard layer emitting through `@flighthq/log` (the status log already flags this deferral); the core keeps terse rejects. — review.md gap 3.
-3. **Residency introspection** — `getAssetIds(library)` (or equivalent) enumerating resident/held entries, and a group-membership read (`getAssetGroupIds(library, name)`), so shutdown and debug passes can audit what is still held. Additive queries, no behavior change. — review.md gap 4.
+## Landed
+
+1. ~~**`explainAssetLoad(library, id)` diagnostic query.**~~ Landed. The plain-data query distinguishes a
+   missing descriptor, missing type adapter, never-acquired catalog entry, in-flight load, resident value,
+   and an entry freed at reference-count zero without initiating work.
+2. ~~**`enableAssetGuards` module.**~~ Landed. Acquire failures retain terse rejected promises in core;
+   per-library opt-in guards emit once-only guidance through `@flighthq/log` for missing descriptors and
+   loaders. Disabled/default libraries remain silent, and enabling one library cannot affect another.
+3. ~~**Residency introspection.**~~ Landed. `getAssetIds` returns a detached insertion-ordered snapshot of
+   held loading/resident entries, while `getAssetGroupIds` returns a detached snapshot of declared group
+   membership. Freed entries disappear from live residency enumeration.
 
 ## Backlog
 

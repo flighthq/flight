@@ -55,13 +55,15 @@ export interface AssetEntry {
   resident: boolean;
 }
 
-// Opaque per-library runtime: the open adapter registry keyed by AssetType, the descriptor map keyed
-// by id, the live cache entries keyed by id, and the group→member-ids index. Application code treats
-// this as internal; it is read and written only by the @flighthq/assets functions.
+// Opaque per-library runtime: the open adapter registry, descriptor map, live cache entries,
+// group→member-ids index, freed-id history used by diagnostics, and optional acquire guard. Application
+// code treats this as internal; it is read and written only by the @flighthq/assets functions.
 export interface AssetLibraryRuntime {
+  acquireGuard: AssetAcquireGuard | null;
   adapters: Map<AssetType, AssetLoaderAdapter>;
   descriptors: Map<string, AssetDescriptor>;
   entries: Map<string, AssetEntry>;
+  freedIds: Set<string>;
   groups: Map<string, string[]>;
 }
 
@@ -71,6 +73,19 @@ export interface AssetLibraryRuntime {
 export interface AssetLibrary {
   runtime: AssetLibraryRuntime;
 }
+
+// Plain-data state returned by explainAssetLoad. `type` is null only when the id has no descriptor;
+// `refCount` is nonzero only while an entry is held (loading or resident).
+export interface AssetLoadExplanation {
+  readonly id: string;
+  readonly refCount: number;
+  readonly status: 'freed' | 'loading' | 'missing-descriptor' | 'missing-loader' | 'never-acquired' | 'resident';
+  readonly type: AssetType | null;
+}
+
+// Optional core hook installed by enableAssetGuards. Kept on each library runtime so enabling
+// diagnostics for one library cannot change another library or create process-global policy.
+export type AssetAcquireGuard = (library: Readonly<AssetLibrary>, explanation: Readonly<AssetLoadExplanation>) => void;
 
 // Aggregate preload progress for loadAssetGroup: `loaded` members settled of `total` scheduled.
 export interface AssetLoadProgress {
