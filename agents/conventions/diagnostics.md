@@ -50,6 +50,30 @@ This is the constructive twin of the `no-warning-comments` lint rule: lint close
 - Guards attach via existing nullable hook/runtime slots — never a new branch in a core hot path.
 - **Warn only — no strict/throw mode.** Throwing on misuse changes control flow between dev and prod and violates the sentinel rule. Tests that want hard failure assert on a memory log sink.
 
+### What is NOT a missing guard
+
+A comment mentioning the caller is a **lead, not a verdict** — grepping for "caller must" finds far more
+sanctioned comments than defects. Every candidate below was verified by following the call chain and found
+legitimate; they are listed so a later sweep does not re-flag them. The banned class is narrow: a comment
+that warns about **misuse the runtime could detect and report**. These are not that:
+
+- **Return-value contracts.** `applyCanvasMaterial` returns true when it called `ctx.save()` and the caller
+  must `ctx.restore()`. That is the meaning of the return value, and both callers honour it. A guard cannot
+  improve on a boolean whose entire job is to carry the obligation.
+- **Sentinel explanations.** `shapeStrokeOutline` telling the caller to fall back to the raster path when a
+  style is inexpressible is the sentinel's documented meaning — the thing an `explain*` query exists to say.
+- **Ownership and aliasing.** A borrowed backdrop the registry never owns, or a physics buffer that is
+  rewritten every step and must not be retained. AGENTS.md sanctions these explicitly, and neither is
+  cheaply observable at runtime.
+- **Coordinate-space and impurity semantics.** `resolveGlTexture` leaving its result bound to `TEXTURE_2D`,
+  or a reflection flipping triangle winding. These describe what the function *is*, not a mistake to catch.
+- **Internal preconditions.** A non-exported helper's "callers must resolve X first" is an internal
+  invariant, which the sentinel rule says not to validate — correct usage cannot reach it.
+
+The three that *were* real — `easeSteps`' degenerate `jumpNone`, `clipRegion`'s double release, and
+`audioMixer`'s writes that reach no mixer — share one property none of the above have: a wrong call is
+silently accepted and the damage surfaces later somewhere else. That is the test.
+
 ### Which guards exist
 
 Per-package enablers are the primitive, and there is deliberately no single global switch that turns
