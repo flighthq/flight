@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/spatial'
-updated: 2026-07-30
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
@@ -10,13 +10,26 @@ See [charter](./charter.md) for blessed direction; evidence in [review](./review
 
 ## Recommended
 
-Sweep-safe, within-package, no design fork:
+_None open._ Re-verified against live source on 2026-08-01 (6 source files, 4 test files, 69 tests,
+13 main exports). The completed items are recorded under [Landed](#landed), outside this section so the
+TODO generator stops reporting them as work.
 
-1. **De-allocate the pair enumeration's cell scan** — drop the `[...ids]` spread in `_queryGridPairs` (iterate the set with a reused scratch array on the grid, like `seen`). Keeps the seam signature untouched while honoring the North star's allocation-frugality. (Changing the `SpatialPair` result protocol itself is a seam decision — Backlog.)
-2. **Finish the guard coverage `setSpatialIndexingGuard` opened** — the seam, the notice record, and `formatSpatialIndexingNotice` shipped 2026-07-30, and non-finite bounds and oversized extents now report through them. Still unreported, and all in the same shape: `cellSize <= 0` (which makes every cell index NaN — the insert path survives it by routing to overflow, but the grid is useless and says nothing), inverted bounds (`max < min`), and update/remove of an id never inserted (a silent insert / silent no-op). Note the original form of this item — an `enableSpatialGuards` that warns through `@flighthq/log` — **cannot be built in this package**: core-layer packages may not depend on `@flighthq/log`. See charter Open direction 5.
-3. **Brute-force property tests** — randomized insert/update/remove churn compared against an O(n²) reference for pairs, region, point, and ray queries (seeded, deterministic). This is the test shape that catches canonical-cell and DDA edge cases the current 15 tests cannot.
-4. **Ray edge-case tests** — a ray passing exactly through cell corners, a ray starting inside an object, and a ray entering the occupied range from far outside.
-5. **Extend the brute-force property tests over the overflow path** — item 3's O(n²) reference comparison is now worth more than it was: the grid has two storage paths (cells and overflow) that must agree, and mixed-size churn across the `MAX_INDEXED_CELLS_PER_OBJECT` boundary is exactly where a divergence between them would hide. The 2026-07-30 tests pin the transitions by hand; randomized churn is what would find the case nobody thought to write.
+## Landed
+
+1. ~~**De-allocate the pair enumeration's cell scan.**~~ Landed. Each cell copies ids into one
+   grid-owned scratch array that is cleared and reused, replacing the per-cell `[...ids]` allocation
+   without changing the `SpatialPair[]` seam.
+2. ~~**Finish the guard coverage `setSpatialIndexingGuard` opened.**~~ Landed. Structured notices now
+   identify insert/update/remove and report invalid cell sizes, inverted bounds, and missing-id
+   update/remove calls in addition to non-finite bounds and overflow. Invalid cell sizes use the
+   bounded overflow path so every query remains correct; inverted bounds decline with `false`.
+3. ~~**Add brute-force property tests.**~~ Landed. Four deterministic xorshift seeds drive 400 churn
+   steps against independent O(n²) pair, region, point, and ray oracles. A mutation removing half of
+   the canonical-cell predicate fails with a duplicate pair at a recorded seed and step.
+4. ~~**Add ray edge-case tests.**~~ Landed. Exact cell-corner traversal, origin-inside-object, and
+   far-outside occupied-range entry each have direct coverage.
+5. ~~**Extend the brute-force properties over overflow.**~~ Landed. Every seed explicitly crosses
+   cells→overflow→cells before mixed-size random churn continues across both storage paths.
 
 ## Backlog
 
@@ -32,3 +45,5 @@ Parked, with why:
 - [2026-07-31 · completed] `updateSpatialObject` compares the old and new covered cell ranges and,
   when unchanged, overwrites only the private stored bounds instead of removing and reinserting the
   object across its cells.
+- [2026-08-01 · picked] Pair-scan de-allocation, complete indexing-notice coverage, deterministic
+  brute-force properties over cells and overflow, and ray boundary coverage.

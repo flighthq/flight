@@ -27,9 +27,9 @@ export function createSpatialIndex(backend?: SpatialIndexBackend): SpatialIndex 
 
 // Adds an object to the index under `id` with its current bounds. The bounds are copied; the caller
 // may reuse its own value afterward. Returns false when the bounds cannot be indexed at all
-// (non-finite) — the object is then absent from every query rather than present at a nonsense
-// position. Oversized-but-finite bounds return true and stay fully queryable; the backend decides how
-// to hold them. explainSpatialIndexing reports which happened.
+// (non-finite or inverted) — the object is then absent from every query rather than present at a
+// nonsense position. Oversized-but-valid bounds return true and stay fully queryable; the backend
+// decides how to hold them. explainSpatialIndexing reports which happened.
 export function insertSpatialObject(
   index: Readonly<SpatialIndex>,
   id: SpatialObjectId,

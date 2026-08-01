@@ -118,14 +118,6 @@ Design calls to settle before building the affected entries:
 
 - `explainShapeJsonParse` diagnostics query — still open, but the prescription needs re-confirming before it is built
 
-### spatial (solid 66)
-
-- De-allocate the pair enumeration's cell scan
-- Finish the guard coverage `setSpatialIndexingGuard` opened
-- Brute-force property tests
-- Ray edge-case tests
-- Extend the brute-force property tests over the overflow path
-
 ### image (solid 68)
 
 - Fix `loadImageResourceFromUrl` abort handling
@@ -847,7 +839,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `spritesheet` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `spatial` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `spritesheet` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 
