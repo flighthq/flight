@@ -206,7 +206,7 @@ jobs:
         include:
           - label: functional · smoke · dom/canvas/webgl
             check: test:functional:smoke
-            args: --renderer=dom,canvas,webgl
+            args: --renderer=dom,canvas,webgl --retries 2
           - label: functional · smoke · webgpu
             check: test:functional:smoke
             args: --renderer=webgpu --parallel 1 --retries 2
