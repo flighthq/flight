@@ -1,24 +1,38 @@
 ---
 package: '@flighthq/image'
-updated: 2026-07-13
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
 # image — Assessment
 
-Based on the 2026-07-13 re-verified review (solid, 68/100). Since the prior assessment, `@flighthq/image-codec` has been built (charter Decisions #2/#3 executed): `detectImageMimeType` migrated there, so the former Recommended item "extend the sniffer with AVIF/SVG/ICO" leaves this cell with it — that work now belongs to the image-codec cell. The remaining Recommended items are re-verified as still open in source (abort leak, `crossOrigin: string`, `isImageResourceSameOrigin` name).
+Based on the 2026-07-13 re-verified review (solid, 68/100). Since the prior assessment, `@flighthq/image-codec` has been built (charter Decisions #2/#3 executed): `detectImageMimeType` migrated there, so the former Recommended item "extend the sniffer with AVIF/SVG/ICO" leaves this cell with it — that work now belongs to the image-codec cell. Re-verified against live source on 2026-08-01 (4 source files, 2 test files, 32 tests, 13 exports): all three of those remaining items — the abort leak, `crossOrigin: string`, and the `isImageResourceSameOrigin` name — have since landed, so this cell has no open Recommended work.
 
 The review keeps the capability gaps (loader→codec-registry routing, data constructor, `toBlob` export) in tension with charter Decision #1 ("package is at its natural scope ceiling"); those stay in Backlog as candidate Open directions rather than recommended against a blessed decision.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/image`, no cross-package coupling, no open design decision.
+_None open._ All three items landed and were re-verified against live source on 2026-08-01; they are
+recorded under [Landed](#landed) below, outside this section so the TODO generator stops reporting them as
+work.
 
-1. **Fix `loadImageResourceFromUrl` abort handling.** Verified 2026-07-13: the abort race still leaves the underlying fetch running (no `img.src = ''` cancel on abort) and the abort listener leaks on the success path. Straight bug fix in the existing loader.
+## Landed
 
-2. **Type `crossOrigin` as `'anonymous' | 'use-credentials'`** instead of `string` on `loadImageResourceFromUrl` (verified still `string`).
+1. ~~**Fix `loadImageResourceFromUrl` abort handling.**~~ Landed, both halves. Aborting now clears the
+   pending load (`img.src = ''` in the abort listener) and rejects with `signal.reason`, and the listener is
+   removed in a `finally` so it comes off on the success path as well as the abort path — the leak the item
+   described cannot occur on either branch. `signal?.throwIfAborted()` also covers the already-aborted case
+   before any element is created. Both behaviours are pinned by tests: one asserts the element's `src` is
+   emptied when the signal fires mid-decode, and one asserts `addEventListener` and `removeEventListener`
+   are each called once **with the same function reference**, which is what makes it a real leak check
+   rather than a call-count check.
 
-3. **Rename `isImageResourceSameOrigin` → `isImageUrlSameOrigin`.** It takes a URL, not an `ImageResource`, so the current name violates the "function name includes the type it operates on" rule. No consumers outside the package barrel.
+2. ~~**Type `crossOrigin` as `'anonymous' | 'use-credentials'`.**~~ Landed; the parameter carries the union,
+   not `string`.
+
+3. ~~**Rename `isImageResourceSameOrigin` → `isImageUrlSameOrigin`.**~~ Landed; the export is
+   `isImageUrlSameOrigin(url: string)`, and the barrel re-exports it under that name. No occurrence of the
+   old name remains.
 
 ## Backlog
 
