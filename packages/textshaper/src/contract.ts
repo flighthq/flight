@@ -1,3 +1,4 @@
+export * from './enableTextShaperGuards';
 export * from './textShaper';
 export * from './textShaperCache';
 export * from './textShaperCluster';
