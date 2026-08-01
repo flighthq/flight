@@ -17,7 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { isWgpuExternalImageSourceReady } from './wgpuExternalImageSource';
+import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
 import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
@@ -142,11 +142,17 @@ export function bindWgpuTexture(
   // internally, so premultipliedAlpha: true is the lossless pass-through; Image/ImageBitmap carry
   // straight alpha and get premultiplied on copy. (A straight-alpha texture under premultiplied
   // blend blows RGB out — it turned the semi-transparent shape panel opaque white.)
-  device.queue.copyExternalImageToTexture(
+  const copied = tryCopyWgpuExternalImageToTexture(
+    device.queue,
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: true },
-    [width, height],
+    width,
+    height,
   );
+  if (!copied) {
+    texture.destroy();
+    return null;
+  }
 
   // The copy fills level 0 only; render the remaining levels by downsampling (WebGPU has no
   // generateMipmap). Skipped for a single-level texture (mipLevelCount === 1).
@@ -224,11 +230,14 @@ export function bindWgpuVideoTexture(
   }
 
   if (entry.uploadedVersion !== image!.version) {
-    state.device.queue.copyExternalImageToTexture(
+    const copied = tryCopyWgpuExternalImageToTexture(
+      state.device.queue,
       { source: element, flipY: false },
       { texture: entry.texture, premultipliedAlpha: true },
-      [width, height],
+      width,
+      height,
     );
+    if (!copied) return entry.uploadedVersion < 0 ? null : entry;
     entry.uploadedVersion = image!.version;
   }
   return entry;
@@ -265,11 +274,17 @@ export function createWgpuTextureEntry(
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
-  device.queue.copyExternalImageToTexture(
+  const copied = tryCopyWgpuExternalImageToTexture(
+    device.queue,
     { source: canvas as GPUCopyExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: true },
-    [w, h],
+    w,
+    h,
   );
+  if (!copied) {
+    texture.destroy();
+    return null;
+  }
 
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
@@ -438,10 +453,12 @@ export function updateWgpuTextureEntry(
   const h = Math.max(1, canvas.height);
   if (!isWgpuExternalImageSourceReady(canvas, w, h)) return;
 
-  device.queue.copyExternalImageToTexture(
+  tryCopyWgpuExternalImageToTexture(
+    device.queue,
     { source: canvas, flipY: false },
     { texture: entry.texture, premultipliedAlpha: true },
-    [w, h],
+    w,
+    h,
   );
 }
 
@@ -534,11 +551,17 @@ function uploadWgpuImageResourceEntry(
     mipLevelCount,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
-  device.queue.copyExternalImageToTexture(
+  const copied = tryCopyWgpuExternalImageToTexture(
+    device.queue,
     { source: resource.source as GPUCopyExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: premultiply },
-    [width, height],
+    width,
+    height,
   );
+  if (!copied) {
+    texture.destroy();
+    return null;
+  }
   if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;

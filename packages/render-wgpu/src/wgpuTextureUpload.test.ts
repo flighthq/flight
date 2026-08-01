@@ -28,7 +28,9 @@ describe('uploadWgpuTextureElement', () => {
   it('drives copyExternalImageToTexture with the external source', () => {
     const device = makeDevice();
     const texture = {} as GPUTexture;
-    const source = {} as GPUCopyExternalImageSource;
+    const source = document.createElement('canvas');
+    source.width = 4;
+    source.height = 4;
     uploadWgpuTextureElement(device, texture, [0, 0, 0], 4, 4, source);
     expect(device.queue.copyExternalImageToTexture).toHaveBeenCalledWith(
       { source },
@@ -39,21 +41,22 @@ describe('uploadWgpuTextureElement', () => {
 
   it('skips a copy with a zero-sized extent', () => {
     const device = makeDevice();
-    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 0, 4, {} as GPUCopyExternalImageSource);
+    const source = document.createElement('canvas');
+    source.width = 4;
+    source.height = 4;
+    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 0, 4, source);
     expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
   });
 
-  it('skips a copy while a 2D canvas context is lost', () => {
+  it('skips a copy when the browser cannot snapshot the source', () => {
     const device = makeDevice();
     const canvas = document.createElement('canvas');
     canvas.width = 4;
     canvas.height = 4;
-    const getContext = vi
-      .spyOn(canvas, 'getContext')
-      .mockReturnValue({ isContextLost: () => true } as unknown as GPUCanvasContext);
-    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 4, 4, canvas);
-    expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
-    getContext.mockRestore();
+    vi.mocked(device.queue.copyExternalImageToTexture).mockImplementation(() => {
+      throw new TypeError('Failed to copy content from external image.');
+    });
+    expect(() => uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 4, 4, canvas)).not.toThrow();
   });
 });
 
@@ -61,7 +64,10 @@ describe('uploadWgpuTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const device = makeDevice();
     const texture = {} as GPUTexture;
-    const image = { source: {} as CanvasImageSource, width: 4, height: 4 } as unknown as Image;
+    const source = document.createElement('canvas');
+    source.width = 4;
+    source.height = 4;
+    const image = { source, width: 4, height: 4 } as unknown as Image;
     uploadWgpuTextureImageResource(device, texture, [0, 0, 0], image);
     expect(device.queue.copyExternalImageToTexture).toHaveBeenCalledTimes(1);
     expect(device.queue.writeTexture).not.toHaveBeenCalled();
