@@ -50,7 +50,8 @@ under-register a built-in relative to door 1. If you register `'BloomEffect'` yo
 `defaultGlBloomEffectRunner`, you have what `registerGlBloomEffect(state)` would have given you, and
 nothing is silently missing. Choose between the doors on ergonomics, not on completeness.
 
-Coverage is filled in on GL; other backends are at varying stages, and §3 is how you tell which.
+Coverage is complete in the sense that matters: on every backend the number of per-kind registrars equals
+the number of public runners exactly, so door 1 reaches every kind the backend implements and no more.
 
 ### Door 2 — generic, for built-ins today and for your own kinds always
 
@@ -82,25 +83,34 @@ support ticket to find out whether a backend can do something: ask the module. I
 `registerGlBloomEffect` exists, GL implements bloom. If the canvas equivalent does not exist, canvas does
 not implement it, and no call you could write would unlock it.
 
-**Two artifacts carry the signal, and they agree.** The per-kind registrar is the one to ask about first;
-the public runner is the second reading, and it is the more precise one where a backend's wrappers are
-still being filled in:
+**Two artifacts carry the signal, and they agree exactly.** Ask either:
 
-- `defaultGlBloomEffectRunner` exists → GL implements bloom.
-- `defaultCanvasBevelEffectRunner` does **not** exist → canvas does not implement bevel. There is nothing to
-  register, and nothing coming that a call would unlock.
+- `registerGlBloomEffect` exists → GL implements bloom. So does `defaultGlBloomEffectRunner`.
+- Neither exists for a kind a backend does not implement. There is nothing to register, and nothing coming
+  that a call would unlock.
 
-The runner cannot drift from the implementation, because it *is* the implementation — which is why the
-counts below are derived from the exported runners rather than from any hand-maintained list.
+Measured on 2026-08-01, the per-kind registrar count equals the public runner count on **every** backend —
+46/46 on GL, 44/44 on WGPU, 15/15 on canvas. That one-to-one correspondence is the rule holding in practice:
+a wrapper exists exactly where an implementation does. The runner cannot drift from the implementation
+because it *is* the implementation, and the wrapper cannot drift from the runner because it is a one-line
+call to the generic door with that runner.
 
-Derived from source on 2026-07-31, that gives: **GL 47 effect kinds, WGPU 46, canvas 39.** WGPU lacks
-exactly one that GL has (`CustomShader`). Canvas lacks eight: `Bevel`, `Blend`, `Composite`,
-`CustomShader`, `GradientBevel`, `GradientGlow`, `InnerGlow`, `InnerShadow`. Nothing exists on canvas that
-is missing on GL.
+Current coverage, derived from source on 2026-08-01: **GL 46 effect kinds, WGPU 44, canvas 15.** WGPU lacks
+two that GL has (`BokehDepthOfField`, `CustomShader`). Canvas implements the layer-style family
+(`DropShadow`, `OuterGlow`, `InnerGlow`, `InnerShadow`, `Bevel`, `GradientBevel`, `GradientGlow`), plus
+`Blur`/`Bloom`, `Blend`/`Composite`, and four stylize kinds (`Pixelate`, `Scanlines`, `FilmGrain`,
+`Vignette`). What it lacks is what a 2D canvas context cannot cheaply do: anything reading a depth or
+velocity G-buffer (`Ssao`, `GodRays`, `ScreenSpaceFog`, `MotionBlur`, `ContactShadows`), the advanced blur
+and lens family, the antialiasing passes, and — worth noting because it is easy to assume otherwise — the
+colour-grade kinds `ToneMap`, `WhiteBalance` and `Posterize`. Nothing exists on canvas that is missing on GL.
 
-These counts were derived from one clone on 2026-07-31 and the GL per-kind wrappers landed in a series
-that clone did not yet carry, so treat the exact numbers as a cross-check rather than as the register — the
-derivation method is the durable part, and you can rerun it against whatever build you hold.
+These numbers move, and they moved recently in both directions: canvas gained `InnerGlow`, `InnerShadow`,
+`Bevel`, `GradientBevel` and `GradientGlow` as real implementations, while a separate change removed runners
+that were registered but unrealized. **The second kind of change is the rule being enforced, not a
+regression** — a runner that answered "yes" and did nothing was exactly the stub this model forbids, and
+deleting it makes the count smaller and the signal true. Re-derive rather than trusting a number in a
+document: the registrars and runners in the build you hold are the register.
+
 
 ## 4. What a missed registration tells you now
 
@@ -182,5 +192,6 @@ or WebGPU for the whole scene instead.
   under-registers a built-in (§2).
 - DOM's batch exclusions are a recorded design position with two sanctioned embed paths (§6), not an
   unfinished area.
-- Still in flight at the time of writing: the generated capability matrix and a canvas-backend sweep.
-  Neither changes the model above.
+- Door 1 is filled in: every backend's per-kind registrar count now equals its runner count exactly (§3).
+- Still in flight at the time of writing: the generated capability matrix, and canvas backend coverage,
+  which is actively growing. Neither changes the model above.
