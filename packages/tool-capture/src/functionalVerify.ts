@@ -25,12 +25,19 @@ const DEFAULT_MIN_COVERAGE = 0.0008;
 const BACKGROUND_CHANNEL_TOLERANCE = 6;
 const FINGERPRINT_GRID = 16;
 
-// Both budgets are the verifier's own, and both must expire inside the runner's 15s outer wait
-// (captureEntry.ts) — a bound that fires after it is never seen, and the run reports the bare stalled
-// `pending` it was meant to replace. Worst case here is one full frame wait followed by a stalled
-// readback, so they are sized to sum below that ceiling with room left to publish the failure.
-const PRESENTED_FRAME_TIMEOUT_MS = 4_000;
-const WGPU_READBACK_TIMEOUT_MS = 8_000;
+// Shares of the runner's per-page budget, not fixed milliseconds. Both of the verifier's waits expire
+// inside the runner's outer wait — a bound that fires after it is never seen, and the run reports the
+// bare stalled `pending` it was meant to replace — so the worst case (a full frame wait followed by a
+// stalled readback) must sum below that ceiling with room left to publish the failure. That invariant
+// is relative, which is exactly why these cannot be constants: written as 4s and 8s they encoded a 15s
+// ceiling, and when the ceiling moved to give a contended runner more room, they silently kept the old
+// one and converted slow-but-working readbacks into hard failures.
+//
+// Same rule captureTimeout.ts states for the runner-side waits, now covering the page's: one number
+// governs all of them, and moving it moves them together.
+const PRESENTED_FRAME_BUDGET_SHARE = 4 / 15;
+const WGPU_READBACK_BUDGET_SHARE = 8 / 15;
+const FALLBACK_CAPTURE_TIMEOUT_MS = 15_000;
 
 export type FunctionalRenderOracle = (bitmap: Readonly<Bitmap>) => void | Promise<void>;
 
@@ -85,6 +92,7 @@ export interface FunctionalWgpuTarget {
 export type FunctionalTarget = FunctionalCanvasTarget | FunctionalDomTarget | FunctionalGlTarget | FunctionalWgpuTarget;
 
 type VerificationWindow = typeof window & {
+  __ftCaptureTimeoutMs?: number;
   __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
   __ftRenderImage?: string;
   __ftTarget?: FunctionalTarget;
@@ -196,7 +204,9 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     // Waiting buys nothing there and costs a dependency on the browser still scheduling frames for a
     // canvas it never presents — a dependency that holds locally and is exactly what stalls under a
     // contended CI adapter.
-    if (render !== 'webgpu') await waitForPresentedFrame(render, PRESENTED_FRAME_TIMEOUT_MS);
+    if (render !== 'webgpu') {
+      await waitForPresentedFrame(render, getCaptureWaitBudgetMs(PRESENTED_FRAME_BUDGET_SHARE));
+    }
 
     result.stage = 'readingBack';
     const bitmap = await snapshotFunctionalRender();
@@ -230,7 +240,9 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
 export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
-  if (target?.kind === 'webgpu') return createBitmapFromWgpuRenderState(target.state, WGPU_READBACK_TIMEOUT_MS);
+  if (target?.kind === 'webgpu') {
+    return createBitmapFromWgpuRenderState(target.state, getCaptureWaitBudgetMs(WGPU_READBACK_BUDGET_SHARE));
+  }
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   if (target?.kind === 'webgl') target.state.gl.finish();
@@ -291,6 +303,18 @@ function findRenderCanvas(): HTMLCanvasElement | null {
 // for a canvas nothing composites. Without the bound the verifier sits in `awaitingFrame` until the
 // runner's outer wait gives up and reports the useless `state: pending` — the bound turns that into a
 // failure that names the await it died in, and a failure can pass on retry where a hang cannot.
+// One wait's slice of the budget the runner gave this page. The runner injects that budget before any
+// page script runs (captureBrowser's init script); a page opened outside the harness has no injected
+// value and falls back to the runner's own default, which is why the number below is duplicated rather
+// than imported — captureTimeout.ts resolves it from process/CLI and cannot load in a browser page.
+// Keep the fallback in step with DEFAULT_CAPTURE_TIMEOUT_MS there.
+function getCaptureWaitBudgetMs(share: number): number {
+  const injected = (window as VerificationWindow).__ftCaptureTimeoutMs;
+  const budget =
+    typeof injected === 'number' && Number.isFinite(injected) && injected > 0 ? injected : FALLBACK_CAPTURE_TIMEOUT_MS;
+  return Math.round(budget * share);
+}
+
 function waitForPresentedFrame(render: string, timeoutMs: number): Promise<void> {
   const raf = (window as VerificationWindow).__ftRealRequestAnimationFrame ?? window.requestAnimationFrame.bind(window);
   return new Promise((resolve, reject) => {

@@ -8,13 +8,15 @@
 
 import type { Browser, BrowserContext } from '@playwright/test';
 
+import { getCaptureTimeoutMs } from './captureTimeout.js';
+
 export interface CaptureBrowserSession {
   browser: Browser;
   context: BrowserContext;
 }
 
 export async function launchBrowser(
-  options: { captureFrames?: number; verify?: boolean; observe?: boolean } = {},
+  options: { captureFrames?: number; verify?: boolean; observe?: boolean; timeoutMs?: number } = {},
 ): Promise<CaptureBrowserSession> {
   const { chromium } = await import('@playwright/test');
 
@@ -47,22 +49,30 @@ export async function launchBrowser(
   const captureFrames = options.captureFrames ?? 0;
   const verify = options.verify ?? true;
   const observe = options.observe ?? false;
+  // The in-page verifier bounds its own waits, and those bounds only mean anything relative to the
+  // budget the runner gives one page. Hand it the same number the runner-side waits use, so raising the
+  // budget for a contended machine moves every wait together instead of leaving the page's pinned to
+  // whatever the runner default happened to be when they were written.
+  const timeoutMs = options.timeoutMs ?? getCaptureTimeoutMs();
   await context.addInitScript(
-    (args: { frames: number; verify: boolean; observe: boolean }) => {
+    (args: { frames: number; verify: boolean; observe: boolean; timeoutMs: number }) => {
       const flags = window as unknown as {
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
         __flightCaptureVerify?: boolean;
         __ftBestGlFrame?: { coverage: number; dataUrl: string };
         __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
+        __ftCaptureTimeoutMs?: number;
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
         __ftTarget?: { kind?: string };
         __ftVerification?: { fingerprint?: string | null; state?: 'pending' | 'passed' | 'failed' };
         __ftWarmupFrames?: number;
       };
-      const { frames, verify, observe } = args;
+      const { frames, verify, observe, timeoutMs } = args;
       flags.__flightCapture = true;
       flags.__flightCaptureVerify = verify;
+      // Set before the frame-halt early-return below: the verifier reads this budget in every mode.
+      flags.__ftCaptureTimeoutMs = timeoutMs;
 
       // Inline mulberry32 — the exact algorithm of the SDK's createRandomSource (@flighthq/math). It is
       // copied (not imported) on purpose: addInitScript is serialized and injected before any module
@@ -307,7 +317,7 @@ export async function launchBrowser(
           callback(time);
         });
     },
-    { frames: captureFrames, verify, observe },
+    { frames: captureFrames, verify, observe, timeoutMs },
   );
 
   return { browser, context };
