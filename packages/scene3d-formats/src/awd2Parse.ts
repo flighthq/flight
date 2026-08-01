@@ -3,12 +3,15 @@ import {
   copyMatrix4,
   createMatrix4,
   createTransform3D,
+  createVector3,
   decomposeMatrix4ToTransform3D,
   inverseMatrix4,
   multiplyMatrix4,
+  normalizeVector3,
 } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createAmbientLight, createDirectionalLight, createPointLight } from '@flighthq/lighting/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
@@ -23,6 +26,7 @@ import type {
   AnimationTrack,
   AwdDecompressor,
   ImportDiagnostic,
+  Light,
   Material,
   MaterialLike,
   Matrix4,
@@ -50,6 +54,8 @@ import {
 import {
   AWD2_BLOCK_CONTAINER,
   AWD2_BLOCK_HEADER_BYTES,
+  AWD2_BLOCK_LIGHT,
+  AWD2_BLOCK_LIGHT_PICKER,
   AWD2_BLOCK_MATERIAL,
   AWD2_BLOCK_MESH_INSTANCE,
   AWD2_BLOCK_SKELETON,
@@ -68,6 +74,25 @@ import {
   AWD2_DATA_UINT8,
   AWD2_FORMAT_VERSION,
   AWD2_HEADER_BYTES,
+  AWD2_LIGHT_DEFAULT_AMBIENT,
+  AWD2_LIGHT_DEFAULT_DIFFUSE,
+  AWD2_LIGHT_DEFAULT_FALLOFF,
+  AWD2_LIGHT_DEFAULT_RADIUS,
+  AWD2_LIGHT_DEFAULT_RGB,
+  AWD2_LIGHT_DEFAULT_SPECULAR,
+  AWD2_LIGHT_PROP_AMBIENT,
+  AWD2_LIGHT_PROP_AMBIENT_COLOR,
+  AWD2_LIGHT_PROP_COLOR,
+  AWD2_LIGHT_PROP_DIFFUSE,
+  AWD2_LIGHT_PROP_DIRECTION_X,
+  AWD2_LIGHT_PROP_DIRECTION_Y,
+  AWD2_LIGHT_PROP_DIRECTION_Z,
+  AWD2_LIGHT_PROP_FALLOFF,
+  AWD2_LIGHT_PROP_RADIUS,
+  AWD2_LIGHT_PROP_SHADOW_MAPPER,
+  AWD2_LIGHT_PROP_SPECULAR,
+  AWD2_LIGHT_TYPE_DIRECTIONAL,
+  AWD2_LIGHT_TYPE_POINT,
   AWD2_MAGIC_0,
   AWD2_MAGIC_1,
   AWD2_MAGIC_2,
@@ -106,9 +131,17 @@ export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?:
 
 // Parses an Away3D AWD 2.x binary file into a format-neutral Scene3DDocument. The 12-byte header (magic
 // `AWD`, version, flags, compression, body length) is validated, then the block stream is walked to
-// extract geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), material
-// blocks (type 81), texture blocks (type 82), and the skeleton block (type 101). Mesh instances reference
-// geometry and material blocks by block ID; materials reference texture blocks the same way.
+// extract geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), light
+// blocks (type 41), light-picker blocks (type 51), material blocks (type 81), texture blocks (type 82),
+// and the skeleton block (type 101). Mesh instances reference geometry and material blocks by block ID;
+// materials reference texture blocks the same way.
+//
+// Each AWD light block fills the document's `lights` placement table. One AWD light is a compound — a
+// punctual term plus its own ambient term on the same entity — so it imports as a DirectionalLight or
+// PointLight PLUS a sibling AmbientLight whenever the file gave it a non-zero ambient; see
+// buildAwdDocumentLights. Light-picker blocks are read but never built from: Away3D scopes lights per
+// MATERIAL through a picker, and Flight's light set is a scene-wide per-draw argument, so a file whose
+// pickers do not all select every light records a Skip diagnostic and imports every light as scene-wide.
 //
 // The file's skeleton (if any) becomes a skeleton-group + joint node subtree in the document node table
 // (`nodes`) plus one entry in `skins` (its `joints` are those joint node indices, its `inverseBind` the
@@ -159,6 +192,8 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   const materialBlocks = new Map<number, ParsedMaterial>();
   const textureBlocks = new Map<number, ParsedTexture>();
   const skeletonBlocks = new Map<number, ParsedSkeleton>();
+  const lightBlocks = new Map<number, ParsedLight>();
+  const lightPickerBlocks = new Map<number, ParsedLightPicker>();
 
   // Blocks this walk does not consume, tallied by (namespace, blockType) so one diagnostic is reported per
   // distinct kind rather than one per occurrence — an unknown block type usually repeats for every object
@@ -216,6 +251,19 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
           diagnostics,
         );
         if (meshInst !== null) meshInstanceBlocks.set(blockId, meshInst);
+      } else if (blockType === AWD2_BLOCK_LIGHT) {
+        const light = parseLightBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          matrixWide,
+          diagnostics,
+        );
+        if (light !== null) lightBlocks.set(blockId, light);
+      } else if (blockType === AWD2_BLOCK_LIGHT_PICKER) {
+        const picker = parseLightPickerBlock(view, source, blockDataStart, blockDataStart + blockLength, diagnostics);
+        if (picker !== null) lightPickerBlocks.set(blockId, picker);
       } else if (blockType === AWD2_BLOCK_MATERIAL) {
         const material = parseMaterialBlock(view, source, blockDataStart, blockDataStart + blockLength, diagnostics);
         if (material !== null) materialBlocks.set(blockId, material);
@@ -404,6 +452,35 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
 
   for (const blockId of nodeIndexForBlock.keys()) {
     if (!parented.has(blockId)) document.scenes[0].rootNodes.push(nodeIndexForBlock.get(blockId)!);
+  }
+
+  // Lights are built after the node passes so a light parented to a container resolves to that container's
+  // document node index. They fill the document's `lights` PLACEMENT TABLE, not the node graph — a light is
+  // not a scene member in Flight, it is a per-draw argument the caller reads off the document.
+  const lightDrops = new Map<string, AwdLightDropTally>();
+  for (const light of lightBlocks.values()) {
+    buildAwdDocumentLights(light, nodeIndexForBlock.get(light.parentId), document, lightDrops);
+  }
+  flushAwdLightDrops(lightDrops, diagnostics);
+
+  for (const [blockId, picker] of lightPickerBlocks) {
+    for (const lightId of picker.lightIds) {
+      if (!lightBlocks.has(lightId)) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'awd2.light-picker-missing-light',
+          'parseAwd2',
+          { block: blockId, light: lightId },
+        );
+      }
+    }
+  }
+  if (isAwdLightScopeDropped(new Set(lightBlocks.keys()), lightPickerBlocks)) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'awd2.light-scope-dropped', 'parseAwd2', {
+      lights: lightBlocks.size,
+      pickers: lightPickerBlocks.size,
+    });
   }
 
   // The file's skeleton animations become document animations whose channels bind by joint node index. Uses
@@ -1048,6 +1125,39 @@ interface ParsedMeshInstance {
   transform: Float64Array;
 }
 
+// A parsed AWD light block (type 41), with every AWD default already resolved (an absent property is a
+// defined value in this format, not an absence the document has to carry). `rgb`/`ambientRgb` are 24-bit
+// 0xrrggbb; `diffuse` and `ambient` are the two intensities the one block carries. `directionX/Y/Z` are
+// still in AWD's LEFT-handed space and meaningful only for a directional light; `radius`/`fallOff` only
+// for a point light. `hasRadius` records whether the file actually wrote the falloff-start distance, which
+// Flight's single-cutoff `range` cannot hold — the flag is what separates a real drop from a default.
+interface ParsedLight {
+  ambient: number;
+  ambientRgb: number;
+  castsShadow: boolean;
+  diffuse: number;
+  directionX: number;
+  directionY: number;
+  directionZ: number;
+  fallOff: number;
+  hasRadius: boolean;
+  lightType: number;
+  name: string;
+  parentId: number;
+  radius: number;
+  rgb: number;
+  specular: number;
+  transform: Float64Array;
+}
+
+// A parsed AWD light-picker block (type 51): the set of light block ids one picker selects. Away3D binds a
+// picker to a MATERIAL, so a file can light different materials with different subsets. Flight's light set
+// is per-draw and scene-wide, so pickers are read to detect and report that scoping, never to build with.
+interface ParsedLightPicker {
+  lightIds: number[];
+  name: string;
+}
+
 // A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId` are texture block ids (0 =
 // absent), `color`/`alpha` the diffuse base (null = absent). `numMethods` is the declared shading-method
 // count — the method bodies are not walked yet (resolveAwdMaterial records a Skip diagnostic when > 0). Other base flags
@@ -1685,6 +1795,140 @@ function parseMaterialBlock(
   };
 }
 
+// Parses a Light block (type 41). Layout:
+// Scene3DHeader(parentId → matrix → name) → lightType(uint8) → PropertyList → UserAttrList.
+// The matrix is the light's placement; Away3D applies it to a POINT light and ignores it for a
+// DIRECTIONAL one (whose aim lives in properties 21/22/23 as a world-space vector), so this parser
+// mirrors that rather than baking a rotation a directional light never used.
+function parseLightBlock(
+  view: Readonly<DataView>,
+  source: Readonly<Uint8Array>,
+  start: number,
+  end: number,
+  matrixWide: boolean,
+  diagnostics?: ImportDiagnostic[],
+): ParsedLight | null {
+  const dv = view as DataView;
+  let offset = start;
+
+  if (offset + 4 > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.light-truncated', 'parseLightBlock', {
+      field: 'parentId',
+    });
+    return null;
+  }
+  const parentId = dv.getUint32(offset, true);
+  offset += 4;
+
+  const floatSize = matrixWide ? 8 : 4;
+  if (offset + 12 * floatSize > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.light-truncated', 'parseLightBlock', {
+      field: 'transform',
+    });
+    return null;
+  }
+  const transformResult = readAwdTransform(view, offset, matrixWide);
+  offset = transformResult.end;
+
+  if (offset + 2 > end || offset + 2 + dv.getUint16(offset, true) > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.light-truncated', 'parseLightBlock', {
+      field: 'name',
+    });
+    return null;
+  }
+  const nameResult = readAwdString(view, source, offset);
+  offset = nameResult.end;
+
+  if (offset + 1 > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.light-truncated', 'parseLightBlock', {
+      field: 'lightType',
+    });
+    return null;
+  }
+  const lightType = (source as Uint8Array)[offset];
+  offset += 1;
+
+  const props = readAwdProperties(view, offset, end);
+  const values = props.values;
+  const hasRadius = values.has(AWD2_LIGHT_PROP_RADIUS);
+  return {
+    ambient: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_AMBIENT) ?? AWD2_LIGHT_DEFAULT_AMBIENT,
+    ambientRgb: readAwdPropertyUint32(view, values, AWD2_LIGHT_PROP_AMBIENT_COLOR) ?? AWD2_LIGHT_DEFAULT_RGB,
+    castsShadow: (readAwdPropertyUint8(view, values, AWD2_LIGHT_PROP_SHADOW_MAPPER) ?? 0) > 0,
+    diffuse: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_DIFFUSE) ?? AWD2_LIGHT_DEFAULT_DIFFUSE,
+    directionX: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_DIRECTION_X) ?? 0,
+    directionY: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_DIRECTION_Y) ?? -1,
+    directionZ: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_DIRECTION_Z) ?? 1,
+    fallOff: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_FALLOFF) ?? AWD2_LIGHT_DEFAULT_FALLOFF,
+    hasRadius,
+    lightType,
+    name: nameResult.value,
+    parentId,
+    radius: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_RADIUS) ?? AWD2_LIGHT_DEFAULT_RADIUS,
+    rgb: readAwdPropertyUint32(view, values, AWD2_LIGHT_PROP_COLOR) ?? AWD2_LIGHT_DEFAULT_RGB,
+    specular: readAwdPropertyNumber(view, values, AWD2_LIGHT_PROP_SPECULAR) ?? AWD2_LIGHT_DEFAULT_SPECULAR,
+    transform: transformResult.transform,
+  };
+}
+
+// Parses a LightPicker block (type 51). Layout:
+// name(VarString) → numLights(uint16) → lightIds(uint32 × N) → UserAttrList. Unlike most AWD blocks it
+// carries no property list.
+function parseLightPickerBlock(
+  view: Readonly<DataView>,
+  source: Readonly<Uint8Array>,
+  start: number,
+  end: number,
+  diagnostics?: ImportDiagnostic[],
+): ParsedLightPicker | null {
+  const dv = view as DataView;
+  let offset = start;
+
+  if (offset + 2 > end || offset + 2 + dv.getUint16(offset, true) > end) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.light-picker-truncated',
+      'parseLightPickerBlock',
+      { field: 'name' },
+    );
+    return null;
+  }
+  const nameResult = readAwdString(view, source, offset);
+  offset = nameResult.end;
+
+  if (offset + 2 > end) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.light-picker-truncated',
+      'parseLightPickerBlock',
+      { field: 'numLights' },
+    );
+    return null;
+  }
+  const numLights = dv.getUint16(offset, true);
+  offset += 2;
+
+  if (offset + numLights * 4 > end) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'awd2.light-picker-truncated',
+      'parseLightPickerBlock',
+      { field: 'lightIds', lights: numLights },
+    );
+    return null;
+  }
+  const lightIds: number[] = [];
+  for (let i = 0; i < numLights; i++) {
+    lightIds.push(dv.getUint32(offset, true));
+    offset += 4;
+  }
+
+  return { lightIds, name: nameResult.value };
+}
+
 // Parses a Texture block (type 82). Layout:
 // name(VarString) → texType(uint8) → dataLen(uint32) → data(dataLen bytes) → PropertyList → UserAttrList.
 // The embedded form carries a self-describing image payload (PNG/JPEG/…); the external form stores a
@@ -1790,6 +2034,32 @@ function readAwdPropertyFloat32(
   const entry = values.get(key);
   if (entry === undefined || entry.length < 4) return null;
   return (view as DataView).getFloat32(entry.offset, true);
+}
+
+// Reads a property whose float width the EXPORTER chose. AWD carries a global "wide properties" header
+// flag, but every property record is already byte-length prefixed, so the width is self-describing in the
+// data: an 8-byte field is a float64, anything else a float32. Reading the record rather than the flag
+// keeps a mixed-width or flag-disagreeing file readable, which a flag-driven reader would silently
+// misparse into garbage magnitudes.
+function readAwdPropertyNumber(
+  view: Readonly<DataView>,
+  values: Readonly<Map<number, { length: number; offset: number }>>,
+  key: number,
+): number | null {
+  const entry = values.get(key);
+  if (entry === undefined || entry.length < 4) return null;
+  const dv = view as DataView;
+  return entry.length >= 8 ? dv.getFloat64(entry.offset, true) : dv.getFloat32(entry.offset, true);
+}
+
+function readAwdPropertyUint8(
+  view: Readonly<DataView>,
+  values: Readonly<Map<number, { length: number; offset: number }>>,
+  key: number,
+): number | null {
+  const entry = values.get(key);
+  if (entry === undefined || entry.length < 1) return null;
+  return (view as DataView).getUint8(entry.offset);
 }
 
 function readAwdPropertyUint32(
@@ -1905,6 +2175,86 @@ function resolveAwdTexture(
     return createExternalTextureRef(parsed.url, null, document.resources);
   }
   return null;
+}
+
+// Appends one AWD light block to the document's light table. An AWD light is a COMPOUND: it carries a
+// punctual term (`color` × `diffuse`, aimed or placed) and its own ambient term (`ambientColor` ×
+// `ambient`) on the same entity. Flight models those as two separate descriptors, so one block emits a
+// DirectionalLight/PointLight plus — only when the file gave it a non-zero ambient — a sibling AmbientLight
+// named after it. Splitting is what makes the import lossless: folding the ambient into the punctual color
+// would tint the wrong term, and dropping it would lose the fill the author set.
+//
+// `node` binds the light to the document node its AWD parent block produced, so an animated parent carries
+// the light with it. A directional light's `transform` stays IDENTITY: its aim is the world-space
+// `direction` on the descriptor, exactly as Away3D reads it, and baking the block matrix in as well would
+// invite a consumer to rotate an already-world-space vector twice.
+function buildAwdDocumentLights(
+  light: Readonly<ParsedLight>,
+  nodeIndex: number | undefined,
+  document: Scene3DDocument,
+  drops: Map<string, AwdLightDropTally>,
+): void {
+  let descriptor: Light;
+  let transform: Transform3D;
+  if (light.lightType === AWD2_LIGHT_TYPE_DIRECTIONAL) {
+    // AWD aims its lights in a LEFT-handed space; the whole file is converted to Flight's right-handed one
+    // by negating z, the same single-axis flip readAwdTransform applies to every placement matrix.
+    const direction = createVector3(light.directionX, light.directionY, -light.directionZ);
+    normalizeVector3(direction, direction);
+    descriptor = createDirectionalLight({
+      castsShadow: light.castsShadow,
+      color: getAwdLightRgba(light.rgb),
+      direction,
+      intensity: light.diffuse,
+    });
+    transform = createTransform3D();
+  } else if (light.lightType === AWD2_LIGHT_TYPE_POINT) {
+    transform = awdTransformToTransform3D(light.transform);
+    descriptor = createPointLight({
+      castsShadow: light.castsShadow,
+      color: getAwdLightRgba(light.rgb),
+      intensity: light.diffuse,
+      position: createVector3(transform.position.x, transform.position.y, transform.position.z),
+      // Away3D's falloff runs from `radius` (full brightness) to `fallOff` (zero); Flight's `range` is the
+      // single cutoff distance, so the END maps and the START has nowhere to go.
+      range: light.fallOff,
+    });
+    if (light.hasRadius) {
+      tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-radius-dropped', { firstLight: light.name });
+    }
+  } else {
+    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-unsupported-type', {
+      firstLight: light.name,
+      firstType: light.lightType,
+    });
+    return;
+  }
+
+  // Away3D scales a light's specular response independently of its diffuse one. Flight's punctual lights
+  // carry a single intensity that drives both, so a file that pulled them apart loses that separation.
+  if (light.specular !== AWD2_LIGHT_DEFAULT_SPECULAR) {
+    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-specular-dropped', {
+      firstLight: light.name,
+      firstSpecular: light.specular,
+    });
+  }
+
+  document.lights.push({ descriptor, name: light.name || undefined, node: nodeIndex, transform });
+
+  if (light.ambient !== 0) {
+    document.lights.push({
+      descriptor: createAmbientLight({ color: getAwdLightRgba(light.ambientRgb), intensity: light.ambient }),
+      name: light.name ? `${light.name} Ambient` : undefined,
+      node: nodeIndex,
+      transform: createTransform3D(),
+    });
+  }
+}
+
+// Packs an AWD light's 24-bit 0xrrggbb color into a Flight 0xrrggbbaa one. A light has no alpha channel in
+// either model, so the imported color is always fully opaque.
+function getAwdLightRgba(rgb: number): number {
+  return (((rgb << 8) >>> 0) | 0xff) >>> 0;
 }
 
 // Packs an AWD material's diffuse into a Flight 0xrrggbbaa color. AWD stores the color as 24-bit 0xrrggbb
@@ -2289,6 +2639,61 @@ interface ParsedSkeletonPose {
 // put a false Drop on every skinned AWD file — including ones that import perfectly.
 function isAwdBlockHandledLater(blockType: number): boolean {
   return blockType === AWD2_BLOCK_SKELETON_POSE || blockType === AWD2_BLOCK_SKELETON_ANIMATION;
+}
+
+// One accumulated light-import drop: total `count` plus the first offender's `detail`, keyed by kind — a
+// file with fifty identically-configured lights states each loss once, not fifty times.
+interface AwdLightDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
+}
+
+// Records one offender against its kind tally, keeping the first offender's detail and bumping the count
+// for later ones. Mirrors tallyUnhandledAwdBlock; flushed by flushAwdLightDrops.
+function tallyAwdLightDrop(
+  tallies: Map<string, AwdLightDropTally>,
+  severity: ImportDiagnosticSeverity,
+  kind: string,
+  firstDetail: Record<string, boolean | number | string>,
+): void {
+  const existing = tallies.get(kind);
+  if (existing === undefined) tallies.set(kind, { count: 1, detail: firstDetail, kind, severity });
+  else existing.count++;
+}
+
+// Emits one crumb per accumulated light-drop kind, with buildAwdDocumentLights as the origin — the
+// function that detects and reports each of these losses.
+function flushAwdLightDrops(tallies: Readonly<Map<string, AwdLightDropTally>>, diagnostics?: ImportDiagnostic[]): void {
+  for (const tally of tallies.values()) {
+    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'buildAwdDocumentLights', {
+      ...tally.detail,
+      count: tally.count,
+    });
+  }
+}
+
+// Whether the file's light pickers scope lighting in a way Flight's scene-wide light set cannot express.
+// Away3D assigns a picker per MATERIAL, so a file can light one material with a subset of its lights;
+// Flight passes one light set to a whole draw. The scoping is representable only when every picker selects
+// exactly the full set of lights the file declares — then "each material's lights" and "the scene's lights"
+// are the same set and nothing is lost.
+//
+// A file with NO picker at all is not a loss and reports nothing: it expressed no scoping to drop, and the
+// document's light table is inert — the caller reads it and chooses what to draw with, so an unpicked
+// light lights nothing until someone asks it to.
+function isAwdLightScopeDropped(
+  lightBlockIds: ReadonlySet<number>,
+  pickers: Readonly<Map<number, ParsedLightPicker>>,
+): boolean {
+  if (lightBlockIds.size === 0) return false;
+  for (const picker of pickers.values()) {
+    const picked = new Set(picker.lightIds);
+    if (picked.size !== lightBlockIds.size) return true;
+    for (const id of lightBlockIds) if (!picked.has(id)) return true;
+  }
+  return false;
 }
 
 // Records one unhandled block against its (namespace, blockType) bucket, keeping the first block id seen.
