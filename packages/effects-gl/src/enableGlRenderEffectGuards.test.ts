@@ -80,6 +80,19 @@ describe('enableGlRenderEffectGuards', () => {
     expect(messageOf(entries[0])).toContain('test.unregistered-b');
   });
 
+  it('WARNS when a failed chain leaves a previously published destination stale', () => {
+    const state = createState();
+    enableGlRenderEffectGuards(state);
+
+    const entries = captureLog(() => {
+      expect(applyChain(state, ['test.stale-destination'], true)).toBe(false);
+    });
+
+    expect(entries.length).toBe(1);
+    expect(messageOf(entries[0])).toContain('STALE DESTINATION');
+    expect(messageOf(entries[0])).toContain('handle the false return');
+  });
+
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', () => {
     const state = createState();
     enableGlRenderEffectGuards(state);
@@ -105,13 +118,14 @@ describe('enableGlRenderEffectGuards', () => {
   });
 });
 
-function applyChain(state: GlRenderState, kinds: readonly string[]): boolean {
+function applyChain(state: GlRenderState, kinds: readonly string[], publishDestination = false): boolean {
   const pool = createGlRenderTexturePool();
   const source = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
   const dest = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
   const scratch = acquireGlRenderTexture(state, pool, { width: 8, height: 8 });
   // Realize the source so `source-unavailable` is not what is being measured here.
   writeGlRenderTextureTarget(state, source, () => {});
+  if (publishDestination) writeGlRenderTextureTarget(state, dest, () => {});
   const effects = kinds.map((kind) => ({ kind }) as unknown as Readonly<RenderEffect>);
   return applyGlRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
