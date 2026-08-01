@@ -28,7 +28,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (shader !== null) {
     flushWgpuQuadBatchWriter(state);
     state.applyBlendMode?.(state, renderProxy.blendMode);
-    if (resolveWgpuTexture(state, texture, true) === null) return;
+    if (resolveWgpuTexture(state, texture, true, 'linear') === null) return;
     shader.bind(state, renderProxy);
     return;
   }
@@ -40,7 +40,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   const material = renderProxy.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
-  const textureEntry = resolveWgpuTexture(state, texture, true);
+  const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
   if (textureEntry === null) return;
   ensureWgpuQuadBatchResources(state);
 

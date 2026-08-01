@@ -6,6 +6,7 @@ import type {
   GlTextureResolver,
   Image,
   RenderTexture,
+  TextureColorSpace,
   TextureSourceKind,
   TextureLike,
 } from '@flighthq/types/contract';
@@ -65,6 +66,7 @@ export function resolveGlTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
   premultiply = false,
+  colorSpace: TextureColorSpace = texture.colorSpace,
 ): WebGLTexture | null {
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
@@ -74,34 +76,39 @@ export function resolveGlTexture(
     runtime.registryMiss?.(3, sourceKind);
     return null;
   }
-  return resolver(state, texture, premultiply);
+  return resolver(state, texture, premultiply, colorSpace);
 }
 
 function resolveGlBitmapTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ): WebGLTexture | null {
   const bitmap = getTextureSource(texture) as Readonly<Bitmap> | null;
-  return bitmap === null
-    ? null
-    : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply, texture.colorSpace);
+  return bitmap === null ? null : bindGlBitmapTexture(state, bitmap, texture.sampler, null, premultiply, colorSpace);
 }
 
-function resolveGlCompressedImageTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {
+function resolveGlCompressedImageTexture(
+  state: GlRenderState,
+  texture: Readonly<TextureLike>,
+  _premultiply: boolean,
+  colorSpace: TextureColorSpace,
+): WebGLTexture | null {
   const image = getTextureSource(texture) as Readonly<CompressedImage> | null;
-  return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler, null, texture.colorSpace);
+  return image === null ? null : bindGlCompressedImageTexture(state, image, texture.sampler, null, colorSpace);
 }
 
 function resolveGlImageTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ): WebGLTexture | null {
   const image = getTextureSource(texture) as Readonly<Image> | null;
   return image === null
     ? null
-    : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply, texture.colorSpace);
+    : bindGlImageResourceTexture(state, image, texture.sampler, null, premultiply, colorSpace);
 }
 
 function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureLike>): WebGLTexture | null {

@@ -36,7 +36,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
-  const textureEntry = resolveWgpuTexture(state, texture, true);
+  const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
   if (textureEntry === null) return;
   const nodeMaterialData = tilemapNode.materialData;
   // Per-tile color adjustments, overriding the node-level tint for the tiles that carry one.

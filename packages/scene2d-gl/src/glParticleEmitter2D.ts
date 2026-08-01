@@ -134,7 +134,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   ensureInstanceCapacity(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  if (resolveGlTexture(state, atlas.texture, true) === null) return;
+  if (resolveGlTexture(state, atlas.texture, true, 'linear') === null) return;
 
   const gl = state.gl;
   const regions = atlas.regions;
