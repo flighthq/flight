@@ -23,11 +23,21 @@ export function acquireShapedRun(): ShapedRun {
 // into one buffer -- corruption that surfaces as wrong glyphs far from its cause. Ignoring keeps the
 // pool invariant (an entry appears at most once) intact whatever the caller does.
 export function releaseShapedRun(run: ShapedRun): void {
-  if (_pooled.has(run)) return;
+  if (_pooled.has(run)) {
+    _releaseGuard?.(run);
+    return;
+  }
   if (_pool.length < _POOL_MAX_SIZE) {
     _pool.push(run);
     _pooled.add(run);
   }
+}
+
+/** Installs the shaped-run release guard, or clears it with `null`. The seam keeps warning text and the
+ *  `@flighthq/log` dependency in the separately importable guard module. Use `enableTextShaperGuards`
+ *  rather than installing a callback directly in application code. */
+export function setShapedRunReleaseGuard(guard: ((run: Readonly<ShapedRun>) => void) | null): void {
+  _releaseGuard = guard;
 }
 
 // Maximum number of ShapedRuns to retain in the pool before discarding on release. Keeps
@@ -37,3 +47,4 @@ const _pool: ShapedRun[] = [];
 // Membership mirror for `_pool`, so the double-release check is O(1) rather than scanning the pool on
 // every release. Weak so a run dropped past capacity stays collectable.
 const _pooled = new WeakSet<ShapedRun>();
+let _releaseGuard: ((run: Readonly<ShapedRun>) => void) | null = null;

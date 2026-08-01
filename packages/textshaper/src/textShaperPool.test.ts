@@ -1,4 +1,4 @@
-import { acquireShapedRun, releaseShapedRun } from './textShaperPool';
+import { acquireShapedRun, releaseShapedRun, setShapedRunReleaseGuard } from './textShaperPool';
 
 describe('acquireShapedRun', () => {
   it('returns a ShapedRun with the expected shape', () => {
@@ -70,5 +70,35 @@ describe('releaseShapedRun', () => {
     const b = acquireShapedRun();
 
     expect(a).not.toBe(b);
+  });
+});
+
+describe('setShapedRunReleaseGuard', () => {
+  it('reports a repeated release after core detects it', () => {
+    const seen: unknown[] = [];
+    const run = acquireShapedRun();
+    setShapedRunReleaseGuard((released) => seen.push(released));
+    try {
+      releaseShapedRun(run);
+      releaseShapedRun(run);
+      expect(seen).toEqual([run]);
+    } finally {
+      setShapedRunReleaseGuard(null);
+      releaseShapedRun(acquireShapedRun());
+    }
+  });
+
+  it('stays silent for paired reuse and after being cleared', () => {
+    const seen: unknown[] = [];
+    const run = acquireShapedRun();
+    setShapedRunReleaseGuard((released) => seen.push(released));
+    releaseShapedRun(run);
+    const reacquired = acquireShapedRun();
+    releaseShapedRun(reacquired);
+    expect(seen).toEqual([]);
+
+    setShapedRunReleaseGuard(null);
+    releaseShapedRun(reacquired);
+    expect(seen).toEqual([]);
   });
 });

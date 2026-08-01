@@ -6,6 +6,8 @@ export {
   createTextShaperCache,
   disposeTextShaperCache,
   disposeTextShaperSignals,
+  disableTextShaperGuards,
+  enableTextShaperGuards,
   enableTextShaperSignals,
   getCaretPositionsForRun,
   getClusterForIndex,

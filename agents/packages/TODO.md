@@ -1,6 +1,6 @@
 # Package TODO Index
 
-_Generated 2026-07-31 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
+_Generated 2026-08-01 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md` (Directed, Recommended, and Depth gaps), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
 
 One line per tracked item. For detail, read only the named package's cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Directed` is user-approved program work, `Recommended` is sweep-safe but **not yet approved**, and `Depth gaps` is surveyed domain depth awaiting prioritization.
 
@@ -130,10 +130,6 @@ Design calls to settle before building the affected entries:
 - Brute-force property tests
 - Ray edge-case tests
 - Extend the brute-force property tests over the overflow path
-
-### textshaper (partial 66)
-
-- `enableTextShaperGuards` for the pool brackets
 
 ### image (solid 68)
 
@@ -862,7 +858,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 

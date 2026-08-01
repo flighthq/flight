@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/textshaper'
-updated: 2026-07-31
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
@@ -10,13 +10,9 @@ Verified against the live tree (7 source files + textshaper-canvas 2 source file
 
 ## Recommended
 
-Re-verified against live source on 2026-07-31 (10 source files, 8 test files, 106 tests, 28 exports). The
-item is unchanged and still open: `packages/textshaper/src` contains no `enable*Guards` module, so the
-package still has no diagnostic half. Since this assessment was written the guard convention has been
-exercised repeatedly elsewhere (`enableClipGuards`, `enableEasingGuards`, `enableAudioMixerGuards`,
-`enableGlRenderEffectGuards`), so the shape to copy is now well established rather than novel.
-
-1. **`enableTextShaperGuards` for the pool brackets.** The 2026-07-30 sweep fixed the *corruption* half of the double-release hazard in core: `releaseShapedRun` now ignores a run that is already pooled, so the pool invariant holds whatever the caller does. What is still missing is the *diagnostic* half. Under the inversion rule a caller-facing warning belongs in a separately-importable guard module, and a double release is a real caller bug worth naming even though it no longer corrupts — silently ignoring it means an unbalanced bracket goes unnoticed until the pool stops recycling. A guard could also catch the mirror-image mistake the core cannot see at all: using a run after releasing it. Deferred rather than built because the package has no guard module yet, so this establishes one.
+_None open._ Re-verified against live source on 2026-08-01 (11 source files, 9 test files, 111 tests,
+30 main exports). The remaining sweep item landed and is recorded under [Landed](#landed), outside this
+section so the TODO generator stops reporting it as work.
 
 ## Landed
 
@@ -26,6 +22,10 @@ exercised repeatedly elsewhere (`enableClipGuards`, `enableEasingGuards`, `enabl
 4. ~~**Fix signal type mismatch.**~~ Landed; `onBackendChanged` is built with `createSignal`.
 5. ~~**Normalize unused `format` parameter naming.**~~ Landed; the glyph-introspection wrappers use `_format` consistently.
 6. ~~**Package Map description update.**~~ Landed.
+7. ~~**Add `enableTextShaperGuards` for the pool brackets.**~~ Landed. The separately importable guard
+   module warns when a shaped run is released twice, while core continues to ignore the repeated release
+   and preserve the pool invariant. Correct acquire/release pairs and the disabled production default
+   remain silent; colocated tests cover the low-level seam and caller-facing logger.
 
 ## Backlog
 
