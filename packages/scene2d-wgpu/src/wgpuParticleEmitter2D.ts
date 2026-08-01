@@ -195,7 +195,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   ensureParticleInstanceBuffer(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  const textureEntry = resolveWgpuTexture(state, atlas.texture, true);
+  const textureEntry = resolveWgpuTexture(state, atlas.texture, true, 'linear');
   if (textureEntry === null) return;
   const textureBindGroup = state.device.createBindGroup({
     layout: runtime.textureBindGroupLayout,

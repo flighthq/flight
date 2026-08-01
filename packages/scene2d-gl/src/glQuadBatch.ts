@@ -40,7 +40,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
-  const glTexture = resolveGlTexture(state, texture, true);
+  const glTexture = resolveGlTexture(state, texture, true, 'linear');
   if (glTexture === null) return;
   const straightAlpha = runtime.currentTextureStraightAlpha;
   const nodeMaterialData = quadBatch.materialData;

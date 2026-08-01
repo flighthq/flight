@@ -122,7 +122,7 @@ describe('registerWgpuImageTextureResolver', () => {
     expect(resolveWgpuTexture(state, texture)).toBe(first);
   });
 
-  it('realizes linear and sRGB interpretations as distinct GPU textures', async () => {
+  it('realizes an override independently and defaults to the texture color space', async () => {
     const state = await createWgpuRenderStateForTest();
     const createTexture = vi.spyOn(state.device, 'createTexture');
     const texture = textureWithImage(imageResource());
@@ -130,10 +130,10 @@ describe('registerWgpuImageTextureResolver', () => {
 
     const srgb = resolveWgpuTexture(state, texture);
     expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm-srgb' }));
-    texture.colorSpace = 'linear';
-    const linear = resolveWgpuTexture(state, texture);
+    const linear = resolveWgpuTexture(state, texture, false, 'linear');
     expect(linear).not.toBe(srgb);
     expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm' }));
+    expect(resolveWgpuTexture(state, texture)).toBe(srgb);
   });
 
   it('resolves a host video through the image source kind', async () => {

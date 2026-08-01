@@ -53,7 +53,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
     const atlas = page.atlas;
     const texture = atlas.texture;
     if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
-    const textureEntry = resolveWgpuTexture(state, texture, true);
+    const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
     if (textureEntry === null) continue;
 
     // prepareWgpuQuadBatchWrite may flush the prior page's batch (each page binds a different image),

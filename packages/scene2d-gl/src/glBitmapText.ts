@@ -51,7 +51,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
     const texture = atlas.texture;
     if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
 
-    const glTexture = resolveGlTexture(state, texture, true);
+    const glTexture = resolveGlTexture(state, texture, true, 'linear');
     if (glTexture === null) continue;
     const straightAlpha = runtime.currentTextureStraightAlpha;
     ensureGlQuadBatchShader(state);

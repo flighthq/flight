@@ -40,7 +40,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
-  const textureEntry = resolveWgpuTexture(state, texture, true);
+  const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
   if (textureEntry === null) return;
   const nodeMaterialData = quadBatch.materialData;
   // Per-quad color adjustments, overriding the node-level tint for the quads that carry one.

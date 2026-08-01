@@ -1,4 +1,4 @@
-import type { TextureLike } from './Texture';
+import type { TextureColorSpace, TextureLike } from './Texture';
 import type { WgpuRenderState, WgpuTextureEntry } from './WgpuRenderState';
 
 // Synchronously realizes a Texture for one render state. GPU handles stay in state-owned caches;
@@ -7,4 +7,5 @@ export type WgpuTextureResolver = (
   state: WgpuRenderState,
   texture: Readonly<TextureLike>,
   premultiply: boolean,
+  colorSpace: TextureColorSpace,
 ) => WgpuTextureEntry | null;

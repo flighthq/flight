@@ -108,7 +108,7 @@ describe('registerGlImageTextureResolver', () => {
     expect(gl.texImage2D).toHaveBeenCalledOnce();
   });
 
-  it('realizes linear and sRGB interpretations as distinct GPU textures', () => {
+  it('realizes an override independently and defaults to the texture color space', () => {
     const { state, gl } = createGlState();
     const texture = textureWithImage(imageResource());
     registerGlImageTextureResolver(state);
@@ -122,8 +122,7 @@ describe('registerGlImageTextureResolver', () => {
       gl.UNSIGNED_BYTE,
       expect.anything(),
     );
-    texture.colorSpace = 'linear';
-    const linear = resolveGlTexture(state, texture);
+    const linear = resolveGlTexture(state, texture, false, 'linear');
     expect(linear).not.toBe(srgb);
     expect(gl.texImage2D).toHaveBeenLastCalledWith(
       gl.TEXTURE_2D,
@@ -133,6 +132,7 @@ describe('registerGlImageTextureResolver', () => {
       gl.UNSIGNED_BYTE,
       expect.anything(),
     );
+    expect(resolveGlTexture(state, texture)).toBe(srgb);
   });
 
   it('returns null for an unbound image source', () => {
