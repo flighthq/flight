@@ -79,6 +79,29 @@ descendant transforms and negative local extents.
 
 The frame is an explicit sequence:
 
+**The padding contract, stated because it is ambiguous from the name alone.** `RenderEffectPadding` is
+**headroom the caller allocates, not an inset the runner applies**:
+
+- The offscreen target is sized **content + padding on each side** — `width = contentWidth + left + right`,
+  `height = contentHeight + top + bottom`.
+- The caller draws the content **offset by `(padding.left, padding.top)`** inside that grown target, so the
+  padded band is empty space for the effect to expand into.
+- **No runner insets by its own padding.** No effect runner on any backend reads padding at all; it is a
+  caller-side allocation concern, consumed before the runner is invoked. A runner reads the whole source
+  texture and writes the whole destination.
+- Padding is **per-effect and summed per side across a chain** — `computeRenderEffectPadding` accumulates
+  each member's directional padding (`left += …`), it does not take a maximum. A pointwise effect
+  contributes zero.
+
+That last point matters when porting from a framework whose padding is a **maximum across all effect
+types** (Starling's `effectPadding` is one figure covering blur/drop-shadow/glow/displacement at once).
+Under that model a single bake inset derived from the max is correct; under this one it is wrong twice
+over — too large for a single cheap effect, and too small for a chain whose members sum past it. Ask each
+effect what it needs, then add.
+
+The canonical worked example is `functional/scenes/per-node-effect-glow-shadow.webgpu.ts`, which sizes its
+target `CONTENT + padding` and draws its source rectangle at `(padding.left, padding.top)`.
+
 1. Query directional chain padding with `computeRenderEffectPadding(state, effects)`. Resolver
    registration is explicit and state-scoped by effect kind, independently of backend effect-runner
    registration. Sequential spatial effects add each side, pointwise effects add zero, and a missing
