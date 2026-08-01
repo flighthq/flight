@@ -72,28 +72,37 @@ built-in — run the stock bloom under your own kind, wrap it to log timings, or
 one kind while keeping the rest. The store sells the screw and the lawnmower: door 1 is the assembled
 convenience, door 2 plus a public runner is the part, and neither is the "real" API.
 
-## 3. `register*` exists only for real implementations
+## 3. What the presence of `register*` does and does not tell you
 
-**The load-bearing rule: a `register*` function exists only where there is a real implementation behind
-it. No stub answers "yes" and then does nothing.** So the question "does the register function exist" is a
-**true capability signal**. Absence is not an oversight to wait out — it is the answer.
+**The rule: a `register*` function is added only alongside a real implementation, and a kind a backend does
+not implement gets no registrar and no runner rather than a stub that registers and does nothing.**
 
-This is the property that makes the API self-describing. You do not need permission, a changelog, or a
-support ticket to find out whether a backend can do something: ask the module. If
-`registerGlBloomEffect` exists, GL implements bloom. If the canvas equivalent does not exist, canvas does
-not implement it, and no call you could write would unlock it.
+**Read the two directions differently, because only one of them is mechanically enforced.**
 
-**Two artifacts carry the signal, and they agree exactly.** Ask either:
+- **Absence is a reliable negative.** If `registerCanvasSsaoEffect` and `defaultCanvasSsaoEffectRunner` do
+  not exist, canvas does not implement SSAO, and no call you could write would unlock it. Nothing is
+  hiding behind a flag. This is the direction you can lean on without further checking.
+- **Presence is a claim about shape, not proof of behaviour.** `npm run reachability:check` verifies that a
+  registrar and a runner exist and pair up — it matches declaration *names* and compares the two sets. It
+  never executes a runner. **A runner whose body is empty passes it**, which was demonstrated directly:
+  replacing a real GL runner with an empty function still reported zero violations. So presence tells you
+  a kind is wired, and is backed by convention and review rather than by a mechanical behaviour check.
 
-- `registerGlBloomEffect` exists → GL implements bloom. So does `defaultGlBloomEffectRunner`.
+That distinction is worth knowing before you plan around it. If a kind's *output* matters to you — not just
+that registering it is possible — verify it the way any renderer output is verified, by rendering it and
+looking, rather than by inferring behaviour from the API surface.
+
+**Two artifacts carry the signal, and they agree with each other.** Ask either:
+
+- `registerGlBloomEffect` exists → GL is wired for bloom. So is `defaultGlBloomEffectRunner`.
 - Neither exists for a kind a backend does not implement. There is nothing to register, and nothing coming
   that a call would unlock.
 
 Measured on 2026-08-01, the per-kind registrar count equals the public runner count on **every** backend —
-46/46 on GL, 44/44 on WGPU, 15/15 on canvas. That one-to-one correspondence is the rule holding in practice:
-a wrapper exists exactly where an implementation does. The runner cannot drift from the implementation
-because it *is* the implementation, and the wrapper cannot drift from the runner because it is a one-line
-call to the generic door with that runner.
+46/46 on GL, 44/44 on WGPU, 15/15 on canvas. That one-to-one correspondence is what the reachability
+check enforces: a wrapper exists exactly where a runner does, and the wrapper cannot drift from the runner
+because it is a one-line call to the generic door with that runner. What the correspondence does **not**
+establish is that either one draws anything — that is the shape-versus-behaviour boundary above.
 
 Current coverage, derived from source on 2026-08-01: **GL 46 effect kinds, WGPU 44, canvas 15.** WGPU lacks
 two that GL has (`BokehDepthOfField`, `CustomShader`). Canvas implements the layer-style family
@@ -186,8 +195,9 @@ or WebGPU for the whole scene instead.
 
 - Missed registrations are **diagnosable** rather than silent, via per-package `enable*Guards` and `explain*`
   queries (§4) — including the partial-registration case that succeeds while dropping effects.
-- The `register*`-means-real-implementation rule is explicit, so capability is answerable from the API
-  surface (§3): if the register function exists, the backend implements the kind, and no stub says otherwise.
+- Capability is answerable from the API surface, with the boundary stated (§3): **absence** is a reliable
+  negative, while **presence** proves the kind is wired, not that its runner draws anything — the
+  reachability check compares declaration names and never executes a runner.
 - The per-kind wrappers were audited and register exactly what the generic call does, so door 2 never
   under-registers a built-in (§2).
 - DOM's batch exclusions are a recorded design position with two sanctioned embed paths (§6), not an
