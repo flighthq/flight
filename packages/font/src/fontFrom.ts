@@ -1,40 +1,42 @@
 import type { Font, FontUrl } from '@flighthq/types/contract';
 
+import {
+  _loadFontFaceFromBytes,
+  _loadFontFaceFromUrl,
+  _loadFontFaceFromUrls,
+  _loadFontFacesFromName,
+} from './_fontFaceLoad';
 import { createFont } from './font';
-import { inferFontFormatFromUrl } from './fontFormat';
-import { getFontShorthand } from './fontShorthand';
 
+/**
+ * Loads a font face from bytes and returns its family handle. If loading rejects, the face is not
+ * registered and no `Font` is returned.
+ */
 export async function loadFontFromBytes(bytes: Uint8Array, family: string): Promise<Font> {
-  const face = new FontFace(
-    family,
-    (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
-  );
-  await face.load();
-  document.fonts.add(face);
+  await _loadFontFaceFromBytes(family, bytes);
   return createFont(family);
 }
 
+/** Looks up a registered family and returns its handle. If the lookup rejects, no `Font` is returned. */
 export async function loadFontFromName(name: string): Promise<Font> {
-  await document.fonts.load(getFontShorthand(name));
+  await _loadFontFacesFromName(name);
   return createFont(name);
 }
 
+/**
+ * Loads a font face from one URL and returns its family handle. If loading rejects, the face is not
+ * registered and no `Font` is returned.
+ */
 export async function loadFontFromUrl(url: string, family: string): Promise<Font> {
-  const face = new FontFace(family, `url(${url})`);
-  await face.load();
-  document.fonts.add(face);
+  await _loadFontFaceFromUrl(family, url);
   return createFont(family);
 }
 
+/**
+ * Loads a font face from fallback URLs and returns its family handle. If loading rejects, the face is
+ * not registered and no `Font` is returned.
+ */
 export async function loadFontFromUrls(sources: FontUrl[], family: string): Promise<Font> {
-  const src = sources
-    .map(({ url, format }) => {
-      const fmt = format ?? inferFontFormatFromUrl(url);
-      return fmt !== null ? `url(${url}) format('${fmt}')` : `url(${url})`;
-    })
-    .join(', ');
-  const face = new FontFace(family, src);
-  await face.load();
-  document.fonts.add(face);
+  await _loadFontFaceFromUrls(family, sources);
   return createFont(family);
 }

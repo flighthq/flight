@@ -62,8 +62,8 @@ describe('loadFontResourceFromBytes', () => {
   });
 
   it('slices only the view bytes out of a larger backing buffer', async () => {
-    // Same slice arithmetic as loadFontFromBytes. Tested on both because they are separate
-    // implementations: without this, a regression in one of the two would go unnoticed.
+    // This integration assertion pins that the resource wrapper forwards its view to the canonical
+    // byte loader rather than widening it back to the whole buffer.
     const backing = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
     await loadFontResourceFromBytes(createFontResource('TestFont'), backing.subarray(2, 6));
     expect(new Uint8Array(constructions[0].source as ArrayBuffer)).toEqual(new Uint8Array([3, 4, 5, 6]));
