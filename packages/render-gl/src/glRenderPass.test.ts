@@ -4,6 +4,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass, setGlRenderTransform2D } from './glRenderPass';
+import { createGlOffscreenRenderState } from './glRenderState';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 
@@ -331,6 +332,55 @@ describe('endGlRenderPass', () => {
 function makeViewport(x: number, y: number, width: number, height: number): Viewport {
   return { devicePixelRatio: 1, height, width, x, y } as Viewport;
 }
+
+describe('offscreen 2D projection basis', () => {
+  // Pins the property a downstream report claimed was broken: that an offscreen state's 2D pass projects
+  // into the BOUND TARGET's dimensions rather than the shared canvas's. An offscreen state aliases the
+  // screen canvas deliberately (one context, one canvas element), so the canvas is the wrong basis and
+  // reading it would shrink content by canvasW/texW and canvasH/texH — non-uniformly, and looking like a
+  // plausible small image rather than an error. The projection helpers read
+  // `renderTargetViewport ?? state.canvas`, so this asserts the pass actually populates that viewport.
+  it('derives the viewport from the target, not from the shared canvas', () => {
+    const { state } = createGlState();
+    const offscreen = createGlOffscreenRenderState(state);
+    const runtime = getGlRenderStateRuntime(offscreen);
+    expect(offscreen.canvas).toBe(state.canvas);
+    expect([state.canvas.width, state.canvas.height]).toEqual([200, 100]);
+
+    beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
+
+    expect(runtime.renderTargetViewport).toEqual({ height: 32, width: 64, x: 0, y: 0 });
+    endGlRenderPass(offscreen);
+  });
+
+  it('restores the previous basis when the pass ends', () => {
+    // Guards the guard: a pass that set the viewport and never restored it would satisfy the test above
+    // while leaving every later screen draw projecting into the offscreen target's dimensions.
+    const { state } = createGlState();
+    const offscreen = createGlOffscreenRenderState(state);
+    const runtime = getGlRenderStateRuntime(offscreen);
+
+    beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
+    endGlRenderPass(offscreen);
+
+    expect(runtime.renderTargetViewport).toBe(null);
+  });
+
+  it('starts an offscreen state with the same neutral root transform as a screen state', () => {
+    // renderTransform2D is the root DEVICE transform for parentless nodes, not a projection
+    // compensation. Identity is the correct neutral for both, and the two constructors agreeing is what
+    // makes an offscreen pass behave like a screen pass until a caller deliberately changes it.
+    const { state } = createGlState();
+    const offscreen = createGlOffscreenRenderState(state);
+
+    // Field-by-field, not toEqual: a Matrix is entity-backed and carries runtime identity beyond its
+    // public fields, so two structurally identical matrices are not deeply equal.
+    const transform = offscreen.renderTransform2D!;
+    expect([transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty]).toEqual([
+      1, 0, 0, 1, 0, 0,
+    ]);
+  });
+});
 
 describe('setGlRenderTransform2D', () => {
   it('installs a copy of the transform as the 2D root device transform', () => {
