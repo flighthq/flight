@@ -115,7 +115,7 @@
     "test:examples:parity": "tsx ./packages/tool-capture/src/bin.ts validate --tool=examples --frames=30 --renderer=canvas,webgl,webgpu --no-regression",
     "test:examples:regression": "tsx ./packages/tool-capture/src/bin.ts validate --tool=examples --frames=30 --renderer=canvas,webgl,webgpu --no-parity",
     "test:examples:regression:baseline": "tsx ./packages/tool-capture/src/bin.ts validate --tool=examples --frames=30 --renderer=canvas,webgl,webgpu --update-fingerprints",
-    "test:examples:smoke": "tsx ./packages/tool-capture/src/bin.ts capture --tool=examples --frames=30 --renderer=dom,canvas,webgl,webgpu --fail-on-error",
+    "test:examples:smoke": "tsx ./packages/tool-capture/src/bin.ts capture --tool=examples --frames=30 --fail-on-error",
     "test:functional": "tsx ./packages/tool-capture/src/bin.ts batch --only=functional",
     "test:functional:baseline": "npm run test:functional:regression:baseline",
     "test:functional:parity": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=dom,canvas,webgl,webgpu --no-regression",
