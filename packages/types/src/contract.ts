@@ -75,6 +75,8 @@ export * from './Bidi';
 export * from './Billboard';
 export * from './BinPack';
 export * from './BitmapFont';
+export * from './BitmapFontSummary';
+export * from './BitmapFontGlyphExplanation';
 export * from './BitmapFontRecord';
 export * from './BitmapText';
 export * from './BlendEffect';
