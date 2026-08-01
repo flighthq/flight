@@ -1,4 +1,5 @@
 export * from './canvasColorMatrixPass';
+export * from './canvasBevelEffect';
 export * from './canvasBlendEffect';
 export * from './canvasBloomEffect';
 export * from './canvasBlurEffect';
@@ -7,6 +8,9 @@ export * from './canvasDropShadowEffect';
 export * from './canvasEffectCompositing';
 export * from './canvasEffectDropShadowCss';
 export * from './canvasFilmGrainEffect';
+export * from './canvasGradientBevelEffect';
+export * from './canvasGradientGlowEffect';
+export * from './canvasGradientRamp';
 export * from './canvasInnerGlowEffect';
 export * from './canvasInnerShadowEffect';
 export * from './canvasOuterGlowEffect';
