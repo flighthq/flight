@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/binpack'
-updated: 2026-07-13
+updated: 2026-08-01
 basedOn: ./review.md
 ---
 
@@ -8,14 +8,33 @@ basedOn: ./review.md
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/binpack` (plus its own header file `types/src/BinPack.ts`), additive, no open design fork.
+_None open._ All six items landed on 2026-08-01 and are recorded under [Landed](#landed) below.
 
-1. **Best-Area-Fit heuristic** (review gap 1). The North star explicitly names "best-area / best-short-side-fit"; only BSSF exists. Add `BinPackOptions.heuristic?: 'bestShortSideFit' | 'bestAreaFit'` (default `'bestShortSideFit'`, so existing results are unchanged) selecting the scoring inside `findBestPlacement`. This is fork-B's sanctioned closed-union case (a tight loop in a closed system, two members); the broader pluggable-strategy seam of Open direction 2 stays open and can supersede the option when Skyline/Guillotine arrive.
-2. **Occupancy metric** (review gap 5). A pure free function `getPackResultOccupancy(result): number` (placed area ÷ `width·height`, `0` for an empty result) so callers can compare packings without hand-rolling the math. Standard in every packing tool; no result-shape change.
-3. **`explainUnpackedRectangles(rects, options): …`** (review gap 6). Per the diagnostics convention, the `unpacked` sentinel gets a shakeable `explain*` query returning plain data per failed id — exceeds the cap even rotated / fixed bin exhausted / usable region non-positive (`maxWidth < 2·border`). Separately importable, costs the packer's bundle nothing.
-4. **Edge-case pinning tests** (review gap 8). Define-and-test: zero/negative-dimension rects, duplicate ids, non-integer sizes, `border` collapsing the usable region (already handled in code — everything → `unpacked` — but unasserted), padding larger than the pieces.
-5. **Seeded fuzz/property test** (review gap 9). Deterministic seeded generator over sizes/options asserting the invariants (pairwise non-overlap, within-bin with border, padding respected, `placements + unpacked = input`, deep-equal on re-run) across many seeds — the path-boolean precedent applied here.
-6. **Drop the redundant placement clone in `finalizeResult`** (review gap 10). `packIntoBin`'s array is function-local and fresh; the `{ ...placement }` re-clone per rect is pure allocation slack against the North star's allocation-conscious clause. Behavior-identical cleanup.
+## Landed
+
+1. ~~**Best-Area-Fit heuristic.**~~ Landed as `BinPackOptions.heuristic`, defaulting to `'bestShortSideFit'`
+   so existing packings are byte-identical. Both rules share one primary/secondary comparison; area-fit
+   breaks ties on the short side rather than on free-rectangle order, so a leftover-area tie resolves the
+   way short-side-fit would.
+2. ~~**Occupancy metric.**~~ Landed as `getPackResultOccupancy`. Measures the **reported** extent, so
+   power-of-two and square rounding show up as the waste they are — which is the number a caller comparing
+   packings wants. Returns 0, not NaN, for an empty result.
+3. ~~**`explainUnpackedRectangles`.**~~ Landed in its own module so the packer's bundle pays nothing.
+   Separates `oversized` / `regionCollapsed` / `binExhausted`, checks region collapse **first** (when the
+   border eats the caps every piece fails for that one reason, and calling each "oversized" would send the
+   caller after the rectangles instead of the border), and counts rotation as a real second chance before
+   calling a piece oversized.
+4. ~~**Edge-case pinning tests.**~~ Landed — and they found a **defect this assessment had assumed away**.
+   The item said zero/negative dimensions were "already handled in code — everything → unpacked". They were
+   not: a `width: -8` rectangle was **placed**, reporting a negative extent and overlapping its neighbour,
+   because a negative side consumes no space in the free-rectangle split. Non-positive sides now go to
+   `unpacked`, which is the existing sentinel for "could not be placed".
+5. ~~**Seeded fuzz/property test.**~~ Landed: a deterministic LCG (no `Math.random`, which the portability
+   gate forbids and which would make a red run unreproducible) over 40 seeds and both heuristics, asserting
+   non-overlap with padding as a real gap, containment net of border, `placements + unpacked = input`, and
+   re-run determinism.
+6. ~~**Drop the redundant placement clone.**~~ Landed; the array is copied, the per-placement object clone
+   is gone.
 
 ## Backlog
 
