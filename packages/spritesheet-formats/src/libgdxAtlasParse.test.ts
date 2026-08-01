@@ -86,6 +86,7 @@ describe('parseLibgdxAtlasSpritesheet', () => {
     expect(data.animations).toHaveLength(1);
     expect(data.animations[0]?.name).toBe('run');
     expect(data.animations[0]?.frameNames).toEqual(['run_0', 'run_1', 'run_2']);
+    expect(data.animations[0]?.repeatCount).toBe(-1);
   });
 
   it('respects custom frameDuration option', () => {

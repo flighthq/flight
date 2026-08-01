@@ -103,6 +103,7 @@ describe('parseStarlingSpritesheet', () => {
     const anim = data.animations.find((a) => a.name === 'hero_idle');
     expect(anim).toBeDefined();
     expect(anim!.frameNames).toHaveLength(3);
+    expect(anim!.repeatCount).toBe(-1);
   });
 
   it('sorts animation frames by numeric suffix', () => {

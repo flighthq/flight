@@ -7,10 +7,10 @@ describe('createSpritesheetAnimationData', () => {
     expect(anim.frameDuration).toBe(100);
     expect(anim.frameDurations).toBeNull();
     expect(anim.frameNames).toEqual([]);
-    expect(anim.loop).toBe(true);
     expect(anim.name).toBe('');
     expect(anim.originX).toBe(0);
     expect(anim.originY).toBe(0);
+    expect(anim.repeatCount).toBe(-1);
   });
 
   it('applies provided partial fields', () => {
@@ -18,18 +18,18 @@ describe('createSpritesheetAnimationData', () => {
       direction: 'pingpong',
       frameDuration: 80,
       frameNames: ['a', 'b', 'c'],
-      loop: false,
       name: 'walk',
       originX: 0.5,
       originY: 1,
+      repeatCount: 3,
     });
     expect(anim.direction).toBe('pingpong');
     expect(anim.frameDuration).toBe(80);
     expect(anim.frameNames).toEqual(['a', 'b', 'c']);
-    expect(anim.loop).toBe(false);
     expect(anim.name).toBe('walk');
     expect(anim.originX).toBe(0.5);
     expect(anim.originY).toBe(1);
+    expect(anim.repeatCount).toBe(3);
   });
 
   it('stores per-frame durations when provided', () => {

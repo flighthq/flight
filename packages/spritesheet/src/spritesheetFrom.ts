@@ -50,9 +50,9 @@ export function createSpritesheetFromData(data: Readonly<SpritesheetData>, atlas
       frameDuration: ad.frameDuration,
       frameDurations: ad.frameDurations,
       frames: resolvedFrames,
-      loop: ad.loop,
       originX: ad.originX,
       originY: ad.originY,
+      repeatCount: ad.repeatCount,
     });
   }
   return createSpritesheet({ animations, atlas, frames });

@@ -7,9 +7,9 @@ export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>):
     frameDuration: obj?.frameDuration ?? 0,
     frameDurations: obj?.frameDurations ?? null,
     frames: obj?.frames ?? [],
-    loop: obj?.loop ?? false,
     originX: obj?.originX ?? 0,
     originY: obj?.originY ?? 0,
+    repeatCount: obj?.repeatCount ?? 0,
   });
 }
 
@@ -21,7 +21,7 @@ export function createSpritesheetAnimationFromFrameNames(
   spritesheet: Readonly<Spritesheet>,
   pattern: string | RegExp,
   options?: Partial<
-    Pick<SpritesheetAnimation, 'direction' | 'frameDuration' | 'frameDurations' | 'loop' | 'originX' | 'originY'>
+    Pick<SpritesheetAnimation, 'direction' | 'frameDuration' | 'frameDurations' | 'originX' | 'originY' | 'repeatCount'>
   >,
 ): SpritesheetAnimation | null {
   const { atlas, frames } = spritesheet;
@@ -45,8 +45,8 @@ export function createSpritesheetAnimationFromFrameNames(
     frameDuration: options?.frameDuration,
     frameDurations: options?.frameDurations,
     frames: matchedIndices,
-    loop: options?.loop,
     originX: options?.originX,
     originY: options?.originY,
+    repeatCount: options?.repeatCount,
   });
 }

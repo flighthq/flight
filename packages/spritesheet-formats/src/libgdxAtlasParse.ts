@@ -208,8 +208,8 @@ function inferAnimations(frameNames: string[], frameDuration: number): Spriteshe
       createSpritesheetAnimationData({
         frameDuration,
         frameNames: entries.map((e) => e.name),
-        loop: true,
         name: base,
+        repeatCount: -1,
       }),
     );
   }

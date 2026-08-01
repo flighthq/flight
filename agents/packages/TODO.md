@@ -281,12 +281,6 @@ Design calls to settle before building the affected entries:
 - Numerical edge tests
 - `isSpringSettled` + undamped interaction test/doc
 
-### spritesheet (solid 74)
-
-- Fix `seekSpritesheetPlayerToFrame` for non-forward directions
-- Add non-forward-direction tests for the seek path
-- Migrate `loop: boolean` to `repeatCount: number` on `SpritesheetAnimation`
-
 ### webcam (solid 74)
 
 - Fix `null as any` cast
@@ -853,7 +847,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
+`storage` · `loader` · `updater` · `font` · `texture` · `video` · `animation` · `audio` · `menu` · `swf` · `snapshot` · `media` · `textshaper` · `glyphatlas` · `motionpath` · `scene3d` · `timeline` · `tween` · `picking` · `bitmap` · `particleemitter` · `spritesheet` · `xml` · `skeleton3d` · `log` · `scene3d-resources` · `camera-controls` · `debug` · `lifecycle` · `textlayout` · `adjustments` · `clipboard` · `camera` · `input` · `platform` · `textinput` · `connectivity` · `screen` · `lighting` · `math` · `scene2d-resources` · `sdk` · `signals` · `easing` · `accessibility` · `application-gl` · `clock` · `host-capacitor` · `intl` · `movieclip` · `physics2d` · `scene2d-formats` · `shading` · `skeleton2d` · `skeleton2d-formats`
 
 ## Liveness — which stage each stale cell needs next
 

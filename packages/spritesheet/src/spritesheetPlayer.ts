@@ -128,9 +128,8 @@ export function seekSpritesheetPlayerToFrame(player: SpritesheetPlayer, frameInd
   if (animation === null || animation.frames.length === 0) return;
   const clamped = Math.max(0, Math.min(frameIndex, animation.frames.length - 1));
   player.frameIndex = clamped;
-  // Sync elapsed to the start of the target virtual frame index that maps to this display frame.
-  // For simplicity, seek to the first virtual index that produces this display frame.
-  player.elapsed = resolveVirtualIndexStartTime(animation, clamped);
+  const virtualIndex = resolveDisplayIndexToFirstVirtualIndex(animation, clamped);
+  player.elapsed = resolveVirtualIndexStartTime(animation, virtualIndex);
 }
 
 export function seekSpritesheetPlayerToTime(player: SpritesheetPlayer, time: number): void {
@@ -151,11 +150,12 @@ export function stopSpritesheetPlayer(player: SpritesheetPlayer): void {
 export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: number): boolean {
   const { animation } = player;
   if (animation === null || player.complete || player.paused || animation.frames.length === 0) return false;
-  const { loop } = animation;
+  const { repeatCount } = animation;
   const totalTime = resolveAnimationTotalTime(animation);
   const prevLoopCount = Math.floor(player.elapsed / totalTime);
   player.elapsed += deltaTime * player.speed;
-  if (!loop && player.elapsed >= totalTime) {
+  const playbackTime = repeatCount < 0 ? Infinity : totalTime * (repeatCount + 1);
+  if (player.elapsed >= playbackTime) {
     if (player.queue.length > 0) {
       const next = player.queue.shift()!;
       player.animation = next;
@@ -163,7 +163,7 @@ export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: nu
       player.frameIndex = 0;
       return true;
     }
-    player.elapsed = totalTime;
+    player.elapsed = playbackTime;
     // On completion, show the last virtual frame in the direction sequence.
     const lastVi = resolveVirtualFrameCount(animation) - 1;
     player.frameIndex = resolveVirtualIndexToDisplayIndex(animation, lastVi);
@@ -178,21 +178,40 @@ export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: nu
   return true;
 }
 
+// Returns the first virtual index whose direction-aware mapping produces `displayIndex`. Forward and
+// pingpong encounter it on the forward leg; reverse and pingpong_reverse encounter it on the reverse
+// leg. Keeping this inverse beside the forward mapping prevents display and virtual indices from being
+// confused at seek call sites.
+function resolveDisplayIndexToFirstVirtualIndex(
+  animation: Readonly<SpritesheetAnimation>,
+  displayIndex: number,
+): number {
+  switch (animation.direction) {
+    case 'forward':
+    case 'pingpong':
+      return displayIndex;
+    case 'reverse':
+    case 'pingpong_reverse':
+      return animation.frames.length - 1 - displayIndex;
+    default:
+      return displayIndex;
+  }
+}
+
 // Returns a cached cumulative-duration array for variable-timing animations.
 // The array has virtualCount+1 entries: [0, d0, d0+d1, ..., total].
 function getCumulativeDurations(animation: Readonly<SpritesheetAnimation>): Float64Array {
   const cached = cumulativeDurationsCache.get(animation);
   if (cached !== undefined) return cached;
-  const { frames, frameDuration, frameDurations } = animation;
-  const n = frames.length;
+  const { frameDuration, frameDurations } = animation;
   const virtualCount = resolveVirtualFrameCount(animation);
   const arr = new Float64Array(virtualCount + 1);
   let t = 0;
   for (let vi = 0; vi < virtualCount; vi++) {
     arr[vi] = t;
-    // Map virtual index to the forward frame index for the duration lookup.
-    const fi = vi < n ? vi : 2 * (n - 1) - vi;
-    t += frameDurations![fi] ?? frameDuration;
+    // Durations belong to displayed frames, so use the same direction-aware mapping as playback.
+    const displayIndex = resolveVirtualIndexToDisplayIndex(animation, vi);
+    t += frameDurations![displayIndex] ?? frameDuration;
   }
   arr[virtualCount] = t || 1;
   cumulativeDurationsCache.set(animation, arr);
