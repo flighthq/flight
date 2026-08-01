@@ -160,6 +160,14 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   const textureBlocks = new Map<number, ParsedTexture>();
   const skeletonBlocks = new Map<number, ParsedSkeleton>();
 
+  // Blocks this walk does not consume, tallied by (namespace, blockType) so one diagnostic is reported per
+  // distinct kind rather than one per occurrence — an unknown block type usually repeats for every object
+  // in the file, and a per-block report would bury the rest of the diagnostics under thousands of lines.
+  const unhandledBlocks = new Map<
+    string,
+    { blockType: number; count: number; firstBlockId: number; namespace: number }
+  >();
+
   let offset = AWD2_HEADER_BYTES;
   while (offset + AWD2_BLOCK_HEADER_BYTES <= bodyEnd) {
     const blockId = view.getUint32(offset, true);
@@ -224,10 +232,32 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
           diagnostics,
         );
         if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
+      } else if (!isAwdBlockHandledLater(blockType)) {
+        // Everything the dispatch above does not name. Without this the block was skipped in total
+        // silence — the offset advanced and the file looked fully imported — so a format feature nobody
+        // has written yet was indistinguishable from a file that has none.
+        tallyUnhandledAwdBlock(unhandledBlocks, namespace, blockType, blockId);
       }
+    } else {
+      // A non-CORE namespace is an extension block (an exporter's own, or a vendor's). Reported for the
+      // same reason and separately from an unknown CORE type, because the two mean different things: an
+      // unknown CORE type is a gap in our coverage of the spec, an extension namespace is content we were
+      // never going to understand without knowing whose it is.
+      tallyUnhandledAwdBlock(unhandledBlocks, namespace, blockType, blockId);
     }
 
     offset = blockDataStart + blockLength;
+  }
+
+  // One diagnostic per distinct unhandled (namespace, blockType), carrying the first block's id and how
+  // many there were, so a reader learns both what was missed and how much of the file it accounted for.
+  for (const entry of unhandledBlocks.values()) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.block-unhandled', 'parseAwd2', {
+      blockType: entry.blockType,
+      count: entry.count,
+      firstBlockId: entry.firstBlockId,
+      namespace: entry.namespace,
+    });
   }
 
   const document = emptyAwdDocument();
@@ -2250,4 +2280,28 @@ interface ParsedSkeletonAnimation {
 interface ParsedSkeletonPose {
   jointTransforms: (Float64Array | null)[];
   name: string;
+}
+
+// Whether a CORE block type is consumed by a LATER walk rather than this one. Skeleton poses and skeleton
+// animations are read by buildAwdDocumentAnimations, which re-walks the block stream once the joint nodes
+// exist, so the first walk passing over them is deferral and not a gap. Reporting them as unhandled would
+// put a false Drop on every skinned AWD file — including ones that import perfectly.
+function isAwdBlockHandledLater(blockType: number): boolean {
+  return blockType === AWD2_BLOCK_SKELETON_POSE || blockType === AWD2_BLOCK_SKELETON_ANIMATION;
+}
+
+// Records one unhandled block against its (namespace, blockType) bucket, keeping the first block id seen.
+function tallyUnhandledAwdBlock(
+  tally: Map<string, { blockType: number; count: number; firstBlockId: number; namespace: number }>,
+  namespace: number,
+  blockType: number,
+  blockId: number,
+): void {
+  const key = `${namespace}:${blockType}`;
+  const entry = tally.get(key);
+  if (entry === undefined) {
+    tally.set(key, { blockType, count: 1, firstBlockId: blockId, namespace });
+    return;
+  }
+  entry.count++;
 }
