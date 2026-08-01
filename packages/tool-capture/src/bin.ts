@@ -20,6 +20,7 @@ import type { CaptureManifest } from './captureManifest.js';
 import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
+import { resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout.js';
 import { runCaptureValidation } from './captureValidation.js';
 import { resolveCaptureWorkerCount } from './captureWorkerCount.js';
 import type {
@@ -42,7 +43,7 @@ const USAGE = `usage:
 capture options:
   --filter <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
   --parallel <n> --sequential --dev --build --update-baseline --fail-on-changed
-  --fail-on-error --verify --no-verify --observe --retries <n>
+  --fail-on-error --verify --no-verify --observe --retries <n> --capture-timeout <ms>
 
 Every command writes a versioned aggregate JSON report beneath its artifact directory.
 
@@ -51,6 +52,8 @@ validation options:
   --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
 
 FLIGHT_CAPTURE_WORKER_COUNT pins worker concurrency when --parallel is omitted.
+FLIGHT_CAPTURE_TIMEOUT_MS pins the per-wait budget (page load, frame poll, verification) when
+  --capture-timeout is omitted; default 15000. Raise it on contended or software-adapter machines.
 
 benchmark options:
   --warmup <n> --iterations <n> --samples <n> --sample-duration <ms> --benchmark-reference <renderer>
@@ -272,6 +275,11 @@ async function batch(argv: readonly string[]): Promise<number> {
 
 async function main(): Promise<void> {
   const [command, ...argv] = process.argv.slice(2);
+  // Pinned once for the process rather than threaded through every option bag: the budget governs
+  // waits in the capture core, the validation loader and the stall reason alike, and those are reached
+  // from three different call shapes. One resolution point is also what keeps `--capture-timeout` and
+  // FLIGHT_CAPTURE_TIMEOUT_MS from being able to mean different things in different waits.
+  setCaptureTimeoutMs(resolveCaptureTimeoutMs(flag(argv, 'capture-timeout'), process.env['FLIGHT_CAPTURE_TIMEOUT_MS']));
   if (command === 'observe') {
     const url = argv[0];
     if (url === undefined || url.startsWith('--')) throw new Error(`observe requires a <url>\n${USAGE}`);

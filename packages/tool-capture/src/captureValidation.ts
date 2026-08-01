@@ -44,6 +44,7 @@ import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
 import type { CaptureFingerprintMap } from './captureSuite.js';
+import { getCaptureTimeoutMs } from './captureTimeout.js';
 
 export interface CaptureValidationOptions {
   subject: string;
@@ -224,7 +225,7 @@ async function loadFingerprint(
     const route = getCaptureEntryRoute(entry, renderer, subject);
     await page.goto(`${baseUrl}/${route}`, {
       waitUntil: 'domcontentloaded',
-      timeout: 15_000,
+      timeout: getCaptureTimeoutMs(),
     });
     // Wait for a TERMINAL state, not merely for __ftVerification to exist. runRenderVerification sets
     // that object up front with fingerprint:null, then fills the fingerprint only AFTER an async step —
@@ -240,7 +241,7 @@ async function loadFingerprint(
           return v?.state === 'passed' || v?.state === 'failed' || document.getElementById('ft-error') !== null;
         },
         null,
-        { timeout: CAPTURE_VERIFICATION_TIMEOUT_MS, polling: 100 },
+        { timeout: getCaptureTimeoutMs(), polling: 100 },
       )
       .catch(() => {});
     const waitedMs = Math.round(performance.now() - waitStartedAt);
@@ -361,11 +362,15 @@ async function captureDomFingerprint(page: Page): Promise<string | null> {
 // with a full monorepo check and test suite running alongside — about 42% of the budget at worst. So a
 // stall at or near the full budget is NOT the scene being slow, and the reason says so rather than
 // leaving the next reader to assume it and raise the timeout.
+//
+// The budget is read from the same seam the wait reads, not passed in, so the two can never disagree
+// about what it was. Passing it would let a caller name a budget the wait did not use, which is the
+// one thing this message must never do — it exists to be trusted about how long the wait actually had.
 export function explainCaptureVerificationStall(
   verification: Readonly<{ fingerprint?: string | null; state?: string }> | null,
   waitedMs: number,
 ): string {
-  const budget = `waited ${waitedMs}ms of ${CAPTURE_VERIFICATION_TIMEOUT_MS}ms`;
+  const budget = `waited ${waitedMs}ms of ${getCaptureTimeoutMs()}ms`;
   if (verification === null || verification === undefined) {
     return `verifier never registered — no __ftVerification on the page (${budget}); the page's module likely failed to run`;
   }
@@ -1024,10 +1029,6 @@ export async function runCaptureValidation(
     return result;
   }
 }
-
-// How long a verification wait may take before it is treated as stalled. Shared by the wait and by the
-// reason it produces, so the two can never disagree about what the budget was.
-const CAPTURE_VERIFICATION_TIMEOUT_MS = 15_000;
 
 // Hex characters per fingerprint cell (one RGB triplet).
 const CAPTURE_FINGERPRINT_CELL_CHARS = 6;

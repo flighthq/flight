@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { setCaptureTimeoutMs } from './captureTimeout';
 import {
   explainCaptureParityUncovered,
   isCaptureRegressionCoverageFailure,
@@ -51,6 +52,18 @@ describe('explainCaptureVerificationStall', () => {
     expect(reason).toContain('15000ms of 15000ms');
     // A short wait is a different story from one that burned the whole budget, and the reason shows it.
     expect(explainCaptureVerificationStall({ state: 'running' }, 900)).toContain('900ms of 15000ms');
+  });
+
+  // The reason and the wait must never disagree about what the budget was — a message that names a
+  // budget the wait did not use is worse than no message, since the whole point of it is to be trusted
+  // about how long the wait actually had. Both read the same seam, so a raised budget moves both.
+  it('reports the configured budget, not the compiled-in default', () => {
+    setCaptureTimeoutMs(45_000);
+    try {
+      expect(explainCaptureVerificationStall({ state: 'running' }, 20_000)).toContain('20000ms of 45000ms');
+    } finally {
+      setCaptureTimeoutMs(null);
+    }
   });
 
   it('names the empty-readback case, which looks like success until the fingerprint is read', () => {
