@@ -7,6 +7,7 @@ import {
 } from '@flighthq/loader/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  AssetAcquireGuard,
   AssetEntry,
   AssetDescriptor,
   AssetGroupLoadOptions,
@@ -27,11 +28,13 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
   const runtime = library.runtime;
   const descriptor = runtime.descriptors.get(id);
   if (descriptor === undefined) {
-    return Promise.reject(new Error(`assets: no descriptor for id "${id}" (registerAssetDescriptor first)`));
+    runtime.acquireGuard?.(library, { id, refCount: 0, status: 'missing-descriptor', type: null });
+    return Promise.reject(new Error(`assets: no descriptor for id "${id}"`));
   }
   const adapter = runtime.adapters.get(descriptor.type);
   if (adapter === undefined) {
-    return Promise.reject(new Error(`assets: no loader for type "${descriptor.type}" (registerAssetLoader first)`));
+    runtime.acquireGuard?.(library, { id, refCount: 0, status: 'missing-loader', type: descriptor.type });
+    return Promise.reject(new Error(`assets: no loader for type "${descriptor.type}"`));
   }
 
   const existing = runtime.entries.get(id);
@@ -43,6 +46,7 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
   }
 
   const entry: AssetEntry = { value: undefined, refcount: 1, loadPromise: null, resident: false };
+  runtime.freedIds.delete(id);
   runtime.entries.set(id, entry);
   const loadPromise = adapter.load(descriptor).then(
     (value) => {
@@ -73,9 +77,11 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
 // in with registerAssetLoader.
 export function createAssetLibrary(): AssetLibrary {
   const runtime: AssetLibraryRuntime = {
+    acquireGuard: null,
     adapters: new Map(),
     descriptors: new Map(),
     entries: new Map(),
+    freedIds: new Set(),
     groups: new Map(),
   };
   return { runtime };
@@ -92,8 +98,10 @@ export function disposeAssetLibrary(library: Readonly<AssetLibrary>): void {
     if (adapter !== undefined) adapter.dispose(entry.value);
   }
   runtime.adapters.clear();
+  runtime.acquireGuard = null;
   runtime.descriptors.clear();
   runtime.entries.clear();
+  runtime.freedIds.clear();
   runtime.groups.clear();
 }
 
@@ -102,6 +110,19 @@ export function disposeAssetLibrary(library: Readonly<AssetLibrary>): void {
 export function getAsset<T = unknown>(library: Readonly<AssetLibrary>, id: string): T | null {
   const entry = library.runtime.entries.get(id);
   return entry !== undefined && entry.resident ? (entry.value as T) : null;
+}
+
+// Returns an insertion-ordered snapshot of the descriptors tagged with `name`, whether or not they are
+// currently resident. Unknown and empty groups return an empty array.
+export function getAssetGroupIds(library: Readonly<AssetLibrary>, name: string): readonly string[] {
+  return library.runtime.groups.get(name)?.slice() ?? [];
+}
+
+// Returns an insertion-ordered snapshot of live cache ids. Both loading and resident entries are
+// included because each is held by at least one unmatched acquire. Mutating the snapshot cannot change
+// library state.
+export function getAssetIds(library: Readonly<AssetLibrary>): readonly string[] {
+  return Array.from(library.runtime.entries.keys());
 }
 
 // Returns the live holder count for `id`: how many acquires have not yet been matched by a release.
@@ -178,6 +199,8 @@ export function registerAssetDescriptor(library: Readonly<AssetLibrary>, descrip
   }
 
   if (previous !== undefined) removeAssetDescriptorGroups(runtime, previous);
+  if (previous !== undefined && !isEquivalentAssetDescriptor(previous, descriptor))
+    runtime.freedIds.delete(descriptor.id);
   const storedDescriptor = copyAssetDescriptor(descriptor);
   runtime.descriptors.set(descriptor.id, storedDescriptor);
   const groups = storedDescriptor.groups;
@@ -246,11 +269,18 @@ export function releaseAssetGroup(library: Readonly<AssetLibrary>, name: string)
   for (const id of ids) releaseAsset(library, id);
 }
 
+// Installs or removes the optional acquire-misuse hook. The core remains logger-free; the separately
+// importable enableAssetGuards module supplies the caller-facing messages.
+export function setAssetAcquireGuard(library: Readonly<AssetLibrary>, guard: AssetAcquireGuard | null): void {
+  library.runtime.acquireGuard = guard;
+}
+
 // Drops the cache entry and, when the asset actually decoded, frees it through its adapter. An entry
 // whose load never settled (released mid-flight) has nothing decoded to free; the in-flight load's own
 // continuation disposes the orphaned value once it resolves.
 function disposeAssetEntry(runtime: AssetLibraryRuntime, id: string, entry: Readonly<AssetEntry>): void {
   runtime.entries.delete(id);
+  runtime.freedIds.add(id);
   if (!entry.resident) return;
   const descriptor = runtime.descriptors.get(id);
   const adapter = descriptor !== undefined ? runtime.adapters.get(descriptor.type) : undefined;

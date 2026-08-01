@@ -7,6 +7,8 @@ import {
   createAssetLibrary,
   disposeAssetLibrary,
   getAsset,
+  getAssetGroupIds,
+  getAssetIds,
   getAssetRefCount,
   loadAssetGroup,
   registerAssetDescriptor,
@@ -14,6 +16,7 @@ import {
   registerAssetManifest,
   releaseAsset,
   releaseAssetGroup,
+  setAssetAcquireGuard,
 } from './assetLibrary';
 
 // A mock loader adapter: counts load calls, records disposed values, and holds each load open until
@@ -168,6 +171,34 @@ describe('getAsset', () => {
     mock.flush();
     const value = await promise;
     expect(getAsset(library, 'hero')).toBe(value);
+  });
+});
+
+describe('getAssetGroupIds', () => {
+  it('returns a detached snapshot of catalog group membership', () => {
+    const library = createAssetLibrary();
+    registerAssetManifest(library, [
+      { groups: ['boot'], id: 'a', type: 'image', url: 'a.bin' },
+      { groups: ['boot', 'shared'], id: 'b', type: 'image', url: 'b.bin' },
+    ]);
+    const ids = getAssetGroupIds(library, 'boot') as string[];
+    expect(ids).toEqual(['a', 'b']);
+    ids.length = 0;
+    expect(getAssetGroupIds(library, 'boot')).toEqual(['a', 'b']);
+    expect(getAssetGroupIds(library, 'unknown')).toEqual([]);
+  });
+});
+
+describe('getAssetIds', () => {
+  it('enumerates held loading and resident entries, then drops freed ids', async () => {
+    const { library, mock } = libraryWith('hero');
+    const pending = acquireAsset(library, 'hero');
+    expect(getAssetIds(library)).toEqual(['hero']);
+    mock.flush();
+    await pending;
+    expect(getAssetIds(library)).toEqual(['hero']);
+    releaseAsset(library, 'hero');
+    expect(getAssetIds(library)).toEqual([]);
   });
 });
 
@@ -436,5 +467,17 @@ describe('releaseAssetGroup', () => {
   it('is a no-op for an unknown group', () => {
     const library = createAssetLibrary();
     expect(() => releaseAssetGroup(library, 'nope')).not.toThrow();
+  });
+});
+
+describe('setAssetAcquireGuard', () => {
+  it('installs and removes the per-library acquire failure hook', async () => {
+    const library = createAssetLibrary();
+    const statuses: string[] = [];
+    setAssetAcquireGuard(library, (_target, explanation) => statuses.push(explanation.status));
+    await expect(acquireAsset(library, 'missing')).rejects.toThrow('no descriptor');
+    setAssetAcquireGuard(library, null);
+    await expect(acquireAsset(library, 'still-missing')).rejects.toThrow('no descriptor');
+    expect(statuses).toEqual(['missing-descriptor']);
   });
 });
