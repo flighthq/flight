@@ -52,5 +52,6 @@ export {
   releaseCanvasRenderTexture,
   renderCanvasBackground,
   renderCanvasScene2D,
+  setCanvasRenderTransform2D,
   withCanvasRenderTextures,
 } from './contract';

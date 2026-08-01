@@ -35,6 +35,7 @@ export {
   renderWgpuBackground,
   resolveWgpuTexture,
   resolveWgpuSmoothingBindGroup,
+  setWgpuRenderTransform2D,
   submitWgpuRenderPass,
   withWgpuRenderTextures,
 } from './contract';

@@ -1,4 +1,5 @@
 import * as sdk from './index';
+import * as rendering from './rendering';
 
 describe('package exports', () => {
   describe('adjustments domain', () => {
@@ -68,6 +69,14 @@ describe('package exports', () => {
 
     it('exports registerRenderer', () => {
       expect(sdk.registerRenderer).toBeTypeOf('function');
+    });
+
+    it('exports caller-owned 2D root transforms through both SDK render barrels', () => {
+      for (const barrel of [sdk, rendering]) {
+        expect(barrel.setCanvasRenderTransform2D).toBeTypeOf('function');
+        expect(barrel.setGlRenderTransform2D).toBeTypeOf('function');
+        expect(barrel.setWgpuRenderTransform2D).toBeTypeOf('function');
+      }
     });
   });
 
