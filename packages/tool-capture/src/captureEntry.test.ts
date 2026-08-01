@@ -9,6 +9,7 @@ import {
   captureUrl,
   getCaptureOutputPaths,
   isTransientCaptureError,
+  isRejectedCaptureBaselineHash,
   isVerifiedCaptureTool,
 } from './captureEntry';
 
@@ -148,6 +149,24 @@ describe('getCaptureOutputPaths', () => {
     expect(paths.finalLogs).toBe(join(paths.outDir, 'logs.jsonl'));
     expect(paths.tmpLogs).toBe(join(paths.outDir, 'logs.tmp.jsonl'));
     expect(paths.statusPath).toBe(join(paths.outDir, 'status.json'));
+  });
+});
+
+describe('isRejectedCaptureBaselineHash', () => {
+  it('rejects the known blank frame a software WebGPU adapter produces', () => {
+    // Nearly committed as ground truth once; the write path must refuse it without anyone looking.
+    expect(isRejectedCaptureBaselineHash('a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0')).toBe(
+      true,
+    );
+  });
+
+  it('accepts an ordinary hash, including one differing only in its last character', () => {
+    expect(isRejectedCaptureBaselineHash('a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d1')).toBe(
+      false,
+    );
+    expect(isRejectedCaptureBaselineHash('0b7af17177ffeb0f0f88c03546a86af9a9ef9274116cb05c0d82561b5c1a51be')).toBe(
+      false,
+    );
   });
 });
 
