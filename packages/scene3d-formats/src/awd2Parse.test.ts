@@ -10,22 +10,34 @@ import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/n
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
+  AmbientLight,
   AnimationClip,
   AwdDecompressor,
+  DirectionalLight,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
+  PointLight,
   Scene3DAnimationTarget,
   Node3D,
   ShadedMaterial,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
+import {
+  AmbientLightKind,
+  DirectionalLightKind,
+  ImportDiagnosticSeverity,
+  PointLightKind,
+  ResourceResolutionState,
+  ShadedMaterialKind,
+} from '@flighthq/types/contract';
 
 import { registerAwd2DeflateDecompressor } from './awd2Inflate';
 import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';
 import {
   AWD2_BLOCK_CONTAINER,
+  AWD2_BLOCK_LIGHT,
+  AWD2_BLOCK_LIGHT_PICKER,
   AWD2_BLOCK_MATERIAL,
   AWD2_BLOCK_MESH_INSTANCE,
   AWD2_BLOCK_SKELETON,
@@ -38,6 +50,19 @@ import {
   AWD2_DATA_FLOAT32,
   AWD2_DATA_UINT16,
   AWD2_HEADER_BYTES,
+  AWD2_LIGHT_PROP_AMBIENT,
+  AWD2_LIGHT_PROP_AMBIENT_COLOR,
+  AWD2_LIGHT_PROP_COLOR,
+  AWD2_LIGHT_PROP_DIFFUSE,
+  AWD2_LIGHT_PROP_DIRECTION_X,
+  AWD2_LIGHT_PROP_DIRECTION_Y,
+  AWD2_LIGHT_PROP_DIRECTION_Z,
+  AWD2_LIGHT_PROP_FALLOFF,
+  AWD2_LIGHT_PROP_RADIUS,
+  AWD2_LIGHT_PROP_SHADOW_MAPPER,
+  AWD2_LIGHT_PROP_SPECULAR,
+  AWD2_LIGHT_TYPE_DIRECTIONAL,
+  AWD2_LIGHT_TYPE_POINT,
   AWD2_MATERIAL_PROP_ALPHA,
   AWD2_MATERIAL_PROP_COLOR,
   AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
@@ -270,6 +295,105 @@ function buildSingleMaterialAwd(matBody: Uint8Array): Uint8Array {
   return concatBytes(buildAwdHeader(body.length), body);
 }
 
+// Builds an AWD typed-property list from (key, value-bytes) records: a uint32 total byte length, then
+// `uint16 key, uint32 fieldLength, <value>` per record. The value width is PER RECORD, which is how one
+// list carries the mixed uint8/uint32/float32/float64 properties a light block uses.
+function buildPropertyList(props: ReadonlyArray<readonly [number, Uint8Array]>): Uint8Array {
+  let total = 0;
+  for (const [, value] of props) total += 6 + value.length;
+  const list = new Uint8Array(4 + total);
+  const view = new DataView(list.buffer);
+  view.setUint32(0, total, true);
+  let offset = 4;
+  for (const [key, value] of props) {
+    view.setUint16(offset, key, true);
+    view.setUint32(offset + 2, value.length, true);
+    list.set(value, offset + 6);
+    offset += 6 + value.length;
+  }
+  return list;
+}
+
+function propUint8(value: number): Uint8Array {
+  return new Uint8Array([value]);
+}
+
+function propUint32(value: number): Uint8Array {
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setUint32(0, value, true);
+  return bytes;
+}
+
+function propFloat32(value: number): Uint8Array {
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setFloat32(0, value, true);
+  return bytes;
+}
+
+function propFloat64(value: number): Uint8Array {
+  const bytes = new Uint8Array(8);
+  new DataView(bytes.buffer).setFloat64(0, value, true);
+  return bytes;
+}
+
+// Light layout: parentId(uint32) → matrix(12 × float32) → name(VarString) → lightType(uint8) →
+// PropertyList → UserAttrList.
+function buildLightBody(
+  name: string,
+  parentId: number,
+  transform: readonly number[],
+  lightType: number,
+  props: ReadonlyArray<readonly [number, Uint8Array]>,
+): Uint8Array {
+  const head = new Uint8Array(4 + 12 * 4);
+  const view = new DataView(head.buffer);
+  view.setUint32(0, parentId, true);
+  for (let i = 0; i < 12; i++) view.setFloat32(4 + i * 4, transform[i], true);
+  return concatBytes(
+    head,
+    buildAwdString(name),
+    new Uint8Array([lightType]),
+    buildPropertyList(props),
+    buildEmptyAttrList(),
+  );
+}
+
+// LightPicker layout: name(VarString) → numLights(uint16) → lightIds(uint32 × N) → UserAttrList. Unlike
+// most AWD blocks it carries no property list.
+function buildLightPickerBody(name: string, lightIds: readonly number[]): Uint8Array {
+  const ids = new Uint8Array(2 + lightIds.length * 4);
+  const view = new DataView(ids.buffer);
+  view.setUint16(0, lightIds.length, true);
+  for (let i = 0; i < lightIds.length; i++) view.setUint32(2 + i * 4, lightIds[i], true);
+  return concatBytes(buildAwdString(name), ids, buildEmptyAttrList());
+}
+
+// Assembles an AWD file from explicit (id, type, body) blocks, with the header sized to the concatenated
+// block stream. Ids are explicit so a light-picker fixture can reference the light blocks by id.
+function buildAwdFileOfBlocks(
+  blocks: ReadonlyArray<{ body: Uint8Array; flags?: number; id: number; type: number }>,
+): Uint8Array {
+  const parts: Uint8Array[] = [];
+  for (const block of blocks) {
+    parts.push(buildBlockHeader(block.id, block.type, block.body.length, block.flags ?? 0), block.body);
+  }
+  const body = concatBytes(...parts);
+  return concatBytes(buildAwdHeader(body.length), body);
+}
+
+// A one-light AWD file — the minimal fixture for the light import. No picker: a file that scopes nothing
+// drops nothing, so the light crumbs under test are the only diagnostics the file can produce.
+function buildSingleLightAwd(
+  lightType: number,
+  props: ReadonlyArray<readonly [number, Uint8Array]>,
+  name = 'Key',
+  transform: readonly number[] = IDENTITY_TRANSFORM,
+): Uint8Array {
+  return buildAwdFileOfBlocks([
+    { body: buildLightBody(name, 0, transform, lightType, props), id: 1, type: AWD2_BLOCK_LIGHT },
+  ]);
+}
+
 // Texture layout: name(VarString) → texType(uint8) → dataLen(uint32) → data → PropertyList → UserAttrList.
 function buildTextureBody(name: string, texType: number, imageBytes: Uint8Array): Uint8Array {
   const nameBytes = buildAwdString(name);
@@ -375,7 +499,7 @@ function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string):
 describe('awd2 diagnostic crumb coverage', () => {
   it.each(CREATE_PATH_TRUNCATIONS)(
     'records $kind (field $field) on the createScene3DFromAwd2 path',
-    ({ blockType, body, bytes, cut, field, kind, origin }) => {
+    ({ blockType, body, bytes, cut, field, kind, lights, origin }) => {
       const diagnostics: ImportDiagnostic[] = [];
       createScene3DFromAwd2(truncatedAwd(blockType, body, cut), diagnostics);
       expect(diagnostics).toHaveLength(1);
@@ -384,6 +508,7 @@ describe('awd2 diagnostic crumb coverage', () => {
       expect(crumb.origin).toBe(origin);
       expect(crumb.detail?.field).toBe(field);
       expect(crumb.detail?.bytes).toBe(bytes); // undefined for every field variant except texture 'data'
+      expect(crumb.detail?.lights).toBe(lights); // undefined for every field variant except picker 'lightIds'
     },
   );
 
@@ -1633,7 +1758,421 @@ describe('parseAwd2', () => {
   });
 });
 
+describe('parseAwd2 lights', () => {
+  it('imports a directional light and splits its ambient term into a sibling AmbientLight', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildSingleLightAwd(
+        AWD2_LIGHT_TYPE_DIRECTIONAL,
+        [
+          [AWD2_LIGHT_PROP_COLOR, propUint32(0xff8040)],
+          [AWD2_LIGHT_PROP_DIFFUSE, propFloat32(0.7)],
+          [AWD2_LIGHT_PROP_AMBIENT_COLOR, propUint32(0x203040)],
+          [AWD2_LIGHT_PROP_AMBIENT, propFloat32(0.3)],
+          [AWD2_LIGHT_PROP_DIRECTION_X, propFloat32(0)],
+          [AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-1)],
+          [AWD2_LIGHT_PROP_DIRECTION_Z, propFloat32(0)],
+        ],
+        'Sun',
+      ),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(0);
+    expect(document.lights).toHaveLength(2);
+
+    const directional = document.lights[0];
+    expect(directional.name).toBe('Sun');
+    expect(directional.node).toBeUndefined();
+    const sun = directional.descriptor as DirectionalLight;
+    expect(sun.kind).toBe(DirectionalLightKind);
+    expect(sun.color).toBe(0xff8040ff);
+    expect(sun.intensity).toBeCloseTo(0.7, 6);
+    expect(sun.castsShadow).toBe(false);
+    expect(sun.direction.x).toBeCloseTo(0, 6);
+    expect(sun.direction.y).toBeCloseTo(-1, 6);
+    expect(sun.direction.z).toBeCloseTo(0, 6);
+
+    const ambient = document.lights[1];
+    expect(ambient.name).toBe('Sun Ambient');
+    const fill = ambient.descriptor as AmbientLight;
+    expect(fill.kind).toBe(AmbientLightKind);
+    expect(fill.color).toBe(0x203040ff);
+    expect(fill.intensity).toBeCloseTo(0.3, 6);
+  });
+
+  // AWD aims in a left-handed space; Flight is right-handed, so the z component flips — the same
+  // single-axis conversion every AWD placement matrix gets. The vector is normalized on the way in.
+  it('converts a directional aim out of AWD left-handed space and normalizes it', () => {
+    const document = parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [
+        [AWD2_LIGHT_PROP_DIRECTION_X, propFloat32(0)],
+        [AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-3)],
+        [AWD2_LIGHT_PROP_DIRECTION_Z, propFloat32(4)],
+      ]),
+    );
+
+    const sun = document.lights[0].descriptor as DirectionalLight;
+    expect(sun.direction.x).toBeCloseTo(0, 6);
+    expect(sun.direction.y).toBeCloseTo(-0.6, 6);
+    expect(sun.direction.z).toBeCloseTo(-0.8, 6);
+  });
+
+  // A directional light's aim is a WORLD-space vector on the descriptor, so its placement matrix stays
+  // identity — Away3D ignores that matrix for directional lights too, and carrying it would invite a
+  // consumer to rotate an already-world-space direction a second time.
+  it('leaves a directional light placement identity even when the block carries a rotation', () => {
+    const document = parseAwd2(
+      buildSingleLightAwd(
+        AWD2_LIGHT_TYPE_DIRECTIONAL,
+        [[AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-1)]],
+        'Sun',
+        [0, 1, 0, -1, 0, 0, 0, 0, 1, 5, 6, 7],
+      ),
+    );
+
+    const placement = document.lights[0].transform;
+    expect(placement.position.x).toBe(0);
+    expect(placement.position.y).toBe(0);
+    expect(placement.position.z).toBe(0);
+    expect(placement.scale.x).toBe(1);
+  });
+
+  it('omits the ambient light when the file gives the light no ambient term', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [[AWD2_LIGHT_PROP_DIFFUSE, propFloat32(1)]]),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(0);
+    expect(document.lights).toHaveLength(1);
+    expect(document.lights[0].descriptor.kind).toBe(DirectionalLightKind);
+  });
+
+  // Every light property is optional in AWD; an absent key is a DEFINED default, not a parse fault, so an
+  // empty property list must import a usable white unit-intensity light and record nothing.
+  it('applies the AWD defaults when the light block carries an empty property list', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []), diagnostics);
+
+    expect(diagnostics).toHaveLength(0);
+    expect(document.lights).toHaveLength(1);
+    const sun = document.lights[0].descriptor as DirectionalLight;
+    expect(sun.color).toBe(0xffffffff);
+    expect(sun.intensity).toBe(1);
+    expect(sun.castsShadow).toBe(false);
+    // AWD's default aim is (0, -1, 1) left-handed, which is (0, -1, -1) normalized in Flight's space.
+    expect(sun.direction.x).toBeCloseTo(0, 6);
+    expect(sun.direction.y).toBeCloseTo(-Math.SQRT1_2, 6);
+    expect(sun.direction.z).toBeCloseTo(-Math.SQRT1_2, 6);
+  });
+
+  it('marks a light that carries a shadow mapper as casting a shadow', () => {
+    const document = parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [[AWD2_LIGHT_PROP_SHADOW_MAPPER, propUint8(1)]]),
+    );
+
+    expect((document.lights[0].descriptor as DirectionalLight).castsShadow).toBe(true);
+  });
+
+  it('imports a point light with its placement and its falloff cutoff as range', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildSingleLightAwd(
+        AWD2_LIGHT_TYPE_POINT,
+        [
+          [AWD2_LIGHT_PROP_COLOR, propUint32(0x00ff00)],
+          [AWD2_LIGHT_PROP_DIFFUSE, propFloat32(2)],
+          [AWD2_LIGHT_PROP_FALLOFF, propFloat32(40)],
+        ],
+        'Lamp',
+        [1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 4, 5],
+      ),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(0);
+    expect(document.lights).toHaveLength(1);
+    const lamp = document.lights[0].descriptor as PointLight;
+    expect(lamp.kind).toBe(PointLightKind);
+    expect(lamp.color).toBe(0x00ff00ff);
+    expect(lamp.intensity).toBe(2);
+    expect(lamp.range).toBe(40);
+    // AWD is left-handed: the placement's z flips with the rest of the file's transforms.
+    expect(lamp.position.x).toBeCloseTo(3, 6);
+    expect(lamp.position.y).toBeCloseTo(4, 6);
+    expect(lamp.position.z).toBeCloseTo(-5, 6);
+    expect(document.lights[0].transform.position.z).toBeCloseTo(-5, 6);
+  });
+
+  // Away3D's falloff runs from `radius` (full brightness) to `fallOff` (zero). Flight's `range` is the
+  // single cutoff, so a file that wrote the start distance loses it — and only then.
+  it('records awd2.light-radius-dropped when the file writes a falloff start distance', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      buildSingleLightAwd(
+        AWD2_LIGHT_TYPE_POINT,
+        [
+          [AWD2_LIGHT_PROP_RADIUS, propFloat32(10)],
+          [AWD2_LIGHT_PROP_FALLOFF, propFloat32(40)],
+        ],
+        'Lamp',
+      ),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-radius-dropped');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('buildAwdDocumentLights');
+    expect(crumb.detail?.firstLight).toBe('Lamp');
+    expect(crumb.detail?.count).toBe(1);
+    expect(crumb.detail?.firstSpecular).toBeUndefined();
+    expect(crumb.detail?.firstType).toBeUndefined();
+  });
+
+  it('records nothing for a point light that omits the falloff start distance', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_POINT, [[AWD2_LIGHT_PROP_FALLOFF, propFloat32(40)]]), diagnostics);
+
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('records awd2.light-specular-dropped when specular is scaled apart from diffuse', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildSingleLightAwd(
+        AWD2_LIGHT_TYPE_DIRECTIONAL,
+        [
+          [AWD2_LIGHT_PROP_DIFFUSE, propFloat32(1)],
+          [AWD2_LIGHT_PROP_SPECULAR, propFloat32(0.25)],
+        ],
+        'Sun',
+      ),
+      diagnostics,
+    );
+
+    // The loss is reported, but the light still imports — a dropped specular scale is not a dropped light.
+    expect(document.lights).toHaveLength(1);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-specular-dropped');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('buildAwdDocumentLights');
+    expect(crumb.detail?.firstLight).toBe('Sun');
+    expect(crumb.detail?.firstSpecular).toBeCloseTo(0.25, 6);
+    expect(crumb.detail?.count).toBe(1);
+    expect(crumb.detail?.firstType).toBeUndefined();
+  });
+
+  it('records awd2.light-unsupported-type and emits no light for a light type AWD does not define', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildSingleLightAwd(7, [[AWD2_LIGHT_PROP_AMBIENT, propFloat32(0.5)]], 'Odd'),
+      diagnostics,
+    );
+
+    // The ambient split is skipped too: an unsupported light emits NOTHING, not a bare ambient half.
+    expect(document.lights).toHaveLength(0);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-unsupported-type');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('buildAwdDocumentLights');
+    expect(crumb.detail?.firstLight).toBe('Odd');
+    expect(crumb.detail?.firstType).toBe(7);
+    expect(crumb.detail?.count).toBe(1);
+    expect(crumb.detail?.firstSpecular).toBeUndefined();
+  });
+
+  // Each property record is byte-length prefixed, so an exporter writing wide (float64) properties is read
+  // by the record's own width — no dependence on the file's precision flag agreeing with the payload.
+  it('reads wide float64 light properties', () => {
+    const document = parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [
+        [AWD2_LIGHT_PROP_DIFFUSE, propFloat64(0.125)],
+        [AWD2_LIGHT_PROP_AMBIENT, propFloat64(0.375)],
+      ]),
+    );
+
+    expect((document.lights[0].descriptor as DirectionalLight).intensity).toBe(0.125);
+    expect((document.lights[1].descriptor as AmbientLight).intensity).toBe(0.375);
+  });
+
+  // A light parented to a container rides that container's node, so an animated parent carries it.
+  it('binds a light to the document node its AWD parent block produced', () => {
+    const containerBody = buildContainerBody('Rig', 0, IDENTITY_TRANSFORM);
+    const document = parseAwd2(
+      buildAwdFileOfBlocks([
+        { body: containerBody, id: 4, type: AWD2_BLOCK_CONTAINER },
+        {
+          body: buildLightBody('Sun', 4, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, [
+            [AWD2_LIGHT_PROP_AMBIENT, propFloat32(0.2)],
+          ]),
+          id: 5,
+          type: AWD2_BLOCK_LIGHT,
+        },
+      ]),
+    );
+
+    expect(document.nodes[0].name).toBe('Rig');
+    expect(document.lights[0].node).toBe(0);
+    expect(document.lights[1].node).toBe(0); // the split ambient rides the same node
+  });
+
+  it('leaves a light unbound when its AWD parent block produced no node', () => {
+    const document = parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('Sun', 99, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 5,
+          type: AWD2_BLOCK_LIGHT,
+        },
+      ]),
+    );
+
+    expect(document.lights[0].node).toBeUndefined();
+  });
+
+  // Aggregation: one crumb per KIND naming the first offender and the total, not one crumb per light.
+  it('aggregates one crumb per drop kind across many lights', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('First', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, [
+            [AWD2_LIGHT_PROP_SPECULAR, propFloat32(0.5)],
+          ]),
+          id: 1,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        {
+          body: buildLightBody('Second', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, [
+            [AWD2_LIGHT_PROP_SPECULAR, propFloat32(0.25)],
+          ]),
+          id: 2,
+          type: AWD2_BLOCK_LIGHT,
+        },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-specular-dropped');
+    expect(crumb.detail?.count).toBe(2);
+    expect(crumb.detail?.firstLight).toBe('First');
+    expect(crumb.detail?.firstSpecular).toBeCloseTo(0.5, 6);
+  });
+
+  // A picker that selects every light scopes nothing away: "this material's lights" and "the scene's
+  // lights" are the same set, which is the shape every real AWD file in the reference corpus has.
+  it('records no scope diagnostic when one picker selects every light in the file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('Sun', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 1,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        { body: buildLightPickerBody('Picker', [1]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics).toHaveLength(0);
+    expect(document.lights).toHaveLength(1);
+  });
+
+  // A file with no picker expressed no scoping, so there is none to drop — and the document's light table
+  // is inert until a caller draws with it.
+  it('records no scope diagnostic when the file declares lights but no picker', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []), diagnostics);
+
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('records awd2.light-scope-dropped when a picker selects only some of the file lights', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('Sun', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 1,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        {
+          body: buildLightBody('Fill', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 2,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        { body: buildLightPickerBody('Partial', [1]), id: 3, type: AWD2_BLOCK_LIGHT_PICKER },
+      ]),
+      diagnostics,
+    );
+
+    // Both lights still import — the scoping is what is lost, not either light.
+    expect(document.lights).toHaveLength(2);
+    expect(diagnostics).toHaveLength(1);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-scope-dropped');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('parseAwd2');
+    expect(crumb.detail?.lights).toBe(2);
+    expect(crumb.detail?.pickers).toBe(1);
+  });
+
+  it('records awd2.light-picker-missing-light when a picker names a block that is not a light', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('Sun', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 1,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        { body: buildLightPickerBody('Picker', [1, 77]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
+      ]),
+      diagnostics,
+    );
+
+    // Two crumbs: the dangling reference, and the scope loss it implies (the picker's set is not the
+    // file's light set). Both are asserted so neither can regress into silence.
+    expect(diagnostics).toHaveLength(2);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.light-picker-missing-light');
+    expect(crumb.severity).toBe('Drop');
+    expect(crumb.origin).toBe('parseAwd2');
+    expect(crumb.detail?.block).toBe(2);
+    expect(crumb.detail?.light).toBe(77);
+    expect(expectOneCrumb(diagnostics, 'awd2.light-scope-dropped').detail?.pickers).toBe(1);
+  });
+
+  // The light and light-picker block types were previously unnamed by the dispatch and fell into the
+  // unhandled-block tally. Handling them must remove them from it, not merely add lights alongside it.
+  it('no longer tallies light or light-picker blocks as unhandled', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      buildAwdFileOfBlocks([
+        {
+          body: buildLightBody('Sun', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+          id: 1,
+          type: AWD2_BLOCK_LIGHT,
+        },
+        { body: buildLightPickerBody('Picker', [1]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toHaveLength(0);
+  });
+});
+
 describe('parseAwd2 unhandled blocks', () => {
+  // Two CORE block types the dispatch genuinely does not name. Both appear in the reference AWD corpus
+  // (shambler carries one of each), so these exercise the tally against real unwritten format coverage
+  // rather than invented numbers — and are the fixtures to change when either type gains a parser.
+  const UNHANDLED_BLOCK_TYPE = 113;
+  const OTHER_UNHANDLED_BLOCK_TYPE = 122;
+
   // One block of `blockType` in `namespace`, carrying `payload` bytes the parser will not look at.
   function fileWithBlocks(
     blocks: ReadonlyArray<{ blockId: number; blockType: number; namespace?: number }>,
@@ -1651,11 +2190,11 @@ describe('parseAwd2 unhandled blocks', () => {
     // The silence this replaces was the real defect: the offset advanced, the block vanished, and a file
     // using a format feature nobody has written was indistinguishable from a file that uses none.
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: 41 }]), diagnostics);
+    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: UNHANDLED_BLOCK_TYPE }]), diagnostics);
 
     expect(diagnostics).toEqual([
       {
-        detail: { blockType: 41, count: 1, firstBlockId: 7, namespace: AWD2_NAMESPACE_CORE },
+        detail: { blockType: UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 7, namespace: AWD2_NAMESPACE_CORE },
         kind: 'awd2.block-unhandled',
         origin: 'parseAwd2',
         severity: ImportDiagnosticSeverity.Drop,
@@ -1680,17 +2219,17 @@ describe('parseAwd2 unhandled blocks', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(
       fileWithBlocks([
-        { blockId: 10, blockType: 41 },
-        { blockId: 11, blockType: 41 },
-        { blockId: 12, blockType: 51 },
-        { blockId: 13, blockType: 41 },
+        { blockId: 10, blockType: UNHANDLED_BLOCK_TYPE },
+        { blockId: 11, blockType: UNHANDLED_BLOCK_TYPE },
+        { blockId: 12, blockType: OTHER_UNHANDLED_BLOCK_TYPE },
+        { blockId: 13, blockType: UNHANDLED_BLOCK_TYPE },
       ]),
       diagnostics,
     );
 
     expect(diagnostics.map((d) => d.detail)).toEqual([
-      { blockType: 41, count: 3, firstBlockId: 10, namespace: AWD2_NAMESPACE_CORE },
-      { blockType: 51, count: 1, firstBlockId: 12, namespace: AWD2_NAMESPACE_CORE },
+      { blockType: UNHANDLED_BLOCK_TYPE, count: 3, firstBlockId: 10, namespace: AWD2_NAMESPACE_CORE },
+      { blockType: OTHER_UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 12, namespace: AWD2_NAMESPACE_CORE },
     ]);
   });
 
@@ -1752,6 +2291,8 @@ const MESH_INSTANCE_BODY = buildMeshInstanceBody('', 0, IDENTITY_TRANSFORM, 1);
 const MATERIAL_BODY_T = buildMaterialBody('', AWD2_MATERIAL_TYPE_COLOR, []);
 const TEXTURE_BODY_T = buildTextureBody('', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
 const SKELETON_BODY_T = buildSkeletonBody('', [{ name: '', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+const LIGHT_BODY_T = buildLightBody('', 0, IDENTITY_TRANSFORM, AWD2_LIGHT_TYPE_DIRECTIONAL, []);
+const LIGHT_PICKER_BODY_T = buildLightPickerBody('', [1]);
 
 // (blockType, body, cut) → the exact Drop crumb the createScene3DFromAwd2 first walk records. Every field
 // variant of every per-block "truncated" kind, locking kind + severity + true origin + detail.field.
@@ -1762,8 +2303,66 @@ const CREATE_PATH_TRUNCATIONS: Array<{
   cut: number;
   field: string;
   kind: string;
+  lights?: number;
   origin: string;
 }> = [
+  {
+    blockType: AWD2_BLOCK_LIGHT,
+    body: LIGHT_BODY_T,
+    cut: 0,
+    field: 'parentId',
+    kind: 'awd2.light-truncated',
+    origin: 'parseLightBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT,
+    body: LIGHT_BODY_T,
+    cut: 4,
+    field: 'transform',
+    kind: 'awd2.light-truncated',
+    origin: 'parseLightBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT,
+    body: LIGHT_BODY_T,
+    cut: 52,
+    field: 'name',
+    kind: 'awd2.light-truncated',
+    origin: 'parseLightBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT,
+    body: LIGHT_BODY_T,
+    cut: 54,
+    field: 'lightType',
+    kind: 'awd2.light-truncated',
+    origin: 'parseLightBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT_PICKER,
+    body: LIGHT_PICKER_BODY_T,
+    cut: 0,
+    field: 'name',
+    kind: 'awd2.light-picker-truncated',
+    origin: 'parseLightPickerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT_PICKER,
+    body: LIGHT_PICKER_BODY_T,
+    cut: 2,
+    field: 'numLights',
+    kind: 'awd2.light-picker-truncated',
+    origin: 'parseLightPickerBlock',
+  },
+  {
+    blockType: AWD2_BLOCK_LIGHT_PICKER,
+    body: LIGHT_PICKER_BODY_T,
+    cut: 4,
+    field: 'lightIds',
+    kind: 'awd2.light-picker-truncated',
+    lights: 1,
+    origin: 'parseLightPickerBlock',
+  },
   {
     blockType: AWD2_BLOCK_CONTAINER,
     body: CONTAINER_BODY,
