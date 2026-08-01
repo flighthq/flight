@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { DomRenderState } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { FunctionalTarget } from './functionalVerify';
 import {
@@ -18,6 +18,13 @@ interface VerificationWindowLike {
   __ftVerification?: unknown;
   __ftRenderImage?: unknown;
   __ftBenchmarkTarget?: { run(): void | Promise<void> };
+  __ftRealRequestAnimationFrame?: (callback: FrameRequestCallback) => number;
+}
+
+// Stands in for the browser having stopped delivering frames: callbacks are accepted and never invoked.
+// The verifier reads the harness-stashed rAF, so replacing that one covers the path it actually takes.
+function stubNeverFiringAnimationFrames(): void {
+  (window as unknown as VerificationWindowLike).__ftRealRequestAnimationFrame = () => 0;
 }
 
 function verification(): Record<string, unknown> {
@@ -30,6 +37,7 @@ afterEach(() => {
   w.__ftVerification = undefined;
   w.__ftRenderImage = undefined;
   w.__ftBenchmarkTarget = undefined;
+  w.__ftRealRequestAnimationFrame = undefined;
 });
 
 // A minimal DOM target — the only backend snapshot/verification handles without a real GPU context.
@@ -101,6 +109,33 @@ describe('runRenderVerification', () => {
     registerFunctionalTarget(domTarget(host));
     await runRenderVerification({}, 'dom');
     expect(verification()).toMatchObject({ render: 'dom', state: 'passed', error: null });
+  });
+
+  it('does not wait for an animation frame on webgpu', async () => {
+    // webgpu pixels are already in the retained capture buffer when the verifier runs, so it must not
+    // depend on the browser scheduling a frame for a canvas it never presents. With rAF stubbed out
+    // entirely, this reaches the readback and fails there — if it still waited, it would never return.
+    stubNeverFiringAnimationFrames();
+
+    await expect(runRenderVerification({}, 'webgpu')).rejects.toThrow(/no readable render bitmap/);
+    expect(verification()).toMatchObject({ state: 'failed', stage: 'readingBack' });
+  });
+
+  it('fails by name when the animation frame never arrives, naming the stage it sat in', async () => {
+    stubNeverFiringAnimationFrames();
+    vi.useFakeTimers();
+    try {
+      const run = runRenderVerification({}, 'webgl');
+      const rejected = expect(run).rejects.toThrow(/stalled in stage awaitingFrame: no animation frame within 4000ms/);
+      await vi.advanceTimersByTimeAsync(4_000);
+      await rejected;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    // The failure is terminal and carries its location — the runner's outer wait would otherwise have
+    // reported the bare `state: pending` this replaces.
+    expect(verification()).toMatchObject({ state: 'failed', stage: 'awaitingFrame' });
   });
 });
 
