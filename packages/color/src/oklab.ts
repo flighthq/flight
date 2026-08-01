@@ -1,3 +1,11 @@
+// Clamps linear sRGB channels to the displayable [0, 1] gamut, writing [r, g, b] into `out`.
+// This is a channel clamp, not a perceptual gamut-mapping operation. Alias-safe.
+export function clampLinearRgb(out: [number, number, number], r: number, g: number, b: number): void {
+  out[0] = Math.max(0, Math.min(1, r));
+  out[1] = Math.max(0, Math.min(1, g));
+  out[2] = Math.max(0, Math.min(1, b));
+}
+
 // Converts linear sRGB [0..1] to Oklab, writing [L, a, b] into `out` (L∈[0..1],
 // a/b∈~[-0.5..0.5]). Oklab is a perceptually uniform space; equal steps in L, a, b are
 // visually equal. Reference: Ottosson 2020. Alias-safe.
@@ -16,8 +24,9 @@ export function linearRgbToOklab(out: [number, number, number], r: number, g: nu
   out[2] = 0.0259040371 * lc + 0.7827717662 * mc - 0.808675766 * sc;
 }
 
-// Converts Oklab [L, a, b] back to linear sRGB [0..1], writing [r, g, b] into `out`.
-// Alias-safe.
+// Converts Oklab [L, a, b] back to unclamped linear sRGB, writing [r, g, b] into `out`.
+// Negative and greater-than-one channels are preserved so this remains a true inverse; callers that
+// require the displayable sRGB gamut can compose the result with `clampLinearRgb`. Alias-safe.
 export function oklabToLinearRgb(out: [number, number, number], L: number, a: number, b: number): void {
   // Oklab → LMS.
   const lc = L + 0.3963377774 * a + 0.2158037573 * b;
@@ -28,7 +37,7 @@ export function oklabToLinearRgb(out: [number, number, number], L: number, a: nu
   const m = mc * mc * mc;
   const s = sc * sc * sc;
   // LMS → linear sRGB.
-  out[0] = Math.max(0, 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
-  out[1] = Math.max(0, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
-  out[2] = Math.max(0, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
+  out[0] = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  out[1] = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  out[2] = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
 }
