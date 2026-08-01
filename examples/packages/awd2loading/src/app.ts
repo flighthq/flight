@@ -1,19 +1,26 @@
-import type { ImportDiagnostic, Mesh, Scene3DLightsLike, ShadedMaterial } from '@flighthq/sdk';
+import type {
+  AmbientLight,
+  DirectionalLight,
+  ImportDiagnostic,
+  Mesh,
+  Scene3DLightsLike,
+  ShadedMaterial,
+} from '@flighthq/sdk';
 import {
-  createAmbientLight,
+  AmbientLightKind,
   createCamera3D,
-  createDirectionalLight,
   createModifierRegistry,
   createPerspectiveProjection,
   createPointLight,
   createRimModifier,
-  createScene3DFromAwd2,
+  createScene3DFromDocument,
   createVector3,
+  DirectionalLightKind,
   getNodeChildren,
   isMesh,
   isModifierStackValid,
   invalidateNodeLocalTransform,
-  normalizeVector3,
+  parseAwd2,
   registerBuiltInModifiers,
   setQuaternionFromEuler,
   ShadedMaterialKind,
@@ -28,9 +35,13 @@ import {
 import { createSyntheticAwd2 } from './createSyntheticAwd2';
 import { canvas, render, scale } from './render';
 
+// Parsing stops at the format-neutral Scene3DDocument, then the document is assembled into a live scene.
+// That two-step is what puts the file's LIGHT TABLE in reach: lights are not scene members in Flight, so
+// createScene3DFromDocument leaves them on the document for the caller to draw with (see `lights` below).
 const awdBytes = createSyntheticAwd2();
 const diagnostics: ImportDiagnostic[] = [];
-const documentScene3D = createScene3DFromAwd2(awdBytes, diagnostics);
+const awdDocument = parseAwd2(awdBytes, diagnostics);
+const documentScene3D = createScene3DFromDocument(awdDocument);
 if (diagnostics.length !== 0)
   throw new Error(`Synthetic AWD2 fixture produced diagnostics: ${diagnostics.map((d) => d.kind).join('; ')}`);
 const mesh = findImportedMesh();
@@ -73,15 +84,13 @@ const cameraController = createOrbitCameraController({
 });
 updateOrbitCameraController(cameraController, camera, 1);
 
-const directionalDirection = createVector3(-0.65, -0.9, -0.5);
-normalizeVector3(directionalDirection, directionalDirection);
+// The AWD file carries ONE light block, and an AWD light is a compound: a directional term plus its own
+// ambient fill on the same entity. The importer splits that into the two descriptors Flight models
+// separately, so both are read straight out of the document rather than re-authored here. The two point
+// lights stay hand-authored, showing imported and app-authored lights composing in one draw.
 const lights: Scene3DLightsLike = {
-  ambient: createAmbientLight({ color: 0x688bc0ff, intensity: 0.22 }),
-  directional: createDirectionalLight({
-    color: 0xffe2c3ff,
-    direction: directionalDirection,
-    intensity: 2.2,
-  }),
+  ambient: findImportedLight<AmbientLight>(AmbientLightKind),
+  directional: findImportedLight<DirectionalLight>(DirectionalLightKind),
   point: [
     createPointLight({
       color: 0x4bdcffff,
@@ -138,9 +147,9 @@ const details = document.createElement('section');
 details.className = 'details';
 details.innerHTML = [
   '<h1>AWD2 loading</h1>',
-  '<p>A tiny cube is authored into an AWD2 byte stream in the browser, then loaded with <strong>createScene3DFromAwd2</strong>.</p>',
-  `<p><strong>${formatBytes(awdBytes.byteLength)}</strong> · 1 mesh · 24 vertices · 1 ShadedMaterial</p>`,
-  '<p class="success">✓ parsed with 0 diagnostics<br>✓ built-in rim modifier registered</p>',
+  '<p>A tiny cube and a light are authored into an AWD2 byte stream in the browser, then loaded with <strong>parseAwd2</strong> + <strong>createScene3DFromDocument</strong>.</p>',
+  `<p><strong>${formatBytes(awdBytes.byteLength)}</strong> · 1 mesh · 24 vertices · 1 ShadedMaterial · ${awdDocument.lights.length} lights</p>`,
+  '<p class="success">✓ parsed with 0 diagnostics<br>✓ built-in rim modifier registered<br>✓ key light and ambient fill imported from the file</p>',
   '<p>Drag to orbit · wheel to zoom</p>',
 ].join('');
 document.body.appendChild(details);
@@ -172,6 +181,14 @@ function queueCaptureFramesAfterWarmup(framesRemaining: number): void {
     }
     for (let frame = 0; frame < 32; frame++) requestAnimationFrame(() => {});
   });
+}
+
+// The first document light of `kind`. A Scene3DDocument's light table is a flat list of placed
+// descriptors, and Scene3DLights takes at most one directional and one ambient, so the caller selects.
+function findImportedLight<T>(kind: string): T {
+  const light = awdDocument.lights.find((candidate) => candidate.descriptor.kind === kind);
+  if (light === undefined) throw new Error(`The AWD2 fixture did not import a ${kind}`);
+  return light.descriptor as T;
 }
 
 function findImportedMesh(): Mesh {
