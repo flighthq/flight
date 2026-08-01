@@ -3,8 +3,12 @@ import type {
   RectangleLike,
   SpatialAabb,
   SpatialIndexBackend,
+  SpatialDeclineReason,
   SpatialIndexingExplanation,
   SpatialIndexingGuard,
+  SpatialIndexingMode,
+  SpatialIndexingOperation,
+  SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
 } from '@flighthq/types/contract';
@@ -23,42 +27,47 @@ import type {
 // everything, so the cell index tells the queries almost nothing and a linear scan answers the same
 // question at a bounded cost. 1024 cells is a 32×32 block — an object 32× the cell size on each axis,
 // far past the "cell size ≈ typical object size" the grid is built around. An object over the budget
-// is a signal the cell size is wrong for the workload, which is what enableSpatialGuards reports.
+// is a signal the cell size is wrong for the workload, which the indexing guard reports.
 export const MAX_INDEXED_CELLS_PER_OBJECT = 1024;
 
 // Builds a uniform-grid (spatial-hash) backend: an object's AABB is mapped to the rectangular block
 // of fixed-size cells it covers, and each cell holds the ids overlapping it. Co-located objects share
 // a cell, so candidate pairs and region/point/ray hits are found by looking only at the relevant
 // cells instead of scanning every object. `cellSize` is the world-space side length of one cell; a
-// good value is roughly the size of a typical object (too small over-spans large objects across many
-// cells, too large lumps unrelated objects together). No import-time side effect — the caller
-// constructs a grid explicitly, and createSpatialIndex uses this as its default index.
+// good value is a positive finite number roughly the size of a typical object (too small over-spans
+// large objects across many cells, too large lumps unrelated objects together). An invalid size uses
+// the bounded overflow path to keep results correct and reports through the indexing guard. No
+// import-time side effect — the caller constructs a grid explicitly, and createSpatialIndex uses
+// this as its default index.
 //
 // Object size does not set the cost: an AABB spanning more than MAX_INDEXED_CELLS_PER_OBJECT cells
-// goes to a flat overflow list that every query scans, and non-finite bounds are declined outright
-// with a false sentinel. Both are visible through explainSpatialIndexing.
+// goes to a flat overflow list that every query scans, and non-finite or inverted bounds are declined
+// outright with a false sentinel. Both are visible through explainSpatialIndexing.
 export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexBackend {
   const grid: UniformGrid = {
     cellSize,
     cells: new Map(),
     bounds: new Map(),
     overflow: new Set(),
-    declined: new Set(),
+    declined: new Map(),
     minCellX: 0,
     minCellY: 0,
     maxCellX: 0,
     maxCellY: 0,
     seen: new Set(),
+    pairIds: [],
   };
   return {
     insertSpatialObject(id, bounds) {
-      return _insertIntoGrid(grid, id, bounds);
+      return _insertIntoGrid(grid, id, bounds, 'insert');
     },
     updateSpatialObject(id, bounds) {
       return _updateGridObject(grid, id, bounds);
     },
     removeSpatialObject(id) {
+      const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
       _removeFromGrid(grid, id);
+      if (wasMissing) _reportGridIndexing(grid, id, 'absent', 'remove', 'missing-id', 0);
     },
     clearSpatialIndex() {
       grid.cells.clear();
@@ -66,6 +75,7 @@ export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexB
       grid.overflow.clear();
       grid.declined.clear();
       grid.seen.clear();
+      grid.pairIds.length = 0;
     },
     explainSpatialIndexing(id) {
       return _explainGridIndexing(grid, id);
@@ -85,11 +95,9 @@ export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexB
   };
 }
 
-// Installs the indexing guard consulted whenever an object is declined or routed to overflow; null
-// uninstalls it. This is the diagnostics seam, not the caller-facing entry point — use
-// enableSpatialGuards, which installs the @flighthq/log reporter through here. Module-scoped rather
-// than per-grid: it is a development diagnostic, and an application debugging a missing object wants
-// it on for every index at once.
+// Installs the indexing guard consulted for invalid configuration or bounds, missing-id operations,
+// and overflow routing; null uninstalls it. Module-scoped rather than per-grid: it is a development
+// diagnostic, and an application debugging an index wants it on for every grid at once.
 export function setSpatialIndexingGuard(guard: SpatialIndexingGuard | null): void {
   _indexingGuard = guard;
 }
@@ -108,22 +116,24 @@ interface GridCell {
 // against the real bounds — it holds every indexed object, whether celled or overflowed, and is what
 // every query falls back to scanning. `overflow` holds the ids too large to bucket, `declined` the
 // ids whose bounds could not be indexed at all (those have no `bounds` entry, so no query can reach
-// them). `minCell*`/`maxCell*` track the occupied cell range for ray traversal; they only ever expand
-// while celled objects exist (remove does not shrink them — a conservative over-walk) and reset when
-// the grid empties. Keeping overflowed objects out of that range is a second reason the bound
-// matters: one oversized AABB would otherwise stretch the range and make every ray walk it. `seen` is
-// a reused scratch set for gather dedup — cleared per query, never reallocated.
+// them). `pairIds` is the reused cell-enumeration scratch array and `seen` is the reused gather set;
+// both are cleared per query, never reallocated. `minCell*`/`maxCell*` track the occupied cell range
+// for ray traversal; they only ever expand while celled objects exist (remove does not shrink them —
+// a conservative over-walk) and reset when the grid empties. Keeping overflowed objects out of that
+// range is a second reason the bound matters: one oversized AABB would otherwise stretch the range
+// and make every ray walk it.
 interface UniformGrid {
   cellSize: number;
   cells: Map<string, GridCell>;
   bounds: Map<SpatialObjectId, SpatialAabb>;
   overflow: Set<SpatialObjectId>;
-  declined: Set<SpatialObjectId>;
+  declined: Map<SpatialObjectId, SpatialDeclineReason>;
   minCellX: number;
   minCellY: number;
   maxCellX: number;
   maxCellY: number;
   seen: Set<SpatialObjectId>;
+  pairIds: SpatialObjectId[];
 }
 
 // Maps a world coordinate to its cell index along one axis. Uses floor so negative coordinates map
@@ -140,8 +150,7 @@ function _cellKey(cx: number, cy: number): string {
 
 // Fills a scratch RectangleLike (x/y/width/height) from a SpatialAabb (min/max corners) so the
 // geometry rectangle-overlap and point-containment helpers can be reused instead of re-deriving the
-// AABB math here. Assumes a normalized AABB (max >= min); a flipped AABB yields a negative extent,
-// which the geometry helpers still normalize internally.
+// AABB math here. Stored AABBs are normalized because insert declines inverted bounds.
 function _fillRectFromAabb(out: RectangleLike, aabb: Readonly<SpatialAabb>): void {
   out.x = aabb.minX;
   out.y = aabb.minY;
@@ -151,7 +160,8 @@ function _fillRectFromAabb(out: RectangleLike, aabb: Readonly<SpatialAabb>): voi
 
 // Reports how `id` is currently held. Pure: reads only, allocates only the returned record.
 function _explainGridIndexing(grid: UniformGrid, id: SpatialObjectId): SpatialIndexingExplanation {
-  if (grid.declined.has(id)) return { bucketCount: 0, id, mode: 'declined', reason: 'non-finite-bounds' };
+  const declineReason = grid.declined.get(id);
+  if (declineReason !== undefined) return { bucketCount: 0, id, mode: 'declined', reason: declineReason };
   if (grid.overflow.has(id)) return { bucketCount: 0, id, mode: 'overflow', reason: null };
   const bounds = grid.bounds.get(id);
   if (bounds === undefined) return { bucketCount: 0, id, mode: 'absent', reason: null };
@@ -161,41 +171,55 @@ function _explainGridIndexing(grid: UniformGrid, id: SpatialObjectId): SpatialIn
 // Adds an object to the index, storing a private copy of the bounds; the caller may safely mutate or
 // reuse the passed bounds afterward. Returns false only for bounds that cannot be indexed at all.
 //
-// Three outcomes, and which one applies is decided *before* any cell is touched — that ordering is
+// Five outcomes, and which one applies is decided *before* any cell is touched — that ordering is
 // the whole point, since deciding afterward would mean walking the cells to find out they were too
 // many:
 //   - non-finite bounds are declined. There is no cell range to compute, and storing them would let a
 //     NaN leak into every later overlap test, so the object is left out of the index entirely and the
 //     caller gets a false sentinel rather than an exception or a silent no-op.
+//   - inverted bounds are likewise declined because min/max corners do not describe an AABB.
+//   - a non-positive or non-finite cell size routes valid objects to overflow, preserving query
+//     correctness through the bounded flat scan while the indexing guard reports the configuration.
 //   - bounds spanning more than MAX_INDEXED_CELLS_PER_OBJECT cells go to the overflow list, which
 //     every query scans. Bounded by the object count instead of the object's size.
 //   - everything else takes the ordinary path: one entry in each cell it covers.
-function _insertIntoGrid(grid: UniformGrid, id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean {
+function _insertIntoGrid(
+  grid: UniformGrid,
+  id: SpatialObjectId,
+  bounds: Readonly<SpatialAabb>,
+  operation: SpatialIndexingOperation,
+): boolean {
   if (
     !Number.isFinite(bounds.minX) ||
     !Number.isFinite(bounds.minY) ||
     !Number.isFinite(bounds.maxX) ||
     !Number.isFinite(bounds.maxY)
   ) {
-    grid.declined.add(id);
-    if (_indexingGuard !== null) {
-      _indexingGuard({ id, mode: 'declined', reason: 'non-finite-bounds', wouldOccupyBucketCount: 0 });
-    }
+    grid.declined.set(id, 'non-finite-bounds');
+    _reportGridIndexing(grid, id, 'declined', operation, 'non-finite-bounds', 0);
+    return false;
+  }
+  if (bounds.maxX < bounds.minX || bounds.maxY < bounds.minY) {
+    grid.declined.set(id, 'inverted-bounds');
+    _reportGridIndexing(grid, id, 'declined', operation, 'inverted-bounds', 0);
     return false;
   }
 
   const cs = grid.cellSize;
   const copy = { minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY };
+  if (!(cs > 0 && Number.isFinite(cs))) {
+    grid.bounds.set(id, copy);
+    grid.overflow.add(id);
+    _reportGridIndexing(grid, id, 'overflow', operation, 'invalid-cell-size', 0);
+    return true;
+  }
   const spanned = _spannedCellCount(cs, copy);
-  // Written as a negated `<=` so a NaN span — a zero or non-finite cellSize makes every cell index
-  // NaN — falls to overflow rather than through to a loop whose bounds are NaN and which therefore
-  // never runs, silently indexing nothing.
+  // Written as a negated `<=` so an unrepresentable span falls to overflow rather than through to a
+  // loop that cannot index it.
   if (!(spanned <= MAX_INDEXED_CELLS_PER_OBJECT)) {
     grid.bounds.set(id, copy);
     grid.overflow.add(id);
-    if (_indexingGuard !== null) {
-      _indexingGuard({ id, mode: 'overflow', reason: null, wouldOccupyBucketCount: spanned });
-    }
+    _reportGridIndexing(grid, id, 'overflow', operation, null, spanned);
     return true;
   }
 
@@ -237,6 +261,7 @@ function _insertIntoGrid(grid: UniformGrid, id: SpatialObjectId, bounds: Readonl
 // usually stays inside this range, so its dominant cost becomes four field writes instead of a
 // remove-and-reinsert walk. Every mode or range transition keeps using the shared slow path below.
 function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean {
+  const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
   const previous = grid.bounds.get(id);
   if (
     previous !== undefined &&
@@ -244,7 +269,9 @@ function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Reado
     Number.isFinite(bounds.minX) &&
     Number.isFinite(bounds.minY) &&
     Number.isFinite(bounds.maxX) &&
-    Number.isFinite(bounds.maxY)
+    Number.isFinite(bounds.maxY) &&
+    bounds.minX <= bounds.maxX &&
+    bounds.minY <= bounds.maxY
   ) {
     const cs = grid.cellSize;
     const spanned = _spannedCellCount(cs, bounds);
@@ -263,7 +290,12 @@ function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Reado
     }
   }
   _removeFromGrid(grid, id);
-  return _insertIntoGrid(grid, id, bounds);
+  const inserted = _insertIntoGrid(grid, id, bounds, 'update');
+  if (wasMissing) {
+    const explanation = _explainGridIndexing(grid, id);
+    _reportGridIndexing(grid, id, explanation.mode, 'update', 'missing-id', 0);
+  }
+  return inserted;
 }
 
 // Reports whether an AABB contains the point (`x`,`y`), reusing the geometry rectangle helper.
@@ -386,10 +418,12 @@ function _queryGridOverflowPairs(grid: UniformGrid, out: SpatialPair[]): void {
 function _queryGridPairs(grid: UniformGrid, out: SpatialPair[]): void {
   out.length = 0;
   const cs = grid.cellSize;
+  const list = grid.pairIds;
   for (const cell of grid.cells.values()) {
     const ids = cell.ids;
     if (ids.size < 2) continue;
-    const list = [...ids];
+    list.length = 0;
+    for (const id of ids) list.push(id);
     for (let i = 0; i < list.length; i++) {
       for (let j = i + 1; j < list.length; j++) {
         let a = list[i];
@@ -409,6 +443,18 @@ function _queryGridPairs(grid: UniformGrid, out: SpatialPair[]): void {
     }
   }
   if (grid.overflow.size !== 0) _queryGridOverflowPairs(grid, out);
+}
+
+function _reportGridIndexing(
+  grid: Readonly<UniformGrid>,
+  id: SpatialObjectId,
+  mode: SpatialIndexingMode,
+  operation: SpatialIndexingOperation,
+  reason: SpatialIndexingReason | null,
+  wouldOccupyBucketCount: number,
+): void {
+  if (_indexingGuard === null) return;
+  _indexingGuard({ cellSize: grid.cellSize, id, mode, operation, reason, wouldOccupyBucketCount });
 }
 
 // Gathers the ids in the cell containing the point, then confirms each against its real bounds. A
@@ -581,10 +627,8 @@ function _spannedCellCount(cellSize: number, aabb: Readonly<SpatialAabb>): numbe
   return (cx1 - cx0 + 1) * (cy1 - cy0 + 1);
 }
 
-// Diagnostics seam: enableSpatialGuards (separately imported, so its message text and its
-// @flighthq/log dependency shake out of a production bundle) fills this, and the insert path reaches
-// it through the null check. Not enabling guards costs one comparison per declined-or-overflowed
-// insert — and nothing at all on the ordinary path.
+// Diagnostics seam filled by setSpatialIndexingGuard. Caller-facing text stays in the separate
+// formatSpatialIndexingNotice module, so production pays only the null checks at noteworthy sites.
 let _indexingGuard: SpatialIndexingGuard | null = null;
 
 // Reused scratch rectangles for the geometry overlap/containment helpers. Only ever read+written

@@ -11,8 +11,10 @@ afterEach(() => {
 describe('formatSpatialIndexingNotice', () => {
   it('names the sentinel to check for a decline', () => {
     const message = formatSpatialIndexingNotice({
+      cellSize: 10,
       id: 3,
       mode: 'declined',
+      operation: 'insert',
       reason: 'non-finite-bounds',
       wouldOccupyBucketCount: 0,
     });
@@ -23,8 +25,10 @@ describe('formatSpatialIndexingNotice', () => {
 
   it('names the span and the cell-size cause for an overflow, without calling it wrong', () => {
     const message = formatSpatialIndexingNotice({
+      cellSize: 1,
       id: 4,
       mode: 'overflow',
+      operation: 'insert',
       reason: null,
       wouldOccupyBucketCount: 40000,
     });
@@ -36,10 +40,50 @@ describe('formatSpatialIndexingNotice', () => {
     expect(message).toContain('Results are unaffected');
   });
 
+  it('explains invalid cell sizes, inverted bounds, and missing ids', () => {
+    expect(
+      formatSpatialIndexingNotice({
+        cellSize: 0,
+        id: 1,
+        mode: 'overflow',
+        operation: 'insert',
+        reason: 'invalid-cell-size',
+        wouldOccupyBucketCount: 0,
+      }),
+    ).toContain('cellSize must be a positive finite number');
+    expect(
+      formatSpatialIndexingNotice({
+        cellSize: 10,
+        id: 2,
+        mode: 'declined',
+        operation: 'update',
+        reason: 'inverted-bounds',
+        wouldOccupyBucketCount: 0,
+      }),
+    ).toContain('minX/minY must not exceed maxX/maxY');
+    expect(
+      formatSpatialIndexingNotice({
+        cellSize: 10,
+        id: 3,
+        mode: 'absent',
+        operation: 'remove',
+        reason: 'missing-id',
+        wouldOccupyBucketCount: 0,
+      }),
+    ).toContain('removal was a no-op');
+  });
+
   it('says plainly that a mode it does not cover carries no advice', () => {
-    expect(formatSpatialIndexingNotice({ id: 5, mode: 'cells', reason: null, wouldOccupyBucketCount: 4 })).toContain(
-      'no caller-facing advice',
-    );
+    expect(
+      formatSpatialIndexingNotice({
+        cellSize: 10,
+        id: 5,
+        mode: 'cells',
+        operation: 'insert',
+        reason: null,
+        wouldOccupyBucketCount: 4,
+      }),
+    ).toContain('no caller-facing advice');
   });
 
   it('formats what the grid actually hands a guard', () => {
@@ -50,8 +94,22 @@ describe('formatSpatialIndexingNotice', () => {
     grid.insertSpatialObject(9, { minX: 0, minY: 0, maxX: 199, maxY: 199 });
     grid.insertSpatialObject(10, { minX: NaN, minY: 0, maxX: 1, maxY: 1 });
     expect(notices.map(formatSpatialIndexingNotice)).toEqual([
-      formatSpatialIndexingNotice({ id: 9, mode: 'overflow', reason: null, wouldOccupyBucketCount: 40000 }),
-      formatSpatialIndexingNotice({ id: 10, mode: 'declined', reason: 'non-finite-bounds', wouldOccupyBucketCount: 0 }),
+      formatSpatialIndexingNotice({
+        cellSize: 1,
+        id: 9,
+        mode: 'overflow',
+        operation: 'insert',
+        reason: null,
+        wouldOccupyBucketCount: 40000,
+      }),
+      formatSpatialIndexingNotice({
+        cellSize: 1,
+        id: 10,
+        mode: 'declined',
+        operation: 'insert',
+        reason: 'non-finite-bounds',
+        wouldOccupyBucketCount: 0,
+      }),
     ]);
     expect(notices.map(formatSpatialIndexingNotice)[0]).toContain('40000 cells');
   });

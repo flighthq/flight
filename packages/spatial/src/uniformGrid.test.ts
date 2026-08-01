@@ -17,6 +17,172 @@ function pairKeys(pairs: readonly SpatialPair[]): string[] {
   return pairs.map((p) => `${Math.min(p.a, p.b)}-${Math.max(p.a, p.b)}`).sort();
 }
 
+function bruteForcePairKeys(objects: ReadonlyMap<SpatialObjectId, Readonly<SpatialAabb>>, cellSize: number): string[] {
+  const entries = [...objects];
+  const pairs: string[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const [aId, a] = entries[i];
+      const [bId, b] = entries[j];
+      if (
+        isOverflowBounds(a, cellSize) || isOverflowBounds(b, cellSize)
+          ? boundsOverlap(a, b)
+          : boundsShareCell(a, b, cellSize)
+      ) {
+        pairs.push(`${Math.min(aId, bId)}-${Math.max(aId, bId)}`);
+      }
+    }
+  }
+  return pairs.sort();
+}
+
+function boundsContainPoint(bounds: Readonly<SpatialAabb>, x: number, y: number): boolean {
+  return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
+}
+
+function boundsIntersectRay(bounds: Readonly<SpatialAabb>, ox: number, oy: number, dx: number, dy: number): boolean {
+  let tMin = -Infinity;
+  let tMax = Infinity;
+  if (dx === 0) {
+    if (ox < bounds.minX || ox > bounds.maxX) return false;
+  } else {
+    const tx0 = (bounds.minX - ox) / dx;
+    const tx1 = (bounds.maxX - ox) / dx;
+    tMin = Math.max(tMin, Math.min(tx0, tx1));
+    tMax = Math.min(tMax, Math.max(tx0, tx1));
+  }
+  if (dy === 0) {
+    if (oy < bounds.minY || oy > bounds.maxY) return false;
+  } else {
+    const ty0 = (bounds.minY - oy) / dy;
+    const ty1 = (bounds.maxY - oy) / dy;
+    tMin = Math.max(tMin, Math.min(ty0, ty1));
+    tMax = Math.min(tMax, Math.max(ty0, ty1));
+  }
+  return tMax >= tMin && tMax >= 0;
+}
+
+function boundsShareCell(a: Readonly<SpatialAabb>, b: Readonly<SpatialAabb>, cellSize: number): boolean {
+  return (
+    Math.max(Math.floor(a.minX / cellSize), Math.floor(b.minX / cellSize)) <=
+      Math.min(Math.floor(a.maxX / cellSize), Math.floor(b.maxX / cellSize)) &&
+    Math.max(Math.floor(a.minY / cellSize), Math.floor(b.minY / cellSize)) <=
+      Math.min(Math.floor(a.maxY / cellSize), Math.floor(b.maxY / cellSize))
+  );
+}
+
+function createTestRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) / 0x1_0000_0000;
+  };
+}
+
+function isOverflowBounds(bounds: Readonly<SpatialAabb>, cellSize: number): boolean {
+  const width = Math.floor(bounds.maxX / cellSize) - Math.floor(bounds.minX / cellSize) + 1;
+  const height = Math.floor(bounds.maxY / cellSize) - Math.floor(bounds.minY / cellSize) + 1;
+  return width * height > MAX_INDEXED_CELLS_PER_OBJECT;
+}
+
+function sortedIds(ids: readonly SpatialObjectId[]): SpatialObjectId[] {
+  return [...ids].sort((a, b) => a - b);
+}
+
+describe('brute-force property coverage', () => {
+  it('matches pair, region, point, and ray oracles through seeded cell and overflow churn', () => {
+    const cellSize = 4;
+    for (const seed of [0x1357_9bdf, 0x2468_ace0, 0x5eed_f00d, 0xc0ff_ee42]) {
+      const random = createTestRandom(seed);
+      const grid = createUniformGridSpatialBackend(cellSize);
+      const objects = new Map<SpatialObjectId, SpatialAabb>();
+
+      function randomBounds(overflow: boolean): SpatialAabb {
+        const minX = Math.floor(random() * 160) - 80 + random();
+        const minY = Math.floor(random() * 160) - 80 + random();
+        const width = overflow ? cellSize * (34 + Math.floor(random() * 12)) : 0.25 + random() * 12;
+        const height = overflow ? cellSize * (34 + Math.floor(random() * 12)) : 0.25 + random() * 12;
+        return { minX, minY, maxX: minX + width, maxY: minY + height };
+      }
+
+      function expectMatchesBruteForce(label: string): void {
+        const pairs: SpatialPair[] = [];
+        grid.querySpatialPairs(pairs);
+        expect(pairKeys(pairs), `${label}: pairs`).toEqual(bruteForcePairKeys(objects, cellSize));
+
+        const regionMinX = random() * 240 - 120;
+        const regionMinY = random() * 240 - 120;
+        const region: SpatialAabb = {
+          minX: regionMinX,
+          minY: regionMinY,
+          maxX: regionMinX + 1 + random() * 80,
+          maxY: regionMinY + 1 + random() * 80,
+        };
+        const regionActual: SpatialObjectId[] = [];
+        grid.querySpatialRegion(region, regionActual);
+        const regionExpected = [...objects].filter(([, bounds]) => boundsOverlap(bounds, region)).map(([id]) => id);
+        expect(sortedIds(regionActual), `${label}: region`).toEqual(sortedIds(regionExpected));
+
+        const pointX = random() * 320 - 160;
+        const pointY = random() * 320 - 160;
+        const pointActual: SpatialObjectId[] = [];
+        grid.querySpatialPoint(pointX, pointY, pointActual);
+        const pointExpected = [...objects]
+          .filter(([, bounds]) => boundsContainPoint(bounds, pointX, pointY))
+          .map(([id]) => id);
+        expect(sortedIds(pointActual), `${label}: point`).toEqual(sortedIds(pointExpected));
+
+        const rayX = random() * 400 - 200;
+        const rayY = random() * 400 - 200;
+        let rayDx = random() * 2 - 1;
+        let rayDy = random() * 2 - 1;
+        if (random() < 0.1) rayDx = 0;
+        if (random() < 0.1) rayDy = 0;
+        const rayActual: SpatialObjectId[] = [];
+        grid.querySpatialRay(rayX, rayY, rayDx, rayDy, rayActual);
+        const rayExpected = [...objects]
+          .filter(([, bounds]) => boundsIntersectRay(bounds, rayX, rayY, rayDx, rayDy))
+          .map(([id]) => id);
+        expect(sortedIds(rayActual), `${label}: ray`).toEqual(sortedIds(rayExpected));
+      }
+
+      const ordinary = randomBounds(false);
+      objects.set(0, ordinary);
+      grid.insertSpatialObject(0, ordinary);
+      expectMatchesBruteForce(`seed ${seed}, ordinary`);
+
+      const overflow = randomBounds(true);
+      objects.set(0, overflow);
+      grid.updateSpatialObject(0, overflow);
+      expect(grid.explainSpatialIndexing(0).mode).toBe('overflow');
+      expectMatchesBruteForce(`seed ${seed}, overflow`);
+
+      const ordinaryAgain = randomBounds(false);
+      objects.set(0, ordinaryAgain);
+      grid.updateSpatialObject(0, ordinaryAgain);
+      expect(grid.explainSpatialIndexing(0).mode).toBe('cells');
+      expectMatchesBruteForce(`seed ${seed}, cells again`);
+
+      for (let step = 0; step < 100; step++) {
+        const id = Math.floor(random() * 18);
+        if (random() < 0.72) {
+          const bounds = randomBounds(random() < 0.22);
+          if (objects.has(id)) grid.updateSpatialObject(id, bounds);
+          else if (random() < 0.5) grid.insertSpatialObject(id, bounds);
+          else grid.updateSpatialObject(id, bounds);
+          objects.set(id, bounds);
+        } else {
+          grid.removeSpatialObject(id);
+          objects.delete(id);
+        }
+        expectMatchesBruteForce(`seed ${seed}, step ${step}`);
+      }
+    }
+  });
+});
+
 describe('cell range across every transition that can strand it', () => {
   // Chief's class-not-instance rule applied to the ray-hang defect. The bug was never "removal after
   // overflow"; it was that a separately-maintained `empty` flag could disagree with the cells it
@@ -460,13 +626,49 @@ describe('oversized-extent bound', () => {
   });
 });
 
+describe('ray edge cases', () => {
+  it('finds objects along a ray that passes exactly through cell corners', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 10, minY: 10, maxX: 12, maxY: 12 });
+    grid.insertSpatialObject(2, { minX: 20, minY: 20, maxX: 22, maxY: 22 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRay(-5, -5, 1, 1, out);
+    expect(sortedIds(out)).toEqual([1, 2]);
+  });
+
+  it('finds an object when the ray starts inside its bounds', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 5, minY: 5, maxX: 15, maxY: 15 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRay(10, 10, -1, 0, out);
+    expect(out).toEqual([1]);
+  });
+
+  it('clips a ray entering the occupied range from far outside', () => {
+    const grid = createUniformGridSpatialBackend(10);
+    grid.insertSpatialObject(1, { minX: 100, minY: 30, maxX: 110, maxY: 40 });
+    const out: SpatialObjectId[] = [];
+    grid.querySpatialRay(-1e9, 35, 1, 0, out);
+    expect(out).toEqual([1]);
+  });
+});
+
 describe('setSpatialIndexingGuard', () => {
   it('reports a decline with its reason, and no span', () => {
     const notices: SpatialIndexingNotice[] = [];
     setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
     const grid = createUniformGridSpatialBackend(10);
     grid.insertSpatialObject(7, { minX: NaN, minY: 0, maxX: 10, maxY: 10 });
-    expect(notices).toEqual([{ id: 7, mode: 'declined', reason: 'non-finite-bounds', wouldOccupyBucketCount: 0 }]);
+    expect(notices).toEqual([
+      {
+        cellSize: 10,
+        id: 7,
+        mode: 'declined',
+        operation: 'insert',
+        reason: 'non-finite-bounds',
+        wouldOccupyBucketCount: 0,
+      },
+    ]);
   });
 
   it('reports an overflow with the span the bound refused to walk', () => {
@@ -474,7 +676,87 @@ describe('setSpatialIndexingGuard', () => {
     setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
     const grid = createUniformGridSpatialBackend(1);
     grid.insertSpatialObject(7, { minX: 0, minY: 0, maxX: 199, maxY: 199 });
-    expect(notices).toEqual([{ id: 7, mode: 'overflow', reason: null, wouldOccupyBucketCount: 40000 }]);
+    expect(notices).toEqual([
+      {
+        cellSize: 1,
+        id: 7,
+        mode: 'overflow',
+        operation: 'insert',
+        reason: null,
+        wouldOccupyBucketCount: 40000,
+      },
+    ]);
+  });
+
+  it('reports an invalid cell size and keeps results correct through the bounded overflow path', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    for (const cellSize of [0, -1]) {
+      const grid = createUniformGridSpatialBackend(cellSize);
+      expect(grid.insertSpatialObject(7, { minX: 0, minY: 0, maxX: 10, maxY: 10 })).toBe(true);
+      const point: SpatialObjectId[] = [];
+      grid.querySpatialPoint(5, 5, point);
+      expect(point).toEqual([7]);
+    }
+    expect(notices).toEqual(
+      [0, -1].map((cellSize) => ({
+        cellSize,
+        id: 7,
+        mode: 'overflow',
+        operation: 'insert',
+        reason: 'invalid-cell-size',
+        wouldOccupyBucketCount: 0,
+      })),
+    );
+  });
+
+  it('declines and reports inverted bounds', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const grid = createUniformGridSpatialBackend(10);
+    expect(grid.insertSpatialObject(7, { minX: 10, minY: 0, maxX: 0, maxY: 10 })).toBe(false);
+    expect(grid.explainSpatialIndexing(7)).toEqual({
+      bucketCount: 0,
+      id: 7,
+      mode: 'declined',
+      reason: 'inverted-bounds',
+    });
+    expect(notices).toEqual([
+      {
+        cellSize: 10,
+        id: 7,
+        mode: 'declined',
+        operation: 'insert',
+        reason: 'inverted-bounds',
+        wouldOccupyBucketCount: 0,
+      },
+    ]);
+  });
+
+  it('reports update and remove operations whose id was never inserted', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const grid = createUniformGridSpatialBackend(10);
+    expect(grid.updateSpatialObject(7, { minX: 0, minY: 0, maxX: 5, maxY: 5 })).toBe(true);
+    grid.removeSpatialObject(8);
+    expect(notices).toEqual([
+      {
+        cellSize: 10,
+        id: 7,
+        mode: 'cells',
+        operation: 'update',
+        reason: 'missing-id',
+        wouldOccupyBucketCount: 0,
+      },
+      {
+        cellSize: 10,
+        id: 8,
+        mode: 'absent',
+        operation: 'remove',
+        reason: 'missing-id',
+        wouldOccupyBucketCount: 0,
+      },
+    ]);
   });
 
   it('stays silent on the ordinary path', () => {

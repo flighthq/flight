@@ -42,9 +42,10 @@ export interface SpatialPair {
 // bounds, so a conservative structure never leaks a false co-occupant into the result.
 export interface SpatialIndexBackend {
   // Adds an object with its current bounds. The bounds are copied; the caller may reuse its own.
-  // Returns false when the bounds are not indexable at all (non-finite), in which case the object is
-  // not in the index and no query will return it — the expected-failure sentinel, not an error.
-  // Oversized-but-finite bounds still return true: a backend may index them by a different route, and
+  // Returns false when the bounds are not indexable at all (non-finite or inverted), in which case
+  // the object is not in the index and no query will return it — the expected-failure sentinel, not
+  // an error.
+  // Oversized-but-valid bounds still return true: a backend may index them by a different route, and
   // the object remains fully queryable.
   insertSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean;
   // Moves an already-inserted object to new bounds. Inserting a not-yet-present id is equivalent to
