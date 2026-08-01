@@ -47,7 +47,7 @@ describe('normalWgpuMeshMaterialRenderer', () => {
     const { fake, state } = makeWgpuScene3DState();
     normalWgpuMeshMaterialRenderer.bind(state, createNormalMaterial({ doubleSided: true }), NO_LIGHTS, makeCamera());
     const call = fake.calls.find((c) => c.name === 'createRenderPipeline');
-    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive.cullMode).toBe('none');
+    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive?.cullMode).toBe('none');
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {

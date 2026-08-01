@@ -52,7 +52,7 @@ describe('compileWgpuDebugPipeline', () => {
     const { fake, state } = makeWgpuScene3DState();
     compileWgpuDebugPipeline(state, NORMAL, 'rgba16float', false, true);
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive.cullMode).toBe('none');
+    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive?.cullMode).toBe('none');
   });
 });
 
