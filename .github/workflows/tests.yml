@@ -204,12 +204,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: functional · smoke
+          - label: functional · smoke · dom/canvas/webgl
             check: test:functional:smoke
-            args: ''
+            args: --renderer=dom,canvas,webgl
+          - label: functional · smoke · webgpu
+            check: test:functional:smoke
+            args: --renderer=webgpu --parallel 1 --retries 2
           - label: functional · parity
             check: test:functional:parity
-            args: ''
+            args: --parallel 1 --retries 2
           - label: examples · smoke · dom/canvas/webgl
             check: test:examples:smoke
             args: --renderer=dom,canvas,webgl
@@ -218,7 +221,7 @@ jobs:
             args: --renderer=webgpu --parallel 1 --retries 2
           - label: examples · parity
             check: test:examples:parity
-            args: ''
+            args: --parallel 1 --retries 2
 
     steps:
       - uses: actions/checkout@v4
@@ -244,9 +247,11 @@ jobs:
       # buys headroom for contention; it does not paper over a stall, which the reason text still
       # distinguishes by reporting how long the wait actually had.
       #
-      # WebGPU serialization: the runner has one SwiftShader adapter, and concurrent devices can
-      # starve frame-capture buffer readback. The examples smoke check therefore keeps the
-      # non-adapter-bound backends parallel in one leg and runs WebGPU alone with `--parallel 1`.
+      # Durable WebGPU rule: every leg that captures WebGPU serializes because this runner has one
+      # SwiftShader adapter and concurrent devices can starve frame-capture buffer readback. Smoke
+      # has no cross-backend comparison, so it splits: non-WebGPU backends stay parallel while
+      # WebGPU runs alone. Parity must compare backends within one run, so the whole leg keeps all
+      # renderers together and uses `--parallel 1`.
       - run: npm run ${{ matrix.check }} -- ${{ matrix.args }}
         env:
           FLIGHT_CAPTURE_WORKER_COUNT: 2
