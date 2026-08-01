@@ -33,7 +33,8 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   ): void {
     const gl = state.gl;
     const wireframe = material as Readonly<WireframeMaterial> | null;
-    const program = ensureGlWireframeProgram(state);
+    const alphaMaskEnabled = wireframe?.alphaMode === 'mask';
+    const program = ensureGlWireframeProgram(state, alphaMaskEnabled);
     // doubleSided = true: lines have no winding, so back-face culling must be off.
     beginGlMeshDraw(state, program, true);
     setGlMeshViewProjection(state, program.locViewProjection, camera);
@@ -44,6 +45,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
     unpackColorToLinear(scratchRgba, wireframe.color);
     gl.uniform4f(program.locColor, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+    if (alphaMaskEnabled) gl.uniform1f(program.locAlphaCutoff, wireframe.alphaCutoff);
   },
 
   draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {

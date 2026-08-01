@@ -294,7 +294,7 @@ function applyGlSurfaceBlendMode(state: GlRenderState, material: Readonly<Materi
   const blendMode =
     surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
   const runtime = getGlRenderStateRuntime(state);
-  if (blendMode === BlendMode.Normal) {
+  if (blendMode === BlendMode.Normal && surface.alphaType !== 'premultiplied') {
     runtime.currentBlendMode = null;
     state.gl.blendEquation(state.gl.FUNC_ADD);
     state.gl.blendFunc(state.gl.SRC_ALPHA, state.gl.ONE_MINUS_SRC_ALPHA);

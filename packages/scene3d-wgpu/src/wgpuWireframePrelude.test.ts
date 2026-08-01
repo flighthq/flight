@@ -42,6 +42,17 @@ describe('ensureWgpuWireframePipeline', () => {
     expect(a).toBe(b);
     expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
   });
+
+  it('caches base and alpha-mask variants independently', () => {
+    const { state } = makeWgpuScene3DState();
+    const base = ensureWgpuWireframePipeline(state, 'bgra8unorm');
+    const masked = ensureWgpuWireframePipeline(state, 'bgra8unorm', true);
+    expect(masked).not.toBe(base);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()]).toEqual([
+      'wireframe:bgra8unorm|base|opaque|rigid',
+      'wireframe:bgra8unorm|mask|opaque|rigid',
+    ]);
+  });
 });
 
 describe('getWgpuWireframeModuleSource', () => {
@@ -50,5 +61,11 @@ describe('getWgpuWireframeModuleSource', () => {
     expect(source).toContain('struct Frame');
     expect(source).toContain('fn fs_main');
     expect(source).toContain('material.color');
+  });
+
+  it('emits alpha-cutoff discard for the masked variant', () => {
+    const source = getWgpuWireframeModuleSource(true);
+    expect(source).toContain('const ALPHA_MASK : bool = true');
+    expect(source).toContain('material.color.a < material.params.x');
   });
 });

@@ -75,6 +75,7 @@ export function compileWgpuDebugPipeline(
   key: Readonly<WgpuDebugDefineKey>,
   format: GPUTextureFormat,
   blended = false,
+  doubleSided = false,
 ): WgpuDebugPipeline {
   const device = state.device;
   const module = device.createShaderModule({ code: getWgpuDebugModuleSourceForKey(key) });
@@ -85,21 +86,22 @@ export function compileWgpuDebugPipeline(
       { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  // Debug materials are single-sided in OpenFL parity terms; the scene back-face cull is fine for both
-  // depth and normal visualization (a culled back face contributes neither depth nor normal).
-  return createWgpuMeshPipeline(state, { blended, doubleSided: false, format, materialBindGroupLayout, module });
+  return createWgpuMeshPipeline(state, { blended, doubleSided, format, materialBindGroupLayout, module });
 }
 
-// Resolves the debug pipeline for a define key + color format, compiling and caching it on first use
-// through the shared scene pipeline cache under the `debug:` family namespace. Distinct modes (and the
-// normal-map variant) cache as distinct entries.
+// Resolves the debug pipeline for a define key + color format + cull choice, compiling and caching it
+// on first use through the shared scene pipeline cache under the `debug:` family namespace. Distinct
+// modes, normal-map variants, and single/double-sided choices cache as distinct entries.
 export function ensureWgpuDebugPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuDebugDefineKey>,
   format: GPUTextureFormat,
+  doubleSided = false,
 ): WgpuDebugPipeline {
-  return ensureWgpuScene3DPipeline(state, `debug:${format}|${buildWgpuDebugDefineKey(key)}`, (blended) =>
-    compileWgpuDebugPipeline(state, key, format, blended),
+  return ensureWgpuScene3DPipeline(
+    state,
+    `debug:${format}|${buildWgpuDebugDefineKey(key)}|${doubleSided ? 'double' : 'single'}`,
+    (blended) => compileWgpuDebugPipeline(state, key, format, blended, doubleSided),
   );
 }
 

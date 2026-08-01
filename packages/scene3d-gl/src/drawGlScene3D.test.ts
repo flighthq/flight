@@ -146,6 +146,23 @@ describe('drawGlScene3D', () => {
     ).toBe(true);
   });
 
+  it('uses premultiplied Normal factors when the surface material declares premultiplied output', () => {
+    const { state, gl } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+
+    const scene = createNode3D(Node3DKind);
+    const material = createStandardPbrMaterial({ alphaMode: 'blend', alphaType: 'premultiplied' });
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
+
+    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+
+    expect(
+      gl.calls.some(
+        (call) => call.name === 'blendFunc' && call.args[0] === gl.ONE && call.args[1] === gl.ONE_MINUS_SRC_ALPHA,
+      ),
+    ).toBe(true);
+  });
+
   it('draws opaque subsets before blended subsets regardless of scene order', () => {
     const { state, gl } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);

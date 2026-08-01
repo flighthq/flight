@@ -1,3 +1,4 @@
+import type { AlphaType } from './AlphaType';
 import type { BlendMode } from './BlendMode';
 import type { CustomShaderMaterial } from './CustomShaderMaterial';
 import type { Kind } from './Entity';
@@ -73,6 +74,10 @@ export interface WgpuScene3DDrawEntry {
 // sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuScene3DRuntime
 // is created lazily per state by getWgpuScene3DRuntime.
 export interface WgpuScene3DRuntime {
+  // The source-alpha convention paired with activeBlendMode. Null for opaque runs. This participates
+  // in immutable pipeline identity because straight Normal uses SRC_ALPHA while premultiplied Normal
+  // uses ONE.
+  activeAlphaType: AlphaType | null;
   // The material blend equation for the active transparent run. Null for opaque runs; faded opaque
   // materials use BlendMode.Normal. WebGPU bakes this into the pipeline, so it is part of the shared
   // pipeline-cache identity alongside the transparent/opaque and skin variants.

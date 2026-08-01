@@ -47,6 +47,13 @@ describe('compileWgpuDebugPipeline', () => {
       .find((d) => d.entries.length === 3);
     expect(matLayout).toBeDefined();
   });
+
+  it('disables back-face culling for a double-sided debug material variant', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    compileWgpuDebugPipeline(state, NORMAL, 'rgba16float', false, true);
+    const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
+    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive.cullMode).toBe('none');
+  });
 });
 
 describe('ensureWgpuDebugPipeline', () => {
@@ -61,8 +68,19 @@ describe('ensureWgpuDebugPipeline', () => {
 
     const keys = [...getWgpuScene3DRuntime(state).pipelineCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
-    expect(keys).toContain('debug:bgra8unorm|d-|opaque|rigid');
-    expect(keys).toContain('debug:bgra8unorm|n-|opaque|rigid');
+    expect(keys).toContain('debug:bgra8unorm|d-|single|opaque|rigid');
+    expect(keys).toContain('debug:bgra8unorm|n-|single|opaque|rigid');
+  });
+
+  it('caches single- and double-sided variants independently', () => {
+    const { state } = makeWgpuScene3DState();
+    const single = ensureWgpuDebugPipeline(state, NORMAL, 'bgra8unorm');
+    const double = ensureWgpuDebugPipeline(state, NORMAL, 'bgra8unorm', true);
+    expect(double).not.toBe(single);
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()]).toEqual([
+      'debug:bgra8unorm|n-|single|opaque|rigid',
+      'debug:bgra8unorm|n-|double|opaque|rigid',
+    ]);
   });
 });
 

@@ -8,6 +8,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
+  AlphaType,
   BlendMode as BlendModeType,
   WgpuMaterialBinding,
   WgpuMeshPipeline,
@@ -123,6 +124,7 @@ export function createWgpuMeshPipeline(
   const layouts = ensureWgpuScene3DLayouts(state);
   const sceneRuntime = getWgpuScene3DRuntime(state);
   const skinning = sceneRuntime.skinningAdapter as WgpuSkinningAdapter | null;
+  const alphaType = options.blended ? (sceneRuntime.activeAlphaType ?? 'straight') : null;
   const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
   const bindGroupLayouts: GPUBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
@@ -154,7 +156,7 @@ export function createWgpuMeshPipeline(
       targets: [
         {
           format: options.format,
-          blend: blendMode === null ? undefined : getWgpuMeshBlendState(blendMode),
+          blend: blendMode === null ? undefined : getWgpuMeshBlendState(blendMode, alphaType ?? 'straight'),
         },
       ],
     },
@@ -175,11 +177,11 @@ export function createWgpuMeshPipeline(
   };
 }
 
-// Built-in mesh shaders currently return straight-alpha RGB, so Normal retains the established
-// src-alpha over realization. The other fixed-function equations reuse render-wgpu's canonical table,
-// shared with particles and 2D rendering, rather than maintaining a second partial mapping here.
-function getWgpuMeshBlendState(blendMode: BlendModeType): GPUBlendState {
-  if (blendMode !== BlendMode.Normal) return getWgpuBlendState(blendMode);
+// Straight Normal output needs SRC_ALPHA while premultiplied Normal needs ONE. Other fixed-function
+// equations reuse render-wgpu's canonical premultiplied table, shared with particles and 2D rendering,
+// rather than maintaining a second partial mapping here.
+function getWgpuMeshBlendState(blendMode: BlendModeType, alphaType: AlphaType): GPUBlendState {
+  if (blendMode !== BlendMode.Normal || alphaType === 'premultiplied') return getWgpuBlendState(blendMode);
   return {
     alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
     color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'src-alpha' },
@@ -603,9 +605,12 @@ export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
 ): T {
   const runtime = getWgpuScene3DRuntime(state);
   const blended = runtime.activeBlendedRun;
+  const alphaType = blended ? (runtime.activeAlphaType ?? 'straight') : null;
   const blendMode = blended ? (runtime.activeBlendMode ?? BlendMode.Normal) : null;
   const skinned = runtime.activeSkinnedRun;
-  const variantKey = `${key}|${blendMode === null ? 'opaque' : `blend:${blendMode}`}|${skinned ? 'skin' : 'rigid'}`;
+  const variantKey = `${key}|${
+    blendMode === null ? 'opaque' : `blend:${blendMode}:${alphaType}`
+  }|${skinned ? 'skin' : 'rigid'}`;
   let pipeline = runtime.pipelineCache.get(variantKey);
   if (pipeline === undefined) {
     pipeline = compile(blended, skinned);

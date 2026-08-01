@@ -6,6 +6,7 @@ import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuWireframeMaterial, wireframeWgpuMeshMaterialRenderer } from './wireframeWgpuMeshMaterialRenderer';
 
@@ -49,6 +50,13 @@ describe('wireframeWgpuMeshMaterialRenderer', () => {
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
     const pipelineCall = fake.calls.find((c) => c.name === 'createRenderPipeline');
     expect((pipelineCall!.args[0] as { primitive: { topology: string } }).primitive.topology).toBe('line-list');
+  });
+
+  it('bind selects the alpha-mask pipeline for a masked material', () => {
+    const { state } = makeWgpuScene3DState();
+    const material = createWireframeMaterial({ alphaCutoff: 0.25, alphaMode: 'mask' });
+    wireframeWgpuMeshMaterialRenderer.bind(state, material, NO_LIGHTS, makeCamera());
+    expect([...getWgpuScene3DRuntime(state).pipelineCache.keys()].some((key) => key.includes('|mask|'))).toBe(true);
   });
 
   it('draw issues a line-list indexed draw over the doubled subset range', () => {

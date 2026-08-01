@@ -34,6 +34,13 @@ describe('getGlWireframeFragmentSource', () => {
   it('outputs the flat color uniform', () => {
     expect(getGlWireframeFragmentSource()).toContain('u_color');
   });
+
+  it('emits alpha-cutoff discard only for the masked variant', () => {
+    expect(getGlWireframeFragmentSource()).not.toContain('#define ALPHA_MASK');
+    const masked = getGlWireframeFragmentSource(true);
+    expect(masked).toContain('#define ALPHA_MASK');
+    expect(masked).toContain('fragColor.a < u_alphaCutoff');
+  });
 });
 
 describe('getGlWireframeVertexSource', () => {
