@@ -9,7 +9,7 @@ import pc from 'picocolors';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
-import { captureParallel } from './captureEntry.js';
+import { captureParallel, isVerifiedCaptureTool } from './captureEntry.js';
 import type { CaptureTargetReport } from './captureEntry.js';
 import { formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler } from './captureInterrupt.js';
@@ -69,7 +69,11 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   if (entries.length === 0) throw new Error(`No capture entries found  subject=${options.subject}`);
 
   const captureFrames = options.captureFrames ?? 0;
-  const verify = options.verify ?? options.subject === 'functional';
+  // Ask the SUBJECT whether its pages register a verifier, rather than hardcoding one subject's name.
+  // This is what `bin.ts capture` uses, so a hardcoded 'functional' here silently left every examples
+  // capture unverified — falling back to a plain screenshot, which on a software WebGPU adapter is a
+  // blank frame that --update-baseline then commits as ground truth.
+  const verify = options.verify ?? isVerifiedCaptureTool(options.subject);
   const ownsBrowser = options.browserSession === undefined;
   const launched =
     options.browserSession ??

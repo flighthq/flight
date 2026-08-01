@@ -11,6 +11,7 @@ import { runCaptureBenchmark } from './captureBenchmark.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
+import { isVerifiedCaptureTool } from './captureEntry.js';
 import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
 import type { CaptureSuiteOptions, CaptureSuiteResult } from './captureSuite.js';
@@ -164,7 +165,7 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
     if (captureOptions !== null || validationOptions !== null) {
       browserSession = await launchBrowser({
         captureFrames,
-        verify: validationOptions !== null || captureOptions?.verify === true || options.subject === 'functional',
+        verify: validationOptions !== null || captureOptions?.verify === true || isVerifiedCaptureTool(options.subject),
         observe: captureOptions?.observe,
       });
       if (captureOptions !== null) {
@@ -176,7 +177,11 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
           root: options.root,
           browserSession,
           captureFrames,
-          verify: captureOptions.verify ?? validationOptions !== null,
+          // Ask the SUBJECT, not the run shape. Deciding this from "is a validation leg also running"
+          // meant a pure capture run never verified, so a subject whose pages DO register a verifier still
+          // fell back to a plain screenshot — which on a software WebGPU adapter is a blank frame, and a
+          // --update-baseline run then commits that blank as ground truth.
+          verify: captureOptions.verify ?? (validationOptions !== null || isVerifiedCaptureTool(options.subject)),
         });
       }
       if (capture?.aborted !== true && validationOptions !== null) {
