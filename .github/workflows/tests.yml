@@ -1,10 +1,11 @@
 name: CI
 
 # The per-commit gate for every PR and for pushes to main/develop. A `changes` job
-# (dorny/paths-filter) decides whether a change touches code at all, so a docs-only PR
-# resolves to "skipped" — a fast success that still reports to branch protection, so these
-# checks are safe to mark required (unlike a whole-workflow path-skip, which never reports
-# and leaves a required check stuck "Expected — Waiting for status").
+# (dorny/paths-filter) decides which areas a change touches, so a docs-only PR skips the code
+# legs — a fast success that still reports to branch protection, so these checks are safe to
+# mark required (unlike a whole-workflow path-skip, which never reports and leaves a required
+# check stuck "Expected — Waiting for status"). Docs-only does not mean unchecked: such a
+# change still runs the `docs` job.
 #
 # Nightly (nightly.yml) runs what does NOT belong on the PR path: full coverage thresholds
 # and API-surface generation.
@@ -20,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      docs: ${{ steps.filter.outputs.docs }}
     steps:
       # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
       # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
@@ -36,12 +38,42 @@ jobs:
           # below would never fire. Ignored for pull_request events, which keep the PR base.
           base: ${{ github.ref_name }}
           # All-except filter: a change triggers the code legs unless it only touches docs,
-          # so a newly added file type still triggers the legs by default.
+          # so a newly added file type still triggers the legs by default. The exclusion is
+          # `agents/**/*.md`, NOT `agents/**` — that directory also holds executable tooling
+          # (todo.mjs, scaffold.mjs, bless-queue.mjs) that agents run every session, and a
+          # blanket exclusion let real code changes skip every leg.
+          #
+          # `docs` is a separate output, not an else-branch of `code`: docs:check's subject is
+          # exactly what `code` excludes, so gating it behind `code` made it unable to fire on
+          # its own subject. See agents/inert-gate-audit.md.
           filters: |
             code:
               - '**'
               - '!**/*.md'
-              - '!agents/**'
+              - '!agents/**/*.md'
+            docs:
+              - '**/*.md'
+              - 'agents/**'
+
+  # Runs on any docs change, including the docs-only commits that skip `build-check` entirely.
+  # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
+  # second output comparing exactly equal to 'false' is the failure mode this job exists to
+  # fix. On a mixed code+docs commit `quality` also runs docs:check; that overlap is one cheap
+  # job, and it is the safe direction to be wrong in.
+  docs:
+    name: Documentation
+    needs: changes
+    if: ${{ needs.changes.outputs.docs == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run docs:check
 
   build-check:
     name: Build preflight

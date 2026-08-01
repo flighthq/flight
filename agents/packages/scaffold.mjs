@@ -34,7 +34,7 @@ function domainSeed(name) {
   if (!existsSync(path)) return null;
   const line = readFileSync(path, 'utf8')
     .split('\n')
-    .find((l) => /^\*\*Domain/.test(l));
+    .find((l) => l.startsWith('**Domain'));
   if (!line) return null;
   return line
     .replace(/\*\*/g, '')
