@@ -1,4 +1,11 @@
 import {
+  getMovieClipCurrentFrame,
+  getMovieClipCurrentLabel,
+  getMovieClipTotalFrames,
+  gotoAndStopMovieClip,
+} from '@flighthq/movieclip/contract';
+import {
+  getNodeChildren,
   getNodeLocalBoundsRectangle,
   getNodeLocalMatrix,
   getNodeParent,
@@ -8,6 +15,8 @@ import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
 } from '@flighthq/scene2d-resources/contract';
+import type { MovieClip } from '@flighthq/types/contract';
+import { MovieClipKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSwf, registerSwfScene2DDocumentImporter } from './swfDocument';
 
@@ -167,7 +176,7 @@ describe('createScene2DFromSwf', () => {
     expect(document?.references).toEqual([]);
   });
 
-  it('keeps the first-frame snapshot isolated from later mutations', () => {
+  it('enumerates named instances from every frame while attaching only the current one', () => {
     const document = createScene2DFromSwf(
       createSwf([
         createTag(
@@ -195,7 +204,204 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references.map((reference) => reference.name)).toEqual(['firstFrameSlot']);
+    expect(document?.references.map((reference) => reference.name)).toEqual(['firstFrameSlot', 'secondFrameSlot']);
+
+    const root = document!.root as MovieClip;
+    const first = document!.references[0].target;
+    const second = document!.references[1].target;
+    expect(getMovieClipTotalFrames(root)).toBe(2);
+    expect(getNodeParent(first)).toBe(root);
+    expect(getNodeParent(second)).toBeNull();
+
+    gotoAndStopMovieClip(root, 2);
+    expect(getNodeParent(first)).toBeNull();
+    expect(getNodeParent(second)).toBe(root);
+
+    // Seeking back restores the same nodes rather than replacing them, so a slot bound before playback
+    // keeps its target across loops.
+    gotoAndStopMovieClip(root, 1);
+    expect(getNodeChildren(root)).toEqual([first]);
+  });
+
+  it('replays a later frame move onto the instance the move targets', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            createMatrix(1, 0, 0, 1, 20, 40),
+            swfString('mover'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_MATRIX]), uint16(3), createMatrix(2, 0, 0, 2, 200, -60)),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    const mover = document!.references[0].target;
+    expect(document?.references).toHaveLength(1);
+    expect(getNodeLocalMatrix(mover)).toMatchObject({ a: 1, d: 1, tx: 1, ty: 2 });
+
+    gotoAndStopMovieClip(root, 2);
+    expect(getMovieClipCurrentFrame(root)).toBe(2);
+    expect(getNodeChildren(root)).toEqual([mover]);
+    expect(getNodeLocalMatrix(mover)).toMatchObject({ a: 2, d: 2, tx: 10, ty: -3 });
+  });
+
+  it('keeps instances in depth order when a later frame places one between them', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('under')),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(9), uint16(8), swfString('over')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(5), uint16(9), swfString('between')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    const under = document!.references[0].target;
+    const over = document!.references[1].target;
+    const between = document!.references[2].target;
+    expect(getNodeChildren(root)).toEqual([under, over]);
+
+    gotoAndStopMovieClip(root, 2);
+    expect(getNodeChildren(root)).toEqual([under, between, over]);
+  });
+
+  it('imports frame labels and the header frame rate as timeline playback data', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_FRAME_LABEL, swfString('intro')),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('slot')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_FRAME_LABEL, swfString('outro')),
+        createTag(TAG_SHOW_FRAME),
+        // A label after the last ShowFrame names a frame the timeline never reaches.
+        createTag(TAG_FRAME_LABEL, swfString('unreached')),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    expect(root.kind).toBe(MovieClipKind);
+    expect(getMovieClipTotalFrames(root)).toBe(2);
+    expect(root.data.timeline?.source?.frameRate).toBe(24);
+    expect(root.data.timeline?.source?.labels).toEqual([
+      { frame: 1, name: 'intro' },
+      { frame: 2, name: 'outro' },
+    ]);
+
+    gotoAndStopMovieClip(root, 'outro');
+    expect(getMovieClipCurrentFrame(root)).toBe(2);
+    expect(getMovieClipCurrentLabel(root)).toMatchObject({ frame: 2, name: 'outro' });
+  });
+
+  it('imports root frame labels declared by DefineSceneAndFrameLabelData', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
+          joinBytes(
+            encodedUint32(1),
+            encodedUint32(200),
+            swfString('Scene 1'),
+            encodedUint32(2),
+            encodedUint32(0),
+            swfString('start'),
+            encodedUint32(1),
+            swfString('finish'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    expect(root.data.timeline?.source?.labels).toEqual([
+      { frame: 1, name: 'start' },
+      { frame: 2, name: 'finish' },
+    ]);
+  });
+
+  it('plays a nested sprite timeline on its own playhead', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(2),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+                uint16(1),
+                uint16(7),
+                swfString('firstChild'),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
+                uint16(2),
+                uint16(8),
+                swfString('secondChild'),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('panel')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    expect(document?.references.map((reference) => reference.name)).toEqual(['panel', 'firstChild', 'secondChild']);
+
+    const panel = document!.references[0].target as MovieClip;
+    const firstChild = document!.references[1].target;
+    const secondChild = document!.references[2].target;
+    expect(getMovieClipTotalFrames(root)).toBe(1);
+    expect(getMovieClipTotalFrames(panel)).toBe(2);
+    expect(getNodeChildren(panel)).toEqual([firstChild]);
+
+    gotoAndStopMovieClip(panel, 2);
+    expect(getNodeChildren(panel)).toEqual([secondChild]);
+    expect(getNodeParent(panel)).toBe(root);
   });
 
   it('uses a PlaceObject4 class name as direct slot linkage while ignoring later metadata', () => {
@@ -708,6 +914,21 @@ describe('createScene2DFromSwf', () => {
       ),
     ).toBeNull();
   });
+
+  it('rejects a timeline that multiplies a small display list past the frame budget', () => {
+    const tags: Uint8Array[] = [];
+    for (let depth = 1; depth <= 200; depth++) {
+      tags.push(
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(depth), uint16(7))),
+      );
+    }
+    // Placing 200 depths costs a few kilobytes; showing them 5001 times would retain over a million
+    // display-list entries, so the snapshot budget rejects the document instead of materializing it.
+    for (let frame = 0; frame < 5001; frame++) tags.push(createTag(TAG_SHOW_FRAME));
+    tags.push(createTag(TAG_END));
+
+    expect(createScene2DFromSwf(createSwf(tags))).toBeNull();
+  });
 });
 
 describe('registerSwfScene2DDocumentImporter', () => {
@@ -833,6 +1054,17 @@ function createPngHeader(width: number, height: number): Uint8Array {
   ]);
 }
 
+function encodedUint32(value: number): Uint8Array {
+  const bytes: number[] = [];
+  let remaining = value;
+  do {
+    const byte = remaining % 0x80;
+    remaining = Math.floor(remaining / 0x80);
+    bytes.push(remaining > 0 ? byte | 0x80 : byte);
+  } while (remaining > 0);
+  return new Uint8Array(bytes);
+}
+
 function createRectangle(xMin: number, xMax: number, yMin: number, yMax: number): Uint8Array {
   const writer = new BitWriter();
   const values = [xMin, xMax, yMin, yMax];
@@ -903,11 +1135,13 @@ const TAG_DEFINE_BITS_JPEG_3 = 35;
 const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
+const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_FILE_ATTRIBUTES = 69;
+const TAG_FRAME_LABEL = 43;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;

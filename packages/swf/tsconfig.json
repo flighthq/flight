@@ -10,6 +10,7 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../movieclip" },
     { "path": "../node" },
     { "path": "../scene2d" },
     { "path": "../scene2d-resources" },
