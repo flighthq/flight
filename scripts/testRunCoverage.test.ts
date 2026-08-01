@@ -10,21 +10,30 @@ const COVERED: Readonly<Parameters<typeof isTestRunCoverageFailure>[0]> = {
   testFiles: 1,
 };
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT_RUN_TIMEOUT_MS = 15_000;
 
 describe('TestRunCoverageReporter', () => {
-  it('FAILS the real root runner when a file selector matches nothing', () => {
-    const result = runRootVitest(['__test_run_coverage_no_such_file__']);
-    expect(result.status).toBe(1);
-    expect(result.output).toContain('ran NOTHING because no test files matched');
-    expect(result.output).toContain('unconfigured, not clean');
-  });
+  it(
+    'FAILS the real root runner when a file selector matches nothing',
+    () => {
+      const result = runRootVitest(['__test_run_coverage_no_such_file__']);
+      expect(result.status).toBe(1);
+      expect(result.output).toContain('ran NOTHING because no test files matched');
+      expect(result.output).toContain('unconfigured, not clean');
+    },
+    ROOT_RUN_TIMEOUT_MS,
+  );
 
-  it('FAILS the real root runner when a name filter matches no tests in a matched file', () => {
-    const result = runRootVitest(['scripts/testRunCoverage.test.ts', '-t', '__test_run_coverage_no_such_name__']);
-    expect(result.status).toBe(1);
-    expect(result.output).toContain('ran NOTHING across 1 matched test file');
-    expect(result.output).toContain('unconfigured, not clean');
-  });
+  it(
+    'FAILS the real root runner when a name filter matches no tests in a matched file',
+    () => {
+      const result = runRootVitest(['scripts/testRunCoverage.test.ts', '-t', '__test_run_coverage_no_such_name__']);
+      expect(result.status).toBe(1);
+      expect(result.output).toContain('ran NOTHING across 1 matched test file');
+      expect(result.output).toContain('unconfigured, not clean');
+    },
+    ROOT_RUN_TIMEOUT_MS,
+  );
 });
 
 describe('isTestRunCoverageFailure', () => {
