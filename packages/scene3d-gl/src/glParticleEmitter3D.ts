@@ -1,5 +1,10 @@
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { createGlProgram, invalidateGlRenderStateCache, resolveGlTexture } from '@flighthq/render-gl/contract';
+import {
+  createGlProgram,
+  enableGlBlendModeSupport,
+  invalidateGlRenderStateCache,
+  resolveGlTexture,
+} from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
@@ -13,7 +18,7 @@ import type {
   Scene3DLightsLike,
   Node3D,
 } from '@flighthq/types/contract';
-import { ParticleEmitter3DKind } from '@flighthq/types/contract';
+import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 
@@ -191,25 +196,23 @@ function collectParticleEmitter3DNodes(node: Readonly<NodeAny>, out: ParticleEmi
   }
 }
 
-// Maps a ParticleBlendMode to a GL blend function. The particle fragment shader outputs premultiplied
-// rgb (already scaled by the particle alpha), so 'normal' is the premultiplied over-blend ONE /
-// ONE_MINUS_SRC_ALPHA (NOT SRC_ALPHA, which would double-apply alpha and darken), and 'add' is a
-// straight ONE/ONE sum (a black sprite background adds nothing, fire brightens). Assumes gl.BLEND is
-// already enabled.
-function applyGlParticleBlendMode(gl: WebGL2RenderingContext, mode: ParticleBlendMode): void {
+// ParticleBlendMode uses serialized lowercase spellings; translate them to the canonical fixed-function
+// BlendMode family so particles and surface meshes share render-gl's one overridable realization table.
+// Assumes gl.BLEND is already enabled.
+function applyGlParticleBlendMode(state: GlRenderState, mode: ParticleBlendMode): void {
+  if (state.applyBlendMode === null) enableGlBlendModeSupport(state);
   switch (mode) {
     case 'add':
-      gl.blendFunc(gl.ONE, gl.ONE);
-      break;
+      state.applyBlendMode!(state, BlendMode.Add);
+      return;
     case 'multiply':
-      gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
-      break;
+      state.applyBlendMode!(state, BlendMode.Multiply);
+      return;
     case 'screen':
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
-      break;
+      state.applyBlendMode!(state, BlendMode.Screen);
+      return;
     default:
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      break;
+      state.applyBlendMode!(state, BlendMode.Normal);
   }
 }
 
@@ -412,7 +415,7 @@ export function drawGlScene3DParticleEmitter3Ds(
     // Each emitter picks its own blend func: 'add' is the canonical fire/glow mode (the fragment
     // shader premultiplies rgb by alpha, so ONE/ONE brightens and a black sprite background adds
     // nothing). A hardcoded SRC_ALPHA over-blend instead makes an additive sprite darken the scene.
-    applyGlParticleBlendMode(gl, emitter.blendMode);
+    applyGlParticleBlendMode(state, emitter.blendMode);
     drawParticleEmitter3DNode(state, shader, emitter);
   }
 

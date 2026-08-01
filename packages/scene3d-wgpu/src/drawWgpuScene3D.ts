@@ -21,7 +21,7 @@ import type {
   WgpuScene3DDrawEntry,
   WgpuScene3DForwardLightList,
 } from '@flighthq/types/contract';
-import { StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -37,7 +37,8 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 //
 // The draw is two-phased for correct alpha compositing: opaque/masked subsets first in scene order,
 // then blended-material or faded-object subsets back-to-front. The second pass selects immutable
-// blended pipeline variants (src-alpha / one-minus-src-alpha, depth test on, depth writes off).
+// blend-mode pipeline variants (material equation, depth test on, depth writes off); a faded opaque
+// material uses the ordinary Normal equation.
 //
 // Subsets sharing the same resolved renderer + material are drawn under a single bind (the seam's
 // "contiguous run" contract): bind uploads the shared camera + light + material state once, then draw
@@ -114,6 +115,7 @@ export function drawWgpuScene3D(
   // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
   // this still-open render pass (it reads the pass off the render-state runtime).
   drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
+  runtime.activeBlendMode = null;
   runtime.activeBlendedRun = false;
   runtime.activeColorAdjustmentRun = false;
   runtime.activeColorMatrixRun = false;
@@ -143,6 +145,7 @@ function drawEntries(
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i] as DrawEntry;
+    runtime.activeBlendMode = blended ? getMaterialBlendMode(entry.material) : null;
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
     const skinned = isWgpuMeshGpuSkinned(state, entry.mesh);
@@ -184,6 +187,15 @@ function drawEntries(
 
 function isBlendedMaterial(material: Readonly<Material>): boolean {
   return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+
+// A material-authored blend equation applies only when alphaMode itself requests blending. A node fade
+// still enters the transparent pass for an opaque/masked material, but retains ordinary Normal over.
+// Unknown material kinds routed through a registered renderer also degrade to Normal rather than
+// leaking an undefined string into WebGPU's immutable pipeline cache.
+function getMaterialBlendMode(material: Readonly<Material>): BlendMode {
+  const surface = material as Readonly<SurfaceMaterial>;
+  return surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
 }
 
 function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {

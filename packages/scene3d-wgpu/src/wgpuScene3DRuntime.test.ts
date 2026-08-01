@@ -13,6 +13,7 @@ describe('getWgpuScene3DRuntime', () => {
     expect(a).toBe(b);
     expect(a.materialRegistry).toBeInstanceOf(Map);
     expect(a.pipelineCache).toBeInstanceOf(Map);
+    expect(a.activeBlendMode).toBeNull();
     expect(a.activeMeshPipeline).toBeNull();
   });
 

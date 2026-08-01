@@ -11,6 +11,7 @@ import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contr
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D, isWgpuMeshGpuSkinned } from './drawWgpuScene3D';
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
@@ -107,7 +108,21 @@ describe('drawWgpuScene3D', () => {
     expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
     expect(runtime.blendedDrawList.map((entry) => entry.mesh)).toEqual([blended]);
     expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque|rigid'))).toBe(true);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend|rigid'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
+  });
+
+  it('selects a pipeline variant keyed by the surface material blendMode', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuStandardPbrMaterial(state);
+    const scene = createNode3D(Node3DKind);
+    const material = createStandardPbrMaterial({ alphaMode: 'blend', blendMode: BlendMode.Add });
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
+
+    drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
+
+    expect(
+      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) => key.endsWith('|blend:Add|rigid')),
+    ).toBe(true);
   });
 
   it('routes resolved node alpha through the blended pass and draw proxy', () => {
@@ -123,7 +138,7 @@ describe('drawWgpuScene3D', () => {
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList).toHaveLength(0);
     expect(runtime.blendedDrawList[0]!.alpha).toBeCloseTo(0.5);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend|rigid'))).toBe(true);
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
   });
 
   it('sorts blended subsets back-to-front by projected depth', () => {

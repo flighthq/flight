@@ -1,8 +1,14 @@
 import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
-import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuBlendState,
+  getWgpuRenderStateRuntime,
+  getWgpuSampler,
+  resolveWgpuTexture,
+} from '@flighthq/render-wgpu/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
+  BlendMode as BlendModeType,
   WgpuMaterialBinding,
   WgpuMeshPipeline,
   WgpuColorAdjustmentMaterialFeature,
@@ -16,6 +22,7 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import {
+  BlendMode,
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
   SCENE_LIGHT_HEMISPHERE_STRIDE,
@@ -114,7 +121,9 @@ export function createWgpuMeshPipeline(
 ): WgpuMeshPipeline {
   const device = state.device;
   const layouts = ensureWgpuScene3DLayouts(state);
-  const skinning = getWgpuScene3DRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;
+  const sceneRuntime = getWgpuScene3DRuntime(state);
+  const skinning = sceneRuntime.skinningAdapter as WgpuSkinningAdapter | null;
+  const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
   const bindGroupLayouts: GPUBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
     options.skinned && skinning !== null ? skinning.getDrawLayout(state) : layouts.drawBindGroupLayout,
@@ -145,12 +154,7 @@ export function createWgpuMeshPipeline(
       targets: [
         {
           format: options.format,
-          blend: options.blended
-            ? {
-                color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-                alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-              }
-            : undefined,
+          blend: blendMode === null ? undefined : getWgpuMeshBlendState(blendMode),
         },
       ],
     },
@@ -168,6 +172,17 @@ export function createWgpuMeshPipeline(
     materialBindGroupLayout: options.materialBindGroupLayout,
     pipeline,
     skinned: options.skinned === true,
+  };
+}
+
+// Built-in mesh shaders currently return straight-alpha RGB, so Normal retains the established
+// src-alpha over realization. The other fixed-function equations reuse render-wgpu's canonical table,
+// shared with particles and 2D rendering, rather than maintaining a second partial mapping here.
+function getWgpuMeshBlendState(blendMode: BlendModeType): GPUBlendState {
+  if (blendMode !== BlendMode.Normal) return getWgpuBlendState(blendMode);
+  return {
+    alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
+    color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'src-alpha' },
   };
 }
 
@@ -579,8 +594,8 @@ export function ensureWgpuScene3DLayouts(state: WgpuRenderState): WgpuScene3DLay
 // Resolves a compiled pipeline for a string cache key, compiling it via the factory on first use and
 // caching it on the scene runtime's per-state pipelineCache. Every family routes its pipeline through
 // this one cache; the key is namespaced by family + define key + color format (for example
-// `unlit:bgra8unorm|-c-`), so families and feature/format variants compile at most once and never
-// collide. Mirrors scene-gl's ensureGlScene3DProgram.
+// `unlit:bgra8unorm|-c-`) and suffixed with blend equation + skinning, so families and immutable state
+// variants compile at most once and never collide. Mirrors scene-gl's ensureGlScene3DProgram.
 export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
   state: WgpuRenderState,
   key: string,
@@ -588,8 +603,9 @@ export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
 ): T {
   const runtime = getWgpuScene3DRuntime(state);
   const blended = runtime.activeBlendedRun;
+  const blendMode = blended ? (runtime.activeBlendMode ?? BlendMode.Normal) : null;
   const skinned = runtime.activeSkinnedRun;
-  const variantKey = `${key}|${blended ? 'blend' : 'opaque'}|${skinned ? 'skin' : 'rigid'}`;
+  const variantKey = `${key}|${blendMode === null ? 'opaque' : `blend:${blendMode}`}|${skinned ? 'skin' : 'rigid'}`;
   let pipeline = runtime.pipelineCache.get(variantKey);
   if (pipeline === undefined) {
     pipeline = compile(blended, skinned);
