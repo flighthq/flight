@@ -166,6 +166,26 @@ export function getTextureAtlasRegionByName(atlas: Readonly<TextureAtlas>, name:
   return null;
 }
 
+// Returns the first region matching the prefix whose name carries the given trailing ordinal, or null
+// when none does. This is the name-plus-frame lookup — libGDX's `findRegion(name, index)` — expressed
+// over the convention this SDK's parsers actually emit, where the ordinal lives in the name.
+//
+// The ordinal is compared as a number, not as text, so `walk_7` and `walk_007` both answer ordinal 7
+// and the caller never has to know how many digits the packer zero-padded to. The prefix matches the
+// same way getTextureAtlasRegionSequence's does — by `startsWith`, so a prefix of `walk` also reaches
+// `walkFast_7`; pass the full base name when the atlas has neighbouring names that share a stem.
+export function getTextureAtlasRegionByOrdinal(
+  atlas: Readonly<TextureAtlas>,
+  prefix: string,
+  ordinal: number,
+): TextureAtlasRegion | null {
+  for (const region of atlas.regions) {
+    if (region.name === null || !region.name.startsWith(prefix)) continue;
+    if (getTextureAtlasRegionOrdinal(region) === ordinal) return region;
+  }
+  return null;
+}
+
 // The number of regions in the atlas.
 export function getTextureAtlasRegionCount(atlas: Readonly<TextureAtlas>): number {
   return atlas.regions.length;
@@ -193,20 +213,94 @@ export function getTextureAtlasRegionFrame(region: Readonly<TextureAtlasRegion>,
   return out;
 }
 
-// Returns all regions whose name starts with the given prefix, in insertion order.
-// Useful for collecting animation frame sequences following a `baseName_NNN` naming convention.
-// Returns an empty array when no region names match.
-export function getTextureAtlasRegionSequence(atlas: Readonly<TextureAtlas>, prefix: string): TextureAtlasRegion[] {
-  const result: TextureAtlasRegion[] = [];
-  for (const region of atlas.regions) {
-    if (region.name !== null && region.name.startsWith(prefix)) result.push(region);
+// The trailing decimal ordinal in the region's name — the frame number in the `baseName_NNN`
+// convention every atlas packer emits — or -1 when the name is null or does not end in digits.
+//
+// Derived from the name rather than stored on the region, because the ordinal a packer emits exists
+// only in the name (`walk_3`): reading it back is a query over data the atlas already holds, not a
+// second field that could disagree with the name it came from. Should a stored ordinal ever be added
+// to TextureAtlasRegion, this remains the answer for the parsers that do not set one.
+//
+// Leading zeros are not significant, so `walk_007` and `walk_7` are both frame 7. The digits must run
+// to the end of the name: `walk_10a` has no ordinal rather than ordinal 10, since a number that is not
+// the last thing in the name is not the frame number.
+export function getTextureAtlasRegionOrdinal(region: Readonly<TextureAtlasRegion>): number {
+  const name = region.name;
+  if (name === null) return -1;
+  let start = name.length;
+  while (start > 0) {
+    const code = name.charCodeAt(start - 1);
+    if (code < 48 || code > 57) break;
+    start--;
   }
-  return result;
+  if (start === name.length) return -1;
+  let ordinal = 0;
+  for (let i = start; i < name.length; i++) {
+    ordinal = ordinal * 10 + (name.charCodeAt(i) - 48);
+  }
+  return ordinal;
+}
+
+// Writes every region whose name starts with the given prefix into `out`, ordered by the trailing
+// ordinal in its name, and returns `out`.
+//
+// Ordering by the parsed ordinal — rather than by insertion or by name — is the point of the function.
+// A packer emits regions in its own packing order, and an unpadded name sorts `walk_10` ahead of
+// `walk_2` as text, so both of the orders that come for free hand back an animation whose frames play
+// out of sequence. That failure is silent: a scrambled animation still runs.
+//
+// A region whose name carries no ordinal sorts after every numbered one, so the numbered run stays
+// contiguous from `out[0]` and `out[i]` is the i-th frame of a well-formed sequence. Unnumbered
+// regions keep their insertion order among themselves, as do regions sharing an ordinal.
+//
+// Takes `out` rather than allocating, matching the other get* queries in this package, and resets its
+// length so one array can be reused across calls.
+export function getTextureAtlasRegionSequence(
+  atlas: Readonly<TextureAtlas>,
+  prefix: string,
+  out: TextureAtlasRegion[],
+): TextureAtlasRegion[] {
+  out.length = 0;
+  for (const region of atlas.regions) {
+    if (region.name !== null && region.name.startsWith(prefix)) out.push(region);
+  }
+  const keys = sequenceSortKeys;
+  keys.length = out.length;
+  for (let i = 0; i < out.length; i++) {
+    keys[i] = _textureAtlasRegionSequenceKey(out[i]);
+  }
+  // Insertion sort, in place over both arrays: it is stable by construction, so equal ordinals and
+  // unnumbered regions keep insertion order without depending on the host's sort being stable — which
+  // a C port's qsort is not — and it needs neither a comparator closure nor a scratch allocation.
+  for (let i = 1; i < out.length; i++) {
+    const region = out[i];
+    const key = keys[i];
+    let j = i - 1;
+    while (j >= 0 && keys[j] > key) {
+      out[j + 1] = out[j];
+      keys[j + 1] = keys[j];
+      j--;
+    }
+    out[j + 1] = region;
+    keys[j + 1] = key;
+  }
+  return out;
 }
 
 // Returns one shared Texture2D per distinct atlas region. A region is a texel rect relative to the
 // page Texture's window: page offset/scale are compiled to source pixels, page flips are folded into
 // the region frame, and a packed rotated region becomes a quarter-turn sampling transform.
+//
+// The cache holds identity, not contents. Every call re-derives the window from the page and the
+// region and writes it into the cached Texture, so a region edited in place through
+// setTextureAtlasRegion — or a page whose own window moved — is picked up by the next call, with no
+// cache to invalidate. That recompute is the contract, not an optimization detail: the cache is keyed
+// by region object, which cannot notice a field changing inside one.
+//
+// The cost of sharing is that the returned Texture is mutated in place, so a reference kept from an
+// earlier call is rewritten by the next call for the same region, including one made by unrelated
+// code. It always describes the region as of the most recent call rather than as of when it was handed
+// out. A caller that needs a Texture frozen against later edits owns cloning it.
 export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regionId: number): Texture2D | null {
   const explanation = explainTextureAtlasRegionTexture(atlas, regionId);
   if (explanation.status !== 'ready') {
@@ -405,6 +499,14 @@ function _nextTextureAtlasRegionId(atlas: Readonly<TextureAtlas>): number {
   return next;
 }
 
+// Sort key behind getTextureAtlasRegionSequence: the region's ordinal, with "has no ordinal" mapped
+// past every real frame number so an unnumbered region lands after the run instead of ahead of frame
+// 0, which is where the raw -1 sentinel would put it.
+function _textureAtlasRegionSequenceKey(region: Readonly<TextureAtlasRegion>): number {
+  const ordinal = getTextureAtlasRegionOrdinal(region);
+  return ordinal < 0 ? Number.MAX_SAFE_INTEGER : ordinal;
+}
+
 function setTextureAtlasRegionTextureWindow(
   texture: Texture2D,
   page: Readonly<Texture2D>,
@@ -450,6 +552,11 @@ function setTextureAtlasRegionTextureWindow(
 
 const regionTextureCache = new WeakMap<Readonly<TextureAtlas>, WeakMap<TextureAtlasRegion, Texture2D>>();
 let textureAtlasRegionTextureGuard: TextureAtlasRegionTextureGuard | null = null;
+
+// Reused across getTextureAtlasRegionSequence calls so the ordinal of each matched region is parsed
+// once per call rather than once per comparison. Not reentrant, which costs nothing here: the sort it
+// serves calls out to nothing.
+const sequenceSortKeys: number[] = [];
 
 // Per-atlas high-water mark for region id allocation. See _nextTextureAtlasRegionId.
 const nextRegionIdMark = new WeakMap<Readonly<TextureAtlas>, number>();

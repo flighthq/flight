@@ -16,6 +16,8 @@ import {
   getTextureAtlasRegionCount,
   getTextureAtlasRegionFrame,
   getTextureAtlasRegionByName,
+  getTextureAtlasRegionByOrdinal,
+  getTextureAtlasRegionOrdinal,
   getTextureAtlasRegionSequence,
   getTextureAtlasRegionTexture,
   getTextureAtlasRegionUv,
@@ -381,6 +383,39 @@ describe('getTextureAtlasRegionByName', () => {
   });
 });
 
+describe('getTextureAtlasRegionByOrdinal', () => {
+  it('returns the region carrying that frame number', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
+    addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'walk_02');
+    expect(getTextureAtlasRegionByOrdinal(atlas, 'walk', 2)?.name).toBe('walk_02');
+  });
+
+  it('matches the ordinal as a number, so zero padding does not have to be known', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_0007');
+    expect(getTextureAtlasRegionByOrdinal(atlas, 'walk', 7)?.name).toBe('walk_0007');
+  });
+
+  it('returns null when no region carries that ordinal', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
+    expect(getTextureAtlasRegionByOrdinal(atlas, 'walk', 9)).toBeNull();
+  });
+
+  it('does not match a region whose ordinal matches under a different prefix', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'idle_01');
+    expect(getTextureAtlasRegionByOrdinal(atlas, 'walk', 1)).toBeNull();
+  });
+
+  it('skips unnamed regions rather than reading an ordinal off them', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    expect(getTextureAtlasRegionByOrdinal(atlas, '', -1)).toBeNull();
+  });
+});
+
 describe('getTextureAtlasRegionCount', () => {
   it('counts the regions', () => {
     const atlas = createTextureAtlas();
@@ -416,45 +451,120 @@ describe('getTextureAtlasRegionFrame', () => {
   });
 });
 
-describe('getTextureAtlasRegionSequence', () => {
-  it('returns an empty array when the atlas has no regions', () => {
-    const atlas = createTextureAtlas();
-    expect(getTextureAtlasRegionSequence(atlas, 'walk')).toEqual([]);
+describe('getTextureAtlasRegionOrdinal', () => {
+  it('reads the trailing frame number', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: 'walk_12' }))).toBe(12);
   });
 
-  it('returns regions whose names start with the given prefix', () => {
+  it('treats leading zeros as insignificant', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: 'walk_007' }))).toBe(7);
+  });
+
+  it('reads digits that are not separated from the base name', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: 'walk12' }))).toBe(12);
+  });
+
+  it('returns -1 when the name ends in a non-digit, rather than an interior number', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: 'walk_10a' }))).toBe(-1);
+  });
+
+  it('returns -1 for a name with no digits at all', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: 'walk' }))).toBe(-1);
+  });
+
+  it('returns -1 for an unnamed region', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion())).toBe(-1);
+  });
+
+  it('reads a name that is entirely digits', () => {
+    expect(getTextureAtlasRegionOrdinal(createTextureAtlasRegion({ name: '10' }))).toBe(10);
+  });
+});
+
+describe('getTextureAtlasRegionSequence', () => {
+  it('leaves out empty when the atlas has no regions', () => {
+    const atlas = createTextureAtlas();
+    expect(getTextureAtlasRegionSequence(atlas, 'walk', [])).toEqual([]);
+  });
+
+  it('collects regions whose names start with the given prefix', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'walk_02');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'idle_01');
-    const seq = getTextureAtlasRegionSequence(atlas, 'walk');
-    expect(seq).toHaveLength(2);
-    expect(seq[0].name).toBe('walk_01');
-    expect(seq[1].name).toBe('walk_02');
+    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    expect(seq.map((r) => r.name)).toEqual(['walk_01', 'walk_02']);
   });
 
   it('skips regions with null names', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'walk_01');
-    const seq = getTextureAtlasRegionSequence(atlas, 'walk');
-    expect(seq).toHaveLength(1);
-    expect(seq[0].name).toBe('walk_01');
+    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    expect(seq.map((r) => r.name)).toEqual(['walk_01']);
   });
 
-  it('returns regions in insertion order', () => {
+  it('orders by frame number rather than by insertion order', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'run_03');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'run_01');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_02');
-    const seq = getTextureAtlasRegionSequence(atlas, 'run');
-    expect(seq.map((r) => r.name)).toEqual(['run_03', 'run_01', 'run_02']);
+    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    expect(seq.map((r) => r.name)).toEqual(['run_01', 'run_02', 'run_03']);
   });
 
-  it('returns an empty array when no region names match the prefix', () => {
+  // The defect the ordinal sort exists for: unpadded names sort walk_10 ahead of walk_2 as text, so
+  // both insertion order and name order can hand back an animation that plays out of sequence.
+  it('orders unpadded frame numbers numerically, not as text', () => {
+    const atlas = createTextureAtlas();
+    for (const name of ['walk_1', 'walk_10', 'walk_2', 'walk_11']) {
+      addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, name);
+    }
+    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    expect(seq.map((r) => r.name)).toEqual(['walk_1', 'walk_2', 'walk_10', 'walk_11']);
+  });
+
+  it('sorts a region with no frame number after the numbered run', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'run');
+    addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'run_02');
+    addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_01');
+    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    expect(seq.map((r) => r.name)).toEqual(['run_01', 'run_02', 'run']);
+  });
+
+  it('keeps insertion order among regions sharing an ordinal', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'runFast_01');
+    addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'runSlow_01');
+    addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_00');
+    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    expect(seq.map((r) => r.name)).toEqual(['run_00', 'runFast_01', 'runSlow_01']);
+  });
+
+  it('keeps insertion order among unnumbered regions', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'runB');
+    addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'runA');
+    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    expect(seq.map((r) => r.name)).toEqual(['runB', 'runA']);
+  });
+
+  it('leaves out empty when no region names match the prefix', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'idle_01');
-    expect(getTextureAtlasRegionSequence(atlas, 'walk')).toEqual([]);
+    expect(getTextureAtlasRegionSequence(atlas, 'walk', [])).toEqual([]);
+  });
+
+  it('returns out itself, and resets it so one array can be reused across calls', () => {
+    const atlas = createTextureAtlas();
+    addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
+    addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'idle_01');
+    const out: TextureAtlasRegion[] = [];
+    expect(getTextureAtlasRegionSequence(atlas, 'walk', out)).toBe(out);
+    expect(out.map((r) => r.name)).toEqual(['walk_01']);
+    expect(getTextureAtlasRegionSequence(atlas, 'idle', out)).toBe(out);
+    expect(out.map((r) => r.name)).toEqual(['idle_01']);
   });
 });
 
@@ -474,6 +584,38 @@ describe('getTextureAtlasRegionTexture', () => {
     expect(first === null ? null : getTextureSource(first)).toBe(image);
     expect(first?.uvOffset).toMatchObject({ x: 0.1, y: 0.1 });
     expect(first?.uvScale).toMatchObject({ x: 0.2, y: 0.3 });
+  });
+
+  // The cache is keyed by region object, so it cannot notice a field changing inside one. What keeps
+  // it correct is that every call re-derives the window — pinned here because it is the contract, and
+  // without a test it reads as an incidental refresh someone could optimize away into a stale UV.
+  it('re-derives the window on every call, so an in-place region edit is picked up', () => {
+    const image = { height: 50, width: 100 } as Image;
+    const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
+    addTextureAtlasRegion(atlas, 10, 5, 20, 15);
+
+    const before = getTextureAtlasRegionTexture(atlas, 0)!;
+    expect(before.uvOffset).toMatchObject({ x: 0.1, y: 0.1 });
+
+    setTextureAtlasRegion(getTextureAtlasRegionById(atlas, 0)!, { height: 25, id: 0, width: 40, x: 50, y: 25 });
+    const after = getTextureAtlasRegionTexture(atlas, 0)!;
+
+    expect(after).toBe(before);
+    expect(after.uvOffset).toMatchObject({ x: 0.5, y: 0.5 });
+    expect(after.uvScale).toMatchObject({ x: 0.4, y: 0.5 });
+  });
+
+  // The cost of sharing one Texture per region: the earlier reference is not a snapshot.
+  it('rewrites a previously returned reference rather than minting a second view', () => {
+    const image = { height: 50, width: 100 } as Image;
+    const atlas = createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
+    addTextureAtlasRegion(atlas, 10, 5, 20, 15);
+
+    const held = getTextureAtlasRegionTexture(atlas, 0)!;
+    setTextureAtlasRegion(getTextureAtlasRegionById(atlas, 0)!, { height: 25, id: 0, width: 40, x: 50, y: 25 });
+    getTextureAtlasRegionTexture(atlas, 0);
+
+    expect(held.uvOffset).toMatchObject({ x: 0.5, y: 0.5 });
   });
 
   it('returns null without an image or matching region', () => {
