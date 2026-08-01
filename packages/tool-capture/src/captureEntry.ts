@@ -125,7 +125,7 @@ export interface CaptureEntryOptions {
   displayLabel?: string;
   /**
    * Forces (true) or disables (false) the in-page render-verification wait + surface readback. Defaults
-   * to `tool === 'functional'`. An external subject (reference) sets it true once its pages register a
+   * by `isVerifiedCaptureTool(tool)`. An external subject (reference) sets it true once its pages register a
    * functional target, so its WebGL captures read the fingerprinted surface instead of a black canvas.
    */
   verify?: boolean;
@@ -538,6 +538,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       let changed: boolean | null = null;
 
       if (updateBaseline) {
+        // Hard reject, not a judgment call: this exact hash is a known blank frame, produced when a
+        // software WebGPU adapter cannot present to the swapchain. It was nearly committed as ground
+        // truth once, caught only because someone opened the PNG. Vigilance is not a control — the write
+        // path refuses it regardless of who is driving.
+        if (isRejectedCaptureBaselineHash(hash)) {
+          throw new Error(
+            `refusing to baseline ${entry.name}/${renderer}: capture produced the known blank frame (${hash.slice(0, 12)}…). Re-run where the backend can actually present, or fix the render.`,
+          );
+        }
         setBaselineField(root, tool, entry.name, renderer, 'sha256', hash);
         baselineHash = hash;
         changed = false;
@@ -1152,16 +1161,29 @@ export interface CaptureUrlOptions {
   maxRetries?: number;
 }
 
+// Subjects whose pages register an in-page render verifier, so a capture can read back the rendered
+// surface instead of trusting the compositor. `reference` is external and opts in explicitly via `verify`.
+// Screenshot hashes that must never become a baseline, whatever produced them. This is a denylist of
+// frames observed to be content-free, kept as an explicit constant so the refusal survives a rewrite of
+// the surrounding logic and cannot be argued with at the call site.
+export function isRejectedCaptureBaselineHash(hash: string): boolean {
+  return REJECTED_CAPTURE_BASELINE_HASHES.has(hash);
+}
+
 export function isTransientCaptureError(message: string): boolean {
   return /timeout|net::ERR_|page crashed|execution context was destroyed|target page|navigation failed|protocol error|render verifier did not reach/i.test(
     message,
   );
 }
 
-// Subjects whose pages register an in-page render verifier, so a capture can read back the rendered
-// surface instead of trusting the compositor. `reference` is external and opts in explicitly via `verify`.
 export function isVerifiedCaptureTool(tool: string): boolean {
   return VERIFIED_CAPTURE_TOOLS.has(tool);
 }
 
 const VERIFIED_CAPTURE_TOOLS: ReadonlySet<string> = new Set(['examples', 'functional']);
+
+// The uniform white frame a software WebGPU adapter yields when it cannot present to the swapchain.
+// Observed identically across nine unrelated example scenes, which is what identified it.
+const REJECTED_CAPTURE_BASELINE_HASHES: ReadonlySet<string> = new Set([
+  'a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0',
+]);
