@@ -9,6 +9,11 @@ import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 // renderWgpuBackground); (2) GPU work queued in a later task than the frame is dropped on these
 // adapters, so submitWgpuRenderPass copies the capture texture into the retained capture buffer in the
 // same frame (encodeWgpuFrameCapture), and createBitmapFromWgpuRenderState only maps that buffer.
+//
+// One buffer serves both sides, so they take turns: the writer skips its copy while the reader holds a
+// map (or has one in flight), and resumes on the next frame. Without that turn-taking a continuously
+// animating scene re-enqueues a copy every frame into the buffer a readback is waiting on — which the
+// queue may not touch while it is mapped, and which pushes the pending map behind ever more GPU work.
 
 // Returns the offscreen texture the frame should render into when capture is enabled, creating/resizing
 // it to the canvas on demand, or null when capture is off (the caller then renders to the swapchain).
@@ -105,6 +110,17 @@ export function encodeWgpuFrameCapture(state: Readonly<WgpuRenderState>, encoder
   const runtime = getWgpuRenderStateRuntime(state);
   const texture = runtime.frameCaptureTexture;
   if (!runtime.frameCaptureEnabled || texture === null || texture === undefined) return;
+  // The reader owns the buffer while it holds a map. One retained buffer serves both sides, and the
+  // queue may not touch a buffer that is mapped or has a map in flight — so a frame encoded during a
+  // readback both invalidates the copy and stacks more GPU work in front of the map it is waiting on.
+  // Skipping the frame is the handshake: the reader is already taking a snapshot, and the next frame
+  // resumes copying once it lets go.
+  //
+  // Deliberately written as "is it busy" rather than "is it not unmapped": an implementation without
+  // `mapState` reports undefined, and the inverted test would then skip every copy for the whole run
+  // and capture nothing. Unknown state falls through to the copy, which is the pre-existing behaviour.
+  const mapState = runtime.frameCaptureBuffer?.mapState;
+  if (mapState === 'pending' || mapState === 'mapped') return;
 
   const width = texture.width;
   const height = texture.height;
