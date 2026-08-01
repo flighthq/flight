@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 
 import { resolveAssetTarget } from '../../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../../scripts/copy-dir';
+import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-html';
 import { workspacePackages } from '../../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
@@ -226,28 +227,11 @@ function examplesPlugin(examples: Example[]): Plugin[] {
             this.emitFile({
               type: 'asset',
               fileName: `examples/${example.name}/${render}/index.html`,
-              source: [
-                '<!DOCTYPE html>',
-                '<html lang="en">',
-                '<head>',
-                '  <meta charset="UTF-8" />',
-                // Document-relative `assets/...` fetches resolve into this example's own asset pool
-                // (see writeBundle) — a per-example base, not a shared one, so an example serves only
-                // what its own manifest declared. The script src below is base-absolute, so <base>
-                // never touches it.
-                `  <base href="${viteBase}example-assets/${example.name}/" />`,
-                '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-                `  <title>${example.name} \xB7 ${render}</title>`,
-                '  <link rel="icon" href="data:," />',
-                '  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>',
-                "  <script>window.addEventListener('pagehide',function(){document.querySelectorAll('canvas').forEach(function(c){var gl=c.getContext('webgl2')||c.getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_lose_context');if(ext)ext.loseContext();}});});</script>",
-                '</head>',
-                '<body>',
-                '  <div id="app"></div>',
-                `  <script type="module" src="${viteBase}${chunk.fileName}"></script>`,
-                '</body>',
-                '</html>',
-              ].join('\n'),
+              // Document-relative `assets/...` fetches resolve into this example's own asset pool
+              // (see writeBundle). The entry script is base-absolute, so <base> never touches it.
+              source: buildExamplesWebEntryHtml(example.name, render, `${viteBase}${chunk.fileName}`, {
+                assetBase: `${viteBase}example-assets/${example.name}/`,
+              }),
             });
           }
         }
@@ -303,22 +287,9 @@ function examplesPlugin(examples: Example[]): Plugin[] {
           }
 
           // HTML entry page
-          const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${name} · ${render}</title>
-  <link rel="icon" href="data:," />
-  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>
-  <script>window.addEventListener('pagehide',function(){document.querySelectorAll('canvas').forEach(function(c){var gl=c.getContext('webgl2')||c.getContext('webgl');if(gl){var ext=gl.getExtension('WEBGL_lose_context');if(ext)ext.loseContext();}});});</script>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__virtual:entry:${name}:${render}"></script>
-</body>
-</html>`;
+          const html = buildExamplesWebEntryHtml(name, render, `/@id/__x00__virtual:entry:${name}:${render}`, {
+            viteClient: true,
+          });
 
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
           res.end(html);
