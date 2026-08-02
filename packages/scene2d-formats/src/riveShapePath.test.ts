@@ -172,7 +172,110 @@ describe('createRivePath', () => {
   it('returns an empty path for a points path with no vertices', () => {
     expect(pointsPath(true, [])!.commands).toEqual([]);
   });
+
+  // Corner rounding is checked against the geometry it claims rather than against the formula that
+  // produced it: the corner is replaced by tangent points sitting `r` back along each edge, and the
+  // curve between them stays inside the original corner.
+  it('pulls a rounded corner back along both edges by its radius', () => {
+    const radius = 10;
+    const path = pointsPath(true, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 0, 26: radius }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 100 }),
+    ])!;
+
+    // The right-angle corner at (100,0) becomes an entry at (90,0) and an exit at (100,10).
+    const points = pointPairs(path);
+    expect(points).toContainEqual([90, 0]);
+    expect(points).toContainEqual([100, 10]);
+    expect(points).not.toContainEqual([100, 0]);
+  });
+
+  it('collapses to the circle ratio at a right angle', () => {
+    const radius = 10;
+    const path = pointsPath(true, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 0, 26: radius }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 100 }),
+    ])!;
+    const cubic = cubicAfter(path, [90, 0]);
+
+    // A quarter turn's handles sit 0.5523r from each tangent point, the standard approximation, so
+    // the first control is that far along the edge from (90,0) toward the corner.
+    expect(cubic![0]).toBeCloseTo(90 + radius * 0.5522847498307936, 4);
+    expect(cubic![1]).toBeCloseTo(0, 6);
+  });
+
+  it('clamps a radius larger than the edges can carry', () => {
+    const path = pointsPath(true, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 20, 25: 0, 26: 1000 }),
+      object(STRAIGHT_VERTEX, { 24: 20, 25: 20 }),
+    ])!;
+
+    // Half of the shorter adjoining edge is the ceiling, so the tangent points land at the midpoints.
+    const points = pointPairs(path);
+    expect(points).toContainEqual([10, 0]);
+    expect(points).toContainEqual([20, 10]);
+  });
+
+  it("leaves an open path's endpoints sharp, since a corner needs two edges", () => {
+    const path = pointsPath(false, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0, 26: 5 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 0, 26: 5 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 100, 26: 5 }),
+    ])!;
+    const points = pointPairs(path);
+
+    expect(points[0]).toEqual([0, 0]);
+    expect(points).toContainEqual([100, 100]);
+    // Only the middle vertex rounds, so exactly one corner cubic appears.
+    expect(path.commands.filter((command) => command === PathCommand.CUBIC_CURVE_TO)).toHaveLength(1);
+  });
+
+  it('leaves a zero radius sharp', () => {
+    const sharp = pointsPath(true, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 100 }),
+    ])!;
+
+    expect(sharp.commands).not.toContain(PathCommand.CUBIC_CURVE_TO);
+  });
 });
+
+// Anchor points only, walked through the verb stream so control points are not mistaken for them.
+function pointPairs(path: { commands: number[]; data: number[] }): number[][] {
+  const points: number[][] = [];
+  let cursor = 0;
+  for (const verb of path.commands) {
+    if (verb === PathCommand.MOVE_TO || verb === PathCommand.LINE_TO) {
+      points.push([path.data[cursor], path.data[cursor + 1]]);
+      cursor += 2;
+    } else if (verb === PathCommand.CUBIC_CURVE_TO) {
+      points.push([path.data[cursor + 4], path.data[cursor + 5]]);
+      cursor += 6;
+    }
+  }
+  return points;
+}
+
+// The control points of the cubic that begins at the given anchor.
+function cubicAfter(path: { commands: number[]; data: number[] }, from: readonly number[]): number[] | null {
+  let cursor = 0;
+  let current: number[] = [0, 0];
+  for (const verb of path.commands) {
+    if (verb === PathCommand.MOVE_TO || verb === PathCommand.LINE_TO) {
+      current = [path.data[cursor], path.data[cursor + 1]];
+      cursor += 2;
+    } else if (verb === PathCommand.CUBIC_CURVE_TO) {
+      if (current[0] === from[0] && current[1] === from[1]) return path.data.slice(cursor, cursor + 4);
+      current = [path.data[cursor + 4], path.data[cursor + 5]];
+      cursor += 6;
+    }
+  }
+  return null;
+}
 
 function expectPoints(actual: readonly number[], expected: readonly number[]): void {
   expect(actual).toHaveLength(expected.length);
