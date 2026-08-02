@@ -1,19 +1,19 @@
 import { addNodeChild, getNodeChildAt, getNodeParent } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { setScene2DContentReferenceContent } from './scene2DContentReference';
 import { createScene2DSlotReference } from './scene2DDocument';
+import { setScene2DSlotReferenceContent } from './scene2DSlotReference';
 
-describe('setScene2DContentReferenceContent', () => {
+describe('setScene2DSlotReferenceContent', () => {
   it('keeps child order stable when a resolve pass retains the same content', () => {
     const target = createDisplayObject();
     const content = createDisplayObject();
     const overlay = createDisplayObject();
     const reference = createScene2DSlotReference('slot', target);
-    setScene2DContentReferenceContent(reference, content);
+    setScene2DSlotReferenceContent(reference, content);
     addNodeChild(target, overlay);
 
-    setScene2DContentReferenceContent(reference, content);
+    setScene2DSlotReferenceContent(reference, content);
 
     expect(getNodeChildAt(target, 0)).toBe(content);
     expect(getNodeChildAt(target, 1)).toBe(overlay);
@@ -27,8 +27,8 @@ describe('setScene2DContentReferenceContent', () => {
     addNodeChild(target, authored);
     const reference = createScene2DSlotReference('slot', target);
 
-    setScene2DContentReferenceContent(reference, first);
-    setScene2DContentReferenceContent(reference, second);
+    setScene2DSlotReferenceContent(reference, first);
+    setScene2DSlotReferenceContent(reference, second);
 
     expect(reference.content).toBe(second);
     expect(getNodeParent(authored)).toBe(target);

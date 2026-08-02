@@ -41,6 +41,7 @@
     "@flighthq/clip": "*",
     "@flighthq/compression": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",

@@ -57,6 +57,28 @@ export class ShapeWriter {
     }
   }
 
+  // One FILLSTYLE for a bitmap fill: the type byte, the little-endian character id, and a matrix carrying
+  // `scale` in both axes. SWF writes shape space in twips, so a 1:1 bitmap fill authors scale 20.
+  writeBitmapFillStyle(type: number, characterId: number, scale: number): void {
+    this.writeByte(type);
+    this.writeByte(characterId & 0xff);
+    this.writeByte((characterId >> 8) & 0xff);
+    this.writeScaleMatrix(scale);
+  }
+
+  writeScaleMatrix(scale: number): void {
+    this.align();
+    const value = Math.round(scale * 65536);
+    const scaleBits = signedBitCount([value]);
+    this.writeUnsigned(1, 1);
+    this.writeUnsigned(scaleBits, 5);
+    this.writeSigned(value, scaleBits);
+    this.writeSigned(value, scaleBits);
+    this.writeUnsigned(0, 1);
+    this.writeUnsigned(0, 5);
+    this.align();
+  }
+
   writeIdentityMatrix(translateX: number, translateY: number): void {
     this.align();
     this.writeUnsigned(0, 1);

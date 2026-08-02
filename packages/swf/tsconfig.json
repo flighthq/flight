@@ -17,6 +17,7 @@
     { "path": "../font" },
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
+    { "path": "../image" },
     { "path": "../movieclip" },
     { "path": "../node" },
     { "path": "../path" },

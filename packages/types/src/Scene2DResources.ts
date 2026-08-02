@@ -1,23 +1,8 @@
 import type { Entity } from './Entity';
+import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
-import type {
-  Scene2DAssetReference,
-  Scene2DContentReference,
-  Scene2DContentReferenceKind,
-  Scene2DDocument,
-  Scene2DSlotReference,
-} from './Scene2DDocument';
+import type { Scene2DDocument, Scene2DSlotReference } from './Scene2DDocument';
 import type { Signal } from './Signal';
-
-// Both content callbacks receive the whole reference rather than its fields: an asset may be addressed by
-// `uri` or carried inline as `bytes`, and a resolver has to see which it is. Passing the reference also
-// keeps the seam stable as references gain fields.
-export type Scene2DAssetContentLoader = (
-  reference: Readonly<Scene2DAssetReference>,
-  signal: AbortSignal,
-) => Promise<Node2D | null>;
-
-export type Scene2DAssetContentResolver = (reference: Readonly<Scene2DAssetReference>) => Node2D | null;
 
 export interface Scene2DDocumentFetchProgress {
   loaded: number;
@@ -62,35 +47,44 @@ export interface Scene2DDocumentLoadOptions {
   signal?: AbortSignal;
 }
 
-export interface Scene2DResourceLoadProgress {
-  kind: Scene2DContentReferenceKind;
-  loaded: number;
-  name: string;
-  total: number;
-}
+// Receives the whole reference rather than its fields so the seam stays stable as slots gain fields.
+export type Scene2DSlotContentResolver = (reference: Readonly<Scene2DSlotReference>) => Node2D | null;
 
-export interface Scene2DResourceResolution {
+export interface Scene2DSlotResolution {
   content: Node2D;
-  reference: Scene2DContentReference;
+  reference: Scene2DSlotReference;
 }
 
 export interface Scene2DResources {
   document: Scene2DDocument;
-  resolved: Scene2DResourceResolution[];
+  resolved: Scene2DSlotResolution[];
   root: Node2D;
-  unresolved: Scene2DContentReference[];
+  unresolved: Scene2DSlotReference[];
 }
-
-export type Scene2DSlotContentResolver = (reference: Readonly<Scene2DSlotReference>) => Node2D | null;
 
 export interface ResolveScene2DResourcesOptions {
-  resolveAssetContent?: Scene2DAssetContentResolver;
   resolveSlotContent?: Scene2DSlotContentResolver;
-  select?: (reference: Readonly<Scene2DContentReference>) => boolean;
+  select?: (reference: Readonly<Scene2DSlotReference>) => boolean;
 }
 
-export interface LoadScene2DResourcesOptions extends Omit<ResolveScene2DResourcesOptions, 'resolveAssetContent'> {
-  loadAssetContent: Scene2DAssetContentLoader;
-  progress?: Signal<(event: Readonly<Scene2DResourceLoadProgress>) => void>;
+export interface Scene2DImageResourceLoadProgress {
+  loaded: number;
+  reference: ImageResourceReference;
+  total: number;
+}
+
+// Counted by reference rather than by waiting Texture: a document that places one bitmap a hundred times
+// reports one resolution, which is also exactly one decode.
+export interface Scene2DImageResources {
+  document: Scene2DDocument;
+  resolved: ImageResourceReference[];
+  unresolved: ImageResourceReference[];
+}
+
+export interface LoadScene2DImageResourcesOptions {
+  // Resolves an External reference's uri. A document whose images are all embedded never needs one.
+  fetch?: ImageResourceFetch;
+  progress?: Signal<(event: Readonly<Scene2DImageResourceLoadProgress>) => void>;
+  select?: (reference: Readonly<ImageResourceReference>) => boolean;
   signal?: AbortSignal;
 }

@@ -1,14 +1,14 @@
 export {
-  createScene2DAssetReference,
   createScene2DDocument,
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
   createScene2DSlotReference,
   loadScene2DDocumentFromUrl,
-  loadScene2DResources,
+  loadScene2DImageResources,
   registerLottieScene2DDocumentImporter,
   registerScene2DDocumentImporter,
   registerSvgScene2DDocumentImporter,
   resolveScene2DResources,
+  setScene2DSlotReferenceContent,
   unregisterScene2DDocumentImporter,
 } from './contract';

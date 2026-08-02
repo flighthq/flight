@@ -2,32 +2,23 @@ import { addNodeChild, getNodeParent } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { resolveScene2DResources } from './resolveScene2DResources';
-import { createScene2DAssetReference, createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
+import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 
 describe('resolveScene2DResources', () => {
-  it('reconciles asset and application slot content synchronously', () => {
+  it('reconciles application slot content synchronously', () => {
     const root = createDisplayObject();
-    const assetTarget = createDisplayObject();
     const slotTarget = createDisplayObject();
-    const assetContent = createDisplayObject();
     const slotContent = createDisplayObject();
-    const document = createScene2DDocument(root, [
-      createScene2DAssetReference('background', 'bg.png', assetTarget),
-      createScene2DSlotReference('avatar', slotTarget, 'Game.Avatar'),
-    ]);
+    const document = createScene2DDocument(root, [createScene2DSlotReference('avatar', slotTarget, 'Game.Avatar')]);
 
     const resources = resolveScene2DResources(document, {
-      resolveAssetContent: (reference) =>
-        reference.name === 'background' && reference.uri === 'bg.png' ? assetContent : null,
       resolveSlotContent: (reference) =>
         reference.name === 'avatar' && reference.linkage === 'Game.Avatar' ? slotContent : null,
     });
 
-    expect(resources.resolved.map((entry) => entry.content)).toEqual([assetContent, slotContent]);
+    expect(resources.resolved.map((entry) => entry.content)).toEqual([slotContent]);
     expect(resources.unresolved).toEqual([]);
-    expect(document.references[0].content).toBe(assetContent);
-    expect(document.references[1].content).toBe(slotContent);
-    expect(getNodeParent(assetContent)).toBe(assetTarget);
+    expect(document.slots[0].content).toBe(slotContent);
     expect(getNodeParent(slotContent)).toBe(slotTarget);
   });
 
