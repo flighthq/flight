@@ -1,5 +1,6 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
@@ -40,7 +41,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
-  const glTexture = resolveGlTexture(state, texture, true, 'linear');
+  const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;
   const straightAlpha = runtime.currentTextureStraightAlpha;
   const nodeMaterialData = quadBatch.materialData;

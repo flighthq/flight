@@ -3,6 +3,7 @@ import {
   resolveWgpuMaterialRenderer,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
@@ -53,7 +54,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
     const atlas = page.atlas;
     const texture = atlas.texture;
     if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
-    const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
+    const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
     if (textureEntry === null) continue;
 
     // prepareWgpuQuadBatchWrite may flush the prior page's batch (each page binds a different image),

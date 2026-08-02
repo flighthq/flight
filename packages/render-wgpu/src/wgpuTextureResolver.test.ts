@@ -122,18 +122,29 @@ describe('registerWgpuImageTextureResolver', () => {
     expect(resolveWgpuTexture(state, texture)).toBe(first);
   });
 
-  it('realizes an override independently and defaults to the texture color space', async () => {
+  // The sample format comes from the PAIR (what the content is, what the destination composites in), not
+  // from an override. One sRGB texture therefore realizes two ways: decoded for a linear-working path
+  // (3D), byte-through for an encoded-working one (2D), cached apart so both can be live at once.
+  it('derives the sample format from the texture and working color spaces', async () => {
     const state = await createWgpuRenderStateForTest();
     const createTexture = vi.spyOn(state.device, 'createTexture');
     const texture = textureWithImage(imageResource());
     registerWgpuImageTextureResolver(state);
 
-    const srgb = resolveWgpuTexture(state, texture);
+    const decoded = resolveWgpuTexture(state, texture, false, 'linear');
     expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm-srgb' }));
-    const linear = resolveWgpuTexture(state, texture, false, 'linear');
-    expect(linear).not.toBe(srgb);
+
+    const byteThrough = resolveWgpuTexture(state, texture, false, 'srgb');
+    expect(byteThrough).not.toBe(decoded);
     expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm' }));
-    expect(resolveWgpuTexture(state, texture)).toBe(srgb);
+
+    // Linear content never decodes, whichever space the destination works in.
+    const linearTexture = textureWithImage(imageResource());
+    (linearTexture as { colorSpace: string }).colorSpace = 'linear';
+    resolveWgpuTexture(state, linearTexture, false, 'linear');
+    expect(createTexture).toHaveBeenLastCalledWith(expect.objectContaining({ format: 'rgba8unorm' }));
+
+    expect(resolveWgpuTexture(state, texture, false, 'linear')).toBe(decoded);
   });
 
   it('resolves a host video through the image source kind', async () => {

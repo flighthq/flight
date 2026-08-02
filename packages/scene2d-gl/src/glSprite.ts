@@ -1,5 +1,6 @@
 import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureSourceKind, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
@@ -24,7 +25,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   const material = renderProxy.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
-  const glTexture = resolveGlTexture(state, texture, true, 'linear');
+  const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;
   const straightAlpha = runtime.currentTextureStraightAlpha;
   ensureGlQuadBatchShader(state);

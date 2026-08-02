@@ -1,5 +1,6 @@
-import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
+import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
+  RenderTargetColorSpace,
   Bitmap,
   CompressedImage,
   Image,
@@ -64,7 +65,7 @@ export function resolveWgpuTexture(
   state: WgpuRenderState,
   texture: Readonly<TextureLike>,
   premultiply = false,
-  colorSpace: TextureColorSpace = texture.colorSpace,
+  workingColorSpace: RenderTargetColorSpace = 'linear',
 ): WgpuTextureEntry | null {
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
@@ -74,7 +75,7 @@ export function resolveWgpuTexture(
     runtime.registryMiss?.(3, sourceKind);
     return null;
   }
-  return resolver(state, texture, premultiply, colorSpace);
+  return resolver(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
 }
 
 function resolveWgpuBitmapTexture(
