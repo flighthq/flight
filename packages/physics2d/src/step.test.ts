@@ -698,6 +698,44 @@ describe('stepPhysics2D contact events', () => {
     expect(world.events.began).toHaveLength(0);
     expect(world.events.ended).toHaveLength(0);
   });
+
+  it('reports begin and end events for a point sensor without inventing a manifold', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const trigger = createRigidBody2D('static', 0, 0);
+    trigger.colliders.push(createPhysics2DCollider({ kind: 'point', x: 0, y: 0 }, STONE, true));
+    addPhysics2DBody(world, trigger);
+    const target = createRigidBody2D('static', 0, 0);
+    target.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE),
+    );
+    addPhysics2DBody(world, target);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(1);
+    expect(world.contacts[0]).toMatchObject({ pointCount: 0, sensor: true, touching: true });
+
+    target.x = 2;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.events.ended).toHaveLength(1);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('reports a segment overlap when the area-bearing collider is the sensor', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const segment = createRigidBody2D('static', 0, 0);
+    segment.colliders.push(createPhysics2DCollider({ kind: 'segment', x0: -2, y0: 0, x1: 2, y1: 0 }, STONE));
+    addPhysics2DBody(world, segment);
+    const trigger = createRigidBody2D('static', 0, 0);
+    trigger.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, STONE, true));
+    addPhysics2DBody(world, trigger);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(1);
+    expect(world.contacts[0]).toMatchObject({ pointCount: 0, sensor: true, touching: true });
+  });
 });
 
 describe('stepPhysics2D with joints', () => {

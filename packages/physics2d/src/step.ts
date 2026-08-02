@@ -1,6 +1,17 @@
-import { collideContactManifold, createCollisionContactManifold } from '@flighthq/collision/contract';
+import {
+  collideContactManifold,
+  createCollisionContactManifold,
+  getCollisionShapeContainsPoint,
+  testSegmentAabbCollision,
+  testSegmentCircleCollision,
+  testSegmentObbCollision,
+  testSegmentPolygonCollision,
+  testSegmentSegmentCollision,
+} from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold,
+  CollisionSegment,
+  CollisionShape,
   Physics2DContact,
   Physics2DContactPoint,
   Physics2DJoint,
@@ -70,7 +81,10 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
         // nothing can ever resolve. Sensors are reported and never resolved, so a sensor pair is the
         // only pair worth keeping between two bodies that cannot move.
         if (bothImmovable && !sensorPair) continue;
-        if (!collideContactManifold(colliderA.world, colliderB.world, manifoldScratch)) continue;
+        const manifold = collideContactManifold(colliderA.world, colliderB.world, manifoldScratch);
+        if (!manifold && (!sensorPair || !testPhysics2DAreaLessSensorOverlap(colliderA.world, colliderB.world))) {
+          continue;
+        }
         mergePhysics2DContact(
           world,
           bodyA.index,
@@ -98,6 +112,38 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
   }
 
   world.contacts.sort(comparePhysics2DContacts);
+}
+
+// Area-less shapes deliberately carry no contact manifold: there is no penetration depth or separating
+// normal for the impulse solver to consume. A sensor needs only a boolean overlap, though, so it can use
+// collision's exact point-containment and segment-query lanes and persist a zero-point contact solely for
+// begin/end lifecycle. This fallback is sensor-only; a solid segment remains non-resolving by design.
+function testPhysics2DAreaLessSensorOverlap(a: Readonly<CollisionShape>, b: Readonly<CollisionShape>): boolean {
+  if (a.kind === 'point') return getCollisionShapeContainsPoint(b, a.x, a.y);
+  if (b.kind === 'point') return getCollisionShapeContainsPoint(a, b.x, b.y);
+  if (a.kind === 'segment') return testPhysics2DSegmentOverlap(a, b);
+  if (b.kind === 'segment') return testPhysics2DSegmentOverlap(b, a);
+  return false;
+}
+
+function testPhysics2DSegmentOverlap(
+  segment: Readonly<CollisionSegment & { kind: 'segment' }>,
+  other: Readonly<CollisionShape>,
+): boolean {
+  switch (other.kind) {
+    case 'aabb':
+      return testSegmentAabbCollision(segment, other);
+    case 'circle':
+      return testSegmentCircleCollision(segment, other);
+    case 'obb':
+      return testSegmentObbCollision(segment, other);
+    case 'polygon':
+      return testSegmentPolygonCollision(segment, other);
+    case 'segment':
+      return testSegmentSegmentCollision(segment, other);
+    case 'point':
+      return getCollisionShapeContainsPoint(segment, other.x, other.y);
+  }
 }
 
 function isPhysics2DColliderPairEnabled(
