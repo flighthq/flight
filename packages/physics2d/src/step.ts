@@ -228,17 +228,28 @@ function mergePhysics2DContact(
   contact.sensor = sensor;
   contact.touching = true;
 
+  // Snapshot the complete two-point cache before overwriting either destination. A manifold can return
+  // the same two feature ids in the opposite slot order as the bodies move. Searching `contact.points`
+  // while writing it in place makes the first write destroy evidence the second search needs, so one
+  // feature silently cold-starts exactly when stable identity should preserve it.
+  const oldPointCount = contact.pointCount;
+  const oldFeature0 = oldPointCount > 0 ? contact.points[0].featureId : -1;
+  const oldNormal0 = oldPointCount > 0 ? contact.points[0].normalImpulse : 0;
+  const oldTangent0 = oldPointCount > 0 ? contact.points[0].tangentImpulse : 0;
+  const oldFeature1 = oldPointCount > 1 ? contact.points[1].featureId : -1;
+  const oldNormal1 = oldPointCount > 1 ? contact.points[1].normalImpulse : 0;
+  const oldTangent1 = oldPointCount > 1 ? contact.points[1].tangentImpulse : 0;
   for (let i = 0; i < manifold.pointCount; i++) {
     const source = manifold.points[i];
     const target = contact.points[i];
     let normalImpulse = 0;
     let tangentImpulse = 0;
-    for (let j = 0; j < contact.pointCount; j++) {
-      if (contact.points[j].featureId === source.featureId) {
-        normalImpulse = contact.points[j].normalImpulse;
-        tangentImpulse = contact.points[j].tangentImpulse;
-        break;
-      }
+    if (oldPointCount > 0 && oldFeature0 === source.featureId) {
+      normalImpulse = oldNormal0;
+      tangentImpulse = oldTangent0;
+    } else if (oldPointCount > 1 && oldFeature1 === source.featureId) {
+      normalImpulse = oldNormal1;
+      tangentImpulse = oldTangent1;
     }
     target.x = source.x;
     target.y = source.y;
