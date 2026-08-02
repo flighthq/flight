@@ -6,6 +6,7 @@ import {
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { copyShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   BoundsNodeAny,
   MovieClip,
@@ -18,9 +19,14 @@ import type {
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
+  Shape,
+  ShapeData,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
+
+import { SwfReader } from './swfReader';
+import { createSwfShape } from './swfShape';
 
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
   const header = new SwfReader(source, 0, source.length);
@@ -87,6 +93,8 @@ interface SwfDisplayObjectData extends Node2DData, SwfAuthoredBoundsData {}
 
 interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
 
+interface SwfShapeNodeData extends ShapeData, SwfAuthoredBoundsData {}
+
 interface SwfPlacement {
   characterId: number;
   depth: number;
@@ -106,6 +114,8 @@ interface SwfTimeline {
 interface SwfTagResult {
   characterBounds: Map<number, SwfRectangle>;
   linkages: Map<number, string>;
+  // One decoded Shape per shape character, drawn once and copied into each placement of it.
+  shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
 }
@@ -118,6 +128,7 @@ interface SwfParseState {
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
   remainingFrameEntries: number;
+  shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
 }
 
@@ -127,95 +138,6 @@ interface SwfInstantiationState {
   remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
-}
-
-class SwfReader {
-  bitPosition = 0;
-  pos: number;
-  valid = true;
-
-  constructor(
-    readonly source: Uint8Array,
-    start: number,
-    readonly end: number,
-  ) {
-    this.pos = start;
-  }
-
-  alignToByte(): void {
-    if (this.bitPosition === 0) return;
-    this.bitPosition = 0;
-    this.pos++;
-  }
-
-  // SWF EncodedU32: seven value bits per byte, least significant group first, at most five bytes.
-  readEncodedUint32(): number {
-    let value = 0;
-    for (let i = 0; i < ENCODED_UINT32_MAX_BYTES; i++) {
-      const byte = this.readUint8();
-      value += (byte & 0x7f) * 2 ** (7 * i);
-      if ((byte & 0x80) === 0) break;
-    }
-    return value;
-  }
-
-  readSignedBits(count: number): number {
-    const value = this.readUnsignedBits(count);
-    if (count === 0) return 0;
-    const sign = 2 ** (count - 1);
-    return value >= sign ? value - 2 ** count : value;
-  }
-
-  readString(): string {
-    this.alignToByte();
-    const start = this.pos;
-    while (this.pos < this.end && this.source[this.pos] !== 0) this.pos++;
-    if (this.pos >= this.end) {
-      this.valid = false;
-      return '';
-    }
-    const value = _decoder.decode(this.source.subarray(start, this.pos));
-    this.pos++;
-    return value;
-  }
-
-  readUint8(): number {
-    this.alignToByte();
-    if (this.pos >= this.end) {
-      this.valid = false;
-      return 0;
-    }
-    return this.source[this.pos++];
-  }
-
-  readUint16(): number {
-    const low = this.readUint8();
-    const high = this.readUint8();
-    return low + high * 0x100;
-  }
-
-  readUint32(): number {
-    const low = this.readUint16();
-    const high = this.readUint16();
-    return low + high * 0x10000;
-  }
-
-  readUnsignedBits(count: number): number {
-    let value = 0;
-    for (let i = 0; i < count; i++) {
-      if (this.pos >= this.end) {
-        this.valid = false;
-        return 0;
-      }
-      value = value * 2 + ((this.source[this.pos] >> (7 - this.bitPosition)) & 1);
-      this.bitPosition++;
-      if (this.bitPosition === 8) {
-        this.bitPosition = 0;
-        this.pos++;
-      }
-    }
-    return value;
-  }
 }
 
 function matchesSwfDocument(source: Uint8Array, context: Readonly<Scene2DDocumentImportContext>): boolean {
@@ -262,14 +184,17 @@ function populateSwfTimelineNode(
       const key = createSwfInstanceKey(placement);
       if (nodes.has(key)) continue;
       const sprite = parsed.sprites.get(placement.characterId);
-      if (!placement.name && sprite === undefined) continue;
+      const shape = parsed.shapes.get(placement.characterId);
+      // A placement earns a node when it is named, when it carries a timeline, or now when it has geometry
+      // to draw — an unnamed shape is most of what a still frame is made of.
+      if (!placement.name && sprite === undefined && shape === undefined) continue;
       if (state.remainingNodes === 0) return false;
       state.remainingNodes--;
 
       // The node and its slot reference exist before the symbol behind it is populated, so a manifest lists
       // a container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
-      const target = sprite === undefined ? createSwfDisplayObject(targetBounds) : createSwfMovieClip(targetBounds);
+      const target = createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
       if (placement.name) {
         references.push(
@@ -384,6 +309,32 @@ function createSwfMovieClip(bounds: SwfRectangle | null): MovieClip {
     (getNodeRuntime(clip) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
   }
   return clip;
+}
+
+// Chooses what a placed character becomes: a MovieClip for a symbol with a timeline, a Shape carrying its
+// own copy of the definition's commands, and otherwise the bounded container a placement with neither
+// still needs.
+function createSwfPlacementNode(
+  sprite: Readonly<SwfTimeline> | undefined,
+  shape: Readonly<Shape> | undefined,
+  bounds: SwfRectangle | null,
+): Node2D {
+  if (sprite !== undefined) return createSwfMovieClip(bounds);
+  return shape === undefined ? createSwfDisplayObject(bounds) : createSwfShapeNode(shape, bounds);
+}
+
+// Each placement of a shape character gets its own copy of the decoded commands, so a document that places
+// one symbol many times still holds independently editable geometry per instance.
+function createSwfShapeNode(template: Readonly<Shape>, bounds: SwfRectangle | null): Shape {
+  const target = createShape();
+  copyShapeCommands(target, template);
+  if (bounds !== null) {
+    // The authored RECT wins over the geometry's own extent: SWF sizes a character by what the tool
+    // recorded, including stroke width and authoring padding the command stream does not carry.
+    (target.data as SwfShapeNodeData).authoredBounds = { ...bounds };
+    (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return target;
 }
 
 function mergeSwfRectangles(a: SwfRectangle, b: Readonly<SwfRectangle>): SwfRectangle {
@@ -544,6 +495,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     definedCharacters: new Set<number>(),
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
+    shapes: new Map<number, Shape>(),
     sprites: new Map<number, SwfTimeline>(),
   };
   const timeline = readSwfTimeline(reader, state);
@@ -551,6 +503,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   return {
     characterBounds: state.characterBounds,
     linkages: state.linkages,
+    shapes: state.shapes,
     sprites: state.sprites,
     timeline,
   };
@@ -601,11 +554,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     } else if (code === TAG_DEFINE_VIDEO_STREAM) {
       if (!readSwfVideoDefinition(body, state)) return null;
     } else if (isSwfBoundedDefinitionTag(code)) {
-      if (
-        !readSwfBoundedDefinition(body, state, code === TAG_DEFINE_MORPH_SHAPE || code === TAG_DEFINE_MORPH_SHAPE_2)
-      ) {
-        return null;
-      }
+      if (!readSwfBoundedDefinition(body, state, code)) return null;
     } else if (code === TAG_DEFINE_SPRITE) {
       const spriteId = body.readUint16();
       body.readUint16();
@@ -674,7 +623,8 @@ function isSwfBoundedDefinitionTag(code: number): boolean {
   );
 }
 
-function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, hasEndBounds: boolean): boolean {
+function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
+  const hasEndBounds = code === TAG_DEFINE_MORPH_SHAPE || code === TAG_DEFINE_MORPH_SHAPE_2;
   const characterId = body.readUint16();
   const startBounds = readSwfRectangle(body);
   const endBounds = hasEndBounds ? readSwfRectangle(body) : null;
@@ -689,7 +639,32 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, hasEndB
   }
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, endBounds === null ? startBounds : mergeSwfRectangles(startBounds, endBounds));
+
+  const version = resolveSwfShapeVersion(code);
+  if (version > 0) readSwfShapeBody(body, state, characterId, version);
   return true;
+}
+
+// Decodes a shape definition's geometry on a reader of its own, so a body this decoder cannot read costs
+// only that body's geometry. The definition keeps its authored bounds and contributes no drawing, which
+// is what every shape did before any geometry was decoded, rather than failing the whole document.
+function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, characterId: number, version: number): void {
+  const reader = new SwfReader(body.source, body.pos, body.end);
+  if (version >= 4) {
+    // Shape 4 carries an edge-bounds RECT and a flags byte between its bounds and its styles.
+    readSwfRectangle(reader);
+    reader.readUint8();
+  }
+  if (!reader.valid) return;
+  const shape = createSwfShape(reader, version);
+  if (shape !== null) state.shapes.set(characterId, shape);
+}
+
+function resolveSwfShapeVersion(code: number): number {
+  if (code === TAG_DEFINE_SHAPE) return 1;
+  if (code === TAG_DEFINE_SHAPE_2) return 2;
+  if (code === TAG_DEFINE_SHAPE_3) return 3;
+  return code === TAG_DEFINE_SHAPE_4 ? 4 : 0;
 }
 
 function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
@@ -834,7 +809,6 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 }
 
 const CWS_SIGNATURE = 0x43;
-const ENCODED_UINT32_MAX_BYTES = 5;
 const FIXED_8_8_ONE = 0x100;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
@@ -888,4 +862,3 @@ const TAG_SYMBOL_CLASS = 76;
 const TWIPS_PER_PIXEL = 20;
 const W_SIGNATURE = 0x57;
 const ZWS_SIGNATURE = 0x5a;
-const _decoder = new TextDecoder();
