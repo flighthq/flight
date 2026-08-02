@@ -221,6 +221,11 @@ shape's paths into a single figure, which is how a hole cuts its parent, so spli
 break the compositing the format states. A path carries its own transform, and since it is no longer
 a node that transform is baked into the geometry it hands over.
 
+**A path always belongs to a shape**: all 3,776 paths in the corpus are a Shape's direct child, with
+no exceptions and no intermediate node. A path found outside a shape is therefore a malformed file
+rather than a shape of the format, and it emits `rive.path-outside-shape` rather than disappearing —
+unreachable on every file tested, but geometry that vanished silently would leave nothing to notice.
+
 Covered path kinds: `PointsPath` with all four vertex kinds, and the parametric family — rectangle
 (linked and per-corner radii), ellipse, triangle, polygon and star, each positioned by its own
 normalized origin, which defaults to its centre.

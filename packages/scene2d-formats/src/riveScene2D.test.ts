@@ -1,5 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { Node2D } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
@@ -25,6 +25,7 @@ const SCALE_X = 16;
 const SCALE_Y = 17;
 const OPACITY = 18;
 const PARENT_ID = 5;
+const POINTS_PATH = 16;
 
 describe('createScene2DFromRiveDocument', () => {
   it('returns no artboards for bytes that are not a Rive file', () => {
@@ -144,6 +145,23 @@ describe('createScene2DFromRiveDocument', () => {
 
     expect(getNodeChildCount(root)).toBe(1);
     expect(getNodeChildCount(getNodeChildAt(root, 0) as Node2D)).toBe(0);
+  });
+
+  // Every one of the 3,776 paths in the reference corpus is the direct child of a Shape, so this is
+  // a malformed file rather than a shape of the format — but the geometry would otherwise disappear
+  // without trace, which is what earns the crumb.
+  it('crumbs a path that is not owned by a shape instead of dropping it silently', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        object(NODE, [uint(PARENT_ID, 0)]),
+        object(POINTS_PATH, [uint(PARENT_ID, 1)]),
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.path-outside-shape']);
   });
 
   it('reparents past a non-node ancestor rather than dropping its descendants', () => {
