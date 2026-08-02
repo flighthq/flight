@@ -10,6 +10,7 @@ export {
   createNode3D,
   createScene3D,
   createScene3DFromDocument,
+  createScene3DLightsFromDocument,
   createScene3DsFromDocument,
   cullNode3DByFrustum,
   disposeNode3D,

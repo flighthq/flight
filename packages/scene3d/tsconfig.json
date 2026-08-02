@@ -14,6 +14,7 @@
     { "path": "../camera" },
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../lighting" },
     { "path": "../materials" },
     { "path": "../mesh" },
     { "path": "../node" },
