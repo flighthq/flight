@@ -1,5 +1,6 @@
 export * from './colliderTransform';
 export * from './islands';
+export * from './jointFactories';
 export * from './jointRegistry';
 export * from './joints';
 export * from './massProperties';

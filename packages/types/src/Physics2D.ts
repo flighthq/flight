@@ -429,6 +429,99 @@ export interface Physics2DMouseJoint extends Physics2DJoint {
   damping: number;
 }
 
+// Authoring inputs for a two-body joint. Factories accept the semantic state a caller owns and fill
+// the solver cache themselves; impulse and world-space lever-arm fields deliberately do not appear
+// here. Anchors default to each body's local origin and connected bodies do not collide by default.
+export interface Physics2DJointOptions {
+  bodyA: number;
+  bodyB: number;
+  localAnchorAX?: number;
+  localAnchorAY?: number;
+  localAnchorBX?: number;
+  localAnchorBY?: number;
+  collideConnected?: boolean;
+}
+
+export interface Physics2DDistanceJointOptions extends Physics2DJointOptions {
+  length: number;
+  stiffness?: number;
+  damping?: number;
+}
+
+export interface Physics2DRevoluteJointOptions extends Physics2DJointOptions {
+  enableMotor?: boolean;
+  motorSpeed?: number;
+  maxMotorTorque?: number;
+  enableLimit?: boolean;
+  lowerAngle?: number;
+  upperAngle?: number;
+  referenceAngle?: number;
+}
+
+export interface Physics2DWeldJointOptions extends Physics2DJointOptions {
+  referenceAngle?: number;
+}
+
+export interface Physics2DRopeJointOptions extends Physics2DJointOptions {
+  maxLength: number;
+}
+
+export interface Physics2DPulleyJointOptions extends Physics2DJointOptions {
+  groundAnchorAX: number;
+  groundAnchorAY: number;
+  groundAnchorBX: number;
+  groundAnchorBY: number;
+  constant: number;
+  ratio?: number;
+}
+
+export interface Physics2DGearJointOptions extends Physics2DJointOptions {
+  coordinateA: Physics2DGearCoordinateKind;
+  coordinateB: Physics2DGearCoordinateKind;
+  constant: number;
+  axisAX?: number;
+  axisAY?: number;
+  axisBX?: number;
+  axisBY?: number;
+  ratio?: number;
+}
+
+export interface Physics2DPrismaticJointOptions extends Physics2DJointOptions {
+  localAxisAX?: number;
+  localAxisAY?: number;
+  referenceAngle?: number;
+  enableMotor?: boolean;
+  motorSpeed?: number;
+  maxMotorForce?: number;
+  enableLimit?: boolean;
+  lowerTranslation?: number;
+  upperTranslation?: number;
+}
+
+export interface Physics2DWheelJointOptions extends Physics2DJointOptions {
+  localAxisAX?: number;
+  localAxisAY?: number;
+  restTranslation?: number;
+  stiffness?: number;
+  damping?: number;
+  enableMotor?: boolean;
+  motorSpeed?: number;
+  maxMotorTorque?: number;
+}
+
+// A mouse joint has one body and one world-space target, so its authoring shape does not expose the
+// dummy second body endpoint required by the generic solver record.
+export interface Physics2DMouseJointOptions {
+  body: number;
+  targetX: number;
+  targetY: number;
+  maxForce: number;
+  localAnchorX?: number;
+  localAnchorY?: number;
+  stiffness?: number;
+  damping?: number;
+}
+
 // The two halves of a joint's solve, registered together under a kind.
 //
 // `prepare` runs once per step, after the bodies have their current transforms, and rebuilds whatever the
