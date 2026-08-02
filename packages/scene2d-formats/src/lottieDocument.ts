@@ -233,10 +233,13 @@ function applyLottieTransform(
   }
   applyVectorProperty(target, transform.a, 'Pivot', ['PivotX', 'PivotY'], 2, (value) => value, context);
   applyVectorProperty(target, transform.s, 'Scale', ['ScaleX', 'ScaleY'], 2, (value) => value / 100, context);
-  applyScalarProperty(target, transform.r ?? transform.rz, 'Rotation', degreesToRadians, context);
+  // Bodymovin states rotation and skew in degrees, and so does Flight's authoring transform, so both
+  // pass through unconverted. The radians live below the seam, where nodeTransform2d applies
+  // DEG_TO_RAD.
+  applyScalarProperty(target, transform.r ?? transform.rz, 'Rotation', (value) => value, context);
   applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
   if (transform.sk !== undefined) {
-    applyScalarProperty(target, transform.sk, 'SkewX', degreesToRadians, context);
+    applyScalarProperty(target, transform.sk, 'SkewX', (value) => value, context);
   }
 }
 

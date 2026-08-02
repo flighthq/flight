@@ -12,6 +12,24 @@ import { PathCommand, SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/typ
 import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
+// A units regression guard. Bodymovin states rotation and skew in degrees and Flight's authoring
+// transform is degrees, so the importer must not convert. It did once, writing radians into a
+// degrees field, which left a 90-degree layer rendering at 1.57 degrees — visually unrotated while
+// every test still passed, because the tests had taken their expectation from the conversion.
+describe('Lottie authoring units', () => {
+  it('writes rotation and skew in the degrees Node2D expects', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        { ind: 1, ip: 0, ks: { r: { k: 90 }, sk: { k: 30 } }, nm: 'turned', op: 60, ty: 3 },
+      ] as LottieLayer[]),
+    );
+    const node = findByName(result.root, 'turned')!;
+
+    expect(node.rotation).toBe(90);
+    expect(node.skewX).toBe(30);
+  });
+});
+
 describe('Lottie document conformance census', () => {
   it('rejects malformed JSON and structurally invalid documents', () => {
     for (const source of ['{', JSON.stringify({ fr: 0, layers: [] })]) {
@@ -81,7 +99,7 @@ describe('Lottie document conformance census', () => {
       alpha: 0.5,
       pivotX: 1,
       pivotY: 2,
-      rotation: Math.PI / 2,
+      rotation: 90,
       scaleX: 2,
       scaleY: 3,
       x: 10,
@@ -418,7 +436,8 @@ describe('Lottie keyframe time/value fidelity', () => {
 
     for (const keyframe of rotationKeys) {
       applyAnimationClipToLottieDocument(result.clip, (keyframe.t - IN_POINT) / FRAME_RATE);
-      expect(node.rotation).toBeCloseTo((keyframe.s * Math.PI) / 180, 5);
+      // Degrees on both sides of the seam: Bodymovin states degrees and Node2D.rotation is degrees.
+      expect(node.rotation).toBeCloseTo(keyframe.s, 5);
     }
     for (const keyframe of opacityKeys) {
       applyAnimationClipToLottieDocument(result.clip, (keyframe.t - IN_POINT) / FRAME_RATE);
@@ -524,70 +543,6 @@ describe('Lottie polystar roundness', () => {
           ty: 4,
         },
       ] as unknown as LottieLayer[]),
-    );
-    return findFirstKind(result.root, ShapeKind) as Shape;
-  }
-});
-
-// A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
-// count of paints in the file is the count of paints in the output. These four cases are the ones a
-// single-slot paint model silently dropped.
-describe('Lottie shape group paint', () => {
-  it('keeps both fills when a group states two', () => {
-    const two = importPaints([RECT, RED_FILL, BLUE_FILL]);
-    const blueOnly = importPaints([RECT, BLUE_FILL]);
-
-    expect(paintStartsOf(two)).toEqual(['beginFill', 'beginFill']);
-    expect(JSON.stringify(two.data.commands)).not.toBe(JSON.stringify(blueOnly.data.commands));
-  });
-
-  it('keeps a gradient fill stated beside a solid one', () => {
-    const both = importPaints([RECT, RED_FILL, GRADIENT_FILL]);
-    const solidOnly = importPaints([RECT, RED_FILL]);
-
-    expect(paintStartsOf(both)).toEqual(['beginFill', 'beginGradientFill']);
-    expect(JSON.stringify(both.data.commands)).not.toBe(JSON.stringify(solidOnly.data.commands));
-  });
-
-  it('emits paints in the order the file lists them', () => {
-    const strokeFirst = importPaints([RECT, STROKE, RED_FILL]);
-    const fillFirst = importPaints([RECT, RED_FILL, STROKE]);
-
-    expect(paintStartsOf(strokeFirst)).toEqual(['lineStyle', 'beginFill']);
-    expect(paintStartsOf(fillFirst)).toEqual(['beginFill', 'lineStyle']);
-  });
-
-  it('draws every path in the group under each paint', () => {
-    const twoPathsTwoFills = importPaints([RECT, OTHER_RECT, RED_FILL, BLUE_FILL]);
-
-    // Two paths, each restated once per paint.
-    expect((twoPathsTwoFills.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(4);
-  });
-
-  it('still emits the geometry when a group states no paint at all', () => {
-    const unpainted = importPaints([RECT]);
-
-    expect((unpainted.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(1);
-    expect(paintStartsOf(unpainted)).toEqual([]);
-  });
-
-  const RECT = { p: { k: [0, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
-  const OTHER_RECT = { p: { k: [40, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
-  const RED_FILL = { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' };
-  const BLUE_FILL = { c: { k: [0, 0, 1] }, o: { k: 100 }, ty: 'fl' };
-  const STROKE = { c: { k: [0, 1, 0] }, o: { k: 100 }, ty: 'st', w: { k: 2 } };
-  const GRADIENT_FILL = {
-    e: { k: [10, 10] },
-    g: { k: { k: [0, 1, 0, 0, 1, 0, 0, 1] }, p: 2 },
-    o: { k: 100 },
-    s: { k: [0, 0] },
-    t: 1,
-    ty: 'gf',
-  };
-
-  function importPaints(items: unknown[]): Shape {
-    const result = createScene2DFromLottieDocument(
-      createDocument([{ ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 }] as unknown as LottieLayer[]),
     );
     return findFirstKind(result.root, ShapeKind) as Shape;
   }
@@ -772,3 +727,67 @@ function findFirstKind(root: Node2D, kind: string): Node2D | null {
   }
   return null;
 }
+
+// A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
+// count of paints in the file is the count of paints in the output. These four cases are the ones a
+// single-slot paint model silently dropped.
+describe('Lottie shape group paint', () => {
+  it('keeps both fills when a group states two', () => {
+    const two = importPaints([RECT, RED_FILL, BLUE_FILL]);
+    const blueOnly = importPaints([RECT, BLUE_FILL]);
+
+    expect(paintStartsOf(two)).toEqual(['beginFill', 'beginFill']);
+    expect(JSON.stringify(two.data.commands)).not.toBe(JSON.stringify(blueOnly.data.commands));
+  });
+
+  it('keeps a gradient fill stated beside a solid one', () => {
+    const both = importPaints([RECT, RED_FILL, GRADIENT_FILL]);
+    const solidOnly = importPaints([RECT, RED_FILL]);
+
+    expect(paintStartsOf(both)).toEqual(['beginFill', 'beginGradientFill']);
+    expect(JSON.stringify(both.data.commands)).not.toBe(JSON.stringify(solidOnly.data.commands));
+  });
+
+  it('emits paints in the order the file lists them', () => {
+    const strokeFirst = importPaints([RECT, STROKE, RED_FILL]);
+    const fillFirst = importPaints([RECT, RED_FILL, STROKE]);
+
+    expect(paintStartsOf(strokeFirst)).toEqual(['lineStyle', 'beginFill']);
+    expect(paintStartsOf(fillFirst)).toEqual(['beginFill', 'lineStyle']);
+  });
+
+  it('draws every path in the group under each paint', () => {
+    const twoPathsTwoFills = importPaints([RECT, OTHER_RECT, RED_FILL, BLUE_FILL]);
+
+    // Two paths, each restated once per paint.
+    expect((twoPathsTwoFills.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(4);
+  });
+
+  it('still emits the geometry when a group states no paint at all', () => {
+    const unpainted = importPaints([RECT]);
+
+    expect((unpainted.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(1);
+    expect(paintStartsOf(unpainted)).toEqual([]);
+  });
+
+  const RECT = { p: { k: [0, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
+  const OTHER_RECT = { p: { k: [40, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
+  const RED_FILL = { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' };
+  const BLUE_FILL = { c: { k: [0, 0, 1] }, o: { k: 100 }, ty: 'fl' };
+  const STROKE = { c: { k: [0, 1, 0] }, o: { k: 100 }, ty: 'st', w: { k: 2 } };
+  const GRADIENT_FILL = {
+    e: { k: [10, 10] },
+    g: { k: { k: [0, 1, 0, 0, 1, 0, 0, 1] }, p: 2 },
+    o: { k: 100 },
+    s: { k: [0, 0] },
+    t: 1,
+    ty: 'gf',
+  };
+
+  function importPaints(items: unknown[]): Shape {
+    const result = createScene2DFromLottieDocument(
+      createDocument([{ ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 }] as unknown as LottieLayer[]),
+    );
+    return findFirstKind(result.root, ShapeKind) as Shape;
+  }
+});
