@@ -3,15 +3,20 @@ import { RiveFieldType } from '@flighthq/types/contract';
 
 import { parseRiveDocument } from './riveDocument';
 
-// WHAT THESE TESTS DO AND DO NOT PROVE. No real .riv has ever been decoded here, so the container
-// GRAMMAR — the fingerprint, the header field order, and the four-keys-per-word table packing — is
-// asserted only for internal consistency: the fixtures are bytes this suite writes. What IS proven
-// independently is every primitive the grammar is built from, because each has a definition outside
-// this codebase: LEB128 is written here from its arithmetic definition (base-128 groups, low first)
-// rather than by mirroring the decoder's loop, and the float and integer cases assert against
-// IEEE-754 and little-endian byte patterns taken from those standards. Cursor discipline is the
-// third real check: a single byte of drift anywhere collapses a multi-object stream, so recovering
-// K objects in order is a structural assertion the byte layout is self-consistent.
+// WHAT THESE TESTS PROVE. The fixtures here are bytes this suite writes, which on its own would
+// only show the decoder agrees with itself. Three things make them worth more. The primitives are
+// checked against definitions outside this codebase: LEB128 is encoded here from its arithmetic
+// definition (base-128 groups, low first) rather than by mirroring the decoder's loop, and the float
+// and integer cases assert against IEEE-754 and little-endian byte patterns from those standards.
+// Cursor discipline is structural — a single byte of drift collapses a multi-object stream, so
+// recovering K objects in order says the layout is self-consistent. And the grammar itself was
+// verified against 64 real editor-authored `.riv` files, which decoded completely (82,543 core
+// objects); the empty-table and built-in-width cases below exist because that corpus disproved an
+// earlier reading in which the file's own table was the only source of property widths.
+//
+// Fixture property keys sit above 60000 deliberately. The object model owns keys up to roughly 1070,
+// and the built-in table outranks the file's, so a fixture reusing a real key would be decoded by
+// the model rather than by the table these cases mean to exercise.
 
 describe('parseRiveDocument', () => {
   it('rejects a file whose fingerprint is not RIVE', () => {
@@ -57,8 +62,8 @@ describe('parseRiveDocument', () => {
       const document = parseRiveDocument(
         buildRiveFile(
           { fileId: 0, major: 1, minor: 0 },
-          [{ key: 20, type: RiveFieldType.Double }],
-          [{ properties: [{ key: 20, raw: bytes }], typeKey: 1 }],
+          [{ key: 60020, type: RiveFieldType.Double }],
+          [{ properties: [{ key: 60020, raw: bytes }], typeKey: 1 }],
         ),
       )!;
 
@@ -70,8 +75,8 @@ describe('parseRiveDocument', () => {
     const document = parseRiveDocument(
       buildRiveFile(
         { fileId: 0, major: 1, minor: 0 },
-        [{ key: 37, type: RiveFieldType.Color }],
-        [{ properties: [{ key: 37, raw: [0x44, 0x33, 0x22, 0xff] }], typeKey: 20 }],
+        [{ key: 60037, type: RiveFieldType.Color }],
+        [{ properties: [{ key: 60037, raw: [0x44, 0x33, 0x22, 0xff] }], typeKey: 20 }],
       ),
     )!;
 
@@ -85,8 +90,8 @@ describe('parseRiveDocument', () => {
     const document = parseRiveDocument(
       buildRiveFile(
         { fileId: 0, major: 1, minor: 0 },
-        [{ key: 55, type: RiveFieldType.String }],
-        [{ properties: [{ key: 55, raw: [...encodeVarUint(encoded.length), ...encoded] }], typeKey: 23 }],
+        [{ key: 60055, type: RiveFieldType.String }],
+        [{ properties: [{ key: 60055, raw: [...encodeVarUint(encoded.length), ...encoded] }], typeKey: 23 }],
       ),
     )!;
 
@@ -98,7 +103,7 @@ describe('parseRiveDocument', () => {
   // four, so recovering the objects at all is what proves the word count.
   it.each([1, 3, 4, 5, 8, 9, 17])('keeps the stream aligned with %i table entries', (count) => {
     const table = Array.from({ length: count }, (_, index) => ({
-      key: index + 10,
+      key: index + 60010,
       type: [RiveFieldType.Uint, RiveFieldType.Double, RiveFieldType.Color, RiveFieldType.String][index % 4],
     }));
     const document = parseRiveDocument(
@@ -114,31 +119,31 @@ describe('parseRiveDocument', () => {
 
   it('recovers every object in a mixed stream, which only holds if the cursor never drifts', () => {
     const table = [
-      { key: 10, type: RiveFieldType.Uint },
-      { key: 11, type: RiveFieldType.Double },
-      { key: 12, type: RiveFieldType.Color },
-      { key: 13, type: RiveFieldType.String },
+      { key: 60010, type: RiveFieldType.Uint },
+      { key: 60011, type: RiveFieldType.Double },
+      { key: 60012, type: RiveFieldType.Color },
+      { key: 60013, type: RiveFieldType.String },
     ];
     const hello = Array.from(new TextEncoder().encode('hello'));
     const document = parseRiveDocument(
       buildRiveFile({ fileId: 0, major: 1, minor: 0 }, table, [
-        { properties: [{ key: 10, raw: encodeVarUint(300) }], typeKey: 1 },
+        { properties: [{ key: 60010, raw: encodeVarUint(300) }], typeKey: 1 },
         { properties: [], typeKey: 2 },
         {
           properties: [
-            { key: 11, raw: [0x00, 0x00, 0x80, 0x3f] },
-            { key: 13, raw: [...encodeVarUint(hello.length), ...hello] },
-            { key: 12, raw: [0x01, 0x02, 0x03, 0x04] },
+            { key: 60011, raw: [0x00, 0x00, 0x80, 0x3f] },
+            { key: 60013, raw: [...encodeVarUint(hello.length), ...hello] },
+            { key: 60012, raw: [0x01, 0x02, 0x03, 0x04] },
           ],
           typeKey: 3,
         },
-        { properties: [{ key: 10, raw: encodeVarUint(1) }], typeKey: 4 },
+        { properties: [{ key: 60010, raw: encodeVarUint(1) }], typeKey: 4 },
       ]),
     )!;
 
     expect(document.objects.map((object) => object.typeKey)).toEqual([1, 2, 3, 4]);
     expect(document.objects[0].properties[0].value).toBe(300);
-    expect(document.objects[2].properties.map((property) => property.key)).toEqual([11, 13, 12]);
+    expect(document.objects[2].properties.map((property) => property.key)).toEqual([60011, 60013, 60012]);
     expect(document.objects[2].properties[1].value).toBe('hello');
     expect(document.objects[3].properties[0].value).toBe(1);
   });
@@ -147,22 +152,68 @@ describe('parseRiveDocument', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const bytes = buildRiveFile(
       { fileId: 0, major: 1, minor: 0 },
-      [{ key: 10, type: RiveFieldType.Uint }],
-      [{ properties: [{ key: 99, raw: [0x05] }], typeKey: 1 }],
+      [{ key: 60010, type: RiveFieldType.Uint }],
+      [{ properties: [{ key: 60099, raw: [0x05] }], typeKey: 1 }],
     );
 
-    // Key 99 is absent from the table, so the width of its value is unknown and every byte after it
-    // is unaddressable. Resynchronizing on a guess would invent a document.
+    // The key is in neither the object model nor the file's table, so the width of its value is
+    // unknown and every byte after it is unaddressable. Guessing would invent a document.
     expect(parseRiveDocument(bytes, diagnostics)).toBeNull();
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.unknown-property-width']);
+  });
+
+  // Learned from the real corpus, not from the spec: a typical file ships an EMPTY table of contents
+  // and expects the reader to already know the standard property widths. A reader driven only by the
+  // file's table stalls on the first property of the first object. Every real file tested carries an
+  // empty or near-empty table, so this is the common path rather than an edge case.
+  it('reads standard properties from the built-in object model when the file declares no table', () => {
+    const name = Array.from(new TextEncoder().encode('Artboard'));
+    const document = parseRiveDocument(
+      buildRiveFile(
+        { fileId: 0, major: 7, minor: 0 },
+        [],
+        [
+          { properties: [], typeKey: 23 },
+          {
+            properties: [
+              { key: 4, raw: [...encodeVarUint(name.length), ...name] },
+              { key: 7, raw: [0x00, 0x80, 0x54, 0x44] },
+              { key: 8, raw: [0x00, 0x00, 0x70, 0x43] },
+            ],
+            typeKey: 1,
+          },
+        ],
+      ),
+    )!;
+
+    expect(document.header.tableOfContents).toEqual([]);
+    expect(document.objects.map((object) => object.typeKey)).toEqual([23, 1]);
+    expect(document.objects[1].properties[0].value).toBe('Artboard');
+    expect(document.objects[1].properties[1].value).toBeCloseTo(850, 3);
+    expect(document.objects[1].properties[2].value).toBeCloseTo(240, 3);
+  });
+
+  it('prefers the built-in width over a table entry that contradicts it', () => {
+    // Property 7 is a float in the object model. A file claiming it is a varuint cannot make it one:
+    // trusting the file here would consume one byte where four belong and desynchronize the stream.
+    const document = parseRiveDocument(
+      buildRiveFile(
+        { fileId: 0, major: 7, minor: 0 },
+        [{ key: 7, type: RiveFieldType.Uint }],
+        [{ properties: [{ key: 7, raw: [0x00, 0x00, 0x70, 0x43] }], typeKey: 1 }],
+      ),
+    )!;
+
+    expect(document.objects[0].properties[0].type).toBe(RiveFieldType.Double);
+    expect(document.objects[0].properties[0].value).toBeCloseTo(240, 3);
   });
 
   it('rejects a stream truncated mid-value', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const complete = buildRiveFile(
       { fileId: 0, major: 1, minor: 0 },
-      [{ key: 11, type: RiveFieldType.Double }],
-      [{ properties: [{ key: 11, raw: [0x00, 0x00, 0x80, 0x3f] }], typeKey: 1 }],
+      [{ key: 60011, type: RiveFieldType.Double }],
+      [{ properties: [{ key: 60011, raw: [0x00, 0x00, 0x80, 0x3f] }], typeKey: 1 }],
     );
 
     expect(parseRiveDocument(complete.slice(0, complete.length - 2), diagnostics)).toBeNull();
@@ -175,10 +226,10 @@ describe('parseRiveDocument', () => {
     const document = parseRiveDocument(
       buildRiveFile(
         { fileId: 0, major: 1, minor: 0 },
-        [{ key: 14, type: RiveFieldType.Uint }],
+        [{ key: 60014, type: RiveFieldType.Uint }],
         [
-          { properties: [{ key: 14, raw: [0x01] }], typeKey: 1 },
-          { properties: [{ key: 14, raw: [0x00] }], typeKey: 1 },
+          { properties: [{ key: 60014, raw: [0x01] }], typeKey: 1 },
+          { properties: [{ key: 60014, raw: [0x00] }], typeKey: 1 },
         ],
       ),
     )!;

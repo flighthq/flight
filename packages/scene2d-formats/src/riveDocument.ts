@@ -10,6 +10,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
+import { getRiveCorePropertyFieldType } from './riveCoreProperties';
+
 /**
  * Decodes the `.riv` container into its header and flat core-object stream. This is the format's
  * bedrock layer and performs no interpretation: type keys and property keys stay numeric, and
@@ -20,7 +22,7 @@ import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contrac
  * file's own table of contents, after which the byte position is no longer known.
  */
 export function parseRiveDocument(source: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): RiveDocument | null {
-  const cursor: RiveCursor = { bytes: source, overflowed: false, position: 0 };
+  const cursor: RiveCursor = { bytes: source, overflowed: false, position: 0, unknownPropertyKey: 0 };
   const header = readRiveHeader(cursor);
   if (header === null) {
     reportRiveReject(diagnostics, 'rive.invalid-header');
@@ -34,7 +36,8 @@ export function parseRiveDocument(source: Readonly<Uint8Array>, diagnostics?: Im
   while (cursor.position < cursor.bytes.length) {
     const object = readRiveCoreObject(cursor, fieldTypes);
     if (object === null) {
-      reportRiveReject(diagnostics, cursor.overflowed ? 'rive.truncated-object-stream' : 'rive.unknown-property-width');
+      if (cursor.overflowed) reportRiveReject(diagnostics, 'rive.truncated-object-stream');
+      else reportRiveReject(diagnostics, 'rive.unknown-property-width', { propertyKey: cursor.unknownPropertyKey });
       return null;
     }
     objects.push(object);
@@ -46,6 +49,7 @@ interface RiveCursor {
   bytes: Readonly<Uint8Array>;
   overflowed: boolean;
   position: number;
+  unknownPropertyKey: number;
 }
 
 function readRiveHeader(cursor: RiveCursor): RiveDocumentHeader | null {
@@ -95,10 +99,15 @@ function readRiveCoreObject(cursor: RiveCursor, fieldTypes: ReadonlyMap<number, 
     if (cursor.overflowed) return null;
     if (key === 0) return { properties, typeKey };
 
-    const type = fieldTypes.get(key);
-    // Without a declared width the next key's position is unknowable, so the stream ends here
-    // rather than resynchronizing on a guess.
-    if (type === undefined) return null;
+    // The built-in object model answers first and the file's table supplements it, which is the
+    // order the format needs: a file using only standard properties ships an empty table. Without a
+    // width from either, the next key's position is unknowable, so the stream ends here rather than
+    // resynchronizing on a guess.
+    const type = getRiveCorePropertyFieldType(key) ?? fieldTypes.get(key);
+    if (type === undefined) {
+      cursor.unknownPropertyKey = key;
+      return null;
+    }
 
     const value = readRiveValue(cursor, type);
     if (cursor.overflowed) return null;
@@ -205,8 +214,12 @@ function toRiveFieldType(value: number): RiveProperty['type'] {
   return RiveFieldType.Uint;
 }
 
-function reportRiveReject(diagnostics: ImportDiagnostic[] | undefined, kind: string): void {
-  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, kind, 'parseRiveDocument');
+function reportRiveReject(
+  diagnostics: ImportDiagnostic[] | undefined,
+  kind: string,
+  detail?: Readonly<Record<string, number>>,
+): void {
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, kind, 'parseRiveDocument', detail);
 }
 
 const RIVE_FINGERPRINT = [0x52, 0x49, 0x56, 0x45];

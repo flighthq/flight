@@ -148,7 +148,21 @@ varuint, varuint-length-prefixed UTF-8 bytes, little-endian IEEE-754 binary32, a
 unsigned 32-bit (color). A boolean travels as a single 0/1 byte, byte-identical to a one-byte
 varuint, which is why the table needs no code for it.
 
-Two wire details are easy to get wrong and are pinned by tests: the table's two-bit field codes pack
+**The file's table of contents is a supplement, not the source of property widths.** This is the
+detail that decides whether a reader works at all on real files, and it is easy to read the format
+backwards. A reader needs a built-in table of the widths the object model defines; the file's own
+table only adds keys the authoring tool believes a reader may not know. A file using only standard
+properties ships an **empty** table — every real file tested does — so a purely table-driven reader
+stalls on the first property of the first object. `getRiveCorePropertyFieldType` carries that
+built-in table, derived from the 368 object-model definitions the format publishes as data, and it
+is consulted **before** the file's table.
+
+That table must include each property's **alternate** keys, not only its current one. A property
+may carry retired key numbers, and files in circulation still write them: `Node.x` is key 13 today
+and was key 9, and omitting the alternates failed 11 of the first 40 real files tested on that one
+key alone.
+
+Two more details are easy to get wrong and are pinned by tests: the table's two-bit field codes pack
 **four to a 32-bit word**, using only that word's low byte — reading it as a dense sixteen-per-word
 bitmap desynchronizes the whole stream — and varuint values are accumulated arithmetically rather
 than with 32-bit shifts, so a value above 2^31 survives.
@@ -166,12 +180,22 @@ rejects a future file nor adapts to an older one.
 by this reader nor by the file's own table, after which the next key's position is unknowable. That
 last one is the format's own unrecoverable case, not a Flight limitation.
 
-**Verification status — read this before trusting the layer.** No real `.riv` has ever been decoded.
-The container *grammar* — fingerprint, header field order, the four-per-word packing — is asserted
-only for internal consistency against bytes the test suite writes, which is precisely the
-"synthetic test that encodes the same guess as the parser" trap. What is independently verified is
-every primitive the grammar rests on, each having a definition outside this codebase: LEB128 against
-its arithmetic definition, and the float and integer reads against IEEE-754 and little-endian byte
-patterns. Cursor discipline is checked structurally, since a single byte of drift collapses a
-multi-object stream. Every wire fact is mutation-tested. **A single real `.riv` would convert the
-grammar from plausible to proven, and is the highest-value next step for this codec.**
+**Verification status.** The container grammar is **verified against 64 real editor-authored `.riv`
+files**, all of which decoded completely — 82,543 core objects with no unread byte and no unknown
+property. The corpus was Rive's own Android runtime test assets, fetched for verification and
+deliberately **not committed**: whether a third-party `.riv` may live in this repo as a fixture is a
+licensing decision, so the suite ships synthetic fixtures only and the corpus run is reproducible on
+demand rather than standing in CI.
+
+That corpus earned its keep immediately. Against synthetic fixtures alone the decoder passed 30
+tests while being unable to read a single real file, because it treated the file's table of contents
+as the source of property widths — the exact "synthetic test that encodes the same guess as the
+parser" failure. Real bytes exposed it at once, then exposed the alternate-key gap behind it.
+
+Alongside the corpus, the primitives are checked against definitions outside this codebase (LEB128
+against its arithmetic definition; float and integer reads against IEEE-754 and little-endian byte
+patterns), cursor discipline is checked structurally, and every wire fact is mutation-tested.
+
+**What remains unverified:** only current-generation files were tested, all major version 7. The
+reader ignores the version fields entirely, so it neither rejects a future file nor adapts to an
+older generation, and no pre-7 file has been tried.
