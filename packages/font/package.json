@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/path": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

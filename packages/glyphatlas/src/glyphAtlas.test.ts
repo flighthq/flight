@@ -15,6 +15,26 @@ describe('createGlyphAtlas', () => {
     expect(atlas.runtime.entries.size).toBe(0);
     expect(atlas.runtime.padding).toBe(1);
   });
+
+  it('binds a per-atlas rasterizer without changing the process-wide backend', () => {
+    const global = createMockRasterizerBackend();
+    const local = createMockRasterizerBackend();
+    setGlyphRasterizerBackend(global.backend);
+    const localAtlas = createGlyphAtlas({
+      fontFamily: 'embedded',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: local.backend,
+      width: 64,
+    });
+    const globalAtlas = createGlyphAtlas({ fontFamily: 'system', fontSize: 16, height: 64, width: 64 });
+
+    getGlyphAtlasEntry(localAtlas, 65);
+    getGlyphAtlasEntry(globalAtlas, 66);
+
+    expect(local.calls).toEqual([65]);
+    expect(global.calls).toEqual([66]);
+  });
 });
 
 describe('createGlyphAtlas font style and weight', () => {

@@ -1,6 +1,7 @@
 export {
   createFont,
   createFontResource,
+  createGlyphRasterizerBackendFromGlyphOutlineSource,
   detectFontFormat,
   getFontShorthand,
   inferFontFormatFromUrl,

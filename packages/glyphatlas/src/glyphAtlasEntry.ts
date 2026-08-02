@@ -1,10 +1,8 @@
 import { createBitmapRegion, writeBitmapPixels } from '@flighthq/bitmap/contract';
 import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry, GlyphRasterizedBitmap } from '@flighthq/types/contract';
 
-import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
-
-// Returns the cached entry for `codepoint`, or ensures it first on a miss: rasterize via the active
-// backend, pack the bitmap into the atlas (incremental shelf placement; on exhaustion, evict the
+// Returns the cached entry for `codepoint`, or ensures it first on a miss: rasterize via the atlas's
+// bound backend, pack the bitmap into the atlas (incremental shelf placement; on exhaustion, evict the
 // least-recently-used glyphs and repack), blit its pixels into the atlas bitmap, record the dirty
 // rect, and cache the entry. Returns null when the glyph cannot be produced — no rasterizer output,
 // or a single glyph larger than the whole atlas. This is the dynamic `GlyphSource.getGlyphEntry`.
@@ -16,7 +14,7 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
     return existing;
   }
 
-  const bitmap = getGlyphRasterizerBackend().rasterize(codepoint, runtime.rasterizeOptions);
+  const bitmap = runtime.rasterizerBackend.rasterize(codepoint, runtime.rasterizeOptions);
   if (bitmap === null) {
     _entryGuard?.('rasterizer-returned-null', codepoint);
     return null;

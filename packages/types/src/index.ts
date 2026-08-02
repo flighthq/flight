@@ -260,6 +260,7 @@ export * from './GlWireframeProgram';
 export * from './GlobalShortcutExplanation';
 export * from './GlyphExtents';
 export * from './GlyphAtlasEntryExplanation';
+export * from './GlyphOutlineSource';
 export * from './GlyphSource';
 export * from './GodRaysEffect';
 export * from './GradientBevelEffect';

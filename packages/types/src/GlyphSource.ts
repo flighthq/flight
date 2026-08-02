@@ -109,6 +109,10 @@ export interface GlyphAtlasOptions {
   maxBytes?: number;
   maxGlyphs?: number;
   padding?: number;
+  // Overrides the process-wide rasterizer for this atlas. This is the composition lane for embedded
+  // or parsed fonts: each atlas can bind its own outline-backed rasterizer without changing how any
+  // other atlas resolves glyphs.
+  rasterizerBackend?: GlyphRasterizerBackend;
   width: number;
 }
 
@@ -149,6 +153,7 @@ export interface GlyphAtlasRuntime {
   metrics: GlyphMetrics;
   packBottom: number;
   padding: number;
+  rasterizerBackend: GlyphRasterizerBackend;
   rasterizeOptions: GlyphRasterizeOptions;
   shelves: GlyphAtlasShelf[];
   bitmap: Bitmap;
