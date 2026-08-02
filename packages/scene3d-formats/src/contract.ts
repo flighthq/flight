@@ -9,6 +9,7 @@ export { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
 export { GltfSheenExtensionHandler } from './gltfSheen';
 export { GltfSpecularExtensionHandler } from './gltfSpecular';
 export { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness';
+export { GltfUnlitExtensionHandler } from './gltfUnlit';
 export {
   GltfIorExtensionHandler,
   GltfTransmissionExtensionHandler,

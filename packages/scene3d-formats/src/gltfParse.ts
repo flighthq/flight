@@ -1101,8 +1101,15 @@ function isSupportedGltfVersion(version: string): boolean {
 // diagnostics from contradicting visible behavior while the open handler registry remains a separate
 // depth step; adding a schema field alone must not count as support.
 function isSupportedGltfExtension(extension: string, handlers: readonly GltfExtensionHandler[] | undefined): boolean {
-  return extension === 'KHR_texture_transform' || handlers?.some((handler) => handler.kind === extension) === true;
+  return CORE_GLTF_EXTENSIONS.has(extension) || handlers?.some((handler) => handler.kind === extension) === true;
 }
+
+// Extensions the CORE parser satisfies with no handler, so a file requiring one is not reported
+// unsupported. KHR_mesh_quantization needs no code at all: it only widens which component types an
+// accessor may use for POSITION/NORMAL/TANGENT/TEXCOORD, and the accessor reader already reads every
+// integer width and applies the spec normalization exactly when `normalized` is set — a non-normalized
+// quantized position passes through raw, which is correct, because its scale rides the node transform.
+const CORE_GLTF_EXTENSIONS = new Set(['KHR_mesh_quantization', 'KHR_texture_transform']);
 
 // Normalizes a raw integer component to its float range per the glTF spec: unsigned types map onto
 // [0, 1] by dividing by their max; signed types map onto [-1, 1] via max(c / MAX, -1). Float
