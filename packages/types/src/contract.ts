@@ -63,6 +63,7 @@ export * from './AreaLight';
 export * from './AsepriteSchema';
 export * from './Assets';
 export * from './AttractorForce';
+export * from './Abc';
 export * from './AudioBus';
 export * from './AudioResource';
 export * from './AutoExposureEffect';

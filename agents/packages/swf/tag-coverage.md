@@ -39,7 +39,7 @@ These are read past. Each is a decision, not an oversight.
 
 | Tag | Why | Files |
 | --- | --- | --- |
-| `DoABC`, `DoInitAction` | Bytecode. The charter exposes it at most as an opaque blob and never executes it; running it is [an anti-goal](../../anti-goals.md). AVM2 puts `stop()` behind a constant pool, method bodies, and the `addFrameScript` calls a generated class constructor makes — a decode surface that belongs in its own cell, per the charter's 2026-07-25 ruling. | 187 / 11 |
+| `DoABC`, `DoInitAction` | Bytecode. The charter exposes it at most as an opaque blob and never executes it; running it is [an anti-goal](../../anti-goals.md). AVM2 puts `stop()` behind a constant pool, method bodies, and the `addFrameScript` calls a generated class constructor makes — a decode surface that belongs in its own cell, per the charter's 2026-07-25 ruling. `@flighthq/abc` now reads the container; what remains is instruction decoding and the Flash-side recognition, which stays in `swf`. | 187 / 11 |
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
 | `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings`, `DefineFontInfo`, `2` | Font hinting and naming metadata. Nothing draws from it until edit text does. | 15 / 14 / 7 |
