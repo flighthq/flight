@@ -1,5 +1,6 @@
-import { getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
+import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
+  RenderTargetColorSpace,
   Bitmap,
   CompressedImage,
   GlRenderState,
@@ -62,11 +63,15 @@ export function registerStandardGlTextureResolvers(state: GlRenderState): void {
 // GL upload and sampler application require that binding. Callers must not reorder this call across
 // activeTexture/bind operations as though it only returned a handle. The CPU source owns its kind; a
 // GPU-origin target owns its own. An unbound or undeclared source is the null sentinel.
+// `workingColorSpace` is the space the DESTINATION composites in, not a claim about this texture —
+// `texture.colorSpace` already says what the content is. The sample format is derived from the pair by
+// getTextureSampleColorSpace, so a path flips one value (its working space) rather than misdescribing
+// every texture it draws. 3D composites linear; 2D composites in the encoded domain and passes 'srgb'.
 export function resolveGlTexture(
   state: GlRenderState,
   texture: Readonly<TextureLike>,
   premultiply = false,
-  colorSpace: TextureColorSpace = texture.colorSpace,
+  workingColorSpace: RenderTargetColorSpace = 'linear',
 ): WebGLTexture | null {
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
@@ -76,7 +81,7 @@ export function resolveGlTexture(
     runtime.registryMiss?.(3, sourceKind);
     return null;
   }
-  return resolver(state, texture, premultiply, colorSpace);
+  return resolver(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
 }
 
 function resolveGlBitmapTexture(

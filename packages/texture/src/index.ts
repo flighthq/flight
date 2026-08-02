@@ -49,3 +49,8 @@ export {
   setVideoTextureSource,
   transformTextureUv,
 } from './contract';
+export {
+  getTextureSampleColorSpace,
+  shouldDecodeTextureOnSample,
+  shouldPremultiplyTextureOnUpload,
+} from './textureColorSpace';

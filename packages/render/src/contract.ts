@@ -17,3 +17,4 @@ export * from './renderTarget';
 export * from './renderTransform2d';
 export * from './renderViewport';
 export * from './sceneRender';
+export { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace';

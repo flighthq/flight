@@ -4,6 +4,7 @@ import {
   resolveWgpuShader,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { RenderProxy2D, Scene2DRenderer, Sprite, WgpuRenderState } from '@flighthq/types/contract';
@@ -28,7 +29,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   if (shader !== null) {
     flushWgpuQuadBatchWriter(state);
     state.applyBlendMode?.(state, renderProxy.blendMode);
-    if (resolveWgpuTexture(state, texture, true, 'linear') === null) return;
+    if (resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE) === null) return;
     shader.bind(state, renderProxy);
     return;
   }
@@ -40,7 +41,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   const material = renderProxy.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
-  const textureEntry = resolveWgpuTexture(state, texture, true, 'linear');
+  const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
   ensureWgpuQuadBatchResources(state);
 

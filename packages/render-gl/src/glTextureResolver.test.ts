@@ -108,12 +108,15 @@ describe('registerGlImageTextureResolver', () => {
     expect(gl.texImage2D).toHaveBeenCalledOnce();
   });
 
-  it('realizes an override independently and defaults to the texture color space', () => {
+  // The sample format comes from the PAIR (what the content is, what the destination composites in), not
+  // from an override. One sRGB texture therefore realizes two ways: decoded for a linear-working path
+  // (3D), byte-through for an encoded-working one (2D), cached apart so both can be live at once.
+  it('derives the sample format from the texture and working color spaces', () => {
     const { state, gl } = createGlState();
     const texture = textureWithImage(imageResource());
     registerGlImageTextureResolver(state);
 
-    const srgb = resolveGlTexture(state, texture);
+    const decoded = resolveGlTexture(state, texture, false, 'linear');
     expect(gl.texImage2D).toHaveBeenLastCalledWith(
       gl.TEXTURE_2D,
       0,
@@ -122,8 +125,9 @@ describe('registerGlImageTextureResolver', () => {
       gl.UNSIGNED_BYTE,
       expect.anything(),
     );
-    const linear = resolveGlTexture(state, texture, false, 'linear');
-    expect(linear).not.toBe(srgb);
+
+    const byteThrough = resolveGlTexture(state, texture, false, 'srgb');
+    expect(byteThrough).not.toBe(decoded);
     expect(gl.texImage2D).toHaveBeenLastCalledWith(
       gl.TEXTURE_2D,
       0,
@@ -132,7 +136,21 @@ describe('registerGlImageTextureResolver', () => {
       gl.UNSIGNED_BYTE,
       expect.anything(),
     );
-    expect(resolveGlTexture(state, texture)).toBe(srgb);
+
+    // Linear content never decodes, whichever space the destination works in.
+    const linearTexture = textureWithImage(imageResource());
+    (linearTexture as { colorSpace: string }).colorSpace = 'linear';
+    resolveGlTexture(state, linearTexture, false, 'linear');
+    expect(gl.texImage2D).toHaveBeenLastCalledWith(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      expect.anything(),
+    );
+
+    expect(resolveGlTexture(state, texture, false, 'linear')).toBe(decoded);
   });
 
   it('returns null for an unbound image source', () => {

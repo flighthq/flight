@@ -13,3 +13,4 @@ export {
   registerRenderer,
   useRenderCache,
 } from './contract';
+export { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace';

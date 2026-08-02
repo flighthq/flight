@@ -1,4 +1,5 @@
 import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
@@ -195,7 +196,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   ensureParticleInstanceBuffer(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  const textureEntry = resolveWgpuTexture(state, atlas.texture, true, 'linear');
+  const textureEntry = resolveWgpuTexture(state, atlas.texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
   const textureBindGroup = state.device.createBindGroup({
     layout: runtime.textureBindGroupLayout,

@@ -1,5 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
@@ -134,7 +135,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   ensureInstanceCapacity(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  if (resolveGlTexture(state, atlas.texture, true, 'linear') === null) return;
+  if (resolveGlTexture(state, atlas.texture, true, SCENE2D_WORKING_COLOR_SPACE) === null) return;
 
   const gl = state.gl;
   const regions = atlas.regions;

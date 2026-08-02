@@ -1,4 +1,5 @@
 import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
@@ -51,7 +52,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
     const texture = atlas.texture;
     if (texture === null || !hasTextureSource(texture) || page.instanceCount === 0) continue;
 
-    const glTexture = resolveGlTexture(state, texture, true, 'linear');
+    const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
     if (glTexture === null) continue;
     const straightAlpha = runtime.currentTextureStraightAlpha;
     ensureGlQuadBatchShader(state);
