@@ -4,18 +4,15 @@ name: Nightly quality
 # smoke/parity legs on every PR — so nightly does NOT repeat them. Nightly holds only work
 # that does not belong on the PR path: full coverage thresholds and API-surface generation.
 #
-# Nightly also owns promotion: `main` is a machine-managed known-good pointer, never pushed
-# by hand. A `resolve` job pins develop's tip once, every quality job tests exactly that
-# commit (scheduled workflows otherwise check out the default branch, which is not what
-# nightly is meant to test), and when all jobs pass, `promote` fast-forwards main to the
-# tested commit. Pushing the pinned SHA (never the branch name) guarantees main only ever
-# advances to a commit this workflow actually verified — a develop push mid-run cannot leak
-# in. The push is fast-forward-only by construction: if main has diverged (someone pushed
-# to it directly), the push fails loudly instead of overwriting.
+# Nightly does NOT own promotion to main — promote.yml does, triggered per-commit by CI going
+# green. Promotion used to live here so it could inherit the coverage + api gates, but that
+# coupling stalled main for reasons unrelated to whether the code works, and pinning develop's
+# tip once a day meant a red tip discarded that day's green commits entirely. The jobs below are
+# health signals on develop; they gate nothing.
 #
-# Promotion additionally requires that tests.yml itself CONCLUDED SUCCESSFULLY for the pinned commit.
-# Nightly does not re-run those legs, so without that check the promotion gate was only as strong as
-# coverage + api, and a commit whose CI went red could still reach main.
+# The `resolve` job still pins develop's tip once so every quality job tests exactly the same
+# commit — scheduled workflows otherwise check out the default branch, which is not what nightly
+# is meant to test.
 on:
   schedule:
     - cron: '0 4 * * *'
@@ -72,51 +69,3 @@ jobs:
       - run: npm ci
       - run: npm run api
       - run: npm run api:json
-
-  promote:
-    name: Promote to main
-    needs: [resolve, coverage, api]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      # Reading the pinned commit's CI conclusion needs the Actions API.
-      actions: read
-
-    steps:
-      # Nightly deliberately does not repeat the build/test/quality/size and render legs — it trusts
-      # tests.yml to have gated them. That trust was previously UNVERIFIED: `needs` can only see jobs in
-      # this workflow, so a develop commit whose CI went red still satisfied coverage + api and got
-      # promoted. This step closes that hole by asking the Actions API what tests.yml actually concluded
-      # for the pinned SHA.
-      #
-      # It refuses on anything short of an explicit success — a failure, a run still in flight, or NO run
-      # at all. The last case matters most: "no CI ran for this commit" is indistinguishable from "CI has
-      # not started yet", and neither is evidence of green. Absence of a red signal is not a green one.
-      - name: Require a green CI run for the pinned commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SHA: ${{ needs.resolve.outputs.sha }}
-        run: |
-          run=$(gh api "repos/${{ github.repository }}/actions/workflows/tests.yml/runs?head_sha=$SHA&per_page=1" \
-            --jq '.workflow_runs[0] | "\(.status) \(.conclusion) \(.html_url)"' 2>/dev/null || true)
-          if [ -z "$run" ] || [ "$run" = "null null null" ]; then
-            echo "::error::No CI (tests.yml) run found for $SHA — refusing to promote a commit whose CI never ran."
-            exit 1
-          fi
-          status=$(echo "$run" | cut -d' ' -f1)
-          conclusion=$(echo "$run" | cut -d' ' -f2)
-          url=$(echo "$run" | cut -d' ' -f3)
-          echo "CI for $SHA: status=$status conclusion=$conclusion ($url)"
-          if [ "$status" != "completed" ] || [ "$conclusion" != "success" ]; then
-            echo "::error::CI for $SHA is $status/$conclusion — refusing to promote. See $url"
-            exit 1
-          fi
-
-      # Full history so the local repo contains main's current tip and the remote can
-      # validate the push below as a fast-forward.
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.resolve.outputs.sha }}
-          fetch-depth: 0
-      - name: Fast-forward main to the tested commit
-        run: git push origin ${{ needs.resolve.outputs.sha }}:refs/heads/main

@@ -1,0 +1,128 @@
+name: Promote
+
+# `main` is a machine-managed known-good pointer, never pushed by hand: it advances only to a
+# commit whose CI (tests.yml) actually concluded successfully. This workflow owns that promotion.
+#
+# Two triggers, one job. `workflow_run` is the fast path — CI finishing green on develop promotes
+# within seconds, so main tracks develop continuously. `schedule` is a catch-up for the cases the
+# event path can miss: a dropped or undelivered workflow_run, a GitHub incident, or a run whose
+# conclusion flipped to green on a later re-run. The catch-up is cheap (one API call plus a push)
+# and idempotent, so running it against an already-current main is a no-op, not a failure.
+#
+# Promotion deliberately does NOT gate on nightly's coverage or api jobs. Those are health signals
+# on develop, not release gates; blocking main on a coverage threshold would stall the known-good
+# pointer for a reason unrelated to whether the code works. Revisit if coverage becomes a hard
+# release requirement.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [develop]
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  # One promotion at a time across ALL triggers — the scheduled catch-up and an event-driven run
+  # can otherwise resolve the same candidate concurrently and race on the same ref. Never cancel
+  # mid-push.
+  group: promote-main
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    # workflow_run fires on every CI completion, including failures and cancellations; only a
+    # success is worth resolving. schedule/workflow_dispatch carry no triggering run to inspect,
+    # so they always proceed — that is what makes the catch-up able to recover a missed event.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    name: Fast-forward main to the newest green commit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push refs/heads/main
+      actions: read # read tests.yml run conclusions
+
+    steps:
+      # fetch-depth: 0 fetches all branches, so both origin/main and origin/develop are present
+      # locally — the resolver below needs the range between them, and the remote needs main's
+      # tip to validate the push as a fast-forward.
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      # Resolves the NEWEST COMMIT ON DEVELOP, AHEAD OF MAIN, THAT HAS A GREEN CI RUN — not simply
+      # the SHA that triggered this run. That one rule absorbs three separate failure modes:
+      #
+      #   Red tip.        Promotion is not pinned to develop's tip, so a red commit at the head does
+      #                   not discard the green commits behind it. It is skipped; the newest green
+      #                   ancestor still promotes.
+      #   Out-of-order.   CI for an older commit can conclude AFTER a newer one (a manual re-run, or
+      #                   slow render legs). Candidates are ranked by commit order via `git rev-list`,
+      #                   never by run order, so a late-concluding old run cannot pull main backwards.
+      #   Missed event.   Whatever the event path failed to promote is still ahead of main, so the
+      #                   next trigger — push or nightly — picks it up with no manual intervention.
+      #
+      # Absence of a green run is never treated as green: a commit is a candidate only on an explicit
+      # success conclusion, so "CI has not started yet" and "CI never ran" both correctly fail to
+      # promote rather than defaulting through.
+      - name: Resolve the newest green commit ahead of main
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # main must be an ancestor of develop. If it is not, someone pushed directly to main and
+          # the branches have genuinely diverged — fail loudly rather than resolve a candidate whose
+          # push would either be rejected or, worse, silently discard that commit.
+          if ! git merge-base --is-ancestor refs/remotes/origin/main refs/remotes/origin/develop; then
+            echo "::error::main has diverged from develop — it is not an ancestor. Promotion needs a human; refusing to guess."
+            exit 1
+          fi
+
+          # Checked before the API call because it is the steady state for the scheduled catch-up —
+          # on a quiet day nothing is ahead of main and there is no need to ask about runs at all.
+          # Reported distinctly from "nothing green" below, which is a different situation.
+          if [ -z "$(git rev-list refs/remotes/origin/main..refs/remotes/origin/develop)" ]; then
+            echo "main is already level with develop at $(git rev-parse --short refs/remotes/origin/main); nothing to promote."
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # One API call. Runs come back newest-first, but that ordering is deliberately NOT trusted
+          # for ranking (see out-of-order above) — this is used only as a SET of "shas with green CI".
+          # Restricted to push events because a pull_request run tests a synthetic merge commit that
+          # never exists on develop. per_page=100 bounds the lookback; commits ahead of main sit well
+          # inside that in normal operation, and anything missed is caught by the next trigger.
+          green_shas=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?branch=develop&status=success&event=push&per_page=100" \
+            --jq '.workflow_runs[].head_sha' | sort -u)
+
+          # `git rev-list A..B` walks newest-first and lists only commits ahead of main, so the first
+          # match is by construction both the newest candidate and a guaranteed fast-forward.
+          candidate=''
+          for sha in $(git rev-list refs/remotes/origin/main..refs/remotes/origin/develop); do
+            if grep -qxF "$sha" <<<"$green_shas"; then
+              candidate="$sha"
+              break
+            fi
+          done
+
+          if [ -z "$candidate" ]; then
+            # Legitimate: develop is red, or CI for the commits ahead of main is still in flight.
+            # Nothing to promote is not a failure — the next trigger reconsiders.
+            echo "$(git rev-list --count refs/remotes/origin/main..refs/remotes/origin/develop) commit(s) ahead of main, none with a green CI run yet; leaving main at $(git rev-parse --short refs/remotes/origin/main)."
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Promoting $candidate ($(git log -1 --format='%s' "$candidate"))"
+          echo "sha=$candidate" >> "$GITHUB_OUTPUT"
+
+      # Pushes the resolved SHA, never the branch name, so main can only ever land on a commit this
+      # workflow verified as green — a develop push mid-run cannot leak in. The push is
+      # fast-forward-only by construction; if main moved under us it is rejected rather than
+      # overwritten.
+      - name: Fast-forward main to the tested commit
+        if: ${{ steps.candidate.outputs.sha != '' }}
+        run: git push origin ${{ steps.candidate.outputs.sha }}:refs/heads/main
