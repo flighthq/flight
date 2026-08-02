@@ -46,6 +46,8 @@ function textureWithImage(image: TextureSource | null): TextureLike {
 function imageResource(source: CanvasImageSource = document.createElement('img')): Image {
   return {
     height: 1,
+    alphaType: 'straight',
+    gamut: 'srgb',
     kind: ImageTextureSourceKind,
     source,
     version: 0,
@@ -68,6 +70,8 @@ function textureWithTarget(): TextureLike {
   if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
   texture.source = createEntity({
     colorSpace: 'linear' as const,
+    alphaType: 'straight' as const,
+    gamut: 'srgb' as const,
     height: 8,
     kind: RenderTargetTextureSourceKind,
     version: 0,

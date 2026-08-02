@@ -1,6 +1,6 @@
 /**
  * Numeric layout of a `Bitmap`'s raw pixel `data`: channel order plus per-channel type.
- * Orthogonal to color space (`Bitmap.colorSpace`) and to file encoding (`ImageFormat`, e.g. PNG/JPEG).
+ * Orthogonal to color space (`TextureSource.gamut`) and to file encoding (`ImageFormat`, e.g. PNG/JPEG).
  * Names follow Wgpu's `GPUTextureFormat` so a Wgpu backend maps a format 1:1 with no lookup table.
  *
  * Both variants are 8-bit unsigned-normalized RGBA in `Uint8ClampedArray` (4 bytes per pixel); they

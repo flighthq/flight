@@ -158,6 +158,12 @@ export function bindWgpuTexture(
   // internally, so premultipliedAlpha: true is the lossless pass-through; Image/ImageBitmap carry
   // straight alpha and get premultiplied on copy. (A straight-alpha texture under premultiplied
   // blend blows RGB out — it turned the semi-transparent shape panel opaque white.)
+  //
+  // Deliberately does NOT consult `image.alphaType`, and the asymmetry with scene-gl is not an
+  // oversight: `premultipliedAlpha` here DECLARES the destination's encoding and the browser derives
+  // whether a conversion is needed from the source it already owns, so an already-premultiplied source
+  // cannot be multiplied twice. WebGL's UNPACK_PREMULTIPLY_ALPHA_WEBGL is imperative — it multiplies
+  // whatever it is handed — which is why that path guards on the declared alphaType and this one must not.
   const copied = tryCopyWgpuExternalImageToTexture(
     device.queue,
     { source: imageSource as GPUCopyExternalImageSource, flipY: false },

@@ -135,7 +135,7 @@ function makeBitmap(
 ): Bitmap {
   return createEntity({
     alphaType: source.alphaType,
-    colorSpace: source.colorSpace,
+    gamut: source.gamut,
     data,
     format: source.format,
     height,

@@ -174,10 +174,18 @@ own doc says so. `Texture` carries no `alphaType`; alpha encoding lives on the S
 
 - `Bitmap` declares it, and both uploaders already honour it
   (`premultiply && bitmap.alphaType !== 'premultiplied'`). No double-multiply.
-- `Image` does NOT declare it, and `uploadGlImageResource` sets `UNPACK_PREMULTIPLY_ALPHA_WEBGL`
-  unconditionally. Safe today because browser PNG/JPEG decode yields straight — but iOS `CGImage` and
-  Android `Bitmap` commonly premultiply on decode, so this becomes the DEFAULT case the moment a native
-  host decodes. Add the field when the first native decode path lands, not "eventually".
+- `Image` and `CompressedImage` did NOT declare it. FIXED: both `alphaType` and the gamut lifted to
+  `TextureSource`, so all three sibling kinds answer uniformly and an uploader asks the source once
+  instead of guarding for `Bitmap` and assuming for the rest. Defaults are the host-decode truth
+  (`'straight'`, `'srgb'`), so behaviour is unchanged and the claim is a fact rather than an assumption.
+  `uploadGlImageResource` now honours it, closing the double-multiply hole; the wgpu path needs no guard
+  because `premultipliedAlpha` there DECLARES the destination and the browser derives the conversion.
+  A native iOS/Android decode that premultiplies now has somewhere to say so.
+
+  THE FIELD IS `gamut`, NOT `colorSpace`, and the rename was forced rather than chosen: `RenderTarget`
+  is both a render destination and a texture source, so it genuinely carries a transfer function AND a
+  gamut — the compiler rejected two fields named `colorSpace` on one type outright. That collision is the
+  clearest possible statement of why the two axes must not share a name.
 - 3D MESH materials assume straight and cannot represent otherwise: they upload with `premultiply=false`,
   there is no un-premultiply anywhere on the upload path, and the tail premultiplies again. A
   premultiplied `Bitmap` on a 3D material double-darkens, undetectably. 3D PARTICLES are consistent

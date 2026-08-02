@@ -9,6 +9,8 @@ export function createReadyImageResourceForTest(width = 1, height = 1): Image {
   return {
     [EntityRuntimeKey]: undefined,
     height,
+    alphaType: 'straight',
+    gamut: 'srgb',
     kind: ImageTextureSourceKind,
     source,
     version: 0,

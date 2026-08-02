@@ -8,7 +8,7 @@ import { BitmapTextureSourceKind } from '@flighthq/types/contract';
  * (not to a region offset). Pixels of `rect` that fall outside the bitmap
  * are filled with transparent black.
  *
- * Returns a new `Bitmap` with the same `colorSpace`, `alphaType`, and
+ * Returns a new `Bitmap` with the same `gamut`, `alphaType`, and
  * `format` as `source`, with dimensions equal to `rect.width × rect.height`.
  */
 export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLike>): Bitmap {
@@ -36,7 +36,7 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
   }
   return createEntity({
     alphaType: source.alphaType,
-    colorSpace: source.colorSpace,
+    gamut: source.gamut,
     data,
     format: source.format,
     height: rh,
@@ -109,7 +109,7 @@ export function extendBitmap(
   }
   return createEntity({
     alphaType: source.alphaType,
-    colorSpace: source.colorSpace,
+    gamut: source.gamut,
     data,
     format: source.format,
     height: dh,
@@ -147,7 +147,7 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
   if (maxX < 0) {
     return createEntity({
       alphaType: source.alphaType,
-      colorSpace: source.colorSpace,
+      gamut: source.gamut,
       data: new Uint8ClampedArray(4),
       format: source.format,
       height: 1,
