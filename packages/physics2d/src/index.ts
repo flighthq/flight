@@ -10,12 +10,14 @@ export {
   Physics2DPrismaticJointKind,
   Physics2DRevoluteJointKind,
   Physics2DRopeJointKind,
+  Physics2DWheelJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
   physics2DMouseJointSolver,
   physics2DPrismaticJointSolver,
   physics2DRevoluteJointSolver,
   physics2DRopeJointSolver,
+  physics2DWheelJointSolver,
   physics2DWeldJointSolver,
 } from './joints';
 export {

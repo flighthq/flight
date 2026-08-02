@@ -4,6 +4,7 @@ import type {
   Physics2DPrismaticJoint,
   Physics2DRevoluteJoint,
   Physics2DRopeJoint,
+  Physics2DWheelJoint,
   Physics2DWeldJoint,
   Physics2DWorld,
 } from '@flighthq/types/contract';
@@ -16,12 +17,14 @@ import {
   Physics2DPrismaticJointKind,
   Physics2DRevoluteJointKind,
   Physics2DRopeJointKind,
+  Physics2DWheelJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
   physics2DMouseJointSolver,
   physics2DPrismaticJointSolver,
   physics2DRevoluteJointSolver,
   physics2DRopeJointSolver,
+  physics2DWheelJointSolver,
   physics2DWeldJointSolver,
 } from './joints';
 import { stepPhysics2D } from './step';
@@ -346,6 +349,20 @@ describe('joints built without their impulse accumulators', () => {
       },
     ],
     [Physics2DRopeJointKind, physics2DRopeJointSolver, { maxLength: 1 }],
+    [
+      Physics2DWheelJointKind,
+      physics2DWheelJointSolver,
+      {
+        damping: 0.7,
+        enableMotor: false,
+        localAxisAX: 0,
+        localAxisAY: 1,
+        maxMotorTorque: 0,
+        motorSpeed: 0,
+        restTranslation: 0,
+        stiffness: 4,
+      },
+    ],
     [Physics2DWeldJointKind, physics2DWeldJointSolver, { referenceAngle: 0, stiffness: 0, damping: 0 }],
   ] as const;
 
@@ -1127,6 +1144,22 @@ describe('physics2DRopeJointSolver', () => {
   });
 });
 
+function wheelJoint(bodyA: number, bodyB: number, over: Partial<Physics2DWheelJoint> = {}): Physics2DWheelJoint {
+  return {
+    ...baseJoint(Physics2DWheelJointKind, bodyA, bodyB),
+    damping: 0.7,
+    enableMotor: false,
+    localAxisAX: 0,
+    localAxisAY: 1,
+    maxMotorTorque: 0,
+    motorImpulse: 0,
+    motorSpeed: 0,
+    restTranslation: -2,
+    stiffness: 4,
+    ...over,
+  } as Physics2DWheelJoint;
+}
+
 describe('physics2DWeldJointSolver', () => {
   it('locks the relative angle as well as the anchor point', () => {
     const world = createPhysics2DWorld();
@@ -1145,5 +1178,105 @@ describe('physics2DWeldJointSolver', () => {
     // A revolute would have swung; a weld holds the angle.
     expect(Math.abs(welded.angle)).toBeLessThan(0.2);
     expect(Math.abs(welded.y - 5)).toBeLessThan(0.3);
+  });
+});
+
+describe('physics2DWheelJointSolver', () => {
+  it('locks lateral motion while preserving suspension travel and free rotation', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const chassis = box(world, 'static', 0, 2);
+    const wheel = box(world, 'dynamic', 1, 0);
+    wheel.angularVelocity = 2;
+    addPhysics2DJoint(world, wheelJoint(chassis.index, wheel.index, { stiffness: 0 }));
+
+    run(world, 120);
+
+    expect(Math.abs(wheel.x)).toBeLessThan(0.05);
+    expect(wheel.y).toBeCloseTo(0, 5);
+    expect(Math.abs(wheel.angle)).toBeGreaterThan(1);
+  });
+
+  it('supports a wheel against gravity with a damped suspension spring', () => {
+    const world = createPhysics2DWorld(0, -10);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const chassis = box(world, 'static', 0, 2);
+    const wheel = box(world, 'dynamic', 0, 0);
+    addPhysics2DJoint(world, wheelJoint(chassis.index, wheel.index));
+
+    run(world, 240);
+
+    expect(wheel.y).toBeGreaterThan(-0.5);
+    expect(wheel.y).toBeLessThan(0.1);
+    expect(Math.abs(wheel.velocityY)).toBeLessThan(0.1);
+  });
+
+  it('drives relative rotation toward its motor speed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const chassis = box(world, 'static', 0, 2);
+    const wheel = box(world, 'dynamic', 0, 0);
+    addPhysics2DJoint(
+      world,
+      wheelJoint(chassis.index, wheel.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: 3 }),
+    );
+
+    run(world, 30);
+
+    expect(wheel.angularVelocity).toBeCloseTo(3, 5);
+  });
+
+  it('bounds motor acceleration by torque times timestep', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const chassis = box(world, 'static', 0, 2);
+    const wheel = box(world, 'dynamic', 0, 0);
+    const maxMotorTorque = 0.5;
+    addPhysics2DJoint(
+      world,
+      wheelJoint(chassis.index, wheel.index, { enableMotor: true, maxMotorTorque, motorSpeed: 100 }),
+    );
+
+    const dt = 0.01;
+    stepPhysics2D(world, dt);
+
+    const maximumDelta = maxMotorTorque * dt * wheel.inverseInertia;
+    expect(wheel.angularVelocity).toBeGreaterThan(0);
+    expect(wheel.angularVelocity).toBeLessThanOrEqual(maximumDelta * 1.0000001);
+  });
+
+  it('clears its motor impulse when the motor is disabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const chassis = box(world, 'static', 0, 2);
+    const wheel = box(world, 'dynamic', 0, 0);
+    const joint = wheelJoint(chassis.index, wheel.index, {
+      enableMotor: true,
+      maxMotorTorque: 1,
+      motorSpeed: 10,
+    });
+    addPhysics2DJoint(world, joint);
+    stepPhysics2D(world, 1 / 60);
+
+    joint.enableMotor = false;
+    wheel.angularVelocity = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(joint.motorImpulse).toBe(0);
+    expect(wheel.angularVelocity).toBe(0);
+  });
+
+  it('preserves authored ends because free relative rotation prevents descriptor-only axis swapping', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DWheelJointKind, physics2DWheelJointSolver);
+    const wheel = box(world, 'dynamic', 0, 0);
+    const chassis = box(world, 'static', 0, 2);
+    const joint = wheelJoint(chassis.index, wheel.index);
+
+    addPhysics2DJoint(world, joint);
+
+    expect(chassis.index).toBeGreaterThan(wheel.index);
+    expect(joint.bodyA).toBe(chassis.index);
+    expect(joint.bodyB).toBe(wheel.index);
   });
 });
