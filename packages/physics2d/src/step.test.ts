@@ -415,6 +415,23 @@ describe('sensor reporting between immovable bodies', () => {
 });
 
 describe('stepPhysics2D', () => {
+  it('rejects invalid solver state before mutating the world', () => {
+    const world = createPhysics2DWorld();
+    const crate = box(world, 0, 2);
+    crate.velocityX = 3;
+    crate.forceY = 4;
+    world.config.positionCorrection = Number.NaN;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(crate.x).toBe(0);
+    expect(crate.y).toBe(2);
+    expect(crate.velocityX).toBe(3);
+    expect(crate.forceY).toBe(4);
+    expect(world.contacts).toHaveLength(0);
+    expect(world.previousTimestep).toBe(0);
+  });
+
   it('scales cached contact impulses into a changed timestep', () => {
     const world = createPhysics2DWorld(0, 0);
     world.config.allowSleeping = false;
