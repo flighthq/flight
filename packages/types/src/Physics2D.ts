@@ -55,7 +55,8 @@ export interface Physics2DCollisionFilter {
 // and rewritten every step; a caller must treat it as read-only and must not retain it across steps.
 //
 // A `sensor` collider is tested and reported but never resolved: it produces contact events without
-// producing an impulse, which is how a trigger volume is built.
+// producing an impulse, which is how a trigger volume is built. After mutating `local`, `material`,
+// `filter`, or `sensor`, call `invalidatePhysics2DCollider` so the world can rebuild all derived state.
 export interface Physics2DCollider {
   local: CollisionShape;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated

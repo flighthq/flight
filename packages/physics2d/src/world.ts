@@ -141,6 +141,26 @@ export function findPhysics2DBody(world: Readonly<Physics2DWorld>, index: number
   return world.bodyByIndex.get(index) ?? null;
 }
 
+// Rebuilds everything derived from a collider after its authored shape, material, filter, or sensor
+// state changes. The caller owns those plain-data fields; this explicit invalidation point keeps mutation
+// cheap while making the necessary cache boundary impossible to mistake for an ordinary assignment.
+export function invalidatePhysics2DCollider(
+  world: Physics2DWorld,
+  body: RigidBody2D,
+  collider: Physics2DCollider,
+): boolean {
+  if (body.colliders.indexOf(collider) < 0) return false;
+  const inWorld = world.bodyByIndex.get(body.index) === body;
+  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  collider.world = createPhysics2DColliderWorldShape(collider.local);
+  updateRigidBody2DMassData(body);
+  if (inWorld) {
+    _wakePhysics2DBodyFromTopology(body);
+    synchronizePhysics2DBroadphase(world);
+  }
+  return true;
+}
+
 // The canonical order of a body pair: lower index first. Every contact in the world is created through
 // this, which is what discharges the ordering obligation `@flighthq/collision` cannot.
 //
