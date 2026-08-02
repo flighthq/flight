@@ -40,6 +40,30 @@ describe('createSwfTextShape', () => {
     expect(shape?.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 12.8, 0]);
   });
 
+  it('draws a version 3 glyph at the size its version 1 twin draws, on the finer grid', () => {
+    // The same square at the same record height, authored twice: 512 units on the 1024 grid a version 1
+    // font uses, and 10240 units on the twenty-times-finer grid version 3 stores. Two encodings of one
+    // picture is the oracle — a wrong EM square makes the version 3 form twenty times too large, which
+    // is the same defect shape as a bitmap fill matrix left in twips.
+    const writeText = (fontId: number): SwfReader => {
+      const writer = new TextWriter();
+      writer.writeRecord({ color: 0, fontId, height: 512 });
+      writer.writeGlyph(0, 0);
+      writer.end();
+      return writer.toReader();
+    };
+    const fonts = new Map([
+      [1, boxFont(512)],
+      [3, boxFontVersion3(512 * 20)],
+    ]);
+
+    const legacy = createSwfTextShape(writeText(1), 1, fonts);
+    const modern = createSwfTextShape(writeText(3), 1, fonts);
+
+    expect(modern?.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 12.8, 0]);
+    expect(modern?.data.commands).toEqual(legacy?.data.commands);
+  });
+
   it('skips a glyph index the font does not carry rather than failing the text', () => {
     const writer = new TextWriter();
     writer.writeRecord({ color: 0, fontId: 1, height: 1024 });
@@ -156,6 +180,22 @@ function boxGlyphBytes(size: number): Uint8Array {
 function boxFont(size: number): GlyphOutlineSource {
   const bytes = boxGlyphBytes(size);
   return readSwfFontGlyphOutlineSource(new SwfReader(joinBytes(uint16(1), uint16(2), bytes), 0, bytes.length + 4), 1)!;
+}
+
+// The same square through the version 2/3 tag layout: id, flags, language, name length, glyph count,
+// the offset table and its trailing code-table offset, then the glyph.
+function boxFontVersion3(size: number): GlyphOutlineSource {
+  const glyph = boxGlyphBytes(size);
+  const bytes = joinBytes(
+    uint16(3),
+    new Uint8Array([0, 0, 0]),
+    uint16(1),
+    uint16(4),
+    uint16(4 + glyph.length),
+    glyph,
+    new Uint8Array([0x41]),
+  );
+  return readSwfFontGlyphOutlineSource(new SwfReader(bytes, 0, bytes.length), 3)!;
 }
 
 class TextWriter {
