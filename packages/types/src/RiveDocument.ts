@@ -1,4 +1,5 @@
 import type { DisplayObject } from './DisplayObject';
+import type { PathWinding } from './ShapeCommand';
 
 /**
  * Rive `.riv` container types used by `@flighthq/scene2d-formats`.
@@ -109,6 +110,16 @@ export interface RiveArtboardImport {
   name: string;
   root: DisplayObject;
   width: number;
+}
+
+/**
+ * One path already resolved into its owning shape's space. Paint is applied per shape rather than
+ * per path, so the shape holds its paths until the whole paint list is known.
+ */
+export interface RivePathRecord {
+  commands: number[];
+  data: number[];
+  winding: PathWinding;
 }
 
 /** The result of importing a `.riv`: every artboard it declares, in file order. */

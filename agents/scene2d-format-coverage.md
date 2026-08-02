@@ -252,9 +252,28 @@ whose children carry none.
 convex one. Three of 2,533 radii in the corpus are negative; those corners round outward by the
 stated magnitude instead of inverting.
 
-**Also not covered:** fills, strokes, gradients, trim paths and dashes, so an imported shape carries
-geometry but no paint and draws nothing; draw order and blend modes; clipping; deformable meshes,
-bones and skinning; animations and keyframes; text; assets; and nested artboard linkage. The state-machine
+**Paint is covered, as an ordered list.** A shape states a *list* of paints, not one of each kind, and
+every paint covers all of that shape's paths — so each paint restates the whole path set in the order
+the file lists them, which is what lets a second fill sit above the first instead of replacing it.
+This is not a hypothetical: **429 of 2,409 shapes in the corpus carry more than one paint**, and a
+one-slot-per-kind model would silently lose paint on every one of them. Lottie needed that same fix
+retrofitted; here it was built in from the start.
+
+Covered: solid fills and strokes, linear and radial gradients with their stops, per-paint visibility,
+fill rule, and stroke thickness, cap and join. **Rive states colour as ARGB** while Flight takes a
+packed RGB with a separate alpha, so every colour is unpacked at the seam; a gradient stop's alpha is
+scaled by the gradient's own opacity, and its position converts from Rive's 0–1 fraction to Flight's
+0–255 ratio. A paint's colour or gradient lives in a *child* of the paint rather than on the paint
+itself.
+
+Over the corpus, 2,372 of 2,409 shapes receive paint — 1,849 solid fills, 706 strokes and 458
+gradients — with no alpha or stop ratio out of range. The 37 unpainted shapes state no visible paint.
+
+**Not covered:** `TrimPath` (46 instances across 11 of the 64 corpus files), which Flight has the
+pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather` (154
+instances), a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
+which no corpus file uses. And draw order and blend modes; clipping; deformable meshes, bones and
+skinning; animations and keyframes; text; assets; and nested artboard linkage. The state-machine
 *descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
 codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
 it neither rejects a future file nor adapts to an older one.

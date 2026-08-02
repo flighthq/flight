@@ -3,7 +3,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { appendShapePath, createShape } from '@flighthq/shape/contract';
+import { createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
@@ -12,13 +12,15 @@ import type {
   RiveArtboardImport,
   RiveCoreObject,
   RiveDocumentImportResult,
+  RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, ShapeKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
 import { createRiveObjectGraph } from './riveObjectGraph';
+import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
 
 /**
@@ -57,6 +59,9 @@ function createRiveArtboardImport(
   // A node is attached to its nearest ancestor that also became a node; components in between, such
   // as a Shape's paint, hold no place in the display tree.
   const nodes: Array<DisplayObject | null> = [root];
+  // Paths accumulate per shape rather than drawing as they are met, because a paint covers every
+  // path of its shape and the paint list is only complete once the shape's children have been read.
+  const shapePaths = new Map<number, RivePathRecord[]>();
   for (let index = 1; index < artboard.objects.length; index++) {
     const object = artboard.objects[index];
     // A path contributes geometry to the shape above it rather than a node of its own. Rive combines
@@ -64,7 +69,7 @@ function createRiveArtboardImport(
     // separate nodes would break the compositing the format states.
     if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_PATH_TYPE_KEY)) {
       nodes.push(null);
-      appendRivePathGeometry(nodes, artboard, index, diagnostics);
+      collectRivePathGeometry(shapePaths, artboard, index, diagnostics);
       continue;
     }
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
@@ -78,11 +83,17 @@ function createRiveArtboardImport(
     nodes.push(node);
     addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
   }
+
+  for (const [shapeIndex, paths] of shapePaths) {
+    const shape = nodes[shapeIndex];
+    if (shape === null || shape === undefined) continue;
+    appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
+  }
   return { height, name, root, width };
 }
 
-function appendRivePathGeometry(
-  nodes: ReadonlyArray<DisplayObject | null>,
+function collectRivePathGeometry(
+  shapePaths: Map<number, RivePathRecord[]>,
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
   diagnostics: ImportDiagnostic[] | undefined,
@@ -90,8 +101,8 @@ function appendRivePathGeometry(
   // A path belongs to a shape — every one of the 3,776 paths in the reference corpus is a shape's
   // direct child — so this is a malformed file rather than a shape of the format. It still crumbs
   // instead of vanishing, because the geometry would otherwise leave no trace.
-  const target = findRiveDisplayParent(nodes, artboard.parentIndices, index);
-  if (target === null || target.kind !== ShapeKind) {
+  const owner = findRiveShapeOwner(artboard, index);
+  if (owner < 0) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Drop,
@@ -116,7 +127,19 @@ function appendRivePathGeometry(
     data[offset] = local.a * x + local.c * y + local.tx;
     data[offset + 1] = local.b * x + local.d * y + local.ty;
   }
-  appendShapePath(target as Shape, path.commands.slice(), data, path.winding);
+  const records = shapePaths.get(owner) ?? [];
+  records.push({ commands: path.commands.slice(), data, winding: path.winding });
+  shapePaths.set(owner, records);
+}
+
+// The nearest ancestor that is a Shape component, in artboard numbering.
+function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number): number {
+  let parent = artboard.parentIndices[index];
+  while (parent > 0) {
+    if (isRiveCoreTypeDerivedFrom(artboard.objects[parent].typeKey, RIVE_SHAPE_TYPE_KEY)) return parent;
+    parent = artboard.parentIndices[parent];
+  }
+  return -1;
 }
 
 function createRivePathMatrix(source: Readonly<RiveCoreObject>): Matrix {
