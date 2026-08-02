@@ -584,6 +584,21 @@ export interface Physics2DQueryResult {
   hitCount: number;
 }
 
+export interface Physics2DRayHit extends Physics2DQueryHit {
+  fraction: number;
+  x: number;
+  y: number;
+  normalX: number;
+  normalY: number;
+}
+
+// Ray output follows the same high-water convention as point and region queries. Hits below
+// `hitCount` are ordered by fraction, then persistent body identity and collider index.
+export interface Physics2DRayResult {
+  hits: Physics2DRayHit[];
+  hitCount: number;
+}
+
 export type Physics2DJointResolutionStatus =
   | 'bodies-missing'
   | 'body-a-missing'

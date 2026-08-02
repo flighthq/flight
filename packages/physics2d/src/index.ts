@@ -65,4 +65,10 @@ export {
   removePhysics2DBody,
   removePhysics2DCollider,
 } from './world';
-export { createPhysics2DQueryResult, queryPhysics2DPoint, queryPhysics2DRegion } from './worldQueries';
+export {
+  createPhysics2DQueryResult,
+  createPhysics2DRayResult,
+  queryPhysics2DPoint,
+  queryPhysics2DRay,
+  queryPhysics2DRegion,
+} from './worldQueries';

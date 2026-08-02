@@ -4,6 +4,7 @@ export * from './enableCollisionGuards';
 export * from './explainCollisionTest';
 export * from './manifold';
 export * from './pointContainment';
+export * from './raycastCollisionShape';
 export * from './segmentCollision';
 export * from './shapeCollision';
 export * from './shapeContact';
