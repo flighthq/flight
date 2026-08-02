@@ -5,6 +5,7 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   attachKeyboardInput,
+  connectSignal,
   connectInputStateToInputManager,
   createCamera2D,
   createCollisionManifold,
@@ -147,15 +148,26 @@ addNodeChild(uiContainer, gameOverLabel);
 const flow = createFlowStack();
 const tweenManager = createTweenManager();
 
+function setVisible(node: Node2D, visible: boolean): void {
+  node.visible = visible;
+  invalidateNodeAppearance(node);
+}
+
+function showWithFade(node: Node2D, duration: number): void {
+  node.visible = true;
+  node.alpha = 0;
+  invalidateNodeAppearance(node);
+  const tween = createTween(tweenManager, node, duration, { alpha: 1 });
+  connectSignal(tween.onUpdate, () => invalidateNodeAppearance(node));
+}
+
 const titleState: FlowState = {
   name: 'title',
   onEnter(): void {
-    titleLabel.visible = true;
-    titleLabel.alpha = 0;
-    subtitleLabel.visible = true;
-    gameOverLabel.visible = false;
-    worldContainer.visible = false;
-    createTween(tweenManager, titleLabel, 500, { alpha: 1 });
+    showWithFade(titleLabel, 500);
+    setVisible(subtitleLabel, true);
+    setVisible(gameOverLabel, false);
+    setVisible(worldContainer, false);
   },
 };
 
@@ -163,19 +175,17 @@ const playingState: FlowState = {
   name: 'playing',
   onEnter(): void {
     resetPlayer();
-    titleLabel.visible = false;
-    subtitleLabel.visible = false;
-    gameOverLabel.visible = false;
-    worldContainer.visible = true;
+    setVisible(titleLabel, false);
+    setVisible(subtitleLabel, false);
+    setVisible(gameOverLabel, false);
+    setVisible(worldContainer, true);
   },
 };
 
 const gameOverState: FlowState = {
   name: 'gameover',
   onEnter(): void {
-    gameOverLabel.visible = true;
-    gameOverLabel.alpha = 0;
-    createTween(tweenManager, gameOverLabel, 350, { alpha: 1 });
+    showWithFade(gameOverLabel, 350);
   },
 };
 
