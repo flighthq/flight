@@ -9,6 +9,7 @@ export {
   GltfSpecularExtensionHandler,
   GltfSpecularGlossinessExtensionHandler,
   GltfTransmissionExtensionHandler,
+  GltfUnlitExtensionHandler,
   GltfVolumeExtensionHandler,
   createScene3DFrom3ds,
   createScene3DFromAwd2,

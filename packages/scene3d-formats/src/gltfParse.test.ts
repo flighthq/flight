@@ -2534,3 +2534,64 @@ describe('parseGltf', () => {
     expect(crumb!.origin).toBe('parseGltfSource');
   });
 });
+
+describe('parseGltf mesh quantization', () => {
+  // A quantized POSITION accessor: normalized signed shorts, which the base spec forbids for POSITION and
+  // KHR_mesh_quantization permits. Three vertices at the short extremes so the normalization is visible.
+  function makeQuantizedGltf(required: boolean): GltfDocument {
+    const positions = new Int16Array([0, 0, 0, 32767, 0, 0, 0, 32767, 0]);
+    const indices = new Uint16Array([0, 1, 2]);
+    const buffer = new Uint8Array(positions.byteLength + indices.byteLength);
+    buffer.set(new Uint8Array(positions.buffer), 0);
+    buffer.set(new Uint8Array(indices.buffer), positions.byteLength);
+    let binary = '';
+    for (let i = 0; i < buffer.length; i++) binary += String.fromCharCode(buffer[i]);
+
+    const source = {
+      accessors: [
+        { bufferView: 0, componentType: 5122, count: 3, normalized: true, type: 'VEC3' },
+        { bufferView: 1, componentType: 5123, count: 3, type: 'SCALAR' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength },
+      ],
+      buffers: [{ byteLength: buffer.length, uri: `data:application/octet-stream;base64,${btoa(binary)}` }],
+      extensionsUsed: ['KHR_mesh_quantization'],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+    } as unknown as GltfDocument;
+    if (required) (source as { extensionsRequired?: string[] }).extensionsRequired = ['KHR_mesh_quantization'];
+    return source;
+  }
+
+  it('reads a quantized position accessor through the existing normalization path', () => {
+    const document = parseGltf(makeQuantizedGltf(false));
+
+    expect(document.meshes).toHaveLength(1);
+    const position = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(position, document.meshes[0].geometry, 1);
+    // A normalized signed short at its maximum is 1.0 — the spec mapping the reader already applies.
+    expect(position.x).toBeCloseTo(1, 4);
+    expect(position.y).toBeCloseTo(0, 4);
+  });
+
+  it('does not report the extension unsupported when a file requires it', () => {
+    // The core satisfies KHR_mesh_quantization with no handler, so requiring it must not crumb.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseGltf(makeQuantizedGltf(true), diagnostics);
+
+    expect(diagnostics.find((d) => d.kind === 'gltf.unsupported-required-extension')).toBeUndefined();
+  });
+
+  it('still reports an extension nothing satisfies', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const source = makeQuantizedGltf(false);
+    (source as { extensionsRequired?: string[] }).extensionsRequired = ['KHR_draco_mesh_compression'];
+    parseGltf(source, diagnostics);
+
+    expect(diagnostics.find((d) => d.kind === 'gltf.unsupported-required-extension')).toBeDefined();
+  });
+});

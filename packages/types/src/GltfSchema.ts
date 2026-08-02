@@ -106,6 +106,8 @@ export interface GltfMaterial {
     KHR_materials_iridescence?: GltfMaterialsIridescence;
     KHR_materials_pbrSpecularGlossiness?: GltfMaterialsPbrSpecularGlossiness;
     KHR_materials_sheen?: GltfMaterialsSheen;
+    // The unlit block is empty by definition — its PRESENCE is the whole statement.
+    KHR_materials_unlit?: Record<string, never>;
     KHR_materials_specular?: GltfMaterialsSpecular;
     KHR_materials_transmission?: GltfMaterialsTransmission;
     KHR_materials_volume?: GltfMaterialsVolume;
