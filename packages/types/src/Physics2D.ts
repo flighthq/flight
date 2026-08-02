@@ -253,6 +253,12 @@ export interface Physics2DSolverConfig {
 // Pure diagnosis of whether one explicit step can run. Individual flags keep simultaneous faults
 // visible; `status` is the stable summary for callers that need only a ready/not-ready branch.
 export interface Physics2DStepExplanation {
+  readonly bodyStateValid: boolean;
+  readonly contactStateValid: boolean;
+  readonly gravityValid: boolean;
+  readonly jointStateValid: boolean;
+  readonly previousTimestepValid: boolean;
+  readonly solverConfigValid: boolean;
   readonly timestepValid: boolean;
   readonly velocityIterationsValid: boolean;
   readonly positionIterationsValid: boolean;

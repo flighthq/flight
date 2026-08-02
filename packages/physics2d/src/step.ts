@@ -24,6 +24,15 @@ import { synchronizePhysics2DBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
+import {
+  isPhysics2DBodyStateValid,
+  isPhysics2DContactStateValid,
+  isPhysics2DGravityValid,
+  isPhysics2DJointStateValid,
+  isPhysics2DPreviousTimestepValid,
+  isPhysics2DSolverConfigValid,
+  isPhysics2DTimestepValid,
+} from './stepValidation';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
 // Builds this step's contact set from the broadphase pairs, preserving each surviving contact's cached
@@ -374,12 +383,17 @@ function effectiveMass(
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   const config = world.config;
   if (
-    !Number.isFinite(dt) ||
-    !(dt > 0) ||
+    !isPhysics2DTimestepValid(dt) ||
     !Number.isSafeInteger(config.velocityIterations) ||
     config.velocityIterations < 0 ||
     !Number.isSafeInteger(config.positionIterations) ||
-    config.positionIterations < 0
+    config.positionIterations < 0 ||
+    !isPhysics2DSolverConfigValid(config) ||
+    !isPhysics2DGravityValid(world) ||
+    !isPhysics2DPreviousTimestepValid(world) ||
+    !isPhysics2DBodyStateValid(world) ||
+    !isPhysics2DContactStateValid(world) ||
+    !isPhysics2DJointStateValid(world)
   ) {
     return;
   }
