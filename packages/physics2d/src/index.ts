@@ -61,3 +61,4 @@ export {
   isPhysics2DPairOrdered,
   removePhysics2DBody,
 } from './world';
+export { createPhysics2DQueryResult, queryPhysics2DPoint } from './worldQueries';
