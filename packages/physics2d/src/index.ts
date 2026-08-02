@@ -7,11 +7,13 @@ export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from 
 export {
   Physics2DDistanceJointKind,
   Physics2DMouseJointKind,
+  Physics2DPrismaticJointKind,
   Physics2DRevoluteJointKind,
   Physics2DRopeJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
   physics2DMouseJointSolver,
+  physics2DPrismaticJointSolver,
   physics2DRevoluteJointSolver,
   physics2DRopeJointSolver,
   physics2DWeldJointSolver,
