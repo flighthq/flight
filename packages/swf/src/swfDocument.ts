@@ -1300,7 +1300,7 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, image.bounds);
   state.images.set(characterId, {
-    bytes: body.source.subarray(imageStart, imageEnd),
+    bytes: stripSwfJpegStreamBoundary(body.source, imageStart, imageEnd, image.mimeType),
     mimeType: image.mimeType,
   });
   return;
@@ -1308,6 +1308,27 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
 
 // Identifies an embedded payload by its magic bytes and reads the dimensions out of its header, without
 // decoding a pixel. The media type travels with the bytes so a resolver can dispatch on format.
+// Removes the end-of-image / start-of-image pair the legacy two-stream layout leaves in the middle of a
+// JPEG. The bytes on either side are one valid stream once it is gone, and a strict decoder is entitled to
+// stop at that marker, so a resolver should never have to know the file's history to read the image.
+function stripSwfJpegStreamBoundary(source: Uint8Array, start: number, end: number, mimeType: string): Uint8Array {
+  if (mimeType !== JPEG_MIME_TYPE) return source.subarray(start, end);
+  for (let pos = start; pos + 3 < end; pos++) {
+    if (
+      source[pos] === 0xff &&
+      source[pos + 1] === JPEG_END_OF_IMAGE &&
+      source[pos + 2] === 0xff &&
+      source[pos + 3] === JPEG_START_OF_IMAGE
+    ) {
+      const spliced = new Uint8Array(end - start - 4);
+      spliced.set(source.subarray(start, pos));
+      spliced.set(source.subarray(pos + 4, end), pos - start);
+      return spliced;
+    }
+  }
+  return source.subarray(start, end);
+}
+
 function readSwfEmbeddedImage(
   source: Uint8Array,
   start: number,
@@ -1359,7 +1380,15 @@ function readSwfEmbeddedImage(
     while (pos < end && source[pos] === 0xff) pos++;
     if (pos >= end) return null;
     const marker = source[pos++];
-    if (marker === JPEG_END_OF_IMAGE || marker === JPEG_START_OF_SCAN) return null;
+    if (marker === JPEG_START_OF_SCAN) return null;
+    // Encoders of the era wrote the encoding tables and the image as two concatenated streams, so an
+    // end-of-image commonly sits before the frame header with a second start-of-image after it. Treating
+    // that first marker as the end of the file would abandon the scan before it ever reached the
+    // dimensions.
+    if (marker === JPEG_END_OF_IMAGE) {
+      if (pos + 1 < end && source[pos] === 0xff && source[pos + 1] === JPEG_START_OF_IMAGE) continue;
+      return null;
+    }
     if (marker === JPEG_START_OF_IMAGE || marker === JPEG_TEMPORARY || (marker >= 0xd0 && marker <= 0xd7)) continue;
     if (pos + 2 > end) return null;
     const length = readBigEndianUint16(source, pos);
