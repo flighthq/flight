@@ -1,5 +1,11 @@
 import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
-import type { Physics2DWorld, RigidBody2D, SpatialIndexBackend, SpatialPair } from '@flighthq/types/contract';
+import type {
+  Physics2DJoint,
+  Physics2DWorld,
+  RigidBody2D,
+  SpatialIndexBackend,
+  SpatialPair,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
@@ -409,6 +415,25 @@ describe('sensor reporting between immovable bodies', () => {
 });
 
 describe('stepPhysics2D', () => {
+  it('scales cached contact impulses into a changed timestep', () => {
+    const world = createPhysics2DWorld(0, 0);
+    world.config.allowSleeping = false;
+    world.config.velocityIterations = 0;
+    world.config.positionIterations = 0;
+    ground(world);
+    box(world, 0, 0.49);
+    stepPhysics2D(world, 1 / 60);
+    const point = world.contacts[0].points[0];
+    point.normalImpulse = 3;
+    point.tangentImpulse = 4;
+
+    stepPhysics2D(world, 1 / 30);
+
+    expect(point.normalImpulse).toBe(6);
+    expect(point.tangentImpulse).toBe(8);
+    expect(world.previousTimestep).toBe(1 / 30);
+  });
+
   it('rests a box on the ground instead of sinking through it', () => {
     const world = createPhysics2DWorld();
     ground(world);
@@ -800,6 +825,51 @@ describe('stepPhysics2D with joints', () => {
     }
     return { left, right, world };
   }
+
+  it('scales common and kind-owned joint impulses into a changed timestep', () => {
+    const world = createPhysics2DWorld(0, 0);
+    world.config.allowSleeping = false;
+    world.config.velocityIterations = 0;
+    world.config.positionIterations = 0;
+    const first = box(world, 0, 0);
+    const second = box(world, 4, 0);
+    registerPhysics2DJointSolver(world, 'Scaled', {
+      prepare: () => {},
+      scaleAccumulatedImpulses: (value, ratio) => {
+        const scaled = value as Physics2DJoint & { motorImpulse: number };
+        scaled.motorImpulse *= ratio;
+      },
+      solve: () => {},
+      warmStart: () => {},
+    });
+    const added = addPhysics2DJoint(world, {
+      kind: 'Scaled',
+      bodyA: first.index,
+      bodyB: second.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      motorImpulse: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    } as Physics2DJoint & { motorImpulse: number }) as Physics2DJoint & { motorImpulse: number };
+    stepPhysics2D(world, 1 / 60);
+    added.impulse0 = 2;
+    added.impulse1 = 3;
+    added.impulse2 = 4;
+    added.motorImpulse = 5;
+
+    stepPhysics2D(world, 1 / 30);
+
+    expect([added.impulse0, added.impulse1, added.impulse2, added.motorImpulse]).toEqual([4, 6, 8, 10]);
+  });
 
   it('produces the same trace when the broadphase reports its pairs in the opposite order', () => {
     // OBLIGATION 2 EXTENDED TO P2. Joints share the contact list's iteration loop, so the contact sort has

@@ -386,6 +386,7 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
 
   synchronizePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
+  scalePhysics2DWarmStartCaches(world, dt);
 
   const preSolve = world.contactHooks.preSolve;
   if (preSolve !== null) {
@@ -510,6 +511,30 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     body.forceX = 0;
     body.forceY = 0;
     body.torque = 0;
+  }
+  world.previousTimestep = dt;
+}
+
+// Accumulated impulses have force*time units. Reusing one unchanged across a different time interval
+// applies the wrong force before the first iteration gets a chance to correct it, which is most visible
+// as a stack or motor kicking when a frame changes cadence. A non-finite ratio clears the cache rather
+// than allowing an extreme pair of otherwise-valid positive timesteps to seed infinity.
+function scalePhysics2DWarmStartCaches(world: Physics2DWorld, dt: number): void {
+  const previous = world.previousTimestep;
+  if (!(previous > 0) || previous === dt) return;
+  const divided = dt / previous;
+  const timestepRatio = Number.isFinite(divided) ? divided : 0;
+  for (const contact of world.contacts) {
+    for (let i = 0; i < contact.pointCount; i++) {
+      contact.points[i].normalImpulse *= timestepRatio;
+      contact.points[i].tangentImpulse *= timestepRatio;
+    }
+  }
+  for (const joint of world.joints) {
+    joint.impulse0 *= timestepRatio;
+    joint.impulse1 *= timestepRatio;
+    joint.impulse2 *= timestepRatio;
+    world.jointSolvers.get(joint.kind)?.scaleAccumulatedImpulses?.(joint, timestepRatio);
   }
 }
 
