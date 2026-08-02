@@ -336,8 +336,20 @@ export interface GltfPrimitive {
   material?: number;
   // Primitive topology (GL constant). Absent means 4 (TRIANGLES).
   mode?: number;
+  // Under KHR_draco_mesh_compression the primitive's own accessors still describe the data — type,
+  // componentType, count — but carry NO bufferView, because the values live inside the compressed
+  // payload. The extension names that payload and maps each attribute semantic onto its id within it.
+  extensions?: { KHR_draco_mesh_compression?: GltfDracoMeshCompression; [kind: string]: unknown };
   // Morph targets: one entry per blend shape, each a set of POSITION/NORMAL/TANGENT delta accessors.
   targets?: GltfMorphTarget[];
+}
+
+// KHR_draco_mesh_compression wire block. Both fields are required by the extension: `bufferView` is the
+// compressed payload and `attributes` maps each glTF semantic (POSITION, NORMAL, …) to its attribute id
+// inside that payload.
+export interface GltfDracoMeshCompression {
+  attributes: Readonly<Record<string, number>>;
+  bufferView: number;
 }
 
 // glTF accessor `componentType` values (GL constants).

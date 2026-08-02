@@ -43,6 +43,7 @@ import type {
   TextureWrap,
   Transform3D,
   GltfExtensionContext,
+  GltfDracoMesh,
   GltfExtensionHandler,
   GltfImportOptions,
   GltfAccessor,
@@ -1106,6 +1107,10 @@ function isSupportedGltfVersion(version: string): boolean {
 // diagnostics from contradicting visible behavior while the open handler registry remains a separate
 // depth step; adding a schema field alone must not count as support.
 function isSupportedGltfExtension(extension: string, handlers: readonly GltfExtensionHandler[] | undefined): boolean {
+  // Draco is supported exactly when a decoder is registered — the only extension whose support is a
+  // RUNTIME fact rather than a property of this parser. Reporting it unsupported until a caller plugs one
+  // in is the honest answer, and reporting it supported afterwards is equally honest.
+  if (extension === 'KHR_draco_mesh_compression') return hasGltfDracoDecoder();
   return CORE_GLTF_EXTENSIONS.has(extension) || handlers?.some((handler) => handler.kind === extension) === true;
 }
 
@@ -1147,12 +1152,19 @@ function primitiveToGeometry(
   // mesh is not emitted) rather than push an empty mesh node. Drop matches md5mesh.mesh-empty. The primitive
   // crumb is the honest classification; the subsuming accessor fault is not emitted as a contradictory
   // Recover (a dropped primitive did not recover).
+  // A Draco primitive's values live in the compressed payload, not in any bufferView, so it is decoded
+  // ONCE here and every attribute read below prefers the decoded array. Null means either that the
+  // primitive is not compressed or that no decoder is registered — resolveGltfDracoMesh reports the
+  // latter, because a Draco primitive with no decoder would otherwise fail as a malformed accessor and
+  // send the reader hunting for a broken file instead of a missing decoder.
+  const draco = resolveGltfDracoMesh(doc, buffers, primitive, gltfDrops);
+
   const positionIndex = primitive.attributes.POSITION;
   if (positionIndex === undefined) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {});
     return null;
   }
-  const position = readAccessor(doc, buffers, positionIndex, gltfDrops, 'VEC3');
+  const position = readGltfAttribute(draco, 'POSITION', doc, buffers, positionIndex, gltfDrops, 'VEC3');
   const vertexCount = position.count;
   if (vertexCount === 0) {
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.primitive-no-position', '', {
@@ -1164,16 +1176,54 @@ function primitiveToGeometry(
   // Optional attributes: a failed, type-mismatched, or count-mismatched accessor is treated as absent (its
   // vertex slots zero-fill with finite defaults) and Recover-crumbed — the mesh stays drawable, the usable
   // survivor a Recover requires. Each expected type is fixed by the vertex layout the loop below reads.
-  const normal = readOptionalGltfAttribute(doc, buffers, primitive.attributes.NORMAL, vertexCount, 'VEC3', gltfDrops);
-  const tangent = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TANGENT, vertexCount, 'VEC4', gltfDrops);
-  const uv = readOptionalGltfAttribute(doc, buffers, primitive.attributes.TEXCOORD_0, vertexCount, 'VEC2', gltfDrops);
+  const normal = readOptionalGltfAttribute(
+    draco,
+    'NORMAL',
+    doc,
+    buffers,
+    primitive.attributes.NORMAL,
+    vertexCount,
+    'VEC3',
+    gltfDrops,
+  );
+  const tangent = readOptionalGltfAttribute(
+    draco,
+    'TANGENT',
+    doc,
+    buffers,
+    primitive.attributes.TANGENT,
+    vertexCount,
+    'VEC4',
+    gltfDrops,
+  );
+  const uv = readOptionalGltfAttribute(
+    draco,
+    'TEXCOORD_0',
+    doc,
+    buffers,
+    primitive.attributes.TEXCOORD_0,
+    vertexCount,
+    'VEC2',
+    gltfDrops,
+  );
 
   // A primitive is skinned when it carries both influence channels; it then emits the skinned layout
   // (joints0/weights0 past uv0). JOINTS_0 is unsigned-integer indices (not normalized); WEIGHTS_0 is
   // float or normalized-integer weights, renormalized per vertex so any quantization drift still sums 1.
   // A failed influence accessor drops just that channel (Recover), so the mesh falls back to unskinned.
-  const joints = readOptionalGltfAttribute(doc, buffers, primitive.attributes.JOINTS_0, vertexCount, 'VEC4', gltfDrops);
+  const joints = readOptionalGltfAttribute(
+    draco,
+    'JOINTS_0',
+    doc,
+    buffers,
+    primitive.attributes.JOINTS_0,
+    vertexCount,
+    'VEC4',
+    gltfDrops,
+  );
   const weights = readOptionalGltfAttribute(
+    draco,
+    'WEIGHTS_0',
     doc,
     buffers,
     primitive.attributes.WEIGHTS_0,
@@ -1228,7 +1278,11 @@ function primitiveToGeometry(
   // or empty one leaves the vertex storage order — which is not a sane triangle list — so no usable
   // primitive survives and the primitive is DROPPED (Drop, mandatory role) rather than kept undrawable.
   let sourceIndices: Uint32Array<ArrayBuffer> | undefined;
-  if (primitive.indices !== undefined) {
+  if (draco?.indices != null) {
+    // The compressed payload carries the connectivity too, so the indices accessor — which under this
+    // extension has no bufferView either — is not consulted.
+    sourceIndices = Uint32Array.from(draco.indices);
+  } else if (primitive.indices !== undefined) {
     const indexResult = readAccessor(doc, buffers, primitive.indices, gltfDrops, 'SCALAR');
     if (indexResult.fault !== null) {
       reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Drop, indexResult.fault);
@@ -1367,8 +1421,26 @@ function buildGltfMorph(
     }
     const positionDeltas = Float32Array.from(positionResult.data);
     // glTF morph deltas are VEC3 for all three channels (the tangent handedness w is not morphed).
-    const normal = readOptionalGltfAttribute(doc, buffers, target.NORMAL, baseVertexCount, 'VEC3', gltfDrops);
-    const tangent = readOptionalGltfAttribute(doc, buffers, target.TANGENT, baseVertexCount, 'VEC3', gltfDrops);
+    const normal = readOptionalGltfAttribute(
+      null,
+      'NORMAL',
+      doc,
+      buffers,
+      target.NORMAL,
+      baseVertexCount,
+      'VEC3',
+      gltfDrops,
+    );
+    const tangent = readOptionalGltfAttribute(
+      null,
+      'TANGENT',
+      doc,
+      buffers,
+      target.TANGENT,
+      baseVertexCount,
+      'VEC3',
+      gltfDrops,
+    );
     const normalDeltas = normal !== null ? Float32Array.from(normal.data) : null;
     const tangentDeltas = tangent !== null ? Float32Array.from(tangent.data) : null;
     targets.push({ normalDeltas, positionDeltas, tangentDeltas });
@@ -1415,7 +1487,79 @@ function reportGltfAccessorFault(
 // element count does not match the primitive's vertex count (a count mismatch would read past the shorter
 // array into non-finite territory; also Recover-crumbed with the expected/actual counts). A present,
 // correctly-sized attribute returns its decoded data.
+// Decodes a primitive's KHR_draco_mesh_compression payload through the registered decoder, or returns
+// null when the primitive is uncompressed or nothing is registered.
+//
+// The no-decoder case is reported HERE rather than being left to fail downstream: under this extension a
+// primitive's accessors carry no bufferView, so without this the read would fault as
+// `gltf.accessor-bufferview-not-found` — technically true and actively misleading, since the bufferView
+// is not missing, the data is simply somewhere the reader cannot go. That is an asset fact the consumer
+// can act on (register a decoder), which is why it is a crumb rather than a coverage-doc entry.
+function resolveGltfDracoMesh(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  primitive: Readonly<GltfPrimitive>,
+  gltfDrops: Map<string, GltfDropTally> | null,
+): GltfDracoMesh | null {
+  const block = primitive.extensions?.KHR_draco_mesh_compression;
+  if (block === undefined) return null;
+
+  const decoder = getGltfDracoDecoder();
+  if (decoder === null) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.draco-decoder-missing', '', {});
+    return null;
+  }
+
+  const view = doc.bufferViews?.[block.bufferView];
+  const bytes = view !== undefined ? buffers[view.buffer] : undefined;
+  if (view === undefined || bytes === undefined) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.draco-payload-missing', '', {
+      firstBufferView: block.bufferView,
+    });
+    return null;
+  }
+
+  const start = view.byteOffset ?? 0;
+  const payload = bytes.subarray(start, start + view.byteLength);
+  // A decoder is third-party code by design, so a throw from it is contained here: a broken payload
+  // degrades to a dropped primitive rather than taking the whole import down.
+  let decoded: GltfDracoMesh | null = null;
+  try {
+    decoded = decoder(payload, block.attributes);
+  } catch {
+    decoded = null;
+  }
+  if (decoded === null) {
+    tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.draco-decode-failed', '', {
+      firstBufferView: block.bufferView,
+    });
+  }
+  return decoded;
+}
+
+// Reads one attribute, preferring the Draco-decoded array when the decoder supplied that semantic and
+// falling back to the accessor otherwise. The accessor stays authoritative for COUNT even under Draco:
+// the file declared it, so a decoder disagreeing is a fault the caller should see rather than a silent
+// reinterpretation of the mesh.
+function readGltfAttribute(
+  draco: GltfDracoMesh | null,
+  semantic: string,
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  index: number,
+  gltfDrops: Map<string, GltfDropTally> | null,
+  expectedType: string,
+): GltfAccessorResult {
+  const decoded = draco?.attributes[semantic];
+  if (decoded !== undefined) {
+    return { count: draco?.vertexCount ?? 0, data: decoded, fault: null };
+  }
+  return readAccessor(doc, buffers, index, gltfDrops, expectedType);
+}
+
 function readOptionalGltfAttribute(
+  draco: GltfDracoMesh | null,
+  semantic: string,
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   index: number | undefined,
@@ -1424,7 +1568,7 @@ function readOptionalGltfAttribute(
   gltfDrops: Map<string, GltfDropTally> | null,
 ): { data: ArrayLike<number> } | null {
   if (index === undefined) return null;
-  const result = readAccessor(doc, buffers, index, gltfDrops, expectedType);
+  const result = readGltfAttribute(draco, semantic, doc, buffers, index, gltfDrops, expectedType);
   if (result.fault !== null) {
     reportGltfAccessorFault(gltfDrops, ImportDiagnosticSeverity.Recover, result.fault);
     return null;
@@ -1884,6 +2028,7 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
 // plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
+import { getGltfDracoDecoder, hasGltfDracoDecoder } from './gltfDraco';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared';
 
 // One accumulated glTF document-build drop: a total occurrence `count` plus the first offender's `detail`,

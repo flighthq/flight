@@ -21,6 +21,8 @@ export {
   createScene3DsFromGlb,
   createScene3DsFromGltf,
   findScene3DSkeletonJoints,
+  getGltfDracoDecoder,
+  hasGltfDracoDecoder,
   importMd5Mesh,
   parse3ds,
   parseAwd2,
@@ -32,4 +34,6 @@ export {
   parseMd5Mesh,
   parseObj,
   parseObjMaterialLibrary,
+  registerGltfDracoDecoder,
+  unregisterGltfDracoDecoder,
 } from './contract';

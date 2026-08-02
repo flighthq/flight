@@ -254,6 +254,7 @@ export * from './GlTextureWrapKind';
 export * from './GlToonProgram';
 export * from './GlUnlitProgram';
 export * from './GlVelocityWriter';
+export * from './GltfDraco';
 export * from './GltfExtension';
 export * from './GltfSchema';
 export * from './GlWireframeProgram';
