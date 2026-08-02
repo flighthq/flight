@@ -65,6 +65,8 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
     _unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
   }
   for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined || solver.usesBodyA === false) continue;
     _unionDynamicPair(world, parents, joint.bodyA, joint.bodyB);
   }
 

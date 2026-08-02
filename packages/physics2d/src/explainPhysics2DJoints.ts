@@ -15,14 +15,17 @@ export function explainPhysics2DJoints(world: Readonly<Physics2DWorld>): Physics
   let readyCount = 0;
   for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex++) {
     const joint = world.joints[jointIndex];
-    const solverRegistered = world.jointSolvers.has(joint.kind);
+    const solver = world.jointSolvers.get(joint.kind);
+    const solverRegistered = solver !== undefined;
+    const bodyAUsed = solver?.usesBodyA !== false;
     const bodyAFound = findPhysics2DBody(world, joint.bodyA) !== null;
     const bodyBFound = findPhysics2DBody(world, joint.bodyB) !== null;
-    const status = getJointResolutionStatus(solverRegistered, bodyAFound, bodyBFound);
+    const status = getJointResolutionStatus(solverRegistered, bodyAUsed, bodyAFound, bodyBFound);
     if (status === 'ready') readyCount++;
     joints.push({
       bodyA: joint.bodyA,
       bodyAFound,
+      bodyAUsed,
       bodyB: joint.bodyB,
       bodyBFound,
       jointIndex,
@@ -36,12 +39,13 @@ export function explainPhysics2DJoints(world: Readonly<Physics2DWorld>): Physics
 
 function getJointResolutionStatus(
   solverRegistered: boolean,
+  bodyAUsed: boolean,
   bodyAFound: boolean,
   bodyBFound: boolean,
 ): Physics2DJointResolutionStatus {
   if (!solverRegistered) return 'solver-unregistered';
-  if (!bodyAFound && !bodyBFound) return 'bodies-missing';
-  if (!bodyAFound) return 'body-a-missing';
+  if (bodyAUsed && !bodyAFound && !bodyBFound) return 'bodies-missing';
+  if (bodyAUsed && !bodyAFound) return 'body-a-missing';
   if (!bodyBFound) return 'body-b-missing';
   return 'ready';
 }

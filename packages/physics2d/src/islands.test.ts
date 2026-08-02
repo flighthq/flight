@@ -2,6 +2,7 @@ import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
+import { registerPhysics2DJointSolver } from './jointRegistry';
 import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world';
 
 // A contact carries no mass properties and no geometry that sleep cares about — only which two bodies it
@@ -171,6 +172,7 @@ describe('updatePhysics2DSleep', () => {
 
   it('keeps a joint island awake while any one member is moving', () => {
     const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'test', { prepare: () => {}, solve: () => {} });
     const settled = still(world, 0);
     const shoved = moving(world, 1);
     world.joints.push({ kind: 'test', bodyA: settled.index, bodyB: shoved.index, collideConnected: false } as never);
@@ -178,6 +180,24 @@ describe('updatePhysics2DSleep', () => {
     updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
 
     expect(settled.sleeping).toBe(false);
+  });
+
+  it('does not island-connect a one-body joint through its unused bodyA', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'one-body', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    const settled = still(world, 0);
+    const shoved = moving(world, 1);
+    world.joints.push({
+      kind: 'one-body',
+      bodyA: shoved.index,
+      bodyB: settled.index,
+      collideConnected: false,
+    } as never);
+
+    updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
+
+    expect(settled.sleeping).toBe(true);
+    expect(shoved.sleeping).toBe(false);
   });
 
   it('does not let a shared static body merge two islands', () => {

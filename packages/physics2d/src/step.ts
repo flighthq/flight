@@ -480,9 +480,13 @@ function createPhysics2DContactPoint(): Physics2DContactPoint {
 // Whether a joint still has an end the solver can move. Mirrors the contact-side test in the solver:
 // two sleeping ends, or a sleeper anchored to static scenery, constrain nothing this step.
 function isPhysics2DJointAwake(world: Readonly<Physics2DWorld>, joint: Readonly<Physics2DJoint>): boolean {
-  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  const solver = world.jointSolvers.get(joint.kind);
+  if (solver === undefined) return false;
   const bodyB = findPhysics2DBody(world, joint.bodyB);
-  if (bodyA === null || bodyB === null) return false;
+  if (bodyB === null) return false;
+  if (solver.usesBodyA === false) return isRigidBody2DPairAwake(bodyB, bodyB);
+  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  if (bodyA === null) return false;
   return isRigidBody2DPairAwake(bodyA, bodyB);
 }
 
@@ -512,6 +516,8 @@ const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupInd
 function isPhysics2DPairJointSuppressed(world: Readonly<Physics2DWorld>, first: number, second: number): boolean {
   for (const joint of world.joints) {
     if (joint.collideConnected) continue;
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined || solver.usesBodyA === false) continue;
     if ((joint.bodyA === first && joint.bodyB === second) || (joint.bodyA === second && joint.bodyB === first)) {
       return true;
     }

@@ -533,6 +533,10 @@ export interface Physics2DMouseJointOptions {
 export interface Physics2DJointSolver {
   prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void;
   solve(world: Physics2DWorld, joint: Physics2DJoint): void;
+  // Whether bodyA participates in this kind's constraint. Omit for the ordinary two-body case. A
+  // one-body kind sets false so world services do not resolve, wake, remove, island-connect, or suppress
+  // collisions through a placeholder endpoint the solver never reads.
+  usesBodyA?: boolean;
   // Whether this kind's two ends may be exchanged, and its chance to carry its own direction-bearing
   // state across the exchange. Called by addPhysics2DJoint with the ends still in their original
   // order; return true to let the generic swap of bodies and anchors proceed, false to veto it.
@@ -614,6 +618,7 @@ export interface Physics2DJointResolution {
   readonly bodyA: number;
   readonly bodyB: number;
   readonly bodyAFound: boolean;
+  readonly bodyAUsed: boolean;
   readonly bodyBFound: boolean;
   readonly solverRegistered: boolean;
   readonly status: Physics2DJointResolutionStatus;

@@ -40,10 +40,11 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
 // asked only when a swap is actually pending, since swapEnds both vetoes and transforms: calling it
 // otherwise would apply a reversal to ends that never moved.
 function _canonicalizePhysics2DJointEnds(world: Physics2DWorld, joint: Physics2DJoint): void {
+  const solver = getPhysics2DJointSolver(world, joint.kind);
+  if (solver?.usesBodyA === false) return;
   const first = findPhysics2DBody(world, joint.bodyA);
   const second = findPhysics2DBody(world, joint.bodyB);
   if (first === null || second === null || isPhysics2DPairOrdered(first, second)) return;
-  const solver = getPhysics2DJointSolver(world, joint.kind);
   if (!(solver?.swapEnds?.(joint) ?? true)) return;
   const bodyA = joint.bodyA;
   joint.bodyA = joint.bodyB;
@@ -102,7 +103,9 @@ export function removePhysics2DJoint(world: Physics2DWorld, joint: Readonly<Phys
 }
 
 function _wakePhysics2DJointBodies(world: Readonly<Physics2DWorld>, joint: Readonly<Physics2DJoint>): void {
-  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  const solver = getPhysics2DJointSolver(world, joint.kind);
+  if (solver === null) return;
+  const bodyA = solver.usesBodyA === false ? null : findPhysics2DBody(world, joint.bodyA);
   const bodyB = findPhysics2DBody(world, joint.bodyB);
   if (bodyA !== null) wakePhysics2DBody(bodyA);
   if (bodyB !== null) wakePhysics2DBody(bodyB);

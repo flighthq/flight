@@ -174,9 +174,13 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
   // against, and leaving it would let a later body inheriting the index be silently constrained by it.
   for (let i = world.joints.length - 1; i >= 0; i--) {
     const joint = world.joints[i];
-    if (joint.bodyA !== body.index && joint.bodyB !== body.index) continue;
-    if (world.jointSolvers.has(joint.kind)) {
-      const otherIndex = joint.bodyA === body.index ? joint.bodyB : joint.bodyA;
+    const solver = world.jointSolvers.get(joint.kind);
+    const usesBodyA = solver?.usesBodyA !== false;
+    const removesBodyA = usesBodyA && joint.bodyA === body.index;
+    const removesBodyB = joint.bodyB === body.index;
+    if (!removesBodyA && !removesBodyB) continue;
+    if (solver !== undefined && usesBodyA) {
+      const otherIndex = removesBodyA ? joint.bodyB : joint.bodyA;
       const other = findPhysics2DBody(world, otherIndex);
       if (other !== null) _wakePhysics2DBodyFromTopology(other);
     }

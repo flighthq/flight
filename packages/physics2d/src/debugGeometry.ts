@@ -196,13 +196,20 @@ function writeJoint(
   world: Readonly<Physics2DWorld>,
   joint: Readonly<Physics2DJoint>,
 ): void {
-  const bodyA = findPhysics2DBody(world, joint.bodyA);
   const bodyB = findPhysics2DBody(world, joint.bodyB);
-  if (bodyA === null || bodyB === null) return;
-  const anchorAX = jointAnchorX(bodyA, joint.localAnchorAX, joint.localAnchorAY);
-  const anchorAY = jointAnchorY(bodyA, joint.localAnchorAX, joint.localAnchorAY);
+  if (bodyB === null) return;
   const anchorBX = jointAnchorX(bodyB, joint.localAnchorBX, joint.localAnchorBY);
   const anchorBY = jointAnchorY(bodyB, joint.localAnchorBX, joint.localAnchorBY);
+  if (joint.kind === 'Mouse') {
+    const mouse = joint as Physics2DMouseJoint;
+    writeLine(out, 'joint', joint.bodyA, joint.bodyB, mouse.targetX, mouse.targetY, anchorBX, anchorBY);
+    return;
+  }
+  if (world.jointSolvers.get(joint.kind)?.usesBodyA === false) return;
+  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  if (bodyA === null) return;
+  const anchorAX = jointAnchorX(bodyA, joint.localAnchorAX, joint.localAnchorAY);
+  const anchorAY = jointAnchorY(bodyA, joint.localAnchorAX, joint.localAnchorAY);
   if (joint.kind === 'Pulley') {
     const pulley = joint as Physics2DPulleyJoint;
     writeLine(out, 'joint', joint.bodyA, joint.bodyB, pulley.groundAnchorAX, pulley.groundAnchorAY, anchorAX, anchorAY);
@@ -217,11 +224,6 @@ function writeJoint(
       pulley.groundAnchorBX,
       pulley.groundAnchorBY,
     );
-    return;
-  }
-  if (joint.kind === 'Mouse') {
-    const mouse = joint as Physics2DMouseJoint;
-    writeLine(out, 'joint', joint.bodyA, joint.bodyB, mouse.targetX, mouse.targetY, anchorBX, anchorBY);
     return;
   }
   writeLine(out, 'joint', joint.bodyA, joint.bodyB, anchorAX, anchorAY, anchorBX, anchorBY);
