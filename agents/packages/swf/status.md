@@ -28,6 +28,13 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   tolerance.
 - Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
   [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
+- AVM1 `DoAction` timeline commands are recognized and emitted as data. AVM1 gives playback control its
+  own single-byte opcodes — stop, play, and both goto forms are literal instructions rather than method
+  calls — so reading them is the same kind of work as reading a placement record, and nothing from the
+  file is ever executed. A recognized block becomes a `Timeline` frame script bound to Flight's own
+  MovieClip calls. A block is recognized only when *every* action in it is a playback command; anything
+  else and the block is declined whole, because honouring the legible half misrepresents the frame. A goto
+  landing on a frame that gotos back is depth-bounded rather than allowed to recurse.
 - `DefineButton` and `DefineButton2` import their up state as a one-frame timeline, so a button
   instantiates, bounds, nests, and masks through the same path a sprite does. The other interaction
   states are dropped rather than stacked invisibly, because a document is a still scene.
