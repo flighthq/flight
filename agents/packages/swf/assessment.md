@@ -19,12 +19,10 @@ basedOn: ./review.md
    color transform, blend mode, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
    yet. A frame's visual state is narrower than its structural state until these cross.
-3. **Ship a default decompressor, and expand compatibility evidence.** The `registerSwfDecompressor` seam
-   is in and proven — registering the repository's existing inflate takes the corpus from 59 to 301 of 306
-   files. What is unresolved is where a default zlib inflate should live, since Flight now needs the same
-   RFC 1951 decoder in two cells (`scene3d-formats` has one) and duplicating it is the decomposition smell
-   the codebase map warns about; extracting it into a cell both consume is the open call. LZMA (`ZWS`) has
-   no implementation anywhere and covers 5 of 306 files, so it ranks below that. Also expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
+3. **Add LZMA, and expand compatibility evidence.** Deflate is settled: `@flighthq/compression` owns the
+   inflate and the shared registry, and one `registerDeflateDecompressor()` takes the corpus from 59 to
+   301 of 306 files. Only `ZWS` remains, at 5 of 306 files, and it is the natural first candidate for a
+   Rust/wasm registrant rather than a hand-written TypeScript decoder. Also expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
    beyond the canonical single-frame named-shape fixture — no external animated file has crossed the
    importer, so multi-frame behavior rests on synthetic bytes alone.
 

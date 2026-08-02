@@ -11,6 +11,7 @@
   },
   "references": [
     { "path": "../clip" },
+    { "path": "../compression" },
     { "path": "../geometry" },
     { "path": "../movieclip" },
     { "path": "../node" },

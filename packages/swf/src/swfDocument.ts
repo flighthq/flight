@@ -1,4 +1,5 @@
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
+import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
@@ -28,9 +29,8 @@ import type {
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
-import { SwfCompression } from '@flighthq/types/contract';
+import { Compression } from '@flighthq/types/contract';
 
-import { getSwfDecompressor } from './swfDecompressor';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 
@@ -180,9 +180,9 @@ function uncompressSwfSource(source: Uint8Array): Uint8Array | null {
   if (signature === FWS_SIGNATURE) return source;
 
   const compression =
-    signature === CWS_SIGNATURE ? SwfCompression.Zlib : signature === ZWS_SIGNATURE ? SwfCompression.Lzma : null;
+    signature === CWS_SIGNATURE ? Compression.Deflate : signature === ZWS_SIGNATURE ? Compression.Lzma : null;
   if (compression === null) return null;
-  const decompress = getSwfDecompressor(compression);
+  const decompress = getDecompressor(compression);
   if (decompress === null) return null;
 
   const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
@@ -193,7 +193,7 @@ function uncompressSwfSource(source: Uint8Array): Uint8Array | null {
   // LZMA puts a compressed length and the 5 property bytes between the header and its stream; zlib starts
   // its stream immediately. Either way the decompressor receives the stream itself.
   const bodyLength = fileLength - SWF_PREFIX_LENGTH;
-  const streamStart = compression === SwfCompression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
+  const streamStart = compression === Compression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
   if (streamStart > source.length) return null;
   const body = decompress(source.subarray(streamStart), bodyLength);
   if (body === null || body.length < bodyLength) return null;

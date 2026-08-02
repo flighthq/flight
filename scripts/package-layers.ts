@@ -5,6 +5,7 @@ export type PackageLayer = 'core' | 'feature' | 'backend' | 'application' | 'hos
 const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
   core: [
     '@flighthq/color',
+    '@flighthq/compression',
     '@flighthq/easing',
     '@flighthq/entity',
     '@flighthq/geometry',

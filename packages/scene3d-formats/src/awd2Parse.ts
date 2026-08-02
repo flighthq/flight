@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { getDecompressor } from '@flighthq/compression/contract';
 import {
   copyMatrix4,
   createMatrix4,
@@ -22,10 +23,11 @@ import {
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type { Scene3D } from '@flighthq/types/contract';
+import type { Decompressor } from '@flighthq/types/contract';
+import { Compression } from '@flighthq/types/contract';
 import type {
   AnimationClip,
   AnimationTrack,
-  AwdDecompressor,
   ImportDiagnostic,
   Light,
   Material,
@@ -64,6 +66,8 @@ import {
   AWD2_BLOCK_SKELETON_POSE,
   AWD2_BLOCK_TEXTURE,
   AWD2_BLOCK_TRIANGLE_GEOMETRY,
+  AWD2_COMPRESSION_DEFLATE,
+  AWD2_COMPRESSION_LZMA,
   AWD2_COMPRESSION_NONE,
   AWD2_DATA_FLOAT32,
   AWD2_DATA_FLOAT64,
@@ -160,7 +164,7 @@ export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?:
 // whose channels bind by joint node index. Assemble into a live Scene3D with `createScene3DFromDocument`.
 //
 // A compressed body (Away3D's exporter default — deflate or LZMA) is inflated first when a decompressor
-// has been registered for that compression method via `registerAwd2Decompressor`; with no codec registered
+// has been registered for that algorithm in `@flighthq/compression`; with no codec registered
 // the file records a diagnostic and returns an empty document. Malformed input records a diagnostic and returns empty rather
 // than throwing.
 export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
@@ -654,16 +658,6 @@ export function parseAwd2SkeletonAnimations(
     index++;
   }
   return out;
-}
-
-// Registers a decompressor for an AWD compression method (AWD2_COMPRESSION_DEFLATE / _LZMA), enabling
-// `parseAwd2`/`parseAwd2SkeletonAnimations` to import compressed files. Kept as an opt-in registry so the
-// codec stays tree-shakable — a bundle that only reads uncompressed AWD never pulls an inflate into its
-// output. Last registration for a method wins; passing null clears it. Codecs are keyed by the header's
-// compression byte, so a vendor can supply its own (e.g. a host-native inflate) for either method.
-export function registerAwd2Decompressor(compression: number, decompressor: AwdDecompressor | null): void {
-  if (decompressor === null) awdDecompressors.delete(compression);
-  else awdDecompressors.set(compression, decompressor);
 }
 
 // Builds one AnimationClip from a parsed AWD skeleton-animation block: samples each pose's per-joint local
@@ -2569,8 +2563,8 @@ function rehydrateAwdBody(
   const compression = input[7];
   if (compression === AWD2_COMPRESSION_NONE) return { source: input, view };
 
-  const decompressor = awdDecompressors.get(compression);
-  if (decompressor === undefined) {
+  const decompressor = resolveAwdDecompressor(compression);
+  if (decompressor === null) {
     reportImportDiagnostic(
       diagnostics,
       ImportDiagnosticSeverity.Reject,
@@ -2584,7 +2578,9 @@ function rehydrateAwdBody(
   // The header's body-length field is the on-disk (compressed) length; the compressed stream is the bytes
   // from the end of the 12-byte header to there.
   const compressedEnd = Math.min(AWD2_HEADER_BYTES + view.getUint32(8, true), input.byteLength);
-  const inflated = decompressor(input.subarray(AWD2_HEADER_BYTES, compressedEnd));
+  // AWD declares no uncompressed length, so the codec is told 0 and decides for itself whether that
+  // matters — DEFLATE grows its own buffer, LZMA reads its stream's own end marker.
+  const inflated = decompressor(input.subarray(AWD2_HEADER_BYTES, compressedEnd), 0);
   if (inflated === null) {
     reportImportDiagnostic(
       diagnostics,
@@ -2612,9 +2608,13 @@ function rehydrateAwdBody(
 // it in one place if Away3D's convention proves to be the opposite chirality.
 const AWD2_TANGENT_HANDEDNESS = -1;
 
-// Opt-in decompressor registry keyed by the header compression byte. Empty by default so an inflate/LZMA
-// codec is only pulled into a bundle when the caller registers one (registerAwd2Decompressor).
-const awdDecompressors = new Map<number, AwdDecompressor>();
+// Maps AWD's header compression byte onto the algorithm the shared registry is keyed by. The file format
+// numbers its methods; the registry names them, so one registration serves every container that carries
+// the same algorithm.
+function resolveAwdDecompressor(compression: number): Decompressor | null {
+  if (compression === AWD2_COMPRESSION_DEFLATE) return getDecompressor(Compression.Deflate);
+  return compression === AWD2_COMPRESSION_LZMA ? getDecompressor(Compression.Lzma) : null;
+}
 
 // Whether a decomposed pose scale departs from unit within tolerance — the gate for emitting a scale
 // animation channel (skipped for the common identity-scale skeletons so clips stay lean).

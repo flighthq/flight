@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/clip": "*",
+    "@flighthq/compression": "*",
     "@flighthq/geometry": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",

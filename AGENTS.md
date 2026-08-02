@@ -193,7 +193,7 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 Package names grouped by domain, `@flighthq/` prefix omitted. For what each package owns and where its boundary sits, read the [package catalog](agents/packages/catalog.md); for full per-package detail and API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries exported signatures directly.
 
-Core: `types` (the header layer — every exported type in the SDK), `entity`, `geometry` (rectangles, vectors, matrices, quaternions, bounding volumes, ray intersection, pools), `math` (scalar utilities), `color` (packed-RGBA pack/unpack, sRGB↔linear, HSL/HSV/OkLab), `node` (graph hierarchy, transforms, bounds, appearance), `signals`.
+Core: `types` (the header layer — every exported type in the SDK), `entity`, `geometry` (rectangles, vectors, matrices, quaternions, bounding volumes, ray intersection, pools), `math` (scalar utilities), `color` (packed-RGBA pack/unpack, sRGB↔linear, HSL/HSV/OkLab), `compression` (compressed-byte decoders behind the one decompressor registry every container format resolves through), `node` (graph hierarchy, transforms, bounds, appearance), `signals`.
 
 Scene graph: `scene2d` (`Node2D` nodes rooted at the `Scene2D` world, including `Sprite`), `text`, `quadbatch` (packed instanced-quad buffer), `tilemap` (tile-id grid over a tileset), `scene3d`, `clip`, `path` (vector-path geometry kernel), `shape` (retained vector command recorder), `interaction` (hit testing, pointer dispatch, overlap), plus the codec neighbors `path-formats` (SVG `d`), `path-boolean` (CSG + offset/simplify), `shape-formats`, `scene2d-formats` (SVG documents), and the standalone `swf` import domain.
 

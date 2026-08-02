@@ -11,7 +11,6 @@ export {
   createScene3DsFromGltf,
   findScene3DSkeletonJoints,
   importMd5Mesh,
-  inflateAwdDeflate,
   parse3ds,
   parseAwd2,
   parseAwd2SkeletonAnimations,
@@ -22,6 +21,4 @@ export {
   parseMd5Mesh,
   parseObj,
   parseObjMaterialLibrary,
-  registerAwd2Decompressor,
-  registerAwd2DeflateDecompressor,
 } from './contract';

@@ -29,8 +29,8 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 
 ## What is solid
 
-- Compression is handled as the carried format it is, not as SWF's own. `registerSwfDecompressor` is the
-  seam; the package vendors no codec, the registry is empty until a caller fills it, and last-write-wins
+- Compression is handled as the carried format it is, not as SWF's own. the shared `@flighthq/compression` registry is the
+  seam; the package vendors no codec and owns no registry of its own, the registry is empty until a caller fills it, and last-write-wins
   lets a host swap in a native decoder. With the repository's existing inflate registered, the corpus sweep
   goes from 59 to 301 of 306 files imported, still with zero throws — and the shape decoder, previously
   exercised only by hand-written bytes, decodes 49,142 commands of real artwork without incident.

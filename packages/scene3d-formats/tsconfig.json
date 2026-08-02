@@ -10,6 +10,7 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../compression" },
     { "path": "../animation" },
     { "path": "../color" },
     { "path": "../geometry" },
