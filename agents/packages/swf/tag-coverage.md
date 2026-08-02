@@ -19,7 +19,8 @@ rare in the wild.
 | `RemoveObject`, `RemoveObject2` | Display-list removal before the frame closes | — |
 | `DefineSprite` | A nested `MovieClip` with its own playhead | 75 |
 | `DefineShape` … `DefineShape4` | `Shape` geometry: fills, gradients, strokes | 49 |
-| `DefineFont`, `DefineFont2`, `DefineFont3` | Glyph outlines as paths, indexed for static text | 38 / 18 |
+| `DefineFont`, `DefineFont2`, `DefineFont3` | Index-keyed `GlyphOutlineSource` paths, advances, metrics, and embedded code tables | 38 / 18 |
+| `DefineFontInfo`, `2` | Legacy `DefineFont` codepoint table, composed over its outline source | 14 |
 | `DefineText`, `DefineText2` | Placed glyph outlines, scaled and coloured per record | 6 |
 | `DefineButton`, `DefineButton2` | The up state, as a one-frame timeline | 6 |
 | `DefineBits` + `JPEGTables` | A spliced JPEG payload on an asset reference | 1 |
@@ -42,7 +43,7 @@ These are read past. Each is a decision, not an oversight.
 | `DoABC`, `DoInitAction` | Bytecode. The charter exposes it at most as an opaque blob and never executes it; running it is [an anti-goal](../../anti-goals.md). AVM2 puts `stop()` behind a constant pool, method bodies, and the `addFrameScript` calls a generated class constructor makes — a decode surface that belongs in its own cell, per the charter's 2026-07-25 ruling. `@flighthq/abc` now reads the container; what remains is instruction decoding and the Flash-side recognition, which stays in `swf`. | 187 / 11 |
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
-| `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings`, `DefineFontInfo`, `2` | Font hinting and naming metadata. Nothing draws from it until edit text does. | 15 / 14 / 7 |
+| `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 7 |
 | `DefineSound`, `SoundStreamHead`, `2`, `SoundStreamBlock`, `StartSound` | Audio is not scene-graph content. A `Scene2DDocument` holds a 2D graph; routing sound into `@flighthq/audio` is a separate contract. | 2 / 2 |
 | `DefineBinaryData` | Arbitrary embedded bytes with no display meaning. | 2 |
 | `VideoFrame` | Video payload frames; the stream's extents are already carried. | 1 |

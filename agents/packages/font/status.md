@@ -1,10 +1,17 @@
 ---
 package: '@flighthq/font'
-updated: 2026-06-25
-by: builder-phase2.9
+updated: 2026-08-01
+by: builder4
 ---
 
 # font — Status Log
+
+## 2026-08-01 — glyph outline source composition
+
+Added the format-neutral, glyph-index-keyed `GlyphOutlineSource` seam (types remain in
+`@flighthq/types`) and `createGlyphRasterizerBackendFromGlyphOutlineSource`. The adapter rasterizes paths
+with deterministic portable supersampling and no canvas/DOM dependency, so SWF today and a general
+TTF/OTF parser later can feed glyphatlas without becoming or widening its raster `GlyphSource`.
 
 ## 2026-06-25 — extracted from @flighthq/resources (resources eliminated)
 

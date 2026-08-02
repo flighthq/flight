@@ -41,21 +41,24 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
 - `DefineBits` with `JPEGTables` splices the legacy split-JPEG form back into one payload — the tables
   lose their end marker, the image its start marker. A pair that will not splice contributes no image and
   leaves the document alone; real files carry the halves inside sprites and in either order.
-- `DefineFont`, `DefineFont2`, and `DefineFont3` decode their glyph outlines as paths. An embedded SWF
-  font is a table of path outlines in its own EM grid, so that is what crosses — no text stack is
-  consulted and no glyph source is synthesized. Glyphs are indexed the way a static text record addresses
-  them, a glyph whose outline fails costs that glyph rather than the font, and a version 3 font's finer
-  grid (twenty times a version 1 or 2 font's) is carried so the same outline scales correctly.
+- `DefineFont`, `DefineFont2`, and `DefineFont3` decode into the generic, index-keyed
+  `GlyphOutlineSource` seam and are publicly recoverable by SWF character id through
+  `createGlyphOutlineSourcesFromSwf`. An embedded SWF font is a table of paths in its own EM grid, so no
+  text stack is consulted: `DefineFont2/3` contribute their codepoint, advance, and vertical-metric
+  tables; a separate `DefineFontInfo/2` supplies legacy `DefineFont` codepoints. A glyph whose outline
+  fails costs that glyph rather than the font, and a version 3 font's finer grid (twenty times a version 1
+  or 2 font's) is carried so the same outline scales correctly.
 - `DefineText` and `DefineText2` compose into drawable geometry: a text record carries glyph indices and
   advances rather than characters, so this is placement rather than layout — each glyph is emitted at the
   pen position, scaled by the record height over the font's EM units, recoloured from the record, and the
-  pen advances by the recorded amount. Composition is deferred until the whole file is walked, because a
-  text record may address a font declared after it.
+  pen advances by the recorded amount. It consumes the same `GlyphOutlineSource` exposed to other font
+  consumers. Composition is deferred until the whole file is walked, because a text record may address a
+  font declared after it.
 - `DefineEditText` still materializes nothing. It carries a *string* plus a font reference and layout
   properties, not glyph indices, so drawing it needs the font's code table and advances plus line
   breaking — and flattening it to paths at import would destroy the one thing that makes it edit text.
-  The glyph outlines it would draw from are now imported; what is missing is a path-backed glyph source
-  to consume them, which is deliberately a later piece of work.
+  The reusable path-backed source, codepoint lookup, advances, and metrics now exist; materializing an
+  editable/layout node over that source is the remaining text-layer work.
 - A placement earns a node when it is named, carries a timeline, or now has geometry, so unnamed shapes —
   most of what a still frame is made of — are materialized. Each placement of a shape character gets its
   own copy of the decoded commands.
