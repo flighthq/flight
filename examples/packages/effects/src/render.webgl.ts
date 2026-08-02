@@ -1,23 +1,32 @@
 import type { Node2D, RenderEffect } from '@flighthq/sdk';
 import {
-  ShapeKind,
   beginGlRenderEffectPipeline,
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  enableFlightDiagnostics,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultGlShapeRenderer,
+  enableFlightDiagnostics,
   endGlRenderEffectPipeline,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
   registerGlBloomEffect,
+  registerGlShapeRasterizer,
+  registerGlStandardMaterial,
   registerGlToneMapEffect,
   registerGlVignetteEffect,
   registerGlWhiteBalanceEffect,
-  registerGlStandardMaterial,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
+  ShapeKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -34,6 +43,18 @@ enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+
+// The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
+// has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
+// shape from silently going missing the moment one is added.
+const shapeRasterizerResolvers = getCanvasRenderStateTextureResolvers(
+  createCanvasRenderState(document.createElement('canvas')),
+);
+registerCanvasImageTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerGlBloomEffect(state);
 registerGlVignetteEffect(state);
 registerGlToneMapEffect(state);

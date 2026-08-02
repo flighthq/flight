@@ -1,12 +1,21 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  enableFlightDiagnostics,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultWgpuShapeRenderer,
+  enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
-  registerWgpuStandardMaterial,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
   registerRenderer,
+  registerWgpuShapeRasterizer,
+  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   ShapeKind,
@@ -26,6 +35,18 @@ enableFlightDiagnostics(state);
 
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+
+// The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
+// has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
+// shape from silently going missing the moment one is added.
+const shapeRasterizerResolvers = getCanvasRenderStateTextureResolvers(
+  createCanvasRenderState(document.createElement('canvas')),
+);
+registerCanvasImageTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 
 export const scale = pixelRatio;
 

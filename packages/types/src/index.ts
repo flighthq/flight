@@ -514,6 +514,7 @@ export * from './ShadedMaterial';
 export * from './Shape';
 export * from './ShapeCommand';
 export * from './ShapeRasterizer';
+export * from './ShapeTessellationExplanation';
 export * from './ShapedRun';
 export * from './ShapeFillRegion';
 export * from './ShapeStrokeRegion';
