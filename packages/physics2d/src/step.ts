@@ -6,72 +6,14 @@ import type {
   Physics2DJoint,
   Physics2DWorld,
   RigidBody2D,
-  SpatialAabb,
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform';
+import { synchronizePhysics2DBroadphase } from './broadphase';
+import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
-
-// Refreshes every collider's world shape and republishes its bounds to the broadphase index.
-function updatePhysics2DBroadphase(world: Physics2DWorld): void {
-  for (const body of world.bodies) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const collider of body.colliders) {
-      updatePhysics2DColliderWorldShape(collider, body);
-      writePhysics2DColliderBounds(collider, boundsScratch);
-      if (boundsScratch.minX < minX) minX = boundsScratch.minX;
-      if (boundsScratch.minY < minY) minY = boundsScratch.minY;
-      if (boundsScratch.maxX > maxX) maxX = boundsScratch.maxX;
-      if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
-    }
-    if (minX > maxX) {
-      // No collider produced bounds, so there is nothing to index. Withdraw rather than skip: the id
-      // may have been indexed on a previous step, and a stale AABB keeps generating pairs for a body
-      // this step has already decided not to collide.
-      world.index.removeSpatialObject(body.index);
-      continue;
-    }
-    // Bounds this package declines to hand to the broadphase — a physics judgement, kept as
-    // defence in depth rather than as a substitute for the index's own bound.
-    //
-    // `@flighthq/spatial` now bounds its own insert cost (non-finite bounds are declined with a
-    // sentinel, oversized ones go to a flat overflow list), so this is no longer what stands between a
-    // diverging body and a hung caller. What it still expresses is a rigid-body world's own opinion:
-    // a body that is non-finite, or ten million units across, has diverged by any measure this
-    // simulation cares about, and continuing to collide it wastes narrow-phase work on a result
-    // already meaningless. Skipping it stops that one body colliding and lets the rest of the world
-    // keep simulating.
-    //
-    // Keeping it also keeps the two packages honest about ownership: the cost bound is the index's,
-    // and this is a divergence filter that happens to share its shape.
-    if (
-      !Number.isFinite(minX) ||
-      !Number.isFinite(minY) ||
-      !Number.isFinite(maxX) ||
-      !Number.isFinite(maxY) ||
-      maxX - minX > MAX_SIMULATED_EXTENT ||
-      maxY - minY > MAX_SIMULATED_EXTENT
-    ) {
-      // Withdraw the body from the index instead of merely skipping the update. Skipping left
-      // whatever AABB it had last step in place, so a body this filter had declared diverged went on
-      // producing broadphase pairs and holding live contacts from its last valid pose — the opposite
-      // of the "stops colliding" this comment claims. Removal is a no-op for an id never indexed.
-      world.index.removeSpatialObject(body.index);
-      continue;
-    }
-    bodyBounds.minX = minX;
-    bodyBounds.minY = minY;
-    bodyBounds.maxX = maxX;
-    bodyBounds.maxY = maxY;
-    world.index.updateSpatialObject(body.index, bodyBounds);
-  }
-}
 
 // Builds this step's contact set from the broadphase pairs, preserving each surviving contact's cached
 // impulses.
@@ -386,7 +328,7 @@ function effectiveMass(
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   if (!(dt > 0)) return;
 
-  updatePhysics2DBroadphase(world);
+  synchronizePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
 
   const preSolve = world.contactHooks.preSolve;
@@ -562,11 +504,6 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
   return left.colliderB - right.colliderB;
 }
 
-// The widest body this world still treats as simulating. Named for what it bounds — the simulation's
-// tolerance for divergence — not for the index, which bounds its own insert cost independently.
-const MAX_SIMULATED_EXTENT = 1e7;
-const boundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-const bodyBounds: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const pairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };

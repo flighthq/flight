@@ -568,6 +568,22 @@ export interface Physics2DContactEvents {
   ended: Physics2DContact[];
 }
 
+// One exact collider hit from a world query. References point at the world's existing plain-data
+// records; the query allocates neither a body nor a collider and `colliderIndex` preserves the stable
+// route back through `body.colliders` when a caller needs to retain an identity instead of a reference.
+export interface Physics2DQueryHit {
+  body: RigidBody2D;
+  collider: Physics2DCollider;
+  colliderIndex: number;
+}
+
+// Query output retains its high-water storage, following the debug-geometry buffer convention. Only
+// entries below `hitCount` belong to the latest query.
+export interface Physics2DQueryResult {
+  hits: Physics2DQueryHit[];
+  hitCount: number;
+}
+
 export type Physics2DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
 
 // Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
