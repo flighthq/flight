@@ -194,6 +194,33 @@ describe('createScene2DFromSwf', () => {
     expect(document!.references[0].name).toBe('logo');
   });
 
+  it('accepts a tag stream that reaches its end without an End tag', () => {
+    // Flash's own tooling ends a sprite — and sometimes the root — with its last content tag and no
+    // terminator. Rejecting those would lose the whole document over a byte no reader needs.
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            createTag(
+              TAG_PLACE_OBJECT_2,
+              joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('kid')),
+            ),
+            createTag(TAG_SHOW_FRAME),
+          ),
+        ),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
+        createTag(TAG_SHOW_FRAME),
+      ]),
+    );
+
+    expect(document?.references.map((reference) => reference.name)).toEqual(['kid']);
+    // An empty stream is an empty movie, not a malformed one.
+    expect(createScene2DFromSwf(createSwf([]))?.references).toEqual([]);
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -915,15 +942,6 @@ describe('createScene2DFromSwf', () => {
     compressed[0] = 0x43;
     expect(createScene2DFromSwf(compressed)).toBeNull();
     expect(createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]))).toBeNull();
-    expect(createScene2DFromSwf(createSwf([]))).toBeNull();
-    expect(
-      createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_SPRITE, joinBytes(uint16(1), uint16(1), createTag(TAG_SHOW_FRAME))),
-          createTag(TAG_END),
-        ]),
-      ),
-    ).toBeNull();
     expect(
       createScene2DFromSwf(
         createSwf([

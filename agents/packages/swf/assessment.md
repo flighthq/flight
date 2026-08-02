@@ -19,8 +19,9 @@ basedOn: ./review.md
    blend mode, clip-depth mask, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
    yet. A frame's visual state is narrower than its structural state until these cross.
-3. **Complete container seams and compatibility coverage.** Route `CWS`/`ZWS` through registered
-   decompressors, expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
+3. **Decompress `CWS`/`ZWS` — the single highest-leverage gap.** A 306-file sweep of Ruffle's corpus puts
+   79% of real SWFs behind zlib or LZMA, so compression, not tag breadth, is what stands between this
+   importer and the bulk of existing content. Route it through registered decompressors, expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
    beyond the canonical single-frame named-shape fixture — no external animated file has crossed the
    importer, so multi-frame behavior rests on synthetic bytes alone.
 

@@ -77,8 +77,9 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   identity.
 - `registerSwfScene2DDocumentImporter` explicitly opts the codec into a caller-owned
   `scene2d-resources` registry; importing the module has no registration side effect.
-- Missing sprite End tags, duplicate definitions, cyclic symbol graphs, excessive nesting, and
-  excessive instantiated-node counts reject safely. Retaining whole frames added an amplification path —
+- A tag stream is complete when it reaches its bounded end, with or without an explicit End tag: Flash's
+  own tooling ends a sprite, and sometimes the root, on its last content tag. Duplicate definitions, cyclic
+  symbol graphs, excessive nesting, and excessive instantiated-node counts still reject safely. Retaining whole frames added an amplification path —
   a display list placed once can be multiplied by every ShowFrame that follows it — so a per-document
   snapshot budget rejects a file that would exceed it, rather than materializing it.
 - Compressed `CWS`/`ZWS`, bitmap and text definition bodies, legacy table-based JPEG/button/font extents,
@@ -104,7 +105,10 @@ and encoding cases, and a shape suite over hand-written SHAPEWITHSTYLE bytes: a 
 conversion with a quadratic edge, right-hand fill reversal, run stitching across a move, Shape 3 alpha,
 stroke width and style, gradient passthrough, unpainted bitmap fills, and both malformed-body rejections —
 plus end-to-end placement, per-instance geometry, and the unparseable-body placeholder. A canonical
-uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`; its exact revision,
+uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`, and a 306-file sweep of
+Ruffle's test corpus now backs the parser end to end — nothing throws, every uncompressed file imports, and
+the only rejections are the 79% of that corpus which is compressed. The sweep is what exposed the End-tag
+defect above; its exact revision,
 MIT license, source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
 [`fixture-evidence.md`](fixture-evidence.md). The external binary is not committed, and the hermetic
 test suite reproduces its zero-bit RECT compatibility case synthetically.

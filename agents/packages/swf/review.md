@@ -71,6 +71,9 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   `DefineSceneAndFrameLabelData` record, deduplicated, ordered by frame, and dropped when they name a
   frame the timeline never reaches. The header's 8.8-fixed frame rate reaches the engine as the source
   frame rate.
+- Tolerance matches the format as written rather than as specified: a tag stream ends at its bounded end
+  with or without an explicit End tag, which is what Flash's own tooling emits, while truncation is still
+  caught by the declared length, by a tag body reaching past its stream, and by the reader's overrun flag.
 - Retaining whole frames is bounded. A per-document snapshot budget rejects a file that would multiply a
   small display list past it, closing the amplification path that whole-frame retention opens.
 - The stage RECT persists as root-local authored bounds. `DefineShape*`, `DefineText*`,
@@ -112,9 +115,11 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   across its frames, so it is stable but looser than a per-frame extent would be.
 - `CWS`/`ZWS` are recognized but rejected until the chartered registered decompression seam exists.
   `DoABC` remains skipped rather than exposed as an opaque blob.
-- Real-file evidence currently covers one small externally produced uncompressed named-shape fixture,
-  and that fixture is single-frame — every animated-timeline claim above rests on synthetic bytes, with
-  no external multi-frame file crossed yet. There is still no diagnostic query, fuzz/property coverage,
+- Real-file evidence now spans a 306-file sweep of Ruffle's test corpus as well as the canonical
+  fixture: nothing throws, every uncompressed file imports, and all 247 rejections are compressed
+  containers. That retires the "no external file has crossed this importer" caveat for parsing. It does
+  not retire it for rendering — nothing in the sweep is rasterized, so geometry is checked as commands,
+  never as pixels, and no external file has been compared against a reference player. There is still no diagnostic query, fuzz/property coverage,
   or representative external corpus for nested timelines, linkage variants, or the broader supported
   extent prefixes. Display-list opcode generations, move/update/replacement state, frame sequencing, and
   nested traversal remain covered synthetically, including unnamed intermediate symbols, removal,
