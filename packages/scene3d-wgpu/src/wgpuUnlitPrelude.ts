@@ -205,6 +205,9 @@ struct UnlitMaterial {
   if (ALPHA_MASK && color.a < material.params.y) {
     discard;
   }
+  if (ALPHA_MASK) {
+    color.a = 1.0;
+  }
   return flightPremultipliedOutput(vec4f(color.rgb * material.params.x, color.a * in.objectAlpha));
 }
 `;

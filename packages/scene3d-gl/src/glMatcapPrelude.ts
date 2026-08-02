@@ -119,6 +119,7 @@ void main() {
 #endif
 #ifdef ALPHA_MASK
   if (color.a < u_alphaCutoff) discard;
+  color.a = 1.0;
 #endif
   fragColor = color;
 ${GL_MESH_FRAGMENT_TAIL}

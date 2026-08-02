@@ -202,6 +202,9 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   if (ALPHA_MASK && baseColor.a < material.params.y) {
     discard;
   }
+  if (ALPHA_MASK) {
+    baseColor.a = 1.0;
+  }
 
   var normal = normalize(in.worldNormal);
   // Double-sided materials flip the normal for back faces so both sides shade correctly.
