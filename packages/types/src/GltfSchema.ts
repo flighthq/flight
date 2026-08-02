@@ -99,11 +99,68 @@ export interface GltfMaterial {
   // Open, kind-keyed material extensions. The named ones are those an individually importable handler
   // reads; the index signature keeps an unknown vendor extension addressable rather than erased.
   extensions?: {
+    KHR_materials_anisotropy?: GltfMaterialsAnisotropy;
     KHR_materials_clearcoat?: GltfMaterialsClearcoat;
     KHR_materials_emissive_strength?: GltfMaterialsEmissiveStrength;
+    KHR_materials_ior?: GltfMaterialsIor;
+    KHR_materials_iridescence?: GltfMaterialsIridescence;
     KHR_materials_sheen?: GltfMaterialsSheen;
+    KHR_materials_specular?: GltfMaterialsSpecular;
+    KHR_materials_transmission?: GltfMaterialsTransmission;
+    KHR_materials_volume?: GltfMaterialsVolume;
     [kind: string]: unknown;
   };
+}
+
+// KHR_materials_anisotropy wire block: directionally stretches the microfacet response along the mesh
+// tangents. `anisotropyTexture` packs the tangent-space direction in RG and the strength in B.
+export interface GltfMaterialsAnisotropy {
+  anisotropyRotation?: number;
+  anisotropyStrength?: number;
+  anisotropyTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_ior wire block: the dielectric index of refraction. Spec default 1.5 (common glass);
+// 1.0 is the documented escape meaning "no dielectric specular at all".
+export interface GltfMaterialsIor {
+  ior?: number;
+}
+
+// KHR_materials_iridescence wire block: view-dependent thin-film interference. The two thickness bounds
+// are in NANOMETRES and the texture's green channel interpolates between them.
+export interface GltfMaterialsIridescence {
+  iridescenceFactor?: number;
+  iridescenceIor?: number;
+  iridescenceTexture?: GltfTextureInfo;
+  iridescenceThicknessMaximum?: number;
+  iridescenceThicknessMinimum?: number;
+  iridescenceThicknessTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_specular wire block: independent dielectric F0 strength and color. The strength rides
+// the ALPHA channel of `specularTexture` while the color is the RGB of `specularColorTexture`.
+export interface GltfMaterialsSpecular {
+  specularColorFactor?: number[];
+  specularColorTexture?: GltfTextureInfo;
+  specularFactor?: number;
+  specularTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_transmission wire block: how much light refracts THROUGH the surface rather than
+// reflecting off it. The factor rides the red channel of `transmissionTexture`.
+export interface GltfMaterialsTransmission {
+  transmissionFactor?: number;
+  transmissionTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_volume wire block: the absorbing interior transmitted light crosses. Only meaningful
+// alongside transmission. `attenuationDistance` defaults to +Infinity — no absorption at any depth —
+// and `attenuationColor` is LINEAR RGB.
+export interface GltfMaterialsVolume {
+  attenuationColor?: number[];
+  attenuationDistance?: number;
+  thicknessFactor?: number;
+  thicknessTexture?: GltfTextureInfo;
 }
 
 // KHR_materials_clearcoat wire block: a second dielectric specular layer. `clearcoatTexture` carries the

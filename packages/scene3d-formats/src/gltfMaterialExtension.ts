@@ -46,3 +46,21 @@ export function attachGltfPbrExtension(document: Scene3DDocument, index: number,
   document.materials[index] = promoted as unknown as MaterialLike;
   return true;
 }
+
+// The PBR extension of `kind` already attached to the document material at `index`, or null.
+//
+// Needed because the glTF↔Flight extension mapping is not one-to-one: `TransmissionVolumePbrExtension`
+// is the single descriptor for KHR_materials_transmission, _volume, AND _ior, so three independently
+// imported handlers fill three parts of one object. Each looks for the descriptor a sibling may already
+// have attached and fills its own fields, rather than attaching a second of the same kind (which
+// attachGltfPbrExtension drops).
+export function findGltfPbrExtension(
+  document: Readonly<Scene3DDocument>,
+  index: number,
+  kind: string,
+): PbrExtension | null {
+  const material = document.materials[index];
+  if (material === undefined || material.kind !== ExtendedPbrMaterialKind) return null;
+  const extended = material as unknown as ExtendedPbrMaterial;
+  return extended.extensions.find((entry) => entry.kind === kind) ?? null;
+}
