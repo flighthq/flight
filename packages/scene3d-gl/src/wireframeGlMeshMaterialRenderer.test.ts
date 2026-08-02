@@ -68,6 +68,20 @@ describe('wireframeGlMeshMaterialRenderer', () => {
     expect(draw!.args[1]).toBe(proxy.subset.indexCount * 2);
   });
 
+  // This family binds its own line-index VAO and bypasses drawGlMeshSubset, which is where every other
+  // family gets its per-draw object alpha. While that upload was only inside drawGlMeshSubset the
+  // wireframe shader read u_objectAlpha = 0, harmless until the fragment tail began premultiplying rgb
+  // by alpha and turned the whole frame black.
+  it('draw uploads the per-draw object alpha it cannot get from drawGlMeshSubset', () => {
+    const { state, gl } = makeGlScene3DState();
+    const proxy = makeProxy();
+    proxy.alpha = 0.5;
+    wireframeGlMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
+    wireframeGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
+
+    expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+  });
+
   it('draw is a no-op when bind has not selected a program', () => {
     const { state, gl } = makeGlScene3DState();
     wireframeGlMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());

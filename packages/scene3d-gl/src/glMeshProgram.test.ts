@@ -18,6 +18,7 @@ import {
   beginGlMeshDraw,
   bindGlUvTransform,
   compileGlProgram,
+  uploadGlMeshObjectAlpha,
   destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlScene3DProgram,
@@ -425,5 +426,32 @@ describe('setGlMeshViewProjection', () => {
     const upload = gl.calls.find((c) => c.name === 'uniformMatrix4fv');
     expect(upload).toBeDefined();
     expect((upload!.args[2] as Float32Array)[0]).toBeCloseTo(Math.sqrt(3) / 2);
+  });
+});
+
+describe('uploadGlMeshObjectAlpha', () => {
+  // Regression guard for the wireframe blank-frame defect: this upload used to live inside
+  // drawGlMeshSubset, so the one family that bypasses that function shipped u_objectAlpha = 0 —
+  // invisible until the fragment tail began premultiplying rgb by alpha, then a black frame.
+  it('uploads the alpha and resolves the location once across draws', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = makeProgram();
+    program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
+
+    uploadGlMeshObjectAlpha(state.gl, program, 0.25);
+    uploadGlMeshObjectAlpha(state.gl, program, 1);
+
+    expect(gl.calls.filter((c) => c.name === 'uniform1f').map((c) => c.args[1])).toEqual([0.25, 1]);
+    expect(gl.calls.some((c) => c.name === 'getUniformLocation' && c.args[0] === 'u_objectAlpha')).toBe(false);
+  });
+
+  it('skips silently for a program whose shader does not declare the uniform', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = makeProgram();
+    program.locObjectAlpha = null; // resolved: this shader has no u_objectAlpha
+
+    uploadGlMeshObjectAlpha(state.gl, program, 0.25);
+
+    expect(gl.calls.some((c) => c.name === 'uniform1f')).toBe(false);
   });
 });
