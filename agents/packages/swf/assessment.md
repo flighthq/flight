@@ -22,7 +22,11 @@ basedOn: ./review.md
    asynchronous resolver can take from `DecompressionStream` rather than vendoring. Whether that resolver
    ships from `swf`, from `scene2d-resources`, or from an application is the open question. Text and font
    definitions remain structural after that.
-2. **Carry per-frame appearance and frame scripts** (lower than it looks — see the measurements above). Placement transforms and clip-depth masks replay; the
+2. **AVM2 timeline control, then per-frame appearance.** AVM1 playback commands now import; AVM2 does not,
+   and it is the larger share — `DoABC` appears in 187 corpus files against 101 for `DoAction`. Recognizing
+   a frame's `stop()` there needs the ABC constant pool, method bodies, and the `addFrameScript` calls a
+   compiler-generated MovieClip subclass constructor makes, which the charter's blessed 2026-07-25 ruling
+   places in its own cell behind a seam rather than here. Then per-frame appearance (lower than it looks — see the measurements above). Placement transforms and clip-depth masks replay; the
    color transform, blend mode, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
    yet. A frame's visual state is narrower than its structural state until these cross.

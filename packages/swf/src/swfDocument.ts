@@ -1,7 +1,7 @@
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
-import { createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
+import { addMovieClipFrameScript, createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
 import {
   createScene2DAssetReference,
@@ -23,6 +23,7 @@ import type {
   Scene2DContentReference,
   Scene2DDocument,
   Scene2DDocumentImportContext,
+  FrameScript,
   Scene2DDocumentImporterRegistry,
   Shape,
   ShapeData,
@@ -31,6 +32,7 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
+import { readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 import { createSwfTextShape, readSwfFontGlyphs, resolveSwfFontUnitsPerEm } from './swfText';
@@ -120,6 +122,9 @@ interface SwfPlacement {
 // labels declared against those frames. Frames are complete snapshots rather than the authored deltas, so
 // a seek to any frame is a plain lookup and never has to replay the frames before it.
 interface SwfTimeline {
+  // Recognized timeline commands, keyed by the frame that carries them. Only blocks made entirely of
+  // playback commands appear here; see readSwfFrameActions.
+  actions: Map<number, FrameScript>;
   frames: Map<number, SwfPlacement>[];
   labels: TimelineLabel[];
 }
@@ -317,6 +322,11 @@ function populateSwfTimelineNode(
   }
 
   setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, state.frameRate));
+  // Frame scripts attach after the source, so the clip already knows how many frames it has when a
+  // recognized command addresses one.
+  for (const [frame, script] of timeline.actions) {
+    if (frame <= frames.length) addMovieClipFrameScript(clip, frame, script);
+  }
   return true;
 }
 
@@ -744,6 +754,7 @@ function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): vo
 
 function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
   const placements = new Map<number, SwfPlacement>();
+  const actions = new Map<number, FrameScript>();
   const frames: Map<number, SwfPlacement>[] = [];
   const labels: TimelineLabel[] = [];
 
@@ -762,6 +773,10 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       state.remainingFrameEntries -= placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
       frames.push(new Map(placements));
+    } else if (code === TAG_DO_ACTION) {
+      // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
+      const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
+      if (script !== null) actions.set(frames.length + 1, script);
     } else if (code === TAG_FRAME_LABEL) {
       addSwfTimelineLabel(labels, frames.length + 1, body.readString());
     } else if (code === TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA) {
@@ -815,6 +830,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
   // A timeline that never shows a frame still has the one display list its tags built.
   if (frames.length === 0) frames.push(placements);
   return {
+    actions,
     frames,
     // A label declared after the last ShowFrame names a frame the timeline never reaches.
     labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
@@ -859,7 +875,7 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
   }
 
   state.definedCharacters.add(buttonId);
-  state.sprites.set(buttonId, { frames: [placements], labels: [] });
+  state.sprites.set(buttonId, { actions: new Map<number, FrameScript>(), frames: [placements], labels: [] });
 }
 
 // Font glyphs decode on a reader of their own, so a font this decoder cannot read costs its glyphs and
@@ -1237,6 +1253,7 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;
+const TAG_DO_ACTION = 12;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FRAME_LABEL = 43;
 const TAG_JPEG_TABLES = 8;

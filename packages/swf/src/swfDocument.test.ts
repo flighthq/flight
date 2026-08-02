@@ -2,8 +2,11 @@ import { registerDecompressor, unregisterDecompressor } from '@flighthq/compress
 import {
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
+  getMovieClipFrameScript,
   getMovieClipTotalFrames,
   gotoAndStopMovieClip,
+  isMovieClipPlaying,
+  playMovieClip,
 } from '@flighthq/movieclip/contract';
 import {
   getNodeChildren,
@@ -480,6 +483,43 @@ describe('createScene2DFromSwf', () => {
     expect(bytes.subarray(0, 2)).toEqual(new Uint8Array([0xff, 0xd8]));
     expect(bytes.length).toBe(tables.length - 2 + image.length - 2);
     expect(getNodeLocalBoundsRectangle(reference.target)).toMatchObject({ height: 8, width: 16 });
+  });
+
+  it('binds a recognized DoAction to the frame that carries it', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_SHOW_FRAME),
+        // Frame 2 carries a bare stop, the overwhelmingly common timeline script.
+        createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    expect(getMovieClipTotalFrames(root)).toBe(2);
+    expect(getMovieClipFrameScript(root, 2)).not.toBeNull();
+    expect(getMovieClipFrameScript(root, 1)).toBeNull();
+
+    playMovieClip(root);
+    expect(isMovieClipPlaying(root)).toBe(true);
+    // Reaching frame 2 runs its script, which stops the clip — the behaviour the file described, applied
+    // through Flight's own API rather than by executing anything the file carried.
+    gotoAndStopMovieClip(root, 2);
+    expect(isMovieClipPlaying(root)).toBe(false);
+  });
+
+  it('leaves a frame whose actions are not purely playback commands unbound', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        // A push then a stop: partially legible, and therefore declined whole.
+        createTag(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x07, 0x00])),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(getMovieClipFrameScript(document!.root as MovieClip, 1)).toBeNull();
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
@@ -1576,6 +1616,7 @@ const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
+const TAG_DO_ACTION = 12;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_JPEG_TABLES = 8;
 const TAG_FRAME_LABEL = 43;
