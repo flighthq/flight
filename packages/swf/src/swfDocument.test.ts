@@ -13,6 +13,7 @@ import {
   gotoAndStopMovieClip,
   isMovieClipPlaying,
   playMovieClip,
+  updateMovieClip,
 } from '@flighthq/movieclip/contract';
 import {
   getNodeChildren,
@@ -1262,6 +1263,63 @@ describe('createScene2DFromSwf', () => {
     gotoAndStopMovieClip(panel, 2);
     expect(getNodeChildren(panel)).toEqual([secondChild]);
     expect(getNodeParent(panel)).toBe(root);
+  });
+
+  it('imports every timeline stopped, on its own playhead, with looping already the play mode', () => {
+    // Flash plays the root and every nested clip automatically and forever. Flight does neither on its
+    // own: a document is inert until a caller plays it, and each clip advances only when that clip is
+    // updated. Both are deliberate, and both are what an author expects to be free — so they are pinned
+    // here rather than left to be rediscovered by a sample that renders one frame and stops.
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(2),
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(8))),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('panel')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    const panel = document!.slots[0].target as MovieClip;
+
+    // Stopped, but already set to loop — so playing one is all it takes for it to run forever.
+    expect(root.data.timeline?.isPlaying).toBe(false);
+    expect(panel.data.timeline?.isPlaying).toBe(false);
+    expect(root.data.timeline?.playMode).toBe('loop');
+    expect(panel.data.timeline?.playMode).toBe('loop');
+
+    // Playing and updating the root advances the root alone; the nested clip has its own playhead and
+    // its own update, which is why a whole-document animation needs every clip played and updated.
+    // One frame's worth of time at the header's 24fps, so the step is a frame rather than a wrap.
+    const frameMs = 1000 / 24;
+    playMovieClip(root);
+    updateMovieClip(root, frameMs);
+    expect(getMovieClipCurrentFrame(root)).toBe(2);
+    expect(getMovieClipCurrentFrame(panel)).toBe(1);
+
+    playMovieClip(panel);
+    updateMovieClip(panel, frameMs);
+    expect(getMovieClipCurrentFrame(panel)).toBe(2);
+
+    // And past the last frame it wraps rather than stopping, with no frame script involved.
+    updateMovieClip(panel, frameMs);
+    expect(getMovieClipCurrentFrame(panel)).toBe(1);
   });
 
   it('uses a PlaceObject4 class name as direct slot linkage while ignoring later metadata', () => {

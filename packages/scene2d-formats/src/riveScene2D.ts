@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -13,7 +14,7 @@ import type {
   RiveDocumentImportResult,
   Shape,
 } from '@flighthq/types/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, ShapeKind } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
@@ -35,10 +36,13 @@ export function createScene2DFromRiveDocument(
   if (document === null) return { artboards: [] };
 
   const graph = createRiveObjectGraph(document, diagnostics);
-  return { artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard)) };
+  return { artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard, diagnostics)) };
 }
 
-function createRiveArtboardImport(artboard: Readonly<RiveArtboardGraph>): RiveArtboardImport {
+function createRiveArtboardImport(
+  artboard: Readonly<RiveArtboardGraph>,
+  diagnostics: ImportDiagnostic[] | undefined,
+): RiveArtboardImport {
   const source = artboard.objects[0];
   const width = readRiveNumber(source, RIVE_WIDTH, 0);
   const height = readRiveNumber(source, RIVE_HEIGHT, 0);
@@ -60,7 +64,7 @@ function createRiveArtboardImport(artboard: Readonly<RiveArtboardGraph>): RiveAr
     // separate nodes would break the compositing the format states.
     if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_PATH_TYPE_KEY)) {
       nodes.push(null);
-      appendRivePathGeometry(nodes, artboard, index);
+      appendRivePathGeometry(nodes, artboard, index, diagnostics);
       continue;
     }
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
@@ -81,11 +85,25 @@ function appendRivePathGeometry(
   nodes: ReadonlyArray<DisplayObject | null>,
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): void {
+  // A path belongs to a shape — every one of the 3,776 paths in the reference corpus is a shape's
+  // direct child — so this is a malformed file rather than a shape of the format. It still crumbs
+  // instead of vanishing, because the geometry would otherwise leave no trace.
   const target = findRiveDisplayParent(nodes, artboard.parentIndices, index);
-  if (target === null || target.kind !== ShapeKind) return;
+  if (target === null || target.kind !== ShapeKind) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'rive.path-outside-shape',
+      'createScene2DFromRiveDocument',
+      { index },
+    );
+    return;
+  }
   const source = artboard.objects[index];
   const path = createRivePath(source, artboard, index);
+  // An empty result is the file's own doing: a points path may legitimately state no vertices.
   if (path === null || path.commands.length === 0) return;
 
   // A path carries its own transform, and it is no longer a node of its own, so that transform is
