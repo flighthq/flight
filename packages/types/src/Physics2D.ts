@@ -330,13 +330,13 @@ export interface Physics2DJoint {
   rBY: number;
 }
 
-// A distance joint: holds two anchors a fixed distance apart. The bar of a linkage when stiff, a spring
-// when soft. `stiffness` and `damping` are zero for a rigid bar; giving them values turns the constraint
-// into a damped spring, which is the same solve with a softened effective mass.
+// A distance joint: holds two anchors a fixed distance apart. Zero `frequencyHz` makes a rigid bar;
+// positive frequency turns the constraint into a spring, and `dampingRatio` controls its decay where
+// zero is undamped and one is critically damped. These are authoring units, not force coefficients.
 export interface Physics2DDistanceJoint extends Physics2DJoint {
   length: number;
-  stiffness: number;
-  damping: number;
+  frequencyHz: number;
+  dampingRatio: number;
 }
 
 // A revolute joint: pins two bodies at a point, leaving rotation free. A hinge, an axle, a shoulder.
@@ -413,14 +413,15 @@ export interface Physics2DPrismaticJoint extends Physics2DJoint {
 }
 
 // A wheel joint: constrains the anchors laterally while allowing suspension travel along body A's
-// local axis. The suspension is a damped spring around `restTranslation`; zero stiffness leaves that
-// axis free. The optional angular motor drives B relative to A, independently of suspension travel.
+// local axis. The suspension is a damped spring around `restTranslation`; zero `frequencyHz` leaves that
+// axis free and `dampingRatio` controls the spring's decay. The optional angular motor drives B relative
+// to A, independently of suspension travel.
 export interface Physics2DWheelJoint extends Physics2DJoint {
   localAxisAX: number;
   localAxisAY: number;
   restTranslation: number;
-  stiffness: number;
-  damping: number;
+  frequencyHz: number;
+  dampingRatio: number;
   enableMotor: boolean;
   motorSpeed: number;
   maxMotorTorque: number;
@@ -430,12 +431,13 @@ export interface Physics2DWheelJoint extends Physics2DJoint {
 // A mouse joint: drags one body toward a moving world-space target with bounded force. The odd one out —
 // it constrains a body to a POINT rather than to another body, which is why it is soft by construction:
 // a rigid drag would let a user inject unbounded energy by moving the cursor faster than the simulation.
+// `frequencyHz` is the response frequency and `dampingRatio` is its dimensionless decay ratio.
 export interface Physics2DMouseJoint extends Physics2DJoint {
   targetX: number;
   targetY: number;
   maxForce: number;
-  stiffness: number;
-  damping: number;
+  frequencyHz: number;
+  dampingRatio: number;
 }
 
 // Authoring inputs for a two-body joint. Factories accept the semantic state a caller owns and fill
@@ -453,8 +455,8 @@ export interface Physics2DJointOptions {
 
 export interface Physics2DDistanceJointOptions extends Physics2DJointOptions {
   length: number;
-  stiffness?: number;
-  damping?: number;
+  frequencyHz?: number;
+  dampingRatio?: number;
 }
 
 export interface Physics2DRevoluteJointOptions extends Physics2DJointOptions {
@@ -511,8 +513,8 @@ export interface Physics2DWheelJointOptions extends Physics2DJointOptions {
   localAxisAX?: number;
   localAxisAY?: number;
   restTranslation?: number;
-  stiffness?: number;
-  damping?: number;
+  frequencyHz?: number;
+  dampingRatio?: number;
   enableMotor?: boolean;
   motorSpeed?: number;
   maxMotorTorque?: number;
@@ -527,8 +529,8 @@ export interface Physics2DMouseJointOptions {
   maxForce: number;
   localAnchorX?: number;
   localAnchorY?: number;
-  stiffness?: number;
-  damping?: number;
+  frequencyHz?: number;
+  dampingRatio?: number;
 }
 
 // The two halves of a joint's solve, registered together under a kind.

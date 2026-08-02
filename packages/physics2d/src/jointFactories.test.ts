@@ -31,8 +31,8 @@ describe('createPhysics2DDistanceJoint', () => {
       rBX: 0,
       rBY: 0,
       length: 3,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     });
   });
 });
@@ -54,7 +54,7 @@ describe('createPhysics2DGearJoint', () => {
 describe('createPhysics2DMouseJoint', () => {
   it('hides the dummy endpoint and owns stable drag defaults', () => {
     const joint = createPhysics2DMouseJoint({ body: 7, targetX: 3, targetY: 4, maxForce: 100 });
-    expect(joint).toMatchObject({ bodyA: 7, bodyB: 7, damping: 0.7, kind: 'Mouse', stiffness: 5 });
+    expect(joint).toMatchObject({ bodyA: 7, bodyB: 7, dampingRatio: 0.7, kind: 'Mouse', frequencyHz: 5 });
   });
 });
 
@@ -145,7 +145,7 @@ describe('createPhysics2DWheelJoint', () => {
       localAxisAX: 0,
       localAxisAY: 1,
       motorImpulse: 0,
-      stiffness: 0,
+      frequencyHz: 0,
     });
   });
 });

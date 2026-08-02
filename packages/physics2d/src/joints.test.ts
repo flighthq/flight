@@ -134,8 +134,8 @@ describe('canonical end ordering and direction-bearing joint state', () => {
     const joint: Physics2DDistanceJoint = {
       ...baseJoint(Physics2DDistanceJointKind, first.index, second.index),
       length: 1,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     };
     addPhysics2DJoint(world, joint);
     expect(joint.bodyA).toBe(second.index);
@@ -154,9 +154,9 @@ describe('joint warm starting', () => {
     const hanging = box(world, 'dynamic', 0, -2);
     const joint: Physics2DDistanceJoint = {
       ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
-      damping: 0,
+      dampingRatio: 0,
       length: 2,
-      stiffness: 0,
+      frequencyHz: 0,
     };
     addPhysics2DJoint(world, joint);
     return { hanging, joint, world };
@@ -191,9 +191,9 @@ describe('joint warm starting', () => {
     const hanging = box(world, 'dynamic', 0, -2);
     addPhysics2DJoint(world, {
       ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
-      damping: 0,
+      dampingRatio: 0,
       length: 2,
-      stiffness: 0,
+      frequencyHz: 0,
     } as Physics2DDistanceJoint);
 
     stepPhysics2D(world, 1 / 60);
@@ -215,9 +215,9 @@ describe('joint warm starting', () => {
     const hanging = box(world, 'dynamic', 0, -2);
     addPhysics2DJoint(world, {
       ...baseJoint(Physics2DDistanceJointKind, anchor.index, hanging.index),
-      damping: 0,
+      dampingRatio: 0,
       length: 2,
-      stiffness: 0,
+      frequencyHz: 0,
     } as Physics2DDistanceJoint);
     expect(() => run(world, 30)).not.toThrow();
     expect(hanging.y).toBeLessThan(-1.5);
@@ -338,7 +338,7 @@ describe('joints built without their impulse accumulators', () => {
   // The same defect on every other solved kind: the revolute motor was the instance that was reported,
   // the generic impulse0/1/2 block is the class.
   const GENERIC_KINDS = [
-    [Physics2DDistanceJointKind, physics2DDistanceJointSolver, { length: 2, stiffness: 0, damping: 0 }],
+    [Physics2DDistanceJointKind, physics2DDistanceJointSolver, { length: 2, frequencyHz: 0, dampingRatio: 0 }],
     [
       Physics2DGearJointKind,
       physics2DGearJointSolver,
@@ -385,17 +385,17 @@ describe('joints built without their impulse accumulators', () => {
       Physics2DWheelJointKind,
       physics2DWheelJointSolver,
       {
-        damping: 0.7,
+        dampingRatio: 0.7,
         enableMotor: false,
         localAxisAX: 0,
         localAxisAY: 1,
         maxMotorTorque: 0,
         motorSpeed: 0,
         restTranslation: 0,
-        stiffness: 4,
+        frequencyHz: 4,
       },
     ],
-    [Physics2DWeldJointKind, physics2DWeldJointSolver, { referenceAngle: 0, stiffness: 0, damping: 0 }],
+    [Physics2DWeldJointKind, physics2DWeldJointSolver, { referenceAngle: 0 }],
   ] as const;
 
   for (const [kind, solver, over] of GENERIC_KINDS) {
@@ -427,8 +427,8 @@ describe('physics2DDistanceJointSolver', () => {
     const joint: Physics2DDistanceJoint = {
       ...baseJoint(Physics2DDistanceJointKind, anchor.index, bob.index),
       length: 2,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     };
     addPhysics2DJoint(world, joint);
     run(world, 240);
@@ -447,8 +447,8 @@ describe('physics2DDistanceJointSolver', () => {
     const joint: Physics2DDistanceJoint = {
       ...baseJoint(Physics2DDistanceJointKind, anchor.index, bob.index),
       length: 2,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     };
     addPhysics2DJoint(world, joint);
     run(world, 600);
@@ -618,8 +618,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1000,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
     run(world, 120);
@@ -635,8 +635,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1000,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
 
@@ -645,7 +645,7 @@ describe('physics2DMouseJointSolver', () => {
     expect(dragged.x).toBeGreaterThan(3);
   });
 
-  it.each([0.5, 5])('keeps a low-stiffness response directed toward the target at stiffness %s', (stiffness) => {
+  it.each([0.5, 5])('keeps a low-frequency response directed toward the target at %s Hz', (frequencyHz) => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);
     const dragged = box(world, 'dynamic', 0, 0);
@@ -654,8 +654,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1_000_000,
-      stiffness,
-      damping: 0.7,
+      frequencyHz,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
 
@@ -680,8 +680,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1000,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
     run(world, 30);
@@ -718,8 +718,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 1000,
       targetY: 0,
       maxForce,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
 
@@ -745,8 +745,8 @@ describe('physics2DMouseJointSolver', () => {
         targetX: 1000,
         targetY: 0,
         maxForce: 1,
-        stiffness: 5,
-        damping: 0.7,
+        frequencyHz: 5,
+        dampingRatio: 0.7,
       };
       addPhysics2DJoint(world, joint);
       stepPhysics2D(world, dt);
@@ -772,8 +772,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1000,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
     expect(joint.bodyB).toBe(dragged.index);
@@ -794,8 +794,8 @@ describe('physics2DMouseJointSolver', () => {
       targetX: 5,
       targetY: 0,
       maxForce: 1000,
-      stiffness: 5,
-      damping: 0.7,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
     };
     addPhysics2DJoint(world, joint);
     expect(joint.bodyB).toBe(dragged.index);
@@ -1394,7 +1394,7 @@ describe('physics2DRopeJointSolver', () => {
 function wheelJoint(bodyA: number, bodyB: number, over: Partial<Physics2DWheelJoint> = {}): Physics2DWheelJoint {
   return {
     ...baseJoint(Physics2DWheelJointKind, bodyA, bodyB),
-    damping: 0.7,
+    dampingRatio: 0.7,
     enableMotor: false,
     localAxisAX: 0,
     localAxisAY: 1,
@@ -1402,7 +1402,7 @@ function wheelJoint(bodyA: number, bodyB: number, over: Partial<Physics2DWheelJo
     motorImpulse: 0,
     motorSpeed: 0,
     restTranslation: -2,
-    stiffness: 4,
+    frequencyHz: 4,
     ...over,
   } as Physics2DWheelJoint;
 }
@@ -1435,7 +1435,7 @@ describe('physics2DWheelJointSolver', () => {
     const chassis = box(world, 'static', 0, 2);
     const wheel = box(world, 'dynamic', 1, 0);
     wheel.angularVelocity = 2;
-    addPhysics2DJoint(world, wheelJoint(chassis.index, wheel.index, { stiffness: 0 }));
+    addPhysics2DJoint(world, wheelJoint(chassis.index, wheel.index, { frequencyHz: 0 }));
 
     run(world, 120);
 

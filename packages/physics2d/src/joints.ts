@@ -31,7 +31,7 @@ export const Physics2DWeldJointKind = 'Weld';
 //
 // One scalar constraint along the axis between the anchors. Softness enters as a modified effective mass
 // plus a position bias rather than as a separate force: solving a spring as a constraint keeps it stable
-// at any stiffness, where adding a spring FORCE explodes once the stiffness times the timestep exceeds
+// at any frequency, where adding a spring FORCE explodes once its response outruns the timestep
 // what the integrator can follow.
 export const physics2DDistanceJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -78,9 +78,9 @@ export const physics2DDistanceJointSolver = {
 
     const mass = axisEffectiveMass(bodyA, bodyB, joint, axisScratch[0], axisScratch[1]);
     const separation = length - distance.length;
-    if (distance.stiffness > 0) {
-      const angular = 2 * Math.PI * distance.stiffness;
-      const damp = 2 * mass * distance.damping * angular;
+    if (distance.frequencyHz > 0) {
+      const angular = 2 * Math.PI * distance.frequencyHz;
+      const damp = 2 * mass * distance.dampingRatio * angular;
       const spring = mass * angular * angular;
       const gamma = dt * (damp + dt * spring);
       jointScratch[2] = gamma > 0 ? 1 / gamma : 0;
@@ -228,8 +228,8 @@ export const physics2DMouseJointSolver = {
     joint.rAY = 0;
 
     const mass = bodyB.inverseMass > 0 ? 1 / bodyB.inverseMass : 0;
-    const angular = 2 * Math.PI * (mouse.stiffness > 0 ? mouse.stiffness : 5);
-    const damp = 2 * mass * mouse.damping * angular;
+    const angular = 2 * Math.PI * (mouse.frequencyHz > 0 ? mouse.frequencyHz : 5);
+    const damp = 2 * mass * mouse.dampingRatio * angular;
     const spring = mass * angular * angular;
     const softDenominator = dt * (damp + dt * spring);
     const gamma = softDenominator > 0 ? 1 / softDenominator : 0;
@@ -849,7 +849,7 @@ export const physics2DRopeJointSolver = {
 };
 
 // Keeps two anchors on a suspension axis while allowing relative rotation. The lateral constraint is
-// rigid; travel along the axis is free when stiffness is zero and becomes a damped spring otherwise.
+// rigid; travel along the axis is free when frequencyHz is zero and becomes a damped spring otherwise.
 export const physics2DWheelJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const wheel = joint as Physics2DWheelJoint;
@@ -925,12 +925,12 @@ export const physics2DWheelJointSolver = {
     let springMass = 0;
     let gamma = 0;
     let springBias = 0;
-    if (wheel.stiffness > 0 && axisDenominator > 0) {
+    if (wheel.frequencyHz > 0 && axisDenominator > 0) {
       const effectiveMass = 1 / axisDenominator;
-      const angular = 2 * Math.PI * wheel.stiffness;
-      const damping = 2 * effectiveMass * wheel.damping * angular;
+      const angular = 2 * Math.PI * wheel.frequencyHz;
+      const dampingCoefficient = 2 * effectiveMass * wheel.dampingRatio * angular;
       const spring = effectiveMass * angular * angular;
-      const soft = dt * (damping + dt * spring);
+      const soft = dt * (dampingCoefficient + dt * spring);
       gamma = soft > 0 ? 1 / soft : 0;
       springBias = (translation - wheel.restTranslation) * dt * spring * gamma;
       springMass = 1 / (axisDenominator + gamma);
