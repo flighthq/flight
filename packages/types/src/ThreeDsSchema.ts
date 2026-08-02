@@ -20,6 +20,25 @@ export const THREE_DS_UV_COORDS = 0x4140;
 export const THREE_DS_SMOOTH_GROUP = 0x4150;
 export const THREE_DS_TRANSFORM_MATRIX = 0x4160;
 
+// Light chunk IDs. A light is a named object (0x4000) whose sub-chunk is N_DIRECT_LIGHT rather than a
+// trimesh; the spotlight sub-chunk is what promotes it from a point light to a cone-restricted one.
+export const THREE_DS_LIGHT = 0x4600;
+export const THREE_DS_LIGHT_SPOT = 0x4610;
+export const THREE_DS_LIGHT_OFF = 0x4620;
+export const THREE_DS_LIGHT_INNER_RANGE = 0x4659;
+export const THREE_DS_LIGHT_OUTER_RANGE = 0x465a;
+export const THREE_DS_LIGHT_MULTIPLIER = 0x465b;
+
+// Camera chunk IDs. Like a light, a camera is a named object whose sub-chunk is N_CAMERA.
+export const THREE_DS_CAMERA = 0x4700;
+export const THREE_DS_CAMERA_RANGES = 0x4720;
+
+// The film-aperture width, in millimetres, that 3DS camera focal lengths are measured against. The
+// N_CAMERA chunk states a lens as a focal length, not an angle, so recovering a field of view needs the
+// aperture it was metered on: fovX = 2*atan(THREE_DS_CAMERA_APERTURE_MM / (2*focalLength)). 3DS predates
+// configurable sensor sizes and fixes this at the 35mm-film gate.
+export const THREE_DS_CAMERA_APERTURE_MM = 36;
+
 // Material chunk IDs.
 export const THREE_DS_MATERIAL = 0xafff;
 export const THREE_DS_MATERIAL_NAME = 0xa000;
@@ -58,6 +77,44 @@ export interface ThreeDsMaterial {
   shininess: number | null;
   specular: readonly [number, number, number];
   textureFilename: string | null;
+}
+
+// A parsed 3DS light descriptor (one per named object carrying an N_DIRECT_LIGHT sub-chunk). Positions
+// are in the file's own right-handed Z-up space — the caller converts them, exactly as it does mesh
+// vertices. `target` is the point a spot light aims AT (not a direction vector); it is null for a point
+// light, and its presence is what makes the light a spot. `hotspot`/`falloff` are the two cone half-angles
+// in DEGREES: `hotspot` is the full-intensity inner cone and `falloff` the outer cone where intensity
+// reaches zero. Both are absolute angles measured from the cone axis — `falloff` is not an offset added to
+// `hotspot`. `multiplier` scales the color's intensity (1 = unscaled). `outerRange` is the distance cutoff
+// and `innerRange` the distance at which attenuation begins, or null when the file states neither.
+// `enabled` is false when the DL_OFF flag chunk is present — an authored-but-disabled light.
+export interface ThreeDsLight {
+  color: readonly [number, number, number];
+  enabled: boolean;
+  falloff: number;
+  hotspot: number;
+  innerRange: number | null;
+  multiplier: number;
+  name: string;
+  outerRange: number | null;
+  position: readonly [number, number, number];
+  target: readonly [number, number, number] | null;
+}
+
+// A parsed 3DS camera descriptor (one per named object carrying an N_CAMERA sub-chunk). `position` and
+// `target` are in the file's right-handed Z-up space; the camera aims from the former at the latter, so
+// the caller derives a direction rather than reading one. `roll` is the bank angle about that aim axis in
+// DEGREES. `focalLength` is a lens focal length in MILLIMETRES, not an angle — convert it against
+// THREE_DS_CAMERA_APERTURE_MM to recover a field of view. `near`/`far` come from the CAM_RANGES sub-chunk
+// and are null when the file omits it.
+export interface ThreeDsCamera {
+  far: number | null;
+  focalLength: number;
+  name: string;
+  near: number | null;
+  position: readonly [number, number, number];
+  roll: number;
+  target: readonly [number, number, number];
 }
 
 // A per-material face group within a 3DS mesh (a FACE_MATERIAL 0x4130 sub-chunk): the material `name`

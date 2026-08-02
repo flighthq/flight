@@ -1,3 +1,4 @@
+import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -14,13 +15,26 @@ import type {
   ImportDiagnostic,
   Mesh,
   Node3D,
+  PointLight,
+  Quaternion,
+  SpotLight,
+  Vector3,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import {
+  THREE_DS_CAMERA,
+  THREE_DS_CAMERA_APERTURE_MM,
+  THREE_DS_CAMERA_RANGES,
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
   THREE_DS_COLOR_FLOAT,
   THREE_DS_EDITOR,
+  THREE_DS_LIGHT,
+  THREE_DS_LIGHT_INNER_RANGE,
+  THREE_DS_LIGHT_MULTIPLIER,
+  THREE_DS_LIGHT_OFF,
+  THREE_DS_LIGHT_OUTER_RANGE,
+  THREE_DS_LIGHT_SPOT,
   THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
   THREE_DS_MAIN,
@@ -119,6 +133,103 @@ function writeUvCoords(uvs: readonly number[]): Uint8Array {
     offset += 4;
   }
   return writeChunk(THREE_DS_UV_COORDS, payload);
+}
+
+// Builds a float32 payload chunk — the shape every scalar light sub-chunk (multiplier, ranges) uses.
+function writeFloatChunk(id: number, value: number): Uint8Array {
+  const payload = new Uint8Array(4);
+  new DataView(payload.buffer).setFloat32(0, value, true);
+  return writeChunk(id, payload);
+}
+
+// Builds a light object (0x4000 wrapping 0x4600): the name, then the light's Z-up position, then the
+// sub-chunks the caller asked for. Passing `target` adds the spot sub-chunk (0x4610), which is what
+// makes the light a spot rather than a point.
+function writeLightObject(options: {
+  color?: readonly [number, number, number];
+  hotspot?: number;
+  falloff?: number;
+  innerRange?: number;
+  multiplier?: number;
+  name: string;
+  off?: boolean;
+  outerRange?: number;
+  position: readonly [number, number, number];
+  target?: readonly [number, number, number];
+}): Uint8Array {
+  const position = new Uint8Array(12);
+  const positionView = new DataView(position.buffer);
+  positionView.setFloat32(0, options.position[0], true);
+  positionView.setFloat32(4, options.position[1], true);
+  positionView.setFloat32(8, options.position[2], true);
+
+  const parts: Uint8Array[] = [position];
+  if (options.color !== undefined) {
+    const color = new Uint8Array(12);
+    const colorView = new DataView(color.buffer);
+    colorView.setFloat32(0, options.color[0], true);
+    colorView.setFloat32(4, options.color[1], true);
+    colorView.setFloat32(8, options.color[2], true);
+    parts.push(writeChunk(THREE_DS_COLOR_FLOAT, color));
+  }
+  if (options.multiplier !== undefined) parts.push(writeFloatChunk(THREE_DS_LIGHT_MULTIPLIER, options.multiplier));
+  if (options.innerRange !== undefined) parts.push(writeFloatChunk(THREE_DS_LIGHT_INNER_RANGE, options.innerRange));
+  if (options.outerRange !== undefined) parts.push(writeFloatChunk(THREE_DS_LIGHT_OUTER_RANGE, options.outerRange));
+  if (options.off === true) parts.push(writeChunk(THREE_DS_LIGHT_OFF, new Uint8Array(0)));
+  if (options.target !== undefined) {
+    const spot = new Uint8Array(20);
+    const spotView = new DataView(spot.buffer);
+    spotView.setFloat32(0, options.target[0], true);
+    spotView.setFloat32(4, options.target[1], true);
+    spotView.setFloat32(8, options.target[2], true);
+    spotView.setFloat32(12, options.hotspot ?? 0, true);
+    spotView.setFloat32(16, options.falloff ?? 0, true);
+    parts.push(writeChunk(THREE_DS_LIGHT_SPOT, spot));
+  }
+
+  const light = writeChunk(THREE_DS_LIGHT, concatBytes(...parts));
+  return writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(options.name), light));
+}
+
+// Builds a camera object (0x4000 wrapping 0x4700): the name, then the fixed 32-byte record — Z-up
+// position, Z-up aim target, bank angle in degrees, lens focal length in millimetres — then an optional
+// CAM_RANGES sub-chunk.
+function writeCameraObject(options: {
+  far?: number;
+  focalLength: number;
+  name: string;
+  near?: number;
+  position: readonly [number, number, number];
+  roll?: number;
+  target: readonly [number, number, number];
+}): Uint8Array {
+  const record = new Uint8Array(32);
+  const view = new DataView(record.buffer);
+  view.setFloat32(0, options.position[0], true);
+  view.setFloat32(4, options.position[1], true);
+  view.setFloat32(8, options.position[2], true);
+  view.setFloat32(12, options.target[0], true);
+  view.setFloat32(16, options.target[1], true);
+  view.setFloat32(20, options.target[2], true);
+  view.setFloat32(24, options.roll ?? 0, true);
+  view.setFloat32(28, options.focalLength, true);
+
+  const parts: Uint8Array[] = [record];
+  if (options.near !== undefined && options.far !== undefined) {
+    const ranges = new Uint8Array(8);
+    const rangesView = new DataView(ranges.buffer);
+    rangesView.setFloat32(0, options.near, true);
+    rangesView.setFloat32(4, options.far, true);
+    parts.push(writeChunk(THREE_DS_CAMERA_RANGES, ranges));
+  }
+
+  const camera = writeChunk(THREE_DS_CAMERA, concatBytes(...parts));
+  return writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(options.name), camera));
+}
+
+// Wraps already-built object chunks in the editor and main chunks to make a complete 3DS file.
+function buildObjects3ds(...objects: Uint8Array[]): Uint8Array {
+  return writeChunk(THREE_DS_MAIN, writeChunk(THREE_DS_EDITOR, concatBytes(...objects)));
 }
 
 // Builds a complete 3DS file with one or more meshes.
@@ -1091,19 +1202,19 @@ describe('parse3ds diagnostics', () => {
     expect(crumb!.detail?.firstName).toBe('Ghost');
   });
 
-  it('skips and reports 3ds.non-mesh-object for a named object with no trimesh (light/camera)', () => {
-    // An OBJECT chunk carrying only a name, no TRIMESH sub-chunk — Flight imports meshes only.
-    const object = writeChunk(THREE_DS_OBJECT, writeNullTerminatedString('Light'));
+  it('skips and reports 3ds.non-entity-object for a named object carrying no entity sub-chunk', () => {
+    // An OBJECT chunk carrying only a name — a dummy/helper object, not a mesh, light, or camera.
+    const object = writeChunk(THREE_DS_OBJECT, writeNullTerminatedString('Dummy01'));
     const editor = writeChunk(THREE_DS_EDITOR, object);
     const bytes = writeChunk(THREE_DS_MAIN, editor);
     const diagnostics: ImportDiagnostic[] = [];
     createScene3DFrom3ds(bytes, diagnostics);
-    const crumb = findDiagnostic(diagnostics, '3ds.non-mesh-object');
+    const crumb = findDiagnostic(diagnostics, '3ds.non-entity-object');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
     expect(crumb!.origin).toBe('parse3ds');
     expect(crumb!.detail?.count).toBe(1);
-    expect(crumb!.detail?.firstName).toBe('Light');
+    expect(crumb!.detail?.firstName).toBe('Dummy01');
   });
 
   it('recovers and reports 3ds.face-subchunk-exceeds for a face sub-chunk declaring length past the chunk', () => {
@@ -1122,5 +1233,224 @@ describe('parse3ds diagnostics', () => {
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('parse3ds');
+  });
+});
+
+describe('parse3ds lights and cameras', () => {
+  // Rotating the canonical local forward axis by the emitted transform recovers the world-space aim, which
+  // is the placement convention's own round trip (see Scene3DDocumentLight): the descriptor stays local and
+  // the transform carries the orientation, so this is the only honest way to assert where a light points.
+  function getAimedDirection(rotation: Readonly<Quaternion>): Vector3 {
+    const out = createVector3(0, 0, -1);
+    rotateVector3ByQuaternion(out, out, rotation);
+    return out;
+  }
+
+  it('imports a light with no spot sub-chunk as a placed PointLight', () => {
+    // Z-up (1, 2, 3) becomes Y-up (1, 3, -2) under the same rotation every mesh vertex takes.
+    const document = parse3ds(
+      buildObjects3ds(
+        writeLightObject({ color: [1, 0.5, 0], multiplier: 2, name: 'Omni01', outerRange: 40, position: [1, 2, 3] }),
+      ),
+    );
+
+    expect(document.lights).toHaveLength(1);
+    const light = document.lights[0];
+    expect(light.name).toBe('Omni01');
+    expect(light.descriptor.kind).toBe('PointLight');
+    expect((light.descriptor as PointLight).intensity).toBe(2);
+    expect((light.descriptor as PointLight).range).toBe(40);
+    expect(light.transform.position.x).toBeCloseTo(1, 5);
+    expect(light.transform.position.y).toBeCloseTo(3, 5);
+    expect(light.transform.position.z).toBeCloseTo(-2, 5);
+    // The descriptor stays at the local origin — the transform is what places it.
+    expect((light.descriptor as PointLight).position.x).toBe(0);
+    expect((light.descriptor as PointLight).position.y).toBe(0);
+    expect((light.descriptor as PointLight).position.z).toBe(0);
+  });
+
+  it('imports a light carrying the spot sub-chunk as a SpotLight aimed by its transform', () => {
+    // Light at the Z-up origin aiming at Z-up (0, 0, -10): in Y-up that aim is straight down (0, -1, 0).
+    const document = parse3ds(
+      buildObjects3ds(
+        writeLightObject({
+          falloff: 60,
+          hotspot: 30,
+          name: 'Spot01',
+          position: [0, 0, 0],
+          target: [0, 0, -10],
+        }),
+      ),
+    );
+
+    expect(document.lights).toHaveLength(1);
+    const light = document.lights[0];
+    expect(light.descriptor.kind).toBe('SpotLight');
+
+    const aim = getAimedDirection(light.transform.rotation);
+    expect(aim.x).toBeCloseTo(0, 5);
+    expect(aim.y).toBeCloseTo(-1, 5);
+    expect(aim.z).toBeCloseTo(0, 5);
+
+    // The descriptor's own direction stays the canonical local -Z; the transform supplies the aim.
+    const spot = light.descriptor as SpotLight;
+    expect(spot.direction.x).toBeCloseTo(0, 5);
+    expect(spot.direction.y).toBeCloseTo(0, 5);
+    expect(spot.direction.z).toBeCloseTo(-1, 5);
+
+    // 3DS states FULL cone apertures; Flight stores the cosines of the HALF-angles.
+    expect(spot.innerConeCos).toBeCloseTo(Math.cos(15 * (Math.PI / 180)), 5);
+    expect(spot.outerConeCos).toBeCloseTo(Math.cos(30 * (Math.PI / 180)), 5);
+    expect(spot.innerConeCos).toBeGreaterThan(spot.outerConeCos);
+  });
+
+  it('imports a light with no color or multiplier chunk at the format defaults', () => {
+    const document = parse3ds(buildObjects3ds(writeLightObject({ name: 'Bare', position: [0, 0, 0] })));
+
+    const light = document.lights[0].descriptor as PointLight;
+    expect(light.color).toBe(0xffffffff);
+    expect(light.intensity).toBe(1);
+    // No OUTER_RANGE chunk means no cutoff — Flight's infinite-range sentinel, not a zero-radius light.
+    expect(light.range).toBe(-1);
+  });
+
+  it('imports a switched-off light at zero intensity and reports 3ds.light-disabled', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parse3ds(
+      buildObjects3ds(writeLightObject({ multiplier: 3, name: 'Off01', off: true, position: [5, 0, 0] })),
+      diagnostics,
+    );
+
+    // The light is still imported, placement intact — only its intensity is zeroed.
+    expect(document.lights).toHaveLength(1);
+    expect((document.lights[0].descriptor as PointLight).intensity).toBe(0);
+    expect(document.lights[0].transform.position.x).toBeCloseTo(5, 5);
+
+    const crumb = findDiagnostic(diagnostics, '3ds.light-disabled');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.origin).toBe('parse3ds');
+    expect(crumb!.detail?.firstName).toBe('Off01');
+  });
+
+  it('skips and reports 3ds.light-inner-range-dropped for the attenuation start Flight does not model', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parse3ds(
+      buildObjects3ds(writeLightObject({ innerRange: 10, name: 'Att', outerRange: 50, position: [0, 0, 0] })),
+      diagnostics,
+    );
+
+    // The outer range still lands — only the start of the falloff has nowhere to go.
+    expect((document.lights[0].descriptor as PointLight).range).toBe(50);
+    const crumb = findDiagnostic(diagnostics, '3ds.light-inner-range-dropped');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.detail?.firstName).toBe('Att');
+  });
+
+  it('imports a camera with its focal length converted to a field of view against the 35mm gate', () => {
+    const document = parse3ds(
+      buildObjects3ds(
+        writeCameraObject({
+          far: 500,
+          focalLength: 50,
+          name: 'Camera01',
+          near: 2,
+          position: [0, 0, 0],
+          target: [0, 0, -10],
+        }),
+      ),
+    );
+
+    expect(document.cameras).toHaveLength(1);
+    const camera = document.cameras[0];
+    expect(camera.name).toBe('Camera01');
+    expect(camera.near).toBe(2);
+    expect(camera.far).toBe(500);
+    expect(camera.projection.kind).toBe('perspective');
+    expect(camera.projection).toMatchObject({ aspect: 1 });
+    const fovY = 2 * Math.atan(THREE_DS_CAMERA_APERTURE_MM / (2 * 50));
+    expect((camera.projection as { fovY: number }).fovY).toBeCloseTo(fovY, 6);
+
+    const aim = getAimedDirection(camera.transform.rotation);
+    expect(aim.y).toBeCloseTo(-1, 5);
+  });
+
+  it('falls back to the 3DS default clip range for a camera with no CAM_RANGES sub-chunk', () => {
+    const document = parse3ds(
+      buildObjects3ds(writeCameraObject({ focalLength: 50, name: 'NoRange', position: [0, 0, 0], target: [1, 0, 0] })),
+    );
+
+    expect(document.cameras[0].near).toBe(1);
+    expect(document.cameras[0].far).toBe(1000);
+  });
+
+  it('rolls a camera about the axis it already aims down', () => {
+    // Aiming along Z-up +x (Y-up +x) with a 90-degree bank: the aim is unchanged and only the roll differs,
+    // which is what distinguishes a bank from a re-aim.
+    const rolled = parse3ds(
+      buildObjects3ds(
+        writeCameraObject({ focalLength: 50, name: 'Rolled', position: [0, 0, 0], roll: 90, target: [1, 0, 0] }),
+      ),
+    ).cameras[0];
+    const level = parse3ds(
+      buildObjects3ds(
+        writeCameraObject({ focalLength: 50, name: 'Level', position: [0, 0, 0], roll: 0, target: [1, 0, 0] }),
+      ),
+    ).cameras[0];
+
+    const rolledAim = getAimedDirection(rolled.transform.rotation);
+    const levelAim = getAimedDirection(level.transform.rotation);
+    expect(rolledAim.x).toBeCloseTo(levelAim.x, 5);
+    expect(rolledAim.y).toBeCloseTo(levelAim.y, 5);
+    expect(rolledAim.z).toBeCloseTo(levelAim.z, 5);
+    // Same aim, different orientation — the bank is real and did not collapse into the aim.
+    expect(rolled.transform.rotation.w).not.toBeCloseTo(level.transform.rotation.w, 3);
+  });
+
+  it('collects meshes, lights, and cameras from one file without either displacing the others', () => {
+    const trimesh = writeChunk(
+      THREE_DS_TRIMESH,
+      concatBytes(writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]), writeFaces([0, 1, 2])),
+    );
+    const mesh = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString('Tri'), trimesh));
+    const document = parse3ds(
+      buildObjects3ds(
+        mesh,
+        writeLightObject({ name: 'Omni01', position: [0, 0, 0] }),
+        writeCameraObject({ focalLength: 35, name: 'Camera01', position: [0, 0, 0], target: [0, 1, 0] }),
+      ),
+    );
+
+    expect(document.meshes).toHaveLength(1);
+    expect(document.lights).toHaveLength(1);
+    expect(document.cameras).toHaveLength(1);
+    // Lights and cameras are placement tables, NOT scene members — the node graph holds the mesh alone.
+    expect(document.nodes).toHaveLength(1);
+    expect(document.scenes[0].rootNodes).toEqual([0]);
+  });
+
+  it('drops and reports 3ds.light-truncated for a light chunk too small for its position', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const light = writeChunk(THREE_DS_LIGHT, new Uint8Array(8)); // 8 bytes: short of the 12-byte position
+    const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString('Bad'), light));
+    const document = parse3ds(buildObjects3ds(object), diagnostics);
+
+    expect(document.lights).toHaveLength(0);
+    const crumb = findDiagnostic(diagnostics, '3ds.light-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+  });
+
+  it('drops and reports 3ds.camera-truncated for a camera chunk too small for its fixed record', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const camera = writeChunk(THREE_DS_CAMERA, new Uint8Array(20)); // short of the 32-byte record
+    const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString('Bad'), camera));
+    const document = parse3ds(buildObjects3ds(object), diagnostics);
+
+    expect(document.cameras).toHaveLength(0);
+    const crumb = findDiagnostic(diagnostics, '3ds.camera-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
   });
 });

@@ -19,6 +19,7 @@
     { "path": "../importdiagnostics" },
     { "path": "../lighting" },
     { "path": "../materials" },
+    { "path": "../math" },
     { "path": "../mesh" },
     { "path": "../node" },
     { "path": "../scene3d" },
