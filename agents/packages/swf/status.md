@@ -78,11 +78,14 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   geometry was decoded, on a reader of its own so one unreadable body never fails the document. The
   authored RECT keeps sizing every node, including shapes, because it carries stroke width and authoring
   padding the command stream does not.
-- A bitmap-filled shape emits its geometry and points the fill at a texture whose pixels arrive later.
-  Dropping the fill used to drop its contours with it, so artwork built entirely from bitmap-filled shapes
-  imported as an empty document — reported from downstream against a real file. The shape now carries a
-  `beginTextureFill` over a sourceless `Texture`, and the parse records which bitmap character each fill
-  is waiting on.
+- Bitmap fills inside a shape paint. Dropping the fill used to drop its contours with it, so artwork built
+  entirely from bitmap-filled shapes imported as an empty document — reported from downstream against a
+  real file. The fill's character id and matrix now resolve to the Texture that character is sampled
+  through and emit `beginTextureFill`; SWF's four bitmap fill types become the repeat/clamp and
+  linear/nearest sampler axes. The fill matrix maps image PIXEL space into shape space, so its linear part
+  divides by twips-per-pixel and an unscaled 1:1 fill authors as scale 20. Resolution belongs to the
+  caller, not to an out-parameter the decoder allocates into, because only the caller can hand back the
+  texture it already made for that character and sampling.
 - `createScene2DSymbolFromSwf` instantiates a symbol the file exported by linkage name but never placed,
   and `readSwfExportedSymbolNames` lists them. A document built only from placements has nothing to show
   for a library symbol, which is what a consumer hits when the authoring tool published a symbol for code
@@ -117,17 +120,26 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix, across every frame of the symbol rather than its
   first — a node's local bounds do not change as its playhead moves.
-- Lossless bitmaps resolve to real pixels at import. Their payload is a raw raster rather than an image
-  file, so decompression comes from the shared registry and the layout — colour-mapped, 15-bit, or
-  24/32-bit, rows padded to four bytes — is unpacked here. A shape's bitmap fill receives its texture
-  source as soon as a deflate decompressor is registered, with no decoder and no asynchrony involved.
-- Embedded images leave the importer as asset references carrying their bytes undecoded. A placed
-  `DefineBits*` character becomes a bounded node plus a `Scene2DAssetReference` whose `bytes` is a
-  zero-copy view of the payload and whose `mimeType` is sniffed from its magic (`image/png`, `image/gif`,
-  `image/jpeg`, or the SWF-specific lossless types). Decoding is the resolve step's job, so it can be
-  asynchronous and a caller that never resolves an image never pays for its pixels. `uri` addresses the
-  character within the document (`swf:bitmap/<id>`) because an embedded asset has no address to fetch
-  from.
+- Lossless bitmaps resolve to real pixels at import, and earn no image resource because nothing is left
+  to load. Their payload is a raw raster rather than an image file, so no generic decoder reaches it;
+  decompression comes from the shared registry and the layout — colour-mapped, 15-bit, or 24/32-bit, rows
+  padded to four bytes — is unpacked here. Only characters something actually samples are unpacked, so a
+  library full of unused bitmaps costs nothing. Without a registered deflate decompressor the geometry
+  still imports and only the paint is missing.
+- Every other embedded image leaves the importer as an `ImageResourceReference` on
+  `Scene2DDocument.imageResources`, carrying its bytes undecoded. The reference is keyed by CHARACTER, not
+  by placement: a placed `DefineBits*` character becomes a `Sprite` over the character's shared waiting
+  `Texture`, so a bitmap placed a hundred times decodes once and every placement is sized by its authored
+  RECT before any pixels exist. `bytes` is a zero-copy view of the payload and `mimeType` is sniffed from
+  its magic (`image/png`, `image/gif`, `image/jpeg`). Pixels are shared and sampling is not — each
+  (character, sampler) pair is its own Texture over the one image resource, which is how one character
+  serves a smoothed placement and a tiled non-smoothed fill at once. Decoding stays the load step's job,
+  so it can be asynchronous and a caller that never loads an image never pays for its pixels.
+- The two bitmap paths are asymmetric on purpose, and the asymmetry is a seam gap rather than a design:
+  `loadImageResourceFromBytes` decodes through an `HTMLImageElement` and never consults the
+  `@flighthq/image-codec` decoder registry, so a lossless payload has no way to reach `createSwfLosslessBitmap`
+  through the resource path. Routing it there — so every format loads the same way and lossless stops being
+  eager — needs that loader to resolve through the registry first.
 - Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
   headers, and video stream definitions retain declared frame dimensions. A video payload stays opaque
   and no visual body is materialized.
@@ -163,13 +175,11 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   symbol graphs, excessive nesting, and excessive instantiated-node counts still reject safely. Retaining whole frames added an amplification path —
   a display list placed once can be multiplied by every ShowFrame that follows it — so a per-document
   snapshot budget rejects a file that would exceed it, rather than materializing it.
-- Bitmap and text definition bodies, legacy table-based JPEG/button/font extents,
-  frame scripts, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
-  What remains for bitmaps is the decoder behind the resolve step, not the path to it: the bytes and their
-  media type now reach a resolver. A JPEG/PNG/GIF payload decodes through the platform or
-  `@flighthq/image-codec`; a lossless payload needs an inflate, which an asynchronous resolver can take
-  from the platform's own `DecompressionStream` rather than vendoring one. That is why the resolve step
-  also settles the question of where an inflate lives — `swf` needs no decompressor seam of its own.
+- Text definition bodies, legacy table-based JPEG/button/font extents, frame scripts, and opaque `DoABC`
+  exposure remain staged rather than being represented incompletely.
+- Bitmap pixels are complete: JPEG/PNG/GIF payloads reach their waiting textures through
+  `loadScene2DImageResources`, and lossless payloads unpack at import. What remains is unifying the two
+  paths behind one loader, noted above.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile, and depends on `movieclip` for the playback nodes it produces and on `shape`/`geometry` for
