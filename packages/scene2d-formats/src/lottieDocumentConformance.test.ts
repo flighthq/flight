@@ -174,7 +174,9 @@ describe('Lottie document conformance census', () => {
     const paint = findFirstKind(findByName(result.root, 'paint')!, ShapeKind) as Shape;
     const gradient = findFirstKind(findByName(result.root, 'gradient')!, ShapeKind) as Shape;
 
-    expect(paint.data.commands.filter((command) => command === 'drawPath')).toHaveLength(4);
+    // Four paths under two paints (a fill and a stroke): every paint restates the group's whole path
+    // set, so the drawPath count is paths x paints.
+    expect(paint.data.commands.filter((command) => command === 'drawPath')).toHaveLength(8);
     expect(paint.data.commands).toContain('beginFill');
     expect(paint.data.commands).toContain('lineStyle');
     expect(gradient.data.commands).toContain('beginGradientFill');
@@ -526,6 +528,77 @@ describe('Lottie polystar roundness', () => {
     return findFirstKind(result.root, ShapeKind) as Shape;
   }
 });
+
+// A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
+// count of paints in the file is the count of paints in the output. These four cases are the ones a
+// single-slot paint model silently dropped.
+describe('Lottie shape group paint', () => {
+  it('keeps both fills when a group states two', () => {
+    const two = importPaints([RECT, RED_FILL, BLUE_FILL]);
+    const blueOnly = importPaints([RECT, BLUE_FILL]);
+
+    expect(paintStartsOf(two)).toEqual(['beginFill', 'beginFill']);
+    expect(JSON.stringify(two.data.commands)).not.toBe(JSON.stringify(blueOnly.data.commands));
+  });
+
+  it('keeps a gradient fill stated beside a solid one', () => {
+    const both = importPaints([RECT, RED_FILL, GRADIENT_FILL]);
+    const solidOnly = importPaints([RECT, RED_FILL]);
+
+    expect(paintStartsOf(both)).toEqual(['beginFill', 'beginGradientFill']);
+    expect(JSON.stringify(both.data.commands)).not.toBe(JSON.stringify(solidOnly.data.commands));
+  });
+
+  it('emits paints in the order the file lists them', () => {
+    const strokeFirst = importPaints([RECT, STROKE, RED_FILL]);
+    const fillFirst = importPaints([RECT, RED_FILL, STROKE]);
+
+    expect(paintStartsOf(strokeFirst)).toEqual(['lineStyle', 'beginFill']);
+    expect(paintStartsOf(fillFirst)).toEqual(['beginFill', 'lineStyle']);
+  });
+
+  it('draws every path in the group under each paint', () => {
+    const twoPathsTwoFills = importPaints([RECT, OTHER_RECT, RED_FILL, BLUE_FILL]);
+
+    // Two paths, each restated once per paint.
+    expect((twoPathsTwoFills.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(4);
+  });
+
+  it('still emits the geometry when a group states no paint at all', () => {
+    const unpainted = importPaints([RECT]);
+
+    expect((unpainted.data.commands as unknown[]).filter((token) => token === 'drawPath')).toHaveLength(1);
+    expect(paintStartsOf(unpainted)).toEqual([]);
+  });
+
+  const RECT = { p: { k: [0, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
+  const OTHER_RECT = { p: { k: [40, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
+  const RED_FILL = { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' };
+  const BLUE_FILL = { c: { k: [0, 0, 1] }, o: { k: 100 }, ty: 'fl' };
+  const STROKE = { c: { k: [0, 1, 0] }, o: { k: 100 }, ty: 'st', w: { k: 2 } };
+  const GRADIENT_FILL = {
+    e: { k: [10, 10] },
+    g: { k: { k: [0, 1, 0, 0, 1, 0, 0, 1] }, p: 2 },
+    o: { k: 100 },
+    s: { k: [0, 0] },
+    t: 1,
+    ty: 'gf',
+  };
+
+  function importPaints(items: unknown[]): Shape {
+    const result = createScene2DFromLottieDocument(
+      createDocument([{ ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 }] as unknown as LottieLayer[]),
+    );
+    return findFirstKind(result.root, ShapeKind) as Shape;
+  }
+});
+
+function paintStartsOf(shape: Shape): string[] {
+  const starts = ['beginFill', 'beginGradientFill', 'lineStyle', 'lineGradientStyle'];
+  return (shape.data.commands as unknown[]).filter(
+    (token): token is string => typeof token === 'string' && starts.includes(token),
+  );
+}
 
 // A shape stores 'drawPath' followed by its arity, the nested path verb stream, and the path data
 // stream. Flattening the cubics here means the outline assertions read the curve Flight will actually

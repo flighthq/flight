@@ -148,21 +148,30 @@ interface LottieMutableAnimationTarget {
   lottieApply(sample: Readonly<number[] | Float32Array>): void;
 }
 
+// A Bodymovin group carries a LIST of paints, not one of each: two fills are legal and each paints
+// every path in the group. Keeping them ordered is what lets a second fill, or a gradient beside a
+// solid one, survive instead of overwriting its predecessor.
+type LottiePaint =
+  | { color: number[]; kind: 'fill'; opacity: number; winding: 'evenOdd' | 'nonZero' }
+  | { color: number[]; kind: 'stroke'; opacity: number; width: number }
+  | {
+      count: number;
+      end: number[];
+      kind: 'gradient';
+      opacity: number;
+      shape: 1 | 2;
+      start: number[];
+      type: 'gf' | 'gs';
+      values: number[];
+      width: number;
+    };
+
+type LottieGradientPaint = Extract<LottiePaint, { kind: 'gradient' }>;
+
 interface LottieShapeState {
-  fill: { color: number[]; opacity: number; winding: 'evenOdd' | 'nonZero' } | null;
-  gradient: {
-    count: number;
-    end: number[];
-    kind: 1 | 2;
-    opacity: number;
-    start: number[];
-    type: 'gf' | 'gs';
-    values: number[];
-    width: number;
-  } | null;
+  paints: LottiePaint[];
   paths: Path[];
   shape: Shape;
-  stroke: { color: number[]; opacity: number; width: number } | null;
 }
 
 function appendLottieLayers(
@@ -467,11 +476,9 @@ function appendLottieShapeItems(
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const state: LottieShapeState = {
-    fill: null,
-    gradient: null,
+    paints: [],
     paths: [],
     shape: createShape(),
-    stroke: null,
   };
   const rerender = (): void => renderLottieShapeState(state);
 
@@ -491,18 +498,20 @@ function appendLottieShapeItems(
       const fill = item as Readonly<LottieFillShapeItem>;
       const color = numericValue(initialLottieValue(fill.c), 3);
       const opacity = [numericValue(initialLottieValue(fill.o), 1)[0] / 100];
-      state.fill = {
+      const paint = {
         color,
+        kind: 'fill' as const,
         opacity: opacity[0],
-        winding: fill.r === 2 ? 'evenOdd' : 'nonZero',
+        winding: (fill.r === 2 ? 'evenOdd' : 'nonZero') as 'evenOdd' | 'nonZero',
       };
+      state.paints.push(paint);
       bindMutableNumericProperty(fill.c, color, (value) => value, rerender, context);
       bindMutableNumericProperty(
         fill.o,
         opacity,
         (value) => value / 100,
         () => {
-          state.fill!.opacity = opacity[0];
+          paint.opacity = opacity[0];
           rerender();
         },
         context,
@@ -512,18 +521,20 @@ function appendLottieShapeItems(
       const color = numericValue(initialLottieValue(stroke.c), 3);
       const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
       const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
-      state.stroke = {
+      const paint = {
         color,
+        kind: 'stroke' as const,
         opacity: opacity[0],
         width: width[0],
       };
+      state.paints.push(paint);
       bindMutableNumericProperty(stroke.c, color, (value) => value, rerender, context);
       bindMutableNumericProperty(
         stroke.o,
         opacity,
         (value) => value / 100,
         () => {
-          state.stroke!.opacity = opacity[0];
+          paint.opacity = opacity[0];
           rerender();
         },
         context,
@@ -533,7 +544,7 @@ function appendLottieShapeItems(
         width,
         (value) => value,
         () => {
-          state.stroke!.width = width[0];
+          paint.width = width[0];
           rerender();
         },
         context,
@@ -545,16 +556,18 @@ function appendLottieShapeItems(
       const end = numericValue(initialLottieValue(gradient.e), 2);
       const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
       const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
-      state.gradient = {
+      const paint = {
         count: gradient.g.p,
         end,
-        kind: gradient.t,
+        kind: 'gradient' as const,
         opacity: opacity[0] / 100,
+        shape: gradient.t,
         start,
         type: gradient.ty,
         values,
         width: width[0],
       };
+      state.paints.push(paint);
       bindMutableNumericProperty(gradient.g.k, values, (value) => value, rerender, context);
       bindMutableNumericProperty(gradient.s, start, (value) => value, rerender, context);
       bindMutableNumericProperty(gradient.e, end, (value) => value, rerender, context);
@@ -564,7 +577,7 @@ function appendLottieShapeItems(
           opacity,
           (value) => value,
           () => {
-            state.gradient!.opacity = opacity[0] / 100;
+            paint.opacity = opacity[0] / 100;
             rerender();
           },
           context,
@@ -576,7 +589,7 @@ function appendLottieShapeItems(
           width,
           (value) => value,
           () => {
-            state.gradient!.width = width[0];
+            paint.width = width[0];
             rerender();
           },
           context,
@@ -943,46 +956,63 @@ function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
   return path;
 }
 
+// Each paint restates the group's whole path set, because that is what a Bodymovin paint means: it
+// applies to every path in its group. Paints are emitted in the order the file lists them, so a
+// second fill lands on top of the first rather than replacing it.
 function renderLottieShapeState(state: LottieShapeState): void {
   clearShapeCommands(state.shape);
-  if (state.fill !== null) {
-    appendShapeBeginFill(state.shape, lottieRgb(state.fill.color), state.fill.opacity);
-  } else if (state.gradient !== null && state.gradient.type === 'gf') {
-    appendLottieGradientFill(state.shape, state.gradient);
+  if (state.paths.length === 0) return;
+  if (state.paints.length === 0) {
+    appendLottieShapePaths(state, null);
+    return;
   }
-  if (state.stroke !== null) {
-    appendShapeLineStyle(state.shape, state.stroke.width, lottieRgb(state.stroke.color), state.stroke.opacity);
-  } else if (state.gradient !== null && state.gradient.type === 'gs') {
-    appendLottieGradientStroke(state.shape, state.gradient);
+  for (const paint of state.paints) {
+    if (paint.kind === 'fill') {
+      appendShapeBeginFill(state.shape, lottieRgb(paint.color), paint.opacity);
+      appendLottieShapePaths(state, paint.winding);
+      appendShapeEndFill(state.shape);
+    } else if (paint.kind === 'stroke') {
+      appendShapeLineStyle(state.shape, paint.width, lottieRgb(paint.color), paint.opacity);
+      appendLottieShapePaths(state, null);
+    } else if (paint.type === 'gf') {
+      appendLottieGradientFill(state.shape, paint);
+      appendLottieShapePaths(state, null);
+      appendShapeEndFill(state.shape);
+    } else {
+      appendLottieGradientStroke(state.shape, paint);
+      appendLottieShapePaths(state, null);
+    }
   }
-  for (const path of state.paths) {
-    appendShapePath(state.shape, path.commands.slice(), path.data.slice(), state.fill?.winding ?? path.winding);
-  }
-  if (state.fill !== null || state.gradient?.type === 'gf') appendShapeEndFill(state.shape);
 }
 
-function appendLottieGradientFill(shape: Shape, state: NonNullable<LottieShapeState['gradient']>): void {
-  const gradient = parseLottieGradient(state.values, state.count, state.opacity);
+function appendLottieShapePaths(state: LottieShapeState, winding: 'evenOdd' | 'nonZero' | null): void {
+  for (const path of state.paths) {
+    appendShapePath(state.shape, path.commands.slice(), path.data.slice(), winding ?? path.winding);
+  }
+}
+
+function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): void {
+  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
   appendShapeBeginGradientFill(
     shape,
-    state.kind === 2 ? 'radial' : 'linear',
+    paint.shape === 2 ? 'radial' : 'linear',
     gradient.colors,
     gradient.alphas,
     gradient.ratios,
-    createLottieGradientMatrix(state.start, state.end),
+    createLottieGradientMatrix(paint.start, paint.end),
   );
 }
 
-function appendLottieGradientStroke(shape: Shape, state: NonNullable<LottieShapeState['gradient']>): void {
-  const gradient = parseLottieGradient(state.values, state.count, state.opacity);
-  appendShapeLineStyle(shape, state.width);
+function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
+  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
+  appendShapeLineStyle(shape, paint.width);
   appendShapeLineGradientStyle(
     shape,
-    state.kind === 2 ? 'radial' : 'linear',
+    paint.shape === 2 ? 'radial' : 'linear',
     gradient.colors,
     gradient.alphas,
     gradient.ratios,
-    createLottieGradientMatrix(state.start, state.end),
+    createLottieGradientMatrix(paint.start, paint.end),
   );
 }
 
