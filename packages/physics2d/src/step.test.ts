@@ -619,15 +619,36 @@ describe('stepPhysics2D', () => {
     expect(crate.velocityY).toBeLessThan(-0.1);
   });
 
-  it('ignores a non-positive timestep rather than integrating backwards', () => {
+  it('rejects a non-positive or non-finite timestep before mutating the world', () => {
     const world = createPhysics2DWorld();
     ground(world);
     const crate = box(world, 0, 2);
     const before = traceWorld(world);
-    stepPhysics2D(world, 0);
-    stepPhysics2D(world, -1 / 60);
-    expect(traceWorld(world)).toBe(before);
+    for (const dt of [0, -1 / 60, Number.NaN, Infinity, -Infinity]) {
+      stepPhysics2D(world, dt);
+      expect(traceWorld(world)).toBe(before);
+    }
     expect(crate.y).toBe(2);
+  });
+
+  it.each([
+    ['velocityIterations', Infinity],
+    ['velocityIterations', -1],
+    ['velocityIterations', 1.5],
+    ['positionIterations', Infinity],
+    ['positionIterations', -1],
+    ['positionIterations', 1.5],
+  ] as const)('rejects invalid %s value %s before mutating the world', (field, value) => {
+    const world = createPhysics2DWorld();
+    ground(world);
+    box(world, 0, 2);
+    const before = traceWorld(world);
+    world.config[field] = value;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(traceWorld(world)).toBe(before);
+    expect(world.contacts).toHaveLength(0);
   });
 });
 

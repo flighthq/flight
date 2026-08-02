@@ -1,5 +1,6 @@
 export * from './colliderTransform';
 export * from './explainPhysics2DJoints';
+export * from './explainPhysics2DStep';
 export * from './islands';
 export * from './jointFactories';
 export * from './jointRegistry';
