@@ -2,7 +2,7 @@
 package: '@flighthq/interaction'
 crate: flighthq-interaction
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -72,6 +72,10 @@ Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal ma
 - **[2026-07-02] Broadphase is interaction's opt-in, not a shared structure — for now.** The spatial index lands as `InteractionManagerOptions.spatialIndex`. If culling or physics later need it, the index can be extracted into a shared primitive. Start specific, generalize on demand.
 
   **Why:** Interaction is the primary consumer. Building a shared acceleration structure for one consumer is premature. The SDK's decomposition philosophy says: extract when the second consumer appears.
+
+- **[2026-08-02] `MorphShapeKind` reuses the Shape hit-test handlers.** The default registrar maps MorphShape to the coarse Shape bounds handler, and the opt-in precise registrar maps it to live fill-region winding tests.
+
+  **Why:** MorphShape has distinct semantic identity but deliberately retains the ordinary Shape command vocabulary. Its sampled drawPath buffers are live, so the existing fill resolver observes current geometry without a morph-specific geometry path.
 
 ## Open directions
 

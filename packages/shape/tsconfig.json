@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../animation" },
     { "path": "../scene2d" },
     { "path": "../geometry" },
     { "path": "../node" },

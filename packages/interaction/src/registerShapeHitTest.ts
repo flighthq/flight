@@ -3,19 +3,20 @@ import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import { containsPathPoint } from '@flighthq/path/contract';
 import { getShapeFillRegions } from '@flighthq/shape/contract';
 import type { Node2D, NodeAny, Shape } from '@flighthq/types/contract';
-import { Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 
 import { registerHitTestPrecise } from './hitTests';
 
 /**
- * Opt-in exact hit provider for shapes: the `*Precise` queries then hit a Shape/Scale9Shape only where
- * the point falls inside actual filled geometry (winding), not the bounding box. The coarse queries and
- * `registerDefaultHitTests` are unaffected.
+ * Opt-in exact hit provider for shapes: the `*Precise` queries then hit a Shape/MorphShape/Scale9Shape
+ * only where the point falls inside actual filled geometry (winding), not the bounding box. The coarse
+ * queries and `registerDefaultHitTests` are unaffected.
  *
  * Importing this module is the opt-in — it pulls `@flighthq/shape` + `@flighthq/path`, so the base
  * interaction bundle stays free of them (tree-shaken unless referenced).
  */
 export function registerShapeHitTest(): void {
+  registerHitTestPrecise(MorphShapeKind, hitTestShapeFill);
   registerHitTestPrecise(ShapeKind, hitTestShapeFill);
   registerHitTestPrecise(Scale9ShapeKind, hitTestShapeFill);
 }

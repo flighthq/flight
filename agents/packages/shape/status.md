@@ -8,6 +8,14 @@ by: builder4
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## [2026-08-02 · builder4] — explicit MorphShape animation binding
+
+Added a stable typed `MorphShapeAnimationTarget`, `applyAnimationClipToMorphShape`, and the reusable
+`applyMorphShapeAnimationSample` visitor. Scalar tracks now drive retained progress through the existing
+setter and invalidation path; one visitor also consumes composed crossfade, blend-tree, state-machine,
+and layer-stack samples. Animation advancement remains caller-owned and the animation core stays
+target-free. Canvas coverage confirms a prepared update renders new geometry without replacing buffers.
+
 ## [2026-08-02 · builder4] — retained MorphShape
 
 Added `MorphShapeKind` and the retained MorphShape entity/runtime family over a prepared `PathMorph`.

@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/animation"
-updated: null
-by: null
+updated: 2026-08-02
+by: builder4
 ---
 
 # animation — Status Log
@@ -10,6 +10,13 @@ by: null
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-08-02 — MorphShape scalar binding consumer
+
+`@flighthq/shape` now consumes the existing animation substrate without changing this package. A stable
+`MorphShapeAnimationTarget` is carried as the channel's opaque `targetRef`; the shape-owned clip binder
+and sample visitor route scalar results into explicit progress sampling. The visitor shape composes with
+crossfades, blend trees, state machines, and layer stacks, preserving animation's target-free boundary.
 
 ## 2026-07-25 — clip-level animation events
 

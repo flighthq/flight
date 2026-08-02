@@ -51,10 +51,11 @@ export function getMorphShapeRuntime(source: Readonly<MorphShape>): Readonly<Mor
   return getNode2DRuntime(source) as MorphShapeRuntime;
 }
 
-// Samples into the stable Path arrays retained by drawPath commands, then invalidates Shape content so
-// bounds and every backend rebuild from the new coordinates. Progress remains unclamped to preserve the
-// path layer's deliberate easing-overshoot contract.
+// Samples changed progress into the stable Path arrays retained by drawPath commands, then invalidates
+// Shape content so bounds and every backend rebuild from the new coordinates. Reapplying the same value
+// is a no-op; progress remains unclamped to preserve the path layer's deliberate easing-overshoot contract.
 export function setMorphShapeProgress(shape: MorphShape, progress: number): void {
+  if (shape.data.progress === progress) return;
   shape.data.progress = progress;
   samplePathMorph(shape.data.path, shape.data.morph, progress);
   invalidateContent(shape);

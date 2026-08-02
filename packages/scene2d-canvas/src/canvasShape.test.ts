@@ -1,12 +1,15 @@
 ﻿import { createMatrix } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import {
   enableRenderRegistryGuards,
   explainRenderRegistryMisses,
   getOrCreateRenderProxy2D,
+  prepareScene2DRender,
   registerRenderer,
 } from '@flighthq/render/contract';
 import {
+  appendMorphShapePath,
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -16,6 +19,7 @@ import {
   appendShapeRectangle,
   createMorphShape,
   createShape,
+  setMorphShapeProgress,
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
@@ -49,6 +53,40 @@ registerCanvasBitmapTextureResolver(resolvers);
 registerCanvasImageTextureResolver(resolvers);
 
 describe('drawCanvasShape', () => {
+  it('renders updated MorphShape geometry through stable retained path buffers', () => {
+    const canvas = document.createElement('canvas');
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, MorphShapeKind, defaultCanvasMorphShapeRenderer);
+    const start = createPath();
+    appendPathMoveTo(start, 0, 0);
+    appendPathLineTo(start, 10, 0);
+    const end = createPath();
+    appendPathMoveTo(end, 20, 30);
+    appendPathLineTo(end, 40, 30);
+    const shape = createMorphShape(createPathMorph(start, end)!);
+    appendShapeBeginFill(shape, 0xff0000);
+    appendMorphShapePath(shape);
+    appendShapeEndFill(shape);
+    const commands = shape.data.path.commands;
+    const coordinates = shape.data.path.data;
+    const moveTo = vi.spyOn(state.context, 'moveTo');
+    const bezierCurveTo = vi.spyOn(state.context, 'bezierCurveTo');
+
+    expect(prepareScene2DRender(state, shape)).toBe(true);
+    const proxy = getOrCreateRenderProxy2D(state, shape);
+    drawCanvasShape(state, proxy);
+    expect(moveTo).toHaveBeenLastCalledWith(0, 0);
+    expect(bezierCurveTo).toHaveBeenLastCalledWith(...shape.data.path.data.slice(2));
+
+    setMorphShapeProgress(shape, 1);
+    expect(prepareScene2DRender(state, shape)).toBe(true);
+    drawCanvasShape(state, proxy);
+    expect(shape.data.path.commands).toBe(commands);
+    expect(shape.data.path.data).toBe(coordinates);
+    expect(moveTo).toHaveBeenLastCalledWith(20, 30);
+    expect(bezierCurveTo).toHaveBeenLastCalledWith(...shape.data.path.data.slice(2));
+  });
+
   it('renders MorphShapeKind through the explicit default renderer alias', () => {
     const canvas = document.createElement('canvas');
     const state = createCanvasRenderState(canvas);

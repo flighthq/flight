@@ -1,4 +1,5 @@
 export * from './morphShape';
+export * from './morphShapeAnimation';
 export * from './scale9Shape';
 export * from './shape';
 export * from './shapeCommands';
