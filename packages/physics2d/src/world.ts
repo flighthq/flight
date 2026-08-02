@@ -13,15 +13,31 @@ import type {
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { createPhysics2DColliderWorldShape } from './colliderTransform';
 import { updateRigidBody2DMassData } from './massProperties';
+import { physics2DBodyOwners, physics2DColliderOwners, physics2DJointOwners } from './ownership';
 
 // Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by, and
 // returns it. The index comes from a monotonic counter rather than the array position, so removing a
 // body can never hand its identity to a later one — a stale contact would otherwise be revived against
 // whichever body inherited the slot, warm-starting it with a force that belonged to something else.
 export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): RigidBody2D {
+  if (physics2DBodyOwners.has(body) || body.index !== -1 || world.bodies.includes(body)) {
+    throw new Error('Cannot add a rigid body that already belongs to a physics world');
+  }
+  const colliders = new Set<Physics2DCollider>();
+  for (const collider of body.colliders) {
+    if (colliders.has(collider)) throw new Error('Cannot add a rigid body containing the same collider twice');
+    colliders.add(collider);
+    const owner = physics2DColliderOwners.get(collider);
+    if (owner !== undefined && owner !== body) {
+      throw new Error('Cannot share a physics collider between rigid bodies');
+    }
+  }
+
   body.index = world.nextBodyIndex++;
   world.bodies.push(body);
   world.bodyByIndex.set(body.index, body);
+  physics2DBodyOwners.set(body, world);
+  for (const collider of colliders) physics2DColliderOwners.set(collider, body);
   updateRigidBody2DMassData(body);
   return body;
 }
@@ -35,9 +51,21 @@ export function addPhysics2DCollider(
   body: RigidBody2D,
   collider: Physics2DCollider,
 ): Physics2DCollider {
+  const bodyOwner = physics2DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) {
+    throw new Error('Cannot mutate a rigid body through a physics world that does not own it');
+  }
+  if (body.colliders.includes(collider)) {
+    throw new Error('Cannot add the same physics collider to a rigid body twice');
+  }
+  const owner = physics2DColliderOwners.get(collider);
+  if (owner !== undefined && owner !== body) {
+    throw new Error('Cannot share a physics collider between rigid bodies');
+  }
   const inWorld = world.bodyByIndex.get(body.index) === body;
   if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
   body.colliders.push(collider);
+  physics2DColliderOwners.set(collider, body);
   updateRigidBody2DMassData(body);
   if (inWorld) {
     _wakePhysics2DBodyFromTopology(body);
@@ -228,6 +256,8 @@ export function invalidatePhysics2DCollider(
   body: RigidBody2D,
   collider: Physics2DCollider,
 ): boolean {
+  const bodyOwner = physics2DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) return false;
   if (body.colliders.indexOf(collider) < 0) return false;
   const inWorld = world.bodyByIndex.get(body.index) === body;
   if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
@@ -283,10 +313,13 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
       if (other !== null) _wakePhysics2DBodyFromTopology(other);
     }
     world.joints.splice(i, 1);
+    physics2DJointOwners.delete(joint);
   }
   world.bodyByIndex.delete(body.index);
   world.bodies.splice(at, 1);
   world.index.removeSpatialObject(body.index);
+  body.index = -1;
+  physics2DBodyOwners.delete(body as RigidBody2D);
   return true;
 }
 
@@ -298,11 +331,14 @@ export function removePhysics2DCollider(
   body: RigidBody2D,
   collider: Readonly<Physics2DCollider>,
 ): boolean {
+  const bodyOwner = physics2DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) return false;
   const at = body.colliders.indexOf(collider as Physics2DCollider);
   if (at < 0) return false;
   const inWorld = world.bodyByIndex.get(body.index) === body;
   if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
   body.colliders.splice(at, 1);
+  physics2DColliderOwners.delete(collider as Physics2DCollider);
   updateRigidBody2DMassData(body);
   if (inWorld) {
     _wakePhysics2DBodyFromTopology(body);

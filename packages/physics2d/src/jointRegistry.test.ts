@@ -45,6 +45,21 @@ function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorB
 }
 
 describe('addPhysics2DJoint', () => {
+  it('rejects duplicate and cross-world insertion without solving a shared accumulator twice', () => {
+    const firstWorld = createPhysics2DWorld();
+    const secondWorld = createPhysics2DWorld();
+    const first = body(firstWorld, 0, 0);
+    const second = body(firstWorld, 2, 0);
+    const added = joint('Unknown', first.index, second.index);
+
+    addPhysics2DJoint(firstWorld, added);
+
+    expect(() => addPhysics2DJoint(firstWorld, added)).toThrow();
+    expect(() => addPhysics2DJoint(secondWorld, added)).toThrow();
+    expect(firstWorld.joints).toEqual([added]);
+    expect(secondWorld.joints).toHaveLength(0);
+  });
+
   it('wakes both bodies when an active constraint is added', () => {
     const world = createPhysics2DWorld();
     registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
@@ -222,6 +237,18 @@ describe('registerPhysics2DJointSolver', () => {
 });
 
 describe('removePhysics2DJoint', () => {
+  it('releases ownership so a detached joint may be inserted again', () => {
+    const firstWorld = createPhysics2DWorld();
+    const secondWorld = createPhysics2DWorld();
+    const first = body(firstWorld, 0, 0);
+    const second = body(firstWorld, 2, 0);
+    const added = addPhysics2DJoint(firstWorld, joint('Unknown', first.index, second.index));
+
+    removePhysics2DJoint(firstWorld, added);
+
+    expect(addPhysics2DJoint(secondWorld, added)).toBe(added);
+  });
+
   it('removes the joint and reports false for one the world does not hold', () => {
     const world = createPhysics2DWorld();
     const first = body(world, 0, 0);
