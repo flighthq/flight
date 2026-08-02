@@ -218,26 +218,35 @@ export const physics2DMouseJointSolver = {
     if (bodyB === null) return;
     const cos = Math.cos(bodyB.angle);
     const sin = Math.sin(bodyB.angle);
-    joint.rBX = joint.localAnchorBX * cos - joint.localAnchorBY * sin;
-    joint.rBY = joint.localAnchorBX * sin + joint.localAnchorBY * cos;
+    const localAnchorX = joint.localAnchorBX - bodyB.centerX;
+    const localAnchorY = joint.localAnchorBY - bodyB.centerY;
+    joint.rBX = localAnchorX * cos - localAnchorY * sin;
+    joint.rBY = localAnchorX * sin + localAnchorY * cos;
     joint.rAX = 0;
     joint.rAY = 0;
 
+    const mass = bodyB.inverseMass > 0 ? 1 / bodyB.inverseMass : 0;
     const angular = 2 * Math.PI * (mouse.stiffness > 0 ? mouse.stiffness : 5);
-    const damp = 2 * mouse.damping * angular;
-    const spring = angular * angular;
-    const gamma = dt * (damp + dt * spring);
-    const inverseGamma = gamma > 0 ? 1 / gamma : 0;
-    const biasFactor = dt * spring * inverseGamma;
+    const damp = 2 * mass * mouse.damping * angular;
+    const spring = mass * angular * angular;
+    const softDenominator = dt * (damp + dt * spring);
+    const gamma = softDenominator > 0 ? 1 / softDenominator : 0;
+    const biasFactor = dt * spring * gamma;
+    const k11 = bodyB.inverseMass + bodyB.inverseInertia * joint.rBY * joint.rBY + gamma;
+    const k12 = -bodyB.inverseInertia * joint.rBX * joint.rBY;
+    const k22 = bodyB.inverseMass + bodyB.inverseInertia * joint.rBX * joint.rBX + gamma;
+    const determinant = k11 * k22 - k12 * k12;
+    const inverseDeterminant = Math.abs(determinant) > EPSILON ? 1 / determinant : 0;
     // maxForce is a force; joint.impulse0/1 accumulate an impulse. Clamping one against the other was
     // a unit error worth a factor of 1/dt — at dt 0.01 the bound admitted a hundred times the force it
     // named. Convert once here, where dt is in hand, rather than in solve, which does not receive it.
-    const mouseState = beginJointSolve(mouse, 5);
-    mouseState[0] = inverseGamma;
-    mouseState[1] = biasFactor;
-    mouseState[2] = dt * mouse.maxForce;
-    mouseState[3] = 0;
-    mouseState[4] = 0;
+    const mouseState = beginJointSolve(mouse, 6);
+    mouseState[0] = k22 * inverseDeterminant;
+    mouseState[1] = -k12 * inverseDeterminant;
+    mouseState[2] = k11 * inverseDeterminant;
+    mouseState[3] = gamma;
+    mouseState[4] = biasFactor;
+    mouseState[5] = dt * mouse.maxForce;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -247,7 +256,7 @@ export const physics2DMouseJointSolver = {
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyB === null) return;
 
-    const [inverseGamma, biasFactor, maxImpulse] = state;
+    const [massXX, massXY, massYY, gamma, biasFactor, maxImpulse] = state;
     const anchorX = bodyB.x + joint.rBX;
     const anchorY = bodyB.y + joint.rBY;
     const errorX = anchorX - mouse.targetX;
@@ -255,10 +264,10 @@ export const physics2DMouseJointSolver = {
 
     const velocityX = bodyB.velocityX - bodyB.angularVelocity * joint.rBY;
     const velocityY = bodyB.velocityY + bodyB.angularVelocity * joint.rBX;
-    const mass = bodyB.inverseMass > 0 ? 1 / bodyB.inverseMass : 0;
-
-    let impulseX = -mass * (velocityX + biasFactor * errorX + inverseGamma * joint.impulse0);
-    let impulseY = -mass * (velocityY + biasFactor * errorY + inverseGamma * joint.impulse1);
+    const constraintX = velocityX + biasFactor * errorX + gamma * joint.impulse0;
+    const constraintY = velocityY + biasFactor * errorY + gamma * joint.impulse1;
+    let impulseX = -(massXX * constraintX + massXY * constraintY);
+    let impulseY = -(massXY * constraintX + massYY * constraintY);
     const previousX = joint.impulse0;
     const previousY = joint.impulse1;
     joint.impulse0 += impulseX;
