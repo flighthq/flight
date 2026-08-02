@@ -3,6 +3,7 @@ import type {
   Physics2DJoint,
   Physics2DMouseJoint,
   Physics2DPrismaticJoint,
+  Physics2DPulleyJoint,
   Physics2DRevoluteJoint,
   Physics2DRopeJoint,
   Physics2DWheelJoint,
@@ -18,6 +19,7 @@ import { findPhysics2DBody } from './world';
 export const Physics2DDistanceJointKind = 'Distance';
 export const Physics2DMouseJointKind = 'Mouse';
 export const Physics2DPrismaticJointKind = 'Prismatic';
+export const Physics2DPulleyJointKind = 'Pulley';
 export const Physics2DRevoluteJointKind = 'Revolute';
 export const Physics2DRopeJointKind = 'Rope';
 export const Physics2DWheelJointKind = 'Wheel';
@@ -438,6 +440,91 @@ export const physics2DPrismaticJointSolver = {
       angularImpulse,
       0,
     );
+  },
+};
+
+// Couples two independently suspended anchor lengths through a fixed ratio. The two ground anchors are
+// world-space points and absorb the reaction, so each body's impulse is applied toward its own ground
+// point rather than as an equal-and-opposite pair between the bodies.
+export const physics2DPulleyJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPulleyImpulse(bodyA, bodyB, joint, state[0], state[1], state[2], state[3], state[6], joint.impulse0);
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+  },
+
+  swapEnds(joint: Physics2DJoint): boolean {
+    const pulley = joint as Physics2DPulleyJoint;
+    if (Math.abs(pulley.ratio) < EPSILON) return false;
+    const ratio = pulley.ratio;
+    const groundX = pulley.groundAnchorAX;
+    const groundY = pulley.groundAnchorAY;
+    pulley.groundAnchorAX = pulley.groundAnchorBX;
+    pulley.groundAnchorAY = pulley.groundAnchorBY;
+    pulley.groundAnchorBX = groundX;
+    pulley.groundAnchorBY = groundY;
+    pulley.ratio = 1 / ratio;
+    pulley.constant /= ratio;
+    joint.impulse0 = (joint.impulse0 ?? 0) * ratio;
+    return true;
+  },
+
+  prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
+    const pulley = joint as Physics2DPulleyJoint;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    writeJointAnchors(bodyA, bodyB, joint);
+
+    const anchorAX = bodyA.x + joint.rAX;
+    const anchorAY = bodyA.y + joint.rAY;
+    const anchorBX = bodyB.x + joint.rBX;
+    const anchorBY = bodyB.y + joint.rBY;
+    const deltaAX = anchorAX - pulley.groundAnchorAX;
+    const deltaAY = anchorAY - pulley.groundAnchorAY;
+    const deltaBX = anchorBX - pulley.groundAnchorBX;
+    const deltaBY = anchorBY - pulley.groundAnchorBY;
+    const lengthA = Math.sqrt(deltaAX * deltaAX + deltaAY * deltaAY);
+    const lengthB = Math.sqrt(deltaBX * deltaBX + deltaBY * deltaBY);
+    const unitAX = lengthA > EPSILON ? deltaAX / lengthA : 0;
+    const unitAY = lengthA > EPSILON ? deltaAY / lengthA : 1;
+    const unitBX = lengthB > EPSILON ? deltaBX / lengthB : 0;
+    const unitBY = lengthB > EPSILON ? deltaBY / lengthB : 1;
+    const crossA = joint.rAX * unitAY - joint.rAY * unitAX;
+    const crossB = joint.rBX * unitBY - joint.rBY * unitBX;
+    const ratioSquared = pulley.ratio * pulley.ratio;
+    const denominator =
+      bodyA.inverseMass +
+      bodyA.inverseInertia * crossA * crossA +
+      ratioSquared * (bodyB.inverseMass + bodyB.inverseInertia * crossB * crossB);
+    const state = beginJointSolve(pulley, 7);
+    state[0] = unitAX;
+    state[1] = unitAY;
+    state[2] = unitBX;
+    state[3] = unitBY;
+    state[4] = denominator > 0 ? 1 / denominator : 0;
+    state[5] = (lengthA + pulley.ratio * lengthB - pulley.constant) * (BAUMGARTE / dt);
+    state[6] = pulley.ratio;
+  },
+
+  solve(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    const velocityA = pulleyAnchorVelocity(bodyA, joint.rAX, joint.rAY, state[0], state[1]);
+    const velocityB = pulleyAnchorVelocity(bodyB, joint.rBX, joint.rBY, state[2], state[3]);
+    const lambda = -state[4] * (velocityA + state[6] * velocityB + state[5]);
+    joint.impulse0 += lambda;
+    applyPulleyImpulse(bodyA, bodyB, joint, state[0], state[1], state[2], state[3], state[6], lambda);
   },
 };
 
@@ -957,6 +1044,42 @@ function prismaticAxisVelocity(
     a2 * bodyB.angularVelocity -
     a1 * bodyA.angularVelocity
   );
+}
+
+function pulleyAnchorVelocity(
+  body: Readonly<RigidBody2D>,
+  rX: number,
+  rY: number,
+  unitX: number,
+  unitY: number,
+): number {
+  const velocityX = body.velocityX - body.angularVelocity * rY;
+  const velocityY = body.velocityY + body.angularVelocity * rX;
+  return velocityX * unitX + velocityY * unitY;
+}
+
+function applyPulleyImpulse(
+  bodyA: RigidBody2D,
+  bodyB: RigidBody2D,
+  joint: Readonly<Physics2DJoint>,
+  unitAX: number,
+  unitAY: number,
+  unitBX: number,
+  unitBY: number,
+  ratio: number,
+  impulse: number,
+): void {
+  const impulseAX = impulse * unitAX;
+  const impulseAY = impulse * unitAY;
+  const impulseB = impulse * ratio;
+  const impulseBX = impulseB * unitBX;
+  const impulseBY = impulseB * unitBY;
+  bodyA.velocityX += bodyA.inverseMass * impulseAX;
+  bodyA.velocityY += bodyA.inverseMass * impulseAY;
+  bodyA.angularVelocity += bodyA.inverseInertia * (joint.rAX * impulseAY - joint.rAY * impulseAX);
+  bodyB.velocityX += bodyB.inverseMass * impulseBX;
+  bodyB.velocityY += bodyB.inverseMass * impulseBY;
+  bodyB.angularVelocity += bodyB.inverseInertia * (joint.rBX * impulseBY - joint.rBY * impulseBX);
 }
 
 // The shared two-axis point solve behind revolute and weld. Each axis is solved against the velocities the

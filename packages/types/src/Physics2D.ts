@@ -358,6 +358,18 @@ export interface Physics2DRopeJoint extends Physics2DJoint {
   maxLength: number;
 }
 
+// A pulley joint couples each body's anchor distance from a fixed world-space ground anchor:
+// `lengthA + ratio * lengthB = constant`. The ground absorbs the net reaction, so unlike an ordinary
+// two-body joint its impulses are not equal and opposite when `ratio` differs from one.
+export interface Physics2DPulleyJoint extends Physics2DJoint {
+  groundAnchorAX: number;
+  groundAnchorAY: number;
+  groundAnchorBX: number;
+  groundAnchorBY: number;
+  ratio: number;
+  constant: number;
+}
+
 // A prismatic joint: constrains two bodies to slide along one axis with no relative rotation. A piston,
 // an elevator, a drawer. `localAxisAX`/`localAxisAY` is the slide axis in body A's local space.
 export interface Physics2DPrismaticJoint extends Physics2DJoint {
