@@ -1,3 +1,4 @@
+import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
@@ -8,7 +9,7 @@ import type {
   Texture,
   VertexAttributeLayout,
 } from '@flighthq/types/contract';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
+import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {
@@ -29,35 +30,6 @@ export const SKINNED_FLOATS_PER_VERTEX = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.
 // Source formats may list more influences per vertex (AWD's shambler uses 8); the top four by weight
 // are kept and renormalized. See packSkinInfluences.
 export const MAX_SKIN_INFLUENCES = 4;
-
-export function buildEmbeddedImageResourceReference(
-  bytes: Uint8Array,
-  mimeType: string | null,
-): EmbeddedImageResourceReference {
-  return {
-    bytes,
-    failure: null,
-    kind: ImageResourceReferenceKind.Embedded,
-    mimeType,
-    state: ResourceResolutionState.Unresolved,
-    textures: [],
-  };
-}
-
-export function buildExternalImageResourceReference(
-  uri: string,
-  basePath: string | null = null,
-): ExternalImageResourceReference {
-  return {
-    basePath,
-    failure: null,
-    kind: ImageResourceReferenceKind.External,
-    mimeType: null,
-    state: ResourceResolutionState.Unresolved,
-    textures: [],
-    uri,
-  };
-}
 
 // Flight uses a right-handed Y-up coordinate system with CCW front faces. Importers for formats
 // that use different conventions apply the conversions below at parse time so every scene enters
@@ -116,7 +88,7 @@ export function createEmbeddedTextureRef(
       candidate.mimeType === mimeType,
   );
   if (resource === undefined) {
-    resource = buildEmbeddedImageResourceReference(bytes, mimeType);
+    resource = createEmbeddedImageResourceReference(bytes, mimeType);
     resources?.push(resource);
   }
   return createTexture({ resource });
@@ -139,7 +111,7 @@ export function createExternalTextureRef(
       candidate.basePath === basePath,
   );
   if (resource === undefined) {
-    resource = buildExternalImageResourceReference(uri, basePath);
+    resource = createExternalImageResourceReference(uri, basePath);
     resources?.push(resource);
   }
   return createTexture({ resource });

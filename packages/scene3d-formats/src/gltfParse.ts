@@ -8,6 +8,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
+import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
@@ -988,9 +989,9 @@ function buildGltfImageResourceReference(
       const semicolon = image.uri.indexOf(';');
       const declared = semicolon > 5 ? image.uri.slice(5, semicolon) : (image.mimeType ?? null);
       const bytes = decodeBase64(image.uri.slice(comma + 1));
-      return buildEmbeddedImageResourceReference(bytes, declared ?? detectImageMimeType(bytes));
+      return createEmbeddedImageResourceReference(bytes, declared ?? detectImageMimeType(bytes));
     }
-    return buildExternalImageResourceReference(image.uri, options?.basePath ?? null);
+    return createExternalImageResourceReference(image.uri, options?.basePath ?? null);
   }
   if (image.bufferView !== undefined) {
     const bufferView = doc.bufferViews?.[image.bufferView];
@@ -1016,7 +1017,7 @@ function buildGltfImageResourceReference(
       return null;
     }
     const bytes = buffer.slice(start, start + bufferView.byteLength);
-    return buildEmbeddedImageResourceReference(bytes, image.mimeType ?? detectImageMimeType(bytes));
+    return createEmbeddedImageResourceReference(bytes, image.mimeType ?? detectImageMimeType(bytes));
   }
   // A glTF image must carry a uri or a bufferView; one with neither cannot be resolved and is omitted.
   tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Drop, 'gltf.image-no-source', '', { firstImage: imageIndex });
@@ -1864,13 +1865,7 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
 // plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
-import {
-  buildEmbeddedImageResourceReference,
-  buildExternalImageResourceReference,
-  CANONICAL_FLOATS_PER_VERTEX,
-  CANONICAL_LAYOUT,
-  SKINNED_FLOATS_PER_VERTEX,
-} from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared';
 
 // One accumulated glTF document-build drop: a total occurrence `count` plus the first offender's `detail`,
 // keyed by kind + discriminator. No origin is stored — buildGltfDocument flushes (physically reports) every

@@ -82,7 +82,10 @@ async function settle(resolver: Scene3DResourceResolver): Promise<void> {
 beforeAll(async () => {
   vi.resetModules();
   loadFromBytes = vi.fn<LoadImageResourceFromBytes>();
-  vi.doMock('@flighthq/image/contract', () => ({
+  // Override only the two loaders; the rest of the module stays real, so growing @flighthq/image cannot
+  // silently blank out a code path under test.
+  vi.doMock('@flighthq/image/contract', async (importOriginal) => ({
+    ...(await importOriginal<typeof ImageModule>()),
     loadImageResourceFromBytes: loadFromBytes,
     loadImageResourceFromUrl: vi.fn(),
   }));

@@ -1,0 +1,117 @@
+import type {
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
+  Image,
+  ImageResourceFailure,
+  ImageResourceFetch,
+  ImageResourceReference,
+  ImageResourceReferenceResolutionExplanation,
+} from '@flighthq/types/contract';
+import {
+  ImageResourceFailureKind,
+  ImageResourceReferenceKind,
+  ResourceResolutionState,
+} from '@flighthq/types/contract';
+
+import { loadImageResourceFromBytes } from './imageResourceFrom';
+
+// `bytes` is retained as the view the container handed over, not a copy: a parser carves an image payload
+// out of its source and the reference borrows it, so a document that never resolves an image never pays for
+// its pixels. `textures` starts empty and each waiting Texture subscribes itself.
+export function createEmbeddedImageResourceReference(
+  bytes: Uint8Array,
+  mimeType: string | null = null,
+): EmbeddedImageResourceReference {
+  return {
+    bytes,
+    failure: null,
+    kind: ImageResourceReferenceKind.Embedded,
+    mimeType,
+    state: ResourceResolutionState.Unresolved,
+    textures: [],
+  };
+}
+
+export function createExternalImageResourceReference(
+  uri: string,
+  basePath: string | null = null,
+): ExternalImageResourceReference {
+  return {
+    basePath,
+    failure: null,
+    kind: ImageResourceReferenceKind.External,
+    mimeType: null,
+    state: ResourceResolutionState.Unresolved,
+    textures: [],
+    uri,
+  };
+}
+
+// Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
+// arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.
+export function createImageResourceFailure(cause: unknown): ImageResourceFailure {
+  if (cause instanceof Error) {
+    return { kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name };
+  }
+  return { kind: ImageResourceFailureKind.Error, message: String(cause), name: null };
+}
+
+// Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
+// and exposes no resolver runtime or raw thrown value.
+export function explainImageResourceReferenceResolution(
+  ref: Readonly<ImageResourceReference>,
+): ImageResourceReferenceResolutionExplanation {
+  return {
+    failure: ref.failure === null ? null : { ...ref.failure },
+    kind: ref.kind,
+    retryable: ref.state === ResourceResolutionState.Failed,
+    state: ref.state,
+  };
+}
+
+// Returns a failed reference to the requestable state. Loading/resolved/unresolved references are unchanged
+// so this atom cannot invalidate live work or a successfully bound resource accidentally.
+export function resetFailedImageResourceReference(ref: ImageResourceReference): boolean {
+  if (ref.state !== ResourceResolutionState.Failed) return false;
+  ref.failure = null;
+  ref.state = ResourceResolutionState.Unresolved;
+  return true;
+}
+
+// Advances one reference through its lifecycle and returns the decoded image, or null for an expected
+// failure. Embedded bytes decode through @flighthq/image-codec; an External uri goes through the caller's
+// fetch seam. An abort is a cancel rather than a failure, so the reference reverts to Unresolved and the
+// rejection propagates — a caller racing several loads against one signal sees one cancellation, not a
+// document full of spurious Failed references.
+//
+// This is the whole lifecycle for a document that resolves its images once. A caller needing concurrency
+// limits, priority, or retry drives those around this atom rather than inside it.
+export async function resolveImageResourceReference(
+  ref: ImageResourceReference,
+  fetch: ImageResourceFetch,
+  signal: AbortSignal,
+): Promise<Image | null> {
+  ref.failure = null;
+  ref.state = ResourceResolutionState.Loading;
+  try {
+    const image =
+      ref.kind === ImageResourceReferenceKind.Embedded
+        ? await loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal)
+        : await fetch(ref, signal);
+    if (image === null) {
+      ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'Image resource unavailable', name: null };
+      ref.state = ResourceResolutionState.Failed;
+      return null;
+    }
+    ref.state = ResourceResolutionState.Resolved;
+    return image;
+  } catch (cause) {
+    if (signal.aborted) {
+      ref.state = ResourceResolutionState.Unresolved;
+      throw cause;
+    }
+    ref.failure = createImageResourceFailure(cause);
+    ref.state = ResourceResolutionState.Failed;
+    return null;
+  }
+}
