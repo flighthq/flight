@@ -36,7 +36,6 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/abc": "*",
     "@flighthq/clip": "*",
     "@flighthq/compression": "*",
     "@flighthq/geometry": "*",
@@ -46,7 +45,6 @@
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-resources": "*",
     "@flighthq/shape": "*",
-    "@flighthq/text": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
