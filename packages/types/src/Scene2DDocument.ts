@@ -40,6 +40,10 @@ export type Scene2DContentReference = Scene2DAssetReference | Scene2DSlotReferen
 // fill references only through the scene2d-resources resolve/load APIs; targets are retained here so codecs
 // can bind each manifest entry without a parallel path language or hidden runtime.
 export interface Scene2DDocument {
+  // The authored stage colour as packed RGBA, or null when the format declares none. It is document
+  // metadata rather than content — a colour the viewport clears to, not a node in the graph — so an
+  // application decides whether to honour it and nothing in `root` depends on it.
+  backgroundColor: number | null;
   references: Scene2DContentReference[];
   root: Node2D;
   sourceKind: string | null;

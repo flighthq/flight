@@ -184,3 +184,32 @@ SELECT
 Fetch that list into `.test-assets/swf/corpus/` (flattening `/` to `__`), then import each file through
 `createScene2DFromSwf` and count throws, nulls, and container signatures. `.test-assets` is gitignored, and
 `npm run test` neither reads the corpus nor touches the network.
+
+## Tag-frequency sweep
+
+Run over the same corpus with deflate registered, counting how many of the 301 readable files carry each
+tag. It exists to rank remaining work by what real files actually contain rather than by what a reader of
+the spec would assume. The corpus skews toward AVM behaviour tests, so scripting tags are over-represented
+— the visual-tag rows are the usable signal.
+
+| Tag | Files |
+| --- | --- |
+| `SetBackgroundColor` | 250 |
+| `FrameLabel` | 125 |
+| `DefineEditText` | 49 |
+| `DefineFont2` | 38 |
+| `DefineShape` (all four generations) | 49 |
+| `DefineFont3` | 18 |
+| `DefineButton2` | 6 |
+| `DefineText` / `DefineText2` | 6 |
+| `DefineMorphShape` | 4 |
+| `DefineBitsLossless` / `2` | 5 |
+| `DefineBitsJPEG3` | 1 |
+
+Placement appearance, across 784 placements: **41** carry a colour transform, and **1** file uses a
+`PlaceObject3` blend mode.
+
+Two rankings came out of this and both contradicted the assumption they replaced. `SetBackgroundColor` is
+in 83% of files and cost one tag to support. Text (`DefineEditText` plus the font tables behind it) is the
+largest remaining visual hole, while per-frame colour transform and blend mode — which had been ranked
+next — cover 5% of placements and one file respectively.

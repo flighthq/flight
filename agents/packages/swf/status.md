@@ -56,6 +56,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
 - `DefineSprite` timelines instantiate recursively, including unnamed intermediate containers needed to
   preserve composed transforms; every named descendant joins the flat enumerable slot manifest, listed
   after the container that carries it.
+- `SetBackgroundColor` becomes the document's `backgroundColor` as opaque packed RGBA — it carries no
+  alpha in the file and a stage is opaque. It is document metadata, not a node: a colour the viewport
+  clears to, which an application honours or ignores. A file that declares none reports null rather than a
+  guessed default.
 - The stage RECT becomes the document root's authored local bounds. Shape, morph-shape, static/edit
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix, across every frame of the symbol rather than its

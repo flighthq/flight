@@ -71,7 +71,7 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, references, instantiation, 0);
   if (root === null) return null;
 
-  return createScene2DDocument(root, references, 'swf');
+  return createScene2DDocument(root, references, 'swf', parsed.backgroundColor);
 }
 
 export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
@@ -138,6 +138,7 @@ interface SwfImagePayload {
 }
 
 interface SwfTagResult {
+  backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
   images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
@@ -148,6 +149,7 @@ interface SwfTagResult {
 }
 
 interface SwfParseState {
+  backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
   images: Map<number, SwfImagePayload>;
@@ -678,6 +680,7 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
 
 function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
+    backgroundColor: null,
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
     images: new Map<number, SwfImagePayload>(),
@@ -689,6 +692,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
   return {
+    backgroundColor: state.backgroundColor,
     characterBounds: state.characterBounds,
     images: state.images,
     linkages: state.linkages,
@@ -735,6 +739,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readLegacyRemoveObject(body, placements);
     } else if (code === TAG_REMOVE_OBJECT_2) {
       placements.delete(body.readUint16());
+    } else if (code === TAG_SET_BACKGROUND_COLOR) {
+      readSwfBackgroundColor(body, state);
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
       readSwfLinkages(body, state.linkages);
     } else if (code === TAG_DEFINE_BITS_JPEG_2 || code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
@@ -770,6 +776,16 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     // A label declared after the last ShowFrame names a frame the timeline never reaches.
     labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
   };
+}
+
+// The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
+// opaque RGBA. Last declaration wins, matching how a player applies the most recent one it has read.
+function readSwfBackgroundColor(body: SwfReader, state: SwfParseState): void {
+  const red = body.readUint8();
+  const green = body.readUint8();
+  const blue = body.readUint8();
+  if (!body.valid) return;
+  state.backgroundColor = red * 0x1000000 + green * 0x10000 + blue * 0x100 + 0xff;
 }
 
 function addSwfTimelineLabel(labels: TimelineLabel[], frame: number, name: string): void {
@@ -1079,6 +1095,7 @@ const TAG_PLACE_OBJECT_3 = 70;
 const TAG_PLACE_OBJECT_4 = 94;
 const TAG_REMOVE_OBJECT = 5;
 const TAG_REMOVE_OBJECT_2 = 28;
+const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const TWIPS_PER_PIXEL = 20;
