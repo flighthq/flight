@@ -2,6 +2,12 @@ export * from './awd2Parse';
 export * from './gltfParse';
 export { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
 export { GltfClearcoatExtensionHandler } from './gltfClearcoat';
+export {
+  getGltfDracoDecoder,
+  hasGltfDracoDecoder,
+  registerGltfDracoDecoder,
+  unregisterGltfDracoDecoder,
+} from './gltfDraco';
 export { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength';
 export { GltfIridescenceExtensionHandler } from './gltfIridescence';
 export { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension';
