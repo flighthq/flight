@@ -75,3 +75,24 @@ export interface RiveDocument {
   header: RiveDocumentHeader;
   objects: RiveCoreObject[];
 }
+
+/**
+ * One artboard's component tree, recovered from the flat stream.
+ *
+ * `objects` is the artboard's own numbering space: **the artboard itself is index 0**, followed by
+ * its components in stream order. That numbering is what `parentId` indexes into, so it is the
+ * artboard rather than the file that gives a component its address.
+ */
+export interface RiveArtboardGraph {
+  objects: RiveCoreObject[];
+  /**
+   * The parent of each entry in `objects`, as an index into that same array. The artboard at index 0
+   * has no parent and carries -1, as does any component whose stated parent could not be resolved.
+   */
+  parentIndices: number[];
+}
+
+/** Every artboard in a `.riv`, each with its component tree resolved. */
+export interface RiveObjectGraph {
+  artboards: RiveArtboardGraph[];
+}

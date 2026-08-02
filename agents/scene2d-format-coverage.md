@@ -178,9 +178,23 @@ key 526, seen once, which the current published model does not define. An unname
 in a way an unknown property is not: a type key is only a number followed by properties, so the
 object still decodes with its properties intact and merely lacks a name.
 
-**Not covered:** everything above identity. No property key is interpreted yet, so artboards, nodes,
-shapes and paths, fills and strokes, deformable meshes, bones and skinning, animations and keyframes,
-and nested artboard linkage are all unread, and nothing produces display nodes. The state-machine
+**Artboard segmentation and the component tree are covered.** `createRiveObjectGraph` splits the flat
+stream into artboards and resolves each component's parent. Two facts drive it, both settled against
+real files rather than reasoned from the spec: **an artboard opens a numbering space in which it is
+index 0**, its components following in stream order, and `parentId` (property key 5) is an index into
+that space. Numbering the artboard as 0 resolves every stated parent across 127 real artboards with
+no cycle and exactly one root; numbering from the first component instead leaves 94 references out of
+range and 33 cycles. Only components are numbered — animations, keyframes, assets and state machines
+share the stream but sit outside the addressing, and counting them would shift every later index.
+
+Over the corpus this produces 37,595 components across 127 artboards with no unresolved parent and no
+diagnostic, at a maximum tree depth of 17. An unresolvable or self-referencing parent is reported and
+the component becomes a root, so one bad reference costs its own placement rather than the artboard.
+
+**Not covered:** everything above structure. No property beyond `parentId` is interpreted, so
+artboard and node transforms, shapes and paths, fills and strokes, deformable meshes, bones and
+skinning, animations and keyframes, and nested artboard linkage are all unread, and nothing produces
+display nodes. The state-machine
 *descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
 codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
 it neither rejects a future file nor adapts to an older one.
