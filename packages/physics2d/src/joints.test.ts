@@ -2,6 +2,7 @@ import type {
   Physics2DDistanceJoint,
   Physics2DMouseJoint,
   Physics2DPrismaticJoint,
+  Physics2DPulleyJoint,
   Physics2DRevoluteJoint,
   Physics2DRopeJoint,
   Physics2DWheelJoint,
@@ -15,6 +16,7 @@ import {
   Physics2DDistanceJointKind,
   Physics2DMouseJointKind,
   Physics2DPrismaticJointKind,
+  Physics2DPulleyJointKind,
   Physics2DRevoluteJointKind,
   Physics2DRopeJointKind,
   Physics2DWheelJointKind,
@@ -22,6 +24,7 @@ import {
   physics2DDistanceJointSolver,
   physics2DMouseJointSolver,
   physics2DPrismaticJointSolver,
+  physics2DPulleyJointSolver,
   physics2DRevoluteJointSolver,
   physics2DRopeJointSolver,
   physics2DWheelJointSolver,
@@ -348,6 +351,18 @@ describe('joints built without their impulse accumulators', () => {
         upperTranslation: 0,
       },
     ],
+    [
+      Physics2DPulleyJointKind,
+      physics2DPulleyJointSolver,
+      {
+        constant: 4,
+        groundAnchorAX: 0,
+        groundAnchorAY: 2,
+        groundAnchorBX: 2,
+        groundAnchorBY: 2,
+        ratio: 1,
+      },
+    ],
     [Physics2DRopeJointKind, physics2DRopeJointSolver, { maxLength: 1 }],
     [
       Physics2DWheelJointKind,
@@ -462,6 +477,19 @@ function prismaticJoint(
     upperTranslation: 0,
     ...over,
   } as Physics2DPrismaticJoint;
+}
+
+function pulleyJoint(bodyA: number, bodyB: number, over: Partial<Physics2DPulleyJoint> = {}): Physics2DPulleyJoint {
+  return {
+    ...baseJoint(Physics2DPulleyJointKind, bodyA, bodyB),
+    constant: 4,
+    groundAnchorAX: 0,
+    groundAnchorAY: 0,
+    groundAnchorBX: 4,
+    groundAnchorBY: 0,
+    ratio: 1,
+    ...over,
+  } as Physics2DPulleyJoint;
 }
 
 describe('physics2DMouseJointSolver', () => {
@@ -775,6 +803,68 @@ describe('physics2DPrismaticJointSolver', () => {
     expect(joint.lowerTranslation).toBe(-2);
     expect(joint.upperTranslation).toBe(4);
     expect(joint.motorSpeed).toBe(3);
+  });
+});
+
+describe('physics2DPulleyJointSolver', () => {
+  it('preserves the coupled cable length while transferring motion between its ends', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPulleyJointKind, physics2DPulleyJointSolver);
+    const left = box(world, 'dynamic', 0, -2);
+    const right = box(world, 'dynamic', 4, -2);
+    left.velocityY = -2;
+    addPhysics2DJoint(world, pulleyJoint(left.index, right.index));
+
+    run(world, 120);
+
+    const lengthA = Math.hypot(left.x, left.y);
+    const lengthB = Math.hypot(right.x - 4, right.y);
+    expect(lengthA + lengthB).toBeCloseTo(4, 3);
+    expect(left.y).toBeLessThan(-2.5);
+    expect(right.y).toBeGreaterThan(-1.5);
+  });
+
+  it('weights the second cable length by its configured ratio', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPulleyJointKind, physics2DPulleyJointSolver);
+    const left = box(world, 'dynamic', 0, -2);
+    const right = box(world, 'dynamic', 4, -2);
+    left.velocityY = -2;
+    addPhysics2DJoint(world, pulleyJoint(left.index, right.index, { constant: 6, ratio: 2 }));
+
+    run(world, 120);
+
+    const lengthA = Math.hypot(left.x, left.y);
+    const lengthB = Math.hypot(right.x - 4, right.y);
+    expect(lengthA + 2 * lengthB).toBeCloseTo(6, 3);
+    expect(Math.abs(left.y + 2)).toBeGreaterThan(Math.abs(right.y + 2));
+  });
+
+  it('preserves the same constraint when canonical ordering exchanges the ends', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPulleyJointKind, physics2DPulleyJointSolver);
+    const first = box(world, 'dynamic', 4, -2);
+    const second = box(world, 'dynamic', 0, -2);
+    const joint = pulleyJoint(second.index, first.index, {
+      constant: 6,
+      groundAnchorAX: 0,
+      groundAnchorAY: 1,
+      groundAnchorBX: 4,
+      groundAnchorBY: 2,
+      impulse0: 3,
+      ratio: 2,
+    });
+
+    addPhysics2DJoint(world, joint);
+
+    expect(joint.bodyA).toBe(first.index);
+    expect(joint.groundAnchorAX).toBe(4);
+    expect(joint.groundAnchorAY).toBe(2);
+    expect(joint.groundAnchorBX).toBe(0);
+    expect(joint.groundAnchorBY).toBe(1);
+    expect(joint.ratio).toBeCloseTo(0.5, 12);
+    expect(joint.constant).toBeCloseTo(3, 12);
+    expect(joint.impulse0).toBeCloseTo(6, 12);
   });
 });
 
