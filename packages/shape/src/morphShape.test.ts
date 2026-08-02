@@ -101,6 +101,17 @@ describe('getMorphShapeRuntime', () => {
 });
 
 describe('setMorphShapeProgress', () => {
+  it('does not invalidate or resample unchanged progress', () => {
+    const shape = createMorphShape(createTestMorph());
+    const revision = getNodeLocalContentRevision(shape);
+    const data = shape.data.path.data.slice();
+
+    setMorphShapeProgress(shape, 0);
+
+    expect(shape.data.path.data).toStrictEqual(data);
+    expect(getNodeLocalContentRevision(shape)).toBe(revision);
+  });
+
   it('resamples stable buffers, stores progress, and invalidates content', () => {
     const shape = createMorphShape(createTestMorph());
     appendMorphShapePath(shape);

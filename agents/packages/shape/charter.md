@@ -68,9 +68,9 @@ Shape is the "what to draw" recorder, not the geometry kernel. General path tess
 
   **Why:** The current representation is portable, simple, and correct. Premature optimization of the buffer format would add complexity without a profiling-gated signal.
 
-- **[2026-08-02] `MorphShape` is its own node kind and retains a prepared path morph; it does not own playback.** `createMorphShape` binds one `PathMorph` to a stable sampled `Path`; `appendMorphShapePath` places those live buffers in the ordinary retained style stream, and `setMorphShapeProgress` samples plus invalidates content. Canvas, DOM, GL, and WebGPU expose explicit default MorphShape renderer aliases over their existing Shape implementations. Animation/timeline code decides when progress changes.
+- **[2026-08-02] `MorphShape` is its own node kind and retains a prepared path morph; it does not own a clock.** `createMorphShape` binds one `PathMorph` to a stable sampled `Path`; `appendMorphShapePath` places those live buffers in the ordinary retained style stream, and `setMorphShapeProgress` samples plus invalidates content. `applyAnimationClipToMorphShape` and `applyMorphShapeAnimationSample` explicitly bind the target-free animation substrate to that setter, while callers still own advancement. Canvas, DOM, GL, and WebGPU expose explicit default MorphShape renderer aliases over their existing Shape implementations.
 
-  **Why:** Runtime identity and renderer registration should name the semantic node users authored, while the actual draw vocabulary remains exactly Shape's. Keeping time outside the entity preserves explicit sampling and lets timeline, tween, or direct application control share the same retained primitive.
+  **Why:** Runtime identity and renderer registration should name the semantic node users authored, while the actual draw vocabulary remains exactly Shape's. Keeping time outside the entity preserves explicit sampling and lets animation, timeline, tween, or direct application control share the same retained primitive. The shape-owned binding follows the same target-free-core/domain-sink split as scene animation.
 
 ## Open directions
 

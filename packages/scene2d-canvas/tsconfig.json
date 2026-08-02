@@ -40,6 +40,9 @@
       "path": "../render"
     },
     {
+      "path": "../path"
+    },
+    {
       "path": "../signals"
     },
     {

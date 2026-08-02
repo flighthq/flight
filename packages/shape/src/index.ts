@@ -1,5 +1,7 @@
 export {
   PathCommand,
+  applyAnimationClipToMorphShape,
+  applyMorphShapeAnimationSample,
   appendMorphShapePath,
   appendShapeArc,
   appendShapeArcTo,
@@ -28,6 +30,7 @@ export {
   computeShapeLocalBoundsRectangle,
   copyShapeCommands,
   createMorphShape,
+  createMorphShapeAnimationTarget,
   createScale9Shape,
   createShape,
   enableShapeHitTesting,

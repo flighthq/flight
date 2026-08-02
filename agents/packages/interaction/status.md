@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/interaction'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-02
+by: builder4
 ---
 
 # interaction — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-08-02 — MorphShape hit-test registration
+
+Registered `MorphShapeKind` with the ordinary Shape handler in `registerDefaultHitTests` and with the
+live fill-region handler in `registerShapeHitTest`. Precise queries now track animated path samples;
+coarse queries retain the existing bounds behavior.
 
 ## 2026-07-09 — pointer coordinate-space docs + potential mapping helper
 
