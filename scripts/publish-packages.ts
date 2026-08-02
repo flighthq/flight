@@ -10,6 +10,14 @@
 // excludes test outputs from the tarball. Idempotent: a package whose version is already on the
 // registry is skipped, so a re-run after a partial failure completes the set.
 //
+// A package is also skipped when the target dist-tag already points at a NEWER version, because
+// `npm publish --tag` moves that tag and npm offers no publish-without-a-tag. Two builds whose CI
+// legs finish out of commit order would otherwise leave `next` pointing at the older snapshot. The
+// guard compares against the registry rather than the branch tip on purpose: a tip comparison
+// starves under burst commits (every run sees a newer tip and skips, so nothing ever publishes),
+// whereas this one always lets the first build to reach the registry win. See
+// snapshot-version-order.ts.
+//
 // The graph is ~141 packages and every publish is network-bound, so both registry phases run
 // CONCURRENTLY rather than one package at a time:
 //
@@ -39,6 +47,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
+
 const execFileAsync = promisify(execFile);
 
 // Wide enough to hide per-publish latency, narrow enough to stay under the registry's publish rate
@@ -63,6 +73,13 @@ interface PackageEntry {
   pkg: Manifest;
 }
 
+interface RegistryEntry {
+  // This exact version is already on the registry.
+  hasVersion: boolean;
+  // What the target dist-tag currently points at, or undefined when the tag does not exist yet.
+  tagVersion: string | undefined;
+}
+
 const DEP_FIELDS = ['dependencies', 'peerDependencies', 'optionalDependencies'] as const;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -75,6 +92,9 @@ const noBuild = args.includes('--no-build');
 // value is a positional-looking token, so exclude it before resolving the name-substring filter.
 const tagIndex = args.indexOf('--tag');
 const distTag = tagIndex === -1 ? undefined : args[tagIndex + 1];
+// The dist-tag this run will actually move. npm defaults to `latest` when --tag is absent, so the
+// backwards-move guard covers the stable release path (release.yml) on the same terms as edge/next.
+const targetTag = distTag ?? 'latest';
 const filter = args.find((a, i) => !a.startsWith('--') && i !== tagIndex + 1);
 
 const manifests = readdirSync(packagesDir, { withFileTypes: true })
@@ -116,11 +136,19 @@ const candidates = manifests.filter(({ pkg }) => {
 
 // One batched pass instead of a serial `npm view` per package. Skipped entirely on --dry-run, which
 // uploads nothing and so has no reason to ask the registry what already exists.
-const alreadyPublished = dryRun ? new Set<string>() : await findPublishedVersions(candidates);
+const registryState = dryRun ? new Map<string, RegistryEntry>() : await readRegistryState(candidates);
 const queue = candidates.filter(({ pkg }) => {
   const id = `${pkg.name}@${pkg.version}`;
-  if (alreadyPublished.has(id)) {
+  const state = registryState.get(pkg.name);
+  if (state?.hasVersion === true) {
     skipped.push(`${id} (already published)`);
+    return false;
+  }
+  // Refuses to drag the dist-tag backwards when this build reaches the publish step after a newer
+  // one already landed. Skipping is not a loss: the newer snapshot on the tag is a superset of this
+  // commit's work, and npm cannot publish without also moving the tag.
+  if (state?.tagVersion !== undefined && isSnapshotVersionSuperseded(pkg.version, state.tagVersion)) {
+    skipped.push(`${id} (superseded — \`${targetTag}\` is already at ${state.tagVersion})`);
     return false;
   }
   return true;
@@ -155,34 +183,45 @@ function pinInternalDependencies(pkg: Manifest): Manifest {
   return clone;
 }
 
-// Returns the set of "name@version" ids already on the registry, checked concurrently.
+// Reads, concurrently, the two facts the publish decision needs per package: whether this exact
+// version is already on the registry, and what the target dist-tag currently points at.
 //
 // This replaces a per-package `npm view`, whose cost was dominated by npm CLI startup rather than the
-// request. It asks the registry directly for each package document and looks for the version key.
-// The registry URL comes from npm config rather than being hardcoded, so a private or mirrored
-// registry still resolves; the packages publish with --access public, so an unauthenticated read is
-// sufficient. A packument fetch that fails for any reason (404 for a never-published name, or a
-// transient error) is treated as NOT published — the publish attempt itself is then the authority,
-// and it fails loudly rather than silently skipping a package that should have shipped.
-async function findPublishedVersions(entries: readonly PackageEntry[]): Promise<Set<string>> {
+// request. It asks the registry directly for each package document. Both facts come from the SAME
+// abbreviated packument, so the dist-tag guard costs no additional requests. The registry URL comes
+// from npm config rather than being hardcoded, so a private or mirrored registry still resolves; the
+// packages publish with --access public, so an unauthenticated read is sufficient.
+//
+// A packument fetch that fails for any reason (404 for a never-published name, or a transient error)
+// leaves the package absent from the map, which reads as neither published nor superseded — the
+// publish attempt itself is then the authority, and it fails loudly rather than silently skipping a
+// package that should have shipped.
+async function readRegistryState(entries: readonly PackageEntry[]): Promise<Map<string, RegistryEntry>> {
   const registry = getRegistry();
-  const found = new Set<string>();
+  const state = new Map<string, RegistryEntry>();
   await runPool(entries, REGISTRY_CHECK_CONCURRENCY, async ({ pkg }) => {
     // Scoped names carry a literal "/" that must not be read as a path separator.
     const url = `${registry}/${pkg.name.replace('/', '%2f')}`;
     try {
-      // The abbreviated packument is a fraction of the full document and still carries every version.
+      // The abbreviated packument is a fraction of the full document and still carries both the full
+      // version list and the dist-tags.
       const response = await fetch(url, {
         headers: { accept: 'application/vnd.npm.install-v1+json' },
       });
       if (!response.ok) return;
-      const doc = (await response.json()) as { versions?: Record<string, unknown> };
-      if (doc.versions?.[pkg.version] !== undefined) found.add(`${pkg.name}@${pkg.version}`);
+      const doc = (await response.json()) as {
+        versions?: Record<string, unknown>;
+        'dist-tags'?: Record<string, string>;
+      };
+      state.set(pkg.name, {
+        hasVersion: doc.versions?.[pkg.version] !== undefined,
+        tagVersion: doc['dist-tags']?.[targetTag],
+      });
     } catch {
-      // Treated as not-published; see the note above.
+      // Left absent from the map; see the note above.
     }
   });
-  return found;
+  return state;
 }
 
 // The effective registry, trailing slash trimmed so callers can join with "/" unconditionally.
