@@ -11,6 +11,46 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — The fixture-blocked gaps built as far as honesty allows (builder, user-directed)
+
+Four directives: build the fixture-blocked gaps out as far as possible or document them clearly; parsers
+**represent what is there honestly**; drop the crumb that violated the import-diagnostics rule.
+
+**The honesty rule settled spec-gloss.** `KHR_materials_pbrSpecularGlossiness` now imports as a
+`SpecularGlossinessPbrMaterial` — the model the file authored. It is the one handler that REPLACES the
+document material rather than attaching a descriptor, because specular-glossiness is a different shading
+model, not a contribution to the standard one. Converting to metallic-roughness at the door was the
+tempting shortcut (the extension is deprecated, so that is where the asset is "supposed" to end up) and is
+rejected for the same reason MTL is not unconditionally reinterpreted: a lossy remap belongs at a seam the
+caller invokes by name. Channels the two models share — normal, occlusion, emissive, alpha — ride across
+from the base material rather than being re-resolved, so the swap cannot disagree with the core about
+sampler or color space. It declines a material another handler already claimed rather than clobbering it.
+
+**`mtl.pbr-extension-unbound` is gone.** Its cause was our unwired MTL path, not the caller's file — the
+exact shape the new rule bans. The gap is in the coverage doc instead.
+
+**AWD cameras (block 42) now import.** The block header is the same envelope every placed AWD block uses,
+which is why it reads identically to the light block. Projection type 5001/5002/5003 selects perspective /
+orthographic / off-center orthographic; the perspective FOV is the VERTICAL angle in degrees, confirmed
+from the reference's own frustum math (`scaleV` carries it directly), so it maps to `fovY` without an
+aspect correction. AWD states no clip planes and no aspect — both belong to the runtime viewport in
+Away3D, not to the asset — so the import takes that ecosystem's defaults rather than inventing numbers.
+An off-center volume keeps its extents and crumbs its lost origin offset, which IS an asset fact.
+
+**3DS keyframer: the unambiguous half is now read.** Object-node pivots (`0xB013`) import — the pivot is
+subtracted from model-space geometry and the opposite translation composed into the placement, so a node
+rotates about its authored origin instead of the world origin. Render-neutral by construction, and
+mutation-tested against the same round-trip invariant `TRI_LOCAL` uses (breaking the compose fails exactly
+the two pivot cases).
+
+The hierarchy and the animation tracks stay unread **on purpose**, and that is the "document it" half of
+the directive rather than a deferral. The `NODE_HDR` trailing uint16 has two documented readings that
+disagree; no corpus file carries a keyframer to settle it; parenting would double-transform against the
+world-space `TRI_LOCAL` placements without an `inverse(parentWorld) * childWorld` rebase; and rotation
+tracks are incremental axis-angle with variable-length per-key TCB parameters. A wrong hierarchy visibly
+misplaces geometry that renders correctly today — strictly worse than flat-but-correct. Reasoning and
+scope live in [scene3d format coverage](../../scene3d-format-coverage.md).
+
 ## 2026-08-02 — Coverage moved out of the changelog; the crumb line drawn (builder, user-directed)
 
 **A per-property "unhandled" tally for AWD materials was proposed and rejected — correctly.** The finding

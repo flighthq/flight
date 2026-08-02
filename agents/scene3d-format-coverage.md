@@ -32,13 +32,14 @@ bundle the family. Available: `KHR_lights_punctual`, `KHR_materials_emissive_str
 
 **Not covered:**
 
-- `KHR_materials_pbrSpecularGlossiness` — **needs a ruling, not code.** Every handler above *attaches* to
-  a material; this one would *replace* it, and Flight carries both a `SpecularGlossinessPbrMaterial` and a
-  `convertSpecularGlossinessToStandardPbr`. Which an importer should produce — keep the authored model, or
-  convert to the metallic-roughness lane at the door — is a design decision. The MTL model-choice ruling
-  is the precedent and points toward keeping the authored model; that it is a *deprecated* glTF extension
-  is the counter-argument.
-- `KHR_draco_mesh_compression`, `KHR_mesh_quantization`, `KHR_materials_unlit`, `KHR_texture_basisu`.
+`KHR_materials_pbrSpecularGlossiness` is also available and is the one handler that REPLACES the material
+rather than attaching to it, since specular-glossiness is a different shading model. It imports as a
+`SpecularGlossinessPbrMaterial` — the model the file authored — under the standing rule that **a parser
+represents what is there honestly**. Flight's `convertSpecularGlossinessToStandardPbr` stays an explicit,
+caller-invoked step; that the extension is deprecated is not licence for the importer to silently remap it.
+
+**Not covered:** `KHR_draco_mesh_compression`, `KHR_mesh_quantization`, `KHR_materials_unlit`,
+`KHR_texture_basisu`.
 
 ## OBJ / MTL
 
@@ -61,7 +62,8 @@ choosing the material model from which directives the file actually states.
   operation over decoded pixels a parser must not perform.
 - **`Ps`/`Pc`/`Pcr`/`aniso`** are parsed but unbound — Flight models those as PBR extensions composed onto
   an `ExtendedPbrMaterial`, and the MTL path does not compose them yet. The glTF path does, so the
-  descriptors and the promotion helper both already exist.
+  descriptors and the promotion helper both already exist. This is recorded here rather than crumbed: the
+  cause is our unwired path, not the caller's file.
 
 ## 3DS
 
@@ -71,11 +73,17 @@ materials including shininess/transparency/opacity map, point and spot lights, a
 
 **Not covered:**
 
-- **The keyframer (`0xB000`).** No node hierarchy and no animation: every imported node is a scene root.
-  This is the largest single 3DS gap. Three things block it — no fixture in the corpus carries the chunk;
-  the `NODE_HDR` tree encoding is ambiguous between two documented readings; and because `TRI_LOCAL`
-  matrices are WORLD placements, parenting would double-transform unless each child is rebased by
-  `inverse(parentWorld) * childWorld`.
+- **The keyframer (`0xB000`) — partially read.** Object-node **pivots** (`0xB013`) ARE imported: the pivot
+  is subtracted from the model-space geometry and the opposite translation composed into the node
+  placement, so a node rotates about its authored origin. That step is render-neutral by construction and
+  mutation-tested against the same round-trip invariant as `TRI_LOCAL`.
+  What stays unread is the **hierarchy** and the **animation tracks**, deliberately: the `NODE_HDR`
+  trailing uint16 has two documented readings that disagree on edge cases and no corpus file carries a
+  keyframer to disambiguate them; because `TRI_LOCAL` matrices are WORLD placements, parenting would
+  double-transform unless each child were rebased by `inverse(parentWorld) * childWorld`; and rotation
+  tracks are incremental axis-angle with variable-length per-key TCB parameters, so key stride is not
+  constant. A wrong hierarchy would visibly misplace geometry that renders correctly today, which is why
+  the ambiguous half is left alone rather than guessed.
 - **`MAT_BUMPMAP` (0xA230)** is parsed into `ThreeDsMaterial.bumpFilename` but deliberately not bound: it
   is a grayscale HEIGHT field, and binding it to `normalMap` (sampled as RGB*2-1) renders bogus vectors.
   An honest bump→normal seam is a renderer feature, not parser breadth.
@@ -85,11 +93,18 @@ materials including shininess/transparency/opacity map, point and spot lights, a
 
 Covered: triangle geometry, containers and mesh instances with hierarchy, skeletons, skeleton poses and
 animations, skinning, materials (color, diffuse texture, normal texture, scalar alpha), textures, lights
-(block 41) and light pickers (block 51), and compressed bodies via the swappable decompressor seam.
+(block 41) and light pickers (block 51), cameras (block 42), and compressed bodies via the swappable
+decompressor seam.
+
+The camera block states no clip planes and no aspect — in Away3D both belong to the runtime viewport
+rather than the asset — so the import takes that ecosystem's own defaults (60° vertical FOV, 20..3000 clip
+span, aspect 1) rather than inventing values. An off-center orthographic camera (projection type 5003)
+keeps its extents; its origin offset has nowhere to go in Flight's centred volume and is crumbed, which is
+an asset fact the author really stated. No corpus fixture carries a camera, so the block layout is
+verified against the reference implementation's field order rather than against real bytes.
 
 **Not covered:**
 
-- **Cameras (block 42).** Modeled by `Scene3DDocument`; no fixture in the corpus carries one.
 - **Vertex-pose animation (blocks 111/112).** No fixture carries either.
 - **Block 113 is an animation SET, not vertex data** — a common misreading, including in an earlier
   Flight worklist. In `shambler.awd` it is named `animationset1` and its payload lists block ids
