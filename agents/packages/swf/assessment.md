@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-01
+updated: 2026-08-02
 basedOn: ./review.md
 ---
 
@@ -8,10 +8,13 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Materialize visible archive content.** Add versioned `DefineShape*`, bitmap, text/font coverage
-   onto existing Flight primitives without retaining a player runtime. Embedded JPEG/PNG/GIF, lossless
-   bitmap, and video dimension prefixes supply structural extents, not decoded pixels or frames, so an
-   imported timeline currently animates containers with nothing drawn in them.
+1. **Decode bitmap pixels, then text and fonts.** `DefineShape` through `DefineShape4` now draw, so the
+   still frame is vector-complete; bitmaps and text are what is left of the visible content. Bitmaps need
+   a ruling first, not code: `DefineBitsLossless` is a synchronous `createBitmap`/`createTexture` path
+   behind a deflate Flight already has once in `scene3d-formats`, so the question is whether that inflate
+   is extracted into a cell both consume or mirrored per-cell behind a registered seam. `DefineBitsJPEG*`
+   needs both a decoder Flight has only asynchronously and a home for embedded encoded payloads in a
+   document model that addresses assets by URI.
 2. **Carry per-frame appearance and frame scripts.** Placement transforms replay; the color transform,
    blend mode, clip-depth mask, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills

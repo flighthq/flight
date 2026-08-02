@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/swf'
 status: partial
-score: 70
-updated: 2026-08-01
+score: 76
+updated: 2026-08-02
 ingested:
   - charter.md
   - status.md
@@ -14,14 +14,15 @@ ingested:
 
 ## Verdict
 
-**Partial — 70/100.** The package supplies the first honest end-to-end proof of the shared named-graph
+**Partial — 76/100.** The package supplies the first honest end-to-end proof of the shared named-graph
 contract: bounded `FWS` parsing turns named instances, transforms, and class linkage into enumerable
 `Scene2DDocument` slot references. `DefineSprite` symbols instantiate recursively, so named descendants
 survive unnamed MovieClip containers with their composed transforms. Structure is no longer frozen at one
 frame: every timeline in the file crosses as `movieclip` playback data, so a document animates through the
-ordinary `MovieClip` API with no SWF runtime retained. What remains unbuilt is the *visual* half — no
-shape, bitmap, text, or font definition is materialized, and compressed bodies are still rejected — so
-this is a structurally complete importer of an archive it cannot yet draw. Stage, shape, text, morph,
+ordinary `MovieClip` API with no SWF runtime retained. Shape definitions now decode to real geometry, so a document
+draws rather than merely measuring: an imported still frame is vector art in the right place at the right
+size. What remains unbuilt is the rest of the visual half — bitmap, text, and font definitions carry
+extents but no content, and compressed bodies are still rejected. Stage, shape, text, morph,
 embedded-image, lossless-bitmap, video, and recursively composed sprite extents cover the available
 named-graph sizing contract. A revision-pinned uncompressed Ruffle fixture supplies real-file evidence for
 the named-slot path and exposed the zero-bit RECT compatibility case now covered synthetically.
@@ -43,6 +44,17 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 - `DefineSprite` dictionaries instantiate recursively after the whole file is parsed, so reused
   symbols, unnamed parent containers, and multi-level world-transform composition retain the intended
   graph structure.
+- Shape decoding recovers what SWF does not record. The format stores edges, each naming the fill on its
+  left and right, not contours; the decoder collects edges per style, reverses the right-hand side so a
+  fill's edges all run the same way around it, and stitches runs end-to-start. The nonzero winding of the
+  emitted commands then matches the fill the file meant, holes included. Whole-twip coordinates make the
+  stitch exact rather than tolerance-based.
+- Geometry degrades one definition at a time. A shape body is decoded on its own reader, so a body this
+  decoder cannot read costs that character's drawing and nothing else — the document still imports, with
+  the definition as the bounded placeholder it was before geometry existed.
+- Fill coverage is honest about its edge: gradients pass through with ratios, spread, and a matrix that
+  needed only a translation change because Flight's gradient box is SWF's gradient square; bitmap fills are
+  read for alignment and left unpainted rather than approximated by a solid colour.
 - Timelines cross as data, not as a player. Each one becomes a `TimelineSource` on a `MovieClip`, so
   playback, seeking, looping, and label lookup are the `movieclip`/`timeline` engine's, and the codec
   keeps no runtime of its own — the seam `TimelineSource` was written for.
@@ -80,9 +92,14 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 
 ## Remaining depth
 
-- No `DefineShape*`, bitmap, text, font, or sprite visual definition is materialized. The current
-  targets are structural containers, not rendered archive content — a timeline animates the right nodes
-  along the right transforms with nothing drawn inside them.
+- Bitmap, text, and font definitions are still structural only. Bitmap pixels are blocked on one
+  decision rather than on implementation: `createBitmap` plus `createTexture` is a synchronous path, and
+  `DefineBitsLossless` needs only a deflate that Flight already carries once, in `scene3d-formats`.
+  Whether that inflate becomes a shared cell or is mirrored per-cell behind a registered seam determines
+  whether `swf` needs a decompressor seam at all. `DefineBitsJPEG*` additionally needs a decoder Flight
+  has only as an asynchronous web registry, so embedded encoded payloads also need a home in the document
+  model, which today addresses assets by URI.
+- Morph shapes keep bounds only; their paired start/end geometry has no 2D-morph home to land in.
 - Playback carries placement transforms only. Per-frame color transforms, blend modes, masks (clip
   depth), filters, and `DoAction`/`DoInitAction` frame scripts are parsed past rather than imported, so
   a frame's visual state is narrower than its structural state. Frame scripts in particular have a
