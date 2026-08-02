@@ -1,7 +1,7 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/types/contract';
 import type {
@@ -123,7 +123,15 @@ export function parseObj(
             firstLine: i + 1,
           });
         // Close the current group and enter the unnamed group — the same boundary a named g/o makes.
-        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
+        flushGroup(
+          materialBuckets,
+          currentGroupName,
+          document,
+          materials,
+          resolvedMaterials,
+          normals.length > 0,
+          diagnostics,
+        );
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = undefined;
       } else if (raw === 'usemtl') {
@@ -235,7 +243,15 @@ export function parseObj(
         // A group/object boundary flushes the accumulated faces as one Mesh (one subset per
         // material) and starts a fresh group. `usemtl` state persists across the boundary per the
         // OBJ spec — `g`/`o` name geometry, they do not reset the active material.
-        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
+        flushGroup(
+          materialBuckets,
+          currentGroupName,
+          document,
+          materials,
+          resolvedMaterials,
+          normals.length > 0,
+          diagnostics,
+        );
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = args || undefined;
         break;
@@ -265,7 +281,15 @@ export function parseObj(
   }
 
   // Flush the final group's accumulated faces.
-  flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials, diagnostics);
+  flushGroup(
+    materialBuckets,
+    currentGroupName,
+    document,
+    materials,
+    resolvedMaterials,
+    normals.length > 0,
+    diagnostics,
+  );
 
   // Emit the aggregated malformed-line/token tallies here in parseObj (the emitting function, so `parseObj`
   // is the crumbs' origin per the collector contract) — one crumb per (kind, discriminator) with its count.
@@ -404,6 +428,7 @@ function flushGroup(
   document: Scene3DDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
   resolvedMaterials: Map<string, number>,
+  sourceHasNormals: boolean,
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const vertices: number[] = [];
@@ -433,6 +458,12 @@ function flushGroup(
     subsets,
     vertices: new Float32Array(vertices),
   });
+  // An OBJ carrying no `vn` at all leaves every normal slot zeroed, and a zero normal shades black under
+  // any lit material — so the geometry is generated from the faces instead, matching what AWD and MD5
+  // already do when their own files omit normals. Smooth (area-weighted across shared vertices) rather
+  // than flat: it is the same choice the 3DS path makes for a mesh with no smoothing chunk, and OBJ's
+  // own smoothing-group directive is not modeled, so there is no authored hard edge to honor.
+  if (!sourceHasNormals) computeMeshGeometryNormals(geometry, geometry);
   const meshIndex = document.meshes.length;
   const mesh: Scene3DDocumentMesh = { geometry, materials };
   document.meshes.push(mesh);

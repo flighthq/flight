@@ -699,3 +699,41 @@ describe('parseObj', () => {
     expect(document.meshes[0].materials).toEqual([-1]);
   });
 });
+
+describe('parseObj generated normals', () => {
+  it('generates normals for an OBJ that declares no vn', () => {
+    // The overwhelmingly common plain OBJ: positions and faces only. Left as-is every normal slot is
+    // zero, and a zero normal shades black under any lit material — so this is a black-import guard,
+    // not a nicety. The triangle lies in the XY plane wound counter-clockwise, so it faces +Z.
+    const document = parseObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n');
+
+    const normal = { x: 0, y: 0, z: 0 };
+    for (let v = 0; v < getMeshGeometryVertexCount(document.meshes[0].geometry); v++) {
+      expect(getMeshGeometryVertexNormal(normal, document.meshes[0].geometry, v)).toBe(true);
+      expect(normal.x).toBeCloseTo(0, 5);
+      expect(normal.y).toBeCloseTo(0, 5);
+      expect(normal.z).toBeCloseTo(1, 5);
+    }
+  });
+
+  it('keeps the file’s own normals when the OBJ declares vn', () => {
+    // Generation must not overwrite authored normals — the file's -Z normals survive even though the
+    // winding would have generated +Z ones.
+    const document = parseObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nvn 0 0 -1\nf 1//1 2//1 3//1\n');
+
+    const normal = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexNormal(normal, document.meshes[0].geometry, 0);
+    expect(normal.z).toBeCloseTo(-1, 5);
+  });
+
+  it('generates normals per group when an OBJ with no vn declares several', () => {
+    const document = parseObj('g a\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\ng b\nv 0 0 5\nv 1 0 5\nv 0 1 5\nf 4 5 6\n');
+
+    expect(document.meshes).toHaveLength(2);
+    const normal = { x: 0, y: 0, z: 0 };
+    for (let m = 0; m < 2; m++) {
+      getMeshGeometryVertexNormal(normal, document.meshes[m].geometry, 0);
+      expect(normal.z).toBeCloseTo(1, 5);
+    }
+  });
+});
