@@ -14,7 +14,9 @@ import {
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
+  resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { MovieClip, Shape } from '@flighthq/types/contract';
 import { MovieClipKind, ShapeKind } from '@flighthq/types/contract';
 
@@ -142,6 +144,54 @@ describe('createScene2DFromSwf', () => {
     const target = document!.references[0].target;
     expect(target.kind).not.toBe(ShapeKind);
     expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 5, width: 10, x: 0, y: 0 });
+  });
+
+  it('carries an embedded image out as undecoded asset bytes for the resolve step', () => {
+    const png = createPngHeader(24, 12);
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), png)),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document!.references[0];
+    expect(reference.kind).toBe('Asset');
+    expect(reference.kind === 'Asset' ? reference.uri : null).toBe('swf:bitmap/9');
+    expect(reference.kind === 'Asset' ? reference.mimeType : null).toBe('image/png');
+    // The bytes are the payload exactly as the file carried it — nothing is decoded at import.
+    expect(reference.kind === 'Asset' ? reference.bytes : null).toEqual(png);
+    expect(reference.content).toBeNull();
+    expect(getNodeLocalBoundsRectangle(reference.target)).toMatchObject({ height: 12, width: 24 });
+  });
+
+  it('resolves an embedded image only when a caller asks for it', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(9), swfString('logo')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // Importing decodes nothing: until a resolver runs, the reference is unfilled.
+    expect(document!.references[0].content).toBeNull();
+
+    const decoded = createDisplayObject();
+    const resources = resolveScene2DResources(document!, {
+      resolveAssetContent: (reference) => (reference.mimeType === 'image/jpeg' && reference.bytes ? decoded : null),
+    });
+
+    expect(resources.resolved).toHaveLength(1);
+    expect(resources.unresolved).toEqual([]);
+    expect(document!.references[0].content).toBe(decoded);
+    expect(document!.references[0].name).toBe('logo');
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {

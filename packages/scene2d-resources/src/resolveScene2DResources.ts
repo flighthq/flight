@@ -38,7 +38,7 @@ function resolveScene2DContentReference(
   options: Readonly<ResolveScene2DResourcesOptions> | undefined,
 ): Node2D | null {
   if (reference.kind === Scene2DContentReferenceKind.Asset) {
-    return options?.resolveAssetContent?.(reference.name, reference.uri) ?? null;
+    return options?.resolveAssetContent?.(reference) ?? null;
   }
-  return options?.resolveSlotContent?.(reference.name, reference.linkage) ?? null;
+  return options?.resolveSlotContent?.(reference) ?? null;
 }

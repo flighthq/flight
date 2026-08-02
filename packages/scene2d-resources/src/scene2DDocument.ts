@@ -7,14 +7,19 @@ import type {
 } from '@flighthq/types/contract';
 import { Scene2DContentReferenceKind } from '@flighthq/types/contract';
 
+// `bytes` carries an asset the document embedded, for a format that has no address to fetch from. The
+// bytes stay encoded here — decoding belongs to the resolve step, which may be asynchronous and which a
+// caller that does not need the asset never runs.
 export function createScene2DAssetReference(
   name: string,
   uri: string,
   target: Node2D,
   required = true,
+  bytes: Uint8Array | null = null,
+  mimeType: string | null = null,
 ): Scene2DAssetReference {
   target.name = name;
-  return { content: null, kind: Scene2DContentReferenceKind.Asset, name, required, target, uri };
+  return { bytes, content: null, kind: Scene2DContentReferenceKind.Asset, mimeType, name, required, target, uri };
 }
 
 export function createScene2DDocument(

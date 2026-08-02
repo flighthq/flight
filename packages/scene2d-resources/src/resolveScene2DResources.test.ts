@@ -17,8 +17,10 @@ describe('resolveScene2DResources', () => {
     ]);
 
     const resources = resolveScene2DResources(document, {
-      resolveAssetContent: (name, uri) => (name === 'background' && uri === 'bg.png' ? assetContent : null),
-      resolveSlotContent: (name, linkage) => (name === 'avatar' && linkage === 'Game.Avatar' ? slotContent : null),
+      resolveAssetContent: (reference) =>
+        reference.name === 'background' && reference.uri === 'bg.png' ? assetContent : null,
+      resolveSlotContent: (reference) =>
+        reference.name === 'avatar' && reference.linkage === 'Game.Avatar' ? slotContent : null,
     });
 
     expect(resources.resolved.map((entry) => entry.content)).toEqual([assetContent, slotContent]);

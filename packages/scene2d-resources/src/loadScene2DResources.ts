@@ -24,9 +24,9 @@ export async function loadScene2DResources(
   const loads = selected.map(async (reference): Promise<Node2D | null> => {
     try {
       if (reference.kind === Scene2DContentReferenceKind.Slot) {
-        return options.resolveSlotContent?.(reference.name, reference.linkage) ?? null;
+        return options.resolveSlotContent?.(reference) ?? null;
       }
-      return await options.loadAssetContent(reference.name, reference.uri, signal);
+      return await options.loadAssetContent(reference, signal);
     } finally {
       loaded++;
       emitScene2DResourceLoadProgress(options, loaded, selected.length, reference);

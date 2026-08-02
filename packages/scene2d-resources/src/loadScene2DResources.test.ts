@@ -18,7 +18,8 @@ describe('loadScene2DResources', () => {
     ]);
 
     const resources = await loadScene2DResources(document, {
-      loadAssetContent: async (name, uri) => (name === 'background' && uri === 'bg.png' ? assetContent : null),
+      loadAssetContent: async (reference) =>
+        reference.name === 'background' && reference.uri === 'bg.png' ? assetContent : null,
       resolveSlotContent: () => slotContent,
     });
 
@@ -54,7 +55,7 @@ describe('loadScene2DResources', () => {
       createScene2DAssetReference('second', 'second.png', createDisplayObject()),
     ]);
     const operation = loadScene2DResources(document, {
-      loadAssetContent: (name) => (name === 'first' ? first : Promise.resolve(secondContent)),
+      loadAssetContent: (reference) => (reference.name === 'first' ? first : Promise.resolve(secondContent)),
     });
     releaseFirst(createDisplayObject());
     const resources = await operation;
@@ -69,7 +70,7 @@ describe('loadScene2DResources', () => {
       createScene2DAssetReference('a', 'a.png', createDisplayObject()),
     ]);
     await loadScene2DResources(document, {
-      loadAssetContent: async (_name, _uri, signal) => {
+      loadAssetContent: async (_reference, signal) => {
         received.push(signal);
         return null;
       },
