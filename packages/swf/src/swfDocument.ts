@@ -84,13 +84,7 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
 // document built only from placements has nothing to show for it, which is why this is a separate entry
 // rather than something the root carries. Each call builds a fresh instance, because a symbol is a
 // template rather than a shared node.
-//
-// A symbol carries the same two resolve contracts a whole file does — named slots to fill and image
-// bytes to decode — so it comes back as a document rooted at the symbol rather than as a bare node.
-// Anything less would hand back artwork whose bitmaps could never be paired with their pixels, since
-// each call parses afresh and its Textures are its own. `backgroundColor` stays null: the stage colour
-// belongs to the stage, and a symbol instantiated into someone else's scene is not it.
-export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: string): Scene2DDocument | null {
+export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: string): Node2D | null {
   const file = readSwfFile(source);
   if (file === null) return null;
   const { frameRate, parsed } = file;
@@ -101,7 +95,6 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
   }
   if (characterId < 0) return null;
 
-  const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
     frameRate: frameRate > 0 ? frameRate : null,
@@ -109,11 +102,15 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
     resolvedBounds: new Map<number, SwfRectangle | null>(),
     remainingNodes: MAX_INSTANTIATED_NODES,
   };
-  const root = createSwfSymbolNode(parsed, characterId, slots, instantiation);
-  if (root === null) return null;
-  fillSwfLosslessBitmapTextures(parsed);
-
-  return createScene2DDocument(root, slots, 'swf', null, createSwfImageResources(parsed));
+  const bounds = resolveSwfCharacterBounds(parsed, characterId, instantiation, 0);
+  const sprite = parsed.sprites.get(characterId);
+  if (sprite !== undefined) {
+    return createSwfTimelineNode(sprite, bounds, parsed, [], instantiation, 0);
+  }
+  const shape = parsed.shapes.get(characterId);
+  const editText = parsed.editTexts.get(characterId);
+  if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds);
+  return shape === undefined ? null : createSwfPlacementNode(undefined, shape, bounds);
 }
 
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
@@ -755,28 +752,6 @@ function createSwfShapeNode(template: Readonly<Shape>, bounds: SwfRectangle | nu
     (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
   }
   return target;
-}
-
-// Builds the node one exported character becomes, resolving the same character kinds in the same order a
-// placement does — an exported bitmap or edit text is as ordinary a library symbol as an exported sprite,
-// and dispatching differently here would make a symbol import unlike the identical character placed on a
-// timeline.
-function createSwfSymbolNode(
-  parsed: Readonly<SwfTagResult>,
-  characterId: number,
-  slots: Scene2DSlotReference[],
-  state: SwfInstantiationState,
-): Node2D | null {
-  const bounds = resolveSwfCharacterBounds(parsed, characterId, state, 0);
-  const editText = parsed.editTexts.get(characterId);
-  if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds);
-  if (parsed.images.has(characterId)) {
-    return createSwfBitmapNode(acquireSwfImageTexture(parsed, characterId, false, true), bounds);
-  }
-  const sprite = parsed.sprites.get(characterId);
-  if (sprite !== undefined) return createSwfTimelineNode(sprite, bounds, parsed, slots, state, 0);
-  const shape = parsed.shapes.get(characterId);
-  return shape === undefined ? null : createSwfShapeNode(shape, bounds);
 }
 
 function mergeSwfRectangles(a: SwfRectangle, b: Readonly<SwfRectangle>): SwfRectangle {

@@ -1,4 +1,10 @@
-import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
+import {
+  composeMatrix4FromTransform3D,
+  createMatrix4,
+  createVector3,
+  matrix4TransformPoint,
+  rotateVector3ByQuaternion,
+} from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -50,12 +56,14 @@ import {
   THREE_DS_OBJECT,
   THREE_DS_PERCENT_INT,
   THREE_DS_SMOOTH_GROUP,
+  THREE_DS_TRANSFORM_MATRIX,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
 } from '@flighthq/types/contract';
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper';
+import { convertPositionsZUpToYUp } from './shared';
 import { createScene3DFrom3ds, parse3ds } from './threeDsParse';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
@@ -1452,5 +1460,187 @@ describe('parse3ds lights and cameras', () => {
     const crumb = findDiagnostic(diagnostics, '3ds.camera-truncated');
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+  });
+});
+
+describe('parse3ds local coordinate system', () => {
+  // Builds a TRI_LOCAL chunk (0x4160) from the format's four contiguous 3-vectors: the object's X, Y,
+  // and Z axes, then its origin.
+  function writeLocalMatrix(
+    xAxis: readonly [number, number, number],
+    yAxis: readonly [number, number, number],
+    zAxis: readonly [number, number, number],
+    origin: readonly [number, number, number],
+  ): Uint8Array {
+    const payload = new Uint8Array(48);
+    const view = new DataView(payload.buffer);
+    const all = [...xAxis, ...yAxis, ...zAxis, ...origin];
+    for (let i = 0; i < 12; i++) view.setFloat32(i * 4, all[i], true);
+    return writeChunk(THREE_DS_TRANSFORM_MATRIX, payload);
+  }
+
+  function buildTriangleWithMatrix3ds(
+    name: string,
+    positions: readonly number[],
+    indices: readonly number[],
+    matrix: Uint8Array | null,
+  ): Uint8Array {
+    const parts = [writeVertices(positions), writeFaces(indices)];
+    if (matrix !== null) parts.push(matrix);
+    const trimesh = writeChunk(THREE_DS_TRIMESH, concatBytes(...parts));
+    const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(name), trimesh));
+    return writeChunk(THREE_DS_MAIN, writeChunk(THREE_DS_EDITOR, object));
+  }
+
+  // Re-applies the emitted node transform to the emitted model-space geometry and compares against the
+  // file's world-space vertices taken straight through the Z-up→Y-up conversion. This is the invariant
+  // that makes TRI_LOCAL support checkable on its own terms: whatever the placement is, localizing by its
+  // inverse and then re-applying it must land back where the file put the geometry. A test that only
+  // asserted the numbers this parser happens to produce would prove nothing about the decomposition.
+  function expectWorldPositionsPreserved(bytes: Uint8Array, worldZUp: readonly number[]): void {
+    const document = parse3ds(bytes);
+    const geometry = document.meshes[0].geometry;
+    const placement = createMatrix4();
+    composeMatrix4FromTransform3D(placement, document.nodes[0].transform);
+
+    const expected = Array.from(worldZUp);
+    convertPositionsZUpToYUp(expected);
+
+    const local = { x: 0, y: 0, z: 0 };
+    const world = createVector3(0, 0, 0);
+    for (let v = 0; v < expected.length / 3; v++) {
+      expect(getMeshGeometryVertexPosition(local, geometry, v)).toBe(true);
+      world.x = local.x;
+      world.y = local.y;
+      world.z = local.z;
+      matrix4TransformPoint(world, placement, world);
+      expect(world.x).toBeCloseTo(expected[v * 3], 3);
+      expect(world.y).toBeCloseTo(expected[v * 3 + 1], 3);
+      expect(world.z).toBeCloseTo(expected[v * 3 + 2], 3);
+    }
+  }
+
+  it('moves a translated placement off the geometry and onto the node transform', () => {
+    // The object sits at Z-up (10, 20, 30) and its vertices are stored already displaced to there.
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const document = parse3ds(
+      buildTriangleWithMatrix3ds(
+        'Moved',
+        world,
+        [0, 1, 2],
+        writeLocalMatrix([1, 0, 0], [0, 1, 0], [0, 0, 1], [10, 20, 30]),
+      ),
+    );
+
+    // Z-up (10, 20, 30) is Y-up (10, 30, -20): the placement rides the node...
+    const position = document.nodes[0].transform.position;
+    expect(position.x).toBeCloseTo(10, 4);
+    expect(position.y).toBeCloseTo(30, 4);
+    expect(position.z).toBeCloseTo(-20, 4);
+
+    // ...and the geometry is back at its own origin rather than baked out at the world offset.
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    expect(local.x).toBeCloseTo(0, 4);
+    expect(local.y).toBeCloseTo(0, 4);
+    expect(local.z).toBeCloseTo(0, 4);
+  });
+
+  it('preserves world positions through a translated placement', () => {
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    expectWorldPositionsPreserved(
+      buildTriangleWithMatrix3ds(
+        'Moved',
+        world,
+        [0, 1, 2],
+        writeLocalMatrix([1, 0, 0], [0, 1, 0], [0, 0, 1], [10, 20, 30]),
+      ),
+      world,
+    );
+  });
+
+  it('preserves world positions through a rotated and translated placement', () => {
+    // A 90-degree rotation about the file's Z axis, placed away from the origin — the case where a
+    // careless conversion (rotating the matrix instead of conjugating it) lands the geometry elsewhere.
+    const world = [1, 2, 3, 4, 5, 6, -7, 8, -9];
+    expectWorldPositionsPreserved(
+      buildTriangleWithMatrix3ds(
+        'Rotated',
+        world,
+        [0, 1, 2],
+        writeLocalMatrix([0, 1, 0], [-1, 0, 0], [0, 0, 1], [5, -5, 2]),
+      ),
+      world,
+    );
+  });
+
+  it('preserves world positions through a non-uniformly scaled placement', () => {
+    const world = [2, 4, 6, 8, 10, 12, 14, 16, 18];
+    expectWorldPositionsPreserved(
+      buildTriangleWithMatrix3ds(
+        'Scaled',
+        world,
+        [0, 1, 2],
+        writeLocalMatrix([2, 0, 0], [0, 3, 0], [0, 0, 4], [1, 1, 1]),
+      ),
+      world,
+    );
+  });
+
+  it('leaves the node at identity and the geometry untouched when the mesh carries no TRI_LOCAL', () => {
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const document = parse3ds(buildTriangleWithMatrix3ds('Plain', world, [0, 1, 2], null));
+
+    const transform = document.nodes[0].transform;
+    expect(transform.position.x).toBe(0);
+    expect(transform.position.y).toBe(0);
+    expect(transform.position.z).toBe(0);
+    expect(transform.scale.x).toBe(1);
+
+    // Z-up (10, 20, 30) → Y-up (10, 30, -20), straight through with no localization.
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    expect(local.x).toBeCloseTo(10, 4);
+    expect(local.y).toBeCloseTo(30, 4);
+    expect(local.z).toBeCloseTo(-20, 4);
+  });
+
+  it('recovers and reports 3ds.local-matrix-singular for a placement that cannot be inverted', () => {
+    // A collapsed basis (a zero Z axis) has no inverse. The geometry stays in world space and the node
+    // keeps its identity transform — the pre-TRI_LOCAL behavior, which still renders correctly.
+    const diagnostics: ImportDiagnostic[] = [];
+    const world = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const document = parse3ds(
+      buildTriangleWithMatrix3ds(
+        'Singular',
+        world,
+        [0, 1, 2],
+        writeLocalMatrix([1, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 0]),
+      ),
+      diagnostics,
+    );
+
+    const crumb = findDiagnostic(diagnostics, '3ds.local-matrix-singular');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(document.nodes[0].transform.position.x).toBe(0);
+
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    expect(local.x).toBeCloseTo(1, 4);
+  });
+
+  it('recovers and reports 3ds.local-matrix-truncated for a TRI_LOCAL chunk short of its twelve floats', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const short = writeChunk(THREE_DS_TRANSFORM_MATRIX, new Uint8Array(24)); // six floats, not twelve
+    const document = parse3ds(
+      buildTriangleWithMatrix3ds('Short', [1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2], short),
+      diagnostics,
+    );
+
+    const crumb = findDiagnostic(diagnostics, '3ds.local-matrix-truncated');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(document.nodes[0].transform.position.x).toBe(0);
   });
 });

@@ -502,15 +502,8 @@ function readSwfShapeLineStyle(
   };
 }
 
-// A fill MATRIX's translation is always twips and always converts. Its LINEAR part does not, and the two
-// fill kinds differ — which is why callers finish the conversion themselves rather than this reader doing
-// it for them.
-//
-// A gradient's matrix maps SWF's gradient square, 32768 twips across, onto the shape. Flight's gradient box
-// is the same physical extent expressed in pixels (±819.2), so the unit difference cancels and the linear
-// part passes through untouched. A bitmap's matrix maps the image's own PIXEL space onto a shape written in
-// twips, so nothing cancels and its linear part must be divided — an unscaled 1:1 fill is authored as scale
-// 20. Applying the gradient rule to a bitmap draws it twenty times too large.
+// A gradient MATRIX maps SWF's gradient square, which spans 32768 twips, onto the shape. Flight's gradient
+// box uses the same square in pixels, so only the translation converts.
 function readSwfShapeMatrix(reader: SwfReader): Matrix {
   let a = 1;
   let d = 1;

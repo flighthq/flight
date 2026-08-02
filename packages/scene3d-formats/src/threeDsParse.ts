@@ -1,7 +1,12 @@
 import {
+  createMatrix4,
   createQuaternion,
   createTransform3D,
   createVector3,
+  decomposeMatrix4ToTransform3D,
+  inverseMatrix4,
+  matrix4TransformPoint,
+  multiplyMatrix4,
   multiplyQuaternion,
   normalizeVector3,
   setQuaternionFromAxisAngle,
@@ -29,6 +34,7 @@ import type {
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
   ThreeDsMesh,
+  Transform3D,
   Vector3,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
@@ -63,6 +69,7 @@ import {
   THREE_DS_PERCENT_FLOAT,
   THREE_DS_PERCENT_INT,
   THREE_DS_SMOOTH_GROUP,
+  THREE_DS_TRANSFORM_MATRIX,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
@@ -409,6 +416,7 @@ function parseTrimesh(
   let vertices: Float32Array | null = null;
   let faces: Uint16Array | null = null;
   let uvs: Float32Array | null = null;
+  let localMatrix: Float32Array | null = null;
   let materialGroups: readonly ThreeDsMaterialGroup[] = [];
   let smoothingGroups: Uint32Array | null = null;
 
@@ -439,6 +447,8 @@ function parseTrimesh(
       }
     } else if (chunkId === THREE_DS_UV_COORDS) {
       uvs = parseUvCoords(view, dataStart, chunkEnd, threeDsDrops);
+    } else if (chunkId === THREE_DS_TRANSFORM_MATRIX) {
+      localMatrix = parseLocalMatrix(view, dataStart, chunkEnd, name, threeDsDrops);
     }
 
     cursor = chunkEnd;
@@ -455,7 +465,28 @@ function parseTrimesh(
     return null;
   }
 
-  return { faces, materialGroups, name, smoothingGroups, uvs, vertices };
+  return { faces, localMatrix, materialGroups, name, smoothingGroups, uvs, vertices };
+}
+
+// Reads a TRI_LOCAL chunk (0x4160): 12 float32 forming the object's placement as four contiguous
+// 3-vectors — its X, Y, and Z axes, then its origin. Returns them in file order; the caller builds the
+// matrix. Returns null when the chunk is too short to hold all twelve.
+function parseLocalMatrix(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  name: string,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): Float32Array | null {
+  if (offset + 48 > end) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.local-matrix-truncated', '', {
+      firstName: name,
+    });
+    return null;
+  }
+  const values = new Float32Array(12);
+  for (let i = 0; i < 12; i++) values[i] = view.getFloat32(offset + i * 4, true);
+  return values;
 }
 
 // Reads the vertex list sub-chunk (0x4110): uint16 count followed by count * 3 float32 values
@@ -676,9 +707,19 @@ function appendMeshDocument(
     return;
   }
 
+  // 3DS stores vertices in WORLD space. Applying TRI_LOCAL's inverse recovers the model-space geometry
+  // the placement was applied to, so the node can carry that placement as a real transform instead of an
+  // identity — which is what lets a pivot rotation or an animation channel drive the object at all. This
+  // is render-neutral for a static scene by construction (localize, then re-apply, is the identity), and
+  // runs in the file's own Z-up space BEFORE the Y-up conversion so one seam still owns that rotation.
+  const positions = Array.from(mesh.vertices);
+  const transform = createTransform3D();
+  if (mesh.localMatrix !== null) {
+    localizeThreeDsPositions(positions, mesh.localMatrix, transform, mesh.name, threeDsDrops);
+  }
+
   // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry operates in
   // Flight's coordinate space. The rotation preserves winding, so computed normals face outward.
-  const positions = Array.from(mesh.vertices);
   convertPositionsZUpToYUp(positions);
 
   // Per-face normals, area-weighted (the raw edge cross product, magnitude ∝ 2×area). Faces that
@@ -821,7 +862,7 @@ function appendMeshDocument(
   document.meshes.push(documentMesh);
   // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself. Match glTF:
   // a lone mesh is a bare Mesh node, named.
-  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform };
   if (mesh.name.length > 0) node.name = mesh.name;
   const nodeIndex = document.nodes.length;
   document.nodes.push(node);
@@ -937,6 +978,73 @@ function appendThreeDsLightDocument(
     ...(light.name.length > 0 ? { name: light.name } : {}),
     transform,
   });
+}
+
+// Rewrites `positions` (world-space, Z-up, in place) into the model space TRI_LOCAL placed them from,
+// and writes that placement into `out` as a Y-up Transform3D. Both steps read the same matrix:
+//
+//   world_zup = M_zup * local_zup           the file's own relation
+//   local_zup = inverse(M_zup) * world_zup  what this recovers
+//   M_yup     = C * M_zup * transpose(C)    the placement, re-expressed in Y-up
+//
+// where C is the Z-up→Y-up rotation. Conjugating rather than merely rotating is what keeps the pair
+// consistent: re-applying the Y-up placement to the Y-up-converted local vertices reproduces exactly the
+// Y-up-converted world vertices, so the change is invisible to a static render and only shows up once
+// something drives the transform.
+//
+// A singular matrix has no inverse — the geometry is left in world space and the node keeps its identity
+// transform, which is the pre-TRI_LOCAL behavior and still renders correctly.
+function localizeThreeDsPositions(
+  positions: number[],
+  localMatrix: Readonly<Float32Array>,
+  out: Transform3D,
+  name: string,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): void {
+  // The file's four contiguous 3-vectors are exactly Matrix4's four columns (m[column * 4 + row]), so the
+  // twelve floats copy straight into the basis and translation slots with no transpose.
+  const placement = createMatrix4(
+    localMatrix[0],
+    localMatrix[1],
+    localMatrix[2],
+    0,
+    localMatrix[3],
+    localMatrix[4],
+    localMatrix[5],
+    0,
+    localMatrix[6],
+    localMatrix[7],
+    localMatrix[8],
+    0,
+    localMatrix[9],
+    localMatrix[10],
+    localMatrix[11],
+    1,
+  );
+
+  const inverse = createMatrix4();
+  if (!inverseMatrix4(inverse, placement)) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.local-matrix-singular', '', {
+      firstName: name,
+    });
+    return;
+  }
+
+  const point = createVector3(0, 0, 0);
+  for (let i = 0; i + 2 < positions.length; i += 3) {
+    point.x = positions[i];
+    point.y = positions[i + 1];
+    point.z = positions[i + 2];
+    matrix4TransformPoint(point, inverse, point);
+    positions[i] = point.x;
+    positions[i + 1] = point.y;
+    positions[i + 2] = point.z;
+  }
+
+  const conjugated = createMatrix4();
+  multiplyMatrix4(conjugated, THREE_DS_Z_UP_TO_Y_UP, placement);
+  multiplyMatrix4(conjugated, conjugated, THREE_DS_Y_UP_TO_Z_UP);
+  decomposeMatrix4ToTransform3D(out, conjugated);
 }
 
 // Applies the RH Z-up → RH Y-up conversion to a single point, so a light or camera placement enters the
@@ -1182,6 +1290,12 @@ interface ThreeDsDropTally {
 // the entity's own `transform` supplying the orientation (see Scene3DDocumentLight). Read-only —
 // createSpotLight clones the direction it is given, and setQuaternionFromUnitVectors only reads its `from`.
 const DOCUMENT_VIEW_LOCAL_AXIS = createVector3(0, 0, -1);
+
+// The RH Z-up → RH Y-up rotation as a Matrix4, and its inverse. This is convertPositionsZUpToYUp's
+// -90°-about-X, (x, y, z) → (x, z, -y), in the form a placement matrix can be conjugated by; the columns
+// are the images of the basis vectors. Being a rotation, the inverse is the transpose. Read-only.
+const THREE_DS_Z_UP_TO_Y_UP = createMatrix4(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1);
+const THREE_DS_Y_UP_TO_Z_UP = createMatrix4(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);
 
 // 3DS's own camera defaults, used only when the file omits the chunk that would state them: the stock
 // 50mm lens, and the CAM_RANGES clip span. Importing these rather than invented values keeps a camera
