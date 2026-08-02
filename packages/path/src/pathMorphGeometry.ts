@@ -7,6 +7,7 @@ export const PathMorphIssueNone = 0;
 export const PathMorphIssueWindingMismatch = 1;
 export const PathMorphIssueContourCountMismatch = 2;
 export const PathMorphIssueContourClosednessMismatch = 3;
+export const PathMorphIssueContourOrientationMismatch = 4;
 
 interface PathMorphBuildResult {
   contour: number | null;
@@ -35,6 +36,11 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
     }
   }
 
+  const orientationMismatch = normalizeCubicContourOrientations(startContours, endContours, start.winding);
+  if (orientationMismatch !== null) {
+    return { contour: orientationMismatch, issue: PathMorphIssueContourOrientationMismatch, morph: null };
+  }
+
   for (let i = 0; i < startContours.length; i++) {
     const startContour = startContours[i];
     const endContour = endContours[i];
@@ -53,6 +59,118 @@ export function buildPathMorph(start: Readonly<Path>, end: Readonly<Path>): Path
     issue: PathMorphIssueNone,
     morph: { commands, endData, startData, winding: start.winding },
   };
+}
+
+// Opposite traversal makes equally-authored closed shapes fold through themselves during coordinate
+// interpolation. Even-odd paths may reverse each contour independently because direction has no fill
+// meaning. Non-zero paths may only reverse the entire endpoint consistently: that negates every
+// winding number without changing what is filled, while reversing a subset could turn a hole into a
+// solid ring. Returns the first contour whose relationship prevents that safe normalization.
+function normalizeCubicContourOrientations(
+  start: readonly CubicContour[],
+  end: CubicContour[],
+  winding: Path['winding'],
+): number | null {
+  if (winding === 'evenOdd') {
+    for (let i = 0; i < start.length; i++) {
+      const startOrientation = getCubicContourOrientation(start[i]);
+      const endOrientation = getCubicContourOrientation(end[i]);
+      if (startOrientation !== 0 && endOrientation !== 0 && startOrientation !== endOrientation) {
+        reverseClosedCubicContour(end[i]);
+      }
+    }
+    return null;
+  }
+
+  let reverseEnd: boolean | null = null;
+  for (let i = 0; i < start.length; i++) {
+    const startOrientation = getCubicContourOrientation(start[i]);
+    const endOrientation = getCubicContourOrientation(end[i]);
+    if (startOrientation === 0 || endOrientation === 0) continue;
+    const reversed = startOrientation !== endOrientation;
+    if (reverseEnd === null) reverseEnd = reversed;
+    else if (reverseEnd !== reversed) return i;
+  }
+  if (reverseEnd === true) {
+    for (let i = 0; i < end.length; i++) {
+      if (getCubicContourOrientation(end[i]) !== 0) reverseClosedCubicContour(end[i]);
+    }
+  }
+  return null;
+}
+
+function getCubicContourOrientation(contour: Readonly<CubicContour>): number {
+  if (!contour.closed) return 0;
+  const area = getCubicContourSignedArea(contour);
+  return area < 0 ? -1 : area > 0 ? 1 : 0;
+}
+
+function reverseClosedCubicContour(contour: CubicContour): void {
+  const reversed: CubicSegment[] = [];
+  for (let i = contour.segments.length - 1; i >= 0; i--) {
+    const segment = contour.segments[i];
+    reversed.push({
+      control1X: segment.control2X,
+      control1Y: segment.control2Y,
+      control2X: segment.control1X,
+      control2Y: segment.control1Y,
+      x0: segment.x1,
+      x1: segment.x0,
+      y0: segment.y1,
+      y1: segment.y0,
+    });
+  }
+  contour.segments = reversed;
+  if (reversed.length > 0) {
+    contour.x = reversed[0].x0;
+    contour.y = reversed[0].y0;
+  }
+  contour.currentX = contour.x;
+  contour.currentY = contour.y;
+}
+
+// Exact Green's-theorem area integral over cubic power-basis coefficients. This avoids introducing a
+// flattening tolerance into morph compatibility and handles curved contours as deterministically as
+// polygonal ones.
+function getCubicContourSignedArea(contour: Readonly<CubicContour>): number {
+  let twiceArea = 0;
+  let extent = 0;
+  for (let i = 0; i < contour.segments.length; i++) {
+    const segment = contour.segments[i];
+    const x0 = segment.x0 - contour.x;
+    const control1X = segment.control1X - contour.x;
+    const control2X = segment.control2X - contour.x;
+    const x1 = segment.x1 - contour.x;
+    const y0 = segment.y0 - contour.y;
+    const control1Y = segment.control1Y - contour.y;
+    const control2Y = segment.control2Y - contour.y;
+    const y1 = segment.y1 - contour.y;
+    extent = Math.max(
+      extent,
+      Math.abs(x0),
+      Math.abs(control1X),
+      Math.abs(control2X),
+      Math.abs(x1),
+      Math.abs(y0),
+      Math.abs(control1Y),
+      Math.abs(control2Y),
+      Math.abs(y1),
+    );
+    const x = getCubicPowerCoefficients(x0, control1X, control2X, x1);
+    const y = getCubicPowerCoefficients(y0, control1Y, control2Y, y1);
+    for (let xi = 0; xi < 4; xi++) {
+      for (let yi = 1; yi < 4; yi++) {
+        twiceArea += (x[xi] * yi * y[yi] - y[xi] * yi * x[yi]) / (xi + yi);
+      }
+    }
+  }
+  const area = twiceArea / 2;
+  const areaEpsilon = Math.max(1, extent * extent) * Number.EPSILON * 64;
+  return Math.abs(area) <= areaEpsilon ? 0 : area;
+}
+
+function getCubicPowerCoefficients(p0: number, p1: number, p2: number, p3: number): readonly number[] {
+  return [p0, 3 * (p1 - p0), 3 * (p0 - 2 * p1 + p2), -p0 + 3 * p1 - 3 * p2 + p3];
 }
 
 function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContour): void {

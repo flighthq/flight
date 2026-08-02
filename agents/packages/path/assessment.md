@@ -42,3 +42,4 @@ Parked — each with the reason it is not sweep-safe.
 
 - [2026-07-02 · picked] Sweep items 1–9: pen position cache, walker dedup, standalone dashPath, getPathContourLengths, getPathNearestPoint, simplifyPath, fitPathCurves, offsetPath, StrokeStyle promotion to types
 - [2026-08-02 · picked] Path morphing ownership resolved: prepared geometry correspondence and reusable progress sampling live in path; retained shape and playback/timeline composition remain downstream.
+- [2026-08-02 · completed] Path morph hardening: fill-safe closed-contour orientation normalization, mixed non-zero orientation diagnostics, exact endpoint sampling, and degenerate closed-contour coverage.

@@ -8,6 +8,15 @@ by: builder4
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## [2026-08-02 · builder4] — path morph orientation and endpoint hardening
+
+Closed-contour correspondence now detects authored traversal direction with an exact cubic signed-area
+integral. Even-odd contours normalize independently; non-zero paths normalize only a consistent global
+endpoint reversal, preserving hole semantics and rejecting mixed orientation changes with a structured
+`contour-orientation-mismatch`. Exact progress endpoints copy the prepared coordinate buffers directly,
+avoiding floating-point reconstruction drift at timeline boundaries. Degenerate closed point contours
+remain valid morph endpoints.
+
 ## [2026-08-02 · builder4] — path morph foundation
 
 Added the path-owned foundation for downstream retained-shape and timeline animation composition.
