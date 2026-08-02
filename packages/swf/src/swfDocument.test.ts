@@ -776,6 +776,27 @@ describe('createScene2DFromSwf', () => {
     expect(drawn.data.commands.filter((token) => token === 'lineTo').length).toBeGreaterThan(0);
   });
 
+  it('reads a JPEG carrying the legacy end-of-image marker between its tables and its pixels', () => {
+    // Encoders of the era wrote the encoding tables and the image as two concatenated JPEG streams, so a
+    // payload commonly contains an end-of-image immediately followed by a second start-of-image before the
+    // frame header ever appears.
+    const image = createJpegHeader(32, 16);
+    const legacy = joinBytes(new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]), image);
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), legacy)),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document!.references[0];
+    expect(reference?.kind).toBe('Asset');
+    expect(getNodeLocalBoundsRectangle(reference!.target)).toMatchObject({ height: 16, width: 32 });
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
