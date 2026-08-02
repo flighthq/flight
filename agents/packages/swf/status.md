@@ -128,7 +128,9 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   headers, and video stream definitions retain declared frame dimensions. A video payload stays opaque
   and no visual body is materialized.
 - `DefineBitsJPEG2` through `DefineBitsJPEG4` retain dimensions from bounded JPEG SOF, PNG IHDR, and
-  GIF header scans. JPEG3/4 alpha payloads remain opaque behind their validated offsets.
+  GIF header scans, including the legacy layout where the encoding tables and the pixels are two
+  concatenated streams — the end-of-image marker between them no longer ends the scan, and it is removed
+  from the bytes a resolver receives. JPEG3/4 alpha payloads remain opaque behind their validated offsets.
 - RECT readers accept the zero-bit encoding used by empty authored shapes, preserving a zero-size
   local bound instead of rejecting the document.
 - `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;

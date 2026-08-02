@@ -61,6 +61,23 @@ format ranges. That is an explicit call on a string already known to be markup �
 parses on assignment, which is [an anti-goal](../../anti-goals.md). After the corpus sweep, no imported
 field is left holding raw markup.
 
+## What an image payload actually contains
+
+An asset reference's `mimeType` describes the bytes beside it, and the four shapes are not equally
+decodable by a generic image decoder. This matters to whoever writes the resolver.
+
+| Shape | `mimeType` | What a resolver receives |
+| --- | --- | --- |
+| `DefineBits` + `JPEGTables` | `image/jpeg` | A complete stream, spliced: neither half is valid alone. |
+| `DefineBitsJPEG2` … `4` carrying JPEG | `image/jpeg` | A complete stream. The legacy end-of-image / start-of-image pair that sits between the tables and the pixels is removed, because a strict decoder may stop at it. |
+| `DefineBitsJPEG2` … `4` carrying PNG or GIF | `image/png`, `image/gif` | The embedded file, unmodified. |
+| `DefineBitsLossless`, `2` | `image/x-swf-lossless[-alpha]` | **Not a standard image format.** A zlib-compressed raw raster, closer to a BMP than a PNG: a format byte, dimensions, an optional colour-table size, then the compressed pixels — 8-bit colour-mapped, 15-bit, or 24/32-bit. A generic decoder cannot read it; the vendor media type is the signal that SWF-specific handling is required. `Lossless2`'s pixels are premultiplied by alpha. |
+
+**`DefineBitsJPEG3`/`4` alpha is not carried.** Those tags append a *separate* zlib-compressed alpha
+channel after the colour image. The reference hands over the colour stream only, so a resolver that decodes
+it faithfully still produces an opaque image. Nothing in the media type says so, which makes this the
+sharpest edge in the current contract and the first thing a resolver API should address.
+
 ## Degradation is uniform
 
 Every definition this decoder cannot read costs that definition and nothing else — an unreadable shape
