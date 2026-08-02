@@ -191,10 +191,34 @@ Over the corpus this produces 37,595 components across 127 artboards with no unr
 diagnostic, at a maximum tree depth of 17. An unresolvable or self-referencing parent is reported and
 the component becomes a root, so one bad reference costs its own placement rather than the artboard.
 
-**Not covered:** everything above structure. No property beyond `parentId` is interpreted, so
-artboard and node transforms, shapes and paths, fills and strokes, deformable meshes, bones and
-skinning, animations and keyframes, and nested artboard linkage are all unread, and nothing produces
-display nodes. The state-machine
+**Transforms and the display tree are covered.** `createScene2DFromRiveDocument` returns one display
+subtree per artboard — a `.riv` holds several and names none of them "the" one, so import presents
+them side by side and leaves the choice to the caller. Artboard name, width and height are read, and
+the artboard's normalized origin becomes a **pivot** in artboard units, which is Flight's word for
+the same idea. Per node: name, x and y (accepting the retired alternate key), rotation, scale, and
+opacity onto `alpha`.
+
+**Rive states rotation in radians and `Node2D.rotation` is degrees**, so import converts. That the
+source is radians was established from the corpus rather than assumed: 1,299 rotation values with a
+maximum of 6.93, clustering on exact 3π/2 and 2π, where degrees would show 90/180/360. The
+assertions guarding it are written against `Node2D`'s unit contract, not against the conversion —
+the Lottie importer carried the mirror-image bug precisely because its tests took the expected value
+from the conversion instead.
+
+Only components that are Nodes become display objects. A Fill or a GradientStop is a component with
+an index, but it is paint belonging to the shape above it, so emitting one would put a phantom object
+in the tree; a node whose nearest ancestor is such a component attaches past it rather than being
+dropped. Properties absent from the stream take the format's documented initial value, so an omitted
+scale is 1 rather than 0.
+
+Over the corpus this produces 7,580 display nodes across 127 artboards, at a maximum depth of 13,
+with no non-finite rotation and no alpha outside 0–1. One artboard reports a zero size, which the
+format permits since width and height default to 0 when unstated.
+
+**Not covered:** no property beyond the transform set is interpreted. Shapes and paths, fills and
+strokes, deformable meshes, bones and skinning, animations and keyframes, text, assets, and nested
+artboard linkage are all unread, so an imported tree currently carries structure and placement but
+draws nothing. The state-machine
 *descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
 codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
 it neither rejects a future file nor adapts to an older one.
