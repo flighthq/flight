@@ -466,6 +466,31 @@ describe('stepPhysics2D', () => {
     expect(bodyWith.velocityX).toBe(0);
   });
 
+  it('clears contact accumulators when warm starting is switched off', () => {
+    // Skipping the warm-start APPLICATION is not a cold start by itself. The contact solve clamps each
+    // increment against the accumulated total, so a cached impulse that remains in the point still
+    // participates in the next solve even when it was not reapplied to the bodies.
+    const world = createPhysics2DWorld();
+    world.config.allowSleeping = false;
+    ground(world);
+    box(world, 0, 0.5);
+    runSteps(world, 60);
+    expect(world.contacts[0].points[0].normalImpulse).toBeGreaterThan(0);
+
+    world.config.warmStarting = false;
+    // Zero iterations isolates the reset from any new impulse this step might legitimately accumulate.
+    world.config.velocityIterations = 0;
+    world.config.positionIterations = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    for (const contact of world.contacts) {
+      for (let i = 0; i < contact.pointCount; i++) {
+        expect(contact.points[i].normalImpulse).toBe(0);
+        expect(contact.points[i].tangentImpulse).toBe(0);
+      }
+    }
+  });
+
   it('produces a bitwise-identical trace for the same scene stepped twice', () => {
     // The golden-trace harness. Determinism for a fixed engine and input order is exact, not approximate:
     // every operation on this path is IEEE-754 exact (+ - * / and sqrt), so anything short of bitwise
