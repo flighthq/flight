@@ -25,6 +25,9 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   boundsUsingLocalTransformId: number;
   canAddChild: (target: Node<Traits>, child: Node<Traits>) => boolean;
   children: Node<Traits>[] | null;
+  // Changes whenever this node's child membership or ordering changes. Consumers stamp this
+  // independently from localContentId because descendants are not the node's local payload.
+  childrenId: number;
   traits?: NodeTraitsKey<Traits>;
   interactionSignals: InteractionSignals | null;
   localBoundsId: number;
@@ -38,6 +41,10 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   // cursor, not focusable). Owned and read by `@flighthq/interaction`.
   interactionState: NodeInteractionState | null;
   parent: Node<Traits> | null;
+  // Changes whenever parent-dependent derived state must be recomputed. Effective attach/detach
+  // operations always advance it, including reattaching to the same parent later: consumers cannot
+  // use parent identity alone because their inherited state may have gone stale while detached.
+  parentReferenceId: number;
   worldBoundsUsingLocalBoundsId: number;
   worldBoundsUsingWorldTransformId: number;
   worldTransformId: number;

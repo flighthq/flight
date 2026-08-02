@@ -4,9 +4,11 @@ import type { Node, NodeRuntime } from '@flighthq/types/contract';
 import {
   computeNodeWorldTransformRevision,
   getNodeAppearanceRevision,
+  getNodeChildrenRevision,
   getNodeLocalBoundsRevision,
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
+  getNodeParentReferenceRevision,
   getNodeWorldTransformRevision,
   invalidateContent,
   invalidateNode,
@@ -59,6 +61,14 @@ describe('getNodeAppearanceRevision', () => {
   });
 });
 
+describe('getNodeChildrenRevision', () => {
+  it('returns childrenId', () => {
+    const runtime = getEntityRuntime(node);
+    runtime.childrenId = 100;
+    expect(getNodeChildrenRevision(node)).toStrictEqual(runtime.childrenId);
+  });
+});
+
 describe('getNodeLocalBoundsRevision', () => {
   it('returns localBoundsId', () => {
     const runtime = getEntityRuntime(node);
@@ -80,6 +90,14 @@ describe('getNodeLocalTransformRevision', () => {
     const runtime = getEntityRuntime(node);
     runtime.localTransformId = 100;
     expect(getNodeLocalTransformRevision(node)).toStrictEqual(runtime.localTransformId);
+  });
+});
+
+describe('getNodeParentReferenceRevision', () => {
+  it('returns parentReferenceId', () => {
+    const runtime = getEntityRuntime(node);
+    runtime.parentReferenceId = 100;
+    expect(getNodeParentReferenceRevision(node)).toStrictEqual(runtime.parentReferenceId);
   });
 });
 
@@ -193,6 +211,13 @@ describe('invalidateNodeLocalTransform', () => {
 });
 
 describe('invalidateNodeParentReference', () => {
+  it('increments parentReferenceId', () => {
+    const runtime = getEntityRuntime(node);
+    const parentReferenceId = runtime.parentReferenceId;
+    invalidateNodeParentReference(node);
+    expect(runtime.parentReferenceId).toBe(parentReferenceId + 1);
+  });
+
   it('invalidates the world transform parent transform cached ID', () => {
     const runtime = getEntityRuntime(node);
     runtime.worldTransformUsingParentTransformId = 1;

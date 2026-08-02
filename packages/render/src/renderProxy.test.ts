@@ -1,15 +1,19 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
+  addNodeChildAt,
   getNodeAppearanceRevision,
+  getNodeChildrenRevision,
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
+  getNodeParentReferenceRevision,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  removeNodeChild,
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ClipRegion } from '@flighthq/types/contract';
+import type { ClipRegion, Node, RenderProxy } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import {
@@ -44,6 +48,14 @@ function makeClipRegion(): ClipRegion {
   return { contours: null, rect: createRectangle(0, 0, 10, 10), winding: 'nonZero', version: 0 };
 }
 
+function markRenderProxyClean<Traits extends object>(data: RenderProxy, source: Node<Traits>): void {
+  data.lastAppearanceId = getNodeAppearanceRevision(source);
+  data.lastChildrenId = getNodeChildrenRevision(source);
+  data.lastLocalContentId = getNodeLocalContentRevision(source);
+  data.lastLocalTransformId = getNodeLocalTransformRevision(source);
+  data.lastParentReferenceId = getNodeParentReferenceRevision(source);
+}
+
 describe('createRenderProxy', () => {
   it('initializes default values', () => {
     const state = createRenderState();
@@ -55,7 +67,9 @@ describe('createRenderProxy', () => {
     expect(node.alpha).toBe(1);
     expect(node.appearanceFrameId).toBe(-1);
     expect(node.lastAppearanceId).toBe(-1);
+    expect(node.lastChildrenId).toBe(-1);
     expect(node.lastLocalTransformId).toBe(-1);
+    expect(node.lastParentReferenceId).toBe(-1);
     expect(node.transformFrameId).toBe(-1);
     expect(node.renderer).toBeNull();
     expect(node.rendererData).toBeNull();
@@ -258,9 +272,7 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceId = getNodeAppearanceRevision(source);
-    data.lastLocalContentId = getNodeLocalContentRevision(source);
-    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
+    markRenderProxyClean(data, source);
 
     expect(isRenderProxyDirty(state, source, data)).toBe(false);
   });
@@ -269,8 +281,7 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceId = getNodeAppearanceRevision(source);
-    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
+    markRenderProxyClean(data, source);
     invalidateNodeAppearance(source);
 
     expect(isRenderProxyDirty(state, source, data)).toBe(true);
@@ -280,8 +291,7 @@ describe('isRenderProxyDirty', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    data.lastAppearanceId = getNodeAppearanceRevision(source);
-    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
+    markRenderProxyClean(data, source);
     const parentData = createRenderProxy2D(state, createDisplayObject());
     parentData.transformFrameId = getRenderStateRuntime(state).currentFrameId;
 
@@ -293,8 +303,7 @@ describe('isRenderProxyDirty', () => {
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
     data.transform2D = createMatrix();
-    data.lastAppearanceId = getNodeAppearanceRevision(source);
-    data.lastLocalTransformId = getNodeLocalTransformRevision(source);
+    markRenderProxyClean(data, source);
     source.x = 10;
     invalidateNodeLocalTransform(source);
 
@@ -337,6 +346,89 @@ describe('isRenderProxyVisible', () => {
 });
 
 describe('prepareScene2DRender', () => {
+  it('dirties a warm proxy when it is reattached after another prepared child', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const root = createDisplayObject();
+    const childA = createDisplayObject();
+    const childB = createDisplayObject();
+    addNodeChild(root, childA);
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+
+    removeNodeChild(root, childA);
+    addNodeChild(root, childB);
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+
+    removeNodeChild(root, childB);
+    addNodeChild(root, childA);
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+  });
+
+  it('dirties the tree when a prepared child is removed', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, child);
+    prepareScene2DRender(state, root);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+
+    removeNodeChild(root, child);
+
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+  });
+
+  it('dirties the tree when prepared siblings are reordered', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const root = createDisplayObject();
+    const childA = createDisplayObject();
+    const childB = createDisplayObject();
+    addNodeChild(root, childA);
+    addNodeChild(root, childB);
+    prepareScene2DRender(state, root);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+
+    addNodeChildAt(root, childA, 1);
+
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+  });
+
+  it('recomputes inherited transform and appearance when a warm child changes parent', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const root = createDisplayObject();
+    const parentA = createDisplayObject();
+    const parentB = createDisplayObject();
+    const child = createDisplayObject();
+    parentA.x = 10;
+    parentA.alpha = 0.5;
+    parentB.x = 100;
+    parentB.alpha = 0.25;
+    child.x = 3;
+    child.alpha = 0.5;
+    invalidateNodeLocalTransform(parentA);
+    invalidateNodeAppearance(parentA);
+    invalidateNodeLocalTransform(parentB);
+    invalidateNodeAppearance(parentB);
+    invalidateNodeLocalTransform(child);
+    invalidateNodeAppearance(child);
+    addNodeChild(root, parentA);
+    addNodeChild(root, parentB);
+    addNodeChild(parentA, child);
+    prepareScene2DRender(state, root);
+    expect(getOrCreateRenderProxy2D(state, child).transform2D.tx).toBe(13);
+    expect(getOrCreateRenderProxy2D(state, child).alpha).toBe(0.25);
+
+    addNodeChild(parentB, child);
+
+    expect(prepareScene2DRender(state, root)).toBe(true);
+    expect(getOrCreateRenderProxy2D(state, child).transform2D.tx).toBe(103);
+    expect(getOrCreateRenderProxy2D(state, child).alpha).toBe(0.125);
+    expect(prepareScene2DRender(state, root)).toBe(false);
+  });
+
   it('creates render nodes for all enabled nodes in the tree', () => {
     const state = createRenderState();
     const root = createDisplayObject();
