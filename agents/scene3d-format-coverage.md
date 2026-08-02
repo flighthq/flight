@@ -28,33 +28,60 @@ block, alpha mode/cutoff, double-sidedness, and `KHR_texture_transform`.
 
 Extensions are **individually importable handlers**, never a global registry — accepting one must not
 bundle the family. Available: `KHR_lights_punctual`, `KHR_materials_emissive_strength`, `_clearcoat`,
-`_sheen`, `_transmission`, `_volume`, `_ior`, `_iridescence`, `_anisotropy`, `_specular`.
+`_sheen`, `_transmission`, `_volume`, `_ior`, `_iridescence`, `_anisotropy`, `_specular`, `_unlit`.
+
+Two need no handler because the core already satisfies them, and are named in `CORE_GLTF_EXTENSIONS` so a
+file *requiring* one is not reported unsupported: `KHR_texture_transform`, and `KHR_mesh_quantization` —
+the latter only widens which component types an accessor may use, and the reader already reads every
+integer width and applies the spec normalization exactly when `normalized` is set.
+
+`KHR_texture_basisu` is **partly** covered, and the parser's share of it is done: a basisu texture is
+resolved to its KTX2 image source, which matters because that extension makes the plain `source` an
+optional fallback most files omit — reading only `source` dropped the map entirely. The KTX2/Basis
+*transcode* is a resource-layer concern (see [basis transcode](basis-transcode.md)), so the extension
+stays out of `CORE_GLTF_EXTENSIONS`: without a transcoder registered downstream the image still will not
+decode, and the required-extension crumb saying so is accurate at the pipeline level.
 
 **Not covered:**
 
-`KHR_materials_pbrSpecularGlossiness` is also available and is the one handler that REPLACES the material
-rather than attaching to it, since specular-glossiness is a different shading model. It imports as a
-`SpecularGlossinessPbrMaterial` — the model the file authored — under the standing rule that **a parser
-represents what is there honestly**. Flight's `convertSpecularGlossinessToStandardPbr` stays an explicit,
-caller-invoked step; that the extension is deprecated is not licence for the importer to silently remap it.
+`KHR_materials_pbrSpecularGlossiness` and `KHR_materials_unlit` are the two handlers that REPLACE the
+material rather than attaching to it, because each states a different shading model rather than a
+contribution to the metallic-roughness one. Spec-gloss imports as a `SpecularGlossinessPbrMaterial` — the
+model the file authored — under the standing rule that **a parser represents what is there honestly**.
+Flight's `convertSpecularGlossinessToStandardPbr` stays an explicit, caller-invoked step; that the
+extension is deprecated is not licence for the importer to silently remap it.
 
-**Not covered:** `KHR_draco_mesh_compression`, `KHR_mesh_quantization`, `KHR_materials_unlit`,
-`KHR_texture_basisu`.
+**Not covered: `KHR_draco_mesh_compression`.** This is the one glTF gap that is not parser breadth at all
+— it needs a Draco mesh decoder, which is a vendored dependency and a cross-package decision. The shape it
+should take already exists as precedent: AWD's `registerAwdDecompressor` seam plus a vendored inflater.
+Until that call is made, a Draco file correctly reports its required extension as unsupported rather than
+importing empty geometry.
 
 ## OBJ / MTL
 
 Covered: `v`, `vn`, `vt`, `f` (triangles, quads, N-gons fan-triangulated, independent and negative
-indices), `g`/`o` grouping with one `MeshSubset` per `usemtl`, and normal generation when the file
-declares no `vn`. MTL reads both the classic Blinn-Phong block and the metallic-roughness PBR extension,
-choosing the material model from which directives the file actually states.
+indices), `g`/`o` grouping with one `MeshSubset` per `usemtl`, `s` smoothing groups, `l` polylines and `p`
+points, and normal generation when the file declares no `vn`. MTL reads both the classic Blinn-Phong block
+and the metallic-roughness PBR extension, choosing the material model from which directives the file
+actually states.
+
+**Smoothing groups work through the dedup key, not a second normal pass.** A corner whose normal will be
+generated is keyed by its smoothing group, so two faces in different groups cannot share a vertex — and
+`computeMeshGeometryNormals`, which averages across shared vertices, therefore cannot average across the
+boundary. `s off`/`s 0` gives every face a group of its own, which is flat shading. A corner carrying an
+authored `vn` is keyed without the group, since its normal is already authoritative and splitting it
+would only duplicate vertices that should have merged.
+
+A file that **never mentions `s`** keeps its vertices merged. The spec's default is off, but reading
+"unstated" as off would silently turn every existing plain OBJ flat; a file that never says `s` has not
+opted into the smoothing model at all.
+
+**Lines and points become sibling meshes**, because `PrimitiveTopology` is a property of the whole
+`MeshGeometry` rather than of a subset — a group mixing faces with lines cannot be one mesh. They carry
+positions only (neither topology shades or samples) and bind no material, since OBJ states none for them.
 
 **Not covered:**
 
-- **Smoothing groups (`s`).** Generated normals are smooth across every shared vertex, so an authored hard
-  edge is lost. 3DS honours its equivalent, so the machinery exists — this is the gap most likely to be
-  visible in a render.
-- **Line and point primitives (`l`, `p`)** — despite `PrimitiveTopology` carrying `line-list` and
-  `point-list`, and glTF importing both.
 - **Free-form geometry** (`curv`, `surf`, `vp`, `deg`, `parm`) — no Flight equivalent, and none planned.
 - **`Ni` (optical density)** is not parsed at all. It is core MTL, not a PBR extension.
 - **Separate `map_Pr`/`map_Pm`** are parsed but unbound: MTL states two grayscale images where the

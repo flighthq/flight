@@ -11,6 +11,50 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — The unblocked leftovers, and one of them was a defect (builder, user-directed)
+
+**OBJ smoothing groups, without a second normal-generation pass.** `s` now drives the vertex DEDUP KEY: a
+corner whose normal will be generated is keyed by its smoothing group, so two faces in different groups
+cannot share a vertex — and `computeMeshGeometryNormals`, which averages across shared vertices, therefore
+cannot average across the boundary. Hard edges fall out of the existing generation pass rather than
+needing a smoothing-aware twin of it. A corner carrying an authored `vn` is keyed WITHOUT the group: its
+normal is already authoritative, and keying it would duplicate vertices that should have merged.
+
+The subtle call is the **unstated** case. The spec's default is `off`, and implementing that literally
+turned every existing plain OBJ flat — it split a 4-vertex quad pair into 6 and broke two existing tests.
+A file that never says `s` has not opted into the smoothing model at all, so unstated keeps the merged
+behaviour and only an explicit `s`/`s off` drives shading. Mutation-tested: reverting the key fails
+exactly the four smoothing cases.
+
+**OBJ lines and points import as sibling meshes.** `PrimitiveTopology` belongs to the whole
+`MeshGeometry`, not to a subset, so a group mixing faces with lines cannot be one mesh. A polyline's N
+references become N-1 connected segments. With `s`, `l`, and `p` all now read, `obj.directive-unsupported`
+has no trigger left.
+
+**glTF `KHR_materials_unlit`** joins spec-gloss as a material REPLACEMENT — unlit is not a contribution to
+the metallic-roughness model, it is the absence of it. Base color, its map, and the alpha state ride
+across; metallic/roughness/normal/occlusion/emissive are dropped by the model change itself, which is the
+stated point of the extension rather than a silent loss.
+
+**`KHR_mesh_quantization` needed no code, only the declaration.** The accessor reader already reads every
+integer width and applies the spec normalization exactly when `normalized` is set, so a quantized POSITION
+already imported correctly — the only gap was that a file *requiring* the extension was reported
+unsupported. It now sits in `CORE_GLTF_EXTENSIONS` alongside `KHR_texture_transform`, proved by a test
+that reads a normalized-short position accessor end to end rather than by assertion.
+
+**`KHR_texture_basisu` turned out to be a live defect, not a missing feature.** That extension makes the
+plain `texture.source` an OPTIONAL fallback, and most real files omit it — so the resolver's
+`source === undefined` check was dropping the map entirely and crumbing `gltf.texture-source-missing` for
+a texture that was not missing, only elsewhere. It now prefers the basisu source. The extension stays OUT
+of `CORE_GLTF_EXTENSIONS` on purpose: the KTX2 transcode is a resource-layer concern, so without a
+transcoder registered downstream the image still will not decode, and the required-extension crumb saying
+so is accurate at the pipeline level even though the parser's own share is complete.
+
+**`KHR_draco_mesh_compression` is the one left, and deliberately.** It is not parser breadth — it needs a
+Draco mesh decoder, a vendored dependency and a cross-package call. The shape already has a precedent in
+this package: AWD's `registerAwdDecompressor` seam plus a vendored inflater. Until that call is made a
+Draco file honestly reports its required extension unsupported rather than importing empty geometry.
+
 ## 2026-08-02 — The fixture-blocked gaps built as far as honesty allows (builder, user-directed)
 
 Four directives: build the fixture-blocked gaps out as far as possible or document them clearly; parsers
