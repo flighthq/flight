@@ -1,10 +1,22 @@
-import { createTransform3D } from '@flighthq/geometry/contract';
+import {
+  createQuaternion,
+  createTransform3D,
+  createVector3,
+  multiplyQuaternion,
+  normalizeVector3,
+  setQuaternionFromAxisAngle,
+  setQuaternionFromUnitVectors,
+  subtractVector3,
+} from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createMeshGeometry } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
+  Light,
   Material,
   MaterialLike,
   MeshSubset,
@@ -12,9 +24,12 @@ import type {
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
+  ThreeDsCamera,
+  ThreeDsLight,
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
   ThreeDsMesh,
+  Vector3,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 import {
@@ -24,6 +39,15 @@ import {
   THREE_DS_EDITOR,
   THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
+  THREE_DS_CAMERA,
+  THREE_DS_CAMERA_APERTURE_MM,
+  THREE_DS_CAMERA_RANGES,
+  THREE_DS_LIGHT,
+  THREE_DS_LIGHT_INNER_RANGE,
+  THREE_DS_LIGHT_MULTIPLIER,
+  THREE_DS_LIGHT_OFF,
+  THREE_DS_LIGHT_OUTER_RANGE,
+  THREE_DS_LIGHT_SPOT,
   THREE_DS_MAIN,
   THREE_DS_MATERIAL,
   THREE_DS_MATERIAL_AMBIENT,
@@ -111,11 +135,19 @@ export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   // resolve each mesh's referenced names against it.
   const threeDsDrops = diagnostics ? new Map<string, ThreeDsDropTally>() : null;
   const materials = new Map<string, ThreeDsMaterial>();
-  const meshes = collectMeshes(view, 0, materials, threeDsDrops);
+  const meshes: ThreeDsMesh[] = [];
+  const lights: ThreeDsLight[] = [];
+  const cameras: ThreeDsCamera[] = [];
+  collectThreeDsObjects(view, 0, materials, meshes, lights, cameras, threeDsDrops);
   const materialIndexByName = new Map<string, number>();
   for (let i = 0; i < meshes.length; i++) {
     appendMeshDocument(meshes[i], materials, materialIndexByName, document, threeDsDrops);
   }
+  // Lights and cameras fill the document's PLACEMENT TABLES, not the node graph — neither is a scene
+  // member in Flight (see Scene3DDocumentLight). They are appended after the meshes so the tables read in
+  // file order regardless of how the objects were interleaved in the chunk tree.
+  for (let i = 0; i < lights.length; i++) appendThreeDsLightDocument(lights[i], document, threeDsDrops);
+  for (let i = 0; i < cameras.length; i++) appendThreeDsCameraDocument(cameras[i], document);
 
   // parse3ds is the single physical emitter for every aggregated crumb (hence the origin); the tallies
   // store no origin. Flush once so per-chunk faults collapse to one crumb per kind/discriminator + count.
@@ -131,17 +163,21 @@ export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   return document;
 }
 
-// Recursively walks the chunk tree starting at `offset`, collecting all trimesh descriptors found
-// within editor → object → trimesh sub-chunks, and populating `materials` with every material block
-// (0xAFFF) found alongside them under the editor chunk.
-function collectMeshes(
+// Recursively walks the chunk tree starting at `offset`, appending every named object it finds to the
+// collector matching that object's kind — trimesh, light, or camera — and populating `materials` with
+// every material block (0xAFFF) found alongside them under the editor chunk. All four collectors are
+// out-parameters because one walk feeds all of them; a 3DS object chunk does not say which kind it is
+// until its sub-chunk is read.
+function collectThreeDsObjects(
   view: Readonly<DataView>,
   offset: number,
   materials: Map<string, ThreeDsMaterial>,
+  meshes: ThreeDsMesh[],
+  lights: ThreeDsLight[],
+  cameras: ThreeDsCamera[],
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): readonly ThreeDsMesh[] {
+): void {
   const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
-  const meshes: ThreeDsMesh[] = [];
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
 
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
@@ -159,11 +195,9 @@ function collectMeshes(
     }
 
     if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
-      const inner = collectMeshes(view, cursor, materials, threeDsDrops);
-      for (let i = 0; i < inner.length; i++) meshes.push(inner[i]);
+      collectThreeDsObjects(view, cursor, materials, meshes, lights, cameras, threeDsDrops);
     } else if (chunkId === THREE_DS_OBJECT) {
-      const mesh = parseObject(view, cursor, chunkEnd, threeDsDrops);
-      if (mesh !== null) meshes.push(mesh);
+      parseThreeDsObject(view, cursor, chunkEnd, meshes, lights, cameras, threeDsDrops);
     } else if (chunkId === THREE_DS_MATERIAL) {
       const material = parseMaterial(view, cursor, chunkEnd);
       if (material.name.length > 0) materials.set(material.name, material);
@@ -171,19 +205,21 @@ function collectMeshes(
 
     cursor = chunkEnd;
   }
-
-  return meshes;
 }
 
 // Parses a named object chunk (0x4000). The payload starts with a null-terminated ASCII name string,
-// followed by sub-chunks. If a trimesh sub-chunk (0x4100) is found, its vertex/face/UV data is
-// returned as a ThreeDsMesh.
-function parseObject(
+// followed by sub-chunks. The object's kind is whichever of the three entity sub-chunks it carries — a
+// trimesh (0x4100), a light (0x4600), or a camera (0x4700) — so the first one found decides, and the
+// parsed descriptor is appended to that kind's collector.
+function parseThreeDsObject(
   view: Readonly<DataView>,
   offset: number,
   end: number,
+  meshes: ThreeDsMesh[],
+  lights: ThreeDsLight[],
+  cameras: ThreeDsCamera[],
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): ThreeDsMesh | null {
+): void {
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
   const name = readNullTerminatedString(view, cursor, end);
   cursor += name.length + 1; // advance past the name and null terminator
@@ -196,20 +232,169 @@ function parseObject(
       tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
         firstOffset: cursor,
       });
-      return null;
+      return;
     }
 
     if (chunkId === THREE_DS_TRIMESH) {
-      return parseTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
+      const mesh = parseTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
+      if (mesh !== null) meshes.push(mesh);
+      return;
+    }
+    if (chunkId === THREE_DS_LIGHT) {
+      const light = parseThreeDsLight(view, cursor, chunkEnd, name, threeDsDrops);
+      if (light !== null) lights.push(light);
+      return;
+    }
+    if (chunkId === THREE_DS_CAMERA) {
+      const camera = parseThreeDsCamera(view, cursor, chunkEnd, name, threeDsDrops);
+      if (camera !== null) cameras.push(camera);
+      return;
     }
 
     cursor = chunkEnd;
   }
 
-  // A named object with no trimesh sub-chunk (a 3DS light/camera/dummy object): Flight imports meshes only,
-  // so the object is not modeled — recognized but skipped.
-  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-mesh-object', '', { firstName: name });
-  return null;
+  // A named object carrying none of the three entity sub-chunks — a dummy/helper object (a pivot, a
+  // target point, a group node). Flight models no such entity, so the object is recognized and skipped.
+  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-entity-object', '', { firstName: name });
+}
+
+// Parses a light chunk (0x4600). The payload is the light's position (3 float32) followed by sub-chunks
+// carrying its color, intensity multiplier, ranges, and — if the light is a spot — its aim and cone.
+// Returns null when the payload is too short to hold the position.
+function parseThreeDsLight(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  name: string,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): ThreeDsLight | null {
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  if (cursor + 12 > end) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.light-truncated', '', { firstName: name });
+    return null;
+  }
+
+  const position: readonly [number, number, number] = [
+    view.getFloat32(cursor, true),
+    view.getFloat32(cursor + 4, true),
+    view.getFloat32(cursor + 8, true),
+  ];
+  cursor += 12;
+
+  // A light with no color chunk is full-intensity white, and one with no multiplier is unscaled — both
+  // are spec defaults, not absences to report.
+  let color: readonly [number, number, number] = [1, 1, 1];
+  let enabled = true;
+  let falloff = 0;
+  let hotspot = 0;
+  let innerRange: number | null = null;
+  let multiplier = 1;
+  let outerRange: number | null = null;
+  let target: readonly [number, number, number] | null = null;
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) {
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-light', '', {
+        firstName: name,
+      });
+      break;
+    }
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_COLOR_FLOAT || chunkId === THREE_DS_COLOR_BYTE) {
+      // A light's color chunk is a DIRECT sub-chunk, not wrapped in a material color block, so the scan
+      // range starts at this chunk's own header rather than at its payload.
+      const parsed = parseColorChunk(view, cursor, chunkEnd);
+      if (parsed !== null) color = parsed;
+    } else if (chunkId === THREE_DS_LIGHT_OFF) {
+      enabled = false;
+    } else if (chunkId === THREE_DS_LIGHT_MULTIPLIER) {
+      if (dataStart + 4 <= chunkEnd) multiplier = view.getFloat32(dataStart, true);
+    } else if (chunkId === THREE_DS_LIGHT_INNER_RANGE) {
+      if (dataStart + 4 <= chunkEnd) innerRange = view.getFloat32(dataStart, true);
+    } else if (chunkId === THREE_DS_LIGHT_OUTER_RANGE) {
+      if (dataStart + 4 <= chunkEnd) outerRange = view.getFloat32(dataStart, true);
+    } else if (chunkId === THREE_DS_LIGHT_SPOT) {
+      // The spot sub-chunk states an aim TARGET POINT, then the two cone angles. Its presence is what
+      // makes this a spot light rather than a point light.
+      if (dataStart + 20 <= chunkEnd) {
+        target = [
+          view.getFloat32(dataStart, true),
+          view.getFloat32(dataStart + 4, true),
+          view.getFloat32(dataStart + 8, true),
+        ];
+        hotspot = view.getFloat32(dataStart + 12, true);
+        falloff = view.getFloat32(dataStart + 16, true);
+      } else {
+        tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.light-spot-truncated', '', {
+          firstName: name,
+        });
+      }
+    }
+
+    cursor = chunkEnd;
+  }
+
+  return { color, enabled, falloff, hotspot, innerRange, multiplier, name, outerRange, position, target };
+}
+
+// Parses a camera chunk (0x4700). The payload is a fixed 32-byte record — position (3 float32), aim
+// target (3 float32), bank/roll angle in degrees, and lens focal length in millimetres — followed by
+// sub-chunks, of which only CAM_RANGES carries data Flight models. Returns null when the payload is too
+// short to hold the fixed record.
+function parseThreeDsCamera(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  name: string,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): ThreeDsCamera | null {
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  if (cursor + 32 > end) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.camera-truncated', '', { firstName: name });
+    return null;
+  }
+
+  const position: readonly [number, number, number] = [
+    view.getFloat32(cursor, true),
+    view.getFloat32(cursor + 4, true),
+    view.getFloat32(cursor + 8, true),
+  ];
+  const target: readonly [number, number, number] = [
+    view.getFloat32(cursor + 12, true),
+    view.getFloat32(cursor + 16, true),
+    view.getFloat32(cursor + 20, true),
+  ];
+  const roll = view.getFloat32(cursor + 24, true);
+  const focalLength = view.getFloat32(cursor + 28, true);
+  cursor += 32;
+
+  let far: number | null = null;
+  let near: number | null = null;
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) {
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-camera', '', {
+        firstName: name,
+      });
+      break;
+    }
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_CAMERA_RANGES && dataStart + 8 <= chunkEnd) {
+      near = view.getFloat32(dataStart, true);
+      far = view.getFloat32(dataStart + 4, true);
+    }
+
+    cursor = chunkEnd;
+  }
+
+  return { far, focalLength, name, near, position, roll, target };
 }
 
 // Parses a trimesh chunk (0x4100) and its sub-chunks (vertices, faces, UVs) into a ThreeDsMesh
@@ -643,6 +828,125 @@ function appendMeshDocument(
   document.scenes[0].rootNodes.push(nodeIndex);
 }
 
+// Appends one parsed 3DS camera to the document's camera placement table. The file states a position and
+// an aim TARGET POINT; the document wants an orientation, so the aim is derived as the normalized
+// target−position and baked into `transform.rotation` as the rotation carrying the canonical camera
+// forward axis (-Z) onto it, with the file's bank angle applied as a roll about that same aim.
+//
+// The lens is a focal length in millimetres, not an angle. It converts to a HORIZONTAL field of view
+// against the 35mm gate the format meters against (see THREE_DS_CAMERA_APERTURE_MM); with no aspect ratio
+// anywhere in the format, the camera is emitted at aspect 1, where the horizontal and vertical fields of
+// view coincide — the same shape glTF lands on for a camera whose `aspectRatio` is absent.
+function appendThreeDsCameraDocument(camera: Readonly<ThreeDsCamera>, document: Scene3DDocument): void {
+  const position = convertThreeDsPointZUpToYUp(camera.position);
+  const transform = createTransform3D();
+  transform.position.x = position.x;
+  transform.position.y = position.y;
+  transform.position.z = position.z;
+
+  const aim = convertThreeDsPointZUpToYUp(camera.target);
+  subtractVector3(aim, aim, position);
+  if (normalizeVector3(aim, aim) > 0) {
+    setQuaternionFromUnitVectors(transform.rotation, DOCUMENT_VIEW_LOCAL_AXIS, aim);
+    if (camera.roll !== 0) {
+      // The bank angle turns the camera about the axis it is already aiming down, so the roll composes
+      // AFTER the aim: rotating about `aim` in world terms is a left-multiply onto the aim rotation.
+      const roll = createQuaternion();
+      setQuaternionFromAxisAngle(roll, aim, camera.roll * DEG_TO_RAD);
+      multiplyQuaternion(transform.rotation, roll, transform.rotation);
+    }
+  }
+
+  // A lens of zero (or a nonsensical negative) states no usable angle; fall back to the format's own
+  // default 50mm lens rather than emitting a degenerate projection.
+  const focalLength = camera.focalLength > 0 ? camera.focalLength : THREE_DS_DEFAULT_FOCAL_LENGTH_MM;
+
+  document.cameras.push({
+    // CAM_RANGES is optional. When it is absent the clip planes are 3DS's own camera defaults, not
+    // invented ones, so an imported camera frames the same depth span the authoring tool showed.
+    far: camera.far ?? THREE_DS_DEFAULT_FAR,
+    ...(camera.name.length > 0 ? { name: camera.name } : {}),
+    near: camera.near ?? THREE_DS_DEFAULT_NEAR,
+    projection: {
+      aspect: 1,
+      fovY: 2 * Math.atan(THREE_DS_CAMERA_APERTURE_MM / (2 * focalLength)),
+      kind: 'perspective',
+    },
+    transform,
+  });
+}
+
+// Appends one parsed 3DS light to the document's light placement table. A light carrying the spot
+// sub-chunk becomes a SpotLight aimed at its target point; every other light is a PointLight, which is
+// what the format's own default is. Per the document convention (see Scene3DDocumentLight) the descriptor
+// is authored in the light's OWN LOCAL space — position at the origin, aim down -Z — and `transform`
+// carries the placement and orientation read from the file.
+function appendThreeDsLightDocument(
+  light: Readonly<ThreeDsLight>,
+  document: Scene3DDocument,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): void {
+  const position = convertThreeDsPointZUpToYUp(light.position);
+  const transform = createTransform3D();
+  transform.position.x = position.x;
+  transform.position.y = position.y;
+  transform.position.z = position.z;
+
+  const color = packThreeDsColor(light.color);
+  // 3DS states a distance at which attenuation BEGINS (inner) and one at which the light stops (outer).
+  // Flight carries the single cutoff, so the outer maps and the inner has nowhere to go.
+  const range = light.outerRange ?? -1;
+  if (light.innerRange !== null) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.light-inner-range-dropped', '', {
+      firstName: light.name,
+    });
+  }
+
+  // A light the author switched off is still an authored light; it imports with its placement and cone
+  // intact at zero intensity, so re-enabling it is a single field write rather than a re-import.
+  const intensity = light.enabled ? light.multiplier : 0;
+  if (!light.enabled) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.light-disabled', '', {
+      firstName: light.name,
+    });
+  }
+
+  let descriptor: Light;
+  if (light.target !== null) {
+    const aim = convertThreeDsPointZUpToYUp(light.target);
+    subtractVector3(aim, aim, position);
+    if (normalizeVector3(aim, aim) > 0) {
+      setQuaternionFromUnitVectors(transform.rotation, DOCUMENT_VIEW_LOCAL_AXIS, aim);
+    }
+    descriptor = createSpotLight({
+      color,
+      direction: DOCUMENT_VIEW_LOCAL_AXIS,
+      // 3DS states the hotspot and falloff as FULL cone apertures; Flight's cone is described by its
+      // half-angles, so each is halved rather than passed through.
+      innerConeDegrees: light.hotspot / 2,
+      intensity,
+      outerConeDegrees: light.falloff / 2,
+      range,
+    });
+  } else {
+    descriptor = createPointLight({ color, intensity, range });
+  }
+
+  document.lights.push({
+    descriptor,
+    ...(light.name.length > 0 ? { name: light.name } : {}),
+    transform,
+  });
+}
+
+// Applies the RH Z-up → RH Y-up conversion to a single point, so a light or camera placement enters the
+// document through the same seam as every mesh vertex (see convertPositionsZUpToYUp).
+function convertThreeDsPointZUpToYUp(point: readonly [number, number, number]): Vector3 {
+  const values = [point[0], point[1], point[2]];
+  convertPositionsZUpToYUp(values);
+  return createVector3(values[0], values[1], values[2]);
+}
+
 // Resolves a 3DS material name to its document material index, registering it (converted to BlinnPhong)
 // on first use and memoizing in `materialIndexByName` so a material shared across meshes registers once.
 // Returns -1 for an empty name or a name absent from the file's material table (a default-material subset).
@@ -873,6 +1177,18 @@ interface ThreeDsDropTally {
   kind: string;
   severity: ImportDiagnosticSeverity;
 }
+
+// The canonical local forward axis every placed document light and camera is authored against: -Z, with
+// the entity's own `transform` supplying the orientation (see Scene3DDocumentLight). Read-only —
+// createSpotLight clones the direction it is given, and setQuaternionFromUnitVectors only reads its `from`.
+const DOCUMENT_VIEW_LOCAL_AXIS = createVector3(0, 0, -1);
+
+// 3DS's own camera defaults, used only when the file omits the chunk that would state them: the stock
+// 50mm lens, and the CAM_RANGES clip span. Importing these rather than invented values keeps a camera
+// framing the depth span the authoring tool showed.
+const THREE_DS_DEFAULT_FAR = 1000;
+const THREE_DS_DEFAULT_FOCAL_LENGTH_MM = 50;
+const THREE_DS_DEFAULT_NEAR = 1;
 
 // Records one offender against its (kind, discriminator) tally — the aggregate-once alternative to a
 // per-chunk/per-mesh `reportImportDiagnostic` while walking the recursive chunk tree. No-op (never

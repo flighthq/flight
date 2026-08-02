@@ -45,6 +45,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/lighting": "*",
     "@flighthq/materials": "*",
+    "@flighthq/math": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/scene3d": "*",
