@@ -11,6 +11,33 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — Coverage moved out of the changelog; the crumb line drawn (builder, user-directed)
+
+**A per-property "unhandled" tally for AWD materials was proposed and rejected — correctly.** The finding
+behind it is real (keys 5, 6, 8, 11, 13, 21, 22 are read by nothing, key 8 on all 35 sponza materials),
+but the fix was wrong: a crumb would fire on essentially every AWD file ever imported, telling the
+consumer nothing they can act on. Unlike a guard, an import crumb is **not shakeable** — the parser emits
+it, so its prose ships with the parser. What keeps it cheap is that the collector is optional, which means
+*what a crumb says* is the whole cost control.
+
+The rule now lives in [diagnostics](../../conventions/diagnostics.md#import-diagnostics-asset-facts-not-project-facts):
+a crumb reports what happened to THIS FILE'S data; a gap in our coverage is a project fact and belongs in a
+document. The test is whether a correct, idiomatic file from the format's own authoring tool would trigger
+it — if yes, it is announcing that we have not finished, once per import, forever.
+
+Note this cuts against a precedent I set earlier in this same log: `awd2.block-unhandled` survives the
+test only because it fires per block type a given file actually carries. The identical construction one
+level down, over a property list every file populates, does not. Apply the test, not the precedent.
+
+**Coverage now has a durable home:** [scene3d format coverage](../../scene3d-format-coverage.md), indexed
+from `agents/index.md` alongside the other architecture records. A reader asking "does Flight import AWD
+cameras?" should not have to reconstruct the answer from a changelog. This log keeps recording *when and
+why* coverage changed; that document records *what is true now*, and every "no fixture" claim in it was
+verified against the corpus rather than assumed.
+
+Two items previously scattered across entries below are consolidated there and should be read from it
+rather than from here: the 3DS keyframer blockers, and the AWD block-113 misreading.
+
 ## 2026-08-02 — Material breadth: MTL picks its own model, alpha maps land, glTF extensions reachable (builder, user-directed)
 
 Three material-layer items, all verifiable against real corpora rather than synthetic bytes.
