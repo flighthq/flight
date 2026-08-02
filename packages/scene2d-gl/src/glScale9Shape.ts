@@ -27,6 +27,7 @@ interface GlScale9ShapeData {
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
+  lastPixelRatio: number;
   lastW: number;
   texture: WebGLTexture;
 }
@@ -46,6 +47,7 @@ export function createGlScale9ShapeData(state: GlRenderState, _source: Renderabl
     lastScaleX: -1,
     lastScaleY: -1,
     lastContentId: -1,
+    lastPixelRatio: 0,
     lastW: 0,
     texture,
   } as unknown as RendererData;
@@ -82,31 +84,36 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   }
 
   const shapeData = renderProxy.rendererData as unknown as GlScale9ShapeData;
+  const pixelRatio = state.pixelRatio;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
+  // Sized in device pixels with the replay pre-scaled to match, exactly as glTextLabel and glRichText
+  // treat their offscreen canvases. The quad below stays in local units and samples the whole texture,
+  // so a denser raster is only sharper — no geometry moves with it.
 
   if (
     version !== shapeData.lastContentId ||
     w !== shapeData.lastW ||
     h !== shapeData.lastH ||
     source.scaleX !== shapeData.lastScaleX ||
-    source.scaleY !== shapeData.lastScaleY
+    source.scaleY !== shapeData.lastScaleY ||
+    pixelRatio !== shapeData.lastPixelRatio
   ) {
-    shapeData.canvas.width = w;
-    shapeData.canvas.height = h;
+    shapeData.canvas.width = Math.ceil(w * pixelRatio);
+    shapeData.canvas.height = Math.ceil(h * pixelRatio);
     const ctx = shapeData.ctx;
-    ctx.clearRect(0, 0, w, h);
-    ctx.save();
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    ctx.clearRect(bounds.x, bounds.y, w, h);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    ctx.translate(-bounds.x, -bounds.y);
     rasterizer(ctx, _remappedCommands, state);
-    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     updateGlTexture(state, shapeData.texture, shapeData.canvas);
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
     shapeData.lastContentId = version;
+    shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
   }
 

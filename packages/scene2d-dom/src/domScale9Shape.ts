@@ -63,14 +63,17 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   const w = Math.max(1, Math.ceil(bounds.width * source.scaleX));
   const h = Math.max(1, Math.ceil(bounds.height * source.scaleY));
 
-  data.canvas.width = w;
-  data.canvas.height = h;
+  // Backing store in device pixels, CSS box in layout units — the split every DPI-aware canvas element
+  // uses, and what keeps the stripped transform below working in layout space.
+  const pixelRatio = state.pixelRatio;
+  data.canvas.width = Math.ceil(w * pixelRatio);
+  data.canvas.height = Math.ceil(h * pixelRatio);
+  data.canvas.style.width = `${w}px`;
+  data.canvas.style.height = `${h}px`;
 
   const ctx = data.context!;
   mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-  if (bounds.x !== 0 || bounds.y !== 0) {
-    ctx.translate(-bounds.x, -bounds.y);
-  }
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
   rasterizer(ctx, _remappedCommands, state);
 
   data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';

@@ -51,14 +51,17 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
   const w = Math.max(1, Math.ceil(bounds.width));
   const h = Math.max(1, Math.ceil(bounds.height));
 
-  // Resizing clears the canvas and resets context state
-  data.canvas.width = w;
-  data.canvas.height = h;
+  // The canvas is the DOM element itself, so its backing store carries device pixels while its CSS box
+  // stays in layout units — the same split every DPI-aware canvas element uses. Resizing clears the
+  // canvas and resets context state.
+  const pixelRatio = state.pixelRatio;
+  data.canvas.width = Math.ceil(w * pixelRatio);
+  data.canvas.height = Math.ceil(h * pixelRatio);
+  data.canvas.style.width = `${w}px`;
+  data.canvas.style.height = `${h}px`;
 
   const ctx = data.context!;
-  if (bounds.x !== 0 || bounds.y !== 0) {
-    ctx.translate(-bounds.x, -bounds.y);
-  }
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
 
   rasterizer(ctx, commands, state);
 

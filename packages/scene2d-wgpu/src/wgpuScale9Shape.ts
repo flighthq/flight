@@ -36,6 +36,7 @@ interface WgpuScale9ShapeData {
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
+  lastPixelRatio: number;
   lastW: number;
   entry: WgpuTextureEntry | null;
 }
@@ -52,6 +53,7 @@ export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderab
     lastScaleX: -1,
     lastScaleY: -1,
     lastContentId: -1,
+    lastPixelRatio: 0,
     lastW: 0,
     entry: null,
   });
@@ -91,6 +93,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   }
 
   const shapeData = getWgpuRendererData<WgpuScale9ShapeData>(renderProxy.rendererData);
+  const pixelRatio = state.pixelRatio;
   if (shapeData === null) return;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
@@ -101,22 +104,29 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     w !== shapeData.lastW ||
     h !== shapeData.lastH ||
     source.scaleX !== shapeData.lastScaleX ||
-    source.scaleY !== shapeData.lastScaleY
+    source.scaleY !== shapeData.lastScaleY ||
+    pixelRatio !== shapeData.lastPixelRatio
   ) {
-    shapeData.canvas.width = w;
-    shapeData.canvas.height = h;
+    const pw = Math.ceil(w * pixelRatio);
+    const ph = Math.ceil(h * pixelRatio);
+    shapeData.canvas.width = pw;
+    shapeData.canvas.height = ph;
     const ctx = shapeData.ctx;
-    ctx.clearRect(0, 0, w, h);
-    ctx.save();
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    ctx.clearRect(bounds.x, bounds.y, w, h);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    ctx.translate(-bounds.x, -bounds.y);
     rasterizer(ctx, _remappedCommands, state);
-    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // GPU textures are fixed-size: recreate the entry when the field size changes, otherwise reupload
-    // the canvas pixels into the existing entry.
-    if (shapeData.entry === null || shapeData.lastW !== w || shapeData.lastH !== h) {
-      const nextEntry = createWgpuTextureEntry(state, w, h, shapeData.canvas);
+    // GPU textures are fixed-size: recreate the entry when the device-pixel size changes — which a
+    // pixelRatio change does even at a fixed field size — otherwise reupload into the existing entry.
+    if (
+      shapeData.entry === null ||
+      shapeData.lastW !== w ||
+      shapeData.lastH !== h ||
+      shapeData.lastPixelRatio !== pixelRatio
+    ) {
+      const nextEntry = createWgpuTextureEntry(state, pw, ph, shapeData.canvas);
       if (nextEntry === null) return;
       shapeData.entry?.texture.destroy();
       shapeData.entry = nextEntry;
@@ -128,6 +138,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
     shapeData.lastContentId = version;
+    shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
   }
 

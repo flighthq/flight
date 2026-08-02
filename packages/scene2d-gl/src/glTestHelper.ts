@@ -6,7 +6,7 @@ import type { GlRenderState } from '@flighthq/types/contract';
 // rather than reaching into render-gl internals. The jsdom webgl2Mock setup file patches
 // HTMLCanvasElement.getContext('webgl2') to return a mock WebGL2RenderingContext, so
 // createGlRenderState produces a fully-populated state with a working mock GL.
-export function createGlState(options?: { allowSmoothing?: boolean }): {
+export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
   state: GlRenderState;
   gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
@@ -17,6 +17,7 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
   const state = createGlRenderState(canvas, {
     backgroundColor: 0x00000000,
     imageSmoothingEnabled: options?.allowSmoothing ?? true,
+    pixelRatio: options?.pixelRatio,
   });
   return { state, gl: state.gl, canvas };
 }
