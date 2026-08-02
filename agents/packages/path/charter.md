@@ -2,7 +2,7 @@
 package: '@flighthq/path'
 crate: flighthq-path
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -34,6 +34,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 - Conversion (flatten, ear-clip tessellate, typed-array mesh, mesh pool).
 - Measurement and analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule containment, segment evaluation).
 - Transformation (affine, translate, reverse).
+- Prepared path morphing: topology normalization plus reusable progress sampling.
 - Stroke-to-outline expansion (joins/caps/dashing) — producing a fillable outline path from a centerline + style.
 - Path editing: `decimatePath` (Douglas-Peucker point reduction), `cleanPath` (coincident/near-collinear vertex dedup), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`. (Kernel-based editing — region offset, self-intersection resolution — lives in `@flighthq/path-boolean`; see Decisions.)
 - Multiple tessellation strategies: simple (current `tessellatePath` for convex/simple polygons) and holes-aware (earcut + winding for compound shapes).
@@ -75,6 +76,10 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 - **[2026-07-02] Multiple tessellation strategies coexist.** Keep `tessellatePath` as the simple, fast, no-holes direct-fill route. Add a second function (e.g. `tessellatePathFilled` or `tessellatePathComplex`) that handles holes via earcut hole-stitching + winding. The caller picks which they need — simple shapes get the cheap path, compound/donut shapes get the correct one.
 
   **Why:** The simple tessellator shouldn't grow complex to handle holes. Two strategies, explicitly chosen, matches the conservative/exact stratification pattern from clip.
+
+- **[2026-08-02] Path morph preparation and sampling belong in `@flighthq/path`; playback does not.** `createPathMorph` performs the allocating, one-time geometry correspondence between two topology-compatible paths, and `samplePathMorph` writes a progress sample into a reusable `Path`. Shape owns any retained `MorphShape` composition, while tween/animation/timeline own how progress changes over time.
+
+  **Why:** Normalizing lines/quadratics/cubics, reconciling segment counts, and interpolating coordinates are pure path geometry. Putting those operations in an animation package would couple a general timing system to one value type; putting time in path would violate the value-typed leaf boundary.
 
 ## Open directions
 
