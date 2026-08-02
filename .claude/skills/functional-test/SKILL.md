@@ -74,10 +74,11 @@ Canvas/WebGL scenes need no registration — the verifier reads back the largest
 Beyond the automatic not-blank check, a scene may export precise checks. The verifier reads them off the module:
 
 ```typescript
-import type { Surface } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 // throws to fail; receives the rendered frame
-export function assertRender(surface: Readonly<Surface>): void | Promise<void> {
-  /* sample pixels with the @flighthq/surface helpers and throw on mismatch */
+export function assertRender(bitmap: Readonly<Bitmap>): void | Promise<void> {
+  /* sample pixels with the @flighthq/bitmap helpers (getBitmapPixelRgb, getBitmapPixelChannel)
+     and throw on mismatch */
 }
 export const minCoverage = 0.01; // override the default non-blank fraction for this scene
 ```
