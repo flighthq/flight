@@ -117,6 +117,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix, across every frame of the symbol rather than its
   first — a node's local bounds do not change as its playhead moves.
+- Lossless bitmaps resolve to real pixels at import. Their payload is a raw raster rather than an image
+  file, so decompression comes from the shared registry and the layout — colour-mapped, 15-bit, or
+  24/32-bit, rows padded to four bytes — is unpacked here. A shape's bitmap fill receives its texture
+  source as soon as a deflate decompressor is registered, with no decoder and no asynchrony involved.
 - Embedded images leave the importer as asset references carrying their bytes undecoded. A placed
   `DefineBits*` character becomes a bounded node plus a `Scene2DAssetReference` whose `bytes` is a
   zero-copy view of the payload and whose `mimeType` is sniffed from its magic (`image/png`, `image/gif`,

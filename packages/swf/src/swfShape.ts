@@ -18,7 +18,7 @@ import type {
   Matrix,
   Shape,
   SpreadMethod,
-  Texture,
+  Texture2D,
 } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
@@ -48,7 +48,7 @@ export function createSwfGlyphShape(reader: SwfReader): Shape | null {
 export function createSwfShape(
   reader: SwfReader,
   version: number,
-  bitmapFills?: { characterId: number; texture: Texture }[],
+  bitmapFills?: { characterId: number; texture: Texture2D }[],
 ): Shape | null {
   const styles = readSwfShapeStyles(reader, version, version >= 3, bitmapFills);
   return styles === null ? null : decodeSwfShapeBody(reader, version, styles);
@@ -148,7 +148,7 @@ interface SwfShapeFill {
   // A bitmap fill points at a texture whose pixels arrive later. The geometry is emitted regardless —
   // dropping it would lose the artwork's shape as well as its paint, which is the whole picture for a file
   // whose art is bitmap-filled.
-  texture: Texture | null;
+  texture: Texture2D | null;
   textureMatrix: Matrix | null;
   spreadMethod: SpreadMethod;
 }
@@ -342,7 +342,7 @@ function readSwfShapeFillStyle(
   reader: SwfReader,
   version: number,
   hasAlpha: boolean,
-  bitmapFills?: { characterId: number; texture: Texture }[],
+  bitmapFills?: { characterId: number; texture: Texture2D }[],
 ): SwfShapeFill | null {
   const type = reader.readUint8();
   if (type === FILL_SOLID) {
@@ -513,7 +513,7 @@ function readSwfShapeStyles(
   reader: SwfReader,
   version: number,
   hasAlpha: boolean,
-  bitmapFills?: { characterId: number; texture: Texture }[],
+  bitmapFills?: { characterId: number; texture: Texture2D }[],
 ): SwfShapeStyles | null {
   const fillCount = readSwfShapeStyleCount(reader, version);
   if (!reader.valid || fillCount > MAX_SHAPE_STYLES) return null;
