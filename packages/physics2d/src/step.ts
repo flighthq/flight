@@ -427,7 +427,21 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   // deliberately untyped and only the kind knows what its numbers mean. With warm starting off the
   // accumulators are cleared instead, so a world told not to use the cache does not quietly keep
   // seeding from it — the previous code left them growing whether the flag was set or not.
-  if (config.warmStarting) warmStartPhysics2DContacts(world);
+  if (config.warmStarting) {
+    warmStartPhysics2DContacts(world);
+  } else {
+    // A cold start means the accumulated contact impulses are not part of THIS step's solve at all.
+    // Merely skipping their reapplication is not enough: solvePhysics2DContact clamps each incremental
+    // impulse against the stored total, so a cache left in the point still changes the projection even
+    // when it was never applied to the bodies. Clear before the first iteration, including when the
+    // iteration count is zero, so toggling warm starting off has an exact and inspectable meaning.
+    for (const contact of world.contacts) {
+      for (let i = 0; i < contact.pointCount; i++) {
+        contact.points[i].normalImpulse = 0;
+        contact.points[i].tangentImpulse = 0;
+      }
+    }
+  }
   // Warm starting is decided per KIND as well as per world, because it is a capability and not just a
   // preference. A kind that declares no warmStart is never reapplying its accumulator — the mouse joint
   // omits it deliberately, since a target that moves between steps invalidates the previous impulse —
