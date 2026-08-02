@@ -8,7 +8,14 @@ updated: 2026-08-02
 Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated timelines landed
 2026-08-01; shape geometry 2026-08-02.
 
-- `createScene2DFromSwf` safely reads uncompressed `FWS` headers and bounded tag records.
+- `createScene2DFromSwf` safely reads `FWS` headers and bounded tag records, and reads `CWS`/`ZWS` through
+  a registered decompressor. Compression is not SWF's domain — a `CWS` body is a zlib stream and a `ZWS`
+  body an LZMA one, both general formats riding inside the container — so the package exposes
+  `registerSwfDecompressor` and vendors neither codec. The registry starts empty, is filled only by an
+  explicit call, and is last-write-wins so a host can replace a portable decoder with a native one.
+  Compression with nothing registered reports the same null sentinel as a malformed file: the bytes are
+  unreadable either way. Decompressed bytes are spliced behind a header rewritten to `FWS`, since the
+  declared length already counts uncompressed bytes.
 - `DefineShape` through `DefineShape4` decode to real drawable geometry on `Shape` nodes: solid fills
   with per-record alpha, linear/radial/focal gradients with their ratios and converted matrices, and
   strokes with width, caps, joins, and miter limit. SWF records edges rather than contours — each edge
@@ -91,7 +98,7 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   symbol graphs, excessive nesting, and excessive instantiated-node counts still reject safely. Retaining whole frames added an amplification path —
   a display list placed once can be multiplied by every ShowFrame that follows it — so a per-document
   snapshot budget rejects a file that would exceed it, rather than materializing it.
-- Compressed `CWS`/`ZWS`, bitmap and text definition bodies, legacy table-based JPEG/button/font extents,
+- Bitmap and text definition bodies, legacy table-based JPEG/button/font extents,
   frame scripts, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
   What remains for bitmaps is the decoder behind the resolve step, not the path to it: the bytes and their
   media type now reach a resolver. A JPEG/PNG/GIF payload decodes through the platform or
@@ -109,8 +116,9 @@ embedded JPEG/PNG/GIF, lossless-bitmap and video dimensions, and recursively com
 Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
 replayed onto the instance it targets, depth ordering when a later frame places an instance between two
 others, labels from both label tags with the header frame rate, an independently seekable nested sprite
-playhead, snapshot-budget rejection, and clip depth producing a clip on covered instances only, with the
-mask undrawn and the region resolved into the covered instance's local space. Geometry coverage adds the bit reader's own overrun, alignment,
+playhead, snapshot-budget rejection, clip depth producing a clip on covered instances only with the mask
+undrawn and the region resolved into the covered instance's local space, and a compressed document
+importing through a registered decompressor while a missing, failing, or short one rejects. Geometry coverage adds the bit reader's own overrun, alignment,
 and encoding cases, and a shape suite over hand-written SHAPEWITHSTYLE bytes: a closed rectangle, twips
 conversion with a quadratic edge, right-hand fill reversal, run stitching across a move, Shape 3 alpha,
 stroke width and style, gradient passthrough, unpainted bitmap fills, and both malformed-body rejections —

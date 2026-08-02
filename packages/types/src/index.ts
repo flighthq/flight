@@ -800,4 +800,5 @@ export * from './Skeleton2DSlotAnimationTarget';
 export * from './SvgDocumentImport';
 export * from './Skeleton2DImport';
 export * from './Scene2DDocument';
+export * from './SwfDecompression';
 export * from './Scene2DResources';
