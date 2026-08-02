@@ -138,6 +138,20 @@ Result at the revision that added shape geometry and End-tag tolerance:
 | Rejected | 247 — **all** compressed (`CWS` 242, `ZWS` 5) |
 | Uncompressed rejected | **0** |
 
+Re-run after `registerSwfDecompressor` landed, with the repository's existing RFC 1951 inflate
+(`inflateAwdDeflate`, from `scene3d-formats`) registered for zlib:
+
+| Measure | Value |
+| --- | --- |
+| Files swept | 306 |
+| Threw | **0** |
+| Imported | **301** |
+| Rejected | 5 — all `ZWS`, the LZMA form, with no decompressor registered |
+| Shape nodes with geometry | 108 across 27 files (49,142 shape commands) |
+
+That second sweep is what backs the shape decoder at scale: 49,142 commands of real Flash-authored
+artwork decode without a single throw, where the synthetic suite could only exercise hand-written bytes.
+
 Two conclusions the synthetic suite could not reach. First, the null-sentinel contract holds against real
 files: nothing throws, and every uncompressed file in the sample imports. Second, compression is not a
 side issue — **79% of this corpus is compressed**, so a registered decompressor is what stands between

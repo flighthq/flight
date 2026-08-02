@@ -18,8 +18,9 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { MovieClip, Shape } from '@flighthq/types/contract';
-import { MovieClipKind, ShapeKind } from '@flighthq/types/contract';
+import { MovieClipKind, ShapeKind, SwfCompression } from '@flighthq/types/contract';
 
+import { registerSwfDecompressor, unregisterSwfDecompressor } from './swfDecompressor';
 import { createScene2DFromSwf, registerSwfScene2DDocumentImporter } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
 
@@ -285,6 +286,50 @@ describe('createScene2DFromSwf', () => {
     // own local space — where a ClipRegion's contours live — the square starts at x=3px.
     expect(masked.clip?.contours).not.toBeNull();
     expect(masked.clip?.rect).toMatchObject({ height: 40, width: 40, x: 3, y: 0 });
+  });
+
+  it('imports a compressed document through a registered decompressor', () => {
+    const uncompressed = createSwf([
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('packed')),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    // A CWS file is the same 8-byte header over a compressed body; the declared length already counts
+    // uncompressed bytes. This stand-in "compresses" by reversing, so the test exercises the seam and the
+    // splice rather than any particular codec.
+    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8).reverse());
+    compressed[0] = 0x43;
+
+    // Without a decompressor the bytes are unreadable, and that reads as the document's null sentinel.
+    expect(createScene2DFromSwf(compressed)).toBeNull();
+
+    registerSwfDecompressor(SwfCompression.Zlib, (body, uncompressedLength) => {
+      expect(uncompressedLength).toBe(uncompressed.length - 8);
+      return new Uint8Array(body).reverse();
+    });
+    try {
+      const document = createScene2DFromSwf(compressed);
+      expect(document?.sourceKind).toBe('swf');
+      expect(document?.references.map((reference) => reference.name)).toEqual(['packed']);
+    } finally {
+      unregisterSwfDecompressor(SwfCompression.Zlib);
+    }
+  });
+
+  it('rejects a compressed document whose decompressor returns a short or failed body', () => {
+    const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
+    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
+    compressed[0] = 0x43;
+
+    registerSwfDecompressor(SwfCompression.Zlib, () => null);
+    expect(createScene2DFromSwf(compressed)).toBeNull();
+
+    registerSwfDecompressor(SwfCompression.Zlib, () => new Uint8Array(2));
+    expect(createScene2DFromSwf(compressed)).toBeNull();
+    unregisterSwfDecompressor(SwfCompression.Zlib);
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {

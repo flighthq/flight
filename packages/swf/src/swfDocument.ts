@@ -28,12 +28,17 @@ import type {
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
+import { SwfCompression } from '@flighthq/types/contract';
 
+import { getSwfDecompressor } from './swfDecompressor';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
-  const header = new SwfReader(source, 0, source.length);
+  const uncompressed = uncompressSwfSource(source);
+  if (uncompressed === null) return null;
+
+  const header = new SwfReader(uncompressed, 0, uncompressed.length);
   const signature = header.readUint8();
   if (signature !== FWS_SIGNATURE || header.readUint8() !== W_SIGNATURE || header.readUint8() !== S_SIGNATURE) {
     return null;
@@ -41,9 +46,9 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
 
   const version = header.readUint8();
   const fileLength = header.readUint32();
-  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > source.length) return null;
+  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > uncompressed.length) return null;
 
-  const body = new SwfReader(source, SWF_PREFIX_LENGTH, fileLength);
+  const body = new SwfReader(uncompressed, SWF_PREFIX_LENGTH, fileLength);
   const stageBounds = readSwfRectangle(body);
   if (stageBounds === null) return null;
   // Header FrameRate is 8.8 fixed and governs every timeline in the file; the authored FrameCount that
@@ -161,6 +166,43 @@ interface SwfInstantiationState {
   remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
+}
+
+// Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
+// that and is returned as-is, with no copy. `CWS` and `ZWS` compress everything after the 8-byte header,
+// so the body is inflated through the registered decompressor and spliced back behind a header rewritten
+// to `FWS` — the declared length already counts uncompressed bytes, so it carries over untouched.
+// Compression the caller has not registered a decompressor for is reported as the document's null
+// sentinel, exactly like a malformed file: the bytes are unreadable either way.
+function uncompressSwfSource(source: Uint8Array): Uint8Array | null {
+  if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) return null;
+  const signature = source[0];
+  if (signature === FWS_SIGNATURE) return source;
+
+  const compression =
+    signature === CWS_SIGNATURE ? SwfCompression.Zlib : signature === ZWS_SIGNATURE ? SwfCompression.Lzma : null;
+  if (compression === null) return null;
+  const decompress = getSwfDecompressor(compression);
+  if (decompress === null) return null;
+
+  const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
+  header.readUint32();
+  const fileLength = header.readUint32();
+  if (fileLength < MIN_SWF_LENGTH) return null;
+
+  // LZMA puts a compressed length and the 5 property bytes between the header and its stream; zlib starts
+  // its stream immediately. Either way the decompressor receives the stream itself.
+  const bodyLength = fileLength - SWF_PREFIX_LENGTH;
+  const streamStart = compression === SwfCompression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
+  if (streamStart > source.length) return null;
+  const body = decompress(source.subarray(streamStart), bodyLength);
+  if (body === null || body.length < bodyLength) return null;
+
+  const uncompressed = new Uint8Array(SWF_PREFIX_LENGTH + bodyLength);
+  uncompressed.set(source.subarray(0, SWF_PREFIX_LENGTH));
+  uncompressed[0] = FWS_SIGNATURE;
+  uncompressed.set(body.subarray(0, bodyLength), SWF_PREFIX_LENGTH);
+  return uncompressed;
 }
 
 function matchesSwfDocument(source: Uint8Array, context: Readonly<Scene2DDocumentImportContext>): boolean {
@@ -1006,6 +1048,7 @@ const MIN_SWF_LENGTH = 12;
 const PNG_MIME_TYPE = 'image/png';
 const S_SIGNATURE = 0x53;
 const SWF_INSTANCE_KEY_SCALE = 0x10000;
+const SWF_LZMA_PREFIX_LENGTH = 17;
 const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';
 const SWF_LOSSLESS_MIME_TYPE = 'image/x-swf-lossless';
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
