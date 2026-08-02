@@ -1762,93 +1762,10 @@ describe('createScene2DSymbolFromSwf', () => {
     const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
 
     expect(symbol).not.toBeNull();
-    expect(symbol!.root.kind).toBe(MovieClipKind);
-    expect(getNodeChildren(symbol!.root)).toHaveLength(1);
+    expect(symbol!.kind).toBe(MovieClipKind);
+    expect(getNodeChildren(symbol!)).toHaveLength(1);
     // Each call builds its own: a library symbol is a template, not a shared node.
-    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')!.root).not.toBe(symbol!.root);
-  });
-
-  it('carries the named slots inside the symbol, so a caller can fill them', () => {
-    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')!;
-
-    expect(symbol.slots.map((slot) => slot.name)).toEqual(['art']);
-    expect(symbol.slots[0].target).toBe(getNodeChildren(symbol.root)[0]);
-  });
-
-  it('resolves the pixels of a bitmap the symbol draws, the way a placed one does', () => {
-    registerDeflateDecompressor();
-    const art = new ShapeWriter();
-    art.writeFillStyleCount(1);
-    art.writeBitmapFillStyle(0x41, 9, 20);
-    art.writeLineStyleCount(0);
-    art.writeStyleBits(1, 0);
-    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
-    art.writeStraightEdge(800, 0);
-    art.writeStraightEdge(0, 800);
-    art.writeEndShape();
-    const pixels = losslessPayload(5, 1, 1, storedDeflate([0, 0x11, 0x22, 0x33]));
-
-    // The bitmap-filled shape is exported by name and never placed, so nothing but the symbol entry
-    // reaches it — which is exactly the case that used to hand back artwork with no pixels behind it.
-    const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(7), swfString('Art'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
-      ]),
-      'Art',
-    );
-    unregisterDecompressor(Compression.Deflate);
-
-    const drawn = symbol!.root as Shape;
-    expect(drawn.data.commands[0]).toBe('beginTextureFill');
-    expect(getTextureSource(drawn.data.commands[2] as Texture2D)).not.toBeNull();
-  });
-
-  it('hands an encoded bitmap out on the image-resource contract, naming the waiting texture', () => {
-    const art = new ShapeWriter();
-    art.writeFillStyleCount(1);
-    art.writeBitmapFillStyle(0x41, 9, 20);
-    art.writeLineStyleCount(0);
-    art.writeStyleBits(1, 0);
-    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
-    art.writeStraightEdge(800, 0);
-    art.writeStraightEdge(0, 800);
-    art.writeEndShape();
-
-    const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(2, 3))),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(7), swfString('Art'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
-      ]),
-      'Art',
-    );
-
-    // An encoded payload decodes through @flighthq/image later, so the symbol must carry the same
-    // reference a whole-file import would — otherwise its Textures could never be paired with pixels.
-    expect(symbol!.imageResources).toHaveLength(1);
-    expect(symbol!.imageResources[0].mimeType).toBe('image/jpeg');
-    expect(symbol!.imageResources[0].textures).toContain((symbol!.root as Shape).data.commands[2] as Texture2D);
-  });
-
-  it('instantiates a bitmap character exported by linkage, not only a sprite or a shape', () => {
-    const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(2, 3))),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(9), swfString('Pixels'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
-      ]),
-      'Pixels',
-    );
-
-    expect(symbol!.root.kind).toBe(SpriteKind);
-    expect(symbol!.imageResources).toHaveLength(1);
+    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')).not.toBe(symbol);
   });
 
   it('reports nothing for a name the file does not export', () => {

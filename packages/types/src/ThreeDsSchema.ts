@@ -131,8 +131,15 @@ export interface ThreeDsMaterialGroup {
 // resolved and partitioned into subsets by the caller. `smoothingGroups` is the per-face smoothing
 // bitmask (SMOOTH_GROUP 0x4150, one uint32 per face) driving per-group normal generation, or null when
 // the mesh carries no smoothing chunk (all faces smoothed together).
+//
+// `vertices` are in WORLD space, which is what the format stores — not model space. `localMatrix` is the
+// TRI_LOCAL (0x4160) placement that puts them there: 12 float32 in file order, four contiguous 3-vectors
+// naming the object's X, Y, and Z axes and then its origin. Recovering model-space geometry means
+// applying its INVERSE to the vertices; the matrix itself then becomes the node's transform. It is null
+// when the mesh carries no TRI_LOCAL chunk, which is the identity-placement case.
 export interface ThreeDsMesh {
   faces: Uint16Array;
+  localMatrix: Float32Array | null;
   materialGroups: readonly ThreeDsMaterialGroup[];
   name: string;
   smoothingGroups: Uint32Array | null;
