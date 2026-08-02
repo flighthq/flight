@@ -1,12 +1,17 @@
+import type { Image } from './Image';
 import type { ResourceResolutionState } from './ResourceResolutionState';
 import type { Texture } from './Texture';
 
-// A lightweight, plain-data reference to a texture image source that a scene/mesh parser emits
-// synchronously instead of decoding inline. A Scene3D owns these references as sidecar data; each reference
-// names its consuming `textures`, whose `storage.image` remains null until a separate caller-driven pass
-// (@flighthq/scene3d-resources) resolves the ref and binds the live Image. This is
-// the seam that lets parse stay synchronous and format-symmetric across every scene-format while
-// the heavy async decode/fetch happens later, under a visibility/priority policy.
+// A lightweight, plain-data reference to a texture image source that a document parser emits
+// synchronously instead of decoding inline. A document owns these references as sidecar data; each
+// reference names its consuming `textures`, whose `source` remains null until a separate caller-driven
+// pass resolves the ref and binds the live Image. This is the seam that lets parse stay synchronous and
+// format-symmetric across every scene-format while the heavy async decode/fetch happens later, under a
+// visibility/priority policy.
+//
+// The reference is dimension-neutral by construction: it names bytes and the textures waiting on them,
+// and nothing about a mesh, a material, or a display object. A 2D document (`Scene2DDocument`) and a 3D
+// scene (`Scene3D`) carry the same references and differ only in how they discover them.
 //
 // Two members, discriminated by `kind`:
 //   Embedded — the encoded image bytes are already in hand (a payload carved out of the container,
@@ -70,6 +75,13 @@ export interface ExternalImageResourceReference extends ImageResourceReferenceBa
 }
 
 export type ImageResourceReference = EmbeddedImageResourceReference | ExternalImageResourceReference;
+
+// The swappable fetch seam an External reference resolves through. The web backend fetches a URL; a
+// native host substitutes its own. Returns null for an expected miss rather than throwing.
+export type ImageResourceFetch = (
+  ref: Readonly<ExternalImageResourceReference>,
+  signal: AbortSignal,
+) => Promise<Image | null>;
 
 export interface ImageResourceReferenceResolutionExplanation {
   failure: ImageResourceFailure | null;

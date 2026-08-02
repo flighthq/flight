@@ -1,0 +1,160 @@
+import type { Image } from '@flighthq/types/contract';
+import { ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
+
+import {
+  createEmbeddedImageResourceReference,
+  createExternalImageResourceReference,
+  createImageResourceFailure,
+  explainImageResourceReferenceResolution,
+  resetFailedImageResourceReference,
+  resolveImageResourceReference,
+} from './imageResourceReference';
+
+// Stub img.decode() so the embedded decode path resolves in jsdom.
+beforeEach(() => {
+  HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+});
+
+const unusedFetch = () => Promise.resolve(null);
+
+describe('createEmbeddedImageResourceReference', () => {
+  it('borrows the byte view rather than copying it', () => {
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const ref = createEmbeddedImageResourceReference(bytes, 'image/png');
+    expect(ref.bytes).toBe(bytes);
+    expect(ref.mimeType).toBe('image/png');
+  });
+
+  it('starts unresolved with no failure and no subscribers', () => {
+    const ref = createEmbeddedImageResourceReference(new Uint8Array(1));
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+    expect(ref.failure).toBeNull();
+    expect(ref.mimeType).toBeNull();
+    expect(ref.textures).toEqual([]);
+  });
+});
+
+describe('createExternalImageResourceReference', () => {
+  it('retains the uri and base path', () => {
+    const ref = createExternalImageResourceReference('atlas.png', '/assets');
+    expect(ref.uri).toBe('atlas.png');
+    expect(ref.basePath).toBe('/assets');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+  });
+
+  it('defaults the base path to null', () => {
+    expect(createExternalImageResourceReference('/atlas.png').basePath).toBeNull();
+  });
+});
+
+describe('createImageResourceFailure', () => {
+  it('keeps an Error name and message', () => {
+    const failure = createImageResourceFailure(new TypeError('bad magic'));
+    expect(failure).toEqual({ kind: ImageResourceFailureKind.Error, message: 'bad magic', name: 'TypeError' });
+  });
+
+  it('stringifies a non-Error cause with no name', () => {
+    expect(createImageResourceFailure('exploded')).toEqual({
+      kind: ImageResourceFailureKind.Error,
+      message: 'exploded',
+      name: null,
+    });
+  });
+});
+
+describe('explainImageResourceReferenceResolution', () => {
+  it('detaches the failure so a caller cannot mutate the reference', () => {
+    const ref = createEmbeddedImageResourceReference(new Uint8Array(1));
+    ref.failure = { kind: ImageResourceFailureKind.Error, message: 'nope', name: null };
+    ref.state = ResourceResolutionState.Failed;
+    const explanation = explainImageResourceReferenceResolution(ref);
+    expect(explanation.failure).not.toBe(ref.failure);
+    expect(explanation.failure).toEqual(ref.failure);
+  });
+
+  it('reports only a failed reference as retryable', () => {
+    const ref = createExternalImageResourceReference('a.png');
+    expect(explainImageResourceReferenceResolution(ref).retryable).toBe(false);
+    ref.state = ResourceResolutionState.Failed;
+    expect(explainImageResourceReferenceResolution(ref).retryable).toBe(true);
+  });
+});
+
+describe('resetFailedImageResourceReference', () => {
+  it('clears a failed reference back to unresolved', () => {
+    const ref = createExternalImageResourceReference('a.png');
+    ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'missing', name: null };
+    ref.state = ResourceResolutionState.Failed;
+    expect(resetFailedImageResourceReference(ref)).toBe(true);
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+    expect(ref.failure).toBeNull();
+  });
+
+  it('leaves a resolved reference untouched', () => {
+    const ref = createExternalImageResourceReference('a.png');
+    ref.state = ResourceResolutionState.Resolved;
+    expect(resetFailedImageResourceReference(ref)).toBe(false);
+    expect(ref.state).toBe(ResourceResolutionState.Resolved);
+  });
+});
+
+describe('resolveImageResourceReference', () => {
+  it('decodes embedded bytes and marks the reference resolved', async () => {
+    const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), 'image/png');
+    const image = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    expect(image).not.toBeNull();
+    expect(ref.state).toBe(ResourceResolutionState.Resolved);
+    expect(ref.failure).toBeNull();
+  });
+
+  it('routes an external reference through the fetch seam', async () => {
+    const ref = createExternalImageResourceReference('atlas.png', '/assets');
+    const fetched = { width: 2 } as Image;
+    const fetch = vi.fn().mockResolvedValue(fetched);
+    expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBe(fetched);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(ref.state).toBe(ResourceResolutionState.Resolved);
+  });
+
+  it('records an unavailable failure when the fetch seam returns null', async () => {
+    const ref = createExternalImageResourceReference('missing.png');
+    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
+    expect(ref.state).toBe(ResourceResolutionState.Failed);
+    expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
+  });
+
+  it('records a thrown cause as a failure rather than rethrowing', async () => {
+    const ref = createExternalImageResourceReference('boom.png');
+    const fetch = vi.fn().mockRejectedValue(new Error('network down'));
+    expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBeNull();
+    expect(ref.state).toBe(ResourceResolutionState.Failed);
+    expect(ref.failure).toEqual({ kind: ImageResourceFailureKind.Error, message: 'network down', name: 'Error' });
+  });
+
+  it('treats an abort as a cancel: reverts to unresolved and rethrows', async () => {
+    const ref = createExternalImageResourceReference('slow.png');
+    const controller = new AbortController();
+    const fetch = vi.fn().mockImplementation(() => {
+      controller.abort();
+      return Promise.reject(new Error('aborted'));
+    });
+    await expect(resolveImageResourceReference(ref, fetch, controller.signal)).rejects.toThrow('aborted');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+    expect(ref.failure).toBeNull();
+  });
+
+  it('clears a prior failure when the reference is retried', async () => {
+    const ref = createExternalImageResourceReference('flaky.png');
+    ref.failure = { kind: ImageResourceFailureKind.Error, message: 'old', name: null };
+    ref.state = ResourceResolutionState.Failed;
+    const fetch = vi.fn().mockResolvedValue({ width: 1 } as Image);
+    await resolveImageResourceReference(ref, fetch, new AbortController().signal);
+    expect(ref.failure).toBeNull();
+    expect(ref.state).toBe(ResourceResolutionState.Resolved);
+  });
+});

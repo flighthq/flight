@@ -1,9 +1,9 @@
+import { explainImageResourceReferenceResolution } from '@flighthq/image/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Scene3DResourceEvent, Scene3DResourceResolver } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { explainImageResourceReferenceResolution } from './sceneResourceRecovery';
 import { enableScene3DResourceSignals } from './sceneResourceSignals';
 
 // Returns whether the failure guard is installed on `resolver`.

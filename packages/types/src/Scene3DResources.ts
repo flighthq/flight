@@ -1,18 +1,13 @@
 import type { EasingFunction } from './EasingFunction';
 import type { Entity, Kind } from './Entity';
 import type { Image } from './Image';
-import type { ExternalImageResourceReference, ImageResourceReference } from './ImageResourceReference';
+import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Material } from './Material';
 import type { PbrExtension } from './PbrExtension';
 import type { ResourceLoader } from './ResourceLoader';
 import type { Scene3D } from './Scene3D';
 import type { Signal } from './Signal';
 import type { Texture } from './Texture';
-
-export type ImageResourceFetch = (
-  ref: Readonly<ExternalImageResourceReference>,
-  signal: AbortSignal,
-) => Promise<Image | null>;
 
 export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
 

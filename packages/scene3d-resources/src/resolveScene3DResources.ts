@@ -1,9 +1,8 @@
-import { loadImageResourceFromBytes } from '@flighthq/image/contract';
+import { createImageResourceFailure, loadImageResourceFromBytes } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
   Image,
-  ImageResourceFailure,
   Scene3D,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
@@ -255,10 +254,3 @@ function requestWorkingResolutions(
 }
 
 const _resolvedVoid: Promise<void> = Promise.resolve();
-
-function createImageResourceFailure(cause: unknown): ImageResourceFailure {
-  if (cause instanceof Error) {
-    return { kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name };
-  }
-  return { kind: ImageResourceFailureKind.Error, message: String(cause), name: null };
-}
