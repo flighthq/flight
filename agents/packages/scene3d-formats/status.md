@@ -11,6 +11,62 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — 3DS meshes carry a real transform; OBJ stops importing black (builder, user-directed)
+
+**TRI_LOCAL (0x4160) is read, and it changes what a 3DS node IS.** The constant had been declared in
+`ThreeDsSchema.ts` and referenced by nothing, so every 3DS mesh node was built at `createTransform3D()`
+identity. The reason that looked harmless is that **3DS stores vertices in WORLD space** — the geometry
+renders in the right place precisely because the placement is already baked into it. The cost is that the
+node has no transform to drive: no pivot, no hierarchy, nothing for an animation channel to bind to.
+
+So the parser now applies the placement's INVERSE to recover model-space geometry and decomposes the
+placement onto the node. Two facts worth keeping:
+
+- The chunk's 12 floats are four contiguous 3-vectors — X axis, Y axis, Z axis, origin — which map
+  **straight onto `Matrix4`'s four columns** (`m[column * 4 + row]`) with no transpose.
+- Re-expressing the placement in Y-up is a **conjugation**, `C * M * transpose(C)`, not a rotation of `M`.
+  Rotating it instead puts the geometry somewhere else entirely. `THREE_DS_Z_UP_TO_Y_UP` and its inverse
+  are named constants for exactly this.
+
+A singular placement records `3ds.local-matrix-singular` (Recover) and falls back to world-space geometry
+with an identity node — the pre-TRI_LOCAL behavior, which still renders correctly.
+
+**The test that earns its place.** `expectWorldPositionsPreserved` re-applies the emitted node transform
+to the emitted model-space geometry and compares against the file's world vertices taken through the
+Z-up→Y-up seam. It is derived from the FORMAT's own relation, not from this parser's implementation, so it
+cannot quietly agree with a wrong assumption the way a hand-written expected-value table would. It is also
+**mutation-tested**: deleting the conjugation's second multiply fails exactly the three round-trip cases.
+Do the same for anything built on the keyframer — with no fixture, a synthetic test that encodes the same
+guess as the parser proves nothing.
+
+**OBJ no longer zero-fills normals.** `objParse` pushed `0, 0, 0` whenever a file declared no `vn`, and a
+zero normal shades black under any lit material — so a plain positions-and-faces OBJ, the most common kind
+there is, imported unlit. It now generates them with `computeMeshGeometryNormals`, which is what AWD and
+MD5 already do when their files omit normals; OBJ was the only importer in the package that did not.
+Smooth rather than flat, matching the 3DS no-smoothing-chunk choice — OBJ's `s` directive is still not
+modeled, so there is no authored hard edge to honor.
+
+**The keyframer (0xB000) is deliberately NOT built, and should not be guessed at.** Three reasons, all
+verified this session rather than assumed:
+
+1. **No fixture exists.** `soldier_ant.3ds` is the only 3DS in the reference corpus and carries neither
+   0x4160 nor 0xB000 — its whole tree is MAIN → EDITOR → one material + one object → trimesh.
+2. **The tree encoding is genuinely ambiguous.** `NODE_HDR` (0xB010) is name + two uint16 flags + a uint16
+   hierarchy value. One documented reading makes that value the parent's index in appearance order
+   (0xFFFF = root); another implementation treats it as a depth position reconstructed with a running
+   index and a stack walk. They agree on well-formed 3ds Max output and diverge on edge cases, and with no
+   fixture there is no way to choose empirically.
+3. **Parenting now interacts with TRI_LOCAL and would be wrong done naively.** Those matrices are WORLD
+   placements. Now that they ride the node transform, parenting B under A double-transforms B unless the
+   child is rebased by `inverse(parentWorld) * childWorld`. Hierarchy work that skips this rebase will
+   break scenes that currently render correctly.
+
+Animation tracks add two more traps on top: 3DS rotation keys are **incremental** axis-angle (each
+relative to the previous, not absolute), and every key carries variable-length TCB/spline parameters gated
+by a per-key flag bitfield, so key stride is not constant. The standing recommendation is to land
+hierarchy + pivot only — with the inverse-parent rebase, and an unresolvable parent falling back to root —
+and to defer tracks until a real authored 3DS exists to check against.
+
 ## 2026-08-02 — 3DS lights and cameras imported; the mesh-era residue named (builder, user-directed)
 
 **The cause, which predicts the rest of the worklist.** These parsers were written when a parse produced a
