@@ -11,8 +11,17 @@ name: Promote
 #
 # Promotion deliberately does NOT gate on nightly's coverage or api jobs. Those are health signals
 # on develop, not release gates; blocking main on a coverage threshold would stall the known-good
-# pointer for a reason unrelated to whether the code works. Revisit if coverage becomes a hard
-# release requirement.
+# pointer for a reason unrelated to whether the code works. That coupling is not hypothetical: it
+# previously lived in nightly.yml as `promote: needs: [resolve, coverage, api]`, and a failing
+# coverage threshold silently skipped promotion every night for over a week while every commit on
+# develop was green.
+#
+# THIS FILE MUST LIVE ON THE REPOSITORY'S DEFAULT BRANCH (`main`) OR IT DOES NOT RUN AT ALL.
+# GitHub registers and executes `workflow_run` and `schedule` workflows only from the default branch
+# — a copy on develop alone is invisible to Actions and never appears in the run list, with no error
+# to notice. `branches: [develop]` below filters the TRIGGERING run's branch and is unrelated to
+# where this file lives; the two are easy to conflate. So this workflow lands on main first, and
+# from there watches develop.
 on:
   workflow_run:
     workflows: [CI]
