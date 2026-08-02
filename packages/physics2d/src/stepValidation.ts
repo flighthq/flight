@@ -118,7 +118,7 @@ function isPhysics2DColliderStateValid(collider: Readonly<Physics2DCollider>): b
   );
 }
 
-function isPhysics2DContactValid(contact: Readonly<Physics2DContact>): boolean {
+export function isPhysics2DContactValid(contact: Readonly<Physics2DContact>): boolean {
   if (
     !Number.isSafeInteger(contact.bodyA) ||
     !Number.isSafeInteger(contact.bodyB) ||

@@ -24,8 +24,10 @@ import { synchronizePhysics2DBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
+import { steppingPhysics2DWorlds } from './ownership';
 import {
   isPhysics2DBodyStateValid,
+  isPhysics2DContactValid,
   isPhysics2DContactStateValid,
   isPhysics2DGravityValid,
   isPhysics2DJointStateValid,
@@ -381,6 +383,18 @@ function effectiveMass(
 // solved before positions are integrated, so the integration moves bodies that have already had their
 // constraints applied rather than moving them and correcting afterwards.
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
+  if (steppingPhysics2DWorlds.has(world)) {
+    throw new Error('Cannot step a physics world recursively');
+  }
+  steppingPhysics2DWorlds.add(world);
+  try {
+    stepPhysics2DOnce(world, dt);
+  } finally {
+    steppingPhysics2DWorlds.delete(world);
+  }
+}
+
+function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   const config = world.config;
   if (
     !isPhysics2DTimestepValid(dt) ||
@@ -407,6 +421,9 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     for (const contact of world.contacts) {
       if (contact.sensor) continue;
       preSolve(world, contact);
+      if (!isPhysics2DContactValid(contact)) {
+        throw new Error('Physics2D pre-solve hook produced invalid contact state');
+      }
       // A disabled or sensor-converted contact solved nothing this step, so its old warm-start cache is
       // no longer evidence about the next one. Retaining it makes a temporarily disabled platform kick
       // a body with an impulse from before the gap when the contact is enabled again.
@@ -502,6 +519,9 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
       const bodyB = findPhysics2DBody(world, contact.bodyB);
       if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) continue;
       postSolve(world, contact);
+      if (!isPhysics2DContactValid(contact)) {
+        throw new Error('Physics2D post-solve hook produced invalid contact state');
+      }
     }
   }
 

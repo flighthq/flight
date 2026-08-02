@@ -6,7 +6,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { wakePhysics2DBody } from './islands';
-import { physics2DJointOwners } from './ownership';
+import { assertPhysics2DWorldNotStepping, physics2DJointOwners } from './ownership';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
 // Adds `joint` to `world` under the same canonical body ordering contacts use, swapping its two ends when
@@ -19,6 +19,7 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 // world. The anchors and lever arms swap with the bodies — a joint whose ends were exchanged without its
 // anchors would attach to the wrong points and hold the pair in a pose nobody asked for.
 export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): Physics2DJoint {
+  assertPhysics2DWorldNotStepping(world);
   if (physics2DJointOwners.has(joint) || world.joints.includes(joint)) {
     throw new Error('Cannot add a physics joint that already belongs to a physics world');
   }
@@ -77,6 +78,7 @@ export function getPhysics2DJointSolver(
 // limit changes can kick both bodies before the new equation gets its first iteration. The solver clears
 // any kind-specific accumulators, while the registry owns the common block and wake transition.
 export function invalidatePhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): boolean {
+  assertPhysics2DWorldNotStepping(world);
   if (physics2DJointOwners.get(joint) !== world || !world.joints.includes(joint)) return false;
   getPhysics2DJointSolver(world, joint.kind)?.clearAccumulatedImpulses?.(joint);
   joint.impulse0 = 0;
@@ -98,6 +100,7 @@ export function registerPhysics2DJointSolver(
   kind: Physics2DJointKind,
   solver: Physics2DJointSolver,
 ): void {
+  assertPhysics2DWorldNotStepping(world);
   world.jointSolvers.set(kind, solver);
   // Joints of this kind may already be in the world: addPhysics2DJoint deliberately leaves an
   // unknown-kind joint in its authored order, because canonicalizing it without the kind's consent
@@ -114,6 +117,7 @@ export function registerPhysics2DJointSolver(
 
 // Removes `joint` from `world`. Returns false when the world does not hold it.
 export function removePhysics2DJoint(world: Physics2DWorld, joint: Readonly<Physics2DJoint>): boolean {
+  assertPhysics2DWorldNotStepping(world);
   const at = world.joints.indexOf(joint as Physics2DJoint);
   if (at < 0) return false;
   if (getPhysics2DJointSolver(world, joint.kind) !== null) _wakePhysics2DJointBodies(world, joint);

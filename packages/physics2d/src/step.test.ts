@@ -304,6 +304,58 @@ describe('contact solve hooks', () => {
     expect(world.contacts[0].sensor).toBe(true);
     expect(calls).toBe(0);
   });
+
+  it('rejects recursive stepping and releases the guard after the callback fails', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    box(world, 0, 0.4);
+    world.contactHooks.preSolve = (currentWorld) => stepPhysics2D(currentWorld, 1 / 60);
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/recursively/);
+    expect(world.previousTimestep).toBe(0);
+
+    world.contactHooks.preSolve = null;
+    expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
+    expect(world.previousTimestep).toBe(1 / 60);
+  });
+
+  it('rejects topology mutation before a hook can partially add an entity', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    box(world, 0, 0.4);
+    const pending = createRigidBody2D('dynamic', 10, 10);
+    world.contactHooks.preSolve = (currentWorld) => {
+      addPhysics2DBody(currentWorld, pending);
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/while it is stepping/);
+    expect(pending.index).toBe(-1);
+    expect(world.bodies).toHaveLength(2);
+
+    world.contactHooks.preSolve = null;
+    expect(addPhysics2DBody(world, pending)).toBe(pending);
+  });
+
+  it('rejects invalid pre- and post-solve output before it can poison a later step', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    box(world, 0, 0.4).velocityY = -1;
+    world.contactHooks.preSolve = (_currentWorld, contact) => {
+      contact.friction = Number.NaN;
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/pre-solve hook produced invalid/);
+    world.contacts[0].friction = STONE.friction;
+    world.contactHooks.preSolve = null;
+    world.contactHooks.postSolve = (_currentWorld, contact) => {
+      contact.restitution = Number.POSITIVE_INFINITY;
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/post-solve hook produced invalid/);
+    world.contacts[0].restitution = STONE.restitution;
+    world.contactHooks.postSolve = null;
+    expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
+  });
 });
 
 describe('sensor reporting between immovable bodies', () => {
