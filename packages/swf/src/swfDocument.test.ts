@@ -350,6 +350,63 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
   });
 
+  it('draws static text from an embedded font as placed glyph outlines', () => {
+    // One glyph: a 512x512 box on the font's 1024-unit EM grid, as a bare SHAPE with no style array.
+    const glyph = new ShapeWriter();
+    glyph.writeStyleBits(1, 0);
+    glyph.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    glyph.writeStraightEdge(512, 0);
+    glyph.writeStraightEdge(0, 512);
+    glyph.writeStraightEdge(-512, 0);
+    glyph.writeStraightEdge(0, -512);
+    glyph.writeEndShape();
+    const glyphBytes = glyph.toBytes();
+
+    // DefineFont: id, then an offset table whose first entry is its own byte length.
+    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+
+    // One text record: font 4, height 1024 twips, one glyph at index 0, advancing 600 twips.
+    const record = new BitWriter();
+    record.writeUnsigned(1, 1); // record type
+    record.writeUnsigned(0, 3); // reserved
+    record.writeUnsigned(1, 1); // has font
+    record.writeUnsigned(1, 1); // has color
+    record.writeUnsigned(0, 1); // has y offset
+    record.writeUnsigned(0, 1); // has x offset
+    const text = joinBytes(
+      uint16(6),
+      createRectangle(0, 1024, 0, 1024),
+      createMatrix(1, 0, 0, 1, 0, 0),
+      new Uint8Array([4, 8]), // glyph bits, advance bits
+      record.toBytes(),
+      uint16(4),
+      new Uint8Array([0xff, 0x00, 0x00]),
+      uint16(1024),
+      new Uint8Array([1]),
+      packGlyphEntry(0, 600),
+      new Uint8Array([0]),
+    );
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_FONT, font),
+        createTag(TAG_DEFINE_TEXT, text),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const drawn = getNodeChildren(document!.root)[0] as Shape;
+    expect(drawn.kind).toBe(ShapeKind);
+    // The glyph's own fill is dropped and the record's colour used instead.
+    expect(drawn.data.commands[0]).toBe('beginFill');
+    expect(drawn.data.commands[2]).toBe(0xff0000);
+    // Height 1024 twips over a 1024-unit EM grid is a scale of 1, so the glyph's 512 units land at
+    // 512/20 = 25.6px — the same twips-to-pixels conversion every other coordinate gets.
+    expect(drawn.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 25.6, 0]);
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -1336,6 +1393,14 @@ function createPngHeader(width: number, height: number): Uint8Array {
   ]);
 }
 
+// One GLYPHENTRY: a 4-bit glyph index followed by an 8-bit signed advance, bit-packed then byte-aligned.
+function packGlyphEntry(index: number, advance: number): Uint8Array {
+  const writer = new BitWriter();
+  writer.writeUnsigned(index, 4);
+  writer.writeSigned(advance, 8);
+  return writer.toBytes();
+}
+
 function encodedUint32(value: number): Uint8Array {
   const bytes: number[] = [];
   let remaining = value;
@@ -1419,9 +1484,11 @@ const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
+const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;
+const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_FRAME_LABEL = 43;

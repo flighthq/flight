@@ -33,6 +33,7 @@ import { Compression } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
+import { createSwfTextShape, readSwfFontGlyphs, resolveSwfFontUnitsPerEm } from './swfText';
 
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
   const uncompressed = uncompressSwfSource(source);
@@ -148,11 +149,23 @@ interface SwfTagResult {
   timeline: SwfTimeline;
 }
 
+// A static text definition, held until every font in the file is known. Text records address glyphs by
+// index into a font that may be defined after them, so composition waits for the whole tag walk.
+interface SwfPendingText {
+  characterId: number;
+  end: number;
+  start: number;
+  version: number;
+}
+
 interface SwfParseState {
   backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
+  fontGlyphs: Map<number, readonly (Shape | null)[]>;
+  fontUnitsPerEm: Map<number, number>;
   images: Map<number, SwfImagePayload>;
+  pendingTexts: SwfPendingText[];
   linkages: Map<number, string>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
@@ -683,7 +696,10 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     backgroundColor: null,
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
+    fontGlyphs: new Map<number, readonly (Shape | null)[]>(),
+    fontUnitsPerEm: new Map<number, number>(),
     images: new Map<number, SwfImagePayload>(),
+    pendingTexts: [],
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
     shapes: new Map<number, Shape>(),
@@ -691,6 +707,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   };
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
+  appendSwfPendingTextShapes(reader, state);
   return {
     backgroundColor: state.backgroundColor,
     characterBounds: state.characterBounds,
@@ -707,6 +724,21 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
 // own tooling end a sprite, and sometimes the root, with the last content tag and no terminator, and
 // rejecting those loses the whole document over a byte no reader needs. Truncation is still caught, by
 // the declared file length, by a tag body reaching past the stream, and by the reader's own overrun flag.
+// Composes every static text definition once the whole file has been walked, so a text record can address
+// a font declared after it. A text whose body does not decode keeps its bounded placeholder, the same way
+// an unreadable shape body does.
+function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): void {
+  for (const pending of state.pendingTexts) {
+    const shape = createSwfTextShape(
+      new SwfReader(reader.source, pending.start, pending.end),
+      pending.version,
+      state.fontGlyphs,
+      state.fontUnitsPerEm,
+    );
+    if (shape !== null) state.shapes.set(pending.characterId, shape);
+  }
+}
+
 function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
   const placements = new Map<number, SwfPlacement>();
   const frames: Map<number, SwfPlacement>[] = [];
@@ -739,6 +771,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readLegacyRemoveObject(body, placements);
     } else if (code === TAG_REMOVE_OBJECT_2) {
       placements.delete(body.readUint16());
+    } else if (code === TAG_DEFINE_FONT || code === TAG_DEFINE_FONT_2 || code === TAG_DEFINE_FONT_3) {
+      readSwfFontDefinition(body, state, code);
     } else if (code === TAG_SET_BACKGROUND_COLOR) {
       readSwfBackgroundColor(body, state);
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
@@ -780,6 +814,19 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
 
 // The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
 // opaque RGBA. Last declaration wins, matching how a player applies the most recent one it has read.
+// Font glyphs decode on a reader of their own, so a font this decoder cannot read costs its glyphs and
+// nothing else. A font declares no placeable bounds and is never itself placed — it is a table the text
+// definitions draw from.
+function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, code: number): void {
+  const version = code === TAG_DEFINE_FONT ? 1 : code === TAG_DEFINE_FONT_2 ? 2 : 3;
+  const reader = new SwfReader(body.source, body.pos, body.end);
+  const fontId = reader.source[body.pos] + reader.source[body.pos + 1] * 0x100;
+  const glyphs = readSwfFontGlyphs(reader, version);
+  if (glyphs === null || fontId === 0) return;
+  state.fontGlyphs.set(fontId, glyphs);
+  state.fontUnitsPerEm.set(fontId, resolveSwfFontUnitsPerEm(version));
+}
+
 function readSwfBackgroundColor(body: SwfReader, state: SwfParseState): void {
   const red = body.readUint8();
   const green = body.readUint8();
@@ -848,6 +895,21 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
 
   const version = resolveSwfShapeVersion(code);
   if (version > 0) readSwfShapeBody(body, state, characterId, version);
+  // A static text definition is queued rather than composed: its records address glyphs by index into a
+  // font that may not have been read yet. Everything after the bounds and the definition matrix is its
+  // record stream.
+  if (code === TAG_DEFINE_TEXT || code === TAG_DEFINE_TEXT_2) {
+    const reader = new SwfReader(body.source, body.pos, body.end);
+    readSwfMatrix(reader);
+    if (reader.valid) {
+      state.pendingTexts.push({
+        characterId,
+        end: body.end,
+        start: reader.pos,
+        version: code === TAG_DEFINE_TEXT ? 1 : 2,
+      });
+    }
+  }
   return true;
 }
 
@@ -1077,6 +1139,9 @@ const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_EDIT_TEXT = 37;
+const TAG_DEFINE_FONT = 10;
+const TAG_DEFINE_FONT_2 = 48;
+const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_MORPH_SHAPE = 46;
 const TAG_DEFINE_MORPH_SHAPE_2 = 84;
 const TAG_DEFINE_SHAPE = 2;

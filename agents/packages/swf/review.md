@@ -69,6 +69,10 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   clipped container and costs no structural change. The region is resolved into each covered instance's
   local space, is per-frame so a moving mask follows, and is omitted rather than guessed when the mask
   character has no decoded geometry.
+- Embedded fonts cross as what they actually are. A SWF font is a table of path outlines, so the glyph
+  shapes decode through the same edge-record reader the shape tags use — minus the style array a glyph
+  does not carry — and static text places them by index, scaled and recoloured per record. No text stack
+  is involved, and nothing is flattened that should not be.
 - Timelines cross as data, not as a player. Each one becomes a `TimelineSource` on a `MovieClip`, so
   playback, seeking, looping, and label lookup are the `movieclip`/`timeline` engine's, and the codec
   keeps no runtime of its own — the seam `TimelineSource` was written for.
@@ -114,8 +118,12 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   document still draws its images as empty bounded containers until an application supplies one. A
   lossless payload additionally needs an inflate, which an asynchronous resolver can take from the
   platform rather than vendoring.
-- Text and font definitions are still structural only, and morph shapes keep bounds alone; their paired
-  start/end geometry has no 2D-morph home to land in.
+- `DefineEditText` is still structural only, and deliberately so: it carries a string plus a font
+  reference rather than glyph indices, so it needs the font's code table, its advance table, and line
+  breaking — and flattening it to paths would destroy the editability that defines it. The outlines are
+  imported; a path-backed glyph source to consume them is the unbuilt piece. The measured corpus puts
+  `DefineEditText` in 49 files against 6 for static text, so this is the larger half of text by usage.
+- Morph shapes keep bounds alone; their paired start/end geometry has no 2D-morph home to land in.
 - Playback carries placement transforms and clip-depth masks. Per-frame color transforms, blend modes,
   filters, and `DoAction`/`DoInitAction` frame scripts are still parsed past rather than imported, so a
   frame's visual state remains narrower than its structural state. Frame scripts in particular have a
