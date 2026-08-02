@@ -58,7 +58,7 @@ function compressedBc3Image(): CompressedImage {
 function bitmap(size: number, version: number): Bitmap {
   return {
     alphaType: 'straight',
-    colorSpace: 'srgb',
+    gamut: 'srgb',
     data: new Uint8ClampedArray(size * size * 4),
     format: 'rgba8unorm',
     height: size,
@@ -195,6 +195,20 @@ describe('applyGlSamplerState', () => {
   });
 });
 
+// A 1x1 bitmap with an explicit encoding and texel, for the alpha-encoding round trip below.
+function encodedBitmap(alphaType: 'straight' | 'premultiplied', rgba: readonly number[]): Bitmap {
+  return {
+    alphaType,
+    data: new Uint8ClampedArray(rgba),
+    format: 'rgba8unorm',
+    gamut: 'srgb',
+    height: 1,
+    kind: BitmapTextureSourceKind,
+    version: 1,
+    width: 1,
+  } as unknown as Bitmap;
+}
+
 describe('bindGlBitmapTexture', () => {
   it('uploads CPU-readable pixels via the raw-pixel path', () => {
     const { state, gl } = createGlState();
@@ -240,6 +254,36 @@ describe('bindGlBitmapTexture', () => {
     };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+  });
+});
+
+// The uploader resolves the source's DECLARED encoding to the one the caller asked for, in BOTH
+// directions. The straight direction is what makes a premultiplied source safe as a 3D material map: 3D
+// binds with premultiply=false and premultiplies in its fragment tail, so passing premultiplied rgb
+// straight through would square the coverage and darken every translucent texel.
+describe('bindGlBitmapTexture alpha encoding', () => {
+  const uploadedPixels = (gl: { texImage2D: unknown }): Uint8ClampedArray =>
+    (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.at(-1)!.at(-1) as Uint8ClampedArray;
+
+  it('recovers straight rgb when a premultiplied source is bound for a straight realization', () => {
+    const { state, gl } = createGlState();
+    bindGlBitmapTexture(state, encodedBitmap('premultiplied', [64, 32, 16, 128]), undefined, null, false);
+    const pixels = uploadedPixels(gl);
+    // 64 stored at a=128 recovers to ~128 straight (64 * 255/128); alpha itself is untouched.
+    expect(pixels[0]).toBeGreaterThan(120);
+    expect(pixels[3]).toBe(128);
+  });
+
+  it('leaves a premultiplied source untouched for a premultiplied realization', () => {
+    const { state, gl } = createGlState();
+    bindGlBitmapTexture(state, encodedBitmap('premultiplied', [64, 32, 16, 128]), undefined, null, true);
+    expect(Array.from(uploadedPixels(gl).slice(0, 4))).toEqual([64, 32, 16, 128]);
+  });
+
+  it('leaves a fully transparent premultiplied texel at zero rather than dividing by zero', () => {
+    const { state, gl } = createGlState();
+    bindGlBitmapTexture(state, encodedBitmap('premultiplied', [0, 0, 0, 0]), undefined, null, false);
+    expect(Array.from(uploadedPixels(gl).slice(0, 4))).toEqual([0, 0, 0, 0]);
   });
 });
 

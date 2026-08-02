@@ -119,6 +119,11 @@ const COLUMN_LIGHTEN = 5;
 // excluded on purpose — see the header.
 const COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COLUMN_SCREEN, COLUMN_LIGHTEN];
 
+// The modes whose fixed-function realization is EXACT under partial coverage, and so must leave the
+// destination untouched at zero alpha. Darken and Lighten are absent because MIN/MAX provably cannot
+// express `(1-a)*dst + a*B(src,dst)` — see DEFAULT_GL_BLEND_MODES.
+const ZERO_COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COLUMN_MULTIPLY, COLUMN_SCREEN];
+
 // Readback margin separating a real coverage difference from tone-mapping and MSAA noise. The real
 // post-fix differences are an order of magnitude larger; today they are exactly zero.
 const COVERAGE_MARGIN = 12;
@@ -128,10 +133,12 @@ const COVERAGE_MARGIN = 12;
 const PATCH_RGB = 0xff8040;
 const FULL_ALPHA = 0xff;
 const QUARTER_ALPHA = 0x40;
+const ZERO_ALPHA = 0x00;
 
 // World-space row centers: full-alpha above the midline, quarter-alpha below.
-const FULL_ROW_Y = 1.2;
-const QUARTER_ROW_Y = -1.2;
+const FULL_ROW_Y = 1.8;
+const QUARTER_ROW_Y = 0;
+const ZERO_ROW_Y = -1.8;
 
 const scene = createScene3D().root;
 
@@ -144,10 +151,11 @@ backdrop.position.z = -1;
 invalidateNodeLocalTransform(backdrop);
 addNodeChild(scene, backdrop);
 
-const patchGeometry = createQuadMeshGeometry(1.1, 1.6);
+const patchGeometry = createQuadMeshGeometry(1.1, 1.1);
 for (let column = 0; column < COLUMNS.length; column++) {
   addPatch(column, FULL_ROW_Y, FULL_ALPHA);
   addPatch(column, QUARTER_ROW_Y, QUARTER_ALPHA);
+  addPatch(column, ZERO_ROW_Y, ZERO_ALPHA);
 }
 
 const camera = createCamera3D({
@@ -175,10 +183,11 @@ function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
   const backdrop = sampleRed(bitmap, 0.5, backdropRowFraction());
   const full = COLUMNS.map((_, column) => sampleRed(bitmap, columnFraction(column), fullRowFraction()));
   const quarter = COLUMNS.map((_, column) => sampleRed(bitmap, columnFraction(column), quarterRowFraction()));
+  const zero = COLUMNS.map((_, column) => sampleRed(bitmap, columnFraction(column), zeroRowFraction()));
 
   // Every sampled value, so a failure report shows the whole grid rather than only the first inequality
   // that tripped. Lands in logs.jsonl next to the screenshot.
-  logInfo({ backdrop, full, quarter }, 'test');
+  logInfo({ backdrop, full, quarter, zero }, 'test');
 
   // Guards the guard: if the backdrop or the patches did not render at all, every comparison below would
   // be between two blanks and would pass vacuously.
@@ -206,6 +215,21 @@ function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
       `${tag} Normal quarter-alpha patch is not between the backdrop and the full-alpha patch ` +
         `(backdrop ${backdrop}, quarter ${quarter[COLUMN_NORMAL]}, full ${full[COLUMN_NORMAL]})`,
     );
+  }
+
+  // Zero coverage must be a no-op: `(1-0)*dst + 0*B(src,dst)` is the destination, whatever B is. The
+  // four modes asserted here express that exactly in fixed-function form. DARKEN AND LIGHTEN ARE
+  // EXCLUDED AND KNOWN WRONG — MIN/MAX cannot carry the coverage term, so Darken computes min(0, dst)
+  // and wipes the backdrop to black. That is recorded here rather than left invisible; the coverage-
+  // correct pair lives in AdvancedBlendMode and realizes through a BlendEffect. Assert them here only
+  // once the enum members route through that path.
+  for (const column of ZERO_COVERAGE_COLUMNS) {
+    if (Math.abs(zero[column] - backdrop) > COVERAGE_MARGIN) {
+      throw new Error(
+        `${tag} ${COLUMNS[column]} changed the backdrop at ZERO coverage (${zero[column]} vs ${backdrop}). ` +
+          `A fully transparent source must composite to the destination under every blend equation.`,
+      );
+    }
   }
 
   if (quarter[COLUMN_MULTIPLY] > backdrop + 10) {
@@ -247,9 +271,13 @@ function quarterRowFraction(): number {
   return (HALF_HEIGHT - QUARTER_ROW_Y) / (HALF_HEIGHT * 2);
 }
 
+function zeroRowFraction(): number {
+  return (HALF_HEIGHT - ZERO_ROW_Y) / (HALF_HEIGHT * 2);
+}
+
 // Above the top row, where only the backdrop covers the frame.
 function backdropRowFraction(): number {
-  return (HALF_HEIGHT - 2.5) / (HALF_HEIGHT * 2);
+  return (HALF_HEIGHT - 2.8) / (HALF_HEIGHT * 2);
 }
 
 function sampleRed(bitmap: Readonly<Bitmap>, xFraction: number, yFraction: number): number {
