@@ -72,6 +72,20 @@ export function getPhysics2DJointSolver(
   return world.jointSolvers.get(kind) ?? null;
 }
 
+// Discards solver-owned state after a stored joint's authored parameters change. A cached impulse is an
+// answer to the previous constraint equation; reapplying it after an anchor, axis, spring, motor, or
+// limit changes can kick both bodies before the new equation gets its first iteration. The solver clears
+// any kind-specific accumulators, while the registry owns the common block and wake transition.
+export function invalidatePhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): boolean {
+  if (physics2DJointOwners.get(joint) !== world || !world.joints.includes(joint)) return false;
+  getPhysics2DJointSolver(world, joint.kind)?.clearAccumulatedImpulses?.(joint);
+  joint.impulse0 = 0;
+  joint.impulse1 = 0;
+  joint.impulse2 = 0;
+  _wakePhysics2DJointBodies(world, joint);
+  return true;
+}
+
 // Registers `solver` for `kind` on this world. Last write wins, so a caller may replace a built-in with
 // its own — collisions are avoided by the vendor-prefix convention (bare names reserved for built-ins),
 // not by a guard that would make overriding impossible.
