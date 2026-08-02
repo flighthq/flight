@@ -3,6 +3,7 @@ export {
   updatePhysics2DColliderWorldShape,
   writePhysics2DColliderBounds,
 } from './colliderTransform';
+export { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
 export {
   Physics2DDistanceJointKind,

@@ -474,3 +474,46 @@ export interface Physics2DContactEvents {
   began: Physics2DContact[];
   ended: Physics2DContact[];
 }
+
+export type Physics2DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
+
+// Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
+// renderer can style or inspect a primitive without geometry knowing anything about colors, cameras, or
+// a graphics backend. `bodyB` is -1 for a primitive sourced from one body.
+export interface Physics2DDebugLine {
+  feature: Physics2DDebugFeature;
+  bodyA: number;
+  bodyB: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export interface Physics2DDebugCircle {
+  feature: Physics2DDebugFeature;
+  bodyA: number;
+  bodyB: number;
+  x: number;
+  y: number;
+  radius: number;
+}
+
+// Arrays retain their high-water capacity; only entries below the corresponding count are live. That
+// lets a caller keep one buffer and refill it every frame without allocating as the scene fluctuates.
+export interface Physics2DDebugGeometry {
+  lines: Physics2DDebugLine[];
+  lineCount: number;
+  circles: Physics2DDebugCircle[];
+  circleCount: number;
+}
+
+export interface Physics2DDebugGeometryOptions {
+  drawCentersOfMass: boolean;
+  drawColliders: boolean;
+  drawContacts: boolean;
+  drawJoints: boolean;
+  centerOfMassRadius: number;
+  contactNormalLength: number;
+  pointRadius: number;
+}
