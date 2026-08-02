@@ -26,8 +26,9 @@ export function createScene2DDocument(
   root: Node2D,
   references: Scene2DContentReference[] = [],
   sourceKind: string | null = null,
+  backgroundColor: number | null = null,
 ): Scene2DDocument {
-  return { references, root, sourceKind };
+  return { backgroundColor, references, root, sourceKind };
 }
 
 export function createScene2DSlotReference(

@@ -26,6 +26,7 @@ describe('createScene2DDocument', () => {
     const root = createDisplayObject();
     const references = [createScene2DAssetReference('bg', 'bg.png', createDisplayObject())];
     expect(createScene2DDocument(root, references, 'acme')).toEqual({
+      backgroundColor: null,
       references,
       root,
       sourceKind: 'acme',

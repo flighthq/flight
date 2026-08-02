@@ -333,6 +333,23 @@ describe('createScene2DFromSwf', () => {
     unregisterDecompressor(Compression.Deflate);
   });
 
+  it('imports the stage background colour as opaque packed RGBA', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x33, 0x66, 0x99])),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // SWF gives the stage colour no alpha and a stage is opaque, so it packs fully opaque.
+    expect(document?.backgroundColor).toBe(0x336699ff);
+    // A file that declares none reports null rather than a guessed default.
+    expect(
+      createScene2DFromSwf(createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]))?.backgroundColor,
+    ).toBeNull();
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -1414,6 +1431,7 @@ const TAG_PLACE_OBJECT_3 = 70;
 const TAG_PLACE_OBJECT_4 = 94;
 const TAG_REMOVE_OBJECT = 5;
 const TAG_REMOVE_OBJECT_2 = 28;
+const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const _encoder = new TextEncoder();

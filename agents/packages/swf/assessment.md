@@ -8,14 +8,18 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Ship the image resolver, then text and fonts.** `DefineShape` through `DefineShape4` draw, and
+1. **Materialize text, then ship the image resolver.** Measured against the 306-file Ruffle corpus rather
+   than assumed: `DefineEditText` appears in 49 files — as many as every `DefineShape` generation
+   combined — with `DefineFont2` in 38 and `DefineFont3` in 18, so text is the largest remaining hole in a
+   still frame. By the same measurement, per-frame colour transform covers only 41 of 784 placements and
+   blend mode just 1 file, which puts both well below text. `DefineShape` through `DefineShape4` draw, and
    embedded image bytes now reach the resolve step with their media type, so what is missing is the
    resolver that turns those bytes into a textured node: platform or `@flighthq/image-codec` decode for
    JPEG/PNG/GIF, and an inflate plus `createBitmap`/`createTexture` for the SWF lossless formats, which an
    asynchronous resolver can take from `DecompressionStream` rather than vendoring. Whether that resolver
    ships from `swf`, from `scene2d-resources`, or from an application is the open question. Text and font
    definitions remain structural after that.
-2. **Carry per-frame appearance and frame scripts.** Placement transforms and clip-depth masks replay; the
+2. **Carry per-frame appearance and frame scripts** (lower than it looks — see the measurements above). Placement transforms and clip-depth masks replay; the
    color transform, blend mode, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
    yet. A frame's visual state is narrower than its structural state until these cross.
