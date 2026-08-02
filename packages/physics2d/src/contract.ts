@@ -5,6 +5,7 @@ export * from './jointFactories';
 export * from './jointRegistry';
 export * from './joints';
 export * from './massProperties';
+export * from './registerBuiltInPhysics2DJointSolvers';
 export * from './solver';
 export * from './step';
 export * from './world';

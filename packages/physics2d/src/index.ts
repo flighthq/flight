@@ -44,6 +44,7 @@ export {
   removePhysics2DJoint,
 } from './jointRegistry';
 export { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
+export { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers';
 export {
   applyPhysics2DImpulse,
   relativeNormalVelocity,
