@@ -5,6 +5,7 @@ import type {
   GlyphAtlasOptions,
   GlyphMetrics,
   GlyphRasterizeOptions,
+  GlyphRasterizerBackend,
 } from '@flighthq/types/contract';
 
 import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
@@ -16,6 +17,7 @@ import { getGlyphRasterizerBackend } from './glyphRasterizerBackend';
 // eviction. Line metrics are derived from `fontSize` for now (see `deriveGlyphMetricsFromFontSize`).
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
   const padding = options.padding ?? 1;
+  const rasterizerBackend = options.rasterizerBackend ?? getGlyphRasterizerBackend();
   // Built before the runtime so the metrics probe sees the same font the glyphs will rasterize with.
   const rasterizeOptions: GlyphRasterizeOptions = {
     fontFamily: options.fontFamily,
@@ -38,9 +40,10 @@ export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtl
       maxGlyphs: options.maxGlyphs ?? 0,
       occupiedArea: 0,
       retainedBytes: 0,
-      metrics: _resolveGlyphAtlasMetrics(rasterizeOptions),
+      metrics: _resolveGlyphAtlasMetrics(rasterizerBackend, rasterizeOptions),
       packBottom: padding,
       padding,
+      rasterizerBackend,
       rasterizeOptions,
       shelves: [],
       bitmap: createBitmap(options.width, options.height),
@@ -82,11 +85,13 @@ export function getGlyphAtlasBitmap(atlas: Readonly<GlyphAtlas>): Bitmap {
   return atlas.runtime.bitmap;
 }
 
-// Asks the active backend to measure the font, falling back to the size heuristic when it cannot.
-// Metrics are resolved once at construction rather than per query: they describe the font at a size,
-// which does not change over the atlas's life, and a backend measurement can touch a canvas.
-function _resolveGlyphAtlasMetrics(rasterizeOptions: Readonly<GlyphRasterizeOptions>): GlyphMetrics {
-  const backend = getGlyphRasterizerBackend();
+// Asks this atlas's bound backend to measure the font, falling back to the size heuristic when it
+// cannot. Metrics are resolved once at construction rather than per query: they describe the font at
+// a size, which does not change over the atlas's life, and a backend measurement can touch a canvas.
+function _resolveGlyphAtlasMetrics(
+  backend: Readonly<GlyphRasterizerBackend>,
+  rasterizeOptions: Readonly<GlyphRasterizeOptions>,
+): GlyphMetrics {
   const measured = backend.measureMetrics?.(rasterizeOptions) ?? null;
   return measured ?? deriveGlyphMetricsFromFontSize(rasterizeOptions.fontSize);
 }

@@ -184,6 +184,28 @@ describe('getGlyphAtlasEntry', () => {
 
     expect(getGlyphAtlasEntry(atlas, 65)).toBeNull();
   });
+
+  it('preserves the advance of a present glyph with no ink', () => {
+    const backend: GlyphRasterizerBackend = {
+      rasterize: () => ({
+        advance: 5,
+        bearingX: 0,
+        bearingY: 0,
+        height: 0,
+        pixels: new Uint8ClampedArray(),
+        width: 0,
+      }),
+    };
+    const atlas = createGlyphAtlas({
+      fontFamily: 'embedded',
+      fontSize: 16,
+      height: 64,
+      rasterizerBackend: backend,
+      width: 64,
+    });
+
+    expect(getGlyphAtlasEntry(atlas, 0x20)).toMatchObject({ advance: 5, height: 0, width: 0 });
+  });
 });
 
 function createMockRasterizerBackend(
