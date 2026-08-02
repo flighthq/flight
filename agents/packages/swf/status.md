@@ -78,8 +78,16 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   geometry was decoded, on a reader of its own so one unreadable body never fails the document. The
   authored RECT keeps sizing every node, including shapes, because it carries stroke width and authoring
   padding the command stream does not.
-- Bitmap fills inside a shape are read for alignment and left unpainted rather than guessed at; they need
-  the same pixel decode the bitmap definitions do.
+- A bitmap-filled shape emits its geometry and points the fill at a texture whose pixels arrive later.
+  Dropping the fill used to drop its contours with it, so artwork built entirely from bitmap-filled shapes
+  imported as an empty document — reported from downstream against a real file. The shape now carries a
+  `beginTextureFill` over a sourceless `Texture`, and the parse records which bitmap character each fill
+  is waiting on.
+- `createScene2DSymbolFromSwf` instantiates a symbol the file exported by linkage name but never placed,
+  and `readSwfExportedSymbolNames` lists them. A document built only from placements has nothing to show
+  for a library symbol, which is what a consumer hits when the authoring tool published a symbol for code
+  to create rather than putting it on a timeline. Each call builds a fresh instance, because a symbol is a
+  template rather than a shared node.
 - `SwfReader` is its own module — the bounded bit reader the document, timeline, and shape decoders all
   share.
 - Every timeline in the file — the root and each `DefineSprite` symbol — crosses as `movieclip`

@@ -29,6 +29,8 @@ import { Compression, MovieClipKind, RichTextKind, ShapeKind } from '@flighthq/t
 import {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
+  createScene2DSymbolFromSwf,
+  readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
 } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
@@ -708,6 +710,70 @@ describe('createScene2DFromSwf', () => {
     // Some mutants must still import, or the property would be passing only because everything is
     // rejected before any real parsing happens.
     expect(imported).toBeGreaterThan(0);
+  });
+
+  it('instantiates a symbol that was exported but never placed', () => {
+    const face = new ShapeWriter();
+    face.writeSolidFillStyles([0x203040]);
+    face.writeLineStyleCount(0);
+    face.writeStyleBits(1, 0);
+    face.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    face.writeStraightEdge(600, 0);
+    face.writeEndShape();
+
+    // A library symbol the authoring tool published for code to create, with nothing on the timeline.
+    const file = createSwf([
+      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 600, 0, 600), face.toBytes())),
+      createTag(
+        TAG_DEFINE_SPRITE,
+        joinBytes(
+          uint16(20),
+          uint16(1),
+          createTag(
+            TAG_PLACE_OBJECT_2,
+            joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('art')),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ),
+      ),
+      createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(20), swfString('Layout'))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    // The document itself is empty, because nothing was placed — which is exactly what a consumer sees.
+    expect(getNodeChildren(createScene2DFromSwf(file)!.root)).toEqual([]);
+    _exportedSymbolFile = file;
+  });
+
+  it('keeps the geometry of a bitmap-filled shape, with its pixels still to come', () => {
+    const art = new ShapeWriter();
+    art.writeFillStyleCount(1);
+    art.writeByte(0x41);
+    art.writeUint16(9);
+    art.writeIdentityMatrix(0, 0);
+    art.writeLineStyleCount(0);
+    art.writeStyleBits(1, 0);
+    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    art.writeStraightEdge(800, 0);
+    art.writeStraightEdge(0, 800);
+    art.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // Artwork built entirely from bitmap-filled shapes used to import as an empty document.
+    const drawn = getNodeChildren(document!.root)[0] as Shape;
+    expect(drawn.kind).toBe(ShapeKind);
+    expect(drawn.data.commands[0]).toBe('beginTextureFill');
+    expect(drawn.data.commands.filter((token) => token === 'lineTo').length).toBeGreaterThan(0);
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
@@ -1549,6 +1615,32 @@ describe('createScene2DFromSwf', () => {
   });
 });
 
+describe('createScene2DSymbolFromSwf', () => {
+  it('builds a fresh instance of a symbol the file exported but never placed', () => {
+    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
+
+    expect(symbol).not.toBeNull();
+    expect(symbol!.kind).toBe(MovieClipKind);
+    expect(getNodeChildren(symbol!)).toHaveLength(1);
+    // Each call builds its own: a library symbol is a template, not a shared node.
+    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')).not.toBe(symbol);
+  });
+
+  it('reports nothing for a name the file does not export', () => {
+    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Missing')).toBeNull();
+  });
+});
+
+describe('readSwfExportedSymbolNames', () => {
+  it('lists every exported linkage name, placed or not', () => {
+    expect(readSwfExportedSymbolNames(_exportedSymbolFile)).toEqual(['Layout']);
+  });
+
+  it('reports an empty list rather than throwing for unreadable bytes', () => {
+    expect(readSwfExportedSymbolNames(new Uint8Array([1, 2, 3]))).toEqual([]);
+  });
+});
+
 describe('registerSwfScene2DDocumentImporter', () => {
   it('adds an opt-in SWF codec without global registration', () => {
     const registry = createScene2DDocumentImporterRegistry();
@@ -1560,6 +1652,9 @@ describe('registerSwfScene2DDocumentImporter', () => {
     expect(createScene2DDocumentFromBytes(source, registry)?.sourceKind).toBe('swf');
   });
 });
+
+// The exported-symbol file the tests above build, shared with the symbol-instantiation suites.
+let _exportedSymbolFile: Uint8Array = new Uint8Array();
 
 class BitWriter {
   private readonly bits: number[] = [];
@@ -1784,6 +1879,7 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_DO_ACTION = 12;
+const TAG_EXPORT_ASSETS = 56;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_JPEG_TABLES = 8;
 const TAG_FRAME_LABEL = 43;

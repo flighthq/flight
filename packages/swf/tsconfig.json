@@ -23,6 +23,7 @@
     { "path": "../scene2d-resources" },
     { "path": "../shape" },
     { "path": "../text" },
+    { "path": "../texture" },
     { "path": "../text-markup" },
     { "path": "../types" }
   ],

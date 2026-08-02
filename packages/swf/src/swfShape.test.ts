@@ -1,3 +1,5 @@
+import type { Texture } from '@flighthq/types/contract';
+
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape, createSwfShape } from './swfShape';
 import { ShapeWriter } from './swfShapeTestHelper';
@@ -268,7 +270,7 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands[7]).toBe('pad');
   });
 
-  it('keeps a bitmap fill unpainted rather than guessing at its pixels', () => {
+  it('emits geometry for a bitmap fill, with a texture its pixels arrive into later', () => {
     const writer = new ShapeWriter();
     writer.writeFillStyleCount(1);
     writer.writeByte(0x41);
@@ -280,9 +282,18 @@ describe('createSwfShape', () => {
     writer.writeStraightEdge(2000, 0);
     writer.writeEndShape();
 
-    const shape = createSwfShape(writer.toReader(), 1);
+    const bitmapFills: { characterId: number; texture: Texture }[] = [];
+    const shape = createSwfShape(writer.toReader(), 1, bitmapFills);
 
-    expect(shape?.data.commands).toEqual([]);
+    // Dropping the geometry would lose the artwork's shape as well as its paint, which is the whole
+    // picture for a file whose art is bitmap-filled.
+    expect(shape?.data.commands[0]).toBe('beginTextureFill');
+    expect(shape?.data.commands.filter((token) => token === 'lineTo')).toHaveLength(1);
+    // The fill names the character whose pixels belong in it, and the texture starts sourceless.
+    expect(bitmapFills).toHaveLength(1);
+    expect(bitmapFills[0].characterId).toBe(7);
+    expect(bitmapFills[0].texture.dimension).toBe('2d');
+    expect(shape?.data.commands[2]).toBe(bitmapFills[0].texture);
   });
 
   it('returns null for a body that runs out mid-record', () => {
