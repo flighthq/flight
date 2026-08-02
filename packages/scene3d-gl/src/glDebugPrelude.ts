@@ -1,6 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
+import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
@@ -154,6 +155,6 @@ void main() {
 
   fragColor = vec4(normal * 0.5 + 0.5, 1.0);
 #endif
-  fragColor.a *= u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL}
 }
 `;

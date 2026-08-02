@@ -285,21 +285,16 @@ function isBlendedMaterial(material: Readonly<Material>): boolean {
 }
 
 // Applies a material's fixed-function blend equation at the same run boundary as its renderer bind.
-// Normal retains the established straight-alpha mesh path. Other modes use render-gl's canonical,
-// overridable registry, shared with the 2D renderer; enable it lazily for a state that has not opted in
-// elsewhere. A faded opaque/masked material uses Normal because blendMode is only meaningful when the
-// material itself declares alphaMode 'blend'.
+// EVERY mode, Normal included, resolves through render-gl's canonical, overridable registry shared with
+// the 2D renderer; enable it lazily for a state that has not opted in elsewhere. There is no per-mode
+// fork: the registry's equations are premultiplied throughout and every mesh fragment tail emits
+// premultiplied color (GL_MESH_FRAGMENT_TAIL), so one table composites every material correctly. A faded
+// opaque/masked material uses Normal because blendMode is only meaningful when the material itself
+// declares alphaMode 'blend'.
 function applyGlSurfaceBlendMode(state: GlRenderState, material: Readonly<Material>): void {
   const surface = material as Readonly<SurfaceMaterial>;
   const blendMode =
     surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
-  const runtime = getGlRenderStateRuntime(state);
-  if (blendMode === BlendMode.Normal && surface.alphaType !== 'premultiplied') {
-    runtime.currentBlendMode = null;
-    state.gl.blendEquation(state.gl.FUNC_ADD);
-    state.gl.blendFunc(state.gl.SRC_ALPHA, state.gl.ONE_MINUS_SRC_ALPHA);
-    return;
-  }
   if (state.applyBlendMode === null) enableGlBlendModeSupport(state);
   state.applyBlendMode!(state, blendMode);
 }

@@ -10,7 +10,6 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
   let scene = sceneRuntimes.get(state);
   if (scene === undefined) {
     scene = {
-      activeAlphaType: null,
       activeBlendMode: null,
       activeBlendedRun: false,
       activeColorAdjustmentRun: false,

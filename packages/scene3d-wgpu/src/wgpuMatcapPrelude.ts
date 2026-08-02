@@ -7,6 +7,7 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -141,7 +142,7 @@ export function getWgpuMatcapModuleSourceForKey(key: Readonly<WgpuMatcapDefineKe
 // rgba; params.x = alphaCutoff.
 const MATCAP_UNIFORM_BYTES = 32;
 
-const MATCAP_WGSL_BODY = /* wgsl */ `
+const MATCAP_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct MatcapMaterial {
   tint : vec4f,    // linear rgba
   params : vec4f,  // x = alphaCutoff
@@ -168,7 +169,7 @@ struct MatcapMaterial {
   if (ALPHA_MASK && color.a < material.params.x) {
     discard;
   }
-  return vec4f(color.rgb, color.a * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(color.rgb, color.a * in.objectAlpha));
 }
 `;
 

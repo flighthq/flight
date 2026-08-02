@@ -1,6 +1,7 @@
 import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import { spliceWgpuColorAdjustmentPrelude } from './wgpuMeshPipeline';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
@@ -103,7 +104,7 @@ export function getWgpuPbrModuleSourceForKey(
     (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
-      '  return vec4f(radiance, alpha * in.objectAlpha);',
+      '  return flightPremultipliedOutput(vec4f(radiance, alpha * in.objectAlpha));',
       `  var flightColor = vec4f(radiance, alpha);
   flightColor = ${
     key.hasColorMatrix
@@ -111,13 +112,13 @@ export function getWgpuPbrModuleSourceForKey(
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
   flightColor.a = flightColor.a * in.objectAlpha;
-  return flightColor;`,
+  return flightPremultipliedOutput(flightColor);`,
     );
   }
   return source;
 }
 
-const PBR_WGSL_BODY = /* wgsl */ `
+const PBR_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 const PI : f32 = 3.14159265359;
 const MAX_FORWARD_LIGHTS : u32 = 4u;
 
@@ -571,6 +572,6 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
     alpha = alpha * (1.0 - material.transmission.x);
   }
 
-  return vec4f(radiance, alpha * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(radiance, alpha * in.objectAlpha));
 }
 `;

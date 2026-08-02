@@ -1,5 +1,6 @@
 import type { GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
+import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
@@ -67,6 +68,6 @@ void main() {
 #ifdef ALPHA_MASK
   if (fragColor.a < u_alphaCutoff) discard;
 #endif
-  fragColor.a *= u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL}
 }
 `;

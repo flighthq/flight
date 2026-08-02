@@ -1,6 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlUnlitDefineKey, GlUnlitProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
+import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
@@ -153,6 +154,6 @@ void main() {
   if (color.a < u_alphaCutoff) discard;
 #endif
   fragColor = vec4(color.rgb * u_intensity, color.a);
-  fragColor.a *= u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL}
 }
 `;

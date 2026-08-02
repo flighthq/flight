@@ -19,7 +19,6 @@ describe('createSurfaceMaterial', () => {
     const material = createSurfaceMaterial(TestSurfaceMaterialKind);
     expect(material.alphaMode).toBe('opaque');
     expect(material.alphaCutoff).toBe(0.5);
-    expect(material.alphaType).toBe('straight');
     expect(material.blendMode).toBe(BlendMode.Normal);
     expect(material.doubleSided).toBe(false);
   });

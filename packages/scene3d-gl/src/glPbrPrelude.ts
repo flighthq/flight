@@ -29,6 +29,7 @@ import type {
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
+import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 // A short, stable, order-independent string identity for a define key, used as the program-cache
 // map key. Two keys with the same flags produce the same string and so share a compiled program.
@@ -485,6 +486,6 @@ ${PBR_EXTENSION_FINALIZE}
 #elif defined(HAS_COLOR_ADJUSTMENT)
   fragColor = applyFlightColorAdjustment(fragColor, u_flightColorScale, u_flightColorBias);
 #endif
-  fragColor.a *= u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL}
 }
 `;

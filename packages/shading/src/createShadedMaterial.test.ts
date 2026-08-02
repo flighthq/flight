@@ -25,7 +25,6 @@ describe('createShadedMaterial', () => {
   it('defaults the SurfaceMaterial trailer to opaque single-sided straight-alpha', () => {
     const material = createShadedMaterial();
     expect(material.alphaMode).toBe('opaque');
-    expect(material.alphaType).toBe('straight');
     expect(material.alphaCutoff).toBe(0.5);
     expect(material.doubleSided).toBe(false);
   });

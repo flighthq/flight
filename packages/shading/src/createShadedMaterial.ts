@@ -20,7 +20,6 @@ export function createShadedMaterial(options?: Readonly<ShadedMaterialOptions>):
   const material = createEntity({ kind: ShadedMaterialKind }) as ShadedMaterial;
   material.alphaCutoff = options?.alphaCutoff ?? 0.5;
   material.alphaMode = options?.alphaMode ?? 'opaque';
-  material.alphaType = options?.alphaType ?? 'straight';
   material.blendMode = options?.blendMode ?? BlendMode.Normal;
   material.diffuse = options?.diffuse ?? 0xffffffff;
   material.diffuseMap = options?.diffuseMap ?? null;

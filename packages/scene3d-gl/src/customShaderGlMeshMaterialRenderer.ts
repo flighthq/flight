@@ -90,8 +90,10 @@ export function getGlCustomMaterialShaderSource(
 // `mat4 u_model`, `mat3 u_normalMatrix` (NOT mat4 — the renderer uploads it with glUniformMatrix3fv,
 // so a mat4 declaration raises a silent GL_INVALID_OPERATION and the mesh draws nothing;
 // enableGlScene3DCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
-// alphaMode is 'blend', drawGlScene3D selects straight or premultiplied Normal factors from the
-// material's alphaType, so the fragment shader must output linear scene color matching that declaration.
+// alphaMode is 'blend', the fragment shader must output PREMULTIPLIED linear scene color (rgb already
+// scaled by the coverage it writes to a) — every blend equation is premultiplied, and Flight compiles
+// caller-authored source verbatim, so it cannot append the fixup the built-in tails get from
+// GL_MESH_FRAGMENT_TAIL. End your main with `fragColor.rgb *= fragColor.a;`.
 // Texture uniforms sample according to each Texture.colorSpace GPU realization; do not decode an sRGB
 // texture again in caller-authored GLSL.
 // For alphaMode 'mask', the native shader owns the cutoff discard (pass alphaCutoff through the custom

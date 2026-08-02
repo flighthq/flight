@@ -146,12 +146,15 @@ describe('drawGlScene3D', () => {
     ).toBe(true);
   });
 
-  it('uses premultiplied Normal factors when the surface material declares premultiplied output', () => {
+  // Normal resolves through the same premultiplied registry as every other mode. The straight-alpha
+  // special case that used to sit in front of it composited a straight tail correctly under Normal and
+  // wrongly under every other equation; SRC_ALPHA reappearing here is that fork coming back.
+  it('uses premultiplied Normal factors, never straight-alpha ones', () => {
     const { state, gl } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
-    const material = createStandardPbrMaterial({ alphaMode: 'blend', alphaType: 'premultiplied' });
+    const material = createStandardPbrMaterial({ alphaMode: 'blend' });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
     drawGlScene3D(state, scene, makeCamera(), LIGHTS);
@@ -161,6 +164,7 @@ describe('drawGlScene3D', () => {
         (call) => call.name === 'blendFunc' && call.args[0] === gl.ONE && call.args[1] === gl.ONE_MINUS_SRC_ALPHA,
       ),
     ).toBe(true);
+    expect(gl.calls.some((call) => call.name === 'blendFunc' && call.args[0] === gl.SRC_ALPHA)).toBe(false);
   });
 
   it('draws opaque subsets before blended subsets regardless of scene order', () => {

@@ -7,6 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -143,7 +144,7 @@ export function getWgpuToonModuleSourceForKey(
 // steps (band count for the stepped-floor quantizer), params.y = alphaCutoff.
 const TOON_UNIFORM_BYTES = 32;
 
-const TOON_WGSL_BODY = /* wgsl */ `
+const TOON_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct ToonMaterial {
   baseColor : vec4f,  // linear rgba
   params : vec4f,     // x = steps, y = alphaCutoff
@@ -234,7 +235,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + baseColor.rgb * frame.ambientRadiance.rgb;
   }
 
-  return vec4f(radiance, baseColor.a * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(radiance, baseColor.a * in.objectAlpha));
 }
 `;
 
