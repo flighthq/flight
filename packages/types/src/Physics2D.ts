@@ -287,6 +287,10 @@ export interface Physics2DWorld {
   gravityX: number;
   gravityY: number;
 
+  // The last successfully completed step, used to express cached impulses in the next step's time
+  // interval. Zero means the world has not completed a step yet.
+  previousTimestep: number;
+
   // Monotonic counter backing `RigidBody2D.index`, so an index is never reused by a later body and a
   // stale contact can never be revived against a different body that inherited its slot.
   nextBodyIndex: number;
@@ -583,6 +587,9 @@ export interface Physics2DJointSolver {
   //
   // Omit it and the kind simply starts each step cold, which is correct but converges more slowly.
   warmStart?(world: Physics2DWorld, joint: Physics2DJoint): void;
+  // Scales kind-specific impulse accumulators when the caller changes timestep. The common
+  // `impulse0..2` block is scaled by the step itself; a motor or another extra accumulator belongs here.
+  scaleAccumulatedImpulses?(joint: Physics2DJoint, timestepRatio: number): void;
   // Discards the accumulated impulses, so a world with warm starting switched off does not keep
   // seeding each step from a cache it has been told not to use.
   clearAccumulatedImpulses?(joint: Physics2DJoint): void;

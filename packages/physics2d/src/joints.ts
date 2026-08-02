@@ -296,6 +296,11 @@ export const physics2DMouseJointSolver = {
 // an off-centre perpendicular impulse also rotates the bodies. The axis lane is independent and may be
 // free, motor-driven, or bounded by translation limits.
 export const physics2DPrismaticJointSolver = {
+  scaleAccumulatedImpulses(joint: Physics2DJoint, timestepRatio: number): void {
+    const prismatic = joint as Physics2DPrismaticJoint;
+    prismatic.motorImpulse = (prismatic.motorImpulse ?? 0) * timestepRatio;
+  },
+
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const prismatic = joint as Physics2DPrismaticJoint;
     const state = jointStateScratch.get(joint);
@@ -622,6 +627,11 @@ export const physics2DPulleyJointSolver = {
 // independently: solving x then y lets each undo part of the other's correction, and a hinge under load
 // visibly creeps.
 export const physics2DRevoluteJointSolver = {
+  scaleAccumulatedImpulses(joint: Physics2DJoint, timestepRatio: number): void {
+    const revolute = joint as Physics2DRevoluteJoint;
+    revolute.motorImpulse = (revolute.motorImpulse ?? 0) * timestepRatio;
+  },
+
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -852,6 +862,11 @@ export const physics2DRopeJointSolver = {
 // Keeps two anchors on a suspension axis while allowing relative rotation. The lateral constraint is
 // rigid; travel along the axis is free when frequencyHz is zero and becomes a damped spring otherwise.
 export const physics2DWheelJointSolver = {
+  scaleAccumulatedImpulses(joint: Physics2DJoint, timestepRatio: number): void {
+    const wheel = joint as Physics2DWheelJoint;
+    wheel.motorImpulse = (wheel.motorImpulse ?? 0) * timestepRatio;
+  },
+
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const wheel = joint as Physics2DWheelJoint;
     const state = jointStateScratch.get(joint);

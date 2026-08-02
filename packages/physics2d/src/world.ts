@@ -206,6 +206,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     config: createPhysics2DSolverConfig(),
     gravityX,
     gravityY,
+    previousTimestep: 0,
     nextBodyIndex: 0,
   };
 }
@@ -318,8 +319,9 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
   world.bodyByIndex.delete(body.index);
   world.bodies.splice(at, 1);
   world.index.removeSpatialObject(body.index);
-  body.index = -1;
-  physics2DBodyOwners.delete(body as RigidBody2D);
+  const mutableBody = body as RigidBody2D;
+  mutableBody.index = -1;
+  physics2DBodyOwners.delete(mutableBody);
   return true;
 }
 
