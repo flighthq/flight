@@ -370,6 +370,7 @@ export * from './Modifier';
 export * from './ModifierKind';
 export * from './ModifierSlot';
 export * from './MorphTarget';
+export * from './MorphShape';
 export * from './MotionBlurEffect';
 export * from './MotionPath';
 export * from './MouseButton';

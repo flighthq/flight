@@ -1,12 +1,20 @@
 ---
 package: '@flighthq/shape'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-02
+by: builder4
 ---
 
 # shape — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-02 · builder4] — retained MorphShape
+
+Added `MorphShapeKind` and the retained MorphShape entity/runtime family over a prepared `PathMorph`.
+Each instance owns a stable sampled `Path`; `appendMorphShapePath` inserts those live buffers between
+ordinary Shape fill/stroke commands, and `setMorphShapeProgress` samples without replacing arrays then
+invalidates content for bounds and rendering. Playback remains external. Canvas, DOM, GL, and WebGPU
+publish explicit default MorphShape renderer aliases that reuse their existing Shape command renderer.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

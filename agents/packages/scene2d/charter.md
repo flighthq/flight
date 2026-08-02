@@ -65,11 +65,15 @@ _In scope vs. non-goals, drawn from the review and the neighbor map. Proposals �
   - **`Video` setters — kept.** `setVideoSource`/`setVideoSmoothing` are plain field setters (siblings to Bitmap's `setBitmapImage`/smoothing); a Video node needs a way to set its source.
   - **DisplayObject traversal wrappers — dropped.** `getDisplayObjectByName`/`getScene2DRootDepth`/`isDisplayObjectOnStage` were typed casts over the generic `@flighthq/node` traversal (`findNodeByName`/`getNodeDepth`/`getNodeRoot`); use the generic functions directly.
 
+- **[2026-08-02] `MorphShape` identity and behavior live in `@flighthq/shape`.** It is a distinct node kind built on the generic Node2D factory, while each `scene2d-<backend>` exports an explicit default MorphShape renderer alias over its Shape implementation. `@flighthq/scene2d` owns neither the shell nor its progress behavior.
+
+  **Why:** MorphShape's retained command stream, prepared path binding, and content invalidation are all vector-shape concerns. The base scene package supplies the generic node machinery; no morph-specific field or hook is needed here.
+
 ## Open directions
 
 _Every candidate question the review surfaced, plus the structural forks that touch this package. An agent **asks** here rather than assuming._
 
-1. **Where does the boundary with neighbor entity packages fall?** `Shape`/`Sprite` live elsewhere; `SimpleButton` is deferred to `@flighthq/interaction` (state-swap) and `MorphShape` to `@flighthq/shape`. Does `scene2d` own _only_ the base entity + leaf surfaces, or should it host button/morph entity _shells_ whose behavior lives in neighbors? **(Structural fork A — source-data vs. graph participation.)**
+1. **Where does the boundary with neighbor entity packages fall?** `Shape`/`MorphShape`/`Sprite` live elsewhere; `SimpleButton` remains deferred to `@flighthq/interaction` (state-swap). MorphShape's shell and behavior are now settled in shape; does SimpleButton follow the same neighbor-owned pattern? **(Structural fork A — source-data vs. graph participation.)**
 
 2. **Should declared traits ship before a renderer honors them?** `cacheAsBitmap`/`scrollRect`/ `opaqueBackground` are settable and invalidate today, but no backend reads them — setting them is a silent visual no-op. Is "data field lands here, behavior lands in a `scene2d-<backend>` pass" the blessed sequencing, or should a trait wait until at least one backend honors it? This is the central judgement for scoring the package honestly.
 

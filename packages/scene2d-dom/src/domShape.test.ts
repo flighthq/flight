@@ -5,7 +5,7 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomShapeRenderer, drawDomShape } from './domShape';
+import { defaultDomMorphShapeRenderer, defaultDomShapeRenderer, drawDomShape } from './domShape';
 import { registerDomShapeRasterizer } from './domShapeRasterizer';
 
 const noopRasterizer = (): void => {};
@@ -32,6 +32,10 @@ describe('defaultDomShapeRenderer', () => {
   it('has submit, and createData', () => {
     expect(typeof defaultDomShapeRenderer.submit).toBe('function');
     expect(typeof defaultDomShapeRenderer.createData).toBe('function');
+  });
+
+  it('provides the MorphShape renderer alias', () => {
+    expect(defaultDomMorphShapeRenderer).toBe(defaultDomShapeRenderer);
   });
 });
 

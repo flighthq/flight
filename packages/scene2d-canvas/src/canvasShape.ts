@@ -67,6 +67,9 @@ export const defaultCanvasShapeRenderer: Scene2DRenderer = {
   submit: drawCanvasShape,
 };
 
+// MorphShape has its own node kind but the same retained command stream and invalidation semantics.
+export const defaultCanvasMorphShapeRenderer: Scene2DRenderer = defaultCanvasShapeRenderer;
+
 function createCanvasShapeDrawState(
   context: CanvasRenderingContext2D,
   resolvers: CanvasTextureResolvers,

@@ -79,3 +79,6 @@ export const defaultDomShapeRenderer: Scene2DRenderer = {
   createData: createDomShapeData,
   submit: drawDomShape,
 };
+
+// MorphShape owns a distinct kind while rendering the same retained command vocabulary.
+export const defaultDomMorphShapeRenderer: Scene2DRenderer = defaultDomShapeRenderer;
