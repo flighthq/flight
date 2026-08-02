@@ -2,7 +2,13 @@ import { createClipRegionFromContours, createClipRegionFromPath } from '@flighth
 import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { addMovieClipFrameScript, createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
-import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
+import {
+  addNodeChild,
+  getNodeRuntime,
+  invalidateNodeAppearance,
+  removeNodeChild,
+  setNodeLocalMatrix,
+} from '@flighthq/node/contract';
 import {
   createScene2DAssetReference,
   createScene2DDocument,
@@ -13,6 +19,7 @@ import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
 import type {
   BoundsNodeAny,
+  RichText,
   ClipRegion,
   MovieClip,
   MovieClipData,
@@ -33,7 +40,8 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
-import { readSwfFrameActions } from './swfFrameAction';
+import { readSwfEditTextFactory } from './swfEditText';
+import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
@@ -96,6 +104,8 @@ interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
 interface SwfShapeNodeData extends ShapeData, SwfAuthoredBoundsData {}
 
 interface SwfPlacement {
+  // The colour transform's alpha multiplier, which is what a fade animates.
+  alpha: number;
   characterId: number;
   // The depth this placement masks up to, inclusive, or 0 when it is ordinary content. A masking
   // placement is never drawn itself: it contributes its shape as the clip on everything it covers.
@@ -133,6 +143,8 @@ interface SwfImagePayload {
 
 interface SwfTagResult {
   backgroundColor: number | null;
+  editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
+  fontNames: Map<number, string>;
   characterBounds: Map<number, SwfRectangle>;
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
@@ -163,6 +175,15 @@ interface SwfParseState {
   jpegTables: Uint8Array | null;
   linkages: Map<number, string>;
   pendingTexts: SwfPendingText[];
+  // Init actions name the sprite they belong to, which may be defined after them.
+  pendingInitActions: { characterId: number; script: FrameScript }[];
+  // Every DoABC payload in the file, held until the whole thing is walked: a class binds to a character
+  // through SymbolClass, which may be read after the script that declares its frame scripts.
+  abcBlobs: Uint8Array[];
+  // A field's node factory per DefineEditText character, and the family name of each embedded font, so a
+  // field declared before its font tag still resolves the family.
+  editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
+  fontNames: Map<number, string>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -296,19 +317,31 @@ function populateSwfTimelineNode(
       const sprite = parsed.sprites.get(placement.characterId);
       const shape = parsed.shapes.get(placement.characterId);
       const image = parsed.images.get(placement.characterId);
+      const editText = parsed.editTexts.get(placement.characterId);
       // A masking placement is never drawn — it contributes its shape as a clip on what it covers, so it
       // earns no node of its own.
       if (placement.clipDepth > 0) continue;
       // A placement earns a node when it is named, when it carries a timeline, or now when it has content —
       // geometry to draw or pixels to load. An unnamed shape is most of what a still frame is made of.
-      if (!placement.name && sprite === undefined && shape === undefined && image === undefined) continue;
+      if (
+        !placement.name &&
+        sprite === undefined &&
+        shape === undefined &&
+        image === undefined &&
+        editText === undefined
+      ) {
+        continue;
+      }
       if (state.remainingNodes === 0) return false;
       state.remainingNodes--;
 
       // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
       // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
-      const target = createSwfPlacementNode(sprite, shape, targetBounds);
+      const target =
+        editText === undefined
+          ? createSwfPlacementNode(sprite, shape, targetBounds)
+          : createSwfEditTextTarget(editText, parsed, targetBounds);
       nodes.set(key, target);
       if (image !== undefined) {
         // An embedded image is an asset rather than a slot: it has content of its own to load, and the
@@ -368,6 +401,7 @@ function createSwfTimelineSource(
   const attached: Node2D[] = [];
   const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
   const appliedClips = new Map<Node2D, ClipRegion | null>();
+  const appliedAlphas = new Map<Node2D, number>();
   return {
     totalFrames: frames.length,
     labels,
@@ -404,6 +438,12 @@ function createSwfTimelineSource(
         if (appliedMatrices.get(node) !== entry.placement.matrix) {
           setNodeLocalMatrix(node, entry.placement.matrix);
           appliedMatrices.set(node, entry.placement.matrix);
+        }
+        // Alpha is per-frame data like the matrix, so a fade authored across frames follows.
+        if (appliedAlphas.get(node) !== entry.placement.alpha) {
+          node.alpha = entry.placement.alpha;
+          invalidateNodeAppearance(node);
+          appliedAlphas.set(node, entry.placement.alpha);
         }
         // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
         // same way: written only when this frame's region differs from the one already on the node.
@@ -546,6 +586,22 @@ function createSwfMovieClip(bounds: SwfRectangle | null): MovieClip {
   return clip;
 }
 
+// A field becomes its own node per placement, because its text is per-instance state rather than shared
+// artwork. The authored RECT still sizes it, so a field reports the box the tool drew even before any
+// layout has run.
+function createSwfEditTextTarget(
+  create: (resolveFontName: (fontId: number) => string) => RichText,
+  parsed: Readonly<SwfTagResult>,
+  bounds: SwfRectangle | null,
+): Node2D {
+  const node = create((fontId) => parsed.fontNames.get(fontId) ?? '');
+  if (bounds !== null) {
+    (node.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
+    (getNodeRuntime(node) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return node;
+}
+
 // Chooses what a placed character becomes: a MovieClip for a symbol with a timeline, a Shape carrying its
 // own copy of the definition's commands, and otherwise the bounded container a placement with neither
 // still needs.
@@ -637,22 +693,23 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const directLinkage = hasClassName ? body.readString() : (inherited?.directLinkage ?? null);
   const characterId = hasCharacter ? body.readUint16() : (inherited?.characterId ?? 0);
   const matrix = (flags & 0x04) !== 0 ? readSwfMatrix(body) : (inherited?.matrix ?? IDENTITY_MATRIX);
-  if ((flags & 0x08) !== 0) readSwfColorTransform(body);
+  const alpha = (flags & 0x08) !== 0 ? readSwfColorTransform(body) : (inherited?.alpha ?? 1);
   if ((flags & 0x10) !== 0) body.readUint16();
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
-  placements.set(depth, { characterId, clipDepth, depth, directLinkage, matrix, name });
+  placements.set(depth, { alpha, characterId, clipDepth, depth, directLinkage, matrix, name });
 }
 
 function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
   const characterId = body.readUint16();
   const depth = body.readUint16();
   const matrix = readSwfMatrix(body);
+  // The legacy record's colour transform has no alpha channel at all.
   if (body.pos < body.end) readSwfColorTransform(body, 3);
   if (!body.valid || characterId === 0) return;
-  placements.set(depth, { characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
+  placements.set(depth, { alpha: 1, characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
 }
 
 function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
@@ -663,17 +720,26 @@ function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlac
   if (existing?.characterId === characterId) placements.delete(depth);
 }
 
-function readSwfColorTransform(reader: SwfReader, channelCount = 4): void {
+// Reads a colour transform, returning only its alpha multiplier — the one channel Flight's node model
+// carries directly. The colour channels are read past: tinting a node is a material feature rather than a
+// node property, so importing it would need a decision this codec should not make on its own.
+// A record with no multiply terms leaves alpha fully opaque.
+function readSwfColorTransform(reader: SwfReader, channelCount = 4): number {
   const hasAdd = reader.readUnsignedBits(1) !== 0;
   const hasMultiply = reader.readUnsignedBits(1) !== 0;
   const bits = reader.readUnsignedBits(4);
+  let alpha = 1;
   if (hasMultiply) {
-    for (let i = 0; i < channelCount; i++) reader.readSignedBits(bits);
+    for (let i = 0; i < channelCount; i++) {
+      const value = reader.readSignedBits(bits) / FIXED_8_8_ONE;
+      if (i === ALPHA_CHANNEL && channelCount > ALPHA_CHANNEL) alpha = Math.max(0, Math.min(1, value));
+    }
   }
   if (hasAdd) {
     for (let i = 0; i < channelCount; i++) reader.readSignedBits(bits);
   }
   reader.alignToByte();
+  return alpha;
 }
 
 function readSwfLinkages(body: SwfReader, linkages: Map<number, string>): void {
@@ -727,7 +793,11 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
 
 function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
+    abcBlobs: [],
     backgroundColor: null,
+    pendingInitActions: [],
+    editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
+    fontNames: new Map<number, string>(),
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
     fontCodePoints: new Map<number, number[]>(),
@@ -744,8 +814,15 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
   appendSwfPendingTextShapes(reader, state);
+  appendSwfAbcFrameScripts(state, timeline);
+  for (const pending of state.pendingInitActions) {
+    const sprite = state.sprites.get(pending.characterId);
+    if (sprite !== undefined && !sprite.actions.has(1)) sprite.actions.set(1, pending.script);
+  }
   return {
     backgroundColor: state.backgroundColor,
+    editTexts: state.editTexts,
+    fontNames: state.fontNames,
     characterBounds: state.characterBounds,
     fontOutlineSources: state.fontOutlineSources,
     images: state.images,
@@ -764,6 +841,35 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
 // Composes every static text definition once the whole file has been walked, so a text record can address
 // a font declared after it. A text whose body does not decode keeps its bounded placeholder, the same way
 // an unreadable shape body does.
+// A DoABC payload names itself before its bytecode: the tag carries flags and a null-terminated name that
+// the anonymous form omits.
+function readSwfAbcPayload(body: Readonly<SwfReader>, hasName: boolean): Uint8Array {
+  if (!hasName) return body.source.subarray(body.pos, body.end);
+  let start = body.pos + 4;
+  while (start < body.end && body.source[start] !== 0) start++;
+  return body.source.subarray(Math.min(start + 1, body.end), body.end);
+}
+
+// Binds recognized AVM2 frame scripts to the timelines they belong to. A script declares them against a
+// class name; SymbolClass is what ties that name back to a character, and character 0 is the root.
+function appendSwfAbcFrameScripts(state: SwfParseState, timeline: SwfTimeline): void {
+  if (state.abcBlobs.length === 0) return;
+  const charactersByClass = new Map<string, number>();
+  for (const [characterId, className] of state.linkages) charactersByClass.set(className, characterId);
+
+  for (const blob of state.abcBlobs) {
+    const byClass = readSwfAbcFrameScripts(blob);
+    if (byClass === null) continue;
+    for (const [className, frames] of byClass) {
+      const characterId = charactersByClass.get(className);
+      if (characterId === undefined) continue;
+      const target = characterId === 0 ? timeline : state.sprites.get(characterId);
+      if (target === undefined) continue;
+      for (const [frame, script] of frames) target.actions.set(frame, script);
+    }
+  }
+}
+
 function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): void {
   for (const pending of state.pendingTexts) {
     const shape = createSwfTextShape(
@@ -796,6 +902,14 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       state.remainingFrameEntries -= placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
       frames.push(new Map(placements));
+    } else if (code === TAG_DO_ABC || code === TAG_DO_ABC_ANONYMOUS) {
+      state.abcBlobs.push(readSwfAbcPayload(body, code === TAG_DO_ABC));
+    } else if (code === TAG_DO_INIT_ACTION) {
+      // An init action runs once for the sprite it names, before that sprite's own first frame, so a
+      // recognized block belongs to frame 1 of that sprite rather than to the timeline reading the tag.
+      const spriteId = body.readUint16();
+      const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
+      if (script !== null) state.pendingInitActions.push({ characterId: spriteId, script });
     } else if (code === TAG_DO_ACTION) {
       // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
       const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
@@ -827,7 +941,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
       readSwfLinkages(body, state.linkages);
     } else if (code === TAG_DEFINE_BITS_JPEG_2 || code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
-      if (!readSwfEmbeddedImageDefinition(body, state, code)) return null;
+      readSwfEmbeddedImageDefinition(body, state, code);
     } else if (code === TAG_DEFINE_BITS_LOSSLESS || code === TAG_DEFINE_BITS_LOSSLESS_2) {
       if (!readSwfLosslessBitmapDefinition(body, state, code === TAG_DEFINE_BITS_LOSSLESS_2)) return null;
     } else if (code === TAG_DEFINE_VIDEO_STREAM) {
@@ -891,7 +1005,7 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
     if (version === 2) readSwfColorTransform(reader);
     if (!reader.valid) return;
     if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
-      placements.set(depth, { characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
+      placements.set(depth, { alpha: 1, characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
     }
     // A filter list has no fixed width, so a record carrying one would desynchronize every record after
     // it. Stopping keeps what was read rather than misreading the rest.
@@ -913,6 +1027,8 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
   const source = readSwfFontGlyphOutlineSource(reader, version);
   if (source === null || fontId === 0) return;
   state.fontOutlineSources.set(fontId, source);
+  const fontName = readSwfFontName(body, version);
+  if (fontName !== '') state.fontNames.set(fontId, fontName);
 }
 
 // DefineFont's original form predates embedded character codes. DefineFontInfo/2 supplies its parallel
@@ -948,6 +1064,18 @@ function composeSwfFontCodePoints(state: SwfParseState): void {
       getGlyphOutlineMetrics: () => source.getGlyphOutlineMetrics(),
     });
   }
+}
+
+// A version 2 or 3 font names its family between its flags and its glyph count. A version 1 font carries
+// no name of its own; a DefineFontInfo tag supplies one, which this importer does not yet read.
+function readSwfFontName(body: Readonly<SwfReader>, version: number): string {
+  if (version === 1) return '';
+  const reader = new SwfReader(body.source, body.pos + 2, body.end);
+  reader.readUint8();
+  reader.readUint8();
+  const length = reader.readUint8();
+  if (!reader.valid || length === 0 || reader.pos + length > reader.end) return '';
+  return _fontNameDecoder.decode(body.source.subarray(reader.pos, reader.pos + length));
 }
 
 function readSwfBackgroundColor(body: SwfReader, state: SwfParseState): void {
@@ -1021,6 +1149,12 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
   // A static text definition is queued rather than composed: its records address glyphs by index into a
   // font that may not have been read yet. Everything after the bounds and the definition matrix is its
   // record stream.
+  if (code === TAG_DEFINE_EDIT_TEXT) {
+    const reader = new SwfReader(body.source, body.pos, body.end);
+    const bounds = state.characterBounds.get(characterId);
+    const factory = readSwfEditTextFactory(reader, bounds?.width ?? 0, bounds?.height ?? 0);
+    if (factory !== null) state.editTexts.set(characterId, factory);
+  }
   if (code === TAG_DEFINE_TEXT || code === TAG_DEFINE_TEXT_2) {
     const reader = new SwfReader(body.source, body.pos, body.end);
     readSwfMatrix(reader);
@@ -1088,7 +1222,10 @@ function readSwfLegacyImageDefinition(body: SwfReader, state: SwfParseState): vo
   state.images.set(characterId, { bytes: spliced, mimeType: image.mimeType });
 }
 
-function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
+// An image this decoder cannot read contributes no image and leaves the document alone, the same way an
+// unreadable shape body, font glyph, or legacy image pair does. Failing a whole document over one picture
+// costs far more than the picture is worth.
+function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): void {
   const characterId = body.readUint16();
   let imageStart = body.pos;
   let imageEnd = body.end;
@@ -1106,17 +1243,17 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
     imageEnd > body.end ||
     state.definedCharacters.has(characterId)
   ) {
-    return false;
+    return;
   }
   const image = readSwfEmbeddedImage(body.source, imageStart, imageEnd);
-  if (image === null) return false;
+  if (image === null) return;
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, image.bounds);
   state.images.set(characterId, {
     bytes: body.source.subarray(imageStart, imageEnd),
     mimeType: image.mimeType,
   });
-  return true;
+  return;
 }
 
 // Identifies an embedded payload by its magic bytes and reads the dimensions out of its header, without
@@ -1256,6 +1393,7 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 }
 
 const CWS_SIGNATURE = 0x43;
+const ALPHA_CHANNEL = 3;
 const FIXED_8_8_ONE = 0x100;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
@@ -1315,7 +1453,10 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;
+const TAG_DO_ABC = 82;
+const TAG_DO_ABC_ANONYMOUS = 72;
 const TAG_DO_ACTION = 12;
+const TAG_DO_INIT_ACTION = 59;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FRAME_LABEL = 43;
 const TAG_JPEG_TABLES = 8;
@@ -1329,6 +1470,7 @@ const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const TWIPS_PER_PIXEL = 20;
+const _fontNameDecoder = new TextDecoder();
 const _maskPoint = { x: 0, y: 0 };
 const W_SIGNATURE = 0x57;
 const ZWS_SIGNATURE = 0x5a;

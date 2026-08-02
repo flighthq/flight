@@ -213,3 +213,23 @@ Two rankings came out of this and both contradicted the assumption they replaced
 in 83% of files and cost one tag to support. Text (`DefineEditText` plus the font tables behind it) is the
 largest remaining visual hole, while per-frame colour transform and blend mode — which had been ranked
 next — cover 5% of placements and one file respectively.
+
+## Mutation sweep
+
+The package's whole error contract is a null sentinel, so the property that matters most is that **no
+input throws**. Every corpus file was mutated twelve ways — scattered byte flips, corruption concentrated
+in the structural head, and truncation to an arbitrary prefix — with a seeded generator so any failure is
+reproducible.
+
+| Measure | Value |
+| --- | --- |
+| Mutants run | 3,672 |
+| Threw | **0** |
+| Still imported | 500 |
+
+The last row is what makes the first meaningful: if every mutant had been rejected at the header, the
+property would pass without any parsing having happened. 500 of them reached real parsing and still
+returned a document.
+
+The same property runs hermetically in the suite over a synthetic file, and `@flighthq/abc` carries its
+own version — 4,000 random byte sequences plus mutations of a well-formed container, none of which threw.

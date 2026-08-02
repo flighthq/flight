@@ -1,3 +1,4 @@
+import { parseTextMarkup } from '@flighthq/text-markup/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText, TextFormat, TextFormatAlign } from '@flighthq/types/contract';
 
@@ -65,6 +66,7 @@ export function readSwfEditTextFactory(
     fontId,
     hasColor,
     height,
+    html: (layoutFlags & EDIT_TEXT_HTML) !== 0,
     indent,
     leading,
     leftMargin,
@@ -98,6 +100,11 @@ function createSwfEditTextNode(field: Readonly<SwfEditTextField>, fontName: stri
   if (field.hasColor) format.color = field.color;
   if (fontName !== '') format.font = fontName;
 
+  // A field flagged as HTML stores markup where its characters would be. Parsing it here is an explicit
+  // call on a string the file has already told us is markup — not a property that parses on assignment,
+  // which is an anti-goal — and without it the field would display its own tags.
+  const content = field.html ? parseTextMarkup(field.text) : null;
+
   const node = createRichText();
   node.data.border = field.border;
   node.data.defaultTextFormat = format;
@@ -105,7 +112,8 @@ function createSwfEditTextNode(field: Readonly<SwfEditTextField>, fontName: stri
   node.data.maxChars = field.maxChars;
   node.data.multiline = field.multiline;
   node.data.selectable = field.selectable && !field.readOnly;
-  node.data.text = field.text;
+  node.data.text = content === null ? field.text : content.text;
+  if (content !== null) node.data.textFormatRanges = content.formatRanges;
   node.data.textColor = field.color;
   node.data.textFormat = format;
   node.data.width = field.width;
@@ -122,6 +130,7 @@ interface SwfEditTextField {
   fontId: number;
   hasColor: boolean;
   height: number;
+  html: boolean;
   indent: number;
   leading: number;
   leftMargin: number;
@@ -156,6 +165,7 @@ const EDIT_TEXT_HAS_LAYOUT = 0x20;
 const EDIT_TEXT_HAS_MAX_LENGTH = 0x02;
 const EDIT_TEXT_HAS_TEXT = 0x80;
 const EDIT_TEXT_HAS_TEXT_COLOR = 0x04;
+const EDIT_TEXT_HTML = 0x02;
 const EDIT_TEXT_MULTILINE = 0x20;
 const EDIT_TEXT_NO_SELECT = 0x10;
 const EDIT_TEXT_READ_ONLY = 0x08;

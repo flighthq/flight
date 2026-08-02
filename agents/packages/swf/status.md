@@ -28,6 +28,11 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   tolerance.
 - Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
   [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
+- `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
+  names, since an init action runs once before that sprite's first frame.
+- A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so
+  an authored fade follows. The colour channels are read past: tinting a node is a material feature rather
+  than a node property, and importing it would need a decision this codec should not make alone.
 - AVM2 `DoABC` timeline commands are recognized too, through `@flighthq/abc`. AVM2 has no playback
   opcodes: a compiler turns frame scripts into an `addFrameScript` call in the generated class
   constructor, pairing a zero-based frame index with a handler that is usually a *method on the class*

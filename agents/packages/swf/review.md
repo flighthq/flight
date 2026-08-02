@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/swf'
-status: partial
-score: 76
+status: solid
+score: 86
 updated: 2026-08-02
 ingested:
   - charter.md
@@ -14,15 +14,17 @@ ingested:
 
 ## Verdict
 
-**Partial — 76/100.** The package supplies the first honest end-to-end proof of the shared named-graph
+**Solid — 86/100.** The package supplies the first honest end-to-end proof of the shared named-graph
 contract: bounded `FWS` parsing turns named instances, transforms, and class linkage into enumerable
 `Scene2DDocument` slot references. `DefineSprite` symbols instantiate recursively, so named descendants
 survive unnamed MovieClip containers with their composed transforms. Structure is no longer frozen at one
 frame: every timeline in the file crosses as `movieclip` playback data, so a document animates through the
-ordinary `MovieClip` API with no SWF runtime retained. Shape definitions now decode to real geometry, so a document
-draws rather than merely measuring: an imported still frame is vector art in the right place at the right
-size. What remains unbuilt is the rest of the visual half — bitmap, text, and font definitions carry
-extents but no content, and compressed bodies are still rejected. Stage, shape, text, morph,
+ordinary `MovieClip` API with no SWF runtime retained. Shape definitions decode to real geometry, embedded fonts cross as
+path outlines, static text places them, edit-text fields arrive as assignable text nodes, compressed
+containers open through a registered decompressor, buttons contribute their up state, clip depth becomes a
+real clip, and both bytecodes give up their timeline commands without either being executed. What remains
+unbuilt is narrower than what is built: morph geometry, per-frame colour beyond alpha, blend modes and
+filters, and the resolver that turns embedded image bytes into pixels. Stage, shape, text, morph,
 embedded-image, lossless-bitmap, video, and recursively composed sprite extents cover the available
 named-graph sizing contract. A revision-pinned uncompressed Ruffle fixture supplies real-file evidence for
 the named-slot path and exposed the zero-bit RECT compatibility case now covered synthetically.
@@ -34,6 +36,11 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   lets a host swap in a native decoder. With the repository's existing inflate registered, the corpus sweep
   goes from 59 to 301 of 306 files imported, still with zero throws — and the shape decoder, previously
   exercised only by hand-written bytes, decodes 49,142 commands of real artwork without incident.
+- Nothing throws. That contract is now backed by a mutation sweep — 3,672 mutated real files, 500 of
+  which still imported, none of which threw — plus hermetic property tests in both this package and
+  `abc`. A definition this decoder cannot read costs that definition and nothing else, uniformly: an
+  unreadable shape body, font glyph, image of either generation, or text body leaves the rest of the
+  document intact.
 - The reader is bounded by both the declared file length and each tag body. Truncation, overruns,
   missing End tags, unsupported compression, and invalid headers return the package's `null` sentinel
   instead of throwing.
