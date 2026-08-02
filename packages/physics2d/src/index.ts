@@ -62,6 +62,7 @@ export {
   createPhysics2DSolverConfig,
   createPhysics2DWorld,
   createRigidBody2D,
+  invalidatePhysics2DCollider,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,

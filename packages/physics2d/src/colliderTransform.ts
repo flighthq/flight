@@ -28,8 +28,7 @@ export function createPhysics2DColliderWorldShape(local: Readonly<CollisionShape
 //
 // The world shape is preallocated at collider creation and mutated in place, so a step allocates
 // nothing. Polygon points are the only variable-length part, and the world array is sized once from the
-// local one; a caller that reshapes a collider must rebuild it through `createPhysics2DCollider` rather
-// than mutating `local.points` in place.
+// local one; `invalidatePhysics2DCollider` replaces that storage after an authored shape changes.
 export function updatePhysics2DColliderWorldShape(collider: Physics2DCollider, body: Readonly<RigidBody2D>): void {
   const local = collider.local;
   const world = collider.world;

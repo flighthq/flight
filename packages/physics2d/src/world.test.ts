@@ -10,6 +10,7 @@ import {
   createPhysics2DSolverConfig,
   createPhysics2DWorld,
   createRigidBody2D,
+  invalidatePhysics2DCollider,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,
@@ -167,6 +168,60 @@ describe('findPhysics2DBody', () => {
     removePhysics2DBody(world, first);
     expect(findPhysics2DBody(world, first.index)).toBeNull();
     expect(world.bodyByIndex.has(first.index)).toBe(false);
+  });
+});
+
+describe('invalidatePhysics2DCollider', () => {
+  it('rebuilds changed shape storage, mass data, and broadphase bounds', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const collider = body.colliders[0];
+    const oldWorldShape = collider.world;
+    collider.local = { kind: 'circle', x: 4, y: 0, radius: 2 };
+    collider.material.density = 2;
+    body.sleeping = true;
+    body.sleepTimer = 5;
+
+    expect(invalidatePhysics2DCollider(world, body, collider)).toBe(true);
+
+    const oldLocation: number[] = [];
+    const newLocation: number[] = [];
+    world.index.querySpatialPoint(0, 0, oldLocation);
+    world.index.querySpatialPoint(4, 0, newLocation);
+    expect(collider.world).not.toBe(oldWorldShape);
+    expect(collider.world.kind).toBe('circle');
+    expect(body.mass).toBeCloseTo(8 * Math.PI);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
+    expect(oldLocation).toEqual([]);
+    expect(newLocation).toEqual([body.index]);
+  });
+
+  it('invalidates contacts after filter and sensor changes', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const first = addPhysics2DBody(world, boxBody(0, 0));
+    const second = addPhysics2DBody(world, boxBody(0.75, 0));
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(1);
+
+    first.colliders[0].sensor = true;
+    expect(invalidatePhysics2DCollider(world, first, first.colliders[0])).toBe(true);
+    expect(world.contacts).toHaveLength(0);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts[0].sensor).toBe(true);
+
+    first.colliders[0].filter.maskBits = 0;
+    expect(invalidatePhysics2DCollider(world, first, first.colliders[0])).toBe(true);
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(0);
+    expect(second.sleeping).toBe(false);
+  });
+
+  it('reports false when the body does not own the collider', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+    expect(invalidatePhysics2DCollider(world, body, absent)).toBe(false);
   });
 });
 
