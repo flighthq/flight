@@ -10,6 +10,7 @@ import type {
   SpatialIndexBackend,
 } from '@flighthq/types/contract';
 
+import { synchronizePhysics2DBroadphase } from './broadphase';
 import { createPhysics2DColliderWorldShape } from './colliderTransform';
 import { updateRigidBody2DMassData } from './massProperties';
 
@@ -22,6 +23,26 @@ export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): Rigi
   world.bodies.push(body);
   updateRigidBody2DMassData(body);
   return body;
+}
+
+// Adds a collider while keeping every derived world structure coherent. A body may still be authored
+// before insertion: in that case only its collider list and mass data change. Once it belongs to the
+// world, topology mutation also discards stale contact impulses, wakes affected bodies, and republishes
+// bounds immediately rather than waiting for the next step.
+export function addPhysics2DCollider(
+  world: Physics2DWorld,
+  body: RigidBody2D,
+  collider: Physics2DCollider,
+): Physics2DCollider {
+  const inWorld = world.bodies.indexOf(body) >= 0;
+  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  body.colliders.push(collider);
+  updateRigidBody2DMassData(body);
+  if (inWorld) {
+    _wakePhysics2DBodyFromTopology(body);
+    synchronizePhysics2DBroadphase(world);
+  }
+  return collider;
 }
 
 // Creates a collider from a LOCAL-space shape, allocating the world-space shape it will be transformed
@@ -148,16 +169,7 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
   // gravity is integrated only for awake bodies and the contact that could have joined it to an awake
   // island is already gone. Sensors transmit no impulse and unknown joints constrain nothing, so neither
   // is a wake edge.
-  for (let i = world.contacts.length - 1; i >= 0; i--) {
-    const contact = world.contacts[i];
-    if (contact.bodyA !== body.index && contact.bodyB !== body.index) continue;
-    if (contact.enabled && !contact.sensor) {
-      const otherIndex = contact.bodyA === body.index ? contact.bodyB : contact.bodyA;
-      const other = findPhysics2DBody(world, otherIndex);
-      if (other !== null) _wakePhysics2DBodyFromTopology(other);
-    }
-    world.contacts.splice(i, 1);
-  }
+  _invalidatePhysics2DBodyContacts(world, body.index);
   // Joints naming the removed body go with it: a constraint with one end missing has nothing to solve
   // against, and leaving it would let a later body inheriting the index be silently constrained by it.
   for (let i = world.joints.length - 1; i >= 0; i--) {
@@ -173,6 +185,48 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
   world.bodies.splice(at, 1);
   world.index.removeSpatialObject(body.index);
   return true;
+}
+
+// Removes one collider and updates all state derived from the body's collider array. Every contact on
+// the body is invalidated, not only the removed collider's: removing an earlier array entry renumbers
+// later collider indices, and any mass change moves the centre used by every cached contact lever arm.
+export function removePhysics2DCollider(
+  world: Physics2DWorld,
+  body: RigidBody2D,
+  collider: Readonly<Physics2DCollider>,
+): boolean {
+  const at = body.colliders.indexOf(collider as Physics2DCollider);
+  if (at < 0) return false;
+  const inWorld = world.bodies.indexOf(body) >= 0;
+  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  body.colliders.splice(at, 1);
+  updateRigidBody2DMassData(body);
+  if (inWorld) {
+    _wakePhysics2DBodyFromTopology(body);
+    synchronizePhysics2DBroadphase(world);
+  }
+  return true;
+}
+
+function _invalidatePhysics2DBodyContacts(world: Physics2DWorld, bodyIndex: number): void {
+  for (let i = world.contacts.length - 1; i >= 0; i--) {
+    const contact = world.contacts[i];
+    if (contact.bodyA !== bodyIndex && contact.bodyB !== bodyIndex) continue;
+    if (contact.enabled && !contact.sensor) {
+      const otherIndex = contact.bodyA === bodyIndex ? contact.bodyB : contact.bodyA;
+      const other = findPhysics2DBody(world, otherIndex);
+      if (other !== null) _wakePhysics2DBodyFromTopology(other);
+    }
+    world.contacts.splice(i, 1);
+  }
+  _removePhysics2DContactEventsForBody(world.events.began, bodyIndex);
+  _removePhysics2DContactEventsForBody(world.events.ended, bodyIndex);
+}
+
+function _removePhysics2DContactEventsForBody(events: Physics2DWorld['events']['began'], bodyIndex: number): void {
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].bodyA === bodyIndex || events[i].bodyB === bodyIndex) events.splice(i, 1);
+  }
 }
 
 // Kept local rather than importing islands.ts, which already resolves bodies through this module.

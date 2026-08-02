@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { stepPhysics2D } from './step';
 import {
   addPhysics2DBody,
+  addPhysics2DCollider,
   findPhysics2DBody,
   createPhysics2DCollider,
   createPhysics2DSolverConfig,
@@ -10,6 +11,7 @@ import {
   createRigidBody2D,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
+  removePhysics2DCollider,
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
@@ -41,6 +43,51 @@ describe('addPhysics2DBody', () => {
     expect(body.mass).toBeCloseTo(1);
     expect(body.inverseMass).toBeCloseTo(1);
     expect(body.inertia).toBeGreaterThan(0);
+  });
+});
+
+describe('addPhysics2DCollider', () => {
+  it('recomputes mass, wakes the body, and publishes bounds immediately', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 3, 4));
+    body.sleeping = true;
+    body.sleepTimer = 5;
+    const collider = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+
+    expect(addPhysics2DCollider(world, body, collider)).toBe(collider);
+
+    const found: number[] = [];
+    world.index.querySpatialPoint(3, 4, found);
+    expect(body.mass).toBeCloseTo(Math.PI);
+    expect(body.sleeping).toBe(false);
+    expect(found).toEqual([body.index]);
+  });
+
+  it('invalidates old contact impulses and events while waking both solid ends', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const first = addPhysics2DBody(world, boxBody(0, 0));
+    const second = addPhysics2DBody(world, boxBody(0.75, 0));
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.events.began).toHaveLength(1);
+    first.sleeping = true;
+    second.sleeping = true;
+
+    addPhysics2DCollider(world, first, createPhysics2DCollider({ kind: 'circle', x: 2, y: 0, radius: 0.25 }, STONE));
+
+    expect(world.contacts).toHaveLength(0);
+    expect(world.events.began).toHaveLength(0);
+    expect(first.sleeping).toBe(false);
+    expect(second.sleeping).toBe(false);
+  });
+
+  it('can author a body before insertion without assigning world identity', () => {
+    const world = createPhysics2DWorld();
+    const body = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DCollider(world, body, createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE));
+    expect(body.index).toBe(-1);
+    expect(body.mass).toBeCloseTo(Math.PI);
+    expect(world.bodies).toHaveLength(0);
   });
 });
 
@@ -186,5 +233,37 @@ describe('removePhysics2DBody', () => {
 
     expect(crate.sleeping).toBe(true);
     expect(crate.sleepTimer).toBe(5);
+  });
+});
+
+describe('removePhysics2DCollider', () => {
+  it('recomputes mass, shifts collider identity safely, and republishes bounds', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 0, 0);
+    const left = createPhysics2DCollider({ kind: 'circle', x: -4, y: 0, radius: 1 }, STONE);
+    const right = createPhysics2DCollider({ kind: 'circle', x: 4, y: 0, radius: 2 }, STONE);
+    body.colliders.push(left, right);
+    addPhysics2DBody(world, body);
+    const originalMass = body.mass;
+
+    expect(removePhysics2DCollider(world, body, left)).toBe(true);
+
+    const removedLocation: number[] = [];
+    const retainedLocation: number[] = [];
+    world.index.querySpatialPoint(-4, 0, removedLocation);
+    world.index.querySpatialPoint(4, 0, retainedLocation);
+    expect(body.colliders).toEqual([right]);
+    expect(body.mass).toBeLessThan(originalMass);
+    expect(removedLocation).toEqual([]);
+    expect(retainedLocation).toEqual([body.index]);
+  });
+
+  it('reports false without changing mass when the collider is absent', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const mass = body.mass;
+    const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+    expect(removePhysics2DCollider(world, body, absent)).toBe(false);
+    expect(body.mass).toBe(mass);
   });
 });
