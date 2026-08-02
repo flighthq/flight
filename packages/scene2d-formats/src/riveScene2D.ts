@@ -15,7 +15,7 @@ import type {
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
@@ -80,6 +80,7 @@ function createRiveArtboardImport(
       ? createShape({ name: readRiveText(object, RIVE_NAME, '') })
       : createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
     applyRiveTransform(node, object);
+    applyRiveBlendMode(node, object);
     nodes.push(node);
     addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
   }
@@ -183,6 +184,19 @@ function applyRiveTransform(target: DisplayObject, source: Readonly<RiveCoreObje
   target.alpha = readRiveNumber(source, RIVE_OPACITY, 1);
 }
 
+// Rive states sixteen blend modes and Flight carries six, so only the shared ones convert; the rest
+// fall back to normal and are recorded in agents/scene2d-format-coverage.md as a Flight gap rather
+// than crumbed, since their cause is Flight's own enum and not anything about the caller's file.
+function applyRiveBlendMode(target: DisplayObject, source: Readonly<RiveCoreObject>): void {
+  if (!isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_DRAWABLE_TYPE_KEY)) return;
+  const value = readRiveNumber(source, RIVE_BLEND_MODE, RIVE_BLEND_SRC_OVER);
+  if (value === RIVE_BLEND_SCREEN) target.blendMode = BlendMode.Screen;
+  else if (value === RIVE_BLEND_DARKEN) target.blendMode = BlendMode.Darken;
+  else if (value === RIVE_BLEND_LIGHTEN) target.blendMode = BlendMode.Lighten;
+  else if (value === RIVE_BLEND_MULTIPLY) target.blendMode = BlendMode.Multiply;
+  else target.blendMode = BlendMode.Normal;
+}
+
 // A property absent from the stream is at its documented initial value, which is why every read
 // carries the format's default rather than treating absence as zero.
 function readRiveNumber(source: Readonly<RiveCoreObject>, key: number, fallback: number): number {
@@ -198,6 +212,7 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 const RIVE_NODE_TYPE_KEY = 2;
 const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_PATH_TYPE_KEY = 12;
+const RIVE_DRAWABLE_TYPE_KEY = 13;
 const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;
@@ -211,3 +226,9 @@ const RIVE_ROTATION = 15;
 const RIVE_SCALE_X = 16;
 const RIVE_SCALE_Y = 17;
 const RIVE_OPACITY = 18;
+const RIVE_BLEND_MODE = 23;
+const RIVE_BLEND_SRC_OVER = 3;
+const RIVE_BLEND_SCREEN = 14;
+const RIVE_BLEND_DARKEN = 16;
+const RIVE_BLEND_LIGHTEN = 17;
+const RIVE_BLEND_MULTIPLY = 24;

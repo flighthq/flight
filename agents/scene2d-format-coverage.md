@@ -269,11 +269,24 @@ itself.
 Over the corpus, 2,372 of 2,409 shapes receive paint — 1,849 solid fills, 706 strokes and 458
 gradients — with no alpha or stop ratio out of range. The 37 unpainted shapes state no visible paint.
 
-**Not covered:** `TrimPath` (46 instances across 11 of the 64 corpus files), which Flight has the
-pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather` (154
-instances), a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
-which no corpus file uses. And draw order and blend modes; clipping; deformable meshes, bones and
-skinning; animations and keyframes; text; assets; and nested artboard linkage. The state-machine
+**Blend modes convert as far as Flight reaches.** A drawable's blend mode maps onto `Node2D.blendMode`
+for the modes both carry — normal, screen, darken, lighten and multiply — and anything else
+normalises. This is a **Flight gap rather than a file problem**: Rive states sixteen modes and
+Flight's `BlendMode` carries six, so overlay, soft-light, colour-dodge, colour-burn, hard-light,
+difference, exclusion, hue, saturation, colour and luminosity have nowhere to land. It is recorded
+here rather than crumbed, because its cause is our own enum. In the corpus 2,898 of 3,042 drawables
+use the default, and of the 144 that do not, 93 are modes Flight cannot express — so this is the
+larger half of non-default blend usage. Widening `@flighthq/BlendMode` is a cross-package question,
+and the same one hangs over the `lottie.unsupported-blend-mode` crumb that Lottie still emits.
+
+**Not covered:** `ClippingShape` — 252 instances across 26 of the 64 corpus files, so common. The
+obstacle is coordinate space rather than the property read: the source shape's geometry lives in its
+own transform chain and the clip must land in the clipped node's space. Draw-order overrides,
+`DrawRules` and `DrawTarget`, 96 of each. `TrimPath`, 46 instances across 11 files, which Flight has
+the pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather`, 154
+instances, a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
+which no corpus file uses. And deformable meshes, bones and skinning; animations and keyframes; text;
+assets; and nested artboard linkage. The state-machine
 *descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
 codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
 it neither rejects a future file nor adapts to an older one.
