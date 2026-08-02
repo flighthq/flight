@@ -67,6 +67,15 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   local bound instead of rejecting the document.
 - `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
   `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
+- Clip depth becomes a real clip. A placement carrying a clip depth masks every depth above its own
+  through that depth, and is never drawn itself. Flight clips a node and its subtree, so one `ClipRegion`
+  is applied to each covered instance — equivalent to grouping them under a clipped container, without
+  restructuring the graph or disturbing the attach/detach/reorder path. The mask's contours come from its
+  decoded shape and cross two transforms into each covered instance's own local space, which is where a
+  `ClipRegion`'s contours live. Masking is per-frame data applied beside the matrix, so a mask that
+  appears or moves between frames follows. Where masks nest, the innermost wins: Flight carries one clip
+  per node rather than intersecting them. A mask whose character has no decoded geometry imposes no clip
+  rather than a wrong one.
 - `PlaceObject2`/`PlaceObject3` distinguish fresh placements from move/update and replacement records.
   Only a move targeting an existing depth inherits omitted fields, and stray moves are ignored. A move
   keeps its depth and character so it keeps its node across frames, while a replacement at the same
@@ -100,7 +109,8 @@ embedded JPEG/PNG/GIF, lossless-bitmap and video dimensions, and recursively com
 Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
 replayed onto the instance it targets, depth ordering when a later frame places an instance between two
 others, labels from both label tags with the header frame rate, an independently seekable nested sprite
-playhead, and snapshot-budget rejection. Geometry coverage adds the bit reader's own overrun, alignment,
+playhead, snapshot-budget rejection, and clip depth producing a clip on covered instances only, with the
+mask undrawn and the region resolved into the covered instance's local space. Geometry coverage adds the bit reader's own overrun, alignment,
 and encoding cases, and a shape suite over hand-written SHAPEWITHSTYLE bytes: a closed rectangle, twips
 conversion with a quadratic edge, right-hand fill reversal, run stitching across a move, Shape 3 alpha,
 stroke width and style, gradient passthrough, unpainted bitmap fills, and both malformed-body rejections —
