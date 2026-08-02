@@ -12,6 +12,10 @@ export function createPhysics2DColliderWorldShape(local: Readonly<CollisionShape
       return { kind: 'obb', x: 0, y: 0, halfW: 0, halfH: 0, rotation: 0 };
     case 'polygon':
       return { kind: 'polygon', points: local.points.slice() };
+    case 'segment':
+      return { kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 };
+    case 'point':
+      return { kind: 'point', x: local.x, y: local.y };
     default:
       return { kind: 'point', x: 0, y: 0 };
   }
@@ -71,6 +75,20 @@ export function updatePhysics2DColliderWorldShape(collider: Physics2DCollider, b
       target[i] = body.x + x * cos - y * sin;
       target[i + 1] = body.y + x * sin + y * cos;
     }
+    return;
+  }
+
+  if (local.kind === 'segment' && world.kind === 'segment') {
+    world.x0 = body.x + local.x0 * cos - local.y0 * sin;
+    world.y0 = body.y + local.x0 * sin + local.y0 * cos;
+    world.x1 = body.x + local.x1 * cos - local.y1 * sin;
+    world.y1 = body.y + local.x1 * sin + local.y1 * cos;
+    return;
+  }
+
+  if (local.kind === 'point' && world.kind === 'point') {
+    world.x = body.x + local.x * cos - local.y * sin;
+    world.y = body.y + local.x * sin + local.y * cos;
   }
 }
 
@@ -134,6 +152,18 @@ export function writePhysics2DColliderBounds(
       out.maxY = maxY;
       return;
     }
+    case 'segment':
+      out.minX = Math.min(shape.x0, shape.x1);
+      out.minY = Math.min(shape.y0, shape.y1);
+      out.maxX = Math.max(shape.x0, shape.x1);
+      out.maxY = Math.max(shape.y0, shape.y1);
+      return;
+    case 'point':
+      out.minX = shape.x;
+      out.minY = shape.y;
+      out.maxX = shape.x;
+      out.maxY = shape.y;
+      return;
     default:
       out.minX = 0;
       out.minY = 0;

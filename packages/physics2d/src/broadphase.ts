@@ -41,10 +41,19 @@ export function synchronizePhysics2DBroadphase(world: Physics2DWorld): void {
     }
     bodyBounds.minX = minX;
     bodyBounds.minY = minY;
-    bodyBounds.maxX = maxX;
-    bodyBounds.maxY = maxY;
+    // Spatial cells use half-open rectangle containment while collision point tests include a shape's
+    // boundary. Publish a minimally conservative upper edge so an exact query at maxX/maxY remains a
+    // broadphase candidate. This also gives a point or axis-aligned segment a non-empty indexed span;
+    // collider-level refinement still reads its exact, zero-area bounds.
+    bodyBounds.maxX = paddedUpperBound(maxX);
+    bodyBounds.maxY = paddedUpperBound(maxY);
     world.index.updateSpatialObject(body.index, bodyBounds);
   }
+}
+
+function paddedUpperBound(value: number): number {
+  const padded = value + Math.max(1, Math.abs(value)) * Number.EPSILON * 4;
+  return Number.isFinite(padded) ? padded : value;
 }
 
 // The widest body this world still treats as simulating. Named for what it bounds — the simulation's

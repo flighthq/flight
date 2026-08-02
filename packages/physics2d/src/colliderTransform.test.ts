@@ -22,6 +22,8 @@ describe('createPhysics2DColliderWorldShape', () => {
   it('keeps the kind for shapes a rigid transform preserves', () => {
     expect(createPhysics2DColliderWorldShape({ kind: 'circle', x: 0, y: 0, radius: 1 }).kind).toBe('circle');
     expect(createPhysics2DColliderWorldShape({ kind: 'polygon', points: [0, 0, 1, 0, 0, 1] }).kind).toBe('polygon');
+    expect(createPhysics2DColliderWorldShape({ kind: 'segment', x0: 0, y0: 0, x1: 1, y1: 0 }).kind).toBe('segment');
+    expect(createPhysics2DColliderWorldShape({ kind: 'point', x: 0, y: 0 }).kind).toBe('point');
   });
 
   it('gives a polygon its own points array so the per-step transform cannot write through to the local shape', () => {
@@ -69,6 +71,26 @@ describe('updatePhysics2DColliderWorldShape', () => {
     if (collider.world.kind !== 'polygon') return;
     expect(Array.from(collider.world.points)).toEqual([3, 4, 4, 4, 3, 5]);
   });
+
+  it('rotates and translates segment endpoints', () => {
+    const collider = createPhysics2DCollider({ kind: 'segment', x0: 0, y0: 0, x1: 2, y1: 0 }, STONE);
+    updatePhysics2DColliderWorldShape(collider, createRigidBody2D('dynamic', 3, 4, Math.PI / 2));
+    expect(collider.world.kind).toBe('segment');
+    if (collider.world.kind !== 'segment') return;
+    expect(collider.world.x0).toBeCloseTo(3);
+    expect(collider.world.y0).toBeCloseTo(4);
+    expect(collider.world.x1).toBeCloseTo(3);
+    expect(collider.world.y1).toBeCloseTo(6);
+  });
+
+  it('rotates and translates points', () => {
+    const collider = createPhysics2DCollider({ kind: 'point', x: 2, y: 0 }, STONE);
+    updatePhysics2DColliderWorldShape(collider, createRigidBody2D('dynamic', 3, 4, Math.PI / 2));
+    expect(collider.world.kind).toBe('point');
+    if (collider.world.kind !== 'point') return;
+    expect(collider.world.x).toBeCloseTo(3);
+    expect(collider.world.y).toBeCloseTo(6);
+  });
 });
 
 describe('writePhysics2DColliderBounds', () => {
@@ -105,11 +127,17 @@ describe('writePhysics2DColliderBounds', () => {
     expect(out).toEqual({ minX: 0, minY: 0, maxX: 4, maxY: 5 });
   });
 
-  it('gives an area-less shape empty bounds rather than infinities', () => {
-    const collider = createPhysics2DCollider({ kind: 'point', x: 1, y: 1 }, STONE);
+  it('bounds a segment by its transformed endpoints', () => {
+    const collider = createPhysics2DCollider({ kind: 'segment', x0: -2, y0: 3, x1: 4, y1: -1 }, STONE);
     const out = bounds();
     writePhysics2DColliderBounds(collider, out);
-    expect(Number.isFinite(out.minX)).toBe(true);
-    expect(Number.isFinite(out.maxY)).toBe(true);
+    expect(out).toEqual({ minX: -2, minY: -1, maxX: 4, maxY: 3 });
+  });
+
+  it('gives a point its exact zero-area bounds', () => {
+    const collider = createPhysics2DCollider({ kind: 'point', x: 1, y: 2 }, STONE);
+    const out = bounds();
+    writePhysics2DColliderBounds(collider, out);
+    expect(out).toEqual({ minX: 1, minY: 2, maxX: 1, maxY: 2 });
   });
 });

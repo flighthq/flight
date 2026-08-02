@@ -66,6 +66,21 @@ describe('queryPhysics2DPoint', () => {
       [second.index, 0],
     ]);
   });
+
+  it('queries transformed point and segment colliders at their current pose', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 3, 4, Math.PI / 2);
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'point', x: 2, y: 0 }, STONE),
+      createPhysics2DCollider({ kind: 'segment', x0: 0, y0: 0, x1: 2, y1: 0 }, STONE),
+    );
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DQueryResult();
+
+    queryPhysics2DPoint(world, 3, 6, out);
+
+    expect(out.hits.slice(0, out.hitCount).map((hit) => hit.colliderIndex)).toEqual([0, 1]);
+  });
 });
 
 describe('queryPhysics2DRegion', () => {
