@@ -83,6 +83,17 @@ export interface CollisionManifold {
   depth: number;
 }
 
+// Exact first intersection of a parametric ray `origin + direction * fraction` with one shape.
+// `raycastCollisionShape` rewrites this record and returns whether it is live. A zero normal means the
+// origin was already inside the shape or the hit shape is area-less and has no outward-facing side.
+export interface CollisionRaycastHit {
+  fraction: number;
+  x: number;
+  y: number;
+  normalX: number;
+  normalY: number;
+}
+
 // Plain-data answer to "why did testCollision return false?". `shapeIndex` identifies invalid or
 // unsupported input (0 for A, 1 for B); it is null for an ordinary separated pair or an overlap.
 export interface CollisionTestExplanation {

@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
-import { createPhysics2DQueryResult, queryPhysics2DPoint, queryPhysics2DRegion } from './worldQueries';
+import {
+  createPhysics2DQueryResult,
+  createPhysics2DRayResult,
+  queryPhysics2DPoint,
+  queryPhysics2DRay,
+  queryPhysics2DRegion,
+} from './worldQueries';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 describe('createPhysics2DQueryResult', () => {
   it('starts with no live hits', () => {
     expect(createPhysics2DQueryResult()).toEqual({ hits: [], hitCount: 0 });
+  });
+});
+
+describe('createPhysics2DRayResult', () => {
+  it('starts with no live hits', () => {
+    expect(createPhysics2DRayResult()).toEqual({ hits: [], hitCount: 0 });
   });
 });
 
@@ -80,6 +92,68 @@ describe('queryPhysics2DPoint', () => {
     queryPhysics2DPoint(world, 3, 6, out);
 
     expect(out.hits.slice(0, out.hitCount).map((hit) => hit.colliderIndex)).toEqual([0, 1]);
+  });
+});
+
+describe('queryPhysics2DRay', () => {
+  it('returns exact intersections nearest-first rather than body insertion order', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const far = createRigidBody2D('dynamic', 5, 0);
+    far.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    const near = createRigidBody2D('dynamic', 2, 0);
+    near.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -1, maxX: 0.5, maxY: 1 }, STONE));
+    addPhysics2DBody(world, far);
+    addPhysics2DBody(world, near);
+    const out = createPhysics2DRayResult();
+
+    queryPhysics2DRay(world, 0, 0, 1, 0, out);
+
+    expect(out.hitCount).toBe(2);
+    expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([near, far]);
+    expect(out.hits[0]).toMatchObject({ colliderIndex: 0, fraction: 1.5, normalX: -1, normalY: 0, x: 1.5, y: 0 });
+    expect(out.hits[1].fraction).toBeCloseTo(4);
+  });
+
+  it('refines broadphase candidates against rotated shape geometry', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 0, 0, Math.PI / 4);
+    body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -2, minY: -0.25, maxX: 2, maxY: 0.25 }, STONE));
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DRayResult();
+
+    queryPhysics2DRay(world, -1.5, 1.4, 0.2, 0, out, 1);
+
+    expect(out.hitCount).toBe(0);
+  });
+
+  it('honours maxFraction and reuses retained hit objects', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 3, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DRayResult();
+    queryPhysics2DRay(world, 0, 0, 1, 0, out);
+    const retained = out.hits[0];
+
+    queryPhysics2DRay(world, 0, 0, 1, 0, out, 1);
+    expect(out.hitCount).toBe(0);
+    queryPhysics2DRay(world, 0, 0, 1, 0, out, 2);
+
+    expect(out.hitCount).toBe(1);
+    expect(out.hits[0]).toBe(retained);
+  });
+
+  it('degenerates a zero direction to an exact point query', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 3, 4);
+    body.colliders.push(createPhysics2DCollider({ kind: 'point', x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DRayResult();
+
+    queryPhysics2DRay(world, 3, 4, 0, 0, out);
+
+    expect(out.hitCount).toBe(1);
+    expect(out.hits[0]).toMatchObject({ body, fraction: 0, normalX: 0, normalY: 0, x: 3, y: 4 });
   });
 });
 

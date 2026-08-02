@@ -19,6 +19,8 @@ export {
   enableCollisionGuards,
   explainCollisionTest,
   getCollisionShapeContainsPoint,
+  createCollisionRaycastHit,
+  raycastCollisionShape,
   testAabbAabbCollision,
   testAabbObbCollision,
   testAabbPolygonCollision,
