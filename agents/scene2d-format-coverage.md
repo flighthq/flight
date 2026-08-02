@@ -215,10 +215,34 @@ Over the corpus this produces 7,580 display nodes across 127 artboards, at a max
 with no non-finite rotation and no alpha outside 0–1. One artboard reports a zero size, which the
 format permits since width and height default to 0 when unstated.
 
-**Not covered:** no property beyond the transform set is interpreted. Shapes and paths, fills and
-strokes, deformable meshes, bones and skinning, animations and keyframes, text, assets, and nested
-artboard linkage are all unread, so an imported tree currently carries structure and placement but
-draws nothing. The state-machine
+**Path geometry is covered.** A Rive Shape becomes a Flight `Shape` and each path beneath it
+contributes commands to that one shape rather than becoming a node of its own — Rive combines a
+shape's paths into a single figure, which is how a hole cuts its parent, so splitting them would
+break the compositing the format states. A path carries its own transform, and since it is no longer
+a node that transform is baked into the geometry it hands over.
+
+Covered path kinds: `PointsPath` with all four vertex kinds, and the parametric family — rectangle
+(linked and per-corner radii), ellipse, triangle, polygon and star, each positioned by its own
+normalized origin, which defaults to its centre.
+
+**Cubic handles are polar, and the three cubic kinds disagree on sign.** A vertex states an angle and
+a distance rather than an absolute control point. A mirrored or asymmetric vertex *subtracts* its
+incoming vector, keeping the pair collinear through the vertex; a detached vertex *adds* its own
+separately-angled one. Applying one rule to all three reflects every detached handle through its
+vertex and bends the curve the wrong way.
+
+Over the corpus this builds 3,770 path records across 2,409 shapes — 45,408 points, none non-finite.
+Fifteen shapes produce no geometry, which the format permits for a shape whose children carry none.
+
+**Not covered — a common-path gap, not an exotic one.** `StraightVertex` states a corner **radius**
+and this importer ignores it, so those corners import sharp. That is not rare: **2,533 of 8,454
+straight vertices in the corpus (30%) state a nonzero radius**. Rive's own rounding construction
+should be taken as a format fact rather than approximated, since a plausible-but-wrong fillet is
+hard to see without pixels.
+
+**Also not covered:** fills, strokes, gradients, trim paths and dashes, so an imported shape carries
+geometry but no paint and draws nothing; draw order and blend modes; clipping; deformable meshes,
+bones and skinning; animations and keyframes; text; assets; and nested artboard linkage. The state-machine
 *descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
 codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
 it neither rejects a future file nor adapts to an older one.

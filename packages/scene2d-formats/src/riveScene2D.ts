@@ -1,18 +1,24 @@
+import { createMatrix } from '@flighthq/geometry/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { appendShapePath, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
+  Matrix,
   RiveArtboardGraph,
   RiveArtboardImport,
   RiveCoreObject,
   RiveDocumentImportResult,
+  Shape,
 } from '@flighthq/types/contract';
+import { ShapeKind } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
 import { createRiveObjectGraph } from './riveObjectGraph';
+import { createRivePath } from './riveShapePath';
 
 /**
  * Imports a `.riv` into one display subtree per artboard.
@@ -49,16 +55,66 @@ function createRiveArtboardImport(artboard: Readonly<RiveArtboardGraph>): RiveAr
   const nodes: Array<DisplayObject | null> = [root];
   for (let index = 1; index < artboard.objects.length; index++) {
     const object = artboard.objects[index];
+    // A path contributes geometry to the shape above it rather than a node of its own. Rive combines
+    // a shape's paths into one figure — that is how a hole cuts its parent — so splitting them into
+    // separate nodes would break the compositing the format states.
+    if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_PATH_TYPE_KEY)) {
+      nodes.push(null);
+      appendRivePathGeometry(nodes, artboard, index);
+      continue;
+    }
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
       nodes.push(null);
       continue;
     }
-    const node = createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
+    const node = isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)
+      ? createShape({ name: readRiveText(object, RIVE_NAME, '') })
+      : createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
     applyRiveTransform(node, object);
     nodes.push(node);
     addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
   }
   return { height, name, root, width };
+}
+
+function appendRivePathGeometry(
+  nodes: ReadonlyArray<DisplayObject | null>,
+  artboard: Readonly<RiveArtboardGraph>,
+  index: number,
+): void {
+  const target = findRiveDisplayParent(nodes, artboard.parentIndices, index);
+  if (target === null || target.kind !== ShapeKind) return;
+  const source = artboard.objects[index];
+  const path = createRivePath(source, artboard, index);
+  if (path === null || path.commands.length === 0) return;
+
+  // A path carries its own transform, and it is no longer a node of its own, so that transform is
+  // baked into the geometry the shape receives.
+  const local = createRivePathMatrix(source);
+  const data = path.data.slice();
+  for (let offset = 0; offset + 1 < data.length; offset += 2) {
+    const x = data[offset];
+    const y = data[offset + 1];
+    data[offset] = local.a * x + local.c * y + local.tx;
+    data[offset + 1] = local.b * x + local.d * y + local.ty;
+  }
+  appendShapePath(target as Shape, path.commands.slice(), data, path.winding);
+}
+
+function createRivePathMatrix(source: Readonly<RiveCoreObject>): Matrix {
+  const rotation = readRiveNumber(source, RIVE_ROTATION, 0);
+  const scaleX = readRiveNumber(source, RIVE_SCALE_X, 1);
+  const scaleY = readRiveNumber(source, RIVE_SCALE_Y, 1);
+  const cosine = Math.cos(rotation);
+  const sine = Math.sin(rotation);
+  return createMatrix(
+    cosine * scaleX,
+    sine * scaleX,
+    -sine * scaleY,
+    cosine * scaleY,
+    readRiveNumber(source, RIVE_X, readRiveNumber(source, RIVE_X_LEGACY, 0)),
+    readRiveNumber(source, RIVE_Y, readRiveNumber(source, RIVE_Y_LEGACY, 0)),
+  );
 }
 
 function findRiveDisplayParent(
@@ -99,6 +155,8 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 }
 
 const RIVE_NODE_TYPE_KEY = 2;
+const RIVE_SHAPE_TYPE_KEY = 3;
+const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;
