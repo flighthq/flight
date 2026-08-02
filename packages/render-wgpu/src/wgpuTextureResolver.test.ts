@@ -28,6 +28,8 @@ beforeAll(() => {
 function imageResource(source: CanvasImageSource = document.createElement('canvas')): Image {
   return {
     height: 4,
+    alphaType: 'straight',
+    gamut: 'srgb',
     kind: ImageTextureSourceKind,
     source,
     version: 0,
@@ -71,6 +73,8 @@ function renderTexture(): RenderTexture {
   texture.colorSpace = 'linear';
   if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
   texture.source = createEntity({
+    alphaType: 'straight' as const,
+    gamut: 'srgb' as const,
     height: 8,
     kind: RenderTargetTextureSourceKind,
     version: 0,

@@ -448,7 +448,11 @@ function uploadGlImageResource(
   colorSpace: TextureColorSpace,
 ): void {
   const gl = state.gl;
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply);
+  // Honour the source's declared encoding, the same way uploadGlBitmap does — a payload that already
+  // folded alpha into rgb (a native decode commonly has) must not be multiplied a second time. Unlike
+  // the Bitmap path there is no CPU fallback here: an Image is a borrowed host handle uploaded straight
+  // through texImage2D, so this can only decline the multiply, never undo one.
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, premultiply && image.alphaType !== 'premultiplied');
   uploadGlTextureElement(
     gl,
     gl.TEXTURE_2D,

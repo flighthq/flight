@@ -89,6 +89,8 @@ function createVideoImageResource(source: Readonly<VideoResource>): Image | null
   if (source.element === null) return null;
   const image = createEntity({
     height: 0,
+    alphaType: 'straight',
+    gamut: 'srgb',
     kind: ImageTextureSourceKind,
     source: source.element,
     version: INITIAL_VIDEO_VERSION,

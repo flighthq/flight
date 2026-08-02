@@ -31,7 +31,7 @@ describe('createImageResourceFromBitmap', () => {
     // so importing it here would force a circular tsconfig project reference.
     const bitmap: Bitmap = createEntity({
       alphaType: 'straight',
-      colorSpace: 'srgb',
+      gamut: 'srgb',
       data: new Uint8ClampedArray(4 * 4 * 4),
       format: 'rgba8unorm',
       height: 4,

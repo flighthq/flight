@@ -27,10 +27,10 @@ describe('cropBitmap', () => {
     expect(getBitmapPixel(out, 2, 2)).toBe(0x00000000);
   });
 
-  it('preserves source colorSpace and alphaType', () => {
+  it('preserves source gamut and alphaType', () => {
     const src = createBitmap(2, 2, 0xff0000ff);
     const out = cropBitmap(src, { x: 0, y: 0, width: 2, height: 2 });
-    expect(out.colorSpace).toBe(src.colorSpace);
+    expect(out.gamut).toBe(src.gamut);
     expect(out.alphaType).toBe(src.alphaType);
   });
 

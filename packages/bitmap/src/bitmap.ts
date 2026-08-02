@@ -5,7 +5,7 @@ import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   return createEntity({
     alphaType: source.alphaType,
-    colorSpace: source.colorSpace,
+    gamut: source.gamut,
     data: new Uint8ClampedArray(source.data),
     format: source.format,
     height: source.height,
@@ -73,7 +73,7 @@ export function createBitmap(width: number, height: number, color: number = 0): 
   }
   return createEntity({
     alphaType: 'straight',
-    colorSpace: 'srgb' as const,
+    gamut: 'srgb' as const,
     data,
     format: 'rgba8unorm',
     height,

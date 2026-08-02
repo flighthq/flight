@@ -11,7 +11,7 @@ import { summarizeBitmapFont } from './summarizeBitmapFont';
 function pageOfBytes(bytes: number): TextureAtlas {
   const image = {
     alphaType: 'straight',
-    colorSpace: 'srgb',
+    gamut: 'srgb',
     data: new Uint8ClampedArray(bytes),
     format: 'rgba8unorm',
     height: 1,

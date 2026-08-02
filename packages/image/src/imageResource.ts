@@ -6,6 +6,8 @@ import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@fligh
 // reference; the clone owns an independent version counter for renderer cache invalidation.
 export function cloneImageResource(resource: Readonly<Image>): Image {
   return createEntity({
+    alphaType: resource.alphaType,
+    gamut: resource.gamut,
     height: resource.height,
     kind: resource.kind,
     source: resource.source,
@@ -18,7 +20,9 @@ export function cloneImageResource(resource: Readonly<Image>): Image {
 // bytes indexed by the container's level ranges.
 export function createCompressedImage(compressed: Readonly<CompressedImageData>): CompressedImage {
   return createEntity({
+    alphaType: DECODED_ALPHA_TYPE,
     compressed,
+    gamut: DECODED_GAMUT,
     height: compressed.container.height,
     kind: CompressedImageTextureSourceKind,
     version: 0,
@@ -28,6 +32,8 @@ export function createCompressedImage(compressed: Readonly<CompressedImageData>)
 
 export function createImageResource(image: CanvasImageSource): Image {
   const resource: Image = createEntity({
+    alphaType: DECODED_ALPHA_TYPE,
+    gamut: DECODED_GAMUT,
     height: 0,
     kind: ImageTextureSourceKind,
     source: image,
@@ -62,3 +68,11 @@ function updateImageResourceSize(resource: Image): void {
     resource.height = sized.height;
   }
 }
+
+// What a HOST decode yields, and the only honest default for a source whose pixels we never touch.
+// Every browser image/canvas/ImageBitmap decode is straight-alpha sRGB, so declaring it is a statement
+// of fact rather than an assumption — which is the point: a producer that knows otherwise (a native
+// iOS/Android decode commonly premultiplies) now has somewhere to say so, and the uploaders' existing
+// `alphaType !== 'premultiplied'` guard starts protecting Image the way it already protects Bitmap.
+const DECODED_ALPHA_TYPE = 'straight';
+const DECODED_GAMUT = 'srgb';

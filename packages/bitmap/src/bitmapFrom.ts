@@ -15,7 +15,7 @@ export function captureBitmapFromImageResource(resource: Readonly<Image>): Bitma
   const raw = ctx.getImageData(0, 0, resource.width, resource.height);
   return createEntity({
     alphaType: 'straight',
-    colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    gamut: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
     format: 'rgba8unorm',
     height: resource.height,
@@ -38,7 +38,7 @@ export function createBitmapFromCanvas(
   const raw = ctx.getImageData(x, y, w, h);
   return createEntity({
     alphaType: 'straight',
-    colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    gamut: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
     format: 'rgba8unorm',
     height: raw.height,
@@ -83,7 +83,7 @@ export function createBitmapFromImageSource(source: CanvasImageSource, width: nu
   // contextual typing that narrows its string fields to Bitmap's literal types.
   const bitmap: Bitmap = createEntity({
     alphaType: 'straight',
-    colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    gamut: raw.colorSpace as 'srgb' | 'display-p3',
     data: raw.data,
     format: 'rgba8unorm',
     height,

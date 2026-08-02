@@ -19,6 +19,8 @@ export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image {
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image {
   return createEntity({
+    alphaType: DECODED_ALPHA_TYPE,
+    gamut: DECODED_GAMUT,
     height: canvas.height,
     kind: ImageTextureSourceKind,
     source: canvas,
@@ -29,6 +31,8 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): Image 
 
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image {
   return createEntity({
+    alphaType: DECODED_ALPHA_TYPE,
+    gamut: DECODED_GAMUT,
     height: bitmap.height,
     kind: ImageTextureSourceKind,
     source: bitmap,
@@ -39,6 +43,8 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): Image {
 
 export function createImageResourceFromImageElement(img: HTMLImageElement): Image {
   return createEntity({
+    alphaType: DECODED_ALPHA_TYPE,
+    gamut: DECODED_GAMUT,
     height: img.height,
     kind: ImageTextureSourceKind,
     source: img,
@@ -117,3 +123,7 @@ export async function loadImageResourceFromUrl(
   }
   return createImageResourceFromImageElement(img);
 }
+
+// The host-decode truth for every browser-backed source; see imageResource.ts.
+const DECODED_ALPHA_TYPE = 'straight';
+const DECODED_GAMUT = 'srgb';
