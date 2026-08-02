@@ -55,7 +55,7 @@ jobs:
               - '**/*.md'
               - 'agents/**'
 
-  # Runs on any docs change, including the docs-only commits that skip `build-check` entirely.
+  # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
   # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
   # second output comparing exactly equal to 'false' is the failure mode this job exists to
   # fix. On a mixed code+docs commit `quality` also runs docs:check; that overlap is one cheap
@@ -75,8 +75,17 @@ jobs:
       - run: npm ci
       - run: npm run docs:check
 
-  build-check:
-    name: Build preflight
+  # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
+  # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
+  # read once — but it put a serial 1m23s in front of every leg on every push, and it computed
+  # nothing the `quality` job below does not already compute: `npm run check` runs packages:check and
+  # typecheck as its first two gates. Its only real effect was fail-fast, declining to start 14 jobs
+  # when the graph does not compile. That trades wall clock on every GREEN push for runner minutes on
+  # the rarer RED one, which is the wrong direction here. The cost of removing it is that
+  # `needs.changes.outputs.code` is now restated per job; that repetition is the price of the
+  # parallelism and is deliberate.
+  build:
+    name: Build · emit
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -88,35 +97,20 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run build:check
-
-  # build / test / quality / size / render all `needs: build-check`; when build-check is skipped
-  # (docs-only change) they skip with it, so the `code` gate only needs stating once.
-  build:
-    name: Build & emit
-    needs: build-check
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
       - run: npm run build
 
-      # Handed to edge-publish, which would otherwise run a SECOND full `tsc -b` over all 141
-      # projects to produce byte-identical output. Safe to reuse across the version stamp that
-      # edge-publish applies afterwards: nothing inlines the package version at build time (the one
-      # manifest read, tool-capture's captureServer, does it at runtime), so dist does not depend on
-      # the version in package.json.
+      # The single build of the graph per push. Handed to edge-publish and to all six render-test
+      # legs, each of which would otherwise run its own full `tsc -b` over all 141 projects to
+      # produce byte-identical output — seven redundant compiles. Safe to reuse across the version
+      # stamp that edge-publish applies afterwards: nothing inlines the package version at build time
+      # (the one manifest read, tool-capture's captureServer, does it at runtime), so dist does not
+      # depend on the version in package.json.
       #
       # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
       # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally rather than gated on
-      # the release-channel branches: it costs a few seconds on a job that is never the critical path
-      # (test and render-test are), and a gate would silently starve any future consumer.
-      - name: Tar dist for the publish job
+      # the release-channel branches: render-test now consumes it on every push, and a gate would
+      # silently starve a consumer rather than fail it.
+      - name: Tar dist for the publish and render jobs
         run: tar -czf dist.tgz packages/*/dist
       - uses: actions/upload-artifact@v4
         with:
@@ -125,8 +119,9 @@ jobs:
           retention-days: 1
 
   harness-build:
-    name: Harness build · ${{ matrix.label }}
-    needs: build-check
+    name: Build · harness · ${{ matrix.label }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -148,15 +143,41 @@ jobs:
 
   # Two test legs with different fidelity/speed tradeoffs. `test` is the thorough one: each package runs
   # under its own vitest config, so node packages use the `node` environment and jsdom packages use
-  # `jsdom`, each isolated in its own process — correct, but minutes long. This is the one lane that
-  # runs tool-capture's serialized browser contracts. `test-fast` is the merged run (one shared jsdom
-  # env, no isolation) for ordinary unit tests; it excludes tool-capture so local pushes stay fast and
-  # don't launch browsers. Both gate PRs; edge-publish gates only on `test-fast`, so a snapshot ships
-  # without waiting on the thorough leg.
+  # `jsdom`, each isolated in its own process — correct, but that is 141 serial Vitest startups plus a
+  # fresh environment per test file. Fitting a full run gave `node ≈ 4.9s + 0.22s/file` and
+  # `jsdom ≈ 2.1s + 0.90s/file` per package: startup dominates the small node packages, per-file DOM
+  # construction dominates everything else, and neither is removable without giving up the fidelity
+  # this lane exists for. So it is DIVIDED rather than optimised — sharded by package across runners,
+  # weight-balanced in scripts/test-shard.ts, with `--shard` scaling off `strategy.job-total` so the
+  # matrix length is the only place the shard count is written.
+  #
+  # The division is NOT free and does not reach 4x: measured, the whole lane is 29m13s serial while one
+  # quarter of it is 11m35s, or 40% rather than 25%. The gap is cold cache. Running 141 packages in one
+  # process warms the module and page cache for the ones behind it; four runners each start cold over
+  # 35, so that warm-up is paid four times. Wall clock still improves ~2.5x, but this lane's runner
+  # minutes go UP by roughly 60% — the trade being made deliberately, since wall clock is what gates a
+  # push and this lane was the critical path.
+  #
+  # Folding the 141 configs into one Vitest run via `projects` was measured and rejected: each project
+  # gets its own Vite server and therefore its own transform cache, so the boots merely move inside one
+  # process and stay serial — and being serial per project, they are paid in full by every shard, which
+  # is what makes that shape unshardable. See the header of scripts/test-packages.ts.
+  #
+  # This is the one lane that runs tool-capture's serialized browser contracts. `test-fast` is the
+  # merged run (one shared jsdom env, no isolation) for ordinary unit tests; it excludes tool-capture so
+  # local pushes stay fast and don't launch browsers. Both gate PRs; edge-publish gates only on
+  # `test-fast`, so a snapshot ships without waiting on the thorough leg.
   test:
-    name: TypeScript tests · isolated (per-package env)
-    needs: build-check
+    name: Tests · per-package env · ${{ matrix.shard }}/${{ strategy.job-total }}
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
+    strategy:
+      # Every shard runs even when one fails: they test disjoint packages, so a failure in one says
+      # nothing about the others and cancelling them costs a whole extra CI round to learn the rest.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -164,13 +185,17 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
+      # Only the shard holding tool-capture needs a browser, but which shard that is depends on the
+      # split, so every shard installs. Chromium is cached by the runner image and this is well off
+      # the critical path of the shard that actually uses it.
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - run: npm run test:unit
+      - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
   test-fast:
-    name: TypeScript tests · fast (merged jsdom)
-    needs: build-check
+    name: Tests · merged jsdom
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -181,9 +206,13 @@ jobs:
       - run: npm ci
       - run: npm run test
 
+  # Runs packages:check and typecheck as its first two gates, which is the whole of what the former
+  # `build-check` preflight did — so a graph that does not compile still fails CI here, just without
+  # holding every other leg behind it.
   quality:
-    name: TypeScript quality
-    needs: build-check
+    name: Quality sweep
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -197,7 +226,8 @@ jobs:
 
   size:
     name: Bundle size
-    needs: build-check
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -215,8 +245,15 @@ jobs:
     # Environment-independent checks only: smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3). The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
+    #
+    # Needs `build` for its dist artifact, not to be sequenced behind it: each leg used to run its own
+    # `npm run build`, so a full tsc -b over all 141 projects ran six more times per push to produce
+    # output byte-identical to what `build` already emitted and uploaded. Waiting for that job costs
+    # nothing net — these legs previously waited on a preflight of comparable length — and the
+    # download replaces ~71s of compile per leg.
     name: Render · ${{ matrix.label }}
-    needs: build-check
+    needs: [changes, build]
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -248,9 +285,15 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      # The parity check imports the SDK from built dist (@flighthq/surface); building is harmless
-      # for the smoke check (which resolves packages from source via the dev server).
-      - run: npm run build
+      # The parity check imports the SDK from built dist (@flighthq/surface); restoring it is harmless
+      # for the smoke check (which resolves packages from source via the dev server). Kept uniform
+      # across the matrix rather than gated on the parity legs: the download is seconds, and a gate
+      # would make the two checks differ in setup for no measurable gain.
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+      - name: Restore dist from the build job
+        run: tar -xzf dist.tgz
       - run: npx playwright install --with-deps chromium
       # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
       #
@@ -284,7 +327,7 @@ jobs:
     # still run in parallel as signals but never block an edge build. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
     # dist-tag (main -> edge, develop -> next), so `latest` is untouched. See agents/packaging.md.
-    name: Publish ${{ github.ref_name }} snapshot to npm
+    name: Publish · ${{ github.ref_name }} snapshot
     needs: [build, test-fast]
     if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
     runs-on: ubuntu-latest
