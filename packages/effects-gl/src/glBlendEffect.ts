@@ -86,7 +86,8 @@ export function unregisterGlBlendEffectBackdrop(state: GlRenderState, backdropKe
 }
 
 // AdvancedBlendMode → shader branch index. Alphabetical by value; kept in lockstep with the switch in
-// BLEND_FRAGMENT_SRC. The four HSL modes (Color/Hue/Luminosity/Saturation) take indices 7..10.
+// BLEND_FRAGMENT_SRC. The four HSL modes (Color/Hue/Luminosity/Saturation) take indices 7..10, and the
+// faithful Darken/Lighten 11..12 (the coverage-correct twins of the fixed-function BlendMode pair).
 const BLEND_MODE_INDEX: Readonly<Record<string, number>> = {
   [AdvancedBlendModeValues.Overlay]: 0,
   [AdvancedBlendModeValues.HardLight]: 1,
@@ -99,6 +100,8 @@ const BLEND_MODE_INDEX: Readonly<Record<string, number>> = {
   [AdvancedBlendModeValues.Saturation]: 8,
   [AdvancedBlendModeValues.Color]: 9,
   [AdvancedBlendModeValues.Luminosity]: 10,
+  [AdvancedBlendModeValues.Darken]: 11,
+  [AdvancedBlendModeValues.Lighten]: 12,
 };
 
 // Per-state backdrop registry. Off the render-state runtime type, freed with the state. Holds texture
@@ -109,7 +112,9 @@ const _backdrops = new WeakMap<GlRenderState, Map<string, WebGLTexture>>();
 // un-premultiplied to straight RGB for the blend math, blended via the mode's B(cb, cs), then the blended
 // color is composited over the backdrop with W3C mixing (cs' = (1 - ab)*cs + ab*B) and Porter-Duff
 // source-over, re-premultiplied on output. The separable/HSL formulas mirror effects/blendModeMath.ts.
-const BLEND_FRAGMENT_SRC = `#version 300 es
+// Exported so the lockstep test can pin the branch switch against the index table above; the two are
+// hand-maintained and a mode with an index but no branch silently renders Normal passthrough.
+export const BLEND_FRAGMENT_SRC = `#version 300 es
 precision highp float;
 in vec2 v_texCoord;
 uniform sampler2D u_texture0;
@@ -157,6 +162,8 @@ float sepChannel(int mode, float cb, float cs) {
   if (mode == 4) return cb + cs - 2.0 * cb * cs;                                               // Exclusion
   if (mode == 5) return cb <= 0.0 ? 0.0 : (cs >= 1.0 ? 1.0 : min(1.0, cb / (1.0 - cs)));       // ColorDodge
   if (mode == 6) return cb >= 1.0 ? 1.0 : (cs <= 0.0 ? 0.0 : 1.0 - min(1.0, (1.0 - cb) / cs)); // ColorBurn
+  if (mode == 11) return min(cb, cs);                                                          // Darken
+  if (mode == 12) return max(cb, cs);                                                          // Lighten
   return cs;                                                                                   // Normal
 }
 

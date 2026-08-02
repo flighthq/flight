@@ -88,6 +88,21 @@ describe('getAdvancedBlendRgb', () => {
 });
 
 describe('getSeparableBlendChannel', () => {
+  // The faithful twins of the fixed-function BlendMode.Darken/Lighten. The channel function is the same
+  // W3C min/max; what the effect path adds is the (1-a)*dst + a*B(src,dst) coverage term that MIN/MAX
+  // blend state cannot carry — which is the whole reason both tiers carry these two.
+  it('Darken and Lighten are the W3C per-channel min and max', () => {
+    expect(getSeparableBlendChannel(AdvancedBlendMode.Darken, 0.6, 0.3)).toBeCloseTo(0.3, 6);
+    expect(getSeparableBlendChannel(AdvancedBlendMode.Darken, 0.2, 0.9)).toBeCloseTo(0.2, 6);
+    expect(getSeparableBlendChannel(AdvancedBlendMode.Lighten, 0.6, 0.3)).toBeCloseTo(0.6, 6);
+    expect(getSeparableBlendChannel(AdvancedBlendMode.Lighten, 0.2, 0.9)).toBeCloseTo(0.9, 6);
+  });
+
+  it('Darken and Lighten are separable, not HSL', () => {
+    expect(isNonSeparableBlendMode(AdvancedBlendMode.Darken)).toBe(false);
+    expect(isNonSeparableBlendMode(AdvancedBlendMode.Lighten)).toBe(false);
+  });
+
   it('Overlay equals HardLight with operands swapped', () => {
     const cb = 0.6;
     const cs = 0.3;
