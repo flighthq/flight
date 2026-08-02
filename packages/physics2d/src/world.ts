@@ -35,8 +35,8 @@ export function addPhysics2DCollider(
   body: RigidBody2D,
   collider: Physics2DCollider,
 ): Physics2DCollider {
-  const inWorld = world.bodies.indexOf(body) >= 0;
-  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  const inWorld = world.bodyByIndex.get(body.index) === body;
+  if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
   body.colliders.push(collider);
   updateRigidBody2DMassData(body);
   if (inWorld) {
@@ -44,6 +44,85 @@ export function addPhysics2DCollider(
     synchronizePhysics2DBroadphase(world);
   }
   return collider;
+}
+
+// Accumulates a world-space force at the centre of mass for the next step. Forces belong only to
+// dynamic bodies; returning false makes an ignored static/kinematic or non-finite action observable.
+export function applyPhysics2DForce(body: RigidBody2D, forceX: number, forceY: number): boolean {
+  if (body.type !== 'dynamic' || !Number.isFinite(forceX) || !Number.isFinite(forceY)) return false;
+  body.forceX += forceX;
+  body.forceY += forceY;
+  if (forceX !== 0 || forceY !== 0) _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+// Accumulates a world-space force at a world-space point, including its moment about the current centre
+// of mass. Keeping the coordinate space in the name-level contract avoids a local/world ambiguity.
+export function applyPhysics2DForceAtPoint(
+  body: RigidBody2D,
+  forceX: number,
+  forceY: number,
+  pointX: number,
+  pointY: number,
+): boolean {
+  if (
+    body.type !== 'dynamic' ||
+    !Number.isFinite(forceX) ||
+    !Number.isFinite(forceY) ||
+    !Number.isFinite(pointX) ||
+    !Number.isFinite(pointY)
+  ) {
+    return false;
+  }
+  body.forceX += forceX;
+  body.forceY += forceY;
+  body.torque += _crossPhysics2DBodyPointVector(body, pointX, pointY, forceX, forceY);
+  if (forceX !== 0 || forceY !== 0) _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+// Applies an instantaneous world-space impulse at the centre of mass. Unlike force, an impulse changes
+// velocity immediately and is not cleared at the end of the next step.
+export function applyPhysics2DLinearImpulse(body: RigidBody2D, impulseX: number, impulseY: number): boolean {
+  if (body.type !== 'dynamic' || !Number.isFinite(impulseX) || !Number.isFinite(impulseY)) return false;
+  body.velocityX += impulseX * body.inverseMass;
+  body.velocityY += impulseY * body.inverseMass;
+  if (impulseX !== 0 || impulseY !== 0) _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+// Applies an instantaneous world-space impulse at a world-space point, changing both linear and angular
+// velocity from the body's derived inverse mass properties.
+export function applyPhysics2DLinearImpulseAtPoint(
+  body: RigidBody2D,
+  impulseX: number,
+  impulseY: number,
+  pointX: number,
+  pointY: number,
+): boolean {
+  if (
+    body.type !== 'dynamic' ||
+    !Number.isFinite(impulseX) ||
+    !Number.isFinite(impulseY) ||
+    !Number.isFinite(pointX) ||
+    !Number.isFinite(pointY)
+  ) {
+    return false;
+  }
+  body.velocityX += impulseX * body.inverseMass;
+  body.velocityY += impulseY * body.inverseMass;
+  body.angularVelocity +=
+    _crossPhysics2DBodyPointVector(body, pointX, pointY, impulseX, impulseY) * body.inverseInertia;
+  if (impulseX !== 0 || impulseY !== 0) _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+// Accumulates torque for the next step and wakes the body so the integrator cannot swallow it.
+export function applyPhysics2DTorque(body: RigidBody2D, torque: number): boolean {
+  if (body.type !== 'dynamic' || !Number.isFinite(torque)) return false;
+  body.torque += torque;
+  if (torque !== 0) _wakePhysics2DBodyFromTopology(body);
+  return true;
 }
 
 // Creates a collider from a LOCAL-space shape, allocating the world-space shape it will be transformed
@@ -151,7 +230,7 @@ export function invalidatePhysics2DCollider(
 ): boolean {
   if (body.colliders.indexOf(collider) < 0) return false;
   const inWorld = world.bodyByIndex.get(body.index) === body;
-  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
   collider.world = createPhysics2DColliderWorldShape(collider.local);
   updateRigidBody2DMassData(body);
   if (inWorld) {
@@ -221,8 +300,8 @@ export function removePhysics2DCollider(
 ): boolean {
   const at = body.colliders.indexOf(collider as Physics2DCollider);
   if (at < 0) return false;
-  const inWorld = world.bodies.indexOf(body) >= 0;
-  if (inWorld) _invalidatePhysics2DBodyContacts(world, body.index);
+  const inWorld = world.bodyByIndex.get(body.index) === body;
+  if (inWorld) _invalidatePhysics2DBodyConstraints(world, body.index);
   body.colliders.splice(at, 1);
   updateRigidBody2DMassData(body);
   if (inWorld) {
@@ -230,6 +309,91 @@ export function removePhysics2DCollider(
     synchronizePhysics2DBroadphase(world);
   }
   return true;
+}
+
+// Teleports a world body and immediately republishes its bounds. Contacts and joint warm-start impulses
+// describe the old pose, so they are invalidated before the transform changes and connected sleepers
+// are woken to respond to the new configuration.
+export function setPhysics2DBodyTransform(
+  world: Physics2DWorld,
+  body: RigidBody2D,
+  x: number,
+  y: number,
+  angle: number,
+): boolean {
+  if (
+    world.bodyByIndex.get(body.index) !== body ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(angle)
+  ) {
+    return false;
+  }
+  if (body.x === x && body.y === y && body.angle === angle) return true;
+  _invalidatePhysics2DBodyConstraints(world, body.index);
+  body.x = x;
+  body.y = y;
+  body.angle = angle;
+  _wakePhysics2DBodyFromTopology(body);
+  synchronizePhysics2DBroadphase(world);
+  return true;
+}
+
+// Changes how a body participates while keeping mass properties, force state, cached constraints, and
+// sleep state coherent. The body must belong to `world`; pre-insertion authoring may assign `type`
+// directly because no derived world state exists yet.
+export function setPhysics2DBodyType(world: Physics2DWorld, body: RigidBody2D, type: RigidBody2D['type']): boolean {
+  if (world.bodyByIndex.get(body.index) !== body) return false;
+  if (body.type === type) return true;
+  _invalidatePhysics2DBodyConstraints(world, body.index);
+  body.type = type;
+  updateRigidBody2DMassData(body);
+  if (type !== 'dynamic') {
+    body.forceX = 0;
+    body.forceY = 0;
+    body.torque = 0;
+  }
+  if (type === 'static') {
+    body.velocityX = 0;
+    body.velocityY = 0;
+    body.angularVelocity = 0;
+  }
+  _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+function _crossPhysics2DBodyPointVector(
+  body: Readonly<RigidBody2D>,
+  pointX: number,
+  pointY: number,
+  vectorX: number,
+  vectorY: number,
+): number {
+  const cos = Math.cos(body.angle);
+  const sin = Math.sin(body.angle);
+  const centerX = body.x + body.centerX * cos - body.centerY * sin;
+  const centerY = body.y + body.centerX * sin + body.centerY * cos;
+  return (pointX - centerX) * vectorY - (pointY - centerY) * vectorX;
+}
+
+function _invalidatePhysics2DBodyConstraints(world: Physics2DWorld, bodyIndex: number): void {
+  _invalidatePhysics2DBodyContacts(world, bodyIndex);
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    const usesBodyA = solver?.usesBodyA !== false;
+    const connectedA = usesBodyA && joint.bodyA === bodyIndex;
+    const connectedB = joint.bodyB === bodyIndex;
+    if (!connectedA && !connectedB) continue;
+    solver?.clearAccumulatedImpulses?.(joint);
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    joint.impulse2 = 0;
+    if (solver === undefined || !usesBodyA) continue;
+    const otherIndex = connectedA ? joint.bodyB : joint.bodyA;
+    if (otherIndex === bodyIndex) continue;
+    const other = findPhysics2DBody(world, otherIndex);
+    if (other !== null) _wakePhysics2DBodyFromTopology(other);
+  }
 }
 
 function _invalidatePhysics2DBodyContacts(world: Physics2DWorld, bodyIndex: number): void {

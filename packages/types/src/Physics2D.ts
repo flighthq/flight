@@ -97,8 +97,10 @@ export interface Physics2DMassData {
 // makes "infinite mass" fall out of the same arithmetic as any other body, with no branch.
 export interface RigidBody2D {
   index: number;
+  // Once inserted, change participation through `setPhysics2DBodyType` so mass and constraints follow.
   type: Physics2DBodyType;
 
+  // Once inserted, teleport through `setPhysics2DBodyTransform` so bounds and caches follow.
   x: number;
   y: number;
   // RADIANS, unlike the scene graph's degrees-valued `node.rotation`. This is the math layer, where
@@ -110,6 +112,7 @@ export interface RigidBody2D {
   velocityY: number;
   angularVelocity: number;
 
+  // Prefer the apply-force/torque helpers: they reject unsupported bodies and wake accepted work.
   forceX: number;
   forceY: number;
   torque: number;
