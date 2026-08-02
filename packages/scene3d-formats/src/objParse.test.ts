@@ -1,3 +1,4 @@
+import { getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -12,10 +13,12 @@ import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
+  MaterialLike,
   Mesh,
   Node3D,
+  StandardPbrMaterial,
 } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse';
 import { createScene3DFromObj, parseObj } from './objParse';
@@ -735,5 +738,94 @@ describe('parseObj generated normals', () => {
       getMeshGeometryVertexNormal(normal, document.meshes[m].geometry, 0);
       expect(normal.z).toBeCloseTo(1, 5);
     }
+  });
+});
+
+function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
+
+describe('parseObj material model selection', () => {
+  const OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl M\nf 1 2 3\n';
+
+  function materialFor(mtl: string, diagnostics?: ImportDiagnostic[]): MaterialLike {
+    const document = parseObj(OBJ, parseObjMaterialLibrary(mtl), diagnostics);
+    expect(document.materials).toHaveLength(1);
+    return document.materials[0];
+  }
+
+  it('reads a classic MTL as Blinn-Phong, which is the model those directives ARE', () => {
+    const material = materialFor('newmtl M\nKd 0.8 0.2 0.1\nKs 1 1 1\nNs 60\n');
+
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    // The specular exponent transfers as itself — it is NOT converted into a roughness.
+    expect((material as BlinnPhongMaterial).shininess).toBe(60);
+  });
+
+  it('reads an MTL stating Pr/Pm as metallic-roughness PBR, taking the file’s own values', () => {
+    const material = materialFor('newmtl M\nKd 0.8 0.2 0.1\nNs 60\nPr 0.35\nPm 0.9\n');
+
+    expect(material.kind).toBe(StandardPbrMaterialKind);
+    const pbr = material as StandardPbrMaterial;
+    expect(pbr.roughness).toBeCloseTo(0.35, 6);
+    expect(pbr.metallic).toBeCloseTo(0.9, 6);
+    // Ns is present but must not have been mapped into roughness — the file stated one directly.
+    expect(pbr.roughness).not.toBeCloseTo(getPbrRoughnessFromPhongShininess(60), 3);
+  });
+
+  it('does not flip a classic material to PBR just because it states an emissive', () => {
+    // Ke names a channel both models could carry, not a shading model. Flipping on it would trade a
+    // stated Ns for a guessed roughness, so the material stays Blinn-Phong and the emissive is crumbed.
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = materialFor('newmtl M\nKd 1 1 1\nNs 32\nKe 1 0.5 0\n', diagnostics);
+
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    const crumb = findDiagnostic(diagnostics, 'mtl.emissive-dropped');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(crumb!.detail?.name).toBe('M');
+  });
+
+  it('honors the emissive once the file also states a PBR value', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = materialFor('newmtl M\nKd 1 1 1\nKe 1 0 0\nPr 0.5\n', diagnostics);
+
+    expect(material.kind).toBe(StandardPbrMaterialKind);
+    // Ke 1 0 0 packs to opaque red.
+    expect((material as StandardPbrMaterial).emissive).toBe(0xff0000ff);
+    expect(findDiagnostic(diagnostics, 'mtl.emissive-dropped')).toBeUndefined();
+  });
+
+  it('leaves separate roughness and metallic maps unbound and reports why', () => {
+    // MTL states them as two grayscale images; StandardPbrMaterial carries ONE packed texture sampling
+    // roughness from G and metallic from B, so binding either alone would drive both terms.
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = materialFor('newmtl M\nPr 0.5\nmap_Pr rough.png\nmap_Pm metal.png\n', diagnostics);
+
+    expect((material as StandardPbrMaterial).metallicRoughnessMap).toBeNull();
+    const crumb = findDiagnostic(diagnostics, 'mtl.metallic-roughness-map-unpacked');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+  });
+
+  it('reports sheen, clearcoat, and anisotropy as unbound PBR extensions', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = materialFor('newmtl M\nPs 0.4\nPc 0.2\nPcr 0.1\naniso 0.3\n', diagnostics);
+
+    // The extension directives are themselves PBR evidence, so the model still flips.
+    expect(material.kind).toBe(StandardPbrMaterialKind);
+    const crumb = findDiagnostic(diagnostics, 'mtl.pbr-extension-unbound');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+  });
+
+  it('prefers the dedicated norm map over map_Bump for the normal map', () => {
+    // map_Bump is a grayscale HEIGHT field; norm is a real tangent-space normal map. A file with both
+    // meant the dedicated one, and sampling a height field as RGB*2-1 vectors renders bogus normals.
+    const document = parseObj(OBJ, parseObjMaterialLibrary('newmtl M\nbump height.png\nnorm normal.png\n'));
+    const material = document.materials[0] as BlinnPhongMaterial;
+
+    const resource = getTestTextureResource(document.resources, material.normalMap!);
+    expect((resource as ExternalImageResourceReference).uri).toBe('normal.png');
   });
 });

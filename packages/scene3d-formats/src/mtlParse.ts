@@ -2,11 +2,15 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic, ObjMaterial, ObjMaterialLibrary } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-// Parses a Wavefront MTL material library from its text source. Every recognized directive
-// (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`, `map_Ks`,
-// `map_Bump`/`bump`) is read; unrecognized directives are silently skipped. Malformed values
-// record a diagnostic and fall back to defaults rather than throwing. Repeated malformed lines are
-// aggregated into one crumb per (kind, discriminator) — the collector contract forbids a per-line report.
+// Parses a Wavefront MTL material library from its text source. Two directive families are read: the
+// classic Blinn-Phong block (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`,
+// `map_Ks`, `map_Bump`/`bump`) and the metallic-roughness PBR extension modern exporters write (`Pr`,
+// `Pm`, `Ps`, `Pc`, `Pcr`, `aniso`, `anisor`, `map_Pr`, `map_Pm`, `norm`, plus `Ke`/`map_Ke`). Every
+// extension field stays null when its directive is absent, so a consumer can tell a file that STATED a
+// roughness from one that merely defaulted — which is what lets an importer pick a shading model instead
+// of guessing one. Unrecognized directives are silently skipped. Malformed values record a diagnostic and
+// fall back to defaults rather than throwing. Repeated malformed lines are aggregated into one crumb per
+// (kind, discriminator) — the collector contract forbids a per-line report.
 export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiagnostic[]): ObjMaterialLibrary {
   const materials = new Map<string, ObjMaterial>();
   let current: ObjMaterial | null = null;
@@ -25,7 +29,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
       // material it is a directive-before-material drop; after one, its value/filename is simply missing.
       if (raw === 'newmtl') {
         tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.newmtl-no-name', '', { firstLine: i + 1 });
-      } else if (raw === 'Ka' || raw === 'Kd' || raw === 'Ks') {
+      } else if (raw === 'Ka' || raw === 'Kd' || raw === 'Ks' || raw === 'Ke') {
         if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
         else
           tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Recover, 'mtl.color-malformed', 'too-few-components', {
@@ -33,10 +37,32 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
             firstLine: i + 1,
             reason: 'too-few-components',
           });
-      } else if (raw === 'Ns' || raw === 'd' || raw === 'Tr' || raw === 'illum') {
+      } else if (
+        raw === 'Ns' ||
+        raw === 'd' ||
+        raw === 'Tr' ||
+        raw === 'illum' ||
+        raw === 'Pr' ||
+        raw === 'Pm' ||
+        raw === 'Ps' ||
+        raw === 'Pc' ||
+        raw === 'Pcr' ||
+        raw === 'aniso' ||
+        raw === 'anisor'
+      ) {
         if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
         else tallyInvalidValue(mtlDrops, raw, i);
-      } else if (raw === 'map_Kd' || raw === 'map_Ka' || raw === 'map_Ks' || raw === 'map_Bump' || raw === 'bump') {
+      } else if (
+        raw === 'map_Kd' ||
+        raw === 'map_Ka' ||
+        raw === 'map_Ks' ||
+        raw === 'map_Bump' ||
+        raw === 'bump' ||
+        raw === 'map_Ke' ||
+        raw === 'map_Pr' ||
+        raw === 'map_Pm' ||
+        raw === 'norm'
+      ) {
         if (current === null) tallyDirectiveBeforeMaterial(mtlDrops, raw, i);
         else
           tallyMtlDrop(mtlDrops, ImportDiagnosticSeverity.Drop, 'mtl.map-no-filename', raw, {
@@ -156,6 +182,117 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
         current.mapBump = args;
         break;
       }
+      case 'Ke': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const c = parseColor(args, mtlDrops, directive, i);
+        if (c !== null) current.emissive = c;
+        break;
+      }
+      case 'Pr': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.roughness = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'Pm': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.metallic = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'Ps': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.sheen = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'Pc': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.clearcoat = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'Pcr': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.clearcoatRoughness = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'aniso': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.anisotropy = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'anisor': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        const v = parseFloat(args);
+        if (Number.isFinite(v)) current.anisotropyRotation = v;
+        else tallyInvalidValue(mtlDrops, directive, i);
+        break;
+      }
+      case 'map_Ke': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        current.mapEmissive = args;
+        break;
+      }
+      case 'map_Pr': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        current.mapRoughness = args;
+        break;
+      }
+      case 'map_Pm': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        current.mapMetallic = args;
+        break;
+      }
+      case 'norm': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        current.mapNormal = args;
+        break;
+      }
       default:
         break;
     }
@@ -177,14 +314,26 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
 function createDefaultObjMaterial(name: string): ObjMaterial {
   return {
     ambient: [0, 0, 0],
+    anisotropy: null,
+    anisotropyRotation: null,
+    clearcoat: null,
+    clearcoatRoughness: null,
     diffuse: [0.8, 0.8, 0.8],
     dissolve: 1,
+    emissive: null,
     illumination: 2,
     mapAmbient: null,
     mapBump: null,
     mapDiffuse: null,
+    mapEmissive: null,
+    mapMetallic: null,
+    mapNormal: null,
+    mapRoughness: null,
     mapSpecular: null,
+    metallic: null,
     name,
+    roughness: null,
+    sheen: null,
     specular: [0, 0, 0],
     specularExponent: 0,
   };

@@ -1,6 +1,6 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/types/contract';
@@ -13,6 +13,7 @@ import type {
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
+  StandardPbrMaterial,
   Texture,
   TextureColorSpace,
   ObjMaterial,
@@ -480,11 +481,17 @@ function flushGroup(
 // load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
 // Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
 // converts explicitly downstream.
-function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scene3DDocument): BlinnPhongMaterial {
+function objMaterialToBlinnPhong(
+  material: Readonly<ObjMaterial>,
+  document: Scene3DDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
+): BlinnPhongMaterial {
   const result = createBlinnPhongMaterial({
     diffuse: packObjColor(material.diffuse, material.dissolve),
     diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    normalMap: externalObjTexture(material.mapBump, document, 'linear'),
+    // `norm` is a real tangent-space normal map and outranks `map_Bump`, which is a grayscale height
+    // field the shaders would sample as RGB*2-1 vectors. A file carrying both meant the dedicated one.
+    normalMap: externalObjTexture(material.mapNormal ?? material.mapBump, document, 'linear'),
     shininess: material.specularExponent,
     specular: packObjColor(material.specular, 1),
     specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
@@ -492,7 +499,89 @@ function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: Scen
   // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
   // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only.
   if (material.dissolve < 1) result.alphaMode = 'blend';
+  // Blinn-Phong has no emissive channel in Flight, so a file that stated one WITHOUT also stating any
+  // metallic-roughness value loses it. Reinterpreting the whole material as PBR to keep it would trade a
+  // stated Ns for a guessed roughness plus an uncompensable π brightness shift — a worse loss than this.
+  if (material.emissive !== null || material.mapEmissive !== null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'mtl.emissive-dropped', 'resolveObjMaterial', {
+      name: material.name,
+    });
+  }
   return result;
+}
+
+// Converts a parsed MTL material to Flight's StandardPbrMaterial — the reading for a file that states
+// metallic-roughness values of its own. Kd → baseColor, Pr → roughness, Pm → metallic, Ke → emissive, and
+// the map_Kd/map_Ke/norm filenames → Unresolved External refs. Nothing is inferred here: an absent Pr or
+// Pm takes the constructor's own default rather than a value derived from Ns or Ks, because the point of
+// this branch is that the file said what it wanted.
+function objMaterialToStandardPbr(
+  material: Readonly<ObjMaterial>,
+  document: Scene3DDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
+): StandardPbrMaterial {
+  const result = createStandardPbrMaterial({
+    baseColor: packObjColor(material.diffuse, material.dissolve),
+    baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
+    emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
+    normalMap: externalObjTexture(material.mapNormal ?? material.mapBump, document, 'linear'),
+    ...(material.emissive !== null ? { emissive: packObjColor(material.emissive, 1) } : {}),
+    ...(material.metallic !== null ? { metallic: material.metallic } : {}),
+    ...(material.roughness !== null ? { roughness: material.roughness } : {}),
+  });
+  if (material.dissolve < 1) result.alphaMode = 'blend';
+
+  // MTL states roughness and metallic as SEPARATE grayscale images; glTF — and so StandardPbrMaterial —
+  // carries one packed texture sampling roughness from G and metallic from B. Binding a lone grayscale
+  // map to that slot would feed the same channel to both terms, so the filenames are parsed and left
+  // unbound. Merging them is an image operation over decoded pixels, which a parser must not do:
+  // resources are referenced here and resolved later, by an explicit pass.
+  if (material.mapRoughness !== null || material.mapMetallic !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.metallic-roughness-map-unpacked',
+      'resolveObjMaterial',
+      { name: material.name },
+    );
+  }
+
+  // Sheen, clearcoat, and anisotropy are modeled by Flight as PBR EXTENSIONS composed onto an
+  // ExtendedPbrMaterial, not as fields of the standard block. Parsing them here without that composition
+  // would put them nowhere, so they are read into ObjMaterial and reported rather than silently dropped.
+  if (
+    material.sheen !== null ||
+    material.clearcoat !== null ||
+    material.clearcoatRoughness !== null ||
+    material.anisotropy !== null ||
+    material.anisotropyRotation !== null
+  ) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.pbr-extension-unbound',
+      'resolveObjMaterial',
+      { name: material.name },
+    );
+  }
+  return result;
+}
+
+// Whether the file stated any metallic-roughness PBR value for this material — the test that picks the
+// shading model. Only directives describing the SHADING MODEL count: Ke/map_Ke name a channel both models
+// could carry, so an otherwise-classic material with an emissive does not get reinterpreted as PBR.
+function hasObjPbrDirectives(material: Readonly<ObjMaterial>): boolean {
+  return (
+    material.roughness !== null ||
+    material.metallic !== null ||
+    material.sheen !== null ||
+    material.clearcoat !== null ||
+    material.clearcoatRoughness !== null ||
+    material.anisotropy !== null ||
+    material.anisotropyRotation !== null ||
+    material.mapRoughness !== null ||
+    material.mapMetallic !== null
+  );
 }
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
@@ -550,7 +639,11 @@ function resolveObjMaterial(
     cache.set(name, -1);
     return -1;
   }
-  const material = objMaterialToBlinnPhong(parsed, document) as unknown as Material;
+  // The file decides the shading model. See hasObjPbrDirectives — a file that STATED metallic-roughness
+  // values is read as PBR; one that did not is read as the Blinn-Phong it actually is.
+  const material = (hasObjPbrDirectives(parsed)
+    ? objMaterialToStandardPbr(parsed, document, diagnostics)
+    : objMaterialToBlinnPhong(parsed, document, diagnostics)) as unknown as Material;
   // Preserve the MTL `newmtl` handle as the material's authored name (findScene3DMaterialByName).
   material.name = name;
   const index = document.materials.length;
