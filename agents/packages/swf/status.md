@@ -28,6 +28,17 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   tolerance.
 - Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
   [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
+- **An imported document does not play itself, and playing one clip plays only that clip.** Every
+  timeline arrives stopped, because `setMovieClipSource` ends in `gotoAndStopTimeline` and nothing here
+  overrides it; and `updateMovieClip` advances the one timeline it is handed, never its descendants. Flash
+  does both automatically — the root and every nested clip play, forever — so a file that loops in a
+  player renders one still frame here until a caller plays and updates each clip. Neither default is a
+  gap to fix: implicit playback and an implicit tree walk are exactly the hidden runtime behaviour this
+  SDK refuses. What it needs is to be *said*, because it is the single most likely reason an imported
+  animation "doesn't work".
+  Looping itself needs nothing: `playMode` already defaults to `'loop'`, so a played clip wraps at its
+  last frame with no frame script involved. A SWF that loops in Flash carries no `gotoAndPlay(1)` to
+  parse, so missing ABC is not what stops one looping here.
 - `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
   names, since an init action runs once before that sprite's first frame.
 - A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so
