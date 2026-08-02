@@ -16,37 +16,39 @@ import {
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject, createSprite, setNode2DClip } from '@flighthq/scene2d/contract';
-import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
+import { copyShapeCommands, createShape, getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
 import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type {
   BoundsNodeAny,
-  RichText,
-  Texture2D,
   ClipRegion,
+  FrameScript,
+  GlyphOutlineSource,
+  ImageResourceReference,
+  MorphShape,
   MovieClip,
   MovieClipData,
   Node2D,
   Node2DData,
   Node2DRuntime,
-  ImageResourceReference,
   Rectangle,
+  RichText,
   Scene2DDocument,
   Scene2DDocumentImportContext,
-  FrameScript,
-  GlyphOutlineSource,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
   Shape,
   ShapeData,
   Sprite,
+  Texture2D,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { Compression, MorphShapeKind } from '@flighthq/types/contract';
 
 import { createSwfLosslessBitmap } from './swfBitmap';
 import { readSwfEditTextFactory } from './swfEditText';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
+import { createSwfMorphShape } from './swfMorphShape';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
@@ -164,6 +166,9 @@ interface SwfPlacement {
   directLinkage: string | null;
   matrix: SwfMatrix;
   name: string | null;
+  // A morph shape's progress, 0..1. SWF stores it as a 16-bit ratio on the placement rather than on the
+  // definition, so one morph character shows a different shape at every depth and frame that places it.
+  ratio: number;
 }
 
 // One SWF timeline: the full display list of every frame it shows, in ShowFrame order, plus the frame
@@ -201,6 +206,7 @@ interface SwfTagResult {
   imageTextures: Map<number, Map<string, Texture2D>>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
+  morphShapes: Map<number, () => MorphShape | null>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
@@ -240,6 +246,7 @@ interface SwfParseState {
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
   remainingFrameEntries: number;
+  morphShapes: Map<number, () => MorphShape | null>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
 }
@@ -398,6 +405,7 @@ function populateSwfTimelineNode(
       if (nodes.has(key)) continue;
       const sprite = parsed.sprites.get(placement.characterId);
       const shape = parsed.shapes.get(placement.characterId);
+      const morphShape = parsed.morphShapes.get(placement.characterId);
       const image = parsed.images.get(placement.characterId);
       const editText = parsed.editTexts.get(placement.characterId);
       // A masking placement is never drawn — it contributes its shape as a clip on what it covers, so it
@@ -409,6 +417,7 @@ function populateSwfTimelineNode(
         !placement.name &&
         sprite === undefined &&
         shape === undefined &&
+        morphShape === undefined &&
         image === undefined &&
         editText === undefined
       ) {
@@ -428,7 +437,9 @@ function populateSwfTimelineNode(
           ? createSwfEditTextTarget(editText, parsed, targetBounds)
           : image !== undefined
             ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
-            : createSwfPlacementNode(sprite, shape, targetBounds);
+            : morphShape !== undefined
+              ? createSwfMorphShapeTarget(morphShape, targetBounds)
+              : createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
       if (placement.name) {
         slots.push(
@@ -476,6 +487,7 @@ function createSwfTimelineSource(
   const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
   const appliedClips = new Map<Node2D, ClipRegion | null>();
   const appliedAlphas = new Map<Node2D, number>();
+  const appliedRatios = new Map<Node2D, number>();
   return {
     totalFrames: frames.length,
     labels,
@@ -518,6 +530,12 @@ function createSwfTimelineSource(
           node.alpha = entry.placement.alpha;
           invalidateNodeAppearance(node);
           appliedAlphas.set(node, entry.placement.alpha);
+        }
+        // A morph's ratio is per-frame data too — it is what animates a morph at all, since the shape
+        // itself is one definition and every frame names a different point along it.
+        if (node.kind === MorphShapeKind && appliedRatios.get(node) !== entry.placement.ratio) {
+          setMorphShapeProgress(node as MorphShape, entry.placement.ratio);
+          appliedRatios.set(node, entry.placement.ratio);
         }
         // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
         // same way: written only when this frame's region differs from the one already on the node.
@@ -743,6 +761,19 @@ function createSwfPlacementNode(
   return shape === undefined ? createSwfDisplayObject(bounds) : createSwfShapeNode(shape, bounds);
 }
 
+// Each placement of a morph character decodes its own node, because a morph's progress is per instance:
+// two placements of one character routinely sit at different points along the same morph. A factory that
+// declines leaves an empty display object, so the placement keeps its box and its slot reference.
+function createSwfMorphShapeTarget(decode: () => MorphShape | null, bounds: SwfRectangle | null): Node2D {
+  const shape = decode();
+  if (shape === null) return createSwfDisplayObject(bounds);
+  if (bounds !== null) {
+    (shape.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
+    (getNodeRuntime(shape) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return shape;
+}
+
 // Each placement of a shape character gets its own copy of the decoded commands, so a document that places
 // one symbol many times still holds independently editable geometry per instance.
 function createSwfShapeNode(template: Readonly<Shape>, bounds: SwfRectangle | null): Shape {
@@ -845,12 +876,12 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const characterId = hasCharacter ? body.readUint16() : (inherited?.characterId ?? 0);
   const matrix = (flags & 0x04) !== 0 ? readSwfMatrix(body) : (inherited?.matrix ?? IDENTITY_MATRIX);
   const alpha = (flags & 0x08) !== 0 ? readSwfColorTransform(body) : (inherited?.alpha ?? 1);
-  if ((flags & 0x10) !== 0) body.readUint16();
+  const ratio = (flags & 0x10) !== 0 ? body.readUint16() / MORPH_RATIO_ONE : (inherited?.ratio ?? 0);
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
-  placements.set(depth, { alpha, characterId, clipDepth, depth, directLinkage, matrix, name });
+  placements.set(depth, { alpha, characterId, clipDepth, depth, directLinkage, matrix, name, ratio });
 }
 
 function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
@@ -860,7 +891,16 @@ function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlace
   // The legacy record's colour transform has no alpha channel at all.
   if (body.pos < body.end) readSwfColorTransform(body, 3);
   if (!body.valid || characterId === 0) return;
-  placements.set(depth, { alpha: 1, characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
+  placements.set(depth, {
+    alpha: 1,
+    characterId,
+    clipDepth: 0,
+    depth,
+    directLinkage: null,
+    matrix,
+    name: null,
+    ratio: 0,
+  });
 }
 
 function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
@@ -959,6 +999,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     pendingTexts: [],
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
+    morphShapes: new Map<number, () => MorphShape | null>(),
     shapes: new Map<number, Shape>(),
     sprites: new Map<number, SwfTimeline>(),
   };
@@ -980,6 +1021,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     images: state.images,
     imageTextures: state.imageTextures,
     linkages: state.linkages,
+    morphShapes: state.morphShapes,
     shapes: state.shapes,
     sprites: state.sprites,
     timeline,
@@ -1158,7 +1200,16 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
     if (version === 2) readSwfColorTransform(reader);
     if (!reader.valid) return;
     if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
-      placements.set(depth, { alpha: 1, characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
+      placements.set(depth, {
+        alpha: 1,
+        characterId,
+        clipDepth: 0,
+        depth,
+        directLinkage: null,
+        matrix,
+        name: null,
+        ratio: 0,
+      });
     }
     // A filter list has no fixed width, so a record carrying one would desynchronize every record after
     // it. Stopping keeps what was read rather than misreading the rest.
@@ -1299,6 +1350,8 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
 
   const version = resolveSwfShapeVersion(code);
   if (version > 0) readSwfShapeBody(body, state, characterId, version);
+  const morphVersion = resolveSwfMorphShapeVersion(code);
+  if (morphVersion > 0) readSwfMorphShapeBody(body, state, characterId, morphVersion);
   // A static text definition is queued rather than composed: its records address glyphs by index into a
   // font that may not have been read yet. Everything after the bounds and the definition matrix is its
   // record stream.
@@ -1340,6 +1393,33 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
     acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
   );
   if (shape !== null) state.shapes.set(characterId, shape);
+}
+
+// Decodes a morph definition's geometry and paint on a reader of its own, so a body this decoder cannot
+// read costs only that body. The definition keeps its authored bounds and contributes no drawing, which
+// is the same degradation a static shape gets.
+function readSwfMorphShapeBody(
+  body: Readonly<SwfReader>,
+  state: SwfParseState,
+  characterId: number,
+  version: number,
+): void {
+  // A morph is stored as a factory rather than a node: progress is per placement, so two placements of
+  // one character sit at different points along the same morph and cannot share one node's sampled path.
+  // Decoding is deferred to first use, so a definition nothing places costs only its bytes.
+  const source = body.source;
+  const start = body.pos;
+  const end = body.end;
+  const decode = (): MorphShape | null =>
+    createSwfMorphShape(new SwfReader(source, start, end), version, (fillCharacterId, repeat, smoothed) =>
+      acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+    );
+  if (decode() !== null) state.morphShapes.set(characterId, decode);
+}
+
+function resolveSwfMorphShapeVersion(code: number): number {
+  if (code === TAG_DEFINE_MORPH_SHAPE) return 1;
+  return code === TAG_DEFINE_MORPH_SHAPE_2 ? 2 : 0;
 }
 
 function resolveSwfShapeVersion(code: number): number {
@@ -1607,6 +1687,8 @@ const MIN_SWF_LENGTH = 12;
 const FONT_INFO_FLAG_WIDE_CODES = 0x01;
 const PNG_MIME_TYPE = 'image/png';
 const S_SIGNATURE = 0x53;
+// A placement ratio is 16-bit, so this is both its maximum and the divisor that makes it a 0..1 progress.
+const MORPH_RATIO_ONE = 0xffff;
 const SWF_INSTANCE_KEY_SCALE = 0x10000;
 const SWF_LZMA_PREFIX_LENGTH = 17;
 const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';

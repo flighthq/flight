@@ -114,14 +114,25 @@ export class ShapeWriter {
     this.writeSigned(deltaY, bits);
   }
 
+  // The new-styles bit is the one style-change flag no helper writes, because only a shape that carries
+  // its own styles can set it — which is exactly what a morph endpoint must be rejected for.
+  writeNewStylesRecord(): void {
+    this.writeUnsigned(0, 1);
+    this.writeUnsigned(1, 1);
+    this.writeUnsigned(0, 4);
+  }
+
   writeStyleBits(fillBits: number, lineBits: number): void {
     this.align();
     this.writeUnsigned(fillBits, 4);
     this.writeUnsigned(lineBits, 4);
   }
 
+  // `bits` is the style-index width declared by writeStyleBits; the default of one matches a shape with
+  // at most one style per kind, which is what most fixtures build.
   writeStyleChange(
     change: Readonly<{ fill0?: number; fill1?: number; line?: number; moveToX?: number; moveToY?: number }>,
+    bits = 1,
   ): void {
     const hasMove = change.moveToX !== undefined && change.moveToY !== undefined;
     this.writeUnsigned(0, 1);
@@ -136,9 +147,9 @@ export class ShapeWriter {
       this.writeSigned(change.moveToX!, bits);
       this.writeSigned(change.moveToY!, bits);
     }
-    if (change.fill0 !== undefined) this.writeUnsigned(change.fill0, 1);
-    if (change.fill1 !== undefined) this.writeUnsigned(change.fill1, 1);
-    if (change.line !== undefined) this.writeUnsigned(change.line, 1);
+    if (change.fill0 !== undefined) this.writeUnsigned(change.fill0, bits);
+    if (change.fill1 !== undefined) this.writeUnsigned(change.fill1, bits);
+    if (change.line !== undefined) this.writeUnsigned(change.line, bits);
   }
 
   writeUint16(value: number): void {

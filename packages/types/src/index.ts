@@ -515,6 +515,7 @@ export * from './Shape';
 export * from './ShapeCommand';
 export * from './ShapeRasterizer';
 export * from './ShapeTessellationExplanation';
+export * from './SwfShapeStylePaths';
 export * from './ShapedRun';
 export * from './ShapeFillRegion';
 export * from './ShapeStrokeRegion';
