@@ -18,7 +18,7 @@ import {
   beginGlMeshDraw,
   bindGlUvTransform,
   compileGlProgram,
-  uploadGlMeshObjectAlpha,
+  uploadGlMeshDrawAlpha,
   destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlScene3DProgram,
@@ -228,6 +228,7 @@ describe('drawGlMeshSubset', () => {
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locObjectAlpha = null; // resolved: this shader has no u_objectAlpha
+    program.locAlphaIsCoverage = null; // and no u_alphaIsCoverage either
     drawGlMeshSubset(
       state,
       program,
@@ -429,28 +430,51 @@ describe('setGlMeshViewProjection', () => {
   });
 });
 
-describe('uploadGlMeshObjectAlpha', () => {
+describe('uploadGlMeshDrawAlpha', () => {
   // Regression guard for the wireframe blank-frame defect: this upload used to live inside
   // drawGlMeshSubset, so the one family that bypasses that function shipped u_objectAlpha = 0 —
   // invisible until the fragment tail began premultiplying rgb by alpha, then a black frame.
-  it('uploads the alpha and resolves the location once across draws', () => {
+  it('uploads node alpha and resolves each location once across draws', () => {
     const { state, gl } = makeGlScene3DState();
     const program = makeProgram();
     program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
+    program.locAlphaIsCoverage = { name: 'u_alphaIsCoverage' } as WebGLUniformLocation;
 
-    uploadGlMeshObjectAlpha(state.gl, program, 0.25);
-    uploadGlMeshObjectAlpha(state.gl, program, 1);
+    uploadGlMeshDrawAlpha(state.gl, program, 0.25, null);
+    uploadGlMeshDrawAlpha(state.gl, program, 1, null);
 
-    expect(gl.calls.filter((c) => c.name === 'uniform1f').map((c) => c.args[1])).toEqual([0.25, 1]);
-    expect(gl.calls.some((c) => c.name === 'getUniformLocation' && c.args[0] === 'u_objectAlpha')).toBe(false);
+    const alphas = gl.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === program.locObjectAlpha);
+    expect(alphas.map((c) => c.args[1])).toEqual([0.25, 1]);
+    expect(gl.calls.some((c) => c.name === 'getUniformLocation')).toBe(false);
   });
 
-  it('skips silently for a program whose shader does not declare the uniform', () => {
+  // The premultiplying tail must not scale rgb on a draw nothing is compositing. Only glTF's 'blend'
+  // declares its alpha to be coverage; 'opaque' and 'mask' resolve to fully opaque.
+  it('flags alpha as coverage only for a blended material', () => {
     const { state, gl } = makeGlScene3DState();
     const program = makeProgram();
-    program.locObjectAlpha = null; // resolved: this shader has no u_objectAlpha
+    program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
+    program.locAlphaIsCoverage = { name: 'u_alphaIsCoverage' } as WebGLUniformLocation;
 
-    uploadGlMeshObjectAlpha(state.gl, program, 0.25);
+    const coverageOf = (material: Parameters<typeof uploadGlMeshDrawAlpha>[3]): unknown => {
+      gl.calls.length = 0;
+      uploadGlMeshDrawAlpha(state.gl, program, 1, material);
+      return gl.calls.find((c) => c.name === 'uniform1f' && c.args[0] === program.locAlphaIsCoverage)?.args[1];
+    };
+
+    expect(coverageOf(createStandardPbrMaterial({ alphaMode: 'blend' }))).toBe(1);
+    expect(coverageOf(createStandardPbrMaterial({ alphaMode: 'mask' }))).toBe(0);
+    expect(coverageOf(createStandardPbrMaterial({ alphaMode: 'opaque' }))).toBe(0);
+    expect(coverageOf(null)).toBe(0);
+  });
+
+  it('skips silently for a program whose shader declares neither uniform', () => {
+    const { state, gl } = makeGlScene3DState();
+    const program = makeProgram();
+    program.locObjectAlpha = null;
+    program.locAlphaIsCoverage = null;
+
+    uploadGlMeshDrawAlpha(state.gl, program, 0.25, null);
 
     expect(gl.calls.some((c) => c.name === 'uniform1f')).toBe(false);
   });

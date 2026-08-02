@@ -13,7 +13,7 @@ import type {
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, setGlMeshViewProjection, uploadGlMeshObjectAlpha } from './glMeshProgram';
+import { beginGlMeshDraw, setGlMeshViewProjection, uploadGlMeshDrawAlpha } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { ensureGlWireframeProgram } from './glWireframePrelude';
 import { ensureGlWireframeUpload } from './glWireframeUpload';
@@ -55,7 +55,7 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
     gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
     // This family bypasses drawGlMeshSubset, so it uploads the per-draw object alpha itself.
-    uploadGlMeshObjectAlpha(gl, program, proxy.alpha ?? 1);
+    uploadGlMeshDrawAlpha(gl, program, proxy.alpha ?? 1, proxy.material);
 
     const upload = ensureGlWireframeUpload(state, geometry);
     const subset = proxy.subset;

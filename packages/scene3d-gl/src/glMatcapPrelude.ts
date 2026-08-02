@@ -1,7 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
@@ -102,7 +102,7 @@ uniform sampler2D u_matcap;
 uniform float u_alphaCutoff;
 #endif
 
-uniform float u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL_UNIFORMS}
 
 out vec4 fragColor;
 

@@ -172,7 +172,7 @@ struct MatcapMaterial {
   if (ALPHA_MASK) {
     color.a = 1.0;
   }
-  return flightPremultipliedOutput(vec4f(color.rgb, color.a * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(color.rgb, flightMeshCoverage(color.a, in.objectAlpha, draw.params.y)));
 }
 `;
 

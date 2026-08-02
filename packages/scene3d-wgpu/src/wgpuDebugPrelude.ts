@@ -149,7 +149,7 @@ struct DebugMaterial {
     let far = material.params.y;
     let eyeDepth = 1.0 / in.clipPosition.w;
     let d = clamp((eyeDepth - near) / max(far - near, 1e-6), 0.0, 1.0);
-    return flightPremultipliedOutput(vec4f(vec3f(d), in.objectAlpha));
+    return flightPremultipliedOutput(vec4f(vec3f(d), flightMeshCoverage(1.0, in.objectAlpha, draw.params.y)));
   }
 
   // NORMAL_MODE: visualize the WORLD-space surface normal — the geometric normal carried through
@@ -170,7 +170,7 @@ struct DebugMaterial {
     normal = normalize(tbn * tangentNormal);
   }
 
-  return flightPremultipliedOutput(vec4f(normal * 0.5 + 0.5, in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(normal * 0.5 + 0.5, flightMeshCoverage(1.0, in.objectAlpha, draw.params.y)));
 }
 `;
 

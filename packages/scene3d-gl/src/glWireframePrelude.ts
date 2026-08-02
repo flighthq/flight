@@ -1,6 +1,6 @@
 import type { GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
@@ -59,7 +59,7 @@ uniform vec4 u_color;
 uniform float u_alphaCutoff;
 #endif
 
-uniform float u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL_UNIFORMS}
 
 out vec4 fragColor;
 
