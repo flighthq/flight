@@ -1,6 +1,7 @@
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
+import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { addMovieClipFrameScript, createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import {
   addNodeChild,
@@ -10,13 +11,13 @@ import {
   setNodeLocalMatrix,
 } from '@flighthq/node/contract';
 import {
-  createScene2DAssetReference,
   createScene2DDocument,
   createScene2DSlotReference,
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
-import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
+import { createDisplayObject, createSprite, setNode2DClip } from '@flighthq/scene2d/contract';
 import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
+import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   BoundsNodeAny,
@@ -28,15 +29,18 @@ import type {
   Node2D,
   Node2DData,
   Node2DRuntime,
+  ImageResourceReference,
   Rectangle,
-  Scene2DContentReference,
   Scene2DDocument,
   Scene2DDocumentImportContext,
   FrameScript,
   GlyphOutlineSource,
   Scene2DDocumentImporterRegistry,
+  Scene2DSlotReference,
   Shape,
   ShapeData,
+  Sprite,
+  Texture,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
@@ -62,7 +66,7 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   if (file === null) return null;
   const { frameRate, parsed, stageBounds } = file;
 
-  const references: Scene2DContentReference[] = [];
+  const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
     frameRate: frameRate > 0 ? frameRate : null,
@@ -70,11 +74,11 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
     resolvedBounds: new Map<number, SwfRectangle | null>(),
     remainingNodes: MAX_INSTANTIATED_NODES,
   };
-  const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, references, instantiation, 0);
+  const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, slots, instantiation, 0);
   if (root === null) return null;
-  fillSwfBitmapTextures(parsed);
+  fillSwfLosslessBitmapTextures(parsed);
 
-  return createScene2DDocument(root, references, 'swf', parsed.backgroundColor);
+  return createScene2DDocument(root, slots, 'swf', parsed.backgroundColor, createSwfImageResources(parsed));
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
@@ -193,6 +197,7 @@ interface SwfTagResult {
   characterBounds: Map<number, SwfRectangle>;
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
+  imageTextures: Map<number, Map<string, Texture2D>>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
   shapeBitmapFills: Map<number, { characterId: number; texture: Texture2D }[]>;
@@ -217,6 +222,7 @@ interface SwfParseState {
   fontCodePoints: Map<number, number[]>;
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
+  imageTextures: Map<number, Map<string, Texture2D>>;
   // The shared JPEG encoding tables a legacy DefineBits image is missing, held until one needs them.
   jpegTables: Uint8Array | null;
   linkages: Map<number, string>;
@@ -246,6 +252,12 @@ interface SwfInstantiationState {
   remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
+}
+
+// The half of the parse/result state acquireSwfImageTexture needs, so it serves the tag walk (shape fills)
+// and the instantiation walk (placed bitmaps) without either state knowing about the other.
+interface SwfImageTextureOwner {
+  imageTextures: Map<number, Map<string, Texture2D>>;
 }
 
 interface SwfFile {
@@ -281,30 +293,28 @@ function readSwfFile(source: Uint8Array): SwfFile | null {
   return parsed === null ? null : { frameRate, parsed, stageBounds };
 }
 
-// Gives every texture a bitmap fill is waiting on its pixels, for the images this package can unpack on
-// its own. A lossless definition is a raw raster plus zlib, and both halves are already here — the shared
-// decompressor the caller registered, and the layout knowledge above — so its pixels resolve at import
-// with no further step. The encoded formats still need a decoder this package does not have, and their
-// textures stay sourceless until one supplies them.
-function fillSwfBitmapTextures(parsed: Readonly<SwfTagResult>): void {
-  if (parsed.shapeBitmapFills.size === 0) return;
-  const bitmaps = new Map<number, Bitmap | null>();
-  for (const fills of parsed.shapeBitmapFills.values()) {
-    for (const fill of fills) {
-      if (!bitmaps.has(fill.characterId)) {
-        const image = parsed.images.get(fill.characterId);
-        const lossless =
-          image !== undefined &&
-          (image.mimeType === SWF_LOSSLESS_MIME_TYPE || image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE);
-        bitmaps.set(
-          fill.characterId,
-          lossless ? createSwfLosslessBitmap(image.bytes, image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE) : null,
-        );
-      }
-      const bitmap = bitmaps.get(fill.characterId) ?? null;
-      if (bitmap !== null) fill.texture.source = bitmap;
-    }
+// Fills in the pixels this package can unpack on its own. A lossless definition is not an image file — it
+// is a raw raster plus zlib — so no generic decoder reaches it, but both halves needed to read it are
+// already here: the shared decompressor the caller registered, and the layout knowledge in swfBitmap. Its
+// pixels therefore resolve at import, and it earns no image resource because there is nothing left to
+// load. The encoded formats leave as references and decode through @flighthq/image later.
+//
+// Only characters something actually samples are unpacked, so a library full of unused bitmaps costs
+// nothing. That is the whole reason this walks the texture map rather than the payload map.
+function fillSwfLosslessBitmapTextures(parsed: Readonly<SwfTagResult>): void {
+  for (const [characterId, variants] of parsed.imageTextures) {
+    if (!isSwfLosslessImage(parsed.images.get(characterId))) continue;
+    const image = parsed.images.get(characterId);
+    if (image === undefined) continue;
+    const bitmap = createSwfLosslessBitmap(image.bytes, image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE);
+    if (bitmap === null) continue;
+    for (const texture of variants.values()) setTextureSource(texture, bitmap);
   }
+}
+
+function isSwfLosslessImage(image: Readonly<SwfImagePayload> | undefined): boolean {
+  if (image === undefined) return false;
+  return image.mimeType === SWF_LOSSLESS_MIME_TYPE || image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE;
 }
 
 // Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
@@ -360,19 +370,19 @@ function createSwfTimelineNode(
   timeline: Readonly<SwfTimeline>,
   bounds: SwfRectangle | null,
   parsed: Readonly<SwfTagResult>,
-  references: Scene2DContentReference[],
+  slots: Scene2DSlotReference[],
   state: SwfInstantiationState,
   depth: number,
 ): MovieClip | null {
   const clip = createSwfMovieClip(bounds);
-  return populateSwfTimelineNode(clip, timeline, parsed, references, state, depth) ? clip : null;
+  return populateSwfTimelineNode(clip, timeline, parsed, slots, state, depth) ? clip : null;
 }
 
 function populateSwfTimelineNode(
   clip: MovieClip,
   timeline: Readonly<SwfTimeline>,
   parsed: Readonly<SwfTagResult>,
-  references: Scene2DContentReference[],
+  slots: Scene2DSlotReference[],
   state: SwfInstantiationState,
   depth: number,
 ): boolean {
@@ -412,26 +422,18 @@ function populateSwfTimelineNode(
       // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
       // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
+      // A placed bitmap character becomes a Sprite over the character's shared waiting Texture, so the
+      // node exists at its authored size before any pixels do and every placement of one character
+      // decodes once.
       const target =
-        editText === undefined
-          ? createSwfPlacementNode(sprite, shape, targetBounds)
-          : createSwfEditTextTarget(editText, parsed, targetBounds);
+        editText !== undefined
+          ? createSwfEditTextTarget(editText, parsed, targetBounds)
+          : image !== undefined
+            ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
+            : createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
-      if (image !== undefined) {
-        // An embedded image is an asset rather than a slot: it has content of its own to load, and the
-        // document carries that content instead of an address to fetch it from.
-        references.push(
-          createScene2DAssetReference(
-            placement.name ?? createSwfImageAssetName(placement.characterId),
-            createSwfImageAssetUri(placement.characterId),
-            target,
-            true,
-            image.bytes,
-            image.mimeType,
-          ),
-        );
-      } else if (placement.name) {
-        references.push(
+      if (placement.name) {
+        slots.push(
           createScene2DSlotReference(
             placement.name,
             target,
@@ -443,7 +445,7 @@ function populateSwfTimelineNode(
       if (sprite !== undefined) {
         if (state.activeSymbols.has(placement.characterId)) return false;
         state.activeSymbols.add(placement.characterId);
-        const populated = populateSwfTimelineNode(target as MovieClip, sprite, parsed, references, state, depth + 1);
+        const populated = populateSwfTimelineNode(target as MovieClip, sprite, parsed, slots, state, depth + 1);
         state.activeSymbols.delete(placement.characterId);
         if (!populated) return false;
       }
@@ -632,14 +634,69 @@ function createSwfInstanceKey(placement: Readonly<SwfPlacement>): number {
   return placement.depth * SWF_INSTANCE_KEY_SCALE + placement.characterId;
 }
 
-// An embedded image has no address to fetch from, so its reference is addressed by the character it came
-// from. The name falls back to the same identity when the placement carried no instance name.
-function createSwfImageAssetName(characterId: number): string {
-  return `bitmap${characterId}`;
+// Returns the Texture a bitmap character is sampled through for one combination of the two flags SWF
+// encodes in a fill type, allocating it on first use. Pixels are shared and sampling is not: every variant
+// of one character is a separate Texture over the same image resource, so one decode serves them all.
+//
+// The image payload does not have to be known yet. A shape can reference a character defined later in the
+// tag stream, so the texture is created blind and createSwfImageResources pairs it with its bytes after
+// the whole file is walked. A character that never gets a payload leaves its textures sourceless, which is
+// how a dangling bitmap fill draws nothing instead of guessing.
+function acquireSwfImageTexture(
+  state: Readonly<SwfImageTextureOwner>,
+  characterId: number,
+  repeat: boolean,
+  smoothed: boolean,
+): Texture2D {
+  let variants = state.imageTextures.get(characterId);
+  if (variants === undefined) {
+    variants = new Map<string, Texture2D>();
+    state.imageTextures.set(characterId, variants);
+  }
+  const key = `${repeat ? 'r' : 'c'}${smoothed ? 's' : 'n'}`;
+  let texture = variants.get(key);
+  if (texture === undefined) {
+    texture = createTexture({
+      sampler: createSampler({
+        magFilter: smoothed ? 'linear' : 'nearest',
+        minFilter: smoothed ? 'linear-mipmap-linear' : 'nearest',
+        mipmaps: smoothed,
+        wrapU: repeat ? 'repeat' : 'clamp-to-edge',
+        wrapV: repeat ? 'repeat' : 'clamp-to-edge',
+      }),
+    });
+    variants.set(key, texture);
+  }
+  return texture;
 }
 
-function createSwfImageAssetUri(characterId: number): string {
-  return `swf:bitmap/${characterId}`;
+// Pairs every bitmap character that something actually samples with the bytes it was defined from. A
+// payload nothing references costs no reference, and a reference names every Texture waiting on it, so
+// loading one binds all of them.
+function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceReference[] {
+  const resources: ImageResourceReference[] = [];
+  for (const [characterId, variants] of parsed.imageTextures) {
+    const image = parsed.images.get(characterId);
+    // A lossless payload already resolved at import through swfBitmap, so a reference for it would report
+    // work that does not exist and would fail if anything tried to decode it as an image file.
+    if (image === undefined || isSwfLosslessImage(image)) continue;
+    const reference = createEmbeddedImageResourceReference(image.bytes, image.mimeType);
+    reference.textures = [...variants.values()];
+    resources.push(reference);
+  }
+  return resources;
+}
+
+function createSwfBitmapNode(texture: Texture2D, bounds: SwfRectangle | null): Sprite {
+  const target = createSprite();
+  target.data.texture = texture;
+  if (bounds !== null) {
+    // The authored RECT sizes the node before the image resolves, so layout does not shift when pixels
+    // arrive and a document that never loads its images still measures correctly.
+    (target.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
+    (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return target;
 }
 
 function createSwfDisplayObject(bounds: SwfRectangle | null): ReturnType<typeof createDisplayObject> {
@@ -878,6 +935,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     fontCodePoints: new Map<number, number[]>(),
     fontOutlineSources: new Map<number, GlyphOutlineSource>(),
     images: new Map<number, SwfImagePayload>(),
+    imageTextures: new Map<number, Map<string, Texture2D>>(),
     jpegTables: null,
     pendingTexts: [],
     linkages: new Map<number, string>(),
@@ -901,6 +959,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     characterBounds: state.characterBounds,
     fontOutlineSources: state.fontOutlineSources,
     images: state.images,
+    imageTextures: state.imageTextures,
     linkages: state.linkages,
     shapeBitmapFills: state.shapeBitmapFills,
     shapes: state.shapes,
@@ -1257,11 +1316,12 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
     reader.readUint8();
   }
   if (!reader.valid) return;
-  const bitmapFills: { characterId: number; texture: Texture2D }[] = [];
-  const shape = createSwfShape(reader, version, bitmapFills);
-  if (shape === null) return;
-  state.shapes.set(characterId, shape);
-  if (bitmapFills.length > 0) state.shapeBitmapFills.set(characterId, bitmapFills);
+  // The fill's character is not this shape's, hence the distinct name: a bitmap fill names whatever
+  // character carries its pixels, which may be defined later in the tag stream.
+  const shape = createSwfShape(reader, version, (fillCharacterId, repeat, smoothed) =>
+    acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+  );
+  if (shape !== null) state.shapes.set(characterId, shape);
 }
 
 function resolveSwfShapeVersion(code: number): number {

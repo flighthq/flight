@@ -1,4 +1,8 @@
-import { registerDecompressor, unregisterDecompressor } from '@flighthq/compression/contract';
+import {
+  registerDecompressor,
+  registerDeflateDecompressor,
+  unregisterDecompressor,
+} from '@flighthq/compression/contract';
 import { createGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import {
@@ -23,8 +27,17 @@ import {
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { MovieClip, RichText, Shape } from '@flighthq/types/contract';
-import { Compression, MovieClipKind, RichTextKind, ShapeKind } from '@flighthq/types/contract';
+import { getTextureSource, getTextureWidth } from '@flighthq/texture/contract';
+import type { MovieClip, RichText, Shape, Sprite, Texture2D } from '@flighthq/types/contract';
+import {
+  Compression,
+  ImageResourceReferenceKind,
+  MovieClipKind,
+  ResourceResolutionState,
+  RichTextKind,
+  ShapeKind,
+  SpriteKind,
+} from '@flighthq/types/contract';
 
 import {
   createGlyphOutlineSourcesFromSwf,
@@ -126,12 +139,11 @@ describe('createScene2DFromSwf', () => {
     );
 
     expect(document?.sourceKind).toBe('swf');
-    expect(document?.references).toHaveLength(1);
+    expect(document?.slots).toHaveLength(1);
     expect(getNodeLocalBoundsRectangle(document!.root)).toMatchObject({ height: 50, width: 100, x: 0, y: 0 });
-    const reference = document!.references[0];
-    expect(reference.kind).toBe('Slot');
+    const reference = document!.slots[0];
     expect(reference.name).toBe('avatarSlot');
-    expect(reference.kind === 'Slot' ? reference.linkage : null).toBe('Game.Avatar');
+    expect(reference.linkage).toBe('Game.Avatar');
     expect(reference.target.name).toBe('avatarSlot');
 
     const matrix = getNodeLocalMatrix(reference.target);
@@ -173,7 +185,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.kind).toBe(ShapeKind);
     expect(drawn.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x3366cc, 1, 'moveTo', 2, 0, 0]);
@@ -222,12 +234,12 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const target = document!.references[0].target;
+    const target = document!.slots[0].target;
     expect(target.kind).not.toBe(ShapeKind);
     expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 5, width: 10, x: 0, y: 0 });
   });
 
-  it('carries an embedded image out as undecoded asset bytes for the resolve step', () => {
+  it('carries an embedded image out as undecoded bytes on a waiting texture', () => {
     const png = createPngHeader(24, 12);
     const document = createScene2DFromSwf(
       createSwf([
@@ -238,17 +250,19 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document!.references[0];
-    expect(reference.kind).toBe('Asset');
-    expect(reference.kind === 'Asset' ? reference.uri : null).toBe('swf:bitmap/9');
-    expect(reference.kind === 'Asset' ? reference.mimeType : null).toBe('image/png');
+    expect(document!.imageResources).toHaveLength(1);
+    const reference = document!.imageResources[0];
+    expect(reference.kind).toBe(ImageResourceReferenceKind.Embedded);
+    expect(reference.mimeType).toBe('image/png');
     // The bytes are the payload exactly as the file carried it — nothing is decoded at import.
-    expect(reference.kind === 'Asset' ? reference.bytes : null).toEqual(png);
-    expect(reference.content).toBeNull();
-    expect(getNodeLocalBoundsRectangle(reference.target)).toMatchObject({ height: 12, width: 24 });
+    if (reference.kind !== ImageResourceReferenceKind.Embedded) throw new Error('expected an embedded reference');
+    expect(reference.bytes).toEqual(png);
+    expect(reference.state).toBe(ResourceResolutionState.Unresolved);
+    expect(reference.textures).toHaveLength(1);
+    expect(getTextureSource(reference.textures![0])).toBeNull();
   });
 
-  it('resolves an embedded image only when a caller asks for it', () => {
+  it('places a bitmap character as a sprite sized by its authored bounds before any pixels load', () => {
     const document = createScene2DFromSwf(
       createSwf([
         createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
@@ -261,18 +275,29 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    // Importing decodes nothing: until a resolver runs, the reference is unfilled.
-    expect(document!.references[0].content).toBeNull();
+    const target = document!.slots[0].target;
+    expect(document!.slots[0].name).toBe('logo');
+    expect(target.kind).toBe(SpriteKind);
+    expect((target as Sprite).data.texture).toBe(document!.imageResources[0].textures![0]);
+    expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 8, width: 8 });
+  });
 
-    const decoded = createDisplayObject();
-    const resources = resolveScene2DResources(document!, {
-      resolveAssetContent: (reference) => (reference.mimeType === 'image/jpeg' && reference.bytes ? decoded : null),
-    });
+  it('shares one image resource across every placement of one bitmap character', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(9))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(9))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
 
-    expect(resources.resolved).toHaveLength(1);
-    expect(resources.unresolved).toEqual([]);
-    expect(document!.references[0].content).toBe(decoded);
-    expect(document!.references[0].name).toBe('logo');
+    // Three placements, one reference, one texture: the decode is paid for once no matter how often the
+    // character is placed.
+    expect(document!.imageResources).toHaveLength(1);
+    expect(document!.imageResources[0].textures).toHaveLength(1);
   });
 
   it('accepts a tag stream that reaches its end without an End tag', () => {
@@ -297,9 +322,9 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references.map((reference) => reference.name)).toEqual(['kid']);
+    expect(document?.slots.map((reference) => reference.name)).toEqual(['kid']);
     // An empty stream is an empty movie, not a malformed one.
-    expect(createScene2DFromSwf(createSwf([]))?.references).toEqual([]);
+    expect(createScene2DFromSwf(createSwf([]))?.slots).toEqual([]);
   });
 
   it('turns a clip-depth placement into a clip on what it covers, and draws no mask', () => {
@@ -394,7 +419,7 @@ describe('createScene2DFromSwf', () => {
     try {
       const document = createScene2DFromSwf(compressed);
       expect(document?.sourceKind).toBe('swf');
-      expect(document?.references.map((reference) => reference.name)).toEqual(['packed']);
+      expect(document?.slots.map((reference) => reference.name)).toEqual(['packed']);
     } finally {
       unregisterDecompressor(Compression.Deflate);
     }
@@ -529,7 +554,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const button = document!.references[0].target;
+    const button = document!.slots[0].target;
     expect(button.kind).toBe(MovieClipKind);
     // One child, not two: the down state is dropped rather than stacked under the up state.
     const children = getNodeChildren(button);
@@ -552,14 +577,13 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document!.references[0];
-    expect(reference.kind).toBe('Asset');
-    expect(reference.kind === 'Asset' ? reference.mimeType : null).toBe('image/jpeg');
+    const reference = document!.imageResources[0];
+    expect(reference.mimeType).toBe('image/jpeg');
     // Neither half is a valid JPEG alone: the tables lose their end marker, the image its start marker.
-    const bytes = reference.kind === 'Asset' ? reference.bytes! : new Uint8Array();
+    if (reference.kind !== ImageResourceReferenceKind.Embedded) throw new Error('expected an embedded reference');
+    const bytes = reference.bytes;
     expect(bytes.subarray(0, 2)).toEqual(new Uint8Array([0xff, 0xd8]));
     expect(bytes.length).toBe(tables.length - 2 + image.length - 2);
-    expect(getNodeLocalBoundsRectangle(reference.target)).toMatchObject({ height: 8, width: 16 });
   });
 
   it('binds a recognized DoAction to the frame that carries it', () => {
@@ -629,7 +653,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const node = document!.references[0].target as RichText;
+    const node = document!.slots[0].target as RichText;
     expect(node.kind).toBe(RichTextKind);
     // The authored string survives as text the caller can read and reassign — the property that would be
     // destroyed by flattening the field into glyph outlines.
@@ -667,7 +691,7 @@ describe('createScene2DFromSwf', () => {
     );
 
     expect(document).not.toBeNull();
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
   });
 
   it('never throws on a mutated file, whatever the mutation reaches', () => {
@@ -776,6 +800,102 @@ describe('createScene2DFromSwf', () => {
     expect(drawn.data.commands.filter((token) => token === 'lineTo').length).toBeGreaterThan(0);
   });
 
+  it('resolves a lossless bitmap fill to pixels at import, with no image resource left to load', () => {
+    registerDeflateDecompressor();
+    const art = new ShapeWriter();
+    art.writeFillStyleCount(1);
+    art.writeBitmapFillStyle(0x41, 9, 20);
+    art.writeLineStyleCount(0);
+    art.writeStyleBits(1, 0);
+    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    art.writeStraightEdge(800, 0);
+    art.writeStraightEdge(0, 800);
+    art.writeEndShape();
+    // One opaque 24-bit pixel, stored as pad/red/green/blue behind a zlib stored block.
+    const pixels = losslessPayload(5, 1, 1, storedDeflate([0, 0x11, 0x22, 0x33]));
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
+        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+    unregisterDecompressor(Compression.Deflate);
+
+    const drawn = getNodeChildren(document!.root)[0] as Shape;
+    expect(drawn.data.commands[0]).toBe('beginTextureFill');
+    // A lossless payload is not an image file, so it resolves here rather than through @flighthq/image —
+    // which is why it leaves nothing on the document's image-resource contract.
+    const texture = drawn.data.commands[2] as Texture2D;
+    expect(getTextureSource(texture)).not.toBeNull();
+    expect(getTextureWidth(texture)).toBe(1);
+    expect(document!.imageResources).toEqual([]);
+  });
+
+  it('leaves a lossless bitmap sourceless when no decompressor is registered', () => {
+    const art = new ShapeWriter();
+    art.writeFillStyleCount(1);
+    art.writeBitmapFillStyle(0x41, 9, 20);
+    art.writeLineStyleCount(0);
+    art.writeStyleBits(1, 0);
+    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    art.writeStraightEdge(800, 0);
+    art.writeEndShape();
+    const pixels = losslessPayload(5, 1, 1, storedDeflate([0, 0x11, 0x22, 0x33]));
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
+        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // The geometry still imports; only the paint is missing, which is the same shape as a caller who
+    // never loads an encoded image.
+    const drawn = getNodeChildren(document!.root)[0] as Shape;
+    expect(drawn.data.commands[0]).toBe('beginTextureFill');
+    expect(getTextureSource(drawn.data.commands[2] as Texture2D)).toBeNull();
+  });
+
+  it('samples one bitmap character through a texture per sampling variant', () => {
+    const art = new ShapeWriter();
+    art.writeFillStyleCount(2);
+    // The same character, tiled-and-smoothed in one style and clamped-and-sharp in the other.
+    art.writeBitmapFillStyle(0x40, 9, 20);
+    art.writeBitmapFillStyle(0x43, 9, 20);
+    art.writeLineStyleCount(0);
+    art.writeStyleBits(2, 0);
+    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    art.writeStraightEdge(800, 0);
+    art.writeStraightEdge(0, 800);
+    art.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
+        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // Pixels are shared and sampling is not: two textures, one reference, one decode.
+    expect(document!.imageResources).toHaveLength(1);
+    const textures = document!.imageResources[0].textures!;
+    expect(textures).toHaveLength(2);
+    expect(textures[0].sampler.wrapU).toBe('repeat');
+    expect(textures[0].sampler.magFilter).toBe('linear');
+    expect(textures[1].sampler.wrapU).toBe('clamp-to-edge');
+    expect(textures[1].sampler.magFilter).toBe('nearest');
+  });
+
   it('reads a JPEG carrying the legacy end-of-image marker between its tables and its pixels', () => {
     // Encoders of the era wrote the encoding tables and the image as two concatenated JPEG streams, so a
     // payload commonly contains an end-of-image immediately followed by a second start-of-image before the
@@ -792,9 +912,12 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document!.references[0];
-    expect(reference?.kind).toBe('Asset');
-    expect(getNodeLocalBoundsRectangle(reference!.target)).toMatchObject({ height: 16, width: 32 });
+    // The placement is unnamed, so it earns no slot: the image travels as a resource and the node it
+    // sizes is reached through the graph.
+    const reference = document!.imageResources[0];
+    expect(reference.mimeType).toBe('image/jpeg');
+    const placed = getNodeChildren(document!.root)[0];
+    expect(getNodeLocalBoundsRectangle(placed)).toMatchObject({ height: 16, width: 32 });
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
@@ -810,9 +933,9 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toHaveLength(1);
-    expect(document?.references[0].name).toBe('empty');
-    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+    expect(document?.slots).toHaveLength(1);
+    expect(document?.slots[0].name).toBe('empty');
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
       height: 0,
       width: 0,
       x: 0,
@@ -839,9 +962,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document?.references[0];
-    expect(reference?.kind).toBe('Slot');
-    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.ExternalAvatar');
+    expect(document?.slots[0].linkage).toBe('Game.ExternalAvatar');
   });
 
   it('updates an existing PlaceObject2 when the move flag is set', () => {
@@ -867,9 +988,9 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document?.references[0];
+    const reference = document?.slots[0];
     expect(reference?.name).toBe('avatarSlot');
-    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.Avatar');
+    expect(reference?.linkage).toBe('Game.Avatar');
     expect(getNodeLocalMatrix(reference!.target)).toMatchObject({ a: 2, d: 3, tx: 2, ty: -3 });
   });
 
@@ -891,7 +1012,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
   });
 
   it('ignores a PlaceObject3 move with no display-list target', () => {
@@ -911,7 +1032,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
   });
 
   it('enumerates named instances from every frame while attaching only the current one', () => {
@@ -942,11 +1063,11 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references.map((reference) => reference.name)).toEqual(['firstFrameSlot', 'secondFrameSlot']);
+    expect(document?.slots.map((reference) => reference.name)).toEqual(['firstFrameSlot', 'secondFrameSlot']);
 
     const root = document!.root as MovieClip;
-    const first = document!.references[0].target;
-    const second = document!.references[1].target;
+    const first = document!.slots[0].target;
+    const second = document!.slots[1].target;
     expect(getMovieClipTotalFrames(root)).toBe(2);
     expect(getNodeParent(first)).toBe(root);
     expect(getNodeParent(second)).toBeNull();
@@ -985,8 +1106,8 @@ describe('createScene2DFromSwf', () => {
     );
 
     const root = document!.root as MovieClip;
-    const mover = document!.references[0].target;
-    expect(document?.references).toHaveLength(1);
+    const mover = document!.slots[0].target;
+    expect(document?.slots).toHaveLength(1);
     expect(getNodeLocalMatrix(mover)).toMatchObject({ a: 1, d: 1, tx: 1, ty: 2 });
 
     gotoAndStopMovieClip(root, 2);
@@ -1017,9 +1138,9 @@ describe('createScene2DFromSwf', () => {
     );
 
     const root = document!.root as MovieClip;
-    const under = document!.references[0].target;
-    const over = document!.references[1].target;
-    const between = document!.references[2].target;
+    const under = document!.slots[0].target;
+    const over = document!.slots[1].target;
+    const between = document!.slots[2].target;
     expect(getNodeChildren(root)).toEqual([under, over]);
 
     gotoAndStopMovieClip(root, 2);
@@ -1128,11 +1249,11 @@ describe('createScene2DFromSwf', () => {
     );
 
     const root = document!.root as MovieClip;
-    expect(document?.references.map((reference) => reference.name)).toEqual(['panel', 'firstChild', 'secondChild']);
+    expect(document?.slots.map((reference) => reference.name)).toEqual(['panel', 'firstChild', 'secondChild']);
 
-    const panel = document!.references[0].target as MovieClip;
-    const firstChild = document!.references[1].target;
-    const secondChild = document!.references[2].target;
+    const panel = document!.slots[0].target as MovieClip;
+    const firstChild = document!.slots[1].target;
+    const secondChild = document!.slots[2].target;
     expect(getMovieClipTotalFrames(root)).toBe(1);
     expect(getMovieClipTotalFrames(panel)).toBe(2);
     expect(getNodeChildren(panel)).toEqual([firstChild]);
@@ -1162,9 +1283,9 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document?.references[0];
+    const reference = document?.slots[0];
     expect(reference?.name).toBe('metadataSlot');
-    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.MetadataAvatar');
+    expect(reference?.linkage).toBe('Game.MetadataAvatar');
     expect(getNodeLocalMatrix(reference!.target)).toMatchObject({ tx: 3, ty: 4 });
   });
 
@@ -1200,9 +1321,9 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    const reference = document?.references[0];
+    const reference = document?.slots[0];
     expect(reference?.name).toBe('legacyChild');
-    expect(reference?.kind === 'Slot' ? reference.linkage : null).toBe('Game.LegacyChild');
+    expect(reference?.linkage).toBe('Game.LegacyChild');
     expect(getNodeWorldMatrix(reference!.target)).toMatchObject({ a: 2, d: 3, tx: 5, ty: -2 });
   });
 
@@ -1234,7 +1355,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
   });
 
   it('applies RemoveObject2 before freezing the first frame', () => {
@@ -1255,7 +1376,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toEqual([]);
+    expect(document?.slots).toEqual([]);
   });
 
   it('imports named slots from nested DefineSprite timelines', () => {
@@ -1318,13 +1439,13 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(document?.references).toHaveLength(2);
-    const panel = document!.references[0];
-    const avatar = document!.references[1];
+    expect(document?.slots).toHaveLength(2);
+    const panel = document!.slots[0];
+    const avatar = document!.slots[1];
     expect(panel.name).toBe('panelSlot');
-    expect(panel.kind === 'Slot' ? panel.linkage : null).toBe('Game.Panel');
+    expect(panel.linkage).toBe('Game.Panel');
     expect(avatar.name).toBe('avatarSlot');
-    expect(avatar.kind === 'Slot' ? avatar.linkage : null).toBe('Game.Avatar');
+    expect(avatar.linkage).toBe('Game.Avatar');
     expect(getNodeLocalBoundsRectangle(panel.target)).toMatchObject({ height: 30, width: 20, x: 3, y: 4 });
     expect(getNodeLocalBoundsRectangle(avatar.target)).toMatchObject({ height: 10, width: 10, x: -1, y: -2 });
     const intermediate = getNodeParent(avatar.target);
@@ -1378,13 +1499,13 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
       height: 16,
       width: 32,
       x: 0,
       y: 0,
     });
-    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[1].target)).toMatchObject({
       height: 4,
       width: 8,
       x: 0,
@@ -1413,7 +1534,7 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
       height: 180,
       width: 320,
       x: 0,
@@ -1449,13 +1570,13 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
       height: 24,
       width: 48,
       x: 0,
       y: 0,
     });
-    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[1].target)).toMatchObject({
       height: 9,
       width: 17,
       x: 0,
@@ -1499,13 +1620,13 @@ describe('createScene2DFromSwf', () => {
       ]),
     );
 
-    expect(getNodeLocalBoundsRectangle(document!.references[0].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
       height: 32,
       width: 64,
       x: 0,
       y: 0,
     });
-    expect(getNodeLocalBoundsRectangle(document!.references[1].target)).toMatchObject({
+    expect(getNodeLocalBoundsRectangle(document!.slots[1].target)).toMatchObject({
       height: 19,
       width: 31,
       x: 0,
@@ -1914,3 +2035,14 @@ const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const _encoder = new TextEncoder();
+
+function losslessPayload(format: number, width: number, height: number, pixels: readonly number[]): Uint8Array {
+  return new Uint8Array([format, width & 0xff, width >> 8, height & 0xff, height >> 8, ...pixels]);
+}
+
+// A stored (uncompressed) DEFLATE block wrapped in a zlib header, so the test exercises the real
+// decompressor rather than a stub.
+function storedDeflate(bytes: readonly number[]): number[] {
+  const length = bytes.length;
+  return [0x78, 0x01, 0x01, length & 0xff, length >> 8, ~length & 0xff, (~length >> 8) & 0xff, ...bytes, 0, 0, 0, 0];
+}

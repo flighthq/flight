@@ -1,50 +1,39 @@
+import type { ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
 
-export const Scene2DContentReferenceKind = {
-  Asset: 'Asset',
-  Slot: 'Slot',
-} as const;
-
-export type Scene2DContentReferenceKind =
-  (typeof Scene2DContentReferenceKind)[keyof typeof Scene2DContentReferenceKind];
-
-interface Scene2DContentReferenceBase {
+// A named place in the authored graph where the application supplies content the document does not carry.
+// The document knows the slot exists and where it goes; only the application knows what belongs in it, so
+// this is the one reference whose resolution produces a Node2D.
+export interface Scene2DSlotReference {
   content: Node2D | null;
+  // The authoring-time class/symbol name a format recorded for this slot, when it recorded one. A resolver
+  // dispatching on an exported symbol reads this rather than matching on `name`.
+  linkage: string | null;
   name: string;
   required: boolean;
   target: Node2D;
 }
 
-export interface Scene2DAssetReference extends Scene2DContentReferenceBase {
-  kind: 'Asset';
-  // How the asset is addressed. A format that embeds its assets has no address to fetch from, so `uri`
-  // names the asset within its document and `bytes` carries it.
-  uri: string;
-  // Encoded bytes the document carried inline, or null when the asset lives at `uri`. Held as a view over
-  // the source rather than a copy, and never decoded at import: decoding is the resolve step's job, so a
-  // caller that never resolves an embedded asset never pays for its pixels.
-  bytes: Uint8Array | null;
-  // Media type of `bytes` when the document could identify one, for a resolver dispatching by format.
-  mimeType: string | null;
-}
-
-export interface Scene2DSlotReference extends Scene2DContentReferenceBase {
-  kind: 'Slot';
-  linkage: string | null;
-}
-
-export type Scene2DContentReference = Scene2DAssetReference | Scene2DSlotReference;
-
-// A static, renderer-neutral named-graph document. `root` is an unattached authored hierarchy and
-// `references` is its enumerable content contract and retains each installed content binding. Applications
-// fill references only through the scene2d-resources resolve/load APIs; targets are retained here so codecs
-// can bind each manifest entry without a parallel path language or hidden runtime.
+// A static, renderer-neutral named-graph document. `root` is the complete authored hierarchy: an importer
+// decides the graph's shape at parse, so nothing downstream can change what a node IS — only what a slot
+// holds and what pixels a texture carries.
+//
+// The two sidecar arrays are the document's enumerable contracts, split by what resolving one produces:
+//
+//   slots          — a node the application supplies. Resolves synchronously through resolveScene2DResources.
+//   imageResources — pixels the document carried or named. Each reference lists the waiting Textures already
+//                    wired into `root`; loading one binds its decoded Image into all of them at once, so a
+//                    character placed a hundred times decodes once.
+//
+// A format that embeds a whole sub-document (a nested or data-uri SVG) recurses through the importer
+// registry at parse instead, which is why neither array carries a node-producing byte payload.
 export interface Scene2DDocument {
   // The authored stage colour as packed RGBA, or null when the format declares none. It is document
   // metadata rather than content — a colour the viewport clears to, not a node in the graph — so an
   // application decides whether to honour it and nothing in `root` depends on it.
   backgroundColor: number | null;
-  references: Scene2DContentReference[];
+  imageResources: ImageResourceReference[];
   root: Node2D;
+  slots: Scene2DSlotReference[];
   sourceKind: string | null;
 }

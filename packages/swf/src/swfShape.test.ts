@@ -1,4 +1,4 @@
-import type { Texture2D } from '@flighthq/types/contract';
+import { createTexture } from '@flighthq/texture/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape, createSwfShape } from './swfShape';
@@ -282,18 +282,81 @@ describe('createSwfShape', () => {
     writer.writeStraightEdge(2000, 0);
     writer.writeEndShape();
 
-    const bitmapFills: { characterId: number; texture: Texture2D }[] = [];
-    const shape = createSwfShape(writer.toReader(), 1, bitmapFills);
+    const seen: number[] = [];
+    const texture = createTexture();
+    const shape = createSwfShape(writer.toReader(), 1, (characterId) => {
+      seen.push(characterId);
+      return texture;
+    });
 
     // Dropping the geometry would lose the artwork's shape as well as its paint, which is the whole
     // picture for a file whose art is bitmap-filled.
     expect(shape?.data.commands[0]).toBe('beginTextureFill');
     expect(shape?.data.commands.filter((token) => token === 'lineTo')).toHaveLength(1);
     // The fill names the character whose pixels belong in it, and the texture starts sourceless.
-    expect(bitmapFills).toHaveLength(1);
-    expect(bitmapFills[0].characterId).toBe(7);
-    expect(bitmapFills[0].texture.dimension).toBe('2d');
-    expect(shape?.data.commands[2]).toBe(bitmapFills[0].texture);
+    expect(seen).toEqual([7]);
+    expect(shape?.data.commands[2]).toBe(texture);
+    expect(texture.source).toBeNull();
+  });
+
+  it('converts a bitmap fill matrix from image pixels to shape pixels', () => {
+    const writer = new ShapeWriter();
+    writer.writeFillStyleCount(1);
+    // Scale 20 is the twips-per-pixel identity, so the matrix reaches the command stream as 1:1.
+    writer.writeBitmapFillStyle(0x41, 7, 20);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(2000, 0);
+    writer.writeStraightEdge(0, 1000);
+    writer.writeEndShape();
+
+    const shape = createSwfShape(writer.toReader(), 3, () => createTexture());
+
+    expect(shape?.data.commands[3]).toMatchObject({ a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 });
+  });
+
+  it('hands the decoder the two sampling flags its fill type encodes', () => {
+    const seen: Array<readonly [number, boolean, boolean]> = [];
+    for (const type of [0x40, 0x41, 0x42, 0x43]) {
+      const writer = new ShapeWriter();
+      writer.writeFillStyleCount(1);
+      writer.writeBitmapFillStyle(type, 3, 20);
+      writer.writeLineStyleCount(0);
+      writer.writeStyleBits(1, 0);
+      writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+      writer.writeStraightEdge(100, 0);
+      writer.writeEndShape();
+      createSwfShape(writer.toReader(), 3, (characterId, repeat, smoothed) => {
+        seen.push([characterId, repeat, smoothed]);
+        return createTexture();
+      });
+    }
+
+    // Repeat and smoothing are sampler axes, so one character can back all four combinations at once.
+    expect(seen).toEqual([
+      [3, true, true],
+      [3, false, true],
+      [3, true, false],
+      [3, false, false],
+    ]);
+  });
+
+  it('keeps the contour but paints nothing when the resolver declines the character', () => {
+    const writer = new ShapeWriter();
+    writer.writeFillStyleCount(1);
+    writer.writeBitmapFillStyle(0x41, 99, 20);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(2000, 0);
+    writer.writeStraightEdge(0, 1000);
+    writer.writeEndShape();
+
+    const shape = createSwfShape(writer.toReader(), 3, () => null);
+
+    expect(shape?.data.commands[0]).toBe('beginFill');
+    expect(shape?.data.commands.filter((token) => token === 'lineTo')).toHaveLength(2);
   });
 
   it('returns null for a body that runs out mid-record', () => {

@@ -37,15 +37,17 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/image": "*",
     "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/signals": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Renderer-neutral Scene2D documents with explicit named asset and application slot resolution",
+  "description": "Renderer-neutral Scene2D documents with explicit application slot and image resource resolution",
   "sideEffects": false
 }

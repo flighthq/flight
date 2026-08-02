@@ -10,7 +10,6 @@ import {
   appendShapeMoveTo,
   createShape,
 } from '@flighthq/shape/contract';
-import { createTexture } from '@flighthq/texture/contract';
 import type {
   CapsStyle,
   GradientType,
@@ -42,19 +41,27 @@ export function createSwfGlyphShape(reader: SwfReader): Shape | null {
 // every edge of a fill runs the same way around it, and then stitched end-to-start into closed contours.
 // Reversal is what makes the nonzero winding of the resulting command stream match the fill SWF meant,
 // holes included.
-// `bitmapFills` collects every bitmap-filled style this shape uses, pairing the character it names with
-// the texture the emitted fill points at. The texture starts sourceless: the geometry is decodable without
-// pixels, so it is emitted either way and the caller supplies the image when it has one.
+//
+// `resolveBitmapFill` turns a bitmap fill's character id and the two sampling flags its type encodes into
+// the Texture that fill paints with. The decoder never sees pixels: the texture it is handed may still be
+// waiting on its image resource, which is what lets shape decoding stay synchronous while decoding does
+// not. Resolution belongs to the caller rather than to an out-parameter this function allocates into,
+// because only the caller can hand back the texture it already made for that character and sampling.
 export function createSwfShape(
   reader: SwfReader,
   version: number,
-  bitmapFills?: { characterId: number; texture: Texture2D }[],
+  resolveBitmapFill: SwfBitmapFillResolver | null = null,
 ): Shape | null {
-  const styles = readSwfShapeStyles(reader, version, version >= 3, bitmapFills);
-  return styles === null ? null : decodeSwfShapeBody(reader, version, styles);
+  const styles = readSwfShapeStyles(reader, version, version >= 3, resolveBitmapFill);
+  return styles === null ? null : decodeSwfShapeBody(reader, version, styles, resolveBitmapFill);
 }
 
-function decodeSwfShapeBody(reader: SwfReader, version: number, styles: SwfShapeStyles): Shape | null {
+function decodeSwfShapeBody(
+  reader: SwfReader,
+  version: number,
+  styles: SwfShapeStyles,
+  resolveBitmapFill: SwfBitmapFillResolver | null = null,
+): Shape | null {
   const hasAlpha = version >= 3;
   const shape = createShape();
   const state: SwfShapeState = {
@@ -102,7 +109,7 @@ function decodeSwfShapeBody(reader: SwfReader, version: number, styles: SwfShape
       // New styles restart the index space, so everything collected against the old arrays has to be
       // drawn before they are replaced.
       appendSwfShapeStyleLayer(shape, state);
-      const replacement = readSwfShapeStyles(reader, version, hasAlpha);
+      const replacement = readSwfShapeStyles(reader, version, hasAlpha, resolveBitmapFill);
       if (replacement === null) return null;
       state.styles = replacement;
       state.fill0 = 0;
@@ -147,7 +154,8 @@ interface SwfShapeFill {
   ratios: number[];
   // A bitmap fill points at a texture whose pixels arrive later. The geometry is emitted regardless —
   // dropping it would lose the artwork's shape as well as its paint, which is the whole picture for a file
-  // whose art is bitmap-filled.
+  // whose art is bitmap-filled. Null when the fill is not a bitmap, or when the resolver declined the
+  // character, in which case the contour is still drawn and simply carries no paint.
   texture: Texture2D | null;
   textureMatrix: Matrix | null;
   spreadMethod: SpreadMethod;
@@ -342,7 +350,7 @@ function readSwfShapeFillStyle(
   reader: SwfReader,
   version: number,
   hasAlpha: boolean,
-  bitmapFills?: { characterId: number; texture: Texture2D }[],
+  resolveBitmapFill: SwfBitmapFillResolver | null,
 ): SwfShapeFill | null {
   const type = reader.readUint8();
   if (type === FILL_SOLID) {
@@ -396,10 +404,21 @@ function readSwfShapeFillStyle(
     const characterId = reader.readUint16();
     const matrix = readSwfShapeMatrix(reader);
     if (!reader.valid) return null;
+    const repeat = type === FILL_REPEATING_BITMAP || type === FILL_NON_SMOOTHED_REPEATING_BITMAP;
+    const smoothed = type === FILL_REPEATING_BITMAP || type === FILL_CLIPPED_BITMAP;
     const fill = createSwfShapeFill(0, 1);
-    fill.texture = createTexture();
-    fill.textureMatrix = matrix;
-    bitmapFills?.push({ characterId, texture: fill.texture });
+    fill.texture = resolveBitmapFill?.(characterId, repeat, smoothed) ?? null;
+    // A bitmap fill's matrix maps the image's PIXEL space into shape space, but SWF writes shape space in
+    // twips, so an unscaled 1:1 fill arrives as a scale of 20. readSwfShapeMatrix already converted the
+    // translation; the linear part converts here, leaving a pixel-to-pixel matrix.
+    fill.textureMatrix = createMatrix(
+      matrix.a / TWIPS_PER_PIXEL,
+      matrix.b / TWIPS_PER_PIXEL,
+      matrix.c / TWIPS_PER_PIXEL,
+      matrix.d / TWIPS_PER_PIXEL,
+      matrix.tx,
+      matrix.ty,
+    );
     return fill;
   }
   return null;
@@ -421,7 +440,12 @@ function createSwfShapeFill(color: number, opacity: number): SwfShapeFill {
   };
 }
 
-function readSwfShapeLineStyle(reader: SwfReader, version: number, hasAlpha: boolean): SwfShapeLine | null {
+function readSwfShapeLineStyle(
+  reader: SwfReader,
+  version: number,
+  hasAlpha: boolean,
+  resolveBitmapFill: SwfBitmapFillResolver | null,
+): SwfShapeLine | null {
   const width = reader.readUint16();
   if (version < 4) {
     const color = readSwfShapeColor(reader, hasAlpha);
@@ -452,7 +476,7 @@ function readSwfShapeLineStyle(reader: SwfReader, version: number, hasAlpha: boo
   // A fill-backed stroke carries a whole FILLSTYLE where its color would be. The style is consumed so the
   // record stays aligned, and the stroke falls back to opaque black rather than being dropped.
   if (hasFill) {
-    const fill = readSwfShapeFillStyle(reader, version, hasAlpha);
+    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, resolveBitmapFill);
     if (fill === null) return null;
     return {
       alpha: fill.opacity,
@@ -513,13 +537,13 @@ function readSwfShapeStyles(
   reader: SwfReader,
   version: number,
   hasAlpha: boolean,
-  bitmapFills?: { characterId: number; texture: Texture2D }[],
+  resolveBitmapFill: SwfBitmapFillResolver | null,
 ): SwfShapeStyles | null {
   const fillCount = readSwfShapeStyleCount(reader, version);
   if (!reader.valid || fillCount > MAX_SHAPE_STYLES) return null;
   const fills: SwfShapeFill[] = [];
   for (let i = 0; i < fillCount; i++) {
-    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, bitmapFills);
+    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, resolveBitmapFill);
     if (fill === null) return null;
     fills.push(fill);
   }
@@ -528,7 +552,7 @@ function readSwfShapeStyles(
   if (!reader.valid || lineCount > MAX_SHAPE_STYLES) return null;
   const lines: SwfShapeLine[] = [];
   for (let i = 0; i < lineCount; i++) {
-    const line = readSwfShapeLineStyle(reader, version, hasAlpha);
+    const line = readSwfShapeLineStyle(reader, version, hasAlpha, resolveBitmapFill);
     if (line === null) return null;
     lines.push(line);
   }
@@ -632,3 +656,9 @@ const STATE_LINE_STYLE = 0x08;
 const STATE_MOVE_TO = 0x01;
 const STATE_NEW_STYLES = 0x10;
 const TWIPS_PER_PIXEL = 20;
+
+// Hands the shape decoder the Texture a bitmap fill paints with, given the fill's character id and the two
+// sampling flags SWF encodes in the fill type: whether the image repeats past its edges, and whether it is
+// sampled smoothly. Those two axes are the sampler's, not the image's, so one character can back both a
+// tiled non-smoothed fill and a clamped smooth one over the same pixels.
+type SwfBitmapFillResolver = (characterId: number, repeat: boolean, smoothed: boolean) => Texture2D | null;

@@ -1,36 +1,26 @@
+import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { Scene2DContentReferenceKind } from '@flighthq/types/contract';
 
-import { createScene2DAssetReference, createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
-
-describe('createScene2DAssetReference', () => {
-  it('creates an enumerable named asset target', () => {
-    const target = createDisplayObject();
-    const reference = createScene2DAssetReference('heroImage', 'hero.png', target);
-    expect(reference).toEqual({
-      bytes: null,
-      content: null,
-      kind: Scene2DContentReferenceKind.Asset,
-      mimeType: null,
-      name: 'heroImage',
-      required: true,
-      target,
-      uri: 'hero.png',
-    });
-    expect(target.name).toBe('heroImage');
-  });
-});
+import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 
 describe('createScene2DDocument', () => {
-  it('retains the unattached root and an independent manifest', () => {
+  it('retains the unattached root and both enumerable contracts', () => {
     const root = createDisplayObject();
-    const references = [createScene2DAssetReference('bg', 'bg.png', createDisplayObject())];
-    expect(createScene2DDocument(root, references, 'acme')).toEqual({
+    const slots = [createScene2DSlotReference('bg', createDisplayObject())];
+    const imageResources = [createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png')];
+    expect(createScene2DDocument(root, slots, 'acme', null, imageResources)).toEqual({
       backgroundColor: null,
-      references,
+      imageResources,
       root,
+      slots,
       sourceKind: 'acme',
     });
+  });
+
+  it('defaults both contracts to empty for a document that carries neither', () => {
+    const document = createScene2DDocument(createDisplayObject());
+    expect(document.slots).toEqual([]);
+    expect(document.imageResources).toEqual([]);
   });
 });
 
@@ -39,7 +29,6 @@ describe('createScene2DSlotReference', () => {
     const target = createDisplayObject();
     const reference = createScene2DSlotReference('avatarSlot', target, 'Game.Avatar', false);
     expect(reference.content).toBeNull();
-    expect(reference.kind).toBe(Scene2DContentReferenceKind.Slot);
     expect(reference.linkage).toBe('Game.Avatar');
     expect(reference.required).toBe(false);
     expect(target.name).toBe('avatarSlot');
