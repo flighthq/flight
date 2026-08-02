@@ -36,6 +36,8 @@ describe('addPhysics2DBody', () => {
     expect(second.index).toBe(1);
     expect(third.index).toBe(2);
     expect(third.index).not.toBe(first.index);
+    expect(world.bodyByIndex.get(second.index)).toBe(second);
+    expect(world.bodyByIndex.get(third.index)).toBe(third);
   });
 
   it('derives mass properties on insertion so a body is never simulated massless', () => {
@@ -129,6 +131,7 @@ describe('createPhysics2DWorld', () => {
   it('starts empty with a default broadphase index', () => {
     const world = createPhysics2DWorld();
     expect(world.bodies).toHaveLength(0);
+    expect(world.bodyByIndex.size).toBe(0);
     expect(world.contacts).toHaveLength(0);
     expect(world.contactHooks).toEqual({ preSolve: null, postSolve: null });
     expect(world.index).toBeDefined();
@@ -163,6 +166,7 @@ describe('findPhysics2DBody', () => {
     addPhysics2DBody(world, boxBody(1, 0));
     removePhysics2DBody(world, first);
     expect(findPhysics2DBody(world, first.index)).toBeNull();
+    expect(world.bodyByIndex.has(first.index)).toBe(false);
   });
 });
 

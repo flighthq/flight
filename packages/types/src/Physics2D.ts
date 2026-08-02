@@ -263,6 +263,10 @@ export interface Physics2DStepExplanation {
 // field rather than a special case in the integrator.
 export interface Physics2DWorld {
   bodies: RigidBody2D[];
+  // Persistent identity lookup kept in lockstep with `bodies` by the world lifecycle helpers. Contacts
+  // and joints resolve this map inside solver loops, so body identity lookup does not scale with the
+  // number of bodies in the world.
+  bodyByIndex: Map<number, RigidBody2D>;
   contacts: Physics2DContact[];
   joints: Physics2DJoint[];
   // Joint solvers by kind, scoped to the world rather than module-global, so two worlds in one process

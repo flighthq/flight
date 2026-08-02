@@ -21,6 +21,7 @@ import { updateRigidBody2DMassData } from './massProperties';
 export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): RigidBody2D {
   body.index = world.nextBodyIndex++;
   world.bodies.push(body);
+  world.bodyByIndex.set(body.index, body);
   updateRigidBody2DMassData(body);
   return body;
 }
@@ -88,6 +89,7 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
 export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend): Physics2DWorld {
   return {
     bodies: [],
+    bodyByIndex: new Map(),
     contacts: [],
     joints: [],
     jointSolvers: new Map(),
@@ -136,10 +138,7 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
 // rather than references so a contact can outlive one step without pinning a removed body alive; this is
 // the lookup that turns one back into the other.
 export function findPhysics2DBody(world: Readonly<Physics2DWorld>, index: number): RigidBody2D | null {
-  for (const body of world.bodies) {
-    if (body.index === index) return body;
-  }
-  return null;
+  return world.bodyByIndex.get(index) ?? null;
 }
 
 // The canonical order of a body pair: lower index first. Every contact in the world is created through
@@ -186,6 +185,7 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
     }
     world.joints.splice(i, 1);
   }
+  world.bodyByIndex.delete(body.index);
   world.bodies.splice(at, 1);
   world.index.removeSpatialObject(body.index);
   return true;
