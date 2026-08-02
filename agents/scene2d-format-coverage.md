@@ -131,8 +131,47 @@ the cycle family `svg.recursive-use`, `svg.recursive-gradient`; `svg.image-missi
 `svg.unresolved-image`; `svg.mixed-clip-rule`; and
 `svg.object-bounding-box-clip-without-bounds`.
 
-## Rive
+## Rive (`.riv`)
 
-Chartered as this cell's third codec and **not built**. No `.riv` byte is read today. See the
-[scene2d-formats charter](packages/scene2d-formats/charter.md) for its scope, and note that Rive's
-state-machine *runtime* is explicitly not a codec concern.
+**Container layer only.** `parseRiveDocument` decodes the file into its header and flat core-object
+stream; no interpretation is built on top of it yet, so nothing produces display nodes, shapes,
+animations, or a `Scene2DDocument` from a `.riv` today.
+
+A `.riv` is not a document tree on the wire. It is a header followed by a flat run of **core
+objects**, each a numeric type key and then numeric property keys with their values. Every structure
+a reader cares about — artboards, shape hierarchy, animations, state machines — is reconstructed from
+that stream by later stages against Rive's object-model definitions.
+
+**Covered:** the `RIVE` fingerprint; varuint (unsigned LEB128) major version, minor version, and file
+id; the property table of contents; and the object stream with its four wire field types —
+varuint, varuint-length-prefixed UTF-8 bytes, little-endian IEEE-754 binary32, and little-endian
+unsigned 32-bit (color). A boolean travels as a single 0/1 byte, byte-identical to a one-byte
+varuint, which is why the table needs no code for it.
+
+Two wire details are easy to get wrong and are pinned by tests: the table's two-bit field codes pack
+**four to a 32-bit word**, using only that word's low byte — reading it as a dense sixteen-per-word
+bitmap desynchronizes the whole stream — and varuint values are accumulated arithmetically rather
+than with 32-bit shifts, so a value above 2^31 survives.
+
+**Not covered:** everything above the container. No type key or property key carries meaning yet, so
+artboards, nodes, shapes and paths, fills and strokes, deformable meshes, bones and skinning,
+animations and keyframes, and nested artboard linkage are all unread. The state-machine *descriptor*
+is likewise unread; per the charter its *runtime* is a separate future cell and never a codec concern.
+Rive's format is versioned and this reader ignores the major/minor version entirely — it neither
+rejects a future file nor adapts to an older one.
+
+**Crumbs.** Three, all asset facts, and all `Reject` because each ends the parse:
+`rive.invalid-header` (missing or wrong fingerprint, or a header that ends early),
+`rive.truncated-object-stream`, and `rive.unknown-property-width` — a property key declared neither
+by this reader nor by the file's own table, after which the next key's position is unknowable. That
+last one is the format's own unrecoverable case, not a Flight limitation.
+
+**Verification status — read this before trusting the layer.** No real `.riv` has ever been decoded.
+The container *grammar* — fingerprint, header field order, the four-per-word packing — is asserted
+only for internal consistency against bytes the test suite writes, which is precisely the
+"synthetic test that encodes the same guess as the parser" trap. What is independently verified is
+every primitive the grammar rests on, each having a definition outside this codebase: LEB128 against
+its arithmetic definition, and the float and integer reads against IEEE-754 and little-endian byte
+patterns. Cursor discipline is checked structurally, since a single byte of drift collapses a
+multi-object stream. Every wire fact is mutation-tested. **A single real `.riv` would convert the
+grammar from plausible to proven, and is the highest-value next step for this codec.**
