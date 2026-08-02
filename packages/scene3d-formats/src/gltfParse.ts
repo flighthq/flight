@@ -347,6 +347,7 @@ function buildGltfDocument(
   applyGltfExtensionHandlers(
     document,
     doc,
+    imageResources,
     gltfNodeToDocNode,
     nodeWorldTransforms,
     options?.extensionHandlers,
@@ -454,6 +455,7 @@ function buildGltfCameras(
 function applyGltfExtensionHandlers(
   document: Scene3DDocument,
   source: Readonly<GltfDocument>,
+  imageResources: readonly (ImageResourceReference | null)[],
   nodeIndices: readonly number[],
   nodeWorldTransforms: readonly Transform3D[],
   handlers: readonly GltfExtensionHandler[] | undefined,
@@ -480,6 +482,11 @@ function applyGltfExtensionHandlers(
     diagnostics,
     document,
     nodeIndices,
+    // The core's own resolver, bound to this parse's image table, so an extension's textures become the
+    // same Unresolved refs the base material's do rather than a parallel dialect of them.
+    resolveTexture(info, colorSpace) {
+      return resolveGltfTexture(source, imageResources, info, colorSpace, gltfDrops);
+    },
     source,
   };
   for (const handler of selected.values()) handler.apply(context);

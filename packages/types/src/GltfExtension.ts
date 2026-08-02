@@ -1,6 +1,7 @@
-import type { GltfDocument } from './GltfSchema';
+import type { GltfDocument, GltfTextureInfo } from './GltfSchema';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Scene3DDocument } from './Scene3DDocument';
+import type { Texture, TextureColorSpace } from './Texture';
 import type { Transform3D } from './Transform3D';
 
 // The deliberately small context an individually imported glTF extension handler receives. Core parsing
@@ -8,11 +9,18 @@ import type { Transform3D } from './Transform3D';
 // facts their named extension owns; they do not fetch resources or reach into parser-private buffers.
 // A handler that drops/skips/recovers input records structured crumbs onto `diagnostics` (the same raw
 // array the parser functions accept), aggregating repeated per-element faults itself.
+// `document.materials` is INDEX-ALIGNED with `source.materials` — the core builds one document material
+// per glTF material, in order — so a material-extension handler addresses its target by the same index
+// the glTF file uses, with no lookup table. `resolveTexture` is the core's own texture resolver, exposed
+// because an extension's texture references have to become the same Unresolved refs the base material's
+// do (same sampler, same color space, same KHR_texture_transform handling); a handler that built its own
+// would produce refs `loadScene3DResources` does not recognize.
 export interface GltfExtensionContext {
   buildNodeTransform(node: number): Transform3D;
   diagnostics?: ImportDiagnostic[];
   document: Scene3DDocument;
   nodeIndices: readonly number[];
+  resolveTexture(info: Readonly<GltfTextureInfo> | undefined, colorSpace: TextureColorSpace): Texture | null;
   source: Readonly<GltfDocument>;
 }
 
