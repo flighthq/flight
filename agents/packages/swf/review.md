@@ -55,6 +55,10 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 - Fill coverage is honest about its edge: gradients pass through with ratios, spread, and a matrix that
   needed only a translation change because Flight's gradient box is SWF's gradient square; bitmap fills are
   read for alignment and left unpainted rather than approximated by a solid colour.
+- Embedded images cross as undecoded bytes on an asset reference, with the media type sniffed from the
+  payload's magic. Import stays synchronous and allocates no pixels; decoding belongs to the resolve step,
+  which may be asynchronous and which a caller that does not need an image never runs. The reference is
+  addressed by the character it came from, since an embedded asset has no address to fetch from.
 - Timelines cross as data, not as a player. Each one becomes a `TimelineSource` on a `MovieClip`, so
   playback, seeking, looping, and label lookup are the `movieclip`/`timeline` engine's, and the codec
   keeps no runtime of its own — the seam `TimelineSource` was written for.
@@ -92,14 +96,13 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 
 ## Remaining depth
 
-- Bitmap, text, and font definitions are still structural only. Bitmap pixels are blocked on one
-  decision rather than on implementation: `createBitmap` plus `createTexture` is a synchronous path, and
-  `DefineBitsLossless` needs only a deflate that Flight already carries once, in `scene3d-formats`.
-  Whether that inflate becomes a shared cell or is mirrored per-cell behind a registered seam determines
-  whether `swf` needs a decompressor seam at all. `DefineBitsJPEG*` additionally needs a decoder Flight
-  has only as an asynchronous web registry, so embedded encoded payloads also need a home in the document
-  model, which today addresses assets by URI.
-- Morph shapes keep bounds only; their paired start/end geometry has no 2D-morph home to land in.
+- Bitmap pixels reach a resolver but nothing decodes them yet. No resolver ships that turns
+  `image/png`, `image/jpeg`, `image/gif`, or the lossless payloads into a textured node, so an imported
+  document still draws its images as empty bounded containers until an application supplies one. A
+  lossless payload additionally needs an inflate, which an asynchronous resolver can take from the
+  platform rather than vendoring.
+- Text and font definitions are still structural only, and morph shapes keep bounds alone; their paired
+  start/end geometry has no 2D-morph home to land in.
 - Playback carries placement transforms only. Per-frame color transforms, blend modes, masks (clip
   depth), filters, and `DoAction`/`DoInitAction` frame scripts are parsed past rather than imported, so
   a frame's visual state is narrower than its structural state. Frame scripts in particular have a

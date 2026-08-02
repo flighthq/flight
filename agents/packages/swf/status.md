@@ -51,9 +51,16 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   text definition bounds become placed-target extents, and sprite extents recursively union every
   available child bound through its placement matrix, across every frame of the symbol rather than its
   first — a node's local bounds do not change as its playhead moves.
+- Embedded images leave the importer as asset references carrying their bytes undecoded. A placed
+  `DefineBits*` character becomes a bounded node plus a `Scene2DAssetReference` whose `bytes` is a
+  zero-copy view of the payload and whose `mimeType` is sniffed from its magic (`image/png`, `image/gif`,
+  `image/jpeg`, or the SWF-specific lossless types). Decoding is the resolve step's job, so it can be
+  asynchronous and a caller that never resolves an image never pays for its pixels. `uri` addresses the
+  character within the document (`swf:bitmap/<id>`) because an embedded asset has no address to fetch
+  from.
 - Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
-  headers, and video stream definitions retain declared frame dimensions. Their media payloads remain
-  opaque and no visual body is materialized.
+  headers, and video stream definitions retain declared frame dimensions. A video payload stays opaque
+  and no visual body is materialized.
 - `DefineBitsJPEG2` through `DefineBitsJPEG4` retain dimensions from bounded JPEG SOF, PNG IHDR, and
   GIF header scans. JPEG3/4 alpha payloads remain opaque behind their validated offsets.
 - RECT readers accept the zero-bit encoding used by empty authored shapes, preserving a zero-size
@@ -76,11 +83,11 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   snapshot budget rejects a file that would exceed it, rather than materializing it.
 - Compressed `CWS`/`ZWS`, bitmap and text definition bodies, legacy table-based JPEG/button/font extents,
   frame scripts, and opaque `DoABC` exposure remain staged rather than being represented incompletely.
-  Bitmap pixels are one decision away rather than one implementation away: `createBitmap` plus
-  `createTexture` is a synchronous path, `DefineBitsLossless` needs only a deflate, and Flight already
-  carries an RFC 1951 inflate in `scene3d-formats`. Whether that inflate is extracted into a cell both
-  consume or mirrored per-cell behind a registered seam decides whether `swf` needs a decompressor seam at
-  all, so it is the user's call and is not built ahead of it.
+  What remains for bitmaps is the decoder behind the resolve step, not the path to it: the bytes and their
+  media type now reach a resolver. A JPEG/PNG/GIF payload decodes through the platform or
+  `@flighthq/image-codec`; a lossless payload needs an inflate, which an asynchronous resolver can take
+  from the platform's own `DecompressionStream` rather than vendoring one. That is why the resolve step
+  also settles the question of where an inflate lives — `swf` needs no decompressor seam of its own.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile, and depends on `movieclip` for the playback nodes it produces and on `shape`/`geometry` for

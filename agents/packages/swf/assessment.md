@@ -8,13 +8,13 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Decode bitmap pixels, then text and fonts.** `DefineShape` through `DefineShape4` now draw, so the
-   still frame is vector-complete; bitmaps and text are what is left of the visible content. Bitmaps need
-   a ruling first, not code: `DefineBitsLossless` is a synchronous `createBitmap`/`createTexture` path
-   behind a deflate Flight already has once in `scene3d-formats`, so the question is whether that inflate
-   is extracted into a cell both consume or mirrored per-cell behind a registered seam. `DefineBitsJPEG*`
-   needs both a decoder Flight has only asynchronously and a home for embedded encoded payloads in a
-   document model that addresses assets by URI.
+1. **Ship the image resolver, then text and fonts.** `DefineShape` through `DefineShape4` draw, and
+   embedded image bytes now reach the resolve step with their media type, so what is missing is the
+   resolver that turns those bytes into a textured node: platform or `@flighthq/image-codec` decode for
+   JPEG/PNG/GIF, and an inflate plus `createBitmap`/`createTexture` for the SWF lossless formats, which an
+   asynchronous resolver can take from `DecompressionStream` rather than vendoring. Whether that resolver
+   ships from `swf`, from `scene2d-resources`, or from an application is the open question. Text and font
+   definitions remain structural after that.
 2. **Carry per-frame appearance and frame scripts.** Placement transforms replay; the color transform,
    blend mode, clip-depth mask, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
