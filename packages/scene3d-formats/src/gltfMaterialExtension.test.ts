@@ -13,7 +13,7 @@ import type {
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension';
 
 function makeDocument(material: MaterialLike): Scene3DDocument {
   return {
@@ -97,5 +97,36 @@ describe('attachGltfPbrExtension', () => {
     const document = makeDocument(createStandardPbrMaterial() as unknown as MaterialLike);
     expect(document.materials[0].kind).toBe(StandardPbrMaterialKind);
     expect((document.materials[0] as unknown as StandardPbrMaterial).roughness).toBeDefined();
+  });
+});
+
+describe('findGltfPbrExtension', () => {
+  it('returns the extension a sibling handler already attached', () => {
+    // The lookup that lets three glTF extensions fill one Flight descriptor: whichever handler runs
+    // first attaches it, the rest find it here instead of attaching a second of the same kind.
+    const document = makeDocument(createStandardPbrMaterial() as unknown as MaterialLike);
+    attachGltfPbrExtension(document, 0, createClearcoatPbrExtension({ clearcoat: 0.6 }));
+
+    const found = findGltfPbrExtension(document, 0, 'ClearcoatPbrExtension');
+    expect(found).not.toBeNull();
+    expect((found as ClearcoatPbrExtension).clearcoat).toBeCloseTo(0.6, 6);
+  });
+
+  it('returns null for a kind not attached to the material', () => {
+    const document = makeDocument(createStandardPbrMaterial() as unknown as MaterialLike);
+    attachGltfPbrExtension(document, 0, createClearcoatPbrExtension());
+
+    expect(findGltfPbrExtension(document, 0, 'SheenPbrExtension')).toBeNull();
+  });
+
+  it('returns null for a material still on the standard lane', () => {
+    // Nothing has been attached yet, so there is no extension list to search.
+    const document = makeDocument(createStandardPbrMaterial() as unknown as MaterialLike);
+    expect(findGltfPbrExtension(document, 0, 'ClearcoatPbrExtension')).toBeNull();
+  });
+
+  it('returns null for a material index that does not exist', () => {
+    const document = makeDocument(createStandardPbrMaterial() as unknown as MaterialLike);
+    expect(findGltfPbrExtension(document, 9, 'ClearcoatPbrExtension')).toBeNull();
   });
 });
