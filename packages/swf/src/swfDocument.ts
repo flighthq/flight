@@ -19,7 +19,6 @@ import { createDisplayObject, createSprite, setNode2DClip } from '@flighthq/scen
 import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
 import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type {
-  Bitmap,
   BoundsNodeAny,
   RichText,
   Texture2D,
@@ -40,7 +39,6 @@ import type {
   Shape,
   ShapeData,
   Sprite,
-  Texture,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
@@ -200,7 +198,6 @@ interface SwfTagResult {
   imageTextures: Map<number, Map<string, Texture2D>>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
-  shapeBitmapFills: Map<number, { characterId: number; texture: Texture2D }[]>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
@@ -236,8 +233,6 @@ interface SwfParseState {
   // field declared before its font tag still resolves the family.
   editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
   fontNames: Map<number, string>;
-  // Which bitmap character each shape's texture fills are waiting on, so a caller can supply the pixels.
-  shapeBitmapFills: Map<number, { characterId: number; texture: Texture2D }[]>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -927,7 +922,6 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     abcBlobs: [],
     backgroundColor: null,
     pendingInitActions: [],
-    shapeBitmapFills: new Map<number, { characterId: number; texture: Texture2D }[]>(),
     editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
     fontNames: new Map<number, string>(),
     characterBounds: new Map<number, SwfRectangle>(),
@@ -961,7 +955,6 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     images: state.images,
     imageTextures: state.imageTextures,
     linkages: state.linkages,
-    shapeBitmapFills: state.shapeBitmapFills,
     shapes: state.shapes,
     sprites: state.sprites,
     timeline,
