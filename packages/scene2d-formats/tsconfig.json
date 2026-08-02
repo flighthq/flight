@@ -18,6 +18,7 @@
     { "path": "../geometry" },
     { "path": "../image" },
     { "path": "../importdiagnostics" },
+    { "path": "../math" },
     { "path": "../node" },
     { "path": "../path" },
     { "path": "../path-formats" },

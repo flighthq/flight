@@ -1,3 +1,5 @@
+import type { DisplayObject } from './DisplayObject';
+
 /**
  * Rive `.riv` container types used by `@flighthq/scene2d-formats`.
  *
@@ -95,4 +97,21 @@ export interface RiveArtboardGraph {
 /** Every artboard in a `.riv`, each with its component tree resolved. */
 export interface RiveObjectGraph {
   artboards: RiveArtboardGraph[];
+}
+
+/**
+ * One imported artboard. A `.riv` holds several, so import returns them side by side rather than
+ * choosing one; the artboard's own size travels with its subtree because nothing in the display tree
+ * records it.
+ */
+export interface RiveArtboardImport {
+  height: number;
+  name: string;
+  root: DisplayObject;
+  width: number;
+}
+
+/** The result of importing a `.riv`: every artboard it declares, in file order. */
+export interface RiveDocumentImportResult {
+  artboards: RiveArtboardImport[];
 }
