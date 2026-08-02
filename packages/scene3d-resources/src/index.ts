@@ -29,6 +29,7 @@ export {
   registerIridescencePbrScene3DMaterialTextures,
   registerScene3DPbrExtensionTextures,
   registerScene3DMaterialTextures,
+  registerShadedScene3DMaterialTextures,
   registerSheenPbrScene3DMaterialTextures,
   registerSpecularPbrScene3DMaterialTextures,
   registerTransmissionVolumePbrScene3DMaterialTextures,
