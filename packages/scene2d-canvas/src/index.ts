@@ -3,6 +3,7 @@ export {
   createCanvasOffscreenRenderState,
   createCanvasElement,
   createCanvasRenderState,
+  connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   getCanvasRenderStateTextureResolvers,
   createCanvasRenderTexturePool,
