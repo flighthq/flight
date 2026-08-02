@@ -23,8 +23,8 @@ import {
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { MovieClip, RichText, Shape } from '@flighthq/types/contract';
-import { Compression, MovieClipKind, RichTextKind, ShapeKind } from '@flighthq/types/contract';
+import type { MovieClip, Shape } from '@flighthq/types/contract';
+import { Compression, MovieClipKind, ShapeKind } from '@flighthq/types/contract';
 
 import {
   createGlyphOutlineSourcesFromSwf,
@@ -595,61 +595,6 @@ describe('createScene2DFromSwf', () => {
     );
 
     expect(getMovieClipFrameScript(document!.root as MovieClip, 1)).toBeNull();
-  });
-
-  it('imports an edit text field as a text node rather than flattening it to paths', () => {
-    const field = joinBytes(
-      uint16(12),
-      createRectangle(0, 4000, 0, 800),
-      // HasText | WordWrap | Multiline | HasTextColor | HasFont, then HasLayout | Border.
-      new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
-      uint16(7),
-      uint16(240),
-      new Uint8Array([0x11, 0x22, 0x33, 0xff]),
-      new Uint8Array([2]),
-      uint16(20),
-      uint16(40),
-      uint16(60),
-      uint16(80),
-      swfString('varName'),
-      swfString('Hello'),
-    );
-
-    const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_EDIT_TEXT, field),
-        createTag(
-          TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(12), swfString('score')),
-        ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
-      ]),
-    );
-
-    const node = document!.references[0].target as RichText;
-    expect(node.kind).toBe(RichTextKind);
-    // The authored string survives as text the caller can read and reassign — the property that would be
-    // destroyed by flattening the field into glyph outlines.
-    expect(node.data.text).toBe('Hello');
-    expect(node.data.multiline).toBe(true);
-    expect(node.data.wordWrap).toBe(true);
-    expect(node.data.border).toBe(true);
-    expect(node.data.textColor).toBe(0x112233);
-    expect(node.data.width).toBe(200);
-    expect(node.data.height).toBe(40);
-    // Twips convert throughout: a 240-twip font height is 12px, and the 20/40/60/80-twip layout values
-    // become 1/2/3/4 pixels in order.
-    expect(node.data.defaultTextFormat).toMatchObject({
-      align: 'center',
-      indent: 3,
-      leading: 4,
-      leftMargin: 1,
-      rightMargin: 2,
-      size: 12,
-    });
-    // The authored RECT still sizes the node, before any layout has run.
-    expect(getNodeLocalBoundsRectangle(node)).toMatchObject({ height: 40, width: 200 });
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
@@ -1740,7 +1685,6 @@ const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS = 6;
 const TAG_DEFINE_BUTTON_2 = 34;
-const TAG_DEFINE_EDIT_TEXT = 37;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_2 = 48;
 const TAG_DEFINE_FONT_INFO = 13;

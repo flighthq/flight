@@ -498,32 +498,22 @@ export function warmWgpuPipelines(state: WgpuRenderState): void {
   getWgpuPipeline(state, BlendMode.Add, 'normal');
 }
 
-// Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs
+// Converts an rgba8 buffer between straight and premultiplied alpha, in either direction. Allocates, but runs
 // only on a texture upload (cache miss or content change), never in the per-frame draw path.
-// The inverse of premultiplyStraightRgba8: recovers straight rgb from premultiplied (rgb = rgb/a*255).
-// A fully transparent texel carries no recoverable color, so it stays zero rather than dividing by zero.
-// Lossy for small alphas — the quantization the multiply discarded cannot be restored — which is why a
-// producer should prefer handing over straight data when both realizations are needed.
-function unpremultiplyToStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
+function convertRgba8AlphaEncoding(
+  data: Readonly<Uint8ClampedArray<ArrayBuffer>>,
+  toPremultiplied: boolean,
+): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(data.length);
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3];
-    const scale = a === 0 ? 0 : 255 / a;
+    // The two directions differ only in this factor, so they share one loop rather than shipping two.
+    // A fully transparent texel carries no recoverable color either way, so it stays zero instead of
+    // dividing by zero on the un-premultiply side.
+    const scale = toPremultiplied ? a / 255 : a === 0 ? 0 : 255 / a;
     out[i] = data[i] * scale;
     out[i + 1] = data[i + 1] * scale;
     out[i + 2] = data[i + 2] * scale;
-    out[i + 3] = a;
-  }
-  return out;
-}
-
-function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
-  const out = new Uint8ClampedArray(data.length);
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    out[i] = (data[i] * a) / 255;
-    out[i + 1] = (data[i + 1] * a) / 255;
-    out[i + 2] = (data[i + 2] * a) / 255;
     out[i + 3] = a;
   }
   return out;
@@ -557,9 +547,9 @@ function uploadWgpuBitmapEntry(
   // premultiplied rgb would square the coverage and darken every translucent texel.
   const data =
     premultiply && bitmap.alphaType !== 'premultiplied'
-      ? premultiplyStraightRgba8(bitmap.data)
+      ? convertRgba8AlphaEncoding(bitmap.data, true)
       : !premultiply && bitmap.alphaType === 'premultiplied'
-        ? unpremultiplyToStraightRgba8(bitmap.data)
+        ? convertRgba8AlphaEncoding(bitmap.data, false)
         : bitmap.data;
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
   if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, format);
