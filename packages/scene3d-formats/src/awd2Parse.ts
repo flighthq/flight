@@ -112,10 +112,17 @@ import {
   AWD2_MAGIC_0,
   AWD2_MAGIC_1,
   AWD2_MAGIC_2,
+  AWD2_MATERIAL_DEFAULT_GLOSS,
+  AWD2_MATERIAL_DEFAULT_SPECULAR_RGB,
+  AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH,
   AWD2_MATERIAL_PROP_ALPHA,
   AWD2_MATERIAL_PROP_COLOR,
   AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD2_MATERIAL_PROP_GLOSS,
   AWD2_MATERIAL_PROP_NORMAL_TEXTURE,
+  AWD2_MATERIAL_PROP_SPECULAR_COLOR,
+  AWD2_MATERIAL_PROP_SPECULAR_STRENGTH,
+  AWD2_MATERIAL_PROP_SPECULAR_TEXTURE,
   AWD2_NAMESPACE_CORE,
   AWD2_STREAM_INDICES,
   AWD2_STREAM_JOINT_INDICES,
@@ -1199,17 +1206,23 @@ interface ParsedLightPicker {
   name: string;
 }
 
-// A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId` are texture block ids (0 =
-// absent), `color`/`alpha` the diffuse base (null = absent). `numMethods` is the declared shading-method
+// A parsed AWD material block (type 81). `diffuseTextureId`/`normalTextureId`/`specularTextureId` are
+// texture block ids (0 = absent), `color`/`alpha` the diffuse base and `specularColor`/`specularStrength`/
+// `gloss` the specular tuple (null = absent, meaning the AWD2_MATERIAL_DEFAULT_* value applies).
+// `numMethods` is the declared shading-method
 // count — the method bodies are not walked yet (resolveAwdMaterial records a Skip diagnostic when > 0). Other base flags
 // (smoothing/repeat/mipmap) are parsed past but not mapped.
 interface ParsedMaterial {
   alpha: number | null;
   color: number | null;
   diffuseTextureId: number;
+  gloss: number | null;
   name: string;
   normalTextureId: number;
   numMethods: number;
+  specularColor: number | null;
+  specularStrength: number | null;
+  specularTextureId: number;
 }
 
 // A parsed AWD texture block (type 82). Exactly one source form is populated: `bytes` (+ detected
@@ -1774,9 +1787,10 @@ function parseMeshInstanceBlock(
 // Parses a Material block (type 81). Layout:
 // name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → methods → UserAttrList.
 // The base PropertyList carries the flat color (property 1), diffuse texture id (property 2), normal
-// texture id (property 3), and alpha (property 10) — the properties Flight maps onto the ShadedMaterial
+// texture id (property 3), alpha (property 10), and the specular tuple — strength (18), gloss (19),
+// color (20), and specular texture id (21) — the properties Flight maps onto the ShadedMaterial
 // base. `numMethods` is captured so the resolver can record a diagnostic that a method-bearing material's shading methods
-// (fog/env/fresnel/specular in Away3D's MethodMaterial model) are not yet imported as modifiers; the
+// (fog/env/fresnel in Away3D's MethodMaterial model) are not yet imported as modifiers; the
 // method bodies themselves (which follow the base PropertyList) are left unwalked pending a real
 // method-bearing fixture and the verified AWD2 method-type layout — every AWD2 asset in the reference
 // corpus is `numMethods == 0`, so there is nothing to observe or test the walk against yet.
@@ -1823,16 +1837,26 @@ function parseMaterialBlock(
   const props = readAwdProperties(view, offset, end);
   const diffuseTextureId = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE) ?? 0;
   const normalTextureId = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_NORMAL_TEXTURE) ?? 0;
+  const specularTextureId = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_SPECULAR_TEXTURE) ?? 0;
   const color = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_COLOR);
   const alpha = readAwdPropertyFloat32(view, props.values, AWD2_MATERIAL_PROP_ALPHA);
+  // Gloss and specular strength are AWD "property numbers": the exporter picks float32 or float64, so
+  // the width comes from each record's own byte-length prefix rather than the file's wide-properties flag.
+  const gloss = readAwdPropertyNumber(view, props.values, AWD2_MATERIAL_PROP_GLOSS);
+  const specularColor = readAwdPropertyUint32(view, props.values, AWD2_MATERIAL_PROP_SPECULAR_COLOR);
+  const specularStrength = readAwdPropertyNumber(view, props.values, AWD2_MATERIAL_PROP_SPECULAR_STRENGTH);
 
   return {
     alpha,
     color,
     diffuseTextureId,
+    gloss,
     name: nameResult.value,
     normalTextureId,
     numMethods,
+    specularColor,
+    specularStrength,
+    specularTextureId,
   };
 }
 
@@ -2259,8 +2283,20 @@ function readAwdPropertyUint32(
 //
 // A method-bearing material (numMethods > 0) records a Skip diagnostic and imports its base only: the AWD2 method-block layout
 // is unverified in-sandbox (the whole reference corpus is numMethods=0), so shipping a blind method→modifier
-// walk would be speculative. The base carries color(1), diffuseTex(2), normalTex(3), alpha(10) — the only
-// base properties real AWD2 files use; specular/gloss/ambient are METHODS in Away3D's model, not base props.
+// walk would be speculative. The base carries color(1), diffuseTex(2), normalTex(3), alpha(10), and the
+// specular tuple strength(18)/gloss(19)/specularColor(20)/specularTex(21).
+//
+// The specular tuple is a BASE property group, not a method. AwayJS's parseMaterial_v1 reads all four keys
+// off the material's own property list and configures `mat.specularMethod` from them, so a numMethods=0
+// material still carries a full specular description — and an ABSENT key means AwayJS's default, not an
+// absent term. That is why gloss defaults to 50 rather than createShadedMaterial's own 32: importing a
+// shambler material at 32 widens every highlight the file authored tight.
+//
+// Away3D's separate specular STRENGTH scalar has no Flight counterpart, so it folds into the packed
+// `specular` RGB. That is exact rather than approximate: both backends' shaded fragment path multiplies
+// the specular term by `specular.rgb` (then by the specular map) and nothing else reads the channel, so
+// color × strength and color-then-scale-by-strength are the same product. A strength above 1 cannot
+// survive the fold — packed RGBA is 8-bit unsigned — so it clamps and records a diagnostic.
 function resolveAwdMaterial(
   materialId: number,
   materialBlocks: Readonly<Map<number, ParsedMaterial>>,
@@ -2291,6 +2327,12 @@ function resolveAwdMaterial(
       ? resolveAwdTexture(parsed.normalTextureId, textureBlocks, document, diagnostics)
       : null;
   if (normalTexture !== null) normalTexture.colorSpace = 'linear';
+  // The specular map keeps the default 'srgb': Away3D samples it as a plain color multiplier on the
+  // specular term, exactly as the diffuse map is sampled — it is not a linear data mask.
+  const specularTexture =
+    parsed.specularTextureId !== 0
+      ? resolveAwdTexture(parsed.specularTextureId, textureBlocks, document, diagnostics)
+      : null;
 
   // A method-bearing material imports its base only (see the header note) — record a diagnostic rather than silently drop.
   if (parsed.numMethods > 0) {
@@ -2304,10 +2346,23 @@ function resolveAwdMaterial(
   }
 
   const diffuse = getAwdDiffuseRgba(parsed.color, parsed.alpha);
+  const strength = parsed.specularStrength ?? AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH;
+  if (strength > 1) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'awd2.material-specular-strength-clamped',
+      'resolveAwdMaterial',
+      { strength },
+    );
+  }
   const material = createShadedMaterial({
     diffuse,
     diffuseMap: diffuseTexture,
     normalMap: normalTexture,
+    shininess: parsed.gloss ?? AWD2_MATERIAL_DEFAULT_GLOSS,
+    specular: getAwdSpecularRgba(parsed.specularColor, strength),
+    specularMap: specularTexture,
   }) as unknown as Material;
   // An alpha below 1 must actually blend; ShadedMaterial defaults to opaque coverage.
   if (parsed.alpha !== null && parsed.alpha < 1) (material as unknown as SurfaceMaterial).alphaMode = 'blend';
@@ -2454,6 +2509,18 @@ function getAwdDiffuseRgba(color: number | null, alpha: number | null): number {
   const rgb = color ?? 0xffffff;
   const alphaByte = alpha !== null ? Math.max(0, Math.min(255, Math.round(alpha * 255))) : 0xff;
   return (((rgb << 8) >>> 0) | alphaByte) >>> 0;
+}
+
+// Packs AWD's specular tuple into ShadedMaterial's single packed-RGBA `specular`, folding Away3D's
+// separate strength scalar into the channels (see the resolveAwdMaterial note for why that product is
+// exact). Alpha stays opaque: nothing in either backend's shaded path reads the specular alpha channel.
+function getAwdSpecularRgba(color: number | null, strength: number): number {
+  const rgb = color ?? AWD2_MATERIAL_DEFAULT_SPECULAR_RGB;
+  const scale = Math.max(0, Math.min(1, strength));
+  const red = Math.round(((rgb >>> 16) & 0xff) * scale);
+  const green = Math.round(((rgb >>> 8) & 0xff) * scale);
+  const blue = Math.round((rgb & 0xff) * scale);
+  return ((red << 24) | (green << 16) | (blue << 8) | 0xff) >>> 0;
 }
 
 // Parses a Skeleton block (type 101). Layout:

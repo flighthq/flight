@@ -82,7 +82,11 @@ import {
   AWD2_MATERIAL_PROP_ALPHA,
   AWD2_MATERIAL_PROP_COLOR,
   AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD2_MATERIAL_PROP_GLOSS,
   AWD2_MATERIAL_PROP_NORMAL_TEXTURE,
+  AWD2_MATERIAL_PROP_SPECULAR_COLOR,
+  AWD2_MATERIAL_PROP_SPECULAR_STRENGTH,
+  AWD2_MATERIAL_PROP_SPECULAR_TEXTURE,
   AWD2_MATERIAL_TYPE_COLOR,
   AWD2_MATERIAL_TYPE_TEXTURE,
   AWD2_NAMESPACE_CORE,
@@ -1270,6 +1274,98 @@ describe('createScene3DFromAwd2', () => {
     const ref = getTestTextureResource(scene.resources, material.normalMap!) as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
+  });
+
+  it('maps the AWD specular-texture property (21) to the material specularMap', () => {
+    // Away3D samples the specular map as a plain color multiplier on the specular term, exactly as it
+    // samples the diffuse map — so it keeps the default 'srgb', unlike the linear normal map above.
+    const posStream = buildStream(
+      AWD2_STREAM_POSITIONS,
+      AWD2_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('spec.png', AWD2_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const matBody = buildMaterialBody('Mat', AWD2_MATERIAL_TYPE_TEXTURE, [[AWD2_MATERIAL_PROP_SPECULAR_TEXTURE, 2]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD2_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
+    expect(material.specularMap).not.toBeNull();
+    expect(material.specularMap!.colorSpace).toBe('srgb');
+    expect(getTextureSource(material.specularMap!)).toBeNull(); // referenced, not decoded
+    const ref = getTestTextureResource(scene.resources, material.specularMap!) as EmbeddedImageResourceReference;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.mimeType).toBe('image/png');
+  });
+
+  it("defaults an absent specular tuple to AwayJS's gloss 50 and opaque-white specular, not createShadedMaterial's 32", () => {
+    // An absent AWD key means AwayJS's SpecularBasicMethod default, not an absent specular term. Importing
+    // at createShadedMaterial's own default exponent of 32 would visibly widen every authored highlight.
+    const material = (
+      getNodeChildren(
+        createScene3DFromAwd2(buildSingleMaterialAwd(buildMaterialBody('Bare', AWD2_MATERIAL_TYPE_COLOR, []))).root,
+      )[0] as Mesh
+    ).materials[0] as ShadedMaterial;
+    expect(material.shininess).toBe(50);
+    expect(material.specular).toBe(0xffffffff);
+    expect(material.specularMap).toBeNull();
+  });
+
+  it('maps the AWD gloss (19) and specular-color (20) properties onto shininess and packed specular', () => {
+    const matBody = buildMaterialBody('Shiny', AWD2_MATERIAL_TYPE_COLOR, [
+      [AWD2_MATERIAL_PROP_GLOSS, float32Bits(12.5)],
+      [AWD2_MATERIAL_PROP_SPECULAR_COLOR, 0x336699],
+    ]);
+    const material = (getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody)).root)[0] as Mesh)
+      .materials[0] as ShadedMaterial;
+    expect(material.shininess).toBe(12.5);
+    expect(material.specular).toBe(0x336699ff);
+  });
+
+  it('folds the AWD specular-strength (18) scalar into the packed specular channels', () => {
+    // ShadedMaterial has no separate strength scalar, and both backends use `specular.rgb` as a pure
+    // multiplier on the specular term — so colour x strength is the same product, not an approximation.
+    // 0x80 = 128; 128 * 0.5 = 64 = 0x40.
+    const matBody = buildMaterialBody('Half', AWD2_MATERIAL_TYPE_COLOR, [
+      [AWD2_MATERIAL_PROP_SPECULAR_COLOR, 0x808080],
+      [AWD2_MATERIAL_PROP_SPECULAR_STRENGTH, float32Bits(0.5)],
+    ]);
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = (
+      getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody), diagnostics).root)[0] as Mesh
+    ).materials[0] as ShadedMaterial;
+    expect(material.specular).toBe(0x404040ff);
+    expect(diagnostics).toHaveLength(0);
+  });
+
+  it('clamps a specular strength above 1 and records awd2.material-specular-strength-clamped', () => {
+    // Packed RGBA is 8-bit unsigned, so a strength that would brighten past white cannot survive the fold.
+    const matBody = buildMaterialBody('Overdriven', AWD2_MATERIAL_TYPE_COLOR, [
+      [AWD2_MATERIAL_PROP_SPECULAR_COLOR, 0x808080],
+      [AWD2_MATERIAL_PROP_SPECULAR_STRENGTH, float32Bits(2)],
+    ]);
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = (
+      getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody), diagnostics).root)[0] as Mesh
+    ).materials[0] as ShadedMaterial;
+    expect(material.specular).toBe(0x808080ff);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.material-specular-strength-clamped');
+    expect(crumb.severity).toBe('Skip');
+    expect(crumb.origin).toBe('resolveAwdMaterial');
+    expect(crumb.detail?.strength).toBe(2);
   });
 
   it('attaches a ShadedMaterial from a flat-color material block, widening color to opaque rgba', () => {
