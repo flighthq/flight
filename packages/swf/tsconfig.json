@@ -10,6 +10,7 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../abc" },
     { "path": "../clip" },
     { "path": "../compression" },
     { "path": "../font" },
@@ -21,6 +22,8 @@
     { "path": "../scene2d" },
     { "path": "../scene2d-resources" },
     { "path": "../shape" },
+    { "path": "../text" },
+    { "path": "../text-markup" },
     { "path": "../types" }
   ],
   "include": ["src"]

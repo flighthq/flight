@@ -65,6 +65,11 @@ Types live in `@flighthq/types` under an `Abc` prefix, per the user's direction 
 structure rather than a narrow query surface — the shape a future disassembler or AS→read migration aid
 would need.
 
+The null-sentinel contract is backed by a property test as well as the sweeps: 500 random byte sequences
+and 500 mutations of a well-formed container, none of which threw.
+
 Not built: the `swf`-side recognition of `addFrameScript` and the timeline commands it binds. That
 recognition belongs in `swf`, not here, because it is Flash display semantics rather than bytecode
-structure — this cell supplies the decoded instructions it will read.
+structure. `swf` now does exactly that: it reads an `addFrameScript` call in a generated class
+constructor, resolves the handler through the instance's method traits, and reads that body — all over the
+instructions this cell decodes, and without executing any of it.

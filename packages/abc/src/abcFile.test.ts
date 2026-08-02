@@ -72,6 +72,28 @@ describe('readAbcFile', () => {
     expect(readAbcFile(buildAbc().subarray(0, 12))).toBeNull();
   });
 
+  it('never throws on arbitrary bytes, whatever they happen to encode', () => {
+    // The reader's whole error contract is a null sentinel, and a container this size is mostly counts
+    // and indices, so the property worth asserting is that no byte sequence produces an exception.
+    let seed = 0x2f6a51b3;
+    const next = (): number => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed;
+    };
+
+    for (let i = 0; i < 500; i++) {
+      const bytes = new Uint8Array(next() % 200);
+      for (let b = 0; b < bytes.length; b++) bytes[b] = next() & 0xff;
+      expect(() => readAbcFile(bytes)).not.toThrow();
+    }
+    // And the same for mutations of a file that is otherwise well formed.
+    for (let i = 0; i < 500; i++) {
+      const mutant = buildAbc();
+      for (let f = 0; f < 3; f++) mutant[next() % mutant.length] = next() & 0xff;
+      expect(() => readAbcFile(mutant)).not.toThrow();
+    }
+  });
+
   it('rejects a multiname whose kind the format does not define', () => {
     const bytes = buildAbc();
     // Overwrite the first multiname's kind byte with one no version of the format uses.
