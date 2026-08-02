@@ -18,7 +18,7 @@ import type {
   RenderProxyVisitor,
   RenderState,
 } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode, RenderRegistry } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
@@ -197,7 +197,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 function resolveRenderProxyRenderer(state: RenderState, kind: string) {
   const runtime = getRenderStateRuntime(state);
   const renderer = runtime.rendererMap.get(kind);
-  if (renderer === undefined) runtime.registryMiss?.(1, kind);
+  if (renderer === undefined) runtime.registryMiss?.(RenderRegistry.NodeRenderer, kind);
   return renderer ?? null;
 }
 

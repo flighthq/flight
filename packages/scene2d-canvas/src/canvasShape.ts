@@ -7,6 +7,7 @@ import type {
   RenderProxy2D,
   Shape,
 } from '@flighthq/types/contract';
+import { RenderRegistry } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
@@ -42,7 +43,8 @@ export function renderCanvasShapeCommands(
     const def = getCanvasShapeCommand(key);
     if (def !== undefined) def.draw(context, drawState, commands, i + 2);
     else {
-      if (registryState !== null) getRenderStateRuntime(registryState).registryMiss?.(2, key);
+      if (registryState !== null)
+        getRenderStateRuntime(registryState).registryMiss?.(RenderRegistry.ShapeCommandHandler, key);
     }
     i += argCount + 2;
   }

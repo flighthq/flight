@@ -1,5 +1,6 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { CanvasRenderState, CanvasTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
+import { RenderRegistry } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -21,7 +22,7 @@ export function resolveCanvasTexture(state: CanvasRenderState, texture: Readonly
   const runtime = getCanvasRenderStateRuntime(state);
   const resolver = runtime.canvasTextureResolverRegistry?.get(sourceKind);
   if (resolver === undefined) {
-    runtime.registryMiss?.(3, sourceKind);
+    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
   return resolver(state, texture);

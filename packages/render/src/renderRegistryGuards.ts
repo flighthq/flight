@@ -31,6 +31,13 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
   switch (registry) {
     case RenderRegistry.EffectPaddingResolver:
       return 'computeRenderEffectPadding: effect kind has no registered padding resolver — call registerRenderEffectPaddingResolver(state, kind, resolver)';
+    // Reported only by the GPU backends, where an unresolved material means the node does not draw at
+    // all. The Canvas renderer treats a missing material renderer as "draw normally", so the same
+    // absence there is the ordinary case rather than a defect.
+    case RenderRegistry.MaterialRenderer:
+      if ('device' in state)
+        return 'resolveWgpuMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuMaterialRenderer(state, kind, renderer)';
+      return 'resolveGlMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerGlMaterialRenderer(state, kind, renderer)';
     case RenderRegistry.NodeRenderer:
       return 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)';
     case RenderRegistry.ShapeCommandHandler:
