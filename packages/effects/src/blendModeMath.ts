@@ -96,6 +96,8 @@ export function getSeparableBlendChannel(mode: AdvancedBlendMode, cb: number, cs
       const d = cb <= 0.25 ? ((16 * cb - 12) * cb + 4) * cb : Math.sqrt(cb);
       return cs <= 0.5 ? cb - (1 - 2 * cs) * cb * (1 - cb) : cb + (2 * cs - 1) * (d - cb);
     }
+    case AdvancedBlendMode.Darken:
+      return Math.min(cb, cs);
     case AdvancedBlendMode.Difference:
       return Math.abs(cb - cs);
     case AdvancedBlendMode.Exclusion:
@@ -105,6 +107,8 @@ export function getSeparableBlendChannel(mode: AdvancedBlendMode, cb: number, cs
       if (cb <= 0) return 0;
       if (cs >= 1) return 1;
       return Math.min(1, cb / (1 - cs));
+    case AdvancedBlendMode.Lighten:
+      return Math.max(cb, cs);
     case AdvancedBlendMode.ColorBurn:
       // W3C: 1→1, source==0→0, else 1 - min(1, (1 - backdrop) / source).
       if (cb >= 1) return 1;

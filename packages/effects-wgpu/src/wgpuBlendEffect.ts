@@ -103,6 +103,8 @@ const BLEND_MODE_INDEX: Readonly<Record<string, number>> = {
   [AdvancedBlendModeValues.Saturation]: 8,
   [AdvancedBlendModeValues.Color]: 9,
   [AdvancedBlendModeValues.Luminosity]: 10,
+  [AdvancedBlendModeValues.Darken]: 11,
+  [AdvancedBlendModeValues.Lighten]: 12,
 };
 
 const backdrops = new WeakMap<WgpuRenderState, Map<string, WgpuRenderTarget>>();
@@ -183,6 +185,8 @@ fn sepChannel(mode : i32, cb : f32, cs : f32) -> f32 {
     if (cb >= 1.0) { return 1.0; }
     return select(1.0 - min(1.0, (1.0 - cb) / cs), 0.0, cs <= 0.0);
   }
+  if (mode == 11) { return min(cb, cs); }
+  if (mode == 12) { return max(cb, cs); }
   return cs;
 }
 

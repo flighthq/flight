@@ -75,6 +75,24 @@ describe('getWgpuBlendEffectModeIndex', () => {
   });
 });
 
+// The index table and the shader's branch switch are two hand-maintained lists that must agree; a mode
+// assigned an index with no matching branch silently renders Normal passthrough instead of the blend the
+// caller asked for. Reading the module source is crude, but it is the only thing that actually pins the
+// two together — and it covers every mode rather than whichever one was added last.
+describe('getWgpuBlendEffectModeIndex shader lockstep', () => {
+  const source = WGPU_BLEND_FRAGMENT_WGSL;
+
+  it('has a shader branch for every index the table assigns', () => {
+    for (const mode of Object.values(AdvancedBlendMode)) {
+      const index = getWgpuBlendEffectModeIndex(mode);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(source, `{mode} maps to index ${index} with no shader branch`.replace('{mode}', mode)).toContain(
+        `mode == ${index}`,
+      );
+    }
+  });
+});
+
 describe('registerWgpuBlendEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuBlendEffect).toBeTypeOf('function');
