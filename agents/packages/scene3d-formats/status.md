@@ -11,6 +11,70 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — Material breadth: MTL picks its own model, alpha maps land, glTF extensions reachable (builder, user-directed)
+
+Three material-layer items, all verifiable against real corpora rather than synthetic bytes.
+
+**MTL now picks its shading model from what the file states, and does not guess.** A file carrying any
+metallic-roughness directive (`Pr`, `Pm`, `Ps`, `Pc`, `Pcr`, `aniso`, `anisor`, `map_Pr`, `map_Pm`) reads
+as `StandardPbrMaterial` field-for-field; everything else reads as the `BlinnPhongMaterial` that
+`Ka`/`Kd`/`Ks`/`Ns` actually IS. The rejected alternative was converting unconditionally:
+`convertPhongToStandardPbrMaterial` is documented reference-not-exact, needs a metallic *guess*, and
+carries a π light-exposure caveat a parser structurally cannot honor (it would have to rescale the
+scene's lights, or the import renders ~3.2× dark). That conversion already exists as an explicit,
+caller-invoked seam, which is where a lossy remap belongs.
+
+`Ke`/`map_Ke` deliberately do **not** trigger the PBR branch. They name a channel both models could
+carry, not a shading model — flipping on them would trade a stated `Ns` for a guessed roughness. A
+classic material stating an emissive keeps its model and records `mtl.emissive-dropped` instead. Every
+extension field on `ObjMaterial` is nullable so ABSENT stays distinguishable from a stated zero; that
+distinction is the whole mechanism.
+
+Two things are parsed but deliberately unbound, each crumbed rather than silently dropped:
+`map_Pr`/`map_Pm` (`mtl.metallic-roughness-map-unpacked`) because MTL states them as two grayscale images
+while the standard block carries ONE packed texture reading roughness from G and metallic from B —
+merging them is an image operation over decoded pixels, which a parser must not do since resources are
+referenced here and resolved later; and sheen/clearcoat/anisotropy (`mtl.pbr-extension-unbound`) because
+Flight models those as PBR extensions composed onto an `ExtendedPbrMaterial`, not as standard-block
+fields. Also: `norm` now outranks `map_Bump` for the normal map, since the former is a real tangent-space
+map and the latter a grayscale height field.
+
+**Alpha maps: the parked reason had expired, and one of the three targets does not exist.** MTL `map_d`
+and 3DS `MAT_OPACMAP` (0xA210) now bind to `alphaMap` on both material lanes. The non-obvious part is
+that an `alphaMap` is INERT while `alphaMode` is `'opaque'`, so a material carrying one flips to `blend`
+even when its scalar transparency says fully opaque — otherwise the authored coverage image would import
+into a slot the renderer never reads. Scalar and map are independent terms that multiply, so a file
+stating both keeps both.
+
+The AWD third of that parked entry has **nothing to bind**. Dumping every material block across all four
+AWD fixtures gives property keys 1, 2, 3, 5, 6, 8, 11, 13, 21, 22 — no opacity-texture property appears,
+and the parser already handles the scalar alpha. Worth recording separately: keys 5, 6, 8, 11, 13, 21 and
+22 ARE present in real files (8 on all 35 sponza materials) and the parser reads NONE of them, silently.
+That is the same silent-drop class the block-level `awd2.block-unhandled` tally closed, one level down —
+a property-level tally is the obvious follow-up. Also note property 10 (ALPHA) appears in NO fixture,
+which contradicts the "real AWD2 files carry this on every material" comment in `awd2Schema.ts`.
+
+**glTF material extensions are now reachable, through the registry rather than hardcoded.**
+`GltfExtensionContext` gained `resolveTexture` — the core's own resolver, bound to the parse's image
+table — because a handler that built its own texture refs would produce refs `loadScene3DResources` does
+not recognize. The context doc now also states the guarantee handlers depend on: `document.materials` is
+index-aligned with `source.materials`.
+
+`attachGltfPbrExtension` is the shared promote-or-append step every KHR_materials_* handler needs. It is
+idempotent by design: a file using clearcoat AND sheen runs two independently imported handlers over one
+material, and the second must append to the first's work rather than re-promote and discard it. Promotion
+carries the resolved standard block, alpha mode, cutoff, double-sidedness and name across, and refuses
+any material that is not on the metallic-roughness lane (an unlit or spec-gloss material has no standard
+block to extend). Three handlers ship: `KHR_materials_emissive_strength` (which follows a material
+another handler already promoted, since handler order is not guaranteed), `KHR_materials_clearcoat`, and
+`KHR_materials_sheen`.
+
+**Still unread, and each is now mechanical** — the seam and the shared helper are the hard part, and
+they exist: `KHR_materials_transmission`/`_volume`, `_iridescence`, `_anisotropy`, `_specular`, and
+`KHR_materials_pbrSpecularGlossiness` (which has both a `SpecularGlossinessPbrMaterial` and a
+`convertSpecularGlossinessToStandardPbr` waiting for it, so it wants a different shape — a material
+REPLACEMENT rather than an extension attachment).
+
 ## 2026-08-02 — 3DS meshes carry a real transform; OBJ stops importing black (builder, user-directed)
 
 **TRI_LOCAL (0x4160) is read, and it changes what a 3DS node IS.** The constant had been declared in
