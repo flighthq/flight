@@ -77,10 +77,6 @@ export function destroyGlMeshProgram(state: GlRenderState, program: Readonly<GlM
   state.gl.deleteProgram(program.program);
 }
 
-// The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
-// the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
-// indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()
-// has selected and stored their program, so the geometry path lives in exactly one place.
 export function drawGlMeshSubset(
   state: GlRenderState,
   program: Readonly<GlMeshProgram>,
@@ -91,15 +87,7 @@ export function drawGlMeshSubset(
   gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
   if (program.locNormalMatrix !== null) gl.uniformMatrix3fv(program.locNormalMatrix, false, proxy.normalMatrix.m);
 
-  // Resolve u_objectAlpha once per program (undefined until first draw), then upload the resolved
-  // per-object opacity when the shader declares it. A program whose fragment scene2d lacks the uniform
-  // caches a null location and skips silently, so families without it cost nothing beyond one lookup.
-  let locObjectAlpha = program.locObjectAlpha;
-  if (locObjectAlpha === undefined) {
-    locObjectAlpha = gl.getUniformLocation(program.program, 'u_objectAlpha');
-    (program as GlMeshProgram).locObjectAlpha = locObjectAlpha;
-  }
-  if (locObjectAlpha !== null) gl.uniform1f(locObjectAlpha, proxy.alpha ?? 1);
+  uploadGlMeshObjectAlpha(gl, program, proxy.alpha ?? 1);
 
   // A resolved per-object transform promotes only this draw run to the registered material-feature
   // variant. Resolve and cache its locations lazily so an untinted/base program performs no lookups
@@ -230,6 +218,31 @@ export function setGlMeshViewProjection(
 ): void {
   getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, getGlScene3DViewportAspect(state));
   state.gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
+}
+
+// The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
+// the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
+// indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()
+// has selected and stored their program, so the geometry path lives in exactly one place.
+// Uploads a draw's resolved per-object opacity into `u_objectAlpha`, resolving the location once per
+// program (undefined until first draw) and caching it. A program whose fragment shader lacks the uniform
+// caches a null location and skips silently, so families without it cost nothing beyond one lookup.
+//
+// Its own function because a renderer that cannot use drawGlMeshSubset still has to do this. The
+// wireframe family binds its own line-index VAO and issues its own gl.LINES draw, and while this upload
+// lived inside drawGlMeshSubset that family silently shipped u_objectAlpha = 0 — invisible while nothing
+// read alpha, and a black frame the moment the fragment tail began premultiplying by it.
+export function uploadGlMeshObjectAlpha(
+  gl: WebGL2RenderingContext,
+  program: Readonly<GlMeshProgram>,
+  alpha: number,
+): void {
+  let location = program.locObjectAlpha;
+  if (location === undefined) {
+    location = gl.getUniformLocation(program.program, 'u_objectAlpha');
+    (program as GlMeshProgram).locObjectAlpha = location;
+  }
+  if (location !== null) gl.uniform1f(location, alpha);
 }
 
 // Vertex-scene2d GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
