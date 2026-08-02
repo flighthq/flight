@@ -11,6 +11,39 @@ by: builder
 
 <!-- newest entry on top -->
 
+## 2026-08-02 — A Draco seam, with no Google code used or shipped (builder, user-directed)
+
+The ruling: Flight will not use or ship any of Google's code, but the format's public shape may inform a
+seam that makes Draco an option a consumer opts into. So `registerGltfDracoDecoder` /
+`unregisterGltfDracoDecoder` / `getGltfDracoDecoder` / `hasGltfDracoDecoder` exist and no decoder does.
+
+**Why it could not reuse the compression registry.** `@flighthq/compression` has exactly the right
+pattern — empty until an explicit call, last-write-wins so a host can swap in a native implementation —
+but its contract is byte-to-byte (`Decompressor`). Draco does not decompress to bytes; it decodes to
+structured mesh data. The shape transfers, the registry does not.
+
+**The decoder contract is SYNCHRONOUS**, because `parseGltf` is. A real Draco decoder needs asynchronous
+WebAssembly setup, so the caller performs that once and registers only the ready decoder — registration
+is what declares readiness. Stated on the type, because it is the thing an integrator will trip on.
+
+**Attributes come back keyed by SEMANTIC, not by Draco attribute id.** The id→semantic mapping is stated
+by the glTF extension block, which is Flight's side of the boundary; the decoder is handed the mapping
+rather than asked to reinvent it. Accessors stay authoritative for count and type, which is what lets the
+importer check a decoder against what the file promised.
+
+**Draco is the only extension whose support is a RUNTIME fact.** `isSupportedGltfExtension` answers from
+the registry, so a required-extension report follows what the caller actually plugged in.
+
+**Two honesty fixes came with it.** `gltf.draco-decoder-missing` replaces what used to surface as
+`gltf.accessor-bufferview-not-found` — technically true and actively misleading, since the bufferView is
+not missing, the data is merely somewhere the reader cannot go. And a decoder that throws is contained to
+a dropped primitive (`gltf.draco-decode-failed`), because third-party code should not take an import down.
+
+**The whole seam is proved by a STUB decoder in the tests** — payload located, attribute ids handed over,
+decoded arrays preferred over the bufferView-less accessors, connectivity taken from the payload. No
+Draco dependency and no compressed fixture is needed to know the wiring is right, which puts this in a
+different class from the fixture-blocked items.
+
 ## 2026-08-02 — The unblocked leftovers, and one of them was a defect (builder, user-directed)
 
 **OBJ smoothing groups, without a second normal-generation pass.** `s` now drives the vertex DEDUP KEY: a

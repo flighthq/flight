@@ -51,11 +51,27 @@ model the file authored — under the standing rule that **a parser represents w
 Flight's `convertSpecularGlossinessToStandardPbr` stays an explicit, caller-invoked step; that the
 extension is deprecated is not licence for the importer to silently remap it.
 
-**Not covered: `KHR_draco_mesh_compression`.** This is the one glTF gap that is not parser breadth at all
-— it needs a Draco mesh decoder, which is a vendored dependency and a cross-package decision. The shape it
-should take already exists as precedent: AWD's `registerAwdDecompressor` seam plus a vendored inflater.
-Until that call is made, a Draco file correctly reports its required extension as unsupported rather than
-importing empty geometry.
+**`KHR_draco_mesh_compression` is covered by a SEAM, not an implementation.** Flight ships no Draco
+decoder and no third-party code: `registerGltfDracoDecoder` lets a consumer plug in its own, and the
+registry starts empty so a build that never registers pulls in nothing. That split is deliberate — Draco
+is an export-time encoding choice, so a decoder is worth nothing to a consumer whose assets do not use it
+and would put a dependency (and its licence) into every build to serve only those who do.
+
+Two consequences worth knowing:
+
+- **The decoder contract is SYNCHRONOUS**, because `parseGltf` is. A real decoder that needs to initialise
+  a WebAssembly module does that once at startup and registers only when ready; registration is what
+  declares readiness, and the importer never awaits.
+- **Draco is the one extension whose support is a RUNTIME fact.** `isSupportedGltfExtension` answers from
+  the registry, so a file requiring it is honestly unsupported until a decoder is plugged in and honestly
+  supported afterwards.
+
+A compressed primitive with no decoder registered reports `gltf.draco-decoder-missing`. That crumb exists
+because the alternative was actively misleading: under this extension a primitive's accessors carry no
+bufferView, so the read used to fail as `gltf.accessor-bufferview-not-found` — true, and it sent the
+reader hunting for a malformed file instead of a missing decoder. A decoder that throws or declines is
+contained to a dropped primitive (`gltf.draco-decode-failed`) rather than taking the import down, since a
+decoder is third-party code by design.
 
 ## OBJ / MTL
 
