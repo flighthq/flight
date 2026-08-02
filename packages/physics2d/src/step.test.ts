@@ -310,6 +310,33 @@ describe('stepPhysics2D', () => {
     expect(top.y - middle.y).toBeGreaterThan(0.9);
   });
 
+  it('uses positionIterations to project overlap without adding separating velocity', () => {
+    const withoutProjection = createPhysics2DWorld(0, 0);
+    withoutProjection.config.positionIterations = 0;
+    const fixedWithout = createRigidBody2D('static', 0, 0);
+    fixedWithout.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE),
+    );
+    addPhysics2DBody(withoutProjection, fixedWithout);
+    const bodyWithout = box(withoutProjection, 0.75, 0);
+
+    const withProjection = createPhysics2DWorld(0, 0);
+    withProjection.config.positionIterations = 3;
+    const fixedWith = createRigidBody2D('static', 0, 0);
+    fixedWith.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE),
+    );
+    addPhysics2DBody(withProjection, fixedWith);
+    const bodyWith = box(withProjection, 0.75, 0);
+
+    stepPhysics2D(withoutProjection, 1 / 60);
+    stepPhysics2D(withProjection, 1 / 60);
+
+    expect(bodyWithout.x - fixedWithout.x).toBe(0.75);
+    expect(bodyWith.x - fixedWith.x).toBeGreaterThan(0.84);
+    expect(bodyWith.velocityX).toBe(0);
+  });
+
   it('produces a bitwise-identical trace for the same scene stepped twice', () => {
     // The golden-trace harness. Determinism for a fixed engine and input order is exact, not approximate:
     // every operation on this path is IEEE-754 exact (+ - * / and sqrt), so anything short of bitwise

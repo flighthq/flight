@@ -238,7 +238,7 @@ function mergePhysics2DContact(
 // Rebuilds every contact's lever arms, effective masses, and velocity bias for this step's geometry.
 // These are recomputed rather than cached because they depend on the bodies' current positions, which
 // the previous step moved.
-function preparePhysics2DConstraints(world: Physics2DWorld, dt: number): void {
+function preparePhysics2DConstraints(world: Physics2DWorld): void {
   const config = world.config;
   for (const contact of world.contacts) {
     if (contact.sensor) continue;
@@ -266,15 +266,61 @@ function preparePhysics2DConstraints(world: Physics2DWorld, dt: number): void {
       point.normalMass = effectiveMass(bodyA, bodyB, point.rAX, point.rAY, point.rBX, point.rBY, normalX, normalY);
       point.tangentMass = effectiveMass(bodyA, bodyB, point.rAX, point.rAY, point.rBX, point.rBY, tangentX, tangentY);
 
-      // Penetration recovery, softened by a slop the solver deliberately leaves unresolved so a resting
-      // contact is not fighting a target of exactly zero overlap every step.
-      const excess = point.depth - config.penetrationSlop;
-      point.bias = excess > 0 ? -(config.positionCorrection / dt) * excess : 0;
-
       // Restitution is dropped below a threshold approach speed. Without that, a ball bounces forever at
       // ever smaller amplitudes and never comes to rest.
       const approach = relativeNormalVelocity(bodyA, bodyB, point, normalX, normalY);
-      if (approach < -config.restitutionThreshold) point.bias += contact.restitution * approach;
+      point.bias = approach < -config.restitutionThreshold ? contact.restitution * approach : 0;
+    }
+  }
+}
+
+// One projected Gauss-Seidel pass over current contact geometry. Unlike the velocity solve, this moves
+// poses directly and leaves velocity unchanged: penetration is a positional error, and injecting a
+// separating velocity to repair it makes a resting body bounce away from a deep overlap. Each contact
+// is regenerated immediately before it is solved because an earlier correction in the same pass may
+// have moved either body. Reusing the module manifold scratch keeps the pass allocation-free.
+function solvePhysics2DPositionsOnce(world: Physics2DWorld): void {
+  const config = world.config;
+  for (const contact of world.contacts) {
+    if (contact.sensor) continue;
+    const bodyA = findPhysics2DBody(world, contact.bodyA);
+    const bodyB = findPhysics2DBody(world, contact.bodyB);
+    if (bodyA === null || bodyB === null) continue;
+    if (!isRigidBody2DPairAwake(bodyA, bodyB)) continue;
+
+    const colliderA = bodyA.colliders[contact.colliderA];
+    const colliderB = bodyB.colliders[contact.colliderB];
+    if (colliderA === undefined || colliderB === undefined) continue;
+    updatePhysics2DColliderWorldShape(colliderA, bodyA);
+    updatePhysics2DColliderWorldShape(colliderB, bodyB);
+    if (!collideContactManifold(colliderA.world, colliderB.world, manifoldScratch)) continue;
+
+    const normalX = manifoldScratch.normalX;
+    const normalY = manifoldScratch.normalY;
+    for (let i = 0; i < manifoldScratch.pointCount; i++) {
+      const point = manifoldScratch.points[i];
+      const excess = point.depth - config.penetrationSlop;
+      if (excess <= 0) continue;
+
+      const centerAX = bodyA.x + bodyA.centerX * Math.cos(bodyA.angle) - bodyA.centerY * Math.sin(bodyA.angle);
+      const centerAY = bodyA.y + bodyA.centerX * Math.sin(bodyA.angle) + bodyA.centerY * Math.cos(bodyA.angle);
+      const centerBX = bodyB.x + bodyB.centerX * Math.cos(bodyB.angle) - bodyB.centerY * Math.sin(bodyB.angle);
+      const centerBY = bodyB.y + bodyB.centerX * Math.sin(bodyB.angle) + bodyB.centerY * Math.cos(bodyB.angle);
+      const rAX = point.x - centerAX;
+      const rAY = point.y - centerAY;
+      const rBX = point.x - centerBX;
+      const rBY = point.y - centerBY;
+      const mass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, normalX, normalY);
+      const impulse = config.positionCorrection * excess * mass;
+      const impulseX = impulse * normalX;
+      const impulseY = impulse * normalY;
+
+      bodyA.x += impulseX * bodyA.inverseMass;
+      bodyA.y += impulseY * bodyA.inverseMass;
+      bodyA.angle += bodyA.inverseInertia * (rAX * impulseY - rAY * impulseX);
+      bodyB.x -= impulseX * bodyB.inverseMass;
+      bodyB.y -= impulseY * bodyB.inverseMass;
+      bodyB.angle -= bodyB.inverseInertia * (rBX * impulseY - rBY * impulseX);
     }
   }
 }
@@ -339,7 +385,7 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     body.angularVelocity /= 1 + body.angularDamping * dt;
   }
 
-  preparePhysics2DConstraints(world, dt);
+  preparePhysics2DConstraints(world);
   for (const joint of world.joints) {
     if (!isPhysics2DJointAwake(world, joint)) continue;
     world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
@@ -390,6 +436,10 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     body.x += body.velocityX * dt;
     body.y += body.velocityY * dt;
     body.angle += body.angularVelocity * dt;
+  }
+
+  for (let iteration = 0; iteration < config.positionIterations; iteration++) {
+    solvePhysics2DPositionsOnce(world);
   }
 
   for (const body of bodies) {
