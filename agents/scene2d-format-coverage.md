@@ -1,0 +1,120 @@
+# Scene2D Format Coverage — What Each Importer Reads, and What It Does Not
+
+Read this before assuming a `@flighthq/scene2d-formats` importer carries a feature, before scoping work
+on one, and before adding a diagnostic that would announce a gap listed here.
+
+This is the durable answer to "does Flight import Lottie repeaters?" — a question a reader should not
+have to reconstruct from a changelog. The per-package `status.md` records *when and why* coverage
+changed; this records *what is true now*. When they disagree, this file is wrong and should be corrected
+from source.
+
+**A gap here is a project fact, not an asset fact.** That distinction is the rule in
+[diagnostics](conventions/diagnostics.md#import-diagnostics-asset-facts-not-project-facts): a crumb tells
+a consumer what happened to *their file*; a gap in our coverage that would fire on every well-formed file
+of the format belongs in this document instead, where it costs a shipped app nothing. The mechanical
+test is whether a correct, idiomatic file from that format's own authoring tool would trigger it.
+
+The 3D sibling is [scene3d format coverage](scene3d-format-coverage.md).
+
+## No real asset has been imported by either codec
+
+Both codecs were built and gated entirely against hand-authored fixtures. Unlike the 3D importers, which
+have the `flight-reference` corpus (thin, but real), `scene2d-formats` has **no reference corpus at all** —
+no `.json` Bodymovin export and no designer-tool `.svg` has ever been run through either parser. Neither
+codec has a functional render scene either, so nothing under `functional/scenes` verifies either one at
+the pixel level on any backend.
+
+Everything below is therefore "correct against our own fixtures." That is a weaker claim than the 3D
+document makes, and it is the single largest open question for this cell.
+
+## Lottie (Bodymovin JSON)
+
+`createScene2DFromLottieDocument` produces a display subtree plus a target-bound `AnimationClip`;
+playback stays explicit through `applyAnimationClipToLottieDocument`.
+
+**Covered:** shape, precomposition, image, null, solid, and text layers; layer parenting and stacking
+order; static and animated 2D transforms including separated position (`p.x`/`p.y`), anchor, scale,
+rotation, opacity, and skew angle; analytic segment-local cubic-Bezier easing, split into per-component
+scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op` visibility; bezier
+paths, rectangles (with corner radius), ellipses, and polystars; solid and gradient fills and strokes,
+linear and radial, each animatable through the format-owned mutable-content binder; static dash;
+static trim paths; a single additive non-inverted mask recovered to `ClipRegion`; images resolved through
+the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
+stretch folded exactly into root time; recursion-guarded precomposition references; and markers as
+`AnimationClipEvent`s.
+
+**Not covered — silent, and verified so.** Each of the following was confirmed by importing the case and
+the reduced document side by side and diffing the emitted shape command stream; the loss is byte-identical
+absence. None of them is announced, and per the rule above none of them should be:
+
+- **Only one fill, one stroke, and one gradient survive per shape group.** `LottieShapeState` holds a
+  single slot for each where Bodymovin has a list. A second fill overwrites the first — `[rect, red, blue]`
+  emits exactly what `[rect, blue]` emits. Multiple fills and multiple strokes in one group are legal and
+  do occur.
+- **A gradient fill beside a solid fill is dropped.** The two are selected with `if/else`, solid winning.
+- **Paint z-order within a group is flattened.** Fill is always emitted before stroke regardless of item
+  order, so `[rect, stroke, fill]` and `[rect, fill, stroke]` produce the same stream. Lottie's item order
+  carries stacking intent.
+- **Polystar corner roundness (`os`, `is`) is not read.** The fields are typed and ignored; roundness 0
+  and roundness 100 emit identical geometry, so a rounded star imports hard-cornered.
+- **Text stroke (`sc`, `sw`) is not read**, and **embedded glyph outlines (`chars`) are not read**.
+  `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
+  export ships text that renders without the author's font present, so a `chars`-bearing file falls back
+  to whatever font the text stack resolves.
+
+**Not covered — declared exclusions.** These were scoped out in the blessed charter rather than missed:
+expressions (`x`, never executed); text animators and animated text documents; effect layers (`ef`);
+audio and camera layers; 3D layers, `position.z`, and skew axis (`sa`); track mattes (`tt`); blend modes
+with no Flight equivalent; arbitrary time remapping (`tm`); and the shape modifiers repeater (`rp`),
+merge-paths (`mm`), and rounded-corners (`rd`), plus animated trim and animated dash. Trim with `m: 2`
+(individually) is approximated as simultaneous.
+
+Masks beyond the single additive non-inverted case — multiple masks, subtract/intersect/lighten/darken
+modes, inverted masks, and feather/expansion — are not composed; Flight's `ClipRegion` is a hard clip.
+
+**Crumbs that remain, and what each means.** These are asset facts: each is contingent on what is in the
+caller's file, and each has a next action.
+
+| Crumb | Meaning |
+| --- | --- |
+| `lottie.invalid-document` | The JSON is malformed or structurally invalid. |
+| `lottie.unresolved-asset` | A layer's `refId` names an asset the document does not define. |
+| `lottie.unresolved-image` | No `resolveImageResource` was supplied, or it returned null. |
+| `lottie.recursive-precomposition` | A precomposition references itself. |
+| `lottie.text-missing-document` | A text layer carries no text document. |
+| `lottie.incompatible-animated-shape-path` | Keyframes of an animated path disagree on vertex count. |
+
+## SVG documents
+
+`createScene2DFromSvgDocument` produces a display subtree from a static SVG document.
+
+**Covered:** the structural elements `svg`, `g`, `a`, `switch`, `symbol`, `defs`, and `use` (recursion-
+guarded), with nested viewports and `viewBox` transforms; the geometry elements `path`, `rect`, `circle`,
+`ellipse`, `line`, `polygon`, and `polyline`; `text` with `tspan`; `image` through the injected
+`resolveImageResource` seam; linear and radial gradients including `objectBoundingBox` units; `clipPath`
+as a hard `ClipRegion`; and the non-rendering elements `style`, `title`, `desc`, and `metadata` skipped
+by name.
+
+**Not covered — declared exclusions.** SVG animation (SMIL), scripts, `foreignObject`, live DOM behavior,
+and filter graphs are not retained; filters belong to `@flighthq/effects`. The charter sets the
+compatibility bar at the static subset common design tools export.
+
+**Not covered — deferred exotic composition**, each currently announced by a crumb that this document
+should absorb: nested clip intersections (`svg.clip-nested-intersection-unsupported`), soft and luminance
+masks approximated as hard clips (`svg.mask-as-hard-clip`), text used as clip geometry
+(`svg.unsupported-clip-text`), `tspan` absolute positioning flattened (`svg.tspan-position-flattened`),
+and filter references (`svg.unsupported-filter`). `svg.unknown-element` likewise fires on any element
+outside the handled set, which an idiomatic authoring-tool export routinely contains.
+
+**Crumbs that remain, and what each means.** Asset facts, contingent on the caller's document:
+`svg.invalid-document`; the dangling-reference family `svg.unresolved-use`, `svg.unresolved-clip-reference`,
+`svg.unresolved-gradient-reference`, `svg.unresolved-fill-gradient`, `svg.unresolved-stroke-gradient`;
+the cycle family `svg.recursive-use`, `svg.recursive-gradient`; `svg.image-missing-href` and
+`svg.unresolved-image`; `svg.mixed-clip-rule`; and
+`svg.object-bounding-box-clip-without-bounds`.
+
+## Rive
+
+Chartered as this cell's third codec and **not built**. No `.riv` byte is read today. See the
+[scene2d-formats charter](packages/scene2d-formats/charter.md) for its scope, and note that Rive's
+state-machine *runtime* is explicitly not a codec concern.
