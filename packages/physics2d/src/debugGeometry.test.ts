@@ -142,7 +142,7 @@ describe('writePhysics2DDebugGeometry', () => {
     const second = addPhysics2DBody(world, createRigidBody2D('dynamic', 4, 0));
     addPhysics2DJoint(world, { ...baseJoint('acme.Custom', first.index, second.index), localAnchorAX: 1 });
     addPhysics2DJoint(world, {
-      ...baseJoint('Mouse', first.index, second.index),
+      ...baseJoint('Mouse', 999, second.index),
       targetX: 8,
       targetY: 3,
     } as Physics2DMouseJoint);

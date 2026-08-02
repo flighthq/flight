@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import { stepPhysics2D } from './step';
 import {
   addPhysics2DBody,
@@ -196,6 +197,34 @@ describe('removePhysics2DBody', () => {
 
   it('reports false for a body the world does not hold', () => {
     expect(removePhysics2DBody(createPhysics2DWorld(), boxBody(0, 0))).toBe(false);
+  });
+
+  it('retains a one-body joint when only its unused bodyA placeholder is removed', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    const placeholder = addPhysics2DBody(world, boxBody(0, 0));
+    const constrained = addPhysics2DBody(world, boxBody(2, 0));
+    const joint = addPhysics2DJoint(world, {
+      kind: 'OneBody',
+      bodyA: placeholder.index,
+      bodyB: constrained.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+
+    removePhysics2DBody(world, placeholder);
+
+    expect(world.joints).toEqual([joint]);
   });
 
   it('wakes a sleeping body when its supporting contact is removed with the other body', () => {

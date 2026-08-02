@@ -626,6 +626,25 @@ describe('physics2DMouseJointSolver', () => {
     expect(dragged.x).toBeGreaterThan(3);
   });
 
+  it('drags its body when the unused bodyA placeholder does not resolve', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);
+    const dragged = box(world, 'dynamic', 0, 0);
+    const joint: Physics2DMouseJoint = {
+      ...baseJoint(Physics2DMouseJointKind, 999, dragged.index),
+      targetX: 5,
+      targetY: 0,
+      maxForce: 1000,
+      stiffness: 5,
+      damping: 0.7,
+    };
+    addPhysics2DJoint(world, joint);
+
+    run(world, 60);
+
+    expect(dragged.x).toBeGreaterThan(3);
+  });
+
   it.each([0.5, 5])('keeps a low-stiffness response directed toward the target at stiffness %s', (stiffness) => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);

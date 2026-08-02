@@ -196,6 +196,8 @@ export const physics2DGearJointSolver = {
 // moving the cursor faster than the simulation can follow, and the rest of the world absorbs it. The force
 // bound is what keeps a dragged body from tunnelling through a wall it is pulled into.
 export const physics2DMouseJointSolver = {
+  usesBodyA: false,
+
   // A mouse joint drags ONE body toward a world-space target; its other end is not a body at all, and
   // callers pass whatever index is convenient. Canonical ordering exists to fix the solve order
   // BETWEEN two bodies, so with only one body there is nothing to order and the exchange is pure

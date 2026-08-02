@@ -20,6 +20,7 @@ describe('explainPhysics2DJoints', () => {
         {
           bodyA: first.index,
           bodyAFound: true,
+          bodyAUsed: true,
           bodyB: second.index,
           bodyBFound: true,
           jointIndex: 0,
@@ -67,6 +68,21 @@ describe('explainPhysics2DJoints', () => {
       'bodies-missing',
     ]);
     expect(explanation.joints[0]).toMatchObject({ bodyAFound: true, bodyBFound: false, solverRegistered: false });
+  });
+
+  it('reports an unused missing bodyA as ready', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
+    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    addPhysics2DJoint(world, {
+      ...createPhysics2DDistanceJoint({ bodyA: 999, bodyB: body.index, length: 1 }),
+      kind: 'OneBody',
+    });
+
+    const explanation = explainPhysics2DJoints(world);
+
+    expect(explanation.joints[0]).toMatchObject({ bodyAFound: false, bodyAUsed: false, status: 'ready' });
+    expect(explanation.status).toBe('complete');
   });
 
   it('recomputes current state without retaining earlier failures', () => {

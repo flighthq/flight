@@ -799,6 +799,34 @@ describe('stepPhysics2D with joints', () => {
     runSteps(world, 10);
     expect(world.contacts).toHaveLength(0);
   });
+
+  it('does not suppress collision through a one-body joint placeholder', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    const placeholder = box(world, 0, 0);
+    const constrained = box(world, 0.2, 0);
+    addPhysics2DJoint(world, {
+      kind: 'OneBody',
+      bodyA: placeholder.index,
+      bodyB: constrained.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+  });
 });
 
 describe('stepPhysics2D with sleeping', () => {
