@@ -358,6 +358,21 @@ export interface Physics2DPrismaticJoint extends Physics2DJoint {
   upperTranslation: number;
 }
 
+// A wheel joint: constrains the anchors laterally while allowing suspension travel along body A's
+// local axis. The suspension is a damped spring around `restTranslation`; zero stiffness leaves that
+// axis free. The optional angular motor drives B relative to A, independently of suspension travel.
+export interface Physics2DWheelJoint extends Physics2DJoint {
+  localAxisAX: number;
+  localAxisAY: number;
+  restTranslation: number;
+  stiffness: number;
+  damping: number;
+  enableMotor: boolean;
+  motorSpeed: number;
+  maxMotorTorque: number;
+  motorImpulse: number;
+}
+
 // A mouse joint: drags one body toward a moving world-space target with bounded force. The odd one out —
 // it constrains a body to a POINT rather than to another body, which is why it is soft by construction:
 // a rigid drag would let a user inject unbounded energy by moving the cursor faster than the simulation.

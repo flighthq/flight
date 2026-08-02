@@ -5,6 +5,7 @@ import type {
   Physics2DPrismaticJoint,
   Physics2DRevoluteJoint,
   Physics2DRopeJoint,
+  Physics2DWheelJoint,
   Physics2DWeldJoint,
   Physics2DWorld,
   RigidBody2D,
@@ -19,6 +20,7 @@ export const Physics2DMouseJointKind = 'Mouse';
 export const Physics2DPrismaticJointKind = 'Prismatic';
 export const Physics2DRevoluteJointKind = 'Revolute';
 export const Physics2DRopeJointKind = 'Rope';
+export const Physics2DWheelJointKind = 'Wheel';
 export const Physics2DWeldJointKind = 'Weld';
 
 // Holds two anchors a fixed distance apart, rigidly or as a damped spring.
@@ -669,6 +671,184 @@ export const physics2DRopeJointSolver = {
     joint.impulse0 = Math.min(0, previous + lambda);
     lambda = joint.impulse0 - previous;
     applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -lambda * axisX, -lambda * axisY);
+  },
+};
+
+// Keeps two anchors on a suspension axis while allowing relative rotation. The lateral constraint is
+// rigid; travel along the axis is free when stiffness is zero and becomes a damped spring otherwise.
+export const physics2DWheelJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const wheel = joint as Physics2DWheelJoint;
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPrismaticImpulse(
+      bodyA,
+      bodyB,
+      state[0],
+      state[1],
+      state[2],
+      state[3],
+      state[4],
+      state[5],
+      state[6],
+      state[7],
+      joint.impulse0,
+      0,
+      joint.impulse1,
+    );
+    if (wheel.motorImpulse !== 0) {
+      bodyA.angularVelocity -= bodyA.inverseInertia * wheel.motorImpulse;
+      bodyB.angularVelocity += bodyB.inverseInertia * wheel.motorImpulse;
+    }
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    joint.impulse2 = 0;
+    (joint as Physics2DWheelJoint).motorImpulse = 0;
+  },
+
+  // Unlike a prismatic joint, a wheel leaves relative rotation free. Expressing body A's axis in body
+  // B's local frame therefore needs the bodies' CURRENT angles, which the registry's descriptor-only
+  // swap seam does not receive. Preserve authored ends instead of pretending a stale reference frame
+  // can canonicalize them.
+  swapEnds(): boolean {
+    return false;
+  },
+
+  prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
+    const wheel = joint as Physics2DWheelJoint;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    writeJointAnchors(bodyA, bodyB, joint);
+
+    const localLength = Math.sqrt(wheel.localAxisAX * wheel.localAxisAX + wheel.localAxisAY * wheel.localAxisAY);
+    const localAxisX = localLength > EPSILON ? wheel.localAxisAX / localLength : 1;
+    const localAxisY = localLength > EPSILON ? wheel.localAxisAY / localLength : 0;
+    const cos = Math.cos(bodyA.angle);
+    const sin = Math.sin(bodyA.angle);
+    const axisX = localAxisX * cos - localAxisY * sin;
+    const axisY = localAxisX * sin + localAxisY * cos;
+    const perpendicularX = -axisY;
+    const perpendicularY = axisX;
+    const distanceX = bodyB.x + joint.rBX - (bodyA.x + joint.rAX);
+    const distanceY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
+    const s1 = (distanceX + joint.rAX) * perpendicularY - (distanceY + joint.rAY) * perpendicularX;
+    const s2 = joint.rBX * perpendicularY - joint.rBY * perpendicularX;
+    const a1 = (distanceX + joint.rAX) * axisY - (distanceY + joint.rAY) * axisX;
+    const a2 = joint.rBX * axisY - joint.rBY * axisX;
+    const lateralDenominator =
+      bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * s1 * s1 + bodyB.inverseInertia * s2 * s2;
+    const axisDenominator =
+      bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * a1 * a1 + bodyB.inverseInertia * a2 * a2;
+    const translation = distanceX * axisX + distanceY * axisY;
+
+    let springMass = 0;
+    let gamma = 0;
+    let springBias = 0;
+    if (wheel.stiffness > 0 && axisDenominator > 0) {
+      const effectiveMass = 1 / axisDenominator;
+      const angular = 2 * Math.PI * wheel.stiffness;
+      const damping = 2 * effectiveMass * wheel.damping * angular;
+      const spring = effectiveMass * angular * angular;
+      const soft = dt * (damping + dt * spring);
+      gamma = soft > 0 ? 1 / soft : 0;
+      springBias = (translation - wheel.restTranslation) * dt * spring * gamma;
+      springMass = 1 / (axisDenominator + gamma);
+    } else {
+      joint.impulse1 = 0;
+    }
+
+    const inverseInertia = bodyA.inverseInertia + bodyB.inverseInertia;
+    const state = beginJointSolve(wheel, 15);
+    state[0] = axisX;
+    state[1] = axisY;
+    state[2] = perpendicularX;
+    state[3] = perpendicularY;
+    state[4] = s1;
+    state[5] = s2;
+    state[6] = a1;
+    state[7] = a2;
+    state[8] = lateralDenominator > 0 ? 1 / lateralDenominator : 0;
+    state[9] = springMass;
+    state[10] = gamma;
+    state[11] = (distanceX * perpendicularX + distanceY * perpendicularY) * (BAUMGARTE / dt);
+    state[12] = springBias;
+    state[13] = inverseInertia > 0 ? 1 / inverseInertia : 0;
+    state[14] = Math.max(0, dt * wheel.maxMotorTorque);
+    wheel.motorImpulse ??= 0;
+    if (wheel.enableMotor) {
+      wheel.motorImpulse = Math.min(Math.max(wheel.motorImpulse, -state[14]), state[14]);
+    } else {
+      wheel.motorImpulse = 0;
+    }
+  },
+
+  solve(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const wheel = joint as Physics2DWheelJoint;
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+
+    if (wheel.enableMotor && state[13] > 0) {
+      const desired = -state[13] * (bodyB.angularVelocity - bodyA.angularVelocity - wheel.motorSpeed);
+      const previous = wheel.motorImpulse;
+      wheel.motorImpulse = Math.min(Math.max(previous + desired, -state[14]), state[14]);
+      const applied = wheel.motorImpulse - previous;
+      bodyA.angularVelocity -= bodyA.inverseInertia * applied;
+      bodyB.angularVelocity += bodyB.inverseInertia * applied;
+    }
+
+    if (state[9] > 0) {
+      const velocity = prismaticAxisVelocity(bodyA, bodyB, state[0], state[1], state[6], state[7]);
+      const lambda = -state[9] * (velocity + state[12] + state[10] * joint.impulse1);
+      joint.impulse1 += lambda;
+      applyPrismaticImpulse(
+        bodyA,
+        bodyB,
+        state[0],
+        state[1],
+        state[2],
+        state[3],
+        state[4],
+        state[5],
+        state[6],
+        state[7],
+        0,
+        0,
+        lambda,
+      );
+    }
+
+    const lateralVelocity =
+      (bodyB.velocityX - bodyA.velocityX) * state[2] +
+      (bodyB.velocityY - bodyA.velocityY) * state[3] +
+      state[5] * bodyB.angularVelocity -
+      state[4] * bodyA.angularVelocity;
+    const lateralImpulse = -state[8] * (lateralVelocity + state[11]);
+    joint.impulse0 += lateralImpulse;
+    applyPrismaticImpulse(
+      bodyA,
+      bodyB,
+      state[0],
+      state[1],
+      state[2],
+      state[3],
+      state[4],
+      state[5],
+      state[6],
+      state[7],
+      lateralImpulse,
+      0,
+      0,
+    );
   },
 };
 
