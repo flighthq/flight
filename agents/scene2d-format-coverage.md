@@ -36,7 +36,8 @@ playback stays explicit through `applyAnimationClipToLottieDocument`.
 order; static and animated 2D transforms including separated position (`p.x`/`p.y`), anchor, scale,
 rotation, opacity, and skew angle; analytic segment-local cubic-Bezier easing, split into per-component
 scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op` visibility; bezier
-paths, rectangles (with corner radius), ellipses, and polystars; solid and gradient fills and strokes,
+paths, rectangles (with corner radius), ellipses, and polystars including corner roundness (`os`/`is`,
+animatable); solid and gradient fills and strokes,
 linear and radial, each animatable through the format-owned mutable-content binder; static dash;
 static trim paths; a single additive non-inverted mask recovered to `ClipRegion`; images resolved through
 the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
@@ -55,12 +56,17 @@ absence. None of them is announced, and per the rule above none of them should b
 - **Paint z-order within a group is flattened.** Fill is always emitted before stroke regardless of item
   order, so `[rect, stroke, fill]` and `[rect, fill, stroke]` produce the same stream. Lottie's item order
   carries stacking intent.
-- **Polystar corner roundness (`os`, `is`) is not read.** The fields are typed and ignored; roundness 0
-  and roundness 100 emit identical geometry, so a rounded star imports hard-cornered.
 - **Text stroke (`sc`, `sw`) is not read**, and **embedded glyph outlines (`chars`) are not read**.
   `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
   export ships text that renders without the author's font present, so a `chars`-bearing file falls back
   to whatever font the text stack resolves.
+
+**Covered, with a caveat worth knowing.** Polystar roundness is built from the relation the format
+itself fixes — a polygon at 100% outer roundness is the circumscribed circle — which pins the tangent
+handle to `r * (4/3) * tan(t / 4)` scaled linearly by roundness. That is verified by sampling the
+emitted curve, and mutation-tested. It has **not** been compared against a real Bodymovin export, so
+if Bodymovin's own roundness curve differs (most plausibly for a star's *inner* roundness, where no
+circle relation constrains it) this would diverge subtly. A real-asset comparison would settle it.
 
 **Not covered — declared exclusions.** These were scoped out in the blessed charter rather than missed:
 expressions (`x`, never executed); text animators and animated text documents; effect layers (`ef`);

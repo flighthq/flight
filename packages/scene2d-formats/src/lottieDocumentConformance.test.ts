@@ -7,7 +7,7 @@ import type {
   LottieShapePath,
   Shape,
 } from '@flighthq/types/contract';
-import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import { PathCommand, SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
 import { createReadyImageResourceForTest } from './testHelper';
@@ -444,6 +444,174 @@ describe('Lottie keyframe time/value fidelity', () => {
     }
   });
 });
+
+// Roundness is pinned by a relation the format states rather than by a curve this parser chose: a
+// polygon at 100% outer roundness IS the circumscribed circle. Sampling the emitted curve and
+// measuring its distance from the center tests that relation directly, so the assertion cannot echo
+// the handle-length formula the builder used.
+describe('Lottie polystar roundness', () => {
+  const CENTER = [30, 40];
+  const RADIUS = 12;
+  const CIRCLE_AREA_TOLERANCE = 0.5;
+
+  it('emits a circle of the outer radius when a polygon is fully round', () => {
+    const shape = importPolystar({ os: { k: 100 }, sy: 2 });
+    const distances = sampleShapeOutline(shape).map((point) => Math.hypot(point[0] - CENTER[0], point[1] - CENTER[1]));
+
+    expect(distances.length).toBeGreaterThan(20);
+    for (const distance of distances) expect(distance).toBeCloseTo(RADIUS, 1);
+  });
+
+  it('keeps every vertex on its radius and bows the edges outward as roundness rises', () => {
+    const sharpArea = shapeOutlineArea(importPolystar({ os: { k: 0 }, sy: 2 }));
+    const halfArea = shapeOutlineArea(importPolystar({ os: { k: 50 }, sy: 2 }));
+    const roundArea = shapeOutlineArea(importPolystar({ os: { k: 100 }, sy: 2 }));
+
+    // The inscribed polygon is the smallest, the circumscribed circle the largest, and roundness
+    // interpolates between them monotonically.
+    expect(sharpArea).toBeLessThan(halfArea);
+    expect(halfArea).toBeLessThan(roundArea);
+    // The sampler flattens each cubic into CURVE_SAMPLES chords, so the measured area is that of an
+    // inscribed polygon and sits just under the true circle.
+    expect(Math.PI * RADIUS * RADIUS - roundArea).toBeLessThan(CIRCLE_AREA_TOLERANCE);
+  });
+
+  it('never moves a star vertex off its stated radius, whatever the roundness', () => {
+    const INNER = 5;
+    for (const overrides of [
+      { ir: { k: INNER }, is: { k: 0 }, os: { k: 0 }, sy: 1 },
+      { ir: { k: INNER }, is: { k: 100 }, os: { k: 0 }, sy: 1 },
+      { ir: { k: INNER }, is: { k: 40 }, os: { k: 90 }, sy: 1 },
+    ]) {
+      // Roundness bows the edges; the anchors themselves must stay exactly on the authored radii, so
+      // every on-curve point is at either the outer or the inner radius.
+      for (const anchor of pathAnchorsOf(importPolystar(overrides))) {
+        const distance = Math.hypot(anchor[0] - CENTER[0], anchor[1] - CENTER[1]);
+        expect(Math.min(Math.abs(distance - RADIUS), Math.abs(distance - INNER))).toBeCloseTo(0, 6);
+      }
+    }
+  });
+
+  it('changes a star outline when inner roundness changes', () => {
+    const sharp = importPolystar({ ir: { k: 5 }, is: { k: 0 }, os: { k: 0 }, sy: 1 });
+    const rounded = importPolystar({ ir: { k: 5 }, is: { k: 100 }, os: { k: 0 }, sy: 1 });
+
+    expect(JSON.stringify(rounded.data.commands)).not.toBe(JSON.stringify(sharp.data.commands));
+  });
+
+  it('emits straight edges when roundness is absent or zero', () => {
+    const absent = importPolystar({ sy: 2 });
+    const zero = importPolystar({ os: { k: 0 }, sy: 2 });
+
+    expect(pathVerbsOf(absent)).not.toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(JSON.stringify(zero.data.commands)).toBe(JSON.stringify(absent.data.commands));
+  });
+
+  function importPolystar(overrides: Record<string, unknown>): Shape {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'star',
+          op: 60,
+          shapes: [
+            { or: { k: RADIUS }, p: { k: CENTER }, pt: { k: 6 }, r: { k: 0 }, ty: 'sr', ...overrides },
+            { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' },
+          ],
+          ty: 4,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+    return findFirstKind(result.root, ShapeKind) as Shape;
+  }
+});
+
+// A shape stores 'drawPath' followed by its arity, the nested path verb stream, and the path data
+// stream. Flattening the cubics here means the outline assertions read the curve Flight will actually
+// draw rather than the control points that describe it.
+const CURVE_SAMPLES = 32;
+
+function sampleShapeOutline(shape: Shape): number[][] {
+  const points: number[][] = [];
+  const tokens = shape.data.commands as unknown[];
+  for (let index = 0; index < tokens.length; index++) {
+    if (tokens[index] !== 'drawPath') continue;
+    const verbs = tokens[index + 2] as number[];
+    const data = tokens[index + 3] as number[];
+    let cursor = 0;
+    let current: number[] = [0, 0];
+    for (const verb of verbs) {
+      if (verb === PathCommand.MOVE_TO || verb === PathCommand.LINE_TO) {
+        current = [data[cursor], data[cursor + 1]];
+        points.push(current);
+        cursor += 2;
+      } else if (verb === PathCommand.CUBIC_CURVE_TO) {
+        const [c1x, c1y, c2x, c2y, x, y] = data.slice(cursor, cursor + 6);
+        for (let step = 1; step <= CURVE_SAMPLES; step++) {
+          const t = step / CURVE_SAMPLES;
+          const inverse = 1 - t;
+          points.push([
+            inverse ** 3 * current[0] + 3 * inverse ** 2 * t * c1x + 3 * inverse * t ** 2 * c2x + t ** 3 * x,
+            inverse ** 3 * current[1] + 3 * inverse ** 2 * t * c1y + 3 * inverse * t ** 2 * c2y + t ** 3 * y,
+          ]);
+        }
+        current = [x, y];
+        cursor += 6;
+      } else if (verb === PathCommand.CURVE_TO) {
+        cursor += 4;
+      } else if (verb === PathCommand.WIDE_MOVE_TO || verb === PathCommand.WIDE_LINE_TO) {
+        cursor += 4;
+      }
+    }
+  }
+  return points;
+}
+
+// The on-curve anchors only — control points excluded, since roundness is allowed to move those.
+function pathAnchorsOf(shape: Shape): number[][] {
+  const anchors: number[][] = [];
+  const tokens = shape.data.commands as unknown[];
+  for (let index = 0; index < tokens.length; index++) {
+    if (tokens[index] !== 'drawPath') continue;
+    const verbs = tokens[index + 2] as number[];
+    const data = tokens[index + 3] as number[];
+    let cursor = 0;
+    for (const verb of verbs) {
+      if (verb === PathCommand.MOVE_TO || verb === PathCommand.LINE_TO) {
+        anchors.push([data[cursor], data[cursor + 1]]);
+        cursor += 2;
+      } else if (verb === PathCommand.CUBIC_CURVE_TO) {
+        anchors.push([data[cursor + 4], data[cursor + 5]]);
+        cursor += 6;
+      } else if (verb === PathCommand.CURVE_TO) {
+        anchors.push([data[cursor + 2], data[cursor + 3]]);
+        cursor += 4;
+      }
+    }
+  }
+  return anchors;
+}
+
+function pathVerbsOf(shape: Shape): number[] {
+  const tokens = shape.data.commands as unknown[];
+  const verbs: number[] = [];
+  for (let index = 0; index < tokens.length; index++) {
+    if (tokens[index] === 'drawPath') verbs.push(...(tokens[index + 2] as number[]));
+  }
+  return verbs;
+}
+
+function shapeOutlineArea(shape: Shape): number {
+  const points = sampleShapeOutline(shape);
+  let area = 0;
+  for (let index = 0; index < points.length; index++) {
+    const [x1, y1] = points[index];
+    const [x2, y2] = points[(index + 1) % points.length];
+    area += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(area) / 2;
+}
 
 function createDocument(layers: LottieLayer[]): LottieDocument {
   return { fr: 30, h: 100, ip: 0, layers, op: 60, w: 100 };

@@ -634,11 +634,27 @@ function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null
     const outer = numericValue(initialLottieValue(polystar.or), 1)[0];
     const inner = polystar.sy === 1 ? numericValue(initialLottieValue(polystar.ir), 1)[0] : outer;
     const rotation = numericValue(initialLottieValue(polystar.r), 1)[0];
-    return createLottiePolystarPath(polystar.sy, center, points, outer, inner, rotation);
+    const outerRoundness = polystar.os === undefined ? 0 : numericValue(initialLottieValue(polystar.os), 1)[0];
+    const innerRoundness =
+      polystar.sy === 1 && polystar.is !== undefined ? numericValue(initialLottieValue(polystar.is), 1)[0] : 0;
+    return createLottiePolystarPath(
+      polystar.sy,
+      center,
+      points,
+      outer,
+      inner,
+      rotation,
+      outerRoundness,
+      innerRoundness,
+    );
   }
   return null;
 }
 
+// Roundness bows each edge outward while the vertices stay on their radius, so the tangent handle is
+// perpendicular to the radius. Its length comes from the relation the format itself fixes: a polygon
+// at 100% roundness is the circumscribed circle, and the cubic that matches a circular arc spanning
+// angle t has handles of r * (4/3) * tan(t / 4). Roundness scales that length linearly.
 function createLottiePolystarPath(
   kind: 1 | 2,
   center: readonly number[],
@@ -646,18 +662,52 @@ function createLottiePolystarPath(
   outer: number,
   inner: number,
   rotationDegrees: number,
+  outerRoundness = 0,
+  innerRoundness = 0,
 ): Path {
   const path = createPath();
   const points = Math.max(2, Math.round(pointCount));
   const rotation = degreesToRadians(rotationDegrees - 90);
-  const vertices: number[] = [];
   const count = kind === 1 ? points * 2 : points;
+  const step = (Math.PI * 2) / count;
+  const handleScale = (4 / 3) * Math.tan(step / 4);
+  const angles: number[] = [];
+  const radii: number[] = [];
+  const handles: number[] = [];
+  const vertices: number[] = [];
   for (let index = 0; index < count; index++) {
-    const radius = kind === 1 && index % 2 === 1 ? inner : outer;
-    const angle = rotation + (index * Math.PI * 2) / count;
+    const isInner = kind === 1 && index % 2 === 1;
+    const radius = isInner ? inner : outer;
+    const roundness = isInner ? innerRoundness : outerRoundness;
+    const angle = rotation + index * step;
+    angles.push(angle);
+    radii.push(radius);
+    handles.push((radius * handleScale * roundness) / 100);
     vertices.push(center[0] + Math.cos(angle) * radius, center[1] + Math.sin(angle) * radius);
   }
-  appendPathPolygon(path, vertices);
+  if (handles.every((handle) => handle === 0)) {
+    appendPathPolygon(path, vertices);
+    return path;
+  }
+  appendPathMoveTo(path, vertices[0], vertices[1]);
+  for (let index = 0; index < count; index++) {
+    const next = (index + 1) % count;
+    // Tangent of increasing angle at each end; the incoming handle points back along the next
+    // vertex's tangent, which is why it is subtracted rather than added.
+    const outgoingX = vertices[index * 2] - Math.sin(angles[index]) * handles[index];
+    const outgoingY = vertices[index * 2 + 1] + Math.cos(angles[index]) * handles[index];
+    const incomingX = vertices[next * 2] + Math.sin(angles[next]) * handles[next];
+    const incomingY = vertices[next * 2 + 1] - Math.cos(angles[next]) * handles[next];
+    appendPathCubicCurveTo(
+      path,
+      outgoingX,
+      outgoingY,
+      incomingX,
+      incomingY,
+      vertices[next * 2],
+      vertices[next * 2 + 1],
+    );
+  }
   return path;
 }
 
@@ -728,14 +778,35 @@ function bindLottieGeometryItem(
     const outer = [numericValue(initialLottieValue(polystar.or), 1)[0]];
     const inner = [polystar.sy === 1 ? numericValue(initialLottieValue(polystar.ir), 1)[0] : outer[0]];
     const rotation = [numericValue(initialLottieValue(polystar.r), 1)[0]];
+    const outerRoundness = [polystar.os === undefined ? 0 : numericValue(initialLottieValue(polystar.os), 1)[0]];
+    const innerRoundness = [
+      polystar.sy === 1 && polystar.is !== undefined ? numericValue(initialLottieValue(polystar.is), 1)[0] : 0,
+    ];
     const apply = (): void => {
-      rebuild(createLottiePolystarPath(polystar.sy, center, points[0], outer[0], inner[0], rotation[0]));
+      rebuild(
+        createLottiePolystarPath(
+          polystar.sy,
+          center,
+          points[0],
+          outer[0],
+          inner[0],
+          rotation[0],
+          outerRoundness[0],
+          innerRoundness[0],
+        ),
+      );
     };
     bindMutableNumericProperty(polystar.p, center, (value) => value, apply, context);
     bindMutableNumericProperty(polystar.pt, points, (value) => value, apply, context);
     bindMutableNumericProperty(polystar.or, outer, (value) => value, apply, context);
     if (polystar.ir !== undefined) bindMutableNumericProperty(polystar.ir, inner, (value) => value, apply, context);
     bindMutableNumericProperty(polystar.r, rotation, (value) => value, apply, context);
+    if (polystar.os !== undefined) {
+      bindMutableNumericProperty(polystar.os, outerRoundness, (value) => value, apply, context);
+    }
+    if (polystar.is !== undefined) {
+      bindMutableNumericProperty(polystar.is, innerRoundness, (value) => value, apply, context);
+    }
   }
 }
 
