@@ -3,7 +3,6 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { tessellatePath } from '@flighthq/path/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { getShapeFillRegions, getShapeStrokeOutlineRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
@@ -19,7 +18,7 @@ import type {
   WgpuRenderState,
   WgpuShapeMeshBuffers,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 import type { WgpuShapeMesh } from '@flighthq/types/contract';
 
 import {
@@ -30,6 +29,7 @@ import {
 } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
+import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 
 interface WgpuShapeData {
   canvas: HTMLCanvasElement;
@@ -161,6 +161,14 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
     }
   }
 
+  // A fill with no tessellated form is the registered rasterizer's job; an absent one is reported
+  // rather than quietly dropping the fill.
+  const rasterizer = getWgpuShapeRasterizer(state);
+  if (rasterizer === null) {
+    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    return;
+  }
+
   const material = renderProxy.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
@@ -181,7 +189,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
     ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, commands, null, state);
+    rasterizer(ctx, commands, state);
     ctx.restore();
     // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
     // re-uploads (recreating the GPU texture, which covers a size change too).

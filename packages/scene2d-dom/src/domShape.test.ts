@@ -6,6 +6,9 @@ import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { defaultDomShapeRenderer, drawDomShape } from './domShape';
+import { registerDomShapeRasterizer } from './domShapeRasterizer';
+
+const noopRasterizer = (): void => {};
 
 beforeAll(() => {
   registerCanvasShapeCommands(defaultCanvasShapeCommands);
@@ -14,6 +17,7 @@ beforeAll(() => {
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
+  registerDomShapeRasterizer(state, noopRasterizer);
   registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
   return state;
 }

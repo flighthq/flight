@@ -28,3 +28,4 @@ export {
   renderWgpuScene2D,
   renderWgpuVelocity,
 } from './contract';
+export { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';

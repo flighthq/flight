@@ -1,5 +1,7 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createGlCanvasElement,
   createGlRenderState,
   createMatrix,
@@ -13,19 +15,23 @@ import {
   defaultGlTextLabelRenderer,
   defaultGlTextureShapeCommands,
   defaultGlTilemapRenderer,
+  enableFlightDiagnostics,
   enableGlBlendModeSupport,
   enableGlClipSupport,
-  enableFlightDiagnostics,
   enableGlRenderCache,
   enableGlStrokePathTessellation,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
-  registerStandardGlTextureResolvers,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasRenderTextureResolver,
   registerGlShapeCommands,
-  registerRenderer,
+  registerGlShapeRasterizer,
   registerGlStandardMaterial,
+  registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -65,6 +71,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+      registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
       registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
@@ -80,6 +87,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
+      registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
       registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     }
   }
@@ -105,4 +113,15 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       this.render(root);
     },
   });
+}
+
+// The shape rasterizer draws the fills the GPU mesh path has no tessellated form for — gradients and
+// texture fills. It resolves its pixels through a CanvasRenderState of its own, so the resolvers
+// registered here are exactly what those fills can paint.
+function createHarnessShapeRasterizer(): ShapeRasterizer {
+  const resolverState = createCanvasRenderState(document.createElement('canvas'));
+  registerCanvasBitmapTextureResolver(resolverState);
+  registerCanvasImageTextureResolver(resolverState);
+  registerCanvasRenderTextureResolver(resolverState);
+  return createCanvasShapeRasterizer(resolverState);
 }

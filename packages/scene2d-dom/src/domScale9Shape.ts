@@ -1,19 +1,23 @@
 ﻿import { createEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
-  Scene2DRenderer,
   DomRenderState,
   MatrixLike,
-  Renderable,
-  RendererData,
   RenderProxy2D,
   RenderState,
+  Renderable,
+  RendererData,
   Scale9Shape,
+  Scene2DRenderer,
+  ShapeCommandToken,
 } from '@flighthq/types/contract';
+import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
 
+import { getDomRenderStateRuntime } from './domRenderState';
 import { buildDomScale9Mapper } from './domScale9Mapper';
 import { drawDomShape } from './domShape';
+import { getDomShapeRasterizer } from './domShapeRasterizer';
 import { prepareDomElement, setDomRendererElement } from './domStyle';
 
 interface DomScale9ShapeData extends RendererData {
@@ -21,7 +25,7 @@ interface DomScale9ShapeData extends RendererData {
   context: CanvasRenderingContext2D | null;
 }
 
-const _remappedCommands: unknown[] = [];
+const _remappedCommands: ShapeCommandToken[] = [];
 
 export function createDomScale9ShapeData(_state: RenderState, _source: Renderable): DomScale9ShapeData {
   return createEntity({ canvas: null, context: null });
@@ -34,6 +38,14 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   const source = renderProxy.source as Scale9Shape;
   const { commands, scale9Grid } = source.data;
   if (commands.length === 0) return;
+
+  // A fill with no tessellated form is the registered rasterizer's job; an absent one is reported
+  // rather than quietly dropping the fill.
+  const rasterizer = getDomShapeRasterizer(state);
+  if (rasterizer === null) {
+    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, Scale9ShapeKind);
+    return;
+  }
 
   const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildDomScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
@@ -55,11 +67,11 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
   data.canvas.height = h;
 
   const ctx = data.context!;
-  mapCanvasScale9ShapeCommands(_remappedCommands, commands, mapper);
+  mapScale9ShapeCommands(_remappedCommands, commands, mapper);
   if (bounds.x !== 0 || bounds.y !== 0) {
     ctx.translate(-bounds.x, -bounds.y);
   }
-  renderCanvasShapeCommands(ctx, _remappedCommands);
+  rasterizer(ctx, _remappedCommands, state);
 
   data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
   data.canvas.style.imageRendering = state.allowSmoothing ? '' : 'pixelated';

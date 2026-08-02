@@ -1,14 +1,19 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderState,
-  enableFlightDiagnostics,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
+  enableFlightDiagnostics,
   prepareScene2DRender,
-  registerWgpuStandardMaterial,
-  registerWgpuShapeCommands,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
   registerRenderer,
+  registerWgpuShapeCommands,
+  registerWgpuShapeRasterizer,
+  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   ShapeKind,
@@ -28,6 +33,12 @@ enableFlightDiagnostics(state);
 
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+// Gradient and texture fills have no tessellated form on this backend, so they draw through an
+// explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
+const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
+registerCanvasBitmapTextureResolver(shapeRasterizerState);
+registerCanvasImageTextureResolver(shapeRasterizerState);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerState));
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;

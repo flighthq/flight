@@ -11,6 +11,7 @@ export enum RenderRegistry {
   MaterialRenderer,
   NodeRenderer,
   ShapeCommandHandler,
+  ShapeRasterizer,
   TextureResolver,
 }
 

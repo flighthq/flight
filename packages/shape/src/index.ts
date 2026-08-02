@@ -42,3 +42,4 @@ export {
   isShapeEmpty,
   registerShapeHitTestCommand,
 } from './contract';
+export * from './scale9ShapeCommands';

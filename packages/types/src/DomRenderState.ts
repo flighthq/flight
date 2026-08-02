@@ -5,6 +5,7 @@ import type { DomTextureResolver } from './DomTextureResolver';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
+import type { ShapeRasterizer } from './ShapeRasterizer';
 import type { TextureSourceKind } from './TextureSourceKind';
 
 export interface DomRenderState extends RenderState {
@@ -37,6 +38,10 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
   // Open, state-scoped Texture source registry. Undefined until the first explicit registration so
   // a DOM bundle only retains the backing realizations it installs.
   domTextureResolverRegistry?: Map<TextureSourceKind, DomTextureResolver> | null;
+  // The shape-rasterization seam, absent until registerDomShapeRasterizer installs one. A shape whose
+  // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
+  // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
+  shapeRasterizer?: ShapeRasterizer | null;
   // Ping-pong order lists: domOrderList holds the previous frame's order so the next frame can detect
   // structure changes; domNextOrderList is the scratch buffer built during the current frame. They
   // swap at the end of each render call.

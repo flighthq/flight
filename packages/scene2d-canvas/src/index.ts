@@ -55,3 +55,4 @@ export {
   setCanvasRenderTransform2D,
   withCanvasRenderTextures,
 } from './contract';
+export { createCanvasShapeRasterizer } from './canvasShapeRasterizer';

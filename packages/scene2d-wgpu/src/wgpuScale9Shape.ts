@@ -5,22 +5,25 @@ import {
   updateWgpuTextureEntry,
 } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { mapCanvasScale9ShapeCommands, renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
-  Scene2DRenderer,
-  Renderable,
-  RendererData,
   RenderProxy2D,
   RenderState,
+  Renderable,
+  RendererData,
   Scale9Shape,
+  Scene2DRenderer,
+  ShapeCommandToken,
   WgpuRenderState,
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
+import { RenderRegistry, Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
 import { drawWgpuShape } from './wgpuShape';
+import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 
 // Scale9 rasterizes its remapped shape commands to a 2D canvas at the scaled size, uploads that as a
 // per-node GPU texture, and draws a quad with the scale stripped from the transform (the size is
@@ -72,6 +75,14 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   if (commands.length === 0) return;
   if (renderProxy.rendererData === null) return;
 
+  // A fill with no tessellated form is the registered rasterizer's job; an absent one is reported
+  // rather than quietly dropping the fill.
+  const rasterizer = getWgpuShapeRasterizer(state);
+  if (rasterizer === null) {
+    getWgpuRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, Scale9ShapeKind);
+    return;
+  }
+
   const bounds = getNodeLocalBoundsRectangle(source);
   const mapper = buildWgpuScale9Mapper(bounds, scale9Grid, source.scaleX, source.scaleY);
   if (mapper === null) {
@@ -97,9 +108,9 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     const ctx = shapeData.ctx;
     ctx.clearRect(0, 0, w, h);
     ctx.save();
-    remapWgpuScale9Commands(_remappedCommands, commands, mapper);
+    mapScale9ShapeCommands(_remappedCommands, commands, mapper);
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, _remappedCommands, null, state);
+    rasterizer(ctx, _remappedCommands, state);
     ctx.restore();
 
     // GPU textures are fixed-size: recreate the entry when the field size changes, otherwise reupload
@@ -149,32 +160,10 @@ export function drawWgpuScale9ShapeMask(state: WgpuRenderState, data: RenderProx
   drawWgpuScale9Shape(state, data);
 }
 
-export function remapWgpuScale9Commands(
-  out: unknown[],
-  source: readonly unknown[],
-  mapper: Parameters<typeof mapCanvasScale9ShapeCommands>[2],
-): void {
-  mapCanvasScale9ShapeCommands(out, source, mapper);
-
-  let i = 0;
-  while (i < out.length) {
-    const key = out[i] as string;
-    const argCount = out[i + 1] as number;
-    if (key === 'drawPath') {
-      const pathData = out[i + 3] as readonly number[];
-      _remappedPathData.length = pathData.length;
-      for (let k = 0; k < pathData.length; k++) _remappedPathData[k] = pathData[k];
-      out[i + 3] = _remappedPathData;
-    }
-    i += argCount + 2;
-  }
-}
-
 export const defaultWgpuScale9ShapeRenderer: Scene2DRenderer = {
   createData: createWgpuScale9ShapeData,
   destroyData: destroyWgpuScale9ShapeData,
   submit: drawWgpuScale9Shape,
 };
 
-const _remappedCommands: unknown[] = [];
-const _remappedPathData: number[] = [];
+const _remappedCommands: ShapeCommandToken[] = [];

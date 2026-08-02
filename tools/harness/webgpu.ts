@@ -1,5 +1,7 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createMatrix,
   createWgpuCanvasElement,
   createWgpuRenderState,
@@ -13,9 +15,9 @@ import {
   defaultWgpuTextLabelRenderer,
   defaultWgpuTextureShapeCommands,
   defaultWgpuTilemapRenderer,
+  enableFlightDiagnostics,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
-  enableFlightDiagnostics,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
   enableWgpuStrokePathTessellation,
@@ -23,10 +25,14 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasRenderTextureResolver,
   registerRenderer,
-  registerWgpuStandardMaterial,
   registerStandardWgpuTextureResolvers,
   registerWgpuShapeCommands,
+  registerWgpuShapeRasterizer,
+  registerWgpuStandardMaterial,
   renderWgpuBackground,
   renderWgpuScene2D,
   RichTextKind,
@@ -65,6 +71,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+      registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
       registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
@@ -80,6 +87,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
+      registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
       registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     }
   }
@@ -106,4 +114,15 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       this.render(root);
     },
   });
+}
+
+// The shape rasterizer draws the fills the GPU mesh path has no tessellated form for — gradients and
+// texture fills. It resolves its pixels through a CanvasRenderState of its own, so the resolvers
+// registered here are exactly what those fills can paint.
+function createHarnessShapeRasterizer(): ShapeRasterizer {
+  const resolverState = createCanvasRenderState(document.createElement('canvas'));
+  registerCanvasBitmapTextureResolver(resolverState);
+  registerCanvasImageTextureResolver(resolverState);
+  registerCanvasRenderTextureResolver(resolverState);
+  return createCanvasShapeRasterizer(resolverState);
 }
