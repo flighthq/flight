@@ -1,6 +1,7 @@
 import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
 import type {
   CollisionShape,
+  Physics2DCollisionFilter,
   Physics2DCollider,
   Physics2DMaterial,
   Physics2DSolverConfig,
@@ -29,8 +30,15 @@ export function createPhysics2DCollider(
   local: CollisionShape,
   material: Physics2DMaterial,
   sensor = false,
+  filter?: Readonly<Physics2DCollisionFilter>,
 ): Physics2DCollider {
-  return { local, world: createPhysics2DColliderWorldShape(local), material, sensor };
+  return {
+    local,
+    world: createPhysics2DColliderWorldShape(local),
+    material,
+    filter: filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter },
+    sensor,
+  };
 }
 
 // The default solver tuning. Ten velocity iterations and three position iterations is the range every

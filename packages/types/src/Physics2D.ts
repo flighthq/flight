@@ -35,6 +35,16 @@ export interface Physics2DMaterial {
   restitution: number;
 }
 
+// Which other colliders one collider may contact. Categories and masks use the familiar symmetric
+// rule: A's mask must include B's category AND B's mask must include A's category. A matching non-zero
+// group overrides both masks — positive always collides, negative never collides — for assemblies whose
+// pieces must make one decision regardless of their ordinary categories.
+export interface Physics2DCollisionFilter {
+  categoryBits: number;
+  maskBits: number;
+  groupIndex: number;
+}
+
 // One piece of a body's shape. A collider carries its shape in the body's LOCAL space and a
 // preallocated world-space copy that `stepPhysics2D` refreshes once per step.
 //
@@ -55,6 +65,7 @@ export interface Physics2DCollider {
   // velocity. Local kind is what you author; world kind is what the narrow phase needs.
   world: CollisionShape;
   material: Physics2DMaterial;
+  filter: Physics2DCollisionFilter;
   sensor: boolean;
 }
 
