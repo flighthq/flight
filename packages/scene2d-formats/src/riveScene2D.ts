@@ -17,6 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
 import { createRiveObjectGraph } from './riveObjectGraph';
@@ -85,6 +86,7 @@ function createRiveArtboardImport(
     addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
   }
 
+  applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
   for (const [shapeIndex, paths] of shapePaths) {
     const shape = nodes[shapeIndex];
     if (shape === null || shape === undefined) continue;

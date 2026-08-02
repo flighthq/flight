@@ -279,9 +279,21 @@ use the default, and of the 144 that do not, 93 are modes Flight cannot express 
 larger half of non-default blend usage. Widening `@flighthq/BlendMode` is a cross-package question,
 and the same one hangs over the `lottie.unsupported-blend-mode` crumb that Lottie still emits.
 
-**Not covered:** `ClippingShape` — 252 instances across 26 of the 64 corpus files, so common. The
-obstacle is coordinate space rather than the property read: the source shape's geometry lives in its
-own transform chain and the clip must land in the clipped node's space. Draw-order overrides,
+**Clipping is covered, and the coordinate transfer is the substance of it.** A clipping shape names a
+*source* shape elsewhere in the artboard, whose geometry sits in the source's own transform chain,
+while Flight rasterizes a clip under the **clipped** node's transform. The geometry therefore has to
+cross chains: `inverse(clippedRelative) · sourceRelative` applied to the source's points. Both chains
+are measured from the artboard root, whose transform is common to the two and so cancels — which is
+what keeps the artboard's own pivot out of the arithmetic. A component that holds no transform passes
+its parent's through rather than restarting at the identity.
+
+Over the corpus this clips 229 nodes with no non-finite bounds and no empty contour set. Rive
+intersects several clips on one node where Flight carries a single region, so a second clipping shape
+on the same node emits `rive.multiple-clipping-shapes` (8 in the corpus) rather than quietly
+replacing the first — intersecting contour sets is a `@flighthq/path-boolean` job, not something to
+fake. A source that resolves to no geometry emits `rive.unresolved-clipping-source` (14).
+
+**Not covered:** draw-order overrides,
 `DrawRules` and `DrawTarget`, 96 of each. `TrimPath`, 46 instances across 11 files, which Flight has
 the pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather`, 154
 instances, a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
