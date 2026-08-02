@@ -69,11 +69,28 @@ block to extend). Three handlers ship: `KHR_materials_emissive_strength` (which 
 another handler already promoted, since handler order is not guaranteed), `KHR_materials_clearcoat`, and
 `KHR_materials_sheen`.
 
-**Still unread, and each is now mechanical** — the seam and the shared helper are the hard part, and
-they exist: `KHR_materials_transmission`/`_volume`, `_iridescence`, `_anisotropy`, `_specular`, and
-`KHR_materials_pbrSpecularGlossiness` (which has both a `SpecularGlossinessPbrMaterial` and a
-`convertSpecularGlossinessToStandardPbr` waiting for it, so it wants a different shape — a material
-REPLACEMENT rather than an extension attachment).
+**The rest of the family followed in the same pass**, and one of them forced a second seam.
+`TransmissionVolumePbrExtension` is ONE Flight descriptor for THREE glTF extensions —
+`KHR_materials_transmission`, `_volume`, and `_ior` — so those handlers cannot each attach their own.
+`findGltfPbrExtension` is the lookup that lets them cooperate: whichever runs first attaches the
+descriptor and the others find it and fill their own fields. They stay three separately importable
+handlers rather than one, because a file may state any subset (transmission alone is a thin refractive
+surface; ior alone retunes an ordinary material) and because accepting one extension must never install
+the others. Handler order is not guaranteed, so none may assume it is the creator — the order-independence
+test runs the trio forwards and backwards and asserts ONE descriptor either way.
+
+Also shipped: `_iridescence` (both nanometre thickness bounds import even when a thickness texture is
+present, because the texture's green channel INTERPOLATES between them rather than carrying an absolute
+depth), `_anisotropy` (rotation in radians — it is a math-layer angle over a tangent-space direction map,
+not an authoring property), and `_specular` (whose two textures split by channel and therefore by color
+space: strength in the alpha of `specularTexture`, linear; color in the RGB of `specularColorTexture`,
+sRGB).
+
+**One extension is deliberately still unbuilt.** `KHR_materials_pbrSpecularGlossiness` wants a different
+shape from everything above — a material REPLACEMENT, not an extension attachment — because Flight
+already carries both a `SpecularGlossinessPbrMaterial` and a `convertSpecularGlossinessToStandardPbr`.
+Which of those two an importer should produce is a design question (keep the authored model, or convert
+to the metallic-roughness lane at import), not parser breadth, so it wants a ruling before code.
 
 ## 2026-08-02 — 3DS meshes carry a real transform; OBJ stops importing black (builder, user-directed)
 
