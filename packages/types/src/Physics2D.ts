@@ -584,6 +584,32 @@ export interface Physics2DQueryResult {
   hitCount: number;
 }
 
+export type Physics2DJointResolutionStatus =
+  | 'bodies-missing'
+  | 'body-a-missing'
+  | 'body-b-missing'
+  | 'ready'
+  | 'solver-unregistered';
+
+// Plain-data diagnosis of whether one stored joint can reach its solver. The individual booleans keep
+// simultaneous faults visible even though `status` provides one stable primary classification.
+export interface Physics2DJointResolution {
+  readonly jointIndex: number;
+  readonly kind: Physics2DJointKind;
+  readonly bodyA: number;
+  readonly bodyB: number;
+  readonly bodyAFound: boolean;
+  readonly bodyBFound: boolean;
+  readonly solverRegistered: boolean;
+  readonly status: Physics2DJointResolutionStatus;
+}
+
+export interface Physics2DJointResolutionExplanation {
+  readonly joints: readonly Readonly<Physics2DJointResolution>[];
+  readonly readyCount: number;
+  readonly status: 'complete' | 'unresolved-joints';
+}
+
 export type Physics2DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
 
 // Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
