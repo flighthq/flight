@@ -106,6 +106,24 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      # Handed to edge-publish, which would otherwise run a SECOND full `tsc -b` over all 141
+      # projects to produce byte-identical output. Safe to reuse across the version stamp that
+      # edge-publish applies afterwards: nothing inlines the package version at build time (the one
+      # manifest read, tool-capture's captureServer, does it at runtime), so dist does not depend on
+      # the version in package.json.
+      #
+      # Tarred first because upload-artifact is slow over many small files, and 141 dist directories
+      # are ~76MB of them — as one tarball it is 5.8MB. Uploaded unconditionally rather than gated on
+      # the release-channel branches: it costs a few seconds on a job that is never the critical path
+      # (test and render-test are), and a gate would silently starve any future consumer.
+      - name: Tar dist for the publish job
+        run: tar -czf dist.tgz packages/*/dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist.tgz
+          retention-days: 1
+
   harness-build:
     name: Harness build · ${{ matrix.label }}
     needs: build-check
@@ -288,12 +306,20 @@ jobs:
           # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
           registry-url: https://registry.npmjs.org
       - run: npm ci
+
+      # Reuses the `build` job's output instead of rebuilding the graph. See the note on the tar step
+      # in `build` for why dist survives the version stamp below.
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+      - name: Restore dist from the build job
+        run: tar -xzf dist.tgz
+
       - name: Compute snapshot version and dist-tag
         id: edge
         run: npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
       - name: Stamp the graph to the snapshot version
         run: npm run version:packages ${{ steps.edge.outputs.version }}
-      - run: npm run build
       - name: Publish snapshot to npm
         run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
         env:
