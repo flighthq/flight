@@ -63,8 +63,8 @@ export function createPhysics2DDistanceJoint(options: Readonly<Physics2DDistance
     kind: Physics2DDistanceJointKind,
     ...createJointBase(options),
     length: options.length,
-    stiffness: options.stiffness ?? 0,
-    damping: options.damping ?? 0,
+    frequencyHz: options.frequencyHz ?? 0,
+    dampingRatio: options.dampingRatio ?? 0,
   };
 }
 
@@ -103,8 +103,8 @@ export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointO
     targetX: options.targetX,
     targetY: options.targetY,
     maxForce: options.maxForce,
-    stiffness: options.stiffness ?? 5,
-    damping: options.damping ?? 0.7,
+    frequencyHz: options.frequencyHz ?? 5,
+    dampingRatio: options.dampingRatio ?? 0.7,
   };
 }
 
@@ -178,8 +178,8 @@ export function createPhysics2DWheelJoint(options: Readonly<Physics2DWheelJointO
     localAxisAX: options.localAxisAX ?? 0,
     localAxisAY: options.localAxisAY ?? 1,
     restTranslation: options.restTranslation ?? 0,
-    stiffness: options.stiffness ?? 0,
-    damping: options.damping ?? 0,
+    frequencyHz: options.frequencyHz ?? 0,
+    dampingRatio: options.dampingRatio ?? 0,
     enableMotor: options.enableMotor ?? false,
     motorSpeed: options.motorSpeed ?? 0,
     maxMotorTorque: options.maxMotorTorque ?? 0,

@@ -794,8 +794,8 @@ describe('stepPhysics2D with joints', () => {
         rBX: 0,
         rBY: 0,
         length: 2,
-        stiffness: 0,
-        damping: 0,
+        frequencyHz: 0,
+        dampingRatio: 0,
       } as never);
     }
     return { left, right, world };
@@ -852,8 +852,8 @@ describe('stepPhysics2D with joints', () => {
       rBX: 0,
       rBY: 0,
       length: 0.2,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     } as never);
     runSteps(world, 10);
     expect(world.contacts).toHaveLength(0);
@@ -962,8 +962,8 @@ describe('stepPhysics2D with sleeping', () => {
       rBX: 0,
       rBY: 0,
       length: 2,
-      stiffness: 0,
-      damping: 0,
+      frequencyHz: 0,
+      dampingRatio: 0,
     } as never);
     runSteps(world, 600);
     expect(bob.sleeping).toBe(true);
