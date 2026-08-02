@@ -20,8 +20,10 @@ export {
   containsPathPoint,
   copyPath,
   createPath,
+  createPathMorph,
   dashPath,
   decimatePath,
+  explainPathMorphCreation,
   explainStrokePathTessellation,
   fitPathCurves,
   flattenPath,
@@ -45,6 +47,7 @@ export {
   releasePathMesh,
   releasePathMeshTyped,
   reversePath,
+  samplePathMorph,
   strokePath,
   tessellatePath,
   tessellatePathTyped,
@@ -53,4 +56,10 @@ export {
   translatePath,
 } from './contract';
 
-export type { StrokePathTessellationExplanation, StrokePathTessellationReason } from './contract';
+export type {
+  PathMorph,
+  PathMorphCreationExplanation,
+  PathMorphCreationReason,
+  StrokePathTessellationExplanation,
+  StrokePathTessellationReason,
+} from './contract';

@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/path'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-02
+by: builder4
 ---
 
 # path — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-02 · builder4] — path morph foundation
+
+Added the path-owned foundation for downstream retained-shape and timeline animation composition.
+`createPathMorph` prepares topology-compatible endpoints into one canonical cubic command stream,
+using exact line/quadratic conversion, exact de Casteljau subdivision for unequal segment counts, and
+closed-contour start alignment. `samplePathMorph` writes any progress value into a reusable `Path`
+without replacing its buffers, so later shape bindings can retain those arrays and invalidate content.
+Incompatible winding, contour count, or open/closed topology returns `null`, with
+`explainPathMorphCreation` providing detached structured diagnostics. Shape styling and all playback
+remain deliberately downstream.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/path'
-updated: 2026-07-13
+updated: 2026-08-02
 basedOn: ./review.md
 ---
 
@@ -33,7 +33,6 @@ Parked — each with the reason it is not sweep-safe.
 - **Holes-aware tessellation.** Blessed (charter Decision "Multiple tessellation strategies coexist") but a significant second tessellator (earcut hole-stitching + winding), not a sweep item. The largest remaining capability gap.
 - **Self-intersection-robust triangulation.** Research-grade; entangled with the holes-aware work; changes `tessellatePath` failure behavior.
 - **Sub-range extraction / trim paths** (`splitPathAtDistance`, extract-range). Kernel-free and in-scope, but new API surface whose shape should get a nod — and it feeds fork I's `lottie-formats` (trim-path animation), so sequencing is a user call. Surfaced as candidate open direction #1.
-- **Path interpolation / morphing** (`interpolatePaths`). Home undecided (path vs. animation/tween binding layer). Candidate open direction #2.
 - **PathMeasure entity.** Open direction #1 in the charter — stateful cached measure vs. pure re-flattening. Unchanged.
 - **Stroke dash-phase semantics + alignment.** Open direction #2 — per-subpath vs. global (SVG/Skia) vs. configurable; inner/outer alignment. Unchanged.
 - **Package Map + charter consumer-list staleness.** The map line and charter "What it is" say `shape`/`interaction` consume path; actual importers are clip, scene2d-gl/wgpu, motionpath, path-boolean, path-formats. Docs/admin edits outside the package cell — user's gate.
@@ -42,3 +41,4 @@ Parked — each with the reason it is not sweep-safe.
 ## Approved
 
 - [2026-07-02 · picked] Sweep items 1–9: pen position cache, walker dedup, standalone dashPath, getPathContourLengths, getPathNearestPoint, simplifyPath, fitPathCurves, offsetPath, StrokeStyle promotion to types
+- [2026-08-02 · picked] Path morphing ownership resolved: prepared geometry correspondence and reusable progress sampling live in path; retained shape and playback/timeline composition remain downstream.
