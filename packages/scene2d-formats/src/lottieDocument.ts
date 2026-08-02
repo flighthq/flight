@@ -191,7 +191,7 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
   applyLottieTransform(container, layer.ks, context);
   applyLottieLayerVisibility(container, layer, context);
   applyLottieBlendMode(container, layer, context);
-  reportLottieLayerExclusions(layer, context);
+  reportLottieExpression(layer.ks, context);
 
   if (layer.ty === 0) appendLottiePrecomposition(container, layer, context);
   else if (layer.ty === 1) appendLottieSolid(container, layer);
@@ -200,11 +200,9 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
     // Null layers intentionally contain only their transform and children.
   } else if (layer.ty === 4) appendLottieShapeItems(container, layer.shapes ?? [], context);
   else if (layer.ty === 5) appendLottieText(container, layer, context);
-  else if (layer.ty === 6 || layer.ty === 13) {
-    reportLottieSkip(context, layer.ty === 6 ? 'lottie.unsupported-audio-layer' : 'lottie.unsupported-camera-layer', {
-      layer: layer.nm ?? '',
-    });
-  } else {
+  else if (layer.ty !== 6 && layer.ty !== 13) {
+    // Audio (6) and camera (13) layers are uncarried by design and stay silent; a type outside the
+    // Bodymovin set is an asset fact the caller can act on. See agents/scene2d-format-coverage.md.
     reportLottieSkip(context, 'lottie.unsupported-layer', { layerType: layer.ty });
   }
 
@@ -221,9 +219,6 @@ function applyLottieTransform(
   if (isSeparatedPosition(transform.p)) {
     applyScalarProperty(target, transform.p.x, 'X', (value) => value, context);
     applyScalarProperty(target, transform.p.y, 'Y', (value) => value, context);
-    if (transform.p.z !== undefined) {
-      reportLottieSkip(context, 'lottie.unsupported-3d-transform', { property: 'position.z' });
-    }
   } else {
     applyVectorProperty(target, transform.p, 'Position', ['X', 'Y'], 2, (value) => value, context);
   }
@@ -233,9 +228,6 @@ function applyLottieTransform(
   applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
   if (transform.sk !== undefined) {
     applyScalarProperty(target, transform.sk, 'SkewX', degreesToRadians, context);
-    if (transform.sa !== undefined) {
-      reportLottieSkip(context, 'lottie.unsupported-skew-axis', { property: 'transform.sa' });
-    }
   }
 }
 
@@ -440,12 +432,6 @@ function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, c
     },
   });
   addNodeChild(parent, label);
-  if ((textData?.a?.length ?? 0) > 0) {
-    reportLottieSkip(context, 'lottie.unsupported-text-animator', { layer: layer.nm ?? '' });
-  }
-  if ((textData?.d.k.length ?? 0) > 1) {
-    reportLottieSkip(context, 'lottie.unsupported-animated-text-document', { layer: layer.nm ?? '' });
-  }
 }
 
 function appendLottiePrecomposition(
@@ -552,9 +538,6 @@ function appendLottieShapeItems(
         },
         context,
       );
-      if (stroke.d !== undefined) {
-        reportLottieSkip(context, 'lottie.unsupported-animated-dash', { shape: item.nm ?? '' });
-      }
     } else if (item.ty === 'gf' || item.ty === 'gs') {
       const gradient = item as Readonly<LottieGradientShapeItem>;
       const values = numericValue(initialLottieValue(gradient.g.k), gradient.g.p * 4);
@@ -611,7 +594,7 @@ function appendLottieShapeItems(
     }
     reportLottieExpression(item, context);
   }
-  applyStaticLottieTrim(items, state, context);
+  applyStaticLottieTrim(items, state);
   renderLottieShapeState(state);
   if (state.paths.length > 0) addNodeChild(group, state.shape);
   addNodeChild(parent, group);
@@ -839,11 +822,7 @@ function unflattenLottieShapePath(template: Readonly<LottieShapePath>, values: r
   };
 }
 
-function applyStaticLottieTrim(
-  items: readonly Readonly<LottieShapeItem>[],
-  state: LottieShapeState,
-  context: LottieImportContext,
-): void {
+function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], state: LottieShapeState): void {
   const raw = items.find((item) => item.ty === 'tm');
   if (raw === undefined) return;
   const trim = raw as Readonly<LottieTrimPathShapeItem>;
@@ -861,9 +840,6 @@ function applyStaticLottieTrim(
     dashPath(path, [visible * length, (1 - visible) * length], (start + offset) * length, trimmed);
     return trimmed;
   });
-  if (trim.m === 2 && state.paths.length > 1) {
-    reportLottieSkip(context, 'lottie.trim-individual-approximated', { count: state.paths.length });
-  }
 }
 
 function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
@@ -943,13 +919,9 @@ function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[]
   const active = masks.filter((mask) => mask.mode !== 'n');
   if (active.length === 0) return;
   const first = active[0];
-  if (first.mode !== 'a' || first.inv === true || active.length > 1) {
-    reportLottieSkip(context, 'lottie.unsupported-mask-composition', {
-      count: active.length,
-      mode: first.mode,
-    });
-    return;
-  }
+  // Only a lone additive, non-inverted mask lowers onto Flight's hard ClipRegion. Composed modes,
+  // inversion, and feather are uncarried; see agents/scene2d-format-coverage.md.
+  if (first.mode !== 'a' || first.inv === true || active.length > 1) return;
   const initial = initialLottieValue(first.pt);
   if (initial === undefined) return;
   target.clip = createClipRegionFromPath(createLottieBezierPath(initial));
@@ -963,9 +935,6 @@ function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[]
       },
       context,
     );
-  }
-  if (first.f !== undefined || first.x !== undefined) {
-    reportLottieSkip(context, 'lottie.unsupported-soft-mask', { mask: first.nm ?? '' });
   }
 }
 
@@ -996,16 +965,6 @@ function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, cont
   else if (mode === 8) target.blendMode = BlendMode.Darken;
   else if (mode === 9) target.blendMode = BlendMode.Lighten;
   else reportLottieSkip(context, 'lottie.unsupported-blend-mode', { blendMode: mode });
-}
-
-function reportLottieLayerExclusions(layer: Readonly<LottieLayer>, context: LottieImportContext): void {
-  if (layer.ddd === 1) reportLottieSkip(context, 'lottie.unsupported-3d-layer', { layer: layer.nm ?? '' });
-  if ((layer.ef?.length ?? 0) > 0) reportLottieSkip(context, 'lottie.unsupported-effect', { layer: layer.nm ?? '' });
-  if (layer.tm !== undefined) reportLottieSkip(context, 'lottie.unsupported-time-remap', { layer: layer.nm ?? '' });
-  if (layer.tt !== undefined || layer.td !== undefined) {
-    reportLottieSkip(context, 'lottie.unsupported-matte', { layer: layer.nm ?? '' });
-  }
-  reportLottieExpression(layer.ks, context);
 }
 
 function reportLottieExpression(value: unknown, context: LottieImportContext): void {
