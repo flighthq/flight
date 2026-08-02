@@ -3,6 +3,9 @@ import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import { createDomScale9ShapeData, defaultDomScale9ShapeRenderer, drawDomScale9Shape } from './domScale9Shape';
+import { registerDomShapeRasterizer } from './domShapeRasterizer';
+
+const noopRasterizer = (): void => {};
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 
@@ -13,6 +16,7 @@ function getCurrentElement(state: ReturnType<typeof createDomRenderState>): HTML
 describe('createDomScale9ShapeData', () => {
   it('creates empty renderer data', () => {
     const state = createDomRenderState(document.createElement('div'));
+    registerDomShapeRasterizer(state, noopRasterizer);
     const shape = createScale9Shape(grid);
 
     const data = createDomScale9ShapeData(state, shape);
@@ -32,6 +36,7 @@ describe('defaultDomScale9ShapeRenderer', () => {
 describe('drawDomScale9Shape', () => {
   it('returns early when commands are empty', () => {
     const state = createDomRenderState(document.createElement('div'));
+    registerDomShapeRasterizer(state, noopRasterizer);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
     data.rendererData = createDomScale9ShapeData(state, shape);
@@ -43,6 +48,7 @@ describe('drawDomScale9Shape', () => {
 
   it('returns early when rendererData is null', () => {
     const state = createDomRenderState(document.createElement('div'));
+    registerDomShapeRasterizer(state, noopRasterizer);
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
@@ -55,6 +61,7 @@ describe('drawDomScale9Shape', () => {
 
   it('renders remapped commands into a canvas and strips object scale from the transform', () => {
     const state = createDomRenderState(document.createElement('div'));
+    registerDomShapeRasterizer(state, noopRasterizer);
     const shape = createScale9Shape(grid);
     shape.scaleX = 2;
     shape.scaleY = 3;

@@ -42,6 +42,13 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
       return 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)';
     case RenderRegistry.ShapeCommandHandler:
       return 'renderCanvasShapeCommands: shape command key has no registered handler — call registerCanvasShapeCommand(command)';
+    // The kind reported is the node kind that went undrawn, since nothing here is keyed by anything else.
+    case RenderRegistry.ShapeRasterizer:
+      if ('device' in state)
+        return 'drawWgpuShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
+      if ('element' in state)
+        return 'drawDomShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerDomShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
+      return 'drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
     case RenderRegistry.TextureResolver:
       if ('gl' in state)
         return 'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver), or copyGlRenderStateRegistrations(offscreenState, screenState) after a late screen registration';

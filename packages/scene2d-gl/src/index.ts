@@ -27,3 +27,4 @@ export {
   renderGlScene2D,
   renderGlVelocity,
 } from './contract';
+export { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer';

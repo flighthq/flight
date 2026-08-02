@@ -7,7 +7,6 @@ import {
   destroyGlScale9ShapeData,
   drawGlScale9Shape,
   drawGlScale9ShapeMask,
-  remapGlScale9Commands,
 } from './glScale9Shape';
 import { createGlState } from './glTestHelper';
 
@@ -74,17 +73,5 @@ describe('drawGlScale9ShapeMask', () => {
     drawGlScale9ShapeMask(state, data);
 
     expect(gl.drawElements).not.toHaveBeenCalled();
-  });
-});
-
-describe('remapGlScale9Commands', () => {
-  it('remaps coordinates with a compatible mapper', () => {
-    const out: unknown[] = [];
-    remapGlScale9Commands(out, ['drawRectangle', 4, 10, 20, 50, 30], {
-      mapX: (x: number) => x * 2,
-      mapY: (y: number) => y * 3,
-    });
-
-    expect(out).toEqual(['drawRectangle', 4, 20, 60, 100, 90]);
   });
 });

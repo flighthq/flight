@@ -42,3 +42,4 @@ export {
   defaultCanvasTextureShapeCommands as defaultGlTextureShapeCommands,
   registerCanvasShapeCommands as registerGlShapeCommands,
 } from '@flighthq/scene2d-canvas/contract';
+export * from './glShapeRasterizer';

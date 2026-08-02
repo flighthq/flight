@@ -19,3 +19,4 @@ export {
   renderDomBackground,
   renderDomScene2D,
 } from './contract';
+export { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer';

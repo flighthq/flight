@@ -1,6 +1,5 @@
 ﻿import { createEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
-import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import type {
   Scene2DRenderer,
   DomRenderState,
@@ -10,7 +9,10 @@ import type {
   RenderState,
   Shape,
 } from '@flighthq/types/contract';
+import { RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
+import { getDomRenderStateRuntime } from './domRenderState';
+import { getDomShapeRasterizer } from './domShapeRasterizer';
 import { prepareDomElement, setDomRendererElement } from './domStyle';
 import { setDomTransformWithOffset } from './domTransform';
 
@@ -31,6 +33,14 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
   const { commands } = source.data;
   if (commands.length === 0) return;
 
+  // A fill with no tessellated form is the registered rasterizer's job; an absent one is reported
+  // rather than quietly dropping the fill.
+  const rasterizer = getDomShapeRasterizer(state);
+  if (rasterizer === null) {
+    getDomRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    return;
+  }
+
   if (data.canvas === null) {
     data.canvas = document.createElement('canvas');
     data.context = data.canvas.getContext('2d');
@@ -50,7 +60,7 @@ export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D):
     ctx.translate(-bounds.x, -bounds.y);
   }
 
-  renderCanvasShapeCommands(ctx, commands);
+  rasterizer(ctx, commands, state);
 
   data.canvas.style.opacity = renderProxy.alpha < 1 ? String(renderProxy.alpha) : '';
   if (state.domCssFilterResolver !== null) {

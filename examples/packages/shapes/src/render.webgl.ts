@@ -1,15 +1,20 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createGlCanvasElement,
   createGlRenderState,
-  enableFlightDiagnostics,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
+  enableFlightDiagnostics,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
-  registerGlStandardMaterial,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
   registerGlShapeCommands,
+  registerGlShapeRasterizer,
+  registerGlStandardMaterial,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   ShapeKind,
@@ -30,6 +35,12 @@ enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+// Gradient and texture fills have no tessellated form on this backend, so they draw through an
+// explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
+const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
+registerCanvasBitmapTextureResolver(shapeRasterizerState);
+registerCanvasImageTextureResolver(shapeRasterizerState);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerState));
 registerGlShapeCommands(defaultGlShapeCommands);
 
 export const scale = pixelRatio;

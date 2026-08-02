@@ -3,7 +3,6 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { tessellatePath } from '@flighthq/path/contract';
 import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { renderCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { getShapeFillRegions, getShapeStrokeOutlineRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type {
   Scene2DRenderer,
@@ -18,7 +17,7 @@ import type {
   ShapeFillRegion,
   ShapeStrokeRegion,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import {
   ensureGlQuadBatchShader,
@@ -27,18 +26,16 @@ import {
   recordGlQuadBatchColorScaleBias,
 } from './glQuadBatchWriter';
 import { drawGlShapeMeshes } from './glShapeMesh';
+import { getGlShapeRasterizer } from './glShapeRasterizer';
 
 // Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
 // carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
 // below — getGlShapeData / toGlShapeRendererData — which confine the single unavoidable cast to one
 // named site instead of scattering it at every callsite.
 interface GlShapeData {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  // The canvas wrapped as an Image (its `source`), so the shared quad-batch writer treats a
-  // canvas-backed shape uniformly with bitmaps and atlases. Re-rendering the canvas bumps the resource's
-  // version (invalidateImageResource), which the batch's version-aware cache uses to re-upload.
-  image: Image;
+  // The rasterization surface, allocated on the first shape that actually needs it. A shape whose fills
+  // all tessellate never touches this, so a scene of solid shapes carries no canvases at all.
+  surface: GlShapeRasterSurface | null;
   lastContentId: number;
   lastW: number;
   lastH: number;
@@ -46,6 +43,12 @@ interface GlShapeData {
   // populated only when every fill and stroke resolves to a solid mesh region, otherwise raster runs.
   meshVersion: number;
   meshes: GlShapeMesh[] | null;
+}
+
+interface GlShapeRasterSurface {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  image: Image;
 }
 
 // Resolves every solid fill and solid stroke into one fill-before-stroke source list. The default lane
@@ -73,15 +76,28 @@ function toGlShapeRendererData(data: GlShapeData): RendererData {
   return data as unknown as RendererData;
 }
 
-function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
+// Allocates the rasterization surface on first use. The canvas wrapped as an Image (its `source`) is
+// what lets the shared quad-batch writer treat a canvas-backed shape uniformly with bitmaps and atlases;
+// re-rendering the canvas bumps the resource's version (invalidateImageResource), which the batch's
+// version-aware cache uses to re-upload.
+function acquireGlShapeRasterSurface(data: GlShapeData): GlShapeRasterSurface {
+  const existing = data.surface;
+  if (existing !== null) return existing;
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
-  return toGlShapeRendererData({
+  const surface: GlShapeRasterSurface = {
     canvas,
-    ctx,
+    ctx: canvas.getContext('2d')!,
     image: createImageResource(canvas),
+  };
+  data.surface = surface;
+  return surface;
+}
+
+function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
+  return toGlShapeRendererData({
+    surface: null,
     lastContentId: -1,
     lastW: 0,
     lastH: 0,
@@ -91,14 +107,16 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
 }
 
 // The batch uploads this shape's canvas-backed resource into the shared cache; free that GPU texture when
-// the shape is torn down so it does not leak past the resource it was keyed on.
+// the shape is torn down so it does not leak past the resource it was keyed on. A shape that only ever
+// tessellated has no surface and so no texture to free.
 function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { image } = getGlShapeData(data);
-  const entry = runtime.textureSourcePremultipliedTextureCache.get(image);
+  const surface = getGlShapeData(data).surface;
+  if (surface === null) return;
+  const entry = runtime.textureSourcePremultipliedTextureCache.get(surface.image);
   if (entry !== undefined) {
     state.gl.deleteTexture(entry.texture);
-    runtime.textureSourcePremultipliedTextureCache.delete(image);
+    runtime.textureSourcePremultipliedTextureCache.delete(surface.image);
   }
 }
 
@@ -145,6 +163,14 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
     }
   }
 
+  // Past this point the shape has a fill with no tessellated form. Drawing it at all is the registered
+  // rasterizer's job, so an absent one is reported rather than quietly dropping the fill.
+  const rasterizer = getGlShapeRasterizer(state);
+  if (rasterizer === null) {
+    runtime.registryMiss?.(RenderRegistry.ShapeRasterizer, ShapeKind);
+    return;
+  }
+
   const material = renderProxy.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
@@ -155,18 +181,19 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;
 
+  const surface = acquireGlShapeRasterSurface(shapeData);
   if (version !== shapeData.lastContentId || w !== shapeData.lastW || h !== shapeData.lastH) {
-    shapeData.canvas.width = w;
-    shapeData.canvas.height = h;
-    const ctx = shapeData.ctx;
+    const { canvas, ctx } = surface;
+    canvas.width = w;
+    canvas.height = h;
     ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.translate(-bounds.x, -bounds.y);
-    renderCanvasShapeCommands(ctx, commands, null, state);
+    rasterizer(ctx, commands, state);
     ctx.restore();
     // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
     // re-uploads from the updated canvas.
-    invalidateImageResource(shapeData.image);
+    invalidateImageResource(surface.image);
     shapeData.lastContentId = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
@@ -178,7 +205,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const texture = bindGlImageResourceTexture(state, shapeData.image, null, null, true);
+  const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
   const straightAlpha = runtime.currentTextureStraightAlpha;
   const startCount = runtime.quadBatchWriterCount;
   const base = prepareGlQuadBatchWrite(

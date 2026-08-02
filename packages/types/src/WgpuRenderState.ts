@@ -9,6 +9,7 @@ import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
+import type { ShapeRasterizer } from './ShapeRasterizer';
 import type { TextureSource } from './TextureSource';
 import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
@@ -195,6 +196,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
   quadBatchWriterBufferCursor: number;
   materialRendererMap?: Map<Kind, WgpuMaterialRenderer>;
+  // The shape-rasterization seam, absent until registerWgpuShapeRasterizer installs one. A shape whose
+  // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
+  // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
+  shapeRasterizer?: ShapeRasterizer | null;
 
   // 3D scene mesh-material seam, owned by scene-wgpu (filled lazily by
   // registerWgpuMeshMaterialRenderer). The per-material-kind 3D draw behavior registry, kept separate

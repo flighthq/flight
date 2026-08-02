@@ -19,7 +19,10 @@ import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuShapeModule from './wgpuShape';
+import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
+
+const noopRasterizer = (): void => {};
 
 // @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape
 // with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
@@ -88,6 +91,7 @@ describe('defaultWgpuShapeRenderer', () => {
 describe('drawWgpuShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const shape = createShape();
@@ -111,6 +115,7 @@ describe('drawWgpuShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -131,6 +136,7 @@ describe('drawWgpuShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
@@ -149,6 +155,7 @@ describe('drawWgpuShape', () => {
 
   it('falls back to the raster quad for a self-intersecting stroke centerline', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
@@ -185,6 +192,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [] }, makeShapeData()));
@@ -194,6 +202,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when rendererData is null', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, null));
@@ -203,11 +212,13 @@ describe('drawWgpuShape', () => {
 
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     expect(() => drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, makeShapeData()))).not.toThrow();
   });
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuShapeRasterizer(state, noopRasterizer);
     renderWgpuBackground(state);
     registerWgpuStandardMaterial(state);
     drawWgpuShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));

@@ -17,8 +17,11 @@ import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import type * as GlShapeModule from './glShape';
+import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
+
+const noopRasterizer = (): void => {};
 import { scopeModuleMocks } from './moduleMockTestHelper';
 
 // @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawGlShape
@@ -40,15 +43,10 @@ beforeAll(async () => {
   ({ defaultGlShapeRenderer, drawGlShape } = await import('./glShape'));
 });
 
+// Mirrors createGlShapeData: the rasterization surface is absent until a shape actually needs one.
 function makeShapeData() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
   return {
-    canvas,
-    ctx,
-    image: createImageResource(canvas),
+    surface: null,
     lastContentId: -1,
     lastW: 0,
     lastH: 0,
@@ -92,6 +90,7 @@ describe('defaultGlShapeRenderer', () => {
 describe('drawGlShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', () => {
     const { state, gl } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     const shape = createShape();
     appendShapeBeginFill(shape, 0x00cc00);
     appendShapeLineStyle(shape, 0);
@@ -109,6 +108,7 @@ describe('drawGlShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', () => {
     const { state, gl } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     enableGlStrokePathTessellation(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);
@@ -122,6 +122,7 @@ describe('drawGlShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', () => {
     const { state, gl } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000);
@@ -135,6 +136,7 @@ describe('drawGlShape', () => {
 
   it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
     const { state, gl } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     enableGlStrokePathTessellation(state);
     registerGlStandardMaterial(state);
     const shape = createShape();
@@ -158,6 +160,7 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when commands array is empty', () => {
     const { state } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
@@ -165,6 +168,7 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when rendererData is null', () => {
     const { state } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
@@ -172,12 +176,14 @@ describe('drawGlShape', () => {
 
   it('returns early without writing to batch when no material renderer is registered', () => {
     const { state } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(0);
   });
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', () => {
     const { state } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
@@ -185,6 +191,7 @@ describe('drawGlShape', () => {
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     flushGlQuadBatchWriter(state);
@@ -193,6 +200,7 @@ describe('drawGlShape', () => {
 
   it('writes correct size into instance data', () => {
     const { state } = createGlState();
+    registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     const d = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;

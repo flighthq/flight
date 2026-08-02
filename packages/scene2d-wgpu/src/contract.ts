@@ -42,3 +42,4 @@ export {
   defaultCanvasTextureShapeCommands as defaultWgpuTextureShapeCommands,
   registerCanvasShapeCommands as registerWgpuShapeCommands,
 } from '@flighthq/scene2d-canvas/contract';
+export * from './wgpuShapeRasterizer';

@@ -24,3 +24,4 @@ export * from './domTransform';
 export * from './enableDomTextureResolverGuards';
 export * from './explainDomTextureResolution';
 export * from './domHtmlView';
+export * from './domShapeRasterizer';

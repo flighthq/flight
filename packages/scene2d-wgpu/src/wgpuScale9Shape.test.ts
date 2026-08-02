@@ -9,7 +9,6 @@ import {
   destroyWgpuScale9ShapeData,
   drawWgpuScale9Shape,
   drawWgpuScale9ShapeMask,
-  remapWgpuScale9Commands,
 } from './wgpuScale9Shape';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
@@ -81,17 +80,5 @@ describe('drawWgpuScale9ShapeMask', () => {
 
     expect(() => drawWgpuScale9ShapeMask(state, renderProxy)).not.toThrow();
     submitWgpuRenderPass(state);
-  });
-});
-
-describe('remapWgpuScale9Commands', () => {
-  it('remaps coordinates with a compatible mapper', () => {
-    const out: unknown[] = [];
-    remapWgpuScale9Commands(out, ['drawRectangle', 4, 10, 20, 50, 30], {
-      mapX: (x: number) => x * 2,
-      mapY: (y: number) => y * 3,
-    });
-
-    expect(out).toEqual(['drawRectangle', 4, 20, 60, 100, 90]);
   });
 });
