@@ -14,6 +14,8 @@
     "composite": true,
     "noEmitOnError": true,
     "paths": {
+      "@flighthq/abc": ["./packages/abc/src/index.ts"],
+      "@flighthq/abc/*": ["./packages/abc/src/*"],
       "@flighthq/accessibility": ["./packages/accessibility/src/index.ts"],
       "@flighthq/accessibility/*": ["./packages/accessibility/src/*"],
       "@flighthq/adjustments": ["./packages/adjustments/src/index.ts"],

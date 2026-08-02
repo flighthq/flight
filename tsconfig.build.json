@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/abc" },
     { "path": "./packages/accessibility" },
     { "path": "./packages/adjustments" },
     { "path": "./packages/animation" },

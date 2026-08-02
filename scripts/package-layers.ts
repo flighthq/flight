@@ -4,6 +4,7 @@ export type PackageLayer = 'core' | 'feature' | 'backend' | 'application' | 'hos
 // get to weaken the architectural rule that checks its own dependencies.
 const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
   core: [
+    '@flighthq/abc',
     '@flighthq/color',
     '@flighthq/compression',
     '@flighthq/easing',
