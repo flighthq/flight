@@ -71,12 +71,14 @@ decodable by a generic image decoder. This matters to whoever writes the resolve
 | `DefineBits` + `JPEGTables` | `image/jpeg` | A complete stream, spliced: neither half is valid alone. |
 | `DefineBitsJPEG2` … `4` carrying JPEG | `image/jpeg` | A complete stream. The legacy end-of-image / start-of-image pair that sits between the tables and the pixels is removed, because a strict decoder may stop at it. |
 | `DefineBitsJPEG2` … `4` carrying PNG or GIF | `image/png`, `image/gif` | The embedded file, unmodified. |
-| `DefineBitsLossless`, `2` | `image/x-swf-lossless[-alpha]` | **Not a standard image format.** A zlib-compressed raw raster, closer to a BMP than a PNG: a format byte, dimensions, an optional colour-table size, then the compressed pixels — 8-bit colour-mapped, 15-bit, or 24/32-bit. A generic decoder cannot read it; the vendor media type is the signal that SWF-specific handling is required. `Lossless2`'s pixels are premultiplied by alpha. |
+| `DefineBitsLossless`, `2` | `image/x-swf-lossless[-alpha]` | **Not a standard image format** — a zlib-compressed raw raster, closer to a BMP than a PNG. This package unpacks it itself: decompression comes from the shared registry, and the pixel layout (8-bit colour-mapped, 15-bit, or 24/32-bit) is format knowledge that lives here. A shape's bitmap fill receives its pixels at import as soon as a deflate decompressor is registered — no decoder and no asynchrony. `Lossless2` pixels stay premultiplied, and the bitmap says so. |
 
 **`DefineBitsJPEG3`/`4` alpha is not carried.** Those tags append a *separate* zlib-compressed alpha
 channel after the colour image. The reference hands over the colour stream only, so a resolver that decodes
-it faithfully still produces an opaque image. Nothing in the media type says so, which makes this the
-sharpest edge in the current contract and the first thing a resolver API should address.
+it faithfully still produces an opaque image, and nothing in the media type says so. This is the remaining
+edge, and it is the one case that genuinely needs the two halves rejoined: the colour is a format only an
+outside decoder reads, while the alpha is zlib this package can already inflate. So the shape of the
+missing piece is known — hand the decoded colour pixels back in, and combine them here with the alpha.
 
 ## Degradation is uniform
 

@@ -1,4 +1,4 @@
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape, createSwfShape } from './swfShape';
@@ -282,7 +282,7 @@ describe('createSwfShape', () => {
     writer.writeStraightEdge(2000, 0);
     writer.writeEndShape();
 
-    const bitmapFills: { characterId: number; texture: Texture }[] = [];
+    const bitmapFills: { characterId: number; texture: Texture2D }[] = [];
     const shape = createSwfShape(writer.toReader(), 1, bitmapFills);
 
     // Dropping the geometry would lose the artwork's shape as well as its paint, which is the whole

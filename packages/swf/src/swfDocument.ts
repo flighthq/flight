@@ -18,9 +18,10 @@ import {
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
 import type {
+  Bitmap,
   BoundsNodeAny,
   RichText,
-  Texture,
+  Texture2D,
   ClipRegion,
   MovieClip,
   MovieClipData,
@@ -41,6 +42,7 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
+import { createSwfLosslessBitmap } from './swfBitmap';
 import { readSwfEditTextFactory } from './swfEditText';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
@@ -70,6 +72,7 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   };
   const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, references, instantiation, 0);
   if (root === null) return null;
+  fillSwfBitmapTextures(parsed);
 
   return createScene2DDocument(root, references, 'swf', parsed.backgroundColor);
 }
@@ -192,7 +195,7 @@ interface SwfTagResult {
   images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
-  shapeBitmapFills: Map<number, { characterId: number; texture: Texture }[]>;
+  shapeBitmapFills: Map<number, { characterId: number; texture: Texture2D }[]>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
@@ -228,7 +231,7 @@ interface SwfParseState {
   editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
   fontNames: Map<number, string>;
   // Which bitmap character each shape's texture fills are waiting on, so a caller can supply the pixels.
-  shapeBitmapFills: Map<number, { characterId: number; texture: Texture }[]>;
+  shapeBitmapFills: Map<number, { characterId: number; texture: Texture2D }[]>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -276,6 +279,32 @@ function readSwfFile(source: Uint8Array): SwfFile | null {
 
   const parsed = readSwfTags(body);
   return parsed === null ? null : { frameRate, parsed, stageBounds };
+}
+
+// Gives every texture a bitmap fill is waiting on its pixels, for the images this package can unpack on
+// its own. A lossless definition is a raw raster plus zlib, and both halves are already here — the shared
+// decompressor the caller registered, and the layout knowledge above — so its pixels resolve at import
+// with no further step. The encoded formats still need a decoder this package does not have, and their
+// textures stay sourceless until one supplies them.
+function fillSwfBitmapTextures(parsed: Readonly<SwfTagResult>): void {
+  if (parsed.shapeBitmapFills.size === 0) return;
+  const bitmaps = new Map<number, Bitmap | null>();
+  for (const fills of parsed.shapeBitmapFills.values()) {
+    for (const fill of fills) {
+      if (!bitmaps.has(fill.characterId)) {
+        const image = parsed.images.get(fill.characterId);
+        const lossless =
+          image !== undefined &&
+          (image.mimeType === SWF_LOSSLESS_MIME_TYPE || image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE);
+        bitmaps.set(
+          fill.characterId,
+          lossless ? createSwfLosslessBitmap(image.bytes, image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE) : null,
+        );
+      }
+      const bitmap = bitmaps.get(fill.characterId) ?? null;
+      if (bitmap !== null) fill.texture.source = bitmap;
+    }
+  }
 }
 
 // Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
@@ -841,7 +870,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     abcBlobs: [],
     backgroundColor: null,
     pendingInitActions: [],
-    shapeBitmapFills: new Map<number, { characterId: number; texture: Texture }[]>(),
+    shapeBitmapFills: new Map<number, { characterId: number; texture: Texture2D }[]>(),
     editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
     fontNames: new Map<number, string>(),
     characterBounds: new Map<number, SwfRectangle>(),
@@ -1228,7 +1257,7 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
     reader.readUint8();
   }
   if (!reader.valid) return;
-  const bitmapFills: { characterId: number; texture: Texture }[] = [];
+  const bitmapFills: { characterId: number; texture: Texture2D }[] = [];
   const shape = createSwfShape(reader, version, bitmapFills);
   if (shape === null) return;
   state.shapes.set(characterId, shape);
