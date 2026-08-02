@@ -37,6 +37,9 @@ export interface ObjMaterial {
   mapBump: string | null;
   // Diffuse texture map file name (map_Kd), null when absent.
   mapDiffuse: string | null;
+  // Dissolve/opacity texture map file name (map_d), null when absent. A dedicated coverage image,
+  // separate from the diffuse map's own alpha channel.
+  mapDissolve: string | null;
   // Emissive texture map file name (map_Ke), null when absent.
   mapEmissive: string | null;
   // Metallic texture map file name (map_Pm), null when absent.
