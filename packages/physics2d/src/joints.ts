@@ -2,6 +2,7 @@ import type {
   Physics2DDistanceJoint,
   Physics2DJoint,
   Physics2DMouseJoint,
+  Physics2DPrismaticJoint,
   Physics2DRevoluteJoint,
   Physics2DRopeJoint,
   Physics2DWeldJoint,
@@ -15,6 +16,7 @@ import { findPhysics2DBody } from './world';
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix.
 export const Physics2DDistanceJointKind = 'Distance';
 export const Physics2DMouseJointKind = 'Mouse';
+export const Physics2DPrismaticJointKind = 'Prismatic';
 export const Physics2DRevoluteJointKind = 'Revolute';
 export const Physics2DRopeJointKind = 'Rope';
 export const Physics2DWeldJointKind = 'Weld';
@@ -194,6 +196,246 @@ export const physics2DMouseJointSolver = {
     bodyB.velocityX += impulseX * bodyB.inverseMass;
     bodyB.velocityY += impulseY * bodyB.inverseMass;
     bodyB.angularVelocity += bodyB.inverseInertia * (joint.rBX * impulseY - joint.rBY * impulseX);
+  },
+};
+
+// Constrains two anchors to one translation axis and locks their relative angle — a slider, piston, or
+// elevator rail. The perpendicular and angular constraints are solved as a coupled 2x2 block because
+// an off-centre perpendicular impulse also rotates the bodies. The axis lane is independent and may be
+// free, motor-driven, or bounded by translation limits.
+export const physics2DPrismaticJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const prismatic = joint as Physics2DPrismaticJoint;
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyPrismaticImpulse(
+      bodyA,
+      bodyB,
+      state[0],
+      state[1],
+      state[2],
+      state[3],
+      state[4],
+      state[5],
+      state[6],
+      state[7],
+      joint.impulse0,
+      joint.impulse1,
+      joint.impulse2 + prismatic.motorImpulse,
+    );
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    joint.impulse2 = 0;
+    (joint as Physics2DPrismaticJoint).motorImpulse = 0;
+  },
+
+  // Preserve the physical positive translation direction while canonicalizing the bodies. Swapping the
+  // ends reverses their separation, so the new axis is the old world axis expressed in old body B's
+  // local frame and negated. `referenceAngle` is precisely the rotation between those two frames.
+  swapEnds(joint: Physics2DJoint): boolean {
+    const prismatic = joint as Physics2DPrismaticJoint;
+    const axisX = prismatic.localAxisAX;
+    const axisY = prismatic.localAxisAY;
+    const cos = Math.cos(prismatic.referenceAngle);
+    const sin = Math.sin(prismatic.referenceAngle);
+    prismatic.localAxisAX = -(axisX * cos + axisY * sin);
+    prismatic.localAxisAY = axisX * sin - axisY * cos;
+    prismatic.referenceAngle = -prismatic.referenceAngle;
+    joint.impulse1 = -(joint.impulse1 ?? 0);
+    prismatic.motorImpulse ??= 0;
+    return true;
+  },
+
+  prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
+    const prismatic = joint as Physics2DPrismaticJoint;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    writeJointAnchors(bodyA, bodyB, joint);
+
+    const localLength = Math.sqrt(
+      prismatic.localAxisAX * prismatic.localAxisAX + prismatic.localAxisAY * prismatic.localAxisAY,
+    );
+    const localAxisX = localLength > EPSILON ? prismatic.localAxisAX / localLength : 1;
+    const localAxisY = localLength > EPSILON ? prismatic.localAxisAY / localLength : 0;
+    const cos = Math.cos(bodyA.angle);
+    const sin = Math.sin(bodyA.angle);
+    const axisX = localAxisX * cos - localAxisY * sin;
+    const axisY = localAxisX * sin + localAxisY * cos;
+    const perpendicularX = -axisY;
+    const perpendicularY = axisX;
+    const distanceX = bodyB.x + joint.rBX - (bodyA.x + joint.rAX);
+    const distanceY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
+    const s1 = (distanceX + joint.rAX) * perpendicularY - (distanceY + joint.rAY) * perpendicularX;
+    const s2 = joint.rBX * perpendicularY - joint.rBY * perpendicularX;
+    const a1 = (distanceX + joint.rAX) * axisY - (distanceY + joint.rAY) * axisX;
+    const a2 = joint.rBX * axisY - joint.rBY * axisX;
+
+    const k11 = bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * s1 * s1 + bodyB.inverseInertia * s2 * s2;
+    const k12 = bodyA.inverseInertia * s1 + bodyB.inverseInertia * s2;
+    const k22 = bodyA.inverseInertia + bodyB.inverseInertia;
+    const axisMass =
+      bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * a1 * a1 + bodyB.inverseInertia * a2 * a2;
+    const state = beginJointSolve(prismatic, 17);
+    state[0] = axisX;
+    state[1] = axisY;
+    state[2] = perpendicularX;
+    state[3] = perpendicularY;
+    state[4] = s1;
+    state[5] = s2;
+    state[6] = a1;
+    state[7] = a2;
+    state[8] = k11;
+    state[9] = k12;
+    state[10] = k22;
+    state[11] = axisMass > 0 ? 1 / axisMass : 0;
+    state[12] = (distanceX * perpendicularX + distanceY * perpendicularY) * (BAUMGARTE / dt);
+    state[13] = (bodyB.angle - bodyA.angle - prismatic.referenceAngle) * (BAUMGARTE / dt);
+    state[14] = BAUMGARTE / dt;
+    state[15] = Math.max(0, dt * prismatic.maxMotorForce);
+    state[16] = distanceX * axisX + distanceY * axisY;
+    prismatic.motorImpulse ??= 0;
+    if (prismatic.enableMotor) {
+      prismatic.motorImpulse = Math.min(Math.max(prismatic.motorImpulse, -state[15]), state[15]);
+    } else {
+      prismatic.motorImpulse = 0;
+    }
+    if (!prismatic.enableLimit) {
+      joint.impulse2 = 0;
+    } else if (Math.abs(prismatic.upperTranslation - prismatic.lowerTranslation) >= EPSILON) {
+      if (state[16] < prismatic.lowerTranslation) {
+        if (joint.impulse2 < 0) joint.impulse2 = 0;
+      } else if (state[16] > prismatic.upperTranslation) {
+        if (joint.impulse2 > 0) joint.impulse2 = 0;
+      } else {
+        joint.impulse2 = 0;
+      }
+    }
+  },
+
+  solve(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const prismatic = joint as Physics2DPrismaticJoint;
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+
+    const axisX = state[0];
+    const axisY = state[1];
+    const perpendicularX = state[2];
+    const perpendicularY = state[3];
+    const s1 = state[4];
+    const s2 = state[5];
+    const a1 = state[6];
+    const a2 = state[7];
+    const axisMass = state[11];
+
+    if (prismatic.enableMotor && axisMass > 0) {
+      const velocity = prismaticAxisVelocity(bodyA, bodyB, axisX, axisY, a1, a2);
+      const desired = -axisMass * (velocity - prismatic.motorSpeed);
+      const previous = prismatic.motorImpulse;
+      const maxImpulse = state[15];
+      prismatic.motorImpulse = Math.min(Math.max(previous + desired, -maxImpulse), maxImpulse);
+      applyPrismaticImpulse(
+        bodyA,
+        bodyB,
+        axisX,
+        axisY,
+        perpendicularX,
+        perpendicularY,
+        s1,
+        s2,
+        a1,
+        a2,
+        0,
+        0,
+        prismatic.motorImpulse - previous,
+      );
+    }
+
+    if (prismatic.enableLimit && axisMass > 0) {
+      const translation = state[16];
+      const velocity = prismaticAxisVelocity(bodyA, bodyB, axisX, axisY, a1, a2);
+      const previous = joint.impulse2;
+      let total = previous;
+      if (Math.abs(prismatic.upperTranslation - prismatic.lowerTranslation) < EPSILON) {
+        const error = translation - prismatic.lowerTranslation;
+        total += -axisMass * (velocity + error * state[14]);
+      } else if (translation < prismatic.lowerTranslation) {
+        const lowerPrevious = previous < 0 ? 0 : previous;
+        const error = translation - prismatic.lowerTranslation;
+        total = Math.max(0, lowerPrevious - axisMass * (velocity + error * state[14]));
+      } else if (translation > prismatic.upperTranslation) {
+        const upperPrevious = previous > 0 ? 0 : previous;
+        const error = translation - prismatic.upperTranslation;
+        total = Math.min(0, upperPrevious - axisMass * (velocity + error * state[14]));
+      } else {
+        total = 0;
+      }
+      joint.impulse2 = total;
+      applyPrismaticImpulse(
+        bodyA,
+        bodyB,
+        axisX,
+        axisY,
+        perpendicularX,
+        perpendicularY,
+        s1,
+        s2,
+        a1,
+        a2,
+        0,
+        0,
+        total - previous,
+      );
+    }
+
+    // `perpendicular` rotates with body A, so the Jacobian includes distance from A's centre to B's
+    // anchor (`s1`), not merely A's own anchor lever arm. Using the point-to-point relative velocity
+    // here while using `s1` in the effective-mass matrix makes the two halves describe different
+    // constraints and leaks perpendicular motion whenever the rail body rotates.
+    const perpendicularVelocity =
+      (bodyB.velocityX - bodyA.velocityX) * perpendicularX +
+      (bodyB.velocityY - bodyA.velocityY) * perpendicularY +
+      s2 * bodyB.angularVelocity -
+      s1 * bodyA.angularVelocity;
+    const angularVelocity = bodyB.angularVelocity - bodyA.angularVelocity;
+    const c1 = perpendicularVelocity + state[12];
+    const c2 = angularVelocity + state[13];
+    const determinant = state[8] * state[10] - state[9] * state[9];
+    let perpendicularImpulse = 0;
+    let angularImpulse = 0;
+    if (Math.abs(determinant) > EPSILON) {
+      perpendicularImpulse = -(state[10] * c1 - state[9] * c2) / determinant;
+      angularImpulse = -(-state[9] * c1 + state[8] * c2) / determinant;
+    } else {
+      perpendicularImpulse = state[8] > 0 ? -c1 / state[8] : 0;
+      angularImpulse = state[10] > 0 ? -c2 / state[10] : 0;
+    }
+    joint.impulse0 += perpendicularImpulse;
+    joint.impulse1 += angularImpulse;
+    applyPrismaticImpulse(
+      bodyA,
+      bodyB,
+      axisX,
+      axisY,
+      perpendicularX,
+      perpendicularY,
+      s1,
+      s2,
+      a1,
+      a2,
+      perpendicularImpulse,
+      angularImpulse,
+      0,
+    );
   },
 };
 
@@ -495,6 +737,47 @@ export const physics2DWeldJointSolver = {
     solvePointConstraint(bodyA, bodyB, joint, state[0], state[1]);
   },
 };
+
+function applyPrismaticImpulse(
+  bodyA: RigidBody2D,
+  bodyB: RigidBody2D,
+  axisX: number,
+  axisY: number,
+  perpendicularX: number,
+  perpendicularY: number,
+  s1: number,
+  s2: number,
+  a1: number,
+  a2: number,
+  perpendicularImpulse: number,
+  angularImpulse: number,
+  axisImpulse: number,
+): void {
+  const impulseX = perpendicularImpulse * perpendicularX + axisImpulse * axisX;
+  const impulseY = perpendicularImpulse * perpendicularY + axisImpulse * axisY;
+  bodyA.velocityX -= bodyA.inverseMass * impulseX;
+  bodyA.velocityY -= bodyA.inverseMass * impulseY;
+  bodyA.angularVelocity -= bodyA.inverseInertia * (perpendicularImpulse * s1 + axisImpulse * a1 + angularImpulse);
+  bodyB.velocityX += bodyB.inverseMass * impulseX;
+  bodyB.velocityY += bodyB.inverseMass * impulseY;
+  bodyB.angularVelocity += bodyB.inverseInertia * (perpendicularImpulse * s2 + axisImpulse * a2 + angularImpulse);
+}
+
+function prismaticAxisVelocity(
+  bodyA: Readonly<RigidBody2D>,
+  bodyB: Readonly<RigidBody2D>,
+  axisX: number,
+  axisY: number,
+  a1: number,
+  a2: number,
+): number {
+  return (
+    (bodyB.velocityX - bodyA.velocityX) * axisX +
+    (bodyB.velocityY - bodyA.velocityY) * axisY +
+    a2 * bodyB.angularVelocity -
+    a1 * bodyA.angularVelocity
+  );
+}
 
 // The shared two-axis point solve behind revolute and weld. Each axis is solved against the velocities the
 // other just left, which is the sequential-impulse property doing its job within one constraint.

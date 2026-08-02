@@ -250,7 +250,7 @@ export interface Physics2DWorld {
 }
 
 // A joint's type identifier. A plain string, not a closed union, because joints are the family a physics
-// package is most likely to be extended in: nine built-in kinds ship here, and a game with a bespoke
+// package is most likely to be extended in: nine built-in kinds are planned, and a game with a bespoke
 // constraint (a conveyor, a ragdoll limit, a rail with a custom profile) should be able to register its
 // own without this package knowing. Built-in kinds take bare names; a user's take a vendor prefix
 // (`acme.Conveyor`), which is what keeps the two from colliding without a registration guard.

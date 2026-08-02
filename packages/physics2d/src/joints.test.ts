@@ -1,7 +1,8 @@
 import type {
   Physics2DDistanceJoint,
-  Physics2DRevoluteJoint,
   Physics2DMouseJoint,
+  Physics2DPrismaticJoint,
+  Physics2DRevoluteJoint,
   Physics2DRopeJoint,
   Physics2DWeldJoint,
   Physics2DWorld,
@@ -12,11 +13,13 @@ import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry
 import {
   Physics2DDistanceJointKind,
   Physics2DMouseJointKind,
+  Physics2DPrismaticJointKind,
   Physics2DRevoluteJointKind,
   Physics2DRopeJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
   physics2DMouseJointSolver,
+  physics2DPrismaticJointSolver,
   physics2DRevoluteJointSolver,
   physics2DRopeJointSolver,
   physics2DWeldJointSolver,
@@ -327,6 +330,21 @@ describe('joints built without their impulse accumulators', () => {
   // the generic impulse0/1/2 block is the class.
   const GENERIC_KINDS = [
     [Physics2DDistanceJointKind, physics2DDistanceJointSolver, { length: 2, stiffness: 0, damping: 0 }],
+    [
+      Physics2DPrismaticJointKind,
+      physics2DPrismaticJointSolver,
+      {
+        enableLimit: false,
+        enableMotor: false,
+        localAxisAX: 1,
+        localAxisAY: 0,
+        lowerTranslation: 0,
+        maxMotorForce: 0,
+        motorSpeed: 0,
+        referenceAngle: 0,
+        upperTranslation: 0,
+      },
+    ],
     [Physics2DRopeJointKind, physics2DRopeJointSolver, { maxLength: 1 }],
     [Physics2DWeldJointKind, physics2DWeldJointSolver, { referenceAngle: 0, stiffness: 0, damping: 0 }],
   ] as const;
@@ -406,6 +424,27 @@ function revoluteJoint(
     upperAngle: 0,
     ...over,
   } as Physics2DRevoluteJoint;
+}
+
+function prismaticJoint(
+  bodyA: number,
+  bodyB: number,
+  over: Partial<Physics2DPrismaticJoint> = {},
+): Physics2DPrismaticJoint {
+  return {
+    ...baseJoint(Physics2DPrismaticJointKind, bodyA, bodyB),
+    enableLimit: false,
+    enableMotor: false,
+    localAxisAX: 1,
+    localAxisAY: 0,
+    lowerTranslation: 0,
+    maxMotorForce: 0,
+    motorImpulse: 0,
+    motorSpeed: 0,
+    referenceAngle: 0,
+    upperTranslation: 0,
+    ...over,
+  } as Physics2DPrismaticJoint;
 }
 
 describe('physics2DMouseJointSolver', () => {
@@ -560,6 +599,165 @@ describe('physics2DMouseJointSolver', () => {
     expect(joint.bodyB).toBe(dragged.index);
     run(world, 60);
     expect(dragged.x).toBeGreaterThan(3);
+  });
+});
+
+describe('physics2DPrismaticJointSolver', () => {
+  it('allows motion along its axis while removing perpendicular motion and relative rotation', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', 0, 1);
+    slider.angle = 0.4;
+    slider.velocityX = 2;
+    addPhysics2DJoint(world, prismaticJoint(rail.index, slider.index));
+
+    run(world, 120);
+
+    expect(slider.x).toBeGreaterThan(3);
+    expect(Math.abs(slider.y)).toBeLessThan(0.05);
+    expect(Math.abs(slider.angle)).toBeLessThan(0.05);
+  });
+
+  it('keeps the slider on an axis carried by a rotating rail body', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'dynamic', 0, 0);
+    const slider = box(world, 'dynamic', 2, 0);
+    rail.angularVelocity = 1;
+    slider.angularVelocity = 1;
+    addPhysics2DJoint(world, prismaticJoint(rail.index, slider.index));
+
+    run(world, 60);
+
+    const axisX = Math.cos(rail.angle);
+    const axisY = Math.sin(rail.angle);
+    const distanceX = slider.x - rail.x;
+    const distanceY = slider.y - rail.y;
+    const perpendicularError = -axisY * distanceX + axisX * distanceY;
+    expect(Math.abs(perpendicularError)).toBeLessThan(0.1);
+    expect(slider.angle).toBeCloseTo(rail.angle, 3);
+  });
+
+  it('drives translation toward its motor speed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', 0, 0);
+    addPhysics2DJoint(
+      world,
+      prismaticJoint(rail.index, slider.index, { enableMotor: true, maxMotorForce: 1000, motorSpeed: 2 }),
+    );
+
+    run(world, 30);
+
+    expect(slider.velocityX).toBeCloseTo(2, 6);
+    expect(slider.x).toBeCloseTo(1, 3);
+  });
+
+  it('bounds its motor impulse by force times timestep', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', 0, 0);
+    const maxMotorForce = 1;
+    addPhysics2DJoint(
+      world,
+      prismaticJoint(rail.index, slider.index, { enableMotor: true, maxMotorForce, motorSpeed: 100 }),
+    );
+
+    const dt = 0.01;
+    stepPhysics2D(world, dt);
+
+    const maximumDelta = maxMotorForce * dt * slider.inverseMass;
+    expect(slider.velocityX).toBeGreaterThan(0);
+    expect(slider.velocityX).toBeLessThanOrEqual(maximumDelta * 1.0000001);
+  });
+
+  it('exerts no force after its motor is disabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', 0, 0);
+    const joint = prismaticJoint(rail.index, slider.index, {
+      enableMotor: true,
+      maxMotorForce: 1,
+      motorSpeed: 10,
+    });
+    addPhysics2DJoint(world, joint);
+    stepPhysics2D(world, 1 / 60);
+
+    joint.enableMotor = false;
+    slider.velocityX = 0;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(joint.motorImpulse).toBe(0);
+    expect(slider.velocityX).toBe(0);
+  });
+
+  it('stops a motor at the upper translation limit', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', 0, 0);
+    addPhysics2DJoint(
+      world,
+      prismaticJoint(rail.index, slider.index, {
+        enableLimit: true,
+        enableMotor: true,
+        lowerTranslation: -0.5,
+        maxMotorForce: 1000,
+        motorSpeed: 5,
+        upperTranslation: 1,
+      }),
+    );
+
+    run(world, 120);
+
+    expect(slider.x).toBeCloseTo(1, 5);
+    expect(slider.velocityX).toBeCloseTo(0, 5);
+  });
+
+  it('corrects a translation already below the lower limit', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = box(world, 'static', 0, 0);
+    const slider = box(world, 'dynamic', -2, 0);
+    addPhysics2DJoint(
+      world,
+      prismaticJoint(rail.index, slider.index, {
+        enableLimit: true,
+        lowerTranslation: -1,
+        upperTranslation: 1,
+      }),
+    );
+
+    run(world, 60);
+
+    expect(slider.x).toBeGreaterThan(-1.05);
+  });
+
+  it('preserves axis direction and translation limits when canonical ordering swaps the ends', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const slider = box(world, 'dynamic', 1, 0);
+    const rail = box(world, 'static', 0, 0);
+    const joint = prismaticJoint(rail.index, slider.index, {
+      enableLimit: true,
+      localAxisAX: -1,
+      lowerTranslation: -2,
+      motorSpeed: 3,
+      referenceAngle: 0,
+      upperTranslation: 4,
+    });
+
+    addPhysics2DJoint(world, joint);
+
+    expect(joint.bodyA).toBe(slider.index);
+    expect(joint.localAxisAX).toBe(1);
+    expect(joint.lowerTranslation).toBe(-2);
+    expect(joint.upperTranslation).toBe(4);
+    expect(joint.motorSpeed).toBe(3);
   });
 });
 
