@@ -563,8 +563,18 @@ const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA
 // realization — the cheap fixed-function set. The Porter-Duff coverage operators (Erase/Alpha/None/…) are
 // a CompositeEffect, the destination-reading blends (Overlay/HardLight/…) a BlendEffect, and rare
 // equations like Subtract are wired on demand via registerGlBlendMode — none belong in the node-property
-// set. Darken/Lighten are exact only for an opaque backdrop (MIN/MAX cannot carry the coverage-restore
-// term); realize them as a BlendEffect for transparent-edge correctness.
+// set.
+//
+// EXACTLY FOUR of the six are correct under partial coverage, and the split is structural rather than a
+// tuning gap. Correct compositing is `(1-a)*dst + a*B(src, dst)`; Normal, Add, Multiply and Screen each
+// factor into fixed-function terms that reproduce it exactly against a premultiplied source. MIN/MAX do
+// not distribute over that lerp, so Darken and Lighten CANNOT be expressed here at any factor choice.
+//
+// Their failure is not a subtle edge either, now that every source is premultiplied: at zero alpha
+// Darken computes min(0, dst) and wipes the backdrop to BLACK, and Lighten is wrong at every
+// intermediate alpha (harmless only at zero). This matched 2D's long-standing behaviour before 3D
+// adopted the same premultiplied output, so it is consistent rather than new — but it is a visible
+// artifact, not an approximation. Realize both as a destination-reading BlendEffect to fix them.
 const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization])[] = [
   [BlendMode.Add, { src: 'ONE', dst: 'ONE' }],
   [BlendMode.Darken, { src: 'ONE', dst: 'ONE', equation: 'MIN' }],

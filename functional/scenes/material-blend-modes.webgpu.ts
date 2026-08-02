@@ -64,8 +64,8 @@ registerWgpuFunctionalTarget(state, scale);
 // full alpha and the bottom row at quarter alpha, same RGB. Alpha is the only variable, so each column
 // is a direct read of whether coverage reaches the composite.
 //
-// A built-in material's fragment tail emits STRAIGHT coverage (rgb is not multiplied by alpha — see
-// wgpuUnlitPrelude), while every blend equation but Normal composites it with a PREMULTIPLIED table. The
+// A built-in material's fragment tail emits PREMULTIPLIED color (rgb scaled by the coverage it writes
+// to a — see WGPU_MESH_FRAGMENT_TAIL), matching every equation in the premultiplied blend table. The
 // scene is built so that mismatch is visible rather than subtle, and the oracle asserts the three
 // columns where correct and incorrect are unambiguous and survive tone-mapping:
 //
