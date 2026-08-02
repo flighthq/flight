@@ -631,6 +631,41 @@ describe('stepPhysics2D', () => {
   });
 });
 
+describe('stepPhysics2D contact cache identity', () => {
+  it('preserves every cached point impulse when manifold feature order changes', () => {
+    // A two-point manifold may report the same features in the opposite slot order after a small pose
+    // change. The merge writes into the persistent array in place, so reading the second old feature
+    // after overwriting the first slot loses it unless both old identities and impulses are snapshotted
+    // before either destination is touched.
+    const world = createPhysics2DWorld(0, 0);
+    world.config.positionIterations = 0;
+    world.config.velocityIterations = 0;
+    box(world, 0, 0);
+    box(world, 0, 0.75);
+    stepPhysics2D(world, 1 / 60);
+    const contact = world.contacts[0];
+    expect(contact.pointCount).toBe(2);
+    const expected = new Map<number, { normal: number; tangent: number }>();
+    for (let i = 0; i < contact.pointCount; i++) {
+      const point = contact.points[i];
+      point.normalImpulse = i + 1;
+      point.tangentImpulse = -(i + 1);
+      expected.set(point.featureId, { normal: point.normalImpulse, tangent: point.tangentImpulse });
+    }
+    contact.points.reverse();
+
+    stepPhysics2D(world, 1 / 60);
+
+    for (let i = 0; i < contact.pointCount; i++) {
+      const point = contact.points[i];
+      const cached = expected.get(point.featureId);
+      expect(cached).toBeDefined();
+      expect(point.normalImpulse).toBe(cached?.normal);
+      expect(point.tangentImpulse).toBe(cached?.tangent);
+    }
+  });
+});
+
 describe('stepPhysics2D contact events', () => {
   it('reports a contact beginning and ending, read off the cache transitions', () => {
     const world = createPhysics2DWorld();
