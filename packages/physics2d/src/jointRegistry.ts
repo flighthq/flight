@@ -6,6 +6,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { wakePhysics2DBody } from './islands';
+import { physics2DJointOwners } from './ownership';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
 // Adds `joint` to `world` under the same canonical body ordering contacts use, swapping its two ends when
@@ -18,6 +19,9 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 // world. The anchors and lever arms swap with the bodies — a joint whose ends were exchanged without its
 // anchors would attach to the wrong points and hold the pair in a pose nobody asked for.
 export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): Physics2DJoint {
+  if (physics2DJointOwners.has(joint) || world.joints.includes(joint)) {
+    throw new Error('Cannot add a physics joint that already belongs to a physics world');
+  }
   // The kind decides how to reverse itself, because the registry cannot know which of a joint's fields
   // carry a direction — see _canonicalizePhysics2DJointEnds.
   // Only canonicalize when the kind can be consulted. A joint whose solver is not registered yet is
@@ -29,6 +33,7 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
   const active = getPhysics2DJointSolver(world, joint.kind) !== null;
   if (active) _canonicalizePhysics2DJointEnds(world, joint);
   world.joints.push(joint);
+  physics2DJointOwners.set(joint, world);
   // Adding an active constraint changes what both bodies may do THIS step. A sleeping pair would skip
   // prepare and solve forever unless something unrelated happened to wake it. Unknown kinds remain
   // inert until registration, and are woken on that activation path instead.
@@ -99,6 +104,7 @@ export function removePhysics2DJoint(world: Physics2DWorld, joint: Readonly<Phys
   if (at < 0) return false;
   if (getPhysics2DJointSolver(world, joint.kind) !== null) _wakePhysics2DJointBodies(world, joint);
   world.joints.splice(at, 1);
+  physics2DJointOwners.delete(joint as Physics2DJoint);
   return true;
 }
 

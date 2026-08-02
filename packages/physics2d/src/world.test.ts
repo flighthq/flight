@@ -32,6 +32,33 @@ function boxBody(x: number, y: number) {
 }
 
 describe('addPhysics2DBody', () => {
+  it('rejects duplicate and cross-world insertion without corrupting either world', () => {
+    const firstWorld = createPhysics2DWorld();
+    const secondWorld = createPhysics2DWorld();
+    const body = addPhysics2DBody(firstWorld, boxBody(0, 0));
+    const index = body.index;
+
+    expect(() => addPhysics2DBody(firstWorld, body)).toThrow();
+    expect(() => addPhysics2DBody(secondWorld, body)).toThrow();
+    expect(firstWorld.bodies).toEqual([body]);
+    expect(firstWorld.bodyByIndex.get(index)).toBe(body);
+    expect(secondWorld.bodies).toHaveLength(0);
+  });
+
+  it('rejects a collider instance shared by two pre-authored bodies', () => {
+    const world = createPhysics2DWorld();
+    const collider = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+    const first = createRigidBody2D('dynamic', 0, 0);
+    const second = createRigidBody2D('dynamic', 2, 0);
+    first.colliders.push(collider);
+    second.colliders.push(collider);
+
+    addPhysics2DBody(world, first);
+    expect(() => addPhysics2DBody(world, second)).toThrow();
+    expect(second.index).toBe(-1);
+    expect(world.bodies).toEqual([first]);
+  });
+
   it('assigns indices from a monotonic counter, so a removed body never hands its identity on', () => {
     // Reusing an array slot as identity would let a stale contact be revived against whichever body
     // inherited it, warm-starting a pair with a force that belonged to something else.
@@ -58,6 +85,30 @@ describe('addPhysics2DBody', () => {
 });
 
 describe('addPhysics2DCollider', () => {
+  it('rejects duplicate, shared, and foreign-world collider mutation', () => {
+    const firstWorld = createPhysics2DWorld();
+    const secondWorld = createPhysics2DWorld();
+    const first = addPhysics2DBody(firstWorld, createRigidBody2D('dynamic', 0, 0));
+    const second = addPhysics2DBody(firstWorld, createRigidBody2D('dynamic', 2, 0));
+    const collider = addPhysics2DCollider(
+      firstWorld,
+      first,
+      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE),
+    );
+
+    expect(() => addPhysics2DCollider(firstWorld, first, collider)).toThrow();
+    expect(() => addPhysics2DCollider(firstWorld, second, collider)).toThrow();
+    expect(() =>
+      addPhysics2DCollider(
+        secondWorld,
+        first,
+        createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 2 }, STONE),
+      ),
+    ).toThrow();
+    expect(first.colliders).toEqual([collider]);
+    expect(second.colliders).toHaveLength(0);
+  });
+
   it('recomputes mass, wakes the body, and publishes bounds immediately', () => {
     const world = createPhysics2DWorld(0, 0);
     const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 3, 4));
@@ -310,6 +361,20 @@ describe('isPhysics2DPairOrdered', () => {
 });
 
 describe('removePhysics2DBody', () => {
+  it('releases ownership and assigns a fresh persistent identity when reinserted', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const firstIndex = body.index;
+
+    removePhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+
+    expect(firstIndex).toBe(0);
+    expect(body.index).toBe(1);
+    expect(world.bodyByIndex.has(firstIndex)).toBe(false);
+    expect(world.bodyByIndex.get(body.index)).toBe(body);
+  });
+
   it('drops every contact naming the removed body', () => {
     const world = createPhysics2DWorld();
     const floor = createRigidBody2D('static', 0, 0);
