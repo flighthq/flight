@@ -30,8 +30,14 @@
 //                    be unreadable — so a failure still shows that package's full stderr.
 //
 // Concurrency is deliberately bounded (not unbounded Promise.all): the registry rate-limits publishes,
-// and a 429 burst would turn a fast publish into a half-published graph. 429s are retried with
-// backoff; override the width with FLIGHT_PUBLISH_CONCURRENCY when diagnosing.
+// and a 429 burst would turn a fast publish into a half-published graph. Override the width with
+// FLIGHT_PUBLISH_CONCURRENCY when diagnosing.
+//
+// Running npm concurrently also makes it fail for reasons unrelated to the package being published —
+// throttling, and npm racing itself during startup. Those are retried with backoff, and a real
+// rejection is not; classifyPublishError draws that line and publish-error-kind.test.ts pins it
+// against the stderr actually observed in CI. Retrying is only safe because a publish that already
+// landed is recognised as done rather than as a conflict.
 //
 // Usage:
 //   tsx scripts/publish-packages.ts                 publish all to the default `latest` dist-tag
@@ -47,6 +53,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { classifyPublishError } from './publish-error-kind.js';
 import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
 
 const execFileAsync = promisify(execFile);
@@ -55,7 +62,18 @@ const execFileAsync = promisify(execFile);
 // limit. Raising this trades a faster publish for a higher chance of 429 backoff.
 const PUBLISH_CONCURRENCY = Number(process.env.FLIGHT_PUBLISH_CONCURRENCY ?? '8');
 const REGISTRY_CHECK_CONCURRENCY = 12;
-const RATE_LIMIT_ATTEMPTS = 4;
+const RETRY_ATTEMPTS = 4;
+
+// npm prunes its log directory (~/.npm/_logs, honouring `logs-max`) on every startup, and concurrent
+// npm processes readdir and unlink the same files there. Losing that race makes npm die before it
+// finishes resolving config — the "Exit prior to config file resolving" crash, which is not a
+// publish failure at all but takes the package down with it. Writing no log files removes the shared
+// state being contended. Nothing is lost: each publish's output is already captured per package, so
+// the log files were never the diagnostic path here.
+//
+// This reduces the race rather than proving it gone, so classifyPublishError still retries the crash
+// if it appears by another route.
+const PUBLISH_ENV = { ...process.env, npm_config_logs_max: '0' };
 
 interface Manifest {
   name: string;
@@ -248,18 +266,26 @@ async function publishOne({ dir, path, pkg }: PackageEntry): Promise<void> {
       try {
         // Output is captured rather than inherited: 141 concurrent npm streams would interleave into
         // noise. Success prints one line; a failure prints that package's full stderr below.
-        await execFileAsync('npm', publishArgs, { cwd: dir });
+        await execFileAsync('npm', publishArgs, { cwd: dir, env: PUBLISH_ENV });
         published.push(id);
         console.log(`[publish] ok ${id}`);
         return;
       } catch (error) {
         const detail = describeExecError(error);
-        // The registry rate-limits publishes; at this width a 429 is an expected, retryable event
-        // rather than a real failure. Anything else fails immediately — retrying a bad tarball or a
-        // rejected version only delays the report.
-        if (!isRateLimited(detail) || attempt === RATE_LIMIT_ATTEMPTS) throw error;
+        const kind = classifyPublishError(detail);
+        // A retry can follow an attempt that actually landed before its error surfaced, so the
+        // version being present is success, not conflict. Without this, retrying would convert a
+        // completed publish into a hard failure.
+        if (kind === 'already-published') {
+          skipped.push(`${id} (already published)`);
+          console.log(`[publish] ok ${id} (already on the registry)`);
+          return;
+        }
+        // 'fatal' covers a rejected version, a bad tarball, missing auth — retrying only delays the
+        // report. Everything retryable is a property of the environment, not of this package.
+        if (kind === 'fatal' || attempt === RETRY_ATTEMPTS) throw error;
         const backoffMs = 1000 * 2 ** (attempt - 1);
-        console.warn(`[publish] rate-limited ${id}, retrying in ${backoffMs}ms (${attempt}/${RATE_LIMIT_ATTEMPTS})`);
+        console.warn(`[publish] ${kind} ${id}, retrying in ${backoffMs}ms (${attempt}/${RETRY_ATTEMPTS})`);
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
@@ -277,10 +303,6 @@ async function publishOne({ dir, path, pkg }: PackageEntry): Promise<void> {
 function describeExecError(error: unknown): string {
   const e = error as { stderr?: string; stdout?: string; message?: string };
   return [e.stderr, e.stdout, e.message].filter((s) => s !== undefined && s !== '').join('\n');
-}
-
-function isRateLimited(detail: string): boolean {
-  return /\b429\b|too many requests|rate limit/i.test(detail);
 }
 
 // Bounded-concurrency map. Workers pull from a shared cursor, so a slow item never leaves the pool
