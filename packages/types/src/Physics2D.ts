@@ -246,6 +246,15 @@ export interface Physics2DSolverConfig {
   warmStarting: boolean;
 }
 
+// Pure diagnosis of whether one explicit step can run. Individual flags keep simultaneous faults
+// visible; `status` is the stable summary for callers that need only a ready/not-ready branch.
+export interface Physics2DStepExplanation {
+  readonly timestepValid: boolean;
+  readonly velocityIterationsValid: boolean;
+  readonly positionIterationsValid: boolean;
+  readonly status: 'invalid-step' | 'ready';
+}
+
 // The simulation. A world owns its bodies, its persistent contacts, and the broadphase index it keeps
 // body bounds in — the index directly rather than behind a physics-specific broadphase seam, because
 // `SpatialIndexBackend` is already the swap point and a seam over a seam buys no capability.

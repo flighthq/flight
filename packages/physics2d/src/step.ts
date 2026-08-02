@@ -372,7 +372,17 @@ function effectiveMass(
 // solved before positions are integrated, so the integration moves bodies that have already had their
 // constraints applied rather than moving them and correcting afterwards.
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
-  if (!(dt > 0)) return;
+  const config = world.config;
+  if (
+    !Number.isFinite(dt) ||
+    !(dt > 0) ||
+    !Number.isSafeInteger(config.velocityIterations) ||
+    config.velocityIterations < 0 ||
+    !Number.isSafeInteger(config.positionIterations) ||
+    config.positionIterations < 0
+  ) {
+    return;
+  }
 
   synchronizePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
@@ -395,8 +405,6 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   }
 
   const bodies = world.bodies;
-  const config = world.config;
-
   // Sleep is decided HERE — after the contact set is current, before anything integrates. The placement
   // is what makes every wake transition cost zero steps. A body woken by a force, by a new neighbour, or
   // by the caller writing a velocity is awake in time to be integrated by this same step; deciding after
