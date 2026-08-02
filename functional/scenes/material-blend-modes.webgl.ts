@@ -1,0 +1,265 @@
+import { logInfo } from '@flighthq/log';
+import { createScene3D } from '@flighthq/scene3d';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
+import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
+import {
+  createScene3DLights,
+  addNodeChild,
+  beginGlRenderEffectPipeline,
+  createAmbientLight,
+  createCamera3D,
+  createDirectionalLight,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  createMesh,
+  createOrthographicProjection,
+  createQuadMeshGeometry,
+  createUnlitMaterial,
+  createVector3,
+  endGlRenderEffectPipeline,
+  getBitmapPixelChannel,
+  ImageChannel,
+  invalidateNodeLocalTransform,
+  prepareScene3DRender,
+  registerGlUnlitMaterial,
+  renderGlBackground,
+  setCamera3DViewMatrix4FromLookAt,
+  BlendMode,
+} from '@flighthq/sdk';
+
+// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
+// import the Gl one directly from its package.
+
+const pixelRatio = window.devicePixelRatio || 1;
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
+document.body.appendChild(canvas);
+
+export const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x101014ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+registerGlUnlitMaterial(state);
+
+const pipeline = createGlRenderEffectPipeline(state, {
+  sampleCount: 4,
+  format: 'rgba16f',
+  depth: 'depth-stencil',
+});
+
+export const scale = pixelRatio;
+export const width = 800;
+export const height = 600;
+
+export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  prepareScene3DRender(state, scene, camera, lights);
+  drawGlScene3D(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
+}
+
+// material-blend-modes — the SurfaceMaterial `blendMode` path on the 3D forward renderers, which had no
+// functional coverage at all (the existing node-blend-modes scenes are the 2D node property, a different
+// path). Six blend modes across the columns, each drawn TWICE over one opaque backdrop: the top row at
+// full alpha and the bottom row at quarter alpha, same RGB. Alpha is the only variable, so each column
+// is a direct read of whether coverage reaches the composite.
+//
+// A built-in material's fragment tail emits STRAIGHT coverage (rgb is not multiplied by alpha — see
+// glUnlitPrelude), while every blend equation but Normal composites it with a PREMULTIPLIED table. The
+// scene is built so that mismatch is visible rather than subtle, and the oracle asserts the three
+// columns where correct and incorrect are unambiguous and survive tone-mapping:
+//
+//   COVERAGE (Normal, Add, Screen, Lighten) — a quarter-alpha patch cannot land on the same value as
+//              the fully-opaque one. When coverage never reaches the composite the two rows are
+//              pixel-identical, which is precisely the defect's signature.
+//   Normal   — additionally directional, and the control: Normal is the one mode wired to a
+//              straight-alpha table today, so its quarter-alpha patch must already sit strictly between
+//              the backdrop and the full-alpha patch, and must stay there.
+//   Multiply — directional rather than differential. Multiplying can only darken, so a quarter-alpha
+//              patch must not be BRIGHTER than the backdrop; one that brightens is coverage arriving
+//              un-applied.
+//
+// DARKEN is rendered but not asserted, and Multiply is asserted directionally rather than by difference,
+// for the same reason: at this patch color (red at full scale) `min(c*a, dst)` and `dst*(c*a) + dst*(1-a)`
+// both collapse to the destination at BOTH alphas, so "the rows must differ" is not a true statement about
+// a correct renderer — it would fail against a correct fix. That is a property of those operators, not a
+// limitation of the harness. Both columns still render, so the frame fingerprint guards them.
+//
+// Assertions are ORDINAL (comparisons between sampled patches), never absolute pixel values: the scene
+// renders through an HDR rgba16f target and is tone-presented, so magnitudes are backend- and
+// curve-dependent while the orderings above are not.
+//
+// Deliberately does NOT set `alphaType` on any material. These are built-in materials whose tails always
+// emit straight coverage, so the scene reads the default and stays valid however that declaration is
+// spelled — or whether it exists on SurfaceMaterial at all.
+
+// Orthographic so world coordinates map linearly to the frame and the sample points below are exact
+// fractions of the image rather than a perspective divide the oracle would have to re-derive.
+const HALF_WIDTH = 4;
+const HALF_HEIGHT = 3;
+
+// Column order is the reading order of the oracle, not the enum's.
+const COLUMNS: readonly BlendMode[] = [
+  BlendMode.Normal,
+  BlendMode.Add,
+  BlendMode.Multiply,
+  BlendMode.Screen,
+  BlendMode.Darken,
+  BlendMode.Lighten,
+];
+
+const COLUMN_NORMAL = 0;
+const COLUMN_ADD = 1;
+const COLUMN_MULTIPLY = 2;
+const COLUMN_SCREEN = 3;
+const COLUMN_LIGHTEN = 5;
+
+// The columns whose operator genuinely separates a quarter-alpha patch from a fully-opaque one at this
+// patch color, and so can carry the "coverage reached the composite" assertion. Multiply and Darken are
+// excluded on purpose — see the header.
+const COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COLUMN_SCREEN, COLUMN_LIGHTEN];
+
+// Readback margin separating a real coverage difference from tone-mapping and MSAA noise. The real
+// post-fix differences are an order of magnitude larger; today they are exactly zero.
+const COVERAGE_MARGIN = 12;
+
+// Patch RGB. Red is full-scale so the red channel the oracle samples carries the cleanest signal;
+// green/blue only make the columns legible in the screenshot.
+const PATCH_RGB = 0xff8040;
+const FULL_ALPHA = 0xff;
+const QUARTER_ALPHA = 0x40;
+
+// World-space row centers: full-alpha above the midline, quarter-alpha below.
+const FULL_ROW_Y = 1.2;
+const QUARTER_ROW_Y = -1.2;
+
+const scene = createScene3D().root;
+
+// Opaque mid-gray backdrop, larger than the view. It is the destination every patch composites against,
+// and it draws in the opaque pass ahead of every blended patch regardless of scene order.
+const backdrop = createMesh(createQuadMeshGeometry(HALF_WIDTH * 2 + 1, HALF_HEIGHT * 2 + 1), [
+  createUnlitMaterial({ baseColor: 0x808080ff }),
+]);
+backdrop.position.z = -1;
+invalidateNodeLocalTransform(backdrop);
+addNodeChild(scene, backdrop);
+
+const patchGeometry = createQuadMeshGeometry(1.1, 1.6);
+for (let column = 0; column < COLUMNS.length; column++) {
+  addPatch(column, FULL_ROW_Y, FULL_ALPHA);
+  addPatch(column, QUARTER_ROW_Y, QUARTER_ALPHA);
+}
+
+const camera = createCamera3D({
+  far: 100,
+  near: 0.1,
+  projection: createOrthographicProjection({ halfHeight: HALF_HEIGHT, halfWidth: HALF_WIDTH }),
+});
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+// Unlit materials ignore lights entirely; the block is required by the draw signature.
+const lights = createScene3DLights({
+  ambient: createAmbientLight({ color: 0xffffffff, intensity: 1 }),
+  directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, 0, -1), intensity: 0 }),
+});
+
+render(scene, camera, lights);
+
+export function assertRender(bitmap: Readonly<Bitmap>): void {
+  assertBlendModeCoverage(bitmap, '[material-blend-modes/webgl]');
+}
+
+// Shared, backend-independent oracle body. Duplicated verbatim in the .webgpu.ts sibling because
+// functional scenes are self-contained per backend by design.
+function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
+  const backdrop = sampleRed(bitmap, 0.5, backdropRowFraction());
+  const full = COLUMNS.map((_, column) => sampleRed(bitmap, columnFraction(column), fullRowFraction()));
+  const quarter = COLUMNS.map((_, column) => sampleRed(bitmap, columnFraction(column), quarterRowFraction()));
+
+  // Every sampled value, so a failure report shows the whole grid rather than only the first inequality
+  // that tripped. Lands in logs.jsonl next to the screenshot.
+  logInfo({ backdrop, full, quarter }, 'test');
+
+  // Guards the guard: if the backdrop or the patches did not render at all, every comparison below would
+  // be between two blanks and would pass vacuously.
+  if (backdrop <= 20) {
+    throw new Error(`${tag} backdrop did not render (red ${backdrop})`);
+  }
+  if (full[COLUMN_ADD] <= backdrop + 10) {
+    throw new Error(
+      `${tag} full-alpha additive patch did not brighten the backdrop (${full[COLUMN_ADD]} vs ${backdrop})`,
+    );
+  }
+
+  for (const column of COVERAGE_COLUMNS) {
+    if (quarter[column] >= full[column] - COVERAGE_MARGIN) {
+      throw new Error(
+        `${tag} ${COLUMNS[column]} ignored coverage: the quarter-alpha patch (${quarter[column]}) is not ` +
+          `clearly dimmer than the full-alpha patch (${full[column]}). A straight-alpha tail composited by ` +
+          `a premultiplied equation contributes at full strength regardless of alpha.`,
+      );
+    }
+  }
+
+  if (!(quarter[COLUMN_NORMAL] > backdrop + 5 && quarter[COLUMN_NORMAL] < full[COLUMN_NORMAL] - 5)) {
+    throw new Error(
+      `${tag} Normal quarter-alpha patch is not between the backdrop and the full-alpha patch ` +
+        `(backdrop ${backdrop}, quarter ${quarter[COLUMN_NORMAL]}, full ${full[COLUMN_NORMAL]})`,
+    );
+  }
+
+  if (quarter[COLUMN_MULTIPLY] > backdrop + 10) {
+    throw new Error(
+      `${tag} Multiply brightened the backdrop: quarter-alpha patch ${quarter[COLUMN_MULTIPLY]} exceeds the ` +
+        `backdrop ${backdrop}. Multiplying can only darken; a straight-alpha tail composited by a ` +
+        `premultiplied Multiply adds an un-applied coverage term.`,
+    );
+  }
+}
+
+// A blended patch of `blendMode` at the given row, alpha carried in the material's base color.
+function addPatch(column: number, y: number, alpha: number): void {
+  const material = createUnlitMaterial({ baseColor: (((PATCH_RGB << 8) >>> 0) | alpha) >>> 0 });
+  material.alphaMode = 'blend';
+  material.blendMode = COLUMNS[column];
+  const mesh = createMesh(patchGeometry, [material]);
+  mesh.position.x = columnCenterX(column);
+  mesh.position.y = y;
+  invalidateNodeLocalTransform(mesh);
+  addNodeChild(scene, mesh);
+}
+
+function columnCenterX(column: number): number {
+  const pitch = (HALF_WIDTH * 2) / COLUMNS.length;
+  return -HALF_WIDTH + pitch * (column + 0.5);
+}
+
+// World → frame fractions. Orthographic, so both axes are linear; y flips (world +y is up, image +y down).
+function columnFraction(column: number): number {
+  return (columnCenterX(column) + HALF_WIDTH) / (HALF_WIDTH * 2);
+}
+
+function fullRowFraction(): number {
+  return (HALF_HEIGHT - FULL_ROW_Y) / (HALF_HEIGHT * 2);
+}
+
+function quarterRowFraction(): number {
+  return (HALF_HEIGHT - QUARTER_ROW_Y) / (HALF_HEIGHT * 2);
+}
+
+// Above the top row, where only the backdrop covers the frame.
+function backdropRowFraction(): number {
+  return (HALF_HEIGHT - 2.5) / (HALF_HEIGHT * 2);
+}
+
+function sampleRed(bitmap: Readonly<Bitmap>, xFraction: number, yFraction: number): number {
+  const x = Math.floor(bitmap.width * xFraction);
+  const y = Math.floor(bitmap.height * yFraction);
+  return getBitmapPixelChannel(bitmap, x, y, ImageChannel.Red);
+}
