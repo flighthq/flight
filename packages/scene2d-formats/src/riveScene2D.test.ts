@@ -26,6 +26,7 @@ const SCALE_Y = 17;
 const OPACITY = 18;
 const PARENT_ID = 5;
 const POINTS_PATH = 16;
+const BLEND_MODE = 23;
 
 describe('createScene2DFromRiveDocument', () => {
   it('returns no artboards for bytes that are not a Rive file', () => {
@@ -162,6 +163,42 @@ describe('createScene2DFromRiveDocument', () => {
     );
 
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.path-outside-shape']);
+  });
+
+  // Rive states sixteen blend modes and Flight carries six. The shared ones convert; the rest fall
+  // back to normal, which the coverage doc records as a Flight gap rather than a file problem.
+  it('converts the blend modes Flight can express and normalises the rest', () => {
+    const modes = [
+      [3, 'Normal'],
+      [14, 'Screen'],
+      [16, 'Darken'],
+      [17, 'Lighten'],
+      [24, 'Multiply'],
+      [15, 'Normal'],
+      [21, 'Normal'],
+    ] as const;
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        ...modes.map(([value]) => object(SHAPE, [uint(PARENT_ID, 0), uint(BLEND_MODE, value)])),
+      ]),
+    );
+    const root = result.artboards[0].root;
+
+    modes.forEach(([, expected], index) => {
+      expect((getNodeChildAt(root, index) as Node2D).blendMode).toBe(expected);
+    });
+  });
+
+  it("leaves a plain node's blend mode alone, since only a drawable states one", () => {
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        object(NODE, [uint(PARENT_ID, 0), uint(BLEND_MODE, 24)]),
+      ]),
+    );
+
+    expect((getNodeChildAt(result.artboards[0].root, 0) as Node2D).blendMode).not.toBe('Multiply');
   });
 
   it('reparents past a non-node ancestor rather than dropping its descendants', () => {
