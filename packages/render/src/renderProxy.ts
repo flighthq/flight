@@ -2,8 +2,10 @@ import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import {
   getNodeAppearanceRevision,
+  getNodeChildrenRevision,
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
+  getNodeParentReferenceRevision,
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
@@ -43,8 +45,10 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     material: null,
     materialData: null,
     lastAppearanceId: -1,
+    lastChildrenId: -1,
     lastLocalContentId: -1,
     lastLocalTransformId: -1,
+    lastParentReferenceId: -1,
     name: null,
     renderer: renderer,
     rendererData: renderer?.createData(state, source) ?? null,
@@ -128,12 +132,15 @@ export function isRenderProxyDirty(
     parentData !== undefined &&
     (parentData.transformFrameId === currentFrameId || parentData.appearanceFrameId === currentFrameId);
   const rendererDirty = data.renderer?.isDirty?.(state, source, data.rendererData) ?? false;
+  const hierarchyDirty =
+    data.lastChildrenId !== getNodeChildrenRevision(source as Node) ||
+    data.lastParentReferenceId !== getNodeParentReferenceRevision(source as Node);
   const localDirty =
     state.sceneGraphSyncPolicy === 'refreshDerivedState' ||
     data.lastLocalTransformId !== getNodeLocalTransformRevision(source as Node) ||
     data.lastAppearanceId !== getNodeAppearanceRevision(source as Node) ||
     data.lastLocalContentId !== getNodeLocalContentRevision(source as Node);
-  return parentDirty || rendererDirty || localDirty;
+  return parentDirty || rendererDirty || hierarchyDirty || localDirty;
 }
 
 export function isRenderProxyVisible(data: RenderProxy2D): boolean {
@@ -171,13 +178,23 @@ export function updateRenderProxy2D(
   data: RenderProxy2D,
   parentData: RenderProxy2D | undefined,
 ): void {
+  const parentReferenceId = getNodeParentReferenceRevision(source as Node);
+  if (data.lastParentReferenceId !== parentReferenceId) {
+    // A prepared node may be detached while its eventual parent changes, then reattached to the same
+    // parent identity. Force both inherited axes through their existing update paths; comparing only
+    // the current parent or its "updated this frame" marker would leave that warm proxy stale.
+    data.lastAppearanceId = -1;
+    data.lastLocalTransformId = -1;
+  }
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
   updateRenderProxyColorScaleBias(state, data, parentData);
   updateNodeClip(state, source, data, parentData);
-  // Record the content revision we synced at, so a later content-only change re-dirties the node.
+  // Record the local and structural revisions this adaptation consumed.
+  data.lastChildrenId = getNodeChildrenRevision(source as Node);
   data.lastLocalContentId = getNodeLocalContentRevision(source as Node);
+  data.lastParentReferenceId = parentReferenceId;
   getRenderStateRuntime(state).renderAdaptHook?.(state, source, data);
 }
 

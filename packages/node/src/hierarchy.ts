@@ -51,7 +51,8 @@ export function addNodeChildAt<Traits extends object>(
   if (parent === target) {
     const i = children!.indexOf(child);
     if (i !== -1) {
-      if (i === index) return child as NodeOf<Traits>;
+      // `index === children.length` means append. An already-last child is therefore unchanged.
+      if (i === Math.min(index, children.length - 1)) return child as NodeOf<Traits>;
       children!.splice(i, 1);
     }
   } else {
@@ -61,6 +62,7 @@ export function addNodeChildAt<Traits extends object>(
   }
 
   children!.splice(index, 0, child);
+  invalidateNodeChildren(targetRuntime);
   const targetSignals = targetRuntime.nodeSignals;
   if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged);
 
@@ -262,6 +264,7 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
     const i = children.indexOf(child);
     if (i !== -1) {
       children.splice(i, 1);
+      invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
     }
     const targetSignals = targetRuntime.nodeSignals;
     if (targetSignals !== null) {
@@ -395,9 +398,11 @@ export function setNodeChildIndex<Traits extends object>(
   if (children === null) return;
   if (index >= 0 && index <= children.length && getNodeParent(child) === target) {
     const i = children.indexOf(child);
-    if (i !== -1 && i !== index) {
+    const destination = Math.min(index, children.length - 1);
+    if (i !== -1 && i !== destination) {
       children.splice(i, 1);
-      children.splice(index, 0, child);
+      children.splice(destination, 0, child);
+      invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
       const targetSignals = targetRuntime.nodeSignals;
       if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
     }
@@ -424,8 +429,10 @@ export function swapNodeChildren<Traits extends object>(
   if (children !== null && getNodeParent(child1) === target && getNodeParent(child2) === target) {
     const index1 = children.indexOf(child1);
     const index2 = children.indexOf(child2);
+    if (index1 === index2) return;
     children[index1] = child2;
     children[index2] = child1;
+    invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
     const targetSignals = (getNodeRuntime(target) as NodeRuntime<Traits>).nodeSignals;
     if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
   }
@@ -447,8 +454,17 @@ export function swapNodeChildrenAt<Traits extends object>(target: Node<Traits>, 
   const swap = children[index1] as Node<Traits>;
   children[index1] = children[index2];
   children[index2] = swap;
+  invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
   const targetSignals = targetRuntime.nodeSignals;
   if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
+}
+
+// Child arrays are package-owned and mutate only through this module, so structural revision bumps
+// are automatic rather than a caller-facing invalidation pairing. The revision is distinct from
+// localContentId: changing descendants changes traversal/output without changing the parent's own
+// rasterizable payload.
+function invalidateNodeChildren<Traits extends object>(runtime: NodeRuntime<Traits>): void {
+  runtime.childrenId = (runtime.childrenId + 1) >>> 0;
 }
 
 function throwOutOfBoundsError(): void {

@@ -31,7 +31,7 @@ import {
 } from './hierarchy';
 import { createNode, enableNodeSignals, getNodeRuntime } from './node';
 import { getNodeWorldMatrix } from './nodeTransform2d';
-import { invalidateNodeLocalTransform } from './revision';
+import { getNodeChildrenRevision, getNodeParentReferenceRevision, invalidateNodeLocalTransform } from './revision';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;
@@ -153,6 +153,16 @@ describe('addNodeChild', () => {
 });
 
 describe('addNodeChildAt', () => {
+  it('advances structural revisions when attaching a child', () => {
+    const childrenId = getNodeChildrenRevision(container);
+    const parentReferenceId = getNodeParentReferenceRevision(childA);
+
+    addNodeChildAt(container, childA, 0);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+    expect(getNodeParentReferenceRevision(childA)).toBe(parentReferenceId + 1);
+  });
+
   it('addNodeChildAt inserts a child at the given index', () => {
     addNodeChild(container, childA);
     addNodeChildAt(container, childB, 0);
@@ -187,6 +197,29 @@ describe('addNodeChildAt', () => {
 
     expect(getChildren(container)[0]).toBe(childB);
     expect(getChildren(container)[1]).toBe(childA);
+  });
+
+  it('advances only the child-list revision when reordering within one parent', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const childrenId = getNodeChildrenRevision(container);
+    const parentReferenceId = getNodeParentReferenceRevision(childA);
+
+    addNodeChildAt(container, childA, 1);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+    expect(getNodeParentReferenceRevision(childA)).toBe(parentReferenceId);
+  });
+
+  it('does not advance structural revisions for an unchanged index', () => {
+    addNodeChild(container, childA);
+    const childrenId = getNodeChildrenRevision(container);
+    const parentReferenceId = getNodeParentReferenceRevision(childA);
+
+    addNodeChildAt(container, childA, 0);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId);
+    expect(getNodeParentReferenceRevision(childA)).toBe(parentReferenceId);
   });
 
   it('calls onParentChanged on the child', () => {
@@ -456,6 +489,17 @@ describe('isNodeAncestorOf', () => {
 });
 
 describe('removeNodeChild', () => {
+  it('advances structural revisions when detaching a child', () => {
+    addNodeChild(container, childA);
+    const childrenId = getNodeChildrenRevision(container);
+    const parentReferenceId = getNodeParentReferenceRevision(childA);
+
+    removeNodeChild(container, childA);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+    expect(getNodeParentReferenceRevision(childA)).toBe(parentReferenceId + 1);
+  });
+
   it('removes the child and clears its parent', () => {
     addNodeChild(container, childA);
     expect(getNodeChildCount(container)).toBe(1);
@@ -864,6 +908,16 @@ describe('replaceNodeChild', () => {
 });
 
 describe('setNodeChildIndex', () => {
+  it('advances the child-list revision when order changes', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const childrenId = getNodeChildrenRevision(container);
+
+    setNodeChildIndex(container, childA, 1);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+  });
+
   it('setChildIndex moves an existing child to a new index', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -908,6 +962,16 @@ describe('setNodeChildIndex', () => {
 });
 
 describe('swapNodeChildren', () => {
+  it('advances the child-list revision when order changes', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const childrenId = getNodeChildrenRevision(container);
+
+    swapNodeChildren(container, childA, childB);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+  });
+
   it('swapNodeChildren swaps two children', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -943,6 +1007,16 @@ describe('swapNodeChildren', () => {
 });
 
 describe('swapNodeChildrenAt', () => {
+  it('advances the child-list revision when order changes', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const childrenId = getNodeChildrenRevision(container);
+
+    swapNodeChildrenAt(container, 0, 1);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId + 1);
+  });
+
   it('swapNodeChildrenAt swaps children by index', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);

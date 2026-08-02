@@ -24,6 +24,10 @@ export function getNodeAppearanceRevision<Traits extends object>(source: Readonl
   return getNodeRuntime(source).appearanceId;
 }
 
+export function getNodeChildrenRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+  return getNodeRuntime(source).childrenId;
+}
+
 export function getNodeLocalBoundsRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).localBoundsId;
 }
@@ -34,6 +38,10 @@ export function getNodeLocalContentRevision<Traits extends object>(source: Reado
 
 export function getNodeLocalTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).localTransformId;
+}
+
+export function getNodeParentReferenceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+  return getNodeRuntime(source).parentReferenceId;
 }
 
 export function getNodeWorldTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
@@ -100,6 +108,7 @@ export function invalidateNodeLocalTransform<Traits extends object>(target: Node
  */
 export function invalidateNodeParentReference<Traits extends object>(target: Node<Traits>): void {
   const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+  runtime.parentReferenceId = (runtime.parentReferenceId + 1) >>> 0;
   runtime.worldTransformUsingParentTransformId = -1;
 }
 
