@@ -259,3 +259,6 @@ export const defaultWgpuShapeRenderer: Scene2DRenderer = {
   destroyData: destroyWgpuShapeData,
   submit: drawWgpuShape,
 };
+
+// MorphShape owns a distinct kind while sharing Shape's mesh/raster renderer and cache lifecycle.
+export const defaultWgpuMorphShapeRenderer: Scene2DRenderer = defaultWgpuShapeRenderer;

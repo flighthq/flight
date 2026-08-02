@@ -14,15 +14,21 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
+  createMorphShape,
   createShape,
 } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { MorphShapeKind, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';
+import {
+  defaultCanvasMorphShapeRenderer,
+  defaultCanvasShapeRenderer,
+  drawCanvasShape,
+  renderCanvasShapeCommands,
+} from './canvasShape';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTextureResolver';
@@ -43,6 +49,17 @@ registerCanvasBitmapTextureResolver(resolvers);
 registerCanvasImageTextureResolver(resolvers);
 
 describe('drawCanvasShape', () => {
+  it('renders MorphShapeKind through the explicit default renderer alias', () => {
+    const canvas = document.createElement('canvas');
+    const state = createCanvasRenderState(canvas);
+    registerRenderer(state, MorphShapeKind, defaultCanvasMorphShapeRenderer);
+    const shape = createMorphShape({ commands: [], endData: [], startData: [], winding: 'nonZero' });
+    const data = getOrCreateRenderProxy2D(state, shape);
+
+    expect(defaultCanvasMorphShapeRenderer).toBe(defaultCanvasShapeRenderer);
+    expect(() => drawCanvasShape(state, data)).not.toThrow();
+  });
+
   it('does not throw for a shape with no commands', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 200;

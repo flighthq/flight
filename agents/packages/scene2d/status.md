@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/scene2d'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-02
+by: builder4
 ---
 
 # scene2d — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-02 · builder4] — MorphShape boundary resolved
+
+The previously deferred MorphShape shell now lives entirely in `@flighthq/shape` as a distinct kind;
+`scene2d` contributes only its existing generic Node2D factory. Each renderer leaf publishes an explicit
+default MorphShape renderer alias over its Shape implementation. No scene2d source change was required.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

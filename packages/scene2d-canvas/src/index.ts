@@ -21,6 +21,7 @@ export {
   defaultCanvasLineStyle,
   defaultCanvasLineTo,
   defaultCanvasMoveTo,
+  defaultCanvasMorphShapeRenderer,
   defaultCanvasParticleEmitter2DRenderer,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasRichTextRenderer,

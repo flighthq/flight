@@ -38,3 +38,4 @@ Parked — each with the reason it is not sweep-safe.
 ## Approved
 
 - [2026-07-02 · picked] Correctness sweep: exact cubic bounds, per-span stroke bounds, drawTriangles in bounds/fill, honor drawPath winding, remove getShapeBounds aliasing comment, typed readback/round-trip (shapeGraphicsData.ts + ShapeGraphicsRecord type), add path dependency
+- [2026-08-02 · picked] Retained MorphShape: distinct kind, prepared PathMorph ownership, stable live-path insertion into Shape styles, explicit progress sampling/invalidation, and default renderer aliases across all 2D backends.

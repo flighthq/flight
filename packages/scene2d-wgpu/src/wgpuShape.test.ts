@@ -29,6 +29,7 @@ const noopRasterizer = (): void => {};
 // this file (registry reset before the mock applies, unmock + reset after), so under a shared
 // (isolate:false) worker it never leaks into the many real consumers of these functions (node,
 // interaction, shape, text) — and a sibling that pre-evaluated ./wgpuShape still picks up the stub.
+let defaultWgpuMorphShapeRenderer: typeof WgpuShapeModule.defaultWgpuMorphShapeRenderer;
 let defaultWgpuShapeRenderer: typeof WgpuShapeModule.defaultWgpuShapeRenderer;
 let drawWgpuShape: typeof WgpuShapeModule.drawWgpuShape;
 
@@ -40,7 +41,7 @@ beforeAll(async () => {
     getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
     getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
   }));
-  ({ defaultWgpuShapeRenderer, drawWgpuShape } = await import('./wgpuShape'));
+  ({ defaultWgpuMorphShapeRenderer, defaultWgpuShapeRenderer, drawWgpuShape } = await import('./wgpuShape'));
   installWgpuMock();
 });
 
@@ -78,6 +79,10 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
 }
 
 describe('defaultWgpuShapeRenderer', () => {
+  it('provides the MorphShape renderer alias', () => {
+    expect(defaultWgpuMorphShapeRenderer).toBe(defaultWgpuShapeRenderer);
+  });
+
   it('declares BatchFormat.Quad', () => {
     expect(defaultWgpuShapeRenderer.format).toBe(BatchFormat.Quad);
   });

@@ -30,7 +30,7 @@ rare in the wild.
 | `SetBackgroundColor` | `Scene2DDocument.backgroundColor` | 250 |
 | `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
 | `SymbolClass`, `ExportAssets` | Slot linkage identity, and the library `createScene2DSymbolFromSwf` instantiates from | 186 / 44 |
-| `DefineMorphShape`, `2` | Authored extents only — no 2D-morph home yet | 4 |
+| `DefineMorphShape`, `2` | Authored extents only — `MorphShape` home exists; SWF edge/style producer pending | 4 |
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
 | `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |

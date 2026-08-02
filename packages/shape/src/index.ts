@@ -1,5 +1,6 @@
 export {
   PathCommand,
+  appendMorphShapePath,
   appendShapeArc,
   appendShapeArcTo,
   appendShapeBeginTextureFill,
@@ -26,6 +27,7 @@ export {
   clearShapeCommands,
   computeShapeLocalBoundsRectangle,
   copyShapeCommands,
+  createMorphShape,
   createScale9Shape,
   createShape,
   enableShapeHitTesting,
@@ -41,5 +43,6 @@ export {
   hitTestShapeCommandPoint,
   isShapeEmpty,
   registerShapeHitTestCommand,
+  setMorphShapeProgress,
 } from './contract';
 export * from './scale9ShapeCommands';

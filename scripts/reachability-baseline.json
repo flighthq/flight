@@ -1215,6 +1215,12 @@
     },
     {
       "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasMorphShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasParticleEmitter2DRenderer",
       "dot": true,
       "contract": true
@@ -1281,6 +1287,12 @@
     },
     {
       "packageName": "scene2d-dom",
+      "symbol": "defaultDomMorphShapeRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
       "symbol": "defaultDomNativeTextRenderer",
       "dot": true,
       "contract": true
@@ -1330,6 +1342,12 @@
     {
       "packageName": "scene2d-gl",
       "symbol": "defaultGlBitmapTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlMorphShapeRenderer",
       "dot": true,
       "contract": true
     },
@@ -1396,6 +1414,12 @@
     {
       "packageName": "scene2d-wgpu",
       "symbol": "defaultWgpuBitmapTextRenderer",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuMorphShapeRenderer",
       "dot": true,
       "contract": true
     },

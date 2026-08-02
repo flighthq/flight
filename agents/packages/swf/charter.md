@@ -66,8 +66,9 @@ exposed, not owned:
   `Scene2DDocument` with slots/linkage. No SWF runtime is retained; Flight's `movieclip`/`timeline`
   *is* the MovieClip runtime — the importer produces their data, it does not embed a player.
 - **Well-homed outputs only.** Every display-tag maps onto an existing Flight subject; no new
-  primitive. Streaming sound → `@flighthq/audio` references; morph shapes (`DefineMorphShape`) → an
-  honest Skip until a 2D-morph home exists.
+  primitive. Streaming sound → `@flighthq/audio` references; morph shapes (`DefineMorphShape`) target
+  `@flighthq/shape`'s `MorphShape` once the SWF edge/style producer is implemented (the current decoder
+  still honestly skips the visual body).
 
 ## Decisions
 

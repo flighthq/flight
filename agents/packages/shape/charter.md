@@ -2,7 +2,7 @@
 package: '@flighthq/shape'
 crate: flighthq-shape
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/shape` is the **retained command recorder** for vector drawing — the retained-mode vector `Graphics`-style display node. It owns a flat command vocabulary (moveTo/lineTo/quadratic + cubic curves, arcs, primitives circle/ellipse/rectangle/round-rect/polygon/polyline, raw path injection, indexed `drawTriangles`), solid/gradient/bitmap fills and strokes, exact analytic local-bounds measurement, a solid-fill region resolver (`getShapeFillRegions`, with a raster-fallback sentinel), an opt-in per-command hit-test registry with built-in primitive handlers, a typed round-trip surface (planned: `getShapeGraphicsData` / `forEachShapeCommand` / `appendShapeGraphicsData`), and a data-only `Scale9Shape` entity carrying a `scale9Grid`.
+`@flighthq/shape` is the **retained command recorder** for vector drawing — the retained-mode vector `Graphics`-style display node. It owns a flat command vocabulary (moveTo/lineTo/quadratic + cubic curves, arcs, primitives circle/ellipse/rectangle/round-rect/polygon/polyline, raw path injection, indexed `drawTriangles`), solid/gradient/bitmap fills and strokes, exact analytic local-bounds measurement, a solid-fill region resolver (`getShapeFillRegions`, with a raster-fallback sentinel), an opt-in per-command hit-test registry with built-in primitive handlers, a retained `MorphShape` over prepared path geometry, a typed round-trip surface (planned: `getShapeGraphicsData` / `forEachShapeCommand` / `appendShapeGraphicsData`), and a data-only `Scale9Shape` entity carrying a `scale9Grid`.
 
 Shape is the "what to draw" recorder, not the geometry kernel. General path tessellation, curve flattening, stroke-to-geometry expansion, and boolean operations belong to `@flighthq/path`. Rendering optimization is delegated to `scene2d-<backend>`. Format-specific serialization (SVG `<path d>`, Canvas2D replay, stable JSON) belongs in `@flighthq/shape-formats`.
 
@@ -28,6 +28,7 @@ Shape is the "what to draw" recorder, not the geometry kernel. General path tess
 **In scope:**
 
 - The `Shape` display node, its runtime quartet, and the full retained command vocabulary.
+- The distinct `MorphShape` node kind: stable sampled path storage, placement within ordinary Shape fill/stroke commands, and explicit progress mutation with content invalidation.
 - Recording fills (solid/gradient/bitmap) and strokes (caps/joints/scaleMode captured as data).
 - Exact local-bounds measurement (quadratic + cubic derivative solving, per-span stroke expansion, drawTriangles vertex sweep).
 - Solid-fill region extraction (`getShapeFillRegions`) with winding-honored fill regions.
@@ -66,6 +67,10 @@ Shape is the "what to draw" recorder, not the geometry kernel. General path tess
 - **[2026-07-02] Buffer representation: keep `unknown[]` for now.** The heterogeneous `unknown[]` retained buffer is the right representation at this stage. It ports to C properly (a tagged union of command entries). A typed-array/pooled variant for per-frame rebuilds is future work if profiling identifies allocation pressure.
 
   **Why:** The current representation is portable, simple, and correct. Premature optimization of the buffer format would add complexity without a profiling-gated signal.
+
+- **[2026-08-02] `MorphShape` is its own node kind and retains a prepared path morph; it does not own playback.** `createMorphShape` binds one `PathMorph` to a stable sampled `Path`; `appendMorphShapePath` places those live buffers in the ordinary retained style stream, and `setMorphShapeProgress` samples plus invalidates content. Canvas, DOM, GL, and WebGPU expose explicit default MorphShape renderer aliases over their existing Shape implementations. Animation/timeline code decides when progress changes.
+
+  **Why:** Runtime identity and renderer registration should name the semantic node users authored, while the actual draw vocabulary remains exactly Shape's. Keeping time outside the entity preserves explicit sampling and lets timeline, tween, or direct application control share the same retained primitive.
 
 ## Open directions
 

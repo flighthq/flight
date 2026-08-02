@@ -1,3 +1,4 @@
+export * from './morphShape';
 export * from './scale9Shape';
 export * from './shape';
 export * from './shapeCommands';

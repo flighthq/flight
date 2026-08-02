@@ -260,3 +260,6 @@ export const defaultGlShapeRenderer: Scene2DRenderer = {
   destroyData: destroyGlShapeData,
   submit: drawGlShape,
 };
+
+// MorphShape owns a distinct kind while sharing Shape's mesh/raster renderer and cache lifecycle.
+export const defaultGlMorphShapeRenderer: Scene2DRenderer = defaultGlShapeRenderer;
