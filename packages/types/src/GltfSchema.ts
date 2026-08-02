@@ -104,6 +104,7 @@ export interface GltfMaterial {
     KHR_materials_emissive_strength?: GltfMaterialsEmissiveStrength;
     KHR_materials_ior?: GltfMaterialsIor;
     KHR_materials_iridescence?: GltfMaterialsIridescence;
+    KHR_materials_pbrSpecularGlossiness?: GltfMaterialsPbrSpecularGlossiness;
     KHR_materials_sheen?: GltfMaterialsSheen;
     KHR_materials_specular?: GltfMaterialsSpecular;
     KHR_materials_transmission?: GltfMaterialsTransmission;
@@ -135,6 +136,18 @@ export interface GltfMaterialsIridescence {
   iridescenceThicknessMaximum?: number;
   iridescenceThicknessMinimum?: number;
   iridescenceThicknessTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_pbrSpecularGlossiness wire block: the DEPRECATED specular-glossiness workflow, which
+// replaces the material's metallic-roughness block rather than extending it. `diffuseFactor` is LINEAR
+// RGBA and `specularFactor` LINEAR RGB; `glossinessFactor` is the inverse of roughness.
+// `specularGlossinessTexture` packs specular in RGB and glossiness in A.
+export interface GltfMaterialsPbrSpecularGlossiness {
+  diffuseFactor?: number[];
+  diffuseTexture?: GltfTextureInfo;
+  glossinessFactor?: number;
+  specularFactor?: number[];
+  specularGlossinessTexture?: GltfTextureInfo;
 }
 
 // KHR_materials_specular wire block: independent dielectric F0 strength and color. The strength rides

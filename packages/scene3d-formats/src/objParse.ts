@@ -551,24 +551,11 @@ function objMaterialToStandardPbr(
     );
   }
 
-  // Sheen, clearcoat, and anisotropy are modeled by Flight as PBR EXTENSIONS composed onto an
-  // ExtendedPbrMaterial, not as fields of the standard block. Parsing them here without that composition
-  // would put them nowhere, so they are read into ObjMaterial and reported rather than silently dropped.
-  if (
-    material.sheen !== null ||
-    material.clearcoat !== null ||
-    material.clearcoatRoughness !== null ||
-    material.anisotropy !== null ||
-    material.anisotropyRotation !== null
-  ) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.pbr-extension-unbound',
-      'resolveObjMaterial',
-      { name: material.name },
-    );
-  }
+  // Sheen, clearcoat, and anisotropy are read into ObjMaterial but not composed onto an
+  // ExtendedPbrMaterial here. That gap is a property of THIS PARSER, not of the caller's file, so it is
+  // recorded in agents/scene3d-format-coverage.md rather than crumbed — a diagnostic whose cause is our
+  // own unfinished wiring tells a consumer nothing they can act on. See the import-diagnostics rule in
+  // agents/conventions/diagnostics.md.
   return result;
 }
 

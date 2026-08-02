@@ -7,6 +7,7 @@ export {
   GltfPunctualLightsExtensionHandler,
   GltfSheenExtensionHandler,
   GltfSpecularExtensionHandler,
+  GltfSpecularGlossinessExtensionHandler,
   GltfTransmissionExtensionHandler,
   GltfVolumeExtensionHandler,
   createScene3DFrom3ds,

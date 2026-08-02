@@ -808,15 +808,15 @@ describe('parseObj material model selection', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
   });
 
-  it('reports sheen, clearcoat, and anisotropy as unbound PBR extensions', () => {
+  it('flips the model on extension directives without crumbing our own unwired path', () => {
+    // The extension directives are themselves PBR evidence, so the model still flips. But sheen and
+    // clearcoat going unbound is a gap in THIS PARSER, not in the caller's file, so it is recorded in
+    // agents/scene3d-format-coverage.md rather than emitted per import.
     const diagnostics: ImportDiagnostic[] = [];
     const material = materialFor('newmtl M\nPs 0.4\nPc 0.2\nPcr 0.1\naniso 0.3\n', diagnostics);
 
-    // The extension directives are themselves PBR evidence, so the model still flips.
     expect(material.kind).toBe(StandardPbrMaterialKind);
-    const crumb = findDiagnostic(diagnostics, 'mtl.pbr-extension-unbound');
-    expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(findDiagnostic(diagnostics, 'mtl.pbr-extension-unbound')).toBeUndefined();
   });
 
   it('prefers the dedicated norm map over map_Bump for the normal map', () => {
