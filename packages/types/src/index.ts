@@ -454,6 +454,7 @@ export * from './RandomSource';
 export * from './Ray3D';
 export * from './Rectangle';
 export * from './RectangleCollider';
+export * from './RiveDocument';
 export * from './Renderable';
 export * from './RenderBlendStateEntry';
 export * from './RenderCache';
