@@ -197,6 +197,15 @@ Three gaps stand between this and pixels a player would accept, all recorded her
 - The image path decodes through a `Blob`/`HTMLImageElement` in `loadImageResourceFromBytes`, which never
   consults `getImageDecoder`. That path is browser-only, so headless and native hosts get no encoded
   pixels at all — the same unification noted above, seen from the other side.
+- A lossless bitmap fill draws on Canvas 2D and is **blank on WebGL and WebGPU**, and the cause is not in
+  this package. Those backends rasterize a non-solid shape through `renderCanvasShapeCommands(ctx,
+  commands, null, state)` — a **null** `CanvasRenderState` — and `resolveCanvasTextureWindowSource` falls
+  back to `image.source` when the state is null. A `Bitmap`-sourced texture has no `.source`, so no pattern
+  is made and the fill silently paints nothing. Isolated three ways: bitmap + null state → null, bitmap +
+  real state → a pattern, image + null state → a pattern. It therefore hits exactly the payloads this
+  package resolves itself (lossless), and spares the ones that decode to an `Image` (JPEG/PNG/GIF). The fix
+  is a `CanvasRenderState` over each backend's scratch rasterization canvas with the texture resolvers
+  registered, in `scene2d-gl`, `scene2d-wgpu`, and `scene2d-dom` — out of this cell's scope.
 - **Nothing here has been rasterized.** There is no SWF example and no functional target, so every claim
   about what a frame looks like rests on decoded command streams, not on pixels. Two value-level defects
   have already hidden behind presence-only assertions (bitmap fills dropping their contours; a bitmap fill
