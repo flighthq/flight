@@ -6,6 +6,17 @@ export {
 export { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
 export {
+  createPhysics2DDistanceJoint,
+  createPhysics2DGearJoint,
+  createPhysics2DMouseJoint,
+  createPhysics2DPrismaticJoint,
+  createPhysics2DPulleyJoint,
+  createPhysics2DRevoluteJoint,
+  createPhysics2DRopeJoint,
+  createPhysics2DWeldJoint,
+  createPhysics2DWheelJoint,
+} from './jointFactories';
+export {
   Physics2DDistanceJointKind,
   Physics2DGearJointKind,
   Physics2DMouseJointKind,
