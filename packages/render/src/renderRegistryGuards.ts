@@ -45,10 +45,10 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
     // The kind reported is the node kind that went undrawn, since nothing here is keyed by anything else.
     case RenderRegistry.ShapeRasterizer:
       if ('device' in state)
-        return 'drawWgpuShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
+        return 'drawWgpuShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))';
       if ('element' in state)
-        return 'drawDomShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerDomShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
-      return 'drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(canvasRenderState))';
+        return 'drawDomShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))';
+      return 'drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))';
     case RenderRegistry.TextureResolver:
       if ('gl' in state)
         return 'resolveGlTexture: texture source kind has no registered resolver — call registerGlTextureResolver(state, sourceKind, resolver), or copyGlRenderStateRegistrations(offscreenState, screenState) after a late screen registration';
@@ -56,7 +56,7 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
         return 'resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)';
       if ('element' in state)
         return 'resolveDomTexture: texture source kind has no registered resolver — call registerDomTextureResolver(state, sourceKind, resolver)';
-      return 'resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(state, sourceKind, resolver)';
+      return 'resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(resolvers, sourceKind, resolver) on the set the caller resolves through';
   }
 }
 

@@ -6,8 +6,15 @@ import {
   destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
-import type { CanvasRenderOptions, CanvasRenderState, CanvasRenderStateRuntime } from '@flighthq/types/contract';
+import type {
+  CanvasRenderOptions,
+  CanvasRenderState,
+  CanvasRenderStateRuntime,
+  CanvasTextureResolvers,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 // Explicit snapshot re-copy for policy that is meaningful to a derived Canvas pipeline. Resource
 // caches remain state-local; registrations are cloned so later changes do not leak across states.
@@ -16,7 +23,7 @@ export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, so
   const sourceRuntime = getCanvasRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   target.canvasCssFilterResolver = source.canvasCssFilterResolver;
-  targetRuntime.canvasTextureResolverRegistry = copyMap(sourceRuntime.canvasTextureResolverRegistry);
+  targetRuntime.canvasTextureResolvers.registry = copyMap(sourceRuntime.canvasTextureResolvers.registry);
   targetRuntime.materialRendererMap = copyMap(sourceRuntime.materialRendererMap);
   targetRuntime.canvasRenderEffectRegistry = copyMap(sourceRuntime.canvasRenderEffectRegistry);
   copyRenderStateRegistrations(target, source);
@@ -48,6 +55,10 @@ export function createCanvasRenderState(
 
   const runtime = createCanvasRenderStateRuntime();
   state[EntityRuntimeKey] = runtime;
+  // The state owns a resolution set and points its miss seam at its own emitter. The closure reads the
+  // emitter at call time, so enabling the guards later still reports through it.
+  runtime.canvasTextureResolvers = createCanvasTextureResolvers();
+  runtime.canvasTextureResolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
   runtime.currentBlendMode = null;
   runtime.imageSmoothingEnabled = options.imageSmoothingEnabled ?? true;
   runtime.imageSmoothingQuality = options.imageSmoothingQuality ?? 'high';
@@ -77,4 +88,10 @@ export function getCanvasRenderStateRuntime(state: CanvasRenderState): CanvasRen
 
 function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | undefined {
   return source === null || source === undefined ? undefined : new Map(source);
+}
+
+// The state's own resolution set, which a shape rasterizer on another backend can share so both resolve
+// one Texture through one transcode cache.
+export function getCanvasRenderStateTextureResolvers(state: CanvasRenderState): CanvasTextureResolvers {
+  return getCanvasRenderStateRuntime(state).canvasTextureResolvers;
 }

@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type {
-  CanvasRenderState,
+  CanvasTextureResolvers,
   GradientType,
   InterpolationMethod,
   Matrix,
@@ -17,11 +17,12 @@ const GRADIENT_HALF = 819.2;
 export function createBitmapPattern(
   context: CanvasRenderingContext2D,
   texture: Readonly<Texture>,
-  state: CanvasRenderState | null = null,
+  resolvers: CanvasTextureResolvers,
+  allowSmoothing = true,
 ): CanvasPattern | null {
-  const source = resolveCanvasTextureWindowSource(state, texture);
+  const source = resolveCanvasTextureWindowSource(resolvers, texture);
   if (source === null) return null;
-  const smooth = (state?.allowSmoothing ?? true) && !texture.sampler.magFilter.startsWith('nearest');
+  const smooth = allowSmoothing && !texture.sampler.magFilter.startsWith('nearest');
   setSmoothing(context, smooth);
   return context.createPattern(source, getCanvasPatternRepetition(texture));
 }

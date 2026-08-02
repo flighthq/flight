@@ -4,6 +4,7 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas() {
@@ -22,7 +23,7 @@ function makeState() {
   canvas.width = 800;
   canvas.height = 400;
   const state = createCanvasRenderState(canvas, {});
-  registerCanvasImageTextureResolver(state);
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   return state;
 }
 

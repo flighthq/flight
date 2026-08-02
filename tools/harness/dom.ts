@@ -14,6 +14,7 @@ import {
   enableDomClipSupport,
   enableDomRenderCache,
   enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
@@ -99,8 +100,8 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const resolverState = createCanvasRenderState(document.createElement('canvas'));
-  registerCanvasBitmapTextureResolver(resolverState);
-  registerCanvasImageTextureResolver(resolverState);
-  registerCanvasRenderTextureResolver(resolverState);
-  return createCanvasShapeRasterizer(resolverState);
+  registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
+  return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));
 }

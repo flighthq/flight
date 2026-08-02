@@ -21,9 +21,12 @@ import {
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
 
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
+import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 beforeAll(() => {
   registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
@@ -57,6 +60,10 @@ function makeBitmapTexture(w: number, h: number, smooth = true, repeat = false) 
   });
 }
 
+const resolvers = createCanvasTextureResolvers();
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasImageTextureResolver(resolvers);
+
 describe('defaultCanvasBeginFill', () => {
   it('calls fill when alpha is above threshold', () => {
     const context = makeContext();
@@ -65,7 +72,7 @@ describe('defaultCanvasBeginFill', () => {
     appendShapeBeginFill(shape, 0xff0000, 1);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -76,7 +83,7 @@ describe('defaultCanvasBeginFill', () => {
     appendShapeBeginFill(shape, 0xff0000, 0);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).not.toHaveBeenCalled();
   });
 });
@@ -89,7 +96,7 @@ describe('defaultCanvasBeginGradientFill', () => {
     appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -100,7 +107,7 @@ describe('defaultCanvasBeginGradientFill', () => {
     appendShapeBeginGradientFill(shape, 'radial', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -114,7 +121,7 @@ describe('defaultCanvasBeginTextureFill', () => {
     appendShapeBeginTextureFill(shape, makeBitmapTexture(200, 200));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(drawImageSpy).toHaveBeenCalledOnce();
     expect(fillSpy).not.toHaveBeenCalled();
   });
@@ -127,7 +134,7 @@ describe('defaultCanvasBeginTextureFill', () => {
     appendShapeBeginTextureFill(shape, makeBitmapTexture(50, 50));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(drawImageSpy).not.toHaveBeenCalled();
     expect(fillSpy).toHaveBeenCalled();
   });
@@ -139,7 +146,7 @@ describe('defaultCanvasBeginTextureFill', () => {
     appendShapeBeginTextureFill(shape, makeBitmapTexture(200, 200, true));
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(context.imageSmoothingEnabled).toBe(true);
   });
 });
@@ -153,7 +160,7 @@ describe('defaultCanvasCubicCurveTo', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeCubicCurveTo(shape, 25, -50, 75, -50, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(25, -50, 75, -50, 100, 0);
   });
 
@@ -164,7 +171,7 @@ describe('defaultCanvasCubicCurveTo', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeCubicCurveTo(shape, 25, -50, 75, -50, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
 });
@@ -178,7 +185,7 @@ describe('defaultCanvasCurveTo', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeCurveTo(shape, 50, -50, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(50, -50, 100, 0);
   });
 
@@ -189,7 +196,7 @@ describe('defaultCanvasCurveTo', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeCurveTo(shape, 50, -50, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
 });
@@ -202,7 +209,7 @@ describe('defaultCanvasDrawCircle', () => {
     appendShapeBeginFill(shape, 0xffffff);
     appendShapeCircle(shape, 50, 50, 25);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(50, 50, 25, 0, Math.PI * 2, true);
   });
 });
@@ -215,7 +222,7 @@ describe('defaultCanvasDrawEllipse', () => {
     appendShapeBeginFill(shape, 0xffffff);
     appendShapeEllipse(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(50, 25, 50, 25, 0, 0, Math.PI * 2);
   });
 });
@@ -229,7 +236,7 @@ describe('defaultCanvasDrawPath', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO], [10, 20, 100, 20, 100, 80]);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(moveSpy).toHaveBeenCalledWith(10, 20);
     expect(lineSpy).toHaveBeenCalledWith(100, 20);
     expect(lineSpy).toHaveBeenCalledWith(100, 80);
@@ -242,7 +249,7 @@ describe('defaultCanvasDrawPath', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.CURVE_TO], [0, 0, 50, 0, 100, 50]);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(50, 0, 100, 50);
   });
 
@@ -253,7 +260,7 @@ describe('defaultCanvasDrawPath', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO], [0, 0, 25, -50, 75, -50, 100, 0]);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(25, -50, 75, -50, 100, 0);
   });
 
@@ -264,7 +271,7 @@ describe('defaultCanvasDrawPath', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.LINE_TO], [0, 0, 100, 100], 'nonZero');
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(fillSpy).toHaveBeenCalledWith('nonzero');
   });
 
@@ -275,7 +282,7 @@ describe('defaultCanvasDrawPath', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.LINE_TO], [0, 0, 100, 100], 'evenOdd');
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(fillSpy).toHaveBeenCalledWith('evenodd');
   });
 });
@@ -288,7 +295,7 @@ describe('defaultCanvasDrawRectangle', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 10, 20, 50, 30);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(10, 20, 50, 30);
   });
 });
@@ -301,7 +308,7 @@ describe('defaultCanvasDrawRoundRectangle', () => {
     appendShapeBeginFill(shape, 0xffffff);
     appendShapeRoundRectangle(shape, 0, 0, 100, 50, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(0, 0, 100, 50, 5);
   });
 });
@@ -314,7 +321,7 @@ describe('defaultCanvasEndFill', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -328,7 +335,7 @@ describe('defaultCanvasLineGradientStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -341,7 +348,7 @@ describe('defaultCanvasLineStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(context.lineCap).toBe('butt');
   });
 
@@ -352,7 +359,7 @@ describe('defaultCanvasLineStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(context.lineCap).toBe('round');
   });
 
@@ -363,7 +370,7 @@ describe('defaultCanvasLineStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(context.lineJoin).toBe('bevel');
   });
 
@@ -374,7 +381,7 @@ describe('defaultCanvasLineStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(context.miterLimit).toBe(8);
   });
 });
@@ -388,7 +395,7 @@ describe('defaultCanvasLineTextureStyle', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -402,7 +409,7 @@ describe('defaultCanvasLineTo', () => {
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(100, 50);
   });
 
@@ -413,7 +420,7 @@ describe('defaultCanvasLineTo', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeLineTo(shape, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(moveSpy).toHaveBeenCalledWith(0, 0);
   });
 });
@@ -427,7 +434,7 @@ describe('defaultCanvasMoveTo', () => {
     appendShapeMoveTo(shape, 30, 40);
     appendShapeLineTo(shape, 100, 40);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(30, 40);
   });
 });

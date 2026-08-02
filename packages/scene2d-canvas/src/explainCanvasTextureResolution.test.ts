@@ -1,6 +1,7 @@
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
 import { explainCanvasTextureResolution } from './explainCanvasTextureResolution';
@@ -18,17 +19,17 @@ describe('explainCanvasTextureResolution', () => {
       } as unknown as TextureSource,
     });
 
-    expect(explainCanvasTextureResolution(state, createTexture())).toEqual({
+    expect(explainCanvasTextureResolution(getCanvasRenderStateTextureResolvers(state), createTexture())).toEqual({
       kind: null,
       status: 'missing-kind',
     });
-    expect(explainCanvasTextureResolution(state, texture)).toEqual({
+    expect(explainCanvasTextureResolution(getCanvasRenderStateTextureResolvers(state), texture)).toEqual({
       kind: 'acme.test',
       status: 'missing-resolver',
     });
 
-    registerCanvasTextureResolver(state, 'acme.test', () => null);
-    expect(explainCanvasTextureResolution(state, texture)).toEqual({
+    registerCanvasTextureResolver(getCanvasRenderStateTextureResolvers(state), 'acme.test', () => null);
+    expect(explainCanvasTextureResolution(getCanvasRenderStateTextureResolvers(state), texture)).toEqual({
       kind: 'acme.test',
       status: 'registered',
     });

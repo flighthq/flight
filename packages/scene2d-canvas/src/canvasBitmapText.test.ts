@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 
 import { defaultCanvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 
 // Single-page stub glyph source whose page-0 image is a real Image backed by a DOM <img>.
@@ -29,7 +30,7 @@ function makeState() {
   canvas.width = 200;
   canvas.height = 200;
   const state = createCanvasRenderState(canvas);
-  registerCanvasImageTextureResolver(state);
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   return state;
 }
 

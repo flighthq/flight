@@ -2,6 +2,7 @@ import { createImageResource } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
@@ -10,7 +11,7 @@ describe('resolveCanvasTextureWindowSource', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const source = document.createElement('canvas');
     const texture = createTexture({ dimension: '2d', source: createImageResource(source) });
-    registerCanvasImageTextureResolver(state);
-    expect(resolveCanvasTextureWindowSource(state, texture)).toBe(source);
+    registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
+    expect(resolveCanvasTextureWindowSource(getCanvasRenderStateTextureResolvers(state), texture)).toBe(source);
   });
 });

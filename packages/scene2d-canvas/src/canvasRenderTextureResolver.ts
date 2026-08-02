@@ -1,13 +1,13 @@
-import type { CanvasRenderState, RenderTexture, Texture } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureResolvers, RenderTexture, Texture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { bindCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasTextureResolver } from './canvasTextureResolver';
 
-export function registerCanvasRenderTextureResolver(state: CanvasRenderState): void {
-  registerCanvasTextureResolver(state, RenderTargetTextureSourceKind, resolveCanvasRenderTexture);
-}
-
-function resolveCanvasRenderTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
-  return bindCanvasRenderTexture(state, texture as Readonly<RenderTexture>);
+// The one resolver that needs a render state: a render-target texture is owned by the state that draws
+// into it, so the state is captured here at registration rather than demanded of every resolution.
+export function registerCanvasRenderTextureResolver(resolvers: CanvasTextureResolvers, state: CanvasRenderState): void {
+  registerCanvasTextureResolver(resolvers, RenderTargetTextureSourceKind, (_resolvers, texture: Readonly<Texture>) =>
+    bindCanvasRenderTexture(state, texture as Readonly<RenderTexture>),
+  );
 }

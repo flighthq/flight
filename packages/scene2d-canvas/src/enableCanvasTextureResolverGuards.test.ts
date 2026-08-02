@@ -2,6 +2,7 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createTexture } from '@flighthq/texture/contract';
 import type { Image } from '@flighthq/types/contract';
 
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTextureResolver';
 import {
@@ -34,18 +35,18 @@ describe('enableCanvasTextureResolverGuards', () => {
     const sink = createMemoryLogSink(4);
     addLogSink(sink.sink);
     enableCanvasTextureResolverGuards(state);
-    registerCanvasTextureResolver(state, 'acme.registered.canvas', () => null);
+    registerCanvasTextureResolver(getCanvasRenderStateTextureResolvers(state), 'acme.registered.canvas', () => null);
     try {
-      expect(resolveCanvasTexture(state, missing)).toBeNull();
-      expect(resolveCanvasTexture(state, missing)).toBeNull();
-      expect(resolveCanvasTexture(state, registered)).toBeNull();
+      expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), missing)).toBeNull();
+      expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), missing)).toBeNull();
+      expect(resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), registered)).toBeNull();
 
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries).toHaveLength(1);
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.canvas',
         message:
-          'resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(state, sourceKind, resolver)',
+          'resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(resolvers, sourceKind, resolver) on the set the caller resolves through',
       });
     } finally {
       removeLogSink(sink.sink);

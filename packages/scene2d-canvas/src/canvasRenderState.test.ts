@@ -5,12 +5,14 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import {
   copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
   destroyCanvasRenderState,
   getCanvasRenderStateRuntime,
+  getCanvasRenderStateTextureResolvers,
 } from './canvasRenderState';
 
 describe('copyCanvasRenderStateRegistrations', () => {
@@ -222,4 +224,16 @@ it('should handle missing imageSmoothingQuality and imageSmoothingEnabled in opt
   const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.context.imageSmoothingEnabled).toBe(true);
   expect(renderer.context.imageSmoothingQuality).toBe('high');
+});
+
+describe('getCanvasRenderStateTextureResolvers', () => {
+  it('hands back the one set the state owns, so a rasterizer can share its transcode cache', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+
+    const resolvers = getCanvasRenderStateTextureResolvers(state);
+
+    expect(resolvers).toBe(getCanvasRenderStateTextureResolvers(state));
+    registerCanvasBitmapTextureResolver(resolvers);
+    expect(resolvers.registry?.size).toBe(1);
+  });
 });

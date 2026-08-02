@@ -1,29 +1,39 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
-import type { CanvasRenderState, CanvasTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
+import type {
+  CanvasTextureResolver,
+  CanvasTextureResolvers,
+  Texture,
+  TextureSourceKind,
+} from '@flighthq/types/contract';
 import { RenderRegistry } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+// A fresh, empty resolution set. Nothing is registered: what a set can resolve is exactly what the
+// caller installs on it, which is what makes a rasterizer's capability inspectable rather than implied.
+export function createCanvasTextureResolvers(): CanvasTextureResolvers {
+  return { registry: null, registryMiss: null };
+}
 
 export function registerCanvasTextureResolver(
-  state: CanvasRenderState,
+  resolvers: CanvasTextureResolvers,
   sourceKind: TextureSourceKind,
   resolver: CanvasTextureResolver | null,
 ): void {
-  const runtime = getCanvasRenderStateRuntime(state);
-  const registry = (runtime.canvasTextureResolverRegistry ??= new Map());
+  const registry = (resolvers.registry ??= new Map());
   if (resolver === null) registry.delete(sourceKind);
   else registry.set(sourceKind, resolver);
 }
 
-export function resolveCanvasTexture(state: CanvasRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
+export function resolveCanvasTexture(
+  resolvers: CanvasTextureResolvers,
+  texture: Readonly<Texture>,
+): CanvasImageSource | null {
   if (texture.dimension !== '2d') return null;
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
-  const runtime = getCanvasRenderStateRuntime(state);
-  const resolver = runtime.canvasTextureResolverRegistry?.get(sourceKind);
+  const resolver = resolvers.registry?.get(sourceKind);
   if (resolver === undefined) {
-    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
+    resolvers.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
-  return resolver(state, texture);
+  return resolver(resolvers, texture);
 }

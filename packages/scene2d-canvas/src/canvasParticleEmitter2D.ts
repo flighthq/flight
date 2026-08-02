@@ -1,6 +1,7 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
@@ -11,7 +12,7 @@ export function drawCanvasParticleEmitter2D(state: CanvasRenderState, renderProx
   const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.texture === null || particleCount === 0) return;
-  const imageSource = resolveCanvasTexture(state, atlas.texture);
+  const imageSource = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), atlas.texture);
   if (imageSource === null) return;
 
   const regions = atlas.regions;

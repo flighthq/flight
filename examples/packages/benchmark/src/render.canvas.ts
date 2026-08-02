@@ -2,9 +2,10 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  enableFlightDiagnostics,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasTextLabelRenderer,
+  enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   QuadBatchKind,
   registerCanvasImageTextureResolver,
@@ -23,7 +24,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x2a2a3aff,
 });
 enableFlightDiagnostics(state);
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 export const scale = pixelRatio;

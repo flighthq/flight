@@ -1,7 +1,6 @@
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
-import type { CanvasRenderState, Image, Texture } from '@flighthq/types/contract';
+import type { CanvasTextureResolvers, Texture } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows
@@ -9,13 +8,12 @@ import { resolveCanvasTexture } from './canvasTextureResolver';
 // refreshed when either the source or Texture state changes. A null state supports host-backed
 // raster fallbacks without retaining any source-specific transcode.
 export function resolveCanvasTextureWindowSource(
-  state: CanvasRenderState | null,
+  resolvers: CanvasTextureResolvers,
   texture: Readonly<Texture>,
 ): CanvasImageSource | null {
   if (texture.dimension !== '2d') return null;
   const image = texture.source;
-  const source =
-    state !== null ? resolveCanvasTexture(state, texture) : ((image as Readonly<Image> | null)?.source ?? null);
+  const source = resolveCanvasTexture(resolvers, texture);
   if (source === null) return null;
 
   const uvOffsetX = texture.uvOffset.x;
@@ -42,8 +40,7 @@ export function resolveCanvasTextureWindowSource(
   if (backingWidth <= 0 || backingHeight <= 0 || sourceWidth <= 0 || sourceHeight <= 0) return null;
 
   const imageVersion = image?.version ?? -1;
-  const runtime = state !== null ? getCanvasRenderStateRuntime(state) : null;
-  const cache = runtime !== null ? (runtime.textureWindowElementCache ??= new WeakMap()) : null;
+  const cache = (resolvers.textureWindowElementCache ??= new WeakMap());
   let entry = cache?.get(texture);
   if (
     entry !== undefined &&

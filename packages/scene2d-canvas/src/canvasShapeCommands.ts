@@ -13,7 +13,7 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
     const texture = buf[i] as Texture;
     const matrix = buf[i + 1] as Matrix | null;
     if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
-    const pattern = createBitmapPattern(context, texture, state.canvasRenderState);
+    const pattern = createBitmapPattern(context, texture, state.canvasTextureResolvers, state.allowSmoothing);
     state.hasFill = pattern !== null;
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
@@ -23,7 +23,7 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
     } else {
       state.fillMatrixInverse = null;
     }
-    state.bitmapSrc = resolveCanvasTextureWindowSource(state.canvasRenderState, texture);
+    state.bitmapSrc = resolveCanvasTextureWindowSource(state.canvasTextureResolvers, texture);
     state.bitmapW = Math.abs(texture.uvScale.x * getTextureWidth(texture));
     state.bitmapH = Math.abs(texture.uvScale.y * getTextureHeight(texture));
   },
@@ -275,7 +275,7 @@ export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle
   key: 'lineTextureStyle',
   draw(context, state, buf, i) {
     const texture = buf[i] as Texture;
-    const pattern = createBitmapPattern(context, texture, state.canvasRenderState);
+    const pattern = createBitmapPattern(context, texture, state.canvasTextureResolvers, state.allowSmoothing);
     if (pattern !== null) {
       state.strokeStyle = pattern;
       state.hasStroke = true;

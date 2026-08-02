@@ -2,13 +2,14 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  enableFlightDiagnostics,
   defaultCanvasBeginFill,
   defaultCanvasDrawRectangle,
   defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   defaultCanvasSpriteRenderer,
   defaultCanvasTextLabelRenderer,
+  enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
@@ -33,7 +34,7 @@ enableFlightDiagnostics(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
 
 export const scale = pixelRatio;

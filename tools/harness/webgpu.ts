@@ -21,6 +21,7 @@ import {
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
   enableWgpuStrokePathTessellation,
+  getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -121,8 +122,8 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const resolverState = createCanvasRenderState(document.createElement('canvas'));
-  registerCanvasBitmapTextureResolver(resolverState);
-  registerCanvasImageTextureResolver(resolverState);
-  registerCanvasRenderTextureResolver(resolverState);
-  return createCanvasShapeRasterizer(resolverState);
+  registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
+  return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));
 }

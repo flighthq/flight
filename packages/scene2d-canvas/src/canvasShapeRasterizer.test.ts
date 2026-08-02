@@ -6,10 +6,10 @@ import { createTexture, setTextureSource } from '@flighthq/texture/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
+import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 beforeAll(() => {
   // Texture fills are their own command set, separately registered from the base one, so a caller that
@@ -24,8 +24,8 @@ describe('createCanvasShapeRasterizer', () => {
     // skipped the resolver registry and read `image.source` directly. A Bitmap has no `.source`, so the
     // fill produced no pattern and the shape drew nothing at all — SWF's lossless bitmaps, specifically.
     const { context, fills } = createRecordingContext();
-    const resolverState = createCanvasRenderState(document.createElement('canvas'));
-    registerCanvasBitmapTextureResolver(resolverState);
+    const resolvers = createCanvasTextureResolvers();
+    registerCanvasBitmapTextureResolver(resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));
@@ -33,7 +33,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolverState)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
 
     expect(fills).toHaveLength(1);
     expect(fills[0]).not.toBe('');
@@ -42,7 +42,7 @@ describe('createCanvasShapeRasterizer', () => {
   it('paints nothing for a source kind its state has no resolver for', () => {
     // Capability follows what the caller registered on the state, not what the renderer reached for.
     const { context, fills } = createRecordingContext();
-    const resolverState = createCanvasRenderState(document.createElement('canvas'));
+    const resolvers = createCanvasTextureResolvers();
 
     const texture = createTexture();
     setTextureSource(texture, createBitmap(2, 2));
@@ -50,7 +50,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolverState)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
 
     expect(fills).toEqual([]);
   });
@@ -60,8 +60,8 @@ describe('createCanvasShapeRasterizer', () => {
     const backing = document.createElement('canvas');
     backing.width = 2;
     backing.height = 2;
-    const resolverState = createCanvasRenderState(document.createElement('canvas'));
-    registerCanvasImageTextureResolver(resolverState);
+    const resolvers = createCanvasTextureResolvers();
+    registerCanvasImageTextureResolver(resolvers);
 
     const texture = createTexture();
     setTextureSource(texture, createImageResourceFromCanvas(backing));
@@ -69,7 +69,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolverState)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
 
     expect(fills).toHaveLength(1);
   });

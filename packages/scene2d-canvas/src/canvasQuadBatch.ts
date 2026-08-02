@@ -3,6 +3,7 @@ import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
 
 import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
@@ -10,7 +11,7 @@ export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderP
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
   if (atlas === null || atlas.texture === null || instanceCount === 0) return;
-  const image = resolveCanvasTexture(state, atlas.texture);
+  const image = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), atlas.texture);
   if (image === null) return;
 
   state.applyBlendMode?.(state, quadBatch.blendMode);

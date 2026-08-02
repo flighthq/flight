@@ -2,14 +2,16 @@
 import type {
   CanvasRenderState,
   CanvasShapeDrawState,
+  CanvasTextureResolvers,
+  RenderProxy2D,
   RenderState,
   Scene2DRenderer,
-  RenderProxy2D,
   Shape,
 } from '@flighthq/types/contract';
 import { RenderRegistry } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { getCanvasShapeCommand } from './canvasShapeRegistry';
 import { setCanvasTransform } from './canvasTransform';
 
@@ -25,16 +27,23 @@ export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderPro
   context.globalAlpha = renderProxy.alpha;
   setCanvasTransform(state, context, renderProxy.transform2D);
 
-  renderCanvasShapeCommands(context, commands, state);
+  renderCanvasShapeCommands(
+    context,
+    commands,
+    getCanvasRenderStateTextureResolvers(state),
+    state,
+    state.allowSmoothing ?? true,
+  );
 }
 
 export function renderCanvasShapeCommands(
   context: CanvasRenderingContext2D,
   commands: unknown[],
-  state: CanvasRenderState | null = null,
-  registryState: RenderState | null = state,
+  resolvers: CanvasTextureResolvers,
+  registryState: RenderState | null = null,
+  allowSmoothing = true,
 ): void {
-  const drawState = createCanvasShapeDrawState(context, state);
+  const drawState = createCanvasShapeDrawState(context, resolvers, allowSmoothing);
   context.beginPath();
   let i = 0;
   while (i < commands.length) {
@@ -60,13 +69,15 @@ export const defaultCanvasShapeRenderer: Scene2DRenderer = {
 
 function createCanvasShapeDrawState(
   context: CanvasRenderingContext2D,
-  renderState: CanvasRenderState | null,
+  resolvers: CanvasTextureResolvers,
+  allowSmoothing: boolean,
 ): CanvasShapeDrawState {
   const state: CanvasShapeDrawState = {
+    allowSmoothing,
     bitmapH: 0,
     bitmapSrc: null,
     bitmapW: 0,
-    canvasRenderState: renderState,
+    canvasTextureResolvers: resolvers,
     fillMatrix: null,
     fillMatrixInverse: null,
     fillStyle: '',
