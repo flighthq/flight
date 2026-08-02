@@ -151,7 +151,8 @@ export interface Physics2DContactPoint {
   // Precomputed constraint denominators, rebuilt each step from the lever arms.
   normalMass: number;
   tangentMass: number;
-  // The velocity bias applied along the normal — restitution plus penetration recovery.
+  // The restitution velocity bias applied along the normal. Penetration recovery is a separate
+  // position-iteration pass, so correcting overlap does not inject artificial separating velocity.
   bias: number;
 }
 
