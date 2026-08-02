@@ -645,6 +645,61 @@ describe('physics2DMouseJointSolver', () => {
     expect(dragged.x).toBeGreaterThan(3);
   });
 
+  it('keeps accepting moved targets after being held still past the sleep timeout', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);
+    const dragged = box(world, 'dynamic', 0, 0);
+    const joint: Physics2DMouseJoint = {
+      ...baseJoint(Physics2DMouseJointKind, dragged.index, dragged.index),
+      targetX: 0,
+      targetY: 0,
+      maxForce: 1000,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
+    };
+    addPhysics2DJoint(world, joint);
+    run(world, 60);
+    expect(dragged.sleeping).toBe(false);
+
+    joint.targetX = 5;
+    stepPhysics2D(world, 1 / 30);
+
+    expect(dragged.velocityX).toBeGreaterThan(0);
+    expect(dragged.x).toBeGreaterThan(0);
+  });
+
+  it('pulls a resting body off a surface without an unstable response', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -10, minY: -1, maxX: 10, maxY: 0 }, STONE));
+    addPhysics2DBody(world, floor);
+    const dragged = box(world, 'dynamic', 0, 0.5);
+    for (let i = 0; i < 120; i++) stepPhysics2D(world, 1 / 30);
+
+    const joint: Physics2DMouseJoint = {
+      ...baseJoint(Physics2DMouseJointKind, dragged.index, dragged.index),
+      localAnchorBX: 0.3,
+      localAnchorBY: 0.2,
+      targetX: dragged.x + 0.3,
+      targetY: dragged.y + 0.2,
+      maxForce: 1000 * dragged.mass,
+      frequencyHz: 5,
+      dampingRatio: 0.7,
+    };
+    addPhysics2DJoint(world, joint);
+    joint.targetX = 3;
+    joint.targetY = 2.5;
+    for (let i = 0; i < 180; i++) stepPhysics2D(world, 1 / 30);
+
+    expect(dragged.x).toBeGreaterThan(2);
+    expect(dragged.y).toBeGreaterThan(1.5);
+    expect(Number.isFinite(dragged.velocityX)).toBe(true);
+    expect(Number.isFinite(dragged.velocityY)).toBe(true);
+    expect(Math.abs(dragged.velocityX)).toBeLessThan(10);
+    expect(Math.abs(dragged.velocityY)).toBeLessThan(10);
+  });
+
   it.each([0.5, 5])('keeps a low-frequency response directed toward the target at %s Hz', (frequencyHz) => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DMouseJointKind, physics2DMouseJointSolver);

@@ -197,6 +197,7 @@ export const physics2DGearJointSolver = {
 // bound is what keeps a dragged body from tunnelling through a wall it is pulled into.
 export const physics2DMouseJointSolver = {
   usesBodyA: false,
+  keepsBodiesAwake: true,
 
   // A mouse joint drags ONE body toward a world-space target; its other end is not a body at all, and
   // callers pass whatever index is convenient. Canonical ordering exists to fix the solve order
