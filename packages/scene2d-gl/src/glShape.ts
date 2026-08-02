@@ -37,6 +37,7 @@ interface GlShapeData {
   // all tessellate never touches this, so a scene of solid shapes carries no canvases at all.
   surface: GlShapeRasterSurface | null;
   lastContentId: number;
+  lastPixelRatio: number;
   lastW: number;
   lastH: number;
   // GPU tessellated-fill cache, rebuilt when the content revision changes. Null until first resolved;
@@ -99,6 +100,7 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
   return toGlShapeRendererData({
     surface: null,
     lastContentId: -1,
+    lastPixelRatio: 0,
     lastW: 0,
     lastH: 0,
     meshVersion: -1,
@@ -181,20 +183,31 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;
 
+  // The raster is the shape's own pixels, so it is sized in device pixels and the replay is pre-scaled
+  // to match — the same treatment glTextLabel and glRichText give their offscreen canvases. The quad
+  // below stays in local units and samples the whole texture, so a denser raster is only sharper: none
+  // of the geometry, bounds, or batching moves with it. pixelRatio joins the invalidation check because
+  // a state that changes it must re-rasterize at the new density.
+  const pixelRatio = state.pixelRatio;
   const surface = acquireGlShapeRasterSurface(shapeData);
-  if (version !== shapeData.lastContentId || w !== shapeData.lastW || h !== shapeData.lastH) {
+  if (
+    version !== shapeData.lastContentId ||
+    w !== shapeData.lastW ||
+    h !== shapeData.lastH ||
+    pixelRatio !== shapeData.lastPixelRatio
+  ) {
     const { canvas, ctx } = surface;
-    canvas.width = w;
-    canvas.height = h;
-    ctx.clearRect(0, 0, w, h);
-    ctx.save();
-    ctx.translate(-bounds.x, -bounds.y);
+    canvas.width = Math.ceil(w * pixelRatio);
+    canvas.height = Math.ceil(h * pixelRatio);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    ctx.clearRect(bounds.x, bounds.y, w, h);
     rasterizer(ctx, commands, state);
-    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
     // re-uploads from the updated canvas.
     invalidateImageResource(surface.image);
     shapeData.lastContentId = version;
+    shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
     shapeData.lastH = h;
   }

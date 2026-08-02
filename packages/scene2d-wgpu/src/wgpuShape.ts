@@ -39,6 +39,7 @@ interface WgpuShapeData {
   // re-uploads on (recreating the GPU texture, covering both content and size changes).
   image: Image;
   lastContentId: number;
+  lastPixelRatio: number;
   lastW: number;
   lastH: number;
   // GPU tessellated-mesh cache, rebuilt when the content revision changes. Null until first resolved;
@@ -59,6 +60,7 @@ function createWgpuShapeData(_state: RenderState, _source: Renderable): Renderer
     ctx,
     image: createImageResource(canvas),
     lastContentId: -1,
+    lastPixelRatio: 0,
     lastW: 0,
     lastH: 0,
     meshVersion: -1,
@@ -180,21 +182,32 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const h = Math.ceil(bounds.height);
   if (w <= 0 || h <= 0) return;
 
-  if (version !== shapeData.lastContentId || w !== shapeData.lastW || h !== shapeData.lastH) {
+  // Sized in device pixels with the replay pre-scaled to match, exactly as the text renderers treat
+  // their offscreen canvases. The quad stays in local units and samples the whole texture, so a denser
+  // raster is only sharper — no geometry moves with it.
+  const pixelRatio = state.pixelRatio;
+  if (
+    version !== shapeData.lastContentId ||
+    w !== shapeData.lastW ||
+    h !== shapeData.lastH ||
+    pixelRatio !== shapeData.lastPixelRatio
+  ) {
     // Reassigning either canvas dimension resets its 2D context even when the value is unchanged.
     // Animated shapes invalidate their commands every frame, so resize only when their bounds change.
-    if (shapeData.canvas.width !== w) shapeData.canvas.width = w;
-    if (shapeData.canvas.height !== h) shapeData.canvas.height = h;
+    const pw = Math.ceil(w * pixelRatio);
+    const ph = Math.ceil(h * pixelRatio);
+    if (shapeData.canvas.width !== pw) shapeData.canvas.width = pw;
+    if (shapeData.canvas.height !== ph) shapeData.canvas.height = ph;
     const ctx = shapeData.ctx;
-    ctx.clearRect(0, 0, w, h);
-    ctx.save();
-    ctx.translate(-bounds.x, -bounds.y);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
+    ctx.clearRect(bounds.x, bounds.y, w, h);
     rasterizer(ctx, commands, state);
-    ctx.restore();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
     // re-uploads (recreating the GPU texture, which covers a size change too).
     invalidateImageResource(shapeData.image);
     shapeData.lastContentId = version;
+    shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
     shapeData.lastH = h;
   }

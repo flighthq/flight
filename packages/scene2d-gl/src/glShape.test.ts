@@ -134,6 +134,52 @@ describe('drawGlShape', () => {
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
   });
 
+  it('rasterizes at the state pixel ratio, so the fallback is not soft on a dense display', () => {
+    const { state } = createGlState({ pixelRatio: 3 });
+    registerGlStandardMaterial(state);
+    const rasterized: { width: number; height: number; transform: DOMMatrix }[] = [];
+    registerGlShapeRasterizer(state, (context) => {
+      rasterized.push({
+        width: context.canvas.width,
+        height: context.canvas.height,
+        transform: context.getTransform(),
+      });
+    });
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+
+    // The stubbed bounds are 64x48; a shape on the raster lane must back that with 3x the pixels and
+    // pre-scale the replay to match, or the quad samples a 1x raster stretched over a 3x screen area.
+    drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
+
+    expect(rasterized).toHaveLength(1);
+    expect(rasterized[0].width).toBe(192);
+    expect(rasterized[0].height).toBe(144);
+    expect(rasterized[0].transform.a).toBe(3);
+    expect(rasterized[0].transform.d).toBe(3);
+  });
+
+  it('re-rasterizes when only the pixel ratio changes, since the cached raster is the wrong density', () => {
+    const { state } = createGlState({ pixelRatio: 1 });
+    registerGlStandardMaterial(state);
+    let rasterCount = 0;
+    registerGlShapeRasterizer(state, () => void rasterCount++);
+    const shape = createShape();
+    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeRectangle(shape, 8, 8, 32, 24);
+    const proxy = makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData());
+
+    drawGlShape(state, proxy);
+    drawGlShape(state, proxy);
+    expect(rasterCount).toBe(1);
+
+    (state as { pixelRatio: number }).pixelRatio = 2;
+    drawGlShape(state, proxy);
+
+    expect(rasterCount).toBe(2);
+  });
+
   it('falls back to the raster quad for a self-intersecting stroke centerline', () => {
     const { state, gl } = createGlState();
     registerGlShapeRasterizer(state, noopRasterizer);
