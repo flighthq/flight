@@ -40,6 +40,9 @@
       "path": "../scene3d-formats"
     },
     {
+      "path": "../shading"
+    },
+    {
       "path": "../signals"
     },
     {

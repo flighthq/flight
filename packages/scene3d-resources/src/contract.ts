@@ -15,6 +15,7 @@ export * from './imageResourceFetch';
 export * from './iridescencePbrScene3DMaterialTextures';
 export * from './sceneResourceResolver';
 export * from './sceneResourceSignals';
+export * from './shadedScene3DMaterialTextures';
 export * from './sheenPbrScene3DMaterialTextures';
 export * from './specularPbrScene3DMaterialTextures';
 export * from './transmissionVolumePbrScene3DMaterialTextures';
