@@ -5,6 +5,7 @@ import type {
   Physics2DWorld,
 } from '@flighthq/types/contract';
 
+import { wakePhysics2DBody } from './islands';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
 // Adds `joint` to `world` under the same canonical body ordering contacts use, swapping its two ends when
@@ -25,8 +26,13 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
   // the generic half of a swap with the kind's half missing, which no later registration would repair.
   // An unregistered joint constrains nothing, so its ordering does not matter until a solver exists;
   // registerPhysics2DJointSolver canonicalizes what is already in the world at that point.
-  if (getPhysics2DJointSolver(world, joint.kind) !== null) _canonicalizePhysics2DJointEnds(world, joint);
+  const active = getPhysics2DJointSolver(world, joint.kind) !== null;
+  if (active) _canonicalizePhysics2DJointEnds(world, joint);
   world.joints.push(joint);
+  // Adding an active constraint changes what both bodies may do THIS step. A sleeping pair would skip
+  // prepare and solve forever unless something unrelated happened to wake it. Unknown kinds remain
+  // inert until registration, and are woken on that activation path instead.
+  if (active) _wakePhysics2DJointBodies(world, joint);
   return joint;
 }
 
@@ -78,7 +84,11 @@ export function registerPhysics2DJointSolver(
   // would half-swap it. This is where that deferred work happens, so the outcome no longer depends on
   // whether the scene or the solver arrived first.
   for (const joint of world.joints) {
-    if (joint.kind === kind) _canonicalizePhysics2DJointEnds(world, joint);
+    if (joint.kind !== kind) continue;
+    _canonicalizePhysics2DJointEnds(world, joint);
+    // Registration turns a previously inert descriptor into a live constraint. Re-registration may
+    // replace its equation entirely, so it is the same topology change from the sleepers' perspective.
+    _wakePhysics2DJointBodies(world, joint);
   }
 }
 
@@ -86,6 +96,14 @@ export function registerPhysics2DJointSolver(
 export function removePhysics2DJoint(world: Physics2DWorld, joint: Readonly<Physics2DJoint>): boolean {
   const at = world.joints.indexOf(joint as Physics2DJoint);
   if (at < 0) return false;
+  if (getPhysics2DJointSolver(world, joint.kind) !== null) _wakePhysics2DJointBodies(world, joint);
   world.joints.splice(at, 1);
   return true;
+}
+
+function _wakePhysics2DJointBodies(world: Readonly<Physics2DWorld>, joint: Readonly<Physics2DJoint>): void {
+  const bodyA = findPhysics2DBody(world, joint.bodyA);
+  const bodyB = findPhysics2DBody(world, joint.bodyB);
+  if (bodyA !== null) wakePhysics2DBody(bodyA);
+  if (bodyB !== null) wakePhysics2DBody(bodyB);
 }

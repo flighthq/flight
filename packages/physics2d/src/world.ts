@@ -143,17 +143,41 @@ export function isPhysics2DPairOrdered(a: Readonly<RigidBody2D>, b: Readonly<Rig
 export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidBody2D>): boolean {
   const at = world.bodies.indexOf(body as RigidBody2D);
   if (at < 0) return false;
-  world.bodies.splice(at, 1);
-  world.index.removeSpatialObject(body.index);
+  // Removing one end invalidates every constraint it participated in. Wake the surviving ends BEFORE
+  // dropping those edges: a crate asleep on deleted ground otherwise remains suspended forever, since
+  // gravity is integrated only for awake bodies and the contact that could have joined it to an awake
+  // island is already gone. Sensors transmit no impulse and unknown joints constrain nothing, so neither
+  // is a wake edge.
   for (let i = world.contacts.length - 1; i >= 0; i--) {
     const contact = world.contacts[i];
-    if (contact.bodyA === body.index || contact.bodyB === body.index) world.contacts.splice(i, 1);
+    if (contact.bodyA !== body.index && contact.bodyB !== body.index) continue;
+    if (contact.enabled && !contact.sensor) {
+      const otherIndex = contact.bodyA === body.index ? contact.bodyB : contact.bodyA;
+      const other = findPhysics2DBody(world, otherIndex);
+      if (other !== null) _wakePhysics2DBodyFromTopology(other);
+    }
+    world.contacts.splice(i, 1);
   }
   // Joints naming the removed body go with it: a constraint with one end missing has nothing to solve
   // against, and leaving it would let a later body inheriting the index be silently constrained by it.
   for (let i = world.joints.length - 1; i >= 0; i--) {
     const joint = world.joints[i];
-    if (joint.bodyA === body.index || joint.bodyB === body.index) world.joints.splice(i, 1);
+    if (joint.bodyA !== body.index && joint.bodyB !== body.index) continue;
+    if (world.jointSolvers.has(joint.kind)) {
+      const otherIndex = joint.bodyA === body.index ? joint.bodyB : joint.bodyA;
+      const other = findPhysics2DBody(world, otherIndex);
+      if (other !== null) _wakePhysics2DBodyFromTopology(other);
+    }
+    world.joints.splice(i, 1);
   }
+  world.bodies.splice(at, 1);
+  world.index.removeSpatialObject(body.index);
   return true;
+}
+
+// Kept local rather than importing islands.ts, which already resolves bodies through this module.
+// Topology only needs the public wake operation's two-field invariant.
+function _wakePhysics2DBodyFromTopology(body: RigidBody2D): void {
+  body.sleeping = false;
+  body.sleepTimer = 0;
 }
