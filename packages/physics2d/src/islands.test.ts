@@ -19,6 +19,7 @@ function link(world: Physics2DWorld, a: Readonly<RigidBody2D>, b: Readonly<Rigid
     points: [],
     friction: 0,
     restitution: 0,
+    enabled: true,
     sensor,
     touching: true,
   });

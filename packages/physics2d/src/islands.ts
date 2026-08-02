@@ -61,7 +61,7 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   // root is a stable representative for the connected component.
   const parents = new Map<number, number>();
   for (const contact of world.contacts) {
-    if (contact.sensor) continue; // A sensor reports overlap and resolves nothing, so it couples no motion.
+    if (!contact.enabled || contact.sensor) continue;
     _unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
   }
   for (const joint of world.joints) {

@@ -82,6 +82,7 @@ describe('createPhysics2DWorld', () => {
     const world = createPhysics2DWorld();
     expect(world.bodies).toHaveLength(0);
     expect(world.contacts).toHaveLength(0);
+    expect(world.contactHooks).toEqual({ preSolve: null, postSolve: null });
     expect(world.index).toBeDefined();
     expect(world.gravityY).toBeLessThan(0);
   });

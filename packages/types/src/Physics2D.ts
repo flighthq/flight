@@ -195,11 +195,25 @@ export interface Physics2DContact {
   friction: number;
   restitution: number;
 
+  // Reset to true when the pair is found each step. A pre-solve hook may set it false to keep the
+  // contact and its begin/end lifecycle while omitting every solver and island effect for this step.
+  enabled: boolean;
   // Whether either collider is a sensor: the contact is reported but generates no impulse.
   sensor: boolean;
   // Whether the pair was overlapping this step. A contact that stops touching is kept for one step so
   // an end-of-contact event can be reported before it is retired.
   touching: boolean;
+}
+
+// A strict per-contact callback invoked by the explicit world step. Pre-solve runs after contact
+// generation and before constraint preparation, so it may adjust friction/restitution or set
+// `enabled=false` for this step. Post-solve runs after velocity iterations and exposes the accumulated
+// point impulses. Sensors do not invoke either hook because they produce no constraint to solve.
+export type Physics2DContactCallback = (world: Physics2DWorld, contact: Physics2DContact) => void;
+
+export interface Physics2DContactHooks {
+  preSolve: Physics2DContactCallback | null;
+  postSolve: Physics2DContactCallback | null;
 }
 
 // The knobs a sequential-impulse solver is tuned by. Defaults live in `@flighthq/physics2d`; these are
@@ -249,6 +263,7 @@ export interface Physics2DWorld {
   // record of contact state: the persistent cache already knows which pairs are touching, and these are
   // read off the moments it gains and loses entries.
   events: Physics2DContactEvents;
+  contactHooks: Physics2DContactHooks;
   index: SpatialIndexBackend;
   config: Physics2DSolverConfig;
 

@@ -212,6 +212,7 @@ function mergePhysics2DContact(
       points: [createPhysics2DContactPoint(), createPhysics2DContactPoint()],
       friction,
       restitution,
+      enabled: true,
       sensor,
       touching: true,
     };
@@ -223,6 +224,7 @@ function mergePhysics2DContact(
   contact.normalY = manifold.normalY;
   contact.friction = friction;
   contact.restitution = restitution;
+  contact.enabled = true;
   contact.sensor = sensor;
   contact.touching = true;
 
@@ -254,7 +256,7 @@ function mergePhysics2DContact(
 function preparePhysics2DConstraints(world: Physics2DWorld): void {
   const config = world.config;
   for (const contact of world.contacts) {
-    if (contact.sensor) continue;
+    if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;
@@ -295,7 +297,7 @@ function preparePhysics2DConstraints(world: Physics2DWorld): void {
 function solvePhysics2DPositionsOnce(world: Physics2DWorld): void {
   const config = world.config;
   for (const contact of world.contacts) {
-    if (contact.sensor) continue;
+    if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;
@@ -376,6 +378,23 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   updatePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
 
+  const preSolve = world.contactHooks.preSolve;
+  if (preSolve !== null) {
+    for (const contact of world.contacts) {
+      if (contact.sensor) continue;
+      preSolve(world, contact);
+      // A disabled or sensor-converted contact solved nothing this step, so its old warm-start cache is
+      // no longer evidence about the next one. Retaining it makes a temporarily disabled platform kick
+      // a body with an impulse from before the gap when the contact is enabled again.
+      if (!contact.enabled || contact.sensor) {
+        for (let i = 0; i < contact.pointCount; i++) {
+          contact.points[i].normalImpulse = 0;
+          contact.points[i].tangentImpulse = 0;
+        }
+      }
+    }
+  }
+
   const bodies = world.bodies;
   const config = world.config;
 
@@ -437,6 +456,17 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
       world.jointSolvers.get(joint.kind)?.solve(world, joint);
     }
     solvePhysics2DContactsOnce(world);
+  }
+
+  const postSolve = world.contactHooks.postSolve;
+  if (postSolve !== null) {
+    for (const contact of world.contacts) {
+      if (!contact.enabled || contact.sensor) continue;
+      const bodyA = findPhysics2DBody(world, contact.bodyA);
+      const bodyB = findPhysics2DBody(world, contact.bodyB);
+      if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) continue;
+      postSolve(world, contact);
+    }
   }
 
   // The sleeping skip here is a COST saving, not a behavioural one, and the distinction is worth having
