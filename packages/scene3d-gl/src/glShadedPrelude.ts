@@ -391,6 +391,7 @@ void main() {
 
 #ifdef ALPHA_MASK
   if (diffuse.a < u_alphaCutoff) discard;
+  diffuse.a = 1.0;
 #endif
 
   vec3 radiance = vec3(0.0);

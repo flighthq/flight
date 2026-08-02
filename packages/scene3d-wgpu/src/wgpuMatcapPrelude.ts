@@ -169,6 +169,9 @@ struct MatcapMaterial {
   if (ALPHA_MASK && color.a < material.params.x) {
     discard;
   }
+  if (ALPHA_MASK) {
+    color.a = 1.0;
+  }
   return flightPremultipliedOutput(vec4f(color.rgb, color.a * in.objectAlpha));
 }
 `;

@@ -373,6 +373,7 @@ void main() {
 
 #ifdef ALPHA_MASK
   if (baseColor.a < u_alphaCutoff) discard;
+  baseColor.a = 1.0;
 #endif
 
   vec3 geometricNormal = normalize(v_normal);

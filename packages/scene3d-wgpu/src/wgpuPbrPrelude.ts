@@ -431,6 +431,9 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
   if (ALPHA_MASK && baseColor.a < material.flags.x) {
     discard;
   }
+  if (ALPHA_MASK) {
+    baseColor.a = 1.0;
+  }
 
   var geometricNormal = normalize(in.worldNormal);
   // Double-sided materials flip the normal for back faces so both sides shade correctly.

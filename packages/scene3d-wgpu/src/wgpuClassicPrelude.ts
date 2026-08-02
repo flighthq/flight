@@ -324,6 +324,9 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
   if (ALPHA_MASK && diffuse.a < material.params.y) {
     discard;
   }
+  if (ALPHA_MASK) {
+    diffuse.a = 1.0;
+  }
 
   var geometricNormal = normalize(in.worldNormal);
   // Double-sided materials flip the normal for back faces so both sides shade correctly.
