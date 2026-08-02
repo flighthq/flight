@@ -8,10 +8,10 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Give edit text a path-backed glyph source, then ship the image resolver.** Embedded font outlines
-   and static text now import as geometry; `DefineEditText` is what remains, and it needs a font's code
-   table and advances behind a glyph source rather than more SWF parsing — `bitmapfont` and the existing
-   `GlyphSource` seam are the shape to follow. Original ranking, still true: Measured against the 306-file Ruffle corpus rather
+1. **Parse edit-text markup, then ship the image resolver.** Fields now import as `RichText` nodes with
+   their authored string and format, and embedded fonts expose glyph outlines. What remains for text is
+   narrow: a field with the HTML flag keeps its markup verbatim, and `parseTextMarkup` is the sanctioned
+   explicit call that would turn it into content plus format ranges. Original ranking, still true: Measured against the 306-file Ruffle corpus rather
    than assumed: `DefineEditText` appears in 49 files — as many as every `DefineShape` generation
    combined — with `DefineFont2` in 38 and `DefineFont3` in 18, so text is the largest remaining hole in a
    still frame. By the same measurement, per-frame colour transform covers only 41 of 784 placements and

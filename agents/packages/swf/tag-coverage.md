@@ -31,7 +31,7 @@ rare in the wild.
 | `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
 | `SymbolClass`, `ExportAssets` | Slot linkage identity | 186 / 44 |
 | `DefineMorphShape`, `2` | Authored extents only — no 2D-morph home yet | 4 |
-| `DefineEditText` | Authored extents only — see below | 49 |
+| `DefineEditText` | A `RichText` node: the authored string, box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
 | `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
 
@@ -51,6 +51,15 @@ These are read past. Each is a decision, not an oversight.
 | `VideoFrame` | Video payload frames; the stream's extents are already carried. | 1 |
 | `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 |
 | `Protect`, `SetTabIndex`, `DefineScalingGrid`, `DefineButtonSound`, `DefineButtonCxform` | Absent from the corpus. `DefineScalingGrid` has an obvious Flight home in `scale9Shape` and is the most likely of these to earn support. | — |
+
+## Edit text carries markup verbatim
+
+A field with the HTML flag stores markup in its initial text rather than plain characters, and the corpus
+is full of it (`<p align="left"><font face=…`). The importer preserves that string exactly as authored and
+does **not** parse it, so such a field currently displays its markup. `@flighthq/text-markup`'s
+`parseTextMarkup` is the sanctioned path — an explicit call producing `RichTextContent`, never a property
+that parses on assignment, which is [an anti-goal](../../anti-goals.md). Wiring it is a small, separate
+step; preserving the authored bytes first means nothing is lost in the meantime.
 
 ## Known asymmetry
 
