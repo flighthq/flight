@@ -829,3 +829,36 @@ describe('parseObj material model selection', () => {
     expect((resource as ExternalImageResourceReference).uri).toBe('normal.png');
   });
 });
+
+describe('parseObj opacity map', () => {
+  const OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl M\nf 1 2 3\n';
+
+  it('binds map_d as the alpha map and makes it actually blend', () => {
+    // `d` is absent, so the material is nominally opaque — the map alone has to flip the mode, or the
+    // authored coverage image lands in a slot the renderer never reads.
+    const document = parseObj(OBJ, parseObjMaterialLibrary('newmtl M\nKd 1 1 1\nmap_d mask.png\n'));
+    const material = document.materials[0] as BlinnPhongMaterial;
+
+    expect(material.alphaMap).not.toBeNull();
+    expect(material.alphaMode).toBe('blend');
+    const resource = getTestTextureResource(document.resources, material.alphaMap!);
+    expect((resource as ExternalImageResourceReference).uri).toBe('mask.png');
+  });
+
+  it('binds map_d on the PBR branch too', () => {
+    const document = parseObj(OBJ, parseObjMaterialLibrary('newmtl M\nPr 0.4\nmap_d mask.png\n'));
+    const material = document.materials[0] as StandardPbrMaterial;
+
+    expect(material.kind).toBe(StandardPbrMaterialKind);
+    expect(material.alphaMap).not.toBeNull();
+    expect(material.alphaMode).toBe('blend');
+  });
+
+  it('keeps the scalar dissolve alongside the map', () => {
+    const document = parseObj(OBJ, parseObjMaterialLibrary('newmtl M\nKd 1 1 1\nd 0.5\nmap_d mask.png\n'));
+    const material = document.materials[0] as BlinnPhongMaterial;
+
+    expect(material.alphaMap).not.toBeNull();
+    expect(material.diffuse & 0xff).toBe(Math.round(0.5 * 255));
+  });
+});

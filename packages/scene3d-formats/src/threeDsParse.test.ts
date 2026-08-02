@@ -48,6 +48,7 @@ import {
   THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
   THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_OPACITY_MAP,
   THREE_DS_MATERIAL_SHININESS,
   THREE_DS_MATERIAL_SPECULAR,
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
@@ -303,6 +304,7 @@ function writeMaterial(opts: {
   diffuse: readonly [number, number, number];
   diffuseFloat?: boolean;
   name: string;
+  opacityFilename?: string;
   shininessPercent?: number;
   specular?: readonly [number, number, number];
   textureFilename?: string;
@@ -327,6 +329,10 @@ function writeMaterial(opts: {
   if (opts.bumpFilename !== undefined) {
     const filename = writeChunk(THREE_DS_MATERIAL_TEXTURE_FILENAME, writeNullTerminatedString(opts.bumpFilename));
     parts.push(writeChunk(THREE_DS_MATERIAL_BUMP_MAP, filename));
+  }
+  if (opts.opacityFilename !== undefined) {
+    const filename = writeChunk(THREE_DS_MATERIAL_TEXTURE_FILENAME, writeNullTerminatedString(opts.opacityFilename));
+    parts.push(writeChunk(THREE_DS_MATERIAL_OPACITY_MAP, filename));
   }
   return writeChunk(THREE_DS_MATERIAL, concatBytes(...parts));
 }
@@ -1642,5 +1648,71 @@ describe('parse3ds local coordinate system', () => {
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(document.nodes[0].transform.position.x).toBe(0);
+  });
+});
+
+describe('parse3ds opacity map', () => {
+  it('binds MAT_OPACMAP as the material alpha map and makes it actually blend', () => {
+    // An alphaMap is INERT while alphaMode is 'opaque', so binding one without also leaving opaque mode
+    // would import the authored coverage image into a slot the renderer never reads. This material states
+    // NO scalar transparency, so the map alone has to be what flips the mode.
+    const material = writeMaterial({ diffuse: [255, 255, 255], name: 'Fence', opacityFilename: 'fence_a.png' });
+    const document = parse3ds(
+      buildMaterialScene3D3ds({
+        faceMaterialName: 'Fence',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Plane',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+
+    const parsed = document.materials[0] as BlinnPhongMaterial;
+    expect(parsed.alphaMap).not.toBeNull();
+    expect(parsed.alphaMode).toBe('blend');
+    const resource = getTestTextureResource(document.resources, parsed.alphaMap!);
+    expect((resource as ExternalImageResourceReference).uri).toBe('fence_a.png');
+  });
+
+  it('keeps the scalar transparency alongside the opacity map', () => {
+    // MAT_TRANSPARENCY and MAT_OPACMAP are independent terms that multiply — reading the map must not
+    // discard the scalar the author also set.
+    const material = writeMaterial({
+      diffuse: [255, 255, 255],
+      name: 'Glass',
+      opacityFilename: 'smudge.png',
+      transparencyPercent: 40,
+    });
+    const document = parse3ds(
+      buildMaterialScene3D3ds({
+        faceMaterialName: 'Glass',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Pane',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+
+    const parsed = document.materials[0] as BlinnPhongMaterial;
+    expect(parsed.alphaMap).not.toBeNull();
+    // 40% transparent → 0.6 alpha in the packed diffuse color's low byte.
+    expect(parsed.diffuse & 0xff).toBe(Math.round(0.6 * 255));
+  });
+
+  it('leaves the alpha map null and the material opaque when the file states no MAT_OPACMAP', () => {
+    const material = writeMaterial({ diffuse: [255, 255, 255], name: 'Solid' });
+    const document = parse3ds(
+      buildMaterialScene3D3ds({
+        faceMaterialName: 'Solid',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Box',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+
+    const parsed = document.materials[0] as BlinnPhongMaterial;
+    expect(parsed.alphaMap).toBeNull();
+    expect(parsed.alphaMode).toBe('opaque');
   });
 });

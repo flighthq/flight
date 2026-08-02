@@ -58,6 +58,7 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
         raw === 'map_Ks' ||
         raw === 'map_Bump' ||
         raw === 'bump' ||
+        raw === 'map_d' ||
         raw === 'map_Ke' ||
         raw === 'map_Pr' ||
         raw === 'map_Pm' ||
@@ -261,6 +262,14 @@ export function parseObjMaterialLibrary(source: string, diagnostics?: ImportDiag
         else tallyInvalidValue(mtlDrops, directive, i);
         break;
       }
+      case 'map_d': {
+        if (current === null) {
+          tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
+          break;
+        }
+        current.mapDissolve = args;
+        break;
+      }
       case 'map_Ke': {
         if (current === null) {
           tallyDirectiveBeforeMaterial(mtlDrops, directive, i);
@@ -325,6 +334,7 @@ function createDefaultObjMaterial(name: string): ObjMaterial {
     mapAmbient: null,
     mapBump: null,
     mapDiffuse: null,
+    mapDissolve: null,
     mapEmissive: null,
     mapMetallic: null,
     mapNormal: null,

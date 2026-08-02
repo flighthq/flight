@@ -48,6 +48,7 @@ export const THREE_DS_MATERIAL_SPECULAR = 0xa030;
 export const THREE_DS_MATERIAL_SHININESS = 0xa040;
 export const THREE_DS_MATERIAL_TRANSPARENCY = 0xa050;
 export const THREE_DS_MATERIAL_TEXTURE_MAP = 0xa200;
+export const THREE_DS_MATERIAL_OPACITY_MAP = 0xa210;
 export const THREE_DS_MATERIAL_TEXTURE_FILENAME = 0xa300;
 export const THREE_DS_MATERIAL_BUMP_MAP = 0xa230;
 
@@ -74,6 +75,9 @@ export interface ThreeDsMaterial {
   diffuse: readonly [number, number, number];
   name: string;
   opacity: number;
+  // MAT_OPACMAP (0xA210) filename — a dedicated coverage image, or null. Distinct from `opacity`, which
+  // is the scalar MAT_TRANSPARENCY: a material may state both, and they multiply.
+  opacityFilename: string | null;
   shininess: number | null;
   specular: readonly [number, number, number];
   textureFilename: string | null;

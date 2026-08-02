@@ -60,6 +60,7 @@ import {
   THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
   THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_OPACITY_MAP,
   THREE_DS_MATERIAL_SHININESS,
   THREE_DS_MATERIAL_SPECULAR,
   THREE_DS_MATERIAL_TEXTURE_FILENAME,
@@ -1090,6 +1091,12 @@ function resolveThreeDsMaterial(
 // converts explicitly.
 function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, document: Scene3DDocument): Material {
   const result = createBlinnPhongMaterial({
+    // MAT_OPACMAP is a dedicated coverage image, separate from the diffuse map's own alpha. Flight's
+    // alphaMap reads its GREEN channel, which is what a grayscale opacity image carries in every channel.
+    alphaMap:
+      material.opacityFilename !== null
+        ? createExternalTextureRef(material.opacityFilename, null, document.resources)
+        : null,
     diffuse: packThreeDsColor(material.diffuse, material.opacity),
     diffuseMap:
       material.textureFilename !== null
@@ -1108,7 +1115,10 @@ function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, docume
   result.name = material.name.length > 0 ? material.name : null;
   // A material below full opacity blends: the opacity rode into the diffuse alpha above; the blend
   // alphaMode makes the renderer actually blend rather than treat the alpha as coverage.
-  if (material.opacity < 1) result.alphaMode = 'blend';
+  // An alphaMap is INERT while alphaMode is 'opaque', so a material carrying one blends even when its
+  // scalar transparency says fully opaque — otherwise the authored coverage image would silently do
+  // nothing. The scalar and the map multiply, so a material stating both keeps both.
+  if (material.opacity < 1 || material.opacityFilename !== null) result.alphaMode = 'blend';
   return result as unknown as Material;
 }
 
@@ -1120,6 +1130,7 @@ function parseMaterial(view: Readonly<DataView>, offset: number, end: number): T
   let bumpFilename: string | null = null;
   let diffuse: readonly [number, number, number] = [1, 1, 1];
   let opacity = 1;
+  let opacityFilename: string | null = null;
   // null = absent (use the material default); a parsed value (including an explicit 0) is passed through.
   let shininess: number | null = null;
   let specular: readonly [number, number, number] = [1, 1, 1];
@@ -1153,12 +1164,14 @@ function parseMaterial(view: Readonly<DataView>, offset: number, end: number): T
       textureFilename = parseTextureFilename(view, dataStart, chunkEnd);
     } else if (chunkId === THREE_DS_MATERIAL_BUMP_MAP) {
       bumpFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_OPACITY_MAP) {
+      opacityFilename = parseTextureFilename(view, dataStart, chunkEnd);
     }
 
     cursor = chunkEnd;
   }
 
-  return { ambient, bumpFilename, diffuse, name, opacity, shininess, specular, textureFilename };
+  return { ambient, bumpFilename, diffuse, name, opacity, opacityFilename, shininess, specular, textureFilename };
 }
 
 // Reads the nested color sub-chunk of a material color block: COLOR_FLOAT (0x0010, 3 float32 in [0,1])

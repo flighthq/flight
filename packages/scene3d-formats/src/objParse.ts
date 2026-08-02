@@ -487,6 +487,8 @@ function objMaterialToBlinnPhong(
   diagnostics: ImportDiagnostic[] | undefined,
 ): BlinnPhongMaterial {
   const result = createBlinnPhongMaterial({
+    // map_d is a dedicated coverage image, separate from the diffuse map's own alpha channel.
+    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
     diffuse: packObjColor(material.diffuse, material.dissolve),
     diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
     // `norm` is a real tangent-space normal map and outranks `map_Bump`, which is a grayscale height
@@ -497,8 +499,10 @@ function objMaterialToBlinnPhong(
     specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
   });
   // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
-  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only.
-  if (material.dissolve < 1) result.alphaMode = 'blend';
+  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only. A map_d
+  // does the same: an alphaMap is INERT while alphaMode is 'opaque', so an authored coverage image would
+  // silently do nothing. The scalar and the map multiply, so a material stating both keeps both.
+  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
   // Blinn-Phong has no emissive channel in Flight, so a file that stated one WITHOUT also stating any
   // metallic-roughness value loses it. Reinterpreting the whole material as PBR to keep it would trade a
   // stated Ns for a guessed roughness plus an uncompensable π brightness shift — a worse loss than this.
@@ -521,6 +525,7 @@ function objMaterialToStandardPbr(
   diagnostics: ImportDiagnostic[] | undefined,
 ): StandardPbrMaterial {
   const result = createStandardPbrMaterial({
+    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
     baseColor: packObjColor(material.diffuse, material.dissolve),
     baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
     emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
@@ -529,7 +534,7 @@ function objMaterialToStandardPbr(
     ...(material.metallic !== null ? { metallic: material.metallic } : {}),
     ...(material.roughness !== null ? { roughness: material.roughness } : {}),
   });
-  if (material.dissolve < 1) result.alphaMode = 'blend';
+  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
 
   // MTL states roughness and metallic as SEPARATE grayscale images; glTF — and so StandardPbrMaterial —
   // carries one packed texture sampling roughness from G and metallic from B. Binding a lone grayscale
