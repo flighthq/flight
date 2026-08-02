@@ -29,7 +29,7 @@ rare in the wild.
 | `DefineVideoStream` | Declared frame extents (payload opaque) | 1 |
 | `SetBackgroundColor` | `Scene2DDocument.backgroundColor` | 250 |
 | `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
-| `SymbolClass`, `ExportAssets` | Slot linkage identity | 186 / 44 |
+| `SymbolClass`, `ExportAssets` | Slot linkage identity, and the library `createScene2DSymbolFromSwf` instantiates from | 186 / 44 |
 | `DefineMorphShape`, `2` | Authored extents only — no 2D-morph home yet | 4 |
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |

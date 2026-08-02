@@ -2,6 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
+  appendShapeBeginTextureFill,
   appendShapeCurveTo,
   appendShapeEndFill,
   appendShapeLineStyle,
@@ -9,7 +10,16 @@ import {
   appendShapeMoveTo,
   createShape,
 } from '@flighthq/shape/contract';
-import type { CapsStyle, GradientType, JointStyle, Matrix, Shape, SpreadMethod } from '@flighthq/types/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type {
+  CapsStyle,
+  GradientType,
+  JointStyle,
+  Matrix,
+  Shape,
+  SpreadMethod,
+  Texture,
+} from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -32,8 +42,15 @@ export function createSwfGlyphShape(reader: SwfReader): Shape | null {
 // every edge of a fill runs the same way around it, and then stitched end-to-start into closed contours.
 // Reversal is what makes the nonzero winding of the resulting command stream match the fill SWF meant,
 // holes included.
-export function createSwfShape(reader: SwfReader, version: number): Shape | null {
-  const styles = readSwfShapeStyles(reader, version, version >= 3);
+// `bitmapFills` collects every bitmap-filled style this shape uses, pairing the character it names with
+// the texture the emitted fill points at. The texture starts sourceless: the geometry is decodable without
+// pixels, so it is emitted either way and the caller supplies the image when it has one.
+export function createSwfShape(
+  reader: SwfReader,
+  version: number,
+  bitmapFills?: { characterId: number; texture: Texture }[],
+): Shape | null {
+  const styles = readSwfShapeStyles(reader, version, version >= 3, bitmapFills);
   return styles === null ? null : decodeSwfShapeBody(reader, version, styles);
 }
 
@@ -128,9 +145,11 @@ interface SwfShapeFill {
   matrix: Matrix | null;
   opacity: number;
   ratios: number[];
-  // A bitmap fill names a character this decoder cannot resolve to pixels, so the style is retained as
-  // unpaintable rather than guessed at: its edges still shape the geometry, but nothing is filled.
-  paintable: boolean;
+  // A bitmap fill points at a texture whose pixels arrive later. The geometry is emitted regardless —
+  // dropping it would lose the artwork's shape as well as its paint, which is the whole picture for a file
+  // whose art is bitmap-filled.
+  texture: Texture | null;
+  textureMatrix: Matrix | null;
   spreadMethod: SpreadMethod;
 }
 
@@ -189,8 +208,10 @@ function appendSwfShapeStyleLayer(shape: Shape, state: SwfShapeState): void {
   for (const index of [...state.fillSegments.keys()].sort(compareSwfShapeStyleIndex)) {
     const fill = state.styles.fills[index - 1];
     const segments = state.fillSegments.get(index);
-    if (fill === undefined || segments === undefined || !fill.paintable) continue;
-    if (fill.gradientType === null) {
+    if (fill === undefined || segments === undefined) continue;
+    if (fill.texture !== null) {
+      appendShapeBeginTextureFill(shape, fill.texture, fill.textureMatrix);
+    } else if (fill.gradientType === null) {
       appendShapeBeginFill(shape, fill.color, fill.opacity);
     } else {
       appendShapeBeginGradientFill(
@@ -317,7 +338,12 @@ function readSwfShapeEdge(reader: SwfReader, state: SwfShapeState): boolean {
   return true;
 }
 
-function readSwfShapeFillStyle(reader: SwfReader, version: number, hasAlpha: boolean): SwfShapeFill | null {
+function readSwfShapeFillStyle(
+  reader: SwfReader,
+  version: number,
+  hasAlpha: boolean,
+  bitmapFills?: { characterId: number; texture: Texture }[],
+): SwfShapeFill | null {
   const type = reader.readUint8();
   if (type === FILL_SOLID) {
     const solid = readSwfShapeColor(reader, hasAlpha);
@@ -354,9 +380,10 @@ function readSwfShapeFillStyle(reader: SwfReader, version: number, hasAlpha: boo
       gradientType: type === FILL_LINEAR_GRADIENT ? 'linear' : 'radial',
       matrix,
       opacity: 1,
-      paintable: true,
       ratios,
       spreadMethod: resolveSwfShapeSpreadMethod(spread),
+      texture: null,
+      textureMatrix: null,
     };
   }
 
@@ -366,12 +393,14 @@ function readSwfShapeFillStyle(reader: SwfReader, version: number, hasAlpha: boo
     type === FILL_NON_SMOOTHED_REPEATING_BITMAP ||
     type === FILL_NON_SMOOTHED_CLIPPED_BITMAP
   ) {
-    reader.readUint16();
-    readSwfShapeMatrix(reader);
+    const characterId = reader.readUint16();
+    const matrix = readSwfShapeMatrix(reader);
     if (!reader.valid) return null;
-    const unpaintable = createSwfShapeFill(0, 1);
-    unpaintable.paintable = false;
-    return unpaintable;
+    const fill = createSwfShapeFill(0, 1);
+    fill.texture = createTexture();
+    fill.textureMatrix = matrix;
+    bitmapFills?.push({ characterId, texture: fill.texture });
+    return fill;
   }
   return null;
 }
@@ -385,9 +414,10 @@ function createSwfShapeFill(color: number, opacity: number): SwfShapeFill {
     gradientType: null,
     matrix: null,
     opacity,
-    paintable: true,
     ratios: [],
     spreadMethod: 'pad',
+    texture: null,
+    textureMatrix: null,
   };
 }
 
@@ -479,12 +509,17 @@ function readSwfShapeStyleCount(reader: SwfReader, version: number): number {
   return count === EXTENDED_STYLE_COUNT && version >= 2 ? reader.readUint16() : count;
 }
 
-function readSwfShapeStyles(reader: SwfReader, version: number, hasAlpha: boolean): SwfShapeStyles | null {
+function readSwfShapeStyles(
+  reader: SwfReader,
+  version: number,
+  hasAlpha: boolean,
+  bitmapFills?: { characterId: number; texture: Texture }[],
+): SwfShapeStyles | null {
   const fillCount = readSwfShapeStyleCount(reader, version);
   if (!reader.valid || fillCount > MAX_SHAPE_STYLES) return null;
   const fills: SwfShapeFill[] = [];
   for (let i = 0; i < fillCount; i++) {
-    const fill = readSwfShapeFillStyle(reader, version, hasAlpha);
+    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, bitmapFills);
     if (fill === null) return null;
     fills.push(fill);
   }

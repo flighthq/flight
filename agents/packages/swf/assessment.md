@@ -8,7 +8,13 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Parse edit-text markup, then ship the image resolver.** Fields now import as `RichText` nodes with
+1. **Ship the image resolver — it is now the single blocking gap, confirmed downstream.** Two consumer
+   ports failed on it: artwork built from bitmap-filled shapes imports its geometry but has no pixels to
+   fill with, and embedded image definitions carry bytes no one decodes. The seam exists on both sides —
+   asset references carry bytes and mime type, and bitmap fills now carry a sourceless texture the parse
+   can name a character for — so what is missing is the decode and the API that hands a decoded image to
+   a waiting texture. That last piece is an API shape decision rather than more SWF parsing. Superseded
+   ranking, still true after it: Fields now import as `RichText` nodes with
    their authored string and format, and embedded fonts expose glyph outlines. What remains for text is
    narrow: a field with the HTML flag keeps its markup verbatim, and `parseTextMarkup` is the sanctioned
    explicit call that would turn it into content plus format ranges. Original ranking, still true: Measured against the 306-file Ruffle corpus rather

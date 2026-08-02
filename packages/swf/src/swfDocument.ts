@@ -20,6 +20,7 @@ import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/s
 import type {
   BoundsNodeAny,
   RichText,
+  Texture,
   ClipRegion,
   MovieClip,
   MovieClipData,
@@ -71,6 +72,47 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   if (root === null) return null;
 
   return createScene2DDocument(root, references, 'swf', parsed.backgroundColor);
+}
+
+// Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
+// symbol is content the authoring tool published for code to create — OpenFL's `new Layout()` — so a
+// document built only from placements has nothing to show for it, which is why this is a separate entry
+// rather than something the root carries. Each call builds a fresh instance, because a symbol is a
+// template rather than a shared node.
+export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: string): Node2D | null {
+  const file = readSwfFile(source);
+  if (file === null) return null;
+  const { frameRate, parsed } = file;
+
+  let characterId = -1;
+  for (const [id, name] of parsed.linkages) {
+    if (name === linkageName) characterId = id;
+  }
+  if (characterId < 0) return null;
+
+  const instantiation: SwfInstantiationState = {
+    activeSymbols: new Set<number>(),
+    frameRate: frameRate > 0 ? frameRate : null,
+    resolvingBounds: new Set<number>(),
+    resolvedBounds: new Map<number, SwfRectangle | null>(),
+    remainingNodes: MAX_INSTANTIATED_NODES,
+  };
+  const bounds = resolveSwfCharacterBounds(parsed, characterId, instantiation, 0);
+  const sprite = parsed.sprites.get(characterId);
+  if (sprite !== undefined) {
+    return createSwfTimelineNode(sprite, bounds, parsed, [], instantiation, 0);
+  }
+  const shape = parsed.shapes.get(characterId);
+  const editText = parsed.editTexts.get(characterId);
+  if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds);
+  return shape === undefined ? null : createSwfPlacementNode(undefined, shape, bounds);
+}
+
+// Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
+// `createScene2DSymbolFromSwf` to instantiate one.
+export function readSwfExportedSymbolNames(source: Uint8Array): string[] {
+  const file = readSwfFile(source);
+  return file === null ? [] : [...file.parsed.linkages.values()];
 }
 
 export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
@@ -150,6 +192,7 @@ interface SwfTagResult {
   images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
+  shapeBitmapFills: Map<number, { characterId: number; texture: Texture }[]>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
@@ -184,6 +227,8 @@ interface SwfParseState {
   // field declared before its font tag still resolves the family.
   editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
   fontNames: Map<number, string>;
+  // Which bitmap character each shape's texture fills are waiting on, so a caller can supply the pixels.
+  shapeBitmapFills: Map<number, { characterId: number; texture: Texture }[]>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -796,6 +841,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     abcBlobs: [],
     backgroundColor: null,
     pendingInitActions: [],
+    shapeBitmapFills: new Map<number, { characterId: number; texture: Texture }[]>(),
     editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
     fontNames: new Map<number, string>(),
     characterBounds: new Map<number, SwfRectangle>(),
@@ -827,6 +873,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     fontOutlineSources: state.fontOutlineSources,
     images: state.images,
     linkages: state.linkages,
+    shapeBitmapFills: state.shapeBitmapFills,
     shapes: state.shapes,
     sprites: state.sprites,
     timeline,
@@ -1181,8 +1228,11 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
     reader.readUint8();
   }
   if (!reader.valid) return;
-  const shape = createSwfShape(reader, version);
-  if (shape !== null) state.shapes.set(characterId, shape);
+  const bitmapFills: { characterId: number; texture: Texture }[] = [];
+  const shape = createSwfShape(reader, version, bitmapFills);
+  if (shape === null) return;
+  state.shapes.set(characterId, shape);
+  if (bitmapFills.length > 0) state.shapeBitmapFills.set(characterId, bitmapFills);
 }
 
 function resolveSwfShapeVersion(code: number): number {
