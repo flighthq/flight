@@ -1,5 +1,5 @@
 import type { Kind, Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import { RenderRegistry, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -23,10 +23,13 @@ export function resolveWgpuMaterialRenderer(
 ): WgpuMaterialRenderer | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const map = runtime.materialRendererMap;
-  if (map === undefined) return null;
-  if (material !== null) {
-    const renderer = map.get(material.kind);
-    if (renderer !== undefined) return renderer;
-  }
-  return map.get(StandardMaterialKind) ?? null;
+  const kind = material?.kind ?? StandardMaterialKind;
+  const renderer = map?.get(kind) ?? null;
+  if (renderer !== null) return renderer;
+
+  // The requested kind is absent. StandardMaterialKind still stands in where it is registered, but the
+  // miss is reported either way — substituting a different shading family is as much worth knowing as
+  // drawing nothing, and the seam records one miss per kind, so neither case repeats.
+  runtime.registryMiss?.(RenderRegistry.MaterialRenderer, kind);
+  return kind === StandardMaterialKind ? null : (map?.get(StandardMaterialKind) ?? null);
 }

@@ -15,6 +15,7 @@ import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
+  RenderRegistry,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -78,7 +79,7 @@ export function resolveGlTexture(
   const runtime = getGlRenderStateRuntime(state);
   const resolver = runtime.glTextureResolverRegistry?.get(sourceKind);
   if (resolver === undefined) {
-    runtime.registryMiss?.(3, sourceKind);
+    runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
   return resolver(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));

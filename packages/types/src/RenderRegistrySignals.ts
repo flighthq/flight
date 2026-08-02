@@ -1,10 +1,14 @@
 import type { Kind } from './Entity';
 import type { Signal } from './Signal';
 
-// Stable numeric registry identifiers keep diagnostic policy and human-readable messages out of
-// render core. Guard modules translate these values only after the opt-in signal seam is enabled.
+// Numeric registry identifiers keep diagnostic policy and human-readable messages out of render core.
+// Guard modules translate these values only after the opt-in signal seam is enabled. The values are
+// assigned by declaration order and nothing persists them, so members stay alphabetized and emitters
+// name the member rather than its number — a literal at a callsite would silently mean a different
+// registry the moment one is inserted above it.
 export enum RenderRegistry {
   EffectPaddingResolver,
+  MaterialRenderer,
   NodeRenderer,
   ShapeCommandHandler,
   TextureResolver,
