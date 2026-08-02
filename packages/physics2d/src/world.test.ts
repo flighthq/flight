@@ -150,4 +150,41 @@ describe('removePhysics2DBody', () => {
   it('reports false for a body the world does not hold', () => {
     expect(removePhysics2DBody(createPhysics2DWorld(), boxBody(0, 0))).toBe(false);
   });
+
+  it('wakes a sleeping body when its supporting contact is removed with the other body', () => {
+    const world = createPhysics2DWorld();
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -5, minY: -1, maxX: 5, maxY: 0 }, STONE));
+    addPhysics2DBody(world, floor);
+    const crate = addPhysics2DBody(world, boxBody(0, 0.5));
+    for (let i = 0; i < 180; i++) stepPhysics2D(world, 1 / 60);
+    expect(crate.sleeping).toBe(true);
+    const restingY = crate.y;
+
+    removePhysics2DBody(world, floor);
+
+    expect(crate.sleeping).toBe(false);
+    expect(crate.sleepTimer).toBe(0);
+    stepPhysics2D(world, 1 / 60);
+    expect(crate.y).toBeLessThan(restingY);
+  });
+
+  it('does not wake a sleeper when only a sensor overlap is removed', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const trigger = createRigidBody2D('static', 0, 0);
+    trigger.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -1, minY: -1, maxX: 1, maxY: 1 }, STONE, true),
+    );
+    addPhysics2DBody(world, trigger);
+    const crate = addPhysics2DBody(world, boxBody(0, 0));
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts[0].sensor).toBe(true);
+    crate.sleeping = true;
+    crate.sleepTimer = 5;
+
+    removePhysics2DBody(world, trigger);
+
+    expect(crate.sleeping).toBe(true);
+    expect(crate.sleepTimer).toBe(5);
+  });
 });

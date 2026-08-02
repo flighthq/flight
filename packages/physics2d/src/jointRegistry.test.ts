@@ -45,6 +45,24 @@ function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorB
 }
 
 describe('addPhysics2DJoint', () => {
+  it('wakes both bodies when an active constraint is added', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    first.sleeping = true;
+    first.sleepTimer = 5;
+    second.sleeping = true;
+    second.sleepTimer = 5;
+
+    addPhysics2DJoint(world, joint('Test', first.index, second.index));
+
+    expect(first.sleeping).toBe(false);
+    expect(first.sleepTimer).toBe(0);
+    expect(second.sleeping).toBe(false);
+    expect(second.sleepTimer).toBe(0);
+  });
+
   it('orders the joint by body index, carrying its anchors with the swap', () => {
     // Obligation 1 applies to joints too: they enter the SAME sequential solve list as contacts, and a
     // joint has no broadphase to canonicalise it, so this is the one place it can be enforced. The
@@ -75,6 +93,26 @@ describe('addPhysics2DJoint', () => {
 
     expect(added.bodyA).toBe(second.index);
     expect(added.localAnchorAX).toBe(7);
+  });
+
+  it('leaves an unknown joint inert until registration, then wakes both ends', () => {
+    const world = createPhysics2DWorld();
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    first.sleeping = true;
+    first.sleepTimer = 5;
+    second.sleeping = true;
+    second.sleepTimer = 5;
+
+    addPhysics2DJoint(world, joint('Deferred', first.index, second.index));
+    expect(first.sleeping).toBe(true);
+    expect(second.sleeping).toBe(true);
+
+    registerPhysics2DJointSolver(world, 'Deferred', { prepare: () => {}, solve: () => {} });
+    expect(first.sleeping).toBe(false);
+    expect(first.sleepTimer).toBe(0);
+    expect(second.sleeping).toBe(false);
+    expect(second.sleepTimer).toBe(0);
   });
 
   // Critic's repro: register the solver AFTER the joint is already in the world, and the kind's own
@@ -201,5 +239,39 @@ describe('removePhysics2DJoint', () => {
     addPhysics2DJoint(world, joint('Test', first.index, second.index));
     removePhysics2DBody(world, second);
     expect(world.joints).toHaveLength(0);
+  });
+
+  it('wakes both ends when an active constraint is removed', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    first.sleeping = true;
+    first.sleepTimer = 5;
+    second.sleeping = true;
+    second.sleepTimer = 5;
+
+    removePhysics2DJoint(world, added);
+
+    expect(first.sleeping).toBe(false);
+    expect(first.sleepTimer).toBe(0);
+    expect(second.sleeping).toBe(false);
+    expect(second.sleepTimer).toBe(0);
+  });
+
+  it('wakes the surviving end when its joint neighbour is removed from the world', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    const removed = body(world, 0, 0);
+    const survivor = body(world, 2, 0);
+    addPhysics2DJoint(world, joint('Test', removed.index, survivor.index));
+    survivor.sleeping = true;
+    survivor.sleepTimer = 5;
+
+    removePhysics2DBody(world, removed);
+
+    expect(survivor.sleeping).toBe(false);
+    expect(survivor.sleepTimer).toBe(0);
   });
 });
