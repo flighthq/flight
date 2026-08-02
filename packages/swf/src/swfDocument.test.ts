@@ -29,10 +29,11 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { getTextureSource, getTextureWidth } from '@flighthq/texture/contract';
-import type { MovieClip, RichText, Shape, Sprite, Texture2D } from '@flighthq/types/contract';
+import type { MorphShape, MovieClip, RichText, Shape, Sprite, Texture2D } from '@flighthq/types/contract';
 import {
   Compression,
   ImageResourceReferenceKind,
+  MorphShapeKind,
   MovieClipKind,
   ResourceResolutionState,
   RichTextKind,
@@ -1815,6 +1816,53 @@ describe('createScene2DFromSwf', () => {
   });
 });
 
+describe('createScene2DFromSwf morph shapes', () => {
+  it('places a morph character and drives its progress from the placement ratio', () => {
+    const startEdges = morphBox(200);
+    const endEdges = morphBox(400);
+    const styles = joinBytes(
+      new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
+      new Uint8Array([0]),
+    );
+    const body = joinBytes(
+      uint16(7),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      uint32(styles.length + startEdges.length),
+      styles,
+      startEdges,
+      endEdges,
+    );
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_MORPH_SHAPE, body),
+        // Two placements of one character at different ratios: the case a single shared node cannot serve.
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(1), uint16(7), uint16(0)),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(2), uint16(7), uint16(0xffff)),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const [first, second] = getNodeChildren(document!.root) as MorphShape[];
+    expect(first.kind).toBe(MorphShapeKind);
+    expect(second.kind).toBe(MorphShapeKind);
+    // Distinct nodes, each sitting at its own point along the same definition.
+    expect(first).not.toBe(second);
+    expect(first.data.progress).toBe(0);
+    expect(second.data.progress).toBe(1);
+    expect(morphWidth(first)).toBeCloseTo(10);
+    expect(morphWidth(second)).toBeCloseTo(20);
+  });
+});
+
 describe('createScene2DSymbolFromSwf', () => {
   it('builds a fresh instance of a symbol the file exported but never placed', () => {
     const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
@@ -2187,3 +2235,30 @@ function storedDeflate(bytes: readonly number[]): number[] {
   const length = bytes.length;
   return [0x78, 0x01, 0x01, length & 0xff, length >> 8, ~length & 0xff, (~length >> 8) & 0xff, ...bytes, 0, 0, 0, 0];
 }
+
+// One closed box `width` twips across under fill style 1, as a morph endpoint's bare SHAPE.
+function morphBox(width: number): Uint8Array {
+  const writer = new ShapeWriter();
+  writer.writeStyleBits(2, 2);
+  writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+  writer.writeStraightEdge(width, 0);
+  writer.writeStraightEdge(0, width);
+  writer.writeStraightEdge(-width, 0);
+  writer.writeStraightEdge(0, -width);
+  writer.writeEndShape();
+  return writer.toBytes();
+}
+
+function morphWidth(shape: MorphShape): number {
+  const data = shape.data.pathBindings[0].path.data;
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < data.length; i += 2) {
+    min = Math.min(min, data[i]);
+    max = Math.max(max, data[i]);
+  }
+  return max - min;
+}
+
+const PLACE_HAS_RATIO = 0x10;
+const TAG_DEFINE_MORPH_SHAPE = 46;

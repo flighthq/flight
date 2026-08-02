@@ -1,7 +1,7 @@
 import { createTexture } from '@flighthq/texture/contract';
 
 import { SwfReader } from './swfReader';
-import { createSwfGlyphShape, createSwfShape } from './swfShape';
+import { createSwfGlyphShape, createSwfShape, readSwfShapeStylePaths } from './swfShape';
 import { ShapeWriter } from './swfShapeTestHelper';
 
 describe('createSwfGlyphShape', () => {
@@ -377,5 +377,49 @@ describe('createSwfShape', () => {
     writer.writeEndShape();
 
     expect(createSwfShape(writer.toReader(), 1)).toBeNull();
+  });
+});
+
+describe('readSwfShapeStylePaths', () => {
+  it('keys contours by the style index its edges referenced, in pixels', () => {
+    const writer = new ShapeWriter();
+    writer.writeStyleBits(2, 2);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+    writer.writeStraightEdge(200, 0);
+    writer.writeStraightEdge(0, 200);
+    writer.writeEndShape();
+    const bytes = writer.toBytes();
+
+    const paths = readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))!;
+
+    expect([...paths.fills.keys()]).toEqual([1]);
+    // 200 twips is 10 pixels: the decode converts, so both morph endpoints are already comparable.
+    expect(paths.fills.get(1)!.data.slice(0, 4)).toEqual([0, 0, 10, 0]);
+  });
+
+  it('records the style runs an end edge set replays, one per style-change record', () => {
+    const writer = new ShapeWriter();
+    writer.writeStyleBits(2, 2);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+    writer.writeStraightEdge(200, 0);
+    writer.writeStyleChange({ fill1: 2, moveToX: 400, moveToY: 0 }, 2);
+    writer.writeStraightEdge(200, 0);
+    writer.writeEndShape();
+    const bytes = writer.toBytes();
+
+    const paths = readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))!;
+
+    expect(paths.runs.map((run) => run.fill1)).toEqual([1, 2]);
+  });
+
+  it('rejects a shape that introduces styles, which a morph endpoint never does', () => {
+    const writer = new ShapeWriter();
+    writer.writeStyleBits(1, 1);
+    // A style-change record with the new-styles bit set is the one form this decoder cannot honour,
+    // because a morph's styles were read once, ahead of both endpoints.
+    writer.writeNewStylesRecord();
+    const bytes = writer.toBytes();
+
+    expect(readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))).toBeNull();
   });
 });

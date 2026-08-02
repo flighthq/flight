@@ -39,6 +39,26 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   Looping itself needs nothing: `playMode` already defaults to `'loop'`, so a played clip wraps at its
   last frame with no frame script involved. A SWF that loops in Flash carries no `gotoAndPlay(1)` to
   parse, so missing ABC is not what stops one looping here.
+- `DefineMorphShape`/`2` decode to a `MorphShape`: both endpoints' geometry, and both endpoints of every
+  fill and stroke style, under one progress. A morph is the only SWF definition that stores its geometry
+  twice — one style array, then a start and an end SHAPE — so the styles are read once as pairs and each
+  edge set is decoded against style *indices* alone through `readSwfShapeStylePaths`. An index carried by
+  both endpoints becomes one path morph beneath the paint morph that index named, and a shape with several
+  fills is one node with several of them rather than one node per region.
+  Two things that are easy to get wrong and are pinned by tests. The **end edge set names no styles**: it
+  repeats the start's record structure with the style fields unset, so it replays the start's runs by
+  position — without that it decodes to no fills at all, silently, which is exactly how it first failed
+  against the corpus. And the **ratio lives on the placement, not the definition**, so it is per-frame data
+  applied beside the matrix and alpha; two placements of one character routinely sit at different points
+  along the same morph, which is why a character decodes to a factory and every placement gets its own node.
+- Morph coverage measured against the corpus: 7 of 8 morph characters across its 5 morph-carrying files
+  decode, including gradient fills and multi-path compound shapes. Two gaps are known rather than assumed.
+  One character (`avm1/click_block`, a version 2 morph) has **more style-change records in its start edge
+  set than its end**, which positional replay cannot pair; a player walks both edge streams in lockstep as
+  a single pass, and that is what this would take. And no corpus file carries a **version 2 morph
+  gradient**, so whether that form packs spread and interpolation into the high nibble of its count byte
+  the way a static gradient does is untested — the decoder reads the whole byte as the count, which every
+  version 1 morph agrees with, and the question is recorded here rather than guessed at in code.
 - `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
   names, since an init action runs once before that sprite's first frame.
 - A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so

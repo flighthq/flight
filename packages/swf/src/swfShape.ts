@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -15,10 +16,12 @@ import type {
   GradientType,
   JointStyle,
   Matrix,
+  Path,
   Shape,
   SpreadMethod,
   Texture2D,
 } from '@flighthq/types/contract';
+import type { SwfShapeStylePaths, SwfShapeStyleRun } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -124,6 +127,110 @@ function decodeSwfShapeBody(
   flushSwfShapeSegments(state);
   appendSwfShapeStyleLayer(shape, state);
   return reader.valid ? shape : null;
+}
+
+// Decodes a bare SHAPE — no style array of its own — into one Path per style index it references.
+//
+// This is the seam a morph shape needs. A morph stores its styles once and its geometry twice, as two
+// SHAPE records whose edges the format guarantees run in step, so the paint is read separately and each
+// edge set is decoded here against style *indices* alone. Contours are stitched and fill0 runs reversed
+// exactly as a styled shape's are, because a morph endpoint is the same geometry a static shape would be.
+//
+// Coordinates convert from twips, so the paths are in pixels and can be morphed against each other and
+// drawn without a second conversion.
+export function readSwfShapeStylePaths(
+  reader: SwfReader,
+  replayRuns: readonly Readonly<SwfShapeStyleRun>[] | null = null,
+): SwfShapeStylePaths | null {
+  const state: SwfShapeState = {
+    fill0: 0,
+    fill0Segment: null,
+    fill1: 0,
+    fill1Segment: null,
+    fillSegments: new Map<number, SwfShapeSegment[]>(),
+    line: 0,
+    lineSegment: null,
+    lineSegments: new Map<number, SwfShapeSegment[]>(),
+    styles: { fills: [], lines: [] },
+    x: 0,
+    y: 0,
+  };
+
+  const fillBits = reader.readUnsignedBits(4);
+  const lineBits = reader.readUnsignedBits(4);
+  if (!reader.valid) return null;
+
+  const runs: SwfShapeStyleRun[] = [];
+  let styleChanges = 0;
+  let records = 0;
+  for (;;) {
+    if (++records > MAX_SHAPE_RECORDS) return null;
+    if (reader.readUnsignedBits(1) !== 0) {
+      if (!readSwfShapeEdge(reader, state)) return null;
+      continue;
+    }
+
+    const flags = reader.readUnsignedBits(5);
+    if (!reader.valid) return null;
+    if (flags === 0) break;
+    // A morph edge set never introduces styles: the arrays were read once, ahead of both endpoints.
+    if ((flags & STATE_NEW_STYLES) !== 0) return null;
+
+    flushSwfShapeSegments(state);
+    if ((flags & STATE_MOVE_TO) !== 0) {
+      const moveBits = reader.readUnsignedBits(5);
+      state.x = reader.readSignedBits(moveBits);
+      state.y = reader.readSignedBits(moveBits);
+    }
+    if ((flags & STATE_FILL_STYLE_0) !== 0) state.fill0 = reader.readUnsignedBits(fillBits);
+    if ((flags & STATE_FILL_STYLE_1) !== 0) state.fill1 = reader.readUnsignedBits(fillBits);
+    if ((flags & STATE_LINE_STYLE) !== 0) state.line = reader.readUnsignedBits(lineBits);
+    if (!reader.valid) return null;
+
+    // An end edge set repeats the start's record structure with its style fields unset, so the run
+    // recorded at the same position is what its contours belong to.
+    const replay = replayRuns?.[styleChanges];
+    if (replay !== undefined) {
+      state.fill0 = replay.fill0;
+      state.fill1 = replay.fill1;
+      state.line = replay.line;
+    }
+    runs.push({ fill0: state.fill0, fill1: state.fill1, line: state.line });
+    styleChanges++;
+  }
+
+  flushSwfShapeSegments(state);
+  if (!reader.valid) return null;
+  return {
+    fills: createSwfShapeSegmentPaths(state.fillSegments),
+    lines: createSwfShapeSegmentPaths(state.lineSegments),
+    runs,
+  };
+}
+
+function createSwfShapeSegmentPaths(segments: ReadonlyMap<number, SwfShapeSegment[]>): Map<number, Path> {
+  const paths = new Map<number, Path>();
+  for (const [index, collected] of segments) {
+    const path = createPath('nonZero');
+    for (const contour of stitchSwfShapeSegments(collected)) {
+      appendPathMoveTo(path, contour.startX / TWIPS_PER_PIXEL, contour.startY / TWIPS_PER_PIXEL);
+      for (const edge of contour.edges) {
+        if (edge.curved) {
+          appendPathCurveTo(
+            path,
+            edge.controlX / TWIPS_PER_PIXEL,
+            edge.controlY / TWIPS_PER_PIXEL,
+            edge.toX / TWIPS_PER_PIXEL,
+            edge.toY / TWIPS_PER_PIXEL,
+          );
+        } else {
+          appendPathLineTo(path, edge.toX / TWIPS_PER_PIXEL, edge.toY / TWIPS_PER_PIXEL);
+        }
+      }
+    }
+    if (path.commands.length > 0) paths.set(index, path);
+  }
+  return paths;
 }
 
 interface SwfShapeEdge {
