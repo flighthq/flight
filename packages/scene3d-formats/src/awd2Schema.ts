@@ -53,6 +53,18 @@ export const AWD2_MATERIAL_PROP_COLOR = 1; // uint32 packed 0xrrggbb color (colo
 export const AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE = 2; // block id (baddr) of the diffuse/albedo texture
 export const AWD2_MATERIAL_PROP_NORMAL_TEXTURE = 3; // block id (baddr) of the normal texture
 export const AWD2_MATERIAL_PROP_ALPHA = 10; // float32 material alpha (opacity); real AWD2 files carry this on every material
+export const AWD2_MATERIAL_PROP_SPECULAR_STRENGTH = 18; // float — scales the specular term; default 1
+export const AWD2_MATERIAL_PROP_GLOSS = 19; // float — the specular exponent (Flight's `shininess`); default 50
+export const AWD2_MATERIAL_PROP_SPECULAR_COLOR = 20; // uint32 packed 0xrrggbb specular tint; default 0xffffff
+export const AWD2_MATERIAL_PROP_SPECULAR_TEXTURE = 21; // block id (baddr) of the specular map
+
+// AwayJS reads the specular tuple off the material's OWN base property list and synthesizes a
+// SpecularBasicMethod from it, so an absent key means its default — not an absent specular term.
+// Matching these defaults is what keeps an imported highlight the size Away3D drew it: Flight's own
+// `createShadedMaterial` default exponent is 32, which is a visibly broader highlight than AWD's 50.
+export const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH = 1;
+export const AWD2_MATERIAL_DEFAULT_GLOSS = 50;
+export const AWD2_MATERIAL_DEFAULT_SPECULAR_RGB = 0xffffff;
 
 // Light block (type 41) `lightType` byte, read after the light name. Away3D only ever emits these two
 // (its own parser maps everything else to "Unsupported LightType"); there is no AWD2 spot light.
