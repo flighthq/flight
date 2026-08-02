@@ -1,5 +1,6 @@
 import type {
   Physics2DDistanceJoint,
+  Physics2DGearJoint,
   Physics2DJoint,
   Physics2DMouseJoint,
   Physics2DPrismaticJoint,
@@ -17,6 +18,7 @@ import { findPhysics2DBody } from './world';
 
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix.
 export const Physics2DDistanceJointKind = 'Distance';
+export const Physics2DGearJointKind = 'Gear';
 export const Physics2DMouseJointKind = 'Mouse';
 export const Physics2DPrismaticJointKind = 'Prismatic';
 export const Physics2DPulleyJointKind = 'Pulley';
@@ -111,6 +113,80 @@ export const physics2DDistanceJointSolver = {
     const lambda = -effectiveMass * (velocity + bias + gamma * joint.impulse0);
     joint.impulse0 += lambda;
     applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -lambda * axisX, -lambda * axisY);
+  },
+};
+
+// Couples two scalar coordinates measured against the world frame. Each coordinate contributes one
+// Jacobian row: rotation contributes angular velocity directly, while translation contributes the
+// velocity of the joint anchor projected onto a fixed axis. The ratio scales both the second body's
+// Jacobian and its effective mass, which is the same mechanism behind meshed gears, linked racks, and a
+// rack-and-pinion pair.
+export const physics2DGearJointSolver = {
+  warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    applyGearImpulse(bodyA, bodyB, state, joint.impulse0);
+  },
+
+  clearAccumulatedImpulses(joint: Physics2DJoint): void {
+    joint.impulse0 = 0;
+  },
+
+  swapEnds(joint: Physics2DJoint): boolean {
+    const gear = joint as Physics2DGearJoint;
+    if (Math.abs(gear.ratio) < EPSILON) return false;
+    const ratio = gear.ratio;
+    const coordinate = gear.coordinateA;
+    const axisX = gear.axisAX;
+    const axisY = gear.axisAY;
+    gear.coordinateA = gear.coordinateB;
+    gear.coordinateB = coordinate;
+    gear.axisAX = gear.axisBX;
+    gear.axisAY = gear.axisBY;
+    gear.axisBX = axisX;
+    gear.axisBY = axisY;
+    gear.ratio = 1 / ratio;
+    gear.constant /= ratio;
+    joint.impulse0 = (joint.impulse0 ?? 0) * ratio;
+    return true;
+  },
+
+  prepare(world: Physics2DWorld, joint: Physics2DJoint, dt: number): void {
+    const gear = joint as Physics2DGearJoint;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    writeJointAnchors(bodyA, bodyB, joint);
+
+    const state = beginJointSolve(gear, 9);
+    writeGearJacobian(gear.coordinateA, gear.axisAX, gear.axisAY, joint.rAX, joint.rAY, state, 0);
+    writeGearJacobian(gear.coordinateB, gear.axisBX, gear.axisBY, joint.rBX, joint.rBY, state, 3);
+    const massA =
+      bodyA.inverseMass * (state[0] * state[0] + state[1] * state[1]) + bodyA.inverseInertia * state[2] * state[2];
+    const massB =
+      bodyB.inverseMass * (state[3] * state[3] + state[4] * state[4]) + bodyB.inverseInertia * state[5] * state[5];
+    const denominator = massA + gear.ratio * gear.ratio * massB;
+    const coordinateA = gearCoordinate(bodyA, joint.rAX, joint.rAY, gear.coordinateA, state[0], state[1]);
+    const coordinateB = gearCoordinate(bodyB, joint.rBX, joint.rBY, gear.coordinateB, state[3], state[4]);
+    state[6] = denominator > 0 ? 1 / denominator : 0;
+    state[7] = (coordinateA + gear.ratio * coordinateB - gear.constant) * (BAUMGARTE / dt);
+    state[8] = gear.ratio;
+  },
+
+  solve(world: Physics2DWorld, joint: Physics2DJoint): void {
+    const state = jointStateScratch.get(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics2DBody(world, joint.bodyA);
+    const bodyB = findPhysics2DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+    const velocityA = bodyA.velocityX * state[0] + bodyA.velocityY * state[1] + bodyA.angularVelocity * state[2];
+    const velocityB = bodyB.velocityX * state[3] + bodyB.velocityY * state[4] + bodyB.angularVelocity * state[5];
+    const lambda = -state[6] * (velocityA + state[8] * velocityB + state[7]);
+    joint.impulse0 += lambda;
+    applyGearImpulse(bodyA, bodyB, state, lambda);
   },
 };
 
@@ -1004,6 +1080,51 @@ export const physics2DWeldJointSolver = {
     solvePointConstraint(bodyA, bodyB, joint, state[0], state[1]);
   },
 };
+
+function writeGearJacobian(
+  kind: Physics2DGearJoint['coordinateA'],
+  axisX: number,
+  axisY: number,
+  rX: number,
+  rY: number,
+  state: number[],
+  offset: number,
+): void {
+  if (kind === 'angular') {
+    state[offset] = 0;
+    state[offset + 1] = 0;
+    state[offset + 2] = 1;
+    return;
+  }
+  const length = Math.sqrt(axisX * axisX + axisY * axisY);
+  const unitX = length > EPSILON ? axisX / length : 1;
+  const unitY = length > EPSILON ? axisY / length : 0;
+  state[offset] = unitX;
+  state[offset + 1] = unitY;
+  state[offset + 2] = rX * unitY - rY * unitX;
+}
+
+function gearCoordinate(
+  body: Readonly<RigidBody2D>,
+  rX: number,
+  rY: number,
+  kind: Physics2DGearJoint['coordinateA'],
+  axisX: number,
+  axisY: number,
+): number {
+  if (kind === 'angular') return body.angle;
+  return (body.x + rX) * axisX + (body.y + rY) * axisY;
+}
+
+function applyGearImpulse(bodyA: RigidBody2D, bodyB: RigidBody2D, state: Readonly<number[]>, impulse: number): void {
+  bodyA.velocityX += bodyA.inverseMass * state[0] * impulse;
+  bodyA.velocityY += bodyA.inverseMass * state[1] * impulse;
+  bodyA.angularVelocity += bodyA.inverseInertia * state[2] * impulse;
+  const impulseB = impulse * state[8];
+  bodyB.velocityX += bodyB.inverseMass * state[3] * impulseB;
+  bodyB.velocityY += bodyB.inverseMass * state[4] * impulseB;
+  bodyB.angularVelocity += bodyB.inverseInertia * state[5] * impulseB;
+}
 
 function applyPrismaticImpulse(
   bodyA: RigidBody2D,
