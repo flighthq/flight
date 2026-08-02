@@ -171,6 +171,66 @@ describe('a body the step declines leaves the broadphase', () => {
   });
 });
 
+describe('collision filtering', () => {
+  function filteredBox(
+    world: Physics2DWorld,
+    type: RigidBody2D['type'],
+    categoryBits: number,
+    maskBits: number,
+    groupIndex = 0,
+  ): RigidBody2D {
+    const body = createRigidBody2D(type, 0, 0);
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE, false, {
+        categoryBits,
+        maskBits,
+        groupIndex,
+      }),
+    );
+    return addPhysics2DBody(world, body);
+  }
+
+  it('requires each collider mask to include the other collider category', () => {
+    const world = createPhysics2DWorld(0, 0);
+    filteredBox(world, 'static', 0x0001, 0x0002);
+    filteredBox(world, 'dynamic', 0x0002, 0x0004);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('creates a contact when both category and mask tests pass', () => {
+    const world = createPhysics2DWorld(0, 0);
+    filteredBox(world, 'static', 0x0001, 0x0002);
+    filteredBox(world, 'dynamic', 0x0002, 0x0001);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+  });
+
+  it('forces a matching positive group to collide regardless of masks', () => {
+    const world = createPhysics2DWorld(0, 0);
+    filteredBox(world, 'static', 0x0001, 0, 7);
+    filteredBox(world, 'dynamic', 0x0002, 0, 7);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+  });
+
+  it('prevents a matching negative group from colliding regardless of masks', () => {
+    const world = createPhysics2DWorld(0, 0);
+    filteredBox(world, 'static', 0x0001, 0xffffffff, -7);
+    filteredBox(world, 'dynamic', 0x0002, 0xffffffff, -7);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(0);
+  });
+});
+
 describe('sensor reporting between immovable bodies', () => {
   // A sensor is reported, never resolved — the solver already skips sensor contacts. The step's
   // "two immovable bodies have no constraint to solve" shortcut ran before any collider was

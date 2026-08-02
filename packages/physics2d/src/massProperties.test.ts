@@ -2,15 +2,10 @@ import type { CollisionShape, Physics2DCollider, Physics2DMassData, RigidBody2D 
 import { describe, expect, it } from 'vitest';
 
 import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
-import { createRigidBody2D } from './world';
+import { createPhysics2DCollider, createRigidBody2D } from './world';
 
 function collider(local: CollisionShape, density = 1): Physics2DCollider {
-  return {
-    local,
-    world: local,
-    material: { density, friction: 0.2, restitution: 0 },
-    sensor: false,
-  };
+  return createPhysics2DCollider(local, { density, friction: 0.2, restitution: 0 });
 }
 
 // The constructor, not a literal that happens to match the fields: a body grows fields (sleep state, for

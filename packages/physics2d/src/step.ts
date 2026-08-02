@@ -120,6 +120,7 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
       for (let j = 0; j < bodyB.colliders.length; j++) {
         const colliderA = bodyA.colliders[i];
         const colliderB = bodyB.colliders[j];
+        if (!isPhysics2DColliderPairEnabled(colliderA, colliderB)) continue;
         const sensorPair = colliderA.sensor || colliderB.sensor;
         // The immovable test belongs here, not on the bodies. Owning one sensor anywhere does not make
         // a body's other colliders reportable: a static body carrying a trigger volume plus ordinary
@@ -155,6 +156,18 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
   }
 
   world.contacts.sort(comparePhysics2DContacts);
+}
+
+function isPhysics2DColliderPairEnabled(
+  colliderA: Readonly<RigidBody2D['colliders'][number]>,
+  colliderB: Readonly<RigidBody2D['colliders'][number]>,
+): boolean {
+  // The fallback keeps worlds deserialized before filters were added safe to step; constructor-created
+  // colliders always own an explicit filter and therefore never take this branch.
+  const filterA = colliderA.filter ?? defaultCollisionFilter;
+  const filterB = colliderB.filter ?? defaultCollisionFilter;
+  if (filterA.groupIndex !== 0 && filterA.groupIndex === filterB.groupIndex) return filterA.groupIndex > 0;
+  return (filterA.maskBits & filterB.categoryBits) !== 0 && (filterB.maskBits & filterA.categoryBits) !== 0;
 }
 
 // Writes this step's manifold into the persistent contact for the pair, creating it if new, and carries
@@ -501,6 +514,7 @@ const boundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const bodyBounds: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 const pairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
+const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
 
 // Whether a joint between these two bodies suppresses their contact.
 function isPhysics2DPairJointSuppressed(world: Readonly<Physics2DWorld>, first: number, second: number): boolean {

@@ -54,6 +54,16 @@ describe('createPhysics2DCollider', () => {
   it('marks a sensor collider so the solver reports its overlaps without resolving them', () => {
     expect(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE, true).sensor).toBe(true);
   });
+
+  it('owns a permissive default collision filter and clones a supplied one', () => {
+    const defaulted = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+    expect(defaulted.filter).toEqual({ categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 });
+
+    const supplied = { categoryBits: 2, maskBits: 4, groupIndex: -3 };
+    const filtered = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE, false, supplied);
+    expect(filtered.filter).toEqual(supplied);
+    expect(filtered.filter).not.toBe(supplied);
+  });
 });
 
 describe('createPhysics2DSolverConfig', () => {
