@@ -6,7 +6,6 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   enableFlightDiagnostics,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
@@ -16,7 +15,6 @@ import {
   registerGlVignetteEffect,
   registerGlWhiteBalanceEffect,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlBloomEffect(state);
 registerGlVignetteEffect(state);
 registerGlToneMapEffect(state);

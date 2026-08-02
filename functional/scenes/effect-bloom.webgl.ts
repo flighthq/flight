@@ -13,12 +13,10 @@ import {
   createGlRenderState,
   createShape,
   registerGlBloomEffect,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 registerGlBloomEffect(state);
 

@@ -12,13 +12,11 @@ import {
   createGlRenderState,
   createShape,
   createVignetteEffect,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   registerGlVignetteEffect,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x101014ff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 registerGlVignetteEffect(state);
 

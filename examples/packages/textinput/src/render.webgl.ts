@@ -4,14 +4,12 @@ import {
   createGlRenderState,
   enableFlightDiagnostics,
   defaultGlRichTextRenderer,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   enableGlTextInput,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -38,7 +36,6 @@ registerGlStandardMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 enableGlTextInput();
 
 export const scale = pixelRatio;

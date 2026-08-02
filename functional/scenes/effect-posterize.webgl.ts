@@ -13,12 +13,10 @@ import {
   createPosterizeEffect,
   createShape,
   registerGlPosterizeEffect,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x202830ff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 registerGlPosterizeEffect(state);
 
