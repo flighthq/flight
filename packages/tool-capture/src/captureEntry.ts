@@ -22,6 +22,7 @@ import type { DetailTone } from './captureFormat.js';
 import { formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
+import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
 import { writeCaptureReport } from './captureReport.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
@@ -594,6 +595,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
             console.error(statusLine('fail', renderer, detailMsg));
             anyFailed = true;
           }
+        }
+
+        // A registry miss that means undrawn output fails the target even though the guards report it
+        // at warn level. Checked after the error branch and independently of it: a target can draw a
+        // partial picture with no page error at all, which is exactly the case that used to pass.
+        const undrawn = findUndrawnRegistryMisses(logs);
+        if (undrawn.length > 0) {
+          console.error(statusLine('fail', renderer, formatUndrawnRegistryMisses(undrawn)));
+          anyFailed = true;
         }
       }
     } catch (err) {
