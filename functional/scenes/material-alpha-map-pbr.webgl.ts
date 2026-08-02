@@ -71,7 +71,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // `alphaMode: 'blend'` composites it (not just the BlinnPhong + 'mask' path the sibling scene covers).
 // A camera-facing warm-orange PBR quad fills the view; its alpha map is a horizontal GRADIENT — green
 // (coverage) fades from 1 at the left edge to 0 at the right. In blend mode the fragment alpha drives
-// SRC_ALPHA compositing over the cool-blue background, so the quad is opaque at the left, ~half-blended
+// premultiplied (ONE, ONE_MINUS_SRC_ALPHA) compositing over the cool-blue background, so the quad is opaque at the left, ~half-blended
 // in the middle, and fully transparent (background) at the right. The gradient's intermediate middle is
 // what distinguishes BLEND from MASK (a mask cutoff would snap each column fully on or off), and the
 // warm-quad-vs-cool-background RED channel is robust to each backend's HDR tone-mapping.

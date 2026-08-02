@@ -176,9 +176,6 @@ export function createWgpuMeshPipeline(
   };
 }
 
-// Straight Normal output needs SRC_ALPHA while premultiplied Normal needs ONE. Other fixed-function
-// equations reuse render-wgpu's canonical premultiplied table, shared with particles and 2D rendering,
-// rather than maintaining a second partial mapping here.
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface
 // trailer (or none at all) is treated as opaque, matching the registry's own fallback.
 function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined): boolean {

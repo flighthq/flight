@@ -139,6 +139,10 @@ const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-a
 // (Erase/Alpha/None/…) are a CompositeEffect and the destination-reading advanced modes
 // (Overlay/HardLight/…/HSL) a BlendEffect — neither is in the node-property BlendMode enum, so there is
 // nothing to map here.
+//
+// Darken/Lighten are the two entries here that are NOT exact under partial coverage: MIN/MAX do not
+// distribute over `(1-a)*dst + a*B(src, dst)`, so at zero alpha Darken wipes the backdrop to black. See
+// the matching note in render-gl's DEFAULT_GL_BLEND_MODES; both want a destination-reading BlendEffect.
 const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Add]: createWgpuBlendState('one', 'one'),
   [BlendMode.Darken]: createWgpuBlendState('one', 'one', 'min'),

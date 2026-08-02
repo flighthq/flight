@@ -7,7 +7,7 @@ import type { MaterialAlphaMode } from './SurfaceMaterial';
 // settable uniformly at construction across ALL surface materials — the trailer is a base concern, not
 // a per-constructor one. `createSurfaceMaterial` applies these in one place; each `create*Material`
 // forwards its options through. An omitted field falls back to the trailer default (opaque,
-// single-sided, straight alpha, Normal blend, 0.5 mask cutoff).
+// single-sided, Normal blend, 0.5 mask cutoff).
 export interface SurfaceMaterialOptions {
   alphaCutoff?: number;
   alphaMode?: MaterialAlphaMode;
