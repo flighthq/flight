@@ -200,6 +200,30 @@ describe('updatePhysics2DSleep', () => {
     expect(shoved.sleeping).toBe(false);
   });
 
+  it('keeps only participating endpoints awake for an externally driven joint', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'external', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+      keepsBodiesAwake: true,
+    });
+    const unused = still(world, 0);
+    const driven = still(world, 1);
+    world.joints.push({
+      kind: 'external',
+      bodyA: unused.index,
+      bodyB: driven.index,
+      collideConnected: false,
+    } as never);
+
+    updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
+
+    expect(unused.sleeping).toBe(true);
+    expect(driven.sleeping).toBe(false);
+    expect(driven.sleepTimer).toBe(0);
+  });
+
   it('does not let a shared static body merge two islands', () => {
     // The failure this prevents is world-sized: every crate in a level rests on the same ground, so a
     // static bridge would make the whole level one island that sleeps only when nothing anywhere moves.

@@ -556,6 +556,10 @@ export interface Physics2DJointSolver {
   // one-body kind sets false so world services do not resolve, wake, remove, island-connect, or suppress
   // collisions through a placeholder endpoint the solver never reads.
   usesBodyA?: boolean;
+  // Whether this constraint represents continuing external control and therefore keeps its participating
+  // non-static bodies awake. A mouse drag is the canonical case: its target may move through bare data
+  // assignment at any time, so allowing the dragged body to sleep would make later target writes inert.
+  keepsBodiesAwake?: boolean;
   // Whether this kind's two ends may be exchanged, and its chance to carry its own direction-bearing
   // state across the exchange. Called by addPhysics2DJoint with the ends still in their original
   // order; return true to let the generic swap of bodies and anchors proceed, false to veto it.

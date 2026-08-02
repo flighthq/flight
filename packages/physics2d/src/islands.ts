@@ -57,6 +57,16 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
     }
   }
 
+  // A constraint driven by state outside the simulation cannot infer that its next target write is
+  // coming, so its solver declares that participating bodies stay awake for the constraint's lifetime.
+  // Reset after the stillness pass so even a timestep longer than timeToSleep cannot put one to sleep.
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver?.keepsBodiesAwake !== true) continue;
+    if (solver.usesBodyA !== false) _keepPhysics2DBodyAwake(world, joint.bodyA);
+    _keepPhysics2DBodyAwake(world, joint.bodyB);
+  }
+
   // Then the island reduction. `_islandRootOf` is union-find over the contact and joint graph, so the
   // root is a stable representative for the connected component.
   const parents = new Map<number, number>();
@@ -127,6 +137,11 @@ function _isBodyStill(body: Readonly<RigidBody2D>, linearThreshold: number, angu
   const speedSquared = body.velocityX * body.velocityX + body.velocityY * body.velocityY;
   if (speedSquared > linearThreshold * linearThreshold) return false;
   return Math.abs(body.angularVelocity) <= angularThreshold;
+}
+
+function _keepPhysics2DBodyAwake(world: Readonly<Physics2DWorld>, bodyIndex: number): void {
+  const body = findPhysics2DBody(world, bodyIndex);
+  if (body !== null && body.type !== 'static') body.sleepTimer = 0;
 }
 
 // Joins two bodies into one island, but only when BOTH are dynamic. A static body is not a member of
