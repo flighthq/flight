@@ -3,12 +3,10 @@ import {
   createGlCanvasElement,
   createGlRenderState,
   enableFlightDiagnostics,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   prepareScene2DRender,
   registerStandardGlTextureResolvers,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -30,7 +28,6 @@ enableFlightDiagnostics(state);
 registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 
 export const scale = pixelRatio;
 

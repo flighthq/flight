@@ -13,12 +13,10 @@ import {
   createGlRenderState,
   createShape,
   registerGlChromaticAberrationEffect,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x101014ff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 registerGlChromaticAberrationEffect(state);
 

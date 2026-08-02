@@ -17,14 +17,12 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   registerWgpuBloomEffect,
-  defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   enableWgpuClipSupport,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
-  registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuScene2D,
   setNode2DClip,
@@ -40,7 +38,6 @@ document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuStandardMaterial(state);
 enableWgpuClipSupport(state);
 registerWgpuBloomEffect(state);

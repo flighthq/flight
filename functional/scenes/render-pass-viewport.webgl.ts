@@ -19,13 +19,7 @@ import {
   presentGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
-import {
-  defaultGlShapeCommands,
-  defaultGlShapeRenderer,
-  enableGlClipSupport,
-  registerGlShapeCommands,
-  renderGlScene2D,
-} from '@flighthq/scene2d-gl';
+import { defaultGlShapeRenderer, enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
@@ -95,7 +89,6 @@ invalidateGlRenderStateCache(state);
 // 2D projection + clip under an edge-clamped region. Requested x=-30,width=300 intersects the target
 // as x=0,width=270; a full orange shape is clipped in LOCAL viewport coordinates.
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 enableGlClipSupport(state);
 const root2D = createDisplayObject();
 root2D.scaleX = scale;

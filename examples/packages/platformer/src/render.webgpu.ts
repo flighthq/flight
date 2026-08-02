@@ -3,14 +3,12 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   enableFlightDiagnostics,
-  defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
   prepareScene2DRender,
   registerStandardWgpuTextureResolvers,
   registerWgpuStandardMaterial,
-  registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -36,7 +34,6 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 registerStandardWgpuTextureResolvers(state);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
 

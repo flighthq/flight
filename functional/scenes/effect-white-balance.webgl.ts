@@ -12,13 +12,11 @@ import {
   createGlRenderState,
   createShape,
   createWhiteBalanceEffect,
-  defaultGlShapeCommands,
   defaultGlShapeRenderer,
   registerGlWhiteBalanceEffect,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
@@ -36,7 +34,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x202830ff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerGlStandardMaterial(state);
 registerGlWhiteBalanceEffect(state);
 

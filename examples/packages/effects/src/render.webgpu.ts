@@ -6,7 +6,6 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   enableFlightDiagnostics,
-  defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
@@ -15,7 +14,6 @@ import {
   registerWgpuVignetteEffect,
   registerWgpuWhiteBalanceEffect,
   registerWgpuStandardMaterial,
-  registerWgpuShapeCommands,
   registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
@@ -34,7 +32,6 @@ enableFlightDiagnostics(state);
 
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerWgpuBloomEffect(state);
 registerWgpuVignetteEffect(state);
 registerWgpuToneMapEffect(state);
