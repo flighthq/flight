@@ -1,10 +1,19 @@
 import { invalidateContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import type {
+  BoundsNodeAny,
+  MorphShape,
+  PartialNode,
+  Rectangle,
+  Shape,
+  ShapeData,
+  ShapeRuntime,
+} from '@flighthq/types/contract';
+import { MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
 
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;
+  if (shape.kind === MorphShapeKind) (shape as MorphShape).data.paintBindings.length = 0;
   invalidateContent(shape);
 }
 
@@ -273,6 +282,7 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
 export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
   out.data.commands.length = 0;
   out.data.commands.push(...source.data.commands);
+  if (out.kind === MorphShapeKind) (out as MorphShape).data.paintBindings.length = 0;
   invalidateContent(out);
 }
 

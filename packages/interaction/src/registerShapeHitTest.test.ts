@@ -25,15 +25,24 @@ describe('registerShapeHitTest', () => {
     const end = createPath();
     appendPathRectangle(end, 10, 10, 80, 80);
     const shape = createMorphShape(createPathMorph(start, end)!);
+    const secondStart = createPath();
+    appendPathCircle(secondStart, 150, 150, 40);
+    const secondEnd = createPath();
+    appendPathRectangle(secondEnd, 110, 110, 80, 80);
     appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendMorphShapePath(shape);
     appendShapeEndFill(shape);
-    setRectangle(getNodeLocalBoundsRectangle(shape), 10, 10, 80, 80);
+    appendShapeBeginFill(shape, 0x0000ffff, 1);
+    appendMorphShapePath(shape, createPathMorph(secondStart, secondEnd)!);
+    appendShapeEndFill(shape);
+    setRectangle(getNodeLocalBoundsRectangle(shape), 10, 10, 180, 180);
     setNodeHitTestEnabled(shape, true);
 
     expect(findGraphHitTargetPrecise(shape, 85, 85)).toBeNull();
+    expect(findGraphHitTargetPrecise(shape, 185, 185)).toBeNull();
     setMorphShapeProgress(shape, 1);
     expect(findGraphHitTargetPrecise(shape, 85, 85)).toBe(shape);
+    expect(findGraphHitTargetPrecise(shape, 185, 185)).toBe(shape);
   });
 
   it('winding-tests the actual fill for precise queries, so a bbox corner outside the circle misses', () => {

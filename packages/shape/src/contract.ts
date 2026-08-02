@@ -1,5 +1,14 @@
+export { explainMorphShapeGradientEndpoints } from './explainMorphShapeGradientEndpoints';
 export * from './morphShape';
 export * from './morphShapeAnimation';
+export {
+  appendMorphShapeBeginFill,
+  appendMorphShapeBeginGradientFill,
+  appendMorphShapeBeginTextureFill,
+  appendMorphShapeLineGradientStyle,
+  appendMorphShapeLineStyle,
+  appendMorphShapeLineTextureStyle,
+} from './morphShapePaint';
 export * from './scale9Shape';
 export * from './shape';
 export * from './shapeCommands';

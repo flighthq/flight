@@ -8,6 +8,16 @@ by: builder4
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## [2026-08-02 · builder4] — compound MorphShape geometry and paint
+
+Expanded one retained MorphShape command stream to support multiple independently prepared path morphs
+and stable in-place paint bindings. Solid and gradient fills, bitmap placement, solid and filled strokes,
+gradient stops/matrices/focal ratios, and stroke width now share the same progress value; the setter
+samples every bound path and paint value before one content invalidation. Structural style choices and
+texture identity stay static, playback stays in animation/timeline, and every renderer continues to replay
+ordinary Shape commands. Clearing or replacing commands discards their offset-based paint bindings, and
+the gradient compatibility sentinel has a detached explanation query.
+
 ## [2026-08-02 · builder4] — explicit MorphShape animation binding
 
 Added a stable typed `MorphShapeAnimationTarget`, `applyAnimationClipToMorphShape`, and the reusable

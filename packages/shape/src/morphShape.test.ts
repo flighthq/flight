@@ -1,7 +1,12 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
-import type { PathMorph, ShapeCommandToken } from '@flighthq/types/contract';
+import type {
+  MorphShapePaintBinding,
+  MorphShapePathBinding,
+  PathMorph,
+  ShapeCommandToken,
+} from '@flighthq/types/contract';
 import { MorphShapeKind } from '@flighthq/types/contract';
 
 import {
@@ -39,6 +44,31 @@ describe('appendMorphShapePath', () => {
     expect(shape.data.commands[6]).toBe(shape.data.path.commands);
     expect(shape.data.commands[7]).toBe(shape.data.path.data);
   });
+
+  it('retains and reuses independent path morphs in one command stream', () => {
+    const shape = createMorphShape(createTestMorph());
+    const secondMorph = createTestMorph(100);
+    const primaryPath = appendMorphShapePath(shape);
+    const secondPath = appendMorphShapePath(shape, secondMorph);
+    const repeatedSecondPath = appendMorphShapePath(shape, secondMorph);
+    const primaryCommands = primaryPath.commands;
+    const primaryData = primaryPath.data;
+    const secondCommands = secondPath.commands;
+    const secondData = secondPath.data;
+    const revision = getNodeLocalContentRevision(shape);
+
+    setMorphShapeProgress(shape, 0.5);
+
+    expect(shape.data.pathBindings).toHaveLength(2);
+    expect(repeatedSecondPath).toBe(secondPath);
+    expect(primaryPath.commands).toBe(primaryCommands);
+    expect(primaryPath.data).toBe(primaryData);
+    expect(secondPath.commands).toBe(secondCommands);
+    expect(secondPath.data).toBe(secondData);
+    expect(primaryPath.data.slice(0, 2)).toStrictEqual([5, 10]);
+    expect(secondPath.data.slice(0, 2)).toStrictEqual([105, 110]);
+    expect(getNodeLocalContentRevision(shape)).toBe(revision + 1);
+  });
 });
 
 describe('createMorphShape', () => {
@@ -50,6 +80,8 @@ describe('createMorphShape', () => {
     expect(shape.kind).toBe(MorphShapeKind);
     expect(shape.data.commands).toStrictEqual([]);
     expect(shape.data.morph).toBe(morph);
+    expect(shape.data.pathBindings).toStrictEqual([{ morph, path: shape.data.path }]);
+    expect(shape.data.paintBindings).toStrictEqual([]);
     expect(shape.data.path.commands).toStrictEqual(morph.commands);
     expect(shape.data.path.data).toStrictEqual(morph.startData);
     expect(shape.data.progress).toBe(0);
@@ -79,6 +111,20 @@ describe('createMorphShape', () => {
 });
 
 describe('createMorphShapeData', () => {
+  it('owns its mutable binding registries without replacing retained values', () => {
+    const morph = createTestMorph();
+    const paintBindings: MorphShapePaintBinding[] = [];
+    const pathBindings: MorphShapePathBinding[] = [];
+
+    const data = createMorphShapeData(morph, { paintBindings, pathBindings });
+
+    expect(data.paintBindings).not.toBe(paintBindings);
+    expect(data.pathBindings).not.toBe(pathBindings);
+    expect(paintBindings).toStrictEqual([]);
+    expect(pathBindings).toStrictEqual([]);
+    expect(data.pathBindings).toStrictEqual([{ morph, path: data.path }]);
+  });
+
   it('samples the requested initial endpoint exactly', () => {
     const morph = createTestMorph();
 
@@ -150,12 +196,12 @@ describe('setMorphShapeProgress', () => {
   });
 });
 
-function createTestMorph(): PathMorph {
+function createTestMorph(offset = 0): PathMorph {
   const start = createPath();
-  appendPathMoveTo(start, 0, 0);
-  appendPathLineTo(start, 10, 0);
+  appendPathMoveTo(start, offset, offset);
+  appendPathLineTo(start, offset + 10, offset);
   const end = createPath();
-  appendPathMoveTo(end, 10, 20);
-  appendPathLineTo(end, 30, 20);
+  appendPathMoveTo(end, offset + 10, offset + 20);
+  appendPathLineTo(end, offset + 30, offset + 20);
   return createPathMorph(start, end)!;
 }
