@@ -1,19 +1,25 @@
-import type { Shape } from '@flighthq/types/contract';
+import { createPath } from '@flighthq/path/contract';
+import type { GlyphOutlineSource, Shape } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { ShapeWriter } from './swfShapeTestHelper';
-import { createSwfTextShape, readSwfFontGlyphs, resolveSwfFontUnitsPerEm } from './swfText';
+import {
+  createSwfTextShape,
+  readSwfFontGlyphOutlineSource,
+  readSwfFontGlyphs,
+  resolveSwfFontUnitsPerEm,
+} from './swfText';
 
 describe('createSwfTextShape', () => {
   it('places a glyph outline at the record height and colour, then advances the pen', () => {
-    const glyphs = [boxGlyph(512)];
+    const font = boxFont(512);
     const writer = new TextWriter();
     writer.writeRecord({ color: 0x00ff00, fontId: 1, height: 1024 });
     writer.writeGlyph(0, 600);
     writer.writeGlyph(0, 0);
     writer.end();
 
-    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, glyphs]]), new Map([[1, 1024]]));
+    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, font]]));
 
     // Two glyphs, each its own fill span, the second offset by the first's 600-twip advance (30px).
     expect(shape?.data.commands.filter((token) => token === 'beginFill')).toHaveLength(2);
@@ -29,7 +35,7 @@ describe('createSwfTextShape', () => {
     writer.writeGlyph(0, 0);
     writer.end();
 
-    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, [boxGlyph(512)]]]), new Map([[1, 1024]]));
+    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, boxFont(512)]]));
 
     expect(shape?.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 12.8, 0]);
   });
@@ -40,7 +46,7 @@ describe('createSwfTextShape', () => {
     writer.writeGlyph(9, 0);
     writer.end();
 
-    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, [boxGlyph(512)]]]), new Map([[1, 1024]]));
+    const shape = createSwfTextShape(writer.toReader(), 1, new Map([[1, boxFont(512)]]));
 
     expect(shape).not.toBeNull();
     expect(shape?.data.commands).toEqual([]);
@@ -51,7 +57,45 @@ describe('createSwfTextShape', () => {
     writer.writeRecord({ color: 0, fontId: 1, height: 1024 });
     const bytes = writer.toBytes();
 
-    expect(createSwfTextShape(new SwfReader(bytes, 0, bytes.length - 1), 1, new Map(), new Map())).toBeNull();
+    expect(createSwfTextShape(new SwfReader(bytes, 0, bytes.length - 1), 1, new Map())).toBeNull();
+  });
+});
+
+describe('readSwfFontGlyphOutlineSource', () => {
+  it('recovers DefineFont2 codepoint lookup, layout metrics, advances, and raw design-unit paths', () => {
+    const glyph = boxGlyphBytes(256);
+    const offsets = joinBytes(uint16(4), uint16(4 + glyph.length));
+    const bytes = joinBytes(
+      uint16(7),
+      new Uint8Array([FONT_HAS_LAYOUT, 0, 0]),
+      uint16(1),
+      offsets,
+      glyph,
+      new Uint8Array([0x41]),
+      uint16(800),
+      uint16(200),
+      uint16(50),
+      uint16(600),
+      ZERO_RECTANGLE,
+      uint16(0),
+    );
+
+    const source = readSwfFontGlyphOutlineSource(new SwfReader(bytes, 0, bytes.length), 2)!;
+    const outline = createPath();
+
+    expect(source.getGlyphOutlineIndexForCodePoint(0x41)).toBe(0);
+    expect(source.getGlyphOutlineIndexForCodePoint(0x42)).toBe(-1);
+    expect(source.getGlyphOutlineAdvance(0)).toBe(600);
+    expect(source.getGlyphOutlineMetrics()).toEqual({ ascent: 800, descent: 200, lineGap: 50, unitsPerEm: 1024 });
+    expect(source.getGlyphOutline(outline, 0)).toBe(true);
+    expect(outline.data).toContain(256);
+  });
+
+  it('keeps a legacy DefineFont index-addressable without inventing a codepoint map', () => {
+    const source = boxFont(512);
+
+    expect(source.getGlyphOutlineIndexForCodePoint(0x41)).toBe(-1);
+    expect(source.getGlyphOutlineAdvance(0)).toBe(512);
   });
 });
 
@@ -109,9 +153,9 @@ function boxGlyphBytes(size: number): Uint8Array {
   return writer.toBytes();
 }
 
-function boxGlyph(size: number): Shape {
+function boxFont(size: number): GlyphOutlineSource {
   const bytes = boxGlyphBytes(size);
-  return readSwfFontGlyphs(new SwfReader(joinBytes(uint16(1), uint16(2), bytes), 0, bytes.length + 4), 1)![0]!;
+  return readSwfFontGlyphOutlineSource(new SwfReader(joinBytes(uint16(1), uint16(2), bytes), 0, bytes.length + 4), 1)!;
 }
 
 class TextWriter {
@@ -183,3 +227,6 @@ function joinBytes(...parts: ReadonlyArray<Uint8Array>): Uint8Array {
 function uint16(value: number): Uint8Array {
   return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
 }
+
+const FONT_HAS_LAYOUT = 0x80;
+const ZERO_RECTANGLE = new Uint8Array([0x08, 0x00]);

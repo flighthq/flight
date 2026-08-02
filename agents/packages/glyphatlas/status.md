@@ -1,8 +1,14 @@
 ---
 package: '@flighthq/glyphatlas'
-updated: 2026-07-30
-by: builder2
+updated: 2026-08-01
+by: builder4
 ---
+
+## 2026-08-01 -- per-atlas rasterizer binding
+
+`GlyphAtlasOptions.rasterizerBackend` now binds a backend to one atlas while retaining the global backend
+as the omission default. Metrics and glyph misses both use the captured backend, so two embedded outline
+fonts can feed independent atlases without racing on process-wide state.
 
 ## 2026-07-30 -- bold and italic atlases were unreachable (builder)
 

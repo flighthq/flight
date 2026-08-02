@@ -12,9 +12,12 @@
   "references": [
     { "path": "../clip" },
     { "path": "../compression" },
+    { "path": "../font" },
     { "path": "../geometry" },
+    { "path": "../glyphatlas" },
     { "path": "../movieclip" },
     { "path": "../node" },
+    { "path": "../path" },
     { "path": "../scene2d" },
     { "path": "../scene2d-resources" },
     { "path": "../shape" },

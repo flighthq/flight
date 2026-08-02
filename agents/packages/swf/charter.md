@@ -94,6 +94,10 @@ _Append-only, dated, blessed rulings._
   MIT fixture is fetched only into ignored local storage. Flight commits its revision-pinned
   provenance, source hash, derived document manifest, and reproduction procedure; hermetic tests
   reproduce the relevant encoding synthetically and never require the asset or network.
+- **[2026-08-01] Embedded outline fonts compose through the shared font/glyph stack.** `DefineFont*`
+  produces the generic, glyph-index-keyed `GlyphOutlineSource` owned by the font layer rather than
+  widening the raster `GlyphSource`. SWF static text walks that source as vector paths; callers can bind
+  the same source explicitly to glyphatlas through the font rasterizer adapter. User-directed 2026-08-01.
 
 ## Open directions
 
@@ -102,7 +106,8 @@ _Append-only, dated, blessed rulings._
    `surface-rs`) only when its measured binary/decompression weight justifies the seam.
 2. **Version + tag baseline.** Which SWF versions and tag set form the AAA core (vector + MovieClip +
    text + bitmap + linkage), with filters/morph/streaming-video as deepening.
-3. **Fonts** — `DefineFont*` glyph outlines vs Flight's font/glyph stack; embedded-font recovery.
+3. **`DefineFont4`.** Decide whether its embedded CFF/OpenType bytes are exposed opaquely as another
+   carried format or parsed by a separate general font-format producer of `GlyphOutlineSource`.
 4. **The separate `abc` parser** — if an AS→read migration aid is ever wanted, a distinct
    AVM-format cell consuming the `DoABC` blob (never a VM). Ranks low; the #3 contract needs none of
    it.

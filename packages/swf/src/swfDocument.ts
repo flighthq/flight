@@ -24,6 +24,7 @@ import type {
   Scene2DDocument,
   Scene2DDocumentImportContext,
   FrameScript,
+  GlyphOutlineSource,
   Scene2DDocumentImporterRegistry,
   Shape,
   ShapeData,
@@ -35,33 +36,20 @@ import { Compression } from '@flighthq/types/contract';
 import { readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
-import { createSwfTextShape, readSwfFontGlyphs, resolveSwfFontUnitsPerEm } from './swfText';
+import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
+
+// Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
+// is the SWF character id used by DefineText and DefineEditText. This is a separate parse entry from
+// Scene2D construction so callers that only need embedded fonts do not have to retain a document.
+export function createGlyphOutlineSourcesFromSwf(source: Uint8Array): ReadonlyMap<number, GlyphOutlineSource> | null {
+  const file = readSwfFile(source);
+  return file === null ? null : new Map(file.parsed.fontOutlineSources);
+}
 
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
-  const uncompressed = uncompressSwfSource(source);
-  if (uncompressed === null) return null;
-
-  const header = new SwfReader(uncompressed, 0, uncompressed.length);
-  const signature = header.readUint8();
-  if (signature !== FWS_SIGNATURE || header.readUint8() !== W_SIGNATURE || header.readUint8() !== S_SIGNATURE) {
-    return null;
-  }
-
-  const version = header.readUint8();
-  const fileLength = header.readUint32();
-  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > uncompressed.length) return null;
-
-  const body = new SwfReader(uncompressed, SWF_PREFIX_LENGTH, fileLength);
-  const stageBounds = readSwfRectangle(body);
-  if (stageBounds === null) return null;
-  // Header FrameRate is 8.8 fixed and governs every timeline in the file; the authored FrameCount that
-  // follows it is advisory, so the real root frame count comes from the ShowFrame tags themselves.
-  const frameRate = body.readUint16() / FIXED_8_8_ONE;
-  body.readUint16();
-  if (!body.valid) return null;
-
-  const parsed = readSwfTags(body);
-  if (parsed === null) return null;
+  const file = readSwfFile(source);
+  if (file === null) return null;
+  const { frameRate, parsed, stageBounds } = file;
 
   const references: Scene2DContentReference[] = [];
   const instantiation: SwfInstantiationState = {
@@ -146,6 +134,7 @@ interface SwfImagePayload {
 interface SwfTagResult {
   backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
+  fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
@@ -167,8 +156,8 @@ interface SwfParseState {
   backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
-  fontGlyphs: Map<number, readonly (Shape | null)[]>;
-  fontUnitsPerEm: Map<number, number>;
+  fontCodePoints: Map<number, number[]>;
+  fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
   // The shared JPEG encoding tables a legacy DefineBits image is missing, held until one needs them.
   jpegTables: Uint8Array | null;
@@ -188,6 +177,39 @@ interface SwfInstantiationState {
   remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
+}
+
+interface SwfFile {
+  frameRate: number;
+  parsed: SwfTagResult;
+  stageBounds: SwfRectangle;
+}
+
+function readSwfFile(source: Uint8Array): SwfFile | null {
+  const uncompressed = uncompressSwfSource(source);
+  if (uncompressed === null) return null;
+
+  const header = new SwfReader(uncompressed, 0, uncompressed.length);
+  const signature = header.readUint8();
+  if (signature !== FWS_SIGNATURE || header.readUint8() !== W_SIGNATURE || header.readUint8() !== S_SIGNATURE) {
+    return null;
+  }
+
+  const version = header.readUint8();
+  const fileLength = header.readUint32();
+  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > uncompressed.length) return null;
+
+  const body = new SwfReader(uncompressed, SWF_PREFIX_LENGTH, fileLength);
+  const stageBounds = readSwfRectangle(body);
+  if (stageBounds === null) return null;
+  // Header FrameRate is 8.8 fixed and governs every timeline in the file; the authored FrameCount that
+  // follows it is advisory, so the real root frame count comes from the ShowFrame tags themselves.
+  const frameRate = body.readUint16() / FIXED_8_8_ONE;
+  body.readUint16();
+  if (!body.valid) return null;
+
+  const parsed = readSwfTags(body);
+  return parsed === null ? null : { frameRate, parsed, stageBounds };
 }
 
 // Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
@@ -708,8 +730,8 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     backgroundColor: null,
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
-    fontGlyphs: new Map<number, readonly (Shape | null)[]>(),
-    fontUnitsPerEm: new Map<number, number>(),
+    fontCodePoints: new Map<number, number[]>(),
+    fontOutlineSources: new Map<number, GlyphOutlineSource>(),
     images: new Map<number, SwfImagePayload>(),
     jpegTables: null,
     pendingTexts: [],
@@ -720,10 +742,12 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   };
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
+  composeSwfFontCodePoints(state);
   appendSwfPendingTextShapes(reader, state);
   return {
     backgroundColor: state.backgroundColor,
     characterBounds: state.characterBounds,
+    fontOutlineSources: state.fontOutlineSources,
     images: state.images,
     linkages: state.linkages,
     shapes: state.shapes,
@@ -745,8 +769,7 @@ function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): vo
     const shape = createSwfTextShape(
       new SwfReader(reader.source, pending.start, pending.end),
       pending.version,
-      state.fontGlyphs,
-      state.fontUnitsPerEm,
+      state.fontOutlineSources,
     );
     if (shape !== null) state.shapes.set(pending.characterId, shape);
   }
@@ -797,6 +820,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readSwfButtonDefinition(body, state, code === TAG_DEFINE_BUTTON_2 ? 2 : 1);
     } else if (code === TAG_DEFINE_FONT || code === TAG_DEFINE_FONT_2 || code === TAG_DEFINE_FONT_3) {
       readSwfFontDefinition(body, state, code);
+    } else if (code === TAG_DEFINE_FONT_INFO || code === TAG_DEFINE_FONT_INFO_2) {
+      readSwfFontInfo(body, state, code === TAG_DEFINE_FONT_INFO_2);
     } else if (code === TAG_SET_BACKGROUND_COLOR) {
       readSwfBackgroundColor(body, state);
     } else if (code === TAG_EXPORT_ASSETS || code === TAG_SYMBOL_CLASS) {
@@ -885,10 +910,44 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
   const version = code === TAG_DEFINE_FONT ? 1 : code === TAG_DEFINE_FONT_2 ? 2 : 3;
   const reader = new SwfReader(body.source, body.pos, body.end);
   const fontId = reader.source[body.pos] + reader.source[body.pos + 1] * 0x100;
-  const glyphs = readSwfFontGlyphs(reader, version);
-  if (glyphs === null || fontId === 0) return;
-  state.fontGlyphs.set(fontId, glyphs);
-  state.fontUnitsPerEm.set(fontId, resolveSwfFontUnitsPerEm(version));
+  const source = readSwfFontGlyphOutlineSource(reader, version);
+  if (source === null || fontId === 0) return;
+  state.fontOutlineSources.set(fontId, source);
+}
+
+// DefineFont's original form predates embedded character codes. DefineFontInfo/2 supplies its parallel
+// code table in a separate tag, which may appear before or after the font definition. Keep that metadata
+// during the tag walk and compose it only once every timeline has been visited.
+function readSwfFontInfo(body: SwfReader, state: SwfParseState, hasLanguage: boolean): void {
+  const fontId = body.readUint16();
+  const nameLength = body.readUint8();
+  for (let index = 0; index < nameLength; index++) body.readUint8();
+  const flags = body.readUint8();
+  if (hasLanguage) body.readUint8();
+  if (!body.valid || fontId === 0) return;
+
+  const codePoints: number[] = [];
+  const wideCodes = (flags & FONT_INFO_FLAG_WIDE_CODES) !== 0;
+  while (body.pos < body.end && body.valid) codePoints.push(wideCodes ? body.readUint16() : body.readUint8());
+  if (body.valid) state.fontCodePoints.set(fontId, codePoints);
+}
+
+function composeSwfFontCodePoints(state: SwfParseState): void {
+  for (const [fontId, codePoints] of state.fontCodePoints) {
+    const source = state.fontOutlineSources.get(fontId);
+    if (source === undefined) continue;
+    const codepointToGlyphIndex = new Map<number, number>();
+    for (let glyphIndex = 0; glyphIndex < codePoints.length; glyphIndex++) {
+      const codePoint = codePoints[glyphIndex];
+      if (!codepointToGlyphIndex.has(codePoint)) codepointToGlyphIndex.set(codePoint, glyphIndex);
+    }
+    state.fontOutlineSources.set(fontId, {
+      getGlyphOutline: (out, glyphIndex) => source.getGlyphOutline(out, glyphIndex),
+      getGlyphOutlineAdvance: (glyphIndex) => source.getGlyphOutlineAdvance(glyphIndex),
+      getGlyphOutlineIndexForCodePoint: (codePoint) => codepointToGlyphIndex.get(codePoint) ?? -1,
+      getGlyphOutlineMetrics: () => source.getGlyphOutlineMetrics(),
+    });
+  }
 }
 
 function readSwfBackgroundColor(body: SwfReader, state: SwfParseState): void {
@@ -1221,6 +1280,7 @@ const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
 const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
 const MIN_SWF_LENGTH = 12;
+const FONT_INFO_FLAG_WIDE_CODES = 0x01;
 const PNG_MIME_TYPE = 'image/png';
 const S_SIGNATURE = 0x53;
 const SWF_INSTANCE_KEY_SCALE = 0x10000;
@@ -1243,6 +1303,8 @@ const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_2 = 48;
 const TAG_DEFINE_FONT_3 = 75;
+const TAG_DEFINE_FONT_INFO = 13;
+const TAG_DEFINE_FONT_INFO_2 = 62;
 const TAG_DEFINE_MORPH_SHAPE = 46;
 const TAG_DEFINE_MORPH_SHAPE_2 = 84;
 const TAG_DEFINE_SHAPE = 2;

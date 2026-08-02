@@ -1,4 +1,6 @@
 import { registerDecompressor, unregisterDecompressor } from '@flighthq/compression/contract';
+import { createGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
+import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import {
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
@@ -24,8 +26,81 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { MovieClip, Shape } from '@flighthq/types/contract';
 import { Compression, MovieClipKind, ShapeKind } from '@flighthq/types/contract';
 
-import { createScene2DFromSwf, registerSwfScene2DDocumentImporter } from './swfDocument';
+import {
+  createGlyphOutlineSourcesFromSwf,
+  createScene2DFromSwf,
+  registerSwfScene2DDocumentImporter,
+} from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
+
+describe('createGlyphOutlineSourcesFromSwf', () => {
+  it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {
+    const glyph = new ShapeWriter();
+    glyph.writeStyleBits(1, 0);
+    glyph.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    glyph.writeStraightEdge(256, 0);
+    glyph.writeStraightEdge(0, 256);
+    glyph.writeStraightEdge(-256, 0);
+    glyph.writeStraightEdge(0, -256);
+    glyph.writeEndShape();
+    const glyphBytes = glyph.toBytes();
+    const offsets = joinBytes(uint16(4), uint16(4 + glyphBytes.length));
+    const font = joinBytes(
+      uint16(4),
+      new Uint8Array([0x80, 0, 0]),
+      uint16(1),
+      offsets,
+      glyphBytes,
+      new Uint8Array([0x41]),
+      uint16(800),
+      uint16(200),
+      uint16(50),
+      uint16(600),
+      createRectangle(0, 256, 0, 256),
+      uint16(0),
+    );
+
+    const sources = createGlyphOutlineSourcesFromSwf(
+      createSwf([createTag(TAG_DEFINE_FONT_2, font), createTag(TAG_END)]),
+    )!;
+    const source = sources.get(4)!;
+    const rasterizerBackend = createGlyphRasterizerBackendFromGlyphOutlineSource(source);
+    const atlas = createGlyphAtlas({
+      fontFamily: 'embedded-swf',
+      fontSize: 32,
+      height: 64,
+      rasterizerBackend,
+      width: 64,
+    });
+    const entry = getGlyphAtlasEntry(atlas, 0x41);
+
+    expect(sources.size).toBe(1);
+    expect(source.getGlyphOutlineIndexForCodePoint(0x41)).toBe(0);
+    expect(entry).not.toBeNull();
+    expect(entry?.advance).toBe(18.75);
+    expect(atlas.runtime.bitmaps.get(0x41)?.pixels.some((value, index) => index % 4 === 3 && value > 0)).toBe(true);
+  });
+
+  it('composes a legacy DefineFont with its separate DefineFontInfo code table', () => {
+    const glyph = new ShapeWriter();
+    glyph.writeStyleBits(1, 0);
+    glyph.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    glyph.writeStraightEdge(256, 0);
+    glyph.writeStraightEdge(0, 256);
+    glyph.writeStraightEdge(-256, 0);
+    glyph.writeStraightEdge(0, -256);
+    glyph.writeEndShape();
+    const font = joinBytes(uint16(4), uint16(2), glyph.toBytes());
+    const fontInfo = joinBytes(uint16(4), new Uint8Array([0, 0, 0x41]));
+
+    const sources = createGlyphOutlineSourcesFromSwf(
+      createSwf([createTag(TAG_DEFINE_FONT_INFO, fontInfo), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+    )!;
+
+    expect(sources.get(4)?.getGlyphOutlineIndexForCodePoint(0x41)).toBe(0);
+    expect(sources.get(4)?.getGlyphOutlineIndexForCodePoint(0x42)).toBe(-1);
+  });
+});
 
 describe('createScene2DFromSwf', () => {
   it('imports a named PlaceObject2 as a transformed slot with SymbolClass linkage', () => {
@@ -1611,6 +1686,8 @@ const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS = 6;
 const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_FONT = 10;
+const TAG_DEFINE_FONT_2 = 48;
+const TAG_DEFINE_FONT_INFO = 13;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;

@@ -1,3 +1,4 @@
+import { createPath, getPathBounds, transformPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeCurveTo,
@@ -5,8 +6,10 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   createShape,
+  getShapeFillRegions,
 } from '@flighthq/shape/contract';
-import type { Shape, ShapeCommandToken } from '@flighthq/types/contract';
+import type { GlyphOutlineSource, Path, RectangleLike, Shape } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape } from './swfShape';
@@ -19,15 +22,15 @@ import { createSwfGlyphShape } from './swfShape';
 export function createSwfTextShape(
   reader: SwfReader,
   version: number,
-  glyphsByFont: ReadonlyMap<number, readonly (Shape | null)[]>,
-  unitsPerEmByFont: ReadonlyMap<number, number>,
+  fonts: ReadonlyMap<number, GlyphOutlineSource>,
 ): Shape | null {
   const glyphBits = reader.readUint8();
   const advanceBits = reader.readUint8();
   if (!reader.valid) return null;
 
   const shape = createShape();
-  let glyphs: readonly (Shape | null)[] | null = null;
+  const glyphOutline = createPath();
+  let font: GlyphOutlineSource | null = null;
   let unitsPerEm = DEFAULT_FONT_UNITS_PER_EM;
   let color = 0;
   let height = 0;
@@ -42,8 +45,8 @@ export function createSwfTextShape(
 
     if ((flags & TEXT_HAS_FONT) !== 0) {
       const fontId = reader.readUint16();
-      glyphs = glyphsByFont.get(fontId) ?? null;
-      unitsPerEm = unitsPerEmByFont.get(fontId) ?? DEFAULT_FONT_UNITS_PER_EM;
+      font = fonts.get(fontId) ?? null;
+      unitsPerEm = font?.getGlyphOutlineMetrics().unitsPerEm ?? DEFAULT_FONT_UNITS_PER_EM;
     }
     if ((flags & TEXT_HAS_COLOR) !== 0) {
       const red = reader.readUint8();
@@ -58,16 +61,17 @@ export function createSwfTextShape(
     const glyphCount = reader.readUint8();
     if (!reader.valid) return null;
 
-    // Glyph geometry arrives divided by the twips-per-pixel the shape decoder applies, so scaling by the
-    // record height in twips over the font's EM units lands in pixels without a second conversion.
+    // The outline source restores the font's design-unit grid. Record height is also authored in twips,
+    // so appendSwfGlyphOutline applies the common twips-to-pixels conversion after scaling the design EM.
     const scale = unitsPerEm === 0 ? 0 : height / unitsPerEm;
     for (let i = 0; i < glyphCount; i++) {
       const index = reader.readUnsignedBits(glyphBits);
       const advance = reader.readSignedBits(advanceBits);
       if (!reader.valid) return null;
-      const glyph = glyphs === null ? null : (glyphs[index] ?? null);
-      if (glyph !== null && scale > 0) {
-        appendSwfGlyphOutline(shape, glyph, color, scale, x / TWIPS_PER_PIXEL, y / TWIPS_PER_PIXEL);
+      if (font !== null && scale > 0) {
+        if (font.getGlyphOutline(glyphOutline, index)) {
+          appendSwfGlyphOutline(shape, glyphOutline, color, scale, x / TWIPS_PER_PIXEL, y / TWIPS_PER_PIXEL);
+        }
       }
       x += advance;
     }
@@ -76,15 +80,54 @@ export function createSwfTextShape(
   return null;
 }
 
+// Reads an embedded font into the index-keyed outline seam shared with non-SWF font parsers. Glyph
+// geometry is recovered through the same SHAPE decoder DefineText uses; DefineFont2/3 code and layout
+// tables add Unicode lookup, advances, and vertical metrics. DefineFont1 has no code or layout table in
+// its own tag, so this tag-level source derives advances/metrics from ink; the file decoder composes a
+// separate DefineFontInfo tag over it when one exists.
+export function readSwfFontGlyphOutlineSource(reader: SwfReader, version: number): GlyphOutlineSource | null {
+  const glyphReader = new SwfReader(reader.source, reader.pos, reader.end);
+  const glyphs = readSwfFontGlyphs(glyphReader, version);
+  if (glyphs === null) return null;
+
+  const outlines = glyphs.map(createSwfGlyphOutlinePath);
+  const fallback = deriveSwfGlyphOutlineData(outlines, resolveSwfFontUnitsPerEm(version));
+  const metadata = version === 1 ? null : readSwfFontMetadata(reader, version, outlines.length);
+  const advances = metadata?.advances ?? fallback.advances;
+  const codepointToGlyphIndex = metadata?.codepointToGlyphIndex ?? new Map<number, number>();
+  const metrics = metadata?.metrics ?? fallback.metrics;
+
+  return {
+    getGlyphOutline(out, glyphIndex): boolean {
+      out.commands.length = 0;
+      out.data.length = 0;
+      out.winding = 'nonZero';
+      const outline = outlines[glyphIndex] ?? null;
+      if (outline === null) return false;
+      for (const command of outline.commands) out.commands.push(command);
+      for (const value of outline.data) out.data.push(value);
+      out.winding = outline.winding;
+      return true;
+    },
+    getGlyphOutlineAdvance(glyphIndex): number {
+      return advances[glyphIndex] ?? 0;
+    },
+    getGlyphOutlineIndexForCodePoint(codePoint): number {
+      return codepointToGlyphIndex.get(codePoint) ?? -1;
+    },
+    getGlyphOutlineMetrics() {
+      return metrics;
+    },
+  };
+}
+
 // Decodes a font's glyph outlines. An embedded SWF font is exactly that — a table of path outlines, one
 // per glyph, in the font's own EM grid — so they cross into Flight as geometry and nothing here consults a
 // text stack. The result is indexed by glyph index, which is what a static text record addresses; a null
 // entry is a glyph whose outline did not decode, so one bad glyph costs that glyph rather than the font.
 //
-// What is NOT read here is the code table that follows the glyphs, mapping character codes onto these
-// indices. Static text needs no such mapping because it stores indices directly. An edit-text field does,
-// because it stores a string — so the code table is where a future path-backed glyph source starts, and it
-// sits immediately after the glyph shapes at the offset this reader already walks past.
+// This shape-only helper intentionally stops before the code and layout tables because static text stores
+// indices directly. `readSwfFontGlyphOutlineSource` composes those tables over the same decoded geometry.
 export function readSwfFontGlyphs(reader: SwfReader, version: number): (Shape | null)[] | null {
   reader.readUint16();
   if (version === 1) {
@@ -113,39 +156,142 @@ export function readSwfFontGlyphs(reader: SwfReader, version: number): (Shape | 
 // glyph's own fill is dropped: a font stores shape, and the text record that uses it stores colour.
 function appendSwfGlyphOutline(
   target: Shape,
-  glyph: Readonly<Shape>,
+  glyph: Readonly<Path>,
   color: number,
   scale: number,
   offsetX: number,
   offsetY: number,
 ): void {
-  const commands = glyph.data.commands;
   appendShapeBeginFill(target, color, 1);
-  let i = 0;
-  while (i + 1 < commands.length) {
-    const name = commands[i] as string;
-    const count = commands[i + 1] as number;
-    const a = i + 2;
-    if (name === 'moveTo') {
-      appendShapeMoveTo(target, at(commands, a) * scale + offsetX, at(commands, a + 1) * scale + offsetY);
-    } else if (name === 'lineTo') {
-      appendShapeLineTo(target, at(commands, a) * scale + offsetX, at(commands, a + 1) * scale + offsetY);
-    } else if (name === 'curveTo') {
+  let dataIndex = 0;
+  for (const command of glyph.commands) {
+    if (command === PathCommand.MOVE_TO) {
+      appendShapeMoveTo(
+        target,
+        (glyph.data[dataIndex] * scale) / TWIPS_PER_PIXEL + offsetX,
+        (glyph.data[dataIndex + 1] * scale) / TWIPS_PER_PIXEL + offsetY,
+      );
+      dataIndex += 2;
+    } else if (command === PathCommand.LINE_TO) {
+      appendShapeLineTo(
+        target,
+        (glyph.data[dataIndex] * scale) / TWIPS_PER_PIXEL + offsetX,
+        (glyph.data[dataIndex + 1] * scale) / TWIPS_PER_PIXEL + offsetY,
+      );
+      dataIndex += 2;
+    } else if (command === PathCommand.CURVE_TO) {
       appendShapeCurveTo(
         target,
-        at(commands, a) * scale + offsetX,
-        at(commands, a + 1) * scale + offsetY,
-        at(commands, a + 2) * scale + offsetX,
-        at(commands, a + 3) * scale + offsetY,
+        (glyph.data[dataIndex] * scale) / TWIPS_PER_PIXEL + offsetX,
+        (glyph.data[dataIndex + 1] * scale) / TWIPS_PER_PIXEL + offsetY,
+        (glyph.data[dataIndex + 2] * scale) / TWIPS_PER_PIXEL + offsetX,
+        (glyph.data[dataIndex + 3] * scale) / TWIPS_PER_PIXEL + offsetY,
       );
+      dataIndex += 4;
     }
-    i = a + count;
   }
   appendShapeEndFill(target);
 }
 
-function at(commands: readonly ShapeCommandToken[], index: number): number {
-  return commands[index] as number;
+function createSwfGlyphOutlinePath(glyph: Readonly<Shape> | null): Path | null {
+  if (glyph === null) return null;
+  const regions = getShapeFillRegions(glyph.data.commands);
+  if (regions === null) return null;
+  const outline = createPath('nonZero');
+  for (const region of regions) {
+    const restored = createPath(region.path.winding);
+    transformPath(region.path, FONT_SHAPE_TO_DESIGN_UNITS, restored);
+    for (const command of restored.commands) outline.commands.push(command);
+    for (const value of restored.data) outline.data.push(value);
+  }
+  return outline;
+}
+
+function deriveSwfGlyphOutlineData(outlines: readonly (Readonly<Path> | null)[], unitsPerEm: number) {
+  const advances: number[] = [];
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const outline of outlines) {
+    const bounds: RectangleLike = { height: 0, width: 0, x: 0, y: 0 };
+    if (outline === null || !getPathBounds(outline, bounds)) {
+      advances.push(0);
+      continue;
+    }
+    advances.push(Math.max(0, bounds.x + bounds.width));
+    minY = Math.min(minY, bounds.y);
+    maxY = Math.max(maxY, bounds.y + bounds.height);
+  }
+  const hasVerticalInk = minY !== Infinity;
+  return {
+    advances,
+    metrics: {
+      ascent: hasVerticalInk ? Math.max(0, -minY) : unitsPerEm * DEFAULT_ASCENT_RATIO,
+      descent: hasVerticalInk ? Math.max(0, maxY) : unitsPerEm * (1 - DEFAULT_ASCENT_RATIO),
+      lineGap: 0,
+      unitsPerEm,
+    },
+  };
+}
+
+function readSwfFontMetadata(reader: SwfReader, version: number, expectedGlyphCount: number) {
+  reader.readUint16();
+  const flags = reader.readUint8();
+  const hasLayout = (flags & FONT_FLAG_HAS_LAYOUT) !== 0;
+  const hasWideCodes = (flags & FONT_FLAG_WIDE_CODES) !== 0;
+  const hasWideOffsets = (flags & FONT_FLAG_WIDE_OFFSETS) !== 0;
+  reader.readUint8();
+  const nameLength = reader.readUint8();
+  for (let i = 0; i < nameLength; i++) reader.readUint8();
+  const glyphCount = reader.readUint16();
+  if (!reader.valid || glyphCount !== expectedGlyphCount) return null;
+
+  const tableStart = reader.pos;
+  const offsets = readSwfFontOffsets(reader, glyphCount, hasWideOffsets);
+  if (offsets === null) return null;
+  const codeTableStart = tableStart + offsets[offsets.length - 1];
+  if (codeTableStart < reader.pos || codeTableStart > reader.end) return null;
+  reader.pos = codeTableStart;
+  const codepointToGlyphIndex = new Map<number, number>();
+  for (let glyphIndex = 0; glyphIndex < glyphCount; glyphIndex++) {
+    const codePoint = hasWideCodes ? reader.readUint16() : reader.readUint8();
+    if (reader.valid && !codepointToGlyphIndex.has(codePoint)) codepointToGlyphIndex.set(codePoint, glyphIndex);
+  }
+  if (!reader.valid) return null;
+
+  if (!hasLayout) return { advances: null, codepointToGlyphIndex, metrics: null };
+  const unitsPerEm = resolveSwfFontUnitsPerEm(version);
+  const metrics = {
+    ascent: readSwfSignedUint16(reader),
+    descent: readSwfSignedUint16(reader),
+    lineGap: readSwfSignedUint16(reader),
+    unitsPerEm,
+  };
+  const advances: number[] = [];
+  for (let glyphIndex = 0; glyphIndex < glyphCount; glyphIndex++) advances.push(readSwfSignedUint16(reader));
+  for (let glyphIndex = 0; glyphIndex < glyphCount; glyphIndex++) skipSwfRectangle(reader);
+  const kerningCount = reader.readUint16();
+  for (let index = 0; index < kerningCount; index++) {
+    if (hasWideCodes) {
+      reader.readUint16();
+      reader.readUint16();
+    } else {
+      reader.readUint8();
+      reader.readUint8();
+    }
+    reader.readUint16();
+  }
+  return reader.valid ? { advances, codepointToGlyphIndex, metrics } : null;
+}
+
+function readSwfSignedUint16(reader: SwfReader): number {
+  const value = reader.readUint16();
+  return value >= 0x8000 ? value - 0x10000 : value;
+}
+
+function skipSwfRectangle(reader: SwfReader): void {
+  const bits = reader.readUnsignedBits(5);
+  for (let index = 0; index < 4; index++) reader.readSignedBits(bits);
+  reader.alignToByte();
 }
 
 function readSwfFontGlyphShapes(
@@ -193,7 +339,11 @@ export function resolveSwfFontUnitsPerEm(version: number): number {
 }
 
 const DEFAULT_FONT_UNITS_PER_EM = 1024;
+const DEFAULT_ASCENT_RATIO = 0.8;
+const FONT_FLAG_HAS_LAYOUT = 0x80;
+const FONT_FLAG_WIDE_CODES = 0x04;
 const FONT_FLAG_WIDE_OFFSETS = 0x08;
+const FONT_SHAPE_TO_DESIGN_UNITS = { a: 20, b: 0, c: 0, d: 20, tx: 0, ty: 0 };
 const MAX_FONT_GLYPHS = 0xffff;
 const MAX_TEXT_RECORDS = 100_000;
 const TEXT_HAS_COLOR = 0x04;

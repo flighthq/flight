@@ -12,7 +12,10 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/font` is the **font resource lifecycle manager** — create, load, and reference fonts via the browser `FontFace` / `document.fonts` API. 10 exports across 4 source files. Dependencies: `entity`, `types`. Extracted from the old `@flighthq/resources`.
+`@flighthq/font` owns **font resource lifecycle and format-neutral outline composition** — create, load,
+and reference browser fonts through `FontFace` / `document.fonts`, or adapt an index-keyed
+`GlyphOutlineSource` supplied by a font parser into a rasterizer backend. Extracted from the old
+`@flighthq/resources`.
 
 Two parallel APIs that do identical loading work but return different types:
 
@@ -35,6 +38,7 @@ Both create a `FontFace`, call `.load()`, add to `document.fonts`. The distincti
 - Font format inference from file extensions (woff, woff2, ttf, otf, eot, svg).
 - Font entity creation (string handle for the text system).
 - FontResource creation (FontFace holder for lower-level access).
+- Explicit composition from a parser-produced `GlyphOutlineSource` to `GlyphRasterizerBackend`.
 
 **Non-goals:**
 
@@ -62,6 +66,11 @@ Both create a `FontFace`, call `.load()`, add to `document.fonts`. The distincti
   **Why:** Can't assess completeness without understanding the full font lifecycle domain.
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
+- **[2026-08-01] Outline sources are a sibling seam, not a widened raster source.** A font parser owns
+  glyph indices, outline paths, codepoint lookup, advances, and design metrics through
+  `GlyphOutlineSource`; it does not pretend to own atlas images. `@flighthq/font` owns the explicit,
+  tree-shakable adapter from that source to `GlyphRasterizerBackend`, while the exported seam types stay
+  in `@flighthq/types`. User-directed 2026-08-01.
 
 ## Open directions
 
