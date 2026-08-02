@@ -6,6 +6,7 @@ export {
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
 export {
   Physics2DDistanceJointKind,
+  Physics2DGearJointKind,
   Physics2DMouseJointKind,
   Physics2DPrismaticJointKind,
   Physics2DPulleyJointKind,
@@ -14,6 +15,7 @@ export {
   Physics2DWheelJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
+  physics2DGearJointSolver,
   physics2DMouseJointSolver,
   physics2DPrismaticJointSolver,
   physics2DPulleyJointSolver,

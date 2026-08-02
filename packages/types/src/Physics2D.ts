@@ -370,6 +370,24 @@ export interface Physics2DPulleyJoint extends Physics2DJoint {
   constant: number;
 }
 
+export type Physics2DGearCoordinateKind = 'angular' | 'linear';
+
+// A gear joint couples one world-referenced degree of freedom from each body:
+// `coordinateA + ratio * coordinateB = constant`. An angular coordinate is the body's angle; a linear
+// coordinate is its anchor projected onto the corresponding fixed world-space axis. Combining the two
+// gives ordinary gears, linked sliders, and rack-and-pinion constraints without retaining references to
+// other joints or introducing a four-body entity into the plain-data world model.
+export interface Physics2DGearJoint extends Physics2DJoint {
+  coordinateA: Physics2DGearCoordinateKind;
+  coordinateB: Physics2DGearCoordinateKind;
+  axisAX: number;
+  axisAY: number;
+  axisBX: number;
+  axisBY: number;
+  ratio: number;
+  constant: number;
+}
+
 // A prismatic joint: constrains two bodies to slide along one axis with no relative rotation. A piston,
 // an elevator, a drawer. `localAxisAX`/`localAxisAY` is the slide axis in body A's local space.
 export interface Physics2DPrismaticJoint extends Physics2DJoint {

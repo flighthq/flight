@@ -1,5 +1,6 @@
 import type {
   Physics2DDistanceJoint,
+  Physics2DGearJoint,
   Physics2DMouseJoint,
   Physics2DPrismaticJoint,
   Physics2DPulleyJoint,
@@ -14,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import {
   Physics2DDistanceJointKind,
+  Physics2DGearJointKind,
   Physics2DMouseJointKind,
   Physics2DPrismaticJointKind,
   Physics2DPulleyJointKind,
@@ -22,6 +24,7 @@ import {
   Physics2DWheelJointKind,
   Physics2DWeldJointKind,
   physics2DDistanceJointSolver,
+  physics2DGearJointSolver,
   physics2DMouseJointSolver,
   physics2DPrismaticJointSolver,
   physics2DPulleyJointSolver,
@@ -337,6 +340,20 @@ describe('joints built without their impulse accumulators', () => {
   const GENERIC_KINDS = [
     [Physics2DDistanceJointKind, physics2DDistanceJointSolver, { length: 2, stiffness: 0, damping: 0 }],
     [
+      Physics2DGearJointKind,
+      physics2DGearJointSolver,
+      {
+        axisAX: 1,
+        axisAY: 0,
+        axisBX: 1,
+        axisBY: 0,
+        constant: 0,
+        coordinateA: 'angular',
+        coordinateB: 'angular',
+        ratio: 2,
+      },
+    ],
+    [
       Physics2DPrismaticJointKind,
       physics2DPrismaticJointSolver,
       {
@@ -439,6 +456,90 @@ describe('physics2DDistanceJointSolver', () => {
   });
 });
 
+describe('physics2DGearJointSolver', () => {
+  it('keeps two angular coordinates at their configured ratio', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DGearJointKind, physics2DGearJointSolver);
+    const first = box(world, 'dynamic', -2, 0);
+    const second = box(world, 'dynamic', 2, 0);
+    first.angularVelocity = 2;
+    addPhysics2DJoint(world, gearJoint(first.index, second.index, { ratio: 2 }));
+
+    run(world, 120);
+
+    expect(first.angle + 2 * second.angle).toBeCloseTo(0, 5);
+    expect(first.angularVelocity).toBeGreaterThan(0);
+    expect(second.angularVelocity).toBeLessThan(0);
+  });
+
+  it('couples linear and angular coordinates for a rack and pinion', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DGearJointKind, physics2DGearJointSolver);
+    const rack = box(world, 'dynamic', 0, 0);
+    const pinion = box(world, 'dynamic', 4, 0);
+    rack.velocityX = 2;
+    addPhysics2DJoint(
+      world,
+      gearJoint(rack.index, pinion.index, {
+        axisAX: 5,
+        coordinateA: 'linear',
+        coordinateB: 'angular',
+        ratio: 2,
+      }),
+    );
+
+    run(world, 120);
+
+    expect(rack.x + 2 * pinion.angle).toBeCloseTo(0, 5);
+    expect(rack.x).toBeGreaterThan(0);
+    expect(pinion.angle).toBeLessThan(0);
+  });
+
+  it('corrects a coordinate pair that starts away from its constant', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DGearJointKind, physics2DGearJointSolver);
+    const first = box(world, 'dynamic', -2, 0);
+    const second = box(world, 'dynamic', 2, 0);
+    first.angle = 1;
+    addPhysics2DJoint(world, gearJoint(first.index, second.index, { ratio: -1 }));
+
+    run(world, 60);
+
+    expect(first.angle - second.angle).toBeCloseTo(0, 5);
+  });
+
+  it('preserves the same constraint when canonical ordering exchanges the ends', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DGearJointKind, physics2DGearJointSolver);
+    const first = box(world, 'dynamic', 2, 0);
+    const second = box(world, 'dynamic', -2, 0);
+    const joint = gearJoint(second.index, first.index, {
+      axisAX: 1,
+      axisAY: 2,
+      axisBX: 3,
+      axisBY: 4,
+      constant: 6,
+      coordinateA: 'linear',
+      coordinateB: 'angular',
+      impulse0: 3,
+      ratio: 2,
+    });
+
+    addPhysics2DJoint(world, joint);
+
+    expect(joint.bodyA).toBe(first.index);
+    expect(joint.coordinateA).toBe('angular');
+    expect(joint.coordinateB).toBe('linear');
+    expect(joint.axisAX).toBe(3);
+    expect(joint.axisAY).toBe(4);
+    expect(joint.axisBX).toBe(1);
+    expect(joint.axisBY).toBe(2);
+    expect(joint.ratio).toBeCloseTo(0.5, 12);
+    expect(joint.constant).toBeCloseTo(3, 12);
+    expect(joint.impulse0).toBeCloseTo(6, 12);
+  });
+});
+
 function revoluteJoint(
   bodyA: number,
   bodyB: number,
@@ -490,6 +591,21 @@ function pulleyJoint(bodyA: number, bodyB: number, over: Partial<Physics2DPulley
     ratio: 1,
     ...over,
   } as Physics2DPulleyJoint;
+}
+
+function gearJoint(bodyA: number, bodyB: number, over: Partial<Physics2DGearJoint> = {}): Physics2DGearJoint {
+  return {
+    ...baseJoint(Physics2DGearJointKind, bodyA, bodyB),
+    axisAX: 1,
+    axisAY: 0,
+    axisBX: 1,
+    axisBY: 0,
+    constant: 0,
+    coordinateA: 'angular',
+    coordinateB: 'angular',
+    ratio: 1,
+    ...over,
+  } as Physics2DGearJoint;
 }
 
 describe('physics2DMouseJointSolver', () => {
