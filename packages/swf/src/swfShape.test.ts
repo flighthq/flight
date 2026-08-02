@@ -1,6 +1,33 @@
 import { SwfReader } from './swfReader';
-import { createSwfShape } from './swfShape';
+import { createSwfGlyphShape, createSwfShape } from './swfShape';
 import { ShapeWriter } from './swfShapeTestHelper';
+
+describe('createSwfGlyphShape', () => {
+  it('decodes a bare SHAPE that carries no style array of its own', () => {
+    const writer = new ShapeWriter();
+    // No fill or line style arrays — a glyph starts straight at the style bits, and its edges reference
+    // an implicit fill whose colour belongs to the text record that draws it.
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(1024, 0);
+    writer.writeStraightEdge(0, 1024);
+    writer.writeEndShape();
+
+    const glyph = createSwfGlyphShape(writer.toReader());
+
+    expect(glyph?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0, 1]);
+    expect(glyph?.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 51.2, 0]);
+  });
+
+  it('returns null for a glyph whose records run out', () => {
+    const writer = new ShapeWriter();
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    const bytes = writer.toBytes();
+
+    expect(createSwfGlyphShape(new SwfReader(bytes, 0, bytes.length - 1))).toBeNull();
+  });
+});
 
 describe('createSwfShape', () => {
   it('decodes a solid-filled rectangle into one closed contour', () => {

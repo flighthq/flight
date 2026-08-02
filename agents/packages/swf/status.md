@@ -26,6 +26,21 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   end-to-start into closed contours. That reversal is what makes the command stream's nonzero winding
   match the fill SWF meant, holes included. Coordinates are exact whole twips, so stitching needs no
   tolerance.
+- `DefineFont`, `DefineFont2`, and `DefineFont3` decode their glyph outlines as paths. An embedded SWF
+  font is a table of path outlines in its own EM grid, so that is what crosses — no text stack is
+  consulted and no glyph source is synthesized. Glyphs are indexed the way a static text record addresses
+  them, a glyph whose outline fails costs that glyph rather than the font, and a version 3 font's finer
+  grid (twenty times a version 1 or 2 font's) is carried so the same outline scales correctly.
+- `DefineText` and `DefineText2` compose into drawable geometry: a text record carries glyph indices and
+  advances rather than characters, so this is placement rather than layout — each glyph is emitted at the
+  pen position, scaled by the record height over the font's EM units, recoloured from the record, and the
+  pen advances by the recorded amount. Composition is deferred until the whole file is walked, because a
+  text record may address a font declared after it.
+- `DefineEditText` still materializes nothing. It carries a *string* plus a font reference and layout
+  properties, not glyph indices, so drawing it needs the font's code table and advances plus line
+  breaking — and flattening it to paths at import would destroy the one thing that makes it edit text.
+  The glyph outlines it would draw from are now imported; what is missing is a path-backed glyph source
+  to consume them, which is deliberately a later piece of work.
 - A placement earns a node when it is named, carries a timeline, or now has geometry, so unnamed shapes —
   most of what a still frame is made of — are materialized. Each placement of a shape character gets its
   own copy of the decoded commands.
@@ -122,7 +137,9 @@ embedded JPEG/PNG/GIF, lossless-bitmap and video dimensions, and recursively com
 Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
 replayed onto the instance it targets, depth ordering when a later frame places an instance between two
 others, labels from both label tags with the header frame rate, an independently seekable nested sprite
-playhead, snapshot-budget rejection, clip depth producing a clip on covered instances only with the mask
+playhead, snapshot-budget rejection, font glyph tables in both the version 1 and version 2 offset forms
+with their overrun rejections, static text placing glyphs at the right scale, colour, and advance, clip
+depth producing a clip on covered instances only with the mask
 undrawn and the region resolved into the covered instance's local space, and a compressed document
 importing through a registered decompressor while a missing, failing, or short one rejects. Geometry coverage adds the bit reader's own overrun, alignment,
 and encoding cases, and a shape suite over hand-written SHAPEWITHSTYLE bytes: a closed rectangle, twips

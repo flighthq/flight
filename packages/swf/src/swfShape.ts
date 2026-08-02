@@ -13,6 +13,14 @@ import type { CapsStyle, GradientType, JointStyle, Matrix, Shape, SpreadMethod }
 
 import type { SwfReader } from './swfReader';
 
+// Decodes a glyph outline. A glyph is a bare SHAPE rather than a SHAPEWITHSTYLE — a font's glyphs carry
+// no styles of their own, because the colour belongs to whatever text record draws the glyph. So the
+// decoder is handed a single implicit fill (the one every glyph edge references) and the emitted geometry
+// is recoloured at composition time. Coordinates stay in the font's EM grid, scaled by each use.
+export function createSwfGlyphShape(reader: SwfReader): Shape | null {
+  return decodeSwfShapeBody(reader, 1, { fills: [createSwfShapeFill(0, 1)], lines: [] });
+}
+
 // Decodes a SHAPEWITHSTYLE body into a Shape whose command stream draws it, or null when the body does
 // not parse. `version` is the DefineShape generation (1 through 4), which selects RGB versus RGBA colors,
 // the extended style-count encoding, and the LINESTYLE2 and focal-gradient records that only Shape 4
@@ -25,10 +33,12 @@ import type { SwfReader } from './swfReader';
 // Reversal is what makes the nonzero winding of the resulting command stream match the fill SWF meant,
 // holes included.
 export function createSwfShape(reader: SwfReader, version: number): Shape | null {
-  const hasAlpha = version >= 3;
-  const styles = readSwfShapeStyles(reader, version, hasAlpha);
-  if (styles === null) return null;
+  const styles = readSwfShapeStyles(reader, version, version >= 3);
+  return styles === null ? null : decodeSwfShapeBody(reader, version, styles);
+}
 
+function decodeSwfShapeBody(reader: SwfReader, version: number, styles: SwfShapeStyles): Shape | null {
+  const hasAlpha = version >= 3;
   const shape = createShape();
   const state: SwfShapeState = {
     fill0: 0,
