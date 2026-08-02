@@ -125,7 +125,7 @@ export function solvePhysics2DContacts(world: Physics2DWorld): void {
 // itself lets it undo what the other just corrected.
 export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
   for (const contact of world.contacts) {
-    if (contact.sensor) continue;
+    if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;
@@ -146,7 +146,7 @@ export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
 // longer the same feature arrives here with zero rather than a stranger's force.
 export function warmStartPhysics2DContacts(world: Physics2DWorld): void {
   for (const contact of world.contacts) {
-    if (contact.sensor) continue;
+    if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
     if (bodyA === null || bodyB === null) continue;

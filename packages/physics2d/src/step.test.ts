@@ -231,6 +231,75 @@ describe('collision filtering', () => {
   });
 });
 
+describe('contact solve hooks', () => {
+  it('calls pre-solve before post-solve exactly once per solved contact', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    const crate = box(world, 0, 0.4);
+    crate.velocityY = -1;
+    const order: string[] = [];
+    world.contactHooks.preSolve = (_currentWorld, contact) => {
+      order.push('pre');
+      contact.friction = 0;
+    };
+    world.contactHooks.postSolve = (_currentWorld, contact) => {
+      order.push('post');
+      expect(contact.points.slice(0, contact.pointCount).some((point) => point.normalImpulse > 0)).toBe(true);
+    };
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(order).toEqual(['pre', 'post']);
+  });
+
+  it('lets pre-solve disable resolution for one step and resets enabled on the next', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    const crate = box(world, 0, 0.4);
+    let postSolveCalls = 0;
+    world.contactHooks.preSolve = (_currentWorld, contact) => {
+      contact.enabled = false;
+    };
+    world.contactHooks.postSolve = () => void postSolveCalls++;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(crate.y).toBe(0.4);
+    expect(world.contacts[0].enabled).toBe(false);
+    expect(postSolveCalls).toBe(0);
+    for (const point of world.contacts[0].points) {
+      expect(point.normalImpulse).toBe(0);
+      expect(point.tangentImpulse).toBe(0);
+    }
+
+    world.contactHooks.preSolve = null;
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts[0].enabled).toBe(true);
+    expect(crate.y).toBeGreaterThan(0.4);
+    expect(postSolveCalls).toBe(1);
+  });
+
+  it('does not invoke solve hooks for sensor contacts', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const trigger = createRigidBody2D('static', 0, 0);
+    trigger.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -1, minY: -1, maxX: 1, maxY: 1 }, STONE, true),
+    );
+    addPhysics2DBody(world, trigger);
+    box(world, 0, 0);
+    let calls = 0;
+    world.contactHooks.preSolve = () => void calls++;
+    world.contactHooks.postSolve = () => void calls++;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].sensor).toBe(true);
+    expect(calls).toBe(0);
+  });
+});
+
 describe('sensor reporting between immovable bodies', () => {
   // A sensor is reported, never resolved — the solver already skips sensor contacts. The step's
   // "two immovable bodies have no constraint to solve" shortcut ran before any collider was

@@ -71,6 +71,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     joints: [],
     jointSolvers: new Map(),
     events: { began: [], ended: [] },
+    contactHooks: { preSolve: null, postSolve: null },
     index: index ?? createUniformGridSpatialBackend(1),
     config: createPhysics2DSolverConfig(),
     gravityX,
