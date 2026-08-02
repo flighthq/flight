@@ -10,6 +10,7 @@ import {
 import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
 import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
@@ -17,8 +18,8 @@ import { defaultCanvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
 
 function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
-  registerCanvasImageTextureResolver(state);
-  registerCanvasRenderTextureResolver(state);
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
+  registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
   return state;
 }

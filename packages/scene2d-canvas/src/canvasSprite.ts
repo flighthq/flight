@@ -3,6 +3,7 @@ import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { resolveCanvasTexture } from './canvasTextureResolver';
 import { setCanvasTransform } from './canvasTransform';
 
@@ -10,7 +11,7 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
   drawCanvasScene2D(state, sprite);
   const texture = (sprite.source as Sprite).data.texture;
   if (texture === null || texture.dimension !== '2d') return;
-  const drawable = resolveCanvasTexture(state, texture);
+  const drawable = resolveCanvasTexture(getCanvasRenderStateTextureResolvers(state), texture);
   if (drawable === null) return;
 
   const textureWidth = getTextureWidth(texture);

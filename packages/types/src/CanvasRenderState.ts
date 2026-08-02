@@ -1,14 +1,11 @@
-import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
-import type { CanvasTextureResolver } from './CanvasTextureResolver';
+import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
-import type { Texture } from './Texture';
-import type { TextureSourceKind } from './TextureSourceKind';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
@@ -29,32 +26,11 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // Active compositing mode tracked to avoid redundant globalCompositeOperation changes. Internal —
   // formerly public on the CanvasRenderState entity.
   currentBlendMode: BlendMode | null;
-  // Open, state-scoped Texture source registry. Undefined until the first explicit registration so
-  // a Canvas bundle only retains the backing realizations it installs.
-  canvasTextureResolverRegistry?: Map<TextureSourceKind, CanvasTextureResolver> | null;
+  // The state's own texture-resolution set, created with the state and wired to its miss emitter. It is
+  // a separate primitive so a shape rasterizer on another backend can share it — see CanvasTextureResolvers.
+  canvasTextureResolvers: CanvasTextureResolvers;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
-  // Per-render-state cache of the drawable HTMLCanvasElement materialized from a Bitmap. The field
-  // stays absent until registerCanvasBitmapTextureResolver is imported and resolves a Bitmap.
-  bitmapElementCache?: WeakMap<Bitmap, { element: HTMLCanvasElement; version: number }>;
-  // Per-render-state cache of a Texture uv window materialized as a standalone canvas for pattern
-  // fills. Identity windows return their backing source directly and never enter this cache.
-  textureWindowElementCache?: WeakMap<
-    Texture,
-    {
-      element: HTMLCanvasElement;
-      flipX: boolean;
-      flipY: boolean;
-      imageVersion: number;
-      source: CanvasImageSource;
-      textureVersion: number;
-      uvOffsetX: number;
-      uvOffsetY: number;
-      uvRotation: number;
-      uvScaleX: number;
-      uvScaleY: number;
-    }
-  >;
   // Per-material-kind canvas renderer registry. Absent (and tree-shaken) until a material renderer
   // is registered.
   materialRendererMap?: Map<Kind, CanvasMaterialRenderer>;

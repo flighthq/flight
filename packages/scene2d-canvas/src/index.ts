@@ -3,6 +3,8 @@ export {
   createCanvasOffscreenRenderState,
   createCanvasElement,
   createCanvasRenderState,
+  createCanvasTextureResolvers,
+  getCanvasRenderStateTextureResolvers,
   createCanvasRenderTexturePool,
   defaultCanvasBeginFill,
   defaultCanvasBeginGradientFill,

@@ -2,10 +2,11 @@ import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  enableFlightDiagnostics,
   defaultCanvasParticleEmitter2DRenderer,
   defaultCanvasTextLabelRenderer,
   enableCanvasBlendMode,
+  enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   ParticleEmitter2DKind,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
@@ -25,7 +26,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 enableCanvasBlendMode(state);

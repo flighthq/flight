@@ -7,6 +7,7 @@ import {
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -38,9 +39,12 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
 const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
-registerCanvasBitmapTextureResolver(shapeRasterizerState);
-registerCanvasImageTextureResolver(shapeRasterizerState);
-registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerState));
+registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerGlShapeRasterizer(
+  state,
+  createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(shapeRasterizerState)),
+);
 registerGlShapeCommands(defaultGlShapeCommands);
 
 export const scale = pixelRatio;

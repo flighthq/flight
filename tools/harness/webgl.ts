@@ -20,6 +20,7 @@ import {
   enableGlClipSupport,
   enableGlRenderCache,
   enableGlStrokePathTessellation,
+  getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -120,8 +121,8 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const resolverState = createCanvasRenderState(document.createElement('canvas'));
-  registerCanvasBitmapTextureResolver(resolverState);
-  registerCanvasImageTextureResolver(resolverState);
-  registerCanvasRenderTextureResolver(resolverState);
-  return createCanvasShapeRasterizer(resolverState);
+  registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
+  registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);
+  return createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(resolverState));
 }

@@ -1,15 +1,16 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  SpriteKind,
   createCanvasElement,
   createCanvasRenderState,
-  enableFlightDiagnostics,
   defaultCanvasSpriteRenderer,
+  enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasScene2D,
+  SpriteKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -22,7 +23,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerCanvasImageTextureResolver(state);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 
 export const scale = pixelRatio;

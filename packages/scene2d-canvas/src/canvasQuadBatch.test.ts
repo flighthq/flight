@@ -10,6 +10,7 @@ import { QuadBatchKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas(regionCount = 1) {
@@ -29,7 +30,7 @@ function makeState() {
   canvas.width = 400;
   canvas.height = 400;
   const state = createCanvasRenderState(canvas);
-  registerCanvasImageTextureResolver(state);
+  registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
   return state;
 }

@@ -10,6 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 import { buildScale9Mapper } from './canvasScale9Mapper';
 import { renderCanvasShapeCommands } from './canvasShape';
 import { setCanvasTransform } from './canvasTransform';
@@ -32,11 +33,23 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: Ren
 
   if (mapper === null) {
     setCanvasTransform(state, context, renderProxy.transform2D);
-    renderCanvasShapeCommands(context, commands, state);
+    renderCanvasShapeCommands(
+      context,
+      commands,
+      getCanvasRenderStateTextureResolvers(state),
+      state,
+      state.allowSmoothing ?? true,
+    );
   } else {
     applyStrippedTransform(state, context, renderProxy.transform2D, scaleX, scaleY);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    renderCanvasShapeCommands(context, _remappedCommands, state);
+    renderCanvasShapeCommands(
+      context,
+      _remappedCommands,
+      getCanvasRenderStateTextureResolvers(state),
+      state,
+      state.allowSmoothing ?? true,
+    );
   }
 }
 

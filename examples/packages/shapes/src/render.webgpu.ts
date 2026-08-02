@@ -7,6 +7,7 @@ import {
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -36,9 +37,12 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
 const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
-registerCanvasBitmapTextureResolver(shapeRasterizerState);
-registerCanvasImageTextureResolver(shapeRasterizerState);
-registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerState));
+registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerWgpuShapeRasterizer(
+  state,
+  createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(shapeRasterizerState)),
+);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;

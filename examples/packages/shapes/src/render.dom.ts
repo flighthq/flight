@@ -6,6 +6,7 @@ import {
   defaultCanvasShapeCommands,
   defaultDomShapeRenderer,
   enableFlightDiagnostics,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -33,9 +34,12 @@ registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
 const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
-registerCanvasBitmapTextureResolver(shapeRasterizerState);
-registerCanvasImageTextureResolver(shapeRasterizerState);
-registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerState));
+registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
+registerDomShapeRasterizer(
+  state,
+  createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(shapeRasterizerState)),
+);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
 export const canvas: HTMLElement = container;

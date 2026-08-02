@@ -19,10 +19,13 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 import { RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import { createCanvasRenderState } from './canvasRenderState';
 import { defaultCanvasShapeRenderer, drawCanvasShape, renderCanvasShapeCommands } from './canvasShape';
 import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
+import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 beforeAll(() => {
   registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
@@ -34,6 +37,10 @@ function makeContext(): CanvasRenderingContext2D {
   canvas.height = 200;
   return canvas.getContext('2d') as CanvasRenderingContext2D;
 }
+
+const resolvers = createCanvasTextureResolvers();
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasImageTextureResolver(resolvers);
 
 describe('drawCanvasShape', () => {
   it('does not throw for a shape with no commands', () => {
@@ -68,7 +75,7 @@ describe('renderCanvasShapeCommands', () => {
   it('does nothing when the command list is empty', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'fill');
-    renderCanvasShapeCommands(context, createShape().data.commands);
+    renderCanvasShapeCommands(context, createShape().data.commands, resolvers);
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -79,7 +86,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -90,7 +97,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeLineStyle(shape, 2, 0x000000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -108,7 +115,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(order).toEqual(['fill', 'stroke']);
   });
 
@@ -119,7 +126,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000, 1);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
-    renderCanvasShapeCommands(context, shape.data.commands);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith('evenodd');
   });
 
@@ -129,7 +136,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000, 1);
     appendShapeRectangle(shape, 10, 10, 0, 0);
     appendShapeEndFill(shape);
-    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands, resolvers)).not.toThrow();
   });
 
   it('does not throw on NaN coordinates', () => {
@@ -140,7 +147,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeLineTo(shape, Number.NaN, 10);
     appendShapeRectangle(shape, Number.NaN, 0, Number.NaN, 10);
     appendShapeEndFill(shape);
-    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands, resolvers)).not.toThrow();
   });
 
   it('does not throw on Infinity coordinates', () => {
@@ -150,7 +157,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeMoveTo(shape, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
     appendShapeLineTo(shape, Number.POSITIVE_INFINITY, 0);
     appendShapeEndFill(shape);
-    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands, resolvers)).not.toThrow();
   });
 
   it('does not throw on very large coordinates', () => {
@@ -159,7 +166,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginFill(shape, 0xff0000, 1);
     appendShapeRectangle(shape, -1e20, -1e20, 2e20, 2e20);
     appendShapeEndFill(shape);
-    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands, resolvers)).not.toThrow();
   });
 
   it('does not throw on a singular bitmap-fill matrix', () => {
@@ -176,7 +183,7 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeBeginTextureFill(shape, bitmap, singular);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     appendShapeEndFill(shape);
-    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands, resolvers)).not.toThrow();
   });
 
   it('skips an unknown command key without throwing', () => {
@@ -186,7 +193,7 @@ describe('renderCanvasShapeCommands', () => {
     // handler, so getCanvasShapeCommand returns the undefined sentinel and the
     // walk advances past it rather than throwing.
     const commands: unknown[] = ['acme.unknownCommand', 2, 1, 2];
-    expect(() => renderCanvasShapeCommands(context, commands)).not.toThrow();
+    expect(() => renderCanvasShapeCommands(context, commands, resolvers)).not.toThrow();
     expect(fillSpy).not.toHaveBeenCalled();
   });
 
@@ -194,7 +201,7 @@ describe('renderCanvasShapeCommands', () => {
     const context = makeContext();
     const state = createCanvasRenderState(context.canvas);
     enableRenderRegistryGuards(state);
-    renderCanvasShapeCommands(context, ['acme.unknownCommand', 0], state);
+    renderCanvasShapeCommands(context, ['acme.unknownCommand', 0], resolvers, state);
     expect(explainRenderRegistryMisses(state)).toEqual({
       misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistry.ShapeCommandHandler }],
       status: 'misses-recorded',
@@ -207,7 +214,7 @@ describe('renderCanvasShapeCommands', () => {
     enableRenderRegistryGuards(state);
     const shape = createShape();
     appendShapeRectangle(shape, 0, 0, 10, 10);
-    renderCanvasShapeCommands(context, shape.data.commands, state);
+    renderCanvasShapeCommands(context, shape.data.commands, resolvers, state);
     expect(explainRenderRegistryMisses(state)).toEqual({ misses: [], status: 'complete' });
   });
 });

@@ -1,7 +1,10 @@
 import { createImageResource } from '@flighthq/image/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
 
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
+import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 function makeContext(): CanvasRenderingContext2D {
   const canvas = document.createElement('canvas');
@@ -27,43 +30,47 @@ function makeTexture(w = 64, h = 64, repeatX = false, repeatY = false, smooth = 
   });
 }
 
+const resolvers = createCanvasTextureResolvers();
+registerCanvasBitmapTextureResolver(resolvers);
+registerCanvasImageTextureResolver(resolvers);
+
 describe('createBitmapPattern', () => {
   it('returns null when the texture is unbound', () => {
     const context = makeContext();
-    expect(createBitmapPattern(context, createTexture())).toBeNull();
+    expect(createBitmapPattern(context, createTexture(), resolvers)).toBeNull();
   });
 
   it('returns a CanvasPattern when the texture is drawable', () => {
     const context = makeContext();
-    const result = createBitmapPattern(context, makeTexture());
+    const result = createBitmapPattern(context, makeTexture(), resolvers);
     expect(result).not.toBeNull();
   });
 
   it('uses repeat when both sampler axes repeat', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'createPattern');
-    createBitmapPattern(context, makeTexture(64, 64, true, true));
+    createBitmapPattern(context, makeTexture(64, 64, true, true), resolvers);
     expect(spy).toHaveBeenCalledWith(expect.anything(), 'repeat');
   });
 
   it('uses no-repeat when both sampler axes clamp', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'createPattern');
-    createBitmapPattern(context, makeTexture());
+    createBitmapPattern(context, makeTexture(), resolvers);
     expect(spy).toHaveBeenCalledWith(expect.anything(), 'no-repeat');
   });
 
   it('sets imageSmoothingEnabled for a linear sampler', () => {
     const context = makeContext();
     context.imageSmoothingEnabled = false;
-    createBitmapPattern(context, makeTexture());
+    createBitmapPattern(context, makeTexture(), resolvers);
     expect(context.imageSmoothingEnabled).toBe(true);
   });
 
   it('sets imageSmoothingEnabled false for a nearest sampler', () => {
     const context = makeContext();
     context.imageSmoothingEnabled = true;
-    createBitmapPattern(context, makeTexture(64, 64, false, false, false));
+    createBitmapPattern(context, makeTexture(64, 64, false, false, false), resolvers);
     expect(context.imageSmoothingEnabled).toBe(false);
   });
 });
