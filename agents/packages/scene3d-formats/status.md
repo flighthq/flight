@@ -1,6 +1,6 @@
 ---
 package: "@flighthq/scene3d-formats"
-updated: "2026-08-01"
+updated: "2026-08-02"
 by: builder
 ---
 
@@ -10,6 +10,63 @@ by: builder
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-08-02 — 3DS lights and cameras imported; the mesh-era residue named (builder, user-directed)
+
+**The cause, which predicts the rest of the worklist.** These parsers were written when a parse produced a
+MESH. `Scene3DDocument` — nodes, lights, cameras, animations, skins — landed later, and the classic-format
+parsers were never revisited against it. The residue was literal: `parseObject` returned `null` for any
+named object without a trimesh, under a comment reading "Flight imports meshes only", and a test pinned
+that skip. 3DS carries lights and cameras INSIDE those very object chunks, so the parser was bailing one
+chunk id before the data. This is the same shape as the AWD2 light gap fixed yesterday, and the user has
+scoped a worklist of the rest (see the agent assignment): 3DS keyframer + TRI_LOCAL, AWD2 camera/vertex
+animation, OBJ normals, the MTL material model, alpha maps, glTF extended PBR.
+
+**What landed.** A named object's kind is now whichever entity sub-chunk it carries — trimesh (0x4100),
+light (0x4600), or camera (0x4700) — and `collectThreeDsObjects` feeds three collectors from one walk.
+Lights and cameras fill the document's PLACEMENT TABLES, not the node graph, matching the AWD2 precedent:
+the descriptor is authored in the entity's own LOCAL space (position at origin, aim down -Z) and the
+`transform` carries placement and orientation. A light with the spot sub-chunk becomes a `SpotLight` aimed
+at its target point; every other light is a `PointLight`, which is the format's own default.
+
+**Wire semantics are verified, not recalled — and two references disagreed.** Neither AwayJS's
+`Max3DSParser` nor three.js's `TDSLoader` parses these payloads (three.js carries the chunk ids as
+commented-out constants only), and the canonical spec host is behind the sandbox's default-deny network
+policy. Two independent implementations were consulted for the FORMAT FACTS only — byte order, field
+order, units — and no code, naming, or structure was taken from either; the sources were deleted before
+the parser was written, deliberately, because their licenses (BSD-3 attribution and GPL) make copying a
+problem the facts themselves are not. They conflicted on two fields, resolved on the format's own terms:
+
+- **The camera's 4th float is a focal length in MILLIMETRES, not an angle.** One reference reads it as a
+  degree FOV. The format documents a lens, and the other reference's round trip (its exporter writes a
+  lens) confirms it. `THREE_DS_CAMERA_APERTURE_MM = 36` converts against the 35mm gate the format meters
+  on. With no aspect ratio anywhere in 3DS, the camera is emitted at aspect 1, where horizontal and
+  vertical fields of view coincide — the shape glTF also lands on when `aspectRatio` is absent.
+- **Spot hotspot and falloff are two ABSOLUTE cone angles, not a base plus an offset.** One reference adds
+  the falloff to the hotspot under a comment marking it a fix — an implementation workaround, not a format
+  fact. They are also FULL apertures, while Flight's cone is described by half-angles, so each is halved.
+
+**Deliberate drops, each crumbed.** `3ds.light-inner-range-dropped` (3DS states where attenuation begins
+and where it ends; Flight carries the single cutoff, so the outer maps and the inner has nowhere to go).
+`3ds.light-disabled` — a switched-off light still imports, placement and cone intact, at zero intensity, so
+re-enabling it is one field write rather than a re-import. `3ds.non-mesh-object` is **renamed**
+`3ds.non-entity-object` and now means what it says: a dummy/helper object carrying none of the three
+entity sub-chunks. Absent CAM_RANGES falls back to 3DS's own 1/1000 clip range and a missing lens to its
+stock 50mm — format defaults, not invented ones.
+
+**No corpus fixture carries a light or camera.** `soldier_ant.3ds`, the only 3DS in the reference corpus,
+is a single mesh; the 11 new tests build their chunk bytes programmatically. So the wire layout is
+verified against two independent readers and the placement math is unit-tested, but nothing has yet
+round-tripped a real authored 3DS light. **A file exported from 3ds Max with a spot and a camera is the
+missing proof** — worth capturing before trusting the aim on a real scene.
+
+**Two corrections to entries below, recorded here rather than edited in place (this log is append-only).**
+The 2026-07-19 entry's "glTF non-triangle primitive modes" item is **stale** —
+`buildGltfPrimitiveElements` already converts line-loops and triangle-fans to canonical triangle/line
+lists. The 2026-07-2x "Parked gaps" entry parks 3DS `MAT_OPACMAP` / MTL `map_d` / AWD alpha maps on the
+grounds that "BlinnPhongMaterial has no `opacityMap`/`alphaMap` field" — that reason has **expired**:
+`BlinnPhongMaterial.alphaMap` now exists and builder2 has attested the renderer side. The gap is
+un-blocked, not un-parked; it is item 6 on the worklist and no parser reads those chunks yet.
 
 ## 2026-08-01 — AWD2 lights: blocks 41 and 51 are no longer dropped (builder, user-directed)
 
