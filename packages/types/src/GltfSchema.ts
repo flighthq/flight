@@ -251,6 +251,9 @@ export interface GltfOcclusionTextureInfo extends GltfTextureInfo {
 // carries the wrap/filter state Flight maps onto a Sampler; absent means the spec-default sampler
 // (repeat wrap, implementation-chosen filtering).
 export interface GltfTexture {
+  // KHR_texture_basisu redirects the image source to a KTX2/Basis payload. The plain `source` is an
+  // OPTIONAL fallback under that extension, so a basisu texture frequently has none.
+  extensions?: { KHR_texture_basisu?: { source: number }; [kind: string]: unknown };
   sampler?: number;
   source?: number;
 }

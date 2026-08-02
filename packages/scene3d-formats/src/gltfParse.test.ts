@@ -2535,6 +2535,49 @@ describe('parseGltf', () => {
   });
 });
 
+describe('parseGltf basisu texture source', () => {
+  function makeBasisuGltf(withFallback: boolean): GltfDocument {
+    const texture: Record<string, unknown> = { extensions: { KHR_texture_basisu: { source: 1 } }, sampler: 0 };
+    // Under KHR_texture_basisu the plain `source` is an OPTIONAL fallback, so most real files omit it.
+    if (withFallback) texture.source = 0;
+    return {
+      asset: { version: '2.0' },
+      images: [{ uri: 'fallback.png' }, { mimeType: 'image/ktx2', uri: 'compressed.ktx2' }],
+      materials: [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }],
+      samplers: [{}],
+      scenes: [{ nodes: [] }],
+      textures: [texture],
+    } as unknown as GltfDocument;
+  }
+
+  it('resolves the basisu image source in preference to the fallback', () => {
+    const document = parseGltf(makeBasisuGltf(true));
+    const material = document.materials[0] as unknown as { baseColorMap: { resource: unknown } | null };
+    const resource = getTestTextureResource(document.resources, material.baseColorMap as never);
+
+    expect((resource as ExternalImageResourceReference).uri).toBe('compressed.ktx2');
+  });
+
+  it('resolves a basisu texture that carries no fallback source at all', () => {
+    // Reading only `source` dropped the map entirely here — the texture is not missing, it is elsewhere.
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseGltf(makeBasisuGltf(false), diagnostics);
+    const material = document.materials[0] as unknown as { baseColorMap: unknown | null };
+
+    expect(material.baseColorMap).not.toBeNull();
+    expect(diagnostics.find((d) => d.kind === 'gltf.texture-source-missing')).toBeUndefined();
+  });
+
+  it('still recovers when a texture genuinely has no source anywhere', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const source = makeBasisuGltf(false);
+    (source.textures as Record<string, unknown>[])[0] = { sampler: 0 };
+    parseGltf(source, diagnostics);
+
+    expect(diagnostics.find((d) => d.kind === 'gltf.texture-source-missing')).toBeDefined();
+  });
+});
+
 describe('parseGltf mesh quantization', () => {
   // A quantized POSITION accessor: normalized signed shorts, which the base spec forbids for POSITION and
   // KHR_mesh_quantization permits. Three vertices at the short extremes so the normalization is visible.
