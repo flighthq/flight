@@ -17,7 +17,15 @@ interface Scene2DContentReferenceBase {
 
 export interface Scene2DAssetReference extends Scene2DContentReferenceBase {
   kind: 'Asset';
+  // How the asset is addressed. A format that embeds its assets has no address to fetch from, so `uri`
+  // names the asset within its document and `bytes` carries it.
   uri: string;
+  // Encoded bytes the document carried inline, or null when the asset lives at `uri`. Held as a view over
+  // the source rather than a copy, and never decoded at import: decoding is the resolve step's job, so a
+  // caller that never resolves an embedded asset never pays for its pixels.
+  bytes: Uint8Array | null;
+  // Media type of `bytes` when the document could identify one, for a resolver dispatching by format.
+  mimeType: string | null;
 }
 
 export interface Scene2DSlotReference extends Scene2DContentReferenceBase {

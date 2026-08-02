@@ -8,8 +8,10 @@ describe('createScene2DAssetReference', () => {
     const target = createDisplayObject();
     const reference = createScene2DAssetReference('heroImage', 'hero.png', target);
     expect(reference).toEqual({
+      bytes: null,
       content: null,
       kind: Scene2DContentReferenceKind.Asset,
+      mimeType: null,
       name: 'heroImage',
       required: true,
       target,

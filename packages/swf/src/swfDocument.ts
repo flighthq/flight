@@ -1,6 +1,7 @@
 import { createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
 import {
+  createScene2DAssetReference,
   createScene2DDocument,
   createScene2DSlotReference,
   registerScene2DDocumentImporter,
@@ -111,8 +112,17 @@ interface SwfTimeline {
   labels: TimelineLabel[];
 }
 
+// An image definition's encoded payload, held as a view over the source. Nothing here is decoded at
+// import: the bytes ride out on an asset reference for the resolve step to decode, which may be
+// asynchronous and which a caller that does not need pixels never runs.
+interface SwfImagePayload {
+  bytes: Uint8Array;
+  mimeType: string;
+}
+
 interface SwfTagResult {
   characterBounds: Map<number, SwfRectangle>;
+  images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
   shapes: Map<number, Shape>;
@@ -123,6 +133,7 @@ interface SwfTagResult {
 interface SwfParseState {
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
+  images: Map<number, SwfImagePayload>;
   linkages: Map<number, string>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
@@ -185,18 +196,32 @@ function populateSwfTimelineNode(
       if (nodes.has(key)) continue;
       const sprite = parsed.sprites.get(placement.characterId);
       const shape = parsed.shapes.get(placement.characterId);
-      // A placement earns a node when it is named, when it carries a timeline, or now when it has geometry
-      // to draw — an unnamed shape is most of what a still frame is made of.
-      if (!placement.name && sprite === undefined && shape === undefined) continue;
+      const image = parsed.images.get(placement.characterId);
+      // A placement earns a node when it is named, when it carries a timeline, or now when it has content —
+      // geometry to draw or pixels to load. An unnamed shape is most of what a still frame is made of.
+      if (!placement.name && sprite === undefined && shape === undefined && image === undefined) continue;
       if (state.remainingNodes === 0) return false;
       state.remainingNodes--;
 
-      // The node and its slot reference exist before the symbol behind it is populated, so a manifest lists
-      // a container ahead of the named descendants it carries.
+      // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
+      // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
       const target = createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
-      if (placement.name) {
+      if (image !== undefined) {
+        // An embedded image is an asset rather than a slot: it has content of its own to load, and the
+        // document carries that content instead of an address to fetch it from.
+        references.push(
+          createScene2DAssetReference(
+            placement.name ?? createSwfImageAssetName(placement.characterId),
+            createSwfImageAssetUri(placement.characterId),
+            target,
+            true,
+            image.bytes,
+            image.mimeType,
+          ),
+        );
+      } else if (placement.name) {
         references.push(
           createScene2DSlotReference(
             placement.name,
@@ -291,6 +316,16 @@ function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsN
 // frames, while a replacement at the same depth is a different instance and gets a node of its own.
 function createSwfInstanceKey(placement: Readonly<SwfPlacement>): number {
   return placement.depth * SWF_INSTANCE_KEY_SCALE + placement.characterId;
+}
+
+// An embedded image has no address to fetch from, so its reference is addressed by the character it came
+// from. The name falls back to the same identity when the placement carried no instance name.
+function createSwfImageAssetName(characterId: number): string {
+  return `bitmap${characterId}`;
+}
+
+function createSwfImageAssetUri(characterId: number): string {
+  return `swf:bitmap/${characterId}`;
 }
 
 function createSwfDisplayObject(bounds: SwfRectangle | null): ReturnType<typeof createDisplayObject> {
@@ -493,6 +528,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
+    images: new Map<number, SwfImagePayload>(),
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
     shapes: new Map<number, Shape>(),
@@ -502,6 +538,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   if (timeline === null) return null;
   return {
     characterBounds: state.characterBounds,
+    images: state.images,
     linkages: state.linkages,
     shapes: state.shapes,
     sprites: state.sprites,
@@ -687,14 +724,24 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
   ) {
     return false;
   }
-  const bounds = readSwfEmbeddedImageBounds(body.source, imageStart, imageEnd);
-  if (bounds === null) return false;
+  const image = readSwfEmbeddedImage(body.source, imageStart, imageEnd);
+  if (image === null) return false;
   state.definedCharacters.add(characterId);
-  state.characterBounds.set(characterId, bounds);
+  state.characterBounds.set(characterId, image.bounds);
+  state.images.set(characterId, {
+    bytes: body.source.subarray(imageStart, imageEnd),
+    mimeType: image.mimeType,
+  });
   return true;
 }
 
-function readSwfEmbeddedImageBounds(source: Uint8Array, start: number, end: number): SwfRectangle | null {
+// Identifies an embedded payload by its magic bytes and reads the dimensions out of its header, without
+// decoding a pixel. The media type travels with the bytes so a resolver can dispatch on format.
+function readSwfEmbeddedImage(
+  source: Uint8Array,
+  start: number,
+  end: number,
+): { bounds: SwfRectangle; mimeType: string } | null {
   if (
     end - start >= 24 &&
     source[start] === 0x89 &&
@@ -711,7 +758,11 @@ function readSwfEmbeddedImageBounds(source: Uint8Array, start: number, end: numb
     source[start + 14] === 0x44 &&
     source[start + 15] === 0x52
   ) {
-    return createSwfDimensionBounds(readBigEndianUint32(source, start + 16), readBigEndianUint32(source, start + 20));
+    const bounds = createSwfDimensionBounds(
+      readBigEndianUint32(source, start + 16),
+      readBigEndianUint32(source, start + 20),
+    );
+    return bounds === null ? null : { bounds, mimeType: PNG_MIME_TYPE };
   }
 
   if (
@@ -723,10 +774,11 @@ function readSwfEmbeddedImageBounds(source: Uint8Array, start: number, end: numb
     (source[start + 4] === 0x37 || source[start + 4] === 0x39) &&
     source[start + 5] === 0x61
   ) {
-    return createSwfDimensionBounds(
+    const bounds = createSwfDimensionBounds(
       source[start + 6] + source[start + 7] * 0x100,
       source[start + 8] + source[start + 9] * 0x100,
     );
+    return bounds === null ? null : { bounds, mimeType: GIF_MIME_TYPE };
   }
 
   if (end - start < 4 || source[start] !== 0xff || source[start + 1] !== JPEG_START_OF_IMAGE) return null;
@@ -749,7 +801,11 @@ function readSwfEmbeddedImageBounds(source: Uint8Array, start: number, end: numb
       marker !== JPEG_DEFINE_ARITHMETIC_CODING
     ) {
       if (length < 7) return null;
-      return createSwfDimensionBounds(readBigEndianUint16(source, pos + 5), readBigEndianUint16(source, pos + 3));
+      const bounds = createSwfDimensionBounds(
+        readBigEndianUint16(source, pos + 5),
+        readBigEndianUint16(source, pos + 3),
+      );
+      return bounds === null ? null : { bounds, mimeType: JPEG_MIME_TYPE };
     }
     pos += length;
   }
@@ -770,6 +826,9 @@ function readBigEndianUint32(source: Uint8Array, offset: number): number {
 
 function readSwfLosslessBitmapDefinition(body: SwfReader, state: SwfParseState, hasAlpha: boolean): boolean {
   const characterId = body.readUint16();
+  // Everything after the character id is the payload a decoder needs: format, dimensions, an optional
+  // colormap size, and the zlib-compressed pixels. It stays compressed here.
+  const payloadStart = body.pos;
   const format = body.readUint8();
   const width = body.readUint16();
   const height = body.readUint16();
@@ -790,6 +849,10 @@ function readSwfLosslessBitmapDefinition(body: SwfReader, state: SwfParseState, 
   }
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, { height, width, x: 0, y: 0 });
+  state.images.set(characterId, {
+    bytes: body.source.subarray(payloadStart, body.end),
+    mimeType: hasAlpha ? SWF_LOSSLESS_ALPHA_MIME_TYPE : SWF_LOSSLESS_MIME_TYPE,
+  });
   return true;
 }
 
@@ -812,10 +875,12 @@ const CWS_SIGNATURE = 0x43;
 const FIXED_8_8_ONE = 0x100;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
+const GIF_MIME_TYPE = 'image/gif';
 const IDENTITY_MATRIX: SwfMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
 const JPEG_DEFINE_ARITHMETIC_CODING = 0xcc;
 const JPEG_DEFINE_HUFFMAN_TABLES = 0xc4;
 const JPEG_END_OF_IMAGE = 0xd9;
+const JPEG_MIME_TYPE = 'image/jpeg';
 const JPEG_EXTENSION = 0xc8;
 const JPEG_START_OF_IMAGE = 0xd8;
 const JPEG_START_OF_SCAN = 0xda;
@@ -827,8 +892,11 @@ const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
 const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
 const MIN_SWF_LENGTH = 12;
+const PNG_MIME_TYPE = 'image/png';
 const S_SIGNATURE = 0x53;
 const SWF_INSTANCE_KEY_SCALE = 0x10000;
+const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';
+const SWF_LOSSLESS_MIME_TYPE = 'image/x-swf-lossless';
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;

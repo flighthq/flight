@@ -1,11 +1,23 @@
 import type { Entity } from './Entity';
 import type { Node2D } from './Node2D';
-import type { Scene2DContentReference, Scene2DContentReferenceKind, Scene2DDocument } from './Scene2DDocument';
+import type {
+  Scene2DAssetReference,
+  Scene2DContentReference,
+  Scene2DContentReferenceKind,
+  Scene2DDocument,
+  Scene2DSlotReference,
+} from './Scene2DDocument';
 import type { Signal } from './Signal';
 
-export type Scene2DAssetContentLoader = (name: string, uri: string, signal: AbortSignal) => Promise<Node2D | null>;
+// Both content callbacks receive the whole reference rather than its fields: an asset may be addressed by
+// `uri` or carried inline as `bytes`, and a resolver has to see which it is. Passing the reference also
+// keeps the seam stable as references gain fields.
+export type Scene2DAssetContentLoader = (
+  reference: Readonly<Scene2DAssetReference>,
+  signal: AbortSignal,
+) => Promise<Node2D | null>;
 
-export type Scene2DAssetContentResolver = (name: string, uri: string) => Node2D | null;
+export type Scene2DAssetContentResolver = (reference: Readonly<Scene2DAssetReference>) => Node2D | null;
 
 export interface Scene2DDocumentFetchProgress {
   loaded: number;
@@ -69,7 +81,7 @@ export interface Scene2DResources {
   unresolved: Scene2DContentReference[];
 }
 
-export type Scene2DSlotContentResolver = (name: string, linkage: string | null) => Node2D | null;
+export type Scene2DSlotContentResolver = (reference: Readonly<Scene2DSlotReference>) => Node2D | null;
 
 export interface ResolveScene2DResourcesOptions {
   resolveAssetContent?: Scene2DAssetContentResolver;
