@@ -177,9 +177,32 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   snapshot budget rejects a file that would exceed it, rather than materializing it.
 - Text definition bodies, legacy table-based JPEG/button/font extents, frame scripts, and opaque `DoABC`
   exposure remain staged rather than being represented incompletely.
-- Bitmap pixels are complete: JPEG/PNG/GIF payloads reach their waiting textures through
+- Opaque bitmap pixels are complete: JPEG/PNG/GIF payloads reach their waiting textures through
   `loadScene2DImageResources`, and lossless payloads unpack at import. What remains is unifying the two
   paths behind one loader, noted above.
+- `createScene2DSymbolFromSwf` returns a `Scene2DDocument` rooted at the symbol, not a bare node. A symbol
+  carries the same two resolve contracts a whole file does — slots to fill and image bytes to decode — and
+  each call parses afresh, so its Textures are its own and no resource list from another call can ever pair
+  them with pixels. It resolves the same character kinds in the same order a placement does, so an exported
+  bitmap or edit-text character imports like the identical character placed on a timeline.
+
+Three gaps stand between this and pixels a player would accept, all recorded here rather than inline:
+
+- `DefineBitsJPEG3`/`4` alpha is **dropped**. The tag reader ends the colour stream at the alpha offset and
+  discards the zlib-compressed alpha block after it, so a transparent JPEG imports fully opaque. Rejoining
+  the two halves is SWF-specific work — the colour stream decodes through a generic decoder, the alpha
+  through the shared decompressor, and only this package knows they belong together — and it needs an
+  entry-point decision first: an option on the import, or a post-pass over a resolved document. Rare in the
+  Ruffle corpus (1 file of 301, which is AVM-test-skewed) and common in authored artwork.
+- The image path decodes through a `Blob`/`HTMLImageElement` in `loadImageResourceFromBytes`, which never
+  consults `getImageDecoder`. That path is browser-only, so headless and native hosts get no encoded
+  pixels at all — the same unification noted above, seen from the other side.
+- **Nothing here has been rasterized.** There is no SWF example and no functional target, so every claim
+  about what a frame looks like rests on decoded command streams, not on pixels. Two value-level defects
+  have already hidden behind presence-only assertions (bitmap fills dropping their contours; a bitmap fill
+  matrix left in twips, drawing twenty times too large). Prefer an oracle that can disagree — the version
+  1/version 3 font test asserts that two encodings of one square produce identical geometry, which a wrong
+  EM square breaks — and treat "authoritative" as unreachable until a render gate exists.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile, and depends on `movieclip` for the playback nodes it produces and on `shape`/`geometry` for
