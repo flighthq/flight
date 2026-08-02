@@ -47,4 +47,35 @@ describe('explainPathMorphCreation', () => {
       supported: false,
     });
   });
+
+  it('reports a non-zero path that reverses only a subset of its contours', () => {
+    const start = createPath();
+    appendPathMoveTo(start, 0, 0);
+    appendPathLineTo(start, 20, 0);
+    appendPathLineTo(start, 20, 20);
+    appendPathLineTo(start, 0, 20);
+    appendPathClose(start);
+    appendPathMoveTo(start, 5, 5);
+    appendPathLineTo(start, 15, 5);
+    appendPathLineTo(start, 15, 15);
+    appendPathLineTo(start, 5, 15);
+    appendPathClose(start);
+    const end = createPath();
+    appendPathMoveTo(end, 0, 0);
+    appendPathLineTo(end, 20, 0);
+    appendPathLineTo(end, 20, 20);
+    appendPathLineTo(end, 0, 20);
+    appendPathClose(end);
+    appendPathMoveTo(end, 5, 5);
+    appendPathLineTo(end, 5, 15);
+    appendPathLineTo(end, 15, 15);
+    appendPathLineTo(end, 15, 5);
+    appendPathClose(end);
+
+    expect(explainPathMorphCreation(start, end)).toStrictEqual({
+      contour: 1,
+      reason: 'contour-orientation-mismatch',
+      supported: false,
+    });
+  });
 });

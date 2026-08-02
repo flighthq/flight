@@ -6,6 +6,7 @@ import {
   buildPathMorph,
   PathMorphIssueContourClosednessMismatch,
   PathMorphIssueContourCountMismatch,
+  PathMorphIssueContourOrientationMismatch,
   PathMorphIssueNone,
   PathMorphIssueWindingMismatch,
 } from './pathMorphGeometry';
@@ -26,5 +27,6 @@ function getReason(issue: number): PathMorphCreationReason {
   if (issue === PathMorphIssueWindingMismatch) return 'winding-mismatch';
   if (issue === PathMorphIssueContourCountMismatch) return 'contour-count-mismatch';
   if (issue === PathMorphIssueContourClosednessMismatch) return 'contour-closedness-mismatch';
+  if (issue === PathMorphIssueContourOrientationMismatch) return 'contour-orientation-mismatch';
   return 'ok';
 }

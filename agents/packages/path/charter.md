@@ -77,7 +77,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 
   **Why:** The simple tessellator shouldn't grow complex to handle holes. Two strategies, explicitly chosen, matches the conservative/exact stratification pattern from clip.
 
-- **[2026-08-02] Path morph preparation and sampling belong in `@flighthq/path`; playback does not.** `createPathMorph` performs the allocating, one-time geometry correspondence between two topology-compatible paths, and `samplePathMorph` writes a progress sample into a reusable `Path`. Shape owns any retained `MorphShape` composition, while tween/animation/timeline own how progress changes over time.
+- **[2026-08-02] Path morph preparation and sampling belong in `@flighthq/path`; playback does not.** `createPathMorph` performs the allocating, one-time geometry correspondence between two topology-compatible paths, and `samplePathMorph` writes a progress sample into a reusable `Path`. Closed traversal is normalized only when it preserves fill semantics: per contour for `evenOdd`, or as one consistent endpoint reversal for `nonZero`. Shape owns any retained `MorphShape` composition, while tween/animation/timeline own how progress changes over time.
 
   **Why:** Normalizing lines/quadratics/cubics, reconciling segment counts, and interpolating coordinates are pure path geometry. Putting those operations in an animation package would couple a general timing system to one value type; putting time in path would violate the value-typed leaf boundary.
 
