@@ -779,6 +779,15 @@
           }
         },
         {
+          "scene": "material-blend-modes",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "material-blinn-phong",
           "backends": {
             "canvas": false,

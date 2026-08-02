@@ -211,30 +211,10 @@ describe('createWgpuMeshPipeline', () => {
     expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(4);
   });
 
-  it('uses src-alpha blending and disables depth writes for a blended variant', () => {
+  // Normal is a premultiplied blend state unconditionally: srcFactor 'one', not 'src-alpha'. A material
+  // no longer declares an alpha convention, so there is nothing left to make this vary.
+  it('uses premultiplied blending and disables depth writes for a blended variant', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const module = state.device.createShaderModule({ code: '' });
-    const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
-    createWgpuMeshPipeline(state, {
-      blended: true,
-      doubleSided: false,
-      format: 'bgra8unorm',
-      materialBindGroupLayout,
-      module,
-    });
-
-    const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
-    expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toEqual({
-      alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
-      color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'src-alpha' },
-    });
-    expect(descriptor.depthStencil!.depthWriteEnabled).toBe(false);
-  });
-
-  it('uses one as the Normal color source factor for premultiplied material output', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    getWgpuScene3DRuntime(state).activeAlphaType = 'premultiplied';
     const module = state.device.createShaderModule({ code: '' });
     const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
     createWgpuMeshPipeline(state, {
@@ -251,6 +231,7 @@ describe('createWgpuMeshPipeline', () => {
       alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
       color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
     });
+    expect(descriptor.depthStencil!.depthWriteEnabled).toBe(false);
   });
 
   it('uses the active surface blend mode for a blended variant', () => {
@@ -543,7 +524,7 @@ describe('ensureWgpuScene3DPipeline', () => {
     expect(variants).toEqual([false, true]);
     expect(Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys())).toEqual([
       'fam:bgra8unorm|-|opaque|rigid',
-      'fam:bgra8unorm|-|blend:Normal:straight|rigid',
+      'fam:bgra8unorm|-|blend:Normal|rigid',
     ]);
   });
 
@@ -564,12 +545,15 @@ describe('ensureWgpuScene3DPipeline', () => {
 
     expect(compiles).toBe(2);
     expect(Array.from(runtime.pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|blend:Add:straight|rigid',
-      'fam:bgra8unorm|-|blend:Multiply:straight|rigid',
+      'fam:bgra8unorm|-|blend:Add|rigid',
+      'fam:bgra8unorm|-|blend:Multiply|rigid',
     ]);
   });
 
-  it('caches straight and premultiplied material output as separate pipeline variants', () => {
+  // The inverse of what this used to assert. Pipeline identity carried an alpha-convention segment while
+  // a material could pick its blend factors; now one blend mode is one premultiplied state, so repeated
+  // draws of the same mode share a single compiled pipeline rather than splitting into two variants.
+  it('caches one pipeline variant per blend mode, not per alpha convention', () => {
     const { state } = makeWgpuScene3DState();
     let compiles = 0;
     const compile = () => {
@@ -578,16 +562,15 @@ describe('ensureWgpuScene3DPipeline', () => {
     };
     const runtime = getWgpuScene3DRuntime(state);
     runtime.activeBlendedRun = true;
-    runtime.activeAlphaType = 'straight';
     ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
-    runtime.activeAlphaType = 'premultiplied';
     ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
+    runtime.activeBlendMode = BlendMode.Add;
     ensureWgpuScene3DPipeline(state, 'fam:bgra8unorm|-', compile);
 
     expect(compiles).toBe(2);
     expect(Array.from(runtime.pipelineCache.keys())).toEqual([
-      'fam:bgra8unorm|-|blend:Normal:straight|rigid',
-      'fam:bgra8unorm|-|blend:Normal:premultiplied|rigid',
+      'fam:bgra8unorm|-|blend:Normal|rigid',
+      'fam:bgra8unorm|-|blend:Add|rigid',
     ]);
   });
 

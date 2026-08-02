@@ -387,10 +387,10 @@ ${indent(plan.emissive, 2)}
     '      let viewDir = shadedViewDir;',
   );
   source = source.replace(
-    '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
+    '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
     `  radiance = radiance + emissive;
 ${indent(plan.effect, 2)}
-  return vec4f(radiance, diffuse.a * in.objectAlpha);`,
+  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));`,
   );
   source = source.replace(
     '@group(3) @binding(2) var shadowSampler : sampler_comparison;',
@@ -407,7 +407,7 @@ struct Ibl {
   );
   if (colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, colorMatrix).replace(
-      '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
+      '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
       `  var flightColor = vec4f(radiance, diffuse.a);
   flightColor = ${
     colorMatrix
@@ -415,7 +415,7 @@ struct Ibl {
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
   flightColor.a = flightColor.a * in.objectAlpha;
-  return flightColor;`,
+  return flightPremultipliedOutput(flightColor);`,
     );
   }
   return source;

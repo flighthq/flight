@@ -9,6 +9,7 @@ import type {
   WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPerMapMaterialBinding,
@@ -171,7 +172,7 @@ export function getWgpuClassicModuleSourceForKey(
   let source = assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
-      '  return vec4f(radiance, diffuse.a * in.objectAlpha);',
+      '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
       `  var flightColor = vec4f(radiance, diffuse.a);
   flightColor = ${
     key.hasColorMatrix
@@ -179,7 +180,7 @@ export function getWgpuClassicModuleSourceForKey(
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
   flightColor.a = flightColor.a * in.objectAlpha;
-  return flightColor;`,
+  return flightPremultipliedOutput(flightColor);`,
     );
   }
   return source;
@@ -221,7 +222,7 @@ function assembleWgpuClassicModuleSource(
 // 12 floats. params.x = shininess, params.y = alphaCutoff.
 const CLASSIC_UNIFORM_BYTES = 48;
 
-const CLASSIC_WGSL_BODY = /* wgsl */ `
+const CLASSIC_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct ClassicMaterial {
   diffuse : vec4f,   // linear rgba
   specular : vec4f,  // linear rgb; a unused
@@ -401,7 +402,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
       frame.hemisphereLights[hemisphere * 3u].xyz, factor) * diffuse.rgb;
   }
 
-  return vec4f(radiance, diffuse.a * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));
 }
 `;
 

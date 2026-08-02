@@ -108,9 +108,7 @@ describe('drawWgpuScene3D', () => {
     expect(runtime.opaqueDrawList.map((entry) => entry.mesh)).toEqual([opaque]);
     expect(runtime.blendedDrawList.map((entry) => entry.mesh)).toEqual([blended]);
     expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|opaque|rigid'))).toBe(true);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal:straight|rigid'))).toBe(
-      true,
-    );
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
   });
 
   it('selects a pipeline variant keyed by the surface material blendMode', () => {
@@ -123,26 +121,24 @@ describe('drawWgpuScene3D', () => {
     drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
 
     expect(
-      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) =>
-        key.endsWith('|blend:Add:straight|rigid'),
-      ),
+      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) => key.endsWith('|blend:Add|rigid')),
     ).toBe(true);
   });
 
-  it('selects a pipeline variant keyed by the surface material alphaType', () => {
+  // Pipeline identity is the blend mode alone. It used to carry an alpha-convention segment too, which
+  // is gone with the fork: one premultiplied blend state per mode, so the same mode is the same pipeline.
+  it('keys a blended pipeline variant by blend mode alone', () => {
     const { state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
     const scene = createNode3D(Node3DKind);
-    const material = createStandardPbrMaterial({ alphaMode: 'blend', alphaType: 'premultiplied' });
+    const material = createStandardPbrMaterial({ alphaMode: 'blend' });
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
 
     drawWgpuScene3D(state, scene, makeCamera(), LIGHTS);
 
-    expect(
-      Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys()).some((key) =>
-        key.endsWith('|blend:Normal:premultiplied|rigid'),
-      ),
-    ).toBe(true);
+    const keys = Array.from(getWgpuScene3DRuntime(state).pipelineCache.keys());
+    expect(keys.some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
+    expect(keys.some((key) => key.includes('straight') || key.includes('premultiplied'))).toBe(false);
   });
 
   it('routes resolved node alpha through the blended pass and draw proxy', () => {
@@ -158,9 +154,7 @@ describe('drawWgpuScene3D', () => {
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.opaqueDrawList).toHaveLength(0);
     expect(runtime.blendedDrawList[0]!.alpha).toBeCloseTo(0.5);
-    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal:straight|rigid'))).toBe(
-      true,
-    );
+    expect(Array.from(runtime.pipelineCache.keys()).some((key) => key.endsWith('|blend:Normal|rigid'))).toBe(true);
   });
 
   it('sorts blended subsets back-to-front by projected depth', () => {

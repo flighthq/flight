@@ -5,6 +5,7 @@ import type {
   WgpuWireframePipeline,
 } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScene3DPipeline,
@@ -104,7 +105,7 @@ export function getWgpuWireframeModuleSource(alphaMaskEnabled = false): string {
 // Wireframe material uniform: color vec4f + params vec4f (params.x = alphaCutoff).
 const WIREFRAME_UNIFORM_BYTES = 32;
 
-const WIREFRAME_WGSL_BODY = /* wgsl */ `
+const WIREFRAME_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct WireframeMaterial {
   color : vec4f,  // linear rgba
   params : vec4f, // x = alphaCutoff
@@ -116,7 +117,7 @@ struct WireframeMaterial {
   if (ALPHA_MASK && material.color.a < material.params.x) {
     discard;
   }
-  return vec4f(material.color.rgb, material.color.a * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(material.color.rgb, material.color.a * in.objectAlpha));
 }
 `;
 

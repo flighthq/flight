@@ -8,6 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScene3DPipeline,
@@ -185,7 +186,7 @@ export function getWgpuUnlitModuleSourceForKey(
 // intensity, params.y = alphaCutoff.
 const UNLIT_UNIFORM_BYTES = 32;
 
-const UNLIT_WGSL_BODY = /* wgsl */ `
+const UNLIT_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct UnlitMaterial {
   color : vec4f,   // linear rgba
   params : vec4f,  // x = intensity, y = alphaCutoff
@@ -204,7 +205,7 @@ struct UnlitMaterial {
   if (ALPHA_MASK && color.a < material.params.y) {
     discard;
   }
-  return vec4f(color.rgb * material.params.x, color.a * in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(color.rgb * material.params.x, color.a * in.objectAlpha));
 }
 `;
 

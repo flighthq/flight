@@ -128,8 +128,10 @@ export function getWgpuCustomMaterialShaderSource(
 //   binding 2*N and texture_2d<f32> at binding 2*N+1.
 //
 // Entry points are `vs_main` and `fs_main`; attributes use locations 0 position, 1 normal, 2 tangent,
-// and 3 uv. Fragment outputs are linear scene color; alpha-blended materials must return output matching
-// their alphaType declaration. Texture slots sample according to each Texture.colorSpace GPU realization;
+// and 3 uv. Fragment outputs are linear scene color; alpha-blended materials must return PREMULTIPLIED
+// color (rgb already scaled by the coverage returned in a) — every blend state is premultiplied, and
+// Flight compiles caller-authored WGSL verbatim, so it cannot append the fixup the built-in tails get
+// from WGPU_MESH_FRAGMENT_TAIL. Return `vec4f(rgb * a, a)`. Texture slots sample according to each Texture.colorSpace GPU realization;
 // caller WGSL must not decode an sRGB texture again. For alphaMode 'mask', the complete native module owns the cutoff discard
 // (pass alphaCutoff through the custom uniforms bag when needed); the fixed ABI cannot inject it. The
 // registry follows the GL lifetime rule: last source write wins before compilation, while an already

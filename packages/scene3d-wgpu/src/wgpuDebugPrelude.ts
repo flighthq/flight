@@ -6,6 +6,7 @@ import type {
   WgpuMaterialBinding,
 } from '@flighthq/types/contract';
 
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -129,7 +130,7 @@ const DEPTH_MODE : i32 = 0;
 const NORMAL_MODE : i32 = 1;
 `;
 
-const DEBUG_WGSL_BODY = /* wgsl */ `
+const DEBUG_WGSL_BODY = /* wgsl */ `${WGPU_MESH_FRAGMENT_TAIL}
 struct DebugMaterial {
   params : vec4f,  // x = near, y = far (depth); z = normalScale (normal)
 };
@@ -148,7 +149,7 @@ struct DebugMaterial {
     let far = material.params.y;
     let eyeDepth = 1.0 / in.clipPosition.w;
     let d = clamp((eyeDepth - near) / max(far - near, 1e-6), 0.0, 1.0);
-    return vec4f(vec3f(d), in.objectAlpha);
+    return flightPremultipliedOutput(vec4f(vec3f(d), in.objectAlpha));
   }
 
   // NORMAL_MODE: visualize the WORLD-space surface normal — the geometric normal carried through
@@ -169,7 +170,7 @@ struct DebugMaterial {
     normal = normalize(tbn * tangentNormal);
   }
 
-  return vec4f(normal * 0.5 + 0.5, in.objectAlpha);
+  return flightPremultipliedOutput(vec4f(normal * 0.5 + 0.5, in.objectAlpha));
 }
 `;
 
