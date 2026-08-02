@@ -236,14 +236,21 @@ incoming vector, keeping the pair collinear through the vertex; a detached verte
 separately-angled one. Applying one rule to all three reflects every detached handle through its
 vertex and bends the curve the wrong way.
 
-Over the corpus this builds 3,770 path records across 2,409 shapes — 45,408 points, none non-finite.
-Fifteen shapes produce no geometry, which the format permits for a shape whose children carry none.
+**Straight-vertex corner rounding is covered**, and it is common rather than exotic: 2,533 of 8,454
+straight vertices in the corpus state a nonzero radius. The construction is the format's own "natural
+rounding" rather than an approximation — the radius is clamped to half the shorter adjoining edge,
+the corner is replaced by tangent points that far back along each edge, and the handles are pulled in
+from those points by a distance that varies with the corner's angle. At a right angle the expression
+collapses to the familiar 0.5523 circle ratio, which is the check that the general form is right. An
+open path's endpoints stay sharp, since a corner needs an edge on both sides.
 
-**Not covered — a common-path gap, not an exotic one.** `StraightVertex` states a corner **radius**
-and this importer ignores it, so those corners import sharp. That is not rare: **2,533 of 8,454
-straight vertices in the corpus (30%) state a nonzero radius**. Rive's own rounding construction
-should be taken as a format fact rather than approximated, since a plausible-but-wrong fillet is
-hard to see without pixels.
+Over the corpus this builds 3,770 path records across 2,409 shapes — 54,378 points and 13,406 cubic
+segments, none non-finite. Fifteen shapes produce no geometry, which the format permits for a shape
+whose children carry none.
+
+**Not covered:** a **negative** corner radius, which Rive treats as an inverted corner rather than a
+convex one. Three of 2,533 radii in the corpus are negative; those corners round outward by the
+stated magnitude instead of inverting.
 
 **Also not covered:** fills, strokes, gradients, trim paths and dashes, so an imported shape carries
 geometry but no paint and draws nothing; draw order and blend modes; clipping; deformable meshes,

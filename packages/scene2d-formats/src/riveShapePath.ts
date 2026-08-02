@@ -46,21 +46,89 @@ function createRivePointsPath(
   if (vertices.length === 0) return path;
 
   const closed = readRiveFlag(source, RIVE_IS_CLOSED, false);
+  applyRiveCornerRounding(vertices, closed);
+
   const first = vertices[0];
-  appendPathMoveTo(path, first.x, first.y);
+  appendPathMoveTo(path, first.entryX, first.entryY);
+  appendRiveCorner(path, first);
   const limit = closed ? vertices.length : vertices.length - 1;
   for (let step = 0; step < limit; step++) {
     const from = vertices[step];
     const to = vertices[(step + 1) % vertices.length];
     // A segment is a line only when neither end states a handle; one handle still curves it.
-    if (from.outX === from.x && from.outY === from.y && to.inX === to.x && to.inY === to.y) {
-      appendPathLineTo(path, to.x, to.y);
+    if (from.outX === from.exitX && from.outY === from.exitY && to.inX === to.entryX && to.inY === to.entryY) {
+      appendPathLineTo(path, to.entryX, to.entryY);
     } else {
-      appendPathCubicCurveTo(path, from.outX, from.outY, to.inX, to.inY, to.x, to.y);
+      appendPathCubicCurveTo(path, from.outX, from.outY, to.inX, to.inY, to.entryX, to.entryY);
     }
+    appendRiveCorner(path, to);
   }
   if (closed) appendPathClose(path);
   return path;
+}
+
+function appendRiveCorner(path: Path, vertex: Readonly<RiveVertexPoint>): void {
+  if (vertex.corner === null) return;
+  appendPathCubicCurveTo(
+    path,
+    vertex.corner[0],
+    vertex.corner[1],
+    vertex.corner[2],
+    vertex.corner[3],
+    vertex.exitX,
+    vertex.exitY,
+  );
+}
+
+/**
+ * Replaces a straight vertex's corner with the arc its radius asks for, following the format's own
+ * "natural rounding": the corner is clamped to half of the shorter adjoining edge, and the control
+ * handles are pulled back from the tangent points by a distance that varies with the corner's angle.
+ * At a right angle the expression collapses to the familiar circle-approximation ratio, which is the
+ * check that the general form is the right one.
+ */
+function applyRiveCornerRounding(vertices: RiveVertexPoint[], closed: boolean): void {
+  const count = vertices.length;
+  for (let index = 0; index < count; index++) {
+    const vertex = vertices[index];
+    // A corner needs an edge on both sides, so an open path's endpoints stay sharp.
+    if (vertex.radius === 0 || (!closed && (index === 0 || index === count - 1))) continue;
+    const previous = vertices[(index - 1 + count) % count];
+    const next = vertices[(index + 1) % count];
+
+    // The neighbour's own handle is the reference point, which for a straight vertex is its position.
+    let toPrevX = previous.outX - vertex.x;
+    let toPrevY = previous.outY - vertex.y;
+    let toNextX = next.inX - vertex.x;
+    let toNextY = next.inY - vertex.y;
+    const previousLength = Math.hypot(toPrevX, toPrevY);
+    const nextLength = Math.hypot(toNextX, toNextY);
+    if (previousLength === 0 || nextLength === 0) continue;
+    toPrevX /= previousLength;
+    toPrevY /= previousLength;
+    toNextX /= nextLength;
+    toNextY /= nextLength;
+
+    const radius = Math.min(previousLength / 2, nextLength / 2, Math.abs(vertex.radius));
+    const angle = Math.abs(Math.atan2(toPrevX * toNextY - toPrevY * toNextX, toPrevX * toNextX + toPrevY * toNextY));
+    const spread = angle < Math.PI / 2 ? 1 + Math.cos(angle) : 2 - Math.sin(angle);
+    const ideal = Math.min(radius, (4 / 3) * Math.tan(angle / 4) * radius * spread);
+
+    vertex.entryX = vertex.x + toPrevX * radius;
+    vertex.entryY = vertex.y + toPrevY * radius;
+    vertex.exitX = vertex.x + toNextX * radius;
+    vertex.exitY = vertex.y + toNextY * radius;
+    vertex.inX = vertex.entryX;
+    vertex.inY = vertex.entryY;
+    vertex.outX = vertex.exitX;
+    vertex.outY = vertex.exitY;
+    vertex.corner = [
+      vertex.x + toPrevX * (radius - ideal),
+      vertex.y + toPrevY * (radius - ideal),
+      vertex.x + toNextX * (radius - ideal),
+      vertex.y + toNextY * (radius - ideal),
+    ];
+  }
 }
 
 function createRiveParametricPath(source: Readonly<RiveCoreObject>): Path {
@@ -177,10 +245,19 @@ function appendRivePolygonPath(
 }
 
 interface RiveVertexPoint {
+  /** Cubic controls for a rounded corner between `entry` and `exit`, or null when the corner is sharp. */
+  corner: number[] | null;
+  /** Where an incoming segment ends, which a corner radius pulls back along the previous edge. */
+  entryX: number;
+  entryY: number;
+  /** Where the outgoing segment begins, pushed forward along the next edge by the same radius. */
+  exitX: number;
+  exitY: number;
   inX: number;
   inY: number;
   outX: number;
   outY: number;
+  radius: number;
   x: number;
   y: number;
 }
@@ -199,7 +276,22 @@ function collectRiveVertices(artboard: Readonly<RiveArtboardGraph>, pathIndex: n
 function createRiveVertexPoint(source: Readonly<RiveCoreObject>): RiveVertexPoint {
   const x = readRiveDouble(source, RIVE_VERTEX_X, 0);
   const y = readRiveDouble(source, RIVE_VERTEX_Y, 0);
-  const point: RiveVertexPoint = { inX: x, inY: y, outX: x, outY: y, x, y };
+  const point: RiveVertexPoint = {
+    corner: null,
+    entryX: x,
+    entryY: y,
+    exitX: x,
+    exitY: y,
+    inX: x,
+    inY: y,
+    outX: x,
+    outY: y,
+    radius: isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_STRAIGHT_VERTEX)
+      ? readRiveDouble(source, RIVE_VERTEX_RADIUS, 0)
+      : 0,
+    x,
+    y,
+  };
 
   if (isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_CUBIC_DETACHED_VERTEX)) {
     const inRotation = readRiveDouble(source, RIVE_IN_ROTATION, 0);
@@ -260,6 +352,7 @@ function readRiveFlag(source: Readonly<RiveCoreObject>, key: number, fallback: b
 const CIRCLE_CUBIC_RATIO = 0.5522847498307936;
 
 const RIVE_PATH_VERTEX = 14;
+const RIVE_STRAIGHT_VERTEX = 5;
 const RIVE_POINTS_COMMON_PATH = 620;
 const RIVE_PARAMETRIC_PATH = 15;
 const RIVE_RECTANGLE = 7;
@@ -276,6 +369,7 @@ const RIVE_PARAMETRIC_HEIGHT = 21;
 const RIVE_VERTEX_X = 24;
 const RIVE_VERTEX_Y = 25;
 const RIVE_IS_CLOSED = 32;
+const RIVE_VERTEX_RADIUS = 26;
 const RIVE_CORNER_RADIUS_TL = 31;
 const RIVE_ASYMMETRIC_ROTATION = 79;
 const RIVE_ASYMMETRIC_IN_DISTANCE = 80;
