@@ -43,8 +43,17 @@ import {
 import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations } from './awd2Parse';
 import {
   AWD2_BLOCK_CONTAINER,
+  AWD2_BLOCK_CAMERA,
   AWD2_BLOCK_LIGHT,
   AWD2_BLOCK_LIGHT_PICKER,
+  AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC,
+  AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER,
+  AWD2_CAMERA_PROJECTION_PERSPECTIVE,
+  AWD2_CAMERA_PROP_FOV,
+  AWD2_CAMERA_PROP_ORTHO_BOTTOM,
+  AWD2_CAMERA_PROP_ORTHO_LEFT,
+  AWD2_CAMERA_PROP_ORTHO_RIGHT,
+  AWD2_CAMERA_PROP_ORTHO_TOP,
   AWD2_BLOCK_MATERIAL,
   AWD2_BLOCK_MESH_INSTANCE,
   AWD2_BLOCK_SKELETON,
@@ -1775,6 +1784,142 @@ function aimOf(light: Readonly<Scene3DDocumentLight>): number[] {
   return [aim.x, aim.y, aim.z].map((value) => Math.round(value * 1e6) / 1e6 + 0);
 }
 
+describe('parseAwd2 cameras', () => {
+  // Camera layout: Scene3DHeader(parentId → matrix → name) → activeFlag(uint8) → lensCount(int16) →
+  // projectionType(int16) → PropertyList → pivot PropertyList → UserAttrList.
+  function buildCameraBody(
+    name: string,
+    projectionType: number,
+    props: ReadonlyArray<readonly [number, Uint8Array]>,
+    transform: readonly number[] = IDENTITY_TRANSFORM,
+    parentId = 0,
+  ): Uint8Array {
+    const head = new Uint8Array(4 + 12 * 4);
+    const view = new DataView(head.buffer);
+    view.setUint32(0, parentId, true);
+    for (let i = 0; i < 12; i++) view.setFloat32(4 + i * 4, transform[i], true);
+    const lens = new Uint8Array(5);
+    const lensView = new DataView(lens.buffer);
+    lensView.setUint8(0, 1); // active-camera flag
+    lensView.setInt16(1, 0, true); // lens count, written but unused by the format
+    lensView.setInt16(3, projectionType, true);
+    return concatBytes(
+      head,
+      buildAwdString(name),
+      lens,
+      buildPropertyList(props),
+      buildPropertyList([]),
+      buildEmptyAttrList(),
+    );
+  }
+
+  function float32Prop(value: number): Uint8Array {
+    const bytes = new Uint8Array(4);
+    new DataView(bytes.buffer).setFloat32(0, value, true);
+    return bytes;
+  }
+
+  function parseCameraFile(
+    projectionType: number,
+    props: ReadonlyArray<readonly [number, Uint8Array]>,
+    diagnostics?: ImportDiagnostic[],
+    transform: readonly number[] = IDENTITY_TRANSFORM,
+  ) {
+    return parseAwd2(
+      buildAwdFileOfBlocks([
+        { body: buildCameraBody('Cam', projectionType, props, transform), id: 1, type: AWD2_BLOCK_CAMERA },
+      ]),
+      diagnostics,
+    );
+  }
+
+  it('imports a perspective camera, reading the FOV as the VERTICAL angle in degrees', () => {
+    const document = parseCameraFile(AWD2_CAMERA_PROJECTION_PERSPECTIVE, [[AWD2_CAMERA_PROP_FOV, float32Prop(45)]]);
+
+    expect(document.cameras).toHaveLength(1);
+    const camera = document.cameras[0];
+    expect(camera.name).toBe('Cam');
+    expect(camera.projection.kind).toBe('perspective');
+    expect((camera.projection as { fovY: number }).fovY).toBeCloseTo((45 * Math.PI) / 180, 6);
+  });
+
+  it('takes the ecosystem projection defaults the format does not state', () => {
+    // AWD carries no clip planes and no aspect on the camera block — both belong to the runtime viewport
+    // — so these are Away3D's own defaults rather than invented values.
+    const document = parseCameraFile(AWD2_CAMERA_PROJECTION_PERSPECTIVE, []);
+
+    const camera = document.cameras[0];
+    expect(camera.near).toBe(20);
+    expect(camera.far).toBe(3000);
+    expect(camera.projection).toMatchObject({ aspect: 1 });
+    expect((camera.projection as { fovY: number }).fovY).toBeCloseTo((60 * Math.PI) / 180, 6);
+  });
+
+  it('carries the block matrix as the camera placement', () => {
+    const placed = [1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 8, 9];
+    const document = parseCameraFile(AWD2_CAMERA_PROJECTION_PERSPECTIVE, [], undefined, placed);
+
+    // AWD is left-handed and the parser negates z, the same flip every placement takes.
+    expect(document.cameras[0].transform.position.x).toBeCloseTo(7, 4);
+    expect(document.cameras[0].transform.position.y).toBeCloseTo(8, 4);
+    expect(document.cameras[0].transform.position.z).toBeCloseTo(-9, 4);
+  });
+
+  it('imports a plain orthographic camera at the unit-scale volume', () => {
+    const document = parseCameraFile(AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC, []);
+
+    expect(document.cameras[0].projection).toMatchObject({ halfHeight: 0.5, halfWidth: 0.5, kind: 'orthographic' });
+  });
+
+  it('derives the extents of an off-center orthographic camera from its bounds', () => {
+    const document = parseCameraFile(AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER, [
+      [AWD2_CAMERA_PROP_ORTHO_LEFT, float32Prop(-200)],
+      [AWD2_CAMERA_PROP_ORTHO_RIGHT, float32Prop(200)],
+      [AWD2_CAMERA_PROP_ORTHO_BOTTOM, float32Prop(-100)],
+      [AWD2_CAMERA_PROP_ORTHO_TOP, float32Prop(100)],
+    ]);
+
+    expect(document.cameras[0].projection).toMatchObject({ halfHeight: 100, halfWidth: 200 });
+  });
+
+  it('skips and reports the offset of an off-center volume Flight cannot centre', () => {
+    // The extents survive; the asymmetry does not. That IS an asset fact — the author stated it.
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseCameraFile(
+      AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER,
+      [
+        [AWD2_CAMERA_PROP_ORTHO_LEFT, float32Prop(0)],
+        [AWD2_CAMERA_PROP_ORTHO_RIGHT, float32Prop(400)],
+        [AWD2_CAMERA_PROP_ORTHO_BOTTOM, float32Prop(-300)],
+        [AWD2_CAMERA_PROP_ORTHO_TOP, float32Prop(300)],
+      ],
+      diagnostics,
+    );
+
+    expect(document.cameras[0].projection).toMatchObject({ halfWidth: 200 });
+    const crumb = diagnostics.find((d) => d.kind === 'awd2.camera-offcenter-dropped');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+  });
+
+  it('skips a projection type the format does not define', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseCameraFile(9999, [], diagnostics);
+
+    expect(document.cameras).toHaveLength(0);
+    expect(diagnostics.find((d) => d.kind === 'awd2.camera-unsupported-projection')).toBeDefined();
+  });
+
+  it('no longer reports the camera block as unhandled', () => {
+    // Before this handler existed, block 42 fell into the unhandled-block tally.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseCameraFile(AWD2_CAMERA_PROJECTION_PERSPECTIVE, [], diagnostics);
+
+    const unhandled = diagnostics.filter((d) => d.kind === 'awd2.block-unhandled');
+    expect(unhandled).toHaveLength(0);
+  });
+});
+
 describe('parseAwd2 lights', () => {
   it('imports a directional light and splits its ambient term into a sibling AmbientLight', () => {
     const diagnostics: ImportDiagnostic[] = [];
@@ -2193,99 +2338,6 @@ describe('parseAwd2 lights', () => {
   });
 });
 
-describe('parseAwd2 unhandled blocks', () => {
-  // Two CORE block types the dispatch genuinely does not name. Both appear in the reference AWD corpus
-  // (shambler carries one of each), so these exercise the tally against real unwritten format coverage
-  // rather than invented numbers — and are the fixtures to change when either type gains a parser.
-  const UNHANDLED_BLOCK_TYPE = 113;
-  const OTHER_UNHANDLED_BLOCK_TYPE = 122;
-
-  // One block of `blockType` in `namespace`, carrying `payload` bytes the parser will not look at.
-  function fileWithBlocks(
-    blocks: ReadonlyArray<{ blockId: number; blockType: number; namespace?: number }>,
-  ): Uint8Array {
-    const parts: Uint8Array[] = [];
-    for (const block of blocks) {
-      parts.push(buildBlockHeader(block.blockId, block.blockType, 4, 0, block.namespace ?? AWD2_NAMESPACE_CORE));
-      parts.push(new Uint8Array(4));
-    }
-    const body = concatBytes(...parts);
-    return concatBytes(buildAwdHeader(body.length), body);
-  }
-
-  it('reports a CORE block type the dispatch does not name', () => {
-    // The silence this replaces was the real defect: the offset advanced, the block vanished, and a file
-    // using a format feature nobody has written was indistinguishable from a file that uses none.
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: UNHANDLED_BLOCK_TYPE }]), diagnostics);
-
-    expect(diagnostics).toEqual([
-      {
-        detail: { blockType: UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 7, namespace: AWD2_NAMESPACE_CORE },
-        kind: 'awd2.block-unhandled',
-        origin: 'parseAwd2',
-        severity: ImportDiagnosticSeverity.Drop,
-      },
-    ]);
-  });
-
-  it('reports a block in a namespace that is not CORE', () => {
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(fileWithBlocks([{ blockId: 3, blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, namespace: 5 }]), diagnostics);
-
-    // Reported even though the TYPE is one we handle, because in another namespace it is somebody else's
-    // block that merely shares a number.
-    expect(diagnostics.map((d) => d.detail)).toEqual([
-      { blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, count: 1, firstBlockId: 3, namespace: 5 },
-    ]);
-  });
-
-  it('reports one diagnostic per distinct block type, with the count and the first block id', () => {
-    // An unknown type usually repeats once per object in the file. Reporting each occurrence would bury
-    // every other diagnostic; the count is what tells a reader how much of the file was dropped.
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(
-      fileWithBlocks([
-        { blockId: 10, blockType: UNHANDLED_BLOCK_TYPE },
-        { blockId: 11, blockType: UNHANDLED_BLOCK_TYPE },
-        { blockId: 12, blockType: OTHER_UNHANDLED_BLOCK_TYPE },
-        { blockId: 13, blockType: UNHANDLED_BLOCK_TYPE },
-      ]),
-      diagnostics,
-    );
-
-    expect(diagnostics.map((d) => d.detail)).toEqual([
-      { blockType: UNHANDLED_BLOCK_TYPE, count: 3, firstBlockId: 10, namespace: AWD2_NAMESPACE_CORE },
-      { blockType: OTHER_UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 12, namespace: AWD2_NAMESPACE_CORE },
-    ]);
-  });
-
-  it('reports nothing for skeleton pose and skeleton animation blocks', () => {
-    // These are consumed by the SECOND walk (buildAwdDocumentAnimations), which re-reads the block stream
-    // once the joint nodes exist. The first walk passing over them is deferral, not a gap — reporting
-    // them would put a false Drop on every skinned AWD file, including ones that import perfectly.
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(
-      fileWithBlocks([
-        { blockId: 20, blockType: AWD2_BLOCK_SKELETON_POSE },
-        { blockId: 21, blockType: AWD2_BLOCK_SKELETON_ANIMATION },
-      ]),
-      diagnostics,
-    );
-
-    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
-  });
-
-  it('reports nothing for a file whose blocks the dispatch all handles', () => {
-    // Guards the guard: if this fired on ordinary content the diagnostic would be noise, and every test
-    // above would pass just as well against a parser that reported unconditionally.
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(SKINNED_TRIANGLE_AWD, diagnostics);
-
-    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
-  });
-});
-
 // Wraps ONE block of `blockType` at a deliberately short declared length so the parser truncates INSIDE
 // it: the block carries only `fullBody`'s first `cut` bytes as its declared blockLength, and the AWD body
 // is sized to exactly that block — so the walk advances to the body end after the single truncated block
@@ -2606,6 +2658,99 @@ const ANIM_PATH_TRUNCATIONS: Array<{
     origin: 'parseSkeletonAnimationBlock',
   },
 ];
+
+describe('parseAwd2 unhandled blocks', () => {
+  // Two CORE block types the dispatch genuinely does not name. Both appear in the reference AWD corpus
+  // (shambler carries one of each), so these exercise the tally against real unwritten format coverage
+  // rather than invented numbers — and are the fixtures to change when either type gains a parser.
+  const UNHANDLED_BLOCK_TYPE = 113;
+  const OTHER_UNHANDLED_BLOCK_TYPE = 122;
+
+  // One block of `blockType` in `namespace`, carrying `payload` bytes the parser will not look at.
+  function fileWithBlocks(
+    blocks: ReadonlyArray<{ blockId: number; blockType: number; namespace?: number }>,
+  ): Uint8Array {
+    const parts: Uint8Array[] = [];
+    for (const block of blocks) {
+      parts.push(buildBlockHeader(block.blockId, block.blockType, 4, 0, block.namespace ?? AWD2_NAMESPACE_CORE));
+      parts.push(new Uint8Array(4));
+    }
+    const body = concatBytes(...parts);
+    return concatBytes(buildAwdHeader(body.length), body);
+  }
+
+  it('reports a CORE block type the dispatch does not name', () => {
+    // The silence this replaces was the real defect: the offset advanced, the block vanished, and a file
+    // using a format feature nobody has written was indistinguishable from a file that uses none.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: UNHANDLED_BLOCK_TYPE }]), diagnostics);
+
+    expect(diagnostics).toEqual([
+      {
+        detail: { blockType: UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 7, namespace: AWD2_NAMESPACE_CORE },
+        kind: 'awd2.block-unhandled',
+        origin: 'parseAwd2',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
+  });
+
+  it('reports a block in a namespace that is not CORE', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(fileWithBlocks([{ blockId: 3, blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, namespace: 5 }]), diagnostics);
+
+    // Reported even though the TYPE is one we handle, because in another namespace it is somebody else's
+    // block that merely shares a number.
+    expect(diagnostics.map((d) => d.detail)).toEqual([
+      { blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, count: 1, firstBlockId: 3, namespace: 5 },
+    ]);
+  });
+
+  it('reports one diagnostic per distinct block type, with the count and the first block id', () => {
+    // An unknown type usually repeats once per object in the file. Reporting each occurrence would bury
+    // every other diagnostic; the count is what tells a reader how much of the file was dropped.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      fileWithBlocks([
+        { blockId: 10, blockType: UNHANDLED_BLOCK_TYPE },
+        { blockId: 11, blockType: UNHANDLED_BLOCK_TYPE },
+        { blockId: 12, blockType: OTHER_UNHANDLED_BLOCK_TYPE },
+        { blockId: 13, blockType: UNHANDLED_BLOCK_TYPE },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.map((d) => d.detail)).toEqual([
+      { blockType: UNHANDLED_BLOCK_TYPE, count: 3, firstBlockId: 10, namespace: AWD2_NAMESPACE_CORE },
+      { blockType: OTHER_UNHANDLED_BLOCK_TYPE, count: 1, firstBlockId: 12, namespace: AWD2_NAMESPACE_CORE },
+    ]);
+  });
+
+  it('reports nothing for skeleton pose and skeleton animation blocks', () => {
+    // These are consumed by the SECOND walk (buildAwdDocumentAnimations), which re-reads the block stream
+    // once the joint nodes exist. The first walk passing over them is deferral, not a gap — reporting
+    // them would put a false Drop on every skinned AWD file, including ones that import perfectly.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(
+      fileWithBlocks([
+        { blockId: 20, blockType: AWD2_BLOCK_SKELETON_POSE },
+        { blockId: 21, blockType: AWD2_BLOCK_SKELETON_ANIMATION },
+      ]),
+      diagnostics,
+    );
+
+    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
+  });
+
+  it('reports nothing for a file whose blocks the dispatch all handles', () => {
+    // Guards the guard: if this fired on ordinary content the diagnostic would be noise, and every test
+    // above would pass just as well against a parser that reported unconditionally.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseAwd2(SKINNED_TRIANGLE_AWD, diagnostics);
+
+    expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
+  });
+});
 
 describe('parseAwd2SkeletonAnimations', () => {
   it('rejects a version-3 (AWD3) file by version with an empty map and an AWD3-naming diagnostic', () => {
