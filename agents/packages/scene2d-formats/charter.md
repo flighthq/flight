@@ -42,9 +42,18 @@ Adobe XD, and Canva: shapes and paths, transforms, fills and gradients, basic cl
 use, and symbol. Exotic clip/mask composition is a chartered later deepening item, specifically
 nested clip intersections, clip-rule inherited from definition ancestors, and text used as clip
 geometry. Implementations may preserve those cases when they can resolve them correctly, but they
-are not part of the core compatibility guarantee; an unresolvable case must emit an accurate
-`ImportDiagnostic` Skip crumb rather than silently approximating it or mislabeling a resolved-empty
-clip as an unresolved reference.
+are not part of the core compatibility guarantee.
+
+An unresolvable case must be **recorded honestly**, and where it is recorded follows the
+asset-fact/project-fact split in
+[diagnostics](../../conventions/diagnostics.md#import-diagnostics-asset-facts-not-project-facts). A
+case that is unresolvable because of what *this file* contains — a dangling reference, a cycle, a
+resolver the caller did not supply — emits an accurate `ImportDiagnostic` crumb, and must not
+mislabel a resolved-empty clip as an unresolved reference. A case that is unresolvable because *we
+have not built it yet* is a project fact: it would fire on every idiomatic export using that
+feature, so it belongs in
+[scene2d format coverage](../../scene2d-format-coverage.md), not in every consumer's diagnostic
+stream. Silence plus a coverage entry is the correct outcome there; silence alone is not.
 
 SVG animation, scripts, foreignObject, live DOM behavior, and filter graphs are not retained. Filter
 effects belong to `@flighthq/effects`; application behavior remains application-owned.
@@ -58,12 +67,14 @@ a display subtree plus animation data. It performs no playback and acquires imag
 The common Bodymovin export path is the AAA baseline: shape, precomposition, image, null, solid, and
 text layers; parenting and 2D transforms; static and animated paths, fills, strokes, gradients,
 trim paths, basic masks, and composition markers as clip events. Document frame `f` maps to seconds
-as `(f - ip) / fr`; duration is `(op - ip) / fr`. Hidden layers and unsupported records remain
-visible through structured `ImportDiagnostic` crumbs rather than disappearing silently.
+as `(f - ip) / fr`; duration is `(op - ip) / fr`. Nothing disappears unrecorded: a record dropped
+because of what *this file* contains crumbs, and a record dropped because the codec does not carry
+that feature is written down in
+[scene2d format coverage](../../scene2d-format-coverage.md).
 
-The first implementation would Skip-crumb expressions, text animators, effect layers, audio,
-cameras, 3D transforms, exotic mattes, unsupported blend modes, arbitrary time remapping, and shape
-modifiers without a Flight equivalent. Static hard masks may recover to `ClipRegion`. These scope
+Expressions, text animators, effect layers, audio, cameras, 3D transforms, exotic mattes, blend
+modes with no Flight equivalent, arbitrary time remapping, and shape modifiers without a Flight
+equivalent are all outside the baseline. Static hard masks may recover to `ClipRegion`. These scope
 exclusions are deliberate up front; none authorizes parser work before review resolves the forks
 below.
 
