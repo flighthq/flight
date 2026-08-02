@@ -59,6 +59,10 @@ import {
   THREE_DS_MATERIAL_AMBIENT,
   THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
+  THREE_DS_KEYFRAME,
+  THREE_DS_KEYFRAME_NODE_HEADER,
+  THREE_DS_KEYFRAME_OBJECT_NODE,
+  THREE_DS_KEYFRAME_PIVOT,
   THREE_DS_MATERIAL_NAME,
   THREE_DS_MATERIAL_OPACITY_MAP,
   THREE_DS_MATERIAL_SHININESS,
@@ -147,9 +151,12 @@ export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   const lights: ThreeDsLight[] = [];
   const cameras: ThreeDsCamera[] = [];
   collectThreeDsObjects(view, 0, materials, meshes, lights, cameras, threeDsDrops);
+  // The keyframer is walked for PIVOTS ONLY (see collectThreeDsPivots). It is a sibling of the editor
+  // chunk, so it is collected separately rather than during the object walk.
+  const pivots = collectThreeDsPivots(view, 0);
   const materialIndexByName = new Map<string, number>();
   for (let i = 0; i < meshes.length; i++) {
-    appendMeshDocument(meshes[i], materials, materialIndexByName, document, threeDsDrops);
+    appendMeshDocument(meshes[i], materials, materialIndexByName, pivots, document, threeDsDrops);
   }
   // Lights and cameras fill the document's PLACEMENT TABLES, not the node graph — neither is a scene
   // member in Flight (see Scene3DDocumentLight). They are appended after the meshes so the tables read in
@@ -695,6 +702,7 @@ function appendMeshDocument(
   mesh: Readonly<ThreeDsMesh>,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
   materialIndexByName: Map<string, number>,
+  pivots: Readonly<Map<string, readonly [number, number, number]>>,
   document: Scene3DDocument,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
 ): void {
@@ -715,8 +723,9 @@ function appendMeshDocument(
   // runs in the file's own Z-up space BEFORE the Y-up conversion so one seam still owns that rotation.
   const positions = Array.from(mesh.vertices);
   const transform = createTransform3D();
+  const pivot = pivots.get(mesh.name) ?? null;
   if (mesh.localMatrix !== null) {
-    localizeThreeDsPositions(positions, mesh.localMatrix, transform, mesh.name, threeDsDrops);
+    localizeThreeDsPositions(positions, mesh.localMatrix, pivot, transform, mesh.name, threeDsDrops);
   }
 
   // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry operates in
@@ -981,6 +990,89 @@ function appendThreeDsLightDocument(
   });
 }
 
+// Walks the keyframer chunk (0xB000) for object-node PIVOTS ONLY, keyed by node name, and returns them in
+// the file's own Z-up space. Empty when the file carries no keyframer.
+//
+// The keyframer also encodes the node hierarchy and TCB animation tracks, and this deliberately reads
+// NEITHER. The hierarchy value in a node header has two documented readings that disagree on edge cases,
+// and no file in the reference corpus carries a keyframer to disambiguate them; rotation tracks are
+// incremental axis-angle with variable-length per-key spline parameters. A wrong hierarchy would visibly
+// misplace geometry that currently renders correctly, so the ambiguous parts stay unread and are recorded
+// in agents/scene3d-format-coverage.md. The pivot has neither problem: three float32, unambiguous, and
+// applying it is render-neutral by construction (see localizeThreeDsPositions).
+function collectThreeDsPivots(
+  view: Readonly<DataView>,
+  offset: number,
+): Map<string, readonly [number, number, number]> {
+  const pivots = new Map<string, readonly [number, number, number]>();
+  const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
+
+    if (chunkId === THREE_DS_MAIN) {
+      for (const [name, pivot] of collectThreeDsPivots(view, cursor)) pivots.set(name, pivot);
+    } else if (chunkId === THREE_DS_KEYFRAME) {
+      collectThreeDsNodePivots(view, cursor, chunkEnd, pivots);
+    }
+
+    cursor = chunkEnd;
+  }
+
+  return pivots;
+}
+
+// Walks the node tags inside a keyframer chunk, pairing each node's header name with its pivot.
+function collectThreeDsNodePivots(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  pivots: Map<string, readonly [number, number, number]>,
+): void {
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) return;
+
+    if (chunkId === THREE_DS_KEYFRAME_OBJECT_NODE) {
+      let name: string | null = null;
+      let pivot: readonly [number, number, number] | null = null;
+      let inner = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+      while (inner + THREE_DS_CHUNK_HEADER_BYTES <= chunkEnd) {
+        const innerId = view.getUint16(inner, true);
+        const innerEnd = readChunkEnd(view, inner, chunkEnd);
+        if (innerEnd < 0) break;
+        const dataStart = inner + THREE_DS_CHUNK_HEADER_BYTES;
+
+        if (innerId === THREE_DS_KEYFRAME_NODE_HEADER) {
+          // The header is a NUL-terminated name followed by two flag uint16s and the hierarchy value.
+          // Only the name is read — see collectThreeDsPivots for why the hierarchy is not.
+          name = readNullTerminatedString(view, dataStart, innerEnd);
+        } else if (innerId === THREE_DS_KEYFRAME_PIVOT && dataStart + 12 <= innerEnd) {
+          pivot = [
+            view.getFloat32(dataStart, true),
+            view.getFloat32(dataStart + 4, true),
+            view.getFloat32(dataStart + 8, true),
+          ];
+        }
+
+        inner = innerEnd;
+      }
+      // A zero pivot is the format's default and means the node origin already is the object origin, so
+      // recording it would only cost a needless translate compose downstream.
+      if (name !== null && name.length > 0 && pivot !== null && (pivot[0] !== 0 || pivot[1] !== 0 || pivot[2] !== 0)) {
+        pivots.set(name, pivot);
+      }
+    }
+
+    cursor = chunkEnd;
+  }
+}
+
 // Rewrites `positions` (world-space, Z-up, in place) into the model space TRI_LOCAL placed them from,
 // and writes that placement into `out` as a Y-up Transform3D. Both steps read the same matrix:
 //
@@ -998,6 +1090,7 @@ function appendThreeDsLightDocument(
 function localizeThreeDsPositions(
   positions: number[],
   localMatrix: Readonly<Float32Array>,
+  pivot: readonly [number, number, number] | null,
   out: Transform3D,
   name: string,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
@@ -1040,6 +1133,20 @@ function localizeThreeDsPositions(
     positions[i] = point.x;
     positions[i + 1] = point.y;
     positions[i + 2] = point.z;
+  }
+
+  // The keyframer's pivot is the origin the node rotates and scales about, expressed in this same model
+  // space. Moving it to the node origin means subtracting it from the geometry and composing the opposite
+  // translation into the placement — which is again render-neutral (subtract, then re-add) and shows up
+  // only once something drives the transform, exactly like the localization above.
+  if (pivot !== null) {
+    for (let i = 0; i + 2 < positions.length; i += 3) {
+      positions[i] -= pivot[0];
+      positions[i + 1] -= pivot[1];
+      positions[i + 2] -= pivot[2];
+    }
+    const pivotTranslation = createMatrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, pivot[0], pivot[1], pivot[2], 1);
+    multiplyMatrix4(placement, placement, pivotTranslation);
   }
 
   const conjugated = createMatrix4();

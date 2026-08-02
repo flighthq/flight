@@ -47,6 +47,10 @@ import {
   THREE_DS_MATERIAL,
   THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
+  THREE_DS_KEYFRAME,
+  THREE_DS_KEYFRAME_NODE_HEADER,
+  THREE_DS_KEYFRAME_OBJECT_NODE,
+  THREE_DS_KEYFRAME_PIVOT,
   THREE_DS_MATERIAL_NAME,
   THREE_DS_MATERIAL_OPACITY_MAP,
   THREE_DS_MATERIAL_SHININESS,
@@ -1247,6 +1251,116 @@ describe('parse3ds diagnostics', () => {
     expect(crumb).toBeDefined();
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     expect(crumb!.origin).toBe('parse3ds');
+  });
+});
+
+describe('parse3ds keyframer pivot', () => {
+  function writeLocalMatrix(origin: readonly [number, number, number]): Uint8Array {
+    const payload = new Uint8Array(48);
+    const view = new DataView(payload.buffer);
+    const all = [1, 0, 0, 0, 1, 0, 0, 0, 1, ...origin];
+    for (let i = 0; i < 12; i++) view.setFloat32(i * 4, all[i], true);
+    return writeChunk(THREE_DS_TRANSFORM_MATRIX, payload);
+  }
+
+  // KFDATA (0xB000) → object node tag (0xB002) → node header (0xB010, NUL-terminated name + two flag
+  // uint16s + the hierarchy value) and pivot (0xB013, three float32).
+  function writeKeyframer(name: string, pivot: readonly [number, number, number] | null): Uint8Array {
+    const header = new Uint8Array(name.length + 1 + 6);
+    for (let i = 0; i < name.length; i++) header[i] = name.charCodeAt(i);
+    new DataView(header.buffer).setUint16(name.length + 1 + 4, 0xffff, true); // hierarchy — never read
+    const parts: Uint8Array[] = [writeChunk(THREE_DS_KEYFRAME_NODE_HEADER, header)];
+    if (pivot !== null) {
+      const payload = new Uint8Array(12);
+      const view = new DataView(payload.buffer);
+      for (let i = 0; i < 3; i++) view.setFloat32(i * 4, pivot[i], true);
+      parts.push(writeChunk(THREE_DS_KEYFRAME_PIVOT, payload));
+    }
+    const node = writeChunk(THREE_DS_KEYFRAME_OBJECT_NODE, concatBytes(...parts));
+    return writeChunk(THREE_DS_KEYFRAME, node);
+  }
+
+  function buildPivot3ds(
+    name: string,
+    world: readonly number[],
+    origin: readonly [number, number, number],
+    pivot: readonly [number, number, number] | null,
+  ): Uint8Array {
+    const trimesh = writeChunk(
+      THREE_DS_TRIMESH,
+      concatBytes(writeVertices(world), writeFaces([0, 1, 2]), writeLocalMatrix(origin)),
+    );
+    const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(name), trimesh));
+    // KFDATA is a SIBLING of the editor chunk, not a child of it.
+    return writeChunk(THREE_DS_MAIN, concatBytes(writeChunk(THREE_DS_EDITOR, object), writeKeyframer(name, pivot)));
+  }
+
+  it('moves the pivot to the node origin without moving the geometry in the world', () => {
+    // The same invariant TRI_LOCAL is held to: re-applying the emitted transform to the emitted geometry
+    // must reproduce the file's world vertices. A pivot that shifted the render would fail here.
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const document = parse3ds(buildPivot3ds('Hinge', world, [10, 20, 30], [2, 3, 4]));
+    const placement = createMatrix4();
+    composeMatrix4FromTransform3D(placement, document.nodes[0].transform);
+
+    const expected = Array.from(world);
+    convertPositionsZUpToYUp(expected);
+
+    const local = { x: 0, y: 0, z: 0 };
+    const point = createVector3(0, 0, 0);
+    for (let v = 0; v < 3; v++) {
+      getMeshGeometryVertexPosition(local, document.meshes[0].geometry, v);
+      point.x = local.x;
+      point.y = local.y;
+      point.z = local.z;
+      matrix4TransformPoint(point, placement, point);
+      expect(point.x).toBeCloseTo(expected[v * 3], 3);
+      expect(point.y).toBeCloseTo(expected[v * 3 + 1], 3);
+      expect(point.z).toBeCloseTo(expected[v * 3 + 2], 3);
+    }
+  });
+
+  it('offsets the geometry by the pivot so the node rotates about the authored origin', () => {
+    // Vertex 0 sits exactly at the object origin, so with a pivot of (2,3,4) it must land at -(2,3,4)
+    // in model space — that displacement IS what makes a rotation swing about the hinge.
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const document = parse3ds(buildPivot3ds('Hinge', world, [10, 20, 30], [2, 3, 4]));
+
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    // Z-up (-2, -3, -4) converts to Y-up (-2, -4, 3).
+    expect(local.x).toBeCloseTo(-2, 4);
+    expect(local.y).toBeCloseTo(-4, 4);
+    expect(local.z).toBeCloseTo(3, 4);
+  });
+
+  it('leaves the geometry alone when the file states no keyframer', () => {
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const document = parse3ds(buildPivot3ds('Hinge', world, [10, 20, 30], null));
+
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    expect(local.x).toBeCloseTo(0, 4);
+    expect(local.y).toBeCloseTo(0, 4);
+    expect(local.z).toBeCloseTo(0, 4);
+  });
+
+  it('ignores a keyframer pivot naming an object the editor chunk does not contain', () => {
+    const world = [10, 20, 30, 11, 20, 30, 10, 21, 30];
+    const trimesh = writeChunk(
+      THREE_DS_TRIMESH,
+      concatBytes(writeVertices(world), writeFaces([0, 1, 2]), writeLocalMatrix([10, 20, 30])),
+    );
+    const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString('Real'), trimesh));
+    const bytes = writeChunk(
+      THREE_DS_MAIN,
+      concatBytes(writeChunk(THREE_DS_EDITOR, object), writeKeyframer('Ghost', [5, 5, 5])),
+    );
+    const document = parse3ds(bytes);
+
+    const local = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(local, document.meshes[0].geometry, 0);
+    expect(local.x).toBeCloseTo(0, 4);
   });
 });
 

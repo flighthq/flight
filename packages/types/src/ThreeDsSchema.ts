@@ -10,6 +10,14 @@ export const THREE_DS_MAIN = 0x4d4d;
 export const THREE_DS_EDITOR = 0x3d3d;
 export const THREE_DS_KEYFRAME = 0xb000;
 
+// Keyframer sub-chunks. Only the two that are UNAMBIGUOUS are named: a node tag's header (whose name is a
+// plain NUL-terminated string) and its pivot (three float32). The header's trailing uint16 encodes the
+// node's place in the hierarchy, and two documented readings of it disagree — see the 3DS section of
+// agents/scene3d-format-coverage.md — so it is deliberately not named or read here.
+export const THREE_DS_KEYFRAME_OBJECT_NODE = 0xb002;
+export const THREE_DS_KEYFRAME_NODE_HEADER = 0xb010;
+export const THREE_DS_KEYFRAME_PIVOT = 0xb013;
+
 // Object/mesh chunk IDs.
 export const THREE_DS_OBJECT = 0x4000;
 export const THREE_DS_TRIMESH = 0x4100;
