@@ -242,3 +242,66 @@ describe('parseObjMaterialLibrary', () => {
     expect(mat.mapBump).toBeNull();
   });
 });
+
+describe('parseObjMaterialLibrary PBR extension directives', () => {
+  it('leaves every PBR extension field null when the file states none', () => {
+    // This is the load-bearing case: null means the file DID NOT SAY, which is what lets a consumer pick
+    // Blinn-Phong for a classic material instead of inventing a roughness for it.
+    const material = parseObjMaterialLibrary('newmtl M\nKd 1 1 1\nNs 32\n').materials.get('M')!;
+
+    expect(material.roughness).toBeNull();
+    expect(material.metallic).toBeNull();
+    expect(material.sheen).toBeNull();
+    expect(material.clearcoat).toBeNull();
+    expect(material.clearcoatRoughness).toBeNull();
+    expect(material.anisotropy).toBeNull();
+    expect(material.anisotropyRotation).toBeNull();
+    expect(material.emissive).toBeNull();
+    expect(material.mapRoughness).toBeNull();
+    expect(material.mapMetallic).toBeNull();
+    expect(material.mapEmissive).toBeNull();
+    expect(material.mapNormal).toBeNull();
+  });
+
+  it('reads the scalar PBR extension directives', () => {
+    const material = parseObjMaterialLibrary(
+      'newmtl M\nPr 0.25\nPm 0.75\nPs 0.4\nPc 0.2\nPcr 0.15\naniso 0.3\nanisor 0.6\n',
+    ).materials.get('M')!;
+
+    expect(material.roughness).toBeCloseTo(0.25, 6);
+    expect(material.metallic).toBeCloseTo(0.75, 6);
+    expect(material.sheen).toBeCloseTo(0.4, 6);
+    expect(material.clearcoat).toBeCloseTo(0.2, 6);
+    expect(material.clearcoatRoughness).toBeCloseTo(0.15, 6);
+    expect(material.anisotropy).toBeCloseTo(0.3, 6);
+    expect(material.anisotropyRotation).toBeCloseTo(0.6, 6);
+  });
+
+  it('distinguishes a stated zero from an absent directive', () => {
+    // Pr 0 is a mirror-smooth surface the author asked for; it must not read as "unstated".
+    const material = parseObjMaterialLibrary('newmtl M\nPr 0\n').materials.get('M')!;
+
+    expect(material.roughness).toBe(0);
+    expect(material.metallic).toBeNull();
+  });
+
+  it('reads Ke as a color and the PBR map filenames', () => {
+    const material = parseObjMaterialLibrary(
+      'newmtl M\nKe 1 0.5 0\nmap_Ke glow.png\nmap_Pr rough.png\nmap_Pm metal.png\nnorm normal.png\n',
+    ).materials.get('M')!;
+
+    expect(material.emissive).toEqual([1, 0.5, 0]);
+    expect(material.mapEmissive).toBe('glow.png');
+    expect(material.mapRoughness).toBe('rough.png');
+    expect(material.mapMetallic).toBe('metal.png');
+    expect(material.mapNormal).toBe('normal.png');
+  });
+
+  it('records a diagnostic for a malformed PBR scalar and keeps the field unstated', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = parseObjMaterialLibrary('newmtl M\nPr notanumber\n', diagnostics).materials.get('M')!;
+
+    expect(material.roughness).toBeNull();
+    expect(diagnostics.length).toBeGreaterThan(0);
+  });
+});
