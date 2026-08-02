@@ -15,8 +15,8 @@ basedOn: ./review.md
    asynchronous resolver can take from `DecompressionStream` rather than vendoring. Whether that resolver
    ships from `swf`, from `scene2d-resources`, or from an application is the open question. Text and font
    definitions remain structural after that.
-2. **Carry per-frame appearance and frame scripts.** Placement transforms replay; the color transform,
-   blend mode, clip-depth mask, and filter list on the same records are parsed past, and
+2. **Carry per-frame appearance and frame scripts.** Placement transforms and clip-depth masks replay; the
+   color transform, blend mode, and filter list on the same records are parsed past, and
    `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
    yet. A frame's visual state is narrower than its structural state until these cross.
 3. **Decompress `CWS`/`ZWS` — the single highest-leverage gap.** A 306-file sweep of Ruffle's corpus puts

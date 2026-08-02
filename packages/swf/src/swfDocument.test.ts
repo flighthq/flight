@@ -221,6 +221,72 @@ describe('createScene2DFromSwf', () => {
     expect(createScene2DFromSwf(createSwf([]))?.references).toEqual([]);
   });
 
+  it('turns a clip-depth placement into a clip on what it covers, and draws no mask', () => {
+    const mask = new ShapeWriter();
+    mask.writeSolidFillStyles([0xffffff]);
+    mask.writeLineStyleCount(0);
+    mask.writeStyleBits(1, 0);
+    mask.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    mask.writeStraightEdge(800, 0);
+    mask.writeStraightEdge(0, 800);
+    mask.writeStraightEdge(-800, 0);
+    mask.writeStraightEdge(0, -800);
+    mask.writeEndShape();
+
+    const content = new ShapeWriter();
+    content.writeSolidFillStyles([0xff0000]);
+    content.writeLineStyleCount(0);
+    content.writeStyleBits(1, 0);
+    content.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    content.writeStraightEdge(2000, 0);
+    content.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), mask.toBytes())),
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(8), createRectangle(0, 2000, 0, 100), content.toBytes())),
+        // The mask sits at depth 1 and covers through depth 5, offset 100 twips right of the origin.
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(7),
+            createMatrix(1, 0, 0, 1, 100, 0),
+            uint16(5),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(8),
+            createMatrix(1, 0, 0, 1, 40, 0),
+          ),
+        ),
+        // Depth 9 is outside the mask's range, so nothing clips it.
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(9), uint16(8))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // The mask itself is never drawn: two placements are covered content, the third is the mask.
+    const children = getNodeChildren(document!.root);
+    expect(children).toHaveLength(2);
+
+    const masked = children[0];
+    const unmasked = children[1];
+    expect(unmasked.clip).toBeNull();
+    expect(masked.clip).not.toBeNull();
+
+    // The mask is a 40x40px square at x=5px; the covered instance sits at x=2px, so in that instance's
+    // own local space — where a ClipRegion's contours live — the square starts at x=3px.
+    expect(masked.clip?.contours).not.toBeNull();
+    expect(masked.clip?.rect).toMatchObject({ height: 40, width: 40, x: 3, y: 0 });
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -1278,6 +1344,7 @@ const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
+const PLACE_HAS_CLIP_DEPTH = 0x40;
 const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;

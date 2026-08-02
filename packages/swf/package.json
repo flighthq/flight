@@ -36,6 +36,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/clip": "*",
     "@flighthq/geometry": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",

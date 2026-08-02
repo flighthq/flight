@@ -59,6 +59,11 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   payload's magic. Import stays synchronous and allocates no pixels; decoding belongs to the resolve step,
   which may be asynchronous and which a caller that does not need an image never runs. The reference is
   addressed by the character it came from, since an embedded asset has no address to fetch from.
+- Masking reuses the clip primitive rather than inventing one. SWF masks by depth range and Flight clips a
+  node and its subtree; applying one region per covered instance is equivalent to grouping them under a
+  clipped container and costs no structural change. The region is resolved into each covered instance's
+  local space, is per-frame so a moving mask follows, and is omitted rather than guessed when the mask
+  character has no decoded geometry.
 - Timelines cross as data, not as a player. Each one becomes a `TimelineSource` on a `MovieClip`, so
   playback, seeking, looping, and label lookup are the `movieclip`/`timeline` engine's, and the codec
   keeps no runtime of its own — the seam `TimelineSource` was written for.
@@ -106,10 +111,12 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   platform rather than vendoring.
 - Text and font definitions are still structural only, and morph shapes keep bounds alone; their paired
   start/end geometry has no 2D-morph home to land in.
-- Playback carries placement transforms only. Per-frame color transforms, blend modes, masks (clip
-  depth), filters, and `DoAction`/`DoInitAction` frame scripts are parsed past rather than imported, so
-  a frame's visual state is narrower than its structural state. Frame scripts in particular have a
+- Playback carries placement transforms and clip-depth masks. Per-frame color transforms, blend modes,
+  filters, and `DoAction`/`DoInitAction` frame scripts are still parsed past rather than imported, so a
+  frame's visual state remains narrower than its structural state. Frame scripts in particular have a
   natural home in `Timeline.frameScripts` and none is used yet.
+- Nested masks collapse to the innermost rather than intersecting, because a node carries one clip. A file
+  that genuinely nests two masks over one instance will clip to the inner one alone.
 - Bounds coverage follows definitions with immediate RECT or dimension prefixes. Legacy table-based
   JPEG, button, and font extents require their own tag interpretation. A symbol's extent is the union
   across its frames, so it is stable but looser than a per-frame extent would be.

@@ -1,3 +1,5 @@
+import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
+import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import { addNodeChild, getNodeRuntime, removeNodeChild, setNodeLocalMatrix } from '@flighthq/node/contract';
 import {
@@ -6,10 +8,11 @@ import {
   createScene2DSlotReference,
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
-import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { copyShapeCommands, createShape } from '@flighthq/shape/contract';
+import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
+import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
 import type {
   BoundsNodeAny,
+  ClipRegion,
   MovieClip,
   MovieClipData,
   Node2D,
@@ -98,6 +101,9 @@ interface SwfShapeNodeData extends ShapeData, SwfAuthoredBoundsData {}
 
 interface SwfPlacement {
   characterId: number;
+  // The depth this placement masks up to, inclusive, or 0 when it is ordinary content. A masking
+  // placement is never drawn itself: it contributes its shape as the clip on everything it covers.
+  clipDepth: number;
   depth: number;
   directLinkage: string | null;
   matrix: SwfMatrix;
@@ -110,6 +116,12 @@ interface SwfPlacement {
 interface SwfTimeline {
   frames: Map<number, SwfPlacement>[];
   labels: TimelineLabel[];
+}
+
+// One drawn placement of a frame, with the clip its mask imposes on it, or null when nothing masks it.
+interface SwfFrameEntry {
+  clip: ClipRegion | null;
+  placement: Readonly<SwfPlacement>;
 }
 
 // An image definition's encoded payload, held as a view over the source. Nothing here is decoded at
@@ -186,17 +198,21 @@ function populateSwfTimelineNode(
   if (depth > MAX_SPRITE_NESTING) return false;
 
   const nodes = new Map<number, Node2D>();
-  const frames: Readonly<SwfPlacement>[][] = [];
+  const frames: SwfFrameEntry[][] = [];
+  const clips = new Map<Readonly<SwfPlacement>, Map<Readonly<SwfPlacement>, ClipRegion | null>>();
 
   for (const frame of timeline.frames) {
     const ordered = [...frame.values()].sort(compareSwfPlacementDepth);
-    frames.push(ordered);
+    frames.push(buildSwfFrameEntries(ordered, parsed, clips));
     for (const placement of ordered) {
       const key = createSwfInstanceKey(placement);
       if (nodes.has(key)) continue;
       const sprite = parsed.sprites.get(placement.characterId);
       const shape = parsed.shapes.get(placement.characterId);
       const image = parsed.images.get(placement.characterId);
+      // A masking placement is never drawn — it contributes its shape as a clip on what it covers, so it
+      // earns no node of its own.
+      if (placement.clipDepth > 0) continue;
       // A placement earns a node when it is named, when it carries a timeline, or now when it has content —
       // geometry to draw or pixels to load. An unnamed shape is most of what a still frame is made of.
       if (!placement.name && sprite === undefined && shape === undefined && image === undefined) continue;
@@ -253,25 +269,26 @@ function populateSwfTimelineNode(
 // belongs to one placed instance of the symbol, so this source belongs to that instance too rather than
 // being shared across every instance of it.
 function createSwfTimelineSource(
-  frames: readonly (readonly Readonly<SwfPlacement>[])[],
+  frames: readonly (readonly Readonly<SwfFrameEntry>[])[],
   nodes: ReadonlyMap<number, Node2D>,
   labels: readonly TimelineLabel[],
   frameRate: number | null,
 ): TimelineSource {
   const attached: Node2D[] = [];
   const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
+  const appliedClips = new Map<Node2D, ClipRegion | null>();
   return {
     totalFrames: frames.length,
     labels,
     frameRate,
     constructFrame(target: Node2D, frame: number): void {
-      const placements = frames[frame - 1];
-      if (placements === undefined) return;
+      const entries = frames[frame - 1];
+      if (entries === undefined) return;
 
       let count = 0;
       let ordered = true;
-      for (const placement of placements) {
-        const node = nodes.get(createSwfInstanceKey(placement));
+      for (const entry of entries) {
+        const node = nodes.get(createSwfInstanceKey(entry.placement));
         if (node === undefined) continue;
         if (attached[count] !== node) ordered = false;
         count++;
@@ -280,24 +297,116 @@ function createSwfTimelineSource(
       if (!ordered || count !== attached.length) {
         for (const node of attached) removeNodeChild(target, node);
         attached.length = 0;
-        for (const placement of placements) {
-          const node = nodes.get(createSwfInstanceKey(placement));
+        for (const entry of entries) {
+          const node = nodes.get(createSwfInstanceKey(entry.placement));
           if (node === undefined) continue;
           addNodeChild(target, node);
           attached.push(node);
         }
       }
 
-      for (const placement of placements) {
-        const node = nodes.get(createSwfInstanceKey(placement));
+      for (const entry of entries) {
+        const node = nodes.get(createSwfInstanceKey(entry.placement));
+        if (node === undefined) continue;
         // Placement records are immutable once parsed, so an unchanged matrix is the same object and the
         // transform does not have to be rewritten or invalidated on every frame the instance survives.
-        if (node === undefined || appliedMatrices.get(node) === placement.matrix) continue;
-        setNodeLocalMatrix(node, placement.matrix);
-        appliedMatrices.set(node, placement.matrix);
+        if (appliedMatrices.get(node) !== entry.placement.matrix) {
+          setNodeLocalMatrix(node, entry.placement.matrix);
+          appliedMatrices.set(node, entry.placement.matrix);
+        }
+        // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
+        // same way: written only when this frame's region differs from the one already on the node.
+        if (appliedClips.get(node) !== entry.clip) {
+          setNode2DClip(node, entry.clip);
+          appliedClips.set(node, entry.clip);
+        }
       }
     },
   };
+}
+
+// Pairs each drawn placement of a frame with the clip its mask imposes. SWF masks by depth range — a
+// placement with a clip depth covers every depth above its own through that clip depth — while Flight
+// clips a node and its subtree. Applying one region to each covered sibling is equivalent to grouping
+// them under a clipped container, and it leaves the attach/detach/reorder path untouched.
+function buildSwfFrameEntries(
+  ordered: readonly Readonly<SwfPlacement>[],
+  parsed: Readonly<SwfTagResult>,
+  clips: Map<Readonly<SwfPlacement>, Map<Readonly<SwfPlacement>, ClipRegion | null>>,
+): SwfFrameEntry[] {
+  const entries: SwfFrameEntry[] = [];
+  for (const placement of ordered) {
+    if (placement.clipDepth > 0) continue;
+    const mask = resolveSwfPlacementMask(ordered, placement);
+    entries.push({ clip: mask === null ? null : resolveSwfMaskClip(mask, placement, parsed, clips), placement });
+  }
+  return entries;
+}
+
+// The innermost mask covering a depth. Flight carries one clip per node, so where masks nest, the
+// deepest one wins rather than intersecting them.
+function resolveSwfPlacementMask(
+  ordered: readonly Readonly<SwfPlacement>[],
+  placement: Readonly<SwfPlacement>,
+): Readonly<SwfPlacement> | null {
+  let mask: Readonly<SwfPlacement> | null = null;
+  for (const candidate of ordered) {
+    if (candidate.clipDepth <= 0 || candidate.depth >= placement.depth) continue;
+    if (placement.depth > candidate.clipDepth) continue;
+    if (mask === null || candidate.depth > mask.depth) mask = candidate;
+  }
+  return mask;
+}
+
+function resolveSwfMaskClip(
+  mask: Readonly<SwfPlacement>,
+  placement: Readonly<SwfPlacement>,
+  parsed: Readonly<SwfTagResult>,
+  clips: Map<Readonly<SwfPlacement>, Map<Readonly<SwfPlacement>, ClipRegion | null>>,
+): ClipRegion | null {
+  let byMasked = clips.get(mask);
+  if (byMasked === undefined) {
+    byMasked = new Map<Readonly<SwfPlacement>, ClipRegion | null>();
+    clips.set(mask, byMasked);
+  }
+  const cached = byMasked.get(placement);
+  if (cached !== undefined) return cached;
+  const region = createSwfMaskClipRegion(mask, placement, parsed);
+  byMasked.set(placement, region);
+  return region;
+}
+
+// Builds the clip a mask imposes on one covered instance, in that instance's own local space — which is
+// where a ClipRegion's contours live. The mask's geometry is authored in its own space, so it crosses two
+// transforms: out of the mask's placement into the parent, then back through the covered instance's
+// placement. A mask whose character has no decoded geometry (a sprite, or a shape body this decoder could
+// not read) imposes no clip rather than a wrong one.
+function createSwfMaskClipRegion(
+  mask: Readonly<SwfPlacement>,
+  placement: Readonly<SwfPlacement>,
+  parsed: Readonly<SwfTagResult>,
+): ClipRegion | null {
+  const shape = parsed.shapes.get(mask.characterId);
+  if (shape === undefined) return null;
+
+  const inverse = createMatrix();
+  if (!inverseMatrix(inverse, placement.matrix)) return null;
+  const combined = createMatrix();
+  multiplyMatrix(combined, mask.matrix, inverse);
+
+  const contours: number[][] = [];
+  for (const region of getShapeFillRegions(shape.data.commands) ?? []) {
+    for (const contour of createClipRegionFromPath(region.path).contours ?? []) {
+      const transformed = new Array<number>(contour.length);
+      for (let i = 0; i < contour.length; i += 2) {
+        matrixTransformPointXY(_maskPoint, combined, contour[i], contour[i + 1]);
+        transformed[i] = _maskPoint.x;
+        transformed[i + 1] = _maskPoint.y;
+      }
+      contours.push(transformed);
+    }
+  }
+  return contours.length === 0 ? null : createClipRegionFromContours(contours, 'nonZero');
 }
 
 function compareSwfPlacementDepth(a: Readonly<SwfPlacement>, b: Readonly<SwfPlacement>): number {
@@ -440,9 +549,10 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   if ((flags & 0x08) !== 0) readSwfColorTransform(body);
   if ((flags & 0x10) !== 0) body.readUint16();
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
+  const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
-  placements.set(depth, { characterId, depth, directLinkage, matrix, name });
+  placements.set(depth, { characterId, clipDepth, depth, directLinkage, matrix, name });
 }
 
 function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
@@ -451,7 +561,7 @@ function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlace
   const matrix = readSwfMatrix(body);
   if (body.pos < body.end) readSwfColorTransform(body, 3);
   if (!body.valid || characterId === 0) return;
-  placements.set(depth, { characterId, depth, directLinkage: null, matrix, name: null });
+  placements.set(depth, { characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
 }
 
 function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
@@ -929,5 +1039,6 @@ const TAG_REMOVE_OBJECT_2 = 28;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const TWIPS_PER_PIXEL = 20;
+const _maskPoint = { x: 0, y: 0 };
 const W_SIGNATURE = 0x57;
 const ZWS_SIGNATURE = 0x5a;
