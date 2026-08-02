@@ -902,7 +902,12 @@ function resolveGltfTexture(
 ): Texture | null {
   if (info === undefined) return null; // the material simply has no texture in this slot — spec-valid, silent
   const texture = doc.textures?.[info.index];
-  if (texture?.source === undefined) {
+  // KHR_texture_basisu points the texture at a KTX2/Basis image instead, and makes the plain `source` an
+  // optional fallback — so a basisu texture often has none, and reading only `source` would drop the map
+  // entirely. Resolving the reference is the parser's whole share of that extension: the transcode
+  // happens later, when an explicit resource pass decodes the payload by mime type.
+  const source = texture?.extensions?.KHR_texture_basisu?.source ?? texture?.source;
+  if (source === undefined) {
     // The textureInfo points at a missing texture, or a texture with no image source — the material keeps
     // its factor and renders without the map (degraded but usable) → Recover.
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.texture-source-missing', '', {
@@ -910,12 +915,12 @@ function resolveGltfTexture(
     });
     return null;
   }
-  const resource = imageResources[texture.source];
+  const resource = imageResources[source];
   if (resource == null) {
     // The referenced image failed to build (already tallied as an image Drop); the material loses this map
     // but survives → Recover.
     tallyGltfDrop(gltfDrops, ImportDiagnosticSeverity.Recover, 'gltf.texture-image-unresolved', '', {
-      firstImage: texture.source,
+      firstImage: source,
     });
     return null;
   }
@@ -936,7 +941,7 @@ function resolveGltfTexture(
   }
 
   result.colorSpace = colorSpace;
-  applyGltfSampler(result, texture.sampler !== undefined ? doc.samplers?.[texture.sampler] : undefined);
+  applyGltfSampler(result, texture?.sampler !== undefined ? doc.samplers?.[texture.sampler] : undefined);
   applyGltfTextureTransform(result, info.extensions?.KHR_texture_transform);
   return result;
 }
