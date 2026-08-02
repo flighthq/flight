@@ -238,7 +238,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + baseColor.rgb * frame.ambientRadiance.rgb;
   }
 
-  return flightPremultipliedOutput(vec4f(radiance, baseColor.a * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(baseColor.a, in.objectAlpha, draw.params.y)));
 }
 `;
 

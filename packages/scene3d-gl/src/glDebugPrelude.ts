@@ -1,7 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
@@ -125,7 +125,7 @@ uniform sampler2D u_normalMap;
 #endif
 #endif
 
-uniform float u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL_UNIFORMS}
 
 out vec4 fragColor;
 

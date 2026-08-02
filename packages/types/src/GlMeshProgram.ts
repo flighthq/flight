@@ -19,6 +19,9 @@ export interface GlMeshProgram {
   // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment scene2d
   // declares u_objectAlpha honors node opacity with no per-family factory edit.
   locObjectAlpha?: WebGLUniformLocation | null;
+  // Paired with locObjectAlpha: whether this draw's alpha is coverage (alphaMode 'blend') or is to be
+  // ignored ('opaque'/'mask'). Resolved lazily alongside it.
+  locAlphaIsCoverage?: WebGLUniformLocation | null;
   // The u_jointTexture bone-palette sampler location — present (and non-null) only on a HAS_SKIN
   // variant, so draw uploads and binds the skin palette data texture exactly when the compiled program
   // consumes it. Optional because families not yet wired for GPU skinning omit it entirely (their

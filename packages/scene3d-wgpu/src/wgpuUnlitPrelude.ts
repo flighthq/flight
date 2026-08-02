@@ -208,7 +208,7 @@ struct UnlitMaterial {
   if (ALPHA_MASK) {
     color.a = 1.0;
   }
-  return flightPremultipliedOutput(vec4f(color.rgb * material.params.x, color.a * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(color.rgb * material.params.x, flightMeshCoverage(color.a, in.objectAlpha, draw.params.y)));
 }
 `;
 

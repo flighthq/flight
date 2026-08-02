@@ -104,14 +104,14 @@ export function getWgpuPbrModuleSourceForKey(
     (skinned && skinning !== null ? skinning.extendMeshPrelude(PBR_WGSL_BODY) : PBR_WGSL_BODY);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
-      '  return flightPremultipliedOutput(vec4f(radiance, alpha * in.objectAlpha));',
+      '  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)));',
       `  var flightColor = vec4f(radiance, alpha);
   flightColor = ${
     key.hasColorMatrix
       ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
-  flightColor.a = flightColor.a * in.objectAlpha;
+  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);
   return flightPremultipliedOutput(flightColor);`,
     );
   }
@@ -575,6 +575,6 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
     alpha = alpha * (1.0 - material.transmission.x);
   }
 
-  return flightPremultipliedOutput(vec4f(radiance, alpha * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)));
 }
 `;

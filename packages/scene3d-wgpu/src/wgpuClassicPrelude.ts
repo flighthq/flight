@@ -172,14 +172,14 @@ export function getWgpuClassicModuleSourceForKey(
   let source = assembleWgpuClassicModuleSource(key, skinned, skinning, CLASSIC_WGSL_BODY);
   if ((key.hasColorAdjustment || key.hasColorMatrix) && colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, key.hasColorMatrix).replace(
-      '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
+      '  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));',
       `  var flightColor = vec4f(radiance, diffuse.a);
   flightColor = ${
     key.hasColorMatrix
       ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
-  flightColor.a = flightColor.a * in.objectAlpha;
+  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);
   return flightPremultipliedOutput(flightColor);`,
     );
   }
@@ -405,7 +405,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
       frame.hemisphereLights[hemisphere * 3u].xyz, factor) * diffuse.rgb;
   }
 
-  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));
 }
 `;
 

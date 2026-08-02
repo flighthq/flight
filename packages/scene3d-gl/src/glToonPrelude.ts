@@ -2,7 +2,7 @@ import type { GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/ty
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
@@ -127,7 +127,7 @@ uniform sampler2D u_baseColorMap;
 uniform sampler2D u_ramp;
 #endif
 
-uniform float u_objectAlpha;
+${GL_MESH_FRAGMENT_TAIL_UNIFORMS}
 
 out vec4 fragColor;
 

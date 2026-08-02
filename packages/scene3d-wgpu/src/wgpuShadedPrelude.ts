@@ -387,10 +387,10 @@ ${indent(plan.emissive, 2)}
     '      let viewDir = shadedViewDir;',
   );
   source = source.replace(
-    '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
+    '  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));',
     `  radiance = radiance + emissive;
 ${indent(plan.effect, 2)}
-  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));`,
+  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));`,
   );
   source = source.replace(
     '@group(3) @binding(2) var shadowSampler : sampler_comparison;',
@@ -407,14 +407,14 @@ struct Ibl {
   );
   if (colorAdjustmentFeature !== null) {
     source = spliceWgpuColorAdjustmentPrelude(source, colorAdjustmentFeature, colorMatrix).replace(
-      '  return flightPremultipliedOutput(vec4f(radiance, diffuse.a * in.objectAlpha));',
+      '  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(diffuse.a, in.objectAlpha, draw.params.y)));',
       `  var flightColor = vec4f(radiance, diffuse.a);
   flightColor = ${
     colorMatrix
       ? 'applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)'
       : 'applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)'
   };
-  flightColor.a = flightColor.a * in.objectAlpha;
+  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);
   return flightPremultipliedOutput(flightColor);`,
     );
   }

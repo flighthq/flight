@@ -45,7 +45,15 @@ export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLa
   if (scene.skinDrawBindGroupLayout === null) {
     scene.skinDrawBindGroupLayout = state.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform', hasDynamicOffset: true } },
+        // binding 0 is the shared Draw uniform, and the FRAGMENT stage reads it too — the mesh fragment
+        // tail takes its alpha-is-coverage flag from draw.params.y. This layout must stay stage-for-stage
+        // identical to the non-skinned drawBindGroupLayout or a skinned pipeline fails validation.
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform', hasDynamicOffset: true },
+        },
+        // The joint palette is sampled in the vertex stage only.
         { binding: 1, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
       ],
     });

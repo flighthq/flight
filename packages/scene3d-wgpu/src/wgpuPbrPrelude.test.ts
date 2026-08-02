@@ -180,7 +180,7 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     expect(source.startsWith(buildWgpuPbrDefineSource(k))).toBe(true);
     expect(source).toContain('fn fs_main');
     expect(source).toContain('@interpolate(flat) objectAlpha : f32');
-    expect(source).toContain('alpha * in.objectAlpha');
+    expect(source).toContain('flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)');
     expect(source).not.toContain('jointTexture');
     expect(getWgpuPbrModuleSourceForKey(k, true, makeWgpuSkinningAdapter())).toContain('textureLoad(jointTexture');
   });

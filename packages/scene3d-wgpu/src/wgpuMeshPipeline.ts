@@ -8,6 +8,8 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
+  Material,
+  SurfaceMaterial,
   WgpuMaterialBinding,
   WgpuMeshPipeline,
   WgpuColorAdjustmentMaterialFeature,
@@ -177,6 +179,12 @@ export function createWgpuMeshPipeline(
 // Straight Normal output needs SRC_ALPHA while premultiplied Normal needs ONE. Other fixed-function
 // equations reuse render-wgpu's canonical premultiplied table, shared with particles and 2D rendering,
 // rather than maintaining a second partial mapping here.
+// Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface
+// trailer (or none at all) is treated as opaque, matching the registry's own fallback.
+function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined): boolean {
+  return material != null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+
 // The shared per-draw tail for every mesh-material family: ring-allocates + writes the Draw uniform
 // (world + normal matrix) for the proxy, lazily uploads the geometry's GPU buffers (cached by
 // geometry.version), binds the dynamic-offset Draw group at group(1) + the vertex/index buffers, and
@@ -789,8 +797,8 @@ export function spliceWgpuColorAdjustmentPrelude(
   return (
     (matrix ? feature.matrixFragmentShaderChunk : feature.fragmentShaderChunk) +
     source.replace(
-      '  params : vec4f,          // x = resolved object alpha',
-      `  params : vec4f,          // x = resolved object alpha
+      '  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag',
+      `  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag
 ${fields}`,
     )
   );
@@ -906,7 +914,10 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   u[floatOffset + 38] = uv[8];
   u[floatOffset + 39] = 0;
   u[floatOffset + 40] = proxy.alpha ?? 1;
-  u[floatOffset + 41] = 0;
+  // y = whether this draw's fragment alpha is COVERAGE. Only glTF's 'blend' says so; 'opaque' ignores
+  // the material's alpha and 'mask' resolves fully opaque at its cutoff. The tail reads it so the
+  // premultiply cannot darken a surface nothing is compositing. Mirrors scene-gl's u_alphaIsCoverage.
+  u[floatOffset + 41] = isWgpuMeshAlphaCoverage(proxy.material) ? 1 : 0;
   u[floatOffset + 42] = 0;
   u[floatOffset + 43] = 0;
 
@@ -971,7 +982,7 @@ struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
   uvTransform : mat3x3f,   // KHR_texture_transform of the material's primary map (identity when unused)
-  params : vec4f,          // x = resolved object alpha
+  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag
 };
 
 @group(0) @binding(0) var<uniform> frame : Frame;

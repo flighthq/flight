@@ -117,7 +117,7 @@ struct WireframeMaterial {
   if (ALPHA_MASK && material.color.a < material.params.x) {
     discard;
   }
-  return flightPremultipliedOutput(vec4f(material.color.rgb, material.color.a * in.objectAlpha));
+  return flightPremultipliedOutput(vec4f(material.color.rgb, flightMeshCoverage(material.color.a, in.objectAlpha, draw.params.y)));
 }
 `;
 

@@ -6,8 +6,10 @@ import type {
   GlMeshProgram,
   Camera3D,
   GlRenderState,
+  Material,
   MeshGeometry,
   Scene3DRenderProxy,
+  SurfaceMaterial,
   TextureLike,
 } from '@flighthq/types/contract';
 
@@ -87,7 +89,7 @@ export function drawGlMeshSubset(
   gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
   if (program.locNormalMatrix !== null) gl.uniformMatrix3fv(program.locNormalMatrix, false, proxy.normalMatrix.m);
 
-  uploadGlMeshObjectAlpha(gl, program, proxy.alpha ?? 1);
+  uploadGlMeshDrawAlpha(gl, program, proxy.alpha ?? 1, proxy.material);
 
   // A resolved per-object transform promotes only this draw run to the registered material-feature
   // variant. Resolve and cache its locations lazily so an untinted/base program performs no lookups
@@ -232,10 +234,11 @@ export function setGlMeshViewProjection(
 // wireframe family binds its own line-index VAO and issues its own gl.LINES draw, and while this upload
 // lived inside drawGlMeshSubset that family silently shipped u_objectAlpha = 0 — invisible while nothing
 // read alpha, and a black frame the moment the fragment tail began premultiplying by it.
-export function uploadGlMeshObjectAlpha(
+export function uploadGlMeshDrawAlpha(
   gl: WebGL2RenderingContext,
   program: Readonly<GlMeshProgram>,
   alpha: number,
+  material: Readonly<Material> | null,
 ): void {
   let location = program.locObjectAlpha;
   if (location === undefined) {
@@ -243,6 +246,23 @@ export function uploadGlMeshObjectAlpha(
     (program as GlMeshProgram).locObjectAlpha = location;
   }
   if (location !== null) gl.uniform1f(location, alpha);
+
+  let coverageLocation = program.locAlphaIsCoverage;
+  if (coverageLocation === undefined) {
+    coverageLocation = gl.getUniformLocation(program.program, 'u_alphaIsCoverage');
+    (program as GlMeshProgram).locAlphaIsCoverage = coverageLocation;
+  }
+  if (coverageLocation !== null) {
+    gl.uniform1f(coverageLocation, isGlMeshAlphaCoverage(material) ? 1 : 0);
+  }
+}
+
+// Whether a draw's fragment alpha is COVERAGE the compositor should honor. Only glTF's 'blend' means
+// that: 'opaque' ignores the material's alpha entirely and 'mask' resolves to fully-opaque at its
+// cutoff. A material with no surface trailer (or none at all) is treated as opaque, which is what the
+// registry falls back to anyway.
+function isGlMeshAlphaCoverage(material: Readonly<Material> | null): boolean {
+  return material !== null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
 }
 
 // Vertex-scene2d GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
