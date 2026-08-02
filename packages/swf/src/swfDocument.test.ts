@@ -15,10 +15,11 @@ import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
 } from '@flighthq/scene2d-resources/contract';
-import type { MovieClip } from '@flighthq/types/contract';
-import { MovieClipKind } from '@flighthq/types/contract';
+import type { MovieClip, Shape } from '@flighthq/types/contract';
+import { MovieClipKind, ShapeKind } from '@flighthq/types/contract';
 
 import { createScene2DFromSwf, registerSwfScene2DDocumentImporter } from './swfDocument';
+import { ShapeWriter } from './swfShapeTestHelper';
 
 describe('createScene2DFromSwf', () => {
   it('imports a named PlaceObject2 as a transformed slot with SymbolClass linkage', () => {
@@ -57,6 +58,90 @@ describe('createScene2DFromSwf', () => {
     expect(matrix.d).toBeCloseTo(0.5);
     expect(matrix.tx).toBeCloseTo(10);
     expect(matrix.ty).toBeCloseTo(-2);
+  });
+
+  it('materializes a placed shape definition as drawable geometry', () => {
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x3366cc]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(2000, 0);
+    writer.writeStraightEdge(0, 1000);
+    writer.writeStraightEdge(-2000, 0);
+    writer.writeStraightEdge(0, -1000);
+    writer.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 2000, 0, 1000), writer.toBytes())),
+        // Unnamed: a shape earns a node because it has geometry, not because it is addressable.
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+            uint16(1),
+            uint16(7),
+            createMatrix(1, 0, 0, 1, 60, 80),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document?.references).toEqual([]);
+    const drawn = getNodeChildren(document!.root)[0] as Shape;
+    expect(drawn.kind).toBe(ShapeKind);
+    expect(drawn.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x3366cc, 1, 'moveTo', 2, 0, 0]);
+    expect(getNodeLocalMatrix(drawn)).toMatchObject({ tx: 3, ty: 4 });
+    // The authored RECT still sizes the node, not the extent of its own commands.
+    expect(getNodeLocalBoundsRectangle(drawn)).toMatchObject({ height: 50, width: 100, x: 0, y: 0 });
+  });
+
+  it('gives each placement of one shape definition its own geometry', () => {
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x123456]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(400, 0);
+    writer.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const children = getNodeChildren(document!.root) as Shape[];
+    expect(children).toHaveLength(2);
+    expect(children[0]).not.toBe(children[1]);
+    expect(children[0].data.commands).not.toBe(children[1].data.commands);
+    expect(children[0].data.commands).toEqual(children[1].data.commands);
+  });
+
+  it('keeps a shape definition whose body does not parse as a bounded placeholder', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        // A bounds prefix with no readable SHAPEWITHSTYLE behind it.
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('boxed')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const target = document!.references[0].target;
+    expect(target.kind).not.toBe(ShapeKind);
+    expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 5, width: 10, x: 0, y: 0 });
   });
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
