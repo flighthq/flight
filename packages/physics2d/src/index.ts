@@ -41,6 +41,7 @@ export {
 export {
   addPhysics2DJoint,
   getPhysics2DJointSolver,
+  invalidatePhysics2DJoint,
   registerPhysics2DJointSolver,
   removePhysics2DJoint,
 } from './jointRegistry';

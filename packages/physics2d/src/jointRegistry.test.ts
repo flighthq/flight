@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addPhysics2DJoint,
   getPhysics2DJointSolver,
+  invalidatePhysics2DJoint,
   registerPhysics2DJointSolver,
   removePhysics2DJoint,
 } from './jointRegistry';
@@ -198,6 +199,52 @@ describe('getPhysics2DJointSolver', () => {
     const second = body(world, 2, 0);
     addPhysics2DJoint(world, joint('acme.Unknown', first.index, second.index));
     expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
+  });
+});
+
+describe('invalidatePhysics2DJoint', () => {
+  it('clears common and kind-owned impulses and wakes both participating bodies', () => {
+    const world = createPhysics2DWorld();
+    let cleared = 0;
+    registerPhysics2DJointSolver(world, 'Test', {
+      clearAccumulatedImpulses: (value) => {
+        cleared++;
+        value.impulse2 = 0;
+      },
+      prepare: () => {},
+      solve: () => {},
+    });
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    added.impulse0 = 10;
+    added.impulse1 = 20;
+    added.impulse2 = 30;
+    first.sleeping = true;
+    first.sleepTimer = 5;
+    second.sleeping = true;
+    second.sleepTimer = 5;
+
+    expect(invalidatePhysics2DJoint(world, added)).toBe(true);
+
+    expect(cleared).toBe(1);
+    expect([added.impulse0, added.impulse1, added.impulse2]).toEqual([0, 0, 0]);
+    expect(first.sleeping).toBe(false);
+    expect(first.sleepTimer).toBe(0);
+    expect(second.sleeping).toBe(false);
+    expect(second.sleepTimer).toBe(0);
+  });
+
+  it('reports false without mutating a joint owned by another world', () => {
+    const owner = createPhysics2DWorld();
+    const other = createPhysics2DWorld();
+    const first = body(owner, 0, 0);
+    const second = body(owner, 2, 0);
+    const added = addPhysics2DJoint(owner, joint('Unknown', first.index, second.index));
+    added.impulse0 = 10;
+
+    expect(invalidatePhysics2DJoint(other, added)).toBe(false);
+    expect(added.impulse0).toBe(10);
   });
 });
 
