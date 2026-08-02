@@ -167,12 +167,23 @@ Two more details are easy to get wrong and are pinned by tests: the table's two-
 bitmap desynchronizes the whole stream — and varuint values are accumulated arithmetically rather
 than with 32-bit shifts, so a value above 2^31 survives.
 
-**Not covered:** everything above the container. No type key or property key carries meaning yet, so
-artboards, nodes, shapes and paths, fills and strokes, deformable meshes, bones and skinning,
-animations and keyframes, and nested artboard linkage are all unread. The state-machine *descriptor*
-is likewise unread; per the charter its *runtime* is a separate future cell and never a codec concern.
-Rive's format is versioned and this reader ignores the major/minor version entirely — it neither
-rejects a future file nor adapts to an older one.
+**Type identity is covered.** `getRiveCoreTypeName` and `isRiveCoreTypeDerivedFrom` carry the 368
+object types and the inheritance each declares. Inheritance is the part that matters: behaviour is
+inherited — a Rectangle is a Shape is a Node is a Component — so a stage that compares type keys for
+equality misses every subclass. The graph is acyclic, at most eight deep, and every declared parent
+resolves, which the table's own test re-checks rather than assumes.
+
+Across the 64-file corpus, 190 distinct types appear and all but one resolve. The exception is type
+key 526, seen once, which the current published model does not define. An unnamed type is harmless
+in a way an unknown property is not: a type key is only a number followed by properties, so the
+object still decodes with its properties intact and merely lacks a name.
+
+**Not covered:** everything above identity. No property key is interpreted yet, so artboards, nodes,
+shapes and paths, fills and strokes, deformable meshes, bones and skinning, animations and keyframes,
+and nested artboard linkage are all unread, and nothing produces display nodes. The state-machine
+*descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
+codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
+it neither rejects a future file nor adapts to an older one.
 
 **Crumbs.** Three, all asset facts, and all `Reject` because each ends the parse:
 `rive.invalid-header` (missing or wrong fingerprint, or a header that ends early),
