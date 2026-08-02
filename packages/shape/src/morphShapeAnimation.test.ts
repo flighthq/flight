@@ -11,12 +11,13 @@ import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import type { MorphShape, MorphShapeAnimationTarget } from '@flighthq/types/contract';
 
-import { createMorphShape } from './morphShape';
+import { appendMorphShapePath, createMorphShape } from './morphShape';
 import {
   applyAnimationClipToMorphShape,
   applyMorphShapeAnimationSample,
   createMorphShapeAnimationTarget,
 } from './morphShapeAnimation';
+import { appendMorphShapeBeginFill } from './morphShapePaint';
 
 describe('applyAnimationClipToMorphShape', () => {
   it('samples scalar progress while preserving easing overshoot', () => {
@@ -33,6 +34,28 @@ describe('applyAnimationClipToMorphShape', () => {
 
     expect(shape.data.progress).toBe(1.5);
     expect(shape.data.path.data.slice(0, 2)).toStrictEqual([30, 45]);
+  });
+
+  it('applies one clip sample atomically to compound geometry and paint', () => {
+    const shape = createTestMorphShape();
+    const secondMorph = createTestMorph(100);
+    appendMorphShapeBeginFill(shape, { color: 0xff0000 }, { color: 0x0000ff });
+    appendMorphShapePath(shape);
+    const secondPath = appendMorphShapePath(shape, secondMorph);
+    const revision = getNodeLocalContentRevision(shape);
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({ times: [0, 1], values: [0, 1] }),
+        createMorphShapeAnimationTarget(shape),
+      ),
+    ]);
+
+    applyAnimationClipToMorphShape(clip, 0.5);
+
+    expect(shape.data.path.data.slice(0, 2)).toStrictEqual([10, 15]);
+    expect(secondPath.data.slice(0, 2)).toStrictEqual([110, 115]);
+    expect(shape.data.commands[2]).toBe(0x800080);
+    expect(getNodeLocalContentRevision(shape)).toBe(revision + 1);
   });
 
   it('ignores foreign channels in a composed clip', () => {
@@ -110,11 +133,15 @@ describe('createMorphShapeAnimationTarget', () => {
 });
 
 function createTestMorphShape(): MorphShape {
+  return createMorphShape(createTestMorph());
+}
+
+function createTestMorph(offset = 0) {
   const start = createPath();
-  appendPathMoveTo(start, 0, 0);
-  appendPathLineTo(start, 10, 0);
+  appendPathMoveTo(start, offset, offset);
+  appendPathLineTo(start, offset + 10, offset);
   const end = createPath();
-  appendPathMoveTo(end, 20, 30);
-  appendPathLineTo(end, 40, 30);
-  return createMorphShape(createPathMorph(start, end)!);
+  appendPathMoveTo(end, offset + 20, offset + 30);
+  appendPathLineTo(end, offset + 40, offset + 30);
+  return createPathMorph(start, end)!;
 }

@@ -9,6 +9,7 @@ import {
   registerRenderer,
 } from '@flighthq/render/contract';
 import {
+  appendMorphShapeBeginFill,
   appendMorphShapePath,
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -64,7 +65,7 @@ describe('drawCanvasShape', () => {
     appendPathMoveTo(end, 20, 30);
     appendPathLineTo(end, 40, 30);
     const shape = createMorphShape(createPathMorph(start, end)!);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendMorphShapeBeginFill(shape, { color: 0xff0000 }, { color: 0x0000ff });
     appendMorphShapePath(shape);
     appendShapeEndFill(shape);
     const commands = shape.data.path.commands;
@@ -75,6 +76,7 @@ describe('drawCanvasShape', () => {
     expect(prepareScene2DRender(state, shape)).toBe(true);
     const proxy = getOrCreateRenderProxy2D(state, shape);
     drawCanvasShape(state, proxy);
+    expect(state.context.fillStyle).toBe('#f00');
     expect(moveTo).toHaveBeenLastCalledWith(0, 0);
     expect(bezierCurveTo).toHaveBeenLastCalledWith(...shape.data.path.data.slice(2));
 
@@ -85,6 +87,7 @@ describe('drawCanvasShape', () => {
     expect(shape.data.path.data).toBe(coordinates);
     expect(moveTo).toHaveBeenLastCalledWith(20, 30);
     expect(bezierCurveTo).toHaveBeenLastCalledWith(...shape.data.path.data.slice(2));
+    expect(state.context.fillStyle).toBe('#00f');
   });
 
   it('renders MorphShapeKind through the explicit default renderer alias', () => {

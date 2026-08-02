@@ -4,9 +4,12 @@ import {
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
+import { createPath, createPathMorph } from '@flighthq/path/contract';
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
+import { createMorphShape, setMorphShapeProgress } from './morphShape';
+import { appendMorphShapeBeginFill } from './morphShapePaint';
 import {
   clearShapeCommands,
   computeShapeLocalBoundsRectangle,
@@ -169,6 +172,19 @@ describe('computeShapeLocalBoundsRectangle', () => {
 });
 
 describe('copyShapeCommands', () => {
+  it('discards target paint bindings when replacing a MorphShape command stream', () => {
+    const path = createPath();
+    const target = createMorphShape(createPathMorph(path, path)!);
+    appendMorphShapeBeginFill(target, { color: 0 }, { color: 0xffffff });
+    const source = createShape({ data: { commands: ['beginFill', 2, 0x123456, 1] } });
+
+    copyShapeCommands(target, source);
+    setMorphShapeProgress(target, 1);
+
+    expect(target.data.commands).toStrictEqual(['beginFill', 2, 0x123456, 1]);
+    expect(target.data.paintBindings).toStrictEqual([]);
+  });
+
   it('copies commands from source to target', () => {
     const source = createShape();
     source.data.commands.push('endFill', 0);
