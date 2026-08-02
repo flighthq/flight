@@ -13,6 +13,7 @@ import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { copyShapeCommands, createShape, getShapeFillRegions } from '@flighthq/shape/contract';
 import type {
   BoundsNodeAny,
+  RichText,
   ClipRegion,
   MovieClip,
   MovieClipData,
@@ -33,6 +34,7 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
+import { readSwfEditTextFactory } from './swfEditText';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
@@ -133,6 +135,8 @@ interface SwfImagePayload {
 
 interface SwfTagResult {
   backgroundColor: number | null;
+  editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
+  fontNames: Map<number, string>;
   characterBounds: Map<number, SwfRectangle>;
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
@@ -166,6 +170,10 @@ interface SwfParseState {
   // Every DoABC payload in the file, held until the whole thing is walked: a class binds to a character
   // through SymbolClass, which may be read after the script that declares its frame scripts.
   abcBlobs: Uint8Array[];
+  // A field's node factory per DefineEditText character, and the family name of each embedded font, so a
+  // field declared before its font tag still resolves the family.
+  editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
+  fontNames: Map<number, string>;
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -299,19 +307,31 @@ function populateSwfTimelineNode(
       const sprite = parsed.sprites.get(placement.characterId);
       const shape = parsed.shapes.get(placement.characterId);
       const image = parsed.images.get(placement.characterId);
+      const editText = parsed.editTexts.get(placement.characterId);
       // A masking placement is never drawn — it contributes its shape as a clip on what it covers, so it
       // earns no node of its own.
       if (placement.clipDepth > 0) continue;
       // A placement earns a node when it is named, when it carries a timeline, or now when it has content —
       // geometry to draw or pixels to load. An unnamed shape is most of what a still frame is made of.
-      if (!placement.name && sprite === undefined && shape === undefined && image === undefined) continue;
+      if (
+        !placement.name &&
+        sprite === undefined &&
+        shape === undefined &&
+        image === undefined &&
+        editText === undefined
+      ) {
+        continue;
+      }
       if (state.remainingNodes === 0) return false;
       state.remainingNodes--;
 
       // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
       // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
-      const target = createSwfPlacementNode(sprite, shape, targetBounds);
+      const target =
+        editText === undefined
+          ? createSwfPlacementNode(sprite, shape, targetBounds)
+          : createSwfEditTextTarget(editText, parsed, targetBounds);
       nodes.set(key, target);
       if (image !== undefined) {
         // An embedded image is an asset rather than a slot: it has content of its own to load, and the
@@ -549,6 +569,22 @@ function createSwfMovieClip(bounds: SwfRectangle | null): MovieClip {
   return clip;
 }
 
+// A field becomes its own node per placement, because its text is per-instance state rather than shared
+// artwork. The authored RECT still sizes it, so a field reports the box the tool drew even before any
+// layout has run.
+function createSwfEditTextTarget(
+  create: (resolveFontName: (fontId: number) => string) => RichText,
+  parsed: Readonly<SwfTagResult>,
+  bounds: SwfRectangle | null,
+): Node2D {
+  const node = create((fontId) => parsed.fontNames.get(fontId) ?? '');
+  if (bounds !== null) {
+    (node.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
+    (getNodeRuntime(node) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return node;
+}
+
 // Chooses what a placed character becomes: a MovieClip for a symbol with a timeline, a Shape carrying its
 // own copy of the definition's commands, and otherwise the bounded container a placement with neither
 // still needs.
@@ -732,6 +768,8 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
     abcBlobs: [],
     backgroundColor: null,
+    editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
+    fontNames: new Map<number, string>(),
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
     fontCodePoints: new Map<number, number[]>(),
@@ -751,6 +789,8 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   appendSwfAbcFrameScripts(state, timeline);
   return {
     backgroundColor: state.backgroundColor,
+    editTexts: state.editTexts,
+    fontNames: state.fontNames,
     characterBounds: state.characterBounds,
     fontOutlineSources: state.fontOutlineSources,
     images: state.images,
@@ -949,6 +989,8 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
   const source = readSwfFontGlyphOutlineSource(reader, version);
   if (source === null || fontId === 0) return;
   state.fontOutlineSources.set(fontId, source);
+  const fontName = readSwfFontName(body, version);
+  if (fontName !== '') state.fontNames.set(fontId, fontName);
 }
 
 // DefineFont's original form predates embedded character codes. DefineFontInfo/2 supplies its parallel
@@ -984,6 +1026,18 @@ function composeSwfFontCodePoints(state: SwfParseState): void {
       getGlyphOutlineMetrics: () => source.getGlyphOutlineMetrics(),
     });
   }
+}
+
+// A version 2 or 3 font names its family between its flags and its glyph count. A version 1 font carries
+// no name of its own; a DefineFontInfo tag supplies one, which this importer does not yet read.
+function readSwfFontName(body: Readonly<SwfReader>, version: number): string {
+  if (version === 1) return '';
+  const reader = new SwfReader(body.source, body.pos + 2, body.end);
+  reader.readUint8();
+  reader.readUint8();
+  const length = reader.readUint8();
+  if (!reader.valid || length === 0 || reader.pos + length > reader.end) return '';
+  return _fontNameDecoder.decode(body.source.subarray(reader.pos, reader.pos + length));
 }
 
 function readSwfBackgroundColor(body: SwfReader, state: SwfParseState): void {
@@ -1057,6 +1111,12 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
   // A static text definition is queued rather than composed: its records address glyphs by index into a
   // font that may not have been read yet. Everything after the bounds and the definition matrix is its
   // record stream.
+  if (code === TAG_DEFINE_EDIT_TEXT) {
+    const reader = new SwfReader(body.source, body.pos, body.end);
+    const bounds = state.characterBounds.get(characterId);
+    const factory = readSwfEditTextFactory(reader, bounds?.width ?? 0, bounds?.height ?? 0);
+    if (factory !== null) state.editTexts.set(characterId, factory);
+  }
   if (code === TAG_DEFINE_TEXT || code === TAG_DEFINE_TEXT_2) {
     const reader = new SwfReader(body.source, body.pos, body.end);
     readSwfMatrix(reader);
@@ -1367,6 +1427,7 @@ const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
 const TWIPS_PER_PIXEL = 20;
+const _fontNameDecoder = new TextDecoder();
 const _maskPoint = { x: 0, y: 0 };
 const W_SIGNATURE = 0x57;
 const ZWS_SIGNATURE = 0x5a;

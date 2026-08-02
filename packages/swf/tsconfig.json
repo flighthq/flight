@@ -22,6 +22,7 @@
     { "path": "../scene2d" },
     { "path": "../scene2d-resources" },
     { "path": "../shape" },
+    { "path": "../text" },
     { "path": "../types" }
   ],
   "include": ["src"]
