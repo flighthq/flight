@@ -5,6 +5,7 @@ export * from './prepareScene3DMorph';
 export * from './scene';
 export * from './sceneAnimation';
 export * from './sceneDocument';
+export * from './sceneDocumentLights';
 export * from './sceneMaterial';
 export * from './sceneNode';
 export * from './sceneNodeAppearance';

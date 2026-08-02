@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/scene3d'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-01
+by: builder3
 ---
 
 # scene — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-08-01 — Scene3DDocument light bridge (builder3, user-directed)
+
+`createScene3DLightsFromDocument(document)` now turns the document's standalone light table into a fresh,
+renderer-ready `Scene3DLights` draw argument without attaching lights to the assembled scene. It clones every
+representable descriptor, composes document TRS into point/spot positions and directional/spot directions,
+keeps all point/spot/hemisphere lights, and deterministically selects the first ambient and directional term
+because the draw contract carries only one of each. Unknown/unrepresentable light kinds remain outside the
+draw argument. The result is an initial-placement snapshot; live animated-node binding remains a separate
+future seam. The AWD2 loading example now consumes imported lights through the bridge instead of repeating
+the placement composition itself.
 
 ## 2026-07-19 — morph corrective-over-skin composition follow-up (doc-honesty stage)
 

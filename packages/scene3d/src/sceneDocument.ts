@@ -30,7 +30,8 @@ import { createNode3D } from './sceneNode';
 // indices to the built nodes, and rebuild each animation clip's channels against them — no format knowledge
 // lives here. Cameras and lights are placement tables the document carries for the caller to read; they are
 // not parented into the graph (a camera is a pure entity, not a scene node), so this assembler leaves them
-// on the document.
+// on the document. Use createScene3DLightsFromDocument when the parsed light table should become a
+// renderer-ready, separately passed Scene3DLights draw argument.
 export function createScene3DFromDocument(document: Readonly<Scene3DDocument>, sceneIndex = 0): Scene3D {
   const nodes = buildDocumentNodes(document);
   applyDocumentSkins(document, nodes);
