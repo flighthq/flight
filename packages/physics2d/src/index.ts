@@ -57,6 +57,11 @@ export { stepPhysics2D } from './step';
 export {
   addPhysics2DBody,
   addPhysics2DCollider,
+  applyPhysics2DForce,
+  applyPhysics2DForceAtPoint,
+  applyPhysics2DLinearImpulse,
+  applyPhysics2DLinearImpulseAtPoint,
+  applyPhysics2DTorque,
   findPhysics2DBody,
   createPhysics2DCollider,
   createPhysics2DSolverConfig,
@@ -66,6 +71,8 @@ export {
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,
+  setPhysics2DBodyTransform,
+  setPhysics2DBodyType,
 } from './world';
 export {
   createPhysics2DQueryResult,

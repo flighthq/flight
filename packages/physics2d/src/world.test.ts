@@ -5,6 +5,11 @@ import { stepPhysics2D } from './step';
 import {
   addPhysics2DBody,
   addPhysics2DCollider,
+  applyPhysics2DForce,
+  applyPhysics2DForceAtPoint,
+  applyPhysics2DLinearImpulse,
+  applyPhysics2DLinearImpulseAtPoint,
+  applyPhysics2DTorque,
   findPhysics2DBody,
   createPhysics2DCollider,
   createPhysics2DSolverConfig,
@@ -14,6 +19,8 @@ import {
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,
+  setPhysics2DBodyTransform,
+  setPhysics2DBodyType,
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
@@ -92,6 +99,69 @@ describe('addPhysics2DCollider', () => {
     expect(body.index).toBe(-1);
     expect(body.mass).toBeCloseTo(Math.PI);
     expect(world.bodies).toHaveLength(0);
+  });
+});
+
+describe('applyPhysics2DForce', () => {
+  it('accumulates force and wakes a dynamic body', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(10, 20));
+    body.sleeping = true;
+    body.sleepTimer = 5;
+
+    expect(applyPhysics2DForce(body, 3, 4)).toBe(true);
+    expect(body.forceX).toBe(3);
+    expect(body.forceY).toBe(4);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
+  });
+
+  it('reports a rejected non-dynamic force without mutating the body', () => {
+    const body = createRigidBody2D('static', 0, 0);
+    expect(applyPhysics2DForce(body, 1, 2)).toBe(false);
+    expect(body.forceX).toBe(0);
+  });
+});
+
+describe('applyPhysics2DForceAtPoint', () => {
+  it('accumulates force and its moment from a world-space point', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(10, 20));
+    expect(applyPhysics2DForceAtPoint(body, 2, 0, 10, 21)).toBe(true);
+    expect(body.forceX).toBe(2);
+    expect(body.torque).toBeCloseTo(-2);
+  });
+});
+
+describe('applyPhysics2DLinearImpulse', () => {
+  it('changes linear velocity immediately from derived inverse mass', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    expect(applyPhysics2DLinearImpulse(body, 1, 2)).toBe(true);
+    expect(body.velocityX).toBeCloseTo(1);
+    expect(body.velocityY).toBeCloseTo(2);
+  });
+});
+
+describe('applyPhysics2DLinearImpulseAtPoint', () => {
+  it('changes linear and angular velocity from a world-space point', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(10, 20));
+    expect(applyPhysics2DLinearImpulseAtPoint(body, 1, 0, 10, 21)).toBe(true);
+    expect(body.velocityX).toBeCloseTo(1);
+    expect(body.angularVelocity).toBeCloseTo(-6);
+  });
+});
+
+describe('applyPhysics2DTorque', () => {
+  it('accumulates torque and wakes a dynamic body', () => {
+    const body = createRigidBody2D('dynamic', 0, 0);
+    body.sleeping = true;
+    body.sleepTimer = 5;
+    expect(applyPhysics2DTorque(body, 3)).toBe(true);
+    expect(body.torque).toBe(3);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
   });
 });
 
@@ -178,7 +248,7 @@ describe('invalidatePhysics2DCollider', () => {
     const collider = body.colliders[0];
     const oldWorldShape = collider.world;
     collider.local = { kind: 'circle', x: 4, y: 0, radius: 2 };
-    collider.material.density = 2;
+    collider.material = { ...collider.material, density: 2 };
     body.sleeping = true;
     body.sleepTimer = 5;
 
@@ -353,5 +423,88 @@ describe('removePhysics2DCollider', () => {
     const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
     expect(removePhysics2DCollider(world, body, absent)).toBe(false);
     expect(body.mass).toBe(mass);
+  });
+});
+
+describe('setPhysics2DBodyTransform', () => {
+  it('invalidates pose caches, wakes connected bodies, and republishes bounds', () => {
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, 'Cached', { prepare: () => {}, solve: () => {} });
+    const first = addPhysics2DBody(world, boxBody(0, 0));
+    const second = addPhysics2DBody(world, boxBody(0.75, 0));
+    const joint = addPhysics2DJoint(world, {
+      kind: 'Cached',
+      bodyA: first.index,
+      bodyB: second.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: true,
+      impulse0: 3,
+      impulse1: 4,
+      impulse2: 5,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+    stepPhysics2D(world, 1 / 60);
+    joint.impulse0 = 3;
+    joint.impulse1 = 4;
+    joint.impulse2 = 5;
+    first.sleeping = true;
+    second.sleeping = true;
+
+    expect(setPhysics2DBodyTransform(world, first, 4, 2, 0.25)).toBe(true);
+
+    const movedLocation: number[] = [];
+    world.index.querySpatialPoint(4, 2, movedLocation);
+    expect(world.contacts).toHaveLength(0);
+    expect(world.events.began).toHaveLength(0);
+    expect([joint.impulse0, joint.impulse1, joint.impulse2]).toEqual([0, 0, 0]);
+    expect(first.sleeping).toBe(false);
+    expect(second.sleeping).toBe(false);
+    expect(movedLocation).toEqual([first.index]);
+  });
+
+  it('reports invalid transforms without changing the body', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, boxBody(1, 2));
+    expect(setPhysics2DBodyTransform(world, body, Number.NaN, 3, 0)).toBe(false);
+    expect(setPhysics2DBodyTransform(createPhysics2DWorld(), body, 4, 5, 0)).toBe(false);
+    expect([body.x, body.y, body.angle]).toEqual([1, 2, 0]);
+  });
+});
+
+describe('setPhysics2DBodyType', () => {
+  it('rebuilds mass and clears incompatible state across type transitions', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const other = addPhysics2DBody(world, boxBody(0.75, 0));
+    stepPhysics2D(world, 1 / 60);
+    body.velocityX = 2;
+    body.velocityY = 3;
+    body.angularVelocity = 4;
+    body.forceX = 5;
+    body.forceY = 6;
+    body.torque = 7;
+    other.sleeping = true;
+
+    expect(setPhysics2DBodyType(world, body, 'static')).toBe(true);
+    expect(body.mass).toBe(0);
+    expect(body.inverseMass).toBe(0);
+    expect([body.velocityX, body.velocityY, body.angularVelocity]).toEqual([0, 0, 0]);
+    expect([body.forceX, body.forceY, body.torque]).toEqual([0, 0, 0]);
+    expect(world.contacts).toHaveLength(0);
+    expect(other.sleeping).toBe(false);
+
+    expect(setPhysics2DBodyType(world, body, 'dynamic')).toBe(true);
+    expect(body.mass).toBeCloseTo(1);
+    expect(body.inverseMass).toBeCloseTo(1);
+  });
+
+  it('reports false for a body outside the world', () => {
+    expect(setPhysics2DBodyType(createPhysics2DWorld(), boxBody(0, 0), 'static')).toBe(false);
   });
 });
