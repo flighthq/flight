@@ -414,8 +414,16 @@ function uploadGlBitmap(
 ): void {
   const bitmap = image as Readonly<Bitmap>;
   const gl = state.gl;
-  const transform = premultiply && bitmap.alphaType !== 'premultiplied';
-  const data = transform ? premultiplyStraightRgba8(bitmap.data) : bitmap.data;
+  // Resolve the source's declared encoding to the one the caller asked for, in EITHER direction. The
+  // straight direction is what makes a premultiplied source safe as a 3D material map: 3D binds with
+  // premultiply=false and its fragment tail multiplies by alpha at the end, so handing it already-
+  // premultiplied rgb would square the coverage and darken every translucent texel.
+  const data =
+    premultiply && bitmap.alphaType !== 'premultiplied'
+      ? premultiplyStraightRgba8(bitmap.data)
+      : !premultiply && bitmap.alphaType === 'premultiplied'
+        ? unpremultiplyToStraightRgba8(bitmap.data)
+        : bitmap.data;
   uploadGlTextureData(
     gl,
     gl.TEXTURE_2D,
@@ -463,6 +471,23 @@ function uploadGlImageResource(
 
 // Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs
 // only on a texture upload (cache miss or content change), never in the per-frame draw path.
+// The inverse of premultiplyStraightRgba8: recovers straight rgb from premultiplied (rgb = rgb/a*255).
+// A fully transparent texel carries no recoverable color, so it stays zero rather than dividing by zero.
+// Lossy for small alphas — the quantization the multiply discarded cannot be restored — which is why a
+// producer should prefer handing over straight data when both realizations are needed.
+function unpremultiplyToStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    const scale = a === 0 ? 0 : 255 / a;
+    out[i] = data[i] * scale;
+    out[i + 1] = data[i + 1] * scale;
+    out[i + 2] = data[i + 2] * scale;
+    out[i + 3] = a;
+  }
+  return out;
+}
+
 function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(data.length);
   for (let i = 0; i < data.length; i += 4) {

@@ -9,6 +9,12 @@
 // The first seven (Overlay..ColorBurn) are separable — each output channel depends only on the matching
 // backdrop/source channel. The last four (Hue..Luminosity) are non-separable HSL modes: each blends a
 // whole RGB triple by transplanting one HSL attribute, so they cannot be computed per channel.
+//
+// MEMBERSHIP IS EXCLUSIVE with the fixed-function `BlendMode` enum, and a test enforces it: a mode lives
+// in exactly one tier. That is why Darken/Lighten are NOT here despite their fixed-function realization
+// being only approximate under partial coverage — adding them would require REMOVING them from the enum,
+// which is a vocabulary decision (it costs every Darken/Lighten user an offscreen bounce, and Canvas 2D
+// realizes both correctly and cheaply via globalCompositeOperation). See DEFAULT_GL_BLEND_MODES.
 export const AdvancedBlendMode = {
   Color: 'Color',
   ColorBurn: 'ColorBurn',
