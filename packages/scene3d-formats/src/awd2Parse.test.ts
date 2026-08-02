@@ -1,4 +1,9 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import {
+  registerDecompressor,
+  registerDeflateDecompressor,
+  unregisterDecompressor,
+} from '@flighthq/compression/contract';
 import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
@@ -10,10 +15,11 @@ import {
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
+import type { Decompressor } from '@flighthq/types/contract';
+import { Compression } from '@flighthq/types/contract';
 import type {
   AmbientLight,
   AnimationClip,
-  AwdDecompressor,
   DirectionalLight,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
@@ -34,8 +40,7 @@ import {
   ShadedMaterialKind,
 } from '@flighthq/types/contract';
 
-import { registerAwd2DeflateDecompressor } from './awd2Inflate';
-import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations, registerAwd2Decompressor } from './awd2Parse';
+import { createScene3DFromAwd2, parseAwd2, parseAwd2SkeletonAnimations } from './awd2Parse';
 import {
   AWD2_BLOCK_CONTAINER,
   AWD2_BLOCK_LIGHT,
@@ -1594,14 +1599,14 @@ describe('createScene3DFromAwd2 animations', () => {
     const blockStream = SKINNED_TRIANGLE_AWD.subarray(AWD2_HEADER_BYTES);
     const onDiskPayload = new Uint8Array(blockStream.length); // stand-in "compressed" bytes the stub inflates
     const compressed = concatBytes(buildAwdHeader(onDiskPayload.length, AWD2_COMPRESSION_DEFLATE), onDiskPayload);
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, () => blockStream);
+    registerDecompressor(Compression.Deflate, () => blockStream);
     try {
       const scene = createScene3DFromAwd2(compressed);
       expect(Object.keys(scene.animations)).toHaveLength(1);
       const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
       expect(mesh.skin).not.toBeNull();
     } finally {
-      registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
+      unregisterDecompressor(Compression.Deflate);
     }
   });
 });
@@ -3017,12 +3022,12 @@ describe('parseAwd2SkeletonAnimations', () => {
   });
 });
 
-describe('registerAwd2Decompressor', () => {
+describe('rehydrateAwdBody', () => {
   // A trivial reversible "codec": the compressed body is a 4-byte marker followed by the real block
   // stream, and the decompressor strips the marker. A compressed length that differs from the inflated
   // length exercises the header body-length rewrite the rehydration performs.
   const MARKER = [0xde, 0xad, 0xbe, 0xef];
-  const stripMarker: AwdDecompressor = (compressed) => compressed.subarray(MARKER.length);
+  const stripMarker: Decompressor = (compressed) => compressed.subarray(MARKER.length);
 
   // Re-wraps an uncompressed AWD as a `method`-compressed file whose body is `MARKER + originalBody`.
   const asCompressed = (uncompressed: Uint8Array, method: number): Uint8Array => {
@@ -3034,12 +3039,12 @@ describe('registerAwd2Decompressor', () => {
   };
 
   afterEach(() => {
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
-    registerAwd2Decompressor(AWD2_COMPRESSION_LZMA, null);
+    unregisterDecompressor(Compression.Deflate);
+    unregisterDecompressor(Compression.Lzma);
   });
 
   it('inflates a compressed geometry file through the registered codec, matching the uncompressed parse', () => {
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
+    registerDecompressor(Compression.Deflate, stripMarker);
     const fromCompressed = parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE));
     const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD);
     expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
@@ -3050,7 +3055,7 @@ describe('registerAwd2Decompressor', () => {
   });
 
   it('routes compressed skeleton-animation files through the same seam', () => {
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
+    registerDecompressor(Compression.Deflate, stripMarker);
     const joints = [createNode3D(), createNode3D()];
     const compressed = asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE);
     const clip = firstAwdClip(compressed, joints);
@@ -3070,7 +3075,7 @@ describe('registerAwd2Decompressor', () => {
   });
 
   it('records a diagnostic and returns empty when the registered codec fails to inflate', () => {
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, () => null);
+    registerDecompressor(Compression.Deflate, () => null);
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createScene3DFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
@@ -3082,8 +3087,8 @@ describe('registerAwd2Decompressor', () => {
   });
 
   it('clears a codec when registered with null', () => {
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, stripMarker);
-    registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null);
+    registerDecompressor(Compression.Deflate, stripMarker);
+    unregisterDecompressor(Compression.Deflate);
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
     expect(diagnostics).toHaveLength(1);
@@ -3123,7 +3128,7 @@ describe('registerAwd2Decompressor', () => {
   };
 
   it('reconstructs the identical scene from a genuinely zlib-compressed AWD via the vendored inflater', () => {
-    registerAwd2DeflateDecompressor();
+    registerDeflateDecompressor();
     const compressedBody = decodeBase64(SKINNED_BODY_COMPRESSED);
     const header = SKINNED_TRIANGLE_AWD.slice(0, 12);
     header[7] = AWD2_COMPRESSION_DEFLATE;

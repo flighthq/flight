@@ -20,6 +20,7 @@
     { "path": "./packages/clipboard" },
     { "path": "./packages/clock" },
     { "path": "./packages/color" },
+    { "path": "./packages/compression" },
     { "path": "./packages/collision" },
     { "path": "./packages/debug" },
     { "path": "./packages/device" },

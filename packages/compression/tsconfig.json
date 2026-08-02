@@ -9,16 +9,6 @@
     "sourceMap": true,
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
-  "references": [
-    { "path": "../clip" },
-    { "path": "../compression" },
-    { "path": "../geometry" },
-    { "path": "../movieclip" },
-    { "path": "../node" },
-    { "path": "../scene2d" },
-    { "path": "../scene2d-resources" },
-    { "path": "../shape" },
-    { "path": "../types" }
-  ],
+  "references": [{ "path": "../types" }],
   "include": ["src"]
 }

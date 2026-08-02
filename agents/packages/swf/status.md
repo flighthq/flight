@@ -10,8 +10,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
 
 - `createScene2DFromSwf` safely reads `FWS` headers and bounded tag records, and reads `CWS`/`ZWS` through
   a registered decompressor. Compression is not SWF's domain — a `CWS` body is a zlib stream and a `ZWS`
-  body an LZMA one, both general formats riding inside the container — so the package exposes
-  `registerSwfDecompressor` and vendors neither codec. The registry starts empty, is filled only by an
+  body an LZMA one, both general formats riding inside the container — so the package vendors neither codec and
+  resolves through the one shared registry in `@flighthq/compression` rather than owning a private one:
+  a caller registers deflate once and every container that carries the same algorithm — SWF's `CWS`, an
+  AWD2 block — can read it. The registry starts empty, is filled only by an
   explicit call, and is last-write-wins so a host can replace a portable decoder with a native one.
   Compression with nothing registered reports the same null sentinel as a malformed file: the bytes are
   unreadable either way. Decompressed bytes are spliced behind a header rewritten to `FWS`, since the

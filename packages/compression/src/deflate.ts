@@ -1,28 +1,25 @@
-import type { AwdDecompressor } from '@flighthq/types/contract';
+import type { Decompressor } from '@flighthq/types/contract';
+import { Compression } from '@flighthq/types/contract';
 
-import { registerAwd2Decompressor } from './awd2Parse';
-import { AWD2_COMPRESSION_DEFLATE } from './awd2Schema';
+import { registerDecompressor } from './decompressor';
 
-// Vendored, dependency-free, synchronous DEFLATE/zlib inflater used as the default AWD decompressor.
-// Away3D's exporter compresses the AWD body with `ByteArray.compress()` (zlib format: a 2-byte header,
-// a raw DEFLATE stream, then a 4-byte Adler-32), so `inflateAwdDeflate` accepts a zlib-wrapped stream and
-// transparently falls back to treating the input as headerless raw DEFLATE. It is kept in its own module
-// so `registerAwd2Decompressor`'s opt-in registry stays tree-shakable — a bundle that never calls
-// `registerAwd2DeflateDecompressor` pays nothing for this ~200 lines of Huffman decoding.
+// Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) decoding. Kept in its own module so
+// the registry stays tree-shakable: a bundle that never calls `registerDeflateDecompressor` pays nothing
+// for this Huffman decoder. Sync because inflate is a straight-line state machine, which keeps every
+// synchronous parser that resolves through the registry synchronous too; a host with a faster native or
+// wasm codec registers that instead.
 //
-// The seam is deliberately sync (RFC 1951/1950 inflate is a straight-line state machine) so the existing
-// synchronous `parseAwd2` keeps working; a host with a faster native codec can register its own instead.
-
-// Inflates a zlib-wrapped or raw DEFLATE stream, returning the decompressed bytes or null on any malformed
-// input (bad Huffman table, back-reference past the output start, truncated stream). Typed as an
-// AwdDecompressor so it can be handed straight to registerAwd2Decompressor.
-export const inflateAwdDeflate: AwdDecompressor = (compressed) => {
+// Real containers mix the two framings — SWF's `CWS` body and Away3D's `ByteArray.compress()` are zlib
+// (a 2-byte header, the DEFLATE stream, an Adler-32), while other producers emit the bare stream — so a
+// zlib header is detected and skipped when present and the input is otherwise read as raw DEFLATE.
+// `uncompressedLength` is unused: DEFLATE encodes its own end and the output buffer grows to fit.
+export const inflateDeflate: Decompressor = (compressed) => {
   const input = compressed as Uint8Array;
-  // Detect a zlib header: low nibble of CMF is the compression method (8 = deflate) and the 16-bit
-  // (CMF,FLG) big-endian value is a multiple of 31. A preset dictionary (FDICT) is not supported.
+  // A zlib header: the low nibble of CMF is the compression method (8 = deflate) and the big-endian
+  // (CMF,FLG) pair is a multiple of 31. A preset dictionary (FDICT) is not supported.
   let start = 0;
   if (input.length >= 2 && (input[0] & 0x0f) === 8 && (((input[0] << 8) | input[1]) & 0xffff) % 31 === 0) {
-    if ((input[1] & 0x20) !== 0) return null; // FDICT preset dictionary — unsupported
+    if ((input[1] & 0x20) !== 0) return null;
     start = 2;
   }
   try {
@@ -32,11 +29,11 @@ export const inflateAwdDeflate: AwdDecompressor = (compressed) => {
   }
 };
 
-// Registers `inflateAwdDeflate` as the decompressor for AWD2_COMPRESSION_DEFLATE, enabling
-// `parseAwd2`/`parseAwd2SkeletonAnimations` to import Away3D's default (compressed) AWD exports. Opt-in so
-// the codec is only bundled when a caller asks for it. Idempotent; last registration wins.
-export function registerAwd2DeflateDecompressor(): void {
-  registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, inflateAwdDeflate);
+// Registers `inflateDeflate` for `Compression.Deflate`, which is what lets every consumer read a
+// zlib-or-raw compressed body. Opt-in, so the codec is only bundled when a caller asks for it.
+// Idempotent; last registration wins.
+export function registerDeflateDecompressor(): void {
+  registerDecompressor(Compression.Deflate, inflateDeflate);
 }
 
 // RFC 1951 length codes 257-285: the base copy length and the number of extra bits that follow.

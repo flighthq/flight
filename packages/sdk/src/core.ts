@@ -1,4 +1,5 @@
 export * from '@flighthq/color';
+export * from '@flighthq/compression';
 export * from '@flighthq/entity';
 export * from '@flighthq/geometry';
 export * from '@flighthq/math';

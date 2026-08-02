@@ -1,8 +1,7 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { Compression } from '@flighthq/types/contract';
 
-import { inflateAwdDeflate, registerAwd2DeflateDecompressor } from './awd2Inflate';
-import { parseAwd2, registerAwd2Decompressor } from './awd2Parse';
-import { AWD2_COMPRESSION_DEFLATE, AWD2_HEADER_BYTES, AWD2_MAGIC_0, AWD2_MAGIC_1, AWD2_MAGIC_2 } from './awd2Schema';
+import { getDecompressor, unregisterDecompressor } from './decompressor';
+import { inflateDeflate, registerDeflateDecompressor } from './deflate';
 
 // The compressed fixtures below are precomputed with Node's zlib and embedded as base64 rather than
 // generated at test time: `scene-formats` is a browser-clean package whose build carries no `@types/node`,
@@ -54,9 +53,9 @@ function decodeBase64(input: string): Uint8Array {
 
 const encode = (s: string): Uint8Array => new TextEncoder().encode(s);
 
-describe('inflateAwdDeflate', () => {
+describe('inflateDeflate', () => {
   it('round-trips empty input', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.EMPTY))).toEqual(new Uint8Array(0));
+    expect(inflateDeflate(decodeBase64(FIXTURES.EMPTY), 0)).toEqual(new Uint8Array(0));
   });
 
   it('keeps inflating a stream whose expansion ratio is large but bounded', () => {
@@ -66,66 +65,56 @@ describe('inflateAwdDeflate', () => {
     // fixture is 124 bytes expanding 528x to 64 KB, and must still round-trip byte for byte.
     const source = new Uint8Array(64 * 1024);
     for (let i = 0; i < source.length; i++) source[i] = i % 7;
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.HIGH_RATIO))).toEqual(source);
+    expect(inflateDeflate(decodeBase64(FIXTURES.HIGH_RATIO), 0)).toEqual(source);
   });
 
   it('round-trips a short literal run (zlib-wrapped)', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.LITERAL))).toEqual(encode('flighthq scene-formats'));
+    expect(inflateDeflate(decodeBase64(FIXTURES.LITERAL), 0)).toEqual(encode('flighthq scene-formats'));
   });
 
   it('round-trips a headerless raw DEFLATE stream via the fallback path', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.RAW_LITERAL))).toEqual(encode('flighthq scene-formats'));
+    expect(inflateDeflate(decodeBase64(FIXTURES.RAW_LITERAL), 0)).toEqual(encode('flighthq scene-formats'));
   });
 
   it('round-trips highly repetitive data through back-references and grows the output buffer', () => {
     // 5400 bytes out — past the 1024-byte initial buffer, exercising the grow path.
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.REPETITIVE))).toEqual(encode('abcABC123'.repeat(600)));
+    expect(inflateDeflate(decodeBase64(FIXTURES.REPETITIVE), 0)).toEqual(encode('abcABC123'.repeat(600)));
   });
 
   it('round-trips prose through a genuine dynamic-Huffman block', () => {
     // Verified offline that zlib emits BTYPE=2 (dynamic Huffman) for this input, exercising the
     // dynamic literal/length + distance code-length decode path.
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.LOREM))).toEqual(encode(LOREM.repeat(12)));
+    expect(inflateDeflate(decodeBase64(FIXTURES.LOREM), 0)).toEqual(encode(LOREM.repeat(12)));
   });
 
   it('round-trips a stored (level 0) block', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.STORED_L0))).toEqual(
+    expect(inflateDeflate(decodeBase64(FIXTURES.STORED_L0), 0)).toEqual(
       encode('the quick brown fox jumps over the lazy dog'),
     );
   });
 
   it('returns null on a truncated stream rather than throwing', () => {
-    expect(inflateAwdDeflate(decodeBase64(FIXTURES.REPETITIVE).subarray(0, 6))).toBeNull();
+    expect(inflateDeflate(decodeBase64(FIXTURES.REPETITIVE).subarray(0, 6), 0)).toBeNull();
   });
 
   it('returns null on a corrupt (invalid block type) stream', () => {
     // 0x78 0x9c is a valid zlib header; 0xff 0xff after it decodes an invalid block type.
-    expect(inflateAwdDeflate(new Uint8Array([0x78, 0x9c, 0xff, 0xff]))).toBeNull();
+    expect(inflateDeflate(new Uint8Array([0x78, 0x9c, 0xff, 0xff]), 0)).toBeNull();
   });
 });
 
-describe('registerAwd2DeflateDecompressor', () => {
-  afterEach(() => registerAwd2Decompressor(AWD2_COMPRESSION_DEFLATE, null));
+describe('registerDeflateDecompressor', () => {
+  afterEach(() => unregisterDecompressor(Compression.Deflate));
 
-  it('wires the vendored inflater so parseAwd2 imports a zlib-compressed AWD body', () => {
-    registerAwd2DeflateDecompressor();
-    // A valid AWD header whose (empty) body is a real zlib stream: the codec must inflate it cleanly, so
-    // parseAwd2 finishes with no "missing decompressor" / "failed to inflate" diagnostic.
-    const compressedBody = decodeBase64(FIXTURES.EMPTY);
-    const awd = new Uint8Array(AWD2_HEADER_BYTES + compressedBody.length);
-    awd[0] = AWD2_MAGIC_0;
-    awd[1] = AWD2_MAGIC_1;
-    awd[2] = AWD2_MAGIC_2;
-    awd[3] = 2; // version major
-    awd[4] = 1; // version minor
-    awd[7] = AWD2_COMPRESSION_DEFLATE;
-    new DataView(awd.buffer).setUint32(8, compressedBody.length, true);
-    awd.set(compressedBody, AWD2_HEADER_BYTES);
+  it('puts the inflater in the shared registry every consumer resolves through', () => {
+    expect(getDecompressor(Compression.Deflate)).toBeNull();
 
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(awd, diagnostics);
-    expect(
-      diagnostics.some((d) => d.kind === 'awd2.compression-no-decompressor' || d.kind === 'awd2.decompression-failed'),
-    ).toBe(false);
+    registerDeflateDecompressor();
+
+    // One registration is what every container format reads through — none of them owns its own registry.
+    expect(getDecompressor(Compression.Deflate)).toBe(inflateDeflate);
+    expect(getDecompressor(Compression.Deflate)?.(decodeBase64(FIXTURES.LITERAL), 0)).toEqual(
+      encode('flighthq scene-formats'),
+    );
   });
 });
