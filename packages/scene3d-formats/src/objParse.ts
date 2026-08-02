@@ -10,6 +10,7 @@ import type {
   Material,
   MaterialLike,
   MeshSubset,
+  PrimitiveTopology,
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
@@ -90,6 +91,12 @@ export function parseObj(
   let activeSmoothingGroup = OBJ_SMOOTHING_UNSTATED;
   let faceOrdinal = 0;
 
+  // Line (`l`) and point (`p`) elements for the current group, as resolved position indices. They cannot
+  // ride the face mesh: PrimitiveTopology is a property of the whole MeshGeometry, not of a subset, so a
+  // group mixing faces with lines becomes sibling meshes rather than one mesh with mixed subsets.
+  let lineElements: number[][] = [];
+  let pointElements: number[] = [];
+
   // One document material index per MTL material name, shared across every mesh (and group) that uses it.
   const resolvedMaterials = new Map<string, number>();
 
@@ -137,6 +144,9 @@ export function parseObj(
         // Close the current group and enter the unnamed group — the same boundary a named g/o makes.
         flushGroup(
           materialBuckets,
+          lineElements,
+          pointElements,
+          positions,
           currentGroupName,
           document,
           materials,
@@ -145,6 +155,8 @@ export function parseObj(
           diagnostics,
         );
         materialBuckets = new Map<string, MaterialBucket>();
+        lineElements = [];
+        pointElements = [];
         currentGroupName = undefined;
       } else if (raw === 'usemtl') {
         // Reset to the default material rather than leaving the previous one bound to subsequent faces.
@@ -271,6 +283,9 @@ export function parseObj(
         // OBJ spec — `g`/`o` name geometry, they do not reset the active material.
         flushGroup(
           materialBuckets,
+          lineElements,
+          pointElements,
+          positions,
           currentGroupName,
           document,
           materials,
@@ -279,6 +294,8 @@ export function parseObj(
           diagnostics,
         );
         materialBuckets = new Map<string, MaterialBucket>();
+        lineElements = [];
+        pointElements = [];
         currentGroupName = args || undefined;
         break;
       }
@@ -297,16 +314,18 @@ export function parseObj(
         activeSmoothingGroup = Number.isFinite(group) && group > 0 ? group : OBJ_SMOOTHING_OFF;
         break;
       }
-      // Recognized OBJ directives Flight does not model: `l`/`p` (line/point primitives). Crumb them
-      // (Skip) per directive so the drop is not silent; a truly-unknown directive falls through the
-      // default and stays silent (it is not an authored Flight-representable feature).
-      case 'l':
-      case 'p':
-        tallyObjDrop(objDrops, ImportDiagnosticSeverity.Skip, 'obj.directive-unsupported', directive, {
-          directive,
-          firstLine: i + 1,
-        });
+      case 'l': {
+        // A polyline is a CHAIN of vertices, so N references become N-1 segments. Only the position ref
+        // is read: `l` may carry a uv, and line topology has nowhere to sample it.
+        const resolved = resolveObjElementIndices(args, positions.length / 3, objDrops, i);
+        if (resolved.length >= 2) lineElements.push(resolved);
         break;
+      }
+      case 'p': {
+        const resolved = resolveObjElementIndices(args, positions.length / 3, objDrops, i);
+        for (let k = 0; k < resolved.length; k++) pointElements.push(resolved[k]);
+        break;
+      }
       default:
         break;
     }
@@ -315,6 +334,9 @@ export function parseObj(
   // Flush the final group's accumulated faces.
   flushGroup(
     materialBuckets,
+    lineElements,
+    pointElements,
+    positions,
     currentGroupName,
     document,
     materials,
@@ -470,6 +492,9 @@ function parseFaceVertex(
 // subsets, never a wrapper over per-material child meshes. A group with no faces adds nothing.
 function flushGroup(
   buckets: Readonly<Map<string, MaterialBucket>>,
+  lineElements: readonly (readonly number[])[],
+  pointElements: readonly number[],
+  sourcePositions: readonly number[],
   name: string | undefined,
   document: Scene3DDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
@@ -496,6 +521,11 @@ function flushGroup(
     materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document, diagnostics));
   }
 
+  // Lines and points are emitted as sibling meshes of the face mesh, before the early return, so a group
+  // consisting ONLY of lines still produces geometry.
+  appendObjTopologyMesh(lineElements.flatMap(toObjLineSegments), sourcePositions, 'line-list', name, document);
+  appendObjTopologyMesh(pointElements, sourcePositions, 'point-list', name, document);
+
   if (subsets.length === 0) return;
 
   const geometry = createMeshGeometry({
@@ -518,6 +548,83 @@ function flushGroup(
   if (name !== undefined) node.name = name;
   document.nodes.push(node);
   document.scenes[0].rootNodes.push(nodeIndex);
+}
+
+// Resolves the whitespace-separated vertex references of an `l` or `p` element to zero-based position
+// indices, dropping any that do not resolve. Only the position component is read — a `l` reference may
+// carry a uv, and neither line nor point topology has anywhere to sample one.
+function resolveObjElementIndices(
+  args: string,
+  positionCount: number,
+  objDrops: Map<string, ObjDropTally> | null,
+  lineIndex: number,
+): number[] {
+  const resolved: number[] = [];
+  const tokens = args.split(/\s+/);
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].length === 0) continue;
+    const index = resolveFaceAttrIndex(tokens[i].split('/')[0], positionCount);
+    if (index < 0) {
+      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.element-index-out-of-range', '', {
+        firstLine: lineIndex + 1,
+        firstToken: tokens[i],
+      });
+      continue;
+    }
+    resolved.push(index);
+  }
+  return resolved;
+}
+
+// Expands one polyline's vertex chain into the vertex PAIRS a line-list wants: N references describe
+// N-1 connected segments, not N independent ones.
+function toObjLineSegments(chain: readonly number[]): number[] {
+  const segments: number[] = [];
+  for (let i = 0; i + 1 < chain.length; i++) segments.push(chain[i], chain[i + 1]);
+  return segments;
+}
+
+// Appends one line-list or point-list mesh built from `elements` (position indices into the file's
+// vertex table) as a sibling node of the group's face mesh. Only positions are written: the canonical
+// layout still reserves normal/tangent/uv slots, but neither topology shades or samples, so they stay
+// zero rather than carrying invented values. No material is bound — OBJ states none for these elements.
+function appendObjTopologyMesh(
+  elements: readonly number[],
+  sourcePositions: readonly number[],
+  topology: PrimitiveTopology,
+  name: string | undefined,
+  document: Scene3DDocument,
+): void {
+  if (elements.length === 0) return;
+
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const dedup = new Map<number, number>();
+  for (let i = 0; i < elements.length; i++) {
+    const source = elements[i];
+    let emitted = dedup.get(source);
+    if (emitted === undefined) {
+      emitted = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
+      vertices.push(sourcePositions[source * 3], sourcePositions[source * 3 + 1], sourcePositions[source * 3 + 2]);
+      for (let pad = 0; pad < CANONICAL_FLOATS_PER_VERTEX - 3; pad++) vertices.push(0);
+      dedup.set(source, emitted);
+    }
+    indices.push(emitted);
+  }
+
+  const geometry = createMeshGeometry({
+    indices: Uint32Array.from(indices),
+    layout: CANONICAL_LAYOUT,
+    subsets: [{ indexCount: indices.length, indexOffset: 0 }],
+    topology,
+    vertices: new Float32Array(vertices),
+  });
+  const meshIndex = document.meshes.length;
+  document.meshes.push({ geometry, materials: [-1] });
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  if (name !== undefined) node.name = name;
+  document.nodes.push(node);
+  document.scenes[0].rootNodes.push(document.nodes.length - 1);
 }
 
 // Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.

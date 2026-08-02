@@ -622,14 +622,11 @@ describe('obj diagnostic crumb coverage', () => {
     expect(crumb.detail?.count).toBe(1);
   });
 
-  it('records obj.directive-unsupported (Skip, parseObj) for a recognized-but-unmodeled directive (l)', () => {
+  it('no longer crumbs the directives it now models (s, l, p)', () => {
+    // obj.directive-unsupported has no trigger left: every directive it named is read for real now.
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromObj('l 1 2\n', undefined, diagnostics);
-    const crumb = expectOneCrumb(diagnostics, 'obj.directive-unsupported');
-    expect(crumb.severity).toBe('Skip');
-    expect(crumb.origin).toBe('parseObj');
-    expect(crumb.detail?.directive).toBe('l');
-    expect(crumb.detail?.count).toBe(1);
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\ns 1\nf 1 2 3\nl 1 2\np 3\n', undefined, diagnostics);
+    expect(diagnostics.filter((d) => d.kind === 'obj.directive-unsupported')).toHaveLength(0);
   });
 
   it('no longer crumbs `s` now that smoothing groups are honoured', () => {
@@ -750,6 +747,74 @@ describe('parseObj generated normals', () => {
 function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);
 }
+
+describe('parseObj line and point primitives', () => {
+  it('imports a polyline as a line-list mesh of connected segments', () => {
+    // Three references describe TWO connected segments, not three independent ones.
+    const document = parseObj('v 0 0 0\nv 1 0 0\nv 2 0 0\nl 1 2 3\n');
+
+    expect(document.meshes).toHaveLength(1);
+    expect(document.meshes[0].geometry.topology).toBe('line-list');
+    expect(getMeshGeometryIndexCount(document.meshes[0].geometry)).toBe(4);
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(3);
+  });
+
+  it('imports points as a point-list mesh', () => {
+    const document = parseObj('v 0 0 0\nv 1 0 0\np 1 2\n');
+
+    expect(document.meshes[0].geometry.topology).toBe('point-list');
+    expect(getMeshGeometryIndexCount(document.meshes[0].geometry)).toBe(2);
+  });
+
+  it('emits lines as a sibling mesh of the faces in the same group', () => {
+    // Topology belongs to the whole geometry, so a group mixing faces and lines cannot be one mesh.
+    const document = parseObj('v 0 0 0\nv 1 0 0\nv 0 1 0\ng Mixed\nf 1 2 3\nl 1 2\n');
+
+    expect(document.meshes).toHaveLength(2);
+    const topologies = document.meshes.map((mesh) => mesh.geometry.topology);
+    expect(topologies).toContain('triangle-list');
+    expect(topologies).toContain('line-list');
+    // Both nodes carry the group's authored name — the file really did put both under one group.
+    expect(document.nodes.every((node) => node.name === 'Mixed')).toBe(true);
+  });
+
+  it('emits a group made only of lines, with no face mesh to hang them off', () => {
+    const document = parseObj('v 0 0 0\nv 1 0 0\ng Wire\nl 1 2\n');
+
+    expect(document.meshes).toHaveLength(1);
+    expect(document.meshes[0].geometry.topology).toBe('line-list');
+    expect(document.scenes[0].rootNodes).toHaveLength(1);
+  });
+
+  it('reads only the position component of a reference that carries a uv', () => {
+    const document = parseObj('v 0 0 0\nv 1 0 0\nvt 0 0\nvt 1 0\nl 1/1 2/2\n');
+
+    expect(document.meshes[0].geometry.topology).toBe('line-list');
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(2);
+  });
+
+  it('resolves negative (relative) references', () => {
+    const document = parseObj('v 0 0 0\nv 1 0 0\nl -2 -1\n');
+
+    const position = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(position, document.meshes[0].geometry, 0);
+    expect(position.x).toBeCloseTo(0, 5);
+  });
+
+  it('drops an out-of-range reference and reports it', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObj('v 0 0 0\nl 1 9\n', undefined, diagnostics);
+
+    const crumb = findDiagnostic(diagnostics, 'obj.element-index-out-of-range');
+    expect(crumb).toBeDefined();
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
+  });
+
+  it('ignores a polyline left with fewer than two resolvable references', () => {
+    const document = parseObj('v 0 0 0\nl 1\n');
+    expect(document.meshes).toHaveLength(0);
+  });
+});
 
 describe('parseObj material model selection', () => {
   const OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl M\nf 1 2 3\n';
