@@ -546,11 +546,15 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   };
 }
 
+// Reads one tag stream — the root's or a sprite's — into frames and labels. The stream is complete when
+// it reaches its bounded end, whether or not an explicit End tag arrived: real files written by Flash's
+// own tooling end a sprite, and sometimes the root, with the last content tag and no terminator, and
+// rejecting those loses the whole document over a byte no reader needs. Truncation is still caught, by
+// the declared file length, by a tag body reaching past the stream, and by the reader's own overrun flag.
 function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
   const placements = new Map<number, SwfPlacement>();
   const frames: Map<number, SwfPlacement>[] = [];
   const labels: TimelineLabel[] = [];
-  let foundEnd = false;
 
   while (reader.pos < reader.end && reader.valid) {
     const tagHeader = reader.readUint16();
@@ -562,10 +566,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
 
     const body = new SwfReader(reader.source, reader.pos, bodyEnd);
     reader.pos = bodyEnd;
-    if (code === TAG_END) {
-      foundEnd = true;
-      break;
-    }
+    if (code === TAG_END) break;
     if (code === TAG_SHOW_FRAME) {
       state.remainingFrameEntries -= placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
@@ -609,7 +610,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     if (!body.valid) return null;
   }
 
-  if (!reader.valid || !foundEnd) return null;
+  if (!reader.valid) return null;
   // A timeline that never shows a frame still has the one display list its tags built.
   if (frames.length === 0) frames.push(placements);
   return {

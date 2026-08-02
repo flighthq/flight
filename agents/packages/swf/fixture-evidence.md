@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-07-30
+updated: 2026-08-02
 fixturePolicy: provenance-and-derived-manifest-only
 ---
 
@@ -115,3 +115,58 @@ console.log(JSON.stringify({
 
 This procedure is intentionally separate from `npm run test`: the committed suite remains hermetic and
 synthetic, and no checkout needs the network or the external SWF to pass.
+
+## Corpus sweep
+
+Beyond the single canonical fixture, a breadth sweep runs the importer across a sample of Ruffle's test
+SWFs. It exists to answer one question the synthetic suite cannot: does this importer survive real files
+written by real tools? Like the fixture above, no binary is committed — only this procedure and the
+aggregate result.
+
+- Repository and revision: `ruffle-rs/ruffle` at `f8d8de6bb15c3d7a799d7088997422b926c8478c`, MIT terms as
+  above.
+- Sample: every `.swf` in the tree under 300 KB, sorted by path, taking every sixteenth — 306 files,
+  1.9 MB, spanning `avm1`, `avm2`, Shumway, Gnash/Ming, and exporter fixtures.
+
+Result at the revision that added shape geometry and End-tag tolerance:
+
+| Measure | Value |
+| --- | --- |
+| Files swept | 306 |
+| Threw | **0** |
+| Imported | 59 |
+| Rejected | 247 — **all** compressed (`CWS` 242, `ZWS` 5) |
+| Uncompressed rejected | **0** |
+
+Two conclusions the synthetic suite could not reach. First, the null-sentinel contract holds against real
+files: nothing throws, and every uncompressed file in the sample imports. Second, compression is not a
+side issue — **79% of this corpus is compressed**, so a registered decompressor is what stands between
+this importer and the bulk of real SWF content, ahead of any further tag coverage.
+
+The sweep also found a real defect, now fixed and covered synthetically: requiring an explicit `End` tag
+rejected whole documents whose sprite — or root — ended at its bounded end with the last content tag and
+no terminator, which Flash's own tooling emits (`timeline/clip_action_no_key_code`,
+`from_shumway/flash_net_URLLoader`). Truncation is still caught by the declared file length, by a tag body
+reaching past its stream, and by the reader's overrun flag.
+
+### Reproduce the sweep
+
+```sh
+mkdir -p .test-assets/swf/corpus
+curl -sS --fail --location \
+  "https://api.github.com/repos/ruffle-rs/ruffle/git/trees/f8d8de6bb15c3d7a799d7088997422b926c8478c?recursive=1" \
+  -o /tmp/ruffle-tree.json
+python3 - <<'SELECT'
+import json
+SHA = "f8d8de6bb15c3d7a799d7088997422b926c8478c"
+tree = json.load(open("/tmp/ruffle-tree.json"))["tree"]
+swfs = sorted([t for t in tree if t["path"].endswith(".swf") and t.get("size", 0) < 300000],
+              key=lambda t: t["path"])[::16]
+for t in swfs:
+    print(f"https://raw.githubusercontent.com/ruffle-rs/ruffle/{SHA}/{t['path']}")
+SELECT
+```
+
+Fetch that list into `.test-assets/swf/corpus/` (flattening `/` to `__`), then import each file through
+`createScene2DFromSwf` and count throws, nulls, and container signatures. `.test-assets` is gitignored, and
+`npm run test` neither reads the corpus nor touches the network.
