@@ -33,6 +33,7 @@ rare in the wild.
 | `DefineMorphShape`, `2` | Authored extents only — no 2D-morph home yet | 4 |
 | `DefineEditText` | Authored extents only — see below | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
+| `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
 
 ## Deliberately carried no further
 
@@ -40,7 +41,8 @@ These are read past. Each is a decision, not an oversight.
 
 | Tag | Why | Files |
 | --- | --- | --- |
-| `DoABC`, `DoInitAction` | Bytecode. The charter exposes it at most as an opaque blob and never executes it; running it is [an anti-goal](../../anti-goals.md). AVM2 puts `stop()` behind a constant pool, method bodies, and the `addFrameScript` calls a generated class constructor makes — a decode surface that belongs in its own cell, per the charter's 2026-07-25 ruling. `@flighthq/abc` now reads the container; what remains is instruction decoding and the Flash-side recognition, which stays in `swf`. | 187 / 11 |
+| `DoInitAction` | Bytecode run once when a sprite is first defined; never executed here, and its playback commands are not yet recognized the way `DoAction`'s are. | 11 |
+| Everything else in a `DoABC` payload | Read, never run. Only `addFrameScript` and the playback calls its handlers make are recognized; all other bytecode is inert data. | — |
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
 | `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 7 |

@@ -28,6 +28,13 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   tolerance.
 - Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
   [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
+- AVM2 `DoABC` timeline commands are recognized too, through `@flighthq/abc`. AVM2 has no playback
+  opcodes: a compiler turns frame scripts into an `addFrameScript` call in the generated class
+  constructor, pairing a zero-based frame index with a handler that is usually a *method on the class*
+  reached by name rather than an inline function — so recognition reads the constructor's call, resolves
+  the handler through the instance's method traits, and then reads that body. `SymbolClass` ties the class
+  name back to a character, with character 0 being the root. Both levels are read, never run, and the same
+  all-or-nothing rule applies to the handler body.
 - AVM1 `DoAction` timeline commands are recognized and emitted as data. AVM1 gives playback control its
   own single-byte opcodes — stop, play, and both goto forms are literal instructions rather than method
   calls — so reading them is the same kind of work as reading a placement record, and nothing from the

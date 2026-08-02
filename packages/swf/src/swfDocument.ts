@@ -33,7 +33,7 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
-import { readSwfFrameActions } from './swfFrameAction';
+import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
 import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
@@ -163,6 +163,9 @@ interface SwfParseState {
   jpegTables: Uint8Array | null;
   linkages: Map<number, string>;
   pendingTexts: SwfPendingText[];
+  // Every DoABC payload in the file, held until the whole thing is walked: a class binds to a character
+  // through SymbolClass, which may be read after the script that declares its frame scripts.
+  abcBlobs: Uint8Array[];
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -727,6 +730,7 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
 
 function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const state: SwfParseState = {
+    abcBlobs: [],
     backgroundColor: null,
     characterBounds: new Map<number, SwfRectangle>(),
     definedCharacters: new Set<number>(),
@@ -744,6 +748,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
   appendSwfPendingTextShapes(reader, state);
+  appendSwfAbcFrameScripts(state, timeline);
   return {
     backgroundColor: state.backgroundColor,
     characterBounds: state.characterBounds,
@@ -764,6 +769,35 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
 // Composes every static text definition once the whole file has been walked, so a text record can address
 // a font declared after it. A text whose body does not decode keeps its bounded placeholder, the same way
 // an unreadable shape body does.
+// A DoABC payload names itself before its bytecode: the tag carries flags and a null-terminated name that
+// the anonymous form omits.
+function readSwfAbcPayload(body: Readonly<SwfReader>, hasName: boolean): Uint8Array {
+  if (!hasName) return body.source.subarray(body.pos, body.end);
+  let start = body.pos + 4;
+  while (start < body.end && body.source[start] !== 0) start++;
+  return body.source.subarray(Math.min(start + 1, body.end), body.end);
+}
+
+// Binds recognized AVM2 frame scripts to the timelines they belong to. A script declares them against a
+// class name; SymbolClass is what ties that name back to a character, and character 0 is the root.
+function appendSwfAbcFrameScripts(state: SwfParseState, timeline: SwfTimeline): void {
+  if (state.abcBlobs.length === 0) return;
+  const charactersByClass = new Map<string, number>();
+  for (const [characterId, className] of state.linkages) charactersByClass.set(className, characterId);
+
+  for (const blob of state.abcBlobs) {
+    const byClass = readSwfAbcFrameScripts(blob);
+    if (byClass === null) continue;
+    for (const [className, frames] of byClass) {
+      const characterId = charactersByClass.get(className);
+      if (characterId === undefined) continue;
+      const target = characterId === 0 ? timeline : state.sprites.get(characterId);
+      if (target === undefined) continue;
+      for (const [frame, script] of frames) target.actions.set(frame, script);
+    }
+  }
+}
+
 function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): void {
   for (const pending of state.pendingTexts) {
     const shape = createSwfTextShape(
@@ -796,6 +830,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       state.remainingFrameEntries -= placements.size + 1;
       if (state.remainingFrameEntries < 0) return null;
       frames.push(new Map(placements));
+    } else if (code === TAG_DO_ABC || code === TAG_DO_ABC_ANONYMOUS) {
+      state.abcBlobs.push(readSwfAbcPayload(body, code === TAG_DO_ABC));
     } else if (code === TAG_DO_ACTION) {
       // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
       const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
@@ -1315,6 +1351,8 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;
+const TAG_DO_ABC = 82;
+const TAG_DO_ABC_ANONYMOUS = 72;
 const TAG_DO_ACTION = 12;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FRAME_LABEL = 43;
