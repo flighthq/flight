@@ -124,6 +124,48 @@ Guards warn at the *moment* of misuse; `explain*` answers "why is my frame blank
 - An `explain<Type>*` function is a **pure query over existing seams returning plain data** (so agents and tests can assert on it), with an optional `format*` companion for humans. It recomputes the cause on demand by re-walking the failure conditions the silent path checks, retains nothing, mutates nothing, and never throws. Example: `explainDisplayObjectRender(state, source)` — the first `explain*` in the SDK, the worked exemplar every later one copies — recomputes why a display object would render blank: whether a renderer is registered for its kind, whether it was prepared, and its effective visibility/alpha, returning a `reason` classification. (`explainRenderState(state, root)` would generalize this to the whole tree — kinds with no renderer, nodes without proxies, the prepare/draw frame-id relation, feature data present while its hook slot is null.)
 - **The high-value, confusing sentinels get a shakeable explainer** — it is a targeted tool, not a blanket obligation on every sentinel. A sentinel earns an `explain*` when its silent failure genuinely confuses (a blank frame with many possible causes is the archetype); a self-evident lookup miss does not. The reason it is targeted rather than universal is maintenance cost: each `explain*` duplicates the silent path's failure conditions and must be kept in step with them, so spend that upkeep only where the confusion warrants it. Where present, the sentinel return stays the zero-cost baseline and the diagnostic twin turns silent state into words; production sheds the explainer while agents always import it.
 
+## Import diagnostics: asset facts, not project facts
+
+Everything above concerns **guards** — warnings about how a caller used the API. Import diagnostics
+(`@flighthq/importdiagnostics` crumbs, emitted by the `*-formats` readers) are a different channel with a
+different audience, and they have their own failure mode: they are not shakeable. A crumb is emitted by
+the parser itself into a caller-supplied collector, so its prose ships whenever the parser does. What
+saves it is that the collector is optional — an unopted parse allocates nothing — not that the string
+sheds.
+
+That makes *what* a crumb says the whole cost control, and the line is:
+
+> **A crumb reports what happened to THIS FILE'S data. A gap in our coverage of the format is a project
+> fact, and belongs in a document, not in every consumer's diagnostic stream.**
+
+The test is mechanical: **would a correct, idiomatic file produced by that format's own authoring tool
+trigger this crumb?** If yes, the crumb is not describing the asset — it is announcing that we have not
+finished, once per import, forever. That is noise the consumer cannot act on, and it makes the crumbs
+that *are* actionable harder to see.
+
+The archetype is AWD material properties 5/6/8/11/13/21/22, which the parser walks past by length. Key 8
+is on all 35 `sponza.awd` materials. A per-property "unhandled" tally would fire on essentially every AWD
+file ever imported. It is recorded in [scene3d format coverage](../scene3d-format-coverage.md) instead.
+
+A crumb still earns its place when the drop is **contingent on what the author actually did** and the
+consumer has a next action:
+
+- `3ds.light-inner-range-dropped` — the file stated an attenuation start; Flight carries one cutoff. Fires
+  only for lights that state it, and tells the author which authored value did not survive.
+- `mtl.emissive-dropped` — actionable in the strong sense: stating any metallic-roughness directive moves
+  the material to the PBR branch, where the emissive is kept.
+- `mtl.metallic-roughness-map-unpacked` — a structural mismatch with a real fix (repack the two grayscale
+  images into one glTF-style texture), not an unbuilt feature.
+
+Two consequences worth stating, because they are easy to get backwards:
+
+- **"Unhandled block/chunk/property" tallies are the suspicious shape.** One can be right — `awd2.block-unhandled`
+  fires only for block types a given file actually carries, and "your file has content we did not import"
+  is genuinely actionable at the whole-block level. But the same construction one level down, over a
+  property list every file populates, is pure noise. Apply the test, not the precedent.
+- **A parse that reads a field and deliberately does not bind it** is on the line. Prefer the coverage doc
+  when the reason is "the path is not wired yet", and a crumb when the reason is a property of the input.
+
 ## Thrown errors
 
 Throws stay reserved for programmer error, so they are rare and cheap — keep messages short, stable, and greppable (the invariant's name: `addNodeChild: child already has a parent`), never interpolated paragraphs in hot paths. The *explanation* of an error belongs in the guard layer and docs, both shakeable.
