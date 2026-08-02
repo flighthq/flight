@@ -27,6 +27,7 @@ export const AWD2_BLOCK_TRIANGLE_GEOMETRY = 1;
 export const AWD2_BLOCK_CONTAINER = 22;
 export const AWD2_BLOCK_MESH_INSTANCE = 23;
 export const AWD2_BLOCK_LIGHT = 41;
+export const AWD2_BLOCK_CAMERA = 42;
 export const AWD2_BLOCK_LIGHT_PICKER = 51;
 export const AWD2_BLOCK_MATERIAL = 81;
 export const AWD2_BLOCK_TEXTURE = 82;
@@ -55,6 +56,21 @@ export const AWD2_MATERIAL_PROP_ALPHA = 10; // float32 material alpha (opacity);
 
 // Light block (type 41) `lightType` byte, read after the light name. Away3D only ever emits these two
 // (its own parser maps everything else to "Unsupported LightType"); there is no AWD2 spot light.
+// Camera block (type 42) projection-type shorts, read after the name and two skipped lens fields.
+// 5003 is an OFF-CENTER orthographic: it states left/right/bottom/top independently, so its view volume
+// need not be centred on the axis.
+export const AWD2_CAMERA_PROJECTION_PERSPECTIVE = 5001;
+export const AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC = 5002;
+export const AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER = 5003;
+
+// Camera block typed-property keys. For a perspective camera key 101 is the VERTICAL field of view in
+// degrees; for an off-center orthographic one, 101/102 are left/right and 103/104 bottom/top.
+export const AWD2_CAMERA_PROP_FOV = 101;
+export const AWD2_CAMERA_PROP_ORTHO_LEFT = 101;
+export const AWD2_CAMERA_PROP_ORTHO_RIGHT = 102;
+export const AWD2_CAMERA_PROP_ORTHO_BOTTOM = 103;
+export const AWD2_CAMERA_PROP_ORTHO_TOP = 104;
+
 export const AWD2_LIGHT_TYPE_POINT = 1;
 export const AWD2_LIGHT_TYPE_DIRECTIONAL = 2;
 

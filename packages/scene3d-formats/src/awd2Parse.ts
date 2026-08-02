@@ -14,6 +14,7 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createAmbientLight, createDirectionalLight, createPointLight } from '@flighthq/lighting/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
@@ -32,6 +33,7 @@ import type {
   Light,
   Material,
   MaterialLike,
+  Projection,
   Matrix4,
   Scene3DDocument,
   Scene3DDocumentAnimation,
@@ -57,6 +59,7 @@ import {
 import {
   AWD2_BLOCK_CONTAINER,
   AWD2_BLOCK_HEADER_BYTES,
+  AWD2_BLOCK_CAMERA,
   AWD2_BLOCK_LIGHT,
   AWD2_BLOCK_LIGHT_PICKER,
   AWD2_BLOCK_MATERIAL,
@@ -96,6 +99,14 @@ import {
   AWD2_LIGHT_PROP_RADIUS,
   AWD2_LIGHT_PROP_SHADOW_MAPPER,
   AWD2_LIGHT_PROP_SPECULAR,
+  AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC,
+  AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER,
+  AWD2_CAMERA_PROJECTION_PERSPECTIVE,
+  AWD2_CAMERA_PROP_FOV,
+  AWD2_CAMERA_PROP_ORTHO_BOTTOM,
+  AWD2_CAMERA_PROP_ORTHO_LEFT,
+  AWD2_CAMERA_PROP_ORTHO_RIGHT,
+  AWD2_CAMERA_PROP_ORTHO_TOP,
   AWD2_LIGHT_TYPE_DIRECTIONAL,
   AWD2_LIGHT_TYPE_POINT,
   AWD2_MAGIC_0,
@@ -204,6 +215,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   // Blocks this walk does not consume, tallied by (namespace, blockType) so one diagnostic is reported per
   // distinct kind rather than one per occurrence — an unknown block type usually repeats for every object
   // in the file, and a per-block report would bury the rest of the diagnostics under thousands of lines.
+  const cameraBlocks = new Map<number, ParsedCamera>();
   const unhandledBlocks = new Map<
     string,
     { blockType: number; count: number; firstBlockId: number; namespace: number }
@@ -267,6 +279,16 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
           diagnostics,
         );
         if (light !== null) lightBlocks.set(blockId, light);
+      } else if (blockType === AWD2_BLOCK_CAMERA) {
+        const camera = parseCameraBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          matrixWide,
+          diagnostics,
+        );
+        if (camera !== null) cameraBlocks.set(blockId, camera);
       } else if (blockType === AWD2_BLOCK_LIGHT_PICKER) {
         const picker = parseLightPickerBlock(view, source, blockDataStart, blockDataStart + blockLength, diagnostics);
         if (picker !== null) lightPickerBlocks.set(blockId, picker);
@@ -468,6 +490,12 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
     buildAwdDocumentLights(light, nodeIndexForBlock.get(light.parentId), document, lightDrops);
   }
   flushAwdLightDrops(lightDrops, diagnostics);
+
+  // Cameras, like lights, fill a PLACEMENT TABLE rather than the node graph, and are built after the node
+  // passes so a camera parented to a container resolves to that container's document node index.
+  for (const camera of cameraBlocks.values()) {
+    buildAwdDocumentCamera(camera, nodeIndexForBlock.get(camera.parentId), document, diagnostics);
+  }
 
   for (const [blockId, picker] of lightPickerBlocks) {
     for (const lightId of picker.lightIds) {
@@ -1127,6 +1155,23 @@ interface ParsedMeshInstance {
 // still in AWD's LEFT-handed space and meaningful only for a directional light; `radius`/`fallOff` only
 // for a point light. `hasRadius` records whether the file actually wrote the falloff-start distance, which
 // Flight's single-cutoff `range` cannot hold — the flag is what separates a real drop from a default.
+// A parsed AWD camera block (type 42). `projectionType` is the file's own 5001/5002/5003 discriminant and
+// the numeric fields carry whichever property set that type uses: `fov` for a perspective camera (VERTICAL,
+// in degrees), and the four bounds for an off-center orthographic one. AWD states no near/far and no aspect
+// on the block — both live on the runtime viewport in Away3D — so the caller supplies the ecosystem
+// defaults rather than inventing values.
+interface ParsedCamera {
+  bottom: number;
+  fov: number;
+  left: number;
+  name: string;
+  parentId: number;
+  projectionType: number;
+  right: number;
+  top: number;
+  transform: Float64Array;
+}
+
 interface ParsedLight {
   ambient: number;
   ambientRgb: number;
@@ -1791,6 +1836,134 @@ function parseMaterialBlock(
   };
 }
 
+// Parses a Camera block (type 42). Layout:
+// Scene3DHeader(parentId → matrix → name) → activeFlag(uint8) → lensCount(int16) → projectionType(int16)
+// → PropertyList → pivot PropertyList → UserAttrList. The header is the same envelope every placed AWD
+// block uses, which is why it reads identically to parseLightBlock.
+function parseCameraBlock(
+  view: Readonly<DataView>,
+  source: Readonly<Uint8Array>,
+  start: number,
+  end: number,
+  matrixWide: boolean,
+  diagnostics?: ImportDiagnostic[],
+): ParsedCamera | null {
+  const dv = view as DataView;
+  let offset = start;
+
+  if (offset + 4 > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.camera-truncated', 'parseCameraBlock', {
+      field: 'parentId',
+    });
+    return null;
+  }
+  const parentId = dv.getUint32(offset, true);
+  offset += 4;
+
+  const floatSize = matrixWide ? 8 : 4;
+  if (offset + 12 * floatSize > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.camera-truncated', 'parseCameraBlock', {
+      field: 'transform',
+    });
+    return null;
+  }
+  const transformResult = readAwdTransform(view, offset, matrixWide);
+  offset = transformResult.end;
+
+  if (offset + 2 > end || offset + 2 + dv.getUint16(offset, true) > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.camera-truncated', 'parseCameraBlock', {
+      field: 'name',
+    });
+    return null;
+  }
+  const nameResult = readAwdString(view, source, offset);
+  offset = nameResult.end;
+
+  // uint8 active-camera flag, then an int16 lens count the format writes but never uses.
+  if (offset + 5 > end) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.camera-truncated', 'parseCameraBlock', {
+      field: 'projectionType',
+    });
+    return null;
+  }
+  offset += 3;
+  const projectionType = dv.getInt16(offset, true);
+  offset += 2;
+
+  const props = readAwdProperties(view, offset, end);
+
+  return {
+    bottom: readAwdPropertyFloat32(view, props.values, AWD2_CAMERA_PROP_ORTHO_BOTTOM) ?? AWD2_CAMERA_DEFAULT_BOTTOM,
+    fov: readAwdPropertyFloat32(view, props.values, AWD2_CAMERA_PROP_FOV) ?? AWD2_CAMERA_DEFAULT_FOV_DEGREES,
+    left: readAwdPropertyFloat32(view, props.values, AWD2_CAMERA_PROP_ORTHO_LEFT) ?? AWD2_CAMERA_DEFAULT_LEFT,
+    name: nameResult.value,
+    parentId,
+    projectionType,
+    right: readAwdPropertyFloat32(view, props.values, AWD2_CAMERA_PROP_ORTHO_RIGHT) ?? AWD2_CAMERA_DEFAULT_RIGHT,
+    top: readAwdPropertyFloat32(view, props.values, AWD2_CAMERA_PROP_ORTHO_TOP) ?? AWD2_CAMERA_DEFAULT_TOP,
+    transform: transformResult.transform,
+  };
+}
+
+// Appends one parsed AWD camera to the document's camera placement table. The block matrix is the
+// camera's placement, exactly as it is for a point light.
+//
+// AWD carries no near/far and no aspect on the camera block — both belong to the runtime viewport in
+// Away3D, not to the asset — so the clip planes take that ecosystem's own projection defaults and the
+// aspect is 1, the same shape every other importer lands on when the format states none.
+function buildAwdDocumentCamera(
+  camera: Readonly<ParsedCamera>,
+  nodeIndex: number | undefined,
+  document: Scene3DDocument,
+  diagnostics?: ImportDiagnostic[],
+): void {
+  let projection: Projection;
+  if (camera.projectionType === AWD2_CAMERA_PROJECTION_PERSPECTIVE) {
+    // Away3D's fieldOfView drives the VERTICAL scale of the frustum, so it maps to fovY directly.
+    projection = { aspect: 1, fovY: camera.fov * DEG_TO_RAD, kind: 'perspective' };
+  } else if (camera.projectionType === AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC) {
+    projection = {
+      halfHeight: AWD2_CAMERA_DEFAULT_ORTHO_HALF_EXTENT,
+      halfWidth: AWD2_CAMERA_DEFAULT_ORTHO_HALF_EXTENT,
+      kind: 'orthographic',
+    };
+  } else if (camera.projectionType === AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER) {
+    projection = {
+      halfHeight: Math.abs(camera.top - camera.bottom) / 2,
+      halfWidth: Math.abs(camera.right - camera.left) / 2,
+      kind: 'orthographic',
+    };
+    // Flight's orthographic volume is centred on the view axis; AWD's off-center form can sit the volume
+    // anywhere. The extents survive, the offset does not — an authored asymmetry the file really stated.
+    if (camera.right + camera.left !== 0 || camera.top + camera.bottom !== 0) {
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'awd2.camera-offcenter-dropped', 'parseAwd2', {
+        name: camera.name,
+      });
+    }
+  } else {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'awd2.camera-unsupported-projection',
+      'parseAwd2',
+      {
+        name: camera.name,
+        projectionType: camera.projectionType,
+      },
+    );
+    return;
+  }
+
+  document.cameras.push({
+    far: AWD2_CAMERA_DEFAULT_FAR,
+    ...(camera.name.length > 0 ? { name: camera.name } : {}),
+    near: AWD2_CAMERA_DEFAULT_NEAR,
+    ...(nodeIndex !== undefined ? { node: nodeIndex } : {}),
+    projection,
+    transform: awdTransformToTransform3D(camera.transform),
+  });
+}
+
 // Parses a Light block (type 41). Layout:
 // Scene3DHeader(parentId → matrix → name) → lightType(uint8) → PropertyList → UserAttrList.
 // The matrix is the light's placement; Away3D applies it to a POINT light and ignores it for a
@@ -2254,6 +2427,19 @@ function buildAwdDocumentLights(
 // `transform` supplying the orientation (see Scene3DDocumentLight). Read-only — createDirectionalLight
 // clones the direction it is given, and setQuaternionFromUnitVectors only reads its `from`.
 const DOCUMENT_LIGHT_LOCAL_AXIS = createVector3(0, 0, -1);
+
+// AWD states no clip planes, aspect, or orthographic extent on the camera block — in Away3D they belong to
+// the runtime viewport, not the asset — so these are that ecosystem's own projection defaults rather than
+// invented values: a 60-degree vertical field of view, a 20..3000 clip span, and a unit-scale orthographic
+// volume (half-extent 0.5). The off-center defaults are the bounds Away3D substitutes when 5003 omits them.
+const AWD2_CAMERA_DEFAULT_BOTTOM = -300;
+const AWD2_CAMERA_DEFAULT_FAR = 3000;
+const AWD2_CAMERA_DEFAULT_FOV_DEGREES = 60;
+const AWD2_CAMERA_DEFAULT_LEFT = -400;
+const AWD2_CAMERA_DEFAULT_NEAR = 20;
+const AWD2_CAMERA_DEFAULT_ORTHO_HALF_EXTENT = 0.5;
+const AWD2_CAMERA_DEFAULT_RIGHT = 400;
+const AWD2_CAMERA_DEFAULT_TOP = 300;
 
 // Packs an AWD light's 24-bit 0xrrggbb color into a Flight 0xrrggbbaa one. A light has no alpha channel in
 // either model, so the imported color is always fully opaque.
