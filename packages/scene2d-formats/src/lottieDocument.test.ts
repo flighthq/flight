@@ -305,20 +305,18 @@ describe('Lottie document conformance census', () => {
     const kinds = diagnostics.map((diagnostic) => diagnostic.kind);
     const shape = findFirstKind(result.root, ShapeKind) as Shape;
 
-    expect(kinds).toEqual(
-      expect.arrayContaining([
-        'lottie.unsupported-3d-layer',
-        'lottie.unsupported-blend-mode',
-        'lottie.unsupported-effect',
-        'lottie.unsupported-expression',
-        'lottie.unsupported-matte',
-        'lottie.unsupported-time-remap',
-      ]),
-    );
+    // 3D layers, effect layers, mattes, and time remapping are uncarried coverage gaps, so they are
+    // project facts recorded in agents/scene2d-format-coverage.md and must NOT crumb. The blend mode
+    // and the expression stay: each is contingent on an author choice with a next action.
+    expect(kinds).toEqual(expect.arrayContaining(['lottie.unsupported-blend-mode', 'lottie.unsupported-expression']));
+    expect(kinds).not.toContain('lottie.unsupported-3d-layer');
+    expect(kinds).not.toContain('lottie.unsupported-effect');
+    expect(kinds).not.toContain('lottie.unsupported-matte');
+    expect(kinds).not.toContain('lottie.unsupported-time-remap');
     expect(shape.data.commands).toContain('drawPath');
   });
 
-  it('diagnoses unresolved assets, soft/composed masks, and unsupported media layers', () => {
+  it('crumbs an unresolved asset while staying silent about uncarried layer kinds and masks', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const masked = shapeLayer(1, 'masked');
     masked.masksProperties = [
@@ -335,14 +333,10 @@ describe('Lottie document conformance census', () => {
       diagnostics,
     );
 
-    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(
-      expect.arrayContaining([
-        'lottie.unresolved-asset',
-        'lottie.unsupported-audio-layer',
-        'lottie.unsupported-camera-layer',
-        'lottie.unsupported-mask-composition',
-      ]),
-    );
+    // A dangling refId is an asset fact the caller can act on. Audio/camera layers and composed or
+    // feathered masks are coverage gaps that would fire on every idiomatic export carrying them, so
+    // the only crumb here is the unresolved asset.
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['lottie.unresolved-asset']);
   });
 });
 

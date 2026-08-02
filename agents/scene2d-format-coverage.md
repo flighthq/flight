@@ -72,8 +72,9 @@ merge-paths (`mm`), and rounded-corners (`rd`), plus animated trim and animated 
 Masks beyond the single additive non-inverted case — multiple masks, subtract/intersect/lighten/darken
 modes, inverted masks, and feather/expansion — are not composed; Flight's `ClipRegion` is a hard clip.
 
-**Crumbs that remain, and what each means.** These are asset facts: each is contingent on what is in the
-caller's file, and each has a next action.
+**Crumbs that remain, and what each means.** Everything listed above as uncarried is *silent* — the
+gaps are recorded here rather than announced once per import. Eleven crumbs survive, each contingent on
+what the caller's file actually contains:
 
 | Crumb | Meaning |
 | --- | --- |
@@ -83,6 +84,16 @@ caller's file, and each has a next action.
 | `lottie.recursive-precomposition` | A precomposition references itself. |
 | `lottie.text-missing-document` | A text layer carries no text document. |
 | `lottie.incompatible-animated-shape-path` | Keyframes of an animated path disagree on vertex count. |
+| `lottie.unsupported-layer` | A layer type outside the Bodymovin set — not a gap, an unknown. |
+| `lottie.unsupported-shape-item` | A shape item type outside the Bodymovin set. |
+| `lottie.unsupported-blend-mode` | The author chose a mode with no Flight equivalent; another mode works. |
+| `lottie.unsupported-expression` | The author attached an expression; baking it before export works. |
+| `lottie.unsupported-shape-modifier` | A repeater, merge-paths, rounded-corners, or animated trim/dash. |
+
+The last three sit in the band the diagnostics convention keeps deliberately: the drop is contingent on
+an author choice *and* the consumer has a next action. **Whether all three earn that keep is an open
+ruling** — `unsupported-shape-modifier` in particular reports our own unimplemented modifiers, and
+retiring it here would be defensible.
 
 ## SVG documents
 
