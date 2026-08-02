@@ -34,12 +34,9 @@ is a substantial common path, not a stub.
 
 ## The finding that governs the maturity question
 
-**The diagnostic surface is not trustworthy, and the charter's honesty guarantee is the thing it
-breaks.** The charter states that an unresolvable case "must emit an accurate `ImportDiagnostic`
-Skip crumb rather than silently approximating it"; the codebase map's diagnostics doctrine says the
-same. Five cases silently approximate with an **empty** diagnostics array. Each was verified by
-importing the case and the reduced document side by side and comparing the emitted shape command
-stream — the loss is byte-identical absence, not a subtle divergence:
+**Five common-path features are silently lost, and they are undocumented project facts.** Each was
+verified by importing the case and the reduced document side by side and comparing the emitted shape
+command stream — the loss is byte-identical absence, not a subtle divergence:
 
 1. **A second fill in one shape group overwrites the first.** `LottieShapeState` holds one `fill`
    slot, one `stroke` slot, one `gradient` slot. `[rect, redFill, blueFill]` emits a stream
@@ -60,13 +57,44 @@ stream — the loss is byte-identical absence, not a subtle divergence:
 None of these five appear in the charter's predeclared exclusion list (expressions, text animators,
 effect layers, audio, cameras, 3D transforms, exotic mattes, unsupported blend modes, arbitrary time
 remapping, shape modifiers without a Flight equivalent). They are therefore **unnoticed gaps, not
-deliberate deferrals** — the distinction that matters, because the deferrals are honest and these
-are not. The predeclared set itself is correctly crumbed; that machinery works.
+deliberate deferrals** — the distinction that matters, because the deferrals were declared and these
+were not.
 
-The consequence is the reason this blocks "ready to move on": a consumer cannot use an empty
-diagnostics array as evidence of a faithful import, which is precisely the contract the crumb
-system exists to provide. Whether these five get *implemented* is a scope call; whether they get
-*crumbed* is not — the charter already decided that.
+**They are project facts, and their home is a document, not a crumb.**
+[Diagnostics](../../conventions/diagnostics.md#import-diagnostics-asset-facts-not-project-facts)
+settles this: a crumb reports what happened to *this file's data*, and the mechanical test is whether
+a correct, idiomatic file from the format's own authoring tool would trigger it. A designer exporting
+a two-fill group, a rounded star, or stroked text from After Effects produces a perfectly correct
+Bodymovin file, so a crumb for any of the five would be announcing that we have not finished — once
+per import, forever — which is unactionable noise that makes the actionable crumbs harder to see.
+The scene3d sibling records exactly this class in
+[scene3d format coverage](../../scene3d-format-coverage.md). **There is no `scene2d` equivalent.**
+That missing document is the real gap these five expose; what is wrong today is that they are
+recorded nowhere at all.
+
+**A doc conflict this surfaces.** The charter says an unresolvable case "must emit an accurate
+`ImportDiagnostic` Skip crumb rather than silently approximating it." That sentence predates the
+asset-facts-not-project-facts rule and now over-claims — read literally it mandates exactly the
+crumbs the convention forbids. The charter needs the narrower wording.
+
+**And the same rule cuts the other way on what already ships.** Most of the existing
+`lottie.unsupported-*` family fails the same mechanical test: `unsupported-camera-layer`,
+`unsupported-3d-layer`, `unsupported-3d-transform`, `unsupported-skew-axis`, `unsupported-effect`,
+`unsupported-text-animator`, `unsupported-animated-text-document`, `unsupported-matte`,
+`unsupported-soft-mask`, `unsupported-mask-composition`, `unsupported-animated-dash`,
+`unsupported-shape-item`, `trim-individual-approximated` all fire on correct idiomatic exports and
+announce our incompleteness rather than an asset fact. A defensible middle band remains — the
+convention keeps a crumb whose drop is *contingent on an author choice with a next action*, which is
+plausibly `unsupported-expression` (bake it before export), `unsupported-blend-mode` (choose a
+supported mode), and `unsupported-shape-modifier` for the repeater (expand it before export). Only
+six are unambiguous asset facts: `invalid-document`, `unresolved-asset`, `unresolved-image` (the
+caller did not supply the resolver — the archetype of a step the consumer should have performed),
+`recursive-precomposition`, `text-missing-document`, and `incompatible-animated-shape-path`.
+
+So the diagnostic surface is miscalibrated in both directions at once: it is silent on five real
+losses and loud about roughly a dozen project facts. Neither half is a correctness bug — every
+import produces the same pixels either way — which is why this is a maturity finding rather than a
+defect list.
 
 ## Test rigor
 
