@@ -79,6 +79,17 @@ export function parseObj(
   let materialBuckets = new Map<string, MaterialBucket>();
   let activeMaterial = '';
 
+  // The smoothing group faces are currently declared under (`s`), and a running face ordinal used to give
+  // every face in the OFF group a group of its own. See parseFaceVertex for why that produces flat
+  // shading without a second normal-generation path.
+  //
+  // The initial state is UNSTATED, not OFF. The spec's default is off, but a file that never mentions
+  // smoothing has not opted into the smoothing model at all — and reading it as off would split every
+  // shared vertex in every existing plain OBJ, turning a smooth import flat. A file that uses `s` is
+  // explicitly driving the shading and is honoured exactly, `s off` included.
+  let activeSmoothingGroup = OBJ_SMOOTHING_UNSTATED;
+  let faceOrdinal = 0;
+
   // One document material index per MTL material name, shared across every mesh (and group) that uses it.
   const resolvedMaterials = new Map<string, number>();
 
@@ -226,7 +237,18 @@ export function parseObj(
         const faceIndices: number[] = [];
 
         for (let vi = 0; vi < vertexTokens.length; vi++) {
-          const idx = parseFaceVertex(vertexTokens[vi], positions, uvs, normals, bucket, objDrops, i);
+          const idx = parseFaceVertex(
+            vertexTokens[vi],
+            positions,
+            uvs,
+            normals,
+            bucket,
+            // A face in the OFF group smooths with nothing, so it gets a group nobody else can share.
+            // An UNSTATED file keeps one shared group, which is the pre-smoothing-group behaviour.
+            activeSmoothingGroup === OBJ_SMOOTHING_OFF ? -1 - faceOrdinal : activeSmoothingGroup,
+            objDrops,
+            i,
+          );
           if (idx < 0) break;
           faceIndices.push(idx);
         }
@@ -237,6 +259,9 @@ export function parseObj(
             bucket.indices.push(faceIndices[0], faceIndices[t], faceIndices[t + 1]);
           }
         }
+        // Advances for EVERY face, smoothed or not, so the unsmoothed ordinals stay unique across the
+        // whole file rather than colliding after a group boundary.
+        faceOrdinal++;
         break;
       }
       case 'g':
@@ -265,10 +290,16 @@ export function parseObj(
         // Acknowledged; the caller passes the parsed material library via the `materials` param.
         break;
       }
-      // Recognized OBJ directives Flight does not model: `s` (smoothing groups), `l`/`p` (line/point
-      // primitives). Crumb them (Skip) per directive so the drop is not silent; a truly-unknown directive
-      // falls through the default and stays silent (it is not an authored Flight-representable feature).
-      case 's':
+      case 's': {
+        // `s off` and `s 0` both mean no smoothing. Anything else is a group id; faces sharing one smooth
+        // together and faces across a boundary do not.
+        const group = args === 'off' ? OBJ_SMOOTHING_OFF : parseInt(args, 10);
+        activeSmoothingGroup = Number.isFinite(group) && group > 0 ? group : OBJ_SMOOTHING_OFF;
+        break;
+      }
+      // Recognized OBJ directives Flight does not model: `l`/`p` (line/point primitives). Crumb them
+      // (Skip) per directive so the drop is not silent; a truly-unknown directive falls through the
+      // default and stays silent (it is not an authored Flight-representable feature).
       case 'l':
       case 'p':
         tallyObjDrop(objDrops, ImportDiagnosticSeverity.Skip, 'obj.directive-unsupported', directive, {
@@ -306,9 +337,16 @@ export function parseObj(
   return document;
 }
 
+// The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
+// separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it
+// did before smoothing groups were read.
+const OBJ_SMOOTHING_OFF = 0;
+const OBJ_SMOOTHING_UNSTATED = -1;
+
 // Accumulates interleaved vertex data and triangle indices for one material within a group.
 interface MaterialBucket {
-  // Dedup map: "posIdx/uvIdx/normalIdx" → emitted vertex index.
+  // Dedup map: "posIdx/uvIdx/normalIdx", or "posIdx/uvIdx/s<group>" for a corner whose normal will be
+  // generated → emitted vertex index.
   dedup: Map<string, number>;
   indices: number[];
   // Interleaved floats: position(3) + normal(3) + tangent(4) + uv(2) = 12 floats per vertex.
@@ -332,6 +370,7 @@ function parseFaceVertex(
   uvs: readonly number[],
   normals: readonly number[],
   bucket: MaterialBucket,
+  smoothingGroup: number,
   objDrops: Map<string, ObjDropTally> | null,
   lineIndex: number,
 ): number {
@@ -385,7 +424,13 @@ function parseFaceVertex(
   }
 
   // Dedup key: unique combination of resolved indices.
-  const key = `${posIdx}/${uvIdx}/${normalIdx}`;
+  // The smoothing group joins the dedup key ONLY for a corner with no authored normal. Splitting the
+  // vertex at a smoothing boundary is what makes the generated normals hard there: computeMeshGeometryNormals
+  // averages across shared vertices, so two faces that no longer share a vertex cannot average together.
+  // That reuses the existing generation pass instead of adding a second, smoothing-aware one. A corner
+  // that DOES carry a normal is already authoritative, and keying it by group would only split vertices
+  // that should have stayed merged.
+  const key = normalIdx >= 0 ? `${posIdx}/${uvIdx}/${normalIdx}` : `${posIdx}/${uvIdx}/s${smoothingGroup}`;
   const existing = bucket.dedup.get(key);
   if (existing !== undefined) return existing;
 

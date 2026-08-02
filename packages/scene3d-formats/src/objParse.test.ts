@@ -622,14 +622,20 @@ describe('obj diagnostic crumb coverage', () => {
     expect(crumb.detail?.count).toBe(1);
   });
 
-  it('records obj.directive-unsupported (Skip, parseObj) for a recognized-but-unmodeled directive (s)', () => {
+  it('records obj.directive-unsupported (Skip, parseObj) for a recognized-but-unmodeled directive (l)', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromObj('s 1\n', undefined, diagnostics);
+    createScene3DFromObj('l 1 2\n', undefined, diagnostics);
     const crumb = expectOneCrumb(diagnostics, 'obj.directive-unsupported');
     expect(crumb.severity).toBe('Skip');
     expect(crumb.origin).toBe('parseObj');
-    expect(crumb.detail?.directive).toBe('s');
+    expect(crumb.detail?.directive).toBe('l');
     expect(crumb.detail?.count).toBe(1);
+  });
+
+  it('no longer crumbs `s` now that smoothing groups are honoured', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\ns 1\nf 1 2 3\n', undefined, diagnostics);
+    expect(diagnostics).toHaveLength(0);
   });
 
   it('records no diagnostics for a well-formed OBJ even with a collector engaged', () => {
@@ -860,5 +866,74 @@ describe('parseObj opacity map', () => {
 
     expect(material.alphaMap).not.toBeNull();
     expect(material.diffuse & 0xff).toBe(Math.round(0.5 * 255));
+  });
+});
+
+describe('parseObj smoothing groups', () => {
+  // Two triangles meeting along the shared edge (1,0,0)-(0,1,0) but folded apart, so the two faces have
+  // genuinely different normals. Whether the shared vertices merge is exactly what smoothing decides.
+  const FOLD = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nv 1 1 1\n';
+
+  function normalAt(source: string, vertex: number): { x: number; y: number; z: number } {
+    const document = parseObj(source);
+    const normal = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexNormal(normal, document.meshes[0].geometry, vertex);
+    return normal;
+  }
+
+  it('splits vertices at a smoothing-group boundary so the generated normals stay hard', () => {
+    // Different groups → the shared edge's vertices cannot merge → each face keeps its own normal.
+    const document = parseObj(`${FOLD}s 1\nf 1 2 3\ns 2\nf 2 4 3\n`);
+
+    // Six corners, no sharing across the boundary, rather than the four a merged pair would give.
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(6);
+  });
+
+  it('merges vertices inside one smoothing group so the generated normals average', () => {
+    const document = parseObj(`${FOLD}s 1\nf 1 2 3\nf 2 4 3\n`);
+
+    // The two faces share the edge's two vertices: 4 unique corners, not 6.
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(4);
+  });
+
+  it('treats `s off` as every face shading flat', () => {
+    const document = parseObj(`${FOLD}s off\nf 1 2 3\nf 2 4 3\n`);
+
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(6);
+  });
+
+  it('treats `s 0` the same as `s off`', () => {
+    const document = parseObj(`${FOLD}s 0\nf 1 2 3\nf 2 4 3\n`);
+
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(6);
+  });
+
+  it('keeps a file that never mentions smoothing merged, as it was before groups were read', () => {
+    // The spec's default is off, but reading "unstated" as off would silently turn every existing plain
+    // OBJ flat. A file that never says `s` has not opted into the smoothing model at all.
+    const document = parseObj(`${FOLD}f 1 2 3\nf 2 4 3\n`);
+
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(4);
+  });
+
+  it('produces genuinely different normals across a boundary than within a group', () => {
+    // The counts above prove the split; this proves the split CHANGES the shading, which is the point.
+    const hard = normalAt(`${FOLD}s 1\nf 1 2 3\ns 2\nf 2 4 3\n`, 1);
+    const smooth = normalAt(`${FOLD}s 1\nf 1 2 3\nf 2 4 3\n`, 1);
+
+    const differs =
+      Math.abs(hard.x - smooth.x) > 1e-4 || Math.abs(hard.y - smooth.y) > 1e-4 || Math.abs(hard.z - smooth.z) > 1e-4;
+    expect(differs).toBe(true);
+  });
+
+  it('leaves authored normals untouched by smoothing groups', () => {
+    // A corner that carries its own `vn` is authoritative; keying it by group would split vertices that
+    // should have stayed merged, for no shading benefit.
+    const document = parseObj(
+      'v 0 0 0\nv 1 0 0\nv 0 1 0\nv 1 1 1\nvn 0 0 1\ns 1\nf 1//1 2//1 3//1\ns 2\nf 2//1 4//1 3//1\n',
+    );
+
+    // Both faces reference the same authored normal, so all shared corners still merge: 4, not 6.
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(4);
   });
 });
