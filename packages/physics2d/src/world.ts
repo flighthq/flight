@@ -13,13 +13,19 @@ import type {
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { createPhysics2DColliderWorldShape } from './colliderTransform';
 import { updateRigidBody2DMassData } from './massProperties';
-import { physics2DBodyOwners, physics2DColliderOwners, physics2DJointOwners } from './ownership';
+import {
+  assertPhysics2DWorldNotStepping,
+  physics2DBodyOwners,
+  physics2DColliderOwners,
+  physics2DJointOwners,
+} from './ownership';
 
 // Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by, and
 // returns it. The index comes from a monotonic counter rather than the array position, so removing a
 // body can never hand its identity to a later one — a stale contact would otherwise be revived against
 // whichever body inherited the slot, warm-starting it with a force that belonged to something else.
 export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): RigidBody2D {
+  assertPhysics2DWorldNotStepping(world);
   if (physics2DBodyOwners.has(body) || body.index !== -1 || world.bodies.includes(body)) {
     throw new Error('Cannot add a rigid body that already belongs to a physics world');
   }
@@ -51,6 +57,7 @@ export function addPhysics2DCollider(
   body: RigidBody2D,
   collider: Physics2DCollider,
 ): Physics2DCollider {
+  assertPhysics2DWorldNotStepping(world);
   const bodyOwner = physics2DBodyOwners.get(body);
   if (bodyOwner !== undefined && bodyOwner !== world) {
     throw new Error('Cannot mutate a rigid body through a physics world that does not own it');
@@ -257,6 +264,7 @@ export function invalidatePhysics2DCollider(
   body: RigidBody2D,
   collider: Physics2DCollider,
 ): boolean {
+  assertPhysics2DWorldNotStepping(world);
   const bodyOwner = physics2DBodyOwners.get(body);
   if (bodyOwner !== undefined && bodyOwner !== world) return false;
   if (body.colliders.indexOf(collider) < 0) return false;
@@ -291,6 +299,7 @@ export function isPhysics2DPairOrdered(a: Readonly<RigidBody2D>, b: Readonly<Rig
 // kept, because a contact whose body is gone has no constraint to solve and its cached impulse belongs
 // to a pair that no longer exists.
 export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidBody2D>): boolean {
+  assertPhysics2DWorldNotStepping(world);
   const at = world.bodies.indexOf(body as RigidBody2D);
   if (at < 0) return false;
   // Removing one end invalidates every constraint it participated in. Wake the surviving ends BEFORE
@@ -333,6 +342,7 @@ export function removePhysics2DCollider(
   body: RigidBody2D,
   collider: Readonly<Physics2DCollider>,
 ): boolean {
+  assertPhysics2DWorldNotStepping(world);
   const bodyOwner = physics2DBodyOwners.get(body);
   if (bodyOwner !== undefined && bodyOwner !== world) return false;
   const at = body.colliders.indexOf(collider as Physics2DCollider);
@@ -359,6 +369,7 @@ export function setPhysics2DBodyTransform(
   y: number,
   angle: number,
 ): boolean {
+  assertPhysics2DWorldNotStepping(world);
   if (
     world.bodyByIndex.get(body.index) !== body ||
     !Number.isFinite(x) ||
@@ -381,6 +392,7 @@ export function setPhysics2DBodyTransform(
 // sleep state coherent. The body must belong to `world`; pre-insertion authoring may assign `type`
 // directly because no derived world state exists yet.
 export function setPhysics2DBodyType(world: Physics2DWorld, body: RigidBody2D, type: RigidBody2D['type']): boolean {
+  assertPhysics2DWorldNotStepping(world);
   if (world.bodyByIndex.get(body.index) !== body) return false;
   if (body.type === type) return true;
   _invalidatePhysics2DBodyConstraints(world, body.index);
