@@ -49,3 +49,4 @@ export {
   setMorphShapeProgress,
 } from './contract';
 export * from './scale9ShapeCommands';
+export * from './explainShapeTessellation';

@@ -1,16 +1,25 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createGlCanvasElement,
   createGlRenderState,
-  enableFlightDiagnostics,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultGlRichTextRenderer,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
+  enableFlightDiagnostics,
   enableGlTextInput,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
-  registerStandardGlTextureResolvers,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
+  registerGlShapeRasterizer,
   registerGlStandardMaterial,
   registerRenderer,
+  registerStandardGlTextureResolvers,
   renderGlBackground,
   renderGlScene2D,
   RichTextKind,
@@ -35,6 +44,18 @@ registerStandardGlTextureResolvers(state);
 registerGlStandardMaterial(state);
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+
+// The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
+// has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
+// shape from silently going missing the moment one is added.
+const shapeRasterizerResolvers = getCanvasRenderStateTextureResolvers(
+  createCanvasRenderState(document.createElement('canvas')),
+);
+registerCanvasImageTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlTextInput();
 

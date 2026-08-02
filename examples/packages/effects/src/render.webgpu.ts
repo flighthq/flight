@@ -1,22 +1,31 @@
 import type { Node2D, RenderEffect } from '@flighthq/sdk';
 import {
-  ShapeKind,
   beginWgpuRenderEffectPipeline,
+  createCanvasRenderState,
+  createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  enableFlightDiagnostics,
+  defaultCanvasShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultWgpuShapeRenderer,
+  enableFlightDiagnostics,
   endWgpuRenderEffectPipeline,
+  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
+  registerCanvasBitmapTextureResolver,
+  registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
+  registerRenderer,
   registerWgpuBloomEffect,
+  registerWgpuShapeRasterizer,
+  registerWgpuStandardMaterial,
   registerWgpuToneMapEffect,
   registerWgpuVignetteEffect,
   registerWgpuWhiteBalanceEffect,
-  registerWgpuStandardMaterial,
-  registerRenderer,
   renderWgpuBackground,
   renderWgpuScene2D,
+  ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
@@ -32,6 +41,18 @@ enableFlightDiagnostics(state);
 
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+
+// The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
+// has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
+// shape from silently going missing the moment one is added.
+const shapeRasterizerResolvers = getCanvasRenderStateTextureResolvers(
+  createCanvasRenderState(document.createElement('canvas')),
+);
+registerCanvasImageTextureResolver(shapeRasterizerResolvers);
+registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerWgpuBloomEffect(state);
 registerWgpuVignetteEffect(state);
 registerWgpuToneMapEffect(state);

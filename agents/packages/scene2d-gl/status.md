@@ -8,6 +8,27 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-08-02 — the mesh lane's boundary, and what falls off it
+
+The GPU mesh lane is narrower than "solid fills", and the difference is now measured rather than assumed:
+
+| shape | lane |
+| --- | --- |
+| solid fill, **any alpha** (1, 0.25, 0) | mesh |
+| **open** stroke | mesh |
+| **closed** stroke — the outline of any rectangle, circle, or closed path | raster |
+| gradient fill, texture fill, textured drawTriangles | raster |
+
+Fill alpha never moves a shape off the mesh lane; it rides on the region. A closed stroke does, because
+the default lane builds fillable open outlines — `enableGlStrokePathTessellation` widens it to hollow
+closed rings, so a stroke-heavy scene can stay on the GPU rather than reaching for a rasterizer.
+
+This matters because the rasterizer became an explicit registration: a shape that leaves the mesh lane
+with none registered draws nothing. Downstream first read the trigger as "alpha fill" and "fill plus
+stroke" — both wrong, and both plausible from the symptom, which is exactly why
+`explainShapeTessellation(commands, strokePathTessellationEnabled)` in `@flighthq/shape` now answers
+the question directly instead of leaving a null to interpret.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 Executed the sweep-safe items from `assessment.md` "## Recommended". Scope strictly within `packages/scene2d-gl/`.
