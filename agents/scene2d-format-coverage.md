@@ -48,20 +48,21 @@ stretch folded exactly into root time; recursion-guarded precomposition referenc
 the reduced document side by side and diffing the emitted shape command stream; the loss is byte-identical
 absence. None of them is announced, and per the rule above none of them should be:
 
-- **Only one fill, one stroke, and one gradient survive per shape group.** `LottieShapeState` holds a
-  single slot for each where Bodymovin has a list. A second fill overwrites the first — `[rect, red, blue]`
-  emits exactly what `[rect, blue]` emits. Multiple fills and multiple strokes in one group are legal and
-  do occur.
-- **A gradient fill beside a solid fill is dropped.** The two are selected with `if/else`, solid winning.
-- **Paint z-order within a group is flattened.** Fill is always emitted before stroke regardless of item
-  order, so `[rect, stroke, fill]` and `[rect, fill, stroke]` produce the same stream. Lottie's item order
-  carries stacking intent.
 - **Text stroke (`sc`, `sw`) is not read**, and **embedded glyph outlines (`chars`) are not read**.
   `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
   export ships text that renders without the author's font present, so a `chars`-bearing file falls back
   to whatever font the text stack resolves.
 
-**Covered, with a caveat worth knowing.** Polystar roundness is built from the relation the format
+Paint is a **list** per shape group, not one of each: multiple fills, multiple strokes, and a gradient
+beside a solid one all survive, and each paint restates the group's whole path set the way a Bodymovin
+paint applies to every path in its group.
+
+**Covered, with a caveat worth knowing.** Paints are emitted in the order the file lists them. Whether
+Bodymovin treats an earlier item as painting *above* or *below* a later one is a z-order convention that
+no relation in the data settles, and no real export has been compared, so a group with two overlapping
+paints may stack inverted. A single-paint group — overwhelmingly the common export — is unaffected.
+
+Polystar roundness is built from the relation the format
 itself fixes — a polygon at 100% outer roundness is the circumscribed circle — which pins the tangent
 handle to `r * (4/3) * tan(t / 4)` scaled linearly by roundness. That is verified by sampling the
 emitted curve, and mutation-tested. It has **not** been compared against a real Bodymovin export, so
