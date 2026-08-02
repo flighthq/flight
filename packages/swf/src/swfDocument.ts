@@ -165,8 +165,10 @@ interface SwfParseState {
   fontGlyphs: Map<number, readonly (Shape | null)[]>;
   fontUnitsPerEm: Map<number, number>;
   images: Map<number, SwfImagePayload>;
-  pendingTexts: SwfPendingText[];
+  // The shared JPEG encoding tables a legacy DefineBits image is missing, held until one needs them.
+  jpegTables: Uint8Array | null;
   linkages: Map<number, string>;
+  pendingTexts: SwfPendingText[];
   // Frames are retained as whole display lists, so a file can multiply a display list it placed once by
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
@@ -699,6 +701,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     fontGlyphs: new Map<number, readonly (Shape | null)[]>(),
     fontUnitsPerEm: new Map<number, number>(),
     images: new Map<number, SwfImagePayload>(),
+    jpegTables: null,
     pendingTexts: [],
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
@@ -771,6 +774,12 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readLegacyRemoveObject(body, placements);
     } else if (code === TAG_REMOVE_OBJECT_2) {
       placements.delete(body.readUint16());
+    } else if (code === TAG_JPEG_TABLES) {
+      state.jpegTables = body.source.subarray(body.pos, body.end);
+    } else if (code === TAG_DEFINE_BITS) {
+      readSwfLegacyImageDefinition(body, state);
+    } else if (code === TAG_DEFINE_BUTTON || code === TAG_DEFINE_BUTTON_2) {
+      readSwfButtonDefinition(body, state, code === TAG_DEFINE_BUTTON_2 ? 2 : 1);
     } else if (code === TAG_DEFINE_FONT || code === TAG_DEFINE_FONT_2 || code === TAG_DEFINE_FONT_3) {
       readSwfFontDefinition(body, state, code);
     } else if (code === TAG_SET_BACKGROUND_COLOR) {
@@ -814,6 +823,45 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
 
 // The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
 // opaque RGBA. Last declaration wins, matching how a player applies the most recent one it has read.
+// A button is a display character whose content is a small display list per interaction state. A document
+// is a still scene, so the up state is what it holds — the same thing a player shows before any pointer
+// touches it — and the other states are dropped rather than layered invisibly on top of one another.
+//
+// The up state is expressed as a one-frame timeline, so a button instantiates, bounds, nests, and masks
+// through exactly the same path a sprite does and needs no separate node kind.
+function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState, version: number): void {
+  const reader = new SwfReader(body.source, body.pos, body.end);
+  const buttonId = reader.readUint16();
+  if (version === 2) {
+    reader.readUint8();
+    reader.readUint16();
+  }
+  if (!reader.valid || buttonId === 0 || state.definedCharacters.has(buttonId)) return;
+
+  const placements = new Map<number, SwfPlacement>();
+  for (let records = 0; records < MAX_BUTTON_RECORDS; records++) {
+    const flags = reader.readUint8();
+    if (!reader.valid) return;
+    if (flags === 0) break;
+
+    const characterId = reader.readUint16();
+    const depth = reader.readUint16();
+    const matrix = readSwfMatrix(reader);
+    if (version === 2) readSwfColorTransform(reader);
+    if (!reader.valid) return;
+    if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
+      placements.set(depth, { characterId, clipDepth: 0, depth, directLinkage: null, matrix, name: null });
+    }
+    // A filter list has no fixed width, so a record carrying one would desynchronize every record after
+    // it. Stopping keeps what was read rather than misreading the rest.
+    if ((flags & BUTTON_HAS_FILTER_LIST) !== 0) break;
+    if ((flags & BUTTON_HAS_BLEND_MODE) !== 0) reader.readUint8();
+  }
+
+  state.definedCharacters.add(buttonId);
+  state.sprites.set(buttonId, { frames: [placements], labels: [] });
+}
+
 // Font glyphs decode on a reader of their own, so a font this decoder cannot read costs its glyphs and
 // nothing else. A font declares no placeable bounds and is never itself placed — it is a table the text
 // definitions draw from.
@@ -933,6 +981,36 @@ function resolveSwfShapeVersion(code: number): number {
   if (code === TAG_DEFINE_SHAPE_2) return 2;
   if (code === TAG_DEFINE_SHAPE_3) return 3;
   return code === TAG_DEFINE_SHAPE_4 ? 4 : 0;
+}
+
+// The legacy split-JPEG form: DefineBits carries an image whose encoding tables were factored out into a
+// single JPEGTables tag shared by every such image in the file. Neither half is a valid JPEG alone, so
+// they are spliced — the tables lose their end-of-image marker and the image its start-of-image marker —
+// and the result travels as an ordinary encoded payload for the resolve step, exactly like a self-contained
+// one. A pair that will not splice into something readable contributes no image and leaves the rest of the
+// document alone: real files carry these halves inside sprites and in either order, so failing the whole
+// import over one of them would cost far more than the image is worth.
+function readSwfLegacyImageDefinition(body: SwfReader, state: SwfParseState): void {
+  const characterId = body.readUint16();
+  if (!body.valid || characterId === 0 || state.definedCharacters.has(characterId)) return;
+  const tables = state.jpegTables;
+  if (tables === null) return;
+
+  const tablesEnd =
+    tables.length >= 2 && tables[tables.length - 2] === 0xff && tables[tables.length - 1] === JPEG_END_OF_IMAGE
+      ? tables.length - 2
+      : tables.length;
+  const imageStart =
+    body.source[body.pos] === 0xff && body.source[body.pos + 1] === JPEG_START_OF_IMAGE ? body.pos + 2 : body.pos;
+  const spliced = new Uint8Array(tablesEnd + (body.end - imageStart));
+  spliced.set(tables.subarray(0, tablesEnd));
+  spliced.set(body.source.subarray(imageStart, body.end), tablesEnd);
+
+  const image = readSwfEmbeddedImage(spliced, 0, spliced.length);
+  if (image === null) return;
+  state.definedCharacters.add(characterId);
+  state.characterBounds.set(characterId, image.bounds);
+  state.images.set(characterId, { bytes: spliced, mimeType: image.mimeType });
 }
 
 function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): boolean {
@@ -1119,6 +1197,10 @@ const JPEG_TEMPORARY = 0x01;
 const LOSSLESS_BITMAP_FORMAT_15_BIT = 4;
 const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
+const BUTTON_HAS_BLEND_MODE = 0x20;
+const BUTTON_HAS_FILTER_LIST = 0x10;
+const BUTTON_STATE_UP = 0x01;
+const MAX_BUTTON_RECORDS = 10_000;
 const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
 const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
@@ -1139,6 +1221,9 @@ const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_EDIT_TEXT = 37;
+const TAG_DEFINE_BITS = 6;
+const TAG_DEFINE_BUTTON = 7;
+const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_2 = 48;
 const TAG_DEFINE_FONT_3 = 75;
@@ -1154,6 +1239,7 @@ const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FRAME_LABEL = 43;
+const TAG_JPEG_TABLES = 8;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_PLACE_OBJECT_3 = 70;
