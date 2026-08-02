@@ -96,6 +96,41 @@ export interface GltfMaterial {
   // Mask-mode cutoff; spec default 0.5.
   alphaCutoff?: number;
   doubleSided?: boolean;
+  // Open, kind-keyed material extensions. The named ones are those an individually importable handler
+  // reads; the index signature keeps an unknown vendor extension addressable rather than erased.
+  extensions?: {
+    KHR_materials_clearcoat?: GltfMaterialsClearcoat;
+    KHR_materials_emissive_strength?: GltfMaterialsEmissiveStrength;
+    KHR_materials_sheen?: GltfMaterialsSheen;
+    [kind: string]: unknown;
+  };
+}
+
+// KHR_materials_clearcoat wire block: a second dielectric specular layer. `clearcoatTexture` carries the
+// layer factor in its RED channel and `clearcoatRoughnessTexture` the roughness in its GREEN, which is
+// why they are separate infos rather than one packed map. All factors default to 0 — an absent extension
+// and a zero-factor one are the same surface.
+export interface GltfMaterialsClearcoat {
+  clearcoatFactor?: number;
+  clearcoatNormalTexture?: GltfNormalTextureInfo;
+  clearcoatRoughnessFactor?: number;
+  clearcoatRoughnessTexture?: GltfTextureInfo;
+  clearcoatTexture?: GltfTextureInfo;
+}
+
+// KHR_materials_emissive_strength wire block: a scalar multiplier on the material's emissive term.
+// Values above 1 push the surface beyond display white, which is what drives bloom.
+export interface GltfMaterialsEmissiveStrength {
+  emissiveStrength?: number;
+}
+
+// KHR_materials_sheen wire block: the grazing-angle retroreflective lobe used by cloth.
+// `sheenColorFactor` is LINEAR RGB with spec default [0,0,0] — i.e. no sheen unless stated.
+export interface GltfMaterialsSheen {
+  sheenColorFactor?: number[];
+  sheenColorTexture?: GltfTextureInfo;
+  sheenRoughnessFactor?: number;
+  sheenRoughnessTexture?: GltfTextureInfo;
 }
 
 export interface GltfPbrMetallicRoughness {

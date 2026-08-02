@@ -1,5 +1,8 @@
 export {
+  GltfClearcoatExtensionHandler,
+  GltfEmissiveStrengthExtensionHandler,
   GltfPunctualLightsExtensionHandler,
+  GltfSheenExtensionHandler,
   createScene3DFrom3ds,
   createScene3DFromAwd2,
   createScene3DFromGlb,

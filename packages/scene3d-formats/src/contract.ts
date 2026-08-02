@@ -1,6 +1,10 @@
 export * from './awd2Parse';
 export * from './gltfParse';
+export { GltfClearcoatExtensionHandler } from './gltfClearcoat';
+export { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength';
+export { attachGltfPbrExtension } from './gltfMaterialExtension';
 export { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
+export { GltfSheenExtensionHandler } from './gltfSheen';
 export * from './md2Parse';
 export * from './md5AnimParse';
 export * from './md5Parse';
