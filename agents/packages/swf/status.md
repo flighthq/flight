@@ -26,6 +26,14 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   end-to-start into closed contours. That reversal is what makes the command stream's nonzero winding
   match the fill SWF meant, holes included. Coordinates are exact whole twips, so stitching needs no
   tolerance.
+- Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
+  [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
+- `DefineButton` and `DefineButton2` import their up state as a one-frame timeline, so a button
+  instantiates, bounds, nests, and masks through the same path a sprite does. The other interaction
+  states are dropped rather than stacked invisibly, because a document is a still scene.
+- `DefineBits` with `JPEGTables` splices the legacy split-JPEG form back into one payload — the tables
+  lose their end marker, the image its start marker. A pair that will not splice contributes no image and
+  leaves the document alone; real files carry the halves inside sprites and in either order.
 - `DefineFont`, `DefineFont2`, and `DefineFont3` decode their glyph outlines as paths. An embedded SWF
   font is a table of path outlines in its own EM grid, so that is what crosses — no text stack is
   consulted and no glyph source is synthesized. Glyphs are indexed the way a static text record addresses

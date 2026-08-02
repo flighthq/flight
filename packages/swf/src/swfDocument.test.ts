@@ -407,6 +407,81 @@ describe('createScene2DFromSwf', () => {
     expect(drawn.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 25.6, 0]);
   });
 
+  it('imports a button as the display list of its up state', () => {
+    const record = (flags: number, characterId: number, depth: number): Uint8Array =>
+      joinBytes(
+        new Uint8Array([flags]),
+        uint16(characterId),
+        uint16(depth),
+        createMatrix(1, 0, 0, 1, 40, 0),
+        createColorTransformWithAlpha(),
+      );
+
+    const face = new ShapeWriter();
+    face.writeSolidFillStyles([0x445566]);
+    face.writeLineStyleCount(0);
+    face.writeStyleBits(1, 0);
+    face.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    face.writeStraightEdge(400, 0);
+    face.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), face.toBytes())),
+        createTag(
+          TAG_DEFINE_BUTTON_2,
+          joinBytes(
+            uint16(20),
+            new Uint8Array([0]),
+            uint16(0),
+            // Up state, then a down-only state that must not appear in a still document.
+            record(0x01, 7, 1),
+            record(0x04, 7, 2),
+            new Uint8Array([0]),
+          ),
+        ),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('btn')),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const button = document!.references[0].target;
+    expect(button.kind).toBe(MovieClipKind);
+    // One child, not two: the down state is dropped rather than stacked under the up state.
+    const children = getNodeChildren(button);
+    expect(children).toHaveLength(1);
+    expect(getNodeLocalMatrix(children[0])).toMatchObject({ tx: 2, ty: 0 });
+  });
+
+  it('splices a legacy DefineBits image with its shared JPEG tables', () => {
+    const tables = new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]);
+    // The image half carries the frame header but no tables, and opens with its own start marker.
+    const image = createJpegHeader(16, 8);
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_JPEG_TABLES, tables),
+        createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), image)),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const reference = document!.references[0];
+    expect(reference.kind).toBe('Asset');
+    expect(reference.kind === 'Asset' ? reference.mimeType : null).toBe('image/jpeg');
+    // Neither half is a valid JPEG alone: the tables lose their end marker, the image its start marker.
+    const bytes = reference.kind === 'Asset' ? reference.bytes! : new Uint8Array();
+    expect(bytes.subarray(0, 2)).toEqual(new Uint8Array([0xff, 0xd8]));
+    expect(bytes.length).toBe(tables.length - 2 + image.length - 2);
+    expect(getNodeLocalBoundsRectangle(reference.target)).toMatchObject({ height: 8, width: 16 });
+  });
+
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -1322,6 +1397,15 @@ function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty
   return writer.toBytes();
 }
 
+// A CXFORMWITHALPHA with neither multiply nor add terms — the shortest legal form.
+function createColorTransformWithAlpha(): Uint8Array {
+  const writer = new BitWriter();
+  writer.writeUnsigned(0, 1);
+  writer.writeUnsigned(0, 1);
+  writer.writeUnsigned(0, 4);
+  return writer.toBytes();
+}
+
 function createLegacyColorTransform(): Uint8Array {
   const writer = new BitWriter();
   writer.writeUnsigned(1, 1);
@@ -1484,6 +1568,8 @@ const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
+const TAG_DEFINE_BITS = 6;
+const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SHAPE_3 = 32;
@@ -1491,6 +1577,7 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_FILE_ATTRIBUTES = 69;
+const TAG_JPEG_TABLES = 8;
 const TAG_FRAME_LABEL = 43;
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;
