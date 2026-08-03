@@ -33,8 +33,16 @@ export const RiveFieldType = {
 
 export type RiveFieldType = (typeof RiveFieldType)[keyof typeof RiveFieldType];
 
-/** A decoded property value. `String` fields surface as text; every other field is numeric. */
-export type RiveValue = number | string;
+/**
+ * A decoded property value. Text surfaces as a string, raw blobs as bytes, and everything else as a
+ * number.
+ *
+ * Text and blobs share one wire code, because the table of contents has only two bits per property
+ * and its job is to say how many bytes to skip — not what they mean. Which of the two a property
+ * actually is comes from the object model, and it matters: decoding an image's bytes as UTF-8 would
+ * corrupt them.
+ */
+export type RiveValue = number | string | Uint8Array;
 
 /**
  * One property of one core object. The field type is retained alongside the value because it is what
@@ -108,6 +116,21 @@ export interface RiveObjectGraph {
   artboards: RiveArtboardGraph[];
 }
 
+/**
+ * One asset the file declares. `bytes` carries an embedded payload when the file ships one, handed
+ * over untouched — decoding it into an image or font is a resource-layer concern, not this codec's.
+ * `kind` is the asset's own type name, so a caller can tell an image from a font without a second
+ * lookup.
+ */
+export interface RiveFileAsset {
+  bytes: Uint8Array | null;
+  cdnBaseUrl: string;
+  height: number;
+  kind: string;
+  name: string;
+  width: number;
+}
+
 /** A named clip. A Rive artboard carries several animations and the name is how a caller picks one. */
 export interface RiveAnimationClip {
   clip: AnimationClip;
@@ -140,4 +163,6 @@ export interface RivePathRecord {
 /** The result of importing a `.riv`: every artboard it declares, in file order. */
 export interface RiveDocumentImportResult {
   artboards: RiveArtboardImport[];
+  /** Every asset the file declares, in the order it declares them — which is how they are addressed. */
+  assets: RiveFileAsset[];
 }

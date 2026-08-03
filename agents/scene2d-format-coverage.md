@@ -347,7 +347,28 @@ transform. Reading the properties is trivial; the mismatch is what blocks it. A 
 an explicit draw index on `Node2D`, or a flattened render list — is a cross-package design question
 rather than something this codec can settle.
 
-**Not covered:** animated geometry and paint, per above. Loop mode, work-area trimming, and playback
+**Assets are covered as data, with no acquisition.** Every asset the file declares is returned in
+declaration order — image, font, audio, script and manifest — with its name, kind, stated dimensions
+and cdn base url. **Order is how they are addressed**: an image drawable's `assetId` is a position in
+that list, not the id the asset states. That was settled against the corpus, where reading it as a
+position resolves all 61 image references and reading it as the stated id resolves none.
+
+An embedded payload travels **untouched**. That needed a container fix: text and blobs share one wire
+code, because the table of contents has two bits per property and its job is to say how many bytes to
+skip, not what they mean. Which a property actually is comes from the object model, and the reader
+now keeps blob-typed properties whole instead of decoding them as UTF-8, which would corrupt an
+image.
+
+Over the corpus this yields 103 assets, 89 carrying 15.1 MB of embedded payload, and **every payload
+matches a valid magic number for its kind** — 20 PNG, 25 WebP, 1 JPEG, 23 TrueType, 8 FLAC, 4 WAV, 1
+MP3, plus Rive's own script and manifest formats. Nothing is corrupted in transit.
+
+Turning a payload into an image or a font is a resource-layer concern, so this codec acquires
+nothing: the bytes and the metadata are handed over and a caller decodes what it wants, matching the
+`resolveImageResource` seam the SVG and Lottie importers use.
+
+**Not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
+asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
 paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes, which no
 corpus file uses. And deformable meshes, bones and skinning; text; assets; and nested artboard

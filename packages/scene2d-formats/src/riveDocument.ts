@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
-import { getRiveCorePropertyFieldType } from './riveCoreProperties';
+import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties';
 
 /**
  * Decodes the `.riv` container into its header and flat core-object stream. This is the format's
@@ -120,14 +120,16 @@ function readRiveCoreObject(cursor: RiveCursor, fieldTypes: ReadonlyMap<number, 
       return null;
     }
 
-    const value = readRiveValue(cursor, type);
+    const value = readRiveValue(cursor, type, key);
     if (cursor.overflowed) return null;
     properties.push({ key, type: toRiveFieldType(type), value });
   }
 }
 
-function readRiveValue(cursor: RiveCursor, type: number): RiveValue {
-  if (type === RiveFieldType.String) return readRiveString(cursor);
+function readRiveValue(cursor: RiveCursor, type: number, key: number): RiveValue {
+  if (type === RiveFieldType.String) {
+    return isRiveCoreBytesProperty(key) ? readRiveBytes(cursor) : readRiveString(cursor);
+  }
   if (type === RiveFieldType.Double) return readRiveFloat32(cursor);
   if (type === RiveFieldType.Color) return readRiveUint32(cursor);
   return readRiveVarUint(cursor);
@@ -174,6 +176,17 @@ function readRiveFloat32(cursor: RiveCursor): number {
   _floatBytes[3] = cursor.bytes[cursor.position + 3];
   cursor.position += 4;
   return _floatView.getFloat32(0, true);
+}
+
+function readRiveBytes(cursor: RiveCursor): Uint8Array {
+  const length = readRiveVarUint(cursor);
+  if (cursor.overflowed || cursor.position + length > cursor.bytes.length) {
+    cursor.overflowed = true;
+    return _emptyBytes;
+  }
+  const start = cursor.position;
+  cursor.position += length;
+  return cursor.bytes.slice(start, start + length);
 }
 
 function readRiveString(cursor: RiveCursor): string {
@@ -239,3 +252,4 @@ const RIVE_SUPPORTED_MAJOR_VERSION = 7;
 const FIELD_TYPE_BITS_PER_WORD = 8;
 const _floatView = new DataView(new ArrayBuffer(4));
 const _floatBytes = new Uint8Array(_floatView.buffer);
+const _emptyBytes = new Uint8Array(0);

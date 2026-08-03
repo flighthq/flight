@@ -18,6 +18,7 @@ import type {
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createRiveAnimationClips } from './riveAnimation';
+import { createRiveFileAssets } from './riveAssets';
 import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
@@ -37,11 +38,12 @@ export function createScene2DFromRiveDocument(
   diagnostics?: ImportDiagnostic[],
 ): RiveDocumentImportResult {
   const document = parseRiveDocument(source, diagnostics);
-  if (document === null) return { artboards: [] };
+  if (document === null) return { artboards: [], assets: [] };
 
   const graph = createRiveObjectGraph(document, diagnostics);
   return {
     artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard, document.objects, diagnostics)),
+    assets: createRiveFileAssets(document.objects),
   };
 }
 

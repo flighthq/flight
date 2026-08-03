@@ -18,6 +18,18 @@ export function getRiveCorePropertyFieldType(key: number): RiveFieldType | undef
   return _fieldTypesByKey.get(key);
 }
 
+/**
+ * Whether a property's length-prefixed bytes are a raw blob rather than text. The wire cannot say —
+ * both travel under the same code — so this comes from the object model, and reading a blob as UTF-8
+ * would corrupt it.
+ */
+export function isRiveCoreBytesProperty(key: number): boolean {
+  return RIVE_BYTES_PROPERTY_KEYS.includes(key);
+}
+
+// Length-prefixed like text, but raw: asset payloads, signatures, and cdn identifiers.
+const RIVE_BYTES_PROPERTY_KEYS = [212, 223, 359, 582, 588, 711, 866, 868, 871, 911, 920, 963];
+
 // Varuint: unsigned integers, object ids, enums, and booleans (a bool is one 0/1 byte).
 const RIVE_UINT_PROPERTY_KEYS = [
   5, 23, 32, 40, 41, 48, 49, 50, 51, 53, 56, 57, 59, 60, 61, 62, 67, 68, 69, 92, 93, 94, 95, 102, 103, 110, 111, 112,
