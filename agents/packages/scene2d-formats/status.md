@@ -8,6 +8,30 @@ by: builder
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-03 — SVG internal DTD entities fixed, in `@flighthq/xml` (cross-package, user-authorised)
+
+The gap the W3C corpus surfaced. A document declaring `<!ENTITY Smile "<circle …/>">` and expanding it
+with `&Smile;` lost all the expanded content, silently.
+
+**The fix could not be a bigger entity table.** A replacement is *markup*, and entity decoding ran on
+already-extracted text — too late to produce elements. It is now a source-level pre-pass: declarations
+are collected while the DOCTYPE is stripped (that walker already tracked quote state and bracket depth,
+so it knew the subset's bounds; it simply discarded them), then substituted into the source before the
+tree is built. An entity-expanded document now imports byte-identically to the literal spelling.
+
+**Two forms are deliberately not honored.** External entities (`SYSTEM` / `PUBLIC`) resolve a URL or
+file path at parse time — a document reading whatever the process can reach — and parameter entities.
+Neither is a gap; the regex requires a quoted replacement directly after the name, which excludes both
+without testing for either.
+
+**The budget is the security property.** Entities that reference each other expand exponentially.
+A mutation removing the budget was the useful part of the work: my *first* bomb test survived it — it
+was too small to explode, so it proved nothing. Rebuilt at six levels, ten references deep, it
+materializes exactly 10,000,000 characters unbudgeted and stays under 200k budgeted. **A test for a
+resource bound has to actually exceed the bound, or it only tests the happy path.**
+
+Whole-repo gates on the shared parser: check green, 1,352 files / 15,408 tests.
+
 ## 2026-08-03 — Rive draw order imported on `NodeOrderList`; my own cross-parent figure was wrong
 
 Rebased onto `origin/develop`, which brought in `@flighthq/node`'s `NodeOrderList` — the ordering API

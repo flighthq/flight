@@ -194,3 +194,90 @@ describe('parseXmlDocument', () => {
     expect(doc?.name).toBe('root');
   });
 });
+
+// A general entity's replacement text is markup, so it has to be substituted into the source before
+// the tree is built. Declarations live in a DOCTYPE's internal subset, which is otherwise discarded.
+describe('parseXmlDocument internal DTD entities', () => {
+  const doctype = (subset: string, body: string): string =>
+    `<?xml version="1.0"?><!DOCTYPE root [${subset}]><root>${body}</root>`;
+
+  it('expands an entity whose replacement is an element', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY dot "<circle r=\'4\'/>">', '&dot;'))!;
+
+    expect(root.children).toHaveLength(1);
+    expect(root.children[0].name).toBe('circle');
+    expect(root.children[0].attributes.r).toBe('4');
+  });
+
+  it('expands the same entity at every reference', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY dot "<circle/>">', '&dot;&dot;&dot;'))!;
+
+    expect(root.children).toHaveLength(3);
+  });
+
+  it('expands an entity declared with single quotes', () => {
+    const root = parseXmlDocument(doctype("<!ENTITY dot '<circle/>'", '&dot;').replace(']', '>]'))!;
+
+    expect(root.children[0].name).toBe('circle');
+  });
+
+  it('expands an entity that references another entity', () => {
+    const subset = '<!ENTITY inner "<circle/>"><!ENTITY outer "<g>&inner;</g>">';
+    const root = parseXmlDocument(doctype(subset, '&outer;'))!;
+
+    expect(root.children[0].name).toBe('g');
+    expect(root.children[0].children[0].name).toBe('circle');
+  });
+
+  it('expands an entity used as an attribute value', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY w "40">', '<rect width="&w;"/>'))!;
+
+    expect(root.children[0].attributes.width).toBe('40');
+  });
+
+  it('leaves an undeclared reference alone rather than dropping it', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY dot "<circle/>">', '&missing;'))!;
+
+    expect(root.text).toBe('&missing;');
+  });
+
+  it('still decodes the predefined entities, which no subset needs to declare', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY dot "<circle/>">', 'a &amp; b'))!;
+
+    expect(root.text).toBe('a & b');
+  });
+
+  // An external entity resolves a URL or file path at parse time — a document reading whatever the
+  // process can reach. Not honoring one is the point, not a gap.
+  it.each([
+    { form: 'external SYSTEM', subset: '<!ENTITY x SYSTEM "/etc/passwd">' },
+    { form: 'external PUBLIC', subset: '<!ENTITY x PUBLIC "-//X//EN" "http://example.test/x">' },
+    { form: 'parameter', subset: '<!ENTITY % x "<circle/>">' },
+  ])('does not honor an $form entity', ({ subset }) => {
+    const root = parseXmlDocument(doctype(subset, '&x;'))!;
+
+    expect(root.children).toHaveLength(0);
+    expect(root.text).toBe('&x;');
+  });
+
+  // Entities that reference each other expand exponentially. The budget is what keeps a hostile
+  // document costing bounded work; it stops expanding and keeps what resolved.
+  it('does not expand a nested entity without bound', () => {
+    // Six levels, each ten references deep: fully expanded this is ten million characters, so an
+    // unbudgeted parser materializes it and a budgeted one stops well short.
+    let subset = '<!ENTITY e0 "aaaaaaaaaa">';
+    for (let level = 1; level <= 6; level++) {
+      subset += `<!ENTITY e${level} "${`&e${level - 1};`.repeat(10)}">`;
+    }
+
+    const root = parseXmlDocument(doctype(subset, '&e6;'))!;
+
+    expect(root.text.length).toBeLessThan(200000);
+  });
+
+  it('terminates on an entity that references itself', () => {
+    const root = parseXmlDocument(doctype('<!ENTITY loop "&loop;">', '&loop;'))!;
+
+    expect(root).not.toBeNull();
+  });
+});

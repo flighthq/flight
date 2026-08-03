@@ -1,8 +1,9 @@
 // Tree-building (DOM-style) XML parser sufficient for atlas and plist file formats.
 // Not a general-purpose XML parser, but handles namespaced/extra attributes and elements,
 // both double-quoted and single-quoted attribute values, XML entity escapes
-// (&amp; &lt; &gt; &quot; &apos; plus numeric references), XML comments (<!-- -->),
-// CDATA sections (<![CDATA[...]]>), the XML declaration, and DOCTYPE.
+// (&amp; &lt; &gt; &quot; &apos; plus numeric references), general entities declared in a DOCTYPE's
+// internal subset, XML comments (<!-- -->), CDATA sections (<![CDATA[...]]>), the XML declaration,
+// and DOCTYPE.
 
 import type { XmlElement } from '@flighthq/types/contract';
 
@@ -28,15 +29,24 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   // Normalize: strip comments and normalize line endings.
   let src = stripXmlComments(xml).replace(/\r\n?/g, '\n');
 
-  // Strip XML declaration and DOCTYPE before parsing the root element.
-  src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, '')).trim();
+  // Strip XML declaration and DOCTYPE before parsing the root element. The DOCTYPE is discarded but
+  // its internal subset is read on the way out, because a general entity's replacement text is markup
+  // and so has to be substituted into the source before the tree is built, not decoded out of a text
+  // node afterwards.
+  const entities: Record<string, string> = {};
+  src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, ''), entities).trim();
 
-  return parseElement(src, { pos: 0 });
+  return parseElement(expandXmlEntities(src, entities), { pos: 0 });
 }
 
 interface ParseState {
   pos: number;
 }
+
+// An entity may nest a few levels legitimately; past that a document is recursing, not composing.
+const MAX_XML_ENTITY_PASSES = 8;
+const MAX_XML_ENTITY_GROWTH = 16;
+const MAX_XML_ENTITY_BUDGET = 65536;
 
 const XML_ENTITIES: Record<string, string> = {
   amp: '&',
@@ -45,6 +55,35 @@ const XML_ENTITIES: Record<string, string> = {
   lt: '<',
   quot: '"',
 };
+
+/**
+ * Substitutes declared general entities into the source ahead of parsing.
+ *
+ * A replacement may itself reference an entity, so expansion repeats until it settles. Both the pass
+ * count and the resulting size are capped: entities that reference each other are otherwise an
+ * exponential bomb ("billion laughs"), and the budget is what keeps a hostile document costing
+ * bounded work. Exhausting the budget stops expansion and keeps what resolved, since a partially
+ * expanded document still parses.
+ *
+ * Only the predefined five and declared general entities substitute. An undeclared reference is left
+ * alone for `decodeXmlEntities` to see as text.
+ */
+function expandXmlEntities(src: string, entities: Readonly<Record<string, string>>): string {
+  let output = src;
+  const budget = src.length * MAX_XML_ENTITY_GROWTH + MAX_XML_ENTITY_BUDGET;
+  for (let pass = 0; pass < MAX_XML_ENTITY_PASSES; pass++) {
+    let expanded = false;
+    const next = output.replace(/&([\w:.-]+);/g, (reference: string, name: string) => {
+      const replacement = entities[name];
+      if (replacement === undefined) return reference;
+      expanded = true;
+      return replacement;
+    });
+    if (!expanded || next.length > budget) return output;
+    output = next;
+  }
+  return output;
+}
 
 function decodeXmlEntities(s: string): string {
   return s.replace(/&(?:#(\d+)|#x([\da-fA-F]+)|(\w+));/g, (reference, dec, hex, name) => {
@@ -180,7 +219,14 @@ function stripXmlComments(xml: string): string {
   return output + xml.slice(copyStart);
 }
 
-function stripXmlDoctypes(xml: string): string {
+/**
+ * Removes every DOCTYPE, collecting the general entities its internal subset declares into `out`.
+ *
+ * Parameter entities (`<!ENTITY % name …>`) and external ones (`SYSTEM` / `PUBLIC`) are deliberately
+ * not collected: an external entity resolves a URL or a file path at parse time, which is a document
+ * reading whatever the process can reach, so the parser has no business honoring one.
+ */
+function stripXmlDoctypes(xml: string, out: Record<string, string>): string {
   let copyStart = 0;
   let output = '';
   let pos = 0;
@@ -192,6 +238,7 @@ function stripXmlDoctypes(xml: string): string {
     }
 
     output += xml.slice(copyStart, pos);
+    const doctypeStart = pos;
     pos += 9;
 
     let internalSubsetDepth = 0;
@@ -213,8 +260,20 @@ function stripXmlDoctypes(xml: string): string {
       pos++;
     }
 
+    collectXmlEntityDeclarations(xml.slice(doctypeStart, pos), out);
     copyStart = pos;
   }
 
   return output + xml.slice(copyStart);
+}
+
+// The name must be followed directly by a quoted replacement, which is what excludes both the
+// parameter form (a `%` where the name belongs) and the external form (a SYSTEM/PUBLIC keyword where
+// the quote belongs) without testing for either.
+function collectXmlEntityDeclarations(doctype: string, out: Record<string, string>): void {
+  const declaration = /<!ENTITY\s+([\w:.-]+)\s*(?:"([^"]*)"|'([^']*)')\s*>/g;
+  let match: RegExpExecArray | null;
+  while ((match = declaration.exec(doctype)) !== null) {
+    out[match[1]] = match[2] ?? match[3] ?? '';
+  }
 }

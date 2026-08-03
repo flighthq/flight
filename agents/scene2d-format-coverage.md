@@ -157,13 +157,18 @@ dropped, since an absent declaration already resolves to the parent's value; the
 properties (`display`, `filter`, `opacity`) name the parent explicitly, because dropping the
 declaration would reset them to their initial value instead. Six regression tests pin it.
 
-*Internal DTD entities are dropped, and this one is not ours.* A document that declares
-`<!ENTITY Smile "<circle …/>">` and expands it with `&Smile;` loses all the expanded content, with no
-diagnostic. `@flighthq/xml` strips the DOCTYPE wholesale and decodes only the five predefined XML
-entities, so the reference survives as literal text rather than markup. The fix belongs in
-`@flighthq/xml`, not here — recorded, not built, per the cross-package rule. Entities are legal SVG 1.1
-and the conformance suite uses them, but no mainstream design tool emits them, so the practical cost is
-low; the silence is the part worth fixing.
+*Internal DTD entities were dropped.* **Fixed, in `@flighthq/xml`.** A document declaring
+`<!ENTITY Smile "<circle …/>">` and expanding it with `&Smile;` lost all the expanded content with no
+diagnostic: the DOCTYPE was discarded wholesale and only the five predefined entities decoded, so the
+reference survived as literal text rather than markup. The fix could not be a larger entity table —
+a replacement is *markup*, and entity decoding ran on already-extracted text, too late to produce
+elements. It is now a source-level pre-pass: declarations are collected while the DOCTYPE is stripped,
+then substituted into the source before the tree is built, so an entity-expanded document imports
+identically to the literal spelling. Two forms are deliberately **not** honored — external entities
+(`SYSTEM` / `PUBLIC`), which resolve a URL or file path at parse time and would let a document read
+whatever the process can reach, and parameter entities. Expansion carries a size-and-pass budget,
+because entities that reference each other expand exponentially; the six-level bomb that materializes
+ten million characters unbudgeted stays bounded, and a self-referencing declaration terminates.
 
 **Not covered — declared exclusions.** SVG animation (SMIL), scripts, `foreignObject`, live DOM behavior,
 and filter graphs are not retained; filters belong to `@flighthq/effects`. The charter sets the
