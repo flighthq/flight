@@ -22,7 +22,7 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics2DBroadphase } from './broadphase';
+import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression';
@@ -677,60 +677,64 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
   ccdImpactBodyB = -1;
   ccdImpactColliderA = -1;
   ccdImpactColliderB = -1;
-  const bodies = world.bodies;
-  for (let i = 0; i < bodies.length; i++) {
-    const bodyA = bodies[i];
-    for (let j = i + 1; j < bodies.length; j++) {
-      const bodyB = bodies[j];
-      if (!isPhysics2DCcdPairActive(bodyA, bodyB)) continue;
-      if (isPhysics2DPairJointSuppressed(world, bodyA.index, bodyB.index)) continue;
-      const translationAX = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityX * dt;
-      const translationAY = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityY * dt;
-      const translationBX = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityX * dt;
-      const translationBY = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityY * dt;
-      for (let colliderA = 0; colliderA < bodyA.colliders.length; colliderA++) {
-        const first = bodyA.colliders[colliderA];
-        if (first.sensor) continue;
-        for (let colliderB = 0; colliderB < bodyB.colliders.length; colliderB++) {
-          const second = bodyB.colliders[colliderB];
-          if (second.sensor || !isPhysics2DColliderPairEnabled(first, second)) continue;
-          // An ordinary contact was already prepared and solved before CCD integration. Sweeping it
-          // again at fraction zero would double-apply its impulse and can consume the entire CCD budget
-          // without advancing time.
-          if (findPhysics2DContact(world, bodyA.index, bodyB.index, colliderA, colliderB) !== null) continue;
-          if (
-            !sweepCollisionShape(
-              first.world,
-              translationAX,
-              translationAY,
-              second.world,
-              translationBX,
-              translationBY,
-              ccdSweepScratch,
-            ) ||
-            ccdSweepScratch.fraction > ccdImpactFraction ||
-            !isPhysics2DImpactApproaching(
-              bodyA,
-              bodyB,
-              ccdSweepScratch,
-              translationAX,
-              translationAY,
-              translationBX,
-              translationBY,
-            )
-          ) {
-            continue;
-          }
-          ccdImpactFraction = ccdSweepScratch.fraction;
-          ccdImpactBodyA = i;
-          ccdImpactBodyB = j;
-          ccdImpactColliderA = colliderA;
-          ccdImpactColliderB = colliderB;
-          ccdImpactX = ccdSweepScratch.x;
-          ccdImpactY = ccdSweepScratch.y;
-          ccdImpactNormalX = ccdSweepScratch.normalX;
-          ccdImpactNormalY = ccdSweepScratch.normalY;
+  synchronizePhysics2DSweptBroadphase(world, dt);
+  world.index.querySpatialPairs(ccdPairScratch);
+  synchronizePhysics2DBroadphase(world);
+  for (const pair of ccdPairScratch) {
+    const firstBody = findPhysics2DBody(world, pair.a);
+    const secondBody = findPhysics2DBody(world, pair.b);
+    if (firstBody === null || secondBody === null) continue;
+    const ordered = isPhysics2DPairOrdered(firstBody, secondBody);
+    const bodyA = ordered ? firstBody : secondBody;
+    const bodyB = ordered ? secondBody : firstBody;
+    if (!isPhysics2DCcdPairActive(bodyA, bodyB)) continue;
+    if (isPhysics2DPairJointSuppressed(world, bodyA.index, bodyB.index)) continue;
+    const translationAX = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityX * dt;
+    const translationAY = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityY * dt;
+    const translationBX = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityX * dt;
+    const translationBY = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityY * dt;
+    for (let colliderA = 0; colliderA < bodyA.colliders.length; colliderA++) {
+      const first = bodyA.colliders[colliderA];
+      if (first.sensor) continue;
+      for (let colliderB = 0; colliderB < bodyB.colliders.length; colliderB++) {
+        const second = bodyB.colliders[colliderB];
+        if (second.sensor || !isPhysics2DColliderPairEnabled(first, second)) continue;
+        // An ordinary contact was already prepared and solved before CCD integration. Sweeping it
+        // again at fraction zero would double-apply its impulse and can consume the entire CCD budget
+        // without advancing time.
+        if (findPhysics2DContact(world, bodyA.index, bodyB.index, colliderA, colliderB) !== null) continue;
+        if (
+          !sweepCollisionShape(
+            first.world,
+            translationAX,
+            translationAY,
+            second.world,
+            translationBX,
+            translationBY,
+            ccdSweepScratch,
+          ) ||
+          ccdSweepScratch.fraction > ccdImpactFraction ||
+          !isPhysics2DImpactApproaching(
+            bodyA,
+            bodyB,
+            ccdSweepScratch,
+            translationAX,
+            translationAY,
+            translationBX,
+            translationBY,
+          )
+        ) {
+          continue;
         }
+        ccdImpactFraction = ccdSweepScratch.fraction;
+        ccdImpactBodyA = bodyA.index;
+        ccdImpactBodyB = bodyB.index;
+        ccdImpactColliderA = colliderA;
+        ccdImpactColliderB = colliderB;
+        ccdImpactX = ccdSweepScratch.x;
+        ccdImpactY = ccdSweepScratch.y;
+        ccdImpactNormalX = ccdSweepScratch.normalX;
+        ccdImpactNormalY = ccdSweepScratch.normalY;
       }
     }
   }
@@ -763,8 +767,9 @@ function isPhysics2DImpactApproaching(
 }
 
 function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
-  const bodyA = world.bodies[ccdImpactBodyA];
-  const bodyB = world.bodies[ccdImpactBodyB];
+  const bodyA = findPhysics2DBody(world, ccdImpactBodyA);
+  const bodyB = findPhysics2DBody(world, ccdImpactBodyB);
+  if (bodyA === null || bodyB === null) return;
   const colliderA = bodyA.colliders[ccdImpactColliderA];
   const colliderB = bodyB.colliders[ccdImpactColliderB];
   if (colliderA === undefined || colliderB === undefined) return;
@@ -982,6 +987,7 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
 }
 
 const pairScratch: SpatialPair[] = [];
+const ccdPairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
 const ccdSweepScratch: CollisionTimeOfImpact = createCollisionTimeOfImpact();
 const ccdCenterAScratch = { x: 0, y: 0 };
