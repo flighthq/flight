@@ -382,7 +382,25 @@ transitions, with 70 inputs. **A machine takes its name from the `Animation` it 
 state-machine component key its layers and inputs use** — reading it with the layer's key leaves every
 machine in the corpus unnamed, which is how the mistake showed itself.
 
-**Not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
+**Text is covered as a single-format label.** A text drawable's words live in its **value runs**,
+each naming a style, and a style paints itself through a fill child exactly as a shape does. Runs are
+joined in file order; the first run's style sets size, line height, letter spacing and colour; the
+drawable's own box and alignment carry over, with alignment numbered left, right, centre.
+
+`styleId` indexes the artboard's **component numbering**, the same space `parentId` uses — against the
+corpus it resolves all 150 runs, while resolving it against the styles in declaration order resolves
+4. That is the fourth distinct id space in this format.
+
+Over the corpus this produces 117 labels, 113 carrying text and 112 carrying a size, with real
+strings recovered from real files.
+
+**Not covered — rich text.** A drawable whose runs differ in style needs more than one format can
+carry; 28 of 117 texts in the corpus have more than one run, though runs often share a style. Also
+uncovered: the font a style names (`fontAssetId` resolves to a font asset whose bytes are read but
+not turned into a typeface), text modifiers and their ranges — the mechanism behind Rive's animated
+per-character effects — text-follow-path, variable-font axes and OpenType features, and `TextInput`.
+
+**Also not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
 asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
 paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes, which no
