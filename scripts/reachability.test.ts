@@ -1,5 +1,8 @@
-import { Project } from 'ts-morph';
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   auditEffectBackend,
@@ -7,6 +10,12 @@ import {
   defaultCompositionSymbols,
   effectReachabilitySymbols,
 } from './reachability-core';
+
+const temporaryDirectories: string[] = [];
+
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { force: true, recursive: true });
+});
 
 describe('source-derived capability reachability', () => {
   it('accepts a mapped public registrar and public raw runner', () => {
@@ -87,9 +96,13 @@ describe('source-derived capability reachability', () => {
 });
 
 function entries(sourceText: string, publicValues: readonly string[]) {
-  const project = new Project({ useInMemoryFileSystem: true });
-  const source = project.createSourceFile('/source.ts', sourceText);
-  const contractEntry = project.createSourceFile('/contract.ts', "export * from './source';");
-  const publicEntry = project.createSourceFile('/index.ts', `export { ${publicValues.join(', ')} } from './contract';`);
+  const directory = mkdtempSync(join(tmpdir(), 'flight-reachability-'));
+  temporaryDirectories.push(directory);
+  const source = join(directory, 'source.ts');
+  const contractEntry = join(directory, 'contract.ts');
+  const publicEntry = join(directory, 'index.ts');
+  writeFileSync(source, sourceText);
+  writeFileSync(contractEntry, "export * from './source';");
+  writeFileSync(publicEntry, `export { ${publicValues.join(', ')} } from './contract';`);
   return { contractEntry, publicEntry, sourceFiles: [source] };
 }
