@@ -570,6 +570,36 @@ describe('SVG inherit keyword', () => {
   });
 });
 
+// An SVG document may declare markup as a general entity in its DOCTYPE's internal subset and expand
+// it by reference. Expansion happens in `@flighthq/xml` before the tree is built, so the importer sees
+// ordinary markup; this pins that the two spellings import identically.
+describe('SVG internal DTD entities', () => {
+  const inner = "<g><circle cx='15' cy='15' r='10' fill='yellow'/><rect width='4' height='4'/></g>";
+
+  it('imports an entity-expanded document the same as the literal markup', () => {
+    const literal = `<svg xmlns="http://www.w3.org/2000/svg">${inner}${inner}</svg>`;
+    const entity =
+      `<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY S "${inner}">]>` +
+      '<svg xmlns="http://www.w3.org/2000/svg">&S;&S;</svg>';
+
+    expect(countSvgDrawPaths(entity)).toBe(countSvgDrawPaths(literal));
+    expect(countSvgDrawPaths(entity)).toBeGreaterThan(0);
+  });
+});
+
+function countSvgDrawPaths(svg: string): number {
+  const root = createScene2DFromSvgDocument(svg);
+  let count = 0;
+  const walk = (node: Node2D): void => {
+    if (node.kind === ShapeKind) {
+      for (const command of (node as Shape).data.commands) if (command === 'drawPath') count++;
+    }
+    for (let index = 0; index < getNodeChildCount(node); index++) walk(getNodeChildAt(node, index) as Node2D);
+  };
+  walk(root);
+  return count;
+}
+
 function firstShape(svg: string): Shape {
   const root = createScene2DFromSvgDocument(svg);
   let found: Shape | null = null;
