@@ -35,7 +35,7 @@ registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
+registerCanvasShapeCommands(state, [defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
 
 export const scale = pixelRatio;
 

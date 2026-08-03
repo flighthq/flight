@@ -48,7 +48,7 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
     case RenderRegistry.NodeRenderer:
       return 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)';
     case RenderRegistry.ShapeCommandHandler:
-      return 'renderCanvasShapeCommands: shape command key has no registered handler — call registerCanvasShapeCommand(command)';
+      return 'renderCanvasShapeCommands: shape command key has no registered handler on this state — call registerCanvasShapeCommand(state, command)';
     // The kind reported is the node kind that went undrawn, since nothing here is keyed by anything else.
     case RenderRegistry.ShapeRasterizer:
       if ('device' in state)

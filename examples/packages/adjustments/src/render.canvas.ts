@@ -28,7 +28,7 @@ enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
+registerCanvasShapeCommands(state, [defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 
 export const scale = pixelRatio;
 

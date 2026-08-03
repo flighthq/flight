@@ -42,7 +42,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerWgpuShapeCommands(state, defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
 

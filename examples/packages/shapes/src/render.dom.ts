@@ -39,7 +39,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
 export const canvas: HTMLElement = container;
 

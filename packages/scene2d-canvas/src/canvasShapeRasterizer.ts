@@ -9,8 +9,11 @@ import { renderCanvasShapeCommands } from './canvasShape';
 // set your Canvas renderer already uses — getCanvasRenderStateTextureResolvers(state) — shares one
 // transcode cache between the two backends; passing a fresh one keeps them separate. Either way the
 // capability is named at the callsite instead of being whatever the renderer happened to reach.
-export function createCanvasShapeRasterizer(resolvers: CanvasTextureResolvers, allowSmoothing = true): ShapeRasterizer {
+//
+// The command set and the smoothing policy come from the state the backend hands the rasterizer, so
+// registering commands onto that state is what makes them reachable here.
+export function createCanvasShapeRasterizer(resolvers: CanvasTextureResolvers): ShapeRasterizer {
   return (context, commands, state) => {
-    renderCanvasShapeCommands(context, commands as unknown[], resolvers, state, allowSmoothing);
+    renderCanvasShapeCommands(context, state, commands as unknown[], resolvers);
   };
 }

@@ -73,7 +73,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
+      registerGlShapeCommands(state, [...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -89,7 +89,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerGlShapeCommands([...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
+      registerGlShapeCommands(state, [...defaultGlShapeCommands, ...defaultGlTextureShapeCommands]);
     }
   }
 

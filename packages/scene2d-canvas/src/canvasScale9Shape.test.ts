@@ -9,10 +9,6 @@ import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape } from './canva
 import { defaultCanvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 
-beforeAll(() => {
-  registerCanvasShapeCommands(defaultCanvasShapeCommands);
-});
-
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 
 describe('drawCanvasScale9Shape', () => {
@@ -21,6 +17,7 @@ describe('drawCanvasScale9Shape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = createCanvasRenderState(canvas);
+    registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
     registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);

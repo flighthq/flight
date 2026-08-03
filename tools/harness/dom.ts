@@ -59,7 +59,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
       registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
-      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -69,7 +69,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

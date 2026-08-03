@@ -32,7 +32,7 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasPixelateEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);

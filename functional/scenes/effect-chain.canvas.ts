@@ -35,7 +35,7 @@ document.body.appendChild(canvas);
 
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 registerCanvasBloomEffect(state);
 registerCanvasVignetteEffect(state);
 

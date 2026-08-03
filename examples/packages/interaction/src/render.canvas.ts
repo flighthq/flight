@@ -33,7 +33,7 @@ enableFlightDiagnostics(state);
 
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasShapeCommands([
+registerCanvasShapeCommands(state, [
   defaultCanvasBeginFill,
   defaultCanvasDrawCircle,
   defaultCanvasDrawRectangle,

@@ -33,23 +33,11 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: Ren
 
   if (mapper === null) {
     setCanvasTransform(state, context, renderProxy.transform2D);
-    renderCanvasShapeCommands(
-      context,
-      commands,
-      getCanvasRenderStateTextureResolvers(state),
-      state,
-      state.allowSmoothing ?? true,
-    );
+    renderCanvasShapeCommands(context, state, commands, getCanvasRenderStateTextureResolvers(state));
   } else {
     applyStrippedTransform(state, context, renderProxy.transform2D, scaleX, scaleY);
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
-    renderCanvasShapeCommands(
-      context,
-      _remappedCommands,
-      getCanvasRenderStateTextureResolvers(state),
-      state,
-      state.allowSmoothing ?? true,
-    );
+    renderCanvasShapeCommands(context, state, _remappedCommands, getCanvasRenderStateTextureResolvers(state));
   }
 }
 

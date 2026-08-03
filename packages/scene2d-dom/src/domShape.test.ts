@@ -10,13 +10,10 @@ import { registerDomShapeRasterizer } from './domShapeRasterizer';
 
 const noopRasterizer = (): void => {};
 
-beforeAll(() => {
-  registerCanvasShapeCommands(defaultCanvasShapeCommands);
-});
-
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
+  registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
   registerDomShapeRasterizer(state, noopRasterizer);
   registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
   return state;

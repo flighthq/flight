@@ -27,34 +27,28 @@ export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderPro
   context.globalAlpha = renderProxy.alpha;
   setCanvasTransform(state, context, renderProxy.transform2D);
 
-  renderCanvasShapeCommands(
-    context,
-    commands,
-    getCanvasRenderStateTextureResolvers(state),
-    state,
-    state.allowSmoothing ?? true,
-  );
+  renderCanvasShapeCommands(context, state, commands, getCanvasRenderStateTextureResolvers(state));
 }
 
+// `state` carries the command registry and the smoothing policy, and is where an unhandled command key
+// is reported — which is why it is required rather than an optional diagnostic tag. `resolvers` stays a
+// separate argument because it is not the state's: a GPU or DOM backend rasterizes through a Canvas
+// resolver set its own state has no place to hold.
 export function renderCanvasShapeCommands(
   context: CanvasRenderingContext2D,
+  state: RenderState,
   commands: unknown[],
   resolvers: CanvasTextureResolvers,
-  registryState: RenderState | null = null,
-  allowSmoothing = true,
 ): void {
-  const drawState = createCanvasShapeDrawState(context, resolvers, allowSmoothing);
+  const drawState = createCanvasShapeDrawState(context, resolvers, state.allowSmoothing);
   context.beginPath();
   let i = 0;
   while (i < commands.length) {
     const key = commands[i] as string;
     const argCount = commands[i + 1] as number;
-    const def = getCanvasShapeCommand(key);
-    if (def !== undefined) def.draw(context, drawState, commands, i + 2);
-    else {
-      if (registryState !== null)
-        getRenderStateRuntime(registryState).registryMiss?.(RenderRegistry.ShapeCommandHandler, key);
-    }
+    const def = getCanvasShapeCommand(state, key);
+    if (def !== null) def.draw(context, drawState, commands, i + 2);
+    else getRenderStateRuntime(state).registryMiss?.(RenderRegistry.ShapeCommandHandler, key);
     i += argCount + 2;
   }
   if (drawState.hasPendingPath && (drawState.hasFill || drawState.hasStroke)) {
