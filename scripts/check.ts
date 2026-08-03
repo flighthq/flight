@@ -73,7 +73,7 @@ if (!scoped) {
 const configuredConcurrency = Number.parseInt(process.env.FLIGHT_CHECK_CONCURRENCY ?? '', 10);
 const concurrency = Number.isFinite(configuredConcurrency)
   ? Math.max(1, configuredConcurrency)
-  : Math.max(1, Math.min(2, availableParallelism()));
+  : Math.min(6, Math.max(1, Math.ceil(availableParallelism() / 2)));
 const results = await runGates(gates, concurrency);
 const failed: string[] = [];
 
@@ -81,7 +81,7 @@ for (const result of results) {
   process.stdout.write(`\n▶ ${result.label}\n`);
   process.stdout.write(result.output);
   if (!result.passed) {
-    process.stderr.write(`${pc.red('✗')} ${result.label} failed\n`);
+    process.stdout.write(`${pc.red('✗')} ${result.label} failed\n`);
     failed.push(result.label);
   }
 }
