@@ -43,6 +43,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "2D narrow-phase collision — discrete shape-vs-shape overlap returning a contact manifold (minimum-translation normal + depth), plus point/segment queries",
+  "description": "2D narrow-phase collision — discrete contact manifolds, exact convex linear sweeps, and point/segment/ray queries",
   "sideEffects": false
 }
