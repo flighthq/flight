@@ -307,10 +307,25 @@ function writeShapeASupport(
   let best = Number.NEGATIVE_INFINITY;
   for (let i = 0; i < vertices.length; i += 2) {
     const projection = -out.normalX * vertices[i] - out.normalY * vertices[i + 1];
-    if (projection <= best) continue;
-    best = projection;
-    out.x = vertices[i] + translationX;
-    out.y = vertices[i + 1] + translationY;
+    if (projection > best) best = projection;
+  }
+  // A face has two equally extreme vertices. Choosing whichever appears first turns an ordinary
+  // face impact into an arbitrary corner impact and hands a rigid-body solver a fictitious lever arm.
+  // Average the complete tied support feature; a vertex remains itself, a face becomes its midpoint.
+  const epsilon = 1e-9 * Math.max(1, Math.abs(best));
+  let count = 0;
+  let x = 0;
+  let y = 0;
+  for (let i = 0; i < vertices.length; i += 2) {
+    const projection = -out.normalX * vertices[i] - out.normalY * vertices[i + 1];
+    if (Math.abs(projection - best) > epsilon) continue;
+    x += vertices[i];
+    y += vertices[i + 1];
+    count++;
+  }
+  if (count > 0) {
+    out.x = x / count + translationX;
+    out.y = y / count + translationY;
   }
 }
 

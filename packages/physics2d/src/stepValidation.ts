@@ -86,7 +86,10 @@ export function isPhysics2DSolverConfigValid(config: Readonly<Physics2DSolverCon
     config.positionCorrection <= 1 &&
     Number.isFinite(config.restitutionThreshold) &&
     config.restitutionThreshold >= 0 &&
-    typeof config.warmStarting === 'boolean'
+    typeof config.warmStarting === 'boolean' &&
+    typeof config.continuousCollision === 'boolean' &&
+    Number.isSafeInteger(config.maxCcdSubsteps) &&
+    config.maxCcdSubsteps >= 0
   );
 }
 
@@ -173,6 +176,7 @@ function isRigidBody2DStateValid(body: Readonly<RigidBody2D>): boolean {
     body.index < 0 ||
     (body.type !== 'dynamic' && body.type !== 'kinematic' && body.type !== 'static') ||
     typeof body.fixedRotation !== 'boolean' ||
+    typeof body.bullet !== 'boolean' ||
     typeof body.sleeping !== 'boolean' ||
     typeof body.sleepEnabled !== 'boolean' ||
     !Number.isFinite(body.sleepTimer) ||

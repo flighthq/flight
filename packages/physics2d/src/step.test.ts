@@ -183,6 +183,103 @@ describe('a body the step declines leaves the broadphase', () => {
   });
 });
 
+describe('bullet continuous collision detection', () => {
+  function wall(world: Physics2DWorld, minX: number, maxX: number, restitution = 0, sensor = false): RigidBody2D {
+    const body = createRigidBody2D('static', 0, 0);
+    body.colliders.push(
+      createPhysics2DCollider(
+        { kind: 'aabb', minX, minY: -10, maxX, maxY: 10 },
+        { density: 1, friction: 0, restitution },
+        sensor,
+      ),
+    );
+    return addPhysics2DBody(world, body);
+  }
+
+  function projectile(world: Physics2DWorld, speed: number, restitution = 0, bullet = true): RigidBody2D {
+    const body = createRigidBody2D('dynamic', 0, 0);
+    body.bullet = bullet;
+    body.velocityX = speed;
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, { density: 1, friction: 0, restitution }),
+    );
+    return addPhysics2DBody(world, body);
+  }
+
+  it('stops a bullet at a thin wall that the discrete path tunnels through', () => {
+    const continuous = createPhysics2DWorld(0, 0);
+    wall(continuous, 5, 5.1);
+    const bullet = projectile(continuous, 100);
+    stepPhysics2D(continuous, 0.1);
+    expect(bullet.x).toBeCloseTo(4.5);
+    expect(bullet.velocityX).toBeCloseTo(0);
+
+    const discrete = createPhysics2DWorld(0, 0);
+    wall(discrete, 5, 5.1);
+    const ordinary = projectile(discrete, 100, 0, false);
+    stepPhysics2D(discrete, 0.1);
+    expect(ordinary.x).toBeCloseTo(10);
+  });
+
+  it('applies restitution at impact and advances through the remaining time', () => {
+    const world = createPhysics2DWorld(0, 0);
+    wall(world, 5, 5.1, 1);
+    const bullet = projectile(world, 100, 1);
+
+    stepPhysics2D(world, 0.1);
+
+    expect(bullet.velocityX).toBeCloseTo(-100);
+    expect(bullet.x).toBeCloseTo(-1);
+  });
+
+  it('resolves multiple impacts chronologically within the configured bound', () => {
+    const world = createPhysics2DWorld(0, 0);
+    wall(world, -5.1, -5, 1);
+    wall(world, 5, 5.1, 1);
+    const bullet = projectile(world, 100, 1);
+
+    stepPhysics2D(world, 0.2);
+
+    expect(bullet.x).toBeGreaterThanOrEqual(-4.5);
+    expect(bullet.x).toBeLessThanOrEqual(4.5);
+    expect(Math.abs(bullet.velocityX)).toBeCloseTo(100);
+  });
+
+  it('uses relative motion, transfers impulse, and wakes a sleeping dynamic target', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const bullet = projectile(world, 100);
+    const target = createRigidBody2D('dynamic', 6, 0);
+    target.sleeping = true;
+    target.sleepTimer = 5;
+    target.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, { density: 1, friction: 0, restitution: 0 }),
+    );
+    addPhysics2DBody(world, target);
+
+    stepPhysics2D(world, 0.1);
+
+    expect(target.sleeping).toBe(false);
+    expect(target.velocityX).toBeGreaterThan(0);
+    expect(bullet.x).toBeLessThan(target.x);
+    expect(target.x - bullet.x).toBeCloseTo(1);
+  });
+
+  it('honours the world switch and ignores sensor-only crossings', () => {
+    const disabled = createPhysics2DWorld(0, 0);
+    disabled.config.continuousCollision = false;
+    wall(disabled, 5, 5.1);
+    const unchecked = projectile(disabled, 100);
+    stepPhysics2D(disabled, 0.1);
+    expect(unchecked.x).toBeCloseTo(10);
+
+    const sensorWorld = createPhysics2DWorld(0, 0);
+    wall(sensorWorld, 5, 5.1, 0, true);
+    const sensorBullet = projectile(sensorWorld, 100);
+    stepPhysics2D(sensorWorld, 0.1);
+    expect(sensorBullet.x).toBeCloseTo(10);
+  });
+});
+
 describe('collision filtering', () => {
   function filteredBox(
     world: Physics2DWorld,

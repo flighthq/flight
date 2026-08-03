@@ -1,17 +1,20 @@
 import {
   collideContactManifold,
   createCollisionContactManifold,
+  createCollisionTimeOfImpact,
   getCollisionShapeContainsPoint,
   testSegmentAabbCollision,
   testSegmentCircleCollision,
   testSegmentObbCollision,
   testSegmentPolygonCollision,
   testSegmentSegmentCollision,
+  sweepCollisionShape,
 } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold,
   CollisionSegment,
   CollisionShape,
+  CollisionTimeOfImpact,
   Physics2DContact,
   Physics2DContactPoint,
   Physics2DWorld,
@@ -25,7 +28,12 @@ import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSlee
 import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression';
 import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
 import { steppingPhysics2DWorlds } from './ownership';
-import { relativeNormalVelocity, solvePhysics2DContactIndicesOnce, warmStartPhysics2DContactIndices } from './solver';
+import {
+  applyPhysics2DImpulse,
+  relativeNormalVelocity,
+  solvePhysics2DContactIndicesOnce,
+  warmStartPhysics2DContactIndices,
+} from './solver';
 import {
   isPhysics2DBodyStateValid,
   isPhysics2DContactValid,
@@ -567,15 +575,13 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   // (any awake neighbour puts it in an awake island before this point), so integrating it would move it
   // by exactly zero. What the skip buys is that a settled thousand-body pile costs no integration work
   // at all, which is the entire reason sleep exists. Removing it changes no observable result.
+  if (config.continuousCollision && config.maxCcdSubsteps > 0 && hasActivePhysics2DBullet(world)) {
+    integratePhysics2DContinuous(world, dt);
+  } else {
+    advancePhysics2DSolveIslandBodies(world, dt);
+  }
+
   for (let island = 0; island < world.solveIslandRoots.length; island++) {
-    const bodyStart = world.solveIslandBodyStarts[island];
-    const bodyEnd = bodyStart + world.solveIslandBodyCounts[island];
-    for (let at = bodyStart; at < bodyEnd; at++) {
-      const body = bodies[world.solveIslandBodyIndices[at]];
-      body.x += body.velocityX * dt;
-      body.y += body.velocityY * dt;
-      if (!body.fixedRotation) body.angle += body.angularVelocity * dt;
-    }
     const contactStart = world.solveIslandContactStarts[island];
     const contactCount = world.solveIslandContactCounts[island];
     for (let iteration = 0; iteration < config.positionIterations; iteration++) {
@@ -615,6 +621,222 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
       }
     }
   }
+}
+
+function advancePhysics2DSolveIslandBodies(world: Physics2DWorld, dt: number): void {
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    const start = world.solveIslandBodyStarts[island];
+    const end = start + world.solveIslandBodyCounts[island];
+    for (let at = start; at < end; at++) advancePhysics2DBody(world.bodies[world.solveIslandBodyIndices[at]], dt);
+  }
+}
+
+function advancePhysics2DBody(body: RigidBody2D, dt: number): void {
+  body.x += body.velocityX * dt;
+  body.y += body.velocityY * dt;
+  if (!body.fixedRotation) body.angle += body.angularVelocity * dt;
+}
+
+function hasActivePhysics2DBullet(world: Readonly<Physics2DWorld>): boolean {
+  for (const body of world.bodies) {
+    if (body.type === 'dynamic' && body.bullet && !body.sleeping) return true;
+  }
+  return false;
+}
+
+// Chronological linear CCD. Every event advances the whole awake world to the same time, applies one
+// impact impulse, refreshes collider transforms, and searches the remaining interval again. The hard
+// config bound prevents a pinball corridor from turning one caller step into an unbounded loop. Angular
+// motion is integrated at event boundaries but is not swept; the collision primitive's contract is
+// explicitly translational.
+function integratePhysics2DContinuous(world: Physics2DWorld, dt: number): void {
+  let remaining = dt;
+  for (let substep = 0; substep < world.config.maxCcdSubsteps && remaining > 0; substep++) {
+    if (!findEarliestPhysics2DImpact(world, remaining)) break;
+    const advance = remaining * ccdImpactFraction;
+    advanceAllAwakePhysics2DBodies(world, advance);
+    remaining -= advance;
+    synchronizePhysics2DBroadphase(world);
+    resolveEarliestPhysics2DImpact(world);
+    if (ccdImpactFraction >= 1) return;
+  }
+  if (remaining > 0) advanceAllAwakePhysics2DBodies(world, remaining);
+}
+
+function advanceAllAwakePhysics2DBodies(world: Physics2DWorld, dt: number): void {
+  for (const body of world.bodies) {
+    if (body.type === 'static' || body.sleeping) continue;
+    advancePhysics2DBody(body, dt);
+  }
+}
+
+function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean {
+  ccdImpactFraction = Number.POSITIVE_INFINITY;
+  ccdImpactBodyA = -1;
+  ccdImpactBodyB = -1;
+  ccdImpactColliderA = -1;
+  ccdImpactColliderB = -1;
+  const bodies = world.bodies;
+  for (let i = 0; i < bodies.length; i++) {
+    const bodyA = bodies[i];
+    for (let j = i + 1; j < bodies.length; j++) {
+      const bodyB = bodies[j];
+      if (!isPhysics2DCcdPairActive(bodyA, bodyB)) continue;
+      if (isPhysics2DPairJointSuppressed(world, bodyA.index, bodyB.index)) continue;
+      const translationAX = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityX * dt;
+      const translationAY = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.velocityY * dt;
+      const translationBX = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityX * dt;
+      const translationBY = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.velocityY * dt;
+      for (let colliderA = 0; colliderA < bodyA.colliders.length; colliderA++) {
+        const first = bodyA.colliders[colliderA];
+        if (first.sensor) continue;
+        for (let colliderB = 0; colliderB < bodyB.colliders.length; colliderB++) {
+          const second = bodyB.colliders[colliderB];
+          if (second.sensor || !isPhysics2DColliderPairEnabled(first, second)) continue;
+          if (
+            !sweepCollisionShape(
+              first.world,
+              translationAX,
+              translationAY,
+              second.world,
+              translationBX,
+              translationBY,
+              ccdSweepScratch,
+            ) ||
+            ccdSweepScratch.fraction > ccdImpactFraction ||
+            !isPhysics2DImpactApproaching(
+              bodyA,
+              bodyB,
+              ccdSweepScratch,
+              translationAX,
+              translationAY,
+              translationBX,
+              translationBY,
+            )
+          ) {
+            continue;
+          }
+          ccdImpactFraction = ccdSweepScratch.fraction;
+          ccdImpactBodyA = i;
+          ccdImpactBodyB = j;
+          ccdImpactColliderA = colliderA;
+          ccdImpactColliderB = colliderB;
+          ccdImpactX = ccdSweepScratch.x;
+          ccdImpactY = ccdSweepScratch.y;
+          ccdImpactNormalX = ccdSweepScratch.normalX;
+          ccdImpactNormalY = ccdSweepScratch.normalY;
+        }
+      }
+    }
+  }
+  return ccdImpactBodyA >= 0;
+}
+
+function isPhysics2DCcdPairActive(bodyA: Readonly<RigidBody2D>, bodyB: Readonly<RigidBody2D>): boolean {
+  const bulletA = bodyA.type === 'dynamic' && bodyA.bullet && !bodyA.sleeping;
+  const bulletB = bodyB.type === 'dynamic' && bodyB.bullet && !bodyB.sleeping;
+  if (!bulletA && !bulletB) return false;
+  return bodyA.inverseMass > 0 || bodyB.inverseMass > 0;
+}
+
+function isPhysics2DImpactApproaching(
+  bodyA: Readonly<RigidBody2D>,
+  bodyB: Readonly<RigidBody2D>,
+  impact: Readonly<CollisionTimeOfImpact>,
+  translationAX: number,
+  translationAY: number,
+  translationBX: number,
+  translationBY: number,
+): boolean {
+  writePhysics2DBodyCenter(bodyA, translationAX * impact.fraction, translationAY * impact.fraction, ccdCenterAScratch);
+  writePhysics2DBodyCenter(bodyB, translationBX * impact.fraction, translationBY * impact.fraction, ccdCenterBScratch);
+  const rAX = impact.x - ccdCenterAScratch.x;
+  const rAY = impact.y - ccdCenterAScratch.y;
+  const rBX = impact.x - ccdCenterBScratch.x;
+  const rBY = impact.y - ccdCenterBScratch.y;
+  return relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, impact.normalX, impact.normalY) < -1e-9;
+}
+
+function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
+  const bodyA = world.bodies[ccdImpactBodyA];
+  const bodyB = world.bodies[ccdImpactBodyB];
+  const colliderA = bodyA.colliders[ccdImpactColliderA];
+  const colliderB = bodyB.colliders[ccdImpactColliderB];
+  if (colliderA === undefined || colliderB === undefined) return;
+  if (bodyA.type !== 'static') {
+    bodyA.sleeping = false;
+    bodyA.sleepTimer = 0;
+  }
+  if (bodyB.type !== 'static') {
+    bodyB.sleeping = false;
+    bodyB.sleepTimer = 0;
+  }
+  writePhysics2DBodyCenter(bodyA, 0, 0, ccdCenterAScratch);
+  writePhysics2DBodyCenter(bodyB, 0, 0, ccdCenterBScratch);
+  const rAX = ccdImpactX - ccdCenterAScratch.x;
+  const rAY = ccdImpactY - ccdCenterAScratch.y;
+  const rBX = ccdImpactX - ccdCenterBScratch.x;
+  const rBY = ccdImpactY - ccdCenterBScratch.y;
+  const normalMass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, ccdImpactNormalX, ccdImpactNormalY);
+  if (!(normalMass > 0)) return;
+  const approach = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, ccdImpactNormalX, ccdImpactNormalY);
+  if (approach >= 0) return;
+  const restitution =
+    approach < -world.config.restitutionThreshold
+      ? mixPhysics2DRestitution(colliderA.material.restitution, colliderB.material.restitution)
+      : 0;
+  const normalImpulse = -(1 + restitution) * approach * normalMass;
+  applyPhysics2DImpulse(
+    bodyA,
+    bodyB,
+    rAX,
+    rAY,
+    rBX,
+    rBY,
+    normalImpulse * ccdImpactNormalX,
+    normalImpulse * ccdImpactNormalY,
+  );
+
+  const tangentX = -ccdImpactNormalY;
+  const tangentY = ccdImpactNormalX;
+  const tangentMass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
+  if (!(tangentMass > 0)) return;
+  const tangentVelocity = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
+  const friction = mixPhysics2DFriction(colliderA.material.friction, colliderB.material.friction);
+  const tangentImpulse = Math.max(
+    -friction * normalImpulse,
+    Math.min(friction * normalImpulse, -tangentVelocity * tangentMass),
+  );
+  applyPhysics2DImpulse(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentImpulse * tangentX, tangentImpulse * tangentY);
+}
+
+function relativePhysics2DPointVelocity(
+  bodyA: Readonly<RigidBody2D>,
+  bodyB: Readonly<RigidBody2D>,
+  rAX: number,
+  rAY: number,
+  rBX: number,
+  rBY: number,
+  axisX: number,
+  axisY: number,
+): number {
+  const velocityAX = bodyA.velocityX - bodyA.angularVelocity * rAY;
+  const velocityAY = bodyA.velocityY + bodyA.angularVelocity * rAX;
+  const velocityBX = bodyB.velocityX - bodyB.angularVelocity * rBY;
+  const velocityBY = bodyB.velocityY + bodyB.angularVelocity * rBX;
+  return (velocityAX - velocityBX) * axisX + (velocityAY - velocityBY) * axisY;
+}
+
+function writePhysics2DBodyCenter(
+  body: Readonly<RigidBody2D>,
+  translationX: number,
+  translationY: number,
+  out: { x: number; y: number },
+): void {
+  const cos = Math.cos(body.angle);
+  const sin = Math.sin(body.angle);
+  out.x = body.x + translationX + body.centerX * cos - body.centerY * sin;
+  out.y = body.y + translationY + body.centerX * sin + body.centerY * cos;
 }
 
 function restorePhysics2DContactHookFields(
@@ -691,4 +913,16 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
 
 const pairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
+const ccdSweepScratch: CollisionTimeOfImpact = createCollisionTimeOfImpact();
+const ccdCenterAScratch = { x: 0, y: 0 };
+const ccdCenterBScratch = { x: 0, y: 0 };
+let ccdImpactFraction = 0;
+let ccdImpactBodyA = -1;
+let ccdImpactBodyB = -1;
+let ccdImpactColliderA = -1;
+let ccdImpactColliderB = -1;
+let ccdImpactX = 0;
+let ccdImpactY = 0;
+let ccdImpactNormalX = 0;
+let ccdImpactNormalY = 0;
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };

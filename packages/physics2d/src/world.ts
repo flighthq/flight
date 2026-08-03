@@ -228,6 +228,8 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
     positionCorrection: 0.2,
     restitutionThreshold: 1,
     warmStarting: true,
+    continuousCollision: true,
+    maxCcdSubsteps: 8,
   };
 }
 
@@ -293,6 +295,7 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
     angularDamping: 0,
     gravityScale: 1,
     fixedRotation: false,
+    bullet: false,
     sleeping: false,
     sleepEnabled: true,
     sleepTimer: 0,
@@ -408,6 +411,17 @@ export function removePhysics2DCollider(
     _wakePhysics2DBodyFromTopology(body);
     synchronizePhysics2DBroadphase(world);
   }
+  return true;
+}
+
+// Opts a world-owned body into or out of continuous linear collision detection. CCD is meaningful only
+// for dynamics, but retaining the authored flag across type changes keeps a temporarily static bullet
+// from silently losing its policy.
+export function setPhysics2DBodyBullet(world: Physics2DWorld, body: RigidBody2D, bullet: boolean): boolean {
+  assertPhysics2DWorldNotStepping(world);
+  if (world.bodyByIndex.get(body.index) !== body || typeof bullet !== 'boolean') return false;
+  body.bullet = bullet;
+  _wakePhysics2DBodyFromTopology(body);
   return true;
 }
 
