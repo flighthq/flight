@@ -1,4 +1,4 @@
-import type { Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types/contract';
+import type { CanvasShapeCommand, Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types/contract';
 
 import {
   copyAllRenderersFromRenderState,
@@ -82,6 +82,29 @@ describe('copyRenderStateRegistrations', () => {
       getRenderStateRuntime(source).renderEffectPaddingResolverRegistry,
     );
     expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(resolver);
+  });
+
+  it('snapshot-copies the shape-command registry without aliasing the map', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const command = { key: 'beginFill', draw: vi.fn() } as unknown as CanvasShapeCommand;
+    getRenderStateRuntime(source).canvasShapeCommandRegistry = new Map([['beginFill', command]]);
+
+    copyRenderStateRegistrations(target, source);
+
+    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry).not.toBe(
+      getRenderStateRuntime(source).canvasShapeCommandRegistry,
+    );
+    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry?.get('beginFill')).toBe(command);
+  });
+
+  it('leaves the shape-command registry null when the source never registered one', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+
+    copyRenderStateRegistrations(target, source);
+
+    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry).toBeNull();
   });
 });
 
