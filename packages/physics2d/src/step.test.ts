@@ -345,14 +345,56 @@ describe('contact solve hooks', () => {
     };
 
     expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/pre-solve hook produced invalid/);
-    world.contacts[0].friction = STONE.friction;
+    expect(world.contacts[0].friction).toBeCloseTo(STONE.friction);
     world.contactHooks.preSolve = null;
     world.contactHooks.postSolve = (_currentWorld, contact) => {
       contact.restitution = Number.POSITIVE_INFINITY;
     };
 
     expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/post-solve hook produced invalid/);
-    world.contacts[0].restitution = STONE.restitution;
+    expect(world.contacts[0].restitution).toBe(STONE.restitution);
+    world.contactHooks.postSolve = null;
+    expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
+  });
+
+  it('does not scale a warm cache until pre-solve completes successfully', () => {
+    const world = createPhysics2DWorld(0, 0);
+    world.config.allowSleeping = false;
+    world.config.velocityIterations = 0;
+    world.config.positionIterations = 0;
+    ground(world);
+    box(world, 0, 0.49);
+    stepPhysics2D(world, 1 / 60);
+    const point = world.contacts[0].points[0];
+    point.normalImpulse = 3;
+    world.contactHooks.preSolve = () => {
+      throw new Error('stop');
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 30)).toThrow('stop');
+    expect(point.normalImpulse).toBe(3);
+    expect(world.previousTimestep).toBe(1 / 60);
+
+    world.contactHooks.preSolve = null;
+    stepPhysics2D(world, 1 / 30);
+    expect(point.normalImpulse).toBe(6);
+  });
+
+  it('commits integration and cleanup before reporting a post-solve exception', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    const crate = box(world, 0, 0.4);
+    crate.velocityX = 1;
+    crate.forceX = 2;
+    world.contactHooks.postSolve = () => {
+      throw new Error('observer failed');
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow('observer failed');
+    expect(crate.x).toBeGreaterThan(0);
+    expect(crate.forceX).toBe(0);
+    expect(world.previousTimestep).toBe(1 / 60);
+
     world.contactHooks.postSolve = null;
     expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
   });
