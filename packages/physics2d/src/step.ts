@@ -192,7 +192,7 @@ function mergePhysics2DContact(
   sensor: boolean,
   friction: number,
   restitution: number,
-): void {
+): Physics2DContact {
   let contact: Physics2DContact | null = null;
   let created = false;
   for (const existing of world.contacts) {
@@ -267,6 +267,7 @@ function mergePhysics2DContact(
     target.tangentImpulse = tangentImpulse;
   }
   contact.pointCount = manifold.pointCount;
+  return contact;
 }
 
 // Rebuilds every contact's lever arms, effective masses, and velocity bias for this step's geometry.
@@ -644,11 +645,11 @@ function hasActivePhysics2DBullet(world: Readonly<Physics2DWorld>): boolean {
   return false;
 }
 
-// Chronological linear CCD. Every event advances the whole awake world to the same time, applies one
-// impact impulse, refreshes collider transforms, and searches the remaining interval again. The hard
-// config bound prevents a pinball corridor from turning one caller step into an unbounded loop. Angular
-// motion is integrated at event boundaries but is not swept; the collision primitive's contract is
-// explicitly translational.
+// Chronological linear CCD. Every event first becomes a persistent contact and traverses pre-solve,
+// then advances the whole awake world to the same time, applies one impact impulse, refreshes collider
+// transforms, and searches the remaining interval again. The hard config bound prevents a pinball
+// corridor from turning one caller step into an unbounded loop. Angular motion is integrated at event
+// boundaries but is not swept; the collision primitive's contract is explicitly translational.
 function integratePhysics2DContinuous(world: Physics2DWorld, dt: number): void {
   let remaining = dt;
   for (let substep = 0; substep < world.config.maxCcdSubsteps && remaining > 0; substep++) {
@@ -693,6 +694,10 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
         for (let colliderB = 0; colliderB < bodyB.colliders.length; colliderB++) {
           const second = bodyB.colliders[colliderB];
           if (second.sensor || !isPhysics2DColliderPairEnabled(first, second)) continue;
+          // An ordinary contact was already prepared and solved before CCD integration. Sweeping it
+          // again at fraction zero would double-apply its impulse and can consume the entire CCD budget
+          // without advancing time.
+          if (findPhysics2DContact(world, bodyA.index, bodyB.index, colliderA, colliderB) !== null) continue;
           if (
             !sweepCollisionShape(
               first.world,
@@ -763,6 +768,8 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
   const colliderA = bodyA.colliders[ccdImpactColliderA];
   const colliderB = bodyB.colliders[ccdImpactColliderB];
   if (colliderA === undefined || colliderB === undefined) return;
+  const contact = createPhysics2DImpactContact(world, bodyA, bodyB, colliderA, colliderB);
+  if (!contact.enabled || contact.sensor) return;
   if (bodyA.type !== 'static') {
     bodyA.sleeping = false;
     bodyA.sleepTimer = 0;
@@ -781,10 +788,7 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
   if (!(normalMass > 0)) return;
   const approach = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, ccdImpactNormalX, ccdImpactNormalY);
   if (approach >= 0) return;
-  const restitution =
-    approach < -world.config.restitutionThreshold
-      ? mixPhysics2DRestitution(colliderA.material.restitution, colliderB.material.restitution)
-      : 0;
+  const restitution = approach < -world.config.restitutionThreshold ? contact.restitution : 0;
   const normalImpulse = -(1 + restitution) * approach * normalMass;
   applyPhysics2DImpulse(
     bodyA,
@@ -796,18 +800,84 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
     normalImpulse * ccdImpactNormalX,
     normalImpulse * ccdImpactNormalY,
   );
+  contact.points[0].normalImpulse = normalImpulse;
 
   const tangentX = -ccdImpactNormalY;
   const tangentY = ccdImpactNormalX;
   const tangentMass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
   if (!(tangentMass > 0)) return;
   const tangentVelocity = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
-  const friction = mixPhysics2DFriction(colliderA.material.friction, colliderB.material.friction);
+  const friction = contact.friction;
   const tangentImpulse = Math.max(
     -friction * normalImpulse,
     Math.min(friction * normalImpulse, -tangentVelocity * tangentMass),
   );
   applyPhysics2DImpulse(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentImpulse * tangentX, tangentImpulse * tangentY);
+  contact.points[0].tangentImpulse = tangentImpulse;
+}
+
+function createPhysics2DImpactContact(
+  world: Physics2DWorld,
+  bodyA: Readonly<RigidBody2D>,
+  bodyB: Readonly<RigidBody2D>,
+  colliderA: Readonly<RigidBody2D['colliders'][number]>,
+  colliderB: Readonly<RigidBody2D['colliders'][number]>,
+): Physics2DContact {
+  manifoldScratch.normalX = ccdImpactNormalX;
+  manifoldScratch.normalY = ccdImpactNormalY;
+  manifoldScratch.pointCount = 1;
+  manifoldScratch.points[0].x = ccdImpactX;
+  manifoldScratch.points[0].y = ccdImpactY;
+  manifoldScratch.points[0].depth = 0;
+  manifoldScratch.points[0].featureId = 0;
+  const contact = mergePhysics2DContact(
+    world,
+    bodyA.index,
+    bodyB.index,
+    ccdImpactColliderA,
+    ccdImpactColliderB,
+    manifoldScratch,
+    false,
+    mixPhysics2DFriction(colliderA.material.friction, colliderB.material.friction),
+    mixPhysics2DRestitution(colliderA.material.restitution, colliderB.material.restitution),
+  );
+  const preSolve = world.contactHooks.preSolve;
+  if (preSolve === null) return contact;
+  const friction = contact.friction;
+  const restitution = contact.restitution;
+  const enabled = contact.enabled;
+  const sensor = contact.sensor;
+  try {
+    preSolve(world, contact);
+  } catch (error) {
+    restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
+    throw error;
+  }
+  if (!isPhysics2DContactValid(contact)) {
+    restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
+    throw new Error('Physics2D pre-solve hook produced invalid contact state');
+  }
+  return contact;
+}
+
+function findPhysics2DContact(
+  world: Readonly<Physics2DWorld>,
+  bodyA: number,
+  bodyB: number,
+  colliderA: number,
+  colliderB: number,
+): Physics2DContact | null {
+  for (const contact of world.contacts) {
+    if (
+      contact.bodyA === bodyA &&
+      contact.bodyB === bodyB &&
+      contact.colliderA === colliderA &&
+      contact.colliderB === colliderB
+    ) {
+      return contact;
+    }
+  }
+  return null;
 }
 
 function relativePhysics2DPointVelocity(

@@ -278,6 +278,51 @@ describe('bullet continuous collision detection', () => {
     stepPhysics2D(sensorWorld, 0.1);
     expect(sensorBullet.x).toBeCloseTo(10);
   });
+
+  it('publishes swept impacts through contact lifecycle and solve hooks', () => {
+    const world = createPhysics2DWorld(0, 0);
+    wall(world, 5, 5.1);
+    const bullet = projectile(world, 100);
+    const order: string[] = [];
+    world.contactHooks.preSolve = (_currentWorld, contact) => {
+      order.push('pre');
+      expect(contact.points[0].x).toBeCloseTo(5);
+    };
+    world.contactHooks.postSolve = (_currentWorld, contact) => {
+      order.push('post');
+      expect(contact.points[0].normalImpulse).toBeGreaterThan(0);
+    };
+
+    stepPhysics2D(world, 0.1);
+
+    expect(order).toEqual(['pre', 'post']);
+    expect(world.events.began).toEqual([world.contacts[0]]);
+    expect(world.events.ended).toHaveLength(0);
+    expect(bullet.x).toBeCloseTo(4.5);
+
+    world.contactHooks.preSolve = null;
+    world.contactHooks.postSolve = null;
+    stepPhysics2D(world, 0.1);
+    expect(world.events.ended).toHaveLength(0);
+  });
+
+  it('lets pre-solve disable a swept impact without consuming the CCD budget at zero time', () => {
+    const world = createPhysics2DWorld(0, 0);
+    wall(world, 5, 5.1);
+    const bullet = projectile(world, 100);
+    let calls = 0;
+    world.contactHooks.preSolve = (_currentWorld, contact) => {
+      calls++;
+      contact.enabled = false;
+    };
+
+    stepPhysics2D(world, 0.1);
+
+    expect(calls).toBe(1);
+    expect(bullet.x).toBeCloseTo(10);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].enabled).toBe(false);
+  });
 });
 
 describe('collision filtering', () => {
