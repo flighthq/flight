@@ -1,3 +1,4 @@
+export * from './explainWgpuScene3DCoverage';
 export * from './blinnPhongWgpuMeshMaterialRenderer';
 export * from './customShaderWgpuMeshMaterialRenderer';
 export * from './depthWgpuMeshMaterialRenderer';
