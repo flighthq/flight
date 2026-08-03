@@ -425,6 +425,35 @@ display-siblings. Measured through the real import path, the honorable case is t
 correction is recorded rather than quietly swapped, because the discarded number was used to argue
 that the ordering model could not serve Rive.
 
+**Solo variant switching is covered.** A `Solo` is a Node that shows exactly one of its children at a
+time — the switcher behind a character's alternate limbs or a button's states. Imported as a plain
+node it drew *every* variant at once, stacked, so this was a visible wrongness rather than a missing
+feature and is applied rather than reported. The active child is named by a component index (property
+296), verified against every Solo in the corpus: all 9 resolve to a component whose parent is the Solo
+itself. Applying it hides 61 stacked variants across the corpus.
+
+**What the corpus says is still unread**, ranked by how many of the 37 real files use it. This is the
+honest remainder of Rive maturity, and the ranking is the point — three of these need a decision above
+this codec, so they are recorded rather than guessed at.
+
+| gap | objects | files | note |
+| --- | --- | --- | --- |
+| Rigging / skinning (`Weight`, `Tendon`, `CubicWeight`, `Skin`, `RootBone`, `Bone`) | 2,664 | 21/37 (57%) | Needs the `skeleton2d` weighted-vector-path decision |
+| Layout (`LayoutComponent`, `LayoutComponentStyle`) | 194 | 11/37 (30%) | Rive's runtime layout engine; no Flight equivalent |
+| Constraints (`IKConstraint`, `TranslationConstraint`, …) | 179 | 11/37 (30%) | Solvers; where they live is a charter question |
+| Data binding (`ViewModelInstance`, `DataBindContext`, `BindableProperty*`) | 691 | 8/37 (22%) | A runtime binding system, not static document data |
+| Variable-font axes (`TextStyleAxis`) | 120 | 7/37 (19%) | Reachable inside the text seam |
+| Feather | 62 | 2/37 (5%) | Belongs to the effects tier |
+| Mesh / vertex art (`MeshVertex`, `ContourMeshVertex`) | 291 | 1/37 (3%) | Deformable mesh; travels with rigging |
+
+Measured against animation rather than object count, the same ranking holds: of 3,503 keyed objects
+(all of which resolve), 369 target bones and 53 target layout — so **rigging alone is 10.5% of all
+animation in the corpus**, and every other unread family is under 2%.
+
+**The reference corpus is 37 files, not 41.** Four of the paths fetched are Git LFS pointers — 131-byte
+text files beginning `version https://` — which the importer correctly rejects as not-a-Rive-file. Any
+future count should say 37.
+
 **Assets are covered as data, with no acquisition.** Every asset the file declares is returned in
 declaration order — image, font, audio, script and manifest — with its name, kind, stated dimensions
 and cdn base url. **Order is how they are addressed**: an image drawable's `assetId` is a position in

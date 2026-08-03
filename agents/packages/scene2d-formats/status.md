@@ -8,6 +8,36 @@ by: builder
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-03 — Rive Solo fixed; the remaining gaps ranked by what real files actually use
+
+**Solo was a visible wrongness, not a missing feature.** A `Solo` shows exactly one child at a time
+(alternate limbs, button states). It derives from Node, so it imported as a plain node and **every
+variant drew at once, stacked**. The active child is component-index property 296 — verified before
+building, against all 9 Solos in the corpus: every one resolves to a component whose parent is the
+Solo itself. Applying it hides 61 stacked variants across the 37 files. Five tests; a mutation kills.
+
+**The corpus is 37 files, not 41.** Four fetched paths are Git LFS *pointers* — 131-byte text files
+beginning `version https://` — which the importer correctly rejects. My earlier "41 real files" was
+wrong; the import numbers were right, the denominator was not.
+
+**Ranked remainder**, by share of the 37 real files, now in [coverage](../../scene2d-format-coverage.md):
+
+| gap | objects | files |
+| --- | --- | --- |
+| Rigging / skinning | 2,664 | 21/37 (57%) |
+| Layout | 194 | 11/37 (30%) |
+| Constraints (IK, translation) | 179 | 11/37 (30%) |
+| Data binding | 691 | 8/37 (22%) |
+| Variable-font axes | 120 | 7/37 (19%) |
+| Feather | 62 | 2/37 (5%) |
+| Mesh / vertex art | 291 | 1/37 (3%) |
+
+Cross-checked against animation, which ranks the same: of 3,503 keyed objects (0 unresolved), 369
+target bones and 53 target layout — **rigging alone is 10.5% of all animation**, everything else under
+2%. That is the number that says rigging is not one gap among seven; it is the gap.
+
+284 package tests, check green.
+
 ## 2026-08-03 — SVG internal DTD entities fixed, in `@flighthq/xml` (cross-package, user-authorised)
 
 The gap the W3C corpus surfaced. A document declaring `<!ENTITY Smile "<circle …/>">` and expanding it
