@@ -260,6 +260,71 @@ describe('computeMeshGeometryTangents', () => {
     expect(indices[4]).toBeGreaterThanOrEqual(4);
   });
 
+  it('splits same-handed corners whose tangent directions cannot share a stable frame', () => {
+    // Both triangles are CCW and both UV determinants are positive, but their U axes point in
+    // opposite model-space directions at shared vertex 0. Handedness-only reconciliation leaves the
+    // shared tangent cancelled or dominated by one face; Flight must create a second complete record.
+    const vertices = new Float32Array(5 * 12);
+    setCanonicalVertex(vertices, 0, 0, 0, 0, 0);
+    setCanonicalVertex(vertices, 1, 1, 0, 1, 0);
+    setCanonicalVertex(vertices, 2, 0, 1, 0, 1);
+    setCanonicalVertex(vertices, 3, -1, 0, 1, 0);
+    setCanonicalVertex(vertices, 4, 0, -1, 0, 1);
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2, 0, 3, 4]),
+      layout: CANONICAL_LAYOUT,
+      vertices,
+    });
+    computeMeshGeometryNormals(geometry, geometry);
+
+    computeMeshGeometryTangents(geometry, geometry);
+
+    expect(geometry.vertices.length / 12).toBe(6);
+    const indices = geometry.indices!;
+    expect(indices[0]).not.toBe(indices[3]);
+    expect(geometry.vertices[indices[0] * 12 + 6]).toBeGreaterThan(0.9);
+    expect(geometry.vertices[indices[3] * 12 + 6]).toBeLessThan(-0.9);
+    // This is a directional split within one handedness, not a mirror split.
+    expect(geometry.vertices[indices[0] * 12 + 9]).toBe(1);
+    expect(geometry.vertices[indices[3] * 12 + 9]).toBe(1);
+
+    // The reference MD5 demo historically repeated both authoring calls after import. Repeating them
+    // must neither grow topology again nor turn the Flight-created tangent split into a hard normal seam.
+    computeMeshGeometryNormals(geometry, geometry);
+    computeMeshGeometryTangents(geometry, geometry);
+    expect(geometry.vertices.length / 12).toBe(6);
+    expect(geometry.vertices[indices[0] * 12 + 3]).toBeCloseTo(geometry.vertices[indices[3] * 12 + 3]);
+    expect(geometry.vertices[indices[0] * 12 + 4]).toBeCloseTo(geometry.vertices[indices[3] * 12 + 4]);
+    expect(geometry.vertices[indices[0] * 12 + 5]).toBeCloseTo(geometry.vertices[indices[3] * 12 + 5]);
+  });
+
+  it('keeps smooth normals shared across a folded mirrored tangent seam', () => {
+    const vertices = new Float32Array(4 * 12);
+    setCanonicalVertex(vertices, 0, 0, 0, 0, 0);
+    setCanonicalVertex(vertices, 1, 1, 0, 1, 0);
+    setCanonicalVertex(vertices, 2, 0, 1, 0, 1);
+    setCanonicalVertex(vertices, 3, -1, 0, 1, 0);
+    vertices[3 * 12 + 2] = 1;
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
+      layout: CANONICAL_LAYOUT,
+      vertices,
+    });
+    computeMeshGeometryNormals(geometry, geometry);
+    const originalNormal = Array.from(geometry.vertices.subarray(3, 6));
+    computeMeshGeometryTangents(geometry, geometry);
+    const indices = geometry.indices!;
+    expect(indices[0]).not.toBe(indices[3]);
+
+    computeMeshGeometryNormals(geometry, geometry);
+
+    for (const vertex of [indices[0], indices[3]]) {
+      expect(geometry.vertices[vertex * 12 + 3]).toBeCloseTo(originalNormal[0]);
+      expect(geometry.vertices[vertex * 12 + 4]).toBeCloseTo(originalNormal[1]);
+      expect(geometry.vertices[vertex * 12 + 5]).toBeCloseTo(originalNormal[2]);
+    }
+  });
+
   it('copies the complete skinned record when splitting a mirrored tangent seam', () => {
     const stride = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.stride / 4;
     const vertices = new Float32Array(4 * stride);
