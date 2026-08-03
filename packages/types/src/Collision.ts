@@ -1,8 +1,9 @@
 // 2D narrow-phase collision header. `@flighthq/collision` tests one collider pair for overlap and,
 // when they overlap, writes a CollisionManifold — the minimum-translation vector that separates the
-// pair. Shapes are plain data (kind + parameters), decoupled from the scene graph; a game maps its
-// entities onto these. This is the detection layer a physics step or trigger system queries after a
-// broadphase has narrowed the candidate pairs; it does not resolve penetration or integrate motion.
+// pair. It also computes exact first contact under linear translation for continuous collision users.
+// Shapes are plain data (kind + parameters), decoupled from the scene graph; a game maps its entities
+// onto these. This is the detection layer a physics step or trigger system queries after a broadphase
+// has narrowed the candidate pairs; it does not resolve penetration or integrate motion.
 // Distinct from @flighthq/geometry (whose Aabb/Obb/sphere are 3D) and @flighthq/interaction (pointer
 // hit-testing against display objects): these are general 2D collider-vs-collider colliders.
 
