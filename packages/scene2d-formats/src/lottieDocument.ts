@@ -45,6 +45,7 @@ import type {
   Node2DAnimationTarget,
   EasingFunction,
   ImportDiagnostic,
+  LottieAdvancedBlend,
   LottieAnimatable,
   LottieAsset,
   LottieBezierHandle,
@@ -73,7 +74,7 @@ import type {
   Path,
   Shape,
 } from '@flighthq/types/contract';
-import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.
@@ -105,10 +106,11 @@ export function createScene2DFromLottieDocument(
       'lottie.invalid-document',
       'createScene2DFromLottieDocument',
     );
-    return { clip: createAnimationClip([]), duration: 0, frameRate: 0, root };
+    return { advancedBlends: [], clip: createAnimationClip([]), duration: 0, frameRate: 0, root };
   }
 
   const context: LottieImportContext = {
+    advancedBlends: [],
     assets: new Map((document.assets ?? []).map((asset) => [asset.id, asset])),
     channels: [],
     diagnostics,
@@ -126,6 +128,7 @@ export function createScene2DFromLottieDocument(
     }),
   );
   return {
+    advancedBlends: context.advancedBlends,
     clip: createAnimationClip(context.channels, duration, events),
     duration,
     frameRate: document.fr,
@@ -134,6 +137,7 @@ export function createScene2DFromLottieDocument(
 }
 
 interface LottieImportContext {
+  advancedBlends: LottieAdvancedBlend[];
   assets: Map<string, LottieAsset>;
   channels: AnimationChannel[];
   diagnostics: ImportDiagnostic[] | undefined;
@@ -1060,15 +1064,25 @@ function applyLottieLayerVisibility(target: Node2D, layer: Readonly<LottieLayer>
   );
 }
 
+/**
+ * Splits a layer's blend mode across Flight's two tiers.
+ *
+ * `BlendMode` is the fixed-function set that folds into blend state; the destination-reading and
+ * non-separable modes are `AdvancedBlendMode`, realized through a `BlendEffect` the caller applies.
+ * Neither tier is a place to guess: Bodymovin numbers overlay as 3, darken as 4 and lighten as 5, and
+ * an earlier reading of this table put Add at 3 and darken/lighten at 8 and 9 — so an overlay layer
+ * rendered as additive while the two modes Flight can express fell through unmapped.
+ */
 function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const mode = layer.bm ?? 0;
-  if (mode === 0) target.blendMode = BlendMode.Normal;
-  else if (mode === 1) target.blendMode = BlendMode.Multiply;
-  else if (mode === 2) target.blendMode = BlendMode.Screen;
-  else if (mode === 3) target.blendMode = BlendMode.Add;
-  else if (mode === 8) target.blendMode = BlendMode.Darken;
-  else if (mode === 9) target.blendMode = BlendMode.Lighten;
-  else reportLottieSkip(context, 'lottie.unsupported-blend-mode', { blendMode: mode });
+  const fixed = _lottieFixedBlendModes.get(mode);
+  if (fixed !== undefined) {
+    target.blendMode = fixed;
+    return;
+  }
+  target.blendMode = BlendMode.Normal;
+  const advanced = _lottieAdvancedBlendModes.get(mode);
+  if (advanced !== undefined) context.advancedBlends.push({ mode: advanced, node: target });
 }
 
 function reportLottieExpression(value: unknown, context: LottieImportContext): void {
@@ -1266,3 +1280,27 @@ function reportLottieDrop(
 
 const _sampleScratch = new Array<number>(256).fill(0);
 const _holdEasing: EasingFunction = () => 0;
+
+// Bodymovin's own numbering. The five that fold into blend state:
+const _lottieFixedBlendModes = new Map<number, string>([
+  [0, BlendMode.Normal],
+  [1, BlendMode.Multiply],
+  [2, BlendMode.Screen],
+  [4, BlendMode.Darken],
+  [5, BlendMode.Lighten],
+]);
+
+// The eleven that must bounce through an offscreen.
+const _lottieAdvancedBlendModes = new Map<number, string>([
+  [3, AdvancedBlendMode.Overlay],
+  [6, AdvancedBlendMode.ColorDodge],
+  [7, AdvancedBlendMode.ColorBurn],
+  [8, AdvancedBlendMode.HardLight],
+  [9, AdvancedBlendMode.SoftLight],
+  [10, AdvancedBlendMode.Difference],
+  [11, AdvancedBlendMode.Exclusion],
+  [12, AdvancedBlendMode.Hue],
+  [13, AdvancedBlendMode.Saturation],
+  [14, AdvancedBlendMode.Color],
+  [15, AdvancedBlendMode.Luminosity],
+]);

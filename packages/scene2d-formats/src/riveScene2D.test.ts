@@ -165,17 +165,17 @@ describe('createScene2DFromRiveDocument', () => {
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.path-outside-shape']);
   });
 
-  // Rive states sixteen blend modes and Flight carries six. The shared ones convert; the rest fall
-  // back to normal, which the coverage doc records as a Flight gap rather than a file problem.
-  it('converts the blend modes Flight can express and normalises the rest', () => {
+  // Flight splits blending deliberately: BlendMode is the fixed-function set that folds into blend
+  // state, and the destination-reading and non-separable modes are AdvancedBlendMode applied through
+  // a BlendEffect. Assigning one of the latter to node.blendMode and getting a silent Normal is the
+  // exact bug that split prevents, so the advanced ones are reported rather than dropped.
+  it('converts the blend modes that fold into blend state', () => {
     const modes = [
       [3, 'Normal'],
       [14, 'Screen'],
       [16, 'Darken'],
       [17, 'Lighten'],
       [24, 'Multiply'],
-      [15, 'Normal'],
-      [21, 'Normal'],
     ] as const;
     const result = createScene2DFromRiveDocument(
       buildRive([
@@ -188,6 +188,37 @@ describe('createScene2DFromRiveDocument', () => {
     modes.forEach(([, expected], index) => {
       expect((getNodeChildAt(root, index) as Node2D).blendMode).toBe(expected);
     });
+    expect(result.artboards[0].advancedBlends).toEqual([]);
+  });
+
+  it('reports a destination-reading mode for a BlendEffect instead of silently normalising it', () => {
+    const advanced = [
+      [15, 'Overlay'],
+      [18, 'ColorDodge'],
+      [19, 'ColorBurn'],
+      [20, 'HardLight'],
+      [21, 'SoftLight'],
+      [22, 'Difference'],
+      [23, 'Exclusion'],
+      [25, 'Hue'],
+      [26, 'Saturation'],
+      [27, 'Color'],
+      [28, 'Luminosity'],
+    ] as const;
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        ...advanced.map(([value]) => object(SHAPE, [uint(PARENT_ID, 0), uint(BLEND_MODE, value)])),
+      ]),
+    );
+    const root = result.artboards[0].root;
+
+    expect(result.artboards[0].advancedBlends.map((entry) => entry.mode)).toEqual(advanced.map(([, name]) => name));
+    // The node itself stays normal, because the mode is not blend state — the caller applies the effect.
+    advanced.forEach((_entry, index) => {
+      expect((getNodeChildAt(root, index) as Node2D).blendMode).toBe('Normal');
+    });
+    expect(result.artboards[0].advancedBlends[0].node).toBe(getNodeChildAt(root, 0));
   });
 
   it("leaves a plain node's blend mode alone, since only a drawable states one", () => {

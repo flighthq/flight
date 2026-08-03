@@ -180,12 +180,9 @@ direction below, and the 3D `mesh`/`skeleton3d` remain excluded either way. Deta
    child-order z-ordering cannot express without reparenting. A draw index, or a flattened render
    list, would settle it; the same question would reach any format with a draw list independent of
    hierarchy.
-8. **Whether `@flighthq/BlendMode` should widen.** It carries six modes against Rive's sixteen, and 93
-   of the 144 non-default blend uses in the corpus have nowhere to land. This also decides the
-   standing `lottie.unsupported-blend-mode` question, since that crumb reports the same shortfall.
-9. **Whether a `-formats` cell owns its functional render scenes.** No codec in this cell has one, so
+8. **Whether a `-formats` cell owns its functional render scenes.** No codec in this cell has one, so
    nothing here is verified at the pixel level on any backend — the widest structural hole for a cell
    whose whole output is visual.
-10. **Whether a third-party corpus may be committed as a fixture.** Rive's reference assets are MIT,
+9. **Whether a third-party corpus may be committed as a fixture.** Rive's reference assets are MIT,
     which permits redistribution but requires carrying the notice. Until that is decided the corpus is
     fetched on demand and its runs are reproducible rather than standing in CI.

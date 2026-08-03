@@ -30,6 +30,55 @@ describe('Lottie authoring units', () => {
   });
 });
 
+// Bodymovin numbers overlay 3, darken 4, lighten 5, hard-light 8 and soft-light 9. An earlier reading
+// put Add at 3 and darken/lighten at 8 and 9, so an overlay layer rendered ADDITIVE while the two
+// modes Flight can express fell through unmapped. Flight's two blend tiers are what make the whole
+// set expressible: the fixed-function five fold into blend state, the other eleven bounce through a
+// BlendEffect the caller applies.
+describe('Lottie blend modes', () => {
+  it('folds the fixed-function modes into blend state', () => {
+    for (const [value, expected] of [
+      [0, 'Normal'],
+      [1, 'Multiply'],
+      [2, 'Screen'],
+      [4, 'Darken'],
+      [5, 'Lighten'],
+    ] as const) {
+      const result = createScene2DFromLottieDocument(
+        createDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
+      );
+
+      expect(findByName(result.root, 'layer')!.blendMode).toBe(expected);
+      expect(result.advancedBlends).toEqual([]);
+    }
+  });
+
+  it('reports the destination-reading modes for a BlendEffect rather than dropping them', () => {
+    const advanced = [
+      [3, 'Overlay'],
+      [6, 'ColorDodge'],
+      [7, 'ColorBurn'],
+      [8, 'HardLight'],
+      [9, 'SoftLight'],
+      [10, 'Difference'],
+      [11, 'Exclusion'],
+      [12, 'Hue'],
+      [13, 'Saturation'],
+      [14, 'Color'],
+      [15, 'Luminosity'],
+    ] as const;
+    for (const [value, expected] of advanced) {
+      const result = createScene2DFromLottieDocument(
+        createDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
+      );
+
+      expect(result.advancedBlends.map((entry) => entry.mode)).toEqual([expected]);
+      // The node stays normal, because the mode is not blend state.
+      expect(findByName(result.root, 'layer')!.blendMode).toBe('Normal');
+    }
+  });
+});
+
 describe('Lottie document conformance census', () => {
   it('rejects malformed JSON and structurally invalid documents', () => {
     for (const source of ['{', JSON.stringify({ fr: 0, layers: [] })]) {
@@ -308,9 +357,11 @@ describe('Lottie document conformance census', () => {
     const shape = findFirstKind(result.root, ShapeKind) as Shape;
 
     // 3D layers, effect layers, mattes, and time remapping are uncarried coverage gaps, so they are
-    // project facts recorded in agents/scene2d-format-coverage.md and must NOT crumb. The blend mode
-    // and the expression stay: each is contingent on an author choice with a next action.
-    expect(kinds).toEqual(expect.arrayContaining(['lottie.unsupported-blend-mode', 'lottie.unsupported-expression']));
+    // project facts recorded in agents/scene2d-format-coverage.md and must NOT crumb. The expression
+    // stays: it is contingent on an author choice with a next action. The blend mode no longer crumbs
+    // at all — Flight expresses every Bodymovin mode, the advanced ones through a BlendEffect.
+    expect(kinds).toEqual(expect.arrayContaining(['lottie.unsupported-expression']));
+    expect(kinds).not.toContain('lottie.unsupported-blend-mode');
     expect(kinds).not.toContain('lottie.unsupported-3d-layer');
     expect(kinds).not.toContain('lottie.unsupported-effect');
     expect(kinds).not.toContain('lottie.unsupported-matte');
@@ -464,88 +515,6 @@ describe('Lottie keyframe time/value fidelity', () => {
       expect(node.y).toBeCloseTo(22, 5);
     }
   });
-});
-
-// Roundness is pinned by a relation the format states rather than by a curve this parser chose: a
-// polygon at 100% outer roundness IS the circumscribed circle. Sampling the emitted curve and
-// measuring its distance from the center tests that relation directly, so the assertion cannot echo
-// the handle-length formula the builder used.
-describe('Lottie polystar roundness', () => {
-  const CENTER = [30, 40];
-  const RADIUS = 12;
-  const CIRCLE_AREA_TOLERANCE = 0.5;
-
-  it('emits a circle of the outer radius when a polygon is fully round', () => {
-    const shape = importPolystar({ os: { k: 100 }, sy: 2 });
-    const distances = sampleShapeOutline(shape).map((point) => Math.hypot(point[0] - CENTER[0], point[1] - CENTER[1]));
-
-    expect(distances.length).toBeGreaterThan(20);
-    for (const distance of distances) expect(distance).toBeCloseTo(RADIUS, 1);
-  });
-
-  it('keeps every vertex on its radius and bows the edges outward as roundness rises', () => {
-    const sharpArea = shapeOutlineArea(importPolystar({ os: { k: 0 }, sy: 2 }));
-    const halfArea = shapeOutlineArea(importPolystar({ os: { k: 50 }, sy: 2 }));
-    const roundArea = shapeOutlineArea(importPolystar({ os: { k: 100 }, sy: 2 }));
-
-    // The inscribed polygon is the smallest, the circumscribed circle the largest, and roundness
-    // interpolates between them monotonically.
-    expect(sharpArea).toBeLessThan(halfArea);
-    expect(halfArea).toBeLessThan(roundArea);
-    // The sampler flattens each cubic into CURVE_SAMPLES chords, so the measured area is that of an
-    // inscribed polygon and sits just under the true circle.
-    expect(Math.PI * RADIUS * RADIUS - roundArea).toBeLessThan(CIRCLE_AREA_TOLERANCE);
-  });
-
-  it('never moves a star vertex off its stated radius, whatever the roundness', () => {
-    const INNER = 5;
-    for (const overrides of [
-      { ir: { k: INNER }, is: { k: 0 }, os: { k: 0 }, sy: 1 },
-      { ir: { k: INNER }, is: { k: 100 }, os: { k: 0 }, sy: 1 },
-      { ir: { k: INNER }, is: { k: 40 }, os: { k: 90 }, sy: 1 },
-    ]) {
-      // Roundness bows the edges; the anchors themselves must stay exactly on the authored radii, so
-      // every on-curve point is at either the outer or the inner radius.
-      for (const anchor of pathAnchorsOf(importPolystar(overrides))) {
-        const distance = Math.hypot(anchor[0] - CENTER[0], anchor[1] - CENTER[1]);
-        expect(Math.min(Math.abs(distance - RADIUS), Math.abs(distance - INNER))).toBeCloseTo(0, 6);
-      }
-    }
-  });
-
-  it('changes a star outline when inner roundness changes', () => {
-    const sharp = importPolystar({ ir: { k: 5 }, is: { k: 0 }, os: { k: 0 }, sy: 1 });
-    const rounded = importPolystar({ ir: { k: 5 }, is: { k: 100 }, os: { k: 0 }, sy: 1 });
-
-    expect(JSON.stringify(rounded.data.commands)).not.toBe(JSON.stringify(sharp.data.commands));
-  });
-
-  it('emits straight edges when roundness is absent or zero', () => {
-    const absent = importPolystar({ sy: 2 });
-    const zero = importPolystar({ os: { k: 0 }, sy: 2 });
-
-    expect(pathVerbsOf(absent)).not.toContain(PathCommand.CUBIC_CURVE_TO);
-    expect(JSON.stringify(zero.data.commands)).toBe(JSON.stringify(absent.data.commands));
-  });
-
-  function importPolystar(overrides: Record<string, unknown>): Shape {
-    const result = createScene2DFromLottieDocument(
-      createDocument([
-        {
-          ind: 1,
-          ip: 0,
-          nm: 'star',
-          op: 60,
-          shapes: [
-            { or: { k: RADIUS }, p: { k: CENTER }, pt: { k: 6 }, r: { k: 0 }, ty: 'sr', ...overrides },
-            { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' },
-          ],
-          ty: 4,
-        },
-      ] as unknown as LottieLayer[]),
-    );
-    return findFirstKind(result.root, ShapeKind) as Shape;
-  }
 });
 
 function paintStartsOf(shape: Shape): string[] {
@@ -727,6 +696,88 @@ function findFirstKind(root: Node2D, kind: string): Node2D | null {
   }
   return null;
 }
+
+// Roundness is pinned by a relation the format states rather than by a curve this parser chose: a
+// polygon at 100% outer roundness IS the circumscribed circle. Sampling the emitted curve and
+// measuring its distance from the center tests that relation directly, so the assertion cannot echo
+// the handle-length formula the builder used.
+describe('Lottie polystar roundness', () => {
+  const CENTER = [30, 40];
+  const RADIUS = 12;
+  const CIRCLE_AREA_TOLERANCE = 0.5;
+
+  it('emits a circle of the outer radius when a polygon is fully round', () => {
+    const shape = importPolystar({ os: { k: 100 }, sy: 2 });
+    const distances = sampleShapeOutline(shape).map((point) => Math.hypot(point[0] - CENTER[0], point[1] - CENTER[1]));
+
+    expect(distances.length).toBeGreaterThan(20);
+    for (const distance of distances) expect(distance).toBeCloseTo(RADIUS, 1);
+  });
+
+  it('keeps every vertex on its radius and bows the edges outward as roundness rises', () => {
+    const sharpArea = shapeOutlineArea(importPolystar({ os: { k: 0 }, sy: 2 }));
+    const halfArea = shapeOutlineArea(importPolystar({ os: { k: 50 }, sy: 2 }));
+    const roundArea = shapeOutlineArea(importPolystar({ os: { k: 100 }, sy: 2 }));
+
+    // The inscribed polygon is the smallest, the circumscribed circle the largest, and roundness
+    // interpolates between them monotonically.
+    expect(sharpArea).toBeLessThan(halfArea);
+    expect(halfArea).toBeLessThan(roundArea);
+    // The sampler flattens each cubic into CURVE_SAMPLES chords, so the measured area is that of an
+    // inscribed polygon and sits just under the true circle.
+    expect(Math.PI * RADIUS * RADIUS - roundArea).toBeLessThan(CIRCLE_AREA_TOLERANCE);
+  });
+
+  it('never moves a star vertex off its stated radius, whatever the roundness', () => {
+    const INNER = 5;
+    for (const overrides of [
+      { ir: { k: INNER }, is: { k: 0 }, os: { k: 0 }, sy: 1 },
+      { ir: { k: INNER }, is: { k: 100 }, os: { k: 0 }, sy: 1 },
+      { ir: { k: INNER }, is: { k: 40 }, os: { k: 90 }, sy: 1 },
+    ]) {
+      // Roundness bows the edges; the anchors themselves must stay exactly on the authored radii, so
+      // every on-curve point is at either the outer or the inner radius.
+      for (const anchor of pathAnchorsOf(importPolystar(overrides))) {
+        const distance = Math.hypot(anchor[0] - CENTER[0], anchor[1] - CENTER[1]);
+        expect(Math.min(Math.abs(distance - RADIUS), Math.abs(distance - INNER))).toBeCloseTo(0, 6);
+      }
+    }
+  });
+
+  it('changes a star outline when inner roundness changes', () => {
+    const sharp = importPolystar({ ir: { k: 5 }, is: { k: 0 }, os: { k: 0 }, sy: 1 });
+    const rounded = importPolystar({ ir: { k: 5 }, is: { k: 100 }, os: { k: 0 }, sy: 1 });
+
+    expect(JSON.stringify(rounded.data.commands)).not.toBe(JSON.stringify(sharp.data.commands));
+  });
+
+  it('emits straight edges when roundness is absent or zero', () => {
+    const absent = importPolystar({ sy: 2 });
+    const zero = importPolystar({ os: { k: 0 }, sy: 2 });
+
+    expect(pathVerbsOf(absent)).not.toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(JSON.stringify(zero.data.commands)).toBe(JSON.stringify(absent.data.commands));
+  });
+
+  function importPolystar(overrides: Record<string, unknown>): Shape {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'star',
+          op: 60,
+          shapes: [
+            { or: { k: RADIUS }, p: { k: CENTER }, pt: { k: 6 }, r: { k: 0 }, ty: 'sr', ...overrides },
+            { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' },
+          ],
+          ty: 4,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+    return findFirstKind(result.root, ShapeKind) as Shape;
+  }
+});
 
 // A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
 // count of paints in the file is the count of paints in the output. These four cases are the ones a
