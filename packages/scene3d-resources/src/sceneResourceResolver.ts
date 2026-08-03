@@ -12,7 +12,9 @@ import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contrac
 import { fetchWebImageResource } from './imageResourceFetch';
 import {
   createScene3DMaterialTextureRegistry,
-  registerBuiltInScene3DMaterialTextures,
+  registerExtendedPbrScene3DMaterialTextures,
+  registerStandardPbrScene3DMaterialTextures,
+  registerUnlitScene3DMaterialTextures,
 } from './sceneMaterialTextureRegistry';
 
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
@@ -21,7 +23,11 @@ export function createBuiltInScene3DResourceResolver(
   options?: Readonly<Scene3DResourceResolverOptions>,
 ): Scene3DResourceResolver {
   const resolver = createScene3DResourceResolver(options);
-  registerBuiltInScene3DMaterialTextures(resolver.registry);
+  // Named one by one rather than behind a bag: this assembly's whole contract is which material
+  // families it covers, so that list belongs in the source a caller reads, not inside a registrar.
+  registerStandardPbrScene3DMaterialTextures(resolver.registry);
+  registerUnlitScene3DMaterialTextures(resolver.registry);
+  registerExtendedPbrScene3DMaterialTextures(resolver.registry);
   return resolver;
 }
 

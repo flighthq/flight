@@ -19,7 +19,8 @@ import { describe, expect, it } from 'vitest';
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
-  registerBuiltInScene3DMaterialTextures,
+  registerStandardPbrScene3DMaterialTextures,
+  registerUnlitScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
   registerScene3DPbrExtensionTextures,
   registerScene3DMaterialTextures,
@@ -44,45 +45,15 @@ describe('getScene3DMaterialTextures', () => {
 
   it('accumulates across calls without clearing out', () => {
     const registry = createScene3DMaterialTextureRegistry();
-    registerBuiltInScene3DMaterialTextures(registry);
+    registerStandardPbrScene3DMaterialTextures(registry);
+    registerUnlitScene3DMaterialTextures(registry);
+    registerExtendedPbrScene3DMaterialTextures(registry);
     const a = createTexture();
     const b = createTexture();
     const out: Texture[] = [];
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: a }), out);
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: b }), out);
     expect(out).toEqual([a, b]);
-  });
-});
-
-describe('registerBuiltInScene3DMaterialTextures', () => {
-  it('registers the extended-pbr, standard-pbr, and unlit listers', () => {
-    const registry = createScene3DMaterialTextureRegistry();
-    registerBuiltInScene3DMaterialTextures(registry);
-    expect(registry.listers.has(ExtendedPbrMaterialKind)).toBe(true);
-    expect(registry.listers.has(StandardPbrMaterialKind)).toBe(true);
-    expect(registry.listers.has(UnlitMaterialKind)).toBe(true);
-  });
-
-  it('lists every non-null standard-pbr texture slot and skips null ones', () => {
-    const registry = createScene3DMaterialTextureRegistry();
-    registerBuiltInScene3DMaterialTextures(registry);
-    const baseColorMap = createTexture();
-    const normalMap = createTexture();
-    const material = createStandardPbrMaterial({ baseColorMap, normalMap });
-    const out: Texture[] = [];
-    getScene3DMaterialTextures(registry, material, out);
-    expect(out).toContain(baseColorMap);
-    expect(out).toContain(normalMap);
-    expect(out).toHaveLength(2);
-  });
-
-  it('lists the unlit base-color slot', () => {
-    const registry = createScene3DMaterialTextureRegistry();
-    registerBuiltInScene3DMaterialTextures(registry);
-    const baseColorMap = createTexture();
-    const out: Texture[] = [];
-    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap }), out);
-    expect(out).toEqual([baseColorMap]);
   });
 });
 
@@ -143,5 +114,62 @@ describe('registerScene3DPbrExtensionTextures', () => {
     const out: Texture[] = [];
     registry.extensionListers.get(AnisotropyPbrExtensionKind)?.(createAnisotropyPbrExtension(), out);
     expect(out).toEqual([second]);
+  });
+});
+
+describe('registerStandardPbrScene3DMaterialTextures', () => {
+  it('composes with the sibling doors to cover the three surface families', () => {
+    // What createBuiltInScene3DResourceResolver now spells out in its own body, rather than hiding it
+    // behind one registrar whose name did not say which families it covered.
+    const registry = createScene3DMaterialTextureRegistry();
+    registerStandardPbrScene3DMaterialTextures(registry);
+    registerUnlitScene3DMaterialTextures(registry);
+    registerExtendedPbrScene3DMaterialTextures(registry);
+    expect(registry.listers.has(ExtendedPbrMaterialKind)).toBe(true);
+    expect(registry.listers.has(StandardPbrMaterialKind)).toBe(true);
+    expect(registry.listers.has(UnlitMaterialKind)).toBe(true);
+  });
+
+  it('lists every non-null standard-pbr texture slot and skips null ones', () => {
+    const registry = createScene3DMaterialTextureRegistry();
+    registerStandardPbrScene3DMaterialTextures(registry);
+    registerUnlitScene3DMaterialTextures(registry);
+    registerExtendedPbrScene3DMaterialTextures(registry);
+    const baseColorMap = createTexture();
+    const normalMap = createTexture();
+    const material = createStandardPbrMaterial({ baseColorMap, normalMap });
+    const out: Texture[] = [];
+    getScene3DMaterialTextures(registry, material, out);
+    expect(out).toContain(baseColorMap);
+    expect(out).toContain(normalMap);
+    expect(out).toHaveLength(2);
+  });
+
+  it('lists the unlit base-color slot', () => {
+    const registry = createScene3DMaterialTextureRegistry();
+    registerStandardPbrScene3DMaterialTextures(registry);
+    registerUnlitScene3DMaterialTextures(registry);
+    registerExtendedPbrScene3DMaterialTextures(registry);
+    const baseColorMap = createTexture();
+    const out: Texture[] = [];
+    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap }), out);
+    expect(out).toEqual([baseColorMap]);
+  });
+});
+
+describe('registerUnlitScene3DMaterialTextures', () => {
+  it('registers only the Unlit lister, leaving other kinds unlisted', () => {
+    // The point of splitting the built-in bag apart: each door registers exactly the family it names,
+    // so a registry holds what the caller asked for and nothing else.
+    const registry = createScene3DMaterialTextureRegistry();
+    registerUnlitScene3DMaterialTextures(registry);
+    const baseColorMap = createTexture();
+    const out: Texture[] = [];
+    getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap }), out);
+    expect(out).toEqual([baseColorMap]);
+
+    out.length = 0;
+    getScene3DMaterialTextures(registry, createStandardPbrMaterial({ baseColorMap }), out);
+    expect(out).toEqual([]);
   });
 });
