@@ -66,6 +66,28 @@ describe('isRigidBody2DPairAwake', () => {
 });
 
 describe('updatePhysics2DSleep', () => {
+  it('reuses world-owned island scratch instead of allocating maps during each update', () => {
+    const world = createPhysics2DWorld();
+    const parents = world.islandParents;
+    const timers = world.islandSleepTimers;
+    const first = still(world, 0);
+    const second = still(world, 1);
+    link(world, first, second);
+
+    updatePhysics2DSleep(world, 0.1);
+    expect(world.islandParents).toBe(parents);
+    expect(world.islandSleepTimers).toBe(timers);
+    expect(parents.size).toBeGreaterThan(0);
+    expect(timers.size).toBeGreaterThan(0);
+
+    world.contacts.length = 0;
+    updatePhysics2DSleep(world, 0.1);
+    expect(world.islandParents).toBe(parents);
+    expect(world.islandSleepTimers).toBe(timers);
+    expect(parents.size).toBe(0);
+    expect(timers.size).toBe(2);
+  });
+
   it('sleeps a body that has been still for the full timeToSleep', () => {
     const world = createPhysics2DWorld();
     const crate = still(world);
