@@ -434,7 +434,28 @@ That is a `skeleton2d` or `path` design question, not something this codec can s
 a lossy mesh approximation would produce geometry that looks plausible and is wrong. Bones, skins,
 tendons and weights are therefore read past, and `Mesh`/`MeshVertex` with them.
 
-**Also not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
+**A `.riv` imports as a named-graph document, and resources resolve through the shared seam.**
+`createScene2DDocumentFromRiveDocument` produces the pieces `Scene2DDocument` wants, and
+`registerRiveScene2DDocumentImporter` puts it in the registry beside SVG and Lottie, matching on the
+`RIVE` fingerprint. Because a file names no artboard "the" one, the root is a container of all of
+them rather than an arbitrary pick.
+
+**Image assets become resource references, not acquired pixels.** An embedded payload is handed over
+untouched with its type detected from its own magic bytes, and every texture waiting on it is listed
+on the reference — so resolving one binds the decoded image into every sprite at once, and an asset
+placed many times decodes once. Import performs no decode and no I/O; that is
+`resolveScene2DResources`' job. Over the corpus: 64 documents, 46 image references (25 WebP, 20 PNG,
+1 JPEG) with 53 textures wired and **no reference left without one**.
+
+**Nested artboards become slots.** A nested artboard is a named place the document does not fill
+itself, which is what a slot is; the artboard it references supplies the `linkage`, so a resolver can
+dispatch on the authored symbol rather than matching a display name. 19 slots across the corpus.
+
+The artboards' clips, state machines and advanced blends travel alongside the document rather than
+inside it, since `Scene2DDocument` models a static named graph and a caller that wants to play or
+blend needs the import itself.
+
+**Also not covered:** so an image
 asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
 paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes, which no

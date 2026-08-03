@@ -1,4 +1,8 @@
-import { createScene2DFromLottieDocument, createScene2DFromSvgDocument } from '@flighthq/scene2d-formats/contract';
+import {
+  createScene2DDocumentFromRiveDocument,
+  createScene2DFromLottieDocument,
+  createScene2DFromSvgDocument,
+} from '@flighthq/scene2d-formats/contract';
 import type {
   ImportDiagnostic,
   Scene2DDocument,
@@ -14,8 +18,32 @@ export function registerLottieScene2DDocumentImporter(registry: Scene2DDocumentI
   registerScene2DDocumentImporter(registry, 'lottie', matchesLottieDocument, importLottieDocument);
 }
 
+export function registerRiveScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
+  registerScene2DDocumentImporter(registry, 'rive', matchesRiveDocument, importRiveDocument);
+}
+
 export function registerSvgScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
   registerScene2DDocumentImporter(registry, 'svg', matchesSvgDocument, importSvgDocument);
+}
+
+/**
+ * A `.riv` carries its images as embedded payloads, so its document hands them over as resource
+ * references with the waiting textures already listed. Resolving one binds the decoded image into
+ * every sprite that uses it — this importer decodes nothing itself.
+ */
+function importRiveDocument(
+  source: Uint8Array,
+  _context: Readonly<Scene2DDocumentImportContext>,
+): Scene2DDocument | null {
+  const diagnostics: ImportDiagnostic[] = [];
+  const result = createScene2DDocumentFromRiveDocument(source, diagnostics);
+  if (result === null) return null;
+  return createScene2DDocument(result.root, result.slots, 'rive', null, result.imageResources);
+}
+
+// The four-byte fingerprint every Rive file opens with.
+function matchesRiveDocument(source: Uint8Array, _context: Readonly<Scene2DDocumentImportContext>): boolean {
+  return source.length >= 4 && source[0] === 0x52 && source[1] === 0x49 && source[2] === 0x56 && source[3] === 0x45;
 }
 
 function importLottieDocument(

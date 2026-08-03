@@ -41,6 +41,7 @@
     "@flighthq/color": "*",
     "@flighthq/easing": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",
