@@ -28,10 +28,11 @@ See [charter](./charter.md) for blessed direction.
 3. **Complete topology-editing primitives.** Exact full-record welding, explicit index conversion,
    deindexing, validation, index-width selection, and unused-vertex compaction now exist as separate
    atoms. Tolerance/semantic welding, subset split/merge/edit operations, and topology conversion remain.
-4. **Deepen normal/tangent/UV authoring.** Mirrored-handedness tangent seams are now topology-safe:
-   complete vertex records split and remap instead of averaging incompatible signs. Remaining depth is
-   angle-threshold smoothing/split normals, baker-specific tangent weighting or same-handed tangent
-   discontinuity policies, and basic planar/box/spherical UV projection as independent functions.
+4. **Deepen normal/tangent/UV authoring.** Mirrored-handedness and sharply divergent same-handed tangent
+   seams are now topology-safe: complete records split and remap, while tangent-only splits retain their
+   authored smoothing identity for later normal recomputation. Remaining depth is angle-threshold
+   authored hard/smooth normal control, exact baker-specific tangent conventions, and basic
+   planar/box/spherical UV projection as independent functions.
 5. **Realize instancing and LOD instead of leaving header-only types.** Instance records need a
    contiguous versioned entity rather than `Matrix4[]`; LOD selection must be per prepared view rather
    than the node-global `activeLevelIndex`. These compose through scene preparation, GL, bounds, and

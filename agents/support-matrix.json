@@ -1037,6 +1037,15 @@
           }
         },
         {
+          "scene": "mesh-tangent-directional-seam",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "mesh-tangent-mirrored-uv",
           "backends": {
             "canvas": false,

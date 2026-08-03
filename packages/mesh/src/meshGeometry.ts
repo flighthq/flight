@@ -39,7 +39,7 @@ export function cloneMeshGeometry(source: Readonly<MeshGeometry>): MeshGeometry 
     bounds = createAabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z);
   }
 
-  return createMeshGeometryRuntime({
+  const clone = createMeshGeometryRuntime({
     bounds: bounds,
     indices: indices,
     layout: source.layout,
@@ -48,6 +48,12 @@ export function cloneMeshGeometry(source: Readonly<MeshGeometry>): MeshGeometry 
     version: 0,
     vertices: vertices,
   });
+  const sourceRuntime = source[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const smoothingSources = sourceRuntime?.tangentSmoothingSources;
+  if (smoothingSources !== null && smoothingSources !== undefined) {
+    (clone[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources = smoothingSources.slice();
+  }
+  return clone;
 }
 
 // Allocates a MeshGeometry from CPU vertex/index data plus a layout. The vertices are taken by
@@ -184,6 +190,7 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
     morphBindPose: null,
     morphBlendedWeights: null,
     skinBindPose: null,
+    tangentSmoothingSources: null,
     webglData: null,
     webgpuData: null,
   };

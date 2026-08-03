@@ -7,7 +7,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 // derive normals, tangents, and the local-space AABB from `geometry.vertices` (+ `geometry.indices`)
 // and write into `out`. They read every input field they need into locals before writing, so each
 // is safe when `out` aliases `geometry`. Normals write back in place; tangents do too unless an
-// indexed mirrored-UV seam requires complete interleaved vertex records to be duplicated first.
+// indexed UV-frame seam requires complete interleaved vertex records to be duplicated first.
 
 // Writes the bounding sphere of all vertex positions into `out`. Uses the AABB midpoint as the
 // center (fast, not minimal) and max-distance from that center as the radius. An empty vertex
@@ -183,6 +183,14 @@ export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly
   const vertexCount = floatsPerVertex > 0 ? Math.floor(vertices.length / floatsPerVertex) : 0;
   const indices = geometry.indices;
   const indexCount = indices ? indices.length : vertexCount;
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const recordedSmoothingSources = runtime?.tangentSmoothingSources;
+  const smoothingSources =
+    recordedSmoothingSources !== null &&
+    recordedSmoothingSources !== undefined &&
+    recordedSmoothingSources.length === vertexCount
+      ? recordedSmoothingSources
+      : null;
 
   const accum = new Float64Array(vertexCount * 3);
 
@@ -207,22 +215,17 @@ export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly
     const ny = e1z * e2x - e1x * e2z;
     const nz = e1x * e2y - e1y * e2x;
 
-    accum[i0 * 3] += nx;
-    accum[i0 * 3 + 1] += ny;
-    accum[i0 * 3 + 2] += nz;
-    accum[i1 * 3] += nx;
-    accum[i1 * 3 + 1] += ny;
-    accum[i1 * 3 + 2] += nz;
-    accum[i2 * 3] += nx;
-    accum[i2 * 3 + 1] += ny;
-    accum[i2 * 3 + 2] += nz;
+    accumulateNormal(accum, smoothingSources ? smoothingSources[i0] : i0, nx, ny, nz);
+    accumulateNormal(accum, smoothingSources ? smoothingSources[i1] : i1, nx, ny, nz);
+    accumulateNormal(accum, smoothingSources ? smoothingSources[i2] : i2, nx, ny, nz);
   }
 
   const target = out.vertices;
   for (let i = 0; i < vertexCount; i++) {
-    let nx = accum[i * 3],
-      ny = accum[i * 3 + 1],
-      nz = accum[i * 3 + 2];
+    const source = smoothingSources ? smoothingSources[i] : i;
+    let nx = accum[source * 3],
+      ny = accum[source * 3 + 1],
+      nz = accum[source * 3 + 2];
     const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
     if (len > 0) {
       nx /= len;
@@ -236,224 +239,379 @@ export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly
   }
 }
 
-// Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then
-// Gram-Schmidt-orthogonalizes each tangent against its normal and stores it with the glTF handedness
-// sign (`bitangent = cross(normal, tangent.xyz) * tangent.w`). A single indexed vertex cannot carry
-// both handednesses at a mirrored-UV boundary, so the indexed path duplicates the complete vertex
-// record and remaps the opposite-handed triangle corners before accumulating. Copying the complete
-// record is load-bearing for extended layouts: joints0/weights0, colors, and secondary UVs survive a
-// split unchanged. Non-indexed streams already have one vertex per corner and need no topology edit.
+function accumulateNormal(accumulator: Float64Array, vertex: number, nx: number, ny: number, nz: number): void {
+  const base = vertex * 3;
+  accumulator[base] += nx;
+  accumulator[base + 1] += ny;
+  accumulator[base + 2] += nz;
+}
+
+// Recomputes a tangent basis from positions, normals, and uv0 with Flight-owned, dependency-free
+// vector math. Each corner contributes a normalized tangent weighted by its geometric corner angle,
+// preventing a tiny or UV-stretched triangle from dominating its neighbours. Indexed corners are
+// clustered by handedness and direction: a corner more than 60 degrees from a cluster's running frame
+// starts another record, so the complete interleaved vertex is duplicated and the corner is remapped. This preserves
+// joints0/weights0, colors, and secondary UVs while repairing both mirrored and folded UV seams.
 //
-// This is an authoring operation: call it before capturing morph/skin bind-pose runtime data. Safe
-// in-place (out === geometry): all source attributes and corner contributions are read into scratch
-// storage before tangent write-back or replacement of the output arrays.
+// The runtime records which generated vertices came from the same authored vertex. A later normal
+// recomputation therefore keeps those tangent-only seams geometrically smooth. Non-indexed streams
+// already have one vertex per corner and require no topology edit. This is still an authoring operation:
+// call it before morph targets or skin bind poses are captured.
 export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonly<MeshGeometry>): void {
   const sourceVertices = geometry.vertices;
-  const sourceFloatsPerVertex = geometry.layout.stride / 4;
-  const sourceVertexCount = sourceFloatsPerVertex > 0 ? Math.floor(sourceVertices.length / sourceFloatsPerVertex) : 0;
+  const sourceStride = geometry.layout.stride / 4;
+  const sourceVertexCount = sourceStride > 0 ? Math.floor(sourceVertices.length / sourceStride) : 0;
   const sourceIndices = geometry.indices;
-  const elementCount = sourceIndices ? sourceIndices.length : sourceVertexCount;
+  const targetStride = out.layout.stride / 4;
 
-  // Indexed geometry needs an orientation census before accumulation. Store one byte per triangle,
-  // one byte per vertex, not per corner, and skip the census entirely for non-indexed input (whose
-  // corners are already distinct). This keeps the additional import-time memory proportional but
-  // lean. A state's sign records the first orientation and magnitude 2 records that both occurred.
-  let triangleSigns: Int8Array | null = null;
-  let orientationStates: Int8Array | null = null;
+  if (sourceIndices === null) {
+    computeNonIndexedTangents(out.vertices, targetStride, sourceVertices, sourceStride, sourceVertexCount);
+    copyTangentSmoothingSources(out, geometry, sourceVertexCount);
+    out.version++;
+    return;
+  }
+
+  const elementCount = sourceIndices.length;
+  const triangleElementCount = elementCount - (elementCount % 3);
+  const primaryClusters = new Int32Array(sourceVertexCount);
+  primaryClusters.fill(-1);
+  const clusterHeads = new Int32Array(sourceVertexCount);
+  clusterHeads.fill(-1);
+  const clusterNext = new Int32Array(triangleElementCount);
+  clusterNext.fill(-1);
+  const clusterSources = new Uint32Array(triangleElementCount);
+  const clusterSigns = new Int8Array(triangleElementCount);
+  const clusterTangents = new Float64Array(triangleElementCount * 3);
+  const elementClusters = new Uint32Array(triangleElementCount);
+  let clusterCount = 0;
   let splitCount = 0;
-  if (sourceIndices !== null) {
-    triangleSigns = new Int8Array(Math.floor(elementCount / 3));
-    orientationStates = new Int8Array(sourceVertexCount);
-    for (let t = 0; t + 2 < elementCount; t += 3) {
-      const i0 = sourceIndices[t];
-      const i1 = sourceIndices[t + 1];
-      const i2 = sourceIndices[t + 2];
-      const u0 = i0 * sourceFloatsPerVertex + UV0_OFFSET;
-      const u1 = i1 * sourceFloatsPerVertex + UV0_OFFSET;
-      const u2 = i2 * sourceFloatsPerVertex + UV0_OFFSET;
-      const du1 = sourceVertices[u1] - sourceVertices[u0];
-      const dv1 = sourceVertices[u1 + 1] - sourceVertices[u0 + 1];
-      const du2 = sourceVertices[u2] - sourceVertices[u0];
-      const dv2 = sourceVertices[u2 + 1] - sourceVertices[u0 + 1];
-      const determinant = du1 * dv2 - du2 * dv1;
-      const sign = determinant < 0 ? -1 : determinant > 0 ? 1 : 0;
-      triangleSigns[t / 3] = sign;
-      if (sign !== 0) {
-        markTangentOrientation(orientationStates, i0, sign);
-        markTangentOrientation(orientationStates, i1, sign);
-        markTangentOrientation(orientationStates, i2, sign);
-      }
-    }
-    for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
-      if (Math.abs(orientationStates[vertex]) === BOTH_TANGENT_ORIENTATIONS) splitCount++;
-    }
-  }
 
-  const targetFloatsPerVertex = out.layout.stride / 4;
-  let targetVertices = out.vertices;
-  let remappedIndices: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer> | null = null;
-  const outputVertexCount = sourceVertexCount + splitCount;
-
-  if (splitCount > 0 && sourceIndices !== null && triangleSigns !== null && orientationStates !== null) {
-    const splitVertices = new Uint32Array(sourceVertexCount);
-    splitVertices.fill(UINT32_UNMAPPED);
-    const expanded = new Float32Array(outputVertexCount * targetFloatsPerVertex);
-    expanded.set(targetVertices.subarray(0, sourceVertexCount * targetFloatsPerVertex));
-    let nextVertex = sourceVertexCount;
-    for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
-      if (Math.abs(orientationStates[vertex]) !== BOTH_TANGENT_ORIENTATIONS) continue;
-      splitVertices[vertex] = nextVertex;
-      const source = vertex * targetFloatsPerVertex;
-      expanded.set(targetVertices.subarray(source, source + targetFloatsPerVertex), nextVertex * targetFloatsPerVertex);
-      nextVertex++;
-    }
-    targetVertices = expanded;
-    out.vertices = expanded;
-
-    const needsUint32 =
-      sourceIndices instanceof Uint32Array || out.indices instanceof Uint32Array || outputVertexCount > UINT16_MAX;
-    remappedIndices = needsUint32 ? new Uint32Array(elementCount) : new Uint16Array(elementCount);
-    for (let element = 0; element < elementCount; element++) {
-      const sourceVertex = sourceIndices[element];
-      const sign = triangleSigns[Math.floor(element / 3)];
-      const primarySign = orientationStates[sourceVertex] < 0 ? -1 : 1;
-      remappedIndices[element] = sign !== 0 && sign !== primarySign ? splitVertices[sourceVertex] : sourceVertex;
-    }
-    out.indices = remappedIndices;
-  }
-
-  const tan = new Float64Array(outputVertexCount * 3);
-  const bitan = new Float64Array(outputVertexCount * 3);
-  for (let t = 0; t + 2 < elementCount; t += 3) {
-    const i0 = sourceIndices ? sourceIndices[t] : t;
-    const i1 = sourceIndices ? sourceIndices[t + 1] : t + 1;
-    const i2 = sourceIndices ? sourceIndices[t + 2] : t + 2;
-    const o0 = remappedIndices ? remappedIndices[t] : i0;
-    const o1 = remappedIndices ? remappedIndices[t + 1] : i1;
-    const o2 = remappedIndices ? remappedIndices[t + 2] : i2;
-
-    const p0 = i0 * sourceFloatsPerVertex + POSITION_OFFSET;
-    const p1 = i1 * sourceFloatsPerVertex + POSITION_OFFSET;
-    const p2 = i2 * sourceFloatsPerVertex + POSITION_OFFSET;
+  for (let triangle = 0; triangle < triangleElementCount; triangle += 3) {
+    const i0 = sourceIndices[triangle];
+    const i1 = sourceIndices[triangle + 1];
+    const i2 = sourceIndices[triangle + 2];
+    const p0 = i0 * sourceStride + POSITION_OFFSET;
+    const p1 = i1 * sourceStride + POSITION_OFFSET;
+    const p2 = i2 * sourceStride + POSITION_OFFSET;
     const e1x = sourceVertices[p1] - sourceVertices[p0];
     const e1y = sourceVertices[p1 + 1] - sourceVertices[p0 + 1];
     const e1z = sourceVertices[p1 + 2] - sourceVertices[p0 + 2];
     const e2x = sourceVertices[p2] - sourceVertices[p0];
     const e2y = sourceVertices[p2 + 1] - sourceVertices[p0 + 1];
     const e2z = sourceVertices[p2 + 2] - sourceVertices[p0 + 2];
-
-    const u0 = i0 * sourceFloatsPerVertex + UV0_OFFSET;
-    const u1 = i1 * sourceFloatsPerVertex + UV0_OFFSET;
-    const u2 = i2 * sourceFloatsPerVertex + UV0_OFFSET;
+    const u0 = i0 * sourceStride + UV0_OFFSET;
+    const u1 = i1 * sourceStride + UV0_OFFSET;
+    const u2 = i2 * sourceStride + UV0_OFFSET;
     const du1 = sourceVertices[u1] - sourceVertices[u0];
     const dv1 = sourceVertices[u1 + 1] - sourceVertices[u0 + 1];
     const du2 = sourceVertices[u2] - sourceVertices[u0];
     const dv2 = sourceVertices[u2 + 1] - sourceVertices[u0 + 1];
     const determinant = du1 * dv2 - du2 * dv1;
     const reciprocal = determinant !== 0 ? 1 / determinant : 0;
+    const faceTx = (dv2 * e1x - dv1 * e2x) * reciprocal;
+    const faceTy = (dv2 * e1y - dv1 * e2y) * reciprocal;
+    const faceTz = (dv2 * e1z - dv1 * e2z) * reciprocal;
+    const faceBx = (du1 * e2x - du2 * e1x) * reciprocal;
+    const faceBy = (du1 * e2y - du2 * e1y) * reciprocal;
+    const faceBz = (du1 * e2z - du2 * e1z) * reciprocal;
 
+    for (let corner = 0; corner < 3; corner++) {
+      const element = triangle + corner;
+      const vertex = sourceIndices[element];
+      const normal = vertex * sourceStride + NORMAL_OFFSET;
+      const nx = sourceVertices[normal];
+      const ny = sourceVertices[normal + 1];
+      const nz = sourceVertices[normal + 2];
+      const normalDot = nx * faceTx + ny * faceTy + nz * faceTz;
+      let tx = faceTx - nx * normalDot;
+      let ty = faceTy - ny * normalDot;
+      let tz = faceTz - nz * normalDot;
+      const tangentLength = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      let sign = 0;
+      if (tangentLength > 0) {
+        tx /= tangentLength;
+        ty /= tangentLength;
+        tz /= tangentLength;
+        const cx = ny * tz - nz * ty;
+        const cy = nz * tx - nx * tz;
+        const cz = nx * ty - ny * tx;
+        sign = cx * faceBx + cy * faceBy + cz * faceBz < 0 ? -1 : 1;
+      }
+
+      let cluster = clusterHeads[vertex];
+      let compatibleCluster = -1;
+      while (cluster !== -1) {
+        const clusterSign = clusterSigns[cluster];
+        const tangent = cluster * 3;
+        const clusterLength = Math.sqrt(
+          clusterTangents[tangent] * clusterTangents[tangent] +
+            clusterTangents[tangent + 1] * clusterTangents[tangent + 1] +
+            clusterTangents[tangent + 2] * clusterTangents[tangent + 2],
+        );
+        if (
+          tangentLength === 0 ||
+          clusterLength === 0 ||
+          (clusterSign === sign &&
+            (tx * clusterTangents[tangent] + ty * clusterTangents[tangent + 1] + tz * clusterTangents[tangent + 2]) /
+              clusterLength >=
+              MIN_TANGENT_CLUSTER_DOT)
+        ) {
+          compatibleCluster = cluster;
+          break;
+        }
+        cluster = clusterNext[cluster];
+      }
+
+      if (compatibleCluster === -1) {
+        compatibleCluster = clusterCount++;
+        clusterSources[compatibleCluster] = vertex;
+        clusterSigns[compatibleCluster] = sign;
+        clusterNext[compatibleCluster] = clusterHeads[vertex];
+        clusterHeads[vertex] = compatibleCluster;
+        if (primaryClusters[vertex] === -1) primaryClusters[vertex] = compatibleCluster;
+        else splitCount++;
+      } else if (clusterSigns[compatibleCluster] === 0 && sign !== 0) {
+        clusterSigns[compatibleCluster] = sign;
+      }
+      elementClusters[element] = compatibleCluster;
+
+      if (tangentLength > 0) {
+        const other1 = sourceIndices[triangle + ((corner + 1) % 3)];
+        const other2 = sourceIndices[triangle + ((corner + 2) % 3)];
+        const weight = getMeshCornerAngle(sourceVertices, sourceStride, vertex, other1, other2);
+        const tangent = compatibleCluster * 3;
+        clusterTangents[tangent] += tx * weight;
+        clusterTangents[tangent + 1] += ty * weight;
+        clusterTangents[tangent + 2] += tz * weight;
+      }
+    }
+  }
+
+  const outputVertexCount = sourceVertexCount + splitCount;
+  const clusterOutputs = new Uint32Array(clusterCount);
+  let targetVertices = out.vertices;
+  if (splitCount > 0) {
+    const expanded = new Float32Array(outputVertexCount * targetStride);
+    expanded.set(targetVertices.subarray(0, sourceVertexCount * targetStride));
+    let nextVertex = sourceVertexCount;
+    for (let cluster = 0; cluster < clusterCount; cluster++) {
+      const source = clusterSources[cluster];
+      if (primaryClusters[source] === cluster) {
+        clusterOutputs[cluster] = source;
+      } else {
+        const output = nextVertex++;
+        clusterOutputs[cluster] = output;
+        const sourceOffset = source * targetStride;
+        expanded.set(targetVertices.subarray(sourceOffset, sourceOffset + targetStride), output * targetStride);
+      }
+    }
+    targetVertices = expanded;
+    out.vertices = expanded;
+
+    const needsUint32 =
+      sourceIndices instanceof Uint32Array || out.indices instanceof Uint32Array || outputVertexCount > UINT16_MAX;
+    const remappedIndices: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer> = needsUint32
+      ? new Uint32Array(elementCount)
+      : new Uint16Array(elementCount);
+    for (let element = 0; element < triangleElementCount; element++) {
+      remappedIndices[element] = clusterOutputs[elementClusters[element]];
+    }
+    for (let element = triangleElementCount; element < elementCount; element++) {
+      remappedIndices[element] = sourceIndices[element];
+    }
+    out.indices = remappedIndices;
+    recordTangentSmoothingSources(
+      out,
+      geometry,
+      clusterSources,
+      clusterOutputs,
+      clusterCount,
+      sourceVertexCount,
+      outputVertexCount,
+    );
+  } else {
+    for (let cluster = 0; cluster < clusterCount; cluster++) clusterOutputs[cluster] = clusterSources[cluster];
+    copyTangentSmoothingSources(out, geometry, sourceVertexCount);
+  }
+
+  for (let cluster = 0; cluster < clusterCount; cluster++) {
+    const tangent = cluster * 3;
+    writeMeshTangent(
+      targetVertices,
+      targetStride,
+      clusterOutputs[cluster],
+      clusterTangents[tangent],
+      clusterTangents[tangent + 1],
+      clusterTangents[tangent + 2],
+      clusterSigns[cluster] < 0 ? -1 : 1,
+    );
+  }
+  for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
+    if (primaryClusters[vertex] === -1) writeMeshTangent(targetVertices, targetStride, vertex, 0, 0, 0, 1);
+  }
+  out.version++;
+}
+
+function computeNonIndexedTangents(
+  target: Float32Array,
+  targetStride: number,
+  source: Readonly<Float32Array>,
+  sourceStride: number,
+  vertexCount: number,
+): void {
+  for (let triangle = 0; triangle + 2 < vertexCount; triangle += 3) {
+    const p0 = triangle * sourceStride + POSITION_OFFSET;
+    const p1 = (triangle + 1) * sourceStride + POSITION_OFFSET;
+    const p2 = (triangle + 2) * sourceStride + POSITION_OFFSET;
+    const e1x = source[p1] - source[p0];
+    const e1y = source[p1 + 1] - source[p0 + 1];
+    const e1z = source[p1 + 2] - source[p0 + 2];
+    const e2x = source[p2] - source[p0];
+    const e2y = source[p2 + 1] - source[p0 + 1];
+    const e2z = source[p2 + 2] - source[p0 + 2];
+    const u0 = triangle * sourceStride + UV0_OFFSET;
+    const u1 = (triangle + 1) * sourceStride + UV0_OFFSET;
+    const u2 = (triangle + 2) * sourceStride + UV0_OFFSET;
+    const du1 = source[u1] - source[u0];
+    const dv1 = source[u1 + 1] - source[u0 + 1];
+    const du2 = source[u2] - source[u0];
+    const dv2 = source[u2 + 1] - source[u0 + 1];
+    const determinant = du1 * dv2 - du2 * dv1;
+    const reciprocal = determinant !== 0 ? 1 / determinant : 0;
     const tx = (dv2 * e1x - dv1 * e2x) * reciprocal;
     const ty = (dv2 * e1y - dv1 * e2y) * reciprocal;
     const tz = (dv2 * e1z - dv1 * e2z) * reciprocal;
     const bx = (du1 * e2x - du2 * e1x) * reciprocal;
     const by = (du1 * e2y - du2 * e1y) * reciprocal;
     const bz = (du1 * e2z - du2 * e1z) * reciprocal;
-
-    accumulateTangent(tan, bitan, o0, tx, ty, tz, bx, by, bz);
-    accumulateTangent(tan, bitan, o1, tx, ty, tz, bx, by, bz);
-    accumulateTangent(tan, bitan, o2, tx, ty, tz, bx, by, bz);
-  }
-
-  for (let i = 0; i < outputVertexCount; i++) {
-    const nBase = i * targetFloatsPerVertex + NORMAL_OFFSET;
-    const nx = targetVertices[nBase],
-      ny = targetVertices[nBase + 1],
-      nz = targetVertices[nBase + 2];
-
-    let tx = tan[i * 3],
-      ty = tan[i * 3 + 1],
-      tz = tan[i * 3 + 2];
-
-    // Gram-Schmidt: t = normalize(t - n * dot(n, t)).
-    const ndt = nx * tx + ny * ty + nz * tz;
-    tx -= nx * ndt;
-    ty -= ny * ndt;
-    tz -= nz * ndt;
-    const len = Math.sqrt(tx * tx + ty * ty + tz * tz);
-    if (len > 0) {
-      tx /= len;
-      ty /= len;
-      tz /= len;
-    } else {
-      // Degenerate UVs: choose the coordinate axis least parallel to the normal, then cross it with
-      // the normal. Unlike the old fixed +X fallback this stays perpendicular even for an X normal.
-      if (Math.abs(nx) <= Math.abs(ny) && Math.abs(nx) <= Math.abs(nz)) {
-        tx = 0;
-        ty = nz;
-        tz = -ny;
-      } else if (Math.abs(ny) <= Math.abs(nz)) {
-        tx = -nz;
-        ty = 0;
-        tz = nx;
-      } else {
-        tx = ny;
-        ty = -nx;
-        tz = 0;
-      }
-      const fallbackLength = Math.sqrt(tx * tx + ty * ty + tz * tz);
-      if (fallbackLength > 0) {
-        tx /= fallbackLength;
-        ty /= fallbackLength;
-        tz /= fallbackLength;
-      } else {
-        tx = 1;
-        ty = 0;
-        tz = 0;
-      }
+    for (let corner = 0; corner < 3; corner++) {
+      const vertex = triangle + corner;
+      const normal = vertex * sourceStride + NORMAL_OFFSET;
+      const nx = source[normal];
+      const ny = source[normal + 1];
+      const nz = source[normal + 2];
+      const normalDot = nx * tx + ny * ty + nz * tz;
+      const tangentX = tx - nx * normalDot;
+      const tangentY = ty - ny * normalDot;
+      const tangentZ = tz - nz * normalDot;
+      const cx = ny * tangentZ - nz * tangentY;
+      const cy = nz * tangentX - nx * tangentZ;
+      const cz = nx * tangentY - ny * tangentX;
+      const sign = cx * bx + cy * by + cz * bz < 0 ? -1 : 1;
+      writeMeshTangent(target, targetStride, vertex, tangentX, tangentY, tangentZ, sign);
     }
-
-    // Handedness: w = sign(dot(cross(n, t), accumulated bitangent)).
-    const cx = ny * tz - nz * ty;
-    const cy = nz * tx - nx * tz;
-    const cz = nx * ty - ny * tx;
-    const w = cx * bitan[i * 3] + cy * bitan[i * 3 + 1] + cz * bitan[i * 3 + 2] < 0 ? -1 : 1;
-
-    const base = i * targetFloatsPerVertex + TANGENT_OFFSET;
-    targetVertices[base] = tx;
-    targetVertices[base + 1] = ty;
-    targetVertices[base + 2] = tz;
-    targetVertices[base + 3] = w;
   }
-  out.version++;
-}
-
-function markTangentOrientation(orientationStates: Int8Array, vertex: number, sign: number): void {
-  const state = orientationStates[vertex];
-  if (state === 0) {
-    orientationStates[vertex] = sign;
-  } else if ((state < 0 ? -1 : 1) !== sign) {
-    orientationStates[vertex] = state < 0 ? -BOTH_TANGENT_ORIENTATIONS : BOTH_TANGENT_ORIENTATIONS;
+  for (let vertex = vertexCount - (vertexCount % 3); vertex < vertexCount; vertex++) {
+    writeMeshTangent(target, targetStride, vertex, 0, 0, 0, 1);
   }
 }
 
-function accumulateTangent(
-  tangents: Float64Array,
-  bitangents: Float64Array,
+function getMeshCornerAngle(
+  vertices: Readonly<Float32Array>,
+  stride: number,
+  center: number,
+  other1: number,
+  other2: number,
+): number {
+  const centerOffset = center * stride + POSITION_OFFSET;
+  const other1Offset = other1 * stride + POSITION_OFFSET;
+  const other2Offset = other2 * stride + POSITION_OFFSET;
+  const ax = vertices[other1Offset] - vertices[centerOffset];
+  const ay = vertices[other1Offset + 1] - vertices[centerOffset + 1];
+  const az = vertices[other1Offset + 2] - vertices[centerOffset + 2];
+  const bx = vertices[other2Offset] - vertices[centerOffset];
+  const by = vertices[other2Offset + 1] - vertices[centerOffset + 1];
+  const bz = vertices[other2Offset + 2] - vertices[centerOffset + 2];
+  const denominator = Math.sqrt((ax * ax + ay * ay + az * az) * (bx * bx + by * by + bz * bz));
+  if (denominator === 0) return 1;
+  const cosine = (ax * bx + ay * by + az * bz) / denominator;
+  return Math.acos(Math.max(-1, Math.min(1, cosine)));
+}
+
+function writeMeshTangent(
+  vertices: Float32Array,
+  stride: number,
   vertex: number,
-  tx: number,
-  ty: number,
-  tz: number,
-  bx: number,
-  by: number,
-  bz: number,
+  sourceX: number,
+  sourceY: number,
+  sourceZ: number,
+  sign: number,
 ): void {
-  const base = vertex * 3;
-  tangents[base] += tx;
-  tangents[base + 1] += ty;
-  tangents[base + 2] += tz;
-  bitangents[base] += bx;
-  bitangents[base + 1] += by;
-  bitangents[base + 2] += bz;
+  const normal = vertex * stride + NORMAL_OFFSET;
+  const nx = vertices[normal];
+  const ny = vertices[normal + 1];
+  const nz = vertices[normal + 2];
+  const normalDot = nx * sourceX + ny * sourceY + nz * sourceZ;
+  let tx = sourceX - nx * normalDot;
+  let ty = sourceY - ny * normalDot;
+  let tz = sourceZ - nz * normalDot;
+  let length = Math.sqrt(tx * tx + ty * ty + tz * tz);
+  if (length === 0) {
+    if (Math.abs(nx) <= Math.abs(ny) && Math.abs(nx) <= Math.abs(nz)) {
+      tx = 0;
+      ty = nz;
+      tz = -ny;
+    } else if (Math.abs(ny) <= Math.abs(nz)) {
+      tx = -nz;
+      ty = 0;
+      tz = nx;
+    } else {
+      tx = ny;
+      ty = -nx;
+      tz = 0;
+    }
+    length = Math.sqrt(tx * tx + ty * ty + tz * tz);
+    if (length === 0) {
+      tx = 1;
+      ty = 0;
+      tz = 0;
+      length = 1;
+    }
+  }
+  const tangent = vertex * stride + TANGENT_OFFSET;
+  vertices[tangent] = tx / length;
+  vertices[tangent + 1] = ty / length;
+  vertices[tangent + 2] = tz / length;
+  vertices[tangent + 3] = sign;
+}
+
+function copyTangentSmoothingSources(out: MeshGeometry, geometry: Readonly<MeshGeometry>, vertexCount: number): void {
+  if (out === geometry) return;
+  const sourceRuntime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const targetRuntime = out[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const sources = sourceRuntime?.tangentSmoothingSources;
+  if (targetRuntime !== undefined) {
+    targetRuntime.tangentSmoothingSources =
+      sources !== null && sources !== undefined && sources.length === vertexCount ? sources.slice() : null;
+  }
+}
+
+function recordTangentSmoothingSources(
+  out: MeshGeometry,
+  geometry: Readonly<MeshGeometry>,
+  clusterSources: Uint32Array,
+  clusterOutputs: Uint32Array,
+  clusterCount: number,
+  sourceVertexCount: number,
+  outputVertexCount: number,
+): void {
+  const sourceRuntime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  const targetRuntime = out[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  if (targetRuntime === undefined) return;
+  const previous = sourceRuntime?.tangentSmoothingSources;
+  const sources = new Uint32Array(outputVertexCount);
+  for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
+    sources[vertex] =
+      previous !== null && previous !== undefined && previous.length === sourceVertexCount ? previous[vertex] : vertex;
+  }
+  for (let cluster = 0; cluster < clusterCount; cluster++) {
+    const output = clusterOutputs[cluster];
+    if (output >= sourceVertexCount) sources[output] = sources[clusterSources[cluster]];
+  }
+  targetRuntime.tangentSmoothingSources = sources;
+  targetRuntime.skinBindPose = null;
+  targetRuntime.morphBindPose = null;
+  targetRuntime.morphBlendedWeights = null;
 }
 
 // Returns the geometry's cached local bounds, recomputing them first if a vertex edit has invalidated
@@ -500,6 +658,5 @@ const NORMAL_OFFSET = 3;
 const POSITION_OFFSET = 0;
 const TANGENT_OFFSET = 6;
 const UV0_OFFSET = 10;
-const BOTH_TANGENT_ORIENTATIONS = 2;
+const MIN_TANGENT_CLUSTER_DOT = 0.5;
 const UINT16_MAX = 65_535;
-const UINT32_UNMAPPED = 0xffffffff;
