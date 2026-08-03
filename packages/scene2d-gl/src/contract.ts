@@ -16,6 +16,7 @@ export * from './glScale9Mapper';
 export * from './glScale9Shape';
 export * from './glMeshShapeRenderer';
 export * from './glRasterShapeRenderer';
+export * from './explainGlScene2DCoverage';
 export * from './glShape';
 export * from './glShapeData';
 export * from './glShapeMesh';
