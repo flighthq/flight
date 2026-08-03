@@ -10,6 +10,7 @@ export * from './renderMaterial';
 export * from './renderProxy';
 export * from './renderProxyAdapter';
 export * from './renderQueue';
+export * from './explainScene2DCoverage';
 export * from './renderRegistryGuards';
 export * from './renderRegistrySignals';
 export * from './renderState';

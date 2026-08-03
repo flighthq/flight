@@ -7,13 +7,13 @@ import type {
   GlMeshMaterialRenderer,
   GlRenderState,
   ImageResourceReference,
-  Scene3DCoverageEntry,
+  SceneCoverageEntry,
 } from '@flighthq/types/contract';
 import {
   ImageResourceReferenceKind,
   RenderRegistry,
   ResourceResolutionState,
-  Scene3DCoverage,
+  SceneCoverage,
   StandardMaterialKind,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -40,8 +40,8 @@ function shamblerLikeScene(withModifier = false) {
   return usage;
 }
 
-function gaps(state: GlRenderState, withModifier = false): Scene3DCoverageEntry[] {
-  const out: Scene3DCoverageEntry[] = [];
+function gaps(state: GlRenderState, withModifier = false): SceneCoverageEntry[] {
+  const out: SceneCoverageEntry[] = [];
   explainGlScene3DCoverage(out, state, shamblerLikeScene(withModifier));
   return out;
 }
@@ -52,12 +52,12 @@ describe('explainGlScene3DCoverage', () => {
   it('reports a bare state as missing both the material renderer and the texture resolver', () => {
     const found = gaps(makeGlScene3DState().state);
     expect(found).toContainEqual({
-      coverage: Scene3DCoverage.Missing,
+      coverage: SceneCoverage.Missing,
       kind: 'ShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
     expect(found).toContainEqual({
-      coverage: Scene3DCoverage.Missing,
+      coverage: SceneCoverage.Missing,
       kind: 'image',
       registry: RenderRegistry.TextureResolver,
     });
@@ -69,7 +69,7 @@ describe('explainGlScene3DCoverage', () => {
     const state = makeGlScene3DState().state;
     registerGlMeshMaterialRenderer(state, StandardMaterialKind, renderer);
     expect(gaps(state)).toContainEqual({
-      coverage: Scene3DCoverage.Fallback,
+      coverage: SceneCoverage.Fallback,
       kind: 'ShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
@@ -79,14 +79,12 @@ describe('explainGlScene3DCoverage', () => {
     const state = makeGlScene3DState().state;
     registerGlMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
     expect(gaps(state)).toContainEqual({
-      coverage: Scene3DCoverage.Satisfied,
+      coverage: SceneCoverage.Satisfied,
       kind: 'ShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
     expect(
-      gaps(state).some(
-        (g) => g.coverage !== Scene3DCoverage.Satisfied && g.registry === RenderRegistry.MaterialRenderer,
-      ),
+      gaps(state).some((g) => g.coverage !== SceneCoverage.Satisfied && g.registry === RenderRegistry.MaterialRenderer),
     ).toBe(false);
   });
 
@@ -95,7 +93,7 @@ describe('explainGlScene3DCoverage', () => {
     // whole material rather than degrading it.
     const found = gaps(makeGlScene3DState().state, true);
     expect(found).toContainEqual({
-      coverage: Scene3DCoverage.Missing,
+      coverage: SceneCoverage.Missing,
       kind: 'RimModifier',
       registry: RenderRegistry.ModifierSnippet,
     });
@@ -108,7 +106,7 @@ describe('explainGlScene3DCoverage', () => {
   it('clears out, so a repeated call does not accumulate', () => {
     const state = makeGlScene3DState().state;
     const usage = shamblerLikeScene();
-    const out: Scene3DCoverageEntry[] = [];
+    const out: SceneCoverageEntry[] = [];
     explainGlScene3DCoverage(out, state, usage);
     const first = out.length;
     explainGlScene3DCoverage(out, state, usage);
@@ -131,7 +129,7 @@ describe('hasGlScene3DCoverage', () => {
     const state = makeGlScene3DState().state;
     registerGlMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
     const usage = shamblerLikeScene();
-    const out: Scene3DCoverageEntry[] = [];
+    const out: SceneCoverageEntry[] = [];
     explainGlScene3DCoverage(out, state, usage);
     expect(hasGlScene3DCoverage(state, usage)).toBe(out.length === 0);
   });

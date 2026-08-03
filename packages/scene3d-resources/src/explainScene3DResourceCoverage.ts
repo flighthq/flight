@@ -1,5 +1,5 @@
-import type { Scene3DCoverageEntry, Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
-import { RenderRegistry, Scene3DCoverage } from '@flighthq/types/contract';
+import type { SceneCoverageEntry, Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
+import { RenderRegistry, SceneCoverage } from '@flighthq/types/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry';
 
@@ -17,7 +17,7 @@ import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry'
 // of a gap is confined to consumers that need mesh→texture ownership, chiefly the reveal-on-resolve
 // recipe, whose meshes would wait for an event that never names them.
 export function explainScene3DResourceCoverage(
-  out: Scene3DCoverageEntry[],
+  out: SceneCoverageEntry[],
   resolver: Readonly<Scene3DResourceResolver>,
   usage: Readonly<Scene3DKindUsage>,
 ): void {
@@ -37,7 +37,7 @@ export function hasScene3DResourceCoverage(
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
 // `found` counts only real shortfalls, so appending satisfied entries to `out` never flips the predicate.
 function collectScene3DResourceCoverageGaps(
-  out: Scene3DCoverageEntry[] | null,
+  out: SceneCoverageEntry[] | null,
   resolver: Readonly<Scene3DResourceResolver>,
   usage: Readonly<Scene3DKindUsage>,
   stopAtFirst: boolean,
@@ -46,12 +46,12 @@ function collectScene3DResourceCoverageGaps(
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
     if (hasScene3DMaterialTextureLister(resolver.registry, kind)) {
-      out?.push({ coverage: Scene3DCoverage.Satisfied, kind, registry: RenderRegistry.MaterialTextureLister });
+      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.MaterialTextureLister });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: Scene3DCoverage.Missing, kind, registry: RenderRegistry.MaterialTextureLister });
+    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.MaterialTextureLister });
   }
   return found;
 }

@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { resolveModifier } from '@flighthq/shading/contract';
-import type { GlRenderState, Scene3DCoverageEntry, Scene3DKindUsage } from '@flighthq/types/contract';
-import { RenderRegistry, Scene3DCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import type { GlRenderState, SceneCoverageEntry, Scene3DKindUsage } from '@flighthq/types/contract';
+import { RenderRegistry, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
@@ -19,12 +19,12 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // absence. For the frame-path question "is this state ready at all", call hasGlScene3DCoverage, which
 // stops at the first shortfall and allocates nothing.
 export function explainGlScene3DCoverage(
-  out: Scene3DCoverageEntry[],
+  out: SceneCoverageEntry[],
   state: GlRenderState,
   usage: Readonly<Scene3DKindUsage>,
 ): void {
   out.length = 0;
-  collectGlScene3DCoverageEntrys(out, state, usage, false);
+  collectGlScene3DCoverageGaps(out, state, usage, false);
 }
 
 // Whether this state can draw every kind `usage` names, counting a fallback as a shortfall — the
@@ -32,15 +32,15 @@ export function explainGlScene3DCoverage(
 // is safe to call per load (or per frame) where explainGlScene3DCoverage would be too heavy. Use the
 // explain form to find out WHICH kind and how badly.
 export function hasGlScene3DCoverage(state: GlRenderState, usage: Readonly<Scene3DKindUsage>): boolean {
-  return !collectGlScene3DCoverageEntrys(null, state, usage, true);
+  return !collectGlScene3DCoverageGaps(null, state, usage, true);
 }
 
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
 // `found` counts only real shortfalls, so appending satisfied entries to `out` never flips the predicate.
 // Appends to `out` when it is non-null; returns whether any shortfall was found. `stopAtFirst` short
 // circuits for the predicate, which is the only reason the boolean is cheaper than the explanation.
-function collectGlScene3DCoverageEntrys(
-  out: Scene3DCoverageEntry[] | null,
+function collectGlScene3DCoverageGaps(
+  out: SceneCoverageEntry[] | null,
   state: GlRenderState,
   usage: Readonly<Scene3DKindUsage>,
   stopAtFirst: boolean,
@@ -56,13 +56,13 @@ function collectGlScene3DCoverageEntrys(
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
     if (materials.has(kind)) {
-      out?.push({ coverage: Scene3DCoverage.Satisfied, kind, registry: RenderRegistry.MaterialRenderer });
+      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.MaterialRenderer });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
     out?.push({
-      coverage: hasStandard ? Scene3DCoverage.Fallback : Scene3DCoverage.Missing,
+      coverage: hasStandard ? SceneCoverage.Fallback : SceneCoverage.Missing,
       kind,
       registry: RenderRegistry.MaterialRenderer,
     });
@@ -74,12 +74,12 @@ function collectGlScene3DCoverageEntrys(
   for (let i = 0; i < usage.textureSourceKinds.length; i++) {
     const kind = usage.textureSourceKinds[i];
     if (resolvers?.has(kind) === true) {
-      out?.push({ coverage: Scene3DCoverage.Satisfied, kind, registry: RenderRegistry.TextureResolver });
+      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.TextureResolver });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: Scene3DCoverage.Missing, kind, registry: RenderRegistry.TextureResolver });
+    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.TextureResolver });
   }
 
   // The shaded compiler assembles base + ordered modifiers into ONE program, so an unregistered
@@ -89,12 +89,12 @@ function collectGlScene3DCoverageEntrys(
   for (let i = 0; i < usage.modifierKinds.length; i++) {
     const kind = usage.modifierKinds[i];
     if (snippets !== null && resolveModifier(snippets, kind) !== null) {
-      out?.push({ coverage: Scene3DCoverage.Satisfied, kind, registry: RenderRegistry.ModifierSnippet });
+      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.ModifierSnippet });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: Scene3DCoverage.Missing, kind, registry: RenderRegistry.ModifierSnippet });
+    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.ModifierSnippet });
   }
 
   // usage.nodeKinds is deliberately NOT checked. The 3D pipeline collects meshes structurally
