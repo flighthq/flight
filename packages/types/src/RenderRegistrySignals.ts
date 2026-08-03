@@ -9,6 +9,7 @@ import type { Signal } from './Signal';
 export enum RenderRegistry {
   EffectPaddingResolver,
   MaterialRenderer,
+  ModifierSnippet,
   NodeRenderer,
   ShapeCommandHandler,
   ShapeRasterizer,

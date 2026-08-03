@@ -38,6 +38,13 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
       if ('device' in state)
         return 'resolveWgpuMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuMaterialRenderer(state, kind, renderer)';
       return 'resolveGlMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerGlMaterialRenderer(state, kind, renderer)';
+    // Reported by the proactive coverage checks (explainGlScene3DCoverage) rather than by a draw-time
+    // miss: the shaded compiler resolves a whole stack at once, so a missing snippet surfaces as a
+    // material that will not compile, not as one lookup returning null.
+    case RenderRegistry.ModifierSnippet:
+      if ('device' in state)
+        return 'a modifier on this material has no registered shader snippet — call registerWgpuModifierSnippet(state, snippet), or registerBuiltInWgpuModifierSnippets(state)';
+      return 'a modifier on this material has no registered shader snippet — call registerGlModifierSnippet(state, snippet), or registerBuiltInGlModifierSnippets(state)';
     case RenderRegistry.NodeRenderer:
       return 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)';
     case RenderRegistry.ShapeCommandHandler:
