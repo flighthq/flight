@@ -23,6 +23,7 @@ import { createRiveFileAssets } from './riveAssets';
 import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
+import { applyRiveDrawOrder } from './riveDrawOrder';
 import { createRiveObjectGraph } from './riveObjectGraph';
 import { createRiveImageSprite, markRiveNestedArtboard } from './riveScene2DDocument';
 import { appendRiveShapePaint } from './riveShapePaint';
@@ -96,6 +97,7 @@ function createRiveArtboardImport(
   }
 
   applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
+  applyRiveDrawOrder(nodes, artboard, root, diagnostics);
 
   // Every reader here reads from the core object's own properties, so animating geometry or paint is
   // a matter of mutating those properties and running the shape's builder again. Capturing the
