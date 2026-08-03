@@ -149,15 +149,28 @@ order-changed for every sibling. It becomes: attach newly placed instances, deta
 does not place, then one `applyNodeOrderList` with depth as the key. The depth→placement map the
 parser already builds (`:1080`) feeds the list directly.
 
-**Rive.** A Draw Rule is a topological constraint over the artboard's drawable list. Resolve the
-constraint set per keyframe into a per-parent key and feed the same list. Where a rule moves a
-drawable out of its parent's contiguous run *and* that parent needs group compositing, that is a
-genuine conflict — report it through `importdiagnostics` as fidelity loss rather than bending the
-graph. In practice, limb-swap rules keep their targets under a common ancestor.
+**Rive** maps onto the `Above`/`Below` verbs one-to-one, and the wire format says so. From the
+generated core headers: `DrawRules` (type 49) carries `drawTargetId` (property 121); `DrawTarget`
+(type 48) carries `drawableId` (119) and `placementValue` (120); `Drawable` (type 13) carries
+`drawableFlags` (129). `placementValue` is Rive's Before/After enum — which *is*
+`setNodeOrderListEntryBelow` / `setNodeOrderListEntryAbove`. A `DrawRules` object governs the node it
+is parented to, so the association needs no extra id.
 
-**skeleton2d.** The slot draw-order timeline that
-[skeleton2d animation model](skeleton2d-animation-model.md) deliberately leaves open binds here: a
-draw-order channel samples to slot keys and applies one list.
+So the import is: capture the artboard root with `setNodeOrderListFromNodeChildren`, walk the
+`DrawRules`, place each governed node relative to its target drawable, apply. `riveScene2D.ts:95`
+builds hierarchy order today and drops rules silently — correct by accident for files without them.
+Where a rule crosses a parent boundary *and* that parent needs group compositing, that is a genuine
+conflict: report it through `importdiagnostics` as fidelity loss rather than bending the graph. In
+practice, limb-swap rules keep their targets under a common ancestor.
+
+**skeleton2d is _not_ a consumer** — an earlier draft of this record claimed it was, and that was
+wrong. A Spine draw-order timeline permutes the skeleton's `slots` array, whose index *is* the draw
+order (`Slot2D` has no order field). `Skeleton2D` is pure data and never builds `Node2D` children, so
+there is no parent whose children could be permuted. Consuming
+`skipSpineBinaryDrawOrderTimelines` (`spineBinaryParse.ts:549`) needs a slot-index permutation inside
+`skeleton2d`, which this API does not provide and should not: it would only reach a `NodeOrderList` if
+a skeleton→scene2d node layer existed, and none does. Two different orderings that happen to share a
+name.
 
 ## Apply owns order, never membership
 
