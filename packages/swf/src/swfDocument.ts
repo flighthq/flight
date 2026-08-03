@@ -7,6 +7,7 @@ import {
   addNodeChild,
   getNodeRuntime,
   invalidateNodeAppearance,
+  invalidateNodeLocalBounds,
   removeNodeChild,
   setNodeLocalMatrix,
 } from '@flighthq/node/contract';
@@ -149,6 +150,14 @@ interface SwfAuthoredBoundsData {
   authoredBounds: SwfRectangle;
 }
 
+// A morph carries both endpoints' boxes so its authored bounds can be the box it actually occupies at the
+// current ratio. The union of the two would be correct for neither endpoint: a morph at rest would report
+// room for the shape it is not yet.
+interface SwfMorphBoundsData extends SwfAuthoredBoundsData {
+  morphEndBounds: SwfRectangle;
+  morphStartBounds: SwfRectangle;
+}
+
 interface SwfDisplayObjectData extends Node2DData, SwfAuthoredBoundsData {}
 
 interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
@@ -206,6 +215,7 @@ interface SwfTagResult {
   imageTextures: Map<number, Map<string, Texture2D>>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
+  morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
   morphShapes: Map<number, () => MorphShape | null>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
@@ -246,6 +256,7 @@ interface SwfParseState {
   // every ShowFrame that follows. This budget is what the whole document has left to spend on those
   // snapshots, shared across the root timeline and every sprite in it.
   remainingFrameEntries: number;
+  morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
   morphShapes: Map<number, () => MorphShape | null>;
   shapes: Map<number, Shape>;
   sprites: Map<number, SwfTimeline>;
@@ -438,7 +449,7 @@ function populateSwfTimelineNode(
           : image !== undefined
             ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
             : morphShape !== undefined
-              ? createSwfMorphShapeTarget(morphShape, targetBounds)
+              ? createSwfMorphShapeTarget(morphShape, targetBounds, parsed.morphBounds.get(placement.characterId))
               : createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
       if (placement.name) {
@@ -535,6 +546,7 @@ function createSwfTimelineSource(
         // itself is one definition and every frame names a different point along it.
         if (node.kind === MorphShapeKind && appliedRatios.get(node) !== entry.placement.ratio) {
           setMorphShapeProgress(node as MorphShape, entry.placement.ratio);
+          applySwfMorphBounds(node as MorphShape, entry.placement.ratio);
           appliedRatios.set(node, entry.placement.ratio);
         }
         // What masks an instance can change from frame to frame, so the clip is per-frame data applied the
@@ -764,14 +776,40 @@ function createSwfPlacementNode(
 // Each placement of a morph character decodes its own node, because a morph's progress is per instance:
 // two placements of one character routinely sit at different points along the same morph. A factory that
 // declines leaves an empty display object, so the placement keeps its box and its slot reference.
-function createSwfMorphShapeTarget(decode: () => MorphShape | null, bounds: SwfRectangle | null): Node2D {
+function createSwfMorphShapeTarget(
+  decode: () => MorphShape | null,
+  bounds: SwfRectangle | null,
+  morphBounds: Readonly<{ end: SwfRectangle; start: SwfRectangle }> | undefined,
+): Node2D {
   const shape = decode();
   if (shape === null) return createSwfDisplayObject(bounds);
-  if (bounds !== null) {
+  if (morphBounds !== undefined) {
+    const data = shape.data as unknown as SwfMorphBoundsData;
+    data.morphStartBounds = { ...morphBounds.start };
+    data.morphEndBounds = { ...morphBounds.end };
+    data.authoredBounds = { ...morphBounds.start };
+    (getNodeRuntime(shape) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  } else if (bounds !== null) {
     (shape.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
     (getNodeRuntime(shape) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
   }
   return shape;
+}
+
+// Moves a morph's authored box to the ratio its geometry is at. Written in place, because the box is read
+// through the bounds hook rather than copied out of it.
+function applySwfMorphBounds(shape: MorphShape, progress: number): void {
+  const data = shape.data as unknown as SwfMorphBoundsData;
+  const start = data.morphStartBounds;
+  const end = data.morphEndBounds;
+  if (start === undefined || end === undefined) return;
+  data.authoredBounds = {
+    height: start.height + (end.height - start.height) * progress,
+    width: start.width + (end.width - start.width) * progress,
+    x: start.x + (end.x - start.x) * progress,
+    y: start.y + (end.y - start.y) * progress,
+  };
+  invalidateNodeLocalBounds(shape);
 }
 
 // Each placement of a shape character gets its own copy of the decoded commands, so a document that places
@@ -999,6 +1037,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     pendingTexts: [],
     linkages: new Map<number, string>(),
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
+    morphBounds: new Map<number, { end: SwfRectangle; start: SwfRectangle }>(),
     morphShapes: new Map<number, () => MorphShape | null>(),
     shapes: new Map<number, Shape>(),
     sprites: new Map<number, SwfTimeline>(),
@@ -1021,6 +1060,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     images: state.images,
     imageTextures: state.imageTextures,
     linkages: state.linkages,
+    morphBounds: state.morphBounds,
     morphShapes: state.morphShapes,
     shapes: state.shapes,
     sprites: state.sprites,
@@ -1347,6 +1387,9 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
   }
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, endBounds === null ? startBounds : mergeSwfRectangles(startBounds, endBounds));
+  // The merged box is what everything that only needs an extent reads. A morph additionally keeps its two
+  // endpoints, because its own box moves with its ratio.
+  if (endBounds !== null) state.morphBounds.set(characterId, { end: endBounds, start: startBounds });
 
   const version = resolveSwfShapeVersion(code);
   if (version > 0) readSwfShapeBody(body, state, characterId, version);

@@ -21,7 +21,7 @@ import type {
   SpreadMethod,
   Texture2D,
 } from '@flighthq/types/contract';
-import type { SwfShapeStylePaths, SwfShapeStyleRun } from '@flighthq/types/contract';
+import type { SwfMorphShapePaths } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -129,19 +129,22 @@ function decodeSwfShapeBody(
   return reader.valid ? shape : null;
 }
 
-// Decodes a bare SHAPE — no style array of its own — into one Path per style index it references.
+// Decodes a morph shape's two edge sets together, into one start and one end Path per style index.
 //
-// This is the seam a morph shape needs. A morph stores its styles once and its geometry twice, as two
-// SHAPE records whose edges the format guarantees run in step, so the paint is read separately and each
-// edge set is decoded here against style *indices* alone. Contours are stitched and fill0 runs reversed
-// exactly as a styled shape's are, because a morph endpoint is the same geometry a static shape would be.
+// The two sets describe the same drawing twice and the format does not repeat the styles in the second:
+// an end style-change record carries a move and nothing else. Nor are the two record streams guaranteed
+// to line up one-for-one — a start set may change style where the end set does not — so this walks both
+// with independent cursors rather than decoding each alone and matching afterwards. Whenever both are at
+// an edge, the pair is appended as a single edge carrying both endpoints; from there stitching and fill0
+// reversal move the pair as a unit, so the two Paths a style index yields have identical structure and
+// need no correspondence pass to morph against each other.
 //
-// Coordinates convert from twips, so the paths are in pixels and can be morphed against each other and
-// drawn without a second conversion.
-export function readSwfShapeStylePaths(
-  reader: SwfReader,
-  replayRuns: readonly Readonly<SwfShapeStyleRun>[] | null = null,
-): SwfShapeStylePaths | null {
+// Coordinates convert from twips, so both paths come out in pixels.
+export function readSwfMorphShapePaths(startReader: SwfReader, endReader: SwfReader): SwfMorphShapePaths | null {
+  const startRecords = readSwfShapeRecordList(startReader);
+  const endRecords = readSwfShapeRecordList(endReader);
+  if (startRecords === null || endRecords === null) return null;
+
   const state: SwfShapeState = {
     fill0: 0,
     fill0Segment: null,
@@ -155,83 +158,205 @@ export function readSwfShapeStylePaths(
     x: 0,
     y: 0,
   };
+  let endX = 0;
+  let endY = 0;
+  let startIndex = 0;
+  let endIndex = 0;
 
-  const fillBits = reader.readUnsignedBits(4);
-  const lineBits = reader.readUnsignedBits(4);
-  if (!reader.valid) return null;
-
-  const runs: SwfShapeStyleRun[] = [];
-  let styleChanges = 0;
-  let records = 0;
   for (;;) {
-    if (++records > MAX_SHAPE_RECORDS) return null;
-    if (reader.readUnsignedBits(1) !== 0) {
-      if (!readSwfShapeEdge(reader, state)) return null;
+    const startRecord = startRecords[startIndex];
+    const endRecord = endRecords[endIndex];
+    if (startRecord === undefined || endRecord === undefined) break;
+
+    // A style change on either side closes the runs open against the current styles. Only the start set
+    // names styles; the end set contributes its pen position and nothing else.
+    if (startRecord.kind === 'style') {
+      flushSwfShapeSegments(state);
+      if (startRecord.moveTo !== null) {
+        state.x = startRecord.moveTo.x;
+        state.y = startRecord.moveTo.y;
+      }
+      if (startRecord.fill0 !== null) state.fill0 = startRecord.fill0;
+      if (startRecord.fill1 !== null) state.fill1 = startRecord.fill1;
+      if (startRecord.line !== null) state.line = startRecord.line;
+      startIndex++;
+      if (endRecord.kind === 'style') {
+        if (endRecord.moveTo !== null) {
+          endX = endRecord.moveTo.x;
+          endY = endRecord.moveTo.y;
+        }
+        endIndex++;
+      }
       continue;
     }
 
-    const flags = reader.readUnsignedBits(5);
-    if (!reader.valid) return null;
-    if (flags === 0) break;
-    // A morph edge set never introduces styles: the arrays were read once, ahead of both endpoints.
-    if ((flags & STATE_NEW_STYLES) !== 0) return null;
-
-    flushSwfShapeSegments(state);
-    if ((flags & STATE_MOVE_TO) !== 0) {
-      const moveBits = reader.readUnsignedBits(5);
-      state.x = reader.readSignedBits(moveBits);
-      state.y = reader.readSignedBits(moveBits);
+    if (endRecord.kind === 'style') {
+      flushSwfShapeSegments(state);
+      if (endRecord.moveTo !== null) {
+        endX = endRecord.moveTo.x;
+        endY = endRecord.moveTo.y;
+      }
+      endIndex++;
+      continue;
     }
-    if ((flags & STATE_FILL_STYLE_0) !== 0) state.fill0 = reader.readUnsignedBits(fillBits);
-    if ((flags & STATE_FILL_STYLE_1) !== 0) state.fill1 = reader.readUnsignedBits(fillBits);
-    if ((flags & STATE_LINE_STYLE) !== 0) state.line = reader.readUnsignedBits(lineBits);
-    if (!reader.valid) return null;
 
-    // An end edge set repeats the start's record structure with its style fields unset, so the run
-    // recorded at the same position is what its contours belong to.
-    const replay = replayRuns?.[styleChanges];
-    if (replay !== undefined) {
-      state.fill0 = replay.fill0;
-      state.fill1 = replay.fill1;
-      state.line = replay.line;
-    }
-    runs.push({ fill0: state.fill0, fill1: state.fill1, line: state.line });
-    styleChanges++;
+    appendSwfMorphEdge(state, startRecord, endRecord, endX, endY);
+    endX = endRecord.toX;
+    endY = endRecord.toY;
+    startIndex++;
+    endIndex++;
   }
 
   flushSwfShapeSegments(state);
-  if (!reader.valid) return null;
   return {
-    fills: createSwfShapeSegmentPaths(state.fillSegments),
-    lines: createSwfShapeSegmentPaths(state.lineSegments),
-    runs,
+    fills: createSwfMorphSegmentPaths(state.fillSegments),
+    lines: createSwfMorphSegmentPaths(state.lineSegments),
   };
 }
 
-function createSwfShapeSegmentPaths(segments: ReadonlyMap<number, SwfShapeSegment[]>): Map<number, Path> {
-  const paths = new Map<number, Path>();
+// Appends one paired edge to whichever runs are open, opening them at the pen where the edge begins.
+function appendSwfMorphEdge(
+  state: SwfShapeState,
+  startEdge: Readonly<SwfShapeEdgeRecord>,
+  endEdge: Readonly<SwfShapeEdgeRecord>,
+  endFromX: number,
+  endFromY: number,
+): void {
+  const fromX = state.x;
+  const fromY = state.y;
+  const edge: SwfShapeEdge = {
+    controlX: startEdge.controlX,
+    controlY: startEdge.controlY,
+    curved: startEdge.curved || endEdge.curved,
+    endControlX: endEdge.curved ? endEdge.controlX : (endFromX + endEdge.toX) / 2,
+    endControlY: endEdge.curved ? endEdge.controlY : (endFromY + endEdge.toY) / 2,
+    endToX: endEdge.toX,
+    endToY: endEdge.toY,
+    toX: startEdge.toX,
+    toY: startEdge.toY,
+  };
+  // One side curving and the other not still has to pair, so the straight side contributes its midpoint
+  // as a control point: the same line, expressed as the quadratic its partner needs to morph against.
+  if (edge.curved && !startEdge.curved) {
+    edge.controlX = (fromX + startEdge.toX) / 2;
+    edge.controlY = (fromY + startEdge.toY) / 2;
+  }
+
+  if (state.fill0 !== 0) {
+    state.fill0Segment ??= createSwfMorphSegment(fromX, fromY, endFromX, endFromY);
+    state.fill0Segment.edges.push(edge);
+  }
+  if (state.fill1 !== 0) {
+    state.fill1Segment ??= createSwfMorphSegment(fromX, fromY, endFromX, endFromY);
+    state.fill1Segment.edges.push(edge);
+  }
+  if (state.line !== 0) {
+    state.lineSegment ??= createSwfMorphSegment(fromX, fromY, endFromX, endFromY);
+    state.lineSegment.edges.push(edge);
+  }
+  state.x = startEdge.toX;
+  state.y = startEdge.toY;
+}
+
+function createSwfMorphSegment(x: number, y: number, endX: number, endY: number): SwfShapeSegment {
+  return { edges: [], endStartX: endX, endStartY: endY, startX: x, startY: y };
+}
+
+function createSwfMorphSegmentPaths(
+  segments: ReadonlyMap<number, SwfShapeSegment[]>,
+): Map<number, { end: Path; start: Path }> {
+  const paths = new Map<number, { end: Path; start: Path }>();
   for (const [index, collected] of segments) {
-    const path = createPath('nonZero');
+    const startPath = createPath('nonZero');
+    const endPath = createPath('nonZero');
     for (const contour of stitchSwfShapeSegments(collected)) {
-      appendPathMoveTo(path, contour.startX / TWIPS_PER_PIXEL, contour.startY / TWIPS_PER_PIXEL);
+      appendPathMoveTo(startPath, contour.startX / TWIPS_PER_PIXEL, contour.startY / TWIPS_PER_PIXEL);
+      appendPathMoveTo(endPath, (contour.endStartX ?? 0) / TWIPS_PER_PIXEL, (contour.endStartY ?? 0) / TWIPS_PER_PIXEL);
       for (const edge of contour.edges) {
         if (edge.curved) {
           appendPathCurveTo(
-            path,
+            startPath,
             edge.controlX / TWIPS_PER_PIXEL,
             edge.controlY / TWIPS_PER_PIXEL,
             edge.toX / TWIPS_PER_PIXEL,
             edge.toY / TWIPS_PER_PIXEL,
           );
+          appendPathCurveTo(
+            endPath,
+            (edge.endControlX ?? 0) / TWIPS_PER_PIXEL,
+            (edge.endControlY ?? 0) / TWIPS_PER_PIXEL,
+            (edge.endToX ?? 0) / TWIPS_PER_PIXEL,
+            (edge.endToY ?? 0) / TWIPS_PER_PIXEL,
+          );
         } else {
-          appendPathLineTo(path, edge.toX / TWIPS_PER_PIXEL, edge.toY / TWIPS_PER_PIXEL);
+          appendPathLineTo(startPath, edge.toX / TWIPS_PER_PIXEL, edge.toY / TWIPS_PER_PIXEL);
+          appendPathLineTo(endPath, (edge.endToX ?? 0) / TWIPS_PER_PIXEL, (edge.endToY ?? 0) / TWIPS_PER_PIXEL);
         }
       }
     }
-    if (path.commands.length > 0) paths.set(index, path);
+    if (startPath.commands.length > 0) paths.set(index, { end: endPath, start: startPath });
   }
   return paths;
 }
+
+// Reads one bare SHAPE into absolute-coordinate records. A morph endpoint never introduces styles, so a
+// record carrying the new-styles bit rejects the whole set rather than being read past.
+function readSwfShapeRecordList(reader: SwfReader): SwfShapeRecord[] | null {
+  const fillBits = reader.readUnsignedBits(4);
+  const lineBits = reader.readUnsignedBits(4);
+  if (!reader.valid) return null;
+
+  const records: SwfShapeRecord[] = [];
+  const pen = { x: 0, y: 0 };
+
+  for (let count = 0; count <= MAX_SHAPE_RECORDS; count++) {
+    if (count === MAX_SHAPE_RECORDS) return null;
+    if (reader.readUnsignedBits(1) !== 0) {
+      const record = readSwfShapeEdgeRecord(reader, pen);
+      if (record === null) return null;
+      records.push(record);
+      continue;
+    }
+
+    const flags = reader.readUnsignedBits(5);
+    if (!reader.valid) return null;
+    if (flags === 0) return records;
+    if ((flags & STATE_NEW_STYLES) !== 0) return null;
+
+    let moveTo: { x: number; y: number } | null = null;
+    if ((flags & STATE_MOVE_TO) !== 0) {
+      const moveBits = reader.readUnsignedBits(5);
+      pen.x = reader.readSignedBits(moveBits);
+      pen.y = reader.readSignedBits(moveBits);
+      moveTo = { x: pen.x, y: pen.y };
+    }
+    const fill0 = (flags & STATE_FILL_STYLE_0) !== 0 ? reader.readUnsignedBits(fillBits) : null;
+    const fill1 = (flags & STATE_FILL_STYLE_1) !== 0 ? reader.readUnsignedBits(fillBits) : null;
+    const line = (flags & STATE_LINE_STYLE) !== 0 ? reader.readUnsignedBits(lineBits) : null;
+    if (!reader.valid) return null;
+    records.push({ fill0, fill1, kind: 'style', line, moveTo });
+  }
+  return null;
+}
+
+interface SwfShapeEdgeRecord {
+  controlX: number;
+  controlY: number;
+  curved: boolean;
+  kind: 'edge';
+  toX: number;
+  toY: number;
+}
+
+interface SwfShapeStyleRecord {
+  fill0: number | null;
+  fill1: number | null;
+  kind: 'style';
+  line: number | null;
+  moveTo: { x: number; y: number } | null;
+}
+
+type SwfShapeRecord = SwfShapeEdgeRecord | SwfShapeStyleRecord;
 
 interface SwfShapeEdge {
   controlX: number;
@@ -239,6 +364,14 @@ interface SwfShapeEdge {
   curved: boolean;
   toX: number;
   toY: number;
+  // A morph edge carries its end endpoint alongside its start one. Absent for an ordinary shape, so the
+  // stitcher and the reverser — which read only the start coordinates and reorder whole edges — need no
+  // morph branch, and a contour's two endpoints stay in correspondence by construction rather than by a
+  // later matching pass.
+  endControlX?: number;
+  endControlY?: number;
+  endToX?: number;
+  endToY?: number;
 }
 
 // An unbroken run of edges collected against one style. A shape's fill is assembled from these, not read
@@ -248,6 +381,8 @@ interface SwfShapeSegment {
   edges: SwfShapeEdge[];
   startX: number;
   startY: number;
+  endStartX?: number;
+  endStartY?: number;
 }
 
 interface SwfShapeFill {
@@ -406,10 +541,11 @@ function readSwfShapeColor(reader: SwfReader, hasAlpha: boolean): { color: numbe
   return { color: red * 0x10000 + green * 0x100 + blue, opacity: alpha / 0xff };
 }
 
-function readSwfShapeEdge(reader: SwfReader, state: SwfShapeState): boolean {
-  // Where the pen stands before this edge is where a run that starts with it begins.
-  const fromX = state.x;
-  const fromY = state.y;
+// Reads one edge off the wire, from the pen position the caller supplies. The pen moves to the edge's
+// end, which is what the next edge is relative to.
+function readSwfShapeEdgeRecord(reader: SwfReader, pen: { x: number; y: number }): SwfShapeEdgeRecord | null {
+  const fromX = pen.x;
+  const fromY = pen.y;
   const straight = reader.readUnsignedBits(1) !== 0;
   const bits = reader.readUnsignedBits(4) + 2;
   let controlX = 0;
@@ -421,23 +557,38 @@ function readSwfShapeEdge(reader: SwfReader, state: SwfShapeState): boolean {
     // deltas follow, and when it is clear VertLineFlag picks which single delta does.
     const isGeneralLine = reader.readUnsignedBits(1) !== 0;
     if (isGeneralLine) {
-      state.x += reader.readSignedBits(bits);
-      state.y += reader.readSignedBits(bits);
+      pen.x += reader.readSignedBits(bits);
+      pen.y += reader.readSignedBits(bits);
     } else {
       const isVerticalLine = reader.readUnsignedBits(1) !== 0;
-      if (isVerticalLine) state.y += reader.readSignedBits(bits);
-      else state.x += reader.readSignedBits(bits);
+      if (isVerticalLine) pen.y += reader.readSignedBits(bits);
+      else pen.x += reader.readSignedBits(bits);
     }
   } else {
     curved = true;
     controlX = fromX + reader.readSignedBits(bits);
     controlY = fromY + reader.readSignedBits(bits);
-    state.x = controlX + reader.readSignedBits(bits);
-    state.y = controlY + reader.readSignedBits(bits);
+    pen.x = controlX + reader.readSignedBits(bits);
+    pen.y = controlY + reader.readSignedBits(bits);
   }
-  if (!reader.valid) return false;
+  if (!reader.valid) return null;
+  return { controlX, controlY, curved, kind: 'edge', toX: pen.x, toY: pen.y };
+}
 
-  const edge: SwfShapeEdge = { controlX, controlY, curved, toX: state.x, toY: state.y };
+function readSwfShapeEdge(reader: SwfReader, state: SwfShapeState): boolean {
+  // Where the pen stands before this edge is where a run that starts with it begins.
+  const fromX = state.x;
+  const fromY = state.y;
+  const record = readSwfShapeEdgeRecord(reader, state);
+  if (record === null) return false;
+
+  const edge: SwfShapeEdge = {
+    controlX: record.controlX,
+    controlY: record.controlY,
+    curved: record.curved,
+    toX: record.toX,
+    toY: record.toY,
+  };
   if (state.fill1 !== 0) {
     state.fill1Segment ??= createSwfShapeSegment(fromX, fromY);
     state.fill1Segment.edges.push(edge);
@@ -692,6 +843,8 @@ function reverseSwfShapeSegment(segment: SwfShapeSegment | null): SwfShapeSegmen
   if (segment === null || segment.edges.length === 0) return null;
   const last = segment.edges[segment.edges.length - 1];
   const reversed = createSwfShapeSegment(last.toX, last.toY);
+  reversed.endStartX = last.endToX;
+  reversed.endStartY = last.endToY;
   for (let i = segment.edges.length - 1; i >= 0; i--) {
     const edge = segment.edges[i];
     const previous = i === 0 ? segment : segment.edges[i - 1];
@@ -699,6 +852,10 @@ function reverseSwfShapeSegment(segment: SwfShapeSegment | null): SwfShapeSegmen
       controlX: edge.controlX,
       controlY: edge.controlY,
       curved: edge.curved,
+      endControlX: edge.endControlX,
+      endControlY: edge.endControlY,
+      endToX: i === 0 ? segment.endStartX : (previous as SwfShapeEdge).endToX,
+      endToY: i === 0 ? segment.endStartY : (previous as SwfShapeEdge).endToY,
       toX: i === 0 ? segment.startX : (previous as SwfShapeEdge).toX,
       toY: i === 0 ? segment.startY : (previous as SwfShapeEdge).toY,
     });

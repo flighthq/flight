@@ -1816,6 +1816,49 @@ describe('createScene2DFromSwf', () => {
   });
 });
 
+describe('createScene2DFromSwf morph bounds', () => {
+  it('reports the box the morph occupies at its ratio, not the union of both endpoints', () => {
+    const startEdges = morphBox(200);
+    const endEdges = morphBox(400);
+    const styles = joinBytes(
+      new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
+      new Uint8Array([0]),
+    );
+    const body = joinBytes(
+      uint16(7),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      uint32(styles.length + startEdges.length),
+      styles,
+      startEdges,
+      endEdges,
+    );
+    const place = (depth: number, ratio: number): Uint8Array =>
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(depth), uint16(7), uint16(ratio)),
+      );
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_MORPH_SHAPE, body),
+        place(1, 0),
+        place(2, 0x7fff),
+        place(3, 0xffff),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    // The union would report 20 for all three. Each instance reports the box it is actually at, which is
+    // what layout and hit testing read.
+    const boxes = getNodeChildren(document!.root).map((node) => getNodeLocalBoundsRectangle(node).width);
+    expect(boxes[0]).toBeCloseTo(10);
+    expect(boxes[1]).toBeCloseTo(15, 1);
+    expect(boxes[2]).toBeCloseTo(20);
+  });
+});
+
 describe('createScene2DFromSwf morph shapes', () => {
   it('places a morph character and drives its progress from the placement ratio', () => {
     const startEdges = morphBox(200);
