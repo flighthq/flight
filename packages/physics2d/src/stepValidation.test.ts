@@ -1,8 +1,10 @@
+import type { Physics2DContact } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint } from './jointRegistry';
 import {
   isPhysics2DBodyStateValid,
+  isPhysics2DContactValid,
   isPhysics2DContactStateValid,
   isPhysics2DGravityValid,
   isPhysics2DJointStateValid,
@@ -40,6 +42,30 @@ describe('isPhysics2DContactStateValid', () => {
     expect(isPhysics2DContactStateValid(world)).toBe(true);
     world.contacts.push({ normalX: Number.NaN, pointCount: 0, points: [] } as never);
     expect(isPhysics2DContactStateValid(world)).toBe(false);
+  });
+});
+
+describe('isPhysics2DContactValid', () => {
+  it('accepts a finite contact and rejects an invalid hook-authored coefficient', () => {
+    const contact: Physics2DContact = {
+      bodyA: 0,
+      bodyB: 1,
+      colliderA: 0,
+      colliderB: 0,
+      normalX: 0,
+      normalY: 1,
+      pointCount: 0,
+      points: [],
+      friction: 0.5,
+      restitution: 0,
+      enabled: true,
+      sensor: false,
+      touching: true,
+    };
+
+    expect(isPhysics2DContactValid(contact)).toBe(true);
+    contact.friction = Number.NaN;
+    expect(isPhysics2DContactValid(contact)).toBe(false);
   });
 });
 
