@@ -306,6 +306,52 @@ describe('bullet continuous collision detection', () => {
     expect(world.events.ended).toHaveLength(0);
   });
 
+  it('catches a thin bullet rotating through an obstacle between matching endpoint poses', () => {
+    const continuous = createPhysics2DWorld(0, 0);
+    const obstacle = createRigidBody2D('static', 0, 1.5);
+    obstacle.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.15 }, { ...STONE, friction: 0 }),
+    );
+    addPhysics2DBody(continuous, obstacle);
+    const rod = createRigidBody2D('dynamic', 0, 0);
+    rod.bullet = true;
+    rod.angularVelocity = Math.PI / 0.1;
+    rod.colliders.push(
+      createPhysics2DCollider(
+        { kind: 'aabb', minX: -2, minY: -0.025, maxX: 2, maxY: 0.025 },
+        { ...STONE, friction: 0 },
+      ),
+    );
+    addPhysics2DBody(continuous, rod);
+
+    stepPhysics2D(continuous, 0.1);
+
+    expect(continuous.events.began).toHaveLength(1);
+    expect(continuous.contacts).toHaveLength(1);
+    expect(Math.abs(rod.angularVelocity)).toBeLessThan(Math.PI / 0.1);
+
+    const discrete = createPhysics2DWorld(0, 0);
+    const discreteObstacle = createRigidBody2D('static', 0, 1.5);
+    discreteObstacle.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.15 }, { ...STONE, friction: 0 }),
+    );
+    addPhysics2DBody(discrete, discreteObstacle);
+    const unchecked = createRigidBody2D('dynamic', 0, 0);
+    unchecked.angularVelocity = Math.PI / 0.1;
+    unchecked.colliders.push(
+      createPhysics2DCollider(
+        { kind: 'aabb', minX: -2, minY: -0.025, maxX: 2, maxY: 0.025 },
+        { ...STONE, friction: 0 },
+      ),
+    );
+    addPhysics2DBody(discrete, unchecked);
+
+    stepPhysics2D(discrete, 0.1);
+
+    expect(discrete.contacts).toHaveLength(0);
+    expect(unchecked.angle).toBeCloseTo(Math.PI);
+  });
+
   it('lets pre-solve disable a swept impact without consuming the CCD budget at zero time', () => {
     const world = createPhysics2DWorld(0, 0);
     wall(world, 5, 5.1);

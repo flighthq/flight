@@ -335,7 +335,7 @@ describe('hydratePhysics2DWorld', () => {
     const body = addPhysics2DBody(world, boxBody(0, 0));
     const legacyWorld = world as unknown as {
       version?: number;
-      config: { continuousCollision?: boolean; maxCcdSubsteps?: number };
+      config: { continuousCollision?: boolean; maxCcdRotationSubsteps?: number; maxCcdSubsteps?: number };
     };
     const legacyBody = body as unknown as {
       bullet?: boolean;
@@ -344,6 +344,7 @@ describe('hydratePhysics2DWorld', () => {
     };
     delete legacyWorld.version;
     delete legacyWorld.config.continuousCollision;
+    delete legacyWorld.config.maxCcdRotationSubsteps;
     delete legacyWorld.config.maxCcdSubsteps;
     delete legacyBody.bullet;
     delete legacyBody.fixedRotation;
@@ -354,6 +355,7 @@ describe('hydratePhysics2DWorld', () => {
     expect(world.version).toBe(Physics2DWorldVersion);
     expect(world.config.continuousCollision).toBe(true);
     expect(world.config.maxCcdSubsteps).toBe(8);
+    expect(world.config.maxCcdRotationSubsteps).toBe(64);
     expect(body.bullet).toBe(false);
     expect(body.fixedRotation).toBe(false);
     expect(body.sleepEnabled).toBe(true);

@@ -645,11 +645,11 @@ function hasActivePhysics2DBullet(world: Readonly<Physics2DWorld>): boolean {
   return false;
 }
 
-// Chronological linear CCD. Every event first becomes a persistent contact and traverses pre-solve,
-// then advances the whole awake world to the same time, applies one impact impulse, refreshes collider
-// transforms, and searches the remaining interval again. The hard config bound prevents a pinball
-// corridor from turning one caller step into an unbounded loop. Angular motion is integrated at event
-// boundaries but is not swept; the collision primitive's contract is explicitly translational.
+// Chronological CCD. Every event first becomes a persistent contact and traverses pre-solve, then
+// advances the whole awake world to the same time, applies one impact impulse, refreshes collider
+// transforms, and searches the remaining interval again. Translation uses collision's analytic linear
+// sweep; angular motion uses bounded sampling plus bisection under maxCcdRotationSubsteps. The two hard
+// bounds keep pinball corridors and multi-revolution bodies deterministic in cost.
 function integratePhysics2DContinuous(world: Physics2DWorld, dt: number): void {
   let remaining = dt;
   for (let substep = 0; substep < world.config.maxCcdSubsteps && remaining > 0; substep++) {
@@ -704,14 +704,17 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
         // without advancing time.
         if (findPhysics2DContact(world, bodyA.index, bodyB.index, colliderA, colliderB) !== null) continue;
         if (
-          !sweepCollisionShape(
-            first.world,
+          !findPhysics2DColliderImpact(
+            world,
+            bodyA,
+            bodyB,
+            first,
+            second,
             translationAX,
             translationAY,
-            second.world,
             translationBX,
             translationBY,
-            ccdSweepScratch,
+            dt,
           ) ||
           ccdSweepScratch.fraction > ccdImpactFraction ||
           !isPhysics2DImpactApproaching(
@@ -722,6 +725,8 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
             translationAY,
             translationBX,
             translationBY,
+            bodyA.angularVelocity * dt,
+            bodyB.angularVelocity * dt,
           )
         ) {
           continue;
@@ -741,6 +746,172 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
   return ccdImpactBodyA >= 0;
 }
 
+function findPhysics2DColliderImpact(
+  world: Readonly<Physics2DWorld>,
+  bodyA: RigidBody2D,
+  bodyB: RigidBody2D,
+  colliderA: RigidBody2D['colliders'][number],
+  colliderB: RigidBody2D['colliders'][number],
+  translationAX: number,
+  translationAY: number,
+  translationBX: number,
+  translationBY: number,
+  dt: number,
+): boolean {
+  const rotationA = bodyA.type === 'static' || bodyA.sleeping ? 0 : bodyA.angularVelocity * dt;
+  const rotationB = bodyB.type === 'static' || bodyB.sleeping ? 0 : bodyB.angularVelocity * dt;
+  if ((rotationA !== 0 || rotationB !== 0) && world.config.maxCcdRotationSubsteps > 0) {
+    return findPhysics2DRotationalImpact(
+      bodyA,
+      bodyB,
+      colliderA,
+      colliderB,
+      translationAX,
+      translationAY,
+      translationBX,
+      translationBY,
+      rotationA,
+      rotationB,
+      world.config.maxCcdRotationSubsteps,
+    );
+  }
+  return sweepCollisionShape(
+    colliderA.world,
+    translationAX,
+    translationAY,
+    colliderB.world,
+    translationBX,
+    translationBY,
+    ccdSweepScratch,
+  );
+}
+
+function findPhysics2DRotationalImpact(
+  bodyA: RigidBody2D,
+  bodyB: RigidBody2D,
+  colliderA: RigidBody2D['colliders'][number],
+  colliderB: RigidBody2D['colliders'][number],
+  translationAX: number,
+  translationAY: number,
+  translationBX: number,
+  translationBY: number,
+  rotationA: number,
+  rotationB: number,
+  maxSubsteps: number,
+): boolean {
+  const angularTravel = Math.max(Math.abs(rotationA), Math.abs(rotationB));
+  const substeps = Math.min(maxSubsteps, Math.max(1, Math.ceil(angularTravel / CCD_ROTATION_INCREMENT)));
+  let lowerFraction = 0;
+  for (let sample = 1; sample <= substeps; sample++) {
+    const upperFraction = sample / substeps;
+    if (
+      !testPhysics2DColliderOverlapAtFraction(
+        bodyA,
+        bodyB,
+        colliderA,
+        colliderB,
+        translationAX,
+        translationAY,
+        translationBX,
+        translationBY,
+        rotationA,
+        rotationB,
+        upperFraction,
+      )
+    ) {
+      lowerFraction = upperFraction;
+      continue;
+    }
+
+    let upper = upperFraction;
+    let lower = lowerFraction;
+    for (let iteration = 0; iteration < CCD_ROTATION_BISECTION_ITERATIONS; iteration++) {
+      const middle = (lower + upper) * 0.5;
+      if (
+        testPhysics2DColliderOverlapAtFraction(
+          bodyA,
+          bodyB,
+          colliderA,
+          colliderB,
+          translationAX,
+          translationAY,
+          translationBX,
+          translationBY,
+          rotationA,
+          rotationB,
+          middle,
+        )
+      ) {
+        upper = middle;
+      } else {
+        lower = middle;
+      }
+    }
+    testPhysics2DColliderOverlapAtFraction(
+      bodyA,
+      bodyB,
+      colliderA,
+      colliderB,
+      translationAX,
+      translationAY,
+      translationBX,
+      translationBY,
+      rotationA,
+      rotationB,
+      upper,
+    );
+    const point = ccdRotationalManifoldScratch.points[0];
+    ccdSweepScratch.fraction = upper;
+    ccdSweepScratch.x = point.x;
+    ccdSweepScratch.y = point.y;
+    ccdSweepScratch.normalX = ccdRotationalManifoldScratch.normalX;
+    ccdSweepScratch.normalY = ccdRotationalManifoldScratch.normalY;
+    return true;
+  }
+  return false;
+}
+
+function testPhysics2DColliderOverlapAtFraction(
+  bodyA: RigidBody2D,
+  bodyB: RigidBody2D,
+  colliderA: RigidBody2D['colliders'][number],
+  colliderB: RigidBody2D['colliders'][number],
+  translationAX: number,
+  translationAY: number,
+  translationBX: number,
+  translationBY: number,
+  rotationA: number,
+  rotationB: number,
+  fraction: number,
+): boolean {
+  const xA = bodyA.x;
+  const yA = bodyA.y;
+  const angleA = bodyA.angle;
+  const xB = bodyB.x;
+  const yB = bodyB.y;
+  const angleB = bodyB.angle;
+  bodyA.x = xA + translationAX * fraction;
+  bodyA.y = yA + translationAY * fraction;
+  bodyA.angle = angleA + rotationA * fraction;
+  bodyB.x = xB + translationBX * fraction;
+  bodyB.y = yB + translationBY * fraction;
+  bodyB.angle = angleB + rotationB * fraction;
+  try {
+    updatePhysics2DColliderWorldShape(colliderA, bodyA);
+    updatePhysics2DColliderWorldShape(colliderB, bodyB);
+    return collideContactManifold(colliderA.world, colliderB.world, ccdRotationalManifoldScratch);
+  } finally {
+    bodyA.x = xA;
+    bodyA.y = yA;
+    bodyA.angle = angleA;
+    bodyB.x = xB;
+    bodyB.y = yB;
+    bodyB.angle = angleB;
+    updatePhysics2DColliderWorldShape(colliderA, bodyA);
+    updatePhysics2DColliderWorldShape(colliderB, bodyB);
+  }
+}
+
 function isPhysics2DCcdPairActive(bodyA: Readonly<RigidBody2D>, bodyB: Readonly<RigidBody2D>): boolean {
   const bulletA = bodyA.type === 'dynamic' && bodyA.bullet && !bodyA.sleeping;
   const bulletB = bodyB.type === 'dynamic' && bodyB.bullet && !bodyB.sleeping;
@@ -756,9 +927,23 @@ function isPhysics2DImpactApproaching(
   translationAY: number,
   translationBX: number,
   translationBY: number,
+  rotationA: number,
+  rotationB: number,
 ): boolean {
-  writePhysics2DBodyCenter(bodyA, translationAX * impact.fraction, translationAY * impact.fraction, ccdCenterAScratch);
-  writePhysics2DBodyCenter(bodyB, translationBX * impact.fraction, translationBY * impact.fraction, ccdCenterBScratch);
+  writePhysics2DBodyCenter(
+    bodyA,
+    translationAX * impact.fraction,
+    translationAY * impact.fraction,
+    rotationA * impact.fraction,
+    ccdCenterAScratch,
+  );
+  writePhysics2DBodyCenter(
+    bodyB,
+    translationBX * impact.fraction,
+    translationBY * impact.fraction,
+    rotationB * impact.fraction,
+    ccdCenterBScratch,
+  );
   const rAX = impact.x - ccdCenterAScratch.x;
   const rAY = impact.y - ccdCenterAScratch.y;
   const rBX = impact.x - ccdCenterBScratch.x;
@@ -783,8 +968,8 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
     bodyB.sleeping = false;
     bodyB.sleepTimer = 0;
   }
-  writePhysics2DBodyCenter(bodyA, 0, 0, ccdCenterAScratch);
-  writePhysics2DBodyCenter(bodyB, 0, 0, ccdCenterBScratch);
+  writePhysics2DBodyCenter(bodyA, 0, 0, 0, ccdCenterAScratch);
+  writePhysics2DBodyCenter(bodyB, 0, 0, 0, ccdCenterBScratch);
   const rAX = ccdImpactX - ccdCenterAScratch.x;
   const rAY = ccdImpactY - ccdCenterAScratch.y;
   const rBX = ccdImpactX - ccdCenterBScratch.x;
@@ -906,10 +1091,11 @@ function writePhysics2DBodyCenter(
   body: Readonly<RigidBody2D>,
   translationX: number,
   translationY: number,
+  rotation: number,
   out: { x: number; y: number },
 ): void {
-  const cos = Math.cos(body.angle);
-  const sin = Math.sin(body.angle);
+  const cos = Math.cos(body.angle + rotation);
+  const sin = Math.sin(body.angle + rotation);
   out.x = body.x + translationX + body.centerX * cos - body.centerY * sin;
   out.y = body.y + translationY + body.centerX * sin + body.centerY * cos;
 }
@@ -990,6 +1176,7 @@ const pairScratch: SpatialPair[] = [];
 const ccdPairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
 const ccdSweepScratch: CollisionTimeOfImpact = createCollisionTimeOfImpact();
+const ccdRotationalManifoldScratch: CollisionContactManifold = createCollisionContactManifold();
 const ccdCenterAScratch = { x: 0, y: 0 };
 const ccdCenterBScratch = { x: 0, y: 0 };
 let ccdImpactFraction = 0;
@@ -1002,3 +1189,5 @@ let ccdImpactY = 0;
 let ccdImpactNormalX = 0;
 let ccdImpactNormalY = 0;
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
+const CCD_ROTATION_INCREMENT = Math.PI / 90;
+const CCD_ROTATION_BISECTION_ITERATIONS = 12;

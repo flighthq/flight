@@ -136,6 +136,9 @@ describe('isPhysics2DSolverConfigValid', () => {
     world.config.penetrationSlop = 0.005;
     world.config.maxCcdSubsteps = -1;
     expect(isPhysics2DSolverConfigValid(world.config)).toBe(false);
+    world.config.maxCcdSubsteps = 8;
+    world.config.maxCcdRotationSubsteps = -1;
+    expect(isPhysics2DSolverConfigValid(world.config)).toBe(false);
   });
 });
 

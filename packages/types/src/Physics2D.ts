@@ -131,8 +131,8 @@ export interface RigidBody2D {
   // A fixed-rotation dynamic body retains translational mass but exposes zero inverse inertia to every
   // contact and joint equation. Change this through setPhysics2DBodyFixedRotation after insertion.
   fixedRotation: boolean;
-  // Opts a dynamic body into continuous linear collision detection for fast motion. The ordinary
-  // discrete path remains the default; change this through setPhysics2DBodyBullet after insertion.
+  // Opts a dynamic body into continuous collision detection for fast translation or rotation. The
+  // ordinary discrete path remains the default; change this through setPhysics2DBodyBullet after insertion.
   bullet: boolean;
 
   // A sleeping body is skipped by integration and by the solver: it holds its pose, spends no
@@ -263,6 +263,9 @@ export interface Physics2DSolverConfig {
   // remaining time discretely. This hard bound keeps adversarial pinball scenes deterministic in cost.
   continuousCollision: boolean;
   maxCcdSubsteps: number;
+  // Maximum angular samples used to bracket one swept rotational impact. Zero keeps linear CCD only;
+  // the bound makes even adversarial multi-revolution steps deterministic in cost.
+  maxCcdRotationSubsteps: number;
 }
 
 // Pure diagnosis of whether one explicit step can run. Individual flags keep simultaneous faults
