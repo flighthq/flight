@@ -79,37 +79,59 @@ between parents, which is what keeps subtree contiguity, group compositing, clip
 sibling reconcile all working untouched.
 
 ```ts
-interface NodeOrderList {
-  nodes: HierarchyNode[];
-  keys: number[];
-  count: number;
+interface NodeOrderList<Traits extends object = NodeTraits> {
+  entryCount: number;
+  nodes: Node<Traits>[];
+  sortKeys: number[];
 }
 ```
 
 Two parallel arrays, not an array of records and not a `Map`: zero per-entry allocation, and it lowers
-to C as two arrays plus a length.
+to C as two arrays plus a length. `entryCount` is the valid window, matching `RenderQueue`'s
+`entries` / `entryCount` buffer pattern.
 
-```ts
-const order = createNodeOrderList();
-addNodeOrderListEntry(order, node, 5);   // key is a plain number
-…
-applyNodeOrderList(parent, order);       // sort + diff + minimal moves
-clearNodeOrderList(order);               // refill next frame
-```
+**Vocabulary.** The list defines an *order*; each *entry* carries a *sort key*. An item does not have
+an order — it has a place in one — which is why the per-entry field is not `orders`. `sortKey` reuses
+the word `RenderQueueEntry.sortKey` and `RenderSortKey` already carry for the identical concept one
+layer over. It is deliberately **not** `depths`: every one of the 14 `depth` fields in
+`@flighthq/types` is the Z/depth buffer, and Flight — unlike Flash — has a 3D half where that is the
+real meaning.
 
-The type lives in `@flighthq/types`; the functions live in a **new module inside
-`@flighthq/node`** — no runtime slot, no entity field, still tree-shaken per module. It operates on
-`HierarchyNode`, so display objects, sprite graphs, and future graph families all get it.
+The type lives in `@flighthq/types`; the functions live in a **module inside `@flighthq/node`** — no
+runtime slot, no entity field, still tree-shaken per module. It is generic over `Node<Traits>`, so
+display objects, sprite graphs, and future graph families all get it.
 
-A plain `number` key covers every consumer: SWF's uint16 depth, skeleton2d's integer slot index, and
-Rive's fractional index, where inserting between two neighbors is just a midpoint and renumbering
-never happens. Ties break **stably by insertion order** — which the C port must preserve explicitly,
-since a stable sort is not the default there.
+A plain `number` sort key covers every consumer: SWF's uint16 depth, skeleton2d's integer slot index,
+and Rive's draw order. Ties break **by entry position** — resolved with an explicit index comparison
+rather than by relying on the sort being stable, which also frees the C port from needing a stable
+sort.
 
 `applyNodeOrderList` sorts, diffs against the parent's current children, and performs only the moves
 that changed, so it never fires the whole-list churn the naive path does.
 
-The "layer" idea needs no machinery: a layer is the high digits of the key.
+The "layer" idea needs no machinery: a layer is the high digits of the sort key.
+
+### The surface
+
+Bulk fill is `addNodeOrderListEntry` (O(1) append, no duplicate check); incremental editing is
+`setNodeOrderListEntry` (upsert), `removeNodeOrderListEntry`, and `swapNodeOrderListEntries` — the
+last being what a display list has always called swapping two depths. Queries are
+`hasNodeOrderListEntry`, `getNodeOrderListEntrySortKey` (`null`, not `-1`, since every finite number
+is a legal key), and `forEachNodeOrderListEntry`. `setNodeOrderListFromNodeChildren` captures a
+parent's current child order as keys — the inverse of apply, and what makes "reorder relative to what
+is already there" expressible at all. `clearNodeOrderList` empties the window and keeps capacity;
+`disposeNodeOrderList` also drops the node references, per the dispose/destroy rule.
+
+### Relative placement without fractional indices
+
+`setNodeOrderListEntryAbove` / `Below` place a node beside a target. They do **not** bisect between
+neighbouring keys. The node takes the target's *own* sort key and its entry is positioned adjacent to
+the target's, so the equal-key tie-break separates the two.
+
+This is exact where bisection is approximate: it works when neighbouring keys leave no gap at all
+(5 and 6), and repeated placement never exhausts float precision, which is why Rive's runtime needs a
+fractional index and Flight does not. Removal shifts the remaining entries down rather than
+back-filling from the end for the same reason — entry position is load-bearing, not incidental.
 
 ## What this deliberately does not do
 
