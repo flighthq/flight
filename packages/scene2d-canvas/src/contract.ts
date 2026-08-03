@@ -1,3 +1,4 @@
+export * from './explainCanvasScene2DCoverage';
 export * from './canvasBackground';
 export * from './canvasBitmapTextureResolver';
 export * from './canvasSprite';
