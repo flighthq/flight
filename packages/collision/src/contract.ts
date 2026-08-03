@@ -8,4 +8,5 @@ export * from './raycastCollisionShape';
 export * from './segmentCollision';
 export * from './shapeCollision';
 export * from './shapeContact';
+export * from './sweepCollisionShape';
 export * from './testCollision';

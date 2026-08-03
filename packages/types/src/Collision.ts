@@ -94,6 +94,18 @@ export interface CollisionRaycastHit {
   normalY: number;
 }
 
+// Exact first contact for two convex area shapes translated linearly over one normalized interval.
+// `fraction` lies in [0,maxFraction]; the normal points in the direction that separates A out of B,
+// matching every discrete manifold, and (`x`,`y`) is a support point on A at impact. Rotational sweep
+// is deliberately outside this primitive: callers must subdivide changing orientations explicitly.
+export interface CollisionTimeOfImpact {
+  fraction: number;
+  x: number;
+  y: number;
+  normalX: number;
+  normalY: number;
+}
+
 // Plain-data answer to "why did testCollision return false?". `shapeIndex` identifies invalid or
 // unsupported input (0 for A, 1 for B); it is null for an ordinary separated pair or an overlap.
 export interface CollisionTestExplanation {
