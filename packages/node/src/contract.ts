@@ -9,6 +9,7 @@ export * from './hasTransform3d';
 export * from './hierarchy';
 export * from './node';
 export * from './nodeColorAdjustment';
+export * from './nodeOrderList';
 export * from './revision';
 export * from './nodeTransform2d';
 export * from './stageFit';

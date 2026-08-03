@@ -381,6 +381,7 @@ export * from './MovieClipSignals';
 export * from './NativeText';
 export * from './Net';
 export * from './Node';
+export * from './NodeOrderList';
 export * from './NodeDescendantVisitor';
 export * from './NodeInteraction';
 export * from './NodeInteractionState';
