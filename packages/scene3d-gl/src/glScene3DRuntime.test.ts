@@ -42,7 +42,14 @@ describe('destroyGlScene3DRuntime', () => {
       resolveFramebuffer: null,
       textures: [],
     } as unknown as GlRenderTarget;
-    scene.shadow = { matrix: {} as Matrix4, texture: depthTexture };
+    scene.shadow = {
+      enabled: true,
+      matrix: {} as Matrix4,
+      normalBias: 0,
+      pcfRadius: 0,
+      shadowBias: 0,
+      texture: depthTexture,
+    };
     scene.skinPalette = { jointCapacity: 4, texture: {} as WebGLTexture };
 
     destroyGlScene3DRuntime(state);

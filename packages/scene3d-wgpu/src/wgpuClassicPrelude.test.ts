@@ -198,8 +198,8 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(source).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d;');
     expect(source).toContain('@group(3) @binding(2) var shadowSampler : sampler_comparison;');
     // The whole directional contribution is scaled by the PCF factor; ambient stays unshadowed.
-    expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
-    expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition\)/g)).toHaveLength(1);
+    expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)');
+    expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition, geometricNormal\)/g)).toHaveLength(1);
   });
 
   it('consumes every packed punctual-light family through the shared classic BRDF', () => {

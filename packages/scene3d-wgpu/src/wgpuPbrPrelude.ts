@@ -2,7 +2,7 @@ import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flig
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
-import { spliceWgpuColorAdjustmentPrelude } from './wgpuMeshPipeline';
+import { spliceWgpuColorAdjustmentPrelude, WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
 // is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /
@@ -177,14 +177,6 @@ struct MaterialBlock {
 
 @group(0) @binding(0) var<uniform> frame : Frame;
 @group(1) @binding(0) var<uniform> draw : Draw;
-// The directional shadow inputs (group 3), the WGSL mirror of scene-gl's u_shadowMap / u_shadowMatrix /
-// u_shadowEnabled. matrix is the light view-projection (world to shadow clip); params.x is the enabled
-// flag (0 or 1). The depth map is a texture_depth_2d PCF-compared with a comparison sampler.
-struct Shadow {
-  matrix : mat4x4f,
-  params : vec4f,   // x = enabled (0 or 1)
-};
-
 @group(2) @binding(0) var<uniform> material : MaterialBlock;
 @group(2) @binding(1) var baseColorSampler : sampler;
 @group(2) @binding(2) var metallicRoughnessSampler : sampler;
@@ -199,9 +191,7 @@ struct Shadow {
 @group(2) @binding(11) var emissiveTexture : texture_2d<f32>;
 @group(2) @binding(12) var alphaTexture : texture_2d<f32>;
 
-@group(3) @binding(0) var<uniform> shadow : Shadow;
-@group(3) @binding(1) var shadowMap : texture_depth_2d;
-@group(3) @binding(2) var shadowSampler : sampler_comparison;
+${WGPU_DIRECTIONAL_SHADOW_WGSL}
 
 // The image-based-lighting inputs share group 3 with shadow so PBR fits WebGPU's maxBindGroups minimum.
 // params.x is the enabled flag (0 or 1), params.y the environment intensity, params.z the highest
@@ -322,34 +312,6 @@ fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f3
   let shift = vec3f(0.5) + vec3f(0.5) * cos(phase);
   let base = fresnelSchlick(cosTheta, f0);
   return mix(base, shift, clamp(thicknessNm / 1000.0, 0.0, 1.0));
-}
-
-// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF —
-// the WGSL mirror of scene-gl's sampleDirectionalShadow. Two WebGPU-specific deltas from the GL form:
-// the sample UV flips Y (WebGPU textures are top-left origin, GL bottom-left), and the depth reference
-// remaps the GL-convention clip Z (-1..1) into WebGPU's 0..1 depth range — matching the identical remap
-// the shadow depth pass applies when it writes the map. The comparison sampler ('less-equal') yields
-// GL's "current <= closest" per tap; fragments outside the shadow frustum read as lit.
-fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
-  if (shadow.params.x < 0.5) {
-    return 1.0;
-  }
-  let clip = shadow.matrix * vec4f(worldPos, 1.0);
-  let ndc = clip.xyz / clip.w;
-  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
-  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
-  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
-    return 1.0;
-  }
-  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
-  var sum = 0.0;
-  for (var x = -1; x <= 1; x = x + 1) {
-    for (var y = -1; y <= 1; y = y + 1) {
-      let offset = vec2f(f32(x), f32(y)) * texel;
-      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
-    }
-  }
-  return sum / 9.0;
 }
 
 // Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range.
@@ -508,7 +470,7 @@ fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec
                                   frame.directionalRadiance.rgb, f0, diffuseColor, roughness,
                                   metallic, anisoT, anisoB, at, ab);
     // Attenuate only the directional term by the PCF shadow factor (mirrors scene-gl's PBR path).
-    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition, geometricNormal);
   }
 
   // Point lights: surface->light direction with a smooth inverse-square range falloff, same BRDF.

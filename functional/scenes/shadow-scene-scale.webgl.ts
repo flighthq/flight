@@ -81,7 +81,7 @@ const direction = createVector3(0.5, -1, 0.3);
 normalizeVector3(direction, direction);
 const lights = {
   ambient: createAmbientLight({ color: 0x384050ff, intensity: 0.08 }),
-  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
+  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
 };
 
 const sceneBounds = createAabb();
@@ -92,7 +92,7 @@ const shadowCamera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
-drawGlScene3DShadowMap(state, scene, shadowCamera);
+drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
 
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);

@@ -62,7 +62,7 @@ export function render(
   shadowCamera: Readonly<Camera3D>,
 ): void {
   beginWgpuFrame(state);
-  drawWgpuScene3DShadowMap(state, scene, shadowCamera);
+  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
@@ -94,7 +94,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
+  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
 });
 const sceneBounds = createAabb();
 getNode3DWorldBounds(sceneBounds, scene);

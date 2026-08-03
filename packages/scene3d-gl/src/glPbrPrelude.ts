@@ -29,6 +29,7 @@ import type {
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
+import { GL_DIRECTIONAL_SHADOW_GLSL } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 // A short, stable, order-independent string identity for a define key, used as the program-cache
@@ -216,31 +217,9 @@ uniform int u_pointCount;
 uniform int u_spotCount;
 uniform int u_hemisphereCount;
 
-uniform sampler2D u_shadowMap;       // directional shadow depth map
-uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
-uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
-
 ${PBR_EXTENSION_DECLARATIONS}
 
-// Directional shadow factor (1.0 = lit, 0.0 = shadowed) with 3x3 PCF; fragments outside the shadow
-// frustum read as lit. Multiplied into the directional term below.
-float sampleDirectionalShadow(vec3 worldPos) {
-  if (u_shadowEnabled < 0.5) return 1.0;
-  vec4 clip = u_shadowMatrix * vec4(worldPos, 1.0);
-  vec3 ndc = clip.xyz / clip.w;
-  vec3 uvz = ndc * 0.5 + 0.5;
-  if (uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0) return 1.0;
-  float current = uvz.z - 0.0025;
-  vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0));
-  float sum = 0.0;
-  for (int x = -1; x <= 1; ++x) {
-    for (int y = -1; y <= 1; ++y) {
-      float closest = texture(u_shadowMap, uvz.xy + vec2(float(x), float(y)) * texel).r;
-      sum += current <= closest ? 1.0 : 0.0;
-    }
-  }
-  return sum / 9.0;
-}
+${GL_DIRECTIONAL_SHADOW_GLSL}
 
 uniform samplerCube u_iblIrradiance;  // diffuse irradiance cubemap
 uniform samplerCube u_iblPrefiltered; // roughness-mipped prefiltered specular cubemap
@@ -428,7 +407,7 @@ ${PBR_EXTENSION_SURFACE}
     vec3 lightDir = normalize(-u_directional.xyz);
     vec3 direct = shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
                                    u_directionalRadiance.rgb, f0, diffuseColor, roughness, metallic);
-    radiance += direct * sampleDirectionalShadow(v_worldPosition);
+    radiance += direct * sampleDirectionalShadow(v_worldPosition, geometricNormal);
   }
 
   // Point lights: surface->light direction with a smooth inverse-square range falloff, same BRDF.

@@ -72,7 +72,7 @@ export function render(
   shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass from the light's POV into the shadow map.
-  drawGlScene3DShadowMap(state, scene, shadowCamera);
+  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
@@ -112,7 +112,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
+  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
 });
 
 const sceneBounds = createAabb();

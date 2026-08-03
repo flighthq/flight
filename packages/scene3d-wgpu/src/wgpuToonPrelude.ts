@@ -15,6 +15,7 @@ import {
   ensureWgpuShadowSampleLayout,
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
+  WGPU_DIRECTIONAL_SHADOW_WGSL,
 } from './wgpuMeshPipeline';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -155,42 +156,7 @@ struct ToonMaterial {
 @group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
 @group(2) @binding(3) var rampTexture : texture_2d<f32>;
 
-// The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
-// builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
-// params.x is the enabled flag. The WGSL mirror of scene-gl's shadow uniforms and wgpuPbrPrelude's Shadow.
-struct Shadow {
-  matrix : mat4x4f,
-  params : vec4f,   // x = enabled (0 or 1)
-};
-
-@group(3) @binding(0) var<uniform> shadow : Shadow;
-@group(3) @binding(1) var shadowMap : texture_depth_2d;
-@group(3) @binding(2) var shadowSampler : sampler_comparison;
-
-// Directional shadow factor with 3x3 PCF — identical to wgpuPbrPrelude's copy. UV flips Y (WebGPU
-// top-left origin), depthRef remaps GL-convention clip Z (-1..1) into WebGPU's 0..1 range; the comparison
-// sampler ('less-equal') yields "current <= closest" per tap. Outside the frustum / no map bound = lit.
-fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
-  if (shadow.params.x < 0.5) {
-    return 1.0;
-  }
-  let clip = shadow.matrix * vec4f(worldPos, 1.0);
-  let ndc = clip.xyz / clip.w;
-  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
-  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
-  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
-    return 1.0;
-  }
-  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
-  var sum = 0.0;
-  for (var x = -1; x <= 1; x = x + 1) {
-    for (var y = -1; y <= 1; y = y + 1) {
-      let offset = vec2f(f32(x), f32(y)) * texel;
-      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
-    }
-  }
-  return sum / 9.0;
-}
+${WGPU_DIRECTIONAL_SHADOW_WGSL}
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var baseColor = material.baseColor;
@@ -230,7 +196,7 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
       let band = floor(nDotL * steps) / max(steps, 1.0);
       direct = baseColor.rgb * band * frame.directionalRadiance.rgb;
     }
-    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition, normal);
   }
 
   // Ambient term: flat irradiance over the base color (unbanded).

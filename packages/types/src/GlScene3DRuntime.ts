@@ -15,10 +15,15 @@ import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
 import type { TextureColorSpace } from './Texture';
 
-// The active directional shadow for this state, set by drawGlScene3DShadowMap and read by the lit bind
-// (bindGlMeshLightBlock) so every lit family samples the same shadow map. Null = no shadow this frame.
+// The directional shadow resource for this state, set by drawGlScene3DShadowMap and read by the lit bind
+// (bindGlMeshLightBlock) so every lit family samples the same shadow map. `enabled` is the per-frame gate;
+// a disabled object may retain its texture for the next shadow pass. Null = no shadow resource yet.
 export interface GlScene3DShadow {
+  enabled: boolean;
   matrix: Matrix4; // light view-projection (world -> shadow clip)
+  normalBias: number;
+  pcfRadius: number;
+  shadowBias: number;
   texture: WebGLTexture; // the sampleable depth shadow map
 }
 

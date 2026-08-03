@@ -64,7 +64,7 @@ export function render(
   shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass: render the scene from the light's POV into the shadow map (off the scene target).
-  drawGlScene3DShadowMap(state, scene, shadowCamera);
+  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
@@ -121,7 +121,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  directional: createDirectionalLight({ color: 0xffffffff, direction, intensity: 3 }),
+  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
 });
 
 // Shadow camera fitted to the scene's world bounds along the light direction.

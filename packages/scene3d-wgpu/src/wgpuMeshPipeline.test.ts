@@ -410,11 +410,37 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
     getWgpuScene3DRuntime(state).shadow = {
       depthTexture: {} as GPUTexture,
       depthView: {} as GPUTextureView,
+      enabled: true,
       matrix: createMatrix4(),
+      normalBias: 0,
+      pcfRadius: 0,
+      shadowBias: 0,
     };
 
     ensureWgpuPbrSampleBindGroup(state);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(before + 1);
+  });
+
+  it('packs the directional shadow configuration into the combined PBR uniform', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const runtime = getWgpuScene3DRuntime(state);
+    runtime.shadow = {
+      depthTexture: {} as GPUTexture,
+      depthView: {} as GPUTextureView,
+      enabled: true,
+      matrix: createMatrix4(),
+      normalBias: 0.02,
+      pcfRadius: 3,
+      shadowBias: 0.01,
+    };
+
+    ensureWgpuPbrSampleBindGroup(state);
+
+    const write = fake.calls.find(
+      (call) => call.name === 'writeBuffer' && call.args[0] === runtime.shadowUniformBuffer,
+    );
+    const values = new Float32Array(write!.args[2] as ArrayBuffer);
+    expect(Array.from(values.slice(16, 20))).toEqual([1, 3, expect.closeTo(0.01), expect.closeTo(0.02)]);
   });
 });
 
@@ -614,10 +640,36 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
     getWgpuScene3DRuntime(state).shadow = {
       depthTexture: {} as GPUTexture,
       depthView: {} as GPUTextureView,
+      enabled: true,
       matrix: createMatrix4(),
+      normalBias: 0,
+      pcfRadius: 0,
+      shadowBias: 0,
     };
     ensureWgpuShadowSampleBindGroup(state);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(before + 1);
+  });
+
+  it('packs the same directional shadow configuration into the classic/toon uniform', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const runtime = getWgpuScene3DRuntime(state);
+    runtime.shadow = {
+      depthTexture: {} as GPUTexture,
+      depthView: {} as GPUTextureView,
+      enabled: true,
+      matrix: createMatrix4(),
+      normalBias: 0.02,
+      pcfRadius: 3,
+      shadowBias: 0.01,
+    };
+
+    ensureWgpuShadowSampleBindGroup(state);
+
+    const write = fake.calls.find(
+      (call) => call.name === 'writeBuffer' && call.args[0] === runtime.shadowUniformBuffer,
+    );
+    const values = new Float32Array(write!.args[2] as ArrayBuffer);
+    expect(Array.from(values.slice(16, 20))).toEqual([1, 3, expect.closeTo(0.01), expect.closeTo(0.02)]);
   });
 });
 
