@@ -48,8 +48,8 @@ const shapeRasterizerResolvers = createCanvasTextureResolvers();
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 

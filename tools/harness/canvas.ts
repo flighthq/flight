@@ -63,7 +63,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -79,7 +79,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
       // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
-      registerCanvasShapeCommands([...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

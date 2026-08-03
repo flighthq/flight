@@ -3,6 +3,7 @@ import { createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
+import type { RenderState } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -11,12 +12,15 @@ import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
-beforeAll(() => {
-  // Texture fills are their own command set, separately registered from the base one, so a caller that
-  // wants bitmap-filled shapes opts into both.
-  registerCanvasShapeCommands(defaultCanvasShapeCommands);
-  registerCanvasShapeCommands(defaultCanvasTextureShapeCommands);
-});
+// The state the backend hands the rasterizer is where the commands live, so this is the wiring a GPU or
+// DOM backend does on its own state. Texture fills are their own command set, separately registered from
+// the base one, so a caller that wants bitmap-filled shapes opts into both.
+function makeRasterizerState(): RenderState {
+  const state = createRenderState();
+  registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+  registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
+  return state;
+}
 
 describe('createCanvasShapeRasterizer', () => {
   it('paints a Bitmap-sourced texture fill, which is what a null render state could never do', () => {
@@ -33,7 +37,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState());
 
     expect(fills).toHaveLength(1);
     expect(fills[0]).not.toBe('');
@@ -50,7 +54,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState());
 
     expect(fills).toEqual([]);
   });
@@ -69,7 +73,7 @@ describe('createCanvasShapeRasterizer', () => {
     appendShapeBeginTextureFill(shape, texture);
     appendShapeRectangle(shape, 0, 0, 10, 10);
 
-    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, createRenderState());
+    createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState());
 
     expect(fills).toHaveLength(1);
   });

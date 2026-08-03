@@ -1,4 +1,5 @@
 import type { BlendMode } from './BlendMode';
+import type { CanvasShapeCommand } from './CanvasShapeRegistry';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Path } from './Path';
@@ -45,6 +46,15 @@ export interface RenderState extends Entity {
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
+  // Shape-command handlers keyed by command key, absent until the first registerCanvasShapeCommand.
+  // Keyed by plain string rather than ShapeCommandKey because registration is open to vendor-prefixed
+  // commands the built-in union does not name.
+  //
+  // On the BASE runtime, not the Canvas one: every backend replays the same command stream — the GPU
+  // and DOM backends through a ShapeRasterizer, for the fills they have no tessellated form for — and
+  // each does it against its own state. Putting the registry here is what lets a caller wire commands
+  // onto the state it already holds and lets a lookup miss report through that state's registryMiss.
+  canvasShapeCommandRegistry?: Map<string, CanvasShapeCommand> | null;
   // Shakeable diagnostics seam (default `null` → no cost): a non-matrix operation that neither the
   // compact scale/bias path nor the full 4×5 matrix path can represent reaches this slot.
   // `enableColorAdjustmentGuards` installs a handler that warns through @flighthq/log.

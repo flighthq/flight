@@ -73,7 +73,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
+      registerWgpuShapeCommands(state, [...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -89,7 +89,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerWgpuShapeCommands([...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
+      registerWgpuShapeCommands(state, [...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
     }
   }
 

@@ -1,21 +1,28 @@
-import type { CanvasShapeCommand, ShapeCommandKey } from '@flighthq/types/contract';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
+import type { CanvasShapeCommand, RenderState, ShapeCommandKey } from '@flighthq/types/contract';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const registry = new Map<string, CanvasShapeCommand<any>>();
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getCanvasShapeCommand(key: string): CanvasShapeCommand<any> | undefined {
-  return registry.get(key);
+// The command set is per render state, like every other kind-keyed handler registry: the state a
+// caller already holds is what carries the wiring, so `renderCanvasShapeCommands` can reach it from
+// the top-level call rather than closing over a bag nothing above can inspect or add to. A GPU or DOM
+// backend registers onto its own state and its ShapeRasterizer resolves through that same state.
+//
+// Returns null rather than undefined for an unregistered key — the ordinary "not wired" answer, not an
+// error. Callers report the miss through the state's registryMiss seam.
+export function getCanvasShapeCommand(state: RenderState, key: string): CanvasShapeCommand | null {
+  return getRenderStateRuntime(state).canvasShapeCommandRegistry?.get(key) ?? null;
 }
 
-export function registerCanvasShapeCommand<K extends ShapeCommandKey>(command: CanvasShapeCommand<K>): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registry.set(command.key, command as CanvasShapeCommand<any>);
+export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
+  state: RenderState,
+  command: CanvasShapeCommand<K>,
+): void {
+  const runtime = getRenderStateRuntime(state);
+  const registry = (runtime.canvasShapeCommandRegistry ??= new Map<string, CanvasShapeCommand>());
+  registry.set(command.key, command);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function registerCanvasShapeCommands(commands: CanvasShapeCommand<any>[]): void {
+export function registerCanvasShapeCommands(state: RenderState, commands: readonly CanvasShapeCommand[]): void {
   for (const command of commands) {
-    registerCanvasShapeCommand(command);
+    registerCanvasShapeCommand(state, command);
   }
 }

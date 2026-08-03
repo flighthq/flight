@@ -28,7 +28,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands([
+registerCanvasShapeCommands(state, [
   defaultCanvasBeginFill,
   defaultCanvasDrawPath,
   defaultCanvasEndFill,

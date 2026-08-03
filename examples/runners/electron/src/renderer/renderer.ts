@@ -33,7 +33,7 @@ document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, { backgroundColor: 0x1d1f23ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
 const root = createDisplayObject();
 root.scaleX = pixelRatio;

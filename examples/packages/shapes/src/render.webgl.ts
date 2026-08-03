@@ -44,7 +44,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeCommands(state, defaultGlShapeCommands);
 
 export const scale = pixelRatio;
 
