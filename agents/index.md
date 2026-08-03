@@ -44,6 +44,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
+- [draw order model](draw-order-model.md) — **unratified.** child order is the only order; the caller-owned `NodeOrderList`.
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
