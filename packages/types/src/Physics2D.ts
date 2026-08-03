@@ -128,12 +128,18 @@ export interface RigidBody2D {
   linearDamping: number;
   angularDamping: number;
   gravityScale: number;
+  // A fixed-rotation dynamic body retains translational mass but exposes zero inverse inertia to every
+  // contact and joint equation. Change this through setPhysics2DBodyFixedRotation after insertion.
+  fixedRotation: boolean;
 
   // A sleeping body is skipped by integration and by the solver: it holds its pose, spends no
   // iterations, and its contacts contribute nothing. Sleep is decided per ISLAND rather than per body,
   // because a body resting on a moving neighbour is not at rest — the island is the unit that can
   // truthfully be called still. Static bodies are never asleep or awake; they simply do not move.
   sleeping: boolean;
+  // Per-body opt-out from world sleeping. A disabled member keeps its whole connected island awake,
+  // because constraints can transmit its continuing motion or external control to every neighbour.
+  sleepEnabled: boolean;
   // Seconds this body has been continuously below both sleep thresholds. Reset the moment it exceeds
   // either, so the timer measures an unbroken stretch of stillness rather than a total.
   sleepTimer: number;

@@ -154,6 +154,11 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   // Per-body stillness first: each body's own timer, independent of who it is touching.
   for (const body of bodies) {
     if (body.type === 'static') continue;
+    if (!body.sleepEnabled) {
+      body.sleeping = false;
+      body.sleepTimer = 0;
+      continue;
+    }
     if (_isBodyStill(body, config.sleepLinearThreshold, config.sleepAngularThreshold)) {
       body.sleepTimer += dt;
     } else {
@@ -182,7 +187,7 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   for (const body of bodies) {
     if (body.type === 'static') continue;
     const islandTimer = islandTimers.get(_islandRootOf(parents, body.index)) ?? body.sleepTimer;
-    const shouldSleep = islandTimer >= config.timeToSleep;
+    const shouldSleep = body.sleepEnabled && islandTimer >= config.timeToSleep;
     if (!shouldSleep && body.sleeping) {
       // Waking clears the timer so a woken island must earn its rest again from zero rather than
       // falling straight back asleep on the next step.

@@ -472,13 +472,14 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
       if (body.type !== 'dynamic') continue;
       body.velocityX += (body.forceX * body.inverseMass + world.gravityX * body.gravityScale) * dt;
       body.velocityY += (body.forceY * body.inverseMass + world.gravityY * body.gravityScale) * dt;
-      body.angularVelocity += body.torque * body.inverseInertia * dt;
+      if (body.fixedRotation) body.angularVelocity = 0;
+      else body.angularVelocity += body.torque * body.inverseInertia * dt;
       // Damping is applied as a multiplicative decay rather than a subtracted force so it stays stable at
       // any timestep: a force-shaped damping term large enough to matter can reverse the velocity it is
       // damping when dt is big.
       body.velocityX /= 1 + body.linearDamping * dt;
       body.velocityY /= 1 + body.linearDamping * dt;
-      body.angularVelocity /= 1 + body.angularDamping * dt;
+      if (!body.fixedRotation) body.angularVelocity /= 1 + body.angularDamping * dt;
     }
   }
 
@@ -573,7 +574,7 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
       const body = bodies[world.solveIslandBodyIndices[at]];
       body.x += body.velocityX * dt;
       body.y += body.velocityY * dt;
-      body.angle += body.angularVelocity * dt;
+      if (!body.fixedRotation) body.angle += body.angularVelocity * dt;
     }
     const contactStart = world.solveIslandContactStarts[island];
     const contactCount = world.solveIslandContactCounts[island];

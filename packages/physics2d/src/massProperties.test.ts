@@ -142,6 +142,17 @@ describe('updateRigidBody2DMassData', () => {
     expect(platform.inverseInertia).toBe(0);
   });
 
+  it('gives fixed rotation zero inverse inertia without discarding derived inertia or linear mass', () => {
+    const target = body([collider({ kind: 'aabb', minX: -2, minY: -1, maxX: 2, maxY: 1 })]);
+    target.fixedRotation = true;
+    updateRigidBody2DMassData(target);
+
+    expect(target.mass).toBeGreaterThan(0);
+    expect(target.inverseMass).toBeGreaterThan(0);
+    expect(target.inertia).toBeGreaterThan(0);
+    expect(target.inverseInertia).toBe(0);
+  });
+
   it('leaves a dynamic body with no area finite rather than dividing by its zero mass', () => {
     // A body whose only collider is a sensor point has no mass. Inverting it would seed NaN into the
     // velocity of everything it later touches, which is unrecoverable rather than merely wrong.

@@ -172,7 +172,9 @@ function isRigidBody2DStateValid(body: Readonly<RigidBody2D>): boolean {
     !Number.isSafeInteger(body.index) ||
     body.index < 0 ||
     (body.type !== 'dynamic' && body.type !== 'kinematic' && body.type !== 'static') ||
+    typeof body.fixedRotation !== 'boolean' ||
     typeof body.sleeping !== 'boolean' ||
+    typeof body.sleepEnabled !== 'boolean' ||
     !Number.isFinite(body.sleepTimer) ||
     body.sleepTimer < 0 ||
     !Number.isFinite(body.linearDamping) ||

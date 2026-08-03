@@ -345,6 +345,20 @@ describe('updatePhysics2DSleep', () => {
     expect(crate.sleepTimer).toBe(0);
   });
 
+  it('keeps a connected island awake while one member has per-body sleeping disabled', () => {
+    const world = createPhysics2DWorld();
+    const first = still(world, 0);
+    const controlled = still(world, 1);
+    controlled.sleepEnabled = false;
+    link(world, first, controlled);
+
+    updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
+
+    expect(controlled.sleeping).toBe(false);
+    expect(controlled.sleepTimer).toBe(0);
+    expect(first.sleeping).toBe(false);
+  });
+
   it('clears the timer of a body it wakes so rest has to be earned again', () => {
     const world = createPhysics2DWorld();
     const settled = still(world, 0);

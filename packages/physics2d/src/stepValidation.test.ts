@@ -31,6 +31,12 @@ describe('isPhysics2DBodyStateValid', () => {
     body.linearDamping = -1;
     expect(isPhysics2DBodyStateValid(world)).toBe(false);
     body.linearDamping = 0;
+    body.fixedRotation = undefined as never;
+    expect(isPhysics2DBodyStateValid(world)).toBe(false);
+    body.fixedRotation = false;
+    body.sleepEnabled = undefined as never;
+    expect(isPhysics2DBodyStateValid(world)).toBe(false);
+    body.sleepEnabled = true;
     world.bodyByIndex.delete(body.index);
     expect(isPhysics2DBodyStateValid(world)).toBe(false);
   });

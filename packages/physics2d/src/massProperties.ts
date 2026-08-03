@@ -99,7 +99,7 @@ export function updateRigidBody2DMassData(body: RigidBody2D): void {
   body.mass = simulated ? mass : 0;
   body.inertia = simulated ? inertia : 0;
   body.inverseMass = simulated && mass > 0 ? 1 / mass : 0;
-  body.inverseInertia = simulated && inertia > 0 ? 1 / inertia : 0;
+  body.inverseInertia = simulated && !body.fixedRotation && inertia > 0 ? 1 / inertia : 0;
 }
 
 // Centroid and second moment of a simple polygon, accumulated per triangle fanned from the origin.

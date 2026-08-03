@@ -115,7 +115,7 @@ export function applyPhysics2DForceAtPoint(
   }
   body.forceX += forceX;
   body.forceY += forceY;
-  body.torque += _crossPhysics2DBodyPointVector(body, pointX, pointY, forceX, forceY);
+  if (!body.fixedRotation) body.torque += _crossPhysics2DBodyPointVector(body, pointX, pointY, forceX, forceY);
   if (forceX !== 0 || forceY !== 0) _wakePhysics2DBodyFromTopology(body);
   return true;
 }
@@ -161,7 +161,7 @@ export function applyPhysics2DLinearImpulseAtPoint(
 // Accumulates torque for the next step and wakes the body so the integrator cannot swallow it.
 export function applyPhysics2DTorque(body: RigidBody2D, torque: number): boolean {
   assertPhysics2DBodyNotStepping(body);
-  if (body.type !== 'dynamic' || !Number.isFinite(torque)) return false;
+  if (body.type !== 'dynamic' || body.fixedRotation || !Number.isFinite(torque)) return false;
   body.torque += torque;
   if (torque !== 0) _wakePhysics2DBodyFromTopology(body);
   return true;
@@ -292,7 +292,9 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
     linearDamping: 0,
     angularDamping: 0,
     gravityScale: 1,
+    fixedRotation: false,
     sleeping: false,
+    sleepEnabled: true,
     sleepTimer: 0,
     colliders: [],
   };
@@ -406,6 +408,38 @@ export function removePhysics2DCollider(
     _wakePhysics2DBodyFromTopology(body);
     synchronizePhysics2DBroadphase(world);
   }
+  return true;
+}
+
+// Enables or disables angular response while preserving the body's translational mass. Existing spin,
+// torque, and cached constraints are discarded when rotation is fixed so no latent angular state
+// resumes if the control is later released.
+export function setPhysics2DBodyFixedRotation(
+  world: Physics2DWorld,
+  body: RigidBody2D,
+  fixedRotation: boolean,
+): boolean {
+  assertPhysics2DWorldNotStepping(world);
+  if (world.bodyByIndex.get(body.index) !== body || typeof fixedRotation !== 'boolean') return false;
+  if (body.fixedRotation === fixedRotation) return true;
+  _invalidatePhysics2DBodyConstraints(world, body.index);
+  body.fixedRotation = fixedRotation;
+  if (fixedRotation) {
+    body.angularVelocity = 0;
+    body.torque = 0;
+  }
+  updateRigidBody2DMassData(body);
+  _wakePhysics2DBodyFromTopology(body);
+  return true;
+}
+
+// Changes whether this body may participate in island sleeping. Either transition wakes it and resets
+// the timer, so enabling sleep still requires a fresh uninterrupted stillness interval.
+export function setPhysics2DBodySleepEnabled(world: Physics2DWorld, body: RigidBody2D, sleepEnabled: boolean): boolean {
+  assertPhysics2DWorldNotStepping(world);
+  if (world.bodyByIndex.get(body.index) !== body || typeof sleepEnabled !== 'boolean') return false;
+  body.sleepEnabled = sleepEnabled;
+  _wakePhysics2DBodyFromTopology(body);
   return true;
 }
 
