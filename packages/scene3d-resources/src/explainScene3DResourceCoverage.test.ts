@@ -3,7 +3,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { Material, Scene3DCoverageGap, Scene3DKindUsage } from '@flighthq/types/contract';
+import type { Material, Scene3DCoverageEntry, Scene3DKindUsage } from '@flighthq/types/contract';
 import { RenderRegistry, Scene3DCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +22,7 @@ function usageOf(...materials: Material[]): Scene3DKindUsage {
 }
 
 function gaps(resolver: Parameters<typeof explainScene3DResourceCoverage>[1], usage: Scene3DKindUsage) {
-  const out: Scene3DCoverageGap[] = [];
+  const out: Scene3DCoverageEntry[] = [];
   explainScene3DResourceCoverage(out, resolver, usage);
   return out;
 }
@@ -35,8 +35,12 @@ describe('explainScene3DResourceCoverage', () => {
     ]);
   });
 
-  it('reports nothing for a kind the built-in assembly covers', () => {
-    expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createUnlitMaterial()))).toEqual([]);
+  it('reports a covered kind as Satisfied rather than omitting it', () => {
+    // The manifest lists every requirement, so a caller can render a checklist and tell "covered" from
+    // "never asked about". Omitting covered kinds would make those two indistinguishable.
+    expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createUnlitMaterial()))).toEqual([
+      { coverage: Scene3DCoverage.Satisfied, kind: 'UnlitMaterial', registry: RenderRegistry.MaterialTextureLister },
+    ]);
   });
 
   it('reports ShadedMaterial against the built-in assembly, which does not wire its lister', () => {
@@ -53,7 +57,9 @@ describe('explainScene3DResourceCoverage', () => {
   it('stops reporting once the named door for that family is called', () => {
     const resolver = createBuiltInScene3DResourceResolver();
     registerShadedScene3DMaterialTextures(resolver.registry);
-    expect(gaps(resolver, usageOf(createShadedMaterial()))).toEqual([]);
+    expect(gaps(resolver, usageOf(createShadedMaterial()))).toEqual([
+      { coverage: Scene3DCoverage.Satisfied, kind: 'ShadedMaterial', registry: RenderRegistry.MaterialTextureLister },
+    ]);
   });
 
   it('reports a family that ships no lister at all, so the omission is visible rather than inferred', () => {
@@ -68,7 +74,7 @@ describe('explainScene3DResourceCoverage', () => {
   it('clears out, so a repeated call does not accumulate', () => {
     const resolver = createScene3DResourceResolver();
     const usage = usageOf(createUnlitMaterial());
-    const out: Scene3DCoverageGap[] = [];
+    const out: Scene3DCoverageEntry[] = [];
     explainScene3DResourceCoverage(out, resolver, usage);
     const first = out.length;
     explainScene3DResourceCoverage(out, resolver, usage);
@@ -84,9 +90,21 @@ describe('hasScene3DResourceCoverage', () => {
   it('agrees with the explain tier on the same resolver, so the two can never disagree', () => {
     const resolver = createBuiltInScene3DResourceResolver();
     const usage = usageOf(createUnlitMaterial(), createShadedMaterial());
-    const out: Scene3DCoverageGap[] = [];
+    const out: Scene3DCoverageEntry[] = [];
     explainScene3DResourceCoverage(out, resolver, usage);
     expect(hasScene3DResourceCoverage(resolver, usage)).toBe(out.length === 0);
+  });
+
+  it('stays true when the manifest is all Satisfied entries, which are not shortfalls', () => {
+    // The invariant the manifest widening could have broken: explain now appends entries for covered
+    // kinds too, and the predicate must keep counting only real gaps.
+    const resolver = createBuiltInScene3DResourceResolver();
+    const usage = usageOf(createUnlitMaterial());
+    const out: Scene3DCoverageEntry[] = [];
+    explainScene3DResourceCoverage(out, resolver, usage);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((e) => e.coverage === Scene3DCoverage.Satisfied)).toBe(true);
+    expect(hasScene3DResourceCoverage(resolver, usage)).toBe(true);
   });
 
   it('is true for an empty scene, which names no material kinds', () => {
