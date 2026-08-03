@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
+  hasScene3DMaterialTextureLister,
   registerStandardPbrScene3DMaterialTextures,
   registerUnlitScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
@@ -54,6 +55,17 @@ describe('getScene3DMaterialTextures', () => {
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: a }), out);
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: b }), out);
     expect(out).toEqual([a, b]);
+  });
+});
+
+describe('hasScene3DMaterialTextureLister', () => {
+  it('separates an unregistered kind from a material that genuinely has no maps', () => {
+    // getScene3DMaterialTextures appends nothing in both cases, so this is the only way to tell them
+    // apart — which is what explainScene3DResourceCoverage reports through.
+    const registry = createScene3DMaterialTextureRegistry();
+    registerUnlitScene3DMaterialTextures(registry);
+    expect(hasScene3DMaterialTextureLister(registry, UnlitMaterialKind)).toBe(true);
+    expect(hasScene3DMaterialTextureLister(registry, StandardPbrMaterialKind)).toBe(false);
   });
 });
 
