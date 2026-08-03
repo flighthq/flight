@@ -86,11 +86,3 @@ export type ShapeCommandKey = keyof ShapeCommandRegistry;
 // fill's live Texture. A reader advances by `argCount + 2` and casts each slot to the
 // type its command's `ShapeCommandRegistry` entry documents.
 export type ShapeCommandToken = Matrix | Texture | boolean | number | readonly number[] | string | null;
-
-// Handler for hit-testing a command. Reads args from the flat command buffer at position i.
-export type ShapeCommandHitTest = (x: number, y: number, buf: readonly ShapeCommandToken[], i: number) => boolean;
-
-// Command definition registered in the hit-test registry.
-export type ShapeHitTestCommand<K extends ShapeCommandKey = ShapeCommandKey> = K extends ShapeCommandKey
-  ? { readonly key: K; readonly hitTest: ShapeCommandHitTest }
-  : never;
