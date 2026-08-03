@@ -19,6 +19,8 @@ export function createSpritesheetTimelineSource(
   return {
     totalFrames: animation.frames.length,
     labels: [],
+    // A spritesheet animation is pure frame content; the format carries nothing to cue.
+    cues: [],
     frameRate: 1000 / animation.frameDuration,
     constructFrame(target: Node2D, frame: number): void {
       const atlas = spritesheet.atlas;

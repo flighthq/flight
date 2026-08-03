@@ -3,6 +3,7 @@ import type {
   Node2D,
   FrameScript,
   Timeline,
+  TimelineCue,
   TimelineFrameEvent,
   TimelineLabel,
   TimelineSignals,
@@ -22,6 +23,7 @@ export function createTimeline(obj?: Partial<Timeline>): Timeline {
   return {
     source: obj?.source ?? null,
     target: obj?.target ?? null,
+    cueRegistry: obj?.cueRegistry ?? null,
     currentFrame: obj?.currentFrame ?? 1,
     frameScripts: obj?.frameScripts ?? null,
     isPlaying: obj?.isPlaying ?? false,
@@ -40,12 +42,14 @@ export function createTimelineSource(obj: {
   totalFrames?: number;
   frameRate?: number | null;
   labels?: readonly TimelineLabel[];
+  cues?: readonly TimelineCue[];
   constructFrame?: (target: Node2D, frame: number) => void;
 }): TimelineSource {
   return {
     totalFrames: obj.totalFrames ?? 1,
     frameRate: obj.frameRate ?? null,
     labels: obj.labels ?? EMPTY_LABELS,
+    cues: obj.cues ?? EMPTY_CUES,
     constructFrame: obj.constructFrame ?? noopConstructFrame,
   };
 }
@@ -148,6 +152,8 @@ export function updateTimeline(timeline: Timeline, deltaTime: number): boolean {
 }
 
 const EMPTY_FRAMES: readonly number[] = [];
+const EMPTY_CUES: readonly TimelineCue[] = [];
+
 const EMPTY_LABELS: readonly TimelineLabel[] = [];
 
 function noopConstructFrame(): void {}

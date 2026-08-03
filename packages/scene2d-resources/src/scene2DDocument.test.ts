@@ -1,14 +1,19 @@
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { AudioResourceReference } from '@flighthq/types/contract';
 
 import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 
 describe('createScene2DDocument', () => {
-  it('retains the unattached root and both enumerable contracts', () => {
+  it('retains the unattached root and all three enumerable contracts', () => {
     const root = createDisplayObject();
     const slots = [createScene2DSlotReference('bg', createDisplayObject())];
     const imageResources = [createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png')];
-    expect(createScene2DDocument(root, slots, 'acme', null, imageResources)).toEqual({
+    const audioResources: AudioResourceReference[] = [
+      { bytes: new Uint8Array([2]), failure: null, kind: 'Embedded', mimeType: 'audio/mpeg', state: 'Unresolved' },
+    ];
+    expect(createScene2DDocument(root, slots, 'acme', null, imageResources, audioResources)).toEqual({
+      audioResources,
       backgroundColor: null,
       imageResources,
       root,
@@ -17,10 +22,11 @@ describe('createScene2DDocument', () => {
     });
   });
 
-  it('defaults both contracts to empty for a document that carries neither', () => {
+  it('defaults all three contracts to empty for a document that carries none', () => {
     const document = createScene2DDocument(createDisplayObject());
     expect(document.slots).toEqual([]);
     expect(document.imageResources).toEqual([]);
+    expect(document.audioResources).toEqual([]);
   });
 });
 

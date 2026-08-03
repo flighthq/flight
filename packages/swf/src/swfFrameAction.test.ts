@@ -192,6 +192,7 @@ function threeFrameClip(labels: readonly { frame: number; name: string }[] = [])
   const clip = createMovieClip();
   setMovieClipSource(clip, {
     constructFrame: () => undefined,
+    cues: [],
     frameRate: 24,
     labels,
     totalFrames: 3,

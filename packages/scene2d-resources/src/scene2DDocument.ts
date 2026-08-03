@@ -1,4 +1,10 @@
-import type { ImageResourceReference, Node2D, Scene2DDocument, Scene2DSlotReference } from '@flighthq/types/contract';
+import type {
+  AudioResourceReference,
+  ImageResourceReference,
+  Node2D,
+  Scene2DDocument,
+  Scene2DSlotReference,
+} from '@flighthq/types/contract';
 
 export function createScene2DDocument(
   root: Node2D,
@@ -6,8 +12,9 @@ export function createScene2DDocument(
   sourceKind: string | null = null,
   backgroundColor: number | null = null,
   imageResources: ImageResourceReference[] = [],
+  audioResources: AudioResourceReference[] = [],
 ): Scene2DDocument {
-  return { backgroundColor, imageResources, root, slots, sourceKind };
+  return { audioResources, backgroundColor, imageResources, root, slots, sourceKind };
 }
 
 export function createScene2DSlotReference(
