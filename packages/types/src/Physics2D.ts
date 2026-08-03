@@ -211,8 +211,9 @@ export interface Physics2DContact {
 
 // A strict per-contact callback invoked by the explicit world step. Pre-solve runs after contact
 // generation and before constraint preparation, so it may adjust friction/restitution or set
-// `enabled=false` for this step. Post-solve runs after velocity iterations and exposes the accumulated
-// point impulses. Sensors do not invoke either hook because they produce no constraint to solve.
+// `enabled=false` for this step. Post-solve runs once the step has committed and exposes the accumulated
+// point impulses. A post-solve exception therefore cannot leave integration or force cleanup half-done.
+// Sensors do not invoke either hook because they produce no constraint to solve.
 export type Physics2DContactCallback = (world: Physics2DWorld, contact: Physics2DContact) => void;
 
 export interface Physics2DContactHooks {

@@ -415,14 +415,23 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
 
   synchronizePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
-  scalePhysics2DWarmStartCaches(world, dt);
 
   const preSolve = world.contactHooks.preSolve;
   if (preSolve !== null) {
     for (const contact of world.contacts) {
       if (contact.sensor) continue;
-      preSolve(world, contact);
+      const friction = contact.friction;
+      const restitution = contact.restitution;
+      const enabled = contact.enabled;
+      const sensor = contact.sensor;
+      try {
+        preSolve(world, contact);
+      } catch (error) {
+        restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
+        throw error;
+      }
       if (!isPhysics2DContactValid(contact)) {
+        restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
         throw new Error('Physics2D pre-solve hook produced invalid contact state');
       }
       // A disabled or sensor-converted contact solved nothing this step, so its old warm-start cache is
@@ -436,6 +445,10 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
       }
     }
   }
+  // Scale only after pre-solve succeeds. A callback may throw, and scaling before it would express the
+  // cache in `dt` while `previousTimestep` still described the old interval; retrying would scale the
+  // already-scaled cache a second time.
+  scalePhysics2DWarmStartCaches(world, dt);
 
   const bodies = world.bodies;
   // Sleep is decided HERE — after the contact set is current, before anything integrates. The placement
@@ -512,20 +525,6 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
     solvePhysics2DContactsOnce(world);
   }
 
-  const postSolve = world.contactHooks.postSolve;
-  if (postSolve !== null) {
-    for (const contact of world.contacts) {
-      if (!contact.enabled || contact.sensor) continue;
-      const bodyA = findPhysics2DBody(world, contact.bodyA);
-      const bodyB = findPhysics2DBody(world, contact.bodyB);
-      if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) continue;
-      postSolve(world, contact);
-      if (!isPhysics2DContactValid(contact)) {
-        throw new Error('Physics2D post-solve hook produced invalid contact state');
-      }
-    }
-  }
-
   // The sleeping skip here is a COST saving, not a behavioural one, and the distinction is worth having
   // in writing: a sleeping body's velocity is zeroed when it falls asleep and nothing can hand it more
   // (any awake neighbour puts it in an awake island before this point), so integrating it would move it
@@ -548,6 +547,45 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
     body.torque = 0;
   }
   world.previousTimestep = dt;
+
+  // Post-solve observes a committed step. User code can throw without preventing transform integration,
+  // force cleanup, or the timestep/cache agreement above, so the next call never resumes a half-step.
+  const postSolve = world.contactHooks.postSolve;
+  if (postSolve !== null) {
+    for (const contact of world.contacts) {
+      if (!contact.enabled || contact.sensor) continue;
+      const bodyA = findPhysics2DBody(world, contact.bodyA);
+      const bodyB = findPhysics2DBody(world, contact.bodyB);
+      if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) continue;
+      const friction = contact.friction;
+      const restitution = contact.restitution;
+      const enabled = contact.enabled;
+      const sensor = contact.sensor;
+      try {
+        postSolve(world, contact);
+      } catch (error) {
+        restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
+        throw error;
+      }
+      if (!isPhysics2DContactValid(contact)) {
+        restorePhysics2DContactHookFields(contact, friction, restitution, enabled, sensor);
+        throw new Error('Physics2D post-solve hook produced invalid contact state');
+      }
+    }
+  }
+}
+
+function restorePhysics2DContactHookFields(
+  contact: Physics2DContact,
+  friction: number,
+  restitution: number,
+  enabled: boolean,
+  sensor: boolean,
+): void {
+  contact.friction = friction;
+  contact.restitution = restitution;
+  contact.enabled = enabled;
+  contact.sensor = sensor;
 }
 
 // Accumulated impulses have force*time units. Reusing one unchanged across a different time interval
