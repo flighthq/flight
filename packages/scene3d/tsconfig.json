@@ -9,16 +9,42 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
-    { "path": "../animation" },
-    { "path": "../camera" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../lighting" },
-    { "path": "../materials" },
-    { "path": "../mesh" },
-    { "path": "../node" },
-    { "path": "../types" }
+    {
+      "path": "../adjustments"
+    },
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../shading"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }
