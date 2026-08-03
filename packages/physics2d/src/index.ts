@@ -69,6 +69,7 @@ export {
   createPhysics2DSolverConfig,
   createPhysics2DWorld,
   createRigidBody2D,
+  hydratePhysics2DWorld,
   invalidatePhysics2DCollider,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
@@ -78,6 +79,7 @@ export {
   setPhysics2DBodyBullet,
   setPhysics2DBodySleepEnabled,
   setPhysics2DBodyType,
+  Physics2DWorldVersion,
 } from './world';
 export {
   createPhysics2DQueryFilter,

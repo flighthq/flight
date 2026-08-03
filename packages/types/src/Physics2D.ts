@@ -287,6 +287,10 @@ export interface Physics2DStepExplanation {
 // `gravityX`/`gravityY` is an acceleration, scaled per body by `gravityScale`, so a balloon is one
 // field rather than a special case in the integrator.
 export interface Physics2DWorld {
+  // Version of the serializable physics fields on this record. Runtime-owned maps, solver registries,
+  // and the spatial index are reconstructed by the caller's format layer; hydratePhysics2DWorld upgrades
+  // older reconstructed records before they enter the explicit step path.
+  version: number;
   bodies: RigidBody2D[];
   // Persistent identity lookup kept in lockstep with `bodies` by the world lifecycle helpers. Contacts
   // and joints resolve this map inside solver loops, so body identity lookup does not scale with the
