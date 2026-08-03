@@ -171,15 +171,21 @@ direction below, and the 3D `mesh`/`skeleton3d` remain excluded either way. Deta
 5. The named-graph output mode's slot/linkage handshake, shared across the SVG-from-XD and Rive codecs
    and the [`@flighthq/swf`](../swf/charter.md) peer through the one `Scene2DDocument` slot contract
    ([`scene2d-resources`](../scene2d-resources/charter.md)).
-6. **Where a weighted vector path belongs.** Rive's rigging deforms bezier paths by bone influence,
-   which no Flight primitive models — `skeleton2d` carries a Spine triangle mesh instead. Whether this
-   is a `skeleton2d` attachment kind, a `path` capability, or a new primitive is the decision that
-   unblocks Rive rigging, and it would serve any other path-deforming source.
-7. **Whether `Node2D` should carry an explicit draw index.** Rive reorders drawables within a flat
-   artboard draw list and 83 of 96 overrides in the corpus cross a parent boundary, which Flight's
-   child-order z-ordering cannot express without reparenting. A draw index, or a flattened render
-   list, would settle it; the same question would reach any format with a draw list independent of
-   hierarchy.
+6. **Where a weighted vector path belongs.** Rive weights bezier **path control points** (`Weight`,
+   `CubicWeight`, with `Tendon` / `Skin` / `RootBone`). Flight already models bone weights — `Skin2D`
+   carries `influenceCounts` / `influences` per vertex on a `MeshAttachment2D` — but on a **triangle
+   mesh**, which is a different primitive, not a missing feature of the same one. So the question is
+   narrower than "build skinning": it is *where a second weight carrier lives* — a `skeleton2d`
+   attachment kind, a `path` capability, or a new primitive. This is the decision that unblocks Rive
+   rigging, the largest single gap in the codec (57% of real files, 10.5% of all keyed animation), and
+   it would serve any other path-deforming source. Closing `skeleton2d`'s own gaps would not unblock
+   it.
+7. **Settled — draw order needed no new node field.** `@flighthq/node`'s `NodeOrderList` carries it as
+   a caller-owned permutation within one parent, and Rive draw rules map onto its `Above` / `Below`
+   verbs one-to-one. The figure this direction was opened on — "83 of 96 cross a parent boundary" — was
+   counted in the **component** tree while ordering permutes the **display** tree; measured through the
+   real import path it is 33 honored, 13 cross-parent, 15 unresolved of 61. A cross-parent rule is
+   reported as fidelity loss rather than reparented out of its compositing group.
 8. **Whether a `-formats` cell owns its functional render scenes.** No codec in this cell has one, so
    nothing here is verified at the pixel level on any backend — the widest structural hole for a cell
    whose whole output is visual.
