@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d-formats'
 status: partial
-score: 62
-updated: 2026-08-02
+score: 71
+updated: 2026-08-03
 ingested:
   - status.md
   - charter.md
@@ -12,8 +12,43 @@ ingested:
 
 # scene2d-formats — Review
 
+Two passes are recorded here. The first, on 2026-08-02, surveyed the **Lottie codec** and is kept
+below unchanged apart from what later work resolved. The second, on 2026-08-03, follows the Rive
+build.
+
+## Rive, as of 2026-08-03
+
+Rive went from chartered-but-absent to the cell's **best-verified codec**, and the reason is
+methodological rather than clever: it is the only one measured against real files. Sixty-four
+editor-authored `.riv` assets caught, in order, a container that could not read any real file, a
+missing alternate-key table, a naming bug that left every state machine unnamed, and a binary payload
+being decoded as UTF-8 — none of which the synthetic suites would ever have shown. The other two
+codecs in this cell have still never seen a real asset, and the gap in confidence between them is now
+the most useful thing this review can say.
+
+Built: container, type registry with inheritance, per-artboard component trees, transforms, path
+geometry with corner rounding, ordered paint, blend modes, clipping, trim, linear animations, assets
+with intact payloads, the state-machine descriptor, single-format text, and a version gate.
+
+**Three items are closed as recorded rather than built**, each needing an answer above this codec —
+draw-order overrides, rig deformation, and the blend-mode shortfall. The charter's open directions now
+carry all three. That is the right disposition: each was measured, and each would have produced
+plausible-but-wrong output if forced.
+
+**The format's defining hazard is id spaces.** Four distinct ones are in play — `parentId` over
+components, `interpolatorId` over all artboard objects, `assetId` over the asset list by order,
+`styleId` over components — and each had to be established empirically. Anyone adding a fifth should
+assume nothing from its neighbours.
+
+**What Rive still lacks** is animated geometry and paint (145 of 383 clips carry no channels because
+only transform properties bind), rich text, image wiring onto the `Image` drawable, and the
+`Scene2DDocument` slot output the charter's named-graph mode wants.
+
+## Lottie, as of 2026-08-02
+
 Survey scoped to the **Lottie codec**, the question the user asked. SVG is characterized only
-where the comparison is load-bearing; it deserves its own pass.
+where the comparison is load-bearing; it deserves its own pass. The five silent losses below were
+subsequently fixed or recorded, and the coverage document this pass called for now exists.
 
 ## Shape of the cell
 
