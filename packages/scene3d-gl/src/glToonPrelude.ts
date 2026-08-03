@@ -164,7 +164,7 @@ void main() {
     float band = floor(nDotL * u_steps) / max(u_steps, 1.0);
     vec3 direct = baseColor.rgb * band * u_directionalRadiance.rgb;
 #endif
-    radiance += direct * sampleDirectionalShadow(v_worldPosition);
+    radiance += direct * sampleDirectionalShadow(v_worldPosition, normal);
   }
 
   // Ambient term: flat irradiance over the base color (unbanded).

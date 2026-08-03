@@ -290,7 +290,7 @@ void main() {
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
     radiance += shadeClassicLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb)
-                * sampleDirectionalShadow(v_worldPosition);
+                * sampleDirectionalShadow(v_worldPosition, geometricNormal);
   }
 
   // Point lights: surface->light direction with a smooth inverse-square range falloff.

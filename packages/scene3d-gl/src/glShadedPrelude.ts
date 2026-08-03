@@ -399,7 +399,7 @@ void main() {
   // Directional light: -direction is the surface->light vector; modulated by the shared shadow term.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
-    float shadow = sampleDirectionalShadow(v_worldPosition);
+    float shadow = sampleDirectionalShadow(v_worldPosition, geometricNormal);
     radiance += shadeShadedLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb, specularColor, shininess) * shadow;
   }
 

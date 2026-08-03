@@ -1,5 +1,6 @@
 import type { GlLitProgram, GlRenderState, Scene3DLightBlock, GlMeshProgram } from '@flighthq/types/contract';
 import {
+  MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
   SCENE_LIGHT_HEMISPHERE_STRIDE,
@@ -86,11 +87,14 @@ export function bindGlMeshLightBlock(
   const runtime = getGlScene3DRuntime(state);
 
   const shadow = runtime.shadow;
-  if (shadow !== null) {
+  if (shadow !== null && shadow.enabled) {
     gl.activeTexture(gl.TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
     gl.bindTexture(gl.TEXTURE_2D, shadow.texture);
+    gl.uniform1f(program.locShadowBias, shadow.shadowBias);
     gl.uniform1i(program.locShadowMap, SHADOW_MAP_TEXTURE_UNIT);
     gl.uniformMatrix4fv(program.locShadowMatrix, false, shadow.matrix.m);
+    gl.uniform1f(program.locShadowNormalBias, shadow.normalBias);
+    gl.uniform1i(program.locShadowPcfRadius, shadow.pcfRadius);
     gl.uniform1f(program.locShadowEnabled, 1);
   } else {
     gl.uniform1f(program.locShadowEnabled, 0);
@@ -190,9 +194,12 @@ export function resolveGlLitLocations(
     locIblPrefiltered: gl.getUniformLocation(program, 'u_iblPrefiltered'),
     locPointCount: gl.getUniformLocation(program, 'u_pointCount'),
     locPointLights: gl.getUniformLocation(program, 'u_pointLights'),
+    locShadowBias: gl.getUniformLocation(program, 'u_shadowBias'),
     locShadowEnabled: gl.getUniformLocation(program, 'u_shadowEnabled'),
     locShadowMap: gl.getUniformLocation(program, 'u_shadowMap'),
     locShadowMatrix: gl.getUniformLocation(program, 'u_shadowMatrix'),
+    locShadowNormalBias: gl.getUniformLocation(program, 'u_shadowNormalBias'),
+    locShadowPcfRadius: gl.getUniformLocation(program, 'u_shadowPcfRadius'),
     locSpotCount: gl.getUniformLocation(program, 'u_spotCount'),
     locSpotLights: gl.getUniformLocation(program, 'u_spotLights'),
   };
@@ -201,7 +208,41 @@ export function resolveGlLitLocations(
 // The GLSL 300 es declaration of the standard forward-light + shadow uniforms and the shared
 // shadow-sampling helper, included once in every lit fragment prelude. Keeping it here keeps the GPU
 // declaration and the CPU upload (bindGlMeshLightBlock) in lockstep. A lit family that wants shadows
-// multiplies its directional contribution by sampleDirectionalShadow(worldPos).
+// multiplies its directional contribution by sampleDirectionalShadow(worldPos, geometricNormal).
+export const GL_DIRECTIONAL_SHADOW_GLSL = `
+uniform sampler2D u_shadowMap;       // directional shadow depth map
+uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
+uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
+uniform int u_shadowPcfRadius;       // integer kernel radius: 0 = one tap, 1 = 3x3
+uniform float u_shadowBias;          // normalized depth-compare bias
+uniform float u_shadowNormalBias;    // receiver offset along the geometric world normal
+
+// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed. The compile-time
+// radius cap bounds fragment cost; u_shadowPcfRadius selects the active square subset at runtime.
+// Fragments outside the shadow frustum are treated as lit.
+float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal) {
+  if (u_shadowEnabled < 0.5) return 1.0;
+  vec3 biasedWorldPos = worldPos + geometricNormal * u_shadowNormalBias;
+  vec4 clip = u_shadowMatrix * vec4(biasedWorldPos, 1.0);
+  vec3 ndc = clip.xyz / clip.w;
+  vec3 uvz = ndc * 0.5 + 0.5;
+  if (uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0) return 1.0;
+  float current = uvz.z - u_shadowBias;
+  vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0));
+  float sum = 0.0;
+  for (int x = -${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; x <= ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; ++x) {
+    if (abs(x) > u_shadowPcfRadius) continue;
+    for (int y = -${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; y <= ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; ++y) {
+      if (abs(y) > u_shadowPcfRadius) continue;
+      float closest = texture(u_shadowMap, uvz.xy + vec2(float(x), float(y)) * texel).r;
+      sum += current <= closest ? 1.0 : 0.0;
+    }
+  }
+  float diameter = float(u_shadowPcfRadius * 2 + 1);
+  return sum / (diameter * diameter);
+}
+`;
+
 export const GL_MESH_LIGHT_BLOCK_GLSL = `
 uniform vec4 u_directional;          // xyz = light travel direction (surface->light is -xyz)
 uniform vec4 u_directionalRadiance;  // rgb = linear radiance, premultiplied by intensity
@@ -209,9 +250,6 @@ uniform vec3 u_ambientRadiance;      // linear ambient irradiance
 uniform float u_directionalCount;    // 0 or 1 — gates the directional term
 uniform float u_ambientCount;        // 0 or 1 — gates the ambient term
 uniform vec3 u_cameraPosition;       // world-space camera position for view-dependent terms
-uniform sampler2D u_shadowMap;       // directional shadow depth map
-uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
-uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
 
 // Punctual (point/spot/hemisphere) forward-light arrays. Fixed MAX_FORWARD_LIGHTS-wide; each count
 // uniform bounds its loop. Layout matches Scene3DLightBlock.data (packScene3DLightBlock) byte-for-byte:
@@ -232,24 +270,5 @@ float rangeWindow(float dist2, float invSqrRange) {
   float windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
   return windowed * windowed;
 }
-
-// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF.
-// Fragments outside the shadow frustum are treated as lit.
-float sampleDirectionalShadow(vec3 worldPos) {
-  if (u_shadowEnabled < 0.5) return 1.0;
-  vec4 clip = u_shadowMatrix * vec4(worldPos, 1.0);
-  vec3 ndc = clip.xyz / clip.w;
-  vec3 uvz = ndc * 0.5 + 0.5;
-  if (uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0) return 1.0;
-  float current = uvz.z - 0.0025;
-  vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0));
-  float sum = 0.0;
-  for (int x = -1; x <= 1; ++x) {
-    for (int y = -1; y <= 1; ++y) {
-      float closest = texture(u_shadowMap, uvz.xy + vec2(float(x), float(y)) * texel).r;
-      sum += current <= closest ? 1.0 : 0.0;
-    }
-  }
-  return sum / 9.0;
-}
+${GL_DIRECTIONAL_SHADOW_GLSL}
 `;

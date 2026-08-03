@@ -21,9 +21,11 @@ import type {
   Texture,
   TextureLike,
   WgpuRenderState,
+  WgpuScene3DShadow,
 } from '@flighthq/types/contract';
 import {
   BlendMode,
+  MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
   SCENE_LIGHT_HEMISPHERE_STRIDE,
@@ -433,24 +435,7 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
     scene.iblDummyLutView = scene.iblDummyLutTexture.createView();
   }
 
-  const shadow = scene.shadow;
-  const s = _shadowSampleScratch;
-  if (shadow !== null) {
-    const m = shadow.matrix.m;
-    for (let i = 0; i < 16; i++) s[i] = m[i];
-    s[16] = 1;
-  } else {
-    for (let i = 0; i < 16; i++) s[i] = 0;
-    s[0] = 1;
-    s[5] = 1;
-    s[10] = 1;
-    s[15] = 1;
-    s[16] = 0;
-  }
-  s[17] = 0;
-  s[18] = 0;
-  s[19] = 0;
-  device.queue.writeBuffer(scene.shadowUniformBuffer, 0, s.buffer, 0, SHADOW_SAMPLE_UNIFORM_BYTES);
+  const shadow = writeWgpuShadowSampleUniform(state);
 
   const ibl = scene.ibl;
   const u = _iblSampleScratch;
@@ -642,24 +627,7 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
     scene.shadowDummyView = scene.shadowDummyTexture.createView();
   }
 
-  const shadow = scene.shadow;
-  const s = _shadowSampleScratch;
-  if (shadow !== null) {
-    const m = shadow.matrix.m;
-    for (let i = 0; i < 16; i++) s[i] = m[i];
-    s[16] = 1; // enabled
-  } else {
-    for (let i = 0; i < 16; i++) s[i] = 0;
-    s[0] = 1;
-    s[5] = 1;
-    s[10] = 1;
-    s[15] = 1; // identity
-    s[16] = 0; // disabled
-  }
-  s[17] = 0;
-  s[18] = 0;
-  s[19] = 0;
-  device.queue.writeBuffer(scene.shadowUniformBuffer, 0, s.buffer, 0, SHADOW_SAMPLE_UNIFORM_BYTES);
+  const shadow = writeWgpuShadowSampleUniform(state);
 
   const view = shadow !== null ? shadow.depthView : scene.shadowDummyView;
   if (scene.shadowSampleBindGroup === null || scene.shadowSampleView !== view) {
@@ -674,6 +642,31 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
     scene.shadowSampleView = view;
   }
   return scene.shadowSampleBindGroup;
+}
+
+// Writes the one shadow uniform shared by the combined PBR sample group and the standalone
+// classic/toon shadow group. params = {enabled, pcfRadius, shadowBias, normalBias}; keeping this in one
+// writer prevents the two binding paths from silently disagreeing about the same 80-byte ABI.
+function writeWgpuShadowSampleUniform(state: WgpuRenderState): WgpuScene3DShadow | null {
+  const scene = getWgpuScene3DRuntime(state);
+  const shadow = scene.shadow;
+  const values = _shadowSampleScratch;
+  if (shadow !== null) {
+    const matrix = shadow.matrix.m;
+    for (let index = 0; index < 16; index++) values[index] = matrix[index];
+    values[16] = shadow.enabled ? 1 : 0;
+    values[17] = shadow.pcfRadius;
+    values[18] = shadow.shadowBias;
+    values[19] = shadow.normalBias;
+  } else {
+    for (let index = 0; index < 20; index++) values[index] = 0;
+    values[0] = 1;
+    values[5] = 1;
+    values[10] = 1;
+    values[15] = 1;
+  }
+  state.device.queue.writeBuffer(scene.shadowUniformBuffer!, 0, values.buffer, 0, SHADOW_SAMPLE_UNIFORM_BYTES);
+  return shadow;
 }
 
 // Resolves the shared group(3) shadow-sample bind-group layout (uniform light matrix + enabled flag, a
@@ -1163,7 +1156,51 @@ const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 // is bindable as a texture_depth_2d for the lit PCF comparison; drawWgpuScene3DShadowMap renders into it.
 export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
 
-// Shadow-sample uniform: mat4x4f light matrix (64) + vec4f params (16, x = enabled) = 80 bytes / 20 floats.
+// Shared by the PBR, classic, and toon WGSL modules. The uniform's vec4 params mirror the single CPU
+// writer above: x=enabled, y=integer PCF radius, z=normalized depth bias, w=world-space normal bias.
+export const WGPU_DIRECTIONAL_SHADOW_WGSL = /* wgsl */ `
+const MAX_DIRECTIONAL_SHADOW_PCF_RADIUS : i32 = ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS};
+
+struct Shadow {
+  matrix : mat4x4f,
+  params : vec4f,
+};
+
+@group(3) @binding(0) var<uniform> shadow : Shadow;
+@group(3) @binding(1) var shadowMap : texture_depth_2d;
+@group(3) @binding(2) var shadowSampler : sampler_comparison;
+
+// Directional shadow factor at a world position. The compile-time radius cap bounds fragment cost;
+// shadow.params.y selects the active square subset at runtime. Outside the frustum / disabled = lit.
+fn sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f) -> f32 {
+  if (shadow.params.x < 0.5) {
+    return 1.0;
+  }
+  let biasedWorldPos = worldPos + geometricNormal * shadow.params.w;
+  let clip = shadow.matrix * vec4f(biasedWorldPos, 1.0);
+  let ndc = clip.xyz / clip.w;
+  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
+  let depthRef = ndc.z * 0.5 + 0.5 - shadow.params.z;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
+    return 1.0;
+  }
+  let radius = i32(shadow.params.y);
+  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
+  var sum = 0.0;
+  for (var x = -MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x <= MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x = x + 1) {
+    if (abs(x) > radius) { continue; }
+    for (var y = -MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; y <= MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; y = y + 1) {
+      if (abs(y) > radius) { continue; }
+      let offset = vec2f(f32(x), f32(y)) * texel;
+      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
+    }
+  }
+  let diameter = f32(radius * 2 + 1);
+  return sum / (diameter * diameter);
+}
+`;
+
+// Shadow-sample uniform: mat4x4f light matrix (64) + vec4f params (16) = 80 bytes / 20 floats.
 const SHADOW_SAMPLE_UNIFORM_BYTES = 80;
 
 // IBL-sample uniform: vec4f params (16, x = enabled, y = intensity, z = maxMip) = 16 bytes / 4 floats.

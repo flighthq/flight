@@ -12,6 +12,7 @@ import { drawWgpuScene3D } from './drawWgpuScene3D';
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
 import { buildWgpuPbrStandardDefineKey } from './standardPbrWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
+import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
 import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
@@ -19,8 +20,14 @@ import { destroyWgpuScene3DShadow, drawWgpuScene3DShadowMap } from './wgpuShadow
 
 const LIGHTS: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
-  directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
+  directional: createDirectionalLight({
+    castsShadow: true,
+    color: 0xffffffff,
+    direction: createVector3(0, -1, -1),
+    intensity: 1,
+  }),
 };
+const SHADOW_LIGHT = LIGHTS.directional!;
 
 function makeShadowCamera(): Camera3D {
   // The projection is overwritten by configureDirectionalShadowCamera3D (to orthographic); start perspective.
@@ -42,7 +49,7 @@ function makeShadowScene3D(): Node3D {
 describe('destroyWgpuScene3DShadow', () => {
   it('destroys the shadow depth texture and clears the slot', () => {
     const { state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const runtime = getWgpuScene3DRuntime(state);
     expect(runtime.shadow).not.toBeNull();
@@ -64,9 +71,28 @@ describe('destroyWgpuScene3DShadow', () => {
 });
 
 describe('drawWgpuScene3DShadowMap', () => {
+  it('does not allocate or render when the directional light has shadows disabled', () => {
+    const { fake, state } = makeWgpuScene3DState();
+
+    drawWgpuScene3DShadowMap(
+      state,
+      makeShadowScene3D(),
+      makeShadowCamera(),
+      createDirectionalLight({ castsShadow: false }),
+    );
+
+    expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
+    expect(fake.calls.some((call) => call.name === 'beginRenderPass')).toBe(false);
+    expect(
+      fake.calls.some(
+        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'depth32float',
+      ),
+    ).toBe(false);
+  });
+
   it('creates a sampleable depth32float shadow map and stores it on the runtime', () => {
     const { fake, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const depthCreate = fake.calls.find(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
@@ -78,9 +104,41 @@ describe('drawWgpuScene3DShadowMap', () => {
     expect(runtime.shadow!.matrix.m.some((v) => v !== 0)).toBe(true);
   });
 
+  it('records normalized PCF and receiver-bias configuration on the runtime', () => {
+    const { state } = makeWgpuScene3DState();
+    const light = createDirectionalLight({
+      castsShadow: true,
+      normalBias: 0.02,
+      pcfRadius: 8.7,
+      shadowBias: 0.01,
+    });
+
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), light);
+
+    expect(getWgpuScene3DRuntime(state).shadow).toEqual(
+      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 4, shadowBias: 0.01 }),
+    );
+  });
+
+  it('disables a retained shadow when a later pass receives castsShadow=false', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = makeShadowScene3D();
+    const camera = makeShadowCamera();
+    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    const runtime = getWgpuScene3DRuntime(state);
+    const shadow = runtime.shadow;
+    const passCount = fake.calls.filter((call) => call.name === 'beginRenderPass').length;
+
+    drawWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+
+    expect(runtime.shadow).toBe(shadow);
+    expect(runtime.shadow!.enabled).toBe(false);
+    expect(fake.calls.filter((call) => call.name === 'beginRenderPass')).toHaveLength(passCount);
+  });
+
   it('opens a depth-only pass and renders each caster mesh depth', () => {
     const { fake, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
@@ -90,7 +148,7 @@ describe('drawWgpuScene3DShadowMap', () => {
 
   it('compiles a vertex-only depth module with the GL->WebGPU depth remap', () => {
     const { fake, state } = makeWgpuScene3DState();
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const shaderCall = fake.calls.find(
       (c) => c.name === 'createShaderModule' && String((c.args[0] as { code: string }).code).includes('draw.world'),
@@ -105,8 +163,8 @@ describe('drawWgpuScene3DShadowMap', () => {
     const { fake, state } = makeWgpuScene3DState();
     const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
-    drawWgpuScene3DShadowMap(state, scene, camera);
-    drawWgpuScene3DShadowMap(state, scene, camera);
+    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const depthCreates = fake.calls.filter(
       (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
     ).length;
@@ -116,7 +174,7 @@ describe('drawWgpuScene3DShadowMap', () => {
   it('is a no-op when no command encoder is active', () => {
     const { fake, state } = makeWgpuScene3DState();
     getWgpuRenderStateRuntime(state).commandEncoder = null;
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
     expect(fake.calls.some((c) => c.name === 'beginRenderPass')).toBe(false);
     expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
   });
@@ -124,7 +182,7 @@ describe('drawWgpuScene3DShadowMap', () => {
   it('binds a group(3) shadow group on the lit PBR draw that follows', () => {
     const { fake, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
-    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera());
+    drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
@@ -139,6 +197,18 @@ describe('drawWgpuScene3DShadowMap', () => {
   });
 });
 
+describe('WGPU_DIRECTIONAL_SHADOW_WGSL', () => {
+  it('uses a bounded runtime PCF radius and configurable receiver biases', () => {
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain(
+      'sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f)',
+    );
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('geometricNormal * shadow.params.w');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('0.5 - shadow.params.z');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('abs(x) > radius');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).not.toContain('0.0025');
+  });
+});
+
 // The lit WGSL string surface: both PBR and classic declare the group(3) shadow bindings and apply the
 // PCF comparison to their directional terms, mirroring scene-gl.
 describe('wgpuPbrPrelude shadow sampling', () => {
@@ -149,7 +219,7 @@ describe('wgpuPbrPrelude shadow sampling', () => {
     expect(code).toContain('var shadowSampler : sampler_comparison');
     expect(code).toContain('fn sampleDirectionalShadow');
     expect(code).toContain('textureSampleCompareLevel(shadowMap, shadowSampler');
-    expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
+    expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)');
   });
 
   it('classic prelude samples the shadow map on the directional term (mirrors scene-gl classic)', () => {
@@ -164,6 +234,6 @@ describe('wgpuPbrPrelude shadow sampling', () => {
     });
     expect(code).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d');
     expect(code).toContain('fn sampleDirectionalShadow');
-    expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
+    expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)');
   });
 });

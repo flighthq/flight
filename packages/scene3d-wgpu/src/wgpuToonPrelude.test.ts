@@ -86,8 +86,8 @@ describe('getWgpuToonModuleSourceForKey', () => {
       const source = getWgpuToonModuleSourceForKey(key);
       expect(source).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d;');
       expect(source).toContain('@group(3) @binding(2) var shadowSampler : sampler_comparison;');
-      expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
-      expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition\)/g)).toHaveLength(1);
+      expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition, normal)');
+      expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition, normal\)/g)).toHaveLength(1);
     }
   });
 });

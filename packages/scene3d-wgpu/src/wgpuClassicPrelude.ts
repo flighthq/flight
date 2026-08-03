@@ -20,6 +20,7 @@ import {
   resolveWgpuMaterialTextureView,
   spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
+  WGPU_DIRECTIONAL_SHADOW_WGSL,
 } from './wgpuMeshPipeline';
 import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
@@ -239,44 +240,7 @@ struct ClassicMaterial {
 @group(2) @binding(7) var normalTexture : texture_2d<f32>;
 @group(2) @binding(8) var alphaTexture : texture_2d<f32>;
 
-// The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
-// builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
-// params.x is the enabled flag (0 or 1). The WGSL mirror of scene-gl's u_shadowMap / u_shadowMatrix /
-// u_shadowEnabled and wgpuPbrPrelude's Shadow.
-struct Shadow {
-  matrix : mat4x4f,
-  params : vec4f,   // x = enabled (0 or 1)
-};
-
-@group(3) @binding(0) var<uniform> shadow : Shadow;
-@group(3) @binding(1) var shadowMap : texture_depth_2d;
-@group(3) @binding(2) var shadowSampler : sampler_comparison;
-
-// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF —
-// identical to wgpuPbrPrelude's copy. UV flips Y (WebGPU top-left origin), depthRef remaps GL-convention
-// clip Z (-1..1) into WebGPU's 0..1 range; the comparison sampler ('less-equal') yields "current <=
-// closest" per tap. Fragments outside the shadow frustum, or when no map is bound, read as lit.
-fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
-  if (shadow.params.x < 0.5) {
-    return 1.0;
-  }
-  let clip = shadow.matrix * vec4f(worldPos, 1.0);
-  let ndc = clip.xyz / clip.w;
-  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
-  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
-  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
-    return 1.0;
-  }
-  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
-  var sum = 0.0;
-  for (var x = -1; x <= 1; x = x + 1) {
-    for (var y = -1; y <= 1; y = y + 1) {
-      let offset = vec2f(f32(x), f32(y)) * texel;
-      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
-    }
-  }
-  return sum / 9.0;
-}
+${WGPU_DIRECTIONAL_SHADOW_WGSL}
 
 // Smooth finite-range window over inverse-square falloff. A non-positive inverse range means
 // unlimited range, matching packScene3DLightBlock and the GL classic/PBR preludes.
@@ -362,7 +326,7 @@ fn shadeClassicLight(normal : vec3f, lightDir : vec3f, lightColor : vec3f, diffu
     let lightDir = normalize(-frame.lightDirection.xyz);
     let direct = shadeClassicLight(normal, lightDir, frame.directionalRadiance.rgb, diffuse.rgb,
                                    specularColor, in.worldPosition);
-    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition, geometricNormal);
   }
 
   // Point lights: surface-to-light direction with smooth inverse-square range falloff.

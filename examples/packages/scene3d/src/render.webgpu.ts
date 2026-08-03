@@ -1,6 +1,7 @@
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
+  beginWgpuFrame,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -11,7 +12,7 @@ import {
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { drawWgpuScene3D } from '@flighthq/sdk/rendering';
+import { drawWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/sdk/rendering';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
@@ -38,8 +39,8 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
-  // WebGPU consumes the same scene/light contract; its directional depth pass is still pending.
-  void shadowCamera;
+  beginWgpuFrame(state);
+  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
   prepareScene3DRender(state, scene, camera, lights);

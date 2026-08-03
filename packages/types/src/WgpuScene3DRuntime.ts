@@ -13,12 +13,17 @@ import type { WgpuRenderState } from './WgpuRenderState';
 // (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) so every lit family samples the same shadow map.
 // The WGSL mirror of scene-gl's GlScene3DShadow. The depth texture is a sampleable depth32float target the
 // depth pass renders into and the lit fs_main PCF-samples; `matrix` is the light view-projection (world →
-// shadow clip). Null = no shadow this frame (lit draws bind a 1x1 dummy depth texture, gated off by the
+// shadow clip). `enabled` is the per-frame gate; a disabled object may retain its texture for the next
+// shadow pass. Null = no shadow resource yet (lit draws bind a 1x1 dummy depth texture, gated off by the
 // shadow uniform). The depth texture is a non-GC GPU resource — freed by destroyWgpuScene3DShadow.
 export interface WgpuScene3DShadow {
   depthTexture: GPUTexture;
   depthView: GPUTextureView;
+  enabled: boolean;
   matrix: Matrix4;
+  normalBias: number;
+  pcfRadius: number;
+  shadowBias: number;
 }
 
 // The baked image-based-lighting set for this state, produced by bakeWgpuEnvironmentIbl and read by the
@@ -141,8 +146,8 @@ export interface WgpuScene3DRuntime {
   pendingUvTransform: Float32Array;
   pipelineCache: Map<string, WgpuMeshPipeline>;
   placeholderView: GPUTextureView | null;
-  // Directional shadow state (mirrors GlScene3DRuntime.shadow/shadowTarget). `shadow` is the per-frame
-  // result written by drawWgpuScene3DShadowMap; the rest are the lazily-created singletons the write side
+  // Directional shadow state (mirrors GlScene3DRuntime.shadow/shadowTarget). `shadow` is the retained
+  // resource and per-frame enabled/config result written by drawWgpuScene3DShadowMap; the rest are the lazily-created singletons the write side
   // (shadowDepthPipeline) and the sample side (everything shadowSample*/shadowUniform*/shadowDummy*/
   // shadowComparisonSampler) reuse each frame. The shadow-sample bind group is rebuilt only when the
   // bound depth view changes (present ↔ absent); its uniform is rewritten every bind. All created lazily,

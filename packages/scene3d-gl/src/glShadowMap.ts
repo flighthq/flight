@@ -3,7 +3,16 @@ import { createMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
-import type { Camera3D, GlRenderState, Mesh, Node3D, Node3DTraits, GlMeshProgram } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  DirectionalLight,
+  GlRenderState,
+  Mesh,
+  Node3D,
+  Node3DTraits,
+  GlMeshProgram,
+} from '@flighthq/types/contract';
+import { MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
 import {
   compileGlProgram,
@@ -20,15 +29,21 @@ import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 // the shadow during shading. Shadows are opt-in: an app that never calls this leaves runtime.shadow
 // null, so existing scenes render unchanged.
 //
-// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D). All
-// meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
+// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D).
+// `directionalLight` owns the enable/filter/bias policy. Calling with castsShadow=false actively disables
+// a previously rendered map without destroying its reusable target. All meshes are drawn (no frustum cull
+// — an off-screen caster can still shadow the visible scene).
 export function drawGlScene3DShadowMap(
   state: GlRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
+  directionalLight: Readonly<DirectionalLight>,
 ): void {
   const gl = state.gl;
   const runtime = getGlScene3DRuntime(state);
+  const previousShadow = runtime.shadow;
+  if (previousShadow !== null) previousShadow.enabled = false;
+  if (!directionalLight.castsShadow) return;
 
   if (runtime.shadowTarget === null) {
     runtime.shadowTarget = createGlRenderTarget(state, {
@@ -38,7 +53,7 @@ export function drawGlScene3DShadowMap(
     });
   }
   const target = runtime.shadowTarget;
-  const matrix = runtime.shadow?.matrix ?? createMatrix4();
+  const matrix = previousShadow?.matrix ?? createMatrix4();
   getCamera3DViewProjectionMatrix4(matrix, shadowCamera, 1);
 
   const rigidProgram = ensureGlScene3DProgram(state, 'shadow:depth', compileShadowDepthProgram);
@@ -115,7 +130,19 @@ export function drawGlScene3DShadowMap(
   gl.disable(gl.CULL_FACE);
   gl.cullFace(gl.BACK);
 
-  runtime.shadow = { matrix, texture: target.depthTexture! };
+  runtime.shadow = {
+    enabled: true,
+    matrix,
+    normalBias: directionalLight.normalBias,
+    pcfRadius: normalizeDirectionalShadowPcfRadius(directionalLight.pcfRadius),
+    shadowBias: directionalLight.shadowBias,
+    texture: target.depthTexture!,
+  };
+}
+
+function normalizeDirectionalShadowPcfRadius(radius: number): number {
+  if (!Number.isFinite(radius)) return 0;
+  return Math.min(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, Math.max(0, Math.floor(radius)));
 }
 
 function compileShadowDepthProgram(gl: WebGL2RenderingContext): GlMeshProgram {

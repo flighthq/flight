@@ -23,9 +23,12 @@ export interface GlLitProgram extends GlMeshProgram {
   locIblPrefiltered: WebGLUniformLocation | null;
   locPointCount: WebGLUniformLocation | null;
   locPointLights: WebGLUniformLocation | null;
+  locShadowBias: WebGLUniformLocation | null;
   locShadowEnabled: WebGLUniformLocation | null;
   locShadowMap: WebGLUniformLocation | null;
   locShadowMatrix: WebGLUniformLocation | null;
+  locShadowNormalBias: WebGLUniformLocation | null;
+  locShadowPcfRadius: WebGLUniformLocation | null;
   locSpotCount: WebGLUniformLocation | null;
   locSpotLights: WebGLUniformLocation | null;
 }

@@ -4,6 +4,7 @@ import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contr
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
+  DirectionalLight,
   Material,
   Matrix3,
   Matrix4,
@@ -13,6 +14,7 @@ import type {
   Scene3DRenderProxy,
   WgpuRenderState,
 } from '@flighthq/types/contract';
+import { MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
 import { ensureWgpuScene3DLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
@@ -55,8 +57,10 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
 // Shadows are opt-in: an app that never calls this leaves runtime.shadow null, so existing scenes render
 // unchanged (the lit draws bind a dummy depth map gated off by the shadow uniform).
 //
-// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D). All
-// meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
+// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D).
+// `directionalLight` owns the enable/filter/bias policy. Calling with castsShadow=false actively disables
+// a previously rendered map while retaining its sampleable depth texture for reuse. All meshes are drawn
+// (no frustum cull — an off-screen caster can still shadow the visible scene).
 //
 // MUST be called before the main scene render pass opens: it drives its own depth-only render pass on
 // the state's command encoder, in the same submit as the forward pass (so the shared uniform ring the
@@ -66,12 +70,16 @@ export function drawWgpuScene3DShadowMap(
   state: WgpuRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
+  directionalLight: Readonly<DirectionalLight>,
 ): void {
+  const sceneRuntime = getWgpuScene3DRuntime(state);
+  if (sceneRuntime.shadow !== null) sceneRuntime.shadow.enabled = false;
+  if (!directionalLight.castsShadow) return;
+
   const runtime = getWgpuRenderStateRuntime(state);
   const encoder = runtime.commandEncoder;
   if (encoder === null) return;
 
-  const sceneRuntime = getWgpuScene3DRuntime(state);
   let shadow = sceneRuntime.shadow;
   if (shadow === null) {
     const depthTexture = state.device.createTexture({
@@ -79,7 +87,15 @@ export function drawWgpuScene3DShadowMap(
       format: SHADOW_DEPTH_FORMAT,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
     });
-    shadow = { depthTexture, depthView: depthTexture.createView(), matrix: createMatrix4() as Matrix4 };
+    shadow = {
+      depthTexture,
+      depthView: depthTexture.createView(),
+      enabled: false,
+      matrix: createMatrix4() as Matrix4,
+      normalBias: 0,
+      pcfRadius: 0,
+      shadowBias: 0,
+    };
     sceneRuntime.shadow = shadow;
   }
   const lightMatrix = shadow.matrix;
@@ -121,6 +137,15 @@ export function drawWgpuScene3DShadowMap(
   });
 
   pass.end();
+  shadow.enabled = true;
+  shadow.normalBias = directionalLight.normalBias;
+  shadow.pcfRadius = normalizeDirectionalShadowPcfRadius(directionalLight.pcfRadius);
+  shadow.shadowBias = directionalLight.shadowBias;
+}
+
+function normalizeDirectionalShadowPcfRadius(radius: number): number {
+  if (!Number.isFinite(radius)) return 0;
+  return Math.min(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, Math.max(0, Math.floor(radius)));
 }
 
 // Resolves (creating once per state) the minimal depth-only shadow pipeline: a vertex-only WGSL module

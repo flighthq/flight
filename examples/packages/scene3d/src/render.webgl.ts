@@ -42,7 +42,7 @@ export function render(
 ): void {
   // The directional depth pass must finish before the HDR effect target opens its framebuffer.
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3DShadowMap(state, scene, shadowCamera);
+  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
 
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
   renderGlBackground(state);

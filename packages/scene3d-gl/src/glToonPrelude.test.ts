@@ -87,8 +87,8 @@ describe('getGlToonFragmentSourceForKey', () => {
     // matching the classic/PBR families; ambient stays unshadowed, so the helper appears once.
     for (const key of [FLAT, { ...FLAT, hasRamp: true }]) {
       const source = getGlToonFragmentSourceForKey(key);
-      expect(source).toContain('sampleDirectionalShadow(v_worldPosition)');
-      expect(source.match(/sampleDirectionalShadow\(v_worldPosition\)/g)).toHaveLength(1);
+      expect(source).toContain('sampleDirectionalShadow(v_worldPosition, normal)');
+      expect(source.match(/sampleDirectionalShadow\(v_worldPosition, normal\)/g)).toHaveLength(1);
     }
   });
 });

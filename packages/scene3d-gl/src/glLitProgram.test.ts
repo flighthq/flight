@@ -1,7 +1,9 @@
+import { createMatrix4 } from '@flighthq/geometry/contract';
 import type { GlRenderState, GlLitProgram } from '@flighthq/types/contract';
 import { EntityRuntimeKey, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2 } from './glScene3DTestHelper';
 
 function makeLitProgram(): GlLitProgram {
@@ -25,9 +27,12 @@ function makeLitProgram(): GlLitProgram {
     locNormalMatrix: loc('u_normalMatrix'),
     locPointCount: loc('u_pointCount'),
     locPointLights: loc('u_pointLights'),
+    locShadowBias: loc('u_shadowBias'),
     locShadowEnabled: loc('u_shadowEnabled'),
     locShadowMap: loc('u_shadowMap'),
     locShadowMatrix: loc('u_shadowMatrix'),
+    locShadowNormalBias: loc('u_shadowNormalBias'),
+    locShadowPcfRadius: loc('u_shadowPcfRadius'),
     locSpotCount: loc('u_spotCount'),
     locSpotLights: loc('u_spotLights'),
     locViewProjection: loc('u_viewProjection'),
@@ -143,6 +148,41 @@ describe('bindGlMeshLightBlock', () => {
     expect(intUploads.find((c) => (c.args[0] as { name: string }).name === 'u_spotCount')?.args[1]).toBe(1);
     expect(intUploads.find((c) => (c.args[0] as { name: string }).name === 'u_hemisphereCount')?.args[1]).toBe(3);
   });
+
+  it('uploads the active directional shadow filter and bias configuration', () => {
+    const gl = makeFakeGl2();
+    const state = makeState(gl);
+    const runtime = getGlScene3DRuntime(state);
+    runtime.shadow = {
+      enabled: true,
+      matrix: createMatrix4(),
+      normalBias: 0.02,
+      pcfRadius: 3,
+      shadowBias: 0.01,
+      texture: {} as WebGLTexture,
+    };
+
+    bindGlMeshLightBlock(state, makeLitProgram(), {
+      ambientCount: 0,
+      data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
+      directionalCount: 1,
+      hemisphereCount: 0,
+      pointCount: 0,
+      spotCount: 0,
+      version: 1,
+    });
+
+    const scalar = (name: string) =>
+      gl.calls.find(
+        (call) =>
+          (call.name === 'uniform1f' || call.name === 'uniform1i') &&
+          (call.args[0] as { name?: string })?.name === name,
+      )?.args[1];
+    expect(scalar('u_shadowEnabled')).toBe(1);
+    expect(scalar('u_shadowPcfRadius')).toBe(3);
+    expect(scalar('u_shadowBias')).toBe(0.01);
+    expect(scalar('u_shadowNormalBias')).toBe(0.02);
+  });
 });
 
 describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
@@ -157,6 +197,9 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
       'u_shadowMap',
       'u_shadowMatrix',
       'u_shadowEnabled',
+      'u_shadowPcfRadius',
+      'u_shadowBias',
+      'u_shadowNormalBias',
       'u_pointLights',
       'u_spotLights',
       'u_hemisphereLights',
@@ -166,6 +209,14 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
     ]) {
       expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain(name);
     }
+  });
+
+  it('uses a bounded runtime PCF radius and configurable receiver biases', () => {
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('geometricNormal * u_shadowNormalBias');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('uvz.z - u_shadowBias');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('abs(x) > u_shadowPcfRadius');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).not.toContain('0.0025');
   });
 });
 
@@ -177,5 +228,8 @@ describe('resolveGlLitLocations', () => {
     expect(locations.locAmbientRadiance).not.toBeNull();
     expect(locations.locCameraPosition).not.toBeNull();
     expect(locations.locShadowMap).not.toBeNull();
+    expect(locations.locShadowPcfRadius).not.toBeNull();
+    expect(locations.locShadowBias).not.toBeNull();
+    expect(locations.locShadowNormalBias).not.toBeNull();
   });
 });

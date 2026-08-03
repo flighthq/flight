@@ -4,6 +4,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
+import { createDirectionalLight } from '@flighthq/lighting/contract';
 import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
@@ -18,6 +19,8 @@ const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
   stride: 12,
 };
+
+const SHADOW_LIGHT = createDirectionalLight({ castsShadow: true });
 
 // A layout carrying joints0 (what hasMeshGeometrySkin keys off) so a mesh with a skin GPU-skins.
 const SKINNED_LAYOUT: VertexAttributeLayout = {
@@ -105,12 +108,28 @@ function makeShadowCamera() {
 }
 
 describe('drawGlScene3DShadowMap', () => {
+  it('does not allocate or render when the directional light has shadows disabled', () => {
+    const { state, gl } = makeShadowState();
+
+    drawGlScene3DShadowMap(
+      state,
+      createNode3D(Node3DKind),
+      makeShadowCamera(),
+      createDirectionalLight({ castsShadow: false }),
+    );
+
+    const runtime = getGlScene3DRuntime(state);
+    expect(runtime.shadowTarget).toBeNull();
+    expect(runtime.shadow).toBeNull();
+    expect(gl.calls.some((call) => call.name === 'clear')).toBe(false);
+  });
+
   it('lazily creates the shadow target on the first call', () => {
     const { state } = makeShadowState();
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
 
     expect(getGlScene3DRuntime(state).shadowTarget).not.toBeNull();
   });
@@ -120,10 +139,10 @@ describe('drawGlScene3DShadowMap', () => {
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const firstTarget = getGlScene3DRuntime(state).shadowTarget;
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const secondTarget = getGlScene3DRuntime(state).shadowTarget;
 
     expect(secondTarget).toBe(firstTarget);
@@ -134,11 +153,45 @@ describe('drawGlScene3DShadowMap', () => {
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
 
     const shadow = getGlScene3DRuntime(state).shadow;
     expect(shadow).not.toBeNull();
     expect(shadow!.matrix).not.toBeNull();
+  });
+
+  it('records normalized PCF and receiver-bias configuration on the runtime', () => {
+    const { state } = makeShadowState();
+    const light = createDirectionalLight({
+      castsShadow: true,
+      normalBias: 0.02,
+      pcfRadius: 8.7,
+      shadowBias: 0.01,
+    });
+
+    drawGlScene3DShadowMap(state, createNode3D(Node3DKind), makeShadowCamera(), light);
+
+    expect(getGlScene3DRuntime(state).shadow).toEqual(
+      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 4, shadowBias: 0.01 }),
+    );
+  });
+
+  it('disables a retained shadow when a later pass receives castsShadow=false', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createNode3D(Node3DKind);
+    const camera = makeShadowCamera();
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    const runtime = getGlScene3DRuntime(state);
+    const shadow = runtime.shadow;
+    const target = runtime.shadowTarget;
+    const clearCount = gl.calls.filter((call) => call.name === 'clear').length;
+
+    drawGlScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+
+    expect(runtime.shadow).toBe(shadow);
+    expect(runtime.shadow!.enabled).toBe(false);
+    expect(runtime.shadowTarget).toBe(target);
+    expect(gl.calls.filter((call) => call.name === 'clear')).toHaveLength(clearCount);
   });
 
   it('sets up the depth pass with front-face culling', () => {
@@ -146,7 +199,7 @@ describe('drawGlScene3DShadowMap', () => {
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
 
     const frontValue = (gl as unknown as Record<string, number>)['FRONT'];
     const cullFaceCall = gl.calls.find((c) => c.name === 'cullFace' && c.args[0] === frontValue);
@@ -172,7 +225,7 @@ describe('drawGlScene3DShadowMap', () => {
     addNodeChild(scene, mesh);
     updateMeshMorph(mesh);
 
-    drawGlScene3DShadowMap(state, scene, makeShadowCamera());
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     const uploaded = lastUploadedVertices(gl.calls);
     expect(uploaded[1]).toBe(5);
@@ -199,7 +252,7 @@ describe('drawGlScene3DShadowMap', () => {
     mesh.skin = skin;
     addNodeChild(scene, mesh);
 
-    drawGlScene3DShadowMap(state, scene, makeShadowCamera());
+    drawGlScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
 
     // A skinned caster compiles + uses the dedicated HAS_SKIN depth program rather than the rigid one.
     expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shadow:depth:skin');
@@ -210,7 +263,7 @@ describe('drawGlScene3DShadowMap', () => {
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
 
-    drawGlScene3DShadowMap(state, scene, camera);
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
 
     const framebufferConstant = (gl as unknown as Record<string, number>)['FRAMEBUFFER'];
     const bindFramebufferCalls = gl.calls.filter((c) => c.name === 'bindFramebuffer');

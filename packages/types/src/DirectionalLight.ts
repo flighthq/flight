@@ -19,3 +19,8 @@ export interface DirectionalLight extends Light {
 }
 
 export const DirectionalLightKind = 'DirectionalLight';
+
+// Directional PCF uses a square (2r+1)^2 comparison kernel. Renderers truncate authored radii to an
+// integer and clamp them to this cap, keeping the per-fragment cost bounded and identical on GL/WGPU.
+// Radius 0 is one comparison tap; radius 1 is a 3x3 kernel.
+export const MAX_DIRECTIONAL_SHADOW_PCF_RADIUS = 4;
