@@ -18,10 +18,15 @@ The 3D sibling is [scene3d format coverage](scene3d-format-coverage.md).
 
 ## How far each codec has been verified
 
-**Lottie and SVG have never seen a real asset.** Both were built and gated entirely against
-hand-authored fixtures — no Bodymovin export and no designer-tool `.svg` has been run through either
-parser. Everything claimed for them below is "correct against our own fixtures," which is a weaker
-claim than the 3D document makes.
+**Lottie has now met real exports, and they were brutal.** Eighteen real Bodymovin files from the
+lottie-web repository were run through the importer: **fourteen crashed it and only three imported at
+all.** Two structural facts about how real exports are written, neither visible to a hand-authored
+fixture, were the cause — see the Lottie section. After the fix, 17 of 18 import (the eighteenth is
+not an animation), producing 9,522 nodes and 6,445 channels where the same corpus previously produced
+566 and 301. **SVG has still never seen a real asset**, and everything claimed for it below is
+"correct against our own fixtures."
+
+Neither corpus is committed; both are fetched on demand, for the licensing reason above.
 
 **Rive is verified against 64 real editor-authored files**, fetched from Rive's own Android runtime
 test assets. They are MIT-licensed, which permits redistribution but requires carrying the copyright
@@ -48,6 +53,19 @@ static trim paths; a single additive non-inverted mask recovered to `ClipRegion`
 the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
 stretch folded exactly into root time; recursion-guarded precomposition references; and markers as
 `AnimationClipEvent`s.
+
+**Two things real exports do that fixtures never showed.** Both were silent-to-fatal, and both are
+now pinned by regression tests.
+
+*Animation is stated by structure, not by the `a` flag.* Across the eighteen files, **2,714 keyframed
+properties carry no `a` flag against 730 that do**. Reading the flag treats those as static and hands
+the caller the raw keyframe array as if it were a value — nonsense for a number, and no `v` at all
+for a shape path. Detection is now structural: a keyframe list holds objects stating a frame `t`,
+where a static value is a number, an array of numbers, or a bare path object.
+
+*An animated shape path wraps its value in a single-element array.* A static path states the object
+directly; a keyframed one nests it one level deeper. The wrapper is the **majority** form — 896
+keyframed paths against 627 bare — so reading only the bare form is what crashed most files.
 
 **Not covered — silent, and verified so.** Each of the following was confirmed by importing the case and
 the reduced document side by side and diffing the emitted shape command stream; the loss is byte-identical
