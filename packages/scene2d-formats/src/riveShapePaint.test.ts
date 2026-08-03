@@ -217,5 +217,10 @@ function object(typeKey: number, properties: Readonly<Record<number, number>>): 
 }
 
 function graph(objects: RiveCoreObject[], parents?: number[]): RiveArtboardGraph {
-  return { objects, parentIndices: parents ?? objects.map((_value, index) => (index === 0 ? -1 : 0)) };
+  return {
+    objects,
+    parentIndices: parents ?? objects.map((_value, index) => (index === 0 ? -1 : 0)),
+    streamEnd: objects.length,
+    streamStart: 0,
+  };
 }

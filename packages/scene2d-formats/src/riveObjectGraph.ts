@@ -29,10 +29,12 @@ export function createRiveObjectGraph(
 ): RiveObjectGraph {
   const artboards: RiveArtboardGraph[] = [];
   let current: RiveCoreObject[] | null = null;
-  for (const object of document.objects) {
+  for (let index = 0; index < document.objects.length; index++) {
+    const object = document.objects[index];
     if (object.typeKey === RIVE_ARTBOARD_TYPE_KEY) {
       current = [object];
-      artboards.push({ objects: current, parentIndices: [] });
+      if (artboards.length > 0) artboards[artboards.length - 1].streamEnd = index;
+      artboards.push({ objects: current, parentIndices: [], streamEnd: document.objects.length, streamStart: index });
       continue;
     }
     // Only components are numbered. Animations, keyframes, assets and state machines share the

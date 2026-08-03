@@ -1,3 +1,4 @@
+import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
 import type { PathWinding } from './ShapeCommand';
 
@@ -89,6 +90,13 @@ export interface RiveDocument {
 export interface RiveArtboardGraph {
   objects: RiveCoreObject[];
   /**
+   * Where this artboard's objects begin and end in the file's own stream. Animations and their
+   * keyframes follow their artboard but are not components, so they fall outside `objects` and can
+   * only be found through this span.
+   */
+  streamEnd: number;
+  streamStart: number;
+  /**
    * The parent of each entry in `objects`, as an index into that same array. The artboard at index 0
    * has no parent and carries -1, as does any component whose stated parent could not be resolved.
    */
@@ -100,12 +108,19 @@ export interface RiveObjectGraph {
   artboards: RiveArtboardGraph[];
 }
 
+/** A named clip. A Rive artboard carries several animations and the name is how a caller picks one. */
+export interface RiveAnimationClip {
+  clip: AnimationClip;
+  name: string;
+}
+
 /**
  * One imported artboard. A `.riv` holds several, so import returns them side by side rather than
  * choosing one; the artboard's own size travels with its subtree because nothing in the display tree
  * records it.
  */
 export interface RiveArtboardImport {
+  animations: RiveAnimationClip[];
   height: number;
   name: string;
   root: DisplayObject;
