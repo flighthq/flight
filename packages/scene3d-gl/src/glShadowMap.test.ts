@@ -172,7 +172,7 @@ describe('drawGlScene3DShadowMap', () => {
     drawGlScene3DShadowMap(state, createNode3D(Node3DKind), makeShadowCamera(), light);
 
     expect(getGlScene3DRuntime(state).shadow).toEqual(
-      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 4, shadowBias: 0.01 }),
+      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 2, shadowBias: 0.01 }),
     );
   });
 

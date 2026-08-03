@@ -116,7 +116,7 @@ describe('drawWgpuScene3DShadowMap', () => {
     drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), light);
 
     expect(getWgpuScene3DRuntime(state).shadow).toEqual(
-      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 4, shadowBias: 0.01 }),
+      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 2, shadowBias: 0.01 }),
     );
   });
 
@@ -204,7 +204,14 @@ describe('WGPU_DIRECTIONAL_SHADOW_WGSL', () => {
     );
     expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('geometricNormal * shadow.params.w');
     expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('0.5 - shadow.params.z');
-    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('abs(x) > radius');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('if (radius == 0)');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('return compareDirectionalShadow(uv, depthRef)');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('if (radius == 1)');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('for (var x = -1; x <= 1; x = x + 1)');
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain(
+      'for (var x = -MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x <= MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x = x + 1)',
+    );
+    expect(WGPU_DIRECTIONAL_SHADOW_WGSL).toContain('return sum / 9.0');
     expect(WGPU_DIRECTIONAL_SHADOW_WGSL).not.toContain('0.0025');
   });
 });

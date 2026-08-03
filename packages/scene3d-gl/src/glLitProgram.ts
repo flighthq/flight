@@ -218,8 +218,14 @@ uniform float u_shadowBias;          // normalized depth-compare bias
 uniform float u_shadowNormalBias;    // receiver offset along the geometric world normal
 
 // Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed. The compile-time
-// radius cap bounds fragment cost; u_shadowPcfRadius selects the active square subset at runtime.
-// Fragments outside the shadow frustum are treated as lit.
+// radius cap bounds fragment cost. Radius 0 and 1 take dedicated one-tap and 3x3 paths, so the default
+// does not execute the maximum kernel; radius 2 takes the bounded 5x5 path. Fragments outside the
+// shadow frustum are treated as lit.
+float compareDirectionalShadow(vec2 uv, float current) {
+  float closest = texture(u_shadowMap, uv).r;
+  return current <= closest ? 1.0 : 0.0;
+}
+
 float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal) {
   if (u_shadowEnabled < 0.5) return 1.0;
   vec3 biasedWorldPos = worldPos + geometricNormal * u_shadowNormalBias;
@@ -229,16 +235,24 @@ float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal) {
   if (uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0) return 1.0;
   float current = uvz.z - u_shadowBias;
   vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0));
+  int radius = clamp(u_shadowPcfRadius, 0, ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS});
+  if (radius == 0) return compareDirectionalShadow(uvz.xy, current);
+
   float sum = 0.0;
+  if (radius == 1) {
+    for (int x = -1; x <= 1; ++x) {
+      for (int y = -1; y <= 1; ++y) {
+        sum += compareDirectionalShadow(uvz.xy + vec2(float(x), float(y)) * texel, current);
+      }
+    }
+    return sum / 9.0;
+  }
   for (int x = -${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; x <= ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; ++x) {
-    if (abs(x) > u_shadowPcfRadius) continue;
     for (int y = -${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; y <= ${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS}; ++y) {
-      if (abs(y) > u_shadowPcfRadius) continue;
-      float closest = texture(u_shadowMap, uvz.xy + vec2(float(x), float(y)) * texel).r;
-      sum += current <= closest ? 1.0 : 0.0;
+      sum += compareDirectionalShadow(uvz.xy + vec2(float(x), float(y)) * texel, current);
     }
   }
-  float diameter = float(u_shadowPcfRadius * 2 + 1);
+  float diameter = float(${MAX_DIRECTIONAL_SHADOW_PCF_RADIUS * 2 + 1});
   return sum / (diameter * diameter);
 }
 `;
