@@ -41,8 +41,9 @@ describe('registerShadedScene3DMaterialTextures', () => {
   });
 
   it('appends nothing for a ShadedMaterial while unregistered', () => {
-    // The registry silently ignores an unregistered kind, which is exactly why this registration exists:
-    // without it an AWD2 scene's maps are never resolved and the model renders untextured.
+    // The registry cannot distinguish this from a material with no maps, which is why callers ask
+    // hasScene3DMaterialTextureLister instead and why getScene3DResourceTextures widens rather than
+    // trusting an empty answer.
     const registry = createScene3DMaterialTextureRegistry();
     const out: Texture[] = [];
     getScene3DMaterialTextures(registry, createShadedMaterial({ diffuseMap: createTexture() }), out);

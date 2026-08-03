@@ -48,6 +48,8 @@
   },
   "devDependencies": {
     "@flighthq/camera": "*",
+    "@flighthq/shading": "*",
+    "@flighthq/texture": "*",
     "typescript": "^5.3.0"
   },
   "description": "3D scene graph and spatial node hierarchy",

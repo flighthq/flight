@@ -1,4 +1,4 @@
-import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
+import { createBlinnPhongMaterial, createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
@@ -107,6 +107,37 @@ describe('getScene3DResourceTextures', () => {
     const out: Texture[] = [];
     getScene3DResourceTextures(scene, registry(), out);
     expect(out).toEqual([map]);
+  });
+
+  it('widens to every resource-backed texture when a material kind has no lister', () => {
+    // The regression this guards: an unlisted kind used to append nothing and be indistinguishable
+    // from "no maps", so the map was never requested and the model rendered untextured in silence.
+    // BlinnPhongMaterial has no built-in lister, so its specularMap is unreachable through the walk.
+    const ref = embeddedRef();
+    const map = createTexture({ resource: ref });
+    const scene = createScene3D();
+    scene.resources.push(ref);
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createBlinnPhongMaterial({ specularMap: map })]));
+
+    const out: Texture[] = [];
+    getScene3DResourceTextures(scene, registry(), out);
+    expect(out).toEqual([map]);
+  });
+
+  it('keeps narrowing when every material kind is known, dropping an unattached texture', () => {
+    // The optimization the lister buys: a resource whose consuming material hangs off no mesh is not
+    // requested. This only holds while every kind in the scene is describable.
+    const attachedRef = embeddedRef();
+    const orphanRef = embeddedRef();
+    const attached = createTexture({ resource: attachedRef });
+    createTexture({ resource: orphanRef });
+    const scene = createScene3D();
+    scene.resources.push(attachedRef, orphanRef);
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: attached })]));
+
+    const out: Texture[] = [];
+    getScene3DResourceTextures(scene, registry(), out);
+    expect(out).toEqual([attached]);
   });
 
   it('clears out before filling it', () => {
