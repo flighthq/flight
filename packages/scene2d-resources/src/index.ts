@@ -6,6 +6,7 @@ export {
   loadScene2DDocumentFromUrl,
   loadScene2DImageResources,
   registerLottieScene2DDocumentImporter,
+  registerRiveScene2DDocumentImporter,
   registerScene2DDocumentImporter,
   registerSvgScene2DDocumentImporter,
   resolveScene2DResources,

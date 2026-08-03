@@ -1,6 +1,8 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
+import type { ImageResourceReference } from './ImageResourceReference';
+import type { Scene2DSlotReference } from './Scene2DDocument';
 import type { PathWinding } from './ShapeCommand';
 
 /**
@@ -213,6 +215,18 @@ export interface RivePathRecord {
   commands: number[];
   data: number[];
   winding: PathWinding;
+}
+
+/**
+ * A `.riv` prepared as a named-graph document: the pieces `Scene2DDocument` wants, plus the import
+ * they came from. The artboards travel alongside because their clips, state machines and advanced
+ * blends have no place in a static document — a caller that wants to play or blend needs the import.
+ */
+export interface RiveScene2DDocumentResult {
+  imageResources: ImageResourceReference[];
+  imported: RiveDocumentImportResult;
+  root: DisplayObject;
+  slots: Scene2DSlotReference[];
 }
 
 /** The result of importing a `.riv`: every artboard it declares, in file order. */

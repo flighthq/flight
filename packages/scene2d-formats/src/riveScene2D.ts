@@ -24,6 +24,7 @@ import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
 import { createRiveObjectGraph } from './riveObjectGraph';
+import { createRiveImageSprite, markRiveNestedArtboard } from './riveScene2DDocument';
 import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
 import { createRiveStateMachines } from './riveStateMachine';
@@ -118,6 +119,17 @@ function createRiveDisplayNode(
     const label = createRiveTextLabel(artboard, index);
     label.name = name;
     return label;
+  }
+  // An image drawable stands up a sprite waiting on its asset; a nested artboard marks a slot site.
+  // Both are recorded for the document layer, which is what turns them into resource references and
+  // slots — the display tree itself stays ignorant of the format.
+  if (object.typeKey === RIVE_IMAGE_TYPE_KEY) {
+    return createRiveImageSprite(name, readRiveNumber(object, RIVE_IMAGE_ASSET_ID, -1));
+  }
+  if (object.typeKey === RIVE_NESTED_ARTBOARD_TYPE_KEY) {
+    const node = createDisplayObject({ name });
+    markRiveNestedArtboard(node, readRiveNumber(object, RIVE_NESTED_ARTBOARD_ID, -1));
+    return node;
   }
   if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)) return createShape({ name });
   return createDisplayObject({ name });
@@ -257,6 +269,10 @@ const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_DRAWABLE_TYPE_KEY = 13;
 const RIVE_TEXT_TYPE_KEY = 134;
+const RIVE_IMAGE_TYPE_KEY = 100;
+const RIVE_NESTED_ARTBOARD_TYPE_KEY = 92;
+const RIVE_IMAGE_ASSET_ID = 206;
+const RIVE_NESTED_ARTBOARD_ID = 197;
 const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;
