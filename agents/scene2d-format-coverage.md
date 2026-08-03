@@ -400,14 +400,25 @@ run, so the span is consumed in order and later paths may be left out entirely. 
 common case, 36 of 46. A span that runs off the end **wraps** to the front, which is how a trim
 animates continuously around a closed shape, and it emits the two pieces rather than clipping.
 
-**Draw-order overrides are a structural mismatch, not a missing read.** `DrawRules` and `DrawTarget`
-(96 of each) move a drawable to sit immediately before or after another drawable in the artboard's
-**flat** draw list, and that target commonly lives in a different subtree — **83 of the 96 cross a
-parent boundary**, with only 6 staying among siblings. Flight expresses z-order as child order within
-a parent, so honouring a cross-subtree move would mean reparenting the node, which changes its
-transform. Reading the properties is trivial; the mismatch is what blocks it. A Flight-level answer —
-an explicit draw index on `Node2D`, or a flattened render list — is a cross-package design question
-rather than something this codec can settle.
+**Draw-order overrides are imported**, through `@flighthq/node`'s `NodeOrderList`. `DrawRules` and
+`DrawTarget` move a drawable to sit immediately before or after another drawable. A `DrawRules` is
+parented to the node it governs and names a `DrawTarget`, which names the drawable and the
+before/after side — the exact shape of `setNodeOrderListEntryBelow` / `Above`, so a rule needs no
+interpretation beyond resolving its two ids.
+
+Ordering permutes children **within one parent**, so a rule whose governed node and target drawable
+are not siblings would need reparenting, moving the node out of the group whose alpha, blend, and clip
+it composites under. Those are reported as fidelity loss (`rive.draw-rule-crosses-parent`) rather than
+approximated. Across the 41-file reference corpus, of **61 rules: 33 are honored, 13 cross a parent
+boundary, and 15 name an end that is not a display node** (`rive.draw-rule-unresolved`).
+
+An earlier revision of this document put the cross-parent share far higher, at 83 of 96. That figure
+was measured in the wrong space — it compared **component-tree** parents, while ordering operates on
+the **display tree**, and the two disagree: a component whose parent is not itself a display node
+reparents up to the nearest one, so components that are not component-siblings frequently *are*
+display-siblings. Measured through the real import path, the honorable case is the majority. The
+correction is recorded rather than quietly swapped, because the discarded number was used to argue
+that the ordering model could not serve Rive.
 
 **Assets are covered as data, with no acquisition.** Every asset the file declares is returned in
 declaration order — image, font, audio, script and manifest — with its name, kind, stated dimensions

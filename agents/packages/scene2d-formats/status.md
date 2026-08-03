@@ -8,6 +8,33 @@ by: builder
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-03 — Rive draw order imported on `NodeOrderList`; my own cross-parent figure was wrong
+
+Rebased onto `origin/develop`, which brought in `@flighthq/node`'s `NodeOrderList` — the ordering API
+the draw-order model proposes, already implemented and in the contract lane. Rive draw rules now import
+onto it (`riveDrawOrder.ts`). A `DrawRules` is parented to the node it governs and names a `DrawTarget`,
+which names the drawable and the before/after side, so it maps one-to-one onto
+`setNodeOrderListEntryBelow` / `Above` with no interpretation beyond resolving two ids.
+
+**The correction that matters: my recorded "83 of 96 cross a parent boundary" was measured in the wrong
+space.** It compared **component-tree** parents. Ordering permutes **display-tree** children, and the
+two disagree — a component whose parent is not itself a display node reparents up to the nearest one,
+so components that are not component-siblings frequently *are* display-siblings. Measured through the
+real import path over 41 real `.riv` files: of **61 rules, 33 are honored, 13 cross a parent boundary
+(`rive.draw-rule-crosses-parent`), and 15 name an end that is not a display node
+(`rive.draw-rule-unresolved`)**. The honorable case is the majority, not the exception.
+
+That number had been used to argue the ordering model could not serve Rive, so the correction is
+recorded in [coverage](../../scene2d-format-coverage.md) rather than quietly swapped. The lesson
+generalises: **a measurement is only as good as the space it was taken in.** Both figures were honest
+counts of real files; one was counting the wrong tree.
+
+Cross-parent rules are reported as fidelity loss rather than approximated by reparenting, which would
+move the governed node out of the group whose alpha, blend, and clip it composites under.
+
+41 real files import with zero crashes. 278 package tests; `check scene2d-formats` green, and the
+whole-repo gates passed on the rebased tree (1,351 files / 15,390 tests).
+
 ## 2026-08-03 — SVG met the W3C conformance suite; `inherit` was deleting geometry
 
 Third and last codec to get the corpus treatment. 34 documents from the W3C SVG 1.1 conformance
