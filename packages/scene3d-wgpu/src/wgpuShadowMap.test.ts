@@ -222,6 +222,12 @@ describe('drawWgpuScene3DShadowMap', () => {
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'end')).toBe(true);
+    expect(getWgpuScene3DRuntime(state).shadowDepthSkinnedPipeline).toBeNull();
+    expect(
+      fake.calls.some(
+        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'rgba32float',
+      ),
+    ).toBe(false);
   });
 
   it('draws a GPU-skinned caster through a palette-backed depth variant', () => {

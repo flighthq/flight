@@ -356,11 +356,17 @@ The shadow depth and forward passes therefore share one valid encoder without ne
 The same primitive lets `refreshWgpuRenderCache` open and submit a standalone offscreen frame when cache
 baking is requested outside the visible frame.
 
+The depth pass mirrors the forward skin opt-in: a rigid-only scene retains the minimal position-only
+pipeline, while `registerWgpuGpuSkinning` lets a skinned caster lazily compile a separate depth variant
+that reads the same RGBA32F joint palette and static bind-pose vertex upload as the forward pass. The
+prepared pose therefore casts its posed silhouette without adding palette or shader cost to rigid scenes.
+
 ### Verification
 
 `shadow-classic.webgpu.ts` and `shadow-directional.webgpu.ts` both pass real WebGPU pixel oracles: a
-Blinn-Phong/PBR sphere casts a clearly darker projected shadow onto a lit plane. `scene2d-cache`
-also exercises the restored out-of-frame WebGPU cache bake.
+Blinn-Phong/PBR sphere casts a clearly darker projected shadow onto a lit plane. `shadow-skinning`
+pins a lateral shadow region created only by the posed upper joint; forcing the depth pass back to its
+rigid variant kills that oracle. `scene2d-cache` also exercises the restored out-of-frame WebGPU cache bake.
 
 ---
 

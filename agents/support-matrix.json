@@ -1464,6 +1464,15 @@
             "webgl": true,
             "webgpu": true
           }
+        },
+        {
+          "scene": "shadow-skinning",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
         }
       ]
     },
