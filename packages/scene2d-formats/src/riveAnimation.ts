@@ -1,8 +1,17 @@
-import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import {
+  createAnimationChannel,
+  createAnimationClip,
+  createAnimationTrack,
+  sampleAnimationTrack,
+} from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
+import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
+import { RiveFieldType } from '@flighthq/types/contract';
 import type {
   AnimationChannel,
+  AnimationClip,
+  RiveArtboardGraph,
   RiveAnimationClip,
   DisplayObject,
   EasingFunction,
@@ -12,6 +21,24 @@ import type {
 } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+
+/**
+ * Samples a Rive clip, applying both the shared display-object channels and the format-owned ones
+ * that drive geometry and paint. Playback stays explicit, as it does for Lottie.
+ */
+export function applyAnimationClipToRiveDocument(clip: Readonly<AnimationClip>, time: number): void {
+  applyAnimationClipToNode2D(clip, time);
+  for (const channel of clip.channels) {
+    const target = channel.targetRef as RiveMutableTarget | null;
+    if (target === null || typeof target !== 'object' || target.riveApply === undefined) continue;
+    sampleAnimationTrack(_sampleScratch, channel.track, time);
+    target.riveApply(_sampleScratch[0]);
+  }
+  // Rebuilding once per shape after every channel has landed keeps a shape with several animated
+  // vertices from regenerating its whole command stream once per vertex.
+  for (const rebuild of _pendingRebuilds) rebuild();
+  _pendingRebuilds.clear();
+}
 
 /**
  * Builds one `AnimationClip` per Rive linear animation.
@@ -25,14 +52,20 @@ export function createRiveAnimationClips(
   objects: readonly Readonly<RiveCoreObject>[],
   range: Readonly<{ end: number; start: number }>,
   nodes: ReadonlyArray<DisplayObject | null>,
+  artboard: Readonly<RiveArtboardGraph>,
+  rebuilds: ReadonlyMap<number, () => void>,
 ): RiveAnimationClip[] {
   const interpolators = collectRiveInterpolators(objects, range);
   const clips: RiveAnimationClip[] = [];
   for (let index = range.start; index < range.end; index++) {
     if (objects[index].typeKey !== RIVE_LINEAR_ANIMATION) continue;
-    clips.push(createRiveAnimationClip(objects, index, range.end, nodes, interpolators));
+    clips.push(createRiveAnimationClip(objects, index, range.end, nodes, interpolators, artboard, rebuilds));
   }
   return clips;
+}
+
+interface RiveMutableTarget {
+  riveApply(value: number): void;
 }
 
 function createRiveAnimationClip(
@@ -41,25 +74,40 @@ function createRiveAnimationClip(
   limit: number,
   nodes: ReadonlyArray<DisplayObject | null>,
   interpolators: ReadonlyMap<number, EasingFunction>,
+  artboard: Readonly<RiveArtboardGraph>,
+  rebuilds: ReadonlyMap<number, () => void>,
 ): RiveAnimationClip {
   const source = objects[start];
   const fps = Math.max(1, readRiveNumber(source, RIVE_ANIMATION_FPS, 60));
   const channels: AnimationChannel[] = [];
 
   let keyed: DisplayObject | null = null;
+  let keyedIndex = -1;
   for (let index = start + 1; index < limit; index++) {
     const object = objects[index];
     // Another animation or a state machine ends this one's run of keyed data.
     if (object.typeKey === RIVE_LINEAR_ANIMATION) break;
     if (object.typeKey === RIVE_KEYED_OBJECT) {
-      const target = readRiveNumber(object, RIVE_KEYED_OBJECT_ID, -1);
-      keyed = target >= 0 && target < nodes.length ? nodes[target] : null;
+      keyedIndex = readRiveNumber(object, RIVE_KEYED_OBJECT_ID, -1);
+      keyed = keyedIndex >= 0 && keyedIndex < nodes.length ? nodes[keyedIndex] : null;
       continue;
     }
-    if (object.typeKey !== RIVE_KEYED_PROPERTY || keyed === null) continue;
-    const path = toRiveAnimationPath(readRiveNumber(object, RIVE_KEYED_PROPERTY_KEY, -1));
-    if (path === null) continue;
-    const channel = createRiveChannel(objects, index, limit, keyed, path, fps, interpolators);
+    if (object.typeKey !== RIVE_KEYED_PROPERTY) continue;
+    const propertyKey = readRiveNumber(object, RIVE_KEYED_PROPERTY_KEY, -1);
+    const path = toRiveAnimationPath(propertyKey);
+    if (path !== null && keyed !== null) {
+      const channel = createRiveChannel(objects, index, limit, fps, interpolators, toRiveValueConversion(path), {
+        node: keyed,
+        path,
+      } satisfies Node2DAnimationTarget);
+      if (channel !== null) channels.push(channel);
+      continue;
+    }
+    // Anything else drives geometry or paint: write the value back onto the object the file keyed and
+    // let the owning shape rebuild from it, which is why no property needs its own binder.
+    const target = createRiveMutableTarget(artboard, rebuilds, keyedIndex, propertyKey);
+    if (target === null) continue;
+    const channel = createRiveChannel(objects, index, limit, fps, interpolators, (value) => value, target);
     if (channel !== null) channels.push(channel);
   }
 
@@ -71,12 +119,11 @@ function createRiveChannel(
   objects: readonly Readonly<RiveCoreObject>[],
   propertyIndex: number,
   limit: number,
-  node: DisplayObject,
-  path: Node2DAnimationPath,
   fps: number,
   interpolators: ReadonlyMap<number, EasingFunction>,
+  convert: (value: number) => number,
+  targetRef: unknown,
 ): AnimationChannel | null {
-  const convert = toRiveValueConversion(path);
   const times: number[] = [];
   const values: number[] = [];
   const segmentEasings: Array<EasingFunction | null> = [];
@@ -95,10 +142,50 @@ function createRiveChannel(
   if (times.length === 0) return null;
   segmentEasings.pop();
 
-  return createAnimationChannel(createAnimationTrack({ interpolation: 'Linear', segmentEasings, times, values }), {
-    node,
-    path,
-  } satisfies Node2DAnimationTarget);
+  return createAnimationChannel(
+    createAnimationTrack({ interpolation: 'Linear', segmentEasings, times, values }),
+    targetRef,
+  );
+}
+
+/**
+ * A writer for one keyed property that is not a node transform — a vertex position, a corner radius,
+ * a colour, a stroke width. It sets the value back on the core object the file keyed and queues the
+ * owning shape's rebuild, so the ordinary readers produce the animated geometry with no second code
+ * path to keep in step.
+ */
+function createRiveMutableTarget(
+  artboard: Readonly<RiveArtboardGraph>,
+  rebuilds: ReadonlyMap<number, () => void>,
+  objectIndex: number,
+  propertyKey: number,
+): RiveMutableTarget | null {
+  if (objectIndex < 0 || objectIndex >= artboard.objects.length || propertyKey < 0) return null;
+  const object = artboard.objects[objectIndex];
+  const rebuild = rebuilds.get(findRiveShapeOwner(artboard, objectIndex));
+  if (rebuild === undefined) return null;
+
+  const property = object.properties.find((candidate) => candidate.key === propertyKey);
+  // A file may key a property it never states, in which case the value starts at the format default.
+  const slot = property ?? { key: propertyKey, type: RiveFieldType.Double, value: 0 };
+  if (property === undefined) object.properties.push(slot);
+
+  return {
+    riveApply(value: number): void {
+      slot.value = value;
+      _pendingRebuilds.add(rebuild);
+    },
+  };
+}
+
+// The nearest ancestor that is a Shape, including the object itself.
+function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number): number {
+  let current = index;
+  while (current > 0) {
+    if (isRiveCoreTypeDerivedFrom(artboard.objects[current].typeKey, RIVE_SHAPE_TYPE_KEY)) return current;
+    current = artboard.parentIndices[current];
+  }
+  return -1;
 }
 
 // Established from the corpus rather than a header: type 2 carries an interpolator in 18,044 of
@@ -170,6 +257,7 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 
 const RIVE_KEYED_OBJECT = 25;
 const RIVE_KEYED_PROPERTY = 26;
+const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_LINEAR_ANIMATION = 31;
 const RIVE_CUBIC_INTERPOLATOR = 139;
 const RIVE_INTERPOLATING_KEYFRAME = 170;
@@ -201,3 +289,7 @@ const RIVE_INTERPOLATION_HOLD = 0;
 const RIVE_INTERPOLATION_LINEAR = 1;
 
 const _holdEasing: EasingFunction = () => 0;
+const _sampleScratch = new Array<number>(8).fill(0);
+// Coalesces the rebuilds a single sample triggers, so a shape regenerates once however many of its
+// vertices moved.
+const _pendingRebuilds = new Set<() => void>();

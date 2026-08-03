@@ -191,7 +191,12 @@ function trimRivePathToWindows(
     if (end <= start) continue;
     const trimmed = createPath(record.winding);
     dashPath(path, [(end - start) * length, (1 - (end - start)) * length], start * length, trimmed);
-    results.push({ commands: trimmed.commands.slice(), data: trimmed.data.slice(), winding: trimmed.winding });
+    results.push({
+      commands: trimmed.commands.slice(),
+      data: trimmed.data.slice(),
+      pathIndex: record.pathIndex,
+      winding: trimmed.winding,
+    });
   }
   return results;
 }

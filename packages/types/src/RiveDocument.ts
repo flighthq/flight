@@ -214,6 +214,8 @@ export interface RiveArtboardImport {
 export interface RivePathRecord {
   commands: number[];
   data: number[];
+  /** The path component this came from, so an animated vertex can regenerate it from source. */
+  pathIndex: number;
   winding: PathWinding;
 }
 

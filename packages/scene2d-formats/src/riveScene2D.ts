@@ -3,7 +3,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { createShape } from '@flighthq/shape/contract';
+import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
@@ -96,14 +96,22 @@ function createRiveArtboardImport(
   }
 
   applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
-  const span = { end: artboard.streamEnd, start: artboard.streamStart };
-  const animations = createRiveAnimationClips(objects, span, nodes);
-  const stateMachines = createRiveStateMachines(objects, span);
-  for (const [shapeIndex, paths] of shapePaths) {
+
+  // Every reader here reads from the core object's own properties, so animating geometry or paint is
+  // a matter of mutating those properties and running the shape's builder again. Capturing the
+  // rebuild per shape is what lets one binder serve vertices, radii, colours and stroke widths alike.
+  const rebuilds = new Map<number, () => void>();
+  for (const shapeIndex of shapePaths.keys()) {
     const shape = nodes[shapeIndex];
     if (shape === null || shape === undefined) continue;
-    appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
+    const rebuild = (): void => rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths);
+    rebuilds.set(shapeIndex, rebuild);
+    rebuild();
   }
+
+  const span = { end: artboard.streamEnd, start: artboard.streamStart };
+  const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds);
+  const stateMachines = createRiveStateMachines(objects, span);
   return { advancedBlends, animations, height, name, root, stateMachines, width };
 }
 
@@ -135,6 +143,23 @@ function createRiveDisplayNode(
   return createDisplayObject({ name });
 }
 
+// Regenerates one shape's whole command stream from the current property values.
+function rebuildRiveShape(
+  shape: Shape,
+  artboard: Readonly<RiveArtboardGraph>,
+  shapeIndex: number,
+  shapePaths: Map<number, RivePathRecord[]>,
+): void {
+  const records: RivePathRecord[] = [];
+  for (const pathIndex of shapePaths.get(shapeIndex)?.map((record) => record.pathIndex) ?? []) {
+    const record = createRivePathRecord(artboard, pathIndex);
+    if (record !== null) records.push(record);
+  }
+  shapePaths.set(shapeIndex, records);
+  clearShapeCommands(shape);
+  appendRiveShapePaint(shape, artboard, shapeIndex, records);
+}
+
 function collectRivePathGeometry(
   shapePaths: Map<number, RivePathRecord[]>,
   artboard: Readonly<RiveArtboardGraph>,
@@ -155,10 +180,20 @@ function collectRivePathGeometry(
     );
     return;
   }
+  const record = createRivePathRecord(artboard, index);
+  if (record === null) return;
+  const records = shapePaths.get(owner) ?? [];
+  records.push(record);
+  shapePaths.set(owner, records);
+}
+
+// One path's geometry in its owning shape's space. Read fresh each time so an animated vertex,
+// radius or size shows up without any cached state to invalidate.
+function createRivePathRecord(artboard: Readonly<RiveArtboardGraph>, index: number): RivePathRecord | null {
   const source = artboard.objects[index];
   const path = createRivePath(source, artboard, index);
   // An empty result is the file's own doing: a points path may legitimately state no vertices.
-  if (path === null || path.commands.length === 0) return;
+  if (path === null || path.commands.length === 0) return null;
 
   // A path carries its own transform, and it is no longer a node of its own, so that transform is
   // baked into the geometry the shape receives.
@@ -170,9 +205,7 @@ function collectRivePathGeometry(
     data[offset] = local.a * x + local.c * y + local.tx;
     data[offset + 1] = local.b * x + local.d * y + local.ty;
   }
-  const records = shapePaths.get(owner) ?? [];
-  records.push({ commands: path.commands.slice(), data, winding: path.winding });
-  shapePaths.set(owner, records);
+  return { commands: path.commands.slice(), data, pathIndex: index, winding: path.winding };
 }
 
 // The nearest ancestor that is a Shape component, in artboard numbering.
