@@ -45,7 +45,7 @@ describe('destroyGlScene3DRuntime', () => {
     scene.shadow = {
       enabled: true,
       matrix: {} as Matrix4,
-      normalBias: 0,
+      normalBiasWorld: 0,
       pcfRadius: 0,
       shadowBias: 0,
       texture: depthTexture,

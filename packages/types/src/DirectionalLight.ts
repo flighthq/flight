@@ -8,13 +8,19 @@ import type { Vector3 } from './Vector3';
 // canonical LOCAL -Z axis and the document light's `transform` carries the aim, per that type's placement
 // convention. Anything a renderer consumes — `Scene3DLights`, `packScene3DLightBlock` — is world-space.
 export interface DirectionalLight extends Light {
+  // Enables the explicit directional shadow-map pass when this light is passed to it.
   castsShadow: boolean;
   color: number;
   direction: Vector3;
   intensity: number;
   kind: 'DirectionalLight';
+  // Receiver offset along the geometric normal, measured in shadow-map texels. The renderer converts
+  // it through the orthographic shadow projection, so a fitted map keeps the same relative bias as the
+  // scene scale changes.
   normalBias: number;
+  // Integer PCF kernel radius in shadow-map texels; see MAX_DIRECTIONAL_SHADOW_PCF_RADIUS.
   pcfRadius: number;
+  // Receiver depth-compare offset in normalized shadow depth.
   shadowBias: number;
 }
 

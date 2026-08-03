@@ -645,7 +645,7 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
 }
 
 // Writes the one shadow uniform shared by the combined PBR sample group and the standalone
-// classic/toon shadow group. params = {enabled, pcfRadius, shadowBias, normalBias}; keeping this in one
+// classic/toon shadow group. params = {enabled, pcfRadius, shadowBias, normalBiasWorld}; keeping this in one
 // writer prevents the two binding paths from silently disagreeing about the same 80-byte ABI.
 function writeWgpuShadowSampleUniform(state: WgpuRenderState): WgpuScene3DShadow | null {
   const scene = getWgpuScene3DRuntime(state);
@@ -657,7 +657,7 @@ function writeWgpuShadowSampleUniform(state: WgpuRenderState): WgpuScene3DShadow
     values[16] = shadow.enabled ? 1 : 0;
     values[17] = shadow.pcfRadius;
     values[18] = shadow.shadowBias;
-    values[19] = shadow.normalBias;
+    values[19] = shadow.normalBiasWorld;
   } else {
     for (let index = 0; index < 20; index++) values[index] = 0;
     values[0] = 1;

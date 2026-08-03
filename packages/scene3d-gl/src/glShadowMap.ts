@@ -1,4 +1,4 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
@@ -44,6 +44,12 @@ export function drawGlScene3DShadowMap(
   const previousShadow = runtime.shadow;
   if (previousShadow !== null) previousShadow.enabled = false;
   if (!directionalLight.castsShadow) return;
+  if (shadowCamera.projection.kind !== 'orthographic') {
+    throw new Error('drawGlScene3DShadowMap requires an orthographic shadow camera');
+  }
+  const normalBiasWorld =
+    directionalLight.normalBias *
+    getOrthographicProjectionTexelSize(shadowCamera.projection, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
   if (runtime.shadowTarget === null) {
     runtime.shadowTarget = createGlRenderTarget(state, {
@@ -133,7 +139,7 @@ export function drawGlScene3DShadowMap(
   runtime.shadow = {
     enabled: true,
     matrix,
-    normalBias: directionalLight.normalBias,
+    normalBiasWorld,
     pcfRadius: normalizeDirectionalShadowPcfRadius(directionalLight.pcfRadius),
     shadowBias: directionalLight.shadowBias,
     texture: target.depthTexture!,

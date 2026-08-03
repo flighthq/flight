@@ -93,7 +93,7 @@ export function bindGlMeshLightBlock(
     gl.uniform1f(program.locShadowBias, shadow.shadowBias);
     gl.uniform1i(program.locShadowMap, SHADOW_MAP_TEXTURE_UNIT);
     gl.uniformMatrix4fv(program.locShadowMatrix, false, shadow.matrix.m);
-    gl.uniform1f(program.locShadowNormalBias, shadow.normalBias);
+    gl.uniform1f(program.locShadowNormalBiasWorld, shadow.normalBiasWorld);
     gl.uniform1i(program.locShadowPcfRadius, shadow.pcfRadius);
     gl.uniform1f(program.locShadowEnabled, 1);
   } else {
@@ -198,7 +198,7 @@ export function resolveGlLitLocations(
     locShadowEnabled: gl.getUniformLocation(program, 'u_shadowEnabled'),
     locShadowMap: gl.getUniformLocation(program, 'u_shadowMap'),
     locShadowMatrix: gl.getUniformLocation(program, 'u_shadowMatrix'),
-    locShadowNormalBias: gl.getUniformLocation(program, 'u_shadowNormalBias'),
+    locShadowNormalBiasWorld: gl.getUniformLocation(program, 'u_shadowNormalBiasWorld'),
     locShadowPcfRadius: gl.getUniformLocation(program, 'u_shadowPcfRadius'),
     locSpotCount: gl.getUniformLocation(program, 'u_spotCount'),
     locSpotLights: gl.getUniformLocation(program, 'u_spotLights'),
@@ -215,7 +215,7 @@ uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
 uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
 uniform int u_shadowPcfRadius;       // integer kernel radius: 0 = one tap, 1 = 3x3
 uniform float u_shadowBias;          // normalized depth-compare bias
-uniform float u_shadowNormalBias;    // receiver offset along the geometric world normal
+uniform float u_shadowNormalBiasWorld; // receiver offset along the geometric normal in world units
 
 // Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed. The compile-time
 // radius cap bounds fragment cost. Radius 0 and 1 take dedicated one-tap and 3x3 paths, so the default
@@ -228,7 +228,7 @@ float compareDirectionalShadow(vec2 uv, float current) {
 
 float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal) {
   if (u_shadowEnabled < 0.5) return 1.0;
-  vec3 biasedWorldPos = worldPos + geometricNormal * u_shadowNormalBias;
+  vec3 biasedWorldPos = worldPos + geometricNormal * u_shadowNormalBiasWorld;
   vec4 clip = u_shadowMatrix * vec4(biasedWorldPos, 1.0);
   vec3 ndc = clip.xyz / clip.w;
   vec3 uvz = ndc * 0.5 + 0.5;

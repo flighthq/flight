@@ -1,9 +1,10 @@
 import { createScene3D } from '@flighthq/scene3d';
-import { drawGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
-import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
+import { drawWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/scene3d-wgpu';
+import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginGlRenderEffectPipeline,
+  beginWgpuFrame,
+  beginWgpuRenderEffectPipeline,
   configureDirectionalShadowCamera3DTightFit,
   createAabb,
   createAmbientLight,
@@ -11,41 +12,41 @@ import {
   createBoxMeshGeometry,
   createCamera3D,
   createDirectionalLight,
-  createGlCanvasElement,
-  createGlRenderEffectPipeline,
-  createGlRenderState,
   createMesh,
   createOrthographicProjection,
   createPlaneMeshGeometry,
   createVector3,
-  endGlRenderEffectPipeline,
-  getNode3DWorldBounds,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  endWgpuRenderEffectPipeline,
   getBitmapPixelLuminance,
+  getNode3DWorldBounds,
   invalidateNodeLocalTransform,
   normalizeVector3,
   prepareScene3DRender,
-  registerGlBlinnPhongMaterial,
-  renderGlBackground,
+  registerWgpuBlinnPhongMaterial,
+  renderWgpuBackground,
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// A large 80×60 architectural ground and three 12-unit occluders exercise an explicit tight
-// light-space shadow fit. A top-down camera and angled sun separate each occluder from its cast
-// shadow, giving the oracle stable lit/shadow regions at scene scale.
+// WebGPU twin of the large-scene GL fixture. A tight light-space fit and one authored texel of normal
+// bias prove that both backends derive the same scale-relative receiver offset.
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x080a10ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-registerGlBlinnPhongMaterial(state);
+registerWgpuBlinnPhongMaterial(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
+const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
   sampleCount: 4,
@@ -54,6 +55,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
+registerWgpuFunctionalTarget(state, scale);
 
 const material = createBlinnPhongMaterial({
   diffuse: 0xa8aaaeff,
@@ -81,8 +83,6 @@ const direction = createVector3(0.5, -1, 0.3);
 normalizeVector3(direction, direction);
 const lights = {
   ambient: createAmbientLight({ color: 0x384050ff, intensity: 0.08 }),
-  // One texel of normal bias is converted through the tight-fit projection below. This is the
-  // large-scene witness that the authored bias follows shadow-map scale instead of raw world units.
   directional: createDirectionalLight({
     castsShadow: true,
     color: 0xffffffff,
@@ -102,20 +102,17 @@ const shadowCamera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
-drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
 
-beginGlRenderEffectPipeline(state, pipeline, 'linear');
-renderGlBackground(state);
-state.gl.depthMask(true);
-state.gl.clearDepth(1);
-state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
+beginWgpuFrame(state);
+drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+renderWgpuBackground(state);
+beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
 prepareScene3DRender(state, scene, camera, lights);
-drawGlScene3D(state, scene, camera, lights);
-endGlRenderEffectPipeline(state, pipeline, []);
+drawWgpuScene3D(state, scene, camera, lights);
+endWgpuRenderEffectPipeline(state, pipeline, []);
+submitWgpuRenderPass(state);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
-  // The centre occluder casts down-light along +X/+Z. Sample its separated shadow around world
-  // (5,-5), and a lit ground patch at world (13,-5) on the same image row.
   const shadowX = Math.round((0.5 + 5 / 90) * bitmap.width);
   const litX = Math.round((0.5 + 13 / 90) * bitmap.width);
   const sampleY = Math.round((0.5 - 5 / 68) * bitmap.height);

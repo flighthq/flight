@@ -1,6 +1,7 @@
 import {
   createCamera3D,
   createOrthographicProjection,
+  getOrthographicProjectionTexelSize,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
@@ -169,11 +170,48 @@ describe('drawGlScene3DShadowMap', () => {
       shadowBias: 0.01,
     });
 
-    drawGlScene3DShadowMap(state, createNode3D(Node3DKind), makeShadowCamera(), light);
+    const camera = makeShadowCamera();
+    if (camera.projection.kind !== 'orthographic') throw new Error('test shadow camera must be orthographic');
+    drawGlScene3DShadowMap(state, createNode3D(Node3DKind), camera, light);
 
     expect(getGlScene3DRuntime(state).shadow).toEqual(
-      expect.objectContaining({ enabled: true, normalBias: 0.02, pcfRadius: 2, shadowBias: 0.01 }),
+      expect.objectContaining({
+        enabled: true,
+        normalBiasWorld: 0.02 * getOrthographicProjectionTexelSize(camera.projection, 1024, 1024),
+        pcfRadius: 2,
+        shadowBias: 0.01,
+      }),
     );
+  });
+
+  it('scales authored normal-bias texels with the orthographic shadow projection', () => {
+    const light = createDirectionalLight({ castsShadow: true, normalBias: 1 });
+    const camera = makeShadowCamera();
+    const wideCamera = makeShadowCamera();
+    wideCamera.projection = createOrthographicProjection({ halfHeight: 20, halfWidth: 20 });
+    const first = makeShadowState();
+    const second = makeShadowState();
+
+    drawGlScene3DShadowMap(first.state, createNode3D(Node3DKind), camera, light);
+    drawGlScene3DShadowMap(second.state, createNode3D(Node3DKind), wideCamera, light);
+
+    expect(getGlScene3DRuntime(second.state).shadow!.normalBiasWorld).toBe(
+      getGlScene3DRuntime(first.state).shadow!.normalBiasWorld * 2,
+    );
+  });
+
+  it('rejects a perspective directional shadow camera', () => {
+    const { state } = makeShadowState();
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: { aspect: 1, fovY: Math.PI / 4, kind: 'perspective' },
+    });
+
+    expect(() => drawGlScene3DShadowMap(state, createNode3D(Node3DKind), camera, SHADOW_LIGHT)).toThrow(
+      'requires an orthographic shadow camera',
+    );
+    expect(getGlScene3DRuntime(state).shadowTarget).toBeNull();
   });
 
   it('handles false -> true -> false without allocating or sampling a stale shadow', () => {

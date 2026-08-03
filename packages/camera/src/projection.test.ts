@@ -4,6 +4,7 @@ import type { OrthographicProjection, PerspectiveProjection } from '@flighthq/ty
 import {
   createOrthographicProjection,
   createPerspectiveProjection,
+  getOrthographicProjectionTexelSize,
   isOrthographicProjection,
   isPerspectiveProjection,
   setProjectionMatrix4,
@@ -29,6 +30,15 @@ describe('createPerspectiveProjection', () => {
   it('defaults aspect to 1 when omitted', () => {
     const projection = createPerspectiveProjection({ fovY: 1 });
     expect(projection.aspect).toBe(1);
+  });
+});
+
+describe('getOrthographicProjectionTexelSize', () => {
+  it('uses the larger world-space texel footprint for a non-square projection and map', () => {
+    const projection = createOrthographicProjection({ halfHeight: 20, halfWidth: 10 });
+
+    expect(getOrthographicProjectionTexelSize(projection, 100, 100)).toBe(0.4);
+    expect(getOrthographicProjectionTexelSize(projection, 50, 200)).toBe(0.4);
   });
 });
 
