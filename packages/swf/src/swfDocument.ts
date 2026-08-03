@@ -5,6 +5,10 @@ import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { addMovieClipFrameScript, createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import {
   addNodeChild,
+  addNodeOrderListEntry,
+  applyNodeOrderList,
+  clearNodeOrderList,
+  createNodeOrderList,
   getNodeRuntime,
   invalidateNodeAppearance,
   invalidateNodeLocalBounds,
@@ -31,6 +35,7 @@ import type {
   Node2D,
   Node2DData,
   Node2DRuntime,
+  Node2DTraits,
   Rectangle,
   RichText,
   Scene2DDocument,
@@ -494,7 +499,9 @@ function createSwfTimelineSource(
   labels: readonly TimelineLabel[],
   frameRate: number | null,
 ): TimelineSource {
-  const attached: Node2D[] = [];
+  const attached = new Set<Node2D>();
+  const framed = new Set<Node2D>();
+  const depths = createNodeOrderList<Node2DTraits>();
   const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
   const appliedClips = new Map<Node2D, ClipRegion | null>();
   const appliedAlphas = new Map<Node2D, number>();
@@ -507,25 +514,31 @@ function createSwfTimelineSource(
       const entries = frames[frame - 1];
       if (entries === undefined) return;
 
-      let count = 0;
-      let ordered = true;
+      // Membership and order are two passes, not one. Only the instances this frame drops are detached
+      // and only the newly placed ones attached; depth ordering is then a permutation of what is
+      // already there, so an instance placed between two others costs one apply rather than detaching
+      // and reattaching the whole list.
+      framed.clear();
+      clearNodeOrderList(depths);
       for (const entry of entries) {
         const node = nodes.get(createSwfInstanceKey(entry.placement));
         if (node === undefined) continue;
-        if (attached[count] !== node) ordered = false;
-        count++;
+        framed.add(node);
+        addNodeOrderListEntry(depths, node, entry.placement.depth);
       }
 
-      if (!ordered || count !== attached.length) {
-        for (const node of attached) removeNodeChild(target, node);
-        attached.length = 0;
-        for (const entry of entries) {
-          const node = nodes.get(createSwfInstanceKey(entry.placement));
-          if (node === undefined) continue;
-          addNodeChild(target, node);
-          attached.push(node);
-        }
+      for (const node of attached) {
+        if (framed.has(node)) continue;
+        removeNodeChild(target, node);
+        attached.delete(node);
       }
+      // Iterates in depth order, since `framed` was filled from the depth-sorted entries.
+      for (const node of framed) {
+        if (attached.has(node)) continue;
+        addNodeChild(target, node);
+        attached.add(node);
+      }
+      applyNodeOrderList(target, depths);
 
       for (const entry of entries) {
         const node = nodes.get(createSwfInstanceKey(entry.placement));
