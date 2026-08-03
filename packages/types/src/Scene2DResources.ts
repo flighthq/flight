@@ -1,3 +1,4 @@
+import type { AudioResourceFetch, AudioResourceReference } from './AudioResourceReference';
 import type { Entity } from './Entity';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
@@ -86,5 +87,28 @@ export interface LoadScene2DImageResourcesOptions {
   fetch?: ImageResourceFetch;
   progress?: Signal<(event: Readonly<Scene2DImageResourceLoadProgress>) => void>;
   select?: (reference: Readonly<ImageResourceReference>) => boolean;
+  signal?: AbortSignal;
+}
+
+export interface Scene2DAudioResourceLoadProgress {
+  loaded: number;
+  reference: AudioResourceReference;
+  total: number;
+}
+
+export interface Scene2DAudioResources {
+  document: Scene2DDocument;
+  resolved: AudioResourceReference[];
+  unresolved: AudioResourceReference[];
+}
+
+export interface LoadScene2DAudioResourcesOptions {
+  // The platform decoder every standard container goes through. Null when each selected reference resolves
+  // through a registered decoder or the fetch seam, so a host with no Web Audio never has to build one.
+  context?: AudioContext | null;
+  // Resolves an External reference's uri. A document whose sounds are all embedded never needs one.
+  fetch?: AudioResourceFetch;
+  progress?: Signal<(event: Readonly<Scene2DAudioResourceLoadProgress>) => void>;
+  select?: (reference: Readonly<AudioResourceReference>) => boolean;
   signal?: AbortSignal;
 }

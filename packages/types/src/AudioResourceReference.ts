@@ -8,9 +8,11 @@ import type { ResourceResolutionState } from './ResourceResolutionState';
 // stay synchronous and format-symmetric while the heavy async decode happens later.
 //
 // The reference is subject-neutral by the same construction as the image lane: it names bytes and the
-// resources waiting on them, and nothing about a timeline, a node, or a document. A 2D document
+// resource waiting on them, and nothing about a timeline, a node, or a document. A 2D document
 // (`Scene2DDocument`) carries these today; a 3D scene with positional audio would carry the same
-// references and differ only in how it discovers them.
+// references and differ only in how it discovers them. It names what *receives* the samples, never what
+// asks for them — a cue is an asker, and a reference that listed cues could not serve a caller-driven
+// play, a positional source, or the library sounds no timeline ever triggers.
 //
 // Nothing here plays. Decoding fills an AudioResource's buffer; starting a channel is `@flighthq/media`'s
 // job, driven by an explicit caller or a registered TimelineAudioEvent handler. A document stays static.
@@ -48,10 +50,15 @@ interface AudioResourceReferenceBase {
   // The audio MIME type (`audio/mpeg`, `audio/wav`) when known — detected from the embedded bytes or
   // declared by the container. Null when it must be inferred at resolve time, which the resolver does.
   mimeType: string | null;
-  // AudioResources consuming this reference. The document owns references as sidecar data; AudioResource
-  // stays format/resource agnostic. A sound cued from forty frames decodes once and fills one resource
-  // every cue already points at.
-  resources?: AudioResource[];
+  // The authoring-time export name, when the container recorded one. A sound every cue reaches needs no
+  // name; a sound no timeline triggers — a library sound the format published for code to start — has
+  // nothing else to find it by, and dropping the name would strand it in the document unreachable.
+  name: string | null;
+  // The single AudioResource this reference fills. One encoded payload decodes to one buffer, so there is
+  // one sink: a sound cued from forty frames is forty cues holding this same resource, and concurrent
+  // sounds are separate cues over separate references rather than several sinks here. It exists before
+  // its samples do, so a cue can hold it while the bytes are still undecoded.
+  resource: AudioResource;
   // Advanced by the resolver: Unresolved → Loading → Resolved | Failed. Read it to drive a loading HUD or
   // to hold playback until audio is ready; each AudioResource's `buffer` is non-null only once `state`
   // reaches Resolved.
@@ -81,6 +88,13 @@ export type AudioResourceFetch = (
   ref: Readonly<ExternalAudioResourceReference>,
   signal: AbortSignal,
 ) => Promise<AudioResource | null>;
+
+// Decodes encoded audio the platform cannot. Registered against the MIME type's essence, so one
+// registration serves every parameter combination a container emits for that format — a SWF ADPCM sound
+// tagged `audio/vnd.adobe.swf-adpcm; rate=22050; channels=1` reaches the decoder registered for the bare
+// type, and reads the rate it needs off the parameters. Returns null for an expected failure rather than
+// throwing. Anything the platform already understands needs no registration.
+export type AudioDecoder = (bytes: Uint8Array, mimeType: string, signal: AbortSignal) => Promise<AudioResource | null>;
 
 export interface AudioResourceReferenceResolutionExplanation {
   failure: AudioResourceFailure | null;
