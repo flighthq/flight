@@ -121,7 +121,17 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
+  // Keep all three sampling controls explicit here. This is the zero-bias, single-tap witness: its
+  // capture must remain free of obvious acne without silently inheriting the old 0.0025/3x3 behavior.
+  directional: createDirectionalLight({
+    castsShadow: true,
+    color: 0xffffffff,
+    direction,
+    intensity: 3,
+    normalBias: 0,
+    pcfRadius: 0,
+    shadowBias: 0,
+  }),
 });
 
 // Shadow camera fitted to the scene's world bounds along the light direction.

@@ -120,14 +120,20 @@ describe('drawWgpuScene3DShadowMap', () => {
     );
   });
 
-  it('disables a retained shadow when a later pass receives castsShadow=false', () => {
+  it('handles false -> true -> false without allocating or sampling a stale shadow', () => {
     const { fake, state } = makeWgpuScene3DState();
     const scene = makeShadowScene3D();
     const camera = makeShadowCamera();
+
+    drawWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+    expect(getWgpuScene3DRuntime(state).shadow).toBeNull();
+
     drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const runtime = getWgpuScene3DRuntime(state);
     const shadow = runtime.shadow;
     const passCount = fake.calls.filter((call) => call.name === 'beginRenderPass').length;
+    expect(shadow!.enabled).toBe(true);
+    expect(passCount).toBeGreaterThan(0);
 
     drawWgpuScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
 

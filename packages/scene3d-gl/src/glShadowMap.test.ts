@@ -176,15 +176,22 @@ describe('drawGlScene3DShadowMap', () => {
     );
   });
 
-  it('disables a retained shadow when a later pass receives castsShadow=false', () => {
+  it('handles false -> true -> false without allocating or sampling a stale shadow', () => {
     const { state, gl } = makeShadowState();
     const scene = createNode3D(Node3DKind);
     const camera = makeShadowCamera();
+
+    drawGlScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
+    expect(getGlScene3DRuntime(state).shadow).toBeNull();
+    expect(getGlScene3DRuntime(state).shadowTarget).toBeNull();
+
     drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const runtime = getGlScene3DRuntime(state);
     const shadow = runtime.shadow;
     const target = runtime.shadowTarget;
     const clearCount = gl.calls.filter((call) => call.name === 'clear').length;
+    expect(shadow!.enabled).toBe(true);
+    expect(clearCount).toBeGreaterThan(0);
 
     drawGlScene3DShadowMap(state, scene, camera, createDirectionalLight({ castsShadow: false }));
 
