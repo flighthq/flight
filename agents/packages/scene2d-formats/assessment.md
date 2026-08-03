@@ -1,10 +1,36 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-02
+updated: 2026-08-03
 basedOn: ./review.md
 ---
 
 # scene2d-formats — Assessment
+
+## Standing, as of 2026-08-03
+
+The Lottie recommendations below all landed, and the cell has since gained a Rive codec. Rive is now
+the **best-verified** of the three purely because it is the only one measured against real files;
+Lottie and SVG have still never seen one, and closing that asymmetry is the highest-value work left
+in this cell.
+
+**Recommended, sweep-safe.** Bind Rive's animated geometry and paint through a format-owned
+mutable-content binder — Lottie already has the pattern, and 145 of 383 Rive clips carry no channels
+without it. Wire a resolved image onto the `Image` drawable that references it, so an image asset
+draws rather than merely arriving. Give SVG the crumb audit Lottie received, since roughly six of its
+crumbs announce our own incompleteness on correct exports. Probe SVG and Lottie for the silent-drop
+class the Rive corpus kept exposing.
+
+**Backlog, parked on something.** The `Scene2DDocument` slot output waits on the slot contract
+chartered in `scene2d-resources`. A real-asset checkpoint for Lottie and SVG waits on the same
+licensing question Rive's corpus raised — now answered as a notice obligation, so it is a decision
+rather than an unknown. Functional render scenes wait on whether a `-formats` cell owns them.
+
+**Routed to the charter's open directions, not here:** where a weighted vector path belongs, whether
+`Node2D` should carry a draw index, whether `@flighthq/BlendMode` should widen, functional-scene
+ownership, and corpus committal. Each is a decision above this codec, and each is measured in
+[coverage](../../scene2d-format-coverage.md).
+
+## The 2026-08-02 Lottie assessment
 
 Scoped to the Lottie codec, per the review. The governing question — is Lottie mature enough to move
 on from — resolves to: **the breadth is there; what is missing is the written record of where it

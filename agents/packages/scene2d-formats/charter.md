@@ -98,12 +98,23 @@ below.
 
 Rive `.riv` is the **richest source** and the primary **modern named-graph (#3)** authoring path —
 absorbed here from the reserved `rive-formats` cell. Format parse only: `.riv` bytes → vector shapes
-(`shape`), deformable meshes + bones/skinning (`skeleton2d` — 2D mesh warp / `MeshAttachment2D`, **not**
-the 3D `mesh`/`skeleton3d`), animations (`animation`), and a `Scene2DDocument` whose slots + linkage
-come from Rive's named + nested artboards. Rive's **state-machine runtime** (inputs driving
+(`shape`), rig deformation (see below), animations (`animation`), and a `Scene2DDocument` whose slots
++ linkage come from Rive's named + nested artboards. Rive's **state-machine runtime** (inputs driving
 transitions) is a *runtime interpretation*, not a parse — it stays a distinct future runtime cell (the
 node/sim split, à la `particles`/`particleemitter`); this codec emits the state-machine *descriptor* as
 data only.
+
+**Rig deformation has no home yet, and this scope originally named the wrong one.** It read
+"deformable meshes + bones/skinning (`skeleton2d` — 2D mesh warp / `MeshAttachment2D`)", which the
+2026-08-03 measurement disproved: Rive skins **vector paths**, not textured meshes. 251 of 263 skins
+in the reference corpus hang off a `PointsPath` against 12 off a `Mesh`, and 1,486 of 1,738 weights
+sit on path vertices against 252 on mesh vertices; only 2 of 64 files hold a mesh at all.
+`MeshAttachment2D` is a Spine triangle mesh with per-vertex UVs, and both are meaningless for a
+weighted bezier path. Rive's bones are also `TransformComponent`s inside the artboard tree, where
+`Skeleton2D` deliberately owns a decoupled flat bone array. What is missing from Flight is a
+**weighted vector path**; where that belongs — `skeleton2d`, `path`, or a new primitive — is an open
+direction below, and the 3D `mesh`/`skeleton3d` remain excluded either way. Details in
+[scene2d format coverage](../../scene2d-format-coverage.md).
 
 ## Decisions
 
@@ -160,3 +171,21 @@ data only.
 5. The named-graph output mode's slot/linkage handshake, shared across the SVG-from-XD and Rive codecs
    and the [`@flighthq/swf`](../swf/charter.md) peer through the one `Scene2DDocument` slot contract
    ([`scene2d-resources`](../scene2d-resources/charter.md)).
+6. **Where a weighted vector path belongs.** Rive's rigging deforms bezier paths by bone influence,
+   which no Flight primitive models — `skeleton2d` carries a Spine triangle mesh instead. Whether this
+   is a `skeleton2d` attachment kind, a `path` capability, or a new primitive is the decision that
+   unblocks Rive rigging, and it would serve any other path-deforming source.
+7. **Whether `Node2D` should carry an explicit draw index.** Rive reorders drawables within a flat
+   artboard draw list and 83 of 96 overrides in the corpus cross a parent boundary, which Flight's
+   child-order z-ordering cannot express without reparenting. A draw index, or a flattened render
+   list, would settle it; the same question would reach any format with a draw list independent of
+   hierarchy.
+8. **Whether `@flighthq/BlendMode` should widen.** It carries six modes against Rive's sixteen, and 93
+   of the 144 non-default blend uses in the corpus have nowhere to land. This also decides the
+   standing `lottie.unsupported-blend-mode` question, since that crumb reports the same shortfall.
+9. **Whether a `-formats` cell owns its functional render scenes.** No codec in this cell has one, so
+   nothing here is verified at the pixel level on any backend — the widest structural hole for a cell
+   whose whole output is visual.
+10. **Whether a third-party corpus may be committed as a fixture.** Rive's reference assets are MIT,
+    which permits redistribution but requires carrying the notice. Until that is decided the corpus is
+    fetched on demand and its runs are reproducible rather than standing in CI.
