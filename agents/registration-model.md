@@ -166,10 +166,14 @@ const usage = createScene3DKindUsage();                  // @flighthq/scene3d
 getScene3DKindUsage(usage, scene);                       // WHAT the document uses — kinds only
 
 if (!hasGlScene3DCoverage(state, usage)) {               // @flighthq/scene3d-gl
-  const gaps: Scene3DCoverageGap[] = [];
-  explainGlScene3DCoverage(gaps, state, usage);          // WHICH kinds, and how badly
+  const manifest: SceneCoverageEntry[] = [];
+  explainGlScene3DCoverage(manifest, state, usage);      // WHICH kinds, and how badly
 }
 ```
+
+The 2D side is the same shape — `getScene2DKindUsage` then `explainGlScene2DCoverage`,
+`explainCanvasScene2DCoverage`, or the shared `explainScene2DCoverage` for a backend with no specifics.
+The resource layer answers for itself with `explainScene3DResourceCoverage`.
 
 **A scene reports what is in it; only the holder of a registry knows whether anything is bound.** So
 `Scene3DKindUsage` carries plain kinds — material, modifier, node, texture-source, and resource MIME
@@ -179,13 +183,71 @@ its own registries, which is why it cannot go stale when a registrar is renamed:
 a table of names.
 
 Two tiers, sharing one implementation so they cannot disagree. `hasGlScene3DCoverage` stops at the first
-shortfall and allocates nothing. `explainGlScene3DCoverage` is the debug-class tier and distinguishes
-`Missing` (nothing resolves; the content does not draw) from `Fallback` (a material with no renderer of its
-own degrades to the standard one — it draws, but not as authored).
+shortfall and allocates nothing. `explainGlScene3DCoverage` is the debug-class tier, and it reports **every**
+requirement — `Satisfied` alongside `Fallback` and `Missing` — so one call is a manifest a caller can render
+as a checklist. Reporting only the gaps would leave "covered" indistinguishable from "never asked about".
+The predicate stays gap-only: a manifest of nothing but `Satisfied` entries still answers `true`.
+
+`Missing` means nothing resolves and the content does not draw. `Fallback` means something resolves but not
+this kind's own implementation, so it draws differently than authored. **Which verdict applies is the
+backend's call, not a shared convention** — a material with no renderer is `Missing` on GL (the node does not
+draw) and `Fallback` on Canvas (a Canvas material only adds draw state over a draw that already happened).
+
+Backends **compose** rather than copy. The node-renderer and shape-command registries live on the base
+`RenderStateRuntime`, so `explainScene2DCoverage` in `@flighthq/render` answers them once for all four 2D
+backends; `explainGlScene2DCoverage` calls it and appends only GL's own blend and material halves. A composed
+`has*` must consult the delegate — that is the one thing this shape can get wrong, so test it.
 
 `nodeKinds` is reported by the scene and deliberately ignored by the GL check: the 3D pipeline collects
 meshes structurally (`geometry != null`), so no 3D node kind is registered against anything. Whether a kind
 needs a renderer is a render-layer rule, so the scene reports and the consumer decides.
+
+### Bags: an array you name is fine, a function that hides one is not
+
+Two shapes look alike and are not:
+
+```ts
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);  // fine
+registerBuiltInGlModifierSnippets(state);                        // not
+```
+
+The first passes an **array the caller names**, whose every member is separately exported, over a vocabulary
+pinned to `keyof ShapeCommandRegistry` — a closed union in `@flighthq/types`. It can only grow by a
+deliberate, reviewed edit to that vocabulary. The second names nothing, offers no per-item path, and grows
+every time someone adds a modifier, so an app written last year silently pays for this year's additions.
+
+So the test is not the plural, and not "does it register several things". It is:
+
+- **Does it grow behind the caller's back**, as a side effect of ordinary feature work? Then it is poison.
+- **Is every member separately exported**, so the bag is a convenience over a door that stays open?
+
+That test also explains why `registerWebImageDecoders` is fine — six MIME keys over one shared
+`decodeImageWithCanvas`, bounded by what one decoder handles — while `registerBuiltInScene3DMaterialTextures`
+was not, and was split into `registerStandardPbrScene3DMaterialTextures` and
+`registerUnlitScene3DMaterialTextures`. An assembly that wires several families should name them in its own
+body, the way `createBuiltInScene3DResourceResolver` does, so the list is in the source a caller reads.
+
+### A registry, or just a function?
+
+Not every kind-keyed family wants a registry:
+
+- **Open family, or the answer is a policy choice** → registry. Which renderer draws a `Shape` is policy
+  (Canvas `arc()`, a GL tessellation, and a DOM path are all correct), so shape *draw* commands are
+  registered per state.
+- **Closed vocabulary and exactly one right answer** → a plain function with an internal switch. "Does this
+  circle contain this point" is the same answer on every backend, so `getShapeFillRegions` switches over the
+  closed command union inside one function — shakeable as a unit, no wiring, and impossible to half-register.
+
+That is why the two halves of `ShapeCommandKey` diverge: draw handlers are a per-backend registry, hit
+testing is a function in `@flighthq/shape` feeding `containsPathPoint` in `@flighthq/path`. A per-command
+hit-test *registry* used to exist alongside it and was deleted — it had no consumers and a strictly weaker
+contract than the function that replaced it.
+
+Registries also need an owner, and the owner is not always a render state. Where the path already threads
+one, use it (`RenderStateRuntime.canvasShapeCommandRegistry`). Where it does not — hit testing works with no
+renderer at all — use a caller-owned bag, as `ModifierRegistry`, `MarkupTagRegistry`, and
+`Scene3DMaterialTextureRegistry` do. **Never a module global**: it cannot be introspected, cannot be
+isolated between states, and makes "wired" indistinguishable from "wired by someone else's test".
 
 ## 5. The capability matrix
 
