@@ -137,12 +137,69 @@ graph. In practice, limb-swap rules keep their targets under a common ancestor.
 [skeleton2d animation model](skeleton2d-animation-model.md) deliberately leaves open binds here: a
 draw-order channel samples to slot keys and applies one list.
 
-## The open question for the ruling
+## Apply owns order, never membership
 
-**Does `applyNodeOrderList` own membership, or only order?**
+Ruled by the user, 2026-08-03. `applyNodeOrderList` reorders children that are already attached and
+ignores list entries that are not. It never attaches and never detaches, so the primitive does exactly
+one thing and is never destructive. SWF spells its attach and detach passes itself.
 
-Recommendation: **only order.** It reorders children that are already attached and ignores list
-entries that are not, so the primitive does exactly one thing and is never destructive. SWF then
-spells attach and detach itself, which is three explicit passes instead of one implicit one. The
-alternative — apply attaches list members and detaches absent children — collapses SWF's frame
-construct to a single call, at the cost of a primitive that silently removes nodes.
+### The rule: a slot-preserving permutation
+
+The list permutes its members among **the slots they already occupy**. Nothing else moves.
+
+```
+applyNodeOrderList(parent, list):
+  1. one pass over parent's children, recording the index of each child that is a
+     member of the list — that ascending index sequence is the slots
+  2. sort the members that were found, by key (stable; ties by insertion order)
+  3. write them back into those same slots, in sorted order
+```
+
+Foreign children never move, not by one index. Members not attached to `parent` — including members
+attached to a *different* parent — are ignored. `childrenId` is bumped once if anything moved, not per
+move.
+
+One rule covers every edge case with no special case:
+
+- Some members removed by the caller → the slot set is smaller; the survivors still sort correctly
+  relative to each other.
+- **All** members removed → the slot set is empty and apply is a no-op. Nothing resurrects, nothing
+  throws.
+- A foreign child added in the middle → it stays where the caller put it; members sort around it.
+- A member manually moved with `setNodeChildIndex` → the next apply puts it back, because the list is
+  the statement of record *for its own members*. Scoped to members, so it cannot stomp anything the
+  caller did not hand it.
+- Applied twice → idempotent by construction.
+
+Cost is one pass over the children plus a sort of the member subset: `O(n + m log m)`.
+
+Per the diagnostics rule, the ignored-entry case is a silent sentinel and gets a shakeable
+`explainNodeOrderList(parent, list)` returning plain data — which entries were not children of this
+parent — rather than a warning in the hot path, since a persistent list legitimately carries off-frame
+members.
+
+### The boundary: contiguity is not promised
+
+Slot preservation means a foreign child sitting between two members stays between them; no key value
+moves a member past it. That is correct — we promised not to move foreign children — but it is the
+edge of what the list offers. **Parenting gives contiguity; the list gives relative order within it.**
+A caller who wants an ordered group to draw as one block puts it under its own container.
+
+A free consequence: two independent lists can share one parent (a SWF timeline list and a skeleton2d
+slot list) with no key-space convention, because each permutes only its own slots.
+
+## What Flash did, and why we are not doing it
+
+Worth recording, because both Flash answers are the ones this rule replaces.
+
+**AVM1 partitioned the key space.** Depths ran −16384 to 1048575: −16383..−1 reserved for author-time
+timeline content, ≥0 for script content via `attachMovie` / `createEmptyMovieClip`, and −16384 the
+single slot for dynamic content beneath everything. Timeline and script never collided because they
+were handed disjoint ranges by convention. The slot rule gets that coexistence structurally instead,
+because "my members" is a real set rather than a range agreement.
+
+**AVM2 hid depth and did not solve it.** `DisplayObjectContainer` became dense indices with the sparse
+timeline list kept private, which produced the well-known defect: returning to a keyframe makes the
+timeline re-assert its placement, so a script-moved instance is both where the script put it and
+re-added by the timeline. Adobe's guidance was to not mix the two. Our re-assert is bounded to list
+members, which is what keeps it from becoming that bug.
