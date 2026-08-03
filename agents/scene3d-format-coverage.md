@@ -168,6 +168,8 @@ verified against the reference implementation's field order rather than against 
 
 Both are essentially complete against what `Scene3DDocument` models. MD2 imports frame-based vertex
 animation as a `MeshMorph` plus the weights clip that drives it, and its skins as materials. MD5 imports
-the mesh, skeleton, skinning, and animation, with each section's `shader` becoming a material.
+the mesh, skeleton, skinning, and animation, with each section's `shader` becoming a material. Because
+MD5 carries neither normals nor tangents, Flight derives both in bind pose; mirrored UV handedness
+duplicates the complete skinned vertex record before bind-pose capture, preserving joint influences.
 
 MD5's `bounds { }` block is skipped deliberately — it is derived data recomputable from the geometry.

@@ -79,6 +79,34 @@ const SINGLE_TRIANGLE = [
   '}',
 ].join('\n');
 
+// Two triangles sharing an edge with opposite UV determinants. The imported skinned geometry must
+// duplicate both shared records so each triangle owns one coherent tangent handedness.
+const MIRRORED_UV_TRIANGLES = [
+  'MD5Version 10',
+  'commandline ""',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/mirrored"',
+  '  numverts 4',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  vert 3 ( 1.0 0.0 ) 3 1',
+  '  numtris 2',
+  '  tri 0 0 1 2',
+  '  tri 1 0 2 3',
+  '  numweights 4',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 1 0 )',
+  '  weight 3 0 1.0 ( -1 0 0 )',
+  '}',
+].join('\n');
+
 // MD5 mesh with two joints forming a parent-child hierarchy.
 const MULTI_JOINT_HIERARCHY = [
   'MD5Version 10',
@@ -270,6 +298,48 @@ describe('createScene3DFromMd5Mesh', () => {
     expect(nx).toBeCloseTo(0);
     expect(ny).toBeCloseTo(-1);
     expect(nz).toBeCloseTo(0);
+  });
+
+  it('generates unit tangents and handedness for the tangent-less MD5 mesh', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+
+    for (let vertex = 0; vertex < 3; vertex++) {
+      const base = vertex * floatsPerVertex;
+      const tx = geometry.vertices[base + 6];
+      const ty = geometry.vertices[base + 7];
+      const tz = geometry.vertices[base + 8];
+      expect(Math.hypot(tx, ty, tz)).toBeCloseTo(1);
+      expect(Math.abs(geometry.vertices[base + 9])).toBe(1);
+    }
+    // One triangle must use one coherent tangent orientation. A zero or mixed W makes its tangent
+    // space undefined and is the importer defect that normalScale previously hid downstream.
+    const indices = geometry.indices!;
+    const sign = geometry.vertices[indices[0] * floatsPerVertex + 9];
+    expect(geometry.vertices[indices[1] * floatsPerVertex + 9]).toBe(sign);
+    expect(geometry.vertices[indices[2] * floatsPerVertex + 9]).toBe(sign);
+  });
+
+  it('splits complete skinned records across a mirrored MD5 UV boundary', () => {
+    const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const indices = geometry.indices!;
+
+    expect(getMeshGeometryVertexCount(geometry)).toBe(6);
+    const firstSign = geometry.vertices[indices[0] * floatsPerVertex + 9];
+    const secondSign = geometry.vertices[indices[3] * floatsPerVertex + 9];
+    expect(firstSign).toBe(-secondSign);
+    for (let corner = 0; corner < 3; corner++) {
+      expect(geometry.vertices[indices[corner] * floatsPerVertex + 9]).toBe(firstSign);
+      expect(geometry.vertices[indices[corner + 3] * floatsPerVertex + 9]).toBe(secondSign);
+    }
+    // Every original and split vertex remains fully influenced by root; topology repair must not
+    // detach the mirrored side from skeletal animation.
+    for (let vertex = 0; vertex < 6; vertex++) {
+      expect(geometry.vertices[vertex * floatsPerVertex + 16]).toBe(1);
+    }
   });
 
   it('reverses MD5 triangle winding to Flight CCW-front (front faces stay front under culling)', () => {
