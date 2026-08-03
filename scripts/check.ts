@@ -1,4 +1,5 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
@@ -23,42 +24,66 @@ const scoped = selectors.length > 0;
 const paths = resolvePaths(selectors);
 const projects = selectPackages(selectors).map((name) => `packages/${name}`);
 
-const failed: string[] = [];
-
-function run(label: string, command: string, args: readonly string[]): void {
-  process.stdout.write(`\n▶ ${label}\n`);
-  const result = spawnSync(command, args, { stdio: 'inherit' });
-  if (result.status !== 0) {
-    process.stderr.write(`${pc.red('✗')} ${label} failed\n`);
-    failed.push(label);
-  }
+interface Gate {
+  args: readonly string[];
+  command: string;
+  label: string;
 }
 
-if (!scoped) run('packages:check', 'tsx', ['scripts/packages.ts']);
+interface GateResult extends Gate {
+  output: string;
+  passed: boolean;
+}
+
+const gates: Gate[] = [];
+const add = (label: string, command: string, args: readonly string[]): void => {
+  gates.push({ args, command, label });
+};
+
+if (!scoped) add('packages:check', 'tsx', ['scripts/packages.ts']);
 
 // Whole-repo typecheck includes SDK source plus the separately-configured functional and tooling trees.
 // Scoped checks build just the selected projects' dependency cone (`tsc -b <project…>`) — `--noEmit`
 // can't combine with building composite dependencies (TS6310), and the emitted .d.ts/.tsbuildinfo are
 // gitignored incremental artifacts.
 if (scoped) {
-  run('typecheck', 'tsc', ['-b', ...projects]);
+  add('typecheck', 'tsc', ['-b', ...projects]);
 } else {
-  run('typecheck', 'tsx', ['scripts/typecheck.ts']);
+  add('typecheck', 'tsx', ['scripts/typecheck.ts']);
 }
-run('lint', 'oxlint', scoped ? ['--max-warnings=0', ...paths] : ['--max-warnings=0']);
-run('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
-run('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
-run('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
-run('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selectors]);
-run('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
-run('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
-run('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
-run('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
+add('lint', 'oxlint', scoped ? ['--max-warnings=0', ...paths] : ['--max-warnings=0']);
+add('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
+add('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
+add('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
+add('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selectors]);
+add('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
+add('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
+add('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
+add('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 
 if (!scoped) {
-  run('api:check', 'tsx', ['scripts/api.ts', '--check']);
-  run('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
-  run('support:check', 'tsx', ['scripts/support.ts', '--check']);
+  add('api:check', 'tsx', ['scripts/api.ts', '--check']);
+  add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
+  add('support:check', 'tsx', ['scripts/support.ts', '--check']);
+}
+
+// Gates are independent and still all run, but a small worker pool overlaps their repeated repository
+// walks and native tooling. Output is buffered per gate and replayed in canonical order so concurrency
+// never turns diagnostics into an interleaved log. Override the bounded default when profiling a host.
+const configuredConcurrency = Number.parseInt(process.env.FLIGHT_CHECK_CONCURRENCY ?? '', 10);
+const concurrency = Number.isFinite(configuredConcurrency)
+  ? Math.max(1, configuredConcurrency)
+  : Math.max(1, Math.min(2, availableParallelism()));
+const results = await runGates(gates, concurrency);
+const failed: string[] = [];
+
+for (const result of results) {
+  process.stdout.write(`\n▶ ${result.label}\n`);
+  process.stdout.write(result.output);
+  if (!result.passed) {
+    process.stderr.write(`${pc.red('✗')} ${result.label} failed\n`);
+    failed.push(result.label);
+  }
 }
 
 // The summary is the point of running everything: one place that says which gates are red, so a reader
@@ -70,3 +95,30 @@ if (failed.length > 0) {
 }
 
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
+
+async function runGate(gate: Gate): Promise<GateResult> {
+  return await new Promise((resolve) => {
+    const child = spawn(gate.command, gate.args, { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const chunks: string[] = [];
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
+    child.on('error', (error) => chunks.push(`${error.message}\n`));
+    child.on('close', (code) => resolve({ ...gate, output: chunks.join(''), passed: code === 0 }));
+  });
+}
+
+async function runGates(items: readonly Gate[], limit: number): Promise<GateResult[]> {
+  const results = new Array<GateResult>(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      for (;;) {
+        const index = next++;
+        const gate = items[index];
+        if (gate === undefined) return;
+        results[index] = await runGate(gate);
+      }
+    }),
+  );
+  return results;
+}

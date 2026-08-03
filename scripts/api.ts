@@ -7,6 +7,7 @@ import type { FunctionDeclaration } from 'ts-morph';
 import { Node, Project } from 'ts-morph';
 
 import { collectEntryPointInventory } from './export-inventory';
+import { collectFastEntryPointInventory } from './fast-export-inventory';
 import { matchesPackageName } from './select';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -149,6 +150,42 @@ function collectApi(project: Project, packages: readonly PackageInfo[]): ApiPack
     if (pkg.contractPath !== null) project.addSourceFileAtPath(pkg.contractPath);
   }
   return packages.map((pkg) => collectPackageApi(project, pkg));
+}
+
+function collectFastCheckApi(packages: readonly PackageInfo[]): ApiPackage[] | null {
+  const result: ApiPackage[] = [];
+  for (const pkg of packages) {
+    const publicFunctions = collectFastBarrelFunctions(pkg.indexPath);
+    if (publicFunctions === null) return null;
+    const publicNames = new Set(publicFunctions.map((fn) => fn.name));
+    const contractFunctions = pkg.contractPath === null ? [] : collectFastBarrelFunctions(pkg.contractPath);
+    if (contractFunctions === null) return null;
+    result.push({
+      name: pkg.name,
+      description: pkg.description,
+      functions: publicFunctions,
+      contractOnlyFunctions: contractFunctions.filter((fn) => !publicNames.has(fn.name)),
+    });
+  }
+  return result;
+}
+
+function collectFastBarrelFunctions(barrelPath: string): ApiFunction[] | null {
+  const functions: ApiFunction[] = [];
+  for (const [name, declarations] of collectFastEntryPointInventory(barrelPath).functions) {
+    const returnTypes = [...new Set(declarations.map((declaration) => declaration.returnType))];
+    // The fast check needs return types only for boolean-shaped accessor names. Keep the interactive
+    // API's semantic path as a fallback if a future accessor intentionally relies on inferred typing.
+    if (/^(?:get|is|has)[A-Z0-9]/.test(name) && returnTypes.includes(null)) return null;
+    functions.push({
+      name,
+      signatures: declarations.flatMap((declaration) =>
+        declaration.returnType === null ? [] : [`${name}(${declaration.parameters}): ${declaration.returnType}`],
+      ),
+      source: relative(root, declarations[0]!.sourcePath).replaceAll('\\', '/'),
+    });
+  }
+  return functions.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function collectPackageApi(project: Project, pkg: PackageInfo): ApiPackage {
@@ -654,16 +691,20 @@ if (options.help) {
   process.exit(0);
 }
 
+const checkPackages = options.check ? topoSort(findPackages()) : null;
+if (checkPackages !== null) {
+  // The check gates the whole tree: filters are ignored so a filtered
+  // invocation can never green-light a duplicate hiding elsewhere.
+  const fastApi = collectFastCheckApi(checkPackages);
+  if (fastApi !== null) runApiCheck(fastApi);
+}
+
 const project = new Project({
   tsConfigFilePath: join(root, 'tsconfig.base.json'),
   skipAddingFilesFromTsConfig: true,
 });
 
-if (options.check) {
-  // The check gates the whole tree: filters are ignored so a filtered
-  // invocation can never green-light a duplicate hiding elsewhere.
-  runApiCheck(collectApi(project, topoSort(findPackages())));
-}
+if (checkPackages !== null) runApiCheck(collectApi(project, checkPackages));
 
 const api = filterApi(collectApi(project, topoSort(findPackages())), options).sort((a, b) =>
   a.name.localeCompare(b.name),

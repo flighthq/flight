@@ -5,6 +5,7 @@ import type { Expression, ModuleExportName, Statement, VariableDeclaration } fro
 // not TypeScript's type graph. Keeping that distinction here avoids constructing a compiler project
 // and resolving the monorepo once for every source file in the coverage sweep.
 export function getFunctionExports(filePath: string, sourceText: string): string[] {
+  if (!sourceText.includes('export') || (!sourceText.includes('function') && !sourceText.includes('=>'))) return [];
   const { errors, program } = parseSync(filePath, sourceText, { lang: 'ts', sourceType: 'module' });
   if (errors.length > 0) throw new Error(`Could not parse ${filePath}: ${errors[0]?.message ?? 'unknown parse error'}`);
 

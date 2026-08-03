@@ -84,6 +84,7 @@ let allowed = 0;
 for (const path of getSourceFiles()) {
   const rel = relative(root, path).replaceAll('\\', '/');
   const text = readFileSync(path, 'utf-8');
+  if (!mightContainEscape(text)) continue;
   const { program } = parseSync(path, text, {
     sourceType: 'module',
     lang: path.endsWith('.tsx') ? 'tsx' : 'ts',
@@ -125,6 +126,13 @@ console.log(
   `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/portable.ts with a reason. See agents/portability.md.')}`,
 );
 process.exit(checkMode ? 1 : 0);
+
+// Parsing is retained as the authority, but most source files cannot possibly contain one of the
+// seven named escapes. This conservative token screen avoids materializing thousands of irrelevant
+// ASTs while comments and strings in the smaller candidate set remain false-positive safe.
+function mightContainEscape(text: string): boolean {
+  return /\b(?:eval|Function|Proxy|Reflect|structuredClone|with)\b|\.prototype\b/.test(text);
+}
 
 // The lowerable-subset escapes, by AST node. Unwraps TS cast/paren wrappers so `(x.prototype as T).y = …`
 // and `(eval as F)(…)` are still caught.
