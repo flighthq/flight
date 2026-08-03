@@ -19,9 +19,16 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
 // cloned, never aliased: derived states start with a snapshot and diverge until an explicit re-copy.
 export function copyRenderStateRegistrations(target: RenderState, source: RenderState): void {
   const targetRuntime = getRenderStateRuntime(target);
-  const sourceRegistry = getRenderStateRuntime(source).renderEffectPaddingResolverRegistry;
+  const sourceRuntime = getRenderStateRuntime(source);
+  const sourcePaddingRegistry = sourceRuntime.renderEffectPaddingResolverRegistry;
   targetRuntime.renderEffectPaddingResolverRegistry =
-    sourceRegistry === null || sourceRegistry === undefined ? null : new Map(sourceRegistry);
+    sourcePaddingRegistry === null || sourcePaddingRegistry === undefined ? null : new Map(sourcePaddingRegistry);
+  // The shape-command set is a base-runtime registry every backend replays through, so a pipeline
+  // that inherits the renderers must inherit the commands too. Without it an offscreen state resolves
+  // no handler for any command in a shape's stream and bakes an empty target.
+  const sourceShapeCommands = sourceRuntime.canvasShapeCommandRegistry;
+  targetRuntime.canvasShapeCommandRegistry =
+    sourceShapeCommands === null || sourceShapeCommands === undefined ? null : new Map(sourceShapeCommands);
 }
 
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
