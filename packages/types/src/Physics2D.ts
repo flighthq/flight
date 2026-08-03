@@ -284,6 +284,9 @@ export interface Physics2DWorld {
   // Joint solvers by kind, scoped to the world rather than module-global, so two worlds in one process
   // can register different custom joints without one seeing the other's.
   jointSolvers: Map<Physics2DJointKind, Physics2DJointSolver>;
+  // Active two-body joints with `collideConnected=false`, indexed by canonical body pair. The nested
+  // value is a reference count so removing one of several suppressing joints cannot re-enable the pair.
+  jointCollisionSuppressions: Map<number, Map<number, number>>;
   // This step's contact transitions, refilled by each step. A per-step output buffer, not a second
   // record of contact state: the persistent cache already knows which pairs are touching, and these are
   // read off the moments it gains and loses entries.
