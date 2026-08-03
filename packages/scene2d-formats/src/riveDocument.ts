@@ -29,6 +29,17 @@ export function parseRiveDocument(source: Readonly<Uint8Array>, diagnostics?: Im
     return null;
   }
 
+  // A different generation of the format numbers its properties differently, so reading one with
+  // this reader would not fail loudly — it would produce a confident, wrong document. Refusing is
+  // the honest outcome, and re-exporting is the caller's next action.
+  if (header.majorVersion !== RIVE_SUPPORTED_MAJOR_VERSION) {
+    reportRiveReject(diagnostics, 'rive.unsupported-version', {
+      major: header.majorVersion,
+      supported: RIVE_SUPPORTED_MAJOR_VERSION,
+    });
+    return null;
+  }
+
   const fieldTypes = new Map<number, number>();
   for (const entry of header.tableOfContents) fieldTypes.set(entry.key, entry.type);
 
@@ -223,6 +234,8 @@ function reportRiveReject(
 }
 
 const RIVE_FINGERPRINT = [0x52, 0x49, 0x56, 0x45];
+// Every file in the reference corpus states major version 7; no other generation has been read.
+const RIVE_SUPPORTED_MAJOR_VERSION = 7;
 const FIELD_TYPE_BITS_PER_WORD = 8;
 const _floatView = new DataView(new ArrayBuffer(4));
 const _floatBytes = new Uint8Array(_floatView.buffer);

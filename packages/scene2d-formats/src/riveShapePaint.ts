@@ -1,4 +1,5 @@
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
+import { createPath, dashPath, getPathLength } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -10,6 +11,7 @@ import {
 import type {
   CapsStyle,
   JointStyle,
+  Path,
   PathWinding,
   RiveArtboardGraph,
   RiveCoreObject,
@@ -47,7 +49,7 @@ export function appendRiveShapePaint(
       continue;
     }
     appendRiveStrokeStyle(shape, paint);
-    appendRivePaths(shape, paths, null);
+    appendRivePaths(shape, paint.trim === null ? paths : trimRivePaths(paths, paint.trim), null);
   }
 }
 
@@ -107,13 +109,120 @@ interface RiveGradientPaint {
   startY: number;
 }
 
+interface RiveTrim {
+  end: number;
+  offset: number;
+  /** Sequential treats the shape's paths as one continuous run; synchronized trims each alike. */
+  sequential: boolean;
+  start: number;
+}
+
 interface RivePaint {
   alpha: number;
   color: number;
   fillRule: PathWinding;
   gradient: RiveGradientPaint | null;
   stroke: { caps: CapsStyle; joints: JointStyle; thickness: number } | null;
+  trim: RiveTrim | null;
   visible: boolean;
+}
+
+/**
+ * Trims a stroke's paths to the span its trim states, as fractions of length.
+ *
+ * The two modes differ in what the fractions measure. Synchronized measures each path against its
+ * own length, so every path keeps the same proportion. Sequential measures against the paths' total
+ * length as if they were one continuous run, so the visible span can start inside one path and end
+ * inside another — which is why the sequential branch tracks a cumulative offset rather than
+ * treating each path alone.
+ */
+function trimRivePaths(paths: readonly RivePathRecord[], trim: Readonly<RiveTrim>): RivePathRecord[] {
+  const visible = toRiveVisibleFraction(trim);
+  if (visible >= 1) return [...paths];
+  if (visible <= 0) return [];
+
+  // The visible span as one or two windows over 0..1. A span that runs off the end wraps to the
+  // front, which is how a trim animates continuously around a closed shape.
+  const begin = (((trim.start + trim.offset) % 1) + 1) % 1;
+  const windows: Array<readonly [number, number]> =
+    begin + visible <= 1
+      ? [[begin, begin + visible]]
+      : [
+          [begin, 1],
+          [0, begin + visible - 1],
+        ];
+
+  if (!trim.sequential) {
+    // Each path is measured against its own length, so every path sees the same windows.
+    return paths.flatMap((path) => trimRivePathToWindows(path, 0, 1, windows));
+  }
+
+  const lengths = paths.map((path) => getPathLength(toRivePath(path)));
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  if (total <= 0) return [];
+  const results: RivePathRecord[] = [];
+  let travelled = 0;
+  for (let index = 0; index < paths.length; index++) {
+    const from = travelled / total;
+    travelled += lengths[index];
+    results.push(...trimRivePathToWindows(paths[index], from, travelled / total, windows));
+  }
+  return results;
+}
+
+// Emits the parts of one path that fall inside the windows, with the path occupying [from, to] of
+// whatever space those windows are measured in.
+function trimRivePathToWindows(
+  record: RivePathRecord,
+  from: number,
+  to: number,
+  windows: ReadonlyArray<readonly [number, number]>,
+): RivePathRecord[] {
+  const span = to - from;
+  if (span <= 0) return [];
+  const path = toRivePath(record);
+  const length = getPathLength(path);
+  if (length <= 0) return [];
+
+  const results: RivePathRecord[] = [];
+  for (const [windowStart, windowEnd] of windows) {
+    const start = Math.max(0, (windowStart - from) / span);
+    const end = Math.min(1, (windowEnd - from) / span);
+    if (end <= start) continue;
+    const trimmed = createPath(record.winding);
+    dashPath(path, [(end - start) * length, (1 - (end - start)) * length], start * length, trimmed);
+    results.push({ commands: trimmed.commands.slice(), data: trimmed.data.slice(), winding: trimmed.winding });
+  }
+  return results;
+}
+
+function toRiveVisibleFraction(trim: Readonly<RiveTrim>): number {
+  const span = trim.end - trim.start;
+  if (Math.abs(span) >= 1) return 1;
+  return ((span % 1) + 1) % 1;
+}
+
+function toRivePath(record: RivePathRecord): Path {
+  const path = createPath(record.winding);
+  for (const command of record.commands) path.commands.push(command);
+  for (const value of record.data) path.data.push(value);
+  return path;
+}
+
+// A trim belongs to the stroke it is a child of, not to the shape.
+function readRiveTrim(artboard: Readonly<RiveArtboardGraph>, paintIndex: number): RiveTrim | null {
+  for (let index = paintIndex + 1; index < artboard.objects.length; index++) {
+    if (artboard.parentIndices[index] !== paintIndex) continue;
+    const object = artboard.objects[index];
+    if (object.typeKey !== RIVE_TRIM_PATH) continue;
+    return {
+      end: readRiveNumber(object, RIVE_TRIM_END, 0),
+      offset: readRiveNumber(object, RIVE_TRIM_OFFSET, 0),
+      sequential: readRiveNumber(object, RIVE_TRIM_MODE, 0) === RIVE_TRIM_SEQUENTIAL,
+      start: readRiveNumber(object, RIVE_TRIM_START, 0),
+    };
+  }
+  return null;
 }
 
 function collectRivePaints(artboard: Readonly<RiveArtboardGraph>, shapeIndex: number): RivePaint[] {
@@ -146,6 +255,7 @@ function createRivePaint(
     fillRule: readRiveNumber(source, RIVE_FILL_RULE, 0) === 1 ? 'evenOdd' : 'nonZero',
     gradient: null,
     stroke,
+    trim: stroke === null ? null : readRiveTrim(artboard, index),
     visible: readRiveFlag(source, RIVE_PAINT_IS_VISIBLE, true),
   };
   applyRivePaintMutator(paint, artboard, index);
@@ -239,6 +349,7 @@ const RIVE_GRADIENT_STOP = 19;
 const RIVE_SHAPE_PAINT = 21;
 const RIVE_LINEAR_GRADIENT = 22;
 const RIVE_STROKE = 24;
+const RIVE_TRIM_PATH = 47;
 
 const RIVE_GRADIENT_STOP_COLOR = 38;
 const RIVE_GRADIENT_STOP_POSITION = 39;
@@ -253,6 +364,11 @@ const RIVE_GRADIENT_OPACITY = 46;
 const RIVE_STROKE_THICKNESS = 47;
 const RIVE_STROKE_CAP = 48;
 const RIVE_STROKE_JOIN = 49;
+const RIVE_TRIM_START = 114;
+const RIVE_TRIM_END = 115;
+const RIVE_TRIM_OFFSET = 116;
+const RIVE_TRIM_MODE = 117;
+const RIVE_TRIM_SEQUENTIAL = 1;
 
 // Rive's own stated defaults, which a file relies on by omitting the property.
 const RIVE_DEFAULT_SOLID_COLOR = 0xff747474;
