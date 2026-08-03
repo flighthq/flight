@@ -61,11 +61,11 @@ export function render(
   lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
+  prepareScene3DRender(state, scene, camera, lights);
   beginWgpuFrame(state);
-  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  prepareScene3DRender(state, scene, camera, lights);
   drawWgpuScene3D(state, scene, camera, lights);
   endWgpuRenderEffectPipeline(state, pipeline, []);
   submitWgpuRenderPass(state);

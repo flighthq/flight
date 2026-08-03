@@ -63,8 +63,9 @@ export function render(
   lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
+  prepareScene3DRender(state, scene, camera, lights);
   // 1) Depth pass: render the scene from the light's POV into the shadow map (off the scene target).
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   // 2) Forward-lit pass into the effect pipeline's rgba16f + depth target; the lit shaders PCF-sample
   // the shadow map set above. Clear depth to the far plane so the LESS depth test occludes correctly.
@@ -74,7 +75,6 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }

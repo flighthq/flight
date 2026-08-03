@@ -7,11 +7,16 @@ import {
 import { createAabb, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import {
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  createBoxMeshGeometry,
+  createMeshGeometry,
+} from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, Scene3DLightsLike, Node3D } from '@flighthq/types/contract';
+import type { Camera3D, Scene3DLightsLike, Node3D, Skeleton3D } from '@flighthq/types/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
 
 import { drawWgpuScene3D } from './drawWgpuScene3D';
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
@@ -22,6 +27,7 @@ import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { destroyWgpuScene3DShadow, drawWgpuScene3DShadowMap } from './wgpuShadowMap';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 
 const LIGHTS: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
@@ -95,6 +101,19 @@ describe('drawWgpuScene3DShadowMap', () => {
     ).toBe(false);
   });
 
+  it('treats an absent directional light as disabled and invalidates a retained shadow', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = makeShadowScene3D();
+    const camera = makeShadowCamera();
+    drawWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    const passCount = fake.calls.filter((call) => call.name === 'beginRenderPass').length;
+
+    drawWgpuScene3DShadowMap(state, scene, camera, null);
+
+    expect(getWgpuScene3DRuntime(state).shadow!.enabled).toBe(false);
+    expect(fake.calls.filter((call) => call.name === 'beginRenderPass')).toHaveLength(passCount);
+  });
+
   it('creates a sampleable depth32float shadow map and stores it on the runtime', () => {
     const { fake, state } = makeWgpuScene3DState();
     drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
@@ -125,7 +144,13 @@ describe('drawWgpuScene3DShadowMap', () => {
     expect(getWgpuScene3DRuntime(state).shadow).toEqual(
       expect.objectContaining({
         enabled: true,
-        normalBiasWorld: 0.02 * getOrthographicProjectionTexelSize(camera.projection, 1024, 1024),
+        normalBiasWorld:
+          0.02 *
+          getOrthographicProjectionTexelSize(
+            camera.projection,
+            DIRECTIONAL_SHADOW_MAP_SIZE,
+            DIRECTIONAL_SHADOW_MAP_SIZE,
+          ),
         pcfRadius: 2,
         shadowBias: 0.01,
       }),
@@ -197,6 +222,37 @@ describe('drawWgpuScene3DShadowMap', () => {
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'end')).toBe(true);
+  });
+
+  it('draws a GPU-skinned caster through a palette-backed depth variant', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    registerWgpuGpuSkinning(state);
+    const scene = createNode3D(Node3DKind);
+    const mesh = createMesh(
+      createMeshGeometry({
+        indices: new Uint16Array([0, 0, 0]),
+        layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+        vertices: new Float32Array(20),
+      }),
+      [],
+    );
+    mesh.skin = { skeleton: { jointMatrices: new Float32Array(16) } as Skeleton3D };
+    addNodeChild(scene, mesh);
+
+    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    const shaderCalls = fake.calls.filter((call) => call.name === 'createShaderModule');
+    const skinnedSource = shaderCalls
+      .map((call) => String((call.args[0] as { code: string }).code))
+      .find((code) => code.includes('jointTexture'));
+    expect(skinnedSource).toContain('skinMatrix(joints0, weights0)');
+    expect(getWgpuScene3DRuntime(state).shadowDepthSkinnedPipeline).not.toBeNull();
+    expect(
+      fake.calls.some(
+        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'rgba32float',
+      ),
+    ).toBe(true);
+    expect(fake.calls.some((call) => call.name === 'setBindGroup' && call.args[0] === 0)).toBe(true);
   });
 
   it('compiles a vertex-only depth module with the GL->WebGPU depth remap', () => {

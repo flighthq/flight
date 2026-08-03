@@ -12,7 +12,7 @@ import type {
   Node3DTraits,
   GlMeshProgram,
 } from '@flighthq/types/contract';
-import { MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
 import {
   compileGlProgram,
@@ -37,28 +37,27 @@ export function drawGlScene3DShadowMap(
   state: GlRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
-  directionalLight: Readonly<DirectionalLight>,
+  directionalLight: Readonly<DirectionalLight> | null,
 ): void {
   const gl = state.gl;
   const runtime = getGlScene3DRuntime(state);
   const previousShadow = runtime.shadow;
   if (previousShadow !== null) previousShadow.enabled = false;
-  if (!directionalLight.castsShadow) return;
+  if (directionalLight === null || !directionalLight.castsShadow) return;
   if (shadowCamera.projection.kind !== 'orthographic') {
     throw new Error('drawGlScene3DShadowMap requires an orthographic shadow camera');
   }
-  const normalBiasWorld =
-    directionalLight.normalBias *
-    getOrthographicProjectionTexelSize(shadowCamera.projection, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-
   if (runtime.shadowTarget === null) {
     runtime.shadowTarget = createGlRenderTarget(state, {
       depth: 'depth-stencil-sampled',
-      height: SHADOW_MAP_SIZE,
-      width: SHADOW_MAP_SIZE,
+      height: DIRECTIONAL_SHADOW_MAP_SIZE,
+      width: DIRECTIONAL_SHADOW_MAP_SIZE,
     });
   }
   const target = runtime.shadowTarget;
+  const normalBiasWorld =
+    directionalLight.normalBias *
+    getOrthographicProjectionTexelSize(shadowCamera.projection, target.width, target.height);
   const matrix = previousShadow?.matrix ?? createMatrix4();
   getCamera3DViewProjectionMatrix4(matrix, shadowCamera, 1);
 
@@ -174,8 +173,6 @@ function compileShadowDepthSkinnedProgram(gl: WebGL2RenderingContext): GlMeshPro
     program,
   };
 }
-
-const SHADOW_MAP_SIZE = 1024;
 
 const SHADOW_DEPTH_VERTEX = `#version 300 es
 layout(location = 0) in vec3 a_position;

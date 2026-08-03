@@ -110,24 +110,7 @@ function extendMeshPrelude(rigidPrelude: string): string {
     .replace(
       '@group(1) @binding(0) var<uniform> draw : Draw;',
       `@group(1) @binding(0) var<uniform> draw : Draw;
-@group(1) @binding(1) var jointTexture : texture_2d<f32>;
-
-fn fetchJointMatrix(joint : u32) -> mat4x4f {
-  let x = i32(joint * 4u);
-  return mat4x4f(
-    textureLoad(jointTexture, vec2i(x, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 1, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 2, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 3, 0), 0)
-  );
-}
-
-fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {
-  return weights.x * fetchJointMatrix(u32(joints.x))
-       + weights.y * fetchJointMatrix(u32(joints.y))
-       + weights.z * fetchJointMatrix(u32(joints.z))
-       + weights.w * fetchJointMatrix(u32(joints.w));
-}`,
+${getWgpuSkinBindingWgsl(1)}`,
     )
     .replace(
       '  @location(3) uv : vec2f,\n) -> VertexOutput {',
@@ -145,6 +128,48 @@ fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {
   localTangent = (skin * vec4f(localTangent, 0.0)).xyz;
   let world = draw.world * localPosition;`,
     );
+}
+
+function extendShadowDepthPrelude(rigidPrelude: string): string {
+  return rigidPrelude
+    .replace(
+      '@group(0) @binding(0) var<uniform> draw : Draw;',
+      `@group(0) @binding(0) var<uniform> draw : Draw;
+${getWgpuSkinBindingWgsl(0)}`,
+    )
+    .replace(
+      '@vertex fn vs_main(@location(0) position : vec3f) -> @builtin(position) vec4f {',
+      `@vertex fn vs_main(
+  @location(0) position : vec3f,
+  @location(4) joints0 : vec4f,
+  @location(5) weights0 : vec4f,
+) -> @builtin(position) vec4f {`,
+    )
+    .replace(
+      '  var clip = draw.world * vec4f(position, 1.0);',
+      '  var clip = draw.world * skinMatrix(joints0, weights0) * vec4f(position, 1.0);',
+    );
+}
+
+function getWgpuSkinBindingWgsl(group: number): string {
+  return `@group(${group}) @binding(1) var jointTexture : texture_2d<f32>;
+
+fn fetchJointMatrix(joint : u32) -> mat4x4f {
+  let x = i32(joint * 4u);
+  return mat4x4f(
+    textureLoad(jointTexture, vec2i(x, 0), 0),
+    textureLoad(jointTexture, vec2i(x + 1, 0), 0),
+    textureLoad(jointTexture, vec2i(x + 2, 0), 0),
+    textureLoad(jointTexture, vec2i(x + 3, 0), 0)
+  );
+}
+
+fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {
+  return weights.x * fetchJointMatrix(u32(joints.x))
+       + weights.y * fetchJointMatrix(u32(joints.y))
+       + weights.z * fetchJointMatrix(u32(joints.z))
+       + weights.w * fetchJointMatrix(u32(joints.w));
+}`;
 }
 
 function getUploadVertices(geometry: Readonly<MeshGeometry>): Float32Array | null {
@@ -192,6 +217,7 @@ function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: stri
 
 const WGPU_SKINNING_ADAPTER: WgpuSkinningAdapter = {
   extendMeshPrelude,
+  extendShadowDepthPrelude,
   getDrawBindGroup: ensureWgpuSkinDrawBindGroup,
   getDrawLayout: ensureWgpuSkinDrawLayout,
   getUploadVertices,
