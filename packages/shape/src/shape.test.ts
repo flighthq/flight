@@ -194,6 +194,25 @@ describe('copyShapeCommands', () => {
     expect(target.data.commands).toEqual(['endFill', 0]);
   });
 
+  it('copies a command stream longer than the engine argument limit', () => {
+    // Imported vector artwork reaches this length routinely, and a spread into push would pass one
+    // argument per command — so this is the size at which copying, not drawing, is what fails.
+    const source = createShape();
+    for (let i = 0; i < 400_000; i++) source.data.commands.push('lineTo', 2, i, i);
+    const target = createShape();
+
+    expect(() => copyShapeCommands(target, source)).not.toThrow();
+    expect(target.data.commands).toHaveLength(source.data.commands.length);
+    expect(target.data.commands[1_599_998]).toBe(399_999);
+  });
+
+  it('leaves the command stream intact when target and source are the same shape', () => {
+    const shape = createShape();
+    shape.data.commands.push('endFill', 0);
+    copyShapeCommands(shape, shape);
+    expect(shape.data.commands).toEqual(['endFill', 0]);
+  });
+
   it('replaces existing target commands and bumps the content revision', () => {
     const source = createShape();
     source.data.commands.push('endFill', 0);
