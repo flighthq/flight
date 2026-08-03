@@ -165,6 +165,7 @@ export * from './Node2DAnimationTarget';
 export * from './Node2DInteractionSignals';
 export * from './Scene2DRenderBlankReason';
 export * from './Scene2DRenderExplanation';
+export * from './Scene2DKindUsage';
 export * from './Scene2DRenderer';
 export * from './DitherEffect';
 export * from './DomBlendModeFidelity';
