@@ -7,7 +7,7 @@ import type {
   GlMeshMaterialRenderer,
   GlRenderState,
   ImageResourceReference,
-  Scene3DCoverageGap,
+  Scene3DCoverageEntry,
 } from '@flighthq/types/contract';
 import {
   ImageResourceReferenceKind,
@@ -40,8 +40,8 @@ function shamblerLikeScene(withModifier = false) {
   return usage;
 }
 
-function gaps(state: GlRenderState, withModifier = false): Scene3DCoverageGap[] {
-  const out: Scene3DCoverageGap[] = [];
+function gaps(state: GlRenderState, withModifier = false): Scene3DCoverageEntry[] {
+  const out: Scene3DCoverageEntry[] = [];
   explainGlScene3DCoverage(out, state, shamblerLikeScene(withModifier));
   return out;
 }
@@ -75,10 +75,19 @@ describe('explainGlScene3DCoverage', () => {
     });
   });
 
-  it('stops reporting the material once its own renderer is registered', () => {
+  it('reports the material as Satisfied once its own renderer is registered', () => {
     const state = makeGlScene3DState().state;
     registerGlMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
-    expect(gaps(state).some((g) => g.registry === RenderRegistry.MaterialRenderer)).toBe(false);
+    expect(gaps(state)).toContainEqual({
+      coverage: Scene3DCoverage.Satisfied,
+      kind: 'ShadedMaterial',
+      registry: RenderRegistry.MaterialRenderer,
+    });
+    expect(
+      gaps(state).some(
+        (g) => g.coverage !== Scene3DCoverage.Satisfied && g.registry === RenderRegistry.MaterialRenderer,
+      ),
+    ).toBe(false);
   });
 
   it('reports an unregistered modifier snippet as Missing, never a fallback', () => {
@@ -99,7 +108,7 @@ describe('explainGlScene3DCoverage', () => {
   it('clears out, so a repeated call does not accumulate', () => {
     const state = makeGlScene3DState().state;
     const usage = shamblerLikeScene();
-    const out: Scene3DCoverageGap[] = [];
+    const out: Scene3DCoverageEntry[] = [];
     explainGlScene3DCoverage(out, state, usage);
     const first = out.length;
     explainGlScene3DCoverage(out, state, usage);
@@ -122,7 +131,7 @@ describe('hasGlScene3DCoverage', () => {
     const state = makeGlScene3DState().state;
     registerGlMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
     const usage = shamblerLikeScene();
-    const out: Scene3DCoverageGap[] = [];
+    const out: Scene3DCoverageEntry[] = [];
     explainGlScene3DCoverage(out, state, usage);
     expect(hasGlScene3DCoverage(state, usage)).toBe(out.length === 0);
   });

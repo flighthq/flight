@@ -1,9 +1,10 @@
-import type { Scene3DCoverageGap, Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
+import type { Scene3DCoverageEntry, Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
 import { RenderRegistry, Scene3DCoverage } from '@flighthq/types/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry';
 
-// Clears `out`, then reports every material kind in `usage` this resolver cannot describe. The resource
+// Clears `out`, then reports EVERY material kind in `usage` with how well this resolver describes it —
+// satisfied ones included, so one call is a complete manifest rather than only a list of complaints. The resource
 // layer's half of the scene↔consumer seam: @flighthq/scene3d says what a document uses, each holder of a
 // registry answers for its own. It reads the registry rather than a table of names, so it cannot go
 // stale against a registrar rename.
@@ -16,7 +17,7 @@ import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry'
 // of a gap is confined to consumers that need mesh→texture ownership, chiefly the reveal-on-resolve
 // recipe, whose meshes would wait for an event that never names them.
 export function explainScene3DResourceCoverage(
-  out: Scene3DCoverageGap[],
+  out: Scene3DCoverageEntry[],
   resolver: Readonly<Scene3DResourceResolver>,
   usage: Readonly<Scene3DKindUsage>,
 ): void {
@@ -34,8 +35,9 @@ export function hasScene3DResourceCoverage(
 }
 
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
+// `found` counts only real shortfalls, so appending satisfied entries to `out` never flips the predicate.
 function collectScene3DResourceCoverageGaps(
-  out: Scene3DCoverageGap[] | null,
+  out: Scene3DCoverageEntry[] | null,
   resolver: Readonly<Scene3DResourceResolver>,
   usage: Readonly<Scene3DKindUsage>,
   stopAtFirst: boolean,
@@ -43,7 +45,10 @@ function collectScene3DResourceCoverageGaps(
   let found = false;
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (hasScene3DMaterialTextureLister(resolver.registry, kind)) continue;
+    if (hasScene3DMaterialTextureLister(resolver.registry, kind)) {
+      out?.push({ coverage: Scene3DCoverage.Satisfied, kind, registry: RenderRegistry.MaterialTextureLister });
+      continue;
+    }
     found = true;
     if (stopAtFirst) return true;
     out?.push({ coverage: Scene3DCoverage.Missing, kind, registry: RenderRegistry.MaterialTextureLister });
