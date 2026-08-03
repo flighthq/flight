@@ -13,6 +13,7 @@ import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } 
 
 const fakeImage = { height: 1, width: 1 } as unknown as Image;
 const testResources: ImageResourceReference[] = [];
+let sceneResources: ImageResourceReference[] = [];
 
 function externalRef(): ImageResourceReference {
   const ref: ImageResourceReference = {
@@ -27,12 +28,17 @@ function externalRef(): ImageResourceReference {
   return ref;
 }
 
+// Hands the scene only the references its own test created, then drains the accumulator. Copying the
+// whole accumulator used to give every scene the previous tests' references as well — harmless only
+// while discovery narrowed by mesh attachment and quietly dropped whatever no mesh referenced.
 function configureResources(scene: ReturnType<typeof createScene3D>): void {
-  scene.resources = testResources.slice();
+  sceneResources = testResources.slice();
+  testResources.length = 0;
+  scene.resources = sceneResources;
 }
 
 function resourceOf(texture: Texture): ImageResourceReference | undefined {
-  return testResources.find((ref) => ref.textures?.includes(texture) === true);
+  return sceneResources.find((ref) => ref.textures?.includes(texture) === true);
 }
 
 describe('loadScene3DResources', () => {

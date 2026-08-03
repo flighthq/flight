@@ -29,17 +29,6 @@ export function getScene3DMaterialTextures(
   if (lister !== undefined) lister(material, out);
 }
 
-// Whether `kind` has a lister bound. The seam that lets a caller tell "this material has no textures"
-// apart from "this material's textures are unknown to me" — two answers `getScene3DMaterialTextures`
-// cannot distinguish, because both append nothing. Resolution depends on the difference: an unknown
-// kind must widen to every resource-backed texture rather than silently resolve none.
-export function hasScene3DMaterialTextureLister(
-  registry: Readonly<Scene3DMaterialTextureRegistry>,
-  kind: Kind,
-): boolean {
-  return registry.listers.has(kind);
-}
-
 // Registers the built-in surface-material listers (StandardPbrMaterial and UnlitMaterial). Opt-in so
 // it carries no top-level side effect; callers that build their own registry invoke it explicitly.
 export function registerBuiltInScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {

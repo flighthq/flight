@@ -4,14 +4,10 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
+import { ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
-import {
-  createScene3DMaterialTextureRegistry,
-  registerBuiltInScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
 
 function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
   return {
@@ -21,12 +17,6 @@ function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Un
     mimeType: 'image/png',
     state,
   };
-}
-
-function registry() {
-  const r = createScene3DMaterialTextureRegistry();
-  registerBuiltInScene3DMaterialTextures(r);
-  return r;
 }
 
 describe('getScene3DResourceTextures', () => {
@@ -43,24 +33,11 @@ describe('getScene3DResourceTextures', () => {
     addNodeChild(scene.root, root);
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
+    getScene3DResourceTextures(out, scene);
     expect(out).toContain(rootMap);
     expect(out).toContain(childMap);
     expect(out).toHaveLength(2);
     expect(getScene3DTextureResourceReference(scene, rootMap)).toBe(rootRef);
-  });
-
-  it('walks a group scene root that is not itself a mesh', () => {
-    const ref = embeddedRef();
-    const map = createTexture({ resource: ref });
-    const scene = createScene3D();
-    scene.resources.push(ref);
-    const mesh = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: map })]);
-    addNodeChild(scene.root, mesh);
-
-    const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
-    expect(out).toEqual([map]);
   });
 
   it('dedupes a texture shared across meshes and materials', () => {
@@ -77,11 +54,11 @@ describe('getScene3DResourceTextures', () => {
     addNodeChild(scene.root, b);
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
+    getScene3DResourceTextures(out, scene);
     expect(out).toEqual([shared]);
   });
 
-  it('ignores a texture that carries no resource ref', () => {
+  it('ignores a texture that carries no resource ref, since nothing needs fetching for it', () => {
     const bound = createTexture();
     const ref = embeddedRef();
     const pending = createTexture({ resource: ref });
@@ -93,26 +70,15 @@ describe('getScene3DResourceTextures', () => {
     scene.resources.push(ref);
     addNodeChild(scene.root, mesh);
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
+    getScene3DResourceTextures(out, scene);
     expect(out).toEqual([pending]);
   });
 
-  it('skips null material slots', () => {
-    const ref = embeddedRef();
-    const map = createTexture({ resource: ref });
-    const mesh = createMesh(createBoxMeshGeometry(), [null, createUnlitMaterial({ baseColorMap: map })]);
-    const scene = createScene3D();
-    scene.resources.push(ref);
-    addNodeChild(scene.root, mesh);
-    const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
-    expect(out).toEqual([map]);
-  });
-
-  it('widens to every resource-backed texture when a material kind has no lister', () => {
-    // The regression this guards: an unlisted kind used to append nothing and be indistinguishable
-    // from "no maps", so the map was never requested and the model rendered untextured in silence.
-    // BlinnPhongMaterial has no built-in lister, so its specularMap is unreachable through the walk.
+  it('finds a texture on any material kind, with nothing registered', () => {
+    // The defect this closes: discovery used to run through a per-kind lister registry, so a kind with
+    // no lister — BlinnPhongMaterial here, and every custom kind — was undiscoverable. The map was
+    // never requested and the model rendered untextured in silence. Now the resource's own back-edge
+    // answers, so no registration exists to forget.
     const ref = embeddedRef();
     const map = createTexture({ resource: ref });
     const scene = createScene3D();
@@ -120,24 +86,26 @@ describe('getScene3DResourceTextures', () => {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createBlinnPhongMaterial({ specularMap: map })]));
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
+    getScene3DResourceTextures(out, scene);
     expect(out).toEqual([map]);
   });
 
-  it('keeps narrowing when every material kind is known, dropping an unattached texture', () => {
-    // The optimization the lister buys: a resource whose consuming material hangs off no mesh is not
-    // requested. This only holds while every kind in the scene is describable.
+  it('returns a texture whose material hangs off no mesh, which is the cost of dropping the registry', () => {
+    // Honest about the trade: the lister walk used to narrow the set by mesh attachment, so an orphan
+    // material's map was not fetched. That narrowing only ever held while every kind in the scene was
+    // describable, and it cost a registry the caller had to know to populate. The residue is one
+    // over-fetch for a document carrying materials it never attaches.
     const attachedRef = embeddedRef();
     const orphanRef = embeddedRef();
     const attached = createTexture({ resource: attachedRef });
-    createTexture({ resource: orphanRef });
+    const orphan = createTexture({ resource: orphanRef });
     const scene = createScene3D();
     scene.resources.push(attachedRef, orphanRef);
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: attached })]));
 
     const out: Texture[] = [];
-    getScene3DResourceTextures(scene, registry(), out);
-    expect(out).toEqual([attached]);
+    getScene3DResourceTextures(out, scene);
+    expect(out).toEqual([attached, orphan]);
   });
 
   it('clears out before filling it', () => {
@@ -148,7 +116,7 @@ describe('getScene3DResourceTextures', () => {
     scene.resources.push(ref);
     addNodeChild(scene.root, mesh);
     const out: Texture[] = [createTexture(), createTexture()];
-    getScene3DResourceTextures(scene, registry(), out);
+    getScene3DResourceTextures(out, scene);
     expect(out).toEqual([map]);
   });
 });

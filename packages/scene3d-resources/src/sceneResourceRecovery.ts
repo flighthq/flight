@@ -19,7 +19,7 @@ export function retryFailedScene3DResources(
   options?: Readonly<UpdateScene3DResourceStreamingOptions>,
 ): number {
   const textures: Texture[] = [];
-  getScene3DResourceTextures(scene, resolver.registry, textures);
+  getScene3DResourceTextures(textures, scene);
   const reset = new Set<ImageResourceReference>();
   for (let i = 0; i < textures.length; i++) {
     const texture = textures[i];

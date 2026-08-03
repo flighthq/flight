@@ -12,7 +12,6 @@ export {
   getScene3DMaterialTextures,
   getScene3DResourceSignals,
   getScene3DResourceTextures,
-  hasScene3DMaterialTextureLister,
   loadScene3DDocumentBytesFromUrl,
   loadScene3DDocumentFrom3dsUrl,
   loadScene3DDocumentFromAwd2Url,

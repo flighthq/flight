@@ -48,7 +48,7 @@ export function resolveScene3DResources(
 ): Scene3DResources {
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   const textures: Texture[] = [];
-  getScene3DResourceTextures(scene, resolver.registry, textures);
+  getScene3DResourceTextures(textures, scene);
 
   const working = new Map<ImageResourceReference, Texture[]>();
   for (let i = 0; i < textures.length; i++) {

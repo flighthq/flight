@@ -32,6 +32,7 @@ let resolveScene3DResources: typeof ResolveScene3DResourcesModule.resolveScene3D
 let updateScene3DResourceStreaming: typeof ResolveScene3DResourcesModule.updateScene3DResourceStreaming;
 let waitForScene3DResourceResolver: typeof LoadScene3DResourcesModule.waitForScene3DResourceResolver;
 const testResources: ImageResourceReference[] = [];
+let sceneResources: ImageResourceReference[] = [];
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   const ref: ImageResourceReference = {
@@ -59,7 +60,7 @@ function externalRef(uri = 'leaf.png'): ImageResourceReference {
 }
 
 function resourceOf(texture: Texture): ImageResourceReference | undefined {
-  return testResources.find((ref) => ref.textures?.includes(texture) === true);
+  return sceneResources.find((ref) => ref.textures?.includes(texture) === true);
 }
 
 function pendingTexture(): Texture {
@@ -68,7 +69,11 @@ function pendingTexture(): Texture {
 
 function meshScene3D(...textures: Texture[]) {
   const scene = createScene3D();
-  scene.resources = testResources.slice();
+  // Only this test's references. Copying the whole accumulator used to hand each scene the previous
+  // tests' references too, which discovery quietly dropped while it narrowed by mesh attachment.
+  sceneResources = testResources.slice();
+  testResources.length = 0;
+  scene.resources = sceneResources;
   for (const texture of textures) {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
   }
