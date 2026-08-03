@@ -98,14 +98,20 @@ what the caller's file actually contains:
 | `lottie.incompatible-animated-shape-path` | Keyframes of an animated path disagree on vertex count. |
 | `lottie.unsupported-layer` | A layer type outside the Bodymovin set — not a gap, an unknown. |
 | `lottie.unsupported-shape-item` | A shape item type outside the Bodymovin set. |
-| `lottie.unsupported-blend-mode` | The author chose a mode with no Flight equivalent; another mode works. |
 | `lottie.unsupported-expression` | The author attached an expression; baking it before export works. |
 | `lottie.unsupported-shape-modifier` | A repeater, merge-paths, rounded-corners, or animated trim/dash. |
 
-The last three sit in the band the diagnostics convention keeps deliberately: the drop is contingent on
-an author choice *and* the consumer has a next action. **Whether all three earn that keep is an open
+The last two sit in the band the diagnostics convention keeps deliberately: the drop is contingent on
+an author choice *and* the consumer has a next action. **Whether both earn that keep is an open
 ruling** — `unsupported-shape-modifier` in particular reports our own unimplemented modifiers, and
 retiring it here would be defensible.
+
+**Blend modes are covered in full**, and the crumb that used to announce them is gone. Bodymovin
+numbers overlay 3, darken 4 and lighten 5; this importer read 3 as *Add* and put darken and lighten at
+8 and 9, so an overlay layer rendered additive while the two modes Flight expresses cheapest fell
+through unmapped. Corrected to Bodymovin's own numbering and split across the two tiers: the
+fixed-function five fold into blend state, and the other eleven are reported on `advancedBlends` for
+the caller to realize through a `BlendEffect`.
 
 ## SVG documents
 
@@ -274,15 +280,20 @@ itself.
 Over the corpus, 2,372 of 2,409 shapes receive paint — 1,849 solid fills, 706 strokes and 458
 gradients — with no alpha or stop ratio out of range. The 37 unpainted shapes state no visible paint.
 
-**Blend modes convert as far as Flight reaches.** A drawable's blend mode maps onto `Node2D.blendMode`
-for the modes both carry — normal, screen, darken, lighten and multiply — and anything else
-normalises. This is a **Flight gap rather than a file problem**: Rive states sixteen modes and
-Flight's `BlendMode` carries six, so overlay, soft-light, colour-dodge, colour-burn, hard-light,
-difference, exclusion, hue, saturation, colour and luminosity have nowhere to land. It is recorded
-here rather than crumbed, because its cause is our own enum. In the corpus 2,898 of 3,042 drawables
-use the default, and of the 144 that do not, 93 are modes Flight cannot express — so this is the
-larger half of non-default blend usage. Widening `@flighthq/BlendMode` is a cross-package question,
-and the same one hangs over the `lottie.unsupported-blend-mode` crumb that Lottie still emits.
+**Blend modes are covered in full, across Flight's two tiers.** `BlendMode` is deliberately the
+fixed-function set that folds into blend state — normal, screen, darken, lighten, multiply here — and
+the destination-reading and non-separable modes are `AdvancedBlendMode`, realized through a
+`BlendEffect` that bounces through an offscreen and samples the backdrop. Both tiers already exist;
+see [effect / adjustment / material architecture](effect-adjustment-architecture.md), which calls the
+advanced set "the canonical composite effect".
+
+So import splits them: fixed-function modes land on `Node2D.blendMode`, and the other eleven are
+reported on the artboard's `advancedBlends` for the caller to apply. **Import attaches no effect** —
+`displayObject.filters` is an anti-goal, and an effect is an explicit descriptor the caller invokes.
+Assigning an advanced mode to `node.blendMode` and getting a silent Normal is the exact bug that tier
+split exists to prevent, and it is what this importer originally did. In the corpus 2,898 of 3,042
+drawables use the default; of the 144 that do not, 93 are advanced modes that now reach a caller
+instead of vanishing.
 
 **Clipping is covered, and the coordinate transfer is the substance of it.** A clipping shape names a
 *source* shape elsewhere in the artboard, whose geometry sits in the source's own transform chain,

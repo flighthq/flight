@@ -1,3 +1,4 @@
+import type { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
 import type { PathWinding } from './ShapeCommand';
@@ -171,6 +172,16 @@ export interface RiveStateMachineDescriptor {
   name: string;
 }
 
+/**
+ * A node whose blend mode cannot be fixed-function blend state, paired with the advanced mode it
+ * asks for. Applying it means building a `BlendEffect`, which bounces through an offscreen and
+ * samples the backdrop — an explicit step the caller takes, never something import performs.
+ */
+export interface RiveAdvancedBlend {
+  mode: AdvancedBlendMode;
+  node: DisplayObject;
+}
+
 /** A named clip. A Rive artboard carries several animations and the name is how a caller picks one. */
 export interface RiveAnimationClip {
   clip: AnimationClip;
@@ -183,6 +194,8 @@ export interface RiveAnimationClip {
  * records it.
  */
 export interface RiveArtboardImport {
+  /** Nodes needing a `BlendEffect`, because their mode is destination-reading or non-separable. */
+  advancedBlends: RiveAdvancedBlend[];
   animations: RiveAnimationClip[];
   /** The artboard's state machines, described as data. Nothing here is interpreted or driven. */
   stateMachines: RiveStateMachineDescriptor[];

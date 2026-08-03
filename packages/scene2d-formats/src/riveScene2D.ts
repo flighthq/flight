@@ -9,13 +9,14 @@ import type {
   ImportDiagnostic,
   Matrix,
   RiveArtboardGraph,
+  RiveAdvancedBlend,
   RiveArtboardImport,
   RiveCoreObject,
   RiveDocumentImportResult,
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
-import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createRiveAnimationClips } from './riveAnimation';
 import { createRiveFileAssets } from './riveAssets';
@@ -67,6 +68,7 @@ function createRiveArtboardImport(
 
   // A node is attached to its nearest ancestor that also became a node; components in between, such
   // as a Shape's paint, hold no place in the display tree.
+  const advancedBlends: RiveAdvancedBlend[] = [];
   const nodes: Array<DisplayObject | null> = [root];
   // Paths accumulate per shape rather than drawing as they are met, because a paint covers every
   // path of its shape and the paint list is only complete once the shape's children have been read.
@@ -87,7 +89,7 @@ function createRiveArtboardImport(
     }
     const node = createRiveDisplayNode(object, artboard, index);
     applyRiveTransform(node, object);
-    applyRiveBlendMode(node, object);
+    applyRiveBlendMode(node, object, advancedBlends);
     nodes.push(node);
     addNodeChild(findRiveDisplayParent(nodes, artboard.parentIndices, index) ?? root, node);
   }
@@ -101,7 +103,7 @@ function createRiveArtboardImport(
     if (shape === null || shape === undefined) continue;
     appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
   }
-  return { animations, height, name, root, stateMachines, width };
+  return { advancedBlends, animations, height, name, root, stateMachines, width };
 }
 
 // A shape carries a command stream and a text drawable carries a label; everything else is a plain
@@ -212,17 +214,30 @@ function applyRiveTransform(target: DisplayObject, source: Readonly<RiveCoreObje
   target.alpha = readRiveNumber(source, RIVE_OPACITY, 1);
 }
 
-// Rive states sixteen blend modes and Flight carries six, so only the shared ones convert; the rest
-// fall back to normal and are recorded in agents/scene2d-format-coverage.md as a Flight gap rather
-// than crumbed, since their cause is Flight's own enum and not anything about the caller's file.
-function applyRiveBlendMode(target: DisplayObject, source: Readonly<RiveCoreObject>): void {
+/**
+ * Splits a drawable's blend mode across the two tiers Flight deliberately keeps apart.
+ *
+ * `BlendMode` is the fixed-function set that folds into blend state. The destination-reading and
+ * non-separable modes cannot, so they are `AdvancedBlendMode` realized through a `BlendEffect` that
+ * bounces through an offscreen. Assigning one to `node.blendMode` and getting a silent Normal is
+ * precisely the bug that split exists to prevent, so those modes are reported for the caller to apply
+ * rather than quietly dropped — import never attaches an effect itself.
+ */
+function applyRiveBlendMode(
+  target: DisplayObject,
+  source: Readonly<RiveCoreObject>,
+  advanced: RiveAdvancedBlend[],
+): void {
   if (!isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_DRAWABLE_TYPE_KEY)) return;
   const value = readRiveNumber(source, RIVE_BLEND_MODE, RIVE_BLEND_SRC_OVER);
-  if (value === RIVE_BLEND_SCREEN) target.blendMode = BlendMode.Screen;
-  else if (value === RIVE_BLEND_DARKEN) target.blendMode = BlendMode.Darken;
-  else if (value === RIVE_BLEND_LIGHTEN) target.blendMode = BlendMode.Lighten;
-  else if (value === RIVE_BLEND_MULTIPLY) target.blendMode = BlendMode.Multiply;
-  else target.blendMode = BlendMode.Normal;
+  const fixed = RIVE_FIXED_BLEND_MODES.get(value);
+  if (fixed !== undefined) {
+    target.blendMode = fixed;
+    return;
+  }
+  target.blendMode = BlendMode.Normal;
+  const mode = RIVE_ADVANCED_BLEND_MODES.get(value);
+  if (mode !== undefined) advanced.push({ mode, node: target });
 }
 
 // A property absent from the stream is at its documented initial value, which is why every read
@@ -257,7 +272,27 @@ const RIVE_SCALE_Y = 17;
 const RIVE_OPACITY = 18;
 const RIVE_BLEND_MODE = 23;
 const RIVE_BLEND_SRC_OVER = 3;
-const RIVE_BLEND_SCREEN = 14;
-const RIVE_BLEND_DARKEN = 16;
-const RIVE_BLEND_LIGHTEN = 17;
-const RIVE_BLEND_MULTIPLY = 24;
+
+// The modes that fold into blend state.
+const RIVE_FIXED_BLEND_MODES = new Map<number, string>([
+  [3, BlendMode.Normal],
+  [14, BlendMode.Screen],
+  [16, BlendMode.Darken],
+  [17, BlendMode.Lighten],
+  [24, BlendMode.Multiply],
+]);
+
+// The modes that must bounce through an offscreen, keyed by Rive's own numbering.
+const RIVE_ADVANCED_BLEND_MODES = new Map<number, string>([
+  [15, AdvancedBlendMode.Overlay],
+  [18, AdvancedBlendMode.ColorDodge],
+  [19, AdvancedBlendMode.ColorBurn],
+  [20, AdvancedBlendMode.HardLight],
+  [21, AdvancedBlendMode.SoftLight],
+  [22, AdvancedBlendMode.Difference],
+  [23, AdvancedBlendMode.Exclusion],
+  [25, AdvancedBlendMode.Hue],
+  [26, AdvancedBlendMode.Saturation],
+  [27, AdvancedBlendMode.Color],
+  [28, AdvancedBlendMode.Luminosity],
+]);
