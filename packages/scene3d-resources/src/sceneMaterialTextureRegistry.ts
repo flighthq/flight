@@ -29,6 +29,16 @@ export function getScene3DMaterialTextures(
   if (lister !== undefined) lister(material, out);
 }
 
+// Whether `kind` has a lister at all. getScene3DMaterialTextures appends nothing for an unregistered
+// kind, which is indistinguishable from a material that genuinely has no maps — this is the query that
+// separates the two, and it is what explainScene3DResourceCoverage reports through.
+export function hasScene3DMaterialTextureLister(
+  registry: Readonly<Scene3DMaterialTextureRegistry>,
+  kind: Kind,
+): boolean {
+  return registry.listers.has(kind);
+}
+
 export function registerExtendedPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DMaterialTextures(registry, ExtendedPbrMaterialKind, (material, out): void => {
     const extended = material as Readonly<ExtendedPbrMaterial>;

@@ -1,3 +1,4 @@
+export * from './explainScene3DResourceCoverage';
 export * from './getScene3DResourceTextures';
 export * from './threeDsLoad';
 export * from './gltfLoad';
