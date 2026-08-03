@@ -156,30 +156,36 @@ existing convenience that installs a console sink, raises log levels, and switch
 once. It composes the per-package guards; it does not replace them, and it cannot currently carry every
 guard, because its subsystem hooks are state-less while several guards are state-scoped.
 
-### Asking before you miss: `getScene3DRequirements`
+### Asking before you miss: the scene↔render seam
 
 Everything above is reactive — you learn at draw time, after a miss. For imported content there is also a
-proactive answer, because a document decides what it needs and you cannot know that statically:
+proactive answer, split across two packages so neither has to know the other's internals:
 
 ```ts
-const requirements: Scene3DRequirement[] = [];
-getScene3DRequirements(scene, requirements);            // @flighthq/scene3d
-console.log(formatScene3DRequirements(requirements, RenderBackend.Gl));
+const usage = createScene3DKindUsage();                  // @flighthq/scene3d
+getScene3DKindUsage(usage, scene);                       // WHAT the document uses — kinds only
+
+if (!hasGlScene3DCoverage(state, usage)) {               // @flighthq/scene3d-gl
+  const gaps: Scene3DCoverageGap[] = [];
+  explainGlScene3DCoverage(gaps, state, usage);          // WHICH kinds, and how badly
+}
 ```
 
-It takes no registry and reads `kind` off the entities the parser already built, so it can never itself be
-the thing you forgot to wire. `formatScene3DRequirements` is the separately importable text module — it
-names the actual function to call for each line, deriving the backend-prefixed registrar from the same
-naming law `scripts/backendPrefix.ts` enforces, and stating the gap where a backend has no such registrar
-(Canvas and DOM compile no shader snippets).
+**A scene reports what is in it; only the holder of a registry knows whether anything is bound.** So
+`Scene3DKindUsage` carries plain kinds — material, modifier, node, texture-source, and resource MIME
+types — and no registry vocabulary, no backend token, and no registrar names. It takes no registry to
+produce, so it cannot itself be the thing you forgot to wire. The backend package answers coverage against
+its own registries, which is why it cannot go stale when a registrar is renamed: it reads the registry, not
+a table of names.
 
-There is deliberately **no** register-all counterpart, and the printed header says so. Reading a list of
-missing registrations and concluding the SDK should ship one convenience barrel is the exact trade the list
-exists to avoid — an assembly must never inflate the bundle cost of a primitive.
+Two tiers, sharing one implementation so they cannot disagree. `hasGlScene3DCoverage` stops at the first
+shortfall and allocates nothing. `explainGlScene3DCoverage` is the debug-class tier and distinguishes
+`Missing` (nothing resolves; the content does not draw) from `Fallback` (a material with no renderer of its
+own degrades to the standard one — it draws, but not as authored).
 
-`NodeRenderer` is absent from the vocabulary on purpose: the 3D pipeline collects meshes structurally
-(`mesh.geometry != null`), so no node kind is registered against anything and naming one would send you
-looking for a registrar that does not exist.
+`nodeKinds` is reported by the scene and deliberately ignored by the GL check: the 3D pipeline collects
+meshes structurally (`geometry != null`), so no 3D node kind is registered against anything. Whether a kind
+needs a renderer is a render-layer rule, so the scene reports and the consumer decides.
 
 ## 5. The capability matrix
 

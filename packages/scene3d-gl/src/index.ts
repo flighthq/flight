@@ -4,6 +4,8 @@ export {
   bakeGlEnvironmentIbl,
   blinnPhongGlMeshMaterialRenderer,
   clearcoatPbrGlExtension,
+  explainGlScene3DCoverage,
+  hasGlScene3DCoverage,
   drawGlEnvironmentSkybox,
   drawGlScene3D,
   drawGlScene3DShadowMap,
