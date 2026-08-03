@@ -504,7 +504,7 @@ export * from './Scale9Mapper';
 export * from './Scale9Shape';
 export * from './ScanlinesEffect';
 export * from './Scene3D';
-export * from './Scene3DCoverageEntry';
+export * from './SceneCoverageEntry';
 export * from './Scene3DKindUsage';
 export * from './Scene3DAnimationPath';
 export * from './Scene3DAnimationTarget';
