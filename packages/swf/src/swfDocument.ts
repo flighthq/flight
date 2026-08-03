@@ -244,6 +244,17 @@ interface SwfImagePayload {
   mimeType: string;
 }
 
+// One trigger's SOUNDINFO, with positions still in the samples the format counted.
+interface SwfSoundInfo {
+  envelope: TimelineAudioEnvelopePoint[];
+  inPointSamples: number;
+  loopCount: number;
+  // -1 when the trigger declared none, which is not the same as an out point at sample zero.
+  outPointSamples: number;
+  skipIfPlaying: boolean;
+  stop: boolean;
+}
+
 // One event sound's encoded payload. `mimeType` is null for a SWF-only format (ADPCM, Nellymoser, raw
 // PCM), which is what tells a resolver it needs a decoder the platform does not already have.
 interface SwfSoundPayload {
@@ -319,6 +330,8 @@ interface SwfParseState {
   // payload. A stream belongs to the timeline that carried its blocks rather than to a character, so it
   // has no id to be keyed by.
   streamSounds: { bytes: Uint8Array; mimeType: string; resource: AudioResource }[];
+  // Cues that named their sound by class, held until SymbolClass says which character that class is.
+  soundCuesAwaitingClass: { className: string; cue: TimelineAudioCue }[];
   // Cues whose offset and duration are still counted in samples, held until the sound they name is read.
   // A trigger may precede its DefineSound, so the conversion cannot happen where the cue is built.
   soundCuesAwaitingRate: { characterId: number; cue: TimelineAudioCue }[];
@@ -1192,6 +1205,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     morphShapes: new Map<number, () => MorphShape | null>(),
     scalingGrids: new Map<number, SwfRectangle>(),
     shapes: new Map<number, Shape>(),
+    soundCuesAwaitingClass: [],
     soundCuesAwaitingRate: [],
     streamSounds: [],
     soundResources: new Map<number, AudioResource>(),
@@ -1201,6 +1215,7 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
+  resolveSwfSoundClassCues(state);
   convertSwfSoundCueTimes(state);
   appendSwfPendingTextShapes(reader, state);
   appendSwfAbcFrameScripts(state, timeline);
@@ -1367,6 +1382,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readPlaceObject(body, placements, true);
     } else if (code === TAG_START_SOUND) {
       readSwfStartSound(body, state, cues, frames.length + 1);
+    } else if (code === TAG_START_SOUND_2) {
+      readSwfStartSound2(body, state, cues, frames.length + 1);
     } else if (code === TAG_SOUND_STREAM_HEAD || code === TAG_SOUND_STREAM_HEAD_2) {
       const declared = readSwfSoundStreamHead(body);
       // A header declaring no samples per frame is the empty one an authoring tool writes into every
@@ -1937,9 +1954,32 @@ function appendSwfStreamSoundCue(
 // defined further down the tag stream and its rate is not known yet.
 function readSwfStartSound(body: SwfReader, state: SwfParseState, cues: TimelineCue[], frame: number): void {
   const characterId = body.readUint16();
-  const flags = body.readUint8();
-  if (!body.valid || characterId === 0) return;
+  const info = readSwfSoundInfo(body);
+  if (characterId === 0 || info === null) return;
+  const cue = createSwfAudioCue(info, frame, acquireSwfSoundResource(state, characterId));
+  cues.push(cue);
+  state.soundCuesAwaitingRate.push({ characterId, cue });
+}
 
+// StartSound2 names its sound by the class an AS3 file bound to it rather than by character id, so the
+// trigger cannot be resolved where it is read: SymbolClass, which is what maps a class name back to a
+// character, is written near the end of a file and practically always after the sprite that triggers it.
+// The cue is built against a resource of its own and adopted into the character's once the name resolves.
+function readSwfStartSound2(body: SwfReader, state: SwfParseState, cues: TimelineCue[], frame: number): void {
+  const className = body.readString();
+  const info = readSwfSoundInfo(body);
+  if (className === '' || info === null) return;
+  const cue = createSwfAudioCue(info, frame, createAudioResource());
+  cues.push(cue);
+  state.soundCuesAwaitingClass.push({ className, cue });
+}
+
+// Reads the SOUNDINFO both triggers carry, or null when it does not decode. Positions stay in the samples
+// the format counted them in; only the envelope converts here, because its unit is fixed at 44.1kHz while
+// the in and out points are in a sound's own rate and that sound may not have been read yet.
+function readSwfSoundInfo(body: SwfReader): SwfSoundInfo | null {
+  const flags = body.readUint8();
+  if (!body.valid) return null;
   const inPointSamples = (flags & SOUND_INFO_HAS_IN_POINT) !== 0 ? body.readUint32() : 0;
   const outPointSamples = (flags & SOUND_INFO_HAS_OUT_POINT) !== 0 ? body.readUint32() : -1;
   const loopCount = (flags & SOUND_INFO_HAS_LOOPS) !== 0 ? body.readUint16() : 1;
@@ -1950,7 +1990,7 @@ function readSwfStartSound(body: SwfReader, state: SwfParseState, cues: Timeline
       const position = body.readUint32();
       const leftLevel = body.readUint16();
       const rightLevel = body.readUint16();
-      if (!body.valid) return;
+      if (!body.valid) return null;
       envelope.push({
         leftGain: Math.min(leftLevel, SOUND_ENVELOPE_LEVEL_ONE) / SOUND_ENVELOPE_LEVEL_ONE,
         rightGain: Math.min(rightLevel, SOUND_ENVELOPE_LEVEL_ONE) / SOUND_ENVELOPE_LEVEL_ONE,
@@ -1958,31 +1998,53 @@ function readSwfStartSound(body: SwfReader, state: SwfParseState, cues: Timeline
       });
     }
   }
-  if (!body.valid) return;
+  if (!body.valid) return null;
+  return {
+    envelope,
+    inPointSamples,
+    loopCount,
+    outPointSamples,
+    skipIfPlaying: (flags & SOUND_INFO_SYNC_NO_MULTIPLE) !== 0,
+    stop: (flags & SOUND_INFO_SYNC_STOP) !== 0,
+  };
+}
 
-  // A stop names the sound to silence and nothing else: every play field SOUNDINFO carries alongside it
-  // describes a playback that is being ended rather than started.
-  const stop = (flags & SOUND_INFO_SYNC_STOP) !== 0;
-  const cue: TimelineAudioCue = {
-    duration: null,
-    envelope: stop ? [] : envelope,
+// Builds the cue one trigger becomes. A stop names the sound to silence and nothing else: every play field
+// SOUNDINFO carries alongside it describes a playback being ended rather than started.
+function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource: AudioResource): TimelineAudioCue {
+  return {
+    duration: info.stop || info.outPointSamples < 0 ? null : info.outPointSamples,
+    envelope: info.stop ? [] : info.envelope,
     frame,
     gain: 1,
     kind: TimelineAudioCueKind,
     // SWF counts the first play as a loop; a timeline cue counts repeats, so one means play once.
-    loops: stop ? 1 : Math.max(1, loopCount),
-    offset: 0,
-    resource: acquireSwfSoundResource(state, characterId),
+    loops: info.stop ? 1 : Math.max(1, info.loopCount),
+    offset: info.stop ? 0 : info.inPointSamples,
+    resource,
     // Do not start this sound if it is already playing — Flash's "Start" sync, as against "Event", which
     // stacks a fresh copy every time the frame is entered.
-    skipIfPlaying: !stop && (flags & SOUND_INFO_SYNC_NO_MULTIPLE) !== 0,
-    stop,
+    skipIfPlaying: !info.stop && info.skipIfPlaying,
+    stop: info.stop,
   };
-  cues.push(cue);
-  if (!stop && (inPointSamples > 0 || outPointSamples >= 0)) {
-    state.soundCuesAwaitingRate.push({ characterId, cue });
-    cue.offset = inPointSamples;
-    cue.duration = outPointSamples >= 0 ? outPointSamples : null;
+}
+
+// Pairs every class-named trigger with the character its class was bound to, now that the whole tag stream
+// has been walked. A cue whose class nothing declared keeps the resource it was built with: the trigger is
+// real and the document simply never carried the sound it names.
+function resolveSwfSoundClassCues(state: SwfParseState): void {
+  if (state.soundCuesAwaitingClass.length === 0) return;
+  const characterIds = new Map<string, number>();
+  for (const [characterId, name] of state.linkages) characterIds.set(name, characterId);
+  for (const pending of state.soundCuesAwaitingClass) {
+    const characterId = characterIds.get(pending.className);
+    if (characterId === undefined) continue;
+    const existing = state.soundResources.get(characterId);
+    // First trigger to name the character donates its resource; later ones adopt it, so every cue over one
+    // sound still shares the single resource the document's reference fills.
+    if (existing === undefined) state.soundResources.set(characterId, pending.cue.resource);
+    else pending.cue.resource = existing;
+    state.soundCuesAwaitingRate.push({ characterId, cue: pending.cue });
   }
 }
 
@@ -2134,6 +2196,7 @@ const SWF_SOUND_RATES: readonly number[] = [5512, 11025, 22050, 44100];
 const TAG_END = 0;
 const TAG_DEFINE_SOUND = 14;
 const TAG_START_SOUND = 15;
+const TAG_START_SOUND_2 = 89;
 const TAG_SOUND_STREAM_BLOCK = 19;
 const TAG_SOUND_STREAM_HEAD = 18;
 const TAG_SOUND_STREAM_HEAD_2 = 45;
