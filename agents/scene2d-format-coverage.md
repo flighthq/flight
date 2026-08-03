@@ -400,6 +400,29 @@ uncovered: the font a style names (`fontAssetId` resolves to a font asset whose 
 not turned into a typeface), text modifiers and their ranges — the mechanism behind Rive's animated
 per-character effects — text-follow-path, variable-font axes and OpenType features, and `TextInput`.
 
+**Rigging does not fit the attachment model the charter assumed, and that is the finding.** The
+charter routes Rive's "deformable meshes + bones/skinning" to `@flighthq/skeleton2d`'s
+`MeshAttachment2D`, and instructed that `skeleton2d` be checked against what Rive actually states
+before mapping. It does not match, for two reasons.
+
+**Rive skins vector paths, not textured meshes.** Of 263 skins in the corpus, **251 hang off a
+`PointsPath` and 12 off a `Mesh`**; of 1,738 weights, **1,486 sit on path vertices** — straight,
+cubic-mirrored, cubic-detached, cubic-asymmetric — against 252 on mesh vertices. Only 2 of 64 files
+contain a mesh at all, while 22 contain bones. `MeshAttachment2D` models a Spine mesh: a triangle
+index buffer plus per-vertex UVs. Both are meaningless for a weighted bezier path, so mapping the
+dominant case onto it would mean inventing triangles and texture coordinates the file never states.
+
+**The bone models differ in kind too.** Rive's bones are `TransformComponent`s living in the
+artboard's own component tree, siblings of `Node` rather than nodes themselves, so they carry a
+transform without being drawable. `Skeleton2D` deliberately owns a flat, decoupled bone array and
+propagates its own world transforms rather than reading posed nodes — the Spine/DragonBones model,
+which is a different architecture rather than a different spelling.
+
+What Flight lacks is a **weighted vector path**: a path whose vertices are driven by bone influences.
+That is a `skeleton2d` or `path` design question, not something this codec can settle, and inventing
+a lossy mesh approximation would produce geometry that looks plausible and is wrong. Bones, skins,
+tendons and weights are therefore read past, and `Mesh`/`MeshVertex` with them.
+
 **Also not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
 asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
