@@ -10,7 +10,7 @@ import { createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
@@ -135,6 +135,19 @@ describe('drawGlScene3DShadowMap', () => {
     expect(getGlScene3DRuntime(state).shadowTarget).not.toBeNull();
   });
 
+  it('treats an absent directional light as disabled and invalidates a retained shadow', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createNode3D(Node3DKind);
+    const camera = makeShadowCamera();
+    drawGlScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
+    const clearCount = gl.calls.filter((call) => call.name === 'clear').length;
+
+    drawGlScene3DShadowMap(state, scene, camera, null);
+
+    expect(getGlScene3DRuntime(state).shadow!.enabled).toBe(false);
+    expect(gl.calls.filter((call) => call.name === 'clear')).toHaveLength(clearCount);
+  });
+
   it('reuses the same shadow target on subsequent calls', () => {
     const { state } = makeShadowState();
     const scene = createNode3D(Node3DKind);
@@ -177,7 +190,13 @@ describe('drawGlScene3DShadowMap', () => {
     expect(getGlScene3DRuntime(state).shadow).toEqual(
       expect.objectContaining({
         enabled: true,
-        normalBiasWorld: 0.02 * getOrthographicProjectionTexelSize(camera.projection, 1024, 1024),
+        normalBiasWorld:
+          0.02 *
+          getOrthographicProjectionTexelSize(
+            camera.projection,
+            DIRECTIONAL_SHADOW_MAP_SIZE,
+            DIRECTIONAL_SHADOW_MAP_SIZE,
+          ),
         pcfRadius: 2,
         shadowBias: 0.01,
       }),

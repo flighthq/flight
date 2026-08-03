@@ -102,14 +102,14 @@ const shadowCamera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
-drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+prepareScene3DRender(state, scene, camera, lights);
+drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);
 state.gl.depthMask(true);
 state.gl.clearDepth(1);
 state.gl.clear(state.gl.DEPTH_BUFFER_BIT);
-prepareScene3DRender(state, scene, camera, lights);
 drawGlScene3D(state, scene, camera, lights);
 endGlRenderEffectPipeline(state, pipeline, []);
 

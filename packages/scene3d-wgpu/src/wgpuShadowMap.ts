@@ -14,11 +14,11 @@ import type {
   Scene3DRenderProxy,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
 import { ensureWgpuScene3DLayouts, SHADOW_DEPTH_FORMAT, writeWgpuDrawUniform } from './wgpuMeshPipeline';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 
 // Frees the directional shadow's non-GC GPU resources for `state`: the shadow depth map, the 1x1
 // no-shadow dummy depth texture, and the shadow-sample uniform buffer, then clears the derived slots
@@ -43,6 +43,7 @@ export function destroyWgpuScene3DShadow(state: WgpuRenderState): void {
   }
   scene.shadowComparisonSampler = null;
   scene.shadowDepthPipeline = null;
+  scene.shadowDepthSkinnedPipeline = null;
   scene.shadowSampleBindGroup = null;
   scene.shadowSampleLayout = null;
   scene.shadowSampleView = null;
@@ -70,11 +71,11 @@ export function drawWgpuScene3DShadowMap(
   state: WgpuRenderState,
   scene: Readonly<Node3D>,
   shadowCamera: Readonly<Camera3D>,
-  directionalLight: Readonly<DirectionalLight>,
+  directionalLight: Readonly<DirectionalLight> | null,
 ): void {
   const sceneRuntime = getWgpuScene3DRuntime(state);
   if (sceneRuntime.shadow !== null) sceneRuntime.shadow.enabled = false;
-  if (!directionalLight.castsShadow) return;
+  if (directionalLight === null || !directionalLight.castsShadow) return;
 
   const runtime = getWgpuRenderStateRuntime(state);
   const encoder = runtime.commandEncoder;
@@ -82,14 +83,10 @@ export function drawWgpuScene3DShadowMap(
   if (shadowCamera.projection.kind !== 'orthographic') {
     throw new Error('drawWgpuScene3DShadowMap requires an orthographic shadow camera');
   }
-  const normalBiasWorld =
-    directionalLight.normalBias *
-    getOrthographicProjectionTexelSize(shadowCamera.projection, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-
   let shadow = sceneRuntime.shadow;
   if (shadow === null) {
     const depthTexture = state.device.createTexture({
-      size: [SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 1],
+      size: [DIRECTIONAL_SHADOW_MAP_SIZE, DIRECTIONAL_SHADOW_MAP_SIZE, 1],
       format: SHADOW_DEPTH_FORMAT,
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
     });
@@ -97,6 +94,8 @@ export function drawWgpuScene3DShadowMap(
       depthTexture,
       depthView: depthTexture.createView(),
       enabled: false,
+      mapHeight: DIRECTIONAL_SHADOW_MAP_SIZE,
+      mapWidth: DIRECTIONAL_SHADOW_MAP_SIZE,
       matrix: createMatrix4() as Matrix4,
       normalBiasWorld: 0,
       pcfRadius: 0,
@@ -104,10 +103,14 @@ export function drawWgpuScene3DShadowMap(
     };
     sceneRuntime.shadow = shadow;
   }
+  const normalBiasWorld =
+    directionalLight.normalBias *
+    getOrthographicProjectionTexelSize(shadowCamera.projection, shadow.mapWidth, shadow.mapHeight);
   const lightMatrix = shadow.matrix;
   getCamera3DViewProjectionMatrix4(lightMatrix, shadowCamera, 1);
 
-  const pipeline = ensureWgpuShadowDepthPipeline(state);
+  const skinning = getWgpuSkinningAdapter(state);
+  const rigidPipeline = ensureWgpuShadowDepthPipeline(state, false);
 
   const pass = encoder.beginRenderPass({
     colorAttachments: [],
@@ -118,22 +121,35 @@ export function drawWgpuScene3DShadowMap(
       depthStoreOp: 'store',
     },
   });
-  pass.setViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, 0, 1);
-  pass.setPipeline(pipeline);
+  pass.setViewport(0, 0, shadow.mapWidth, shadow.mapHeight, 0, 1);
+  let boundPipeline: GPURenderPipeline | null = null;
 
   forEachNodeDescendant<Node3DTraits>(scene, (node) => {
     // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;
-    const upload = ensureWgpuMeshUpload(state, mesh.geometry);
+    // The app prepares the skin palette before any draw. Select the optional skinned depth pipeline only
+    // when the registered GPU-skinning adapter recognizes this caster, so rigid scenes neither compile
+    // the skin shader nor allocate a palette texture.
+    const skinned = skinning?.isGpuSkinned(mesh) ?? false;
+    const pipeline = skinned ? ensureWgpuShadowDepthPipeline(state, true) : rigidPipeline;
+    const upload = ensureWgpuMeshUpload(state, mesh.geometry, skinned);
     if (upload === null || upload.indexBuffer === null) return;
+    if (pipeline !== boundPipeline) {
+      pass.setPipeline(pipeline);
+      boundPipeline = pipeline;
+    }
 
     // The depth VS multiplies position by draw.world alone (no separate view-projection uniform), so bake
     // the light view-projection into the per-mesh world matrix here (lightMatrix * nodeWorld). Cheaper than
     // a second bind group and functionally identical to GL's separate u_viewProjection · u_model.
     const world = getNodeWorldMatrix4(mesh) as Matrix4;
     multiplyMatrix4(_shadowProxy.worldMatrix, lightMatrix, world);
-    const drawBindGroup = writeWgpuDrawUniform(state, _shadowProxy);
+    const jointMatrices = skinned ? mesh.skin!.skeleton.jointMatrices : null;
+    _shadowProxy.jointMatrices = jointMatrices;
+    const rigidDrawBindGroup = writeWgpuDrawUniform(state, _shadowProxy);
+    const drawBindGroup =
+      jointMatrices === null ? rigidDrawBindGroup : skinning!.getDrawBindGroup(state, jointMatrices);
     _dynamicOffsets[0] = sceneRuntime.pendingDrawOffset;
 
     pass.setBindGroup(0, drawBindGroup, _dynamicOffsets);
@@ -159,27 +175,37 @@ function normalizeDirectionalShadowPcfRadius(radius: number): number {
 // with front-face culling. Its group(0) is the shared Draw layout (dynamic-offset per-mesh world matrix),
 // so drawWgpuScene3DShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
 // compileShadowDepthProgram.
-function ensureWgpuShadowDepthPipeline(state: WgpuRenderState): GPURenderPipeline {
+function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean): GPURenderPipeline {
   const scene = getWgpuScene3DRuntime(state);
-  if (scene.shadowDepthPipeline !== null) return scene.shadowDepthPipeline;
+  const cached = skinned ? scene.shadowDepthSkinnedPipeline : scene.shadowDepthPipeline;
+  if (cached !== null) return cached;
 
   const device = state.device;
-  const module = device.createShaderModule({ code: SHADOW_DEPTH_WGSL });
+  const skinning = getWgpuSkinningAdapter(state);
+  const module = device.createShaderModule({
+    code: skinned && skinning !== null ? skinning.extendShadowDepthPrelude(SHADOW_DEPTH_WGSL) : SHADOW_DEPTH_WGSL,
+  });
   const layout = device.createPipelineLayout({
-    bindGroupLayouts: [ensureWgpuScene3DLayouts(state).drawBindGroupLayout],
+    bindGroupLayouts: [
+      skinned && skinning !== null
+        ? skinning.getDrawLayout(state)
+        : ensureWgpuScene3DLayouts(state).drawBindGroupLayout,
+    ],
   });
   const pipeline = device.createRenderPipeline({
     layout,
-    vertex: { module, entryPoint: 'vs_main', buffers: SHADOW_VERTEX_BUFFER_LAYOUTS },
+    vertex: {
+      module,
+      entryPoint: 'vs_main',
+      buffers: skinned && skinning !== null ? skinning.vertexBufferLayouts : SHADOW_VERTEX_BUFFER_LAYOUTS,
+    },
     primitive: { topology: 'triangle-list', frontFace: 'ccw', cullMode: 'front' },
     depthStencil: { format: SHADOW_DEPTH_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
   });
-  scene.shadowDepthPipeline = pipeline;
+  if (skinned) scene.shadowDepthSkinnedPipeline = pipeline;
+  else scene.shadowDepthPipeline = pipeline;
   return pipeline;
 }
-
-// Matches scene-gl's SHADOW_MAP_SIZE — the square resolution of the directional shadow map.
-const SHADOW_MAP_SIZE = 1024;
 
 // The depth-only shadow vertex module. Reads only position from the canonical 48-byte vertex; draw.world
 // already carries the light view-projection (baked per mesh by drawWgpuScene3DShadowMap). The one WebGPU
@@ -205,6 +231,7 @@ const SHADOW_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 // The reused per-mesh proxy handed to writeWgpuDrawUniform in the depth pass; only worldMatrix is read
 // (normalMatrix is written but unused by the shadow VS). subset/material are placeholders.
 const _shadowProxy: Scene3DRenderProxy = {
+  jointMatrices: null,
   material: {} as Readonly<Material>,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },

@@ -20,6 +20,8 @@ export interface WgpuScene3DShadow {
   depthTexture: GPUTexture;
   depthView: GPUTextureView;
   enabled: boolean;
+  mapHeight: number;
+  mapWidth: number;
   matrix: Matrix4;
   normalBiasWorld: number;
   pcfRadius: number;
@@ -155,6 +157,7 @@ export interface WgpuScene3DRuntime {
   shadow: WgpuScene3DShadow | null;
   shadowComparisonSampler: GPUSampler | null;
   shadowDepthPipeline: GPURenderPipeline | null;
+  shadowDepthSkinnedPipeline: GPURenderPipeline | null;
   shadowDummyTexture: GPUTexture | null;
   shadowDummyView: GPUTextureView | null;
   shadowSampleBindGroup: GPUBindGroup | null;

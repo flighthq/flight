@@ -103,11 +103,11 @@ const shadowCamera = createCamera3D({
 });
 configureDirectionalShadowCamera3DTightFit(shadowCamera, direction, sceneBounds, 1.03);
 
+prepareScene3DRender(state, scene, camera, lights);
 beginWgpuFrame(state);
-drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 renderWgpuBackground(state);
 beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-prepareScene3DRender(state, scene, camera, lights);
 drawWgpuScene3D(state, scene, camera, lights);
 endWgpuRenderEffectPipeline(state, pipeline, []);
 submitWgpuRenderPass(state);

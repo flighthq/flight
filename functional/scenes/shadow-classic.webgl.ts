@@ -71,8 +71,9 @@ export function render(
   lights: Readonly<Scene3DLights>,
   shadowCamera: Readonly<Camera3D>,
 ): void {
+  prepareScene3DRender(state, scene, camera, lights);
   // 1) Depth pass from the light's POV into the shadow map.
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional!);
+  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
   // 2) Forward-lit pass; the classic prelude's directional term PCF-samples the shadow map set above.
   beginGlRenderEffectPipeline(state, pipeline, 'linear');
@@ -81,7 +82,6 @@ export function render(
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
-  prepareScene3DRender(state, scene, camera, lights);
   drawGlScene3D(state, scene, camera, lights);
   endGlRenderEffectPipeline(state, pipeline, []);
 }
