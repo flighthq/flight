@@ -26,6 +26,7 @@ import { createRiveObjectGraph } from './riveObjectGraph';
 import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
 import { createRiveStateMachines } from './riveStateMachine';
+import { createRiveTextLabel } from './riveText';
 
 /**
  * Imports a `.riv` into one display subtree per artboard.
@@ -84,9 +85,7 @@ function createRiveArtboardImport(
       nodes.push(null);
       continue;
     }
-    const node = isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)
-      ? createShape({ name: readRiveText(object, RIVE_NAME, '') })
-      : createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
+    const node = createRiveDisplayNode(object, artboard, index);
     applyRiveTransform(node, object);
     applyRiveBlendMode(node, object);
     nodes.push(node);
@@ -103,6 +102,23 @@ function createRiveArtboardImport(
     appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
   }
   return { animations, height, name, root, stateMachines, width };
+}
+
+// A shape carries a command stream and a text drawable carries a label; everything else is a plain
+// container.
+function createRiveDisplayNode(
+  object: Readonly<RiveCoreObject>,
+  artboard: Readonly<RiveArtboardGraph>,
+  index: number,
+): DisplayObject {
+  const name = readRiveText(object, RIVE_NAME, '');
+  if (object.typeKey === RIVE_TEXT_TYPE_KEY) {
+    const label = createRiveTextLabel(artboard, index);
+    label.name = name;
+    return label;
+  }
+  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)) return createShape({ name });
+  return createDisplayObject({ name });
 }
 
 function collectRivePathGeometry(
@@ -225,6 +241,7 @@ const RIVE_NODE_TYPE_KEY = 2;
 const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_DRAWABLE_TYPE_KEY = 13;
+const RIVE_TEXT_TYPE_KEY = 134;
 const RIVE_NAME = 4;
 const RIVE_WIDTH = 7;
 const RIVE_HEIGHT = 8;
