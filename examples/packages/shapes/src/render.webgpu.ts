@@ -1,13 +1,13 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  createCanvasRenderState,
+  connectCanvasTextureResolverMisses,
+  createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
   createWgpuCanvasElement,
   createWgpuRenderState,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   enableFlightDiagnostics,
-  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -35,14 +35,13 @@ enableFlightDiagnostics(state);
 registerWgpuStandardMaterial(state);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
-// explicit rasterizer whose CanvasRenderState carries the texture resolvers they need.
-const shapeRasterizerState = createCanvasRenderState(document.createElement('canvas'));
-registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
-registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(shapeRasterizerState));
-registerWgpuShapeRasterizer(
-  state,
-  createCanvasShapeRasterizer(getCanvasRenderStateTextureResolvers(shapeRasterizerState)),
-);
+// explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
+// rather than a render state, and that set is pointed at this state's diagnostics.
+const shapeRasterizerResolvers = createCanvasTextureResolvers();
+connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
+registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
+registerCanvasImageTextureResolver(shapeRasterizerResolvers);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 
 export const scale = pixelRatio;
