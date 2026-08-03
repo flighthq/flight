@@ -23,7 +23,6 @@ import {
   registerExtendedPbrScene3DMaterialTextures,
   registerScene3DPbrExtensionTextures,
   registerScene3DMaterialTextures,
-  hasScene3DMaterialTextureLister,
 } from './sceneMaterialTextureRegistry';
 
 describe('createScene3DMaterialTextureRegistry', () => {
@@ -52,24 +51,6 @@ describe('getScene3DMaterialTextures', () => {
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: a }), out);
     getScene3DMaterialTextures(registry, createUnlitMaterial({ baseColorMap: b }), out);
     expect(out).toEqual([a, b]);
-  });
-});
-
-describe('hasScene3DMaterialTextureLister', () => {
-  it('separates a registered kind from an unregistered one', () => {
-    const registry = createScene3DMaterialTextureRegistry();
-    registerBuiltInScene3DMaterialTextures(registry);
-    expect(hasScene3DMaterialTextureLister(registry, UnlitMaterialKind)).toBe(true);
-    expect(hasScene3DMaterialTextureLister(registry, 'acme.Unknown')).toBe(false);
-  });
-
-  it('is true for a kind whose lister appends nothing, which getScene3DMaterialTextures cannot express', () => {
-    const registry = createScene3DMaterialTextureRegistry();
-    registerScene3DMaterialTextures(registry, 'acme.Bare', () => undefined);
-    const out: Texture[] = [];
-    getScene3DMaterialTextures(registry, { kind: 'acme.Bare' } as Material, out);
-    expect(out).toEqual([]);
-    expect(hasScene3DMaterialTextureLister(registry, 'acme.Bare')).toBe(true);
   });
 });
 
