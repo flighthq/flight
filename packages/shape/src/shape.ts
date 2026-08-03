@@ -280,8 +280,16 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
 }
 
 export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
-  out.data.commands.length = 0;
-  out.data.commands.push(...source.data.commands);
+  const commands = out.data.commands;
+  const sourceCommands = source.data.commands;
+  // Copied element by element rather than by spreading into push: a spread passes one argument per
+  // command, and a command stream is as long as its authored artwork, so imported vector art overflows
+  // the engine's argument limit. Aliased `out` is a no-op copy, not a self-clear followed by a read of
+  // what was just cleared.
+  if (commands !== sourceCommands) {
+    commands.length = sourceCommands.length;
+    for (let i = 0; i < sourceCommands.length; i++) commands[i] = sourceCommands[i];
+  }
   if (out.kind === MorphShapeKind) (out as MorphShape).data.paintBindings.length = 0;
   invalidateContent(out);
 }
