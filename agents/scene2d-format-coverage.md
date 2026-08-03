@@ -367,6 +367,21 @@ Turning a payload into an image or a font is a resource-layer concern, so this c
 nothing: the bytes and the metadata are handed over and a caller decodes what it wants, matching the
 `resolveImageResource` seam the SVG and Lottie importers use.
 
+**State machines are described as data, and nothing is interpreted.** The charter puts Rive's
+state-machine *runtime* — inputs driving transitions — in a separate cell, so this reports the
+machine and drives none of it: named machines, their inputs by kind and value, layers, states, and
+the transitions leaving each state with their duration, exit time and flags.
+
+Transition and animation references keep the values the file states rather than being resolved into
+positions. Rive uses at least three distinct id spaces — a component's parent indexes components, an
+interpolator indexes all artboard objects, an asset indexes the asset list — so a descriptor that
+guessed at a fourth would be worse than one that reports what is written.
+
+Over the corpus this yields 98 machines, all named, across 154 layers holding 789 states and 404
+transitions, with 70 inputs. **A machine takes its name from the `Animation` it extends, not from the
+state-machine component key its layers and inputs use** — reading it with the layer's key leaves every
+machine in the corpus unnamed, which is how the mistake showed itself.
+
 **Not covered:** wiring a resolved image onto the `Image` drawable that references it, so an image
 asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a

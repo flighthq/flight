@@ -25,6 +25,7 @@ import { parseRiveDocument } from './riveDocument';
 import { createRiveObjectGraph } from './riveObjectGraph';
 import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
+import { createRiveStateMachines } from './riveStateMachine';
 
 /**
  * Imports a `.riv` into one display subtree per artboard.
@@ -93,13 +94,15 @@ function createRiveArtboardImport(
   }
 
   applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
-  const animations = createRiveAnimationClips(objects, { end: artboard.streamEnd, start: artboard.streamStart }, nodes);
+  const span = { end: artboard.streamEnd, start: artboard.streamStart };
+  const animations = createRiveAnimationClips(objects, span, nodes);
+  const stateMachines = createRiveStateMachines(objects, span);
   for (const [shapeIndex, paths] of shapePaths) {
     const shape = nodes[shapeIndex];
     if (shape === null || shape === undefined) continue;
     appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
   }
-  return { animations, height, name, root, width };
+  return { animations, height, name, root, stateMachines, width };
 }
 
 function collectRivePathGeometry(

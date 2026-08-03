@@ -131,6 +131,46 @@ export interface RiveFileAsset {
   width: number;
 }
 
+/**
+ * A state machine as plain data. Rive's state-machine *runtime* — inputs driving transitions — is a
+ * separate concern from parsing, so this describes the machine and interprets none of it.
+ *
+ * References keep the values the file states rather than being resolved into positions, because Rive
+ * uses several distinct id spaces and a descriptor that guessed at one would be worse than a faithful
+ * report of what is written.
+ */
+export interface RiveStateMachineTransition {
+  duration: number;
+  exitTime: number;
+  flags: number;
+  toStateId: number;
+}
+
+/** One state in a layer. `animationId` is -1 for states that play no animation. */
+export interface RiveStateMachineState {
+  animationId: number;
+  kind: string;
+  transitions: RiveStateMachineTransition[];
+}
+
+export interface RiveStateMachineLayer {
+  name: string;
+  states: RiveStateMachineState[];
+}
+
+/** A named input. `value` is a boolean, a number, or null for a trigger, which carries none. */
+export interface RiveStateMachineInput {
+  kind: string;
+  name: string;
+  value: boolean | number | null;
+}
+
+export interface RiveStateMachineDescriptor {
+  inputs: RiveStateMachineInput[];
+  layers: RiveStateMachineLayer[];
+  name: string;
+}
+
 /** A named clip. A Rive artboard carries several animations and the name is how a caller picks one. */
 export interface RiveAnimationClip {
   clip: AnimationClip;
@@ -144,6 +184,8 @@ export interface RiveAnimationClip {
  */
 export interface RiveArtboardImport {
   animations: RiveAnimationClip[];
+  /** The artboard's state machines, described as data. Nothing here is interpreted or driven. */
+  stateMachines: RiveStateMachineDescriptor[];
   height: number;
   name: string;
   root: DisplayObject;
