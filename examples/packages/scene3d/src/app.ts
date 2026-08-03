@@ -112,7 +112,7 @@ const directionalLight = createDirectionalLight({
   color: 0xffe3c4ff,
   direction: directionalDirection,
   intensity: 3,
-  normalBias: 0.003,
+  normalBias: 0.75,
   pcfRadius: 1,
   shadowBias: 0.001,
 });

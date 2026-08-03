@@ -412,7 +412,7 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
       depthView: {} as GPUTextureView,
       enabled: true,
       matrix: createMatrix4(),
-      normalBias: 0,
+      normalBiasWorld: 0,
       pcfRadius: 0,
       shadowBias: 0,
     };
@@ -429,7 +429,7 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
       depthView: {} as GPUTextureView,
       enabled: true,
       matrix: createMatrix4(),
-      normalBias: 0.02,
+      normalBiasWorld: 0.02,
       pcfRadius: 2,
       shadowBias: 0.01,
     };
@@ -642,7 +642,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
       depthView: {} as GPUTextureView,
       enabled: true,
       matrix: createMatrix4(),
-      normalBias: 0,
+      normalBiasWorld: 0,
       pcfRadius: 0,
       shadowBias: 0,
     };
@@ -658,7 +658,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
       depthView: {} as GPUTextureView,
       enabled: true,
       matrix: createMatrix4(),
-      normalBias: 0.02,
+      normalBiasWorld: 0.02,
       pcfRadius: 2,
       shadowBias: 0.01,
     };

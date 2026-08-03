@@ -21,7 +21,7 @@ export interface WgpuScene3DShadow {
   depthView: GPUTextureView;
   enabled: boolean;
   matrix: Matrix4;
-  normalBias: number;
+  normalBiasWorld: number;
   pcfRadius: number;
   shadowBias: number;
 }

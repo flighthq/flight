@@ -31,7 +31,7 @@ function makeLitProgram(): GlLitProgram {
     locShadowEnabled: loc('u_shadowEnabled'),
     locShadowMap: loc('u_shadowMap'),
     locShadowMatrix: loc('u_shadowMatrix'),
-    locShadowNormalBias: loc('u_shadowNormalBias'),
+    locShadowNormalBiasWorld: loc('u_shadowNormalBiasWorld'),
     locShadowPcfRadius: loc('u_shadowPcfRadius'),
     locSpotCount: loc('u_spotCount'),
     locSpotLights: loc('u_spotLights'),
@@ -156,7 +156,7 @@ describe('bindGlMeshLightBlock', () => {
     runtime.shadow = {
       enabled: true,
       matrix: createMatrix4(),
-      normalBias: 0.02,
+      normalBiasWorld: 0.02,
       pcfRadius: 2,
       shadowBias: 0.01,
       texture: {} as WebGLTexture,
@@ -181,7 +181,7 @@ describe('bindGlMeshLightBlock', () => {
     expect(scalar('u_shadowEnabled')).toBe(1);
     expect(scalar('u_shadowPcfRadius')).toBe(2);
     expect(scalar('u_shadowBias')).toBe(0.01);
-    expect(scalar('u_shadowNormalBias')).toBe(0.02);
+    expect(scalar('u_shadowNormalBiasWorld')).toBe(0.02);
   });
 });
 
@@ -199,7 +199,7 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
       'u_shadowEnabled',
       'u_shadowPcfRadius',
       'u_shadowBias',
-      'u_shadowNormalBias',
+      'u_shadowNormalBiasWorld',
       'u_pointLights',
       'u_spotLights',
       'u_hemisphereLights',
@@ -213,7 +213,7 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
 
   it('uses a bounded runtime PCF radius and configurable receiver biases', () => {
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)');
-    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('geometricNormal * u_shadowNormalBias');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('geometricNormal * u_shadowNormalBiasWorld');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('uvz.z - u_shadowBias');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('if (radius == 0) return compareDirectionalShadow(uvz.xy, current)');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('if (radius == 1)');
@@ -234,6 +234,6 @@ describe('resolveGlLitLocations', () => {
     expect(locations.locShadowMap).not.toBeNull();
     expect(locations.locShadowPcfRadius).not.toBeNull();
     expect(locations.locShadowBias).not.toBeNull();
-    expect(locations.locShadowNormalBias).not.toBeNull();
+    expect(locations.locShadowNormalBiasWorld).not.toBeNull();
   });
 });

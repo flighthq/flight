@@ -1,4 +1,4 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
@@ -79,6 +79,12 @@ export function drawWgpuScene3DShadowMap(
   const runtime = getWgpuRenderStateRuntime(state);
   const encoder = runtime.commandEncoder;
   if (encoder === null) return;
+  if (shadowCamera.projection.kind !== 'orthographic') {
+    throw new Error('drawWgpuScene3DShadowMap requires an orthographic shadow camera');
+  }
+  const normalBiasWorld =
+    directionalLight.normalBias *
+    getOrthographicProjectionTexelSize(shadowCamera.projection, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
   let shadow = sceneRuntime.shadow;
   if (shadow === null) {
@@ -92,7 +98,7 @@ export function drawWgpuScene3DShadowMap(
       depthView: depthTexture.createView(),
       enabled: false,
       matrix: createMatrix4() as Matrix4,
-      normalBias: 0,
+      normalBiasWorld: 0,
       pcfRadius: 0,
       shadowBias: 0,
     };
@@ -138,7 +144,7 @@ export function drawWgpuScene3DShadowMap(
 
   pass.end();
   shadow.enabled = true;
-  shadow.normalBias = directionalLight.normalBias;
+  shadow.normalBiasWorld = normalBiasWorld;
   shadow.pcfRadius = normalizeDirectionalShadowPcfRadius(directionalLight.pcfRadius);
   shadow.shadowBias = directionalLight.shadowBias;
 }

@@ -29,6 +29,17 @@ export function createPerspectiveProjection(opts: Readonly<PerspectiveProjection
   };
 }
 
+// Returns the larger world-space footprint of one texel across an orthographic projection. Using the
+// larger axis gives receiver offsets one conservative, aspect-independent unit even when the shadow
+// map or light projection is not square. `pixelWidth`/`pixelHeight` must be positive.
+export function getOrthographicProjectionTexelSize(
+  projection: Readonly<OrthographicProjection>,
+  pixelWidth: number,
+  pixelHeight: number,
+): number {
+  return Math.max((projection.halfWidth * 2) / pixelWidth, (projection.halfHeight * 2) / pixelHeight);
+}
+
 // True when the projection is an orthographic descriptor. Narrows the discriminated union.
 export function isOrthographicProjection(projection: Readonly<Projection>): projection is OrthographicProjection {
   return projection.kind === 'orthographic';

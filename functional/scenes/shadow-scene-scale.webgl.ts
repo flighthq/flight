@@ -81,7 +81,17 @@ const direction = createVector3(0.5, -1, 0.3);
 normalizeVector3(direction, direction);
 const lights = {
   ambient: createAmbientLight({ color: 0x384050ff, intensity: 0.08 }),
-  directional: createDirectionalLight({ castsShadow: true, color: 0xffffffff, direction, intensity: 3 }),
+  // One texel of normal bias is converted through the tight-fit projection below. This is the
+  // large-scene witness that the authored bias follows shadow-map scale instead of raw world units.
+  directional: createDirectionalLight({
+    castsShadow: true,
+    color: 0xffffffff,
+    direction,
+    intensity: 3,
+    normalBias: 1,
+    pcfRadius: 0,
+    shadowBias: 0,
+  }),
 };
 
 const sceneBounds = createAabb();

@@ -21,7 +21,7 @@ import type { TextureColorSpace } from './Texture';
 export interface GlScene3DShadow {
   enabled: boolean;
   matrix: Matrix4; // light view-projection (world -> shadow clip)
-  normalBias: number;
+  normalBiasWorld: number;
   pcfRadius: number;
   shadowBias: number;
   texture: WebGLTexture; // the sampleable depth shadow map

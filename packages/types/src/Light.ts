@@ -10,8 +10,8 @@ import type { Entity, Kind } from './Entity';
 // seam in @flighthq/materials). `range` is the falloff cutoff distance in world units, with -1
 // meaning infinite (no attenuation cutoff) for the punctual lights that support it.
 //
-// Shadow params, on lights that cast: `castsShadow` opts in; `shadowBias` (depth-compare bias)
-// and `normalBias` (surface-offset along the normal) fight shadow acne / peter-panning;
+// Shadow params, on lights that cast: `castsShadow` opts in; `shadowBias` is normalized depth-compare
+// bias; `normalBias` is a surface-normal offset whose units are defined by the concrete light;
 // `pcfRadius` is the percentage-closer-filtering kernel radius in shadow-map texels.
 
 // Open base contract for every light. The `kind` is the canonical PascalCase type name; concrete
