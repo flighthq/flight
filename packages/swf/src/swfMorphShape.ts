@@ -21,7 +21,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
-import { readSwfShapeStylePaths } from './swfShape';
+import { readSwfMorphShapePaths } from './swfShape';
 
 // Decodes a DefineMorphShape/2 body into a MorphShape.
 //
@@ -55,26 +55,25 @@ export function createSwfMorphShape(
   if (lines === null) return null;
 
   // The offset bounds the start edges exactly, which is also what keeps a truncated first half from
-  // being read as the second.
-  const start = readSwfShapeStylePaths(new SwfReader(reader.source, reader.pos, endEdgesStart));
-  if (start === null) return null;
-  // The end edges name no styles of their own; they replay the start's runs in the same order.
-  const end = readSwfShapeStylePaths(new SwfReader(reader.source, endEdgesStart, reader.end), start.runs);
-  if (end === null) return null;
+  // being read as the second. Both sets are walked together: the end set names no styles of its own, and
+  // the two record streams do not always line up one-for-one.
+  const paths = readSwfMorphShapePaths(
+    new SwfReader(reader.source, reader.pos, endEdgesStart),
+    new SwfReader(reader.source, endEdgesStart, reader.end),
+  );
+  if (paths === null) return null;
 
-  return createSwfMorphShapeNode(fills, lines, start.fills, end.fills, start.lines, end.lines);
+  return createSwfMorphShapeNode(fills, lines, paths.fills, paths.lines);
 }
 
 function createSwfMorphShapeNode(
   fills: readonly Readonly<SwfMorphFill>[],
   lines: readonly Readonly<SwfMorphLine>[],
-  startFills: ReadonlyMap<number, Path>,
-  endFills: ReadonlyMap<number, Path>,
-  startLines: ReadonlyMap<number, Path>,
-  endLines: ReadonlyMap<number, Path>,
+  fillPaths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
+  linePaths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
 ): MorphShape | null {
-  const paired = pairSwfMorphPaths(startFills, endFills);
-  const pairedLines = pairSwfMorphPaths(startLines, endLines);
+  const paired = pairSwfMorphPaths(fillPaths);
+  const pairedLines = pairSwfMorphPaths(linePaths);
   if (paired.length === 0 && pairedLines.length === 0) return null;
 
   // The node is created around the first morph and every morph — including that one — is appended under
@@ -168,16 +167,16 @@ interface SwfMorphPathPair {
   morph: ReturnType<typeof createPathMorph> & object;
 }
 
-// Pairs the two endpoints by style index. An index only one endpoint carries has nothing to morph
-// against, and a pair the morph builder cannot put in correspondence is dropped the same way — either
-// leaves the rest of the shape intact rather than failing the definition.
-function pairSwfMorphPaths(start: ReadonlyMap<number, Path>, end: ReadonlyMap<number, Path>): SwfMorphPathPair[] {
+// Prepares each style index's endpoint pair. The two paths already have identical structure, so the morph
+// builder has nothing to reconcile; a pair it still declines is dropped, leaving the rest of the shape
+// intact rather than failing the definition.
+function pairSwfMorphPaths(
+  paths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
+): SwfMorphPathPair[] {
   const pairs: SwfMorphPathPair[] = [];
-  for (const index of [...start.keys()].sort(compareSwfMorphIndex)) {
-    const startPath = start.get(index);
-    const endPath = end.get(index);
-    if (startPath === undefined || endPath === undefined) continue;
-    const morph = createPathMorph(startPath, endPath);
+  for (const index of [...paths.keys()].sort(compareSwfMorphIndex)) {
+    const pair = paths.get(index)!;
+    const morph = createPathMorph(pair.start, pair.end);
     if (morph !== null) pairs.push({ index, morph });
   }
   return pairs;

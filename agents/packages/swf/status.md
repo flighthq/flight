@@ -45,20 +45,26 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   edge set is decoded against style *indices* alone through `readSwfShapeStylePaths`. An index carried by
   both endpoints becomes one path morph beneath the paint morph that index named, and a shape with several
   fills is one node with several of them rather than one node per region.
-  Two things that are easy to get wrong and are pinned by tests. The **end edge set names no styles**: it
-  repeats the start's record structure with the style fields unset, so it replays the start's runs by
-  position — without that it decodes to no fills at all, silently, which is exactly how it first failed
-  against the corpus. And the **ratio lives on the placement, not the definition**, so it is per-frame data
-  applied beside the matrix and alpha; two placements of one character routinely sit at different points
-  along the same morph, which is why a character decodes to a factory and every placement gets its own node.
-- Morph coverage measured against the corpus: 7 of 8 morph characters across its 5 morph-carrying files
-  decode, including gradient fills and multi-path compound shapes. Two gaps are known rather than assumed.
-  One character (`avm1/click_block`, a version 2 morph) has **more style-change records in its start edge
-  set than its end**, which positional replay cannot pair; a player walks both edge streams in lockstep as
-  a single pass, and that is what this would take. And no corpus file carries a **version 2 morph
-  gradient**, so whether that form packs spread and interpolation into the high nibble of its count byte
-  the way a static gradient does is untested — the decoder reads the whole byte as the count, which every
-  version 1 morph agrees with, and the question is recorded here rather than guessed at in code.
+  The two edge sets are walked **in step**, by `readSwfMorphShapePaths`, rather than decoded apart and
+  matched afterwards. Two facts force that. The end set **names no styles** — it repeats the start's record
+  structure with the style fields unset — and the two record streams **do not always line up one-for-one**,
+  since either side may change style where the other does not. A paired walk handles both with independent
+  cursors, and it pays for itself twice over: each contour carries both endpoints through stitching and
+  fill0 reversal as a unit, so a style index's two paths come out with identical structure and the morph
+  builder has no correspondence to reconstruct. An edge that is straight on one side and curved on the
+  other still pairs, the straight side contributing its midpoint as a control point.
+  The **ratio lives on the placement, not the definition**, so it is per-frame data applied beside the
+  matrix and alpha; two placements of one character routinely sit at different points along the same morph,
+  which is why a character decodes to a factory and every placement gets its own node. A morph's authored
+  bounds interpolate with it: the union of both endpoints would be right for neither, leaving a morph at
+  rest reporting room for the shape it is not yet.
+- Morph coverage measured against the corpus: **all 8 morph characters** across its 5 morph-carrying files
+  decode, including gradient fills and multi-path compound shapes. One gap remains, and it is an unknown
+  rather than a defect: no corpus file carries a **version 2 morph gradient**, so whether that form packs
+  spread and interpolation into the high nibble of its count byte the way a static gradient does is
+  untested. The decoder reads the whole byte as the count, which every version 1 morph agrees with. That
+  reading was implemented, found to fix nothing, and reverted rather than shipped unverified — the question
+  is recorded here instead of guessed at in code.
 - `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
   names, since an init action runs once before that sprite's first frame.
 - A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so

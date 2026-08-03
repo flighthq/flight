@@ -1,7 +1,7 @@
 import { createTexture } from '@flighthq/texture/contract';
 
 import { SwfReader } from './swfReader';
-import { createSwfGlyphShape, createSwfShape, readSwfShapeStylePaths } from './swfShape';
+import { createSwfGlyphShape, createSwfShape, readSwfMorphShapePaths } from './swfShape';
 import { ShapeWriter } from './swfShapeTestHelper';
 
 describe('createSwfGlyphShape', () => {
@@ -380,46 +380,73 @@ describe('createSwfShape', () => {
   });
 });
 
-describe('readSwfShapeStylePaths', () => {
-  it('keys contours by the style index its edges referenced, in pixels', () => {
-    const writer = new ShapeWriter();
-    writer.writeStyleBits(2, 2);
-    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
-    writer.writeStraightEdge(200, 0);
-    writer.writeStraightEdge(0, 200);
-    writer.writeEndShape();
-    const bytes = writer.toBytes();
-
-    const paths = readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))!;
+describe('readSwfMorphShapePaths', () => {
+  it('keys both endpoints by the style index the start edges referenced, in pixels', () => {
+    const paths = readSwfMorphShapePaths(morphReader(200), morphReader(400))!;
 
     expect([...paths.fills.keys()]).toEqual([1]);
-    // 200 twips is 10 pixels: the decode converts, so both morph endpoints are already comparable.
-    expect(paths.fills.get(1)!.data.slice(0, 4)).toEqual([0, 0, 10, 0]);
+    // 200 twips is 10 pixels: the decode converts, so both endpoints are already comparable.
+    expect(paths.fills.get(1)!.start.data.slice(0, 4)).toEqual([0, 0, 10, 0]);
+    expect(paths.fills.get(1)!.end.data.slice(0, 4)).toEqual([0, 0, 20, 0]);
   });
 
-  it('records the style runs an end edge set replays, one per style-change record', () => {
-    const writer = new ShapeWriter();
-    writer.writeStyleBits(2, 2);
-    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
-    writer.writeStraightEdge(200, 0);
-    writer.writeStyleChange({ fill1: 2, moveToX: 400, moveToY: 0 }, 2);
-    writer.writeStraightEdge(200, 0);
-    writer.writeEndShape();
-    const bytes = writer.toBytes();
+  it('gives the two endpoints identical structure, so nothing has to match them up afterwards', () => {
+    const paths = readSwfMorphShapePaths(morphReader(200), morphReader(400))!;
 
-    const paths = readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))!;
-
-    expect(paths.runs.map((run) => run.fill1)).toEqual([1, 2]);
+    const pair = paths.fills.get(1)!;
+    expect(pair.end.commands).toEqual(pair.start.commands);
+    expect(pair.end.data).toHaveLength(pair.start.data.length);
   });
 
-  it('rejects a shape that introduces styles, which a morph endpoint never does', () => {
+  it('pairs the edges when only the end set changes style, which positional matching cannot', () => {
+    // The start set names its style once; the end set adds a style change the start does not have. The
+    // walk consumes it on the end cursor alone rather than falling out of step — the case that left one
+    // corpus morph undecoded when each endpoint was read on its own.
+    const start = new ShapeWriter();
+    start.writeStyleBits(2, 2);
+    start.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+    start.writeStraightEdge(200, 0);
+    start.writeStraightEdge(0, 200);
+    start.writeEndShape();
+    const end = new ShapeWriter();
+    end.writeStyleBits(2, 2);
+    end.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+    end.writeStraightEdge(400, 0);
+    end.writeStyleChange({ moveToX: 400, moveToY: 0 }, 2);
+    end.writeStraightEdge(0, 400);
+    end.writeEndShape();
+    const startBytes = start.toBytes();
+    const endBytes = end.toBytes();
+
+    const paths = readSwfMorphShapePaths(
+      new SwfReader(startBytes, 0, startBytes.length),
+      new SwfReader(endBytes, 0, endBytes.length),
+    )!;
+
+    expect([...paths.fills.keys()]).toEqual([1]);
+    expect(paths.fills.get(1)!.end.commands).toEqual(paths.fills.get(1)!.start.commands);
+  });
+
+  it('rejects an endpoint that introduces styles, which a morph never does', () => {
     const writer = new ShapeWriter();
     writer.writeStyleBits(1, 1);
-    // A style-change record with the new-styles bit set is the one form this decoder cannot honour,
-    // because a morph's styles were read once, ahead of both endpoints.
     writer.writeNewStylesRecord();
     const bytes = writer.toBytes();
 
-    expect(readSwfShapeStylePaths(new SwfReader(bytes, 0, bytes.length))).toBeNull();
+    expect(readSwfMorphShapePaths(new SwfReader(bytes, 0, bytes.length), morphReader(200))).toBeNull();
   });
 });
+
+// One closed box `width` twips across under fill style 1, as a morph endpoint's bare SHAPE.
+function morphReader(width: number): SwfReader {
+  const writer = new ShapeWriter();
+  writer.writeStyleBits(2, 2);
+  writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 }, 2);
+  writer.writeStraightEdge(width, 0);
+  writer.writeStraightEdge(0, width);
+  writer.writeStraightEdge(-width, 0);
+  writer.writeStraightEdge(0, -width);
+  writer.writeEndShape();
+  const bytes = writer.toBytes();
+  return new SwfReader(bytes, 0, bytes.length);
+}
