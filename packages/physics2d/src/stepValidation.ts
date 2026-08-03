@@ -89,7 +89,9 @@ export function isPhysics2DSolverConfigValid(config: Readonly<Physics2DSolverCon
     typeof config.warmStarting === 'boolean' &&
     typeof config.continuousCollision === 'boolean' &&
     Number.isSafeInteger(config.maxCcdSubsteps) &&
-    config.maxCcdSubsteps >= 0
+    config.maxCcdSubsteps >= 0 &&
+    Number.isSafeInteger(config.maxCcdRotationSubsteps) &&
+    config.maxCcdRotationSubsteps >= 0
   );
 }
 

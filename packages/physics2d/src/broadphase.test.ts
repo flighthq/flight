@@ -38,11 +38,11 @@ describe('synchronizePhysics2DSweptBroadphase', () => {
     const world = createPhysics2DWorld(0, 0);
     const first = createRigidBody2D('dynamic', 0, 0);
     first.velocityX = 10;
-    first.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }));
+    first.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, STONE));
     addPhysics2DBody(world, first);
     const second = createRigidBody2D('kinematic', 10, 0);
     second.velocityX = -10;
-    second.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }));
+    second.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, STONE));
     addPhysics2DBody(world, second);
     const pairs: { a: number; b: number }[] = [];
 
@@ -53,5 +53,25 @@ describe('synchronizePhysics2DSweptBroadphase', () => {
     synchronizePhysics2DSweptBroadphase(world, 0.5);
     world.index.querySpatialPairs(pairs);
     expect(pairs).toEqual([{ a: first.index, b: second.index }]);
+  });
+
+  it('conservatively indexes the full rotation radius of an angular body', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const rod = createRigidBody2D('dynamic', 0, 0);
+    rod.angularVelocity = Math.PI;
+    rod.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -2, minY: -0.05, maxX: 2, maxY: 0.05 }, STONE));
+    addPhysics2DBody(world, rod);
+    const obstacle = createRigidBody2D('static', 0, 1.5);
+    obstacle.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, STONE));
+    addPhysics2DBody(world, obstacle);
+    const pairs: { a: number; b: number }[] = [];
+
+    synchronizePhysics2DBroadphase(world);
+    world.index.querySpatialPairs(pairs);
+    expect(pairs).toHaveLength(0);
+
+    synchronizePhysics2DSweptBroadphase(world, 0.5);
+    world.index.querySpatialPairs(pairs);
+    expect(pairs).toEqual([{ a: rod.index, b: obstacle.index }]);
   });
 });

@@ -22,6 +22,7 @@ function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number)
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
+    let rotationRadiusSquared = 0;
     for (const collider of body.colliders) {
       updatePhysics2DColliderWorldShape(collider, body);
       writePhysics2DColliderBounds(collider, boundsScratch);
@@ -29,6 +30,10 @@ function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number)
       if (boundsScratch.minY < minY) minY = boundsScratch.minY;
       if (boundsScratch.maxX > maxX) maxX = boundsScratch.maxX;
       if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
+      const radiusX = Math.max(Math.abs(boundsScratch.minX - body.x), Math.abs(boundsScratch.maxX - body.x));
+      const radiusY = Math.max(Math.abs(boundsScratch.minY - body.y), Math.abs(boundsScratch.maxY - body.y));
+      const radiusSquared = radiusX * radiusX + radiusY * radiusY;
+      if (radiusSquared > rotationRadiusSquared) rotationRadiusSquared = radiusSquared;
     }
     if (minX > maxX) {
       // No collider produced bounds, so there is nothing to index. Withdraw rather than skip: the id
@@ -39,10 +44,21 @@ function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number)
     if (dt > 0 && body.type !== 'static' && !body.sleeping) {
       const translationX = body.velocityX * dt;
       const translationY = body.velocityY * dt;
-      if (translationX < 0) minX += translationX;
-      else maxX += translationX;
-      if (translationY < 0) minY += translationY;
-      else maxY += translationY;
+      if (body.angularVelocity !== 0) {
+        // A circle around the body origin encloses every orientation of every collider. Sweeping that
+        // circle along the origin's translation is conservative for arbitrary rotation, including an
+        // offset circle whose centre follows an arc rather than the linear path used by shape sweep.
+        const radius = Math.sqrt(rotationRadiusSquared);
+        minX = Math.min(minX, body.x - radius, body.x + translationX - radius);
+        minY = Math.min(minY, body.y - radius, body.y + translationY - radius);
+        maxX = Math.max(maxX, body.x + radius, body.x + translationX + radius);
+        maxY = Math.max(maxY, body.y + radius, body.y + translationY + radius);
+      } else {
+        if (translationX < 0) minX += translationX;
+        else maxX += translationX;
+        if (translationY < 0) minY += translationY;
+        else maxY += translationY;
+      }
     }
     // The spatial package bounds its own indexing cost. This second limit expresses the physics
     // world's stricter judgement that a non-finite or ten-million-unit body has diverged and should no

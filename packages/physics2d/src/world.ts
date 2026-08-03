@@ -230,6 +230,7 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
     warmStarting: true,
     continuousCollision: true,
     maxCcdSubsteps: 8,
+    maxCcdRotationSubsteps: 64,
   };
 }
 
@@ -330,6 +331,9 @@ export function hydratePhysics2DWorld(world: Physics2DWorld): boolean {
     world.config.continuousCollision = defaults.continuousCollision;
   }
   if (world.config.maxCcdSubsteps === undefined) world.config.maxCcdSubsteps = defaults.maxCcdSubsteps;
+  if (world.config.maxCcdRotationSubsteps === undefined) {
+    world.config.maxCcdRotationSubsteps = defaults.maxCcdRotationSubsteps;
+  }
   for (const body of world.bodies) {
     if (body.fixedRotation === undefined) body.fixedRotation = false;
     if (body.bullet === undefined) body.bullet = false;
@@ -443,8 +447,8 @@ export function removePhysics2DCollider(
   return true;
 }
 
-// Opts a world-owned body into or out of continuous linear collision detection. CCD is meaningful only
-// for dynamics, but retaining the authored flag across type changes keeps a temporarily static bullet
+// Opts a world-owned body into or out of continuous collision detection. CCD is meaningful only for
+// dynamics, but retaining the authored flag across type changes keeps a temporarily static bullet
 // from silently losing its policy.
 export function setPhysics2DBodyBullet(world: Physics2DWorld, body: RigidBody2D, bullet: boolean): boolean {
   assertPhysics2DWorldNotStepping(world);
@@ -601,4 +605,4 @@ function _wakePhysics2DBodyFromTopology(body: RigidBody2D): void {
   body.sleepTimer = 0;
 }
 
-export const Physics2DWorldVersion = 1;
+export const Physics2DWorldVersion = 2;
