@@ -36,6 +36,10 @@ export function isRigidBody2DPairAwake(a: Readonly<RigidBody2D>, b: Readonly<Rig
 export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   const config = world.config;
   const bodies = world.bodies;
+  const parents = world.islandParents;
+  const islandTimers = world.islandSleepTimers;
+  parents.clear();
+  islandTimers.clear();
 
   if (!config.allowSleeping) {
     // The mechanism is off, so nothing may be left asleep from when it was on — a body that stayed
@@ -69,7 +73,6 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
 
   // Then the island reduction. `_islandRootOf` is union-find over the contact and joint graph, so the
   // root is a stable representative for the connected component.
-  const parents = new Map<number, number>();
   for (const contact of world.contacts) {
     if (!contact.enabled || contact.sensor) continue;
     _unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
@@ -81,7 +84,6 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   }
 
   // The island's timer is the MINIMUM across its members: the least-settled body decides.
-  const islandTimers = new Map<number, number>();
   for (const body of bodies) {
     if (body.type === 'static') continue;
     const root = _islandRootOf(parents, body.index);

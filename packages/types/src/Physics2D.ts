@@ -290,6 +290,12 @@ export interface Physics2DWorld {
   index: SpatialIndexBackend;
   config: Physics2DSolverConfig;
 
+  // Reusable union-find and reduction scratch for sleeping islands. These maps are allocated with the
+  // world and cleared in place; keeping them on the plain world record makes the no-per-step-allocation
+  // contract explicit and maps directly to owned scratch tables in the native port.
+  islandParents: Map<number, number>;
+  islandSleepTimers: Map<number, number>;
+
   gravityX: number;
   gravityY: number;
 

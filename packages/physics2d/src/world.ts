@@ -238,6 +238,8 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     contactHooks: { preSolve: null, postSolve: null },
     index: index ?? createUniformGridSpatialBackend(1),
     config: createPhysics2DSolverConfig(),
+    islandParents: new Map(),
+    islandSleepTimers: new Map(),
     gravityX,
     gravityY,
     previousTimestep: 0,
