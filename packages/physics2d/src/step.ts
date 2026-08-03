@@ -22,6 +22,7 @@ import type {
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
+import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression';
 import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
 import { steppingPhysics2DWorlds } from './ownership';
 import { relativeNormalVelocity, solvePhysics2DContactIndicesOnce, warmStartPhysics2DContactIndices } from './solver';
@@ -690,16 +691,3 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
 const pairScratch: SpatialPair[] = [];
 const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
-
-// Whether a joint between these two bodies suppresses their contact.
-function isPhysics2DPairJointSuppressed(world: Readonly<Physics2DWorld>, first: number, second: number): boolean {
-  for (const joint of world.joints) {
-    if (joint.collideConnected) continue;
-    const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined || solver.usesBodyA === false) continue;
-    if ((joint.bodyA === first && joint.bodyB === second) || (joint.bodyA === second && joint.bodyB === first)) {
-      return true;
-    }
-  }
-  return false;
-}

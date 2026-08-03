@@ -12,6 +12,7 @@ import type {
 
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { createPhysics2DColliderWorldShape } from './colliderTransform';
+import { rebuildPhysics2DJointCollisionSuppressions } from './jointCollisionSuppression';
 import { updateRigidBody2DMassData } from './massProperties';
 import {
   assertPhysics2DBodyNotStepping,
@@ -240,6 +241,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     contacts: [],
     joints: [],
     jointSolvers: new Map(),
+    jointCollisionSuppressions: new Map(),
     events: { began: [], ended: [] },
     contactHooks: { preSolve: null, postSolve: null },
     index: index ?? createUniformGridSpatialBackend(1),
@@ -372,6 +374,7 @@ export function removePhysics2DBody(world: Physics2DWorld, body: Readonly<RigidB
     world.joints.splice(i, 1);
     physics2DJointOwners.delete(joint);
   }
+  rebuildPhysics2DJointCollisionSuppressions(world);
   world.bodyByIndex.delete(body.index);
   world.bodies.splice(at, 1);
   world.index.removeSpatialObject(body.index);

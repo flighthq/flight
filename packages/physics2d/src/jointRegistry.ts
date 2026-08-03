@@ -6,6 +6,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { wakePhysics2DBody } from './islands';
+import { rebuildPhysics2DJointCollisionSuppressions } from './jointCollisionSuppression';
 import { assertPhysics2DWorldNotStepping, physics2DJointOwners } from './ownership';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 
@@ -35,6 +36,7 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
   if (active) _canonicalizePhysics2DJointEnds(world, joint);
   world.joints.push(joint);
   physics2DJointOwners.set(joint, world);
+  rebuildPhysics2DJointCollisionSuppressions(world);
   // Adding an active constraint changes what both bodies may do THIS step. A sleeping pair would skip
   // prepare and solve forever unless something unrelated happened to wake it. Unknown kinds remain
   // inert until registration, and are woken on that activation path instead.
@@ -84,6 +86,7 @@ export function invalidatePhysics2DJoint(world: Physics2DWorld, joint: Physics2D
   joint.impulse0 = 0;
   joint.impulse1 = 0;
   joint.impulse2 = 0;
+  rebuildPhysics2DJointCollisionSuppressions(world);
   _wakePhysics2DJointBodies(world, joint);
   return true;
 }
@@ -113,6 +116,7 @@ export function registerPhysics2DJointSolver(
     // replace its equation entirely, so it is the same topology change from the sleepers' perspective.
     _wakePhysics2DJointBodies(world, joint);
   }
+  rebuildPhysics2DJointCollisionSuppressions(world);
 }
 
 // Removes `joint` from `world`. Returns false when the world does not hold it.
@@ -123,6 +127,7 @@ export function removePhysics2DJoint(world: Physics2DWorld, joint: Readonly<Phys
   if (getPhysics2DJointSolver(world, joint.kind) !== null) _wakePhysics2DJointBodies(world, joint);
   world.joints.splice(at, 1);
   physics2DJointOwners.delete(joint as Physics2DJoint);
+  rebuildPhysics2DJointCollisionSuppressions(world);
   return true;
 }
 

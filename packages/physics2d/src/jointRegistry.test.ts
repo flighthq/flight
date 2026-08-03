@@ -246,6 +246,20 @@ describe('invalidatePhysics2DJoint', () => {
     expect(invalidatePhysics2DJoint(other, added)).toBe(false);
     expect(added.impulse0).toBe(10);
   });
+
+  it('reindexes collision suppression after an authored flag changes', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBe(1);
+
+    added.collideConnected = true;
+    expect(invalidatePhysics2DJoint(world, added)).toBe(true);
+
+    expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBeUndefined();
+  });
 });
 
 describe('registerPhysics2DJointSolver', () => {
@@ -332,6 +346,21 @@ describe('removePhysics2DJoint', () => {
     expect(first.sleepTimer).toBe(0);
     expect(second.sleeping).toBe(false);
     expect(second.sleepTimer).toBe(0);
+  });
+
+  it('keeps a pair suppressed until its final suppressing joint is removed', () => {
+    const world = createPhysics2DWorld();
+    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    const first = body(world, 0, 0);
+    const second = body(world, 2, 0);
+    const one = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const two = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBe(2);
+
+    removePhysics2DJoint(world, one);
+    expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBe(1);
+    removePhysics2DJoint(world, two);
+    expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBeUndefined();
   });
 
   it('wakes the surviving end when its joint neighbour is removed from the world', () => {
