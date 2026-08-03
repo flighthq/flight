@@ -43,7 +43,7 @@ describe('parseRiveDocument', () => {
   it.each([0, 1, 63, 127, 128, 129, 300, 16383, 16384, 2097151, 2097152, 4294967295, 68719476735])(
     'round-trips the varuint %i against its arithmetic definition',
     (value) => {
-      const document = parseRiveDocument(buildRiveFile({ fileId: value, major: 1, minor: 0 }, [], []))!;
+      const document = parseRiveDocument(buildRiveFile({ fileId: value, major: 7, minor: 0 }, [], []))!;
 
       expect(document.header.fileId).toBe(value);
     },
@@ -61,7 +61,7 @@ describe('parseRiveDocument', () => {
     for (const { bytes, value } of cases) {
       const document = parseRiveDocument(
         buildRiveFile(
-          { fileId: 0, major: 1, minor: 0 },
+          { fileId: 0, major: 7, minor: 0 },
           [{ key: 60020, type: RiveFieldType.Double }],
           [{ properties: [{ key: 60020, raw: bytes }], typeKey: 1 }],
         ),
@@ -74,7 +74,7 @@ describe('parseRiveDocument', () => {
   it('reads a color property as a little-endian unsigned 32-bit value', () => {
     const document = parseRiveDocument(
       buildRiveFile(
-        { fileId: 0, major: 1, minor: 0 },
+        { fileId: 0, major: 7, minor: 0 },
         [{ key: 60037, type: RiveFieldType.Color }],
         [{ properties: [{ key: 60037, raw: [0x44, 0x33, 0x22, 0xff] }], typeKey: 20 }],
       ),
@@ -89,7 +89,7 @@ describe('parseRiveDocument', () => {
     const encoded = Array.from(new TextEncoder().encode(text));
     const document = parseRiveDocument(
       buildRiveFile(
-        { fileId: 0, major: 1, minor: 0 },
+        { fileId: 0, major: 7, minor: 0 },
         [{ key: 60055, type: RiveFieldType.String }],
         [{ properties: [{ key: 60055, raw: [...encodeVarUint(encoded.length), ...encoded] }], typeKey: 23 }],
       ),
@@ -107,7 +107,7 @@ describe('parseRiveDocument', () => {
       type: [RiveFieldType.Uint, RiveFieldType.Double, RiveFieldType.Color, RiveFieldType.String][index % 4],
     }));
     const document = parseRiveDocument(
-      buildRiveFile({ fileId: 0, major: 1, minor: 0 }, table, [
+      buildRiveFile({ fileId: 0, major: 7, minor: 0 }, table, [
         { properties: [], typeKey: 91 },
         { properties: [], typeKey: 92 },
       ]),
@@ -126,7 +126,7 @@ describe('parseRiveDocument', () => {
     ];
     const hello = Array.from(new TextEncoder().encode('hello'));
     const document = parseRiveDocument(
-      buildRiveFile({ fileId: 0, major: 1, minor: 0 }, table, [
+      buildRiveFile({ fileId: 0, major: 7, minor: 0 }, table, [
         { properties: [{ key: 60010, raw: encodeVarUint(300) }], typeKey: 1 },
         { properties: [], typeKey: 2 },
         {
@@ -151,7 +151,7 @@ describe('parseRiveDocument', () => {
   it('stops rather than guessing when a property key has no declared width', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const bytes = buildRiveFile(
-      { fileId: 0, major: 1, minor: 0 },
+      { fileId: 0, major: 7, minor: 0 },
       [{ key: 60010, type: RiveFieldType.Uint }],
       [{ properties: [{ key: 60099, raw: [0x05] }], typeKey: 1 }],
     );
@@ -208,10 +208,20 @@ describe('parseRiveDocument', () => {
     expect(document.objects[0].properties[0].value).toBeCloseTo(240, 3);
   });
 
+  // A different generation numbers its properties differently, so this reader would not fail on one
+  // — it would produce a confident, wrong document.
+  it('refuses a file from a format generation it has not read', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    expect(parseRiveDocument(buildRiveFile({ fileId: 0, major: 6, minor: 0 }, [], []), diagnostics)).toBeNull();
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.unsupported-version']);
+    expect(parseRiveDocument(buildRiveFile({ fileId: 0, major: 8, minor: 0 }, [], []))).toBeNull();
+  });
+
   it('rejects a stream truncated mid-value', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const complete = buildRiveFile(
-      { fileId: 0, major: 1, minor: 0 },
+      { fileId: 0, major: 7, minor: 0 },
       [{ key: 60011, type: RiveFieldType.Double }],
       [{ properties: [{ key: 60011, raw: [0x00, 0x00, 0x80, 0x3f] }], typeKey: 1 }],
     );
@@ -225,7 +235,7 @@ describe('parseRiveDocument', () => {
     // is why the two-bit table needs no code of its own for it.
     const document = parseRiveDocument(
       buildRiveFile(
-        { fileId: 0, major: 1, minor: 0 },
+        { fileId: 0, major: 7, minor: 0 },
         [{ key: 60014, type: RiveFieldType.Uint }],
         [
           { properties: [{ key: 60014, raw: [0x01] }], typeKey: 1 },

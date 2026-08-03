@@ -16,16 +16,21 @@ test is whether a correct, idiomatic file from that format's own authoring tool 
 
 The 3D sibling is [scene3d format coverage](scene3d-format-coverage.md).
 
-## No real asset has been imported by either codec
+## How far each codec has been verified
 
-Both codecs were built and gated entirely against hand-authored fixtures. Unlike the 3D importers, which
-have the `flight-reference` corpus (thin, but real), `scene2d-formats` has **no reference corpus at all** —
-no `.json` Bodymovin export and no designer-tool `.svg` has ever been run through either parser. Neither
-codec has a functional render scene either, so nothing under `functional/scenes` verifies either one at
-the pixel level on any backend.
+**Lottie and SVG have never seen a real asset.** Both were built and gated entirely against
+hand-authored fixtures — no Bodymovin export and no designer-tool `.svg` has been run through either
+parser. Everything claimed for them below is "correct against our own fixtures," which is a weaker
+claim than the 3D document makes.
 
-Everything below is therefore "correct against our own fixtures." That is a weaker claim than the 3D
-document makes, and it is the single largest open question for this cell.
+**Rive is verified against 64 real editor-authored files**, fetched from Rive's own Android runtime
+test assets. They are MIT-licensed, which permits redistribution but requires carrying the copyright
+notice, so whether they may live in this repo as committed fixtures is an open licensing decision;
+until it is made they are fetched on demand and the corpus runs are reproducible rather than standing
+in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
+
+**No codec has a functional render scene**, so nothing under `functional/scenes` verifies any of the
+three at the pixel level on any backend. That is the largest remaining gap for the cell.
 
 ## Lottie (Bodymovin JSON)
 
@@ -321,10 +326,21 @@ animated vertex positions, colours and paint properties would need a format-owne
 binder like the one Lottie has, so they are read past. That is why **145 of the 383 clips carry no
 channels** — they animate only geometry or paint.
 
+**Trim paths are covered**, and they belong to a **stroke** rather than to a shape — all 46 in the
+corpus are a stroke's child, so a trim narrows only the stroke that owns it and leaves that shape's
+fills alone. Start, end and offset are fractions of length, established from their corpus ranges
+rather than assumed: offset runs −0.25 to 0.422, which no degree-valued field would.
+
+The two modes differ in what the fractions measure, and they keep the same total length, so only the
+distribution separates them. **Synchronized** measures each path against its own length, taking the
+same proportion out of every one. **Sequential** measures against the paths' total as one continuous
+run, so the span is consumed in order and later paths may be left out entirely. Sequential is the
+common case, 36 of 46. A span that runs off the end **wraps** to the front, which is how a trim
+animates continuously around a closed shape, and it emits the two pieces rather than clipping.
+
 **Not covered:** animated geometry and paint, per above. Loop mode, work-area trimming, and playback
 speed, which the animation states and this importer does not yet carry. Draw-order overrides,
-`DrawRules` and `DrawTarget`, 96 of each. `TrimPath`, 46 instances across 11 files, which Flight has
-the pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather`, 154
+`DrawRules` and `DrawTarget`, 96 of each. `Feather`, 154
 instances, a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
 which no corpus file uses. And deformable meshes, bones and skinning; animations and keyframes; text;
 assets; and nested artboard linkage. The state-machine
@@ -337,6 +353,11 @@ it neither rejects a future file nor adapts to an older one.
 `rive.truncated-object-stream`, and `rive.unknown-property-width` — a property key declared neither
 by this reader nor by the file's own table, after which the next key's position is unknowable. That
 last one is the format's own unrecoverable case, not a Flight limitation.
+
+A file from another format generation is **refused** rather than misread: the property numbering
+differs between generations, so a wrong-generation parse would produce a confident, wrong document
+instead of failing. Only major version 7 has been read, and anything else emits
+`rive.unsupported-version`.
 
 **Verification status.** The container grammar is **verified against 64 real editor-authored `.riv`
 files**, all of which decoded completely — 82,543 core objects with no unread byte and no unknown
