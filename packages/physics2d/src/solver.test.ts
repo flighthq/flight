@@ -135,6 +135,33 @@ describe('solvePhysics2DContacts', () => {
     expect(crate.velocityX).toBeGreaterThan(0);
   });
 
+  it('keeps a contact frictionless when either collider has zero friction', () => {
+    const world = createPhysics2DWorld(0, -10);
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(
+      createPhysics2DCollider(
+        { kind: 'aabb', minX: -50, minY: -1, maxX: 50, maxY: 0 },
+        { density: 1, friction: 0, restitution: 0 },
+      ),
+    );
+    addPhysics2DBody(world, floor);
+    const crate = createRigidBody2D('dynamic', 0, 0.499);
+    crate.colliders.push(
+      createPhysics2DCollider(
+        { kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 },
+        { density: 1, friction: 1, restitution: 0 },
+      ),
+    );
+    addPhysics2DBody(world, crate);
+    crate.velocityX = 4;
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].friction).toBe(0);
+    expect(world.contacts[0].points[0].tangentImpulse).toBe(0);
+  });
+
   it('does nothing for a world with no contacts', () => {
     const world = createPhysics2DWorld();
     expect(() => solvePhysics2DContacts(world)).not.toThrow();
