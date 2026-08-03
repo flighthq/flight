@@ -6,6 +6,17 @@ import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from 
 // and public world queries share this path so a query observes the body's current authored pose, not
 // the pre-integration snapshot used to build the most recent contact set.
 export function synchronizePhysics2DBroadphase(world: Physics2DWorld): void {
+  synchronizePhysics2DBroadphaseBounds(world, 0);
+}
+
+// Publishes the union of every body's current and linearly translated bounds for one CCD interval.
+// The ordinary index is reused deliberately: a step queries the candidate pairs immediately and then
+// restores current bounds, avoiding a second hidden index while retaining the backend swap point.
+export function synchronizePhysics2DSweptBroadphase(world: Physics2DWorld, dt: number): void {
+  synchronizePhysics2DBroadphaseBounds(world, dt);
+}
+
+function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number): void {
   for (const body of world.bodies) {
     let minX = Infinity;
     let minY = Infinity;
@@ -24,6 +35,14 @@ export function synchronizePhysics2DBroadphase(world: Physics2DWorld): void {
       // may have been indexed on a previous step, and stale bounds would keep returning an empty body.
       world.index.removeSpatialObject(body.index);
       continue;
+    }
+    if (dt > 0 && body.type !== 'static' && !body.sleeping) {
+      const translationX = body.velocityX * dt;
+      const translationY = body.velocityY * dt;
+      if (translationX < 0) minX += translationX;
+      else maxX += translationX;
+      if (translationY < 0) minY += translationY;
+      else maxY += translationY;
     }
     // The spatial package bounds its own indexing cost. This second limit expresses the physics
     // world's stricter judgement that a non-finite or ten-million-unit body has diverged and should no
