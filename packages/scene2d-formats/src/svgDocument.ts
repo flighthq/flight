@@ -1417,21 +1417,35 @@ function resolveSvgStyle(
   for (const rule of matchingRules) Object.assign(declarations, rule.declarations);
   Object.assign(declarations, parseStyleDeclarations(attribute(element, 'style') ?? ''));
 
+  // `inherit` is the CSS-wide keyword for "the parent's computed value", legal on every property
+  // here. For an inherited property that is exactly what an absent declaration already resolves to,
+  // so the declaration is dropped; the three non-inherited properties below reset to an initial
+  // value instead, and so name the parent explicitly. Left in the map, the literal string reaches
+  // the paint parser as if it were a color, yields no paint, and the geometry silently disappears.
+  const inheritedProperties = new Set<string>();
+  for (const name of Object.keys(declarations)) {
+    if (declarations[name].trim() !== 'inherit') continue;
+    inheritedProperties.add(name);
+    delete declarations[name];
+  }
+
   const style: SvgStyle = { ...parentStyle };
   style.clipRule = resolveSvgWinding(declarations['clip-rule'], style.clipRule);
   style.color = declarations.color ?? style.color;
   // `display` is not inherited. An ancestor with display:none still suppresses its subtree via
   // the display-object hierarchy (and the clip collector's early return).
-  style.display = declarations.display ?? 'inline';
+  style.display = inheritedProperties.has('display') ? parentStyle.display : (declarations.display ?? 'inline');
   style.fill = declarations.fill ?? style.fill;
   style.fillOpacity = clamp(parseCssNumber(declarations['fill-opacity'], style.fillOpacity), 0, 1);
   style.fillRule = resolveSvgWinding(declarations['fill-rule'], style.fillRule);
-  style.filter = declarations.filter ?? 'none';
+  style.filter = inheritedProperties.has('filter') ? parentStyle.filter : (declarations.filter ?? 'none');
   style.fontFamily = declarations['font-family'] ?? style.fontFamily;
   style.fontSize = parseSvgLength(declarations['font-size'] ?? null, style.fontSize);
   style.fontStyle = declarations['font-style'] ?? style.fontStyle;
   style.fontWeight = declarations['font-weight'] ?? style.fontWeight;
-  style.opacity = clamp(parseCssNumber(declarations.opacity, 1), 0, 1);
+  style.opacity = inheritedProperties.has('opacity')
+    ? parentStyle.opacity
+    : clamp(parseCssNumber(declarations.opacity, 1), 0, 1);
   style.stroke = declarations.stroke ?? style.stroke;
   style.strokeDasharray = declarations['stroke-dasharray'] ?? style.strokeDasharray;
   style.strokeDashoffset = parseSvgLength(declarations['stroke-dashoffset'] ?? null, style.strokeDashoffset);

@@ -529,3 +529,59 @@ function getDescendant(root: Node2D, path: number[]): Node2D {
   for (const index of path) node = getNodeChildAt(node, index) as Node2D;
   return node;
 }
+
+// `inherit` is legal on every presentation attribute and is what the W3C's own conformance suite
+// uses to test the color property. Read as a paint value it yields no fill and no stroke, which
+// silently deletes the element's geometry rather than reporting anything.
+describe('SVG inherit keyword', () => {
+  it.each([
+    { declaration: 'fill="inherit"', from: 'fill="#ff0000"', name: 'fill' },
+    { declaration: 'style="fill:inherit"', from: 'fill="#ff0000"', name: 'fill through a style attribute' },
+    { declaration: 'stroke="inherit" fill="none" stroke-width="2"', from: 'stroke="#ff0000"', name: 'stroke' },
+  ])('takes the parent value for an inherited $name', ({ declaration, from }) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"><g ${from}><rect width="10" height="10" ${declaration}/></g></svg>`;
+
+    expect(firstShapeCommands(svg)).toContain(0xff0000);
+  });
+
+  it('resolves currentColor against a color that itself inherits', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><g color="#008000"><g color="inherit">' +
+      '<rect width="10" height="10" fill="currentColor"/></g></g></svg>';
+
+    expect(firstShapeCommands(svg)).toContain(0x008000);
+  });
+
+  // opacity is not inherited, so `inherit` is the one way to ask for the parent's value rather than
+  // the initial 1. Dropping the declaration instead would silently render this fully opaque.
+  it('takes the parent value for opacity, which does not inherit on its own', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><g opacity="0.5">' +
+      '<rect width="10" height="10" fill="#ff0000" opacity="inherit"/></g></svg>';
+
+    expect(firstShape(svg).alpha).toBe(0.5);
+  });
+
+  it('leaves an unparented inherit at the initial value rather than dropping the geometry', () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" opacity="inherit"/></svg>';
+
+    expect(firstShape(svg).alpha).toBe(1);
+    expect(firstShapeCommands(svg).length).toBeGreaterThan(0);
+  });
+});
+
+function firstShape(svg: string): Shape {
+  const root = createScene2DFromSvgDocument(svg);
+  let found: Shape | null = null;
+  const walk = (node: Node2D): void => {
+    if (found === null && node.kind === ShapeKind) found = node as Shape;
+    for (let index = 0; index < getNodeChildCount(node); index++) walk(getNodeChildAt(node, index) as Node2D);
+  };
+  walk(root);
+  if (found === null) throw new Error('no shape was imported');
+  return found;
+}
+
+function firstShapeCommands(svg: string): readonly unknown[] {
+  return firstShape(svg).data.commands;
+}

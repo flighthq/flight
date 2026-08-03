@@ -8,6 +8,39 @@ by: builder
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-03 — SVG met the W3C conformance suite; `inherit` was deleting geometry
+
+Third and last codec to get the corpus treatment. 34 documents from the W3C SVG 1.1 conformance
+suite — shapes, path data, transforms, units, gradients, painting, masking, structure, styling, text.
+
+**It came through far better than Lottie.** Zero crashes, zero non-finite transform values, every
+document produced geometry on the first run; 410 source drawables produced 520 `drawPath` records
+(above one-to-one because `use` instantiates). Every shortfall traced to a declared exclusion —
+`pattern` fills, soft masks — each already announced by a crumb. Two did not.
+
+**Bug — `inherit` silently deleted the element's geometry. Fixed.** `inherit` is the CSS-wide keyword
+for "the parent's computed value", legal on every presentation attribute, and the suite's own colour
+test uses it. Read as a paint value it resolved to no fill and no stroke, so the element imported as a
+shape with an **empty command list**: the geometry was gone and nothing was reported. Resolved at the
+single style seam in `resolveSvgStyle` — for an inherited property the declaration is dropped, since
+an absent declaration already resolves to the parent's value; the three non-inherited properties
+(`display`, `filter`, `opacity`) name the parent explicitly, because dropping the declaration would
+reset them to their initial value instead. Six regression tests; a mutation kills five of them (the
+sixth is a deliberate no-parent boundary case).
+
+**Gap — internal DTD entities, and it is not ours.** `<!ENTITY Smile "<circle …/>">` expanded by
+`&Smile;` loses all its content, silently. `@flighthq/xml` strips the DOCTYPE wholesale and decodes
+only the five predefined entities, so the reference survives as literal text rather than markup.
+Cross-package, so recorded in [coverage](../../scene2d-format-coverage.md) rather than built. Entities
+are legal SVG 1.1 but no mainstream design tool emits them; the silence is the part worth fixing.
+
+**All three codecs have now read real files, and each one hid a defect no fixture could reach** —
+Rive could not open a single real `.riv` while passing 30 synthetic tests; Lottie crashed on 78% of
+real exports while passing a full conformance census; SVG silently dropped geometry for a keyword its
+own conformance suite exercises. Corpora are fetched on demand and deleted, never committed.
+
+273 tests, `check scene2d-formats` and `docs:check` green.
+
 ## 2026-08-03 — Rive: three items closed as design questions rather than code
 
 Draw-order overrides, rigging, and the blend-mode shortfall each turned out to need an answer above
