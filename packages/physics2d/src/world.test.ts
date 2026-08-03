@@ -236,6 +236,34 @@ describe('createPhysics2DCollider', () => {
     expect(filtered.filter).toEqual(supplied);
     expect(filtered.filter).not.toBe(supplied);
   });
+
+  it('owns shape storage and material values independently of authoring templates and sibling colliders', () => {
+    const points = [0, 0, 2, 0, 0, 2];
+    const local = { kind: 'polygon' as const, points };
+    const material = { density: 1, friction: 0.25, restitution: 0.5 };
+    const first = createPhysics2DCollider(local, material);
+    const second = createPhysics2DCollider(local, material);
+
+    expect(first.local).not.toBe(local);
+    expect(second.local).not.toBe(local);
+    expect(first.material).not.toBe(material);
+    expect(second.material).not.toBe(material);
+    expect(first.local.kind).toBe('polygon');
+    expect(second.local.kind).toBe('polygon');
+    if (first.local.kind !== 'polygon' || second.local.kind !== 'polygon') throw new Error('expected polygons');
+    expect(first.local.points).not.toBe(points);
+    expect(second.local.points).not.toBe(points);
+
+    points[0] = 100;
+    material.density = 9;
+    (first.local.points as number[])[1] = 50;
+    first.material.friction = 0.75;
+
+    expect(first.local.points[0]).toBe(0);
+    expect(second.local.points).toEqual([0, 0, 2, 0, 0, 2]);
+    expect(first.material.density).toBe(1);
+    expect(second.material).toEqual({ density: 1, friction: 0.25, restitution: 0.5 });
+  });
 });
 
 describe('createPhysics2DSolverConfig', () => {

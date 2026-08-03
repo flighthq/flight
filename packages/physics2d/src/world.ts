@@ -160,21 +160,48 @@ export function applyPhysics2DTorque(body: RigidBody2D, torque: number): boolean
   return true;
 }
 
-// Creates a collider from a LOCAL-space shape, allocating the world-space shape it will be transformed
-// into. Both shapes exist for the collider's lifetime; the step rewrites the world one in place.
+// Creates a collider from a LOCAL-space shape, owning copies of every authored value and allocating the
+// world-space shape it will be transformed into. Both shapes exist for the collider's lifetime; the step
+// rewrites the world one in place. Copying here makes two colliders created from one authoring template
+// independent invalidation units rather than aliases whose mass and broadphase caches can disagree.
 export function createPhysics2DCollider(
   local: CollisionShape,
   material: Physics2DMaterial,
   sensor = false,
   filter?: Readonly<Physics2DCollisionFilter>,
 ): Physics2DCollider {
+  const ownedLocal = clonePhysics2DLocalShape(local);
   return {
-    local,
-    world: createPhysics2DColliderWorldShape(local),
-    material,
+    local: ownedLocal,
+    world: createPhysics2DColliderWorldShape(ownedLocal),
+    material: { ...material },
     filter: filter === undefined ? { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 } : { ...filter },
     sensor,
   };
+}
+
+function clonePhysics2DLocalShape(local: Readonly<CollisionShape>): CollisionShape {
+  switch (local.kind) {
+    case 'circle':
+      return { kind: 'circle', x: local.x, y: local.y, radius: local.radius };
+    case 'aabb':
+      return { kind: 'aabb', minX: local.minX, minY: local.minY, maxX: local.maxX, maxY: local.maxY };
+    case 'obb':
+      return {
+        kind: 'obb',
+        x: local.x,
+        y: local.y,
+        halfW: local.halfW,
+        halfH: local.halfH,
+        rotation: local.rotation,
+      };
+    case 'polygon':
+      return { kind: 'polygon', points: local.points.slice() };
+    case 'segment':
+      return { kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 };
+    case 'point':
+      return { kind: 'point', x: local.x, y: local.y };
+  }
 }
 
 // The default solver tuning. Ten velocity iterations and three position iterations is the range every
