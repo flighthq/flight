@@ -156,6 +156,31 @@ existing convenience that installs a console sink, raises log levels, and switch
 once. It composes the per-package guards; it does not replace them, and it cannot currently carry every
 guard, because its subsystem hooks are state-less while several guards are state-scoped.
 
+### Asking before you miss: `getScene3DRequirements`
+
+Everything above is reactive — you learn at draw time, after a miss. For imported content there is also a
+proactive answer, because a document decides what it needs and you cannot know that statically:
+
+```ts
+const requirements: Scene3DRequirement[] = [];
+getScene3DRequirements(scene, requirements);            // @flighthq/scene3d
+console.log(formatScene3DRequirements(requirements, RenderBackend.Gl));
+```
+
+It takes no registry and reads `kind` off the entities the parser already built, so it can never itself be
+the thing you forgot to wire. `formatScene3DRequirements` is the separately importable text module — it
+names the actual function to call for each line, deriving the backend-prefixed registrar from the same
+naming law `scripts/backendPrefix.ts` enforces, and stating the gap where a backend has no such registrar
+(Canvas and DOM compile no shader snippets).
+
+There is deliberately **no** register-all counterpart, and the printed header says so. Reading a list of
+missing registrations and concluding the SDK should ship one convenience barrel is the exact trade the list
+exists to avoid — an assembly must never inflate the bundle cost of a primitive.
+
+`NodeRenderer` is absent from the vocabulary on purpose: the 3D pipeline collects meshes structurally
+(`mesh.geometry != null`), so no node kind is registered against anything and naming one would send you
+looking for a registrar that does not exist.
+
 ## 5. The capability matrix
 
 A generated backend capability matrix is in flight (owned by another agent at the time of writing); this
