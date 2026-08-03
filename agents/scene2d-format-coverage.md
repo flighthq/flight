@@ -338,15 +338,21 @@ run, so the span is consumed in order and later paths may be left out entirely. 
 common case, 36 of 46. A span that runs off the end **wraps** to the front, which is how a trim
 animates continuously around a closed shape, and it emits the two pieces rather than clipping.
 
+**Draw-order overrides are a structural mismatch, not a missing read.** `DrawRules` and `DrawTarget`
+(96 of each) move a drawable to sit immediately before or after another drawable in the artboard's
+**flat** draw list, and that target commonly lives in a different subtree — **83 of the 96 cross a
+parent boundary**, with only 6 staying among siblings. Flight expresses z-order as child order within
+a parent, so honouring a cross-subtree move would mean reparenting the node, which changes its
+transform. Reading the properties is trivial; the mismatch is what blocks it. A Flight-level answer —
+an explicit draw index on `Node2D`, or a flattened render list — is a cross-package design question
+rather than something this codec can settle.
+
 **Not covered:** animated geometry and paint, per above. Loop mode, work-area trimming, and playback
-speed, which the animation states and this importer does not yet carry. Draw-order overrides,
-`DrawRules` and `DrawTarget`, 96 of each. `Feather`, 154
-instances, a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,
-which no corpus file uses. And deformable meshes, bones and skinning; animations and keyframes; text;
-assets; and nested artboard linkage. The state-machine
-*descriptor* is likewise unread; per the charter its *runtime* is a separate future cell and never a
-codec concern. Rive's format is versioned and this reader ignores the major/minor version entirely —
-it neither rejects a future file nor adapts to an older one.
+speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
+paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes, which no
+corpus file uses. And deformable meshes, bones and skinning; text; assets; and nested artboard
+linkage. The state-machine *descriptor* is likewise unread; per the charter its *runtime* is a
+separate future cell and never a codec concern.
 
 **Crumbs.** Three, all asset facts, and all `Reject` because each ends the parse:
 `rive.invalid-header` (missing or wrong fingerprint, or a header that ends early),
