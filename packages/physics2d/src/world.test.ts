@@ -20,6 +20,7 @@ import {
   removePhysics2DBody,
   removePhysics2DCollider,
   setPhysics2DBodyFixedRotation,
+  setPhysics2DBodyBullet,
   setPhysics2DBodySleepEnabled,
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
@@ -300,6 +301,7 @@ describe('createRigidBody2D', () => {
     expect(body.mass).toBe(0);
     expect(body.index).toBe(-1);
     expect(body.fixedRotation).toBe(false);
+    expect(body.bullet).toBe(false);
     expect(body.sleepEnabled).toBe(true);
   });
 });
@@ -521,6 +523,25 @@ describe('removePhysics2DCollider', () => {
     const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
     expect(removePhysics2DCollider(world, body, absent)).toBe(false);
     expect(body.mass).toBe(mass);
+  });
+});
+
+describe('setPhysics2DBodyBullet', () => {
+  it('changes CCD policy and wakes the owned body', () => {
+    const world = createPhysics2DWorld();
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    body.sleeping = true;
+    body.sleepTimer = 5;
+
+    expect(setPhysics2DBodyBullet(world, body, true)).toBe(true);
+
+    expect(body.bullet).toBe(true);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
+  });
+
+  it('reports false for a body outside the world', () => {
+    expect(setPhysics2DBodyBullet(createPhysics2DWorld(), boxBody(0, 0), true)).toBe(false);
   });
 });
 

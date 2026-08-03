@@ -34,6 +34,9 @@ describe('isPhysics2DBodyStateValid', () => {
     body.fixedRotation = undefined as never;
     expect(isPhysics2DBodyStateValid(world)).toBe(false);
     body.fixedRotation = false;
+    body.bullet = undefined as never;
+    expect(isPhysics2DBodyStateValid(world)).toBe(false);
+    body.bullet = false;
     body.sleepEnabled = undefined as never;
     expect(isPhysics2DBodyStateValid(world)).toBe(false);
     body.sleepEnabled = true;
@@ -129,6 +132,9 @@ describe('isPhysics2DSolverConfigValid', () => {
     expect(isPhysics2DSolverConfigValid(world.config)).toBe(false);
     world.config.positionCorrection = 0.2;
     world.config.penetrationSlop = Number.NaN;
+    expect(isPhysics2DSolverConfigValid(world.config)).toBe(false);
+    world.config.penetrationSlop = 0.005;
+    world.config.maxCcdSubsteps = -1;
     expect(isPhysics2DSolverConfigValid(world.config)).toBe(false);
   });
 });
