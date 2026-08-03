@@ -182,6 +182,7 @@ function square(): RivePathRecord {
   return {
     commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO],
     data: [0, 0, 10, 0, 10, 10],
+    pathIndex: 0,
     winding: 'nonZero',
   };
 }

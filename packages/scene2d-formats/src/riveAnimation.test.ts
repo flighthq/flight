@@ -1,9 +1,11 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, RiveCoreObject } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import type { DisplayObject, Node2D, RiveArtboardGraph, RiveCoreObject, Shape } from '@flighthq/types/contract';
+import { RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
-import { createRiveAnimationClips } from './riveAnimation';
+import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation';
+import { createScene2DFromRiveDocument } from './riveScene2D';
 
 // Time comes from the animation's OWN frame rate, and the interpolation enum was read off the corpus
 // rather than a header: type 2 carries an interpolator in 18,044 of 18,608 cases, type 1 never does,
@@ -26,9 +28,101 @@ const INTERPOLATION = 68;
 const INTERPOLATOR_ID = 69;
 const VALUE = 70;
 
+// Geometry and paint animate by writing the value back onto the core object the file keyed and
+// rebuilding the owning shape, so the ordinary readers produce the result and there is no second
+// code path to keep in step. Before this, 145 of the corpus's 383 clips carried no channels at all.
+describe('applyAnimationClipToRiveDocument', () => {
+  it('moves a path vertex and regenerates the shape geometry', () => {
+    const result = createScene2DFromRiveDocument(riveWithAnimatedVertex(24, 0, 60));
+    const shape = firstShape(result);
+    const before = JSON.stringify(shape.data.commands);
+
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
+
+    expect(JSON.stringify(shape.data.commands)).not.toBe(before);
+    expect(pathPoints(shape)[0][0]).toBeCloseTo(60, 3);
+  });
+
+  it('interpolates a vertex partway through its segment', () => {
+    const result = createScene2DFromRiveDocument(riveWithAnimatedVertex(24, 0, 100));
+    const shape = firstShape(result);
+
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
+
+    expect(pathPoints(shape)[0][0]).toBeCloseTo(50, 3);
+  });
+
+  it('animates a fill colour through the same route', () => {
+    const result = createScene2DFromRiveDocument(riveWithAnimatedFill());
+    const shape = firstShape(result);
+    const colourOf = (): unknown => {
+      const tokens = shape.data.commands as unknown[];
+      return tokens[tokens.indexOf('beginFill') + 2];
+    };
+    const before = colourOf();
+
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
+
+    expect(colourOf()).not.toBe(before);
+  });
+
+  it('leaves the clip alone when nothing keyed belongs to a shape', () => {
+    const result = createScene2DFromRiveDocument(riveWithAnimatedVertex(24, 0, 10));
+
+    // Sampling twice must be stable rather than accumulating.
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
+    const once = JSON.stringify(firstShape(result).data.commands);
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
+
+    expect(JSON.stringify(firstShape(result).data.commands)).toBe(once);
+  });
+});
+
+function build(
+  fps: number,
+  propertyKey: number,
+  frames: ReadonlyArray<{ frame: number; interpolation?: number; value: number }>,
+  nodes?: Array<DisplayObject | null>,
+  objectId = 0,
+) {
+  const objects: RiveCoreObject[] = [
+    object(LINEAR_ANIMATION, { [FPS]: fps, [DURATION]: 60 }),
+    object(KEYED_OBJECT, { [OBJECT_ID]: objectId }),
+    object(KEYED_PROPERTY, { [PROPERTY_KEY]: propertyKey }),
+    ...frames.map((entry) =>
+      object(KEYFRAME_DOUBLE, {
+        [FRAME]: entry.frame,
+        [INTERPOLATION]: entry.interpolation ?? 1,
+        [VALUE]: entry.value,
+      }),
+    ),
+  ];
+  const resolved = nodes ?? [createDisplayObject()];
+  return {
+    clips: createRiveAnimationClips(objects, { end: objects.length, start: 0 }, resolved, emptyArtboard(), new Map()),
+  };
+}
+
+// These cases exercise the transform channels, which need no artboard or rebuild registry.
+function emptyArtboard(): RiveArtboardGraph {
+  return { objects: [], parentIndices: [], streamEnd: 0, streamStart: 0 };
+}
+
+function object(typeKey: number, properties: Readonly<Record<number, number>>, name?: string): RiveCoreObject {
+  const entries: RiveCoreObject['properties'] = Object.entries(properties).map(([key, value]) => ({
+    key: Number(key),
+    type: RiveFieldType.Double,
+    value,
+  }));
+  if (name !== undefined) entries.push({ key: NAME, type: RiveFieldType.String, value: name });
+  return { properties: entries, typeKey };
+}
+
 describe('createRiveAnimationClips', () => {
   it('returns nothing when the range holds no animation', () => {
-    expect(createRiveAnimationClips([object(KEYED_OBJECT, {})], { end: 1, start: 0 }, [])).toEqual([]);
+    expect(
+      createRiveAnimationClips([object(KEYED_OBJECT, {})], { end: 1, start: 0 }, [], emptyArtboard(), new Map()),
+    ).toEqual([]);
   });
 
   it('names each clip and takes its duration from its own frame rate', () => {
@@ -36,7 +130,7 @@ describe('createRiveAnimationClips', () => {
       object(LINEAR_ANIMATION, { [FPS]: 30, [DURATION]: 60 }, 'walk'),
       object(LINEAR_ANIMATION, { [FPS]: 24, [DURATION]: 12 }, 'blink'),
     ];
-    const clips = createRiveAnimationClips(objects, { end: 2, start: 0 }, []);
+    const clips = createRiveAnimationClips(objects, { end: 2, start: 0 }, [], emptyArtboard(), new Map());
 
     expect(clips.map((entry) => entry.name)).toEqual(['walk', 'blink']);
     expect(clips[0].clip.duration).toBeCloseTo(2, 6);
@@ -123,7 +217,13 @@ describe('createRiveAnimationClips', () => {
       object(KEYFRAME_DOUBLE, { [FRAME]: 30, [VALUE]: 100, [INTERPOLATION]: 2, [INTERPOLATOR_ID]: 1 }),
     ];
     const node = createDisplayObject();
-    const clips = createRiveAnimationClips(objects, { end: objects.length, start: 0 }, [node]);
+    const clips = createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      [node],
+      emptyArtboard(),
+      new Map(),
+    );
     const out = [0];
 
     sampleAnimationTrack(out, clips[0].clip.channels[0].track, 0.5);
@@ -149,35 +249,99 @@ describe('createRiveAnimationClips', () => {
   });
 });
 
-function build(
-  fps: number,
-  propertyKey: number,
-  frames: ReadonlyArray<{ frame: number; interpolation?: number; value: number }>,
-  nodes?: Array<DisplayObject | null>,
-  objectId = 0,
-) {
-  const objects: RiveCoreObject[] = [
-    object(LINEAR_ANIMATION, { [FPS]: fps, [DURATION]: 60 }),
-    object(KEYED_OBJECT, { [OBJECT_ID]: objectId }),
-    object(KEYED_PROPERTY, { [PROPERTY_KEY]: propertyKey }),
-    ...frames.map((entry) =>
-      object(KEYFRAME_DOUBLE, {
-        [FRAME]: entry.frame,
-        [INTERPOLATION]: entry.interpolation ?? 1,
-        [VALUE]: entry.value,
-      }),
-    ),
-  ];
-  const resolved = nodes ?? [createDisplayObject()];
-  return { clips: createRiveAnimationClips(objects, { end: objects.length, start: 0 }, resolved) };
+function firstShape(result: ReturnType<typeof createScene2DFromRiveDocument>): Shape {
+  return findShape(result.artboards[0].root)!;
 }
 
-function object(typeKey: number, properties: Readonly<Record<number, number>>, name?: string): RiveCoreObject {
-  const entries: RiveCoreObject['properties'] = Object.entries(properties).map(([key, value]) => ({
-    key: Number(key),
-    type: RiveFieldType.Double,
-    value,
-  }));
-  if (name !== undefined) entries.push({ key: NAME, type: RiveFieldType.String, value: name });
-  return { properties: entries, typeKey };
+function findShape(node: Node2D): Shape | null {
+  if (node.kind === ShapeKind) return node as Shape;
+  for (let index = 0; index < getNodeChildCount(node); index++) {
+    const found = findShape(getNodeChildAt(node, index) as Node2D);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+function pathPoints(shape: Shape): number[][] {
+  const tokens = shape.data.commands as unknown[];
+  const points: number[][] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] !== 'drawPath') continue;
+    const data = tokens[i + 3] as number[];
+    for (let o = 0; o + 1 < data.length; o += 2) points.push([data[o], data[o + 1]]);
+  }
+  return points;
+}
+
+function riveWithAnimatedVertex(propertyKey: number, from: number, to: number): Uint8Array {
+  // Artboard > Shape > PointsPath > two straight vertices, with the first vertex's x keyed.
+  return buildRiveBytes([
+    [1, [t(4, 'Board'), f(7, 100), f(8, 100)]],
+    [3, [u(5, 0)]],
+    [16, [u(5, 1)]],
+    [5, [u(5, 2), f(24, from), f(25, 0)]],
+    [5, [u(5, 2), f(24, 50), f(25, 50)]],
+    [31, [t(55, 'move'), u(56, 30), u(57, 30)]],
+    [25, [u(51, 3)]],
+    [26, [u(53, propertyKey)]],
+    [30, [u(67, 0), f(70, from), u(68, 1)]],
+    [30, [u(67, 30), f(70, to), u(68, 1)]],
+  ]);
+}
+
+function riveWithAnimatedFill(): Uint8Array {
+  return buildRiveBytes([
+    [1, [t(4, 'Board'), f(7, 100), f(8, 100)]],
+    [3, [u(5, 0)]],
+    [16, [u(5, 1)]],
+    [5, [u(5, 2), f(24, 0), f(25, 0)]],
+    [5, [u(5, 2), f(24, 50), f(25, 50)]],
+    [20, [u(5, 1)]],
+    [18, [u(5, 5), c(37, 0xff112233)]],
+    [31, [t(55, 'tint'), u(56, 30), u(57, 30)]],
+    [25, [u(51, 6)]],
+    [26, [u(53, 37)]],
+    [37, [u(67, 0), c(88, 0xff112233), u(68, 1)]],
+    [37, [u(67, 30), c(88, 0xffddeeff), u(68, 1)]],
+  ]);
+}
+
+function varUint(value: number): number[] {
+  const out: number[] = [];
+  let remaining = value;
+  do {
+    const group = remaining % 128;
+    remaining = Math.floor(remaining / 128);
+    out.push(remaining > 0 ? group + 128 : group);
+  } while (remaining > 0);
+  return out;
+}
+
+function u(key: number, value: number): number[] {
+  return [...varUint(key), ...varUint(value)];
+}
+
+function f(key: number, value: number): number[] {
+  const view = new DataView(new ArrayBuffer(4));
+  view.setFloat32(0, value, true);
+  return [...varUint(key), view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3)];
+}
+
+function c(key: number, value: number): number[] {
+  return [...varUint(key), value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
+}
+
+function t(key: number, value: string): number[] {
+  const encoded = Array.from(new TextEncoder().encode(value));
+  return [...varUint(key), ...varUint(encoded.length), ...encoded];
+}
+
+function buildRiveBytes(objects: Array<[number, number[][]]>): Uint8Array {
+  const out: number[] = [0x52, 0x49, 0x56, 0x45, ...varUint(7), ...varUint(0), ...varUint(0), 0];
+  for (const [typeKey, properties] of objects) {
+    out.push(...varUint(typeKey));
+    for (const property of properties) out.push(...property);
+    out.push(0);
+  }
+  return new Uint8Array(out);
 }

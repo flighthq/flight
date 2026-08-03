@@ -316,13 +316,19 @@ function trimmedStroke(start: number, end: number, mode: number) {
 }
 
 function line(length: number): RivePathRecord {
-  return { commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO], data: [0, 0, length, 0], winding: 'nonZero' };
+  return {
+    commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
+    data: [0, 0, length, 0],
+    pathIndex: 0,
+    winding: 'nonZero',
+  };
 }
 
 function square(): RivePathRecord {
   return {
     commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
     data: [0, 0, 10, 0],
+    pathIndex: 0,
     winding: 'nonZero',
   };
 }

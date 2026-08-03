@@ -332,10 +332,20 @@ assumed from a sibling.
 Over the corpus this builds 383 clips, all named, carrying 2,925 channels and 11,333 keyframes with
 no non-finite time or value.
 
-**Only transform properties bind.** X, Y, rotation, scale and opacity reach `Node2DAnimationTarget`;
-animated vertex positions, colours and paint properties would need a format-owned mutable-content
-binder like the one Lottie has, so they are read past. That is why **145 of the 383 clips carry no
-channels** — they animate only geometry or paint.
+**Geometry and paint animate too, through the property the file keyed.** Transform properties bind to
+`Node2DAnimationTarget`; everything else — vertex positions, corner radii, colours, stroke widths,
+parametric sizes, trim spans — writes its value back onto the core object the file keyed and queues
+the owning shape to rebuild. Because every reader in this codec reads from those same properties, one
+binder serves all of them and there is no second code path to keep in step with the first. Rebuilds
+coalesce per sample, so a shape with several animated vertices regenerates once rather than once per
+vertex. Playback stays explicit through `applyAnimationClipToRiveDocument`.
+
+Over the corpus this carries 5,170 channels across 383 clips, up from 2,925 when only transforms
+bound, and drops the clips with no channels at all from 145 to 112. Sampling every clip at its
+midpoint visibly changes 139 shapes and produces no non-finite coordinate.
+
+**The 112 clips still carrying no channels** animate properties on objects that are not shapes —
+chiefly bones, whose deformation has no home yet (see the rigging note above).
 
 **Trim paths are covered**, and they belong to a **stroke** rather than to a shape — all 46 in the
 corpus are a stroke's child, so a trim narrows only the stroke that owns it and leaves that shape's
