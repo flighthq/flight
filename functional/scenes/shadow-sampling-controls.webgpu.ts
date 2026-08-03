@@ -1,11 +1,10 @@
 import { createScene3D } from '@flighthq/scene3d';
 import { drawWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/scene3d-wgpu';
-import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
+import type { Bitmap } from '@flighthq/sdk';
 import {
-  createScene3DLights,
   addNodeChild,
-  beginWgpuRenderEffectPipeline,
   beginWgpuFrame,
+  beginWgpuRenderEffectPipeline,
   configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
@@ -22,8 +21,8 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   endWgpuRenderEffectPipeline,
-  getNode3DWorldBounds,
   getBitmapPixelLuminance,
+  getNode3DWorldBounds,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   registerWgpuBlinnPhongMaterial,
@@ -34,6 +33,8 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+// WebGPU mirror of the isolated GL sampling-control witness. Radius 1 must take the literal 3x3 path;
+// the deliberately coarse projection and negative depth bias make both controls observable in capture.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -55,29 +56,9 @@ export const width = 800;
 export const height = 600;
 registerWgpuFunctionalTarget(state, scale);
 
-export function render(
-  scene: Readonly<Node3D>,
-  camera: Readonly<Camera3D>,
-  lights: Readonly<Scene3DLights>,
-  shadowCamera: Readonly<Camera3D>,
-): void {
-  prepareScene3DRender(state, scene, camera, lights);
-  beginWgpuFrame(state);
-  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
-  drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
-  submitWgpuRenderPass(state);
-}
-
-const logicalWidth = width / scale;
-const logicalHeight = height / scale;
 const material = createBlinnPhongMaterial({ diffuse: 0xb8b8b8ff, shininess: 16, specular: 0x101010ff });
 const scene = createScene3D().root;
-
-const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
-addNodeChild(scene, ground);
+addNodeChild(scene, createMesh(createPlaneMeshGeometry(8, 8), [material]));
 
 const sphere = createMesh(createSphereMeshGeometry(0.7, 32, 24), [material]);
 setVector3(sphere.position, 0, 1.3, 0);
@@ -87,25 +68,24 @@ addNodeChild(scene, sphere);
 const camera = createCamera3D({
   far: 100,
   near: 0.1,
-  projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
+  projection: createPerspectiveProjection({ aspect: width / height, fovY: Math.PI / 4 }),
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
 
 const direction = createVector3(0, -1, 0);
-const lights = createScene3DLights({
+const lights = {
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  // Keep the classic-family witness representative: fitted camera, default single-tap filtering, and
-  // zero receiver biases. Synthetic sampling-control witnesses live in shadow-sampling-controls.
   directional: createDirectionalLight({
     castsShadow: true,
     color: 0xffffffff,
     direction,
     intensity: 3,
     normalBias: 0,
-    pcfRadius: 0,
-    shadowBias: 0,
+    pcfRadius: 1,
+    shadowBias: -0.01,
   }),
-});
+};
+
 const sceneBounds = createAabb();
 getNode3DWorldBounds(sceneBounds, scene);
 const shadowCamera = createCamera3D({
@@ -114,20 +94,25 @@ const shadowCamera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
+shadowCamera.projection = createOrthographicProjection({ halfHeight: 40, halfWidth: 40 });
 
-render(scene, camera, lights, shadowCamera);
+prepareScene3DRender(state, scene, camera, lights);
+beginWgpuFrame(state);
+drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+renderWgpuBackground(state);
+beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+drawWgpuScene3D(state, scene, camera, lights);
+endWgpuRenderEffectPipeline(state, pipeline, []);
+submitWgpuRenderPass(state);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
-  const cx = Math.floor(bitmap.width / 2);
-  const litLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.9));
-  const shadowLuminance = getBitmapPixelLuminance(bitmap, cx, Math.floor(bitmap.height * 0.56));
-
+  const x = Math.floor(bitmap.width / 2);
+  const litLuminance = getBitmapPixelLuminance(bitmap, x, Math.floor(bitmap.height * 0.9));
+  const shadowLuminance = getBitmapPixelLuminance(bitmap, x, Math.floor(bitmap.height * 0.56));
   if (litLuminance <= 24) {
-    throw new Error(`[shadow-classic] ground is blank (luminance ${litLuminance}) — scene did not render`);
+    throw new Error(`[shadow-sampling-controls] ground is blank (${litLuminance})`);
   }
   if (shadowLuminance + 32 >= litLuminance) {
-    throw new Error(
-      `[shadow-classic] no shadow: ground under the sphere (${shadowLuminance}) is not clearly darker than the lit ground (${litLuminance})`,
-    );
+    throw new Error(`[shadow-sampling-controls] shadow ${shadowLuminance}, lit ground ${litLuminance}`);
   }
 }
