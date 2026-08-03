@@ -298,6 +298,22 @@ export interface Physics2DWorld {
   islandParents: Map<number, number>;
   islandSleepTimers: Map<number, number>;
 
+  // Deterministic, flattened solve-island workspace. The builder refills these arrays in place after
+  // sleep has resolved the active constraint graph. Each island owns contiguous slices of the body,
+  // contact, and joint index arrays, so the solver never scans unrelated or sleeping constraints.
+  solveIslandByRoot: Map<number, number>;
+  solveIslandRoots: number[];
+  solveIslandBodyStarts: number[];
+  solveIslandBodyCounts: number[];
+  solveIslandContactStarts: number[];
+  solveIslandContactCounts: number[];
+  solveIslandJointStarts: number[];
+  solveIslandJointCounts: number[];
+  solveIslandBodyIndices: number[];
+  solveIslandContactIndices: number[];
+  solveIslandJointIndices: number[];
+  solveIslandCursors: number[];
+
   gravityX: number;
   gravityY: number;
 

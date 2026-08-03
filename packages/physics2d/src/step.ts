@@ -14,7 +14,6 @@ import type {
   CollisionShape,
   Physics2DContact,
   Physics2DContactPoint,
-  Physics2DJoint,
   Physics2DWorld,
   RigidBody2D,
   SpatialPair,
@@ -22,10 +21,10 @@ import type {
 
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
-import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
+import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
 import { steppingPhysics2DWorlds } from './ownership';
-import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
+import { relativeNormalVelocity, solvePhysics2DContactIndicesOnce, warmStartPhysics2DContactIndices } from './solver';
 import {
   isPhysics2DBodyStateValid,
   isPhysics2DContactValid,
@@ -264,9 +263,12 @@ function mergePhysics2DContact(
 // Rebuilds every contact's lever arms, effective masses, and velocity bias for this step's geometry.
 // These are recomputed rather than cached because they depend on the bodies' current positions, which
 // the previous step moved.
-function preparePhysics2DConstraints(world: Physics2DWorld): void {
+function preparePhysics2DConstraints(world: Physics2DWorld, indices: number[], start: number, count: number): void {
   const config = world.config;
-  for (const contact of world.contacts) {
+  const end = start + count;
+  for (let contactAt = start; contactAt < end; contactAt++) {
+    const contact = world.contacts[indices[contactAt]];
+    if (contact === undefined) continue;
     if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
@@ -305,9 +307,12 @@ function preparePhysics2DConstraints(world: Physics2DWorld): void {
 // separating velocity to repair it makes a resting body bounce away from a deep overlap. Each contact
 // is regenerated immediately before it is solved because an earlier correction in the same pass may
 // have moved either body. Reusing the module manifold scratch keeps the pass allocation-free.
-function solvePhysics2DPositionsOnce(world: Physics2DWorld): void {
+function solvePhysics2DPositionsOnce(world: Physics2DWorld, indices: number[], start: number, count: number): void {
   const config = world.config;
-  for (const contact of world.contacts) {
+  const end = start + count;
+  for (let contactAt = start; contactAt < end; contactAt++) {
+    const contact = world.contacts[indices[contactAt]];
+    if (contact === undefined) continue;
     if (!contact.enabled || contact.sensor) continue;
     const bodyA = findPhysics2DBody(world, contact.bodyA);
     const bodyB = findPhysics2DBody(world, contact.bodyB);
@@ -456,24 +461,39 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   // by the caller writing a velocity is awake in time to be integrated by this same step; deciding after
   // integration instead would skip it once and move it a step late.
   updatePhysics2DSleep(world, dt);
+  buildPhysics2DSolveIslands(world);
 
-  for (const body of bodies) {
-    if (body.type !== 'dynamic' || body.sleeping) continue;
-    body.velocityX += (body.forceX * body.inverseMass + world.gravityX * body.gravityScale) * dt;
-    body.velocityY += (body.forceY * body.inverseMass + world.gravityY * body.gravityScale) * dt;
-    body.angularVelocity += body.torque * body.inverseInertia * dt;
-    // Damping is applied as a multiplicative decay rather than a subtracted force so it stays stable at
-    // any timestep: a force-shaped damping term large enough to matter can reverse the velocity it is
-    // damping when dt is big.
-    body.velocityX /= 1 + body.linearDamping * dt;
-    body.velocityY /= 1 + body.linearDamping * dt;
-    body.angularVelocity /= 1 + body.angularDamping * dt;
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    const start = world.solveIslandBodyStarts[island];
+    const end = start + world.solveIslandBodyCounts[island];
+    for (let at = start; at < end; at++) {
+      const body = bodies[world.solveIslandBodyIndices[at]];
+      if (body.type !== 'dynamic') continue;
+      body.velocityX += (body.forceX * body.inverseMass + world.gravityX * body.gravityScale) * dt;
+      body.velocityY += (body.forceY * body.inverseMass + world.gravityY * body.gravityScale) * dt;
+      body.angularVelocity += body.torque * body.inverseInertia * dt;
+      // Damping is applied as a multiplicative decay rather than a subtracted force so it stays stable at
+      // any timestep: a force-shaped damping term large enough to matter can reverse the velocity it is
+      // damping when dt is big.
+      body.velocityX /= 1 + body.linearDamping * dt;
+      body.velocityY /= 1 + body.linearDamping * dt;
+      body.angularVelocity /= 1 + body.angularDamping * dt;
+    }
   }
 
-  preparePhysics2DConstraints(world);
-  for (const joint of world.joints) {
-    if (!isPhysics2DJointAwake(world, joint)) continue;
-    world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    preparePhysics2DConstraints(
+      world,
+      world.solveIslandContactIndices,
+      world.solveIslandContactStarts[island],
+      world.solveIslandContactCounts[island],
+    );
+    const jointStart = world.solveIslandJointStarts[island];
+    const jointEnd = jointStart + world.solveIslandJointCounts[island];
+    for (let at = jointStart; at < jointEnd; at++) {
+      const joint = world.joints[world.solveIslandJointIndices[at]];
+      world.jointSolvers.get(joint.kind)?.prepare(world, joint, dt);
+    }
   }
   // Joints warm-start alongside contacts, which is what the impulse block on Physics2DJoint has always
   // been documented to be for. Each kind reapplies its own converged impulse, because the block is
@@ -481,7 +501,14 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   // accumulators are cleared instead, so a world told not to use the cache does not quietly keep
   // seeding from it — the previous code left them growing whether the flag was set or not.
   if (config.warmStarting) {
-    warmStartPhysics2DContacts(world);
+    for (let island = 0; island < world.solveIslandRoots.length; island++) {
+      warmStartPhysics2DContactIndices(
+        world,
+        world.solveIslandContactIndices,
+        world.solveIslandContactStarts[island],
+        world.solveIslandContactCounts[island],
+      );
+    }
   } else {
     // A cold start means the accumulated contact impulses are not part of THIS step's solve at all.
     // Merely skipping their reapplication is not enough: solvePhysics2DContact clamps each incremental
@@ -502,27 +529,35 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   // world flag left the mouse's stale impulse live: after zeroing a body's velocity and moving the
   // target onto it, the next step still produced motion, contradicting the cold-start contract on the
   // type. An impulse that is never reapplied must be cleared, or it is neither warm nor cold.
-  for (const joint of world.joints) {
-    const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined) continue;
-    // A joint between two sleeping ends must not warm-start: reapplying its impulse hands a sleeper
-    // velocity it will never integrate, and the next step's stillness test reads that as motion.
-    if (!isPhysics2DJointAwake(world, joint)) continue;
-    if (config.warmStarting && solver.warmStart !== undefined) {
-      solver.warmStart(world, joint);
-    } else {
-      solver.clearAccumulatedImpulses?.(joint);
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    const start = world.solveIslandJointStarts[island];
+    const end = start + world.solveIslandJointCounts[island];
+    for (let at = start; at < end; at++) {
+      const joint = world.joints[world.solveIslandJointIndices[at]];
+      const solver = world.jointSolvers.get(joint.kind);
+      if (solver === undefined) continue;
+      if (config.warmStarting && solver.warmStart !== undefined) {
+        solver.warmStart(world, joint);
+      } else {
+        solver.clearAccumulatedImpulses?.(joint);
+      }
     }
   }
   // Joints and contacts share one solve list and one iteration count. Solving them in separate passes
   // would let each undo the other's correction — a hinge under load creeps if the contacts beneath it get
   // a whole pass to themselves between joint iterations.
-  for (let iteration = 0; iteration < config.velocityIterations; iteration++) {
-    for (const joint of world.joints) {
-      if (!isPhysics2DJointAwake(world, joint)) continue;
-      world.jointSolvers.get(joint.kind)?.solve(world, joint);
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    const jointStart = world.solveIslandJointStarts[island];
+    const jointEnd = jointStart + world.solveIslandJointCounts[island];
+    const contactStart = world.solveIslandContactStarts[island];
+    const contactCount = world.solveIslandContactCounts[island];
+    for (let iteration = 0; iteration < config.velocityIterations; iteration++) {
+      for (let at = jointStart; at < jointEnd; at++) {
+        const joint = world.joints[world.solveIslandJointIndices[at]];
+        world.jointSolvers.get(joint.kind)?.solve(world, joint);
+      }
+      solvePhysics2DContactIndicesOnce(world, world.solveIslandContactIndices, contactStart, contactCount);
     }
-    solvePhysics2DContactsOnce(world);
   }
 
   // The sleeping skip here is a COST saving, not a behavioural one, and the distinction is worth having
@@ -530,15 +565,20 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   // (any awake neighbour puts it in an awake island before this point), so integrating it would move it
   // by exactly zero. What the skip buys is that a settled thousand-body pile costs no integration work
   // at all, which is the entire reason sleep exists. Removing it changes no observable result.
-  for (const body of bodies) {
-    if (body.type === 'static' || body.sleeping) continue;
-    body.x += body.velocityX * dt;
-    body.y += body.velocityY * dt;
-    body.angle += body.angularVelocity * dt;
-  }
-
-  for (let iteration = 0; iteration < config.positionIterations; iteration++) {
-    solvePhysics2DPositionsOnce(world);
+  for (let island = 0; island < world.solveIslandRoots.length; island++) {
+    const bodyStart = world.solveIslandBodyStarts[island];
+    const bodyEnd = bodyStart + world.solveIslandBodyCounts[island];
+    for (let at = bodyStart; at < bodyEnd; at++) {
+      const body = bodies[world.solveIslandBodyIndices[at]];
+      body.x += body.velocityX * dt;
+      body.y += body.velocityY * dt;
+      body.angle += body.angularVelocity * dt;
+    }
+    const contactStart = world.solveIslandContactStarts[island];
+    const contactCount = world.solveIslandContactCounts[island];
+    for (let iteration = 0; iteration < config.positionIterations; iteration++) {
+      solvePhysics2DPositionsOnce(world, world.solveIslandContactIndices, contactStart, contactCount);
+    }
   }
 
   for (const body of bodies) {
@@ -627,19 +667,6 @@ function createPhysics2DContactPoint(): Physics2DContactPoint {
     tangentMass: 0,
     bias: 0,
   };
-}
-
-// Whether a joint still has an end the solver can move. Mirrors the contact-side test in the solver:
-// two sleeping ends, or a sleeper anchored to static scenery, constrain nothing this step.
-function isPhysics2DJointAwake(world: Readonly<Physics2DWorld>, joint: Readonly<Physics2DJoint>): boolean {
-  const solver = world.jointSolvers.get(joint.kind);
-  if (solver === undefined) return false;
-  const bodyB = findPhysics2DBody(world, joint.bodyB);
-  if (bodyB === null) return false;
-  if (solver.usesBodyA === false) return isRigidBody2DPairAwake(bodyB, bodyB);
-  const bodyA = findPhysics2DBody(world, joint.bodyA);
-  if (bodyA === null) return false;
-  return isRigidBody2DPairAwake(bodyA, bodyB);
 }
 
 // Whether any of the body's colliders senses rather than collides. Cheap enough to ask per pair: a

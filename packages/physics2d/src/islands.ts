@@ -3,6 +3,92 @@ import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { assertPhysics2DBodyNotStepping } from './ownership';
 import { findPhysics2DBody } from './world';
 
+/** Rebuilds deterministic contiguous lists for the awake solve islands.
+ *
+ *  The sleep reduction already owns the union-find graph, so solving consumes that same graph rather
+ *  than discovering connectivity a second way. Roots are admitted in body order, and bodies,
+ *  contacts, and joints retain their canonical world-list order inside each root. Disconnected islands
+ *  therefore cannot perturb one another's iteration order, and sleeping constraints cost no solver
+ *  scans. Every array and map is world-owned high-water workspace and is cleared/refilled in place. */
+export function buildPhysics2DSolveIslands(world: Physics2DWorld): void {
+  const roots = world.solveIslandRoots;
+  const byRoot = world.solveIslandByRoot;
+  const bodyCounts = world.solveIslandBodyCounts;
+  const contactCounts = world.solveIslandContactCounts;
+  const jointCounts = world.solveIslandJointCounts;
+  roots.length = 0;
+  byRoot.clear();
+  bodyCounts.length = 0;
+  contactCounts.length = 0;
+  jointCounts.length = 0;
+
+  for (const body of world.bodies) {
+    if (body.type === 'static' || body.sleeping) continue;
+    const root = _islandRootOf(world.islandParents, body.index);
+    let island = byRoot.get(root);
+    if (island === undefined) {
+      island = roots.length;
+      roots.push(root);
+      byRoot.set(root, island);
+      bodyCounts.push(0);
+      contactCounts.push(0);
+      jointCounts.push(0);
+    }
+    bodyCounts[island]++;
+  }
+
+  for (const contact of world.contacts) {
+    if (!contact.enabled || contact.sensor) continue;
+    const island = _physics2DSolveIslandForPair(world, contact.bodyA, contact.bodyB);
+    if (island >= 0) contactCounts[island]++;
+  }
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined) continue;
+    const island =
+      solver.usesBodyA === false
+        ? _physics2DSolveIslandForBody(world, joint.bodyB)
+        : _physics2DSolveIslandForPair(world, joint.bodyA, joint.bodyB);
+    if (island >= 0) jointCounts[island]++;
+  }
+
+  _preparePhysics2DIslandSlices(world.solveIslandBodyStarts, bodyCounts, world.solveIslandCursors);
+  _preparePhysics2DIslandSlices(world.solveIslandContactStarts, contactCounts, world.solveIslandCursors);
+  _preparePhysics2DIslandSlices(world.solveIslandJointStarts, jointCounts, world.solveIslandCursors);
+
+  world.solveIslandBodyIndices.length = _physics2DIslandItemCount(world.solveIslandBodyStarts, bodyCounts);
+  world.solveIslandContactIndices.length = _physics2DIslandItemCount(world.solveIslandContactStarts, contactCounts);
+  world.solveIslandJointIndices.length = _physics2DIslandItemCount(world.solveIslandJointStarts, jointCounts);
+
+  _copyPhysics2DIslandStarts(world.solveIslandCursors, world.solveIslandBodyStarts);
+  for (let i = 0; i < world.bodies.length; i++) {
+    const body = world.bodies[i];
+    if (body.type === 'static' || body.sleeping) continue;
+    const island = byRoot.get(_islandRootOf(world.islandParents, body.index));
+    if (island !== undefined) world.solveIslandBodyIndices[world.solveIslandCursors[island]++] = i;
+  }
+
+  _copyPhysics2DIslandStarts(world.solveIslandCursors, world.solveIslandContactStarts);
+  for (let i = 0; i < world.contacts.length; i++) {
+    const contact = world.contacts[i];
+    if (!contact.enabled || contact.sensor) continue;
+    const island = _physics2DSolveIslandForPair(world, contact.bodyA, contact.bodyB);
+    if (island >= 0) world.solveIslandContactIndices[world.solveIslandCursors[island]++] = i;
+  }
+
+  _copyPhysics2DIslandStarts(world.solveIslandCursors, world.solveIslandJointStarts);
+  for (let i = 0; i < world.joints.length; i++) {
+    const joint = world.joints[i];
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined) continue;
+    const island =
+      solver.usesBodyA === false
+        ? _physics2DSolveIslandForBody(world, joint.bodyB)
+        : _physics2DSolveIslandForPair(world, joint.bodyA, joint.bodyB);
+    if (island >= 0) world.solveIslandJointIndices[world.solveIslandCursors[island]++] = i;
+  }
+}
+
 /** Whether a constraint between these two bodies still has anything to solve.
  *
  *  A constraint is live only while at least one of its ends can still move this step. Two sleeping
@@ -42,6 +128,19 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
   parents.clear();
   islandTimers.clear();
 
+  // Build the active constraint graph even when sleeping is disabled. The same union-find owns the
+  // solve islands below; clearing it and returning here would split every awake body into a singleton
+  // and assign a multi-body constraint to only the first of those artificial components.
+  for (const contact of world.contacts) {
+    if (!contact.enabled || contact.sensor) continue;
+    _unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
+  }
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    if (solver === undefined || solver.usesBodyA === false) continue;
+    _unionDynamicPair(world, parents, joint.bodyA, joint.bodyB);
+  }
+
   if (!config.allowSleeping) {
     // The mechanism is off, so nothing may be left asleep from when it was on — a body that stayed
     // asleep here would never be integrated again and would look frozen for the rest of the session.
@@ -70,18 +169,6 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
     if (solver?.keepsBodiesAwake !== true) continue;
     if (solver.usesBodyA !== false) _keepPhysics2DBodyAwake(world, joint.bodyA);
     _keepPhysics2DBodyAwake(world, joint.bodyB);
-  }
-
-  // Then the island reduction. `_islandRootOf` is union-find over the contact and joint graph, so the
-  // root is a stable representative for the connected component.
-  for (const contact of world.contacts) {
-    if (!contact.enabled || contact.sensor) continue;
-    _unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
-  }
-  for (const joint of world.joints) {
-    const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined || solver.usesBodyA === false) continue;
-    _unionDynamicPair(world, parents, joint.bodyA, joint.bodyB);
   }
 
   // The island's timer is the MINIMUM across its members: the least-settled body decides.
@@ -146,6 +233,38 @@ function _isBodyStill(body: Readonly<RigidBody2D>, linearThreshold: number, angu
 function _keepPhysics2DBodyAwake(world: Readonly<Physics2DWorld>, bodyIndex: number): void {
   const body = findPhysics2DBody(world, bodyIndex);
   if (body !== null && body.type !== 'static') body.sleepTimer = 0;
+}
+
+function _physics2DSolveIslandForBody(world: Physics2DWorld, bodyIndex: number): number {
+  const body = findPhysics2DBody(world, bodyIndex);
+  if (body === null || body.type === 'static' || body.sleeping) return -1;
+  return world.solveIslandByRoot.get(_islandRootOf(world.islandParents, body.index)) ?? -1;
+}
+
+function _physics2DSolveIslandForPair(world: Physics2DWorld, bodyA: number, bodyB: number): number {
+  const islandA = _physics2DSolveIslandForBody(world, bodyA);
+  if (islandA >= 0) return islandA;
+  return _physics2DSolveIslandForBody(world, bodyB);
+}
+
+function _preparePhysics2DIslandSlices(starts: number[], counts: number[], cursors: number[]): void {
+  starts.length = counts.length;
+  cursors.length = counts.length;
+  let start = 0;
+  for (let i = 0; i < counts.length; i++) {
+    starts[i] = start;
+    start += counts[i];
+  }
+}
+
+function _copyPhysics2DIslandStarts(cursors: number[], starts: number[]): void {
+  cursors.length = starts.length;
+  for (let i = 0; i < starts.length; i++) cursors[i] = starts[i];
+}
+
+function _physics2DIslandItemCount(starts: number[], counts: number[]): number {
+  const last = counts.length - 1;
+  return last < 0 ? 0 : starts[last] + counts[last];
 }
 
 // Joins two bodies into one island, but only when BOTH are dynamic. A static body is not a member of

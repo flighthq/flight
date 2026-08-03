@@ -1,7 +1,7 @@
 import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
+import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
 import { registerPhysics2DJointSolver } from './jointRegistry';
 import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world';
 
@@ -35,6 +35,51 @@ function moving(world: Physics2DWorld, x = 0): RigidBody2D {
   body.velocityX = 5;
   return body;
 }
+
+describe('buildPhysics2DSolveIslands', () => {
+  it('builds deterministic contiguous lists without replacing world-owned workspace', () => {
+    const world = createPhysics2DWorld();
+    world.config.allowSleeping = false;
+    const bodyIndices = world.solveIslandBodyIndices;
+    const contactIndices = world.solveIslandContactIndices;
+    const first = still(world, 0);
+    const second = still(world, 1);
+    const third = still(world, 10);
+    link(world, first, second);
+
+    updatePhysics2DSleep(world, 0.016);
+    buildPhysics2DSolveIslands(world);
+
+    expect(world.solveIslandRoots).toHaveLength(2);
+    expect(world.solveIslandBodyCounts).toEqual([2, 1]);
+    expect(world.solveIslandContactCounts).toEqual([1, 0]);
+    expect(world.solveIslandBodyIndices).toEqual([0, 1, 2]);
+    expect(world.solveIslandContactIndices).toEqual([0]);
+
+    world.contacts.length = 0;
+    updatePhysics2DSleep(world, 0.016);
+    buildPhysics2DSolveIslands(world);
+    expect(world.solveIslandBodyIndices).toBe(bodyIndices);
+    expect(world.solveIslandContactIndices).toBe(contactIndices);
+    expect(world.solveIslandBodyCounts).toEqual([1, 1, 1]);
+    expect(third.sleeping).toBe(false);
+  });
+
+  it('does not admit sleeping bodies or their constraints to the solve lists', () => {
+    const world = createPhysics2DWorld();
+    const ground = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const settled = still(world);
+    link(world, ground, settled);
+
+    updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
+    buildPhysics2DSolveIslands(world);
+
+    expect(settled.sleeping).toBe(true);
+    expect(world.solveIslandRoots).toHaveLength(0);
+    expect(world.solveIslandBodyIndices).toHaveLength(0);
+    expect(world.solveIslandContactIndices).toHaveLength(0);
+  });
+});
 
 describe('isRigidBody2DPairAwake', () => {
   it('reports a pair awake when one end is an awake dynamic body', () => {

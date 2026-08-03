@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyPhysics2DImpulse,
-  solvePhysics2DContactsOnce,
   relativeNormalVelocity,
+  solvePhysics2DContactIndicesOnce,
+  solvePhysics2DContactsOnce,
   solvePhysics2DContacts,
+  warmStartPhysics2DContactIndices,
   warmStartPhysics2DContacts,
 } from './solver';
 import { stepPhysics2D } from './step';
@@ -96,6 +98,21 @@ describe('relativeNormalVelocity', () => {
   });
 });
 
+describe('solvePhysics2DContactIndicesOnce', () => {
+  it('solves only the selected flattened island slice', () => {
+    const { world, crate } = restingWorld();
+    stepPhysics2D(world, 1 / 60);
+    crate.velocityY = -5;
+
+    solvePhysics2DContactIndicesOnce(world, [0], 0, 1);
+
+    expect(crate.velocityY).toBeGreaterThan(-5);
+    const afterSelected = crate.velocityY;
+    solvePhysics2DContactIndicesOnce(world, [0], 1, 0);
+    expect(crate.velocityY).toBe(afterSelected);
+  });
+});
+
 describe('solvePhysics2DContacts', () => {
   it('removes the closing velocity at a resting contact', () => {
     const { world, crate } = restingWorld();
@@ -183,6 +200,20 @@ describe('solvePhysics2DContactsOnce', () => {
 
   it('does nothing for a world with no contacts', () => {
     expect(() => solvePhysics2DContactsOnce(createPhysics2DWorld())).not.toThrow();
+  });
+});
+
+describe('warmStartPhysics2DContactIndices', () => {
+  it('reapplies cached impulses only from the selected flattened island slice', () => {
+    const { world, crate } = restingWorld();
+    stepPhysics2D(world, 1 / 60);
+    expect(world.contacts[0].points[0].normalImpulse).toBeGreaterThan(0);
+    crate.velocityX = 0;
+    crate.velocityY = 0;
+
+    warmStartPhysics2DContactIndices(world, [0], 0, 1);
+
+    expect(crate.velocityY).not.toBe(0);
   });
 });
 
