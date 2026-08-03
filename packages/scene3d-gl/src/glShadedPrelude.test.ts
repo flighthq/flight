@@ -100,6 +100,7 @@ describe('compileGlShadedProgram', () => {
     const fragment = fragmentSourceFrom(gl.calls);
     // The shared block declares u_directional exactly once (no forked light loop).
     expect(fragment.split('uniform vec4 u_directional;').length - 1).toBe(1);
+    expect(fragment.match(/float sampleDirectionalShadow\(vec3 worldPos, vec3 geometricNormal\)/g)).toHaveLength(1);
   });
 
   it('injects the skin define + vertex declarations only into the skinned vertex source', () => {

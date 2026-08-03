@@ -113,6 +113,8 @@ const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
   // Radius 1 is the rendered 3x3 PCF witness; the PBR directional scene separately fixes radius 0.
+  // The deliberately negative depth bias expands the caster comparison just enough to give shadowBias
+  // its own stable image witness (zeroing only this field changes the capture on both backends).
   directional: createDirectionalLight({
     castsShadow: true,
     color: 0xffffffff,
@@ -120,7 +122,7 @@ const lights = createScene3DLights({
     intensity: 3,
     normalBias: 0,
     pcfRadius: 1,
-    shadowBias: 0,
+    shadowBias: -0.01,
   }),
 });
 

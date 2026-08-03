@@ -132,6 +132,7 @@ describe('getGlPbrFragmentSourceForKey', () => {
     expect(src.startsWith('#version 300 es')).toBe(true);
     expect(src).toContain('#define HAS_NORMAL_MAP');
     expect(src).toContain('out vec4 fragColor');
+    expect(src.match(/float sampleDirectionalShadow\(vec3 worldPos, vec3 geometricNormal\)/g)).toHaveLength(1);
   });
 
   it('emits the MAX_FORWARD_LIGHTS spec constant and loops the punctual light arrays', () => {

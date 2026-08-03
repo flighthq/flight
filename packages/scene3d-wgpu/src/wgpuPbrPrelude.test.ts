@@ -179,6 +179,7 @@ describe('getWgpuPbrModuleSourceForKey', () => {
     const source = getWgpuPbrModuleSourceForKey(k);
     expect(source.startsWith(buildWgpuPbrDefineSource(k))).toBe(true);
     expect(source).toContain('fn fs_main');
+    expect(source.match(/fn sampleDirectionalShadow\(worldPos : vec3f, geometricNormal : vec3f\)/g)).toHaveLength(1);
     expect(source).toContain('@interpolate(flat) objectAlpha : f32');
     expect(source).toContain('flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)');
     expect(source).not.toContain('jointTexture');

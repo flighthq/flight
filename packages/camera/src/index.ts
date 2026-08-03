@@ -21,6 +21,7 @@ export {
   getCamera3DViewProjectionMatrix4,
   getCamera3DViewSpaceZ,
   getCamera3DWorldToScreen,
+  getOrthographicProjectionTexelSize,
   intersectCamera3DRayWithPlane,
   isBoxInCamera3DFrustum,
   isOrthographicProjection,

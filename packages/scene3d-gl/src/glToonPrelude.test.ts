@@ -88,6 +88,7 @@ describe('getGlToonFragmentSourceForKey', () => {
     for (const key of [FLAT, { ...FLAT, hasRamp: true }]) {
       const source = getGlToonFragmentSourceForKey(key);
       expect(source).toContain('sampleDirectionalShadow(v_worldPosition, normal)');
+      expect(source.match(/float sampleDirectionalShadow\(vec3 worldPos, vec3 geometricNormal\)/g)).toHaveLength(1);
       expect(source.match(/sampleDirectionalShadow\(v_worldPosition, normal\)/g)).toHaveLength(1);
     }
   });
