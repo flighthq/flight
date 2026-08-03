@@ -45,12 +45,26 @@ beforeAll(async () => {
   installWgpuMock();
 });
 
+// Mirrors createWgpuShapeData: the rasterization surface is absent until a shape actually needs one,
+// so a scene drawn entirely through the mesh path carries no canvases.
 function makeShapeData() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, image: createImageResource(canvas), lastContentId: -1, lastW: 0, lastH: 0 };
+  return {
+    surface: null,
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+    meshBuffers: {
+      vertexBuffers: [],
+      vertexCapacities: [],
+      indexBuffers: [],
+      indexCapacities: [],
+      uniformBuffers: [],
+      bindGroups: [],
+    },
+  };
 }
 
 function makeShapeProxy(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderProxy2D {
@@ -178,7 +192,8 @@ describe('drawWgpuShape', () => {
     const proxy = makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData);
 
     drawWgpuShape(state, proxy);
-    const canvas = (rendererData as unknown as { canvas: HTMLCanvasElement }).canvas;
+    // The first draw rasterized, so the surface exists by now — it is allocated on demand, not with the node.
+    const canvas = (rendererData as unknown as { surface: { canvas: HTMLCanvasElement } }).surface.canvas;
     let canvasWidth = canvas.width;
     let canvasHeight = canvas.height;
     const setWidth = vi.fn((value: number) => (canvasWidth = value));
