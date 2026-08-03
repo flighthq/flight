@@ -14,6 +14,7 @@ import { synchronizePhysics2DBroadphase } from './broadphase';
 import { createPhysics2DColliderWorldShape } from './colliderTransform';
 import { updateRigidBody2DMassData } from './massProperties';
 import {
+  assertPhysics2DBodyNotStepping,
   assertPhysics2DWorldNotStepping,
   physics2DBodyOwners,
   physics2DColliderOwners,
@@ -84,6 +85,7 @@ export function addPhysics2DCollider(
 // Accumulates a world-space force at the centre of mass for the next step. Forces belong only to
 // dynamic bodies; returning false makes an ignored static/kinematic or non-finite action observable.
 export function applyPhysics2DForce(body: RigidBody2D, forceX: number, forceY: number): boolean {
+  assertPhysics2DBodyNotStepping(body);
   if (body.type !== 'dynamic' || !Number.isFinite(forceX) || !Number.isFinite(forceY)) return false;
   body.forceX += forceX;
   body.forceY += forceY;
@@ -100,6 +102,7 @@ export function applyPhysics2DForceAtPoint(
   pointX: number,
   pointY: number,
 ): boolean {
+  assertPhysics2DBodyNotStepping(body);
   if (
     body.type !== 'dynamic' ||
     !Number.isFinite(forceX) ||
@@ -119,6 +122,7 @@ export function applyPhysics2DForceAtPoint(
 // Applies an instantaneous world-space impulse at the centre of mass. Unlike force, an impulse changes
 // velocity immediately and is not cleared at the end of the next step.
 export function applyPhysics2DLinearImpulse(body: RigidBody2D, impulseX: number, impulseY: number): boolean {
+  assertPhysics2DBodyNotStepping(body);
   if (body.type !== 'dynamic' || !Number.isFinite(impulseX) || !Number.isFinite(impulseY)) return false;
   body.velocityX += impulseX * body.inverseMass;
   body.velocityY += impulseY * body.inverseMass;
@@ -135,6 +139,7 @@ export function applyPhysics2DLinearImpulseAtPoint(
   pointX: number,
   pointY: number,
 ): boolean {
+  assertPhysics2DBodyNotStepping(body);
   if (
     body.type !== 'dynamic' ||
     !Number.isFinite(impulseX) ||
@@ -154,6 +159,7 @@ export function applyPhysics2DLinearImpulseAtPoint(
 
 // Accumulates torque for the next step and wakes the body so the integrator cannot swallow it.
 export function applyPhysics2DTorque(body: RigidBody2D, torque: number): boolean {
+  assertPhysics2DBodyNotStepping(body);
   if (body.type !== 'dynamic' || !Number.isFinite(torque)) return false;
   body.torque += torque;
   if (torque !== 0) _wakePhysics2DBodyFromTopology(body);

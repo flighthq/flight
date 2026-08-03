@@ -213,7 +213,8 @@ export interface Physics2DContact {
 // generation and before constraint preparation, so it may adjust friction/restitution or set
 // `enabled=false` for this step. Post-solve runs once the step has committed and exposes the accumulated
 // point impulses. A post-solve exception therefore cannot leave integration or force cleanup half-done.
-// Sensors do not invoke either hook because they produce no constraint to solve.
+// World lifecycle and body-action helpers reject calls from either hook: contact fields are the hook's
+// sole mutation surface. Sensors do not invoke either hook because they produce no constraint to solve.
 export type Physics2DContactCallback = (world: Physics2DWorld, contact: Physics2DContact) => void;
 
 export interface Physics2DContactHooks {

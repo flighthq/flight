@@ -14,6 +14,11 @@ export const physics2DJointOwners = new WeakMap<Physics2DJoint, Physics2DWorld>(
 // state belongs here beside ownership rather than in the serializable world descriptor.
 export const steppingPhysics2DWorlds = new WeakSet<Physics2DWorld>();
 
+export function assertPhysics2DBodyNotStepping(body: Readonly<RigidBody2D>): void {
+  const world = physics2DBodyOwners.get(body as RigidBody2D);
+  if (world !== undefined) assertPhysics2DWorldNotStepping(world);
+}
+
 export function assertPhysics2DWorldNotStepping(world: Readonly<Physics2DWorld>): void {
   if (steppingPhysics2DWorlds.has(world as Physics2DWorld)) {
     throw new Error('Cannot mutate a physics world while it is stepping');

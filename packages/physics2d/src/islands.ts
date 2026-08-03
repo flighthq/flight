@@ -1,5 +1,6 @@
 import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 
+import { assertPhysics2DBodyNotStepping } from './ownership';
 import { findPhysics2DBody } from './world';
 
 /** Whether a constraint between these two bodies still has anything to solve.
@@ -120,6 +121,7 @@ export function updatePhysics2DSleep(world: Physics2DWorld, dt: number): void {
  *  change to a sleeping body must do — applying a force, teleporting it, or removing what it rested on —
  *  since a sleeping body is skipped by integration and would otherwise ignore the change entirely. */
 export function wakePhysics2DBody(body: RigidBody2D): void {
+  assertPhysics2DBodyNotStepping(body);
   body.sleeping = false;
   body.sleepTimer = 0;
 }
