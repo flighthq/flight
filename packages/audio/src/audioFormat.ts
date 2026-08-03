@@ -45,6 +45,39 @@ export function detectAudioMimeType(data: ArrayBuffer | Uint8Array): string | nu
   return null;
 }
 
+// Returns the type/subtype of a MIME string without its parameters, lowercased — `audio/vnd.adobe.swf-adpcm`
+// for `audio/vnd.adobe.swf-adpcm; rate=22050`. Decoders register against the essence so one registration
+// serves every parameter combination a container emits.
+export function getAudioMimeTypeEssence(mimeType: string): string {
+  const end = mimeType.indexOf(';');
+  return (end === -1 ? mimeType : mimeType.slice(0, end)).trim().toLowerCase();
+}
+
+// Returns one MIME parameter's value, or null when the type does not carry it. This is how a decoder for a
+// container-less format reads the sample rate and channel count its bitstream does not encode.
+export function getAudioMimeTypeParameter(mimeType: string, name: string): string | null {
+  const wanted = name.toLowerCase();
+  // Split on semicolons outside quotes: a quoted value may contain one, and treating that as a separator
+  // would truncate the value and invent a parameter out of its tail.
+  let start = -1;
+  let quoted = false;
+  for (let i = 0; i <= mimeType.length; i++) {
+    const character = i < mimeType.length ? mimeType[i] : ';';
+    if (character === '"') quoted = !quoted;
+    if (quoted || character !== ';') continue;
+    if (start >= 0) {
+      const part = mimeType.slice(start, i);
+      const separator = part.indexOf('=');
+      if (separator >= 0 && part.slice(0, separator).trim().toLowerCase() === wanted) {
+        const value = part.slice(separator + 1).trim();
+        return value.length >= 2 && value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+      }
+    }
+    start = i + 1;
+  }
+  return null;
+}
+
 // Infers the MIME type from a URL's file extension, or null when unrecognized. Extension-based; use
 // detectAudioMimeType when the bytes are in hand.
 export function inferAudioMimeType(url: string): string | null {
