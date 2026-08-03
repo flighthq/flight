@@ -2,10 +2,12 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { Expression } from 'oxc-parser';
 import pc from 'picocolors';
-import * as ts from 'typescript';
 
 import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
+import { collectFastEntryPointInventory } from './fast-export-inventory';
+import { getParsedOxcSource } from './oxc-source';
 import {
   getCoreGuardImportViolations,
   getCoreGuardRuntimeImportViolations,
@@ -212,29 +214,41 @@ function getAllTsFiles(dir: string): { source: string[]; test: string[] } {
   return { source, test };
 }
 
+function getStaticModuleSpecifiers(filePath: string): string[] {
+  const { module } = getParsedOxcSource(filePath);
+  return [
+    ...module.staticImports.map((statement) => statement.moduleRequest.value),
+    ...module.staticExports.flatMap((statement) =>
+      statement.entries.flatMap((entry) => (entry.moduleRequest === null ? [] : [entry.moduleRequest.value])),
+    ),
+  ];
+}
+
+function getModuleSpecifiers(filePath: string): string[] {
+  const parsed = getParsedOxcSource(filePath);
+  const specifiers = getStaticModuleSpecifiers(filePath);
+  for (const statement of parsed.program.body) {
+    if (
+      statement.type === 'TSImportEqualsDeclaration' &&
+      statement.moduleReference.type === 'TSExternalModuleReference' &&
+      statement.moduleReference.expression !== null
+    ) {
+      specifiers.push(statement.moduleReference.expression.value);
+    }
+  }
+  for (const dynamicImport of parsed.module.dynamicImports) {
+    const source = parsed.text.slice(dynamicImport.moduleRequest.start, dynamicImport.moduleRequest.end);
+    const quote = source[0];
+    if ((quote === "'" || quote === '"') && source.at(-1) === quote) specifiers.push(source.slice(1, -1));
+  }
+  return specifiers;
+}
+
 function scanFlightImportSpecifiers(files: string[]): Set<string> {
   const imports = new Set<string>();
   for (const filePath of files) {
-    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
-    for (const statement of sourceFile.statements) {
-      let specifier: string | undefined;
-      if (
-        ts.isImportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)
-      ) {
-        specifier = statement.moduleSpecifier.text;
-      } else if (
-        ts.isExportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)
-      ) {
-        specifier = statement.moduleSpecifier.text;
-      }
-      if (specifier?.startsWith('@flighthq/')) {
-        imports.add(specifier);
-      }
-    }
+    for (const specifier of getStaticModuleSpecifiers(filePath))
+      if (specifier.startsWith('@flighthq/')) imports.add(specifier);
   }
   return imports;
 }
@@ -246,15 +260,7 @@ function scanFlightImportSpecifiers(files: string[]): Set<string> {
 function scanLocalImportsByFile(files: string[]): Map<string, string[]> {
   const byFile = new Map<string, string[]>();
   for (const filePath of files) {
-    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
-    const specifiers: string[] = [];
-    for (const statement of sourceFile.statements) {
-      const moduleSpecifier =
-        (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) && statement.moduleSpecifier;
-      if (moduleSpecifier && ts.isStringLiteral(moduleSpecifier) && moduleSpecifier.text.startsWith('.')) {
-        specifiers.push(moduleSpecifier.text);
-      }
-    }
+    const specifiers = getStaticModuleSpecifiers(filePath).filter((specifier) => specifier.startsWith('.'));
     if (specifiers.length > 0) byFile.set(relative(root, filePath), specifiers);
   }
   return byFile;
@@ -285,40 +291,7 @@ function scanContractLaneImports(files: string[], importingPackage: string): Map
   const violations = new Map<string, string[]>();
 
   for (const filePath of files) {
-    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
-    const specifiers = new Set<string>();
-
-    function visit(node: ts.Node): void {
-      let specifier: string | undefined;
-      if (
-        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-        node.moduleSpecifier &&
-        ts.isStringLiteral(node.moduleSpecifier)
-      ) {
-        specifier = node.moduleSpecifier.text;
-      } else if (
-        ts.isImportEqualsDeclaration(node) &&
-        ts.isExternalModuleReference(node.moduleReference) &&
-        node.moduleReference.expression &&
-        ts.isStringLiteral(node.moduleReference.expression)
-      ) {
-        specifier = node.moduleReference.expression.text;
-      } else if (
-        ts.isCallExpression(node) &&
-        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-        node.arguments.length === 1 &&
-        ts.isStringLiteral(node.arguments[0])
-      ) {
-        specifier = node.arguments[0].text;
-      }
-
-      if (specifier !== undefined) specifiers.add(specifier);
-      ts.forEachChild(node, visit);
-    }
-
-    visit(sourceFile);
-
-    for (const specifier of specifiers) {
+    for (const specifier of new Set(getModuleSpecifiers(filePath))) {
       const packageName = specifier.split('/').slice(0, 2).join('/');
       if (
         packageName === importingPackage ||
@@ -336,19 +309,15 @@ function scanContractLaneImports(files: string[], importingPackage: string): Map
   return violations;
 }
 
-function skipOuterExpressions(expression: ts.Expression): ts.Expression {
-  let e: ts.Expression = expression;
+function skipOuterExpressions(expression: Expression): Expression {
+  let e = expression;
   while (true) {
-    if (ts.isParenthesizedExpression(e)) {
+    if (e.type === 'ParenthesizedExpression') {
       e = e.expression;
       continue;
     }
-    if (e.kind === ts.SyntaxKind.AsExpression) {
-      e = (e as unknown as { expression: ts.Expression }).expression;
-      continue;
-    }
-    if (e.kind === ts.SyntaxKind.TypeAssertionExpression) {
-      e = (e as unknown as { expression: ts.Expression }).expression;
+    if (e.type === 'TSAsExpression' || e.type === 'TSTypeAssertion') {
+      e = e.expression;
       continue;
     }
     break;
@@ -356,18 +325,17 @@ function skipOuterExpressions(expression: ts.Expression): ts.Expression {
   return e;
 }
 
-function isTopLevelSideEffectStatement(statement: ts.Statement): boolean {
-  if (!ts.isExpressionStatement(statement)) return false;
+function isTopLevelSideEffectExpression(expression: Expression): boolean {
+  const unwrapped = skipOuterExpressions(expression);
 
-  const expression = skipOuterExpressions(statement.expression);
   return (
-    ts.isCallExpression(expression) ||
-    ts.isNewExpression(expression) ||
-    ts.isBinaryExpression(expression) ||
-    ts.isPrefixUnaryExpression(expression) ||
-    ts.isPostfixUnaryExpression(expression) ||
-    ts.isDeleteExpression(expression) ||
-    ts.isAwaitExpression(expression)
+    unwrapped.type === 'CallExpression' ||
+    unwrapped.type === 'NewExpression' ||
+    unwrapped.type === 'AssignmentExpression' ||
+    unwrapped.type === 'BinaryExpression' ||
+    unwrapped.type === 'UnaryExpression' ||
+    unwrapped.type === 'UpdateExpression' ||
+    unwrapped.type === 'AwaitExpression'
   );
 }
 
@@ -393,11 +361,13 @@ function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string, bin: P
 
   for (const sourcePath of getSourceFiles(join(pkgDir, 'src'))) {
     if (binSources.has(sourcePath)) continue;
-    const sourceFile = ts.createSourceFile(sourcePath, readFileSync(sourcePath, 'utf-8'), ts.ScriptTarget.Latest, true);
-    for (const statement of sourceFile.statements) {
-      if (!isTopLevelSideEffectStatement(statement)) continue;
+    const { program, text } = getParsedOxcSource(sourcePath);
+    for (const statement of program.body) {
+      if (statement.type !== 'ExpressionStatement' || !isTopLevelSideEffectExpression(statement.expression)) continue;
 
-      const { line, character } = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile));
+      const before = text.slice(0, statement.start);
+      const line = before.split('\n').length - 1;
+      const character = statement.start - before.lastIndexOf('\n') - 1;
       sideEffects.push(`${sourcePath.replace(pkgDir + '\\', '')}:${line + 1}:${character + 1}`);
     }
   }
@@ -456,24 +426,8 @@ for (const pkgDir of packageDirs) {
   }
 }
 
-const laneBarrelPaths = packageDirs.flatMap((pkgDir) =>
-  ['index.ts', 'contract.ts'].map((file) => join(pkgDir, 'src', file)).filter((path) => existsSync(path)),
-);
-const parsedTsConfig = ts.parseJsonConfigFileContent(tsconfig ?? {}, ts.sys, root, undefined, tsconfigBasePath);
-const laneProgram = ts.createProgram(laneBarrelPaths, parsedTsConfig.options);
-const laneTypeChecker = laneProgram.getTypeChecker();
-
 function getBarrelExports(path: string): Set<string> {
-  const sourceFile = laneProgram.getSourceFile(path);
-  if (sourceFile === undefined) return new Set();
-  const symbol = laneTypeChecker.getSymbolAtLocation(sourceFile);
-  if (symbol === undefined) return new Set();
-  return new Set(
-    laneTypeChecker
-      .getExportsOfModule(symbol)
-      .map((exported) => exported.getName())
-      .filter((name) => name !== 'default'),
-  );
+  return new Set([...collectFastEntryPointInventory(path).names].filter((name) => name !== 'default'));
 }
 
 const expectedPackageFiles = [

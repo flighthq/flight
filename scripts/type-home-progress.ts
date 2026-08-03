@@ -5,11 +5,10 @@
 //
 //   npx tsx scripts/type-home-progress.ts          # meter (always exit 0)
 //   npx tsx scripts/type-home-progress.ts --gate    # exit 1 if any exported types remain outside types
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import ts from 'typescript';
-
+import { getParsedOxcSource } from './oxc-source';
 import { getSelectors, selectPackages } from './select';
 
 const root = process.cwd();
@@ -36,13 +35,17 @@ function sourceFiles(dir: string): string[] {
 }
 
 function exportedTypeNames(file: string): string[] {
-  const sf = ts.createSourceFile(file, readFileSync(file, 'utf-8'), ts.ScriptTarget.Latest, true);
   const names: string[] = [];
-  for (const s of sf.statements) {
-    if (!ts.canHaveModifiers(s)) continue;
-    if (!ts.getModifiers(s)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
-    if ((ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s) || ts.isEnumDeclaration(s)) && s.name)
-      names.push(s.name.text);
+  for (const statement of getParsedOxcSource(file).program.body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration;
+    if (
+      declaration?.type === 'TSInterfaceDeclaration' ||
+      declaration?.type === 'TSTypeAliasDeclaration' ||
+      declaration?.type === 'TSEnumDeclaration'
+    ) {
+      names.push(declaration.id.name);
+    }
   }
   return names;
 }

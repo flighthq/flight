@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import pc from 'picocolors';
-import { Project } from 'ts-morph';
 
 import {
   auditEffectBackend,
@@ -34,20 +33,24 @@ const selectors = getSelectors();
 if (updateMode && selectors.length > 0) throw new Error('Reachability baseline updates must be whole-repo');
 
 const selected = selectPackages(selectors);
-const project = new Project({ tsConfigFilePath: join(root, 'tsconfig.base.json'), skipAddingFilesFromTsConfig: true });
-for (const name of selected) project.addSourceFilesAtPaths(join(root, 'packages', name, 'src', '*.ts'));
 
 const violations: ReachabilityViolation[] = [];
 const lanes: ReachabilityLaneEntry[] = [];
 for (const name of selected) {
   const sourceDir = join(root, 'packages', name, 'src');
-  const publicEntry = project.getSourceFile(join(sourceDir, 'index.ts'));
-  const contractEntry = project.getSourceFile(join(sourceDir, 'contract.ts'));
-  if (publicEntry === undefined || contractEntry === undefined) continue;
-  const sourceFiles = project.getSourceFiles().filter((sourceFile) => {
-    const path = relative(sourceDir, sourceFile.getFilePath()).replaceAll('\\', '/');
-    return !path.startsWith('../') && path !== 'index.ts' && path !== 'contract.ts' && !path.endsWith('.test.ts');
-  });
+  const publicEntry = join(sourceDir, 'index.ts');
+  const contractEntry = join(sourceDir, 'contract.ts');
+  if (!existsSync(publicEntry) || !existsSync(contractEntry)) continue;
+  const sourceFiles = readdirSync(sourceDir, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name.endsWith('.ts') &&
+        entry.name !== 'index.ts' &&
+        entry.name !== 'contract.ts' &&
+        !entry.name.endsWith('.test.ts'),
+    )
+    .map((entry) => join(sourceDir, entry.name));
   const backend = effectBackend(name);
   const symbols = defaultCompositionSymbols(sourceFiles);
   if (backend !== null) {
