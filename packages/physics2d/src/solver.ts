@@ -104,6 +104,18 @@ function solvePhysics2DContact(contact: Physics2DContact, bodyA: RigidBody2D, bo
   }
 }
 
+// One pass over one solve island's flattened contact slice. The index list belongs to the world and is
+// rebuilt once per step, so this adds no transient filtering array to the iteration hot path.
+export function solvePhysics2DContactIndicesOnce(
+  world: Physics2DWorld,
+  indices: number[],
+  start: number,
+  count: number,
+): void {
+  const end = start + count;
+  for (let i = start; i < end; i++) _solvePhysics2DContactAt(world, indices[i]);
+}
+
 // The sequential-impulse velocity solve: projected Gauss-Seidel over the contact list, `velocityIterations`
 // times.
 //
@@ -124,14 +136,18 @@ export function solvePhysics2DContacts(world: Physics2DWorld): void {
 // single iteration loop: joints and contacts constrain the same bodies, and giving either a whole pass to
 // itself lets it undo what the other just corrected.
 export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
-  for (const contact of world.contacts) {
-    if (!contact.enabled || contact.sensor) continue;
-    const bodyA = findPhysics2DBody(world, contact.bodyA);
-    const bodyB = findPhysics2DBody(world, contact.bodyB);
-    if (bodyA === null || bodyB === null) continue;
-    if (!isRigidBody2DPairAwake(bodyA, bodyB)) continue;
-    solvePhysics2DContact(contact, bodyA, bodyB);
-  }
+  for (let i = 0; i < world.contacts.length; i++) _solvePhysics2DContactAt(world, i);
+}
+
+// Warm-starts one solve island's flattened contact slice.
+export function warmStartPhysics2DContactIndices(
+  world: Physics2DWorld,
+  indices: number[],
+  start: number,
+  count: number,
+): void {
+  const end = start + count;
+  for (let i = start; i < end; i++) _warmStartPhysics2DContactAt(world, indices[i]);
 }
 
 // Applies each contact's cached impulses before the first iteration — the warm start.
@@ -145,24 +161,34 @@ export function solvePhysics2DContactsOnce(world: Physics2DWorld): void {
 // The cached impulses were matched by feature id when the contact was merged, so a point that is no
 // longer the same feature arrives here with zero rather than a stranger's force.
 export function warmStartPhysics2DContacts(world: Physics2DWorld): void {
-  for (const contact of world.contacts) {
-    if (!contact.enabled || contact.sensor) continue;
-    const bodyA = findPhysics2DBody(world, contact.bodyA);
-    const bodyB = findPhysics2DBody(world, contact.bodyB);
-    if (bodyA === null || bodyB === null) continue;
-    if (!isRigidBody2DPairAwake(bodyA, bodyB)) continue;
+  for (let i = 0; i < world.contacts.length; i++) _warmStartPhysics2DContactAt(world, i);
+}
 
-    const normalX = contact.normalX;
-    const normalY = contact.normalY;
-    const tangentX = -normalY;
-    const tangentY = normalX;
+function _solvePhysics2DContactAt(world: Physics2DWorld, contactIndex: number): void {
+  const contact = world.contacts[contactIndex];
+  if (contact === undefined || !contact.enabled || contact.sensor) return;
+  const bodyA = findPhysics2DBody(world, contact.bodyA);
+  const bodyB = findPhysics2DBody(world, contact.bodyB);
+  if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) return;
+  solvePhysics2DContact(contact, bodyA, bodyB);
+}
 
-    for (let i = 0; i < contact.pointCount; i++) {
-      const point = contact.points[i];
-      const impulseX = point.normalImpulse * normalX + point.tangentImpulse * tangentX;
-      const impulseY = point.normalImpulse * normalY + point.tangentImpulse * tangentY;
-      applyPhysics2DImpulse(bodyA, bodyB, point.rAX, point.rAY, point.rBX, point.rBY, impulseX, impulseY);
-    }
+function _warmStartPhysics2DContactAt(world: Physics2DWorld, contactIndex: number): void {
+  const contact = world.contacts[contactIndex];
+  if (contact === undefined || !contact.enabled || contact.sensor) return;
+  const bodyA = findPhysics2DBody(world, contact.bodyA);
+  const bodyB = findPhysics2DBody(world, contact.bodyB);
+  if (bodyA === null || bodyB === null || !isRigidBody2DPairAwake(bodyA, bodyB)) return;
+
+  const normalX = contact.normalX;
+  const normalY = contact.normalY;
+  const tangentX = -normalY;
+  const tangentY = normalX;
+  for (let i = 0; i < contact.pointCount; i++) {
+    const point = contact.points[i];
+    const impulseX = point.normalImpulse * normalX + point.tangentImpulse * tangentX;
+    const impulseY = point.normalImpulse * normalY + point.tangentImpulse * tangentY;
+    applyPhysics2DImpulse(bodyA, bodyB, point.rAX, point.rAY, point.rBX, point.rBY, impulseX, impulseY);
   }
 }
 
