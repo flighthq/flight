@@ -1,4 +1,10 @@
-import { canPlayAudioType, detectAudioMimeType, inferAudioMimeType } from './audioFormat';
+import {
+  canPlayAudioType,
+  detectAudioMimeType,
+  getAudioMimeTypeEssence,
+  getAudioMimeTypeParameter,
+  inferAudioMimeType,
+} from './audioFormat';
 
 describe('canPlayAudioType', () => {
   beforeEach(() => {
@@ -69,6 +75,42 @@ describe('detectAudioMimeType', () => {
     const buf = new ArrayBuffer(4);
     new Uint8Array(buf).set([0x66, 0x4c, 0x61, 0x43]);
     expect(detectAudioMimeType(buf)).toBe('audio/flac');
+  });
+});
+
+describe('getAudioMimeTypeEssence', () => {
+  it('strips parameters and lowercases the type', () => {
+    expect(getAudioMimeTypeEssence('audio/vnd.adobe.swf-adpcm; rate=22050; channels=1')).toBe(
+      'audio/vnd.adobe.swf-adpcm',
+    );
+    expect(getAudioMimeTypeEssence('  AUDIO/MPEG  ')).toBe('audio/mpeg');
+  });
+
+  it('returns a parameterless type unchanged', () => {
+    expect(getAudioMimeTypeEssence('audio/mpeg')).toBe('audio/mpeg');
+    expect(getAudioMimeTypeEssence('')).toBe('');
+  });
+});
+
+describe('getAudioMimeTypeParameter', () => {
+  it('reads a parameter a container-less format needs to decode', () => {
+    const mimeType = 'audio/vnd.adobe.swf-pcm; rate=22050; channels=2; bits=16';
+    expect(getAudioMimeTypeParameter(mimeType, 'rate')).toBe('22050');
+    expect(getAudioMimeTypeParameter(mimeType, 'channels')).toBe('2');
+    expect(getAudioMimeTypeParameter(mimeType, 'BITS')).toBe('16');
+  });
+
+  it('unwraps a quoted value', () => {
+    expect(getAudioMimeTypeParameter('audio/x-thing; codec="a;b"', 'codec')).toBe('a;b');
+  });
+
+  it('returns null for a parameter the type does not carry', () => {
+    expect(getAudioMimeTypeParameter('audio/mpeg', 'rate')).toBeNull();
+    expect(getAudioMimeTypeParameter('audio/mpeg; rate=1', 'channels')).toBeNull();
+  });
+
+  it('never reads the type itself as a parameter', () => {
+    expect(getAudioMimeTypeParameter('audio/mpeg', 'audio/mpeg')).toBeNull();
   });
 });
 
