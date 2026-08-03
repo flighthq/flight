@@ -1,3 +1,4 @@
+import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
@@ -21,9 +22,17 @@ import {
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject, createSprite, setNode2DClip } from '@flighthq/scene2d/contract';
-import { copyShapeCommands, createShape, getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
+import {
+  copyShapeCommands,
+  createScale9Shape,
+  createShape,
+  getShapeFillRegions,
+  setMorphShapeProgress,
+} from '@flighthq/shape/contract';
 import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type {
+  AudioResource,
+  AudioResourceReference,
   BoundsNodeAny,
   ClipRegion,
   FrameScript,
@@ -42,14 +51,24 @@ import type {
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
+  Scale9Shape,
   Shape,
   ShapeData,
+  TimelineAudioCue,
+  TimelineAudioEnvelopePoint,
+  TimelineCue,
+  TimelineStreamAudioCue,
   Sprite,
   Texture2D,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
-import { Compression, MorphShapeKind } from '@flighthq/types/contract';
+import {
+  Compression,
+  MorphShapeKind,
+  TimelineAudioCueKind,
+  TimelineStreamAudioCueKind,
+} from '@flighthq/types/contract';
 
 import { createSwfLosslessBitmap } from './swfBitmap';
 import { readSwfEditTextFactory } from './swfEditText';
@@ -78,13 +97,19 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
-    remainingNodes: MAX_INSTANTIATED_NODES,
   };
   const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, slots, instantiation, 0);
   if (root === null) return null;
   fillSwfLosslessBitmapTextures(parsed);
 
-  return createScene2DDocument(root, slots, 'swf', parsed.backgroundColor, createSwfImageResources(parsed));
+  return createScene2DDocument(
+    root,
+    slots,
+    'swf',
+    parsed.backgroundColor,
+    createSwfImageResources(parsed),
+    createSwfAudioResources(parsed),
+  );
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
@@ -115,13 +140,19 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
-    remainingNodes: MAX_INSTANTIATED_NODES,
   };
   const root = createSwfSymbolNode(parsed, characterId, slots, instantiation);
   if (root === null) return null;
   fillSwfLosslessBitmapTextures(parsed);
 
-  return createScene2DDocument(root, slots, 'swf', null, createSwfImageResources(parsed));
+  return createScene2DDocument(
+    root,
+    slots,
+    'swf',
+    null,
+    createSwfImageResources(parsed),
+    createSwfAudioResources(parsed),
+  );
 }
 
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
@@ -192,6 +223,9 @@ interface SwfTimeline {
   // Recognized timeline commands, keyed by the frame that carries them. Only blocks made entirely of
   // playback commands appear here; see readSwfFrameActions.
   actions: Map<number, FrameScript>;
+  // Edge-triggered cues the frames authored, in tag order. A sound trigger is not frame content — it is
+  // something entering the frame *does* — so it rides here rather than in the display list.
+  cues: TimelineCue[];
   frames: Map<number, SwfPlacement>[];
   labels: TimelineLabel[];
 }
@@ -210,6 +244,16 @@ interface SwfImagePayload {
   mimeType: string;
 }
 
+// One event sound's encoded payload. `mimeType` is null for a SWF-only format (ADPCM, Nellymoser, raw
+// PCM), which is what tells a resolver it needs a decoder the platform does not already have.
+interface SwfSoundPayload {
+  bytes: Uint8Array;
+  mimeType: string | null;
+  // The sound's own sample rate. A cue's offset and duration are counted in these samples, and the MIME
+  // type cannot carry it back for MP3, whose type names no parameters.
+  sampleRate: number;
+}
+
 interface SwfTagResult {
   backgroundColor: number | null;
   editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
@@ -222,7 +266,13 @@ interface SwfTagResult {
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
   morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
   morphShapes: Map<number, () => MorphShape | null>;
+  // The nine-slice splitter a DefineScalingGrid names, keyed by the sprite character it applies to.
+  scalingGrids: Map<number, SwfRectangle>;
   shapes: Map<number, Shape>;
+  // The AudioResource each sound character's cues and document reference share.
+  soundResources: Map<number, AudioResource>;
+  sounds: Map<number, SwfSoundPayload>;
+  streamSounds: { bytes: Uint8Array; mimeType: string; resource: AudioResource }[];
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
 }
@@ -263,14 +313,25 @@ interface SwfParseState {
   remainingFrameEntries: number;
   morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
   morphShapes: Map<number, () => MorphShape | null>;
+  scalingGrids: Map<number, SwfRectangle>;
   shapes: Map<number, Shape>;
+  // Every stream sound the file interleaved with a timeline's frames, each already concatenated into one
+  // payload. A stream belongs to the timeline that carried its blocks rather than to a character, so it
+  // has no id to be keyed by.
+  streamSounds: { bytes: Uint8Array; mimeType: string; resource: AudioResource }[];
+  // Cues whose offset and duration are still counted in samples, held until the sound they name is read.
+  // A trigger may precede its DefineSound, so the conversion cannot happen where the cue is built.
+  soundCuesAwaitingRate: { characterId: number; cue: TimelineAudioCue }[];
+  // One AudioResource per sound character, shared by every cue that names it and by the document's
+  // reference. Acquired on demand because a trigger can name a sound defined later in the tag stream.
+  soundResources: Map<number, AudioResource>;
+  sounds: Map<number, SwfSoundPayload>;
   sprites: Map<number, SwfTimeline>;
 }
 
 interface SwfInstantiationState {
   activeSymbols: Set<number>;
   frameRate: number | null;
-  remainingNodes: number;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
 }
@@ -399,6 +460,14 @@ function createSwfTimelineNode(
   return populateSwfTimelineNode(clip, timeline, parsed, slots, state, depth) ? clip : null;
 }
 
+// Instantiates one placed instance of a timeline. Every instance of a symbol gets its own subtree, because
+// each plays independently, so the node count grows with instances × subtree size rather than with what a
+// frame shows: an ordinary authored room reaches a few hundred thousand nodes, all of them retained — the
+// ones a frame does not place are detached, not discarded. Nothing here caps that count. A cap fires on
+// content whose only fault is being large, and losing a whole document to one is worse than the memory,
+// so the bounds that remain are the structural ones: MAX_SPRITE_NESTING for depth and `activeSymbols` for
+// a symbol that contains itself. Lazy per-frame instantiation is the lever that would actually lower the
+// ceiling; a cap only decides when to give up.
 function populateSwfTimelineNode(
   clip: MovieClip,
   timeline: Readonly<SwfTimeline>,
@@ -439,23 +508,27 @@ function populateSwfTimelineNode(
       ) {
         continue;
       }
-      if (state.remainingNodes === 0) return false;
-      state.remainingNodes--;
-
       // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
       // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
       // A placed bitmap character becomes a Sprite over the character's shared waiting Texture, so the
       // node exists at its authored size before any pixels do and every placement of one character
       // decodes once.
+      // A scaling grid collapses its wrapper sprite into one nine-slice shape, so the node it produces is
+      // the whole symbol rather than a container to populate afterwards.
+      const scale9Grid = sprite === undefined ? undefined : parsed.scalingGrids.get(placement.characterId);
+      const scale9 =
+        scale9Grid === undefined ? null : createSwfScale9ShapeNode(sprite!, scale9Grid, parsed, targetBounds);
       const target =
-        editText !== undefined
-          ? createSwfEditTextTarget(editText, parsed, targetBounds)
-          : image !== undefined
-            ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
-            : morphShape !== undefined
-              ? createSwfMorphShapeTarget(morphShape, targetBounds, parsed.morphBounds.get(placement.characterId))
-              : createSwfPlacementNode(sprite, shape, targetBounds);
+        scale9 !== null
+          ? scale9
+          : editText !== undefined
+            ? createSwfEditTextTarget(editText, parsed, targetBounds)
+            : image !== undefined
+              ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
+              : morphShape !== undefined
+                ? createSwfMorphShapeTarget(morphShape, targetBounds, parsed.morphBounds.get(placement.characterId))
+                : createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
       if (placement.name) {
         slots.push(
@@ -467,7 +540,7 @@ function populateSwfTimelineNode(
         );
       }
 
-      if (sprite !== undefined) {
+      if (sprite !== undefined && scale9 === null) {
         if (state.activeSymbols.has(placement.characterId)) return false;
         state.activeSymbols.add(placement.characterId);
         const populated = populateSwfTimelineNode(target as MovieClip, sprite, parsed, slots, state, depth + 1);
@@ -477,7 +550,7 @@ function populateSwfTimelineNode(
     }
   }
 
-  setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, state.frameRate));
+  setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, timeline.cues, state.frameRate));
   // Frame scripts attach after the source, so the clip already knows how many frames it has when a
   // recognized command addresses one.
   for (const [frame, script] of timeline.actions) {
@@ -497,6 +570,7 @@ function createSwfTimelineSource(
   frames: readonly (readonly Readonly<SwfFrameEntry>[])[],
   nodes: ReadonlyMap<number, Node2D>,
   labels: readonly TimelineLabel[],
+  cues: readonly TimelineCue[],
   frameRate: number | null,
 ): TimelineSource {
   const attached = new Set<Node2D>();
@@ -510,6 +584,9 @@ function createSwfTimelineSource(
     totalFrames: frames.length,
     labels,
     frameRate,
+    // A source with nothing to dispatch carries an empty array rather than null, so a caller never
+    // branches on absence.
+    cues,
     constructFrame(target: Node2D, frame: number): void {
       const entries = frames[frame - 1];
       if (entries === undefined) return;
@@ -714,6 +791,32 @@ function acquireSwfImageTexture(
 // Pairs every bitmap character that something actually samples with the bytes it was defined from. A
 // payload nothing references costs no reference, and a reference names every Texture waiting on it, so
 // loading one binds all of them.
+// Every event sound the file defined, in character order, each carrying the export name the file gave it
+// when it gave one. Sounds are enumerated rather than discovered from the graph because nothing in the
+// graph refers to them: a SWF triggers a sound from a timeline or from script, so a document that dropped
+// the ones no frame happens to start would be discarding most of the audio a file ships with.
+function createSwfAudioResources(parsed: Readonly<SwfTagResult>): AudioResourceReference[] {
+  const resources: AudioResourceReference[] = [];
+  for (const [characterId, sound] of parsed.sounds) {
+    // ExportAssets is what publishes a sound for code to start. Every sound in a real file that no frame
+    // triggers turns out to be one of these, so the name is the only way back to it.
+    const name = parsed.linkages.get(characterId) ?? null;
+    const reference = createEmbeddedAudioResourceReference(sound.bytes, sound.mimeType, name);
+    // Every cue naming this sound already holds this resource, so decode has to fill that one rather than
+    // the fresh one the constructor made.
+    const shared = parsed.soundResources.get(characterId);
+    if (shared !== undefined) reference.resource = shared;
+    resources.push(reference);
+  }
+  // A stream has no character id and so no export name; the cue that starts it is its only handle.
+  for (const stream of parsed.streamSounds) {
+    const reference = createEmbeddedAudioResourceReference(stream.bytes, stream.mimeType, null);
+    reference.resource = stream.resource;
+    resources.push(reference);
+  }
+  return resources;
+}
+
 function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceReference[] {
   const resources: ImageResourceReference[] = [];
   for (const [characterId, variants] of parsed.imageTextures) {
@@ -827,6 +930,37 @@ function applySwfMorphBounds(shape: MorphShape, progress: number): void {
 
 // Each placement of a shape character gets its own copy of the decoded commands, so a document that places
 // one symbol many times still holds independently editable geometry per instance.
+// Builds the nine-slice node a scaling-grid sprite becomes, or null when the sprite is not one this can
+// express. Flash hangs the grid on a sprite, but Flight's nine-slice lives on the shape whose commands get
+// remapped, so the two only meet where the sprite is a wrapper: one frame placing one unnamed, unmasked
+// shape at identity, which is what an authoring tool emits when a designer sets scale9Grid on artwork.
+// Returning null leaves the sprite an ordinary MovieClip — the grid is dropped rather than misapplied,
+// because a grid on a multi-frame or multi-layer sprite means something this node cannot honor.
+function createSwfScale9ShapeNode(
+  sprite: Readonly<SwfTimeline>,
+  grid: Readonly<SwfRectangle>,
+  parsed: Readonly<SwfTagResult>,
+  bounds: SwfRectangle | null,
+): Scale9Shape | null {
+  if (sprite.frames.length !== 1 || sprite.actions.size > 0) return null;
+  const placements = [...sprite.frames[0].values()];
+  if (placements.length !== 1) return null;
+  const inner = placements[0];
+  if (inner.name !== null || inner.clipDepth > 0 || inner.alpha !== 1) return null;
+  const { a, b, c, d, tx, ty } = inner.matrix;
+  if (a !== 1 || b !== 0 || c !== 0 || d !== 1 || tx !== 0 || ty !== 0) return null;
+  const shape = parsed.shapes.get(inner.characterId);
+  if (shape === undefined) return null;
+
+  const target = createScale9Shape({ height: grid.height, width: grid.width, x: grid.x, y: grid.y });
+  copyShapeCommands(target, shape);
+  if (bounds !== null) {
+    (target.data as unknown as SwfShapeNodeData).authoredBounds = { ...bounds };
+    (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
+  }
+  return target;
+}
+
 function createSwfShapeNode(template: Readonly<Shape>, bounds: SwfRectangle | null): Shape {
   const target = createShape();
   copyShapeCommands(target, template);
@@ -1024,10 +1158,14 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
   const yMin = reader.readSignedBits(bits);
   const yMax = reader.readSignedBits(bits);
   reader.alignToByte();
-  if (!reader.valid || xMax < xMin || yMax < yMin) return null;
+  // Only a reader that ran out of bits is a failure. An inverted extent is not: real authoring tools
+  // emit degenerate bounds for characters that occupy no space, and a RECT is an advisory extent rather
+  // than the geometry itself — the shape body carries that. Reading one as an empty box keeps a single
+  // odd character from discarding the whole file.
+  if (!reader.valid) return null;
   return {
-    height: (yMax - yMin) / TWIPS_PER_PIXEL,
-    width: (xMax - xMin) / TWIPS_PER_PIXEL,
+    height: Math.max(0, yMax - yMin) / TWIPS_PER_PIXEL,
+    width: Math.max(0, xMax - xMin) / TWIPS_PER_PIXEL,
     x: xMin / TWIPS_PER_PIXEL,
     y: yMin / TWIPS_PER_PIXEL,
   };
@@ -1052,12 +1190,18 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     remainingFrameEntries: MAX_TIMELINE_FRAME_ENTRIES,
     morphBounds: new Map<number, { end: SwfRectangle; start: SwfRectangle }>(),
     morphShapes: new Map<number, () => MorphShape | null>(),
+    scalingGrids: new Map<number, SwfRectangle>(),
     shapes: new Map<number, Shape>(),
+    soundCuesAwaitingRate: [],
+    streamSounds: [],
+    soundResources: new Map<number, AudioResource>(),
+    sounds: new Map<number, SwfSoundPayload>(),
     sprites: new Map<number, SwfTimeline>(),
   };
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
   composeSwfFontCodePoints(state);
+  convertSwfSoundCueTimes(state);
   appendSwfPendingTextShapes(reader, state);
   appendSwfAbcFrameScripts(state, timeline);
   for (const pending of state.pendingInitActions) {
@@ -1075,7 +1219,11 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     linkages: state.linkages,
     morphBounds: state.morphBounds,
     morphShapes: state.morphShapes,
+    scalingGrids: state.scalingGrids,
     shapes: state.shapes,
+    soundResources: state.soundResources,
+    sounds: state.sounds,
+    streamSounds: state.streamSounds,
     sprites: state.sprites,
     timeline,
   };
@@ -1132,8 +1280,12 @@ function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): vo
 function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline | null {
   const placements = new Map<number, SwfPlacement>();
   const actions = new Map<number, FrameScript>();
+  const cues: TimelineCue[] = [];
   const frames: Map<number, SwfPlacement>[] = [];
   const labels: TimelineLabel[] = [];
+  const streamChunks: Uint8Array[] = [];
+  let streamFormat = -1;
+  let streamStartFrame = 1;
 
   while (reader.pos < reader.end && reader.valid) {
     const tagHeader = reader.readUint16();
@@ -1166,6 +1318,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       addSwfTimelineLabel(labels, frames.length + 1, body.readString());
     } else if (code === TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA) {
       readSwfSceneAndFrameLabelData(body, labels);
+    } else if (code === TAG_DEFINE_SCALING_GRID) {
+      readSwfScalingGrid(body, state);
     } else if (code === TAG_PLACE_OBJECT) {
       readLegacyPlaceObject(body, placements);
     } else if (code === TAG_PLACE_OBJECT_2) {
@@ -1192,6 +1346,8 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       readSwfEmbeddedImageDefinition(body, state, code);
     } else if (code === TAG_DEFINE_BITS_LOSSLESS || code === TAG_DEFINE_BITS_LOSSLESS_2) {
       if (!readSwfLosslessBitmapDefinition(body, state, code === TAG_DEFINE_BITS_LOSSLESS_2)) return null;
+    } else if (code === TAG_DEFINE_SOUND) {
+      readSwfSoundDefinition(body, state);
     } else if (code === TAG_DEFINE_VIDEO_STREAM) {
       if (!readSwfVideoDefinition(body, state)) return null;
     } else if (isSwfBoundedDefinitionTag(code)) {
@@ -1209,6 +1365,23 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       state.sprites.set(spriteId, spriteTimeline);
     } else if (code === TAG_PLACE_OBJECT_3 || code === TAG_PLACE_OBJECT_4) {
       readPlaceObject(body, placements, true);
+    } else if (code === TAG_START_SOUND) {
+      readSwfStartSound(body, state, cues, frames.length + 1);
+    } else if (code === TAG_SOUND_STREAM_HEAD || code === TAG_SOUND_STREAM_HEAD_2) {
+      const declared = readSwfSoundStreamHead(body);
+      // A header declaring no samples per frame is the empty one an authoring tool writes into every
+      // sprite. Only a header that promises samples starts a stream.
+      if (declared >= 0) {
+        streamFormat = declared;
+        streamStartFrame = frames.length + 1;
+      }
+    } else if (code === TAG_SOUND_STREAM_BLOCK) {
+      if (streamFormat === SOUND_FORMAT_MP3) {
+        // Each MP3 block leads with its own sample count and seek offset; only the frames concatenate.
+        body.readUint16();
+        body.readUint16();
+        if (body.valid && body.pos < body.end) streamChunks.push(body.source.subarray(body.pos, body.end));
+      }
     }
     if (!body.valid) return null;
   }
@@ -1216,8 +1389,11 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
   if (!reader.valid) return null;
   // A timeline that never shows a frame still has the one display list its tags built.
   if (frames.length === 0) frames.push(placements);
+  appendSwfStreamSoundCue(state, cues, streamChunks, streamStartFrame);
   return {
     actions,
+    // A cue authored after the last ShowFrame names a frame the timeline never reaches.
+    cues: cues.filter((cue) => cue.frame <= frames.length),
     frames,
     // A label declared after the last ShowFrame names a frame the timeline never reaches.
     labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
@@ -1271,7 +1447,8 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
   }
 
   state.definedCharacters.add(buttonId);
-  state.sprites.set(buttonId, { actions: new Map<number, FrameScript>(), frames: [placements], labels: [] });
+  // A button's up state is a still one-frame display list; nothing about it is edge-triggered.
+  state.sprites.set(buttonId, { actions: new Map<number, FrameScript>(), cues: [], frames: [placements], labels: [] });
 }
 
 // Font glyphs decode on a reader of their own, so a font this decoder cannot read costs its glyphs and
@@ -1356,6 +1533,16 @@ function compareSwfTimelineLabelFrame(a: Readonly<TimelineLabel>, b: Readonly<Ti
 // a file that uses it declares no FrameLabel tags. Its frame offsets are zero-based. The scene table is
 // read to reach the label table that follows it; scene names are a separate authoring concept from a frame
 // label and are not imported as one.
+// DefineScalingGrid names the sprite it applies to and the centre rectangle of that sprite's nine-slice
+// grid. The tag can precede or follow the sprite it names, so this only records the pair; instantiation
+// decides what a grid can be applied to.
+function readSwfScalingGrid(body: SwfReader, state: SwfParseState): void {
+  const characterId = body.readUint16();
+  const splitter = readSwfRectangle(body);
+  if (!body.valid || characterId === 0 || splitter === null) return;
+  state.scalingGrids.set(characterId, splitter);
+}
+
 function readSwfSceneAndFrameLabelData(body: SwfReader, labels: TimelineLabel[]): void {
   const sceneCount = body.readEncodedUint32();
   for (let i = 0; i < sceneCount && body.valid; i++) {
@@ -1699,6 +1886,176 @@ function readSwfLosslessBitmapDefinition(body: SwfReader, state: SwfParseState, 
   return true;
 }
 
+// Reads a stream header, returning the compression format when it declares a real stream and -1 when it
+// does not. An authoring tool writes an empty header into practically every sprite, so the sample count is
+// what separates a stream from that boilerplate.
+function readSwfSoundStreamHead(body: SwfReader): number {
+  body.readUint8();
+  const streamFlags = body.readUint8();
+  const samplesPerFrame = body.readUint16();
+  if (!body.valid || samplesPerFrame === 0) return -1;
+  return streamFlags >> 4;
+}
+
+// Joins a timeline's stream blocks into the one payload a decoder can take, and gives the timeline a cue to
+// start it. SWF interleaves a stream with the display list so the two advance together, which is why the
+// bytes arrive in pieces and why the cue names the frame the stream begins on rather than a duration.
+function appendSwfStreamSoundCue(
+  state: SwfParseState,
+  cues: TimelineCue[],
+  chunks: readonly Uint8Array[],
+  startFrame: number,
+): void {
+  if (chunks.length === 0) return;
+  let length = 0;
+  for (const chunk of chunks) length += chunk.length;
+  if (length === 0) return;
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  const resource = createAudioResource();
+  state.streamSounds.push({ bytes, mimeType: 'audio/mpeg', resource });
+  const cue: TimelineStreamAudioCue = {
+    frame: startFrame,
+    gain: 1,
+    kind: TimelineStreamAudioCueKind,
+    resource,
+  };
+  cues.push(cue);
+}
+
+// StartSound triggers a sound the library already defines, carrying a SOUNDINFO that says how to play it.
+// It becomes a TimelineAudioCue rather than anything that plays: an importer emits authored data, and only
+// a registered handler acts on it.
+//
+// Every position SOUNDINFO carries is a sample count, and the two kinds count differently — an envelope
+// point is always in 44.1kHz samples whatever the sound's rate, while the in and out points are in the
+// sound's own. The envelope converts here; the in/out pair waits, because the sound it names may be
+// defined further down the tag stream and its rate is not known yet.
+function readSwfStartSound(body: SwfReader, state: SwfParseState, cues: TimelineCue[], frame: number): void {
+  const characterId = body.readUint16();
+  const flags = body.readUint8();
+  if (!body.valid || characterId === 0) return;
+
+  const inPointSamples = (flags & SOUND_INFO_HAS_IN_POINT) !== 0 ? body.readUint32() : 0;
+  const outPointSamples = (flags & SOUND_INFO_HAS_OUT_POINT) !== 0 ? body.readUint32() : -1;
+  const loopCount = (flags & SOUND_INFO_HAS_LOOPS) !== 0 ? body.readUint16() : 1;
+  const envelope: TimelineAudioEnvelopePoint[] = [];
+  if ((flags & SOUND_INFO_HAS_ENVELOPE) !== 0) {
+    const points = body.readUint8();
+    for (let i = 0; i < points && body.valid; i++) {
+      const position = body.readUint32();
+      const leftLevel = body.readUint16();
+      const rightLevel = body.readUint16();
+      if (!body.valid) return;
+      envelope.push({
+        leftGain: Math.min(leftLevel, SOUND_ENVELOPE_LEVEL_ONE) / SOUND_ENVELOPE_LEVEL_ONE,
+        rightGain: Math.min(rightLevel, SOUND_ENVELOPE_LEVEL_ONE) / SOUND_ENVELOPE_LEVEL_ONE,
+        time: position / SOUND_ENVELOPE_RATE,
+      });
+    }
+  }
+  if (!body.valid) return;
+
+  // A stop names the sound to silence and nothing else: every play field SOUNDINFO carries alongside it
+  // describes a playback that is being ended rather than started.
+  const stop = (flags & SOUND_INFO_SYNC_STOP) !== 0;
+  const cue: TimelineAudioCue = {
+    duration: null,
+    envelope: stop ? [] : envelope,
+    frame,
+    gain: 1,
+    kind: TimelineAudioCueKind,
+    // SWF counts the first play as a loop; a timeline cue counts repeats, so one means play once.
+    loops: stop ? 1 : Math.max(1, loopCount),
+    offset: 0,
+    resource: acquireSwfSoundResource(state, characterId),
+    // Do not start this sound if it is already playing — Flash's "Start" sync, as against "Event", which
+    // stacks a fresh copy every time the frame is entered.
+    skipIfPlaying: !stop && (flags & SOUND_INFO_SYNC_NO_MULTIPLE) !== 0,
+    stop,
+  };
+  cues.push(cue);
+  if (!stop && (inPointSamples > 0 || outPointSamples >= 0)) {
+    state.soundCuesAwaitingRate.push({ characterId, cue });
+    cue.offset = inPointSamples;
+    cue.duration = outPointSamples >= 0 ? outPointSamples : null;
+  }
+}
+
+// Converts the in and out points held in sample counts into the seconds a cue carries, once every sound's
+// rate is known. A cue naming a sound the file never defined keeps its samples rather than guessing a rate.
+function convertSwfSoundCueTimes(state: SwfParseState): void {
+  for (const pending of state.soundCuesAwaitingRate) {
+    const sound = state.sounds.get(pending.characterId);
+    if (sound === undefined) continue;
+    const inPoint = pending.cue.offset / sound.sampleRate;
+    // SWF's out point is the last sample to play, so the span is measured from the in point.
+    pending.cue.duration = pending.cue.duration === null ? null : pending.cue.duration / sound.sampleRate - inPoint;
+    pending.cue.offset = inPoint;
+  }
+}
+
+// Returns the one AudioResource every cue naming this sound shares, creating it on first mention. A cue can
+// name a sound the tag stream has not reached, so this cannot wait for the payload.
+function acquireSwfSoundResource(state: SwfParseState, characterId: number): AudioResource {
+  const existing = state.soundResources.get(characterId);
+  if (existing !== undefined) return existing;
+  const resource = createAudioResource();
+  state.soundResources.set(characterId, resource);
+  return resource;
+}
+
+// DefineSound carries a whole event sound in one tag: a four-bit format, the playback rate/width/channel
+// fields, a sample count, and the encoded payload. Only the format decides whether anything downstream can
+// decode it, so that is what this keeps alongside the bytes — the rate and channel fields describe what the
+// payload already says, and every format Flash could emit is self-describing to a decoder that knows it.
+//
+// A sound whose format has no standard container is retained rather than dropped: the bytes are the only
+// copy, and a reference with a null MIME type is a sound waiting for a decoder instead of a sound lost.
+function readSwfSoundDefinition(body: SwfReader, state: SwfParseState): void {
+  const characterId = body.readUint16();
+  const flags = body.readUint8();
+  body.readUint32();
+  if (!body.valid || characterId === 0 || state.sounds.has(characterId)) return;
+  const format = flags >> 4;
+  // An MP3 payload leads with a signed 16-bit seek offset that is not part of the bitstream, so the frames
+  // a decoder wants start after it. Every other format's payload begins immediately.
+  if (format === SOUND_FORMAT_MP3) body.readUint16();
+  if (!body.valid) return;
+  state.sounds.set(characterId, {
+    bytes: body.source.subarray(body.pos, body.end),
+    mimeType: createSwfSoundMimeType(format, flags),
+    sampleRate: resolveSwfSoundSampleRate(format, flags),
+  });
+}
+
+// Names the format a sound is in, so a decoder can be registered against it before one exists. Only MP3 is
+// a type the platform already knows; the rest take a vendor type carrying the sample rate, channel count,
+// and sample width that their bitstreams do not encode and a decoder cannot work without. Tagging beats
+// leaving them null, because a null type is indistinguishable from bytes nobody identified.
+//
+// Returns null only for a format code SWF never defined, which is a sound this cannot describe at all.
+function createSwfSoundMimeType(format: number, flags: number): string | null {
+  if (format === SOUND_FORMAT_MP3) return 'audio/mpeg';
+  const essence = SWF_SOUND_MIME_ESSENCES[format];
+  if (essence === undefined) return null;
+  const channels = (flags & 0x01) === 0 ? 1 : 2;
+  const bits = (flags & 0x02) === 0 ? 8 : 16;
+  return `${essence}; rate=${resolveSwfSoundSampleRate(format, flags)}; channels=${channels}; bits=${bits}`;
+}
+
+// Nellymoser 8k and 16k encode their rate in the format code itself, and the header's rate field is not
+// what those decode at, so the code wins where the two disagree.
+function resolveSwfSoundSampleRate(format: number, flags: number): number {
+  if (format === SOUND_FORMAT_NELLYMOSER_8K) return 8000;
+  if (format === SOUND_FORMAT_NELLYMOSER_16K) return 16000;
+  return SWF_SOUND_RATES[(flags >> 2) & 0x03];
+}
+
 function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean {
   const characterId = body.readUint16();
   body.readUint16();
@@ -1736,7 +2093,6 @@ const BUTTON_HAS_BLEND_MODE = 0x20;
 const BUTTON_HAS_FILTER_LIST = 0x10;
 const BUTTON_STATE_UP = 0x01;
 const MAX_BUTTON_RECORDS = 10_000;
-const MAX_INSTANTIATED_NODES = 100_000;
 const MAX_SPRITE_NESTING = 256;
 const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
 const MIN_SWF_LENGTH = 12;
@@ -1751,7 +2107,37 @@ const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';
 const SWF_LOSSLESS_MIME_TYPE = 'image/x-swf-lossless';
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
+const SOUND_ENVELOPE_LEVEL_ONE = 32768;
+// An envelope position is counted in 44.1kHz samples whatever the sound's own rate.
+const SOUND_ENVELOPE_RATE = 44100;
+const SOUND_INFO_HAS_ENVELOPE = 0x08;
+const SOUND_INFO_HAS_IN_POINT = 0x01;
+const SOUND_INFO_HAS_LOOPS = 0x04;
+const SOUND_INFO_HAS_OUT_POINT = 0x02;
+const SOUND_INFO_SYNC_NO_MULTIPLE = 0x10;
+const SOUND_INFO_SYNC_STOP = 0x20;
+const SOUND_FORMAT_MP3 = 2;
+const SOUND_FORMAT_NELLYMOSER_16K = 4;
+const SOUND_FORMAT_NELLYMOSER_8K = 5;
+// SWF's own sound formats, none of which has a registered media type. The vendor names are stable keys a
+// decoder registers against; the rate/channel/width parameters ride along on the MIME string.
+const SWF_SOUND_MIME_ESSENCES: Readonly<Record<number, string>> = {
+  0: 'audio/vnd.adobe.swf-pcm',
+  1: 'audio/vnd.adobe.swf-adpcm',
+  3: 'audio/vnd.adobe.swf-pcm',
+  4: 'audio/vnd.adobe.swf-nellymoser',
+  5: 'audio/vnd.adobe.swf-nellymoser',
+  6: 'audio/vnd.adobe.swf-nellymoser',
+  11: 'audio/vnd.adobe.swf-speex',
+};
+const SWF_SOUND_RATES: readonly number[] = [5512, 11025, 22050, 44100];
 const TAG_END = 0;
+const TAG_DEFINE_SOUND = 14;
+const TAG_START_SOUND = 15;
+const TAG_SOUND_STREAM_BLOCK = 19;
+const TAG_SOUND_STREAM_HEAD = 18;
+const TAG_SOUND_STREAM_HEAD_2 = 45;
+const TAG_DEFINE_SCALING_GRID = 78;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS_JPEG_2 = 21;
 const TAG_DEFINE_BITS_JPEG_3 = 35;
