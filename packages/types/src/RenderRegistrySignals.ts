@@ -7,6 +7,7 @@ import type { Signal } from './Signal';
 // name the member rather than its number — a literal at a callsite would silently mean a different
 // registry the moment one is inserted above it.
 export enum RenderRegistry {
+  BlendRealization,
   EffectPaddingResolver,
   MaterialRenderer,
   MaterialTextureLister,

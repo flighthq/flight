@@ -29,6 +29,10 @@ export function explainRenderRegistryMisses(state: RenderState): RenderRegistryM
 
 function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegistry): string {
   switch (registry) {
+    // GL composites through an explicit per-mode realization; Canvas and DOM express blend modes
+    // natively and never report this.
+    case RenderRegistry.BlendRealization:
+      return 'a blend mode this scene uses has no registered GL realization, so the node composites as Normal instead — call registerGlBlendMode(state, blendMode, realization)';
     case RenderRegistry.EffectPaddingResolver:
       return 'computeRenderEffectPadding: effect kind has no registered padding resolver — call registerRenderEffectPaddingResolver(state, kind, resolver)';
     // Reported by the resource layer, not the frame path: a material kind with no lister has its
