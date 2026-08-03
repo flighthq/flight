@@ -39,7 +39,6 @@ export {
   createMorphShapeAnimationTarget,
   createScale9Shape,
   createShape,
-  enableShapeHitTesting,
   explainMorphShapeGradientEndpoints,
   getPathCommandOperandCount,
   getShapeBounds,
@@ -50,9 +49,7 @@ export {
   hasNonSolidShapeFill,
   hasNonSolidShapeStroke,
   hasShapeFill,
-  hitTestShapeCommandPoint,
   isShapeEmpty,
-  registerShapeHitTestCommand,
   setMorphShapeProgress,
 } from './contract';
 export * from './scale9ShapeCommands';

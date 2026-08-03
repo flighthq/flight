@@ -47,8 +47,10 @@ export interface RenderState extends Entity {
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
   // Shape-command handlers keyed by command key, absent until the first registerCanvasShapeCommand.
-  // Keyed by plain string rather than ShapeCommandKey because registration is open to vendor-prefixed
-  // commands the built-in union does not name.
+  // ShapeCommandKey is a closed union — the authored vocabulary is fixed by ShapeCommandRegistry, whose
+  // per-command argument tuples are what make the flat token buffer statically describable and portable.
+  // The map is keyed by plain string only because a stream is read back token by token, so the lookup
+  // takes whatever the buffer holds; it is not an opening of the vocabulary.
   //
   // On the BASE runtime, not the Canvas one: every backend replays the same command stream — the GPU
   // and DOM backends through a ShapeRasterizer, for the fills they have no tessellated form for — and
