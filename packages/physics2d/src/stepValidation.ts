@@ -23,6 +23,38 @@ export function isPhysics2DContactStateValid(world: Readonly<Physics2DWorld>): b
   return true;
 }
 
+export function isPhysics2DContactValid(contact: Readonly<Physics2DContact>): boolean {
+  if (
+    !Number.isSafeInteger(contact.bodyA) ||
+    !Number.isSafeInteger(contact.bodyB) ||
+    !Number.isSafeInteger(contact.colliderA) ||
+    !Number.isSafeInteger(contact.colliderB) ||
+    !Number.isSafeInteger(contact.pointCount) ||
+    contact.pointCount < 0 ||
+    contact.pointCount > contact.points.length ||
+    !Number.isFinite(contact.normalX) ||
+    !Number.isFinite(contact.normalY) ||
+    !Number.isFinite(contact.friction) ||
+    contact.friction < 0 ||
+    !Number.isFinite(contact.restitution) ||
+    contact.restitution < 0 ||
+    typeof contact.enabled !== 'boolean' ||
+    typeof contact.sensor !== 'boolean' ||
+    typeof contact.touching !== 'boolean'
+  ) {
+    return false;
+  }
+  for (let i = 0; i < contact.pointCount; i++) {
+    const point = contact.points[i];
+    if (point === undefined) return false;
+    for (const key in point) {
+      const value = point[key as keyof typeof point];
+      if (typeof value === 'number' && !Number.isFinite(value)) return false;
+    }
+  }
+  return true;
+}
+
 export function isPhysics2DGravityValid(world: Readonly<Physics2DWorld>): boolean {
   return Number.isFinite(world.gravityX) && Number.isFinite(world.gravityY);
 }
@@ -56,10 +88,6 @@ export function isPhysics2DSolverConfigValid(config: Readonly<Physics2DSolverCon
     config.restitutionThreshold >= 0 &&
     typeof config.warmStarting === 'boolean'
   );
-}
-
-export function isPhysics2DTimestepValid(dt: number): boolean {
-  return Number.isFinite(dt) && dt > 0;
 }
 
 function isCollisionShapeStateValid(shape: Readonly<CollisionShape>): boolean {
@@ -118,36 +146,8 @@ function isPhysics2DColliderStateValid(collider: Readonly<Physics2DCollider>): b
   );
 }
 
-export function isPhysics2DContactValid(contact: Readonly<Physics2DContact>): boolean {
-  if (
-    !Number.isSafeInteger(contact.bodyA) ||
-    !Number.isSafeInteger(contact.bodyB) ||
-    !Number.isSafeInteger(contact.colliderA) ||
-    !Number.isSafeInteger(contact.colliderB) ||
-    !Number.isSafeInteger(contact.pointCount) ||
-    contact.pointCount < 0 ||
-    contact.pointCount > contact.points.length ||
-    !Number.isFinite(contact.normalX) ||
-    !Number.isFinite(contact.normalY) ||
-    !Number.isFinite(contact.friction) ||
-    contact.friction < 0 ||
-    !Number.isFinite(contact.restitution) ||
-    contact.restitution < 0 ||
-    typeof contact.enabled !== 'boolean' ||
-    typeof contact.sensor !== 'boolean' ||
-    typeof contact.touching !== 'boolean'
-  ) {
-    return false;
-  }
-  for (let i = 0; i < contact.pointCount; i++) {
-    const point = contact.points[i];
-    if (point === undefined) return false;
-    for (const key in point) {
-      const value = point[key as keyof typeof point];
-      if (typeof value === 'number' && !Number.isFinite(value)) return false;
-    }
-  }
-  return true;
+export function isPhysics2DTimestepValid(dt: number): boolean {
+  return Number.isFinite(dt) && dt > 0;
 }
 
 function isPhysics2DJointValid(joint: Readonly<Physics2DJoint>): boolean {

@@ -24,8 +24,8 @@ import { synchronizePhysics2DBroadphase } from './broadphase';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
-import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
 import { steppingPhysics2DWorlds } from './ownership';
+import { relativeNormalVelocity, solvePhysics2DContactsOnce, warmStartPhysics2DContacts } from './solver';
 import {
   isPhysics2DBodyStateValid,
   isPhysics2DContactValid,
