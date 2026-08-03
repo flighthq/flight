@@ -10,6 +10,7 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    { "path": "../audio" },
     { "path": "../entity" },
     { "path": "../image" },
     { "path": "../node" },

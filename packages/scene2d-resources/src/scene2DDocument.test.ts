@@ -1,6 +1,6 @@
+import { createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { AudioResourceReference } from '@flighthq/types/contract';
 
 import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
 
@@ -9,9 +9,7 @@ describe('createScene2DDocument', () => {
     const root = createDisplayObject();
     const slots = [createScene2DSlotReference('bg', createDisplayObject())];
     const imageResources = [createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png')];
-    const audioResources: AudioResourceReference[] = [
-      { bytes: new Uint8Array([2]), failure: null, kind: 'Embedded', mimeType: 'audio/mpeg', state: 'Unresolved' },
-    ];
+    const audioResources = [createEmbeddedAudioResourceReference(new Uint8Array([2]), 'audio/mpeg')];
     expect(createScene2DDocument(root, slots, 'acme', null, imageResources, audioResources)).toEqual({
       audioResources,
       backgroundColor: null,

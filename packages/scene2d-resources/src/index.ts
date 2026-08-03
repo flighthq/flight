@@ -1,4 +1,5 @@
 export {
+  loadScene2DAudioResources,
   createScene2DDocument,
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
