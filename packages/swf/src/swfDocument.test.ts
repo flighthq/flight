@@ -29,7 +29,17 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { getTextureSource, getTextureWidth } from '@flighthq/texture/contract';
-import type { MorphShape, MovieClip, RichText, Shape, Sprite, Texture2D } from '@flighthq/types/contract';
+import type {
+  EmbeddedAudioResourceReference,
+  TimelineAudioCue,
+  MorphShape,
+  MovieClip,
+  RichText,
+  Scale9Shape,
+  Shape,
+  Sprite,
+  Texture2D,
+} from '@flighthq/types/contract';
 import {
   Compression,
   ImageResourceReferenceKind,
@@ -37,6 +47,7 @@ import {
   MovieClipKind,
   ResourceResolutionState,
   RichTextKind,
+  Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
 } from '@flighthq/types/contract';
@@ -239,6 +250,300 @@ describe('createScene2DFromSwf', () => {
     const target = document!.slots[0].target;
     expect(target.kind).not.toBe(ShapeKind);
     expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 5, width: 10, x: 0, y: 0 });
+  });
+
+  it('reads a character’s inverted bounds as an empty box rather than discarding the file', () => {
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x123456]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(400, 0);
+    writer.writeEndShape();
+
+    // Real authoring tools emit a degenerate extent for a character that occupies no space. The bounds
+    // are advisory, so the odd character costs its own size and nothing else — the shape placed beside
+    // it still arrives.
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(400, -400, 300, -300))),
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(8), createRectangle(0, 400, 0, 400), writer.toBytes())),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('empty')),
+        ),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(8))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document).not.toBeNull();
+    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({ height: 0, width: 0 });
+    const drawn = getNodeChildren(document!.root).filter((child) => child.kind === ShapeKind) as Shape[];
+    expect(drawn).toHaveLength(1);
+    expect(drawn[0].data.commands.length).toBeGreaterThan(0);
+  });
+
+  it('collapses a scaling-grid wrapper sprite into one nine-slice shape', () => {
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x123456]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(400, 0);
+    writer.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        // The grid names the sprite, not the shape — the tag may also precede the sprite it names.
+        createTag(TAG_DEFINE_SCALING_GRID, joinBytes(uint16(20), createRectangle(100, 300, 100, 300))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const children = getNodeChildren(document!.root);
+    expect(children).toHaveLength(1);
+    const target = children[0] as Scale9Shape;
+    expect(target.kind).toBe(Scale9ShapeKind);
+    // Twips convert to pixels, and the shape's own commands come with it rather than staying behind a
+    // MovieClip that the nine-slice rewrite could never reach.
+    expect(target.data.scale9Grid).toMatchObject({ height: 10, width: 10, x: 5, y: 5 });
+    expect(target.data.commands.length).toBeGreaterThan(0);
+    expect(getNodeChildren(target)).toHaveLength(0);
+  });
+
+  it('leaves a scaling grid on a sprite that is more than a wrapper as an ordinary clip', () => {
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x123456]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(400, 0);
+    writer.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        // A real shape body, so the layer count is the only thing that can disqualify the wrapper.
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
+        createTag(
+          TAG_DEFINE_SPRITE,
+          joinBytes(
+            uint16(20),
+            uint16(1),
+            // Two layers, so the grid describes a composition no single shape's commands can carry.
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(7))),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ),
+        ),
+        createTag(TAG_DEFINE_SCALING_GRID, joinBytes(uint16(20), createRectangle(100, 300, 100, 300))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const target = getNodeChildren(document!.root)[0];
+    expect(target.kind).toBe(MovieClipKind);
+  });
+
+  it('carries an MP3 event sound out as undecoded bytes past its seek prefix', () => {
+    // format 2 (MP3) << 4 | 22kHz | 16-bit | stereo, then the sample count, then the SI16 seek offset the
+    // bitstream is not part of, then the frames themselves.
+    const frames = new Uint8Array([0xff, 0xfb, 0x90, 0x44, 0x11, 0x22]);
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), frames)),
+        // Publishing the sound by name is what makes it reachable when no frame ever cues it.
+        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(9), swfString('theme'))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document!.audioResources).toHaveLength(1);
+    const reference = document!.audioResources[0] as EmbeddedAudioResourceReference;
+    expect(reference.kind).toBe('Embedded');
+    expect(reference.mimeType).toBe('audio/mpeg');
+    expect([...reference.bytes]).toEqual([...frames]);
+    expect(reference.name).toBe('theme');
+    // The resource exists before its samples do, so a cue has something to hold.
+    expect(reference.resource.buffer).toBeNull();
+    expect(reference.state).toBe(ResourceResolutionState.Unresolved);
+  });
+
+  it('tags a sound whose format has no standard container instead of dropping it untyped', () => {
+    const payload = new Uint8Array([1, 2, 3, 4]);
+    const document = createScene2DFromSwf(
+      createSwf([
+        // format 1 (ADPCM): no MIME type Flight can name, and no seek prefix to skip.
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x1b]), uint32(16), payload)),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document!.audioResources).toHaveLength(1);
+    const reference = document!.audioResources[0] as EmbeddedAudioResourceReference;
+    // Tagged with a vendor type carrying what the ADPCM bitstream itself does not encode, so a decoder can
+    // register against it before one exists. 0x1b is 22.05kHz, 16-bit, stereo.
+    expect(reference.mimeType).toBe('audio/vnd.adobe.swf-adpcm; rate=22050; channels=2; bits=16');
+    // No ExportAssets for this one, so nothing published a name for it.
+    expect(reference.name).toBeNull();
+    expect([...reference.bytes]).toEqual([...payload]);
+  });
+
+  it('turns a StartSound into an audio cue sharing the document’s resource', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        createTag(TAG_SHOW_FRAME),
+        // 0x00: plain event sound, no in/out, no loops, no envelope.
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const source = (document!.root as MovieClip).data.timeline!.source!;
+    expect(source.cues).toHaveLength(1);
+    const cue = source.cues[0] as TimelineAudioCue;
+    expect(cue.kind).toBe('Audio');
+    // The trigger sits on the frame its tag precedes, not the frame that was already shown.
+    expect(cue.frame).toBe(2);
+    expect(cue.stop).toBe(false);
+    expect(cue.loops).toBe(1);
+    expect(cue.offset).toBe(0);
+    expect(cue.duration).toBeNull();
+    expect(cue.envelope).toEqual([]);
+    expect(cue.skipIfPlaying).toBe(false);
+    // One resource, held by the cue and listed by the document, so one decode serves both.
+    expect(cue.resource).toBe(document!.audioResources[0].resource);
+  });
+
+  it('gives every cue naming one sound the same resource the document lists', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cues = (document!.root as MovieClip).data.timeline!.source!.cues as readonly TimelineAudioCue[];
+    expect(cues).toHaveLength(2);
+    expect(cues[0].frame).toBe(1);
+    expect(cues[1].frame).toBe(2);
+    // The whole point of holding the entity rather than a name: one decode fills what both cues play, and
+    // the document lists that same resource so loading it wires both at once.
+    expect(cues[0].resource).toBe(cues[1].resource);
+    expect(cues[0].resource).toBe(document!.audioResources[0].resource);
+    expect(document!.audioResources).toHaveLength(1);
+  });
+
+  it('reads a stop trigger as a stop rather than a play', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        // 0x20 is SyncStop; 0x10 alongside it is SyncNoMultiple, which a stop has no use for.
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x30]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    expect(cue.stop).toBe(true);
+    expect(cue.skipIfPlaying).toBe(false);
+  });
+
+  it('converts in and out points from the sound’s own samples into seconds', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        // 0x2b is 22.05kHz, so 11025 samples is half a second.
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(44100), uint16(0), mp3())),
+        // 0x03: has in point and out point.
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x03]), uint32(11025), uint32(33075))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    expect(cue.offset).toBeCloseTo(0.5);
+    // The out point is the last sample to play, so the duration spans from the in point to it.
+    expect(cue.duration).toBeCloseTo(1.0);
+  });
+
+  it('reads a stereo envelope in 44.1kHz samples whatever the sound’s rate', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        // 0x08: has envelope. Two points, the second panned hard left.
+        createTag(
+          TAG_START_SOUND,
+          joinBytes(
+            uint16(9),
+            new Uint8Array([0x08]),
+            new Uint8Array([2]),
+            uint32(0),
+            uint16(32768),
+            uint16(32768),
+            uint32(22050),
+            uint16(32768),
+            uint16(0),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    expect(cue.envelope).toHaveLength(2);
+    expect(cue.envelope[0]).toEqual({ leftGain: 1, rightGain: 1, time: 0 });
+    // 22050 of 44.1kHz samples is half a second even though the sound itself is 22.05kHz.
+    expect(cue.envelope[1].time).toBeCloseTo(0.5);
+    expect(cue.envelope[1].leftGain).toBe(1);
+    expect(cue.envelope[1].rightGain).toBe(0);
+  });
+
+  it('lets a trigger name a sound the tag stream has not reached yet', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    // The cue was built before the payload existed, and still shares the reference's resource.
+    expect(cue.resource).toBe(document!.audioResources[0].resource);
+  });
+
+  it('carries no audio references for a file that defines no sounds', () => {
+    const document = createScene2DFromSwf(createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]));
+    expect(document!.audioResources).toEqual([]);
   });
 
   it('carries an embedded image out as undecoded bytes on a waiting texture', () => {
@@ -2215,6 +2520,11 @@ function swfString(value: string): Uint8Array {
   return joinBytes(_encoder.encode(value), new Uint8Array([0]));
 }
 
+// A minimal MP3 payload: one frame sync is all any of these tests reads back.
+function mp3(): Uint8Array {
+  return new Uint8Array([0xff, 0xfb, 0x90, 0x44]);
+}
+
 function uint16(value: number): Uint8Array {
   return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
 }
@@ -2240,6 +2550,9 @@ const TAG_DEFINE_BITS_JPEG_3 = 35;
 const TAG_DEFINE_BITS_JPEG_4 = 90;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
+const TAG_DEFINE_SOUND = 14;
+const TAG_START_SOUND = 15;
+const TAG_DEFINE_SCALING_GRID = 78;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS = 6;
 const TAG_DEFINE_BUTTON_2 = 34;

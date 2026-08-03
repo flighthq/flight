@@ -881,7 +881,7 @@ function stitchSwfShapeSegments(segments: readonly Readonly<SwfShapeSegment>[]):
     if (used[i]) continue;
     used[i] = true;
     const contour = createSwfShapeSegment(segments[i].startX, segments[i].startY);
-    contour.edges.push(...segments[i].edges);
+    appendSwfShapeEdges(contour.edges, segments[i].edges);
 
     for (;;) {
       const tail = contour.edges[contour.edges.length - 1];
@@ -891,11 +891,18 @@ function stitchSwfShapeSegments(segments: readonly Readonly<SwfShapeSegment>[]):
       const next = candidates.find((index) => !used[index]);
       if (next === undefined) break;
       used[next] = true;
-      contour.edges.push(...segments[next].edges);
+      appendSwfShapeEdges(contour.edges, segments[next].edges);
     }
     contours.push(contour);
   }
   return contours;
+}
+
+// Appends element by element rather than by spreading into push. A contour's edge count comes from the
+// authored artwork, and a spread passes one argument per edge, so a large enough path overflows the
+// engine's argument limit before it ever reaches the shape.
+function appendSwfShapeEdges(out: SwfShapeEdge[], source: readonly SwfShapeEdge[]): void {
+  for (let i = 0; i < source.length; i++) out.push(source[i]);
 }
 
 function createSwfShapePointKey(x: number, y: number): string {
