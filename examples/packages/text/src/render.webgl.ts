@@ -1,6 +1,7 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
-  createCanvasRenderState,
+  connectCanvasTextureResolverMisses,
+  createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
   createGlCanvasElement,
   createGlRenderState,
@@ -10,7 +11,6 @@ import {
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   enableFlightDiagnostics,
-  getCanvasRenderStateTextureResolvers,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -46,9 +46,8 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
 // shape from silently going missing the moment one is added.
-const shapeRasterizerResolvers = getCanvasRenderStateTextureResolvers(
-  createCanvasRenderState(document.createElement('canvas')),
-);
+const shapeRasterizerResolvers = createCanvasTextureResolvers();
+connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(shapeRasterizerResolvers);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
