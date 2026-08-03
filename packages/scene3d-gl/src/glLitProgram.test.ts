@@ -157,7 +157,7 @@ describe('bindGlMeshLightBlock', () => {
       enabled: true,
       matrix: createMatrix4(),
       normalBias: 0.02,
-      pcfRadius: 3,
+      pcfRadius: 2,
       shadowBias: 0.01,
       texture: {} as WebGLTexture,
     };
@@ -179,7 +179,7 @@ describe('bindGlMeshLightBlock', () => {
           (call.args[0] as { name?: string })?.name === name,
       )?.args[1];
     expect(scalar('u_shadowEnabled')).toBe(1);
-    expect(scalar('u_shadowPcfRadius')).toBe(3);
+    expect(scalar('u_shadowPcfRadius')).toBe(2);
     expect(scalar('u_shadowBias')).toBe(0.01);
     expect(scalar('u_shadowNormalBias')).toBe(0.02);
   });
@@ -215,7 +215,11 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('geometricNormal * u_shadowNormalBias');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('uvz.z - u_shadowBias');
-    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('abs(x) > u_shadowPcfRadius');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('if (radius == 0) return compareDirectionalShadow(uvz.xy, current)');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('if (radius == 1)');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('for (int x = -1; x <= 1; ++x)');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('for (int x = -2; x <= 2; ++x)');
+    expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain('return sum / 9.0');
     expect(GL_MESH_LIGHT_BLOCK_GLSL).not.toContain('0.0025');
   });
 });

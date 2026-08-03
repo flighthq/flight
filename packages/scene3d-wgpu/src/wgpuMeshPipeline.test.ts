@@ -430,7 +430,7 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
       enabled: true,
       matrix: createMatrix4(),
       normalBias: 0.02,
-      pcfRadius: 3,
+      pcfRadius: 2,
       shadowBias: 0.01,
     };
 
@@ -440,7 +440,7 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
       (call) => call.name === 'writeBuffer' && call.args[0] === runtime.shadowUniformBuffer,
     );
     const values = new Float32Array(write!.args[2] as ArrayBuffer);
-    expect(Array.from(values.slice(16, 20))).toEqual([1, 3, expect.closeTo(0.01), expect.closeTo(0.02)]);
+    expect(Array.from(values.slice(16, 20))).toEqual([1, 2, expect.closeTo(0.01), expect.closeTo(0.02)]);
   });
 });
 
@@ -659,7 +659,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
       enabled: true,
       matrix: createMatrix4(),
       normalBias: 0.02,
-      pcfRadius: 3,
+      pcfRadius: 2,
       shadowBias: 0.01,
     };
 
@@ -669,7 +669,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
       (call) => call.name === 'writeBuffer' && call.args[0] === runtime.shadowUniformBuffer,
     );
     const values = new Float32Array(write!.args[2] as ArrayBuffer);
-    expect(Array.from(values.slice(16, 20))).toEqual([1, 3, expect.closeTo(0.01), expect.closeTo(0.02)]);
+    expect(Array.from(values.slice(16, 20))).toEqual([1, 2, expect.closeTo(0.01), expect.closeTo(0.02)]);
   });
 });
 

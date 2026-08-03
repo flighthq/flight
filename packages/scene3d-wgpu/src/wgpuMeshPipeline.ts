@@ -1171,7 +1171,12 @@ struct Shadow {
 @group(3) @binding(2) var shadowSampler : sampler_comparison;
 
 // Directional shadow factor at a world position. The compile-time radius cap bounds fragment cost;
-// shadow.params.y selects the active square subset at runtime. Outside the frustum / disabled = lit.
+// radius 0 and 1 take dedicated one-tap and 3x3 paths, while radius 2 takes the bounded 5x5 path.
+// Outside the frustum / disabled = lit.
+fn compareDirectionalShadow(uv : vec2f, depthRef : f32) -> f32 {
+  return textureSampleCompareLevel(shadowMap, shadowSampler, uv, depthRef);
+}
+
 fn sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f) -> f32 {
   if (shadow.params.x < 0.5) {
     return 1.0;
@@ -1184,18 +1189,29 @@ fn sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f) -> f32 {
   if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
     return 1.0;
   }
-  let radius = i32(shadow.params.y);
+  let radius = clamp(i32(shadow.params.y), 0, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS);
   let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
+  if (radius == 0) {
+    return compareDirectionalShadow(uv, depthRef);
+  }
+
   var sum = 0.0;
+  if (radius == 1) {
+    for (var x = -1; x <= 1; x = x + 1) {
+      for (var y = -1; y <= 1; y = y + 1) {
+        let offset = vec2f(f32(x), f32(y)) * texel;
+        sum = sum + compareDirectionalShadow(uv + offset, depthRef);
+      }
+    }
+    return sum / 9.0;
+  }
   for (var x = -MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x <= MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; x = x + 1) {
-    if (abs(x) > radius) { continue; }
     for (var y = -MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; y <= MAX_DIRECTIONAL_SHADOW_PCF_RADIUS; y = y + 1) {
-      if (abs(y) > radius) { continue; }
       let offset = vec2f(f32(x), f32(y)) * texel;
-      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
+      sum = sum + compareDirectionalShadow(uv + offset, depthRef);
     }
   }
-  let diameter = f32(radius * 2 + 1);
+  let diameter = f32(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS * 2 + 1);
   return sum / (diameter * diameter);
 }
 `;
