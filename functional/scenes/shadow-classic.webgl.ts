@@ -112,17 +112,16 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0
 const direction = createVector3(0, -1, 0);
 const lights = createScene3DLights({
   ambient: createAmbientLight({ color: 0x404040ff, intensity: 0.12 }),
-  // Radius 1 is the rendered 3x3 PCF witness; the PBR directional scene separately fixes radius 0.
-  // The deliberately negative depth bias expands the caster comparison just enough to give shadowBias
-  // its own stable image witness (zeroing only this field changes the capture on both backends).
+  // Keep the classic-family witness representative: fitted camera, default single-tap filtering, and
+  // zero receiver biases. Synthetic sampling-control witnesses live in shadow-sampling-controls.
   directional: createDirectionalLight({
     castsShadow: true,
     color: 0xffffffff,
     direction,
     intensity: 3,
     normalBias: 0,
-    pcfRadius: 1,
-    shadowBias: -0.01,
+    pcfRadius: 0,
+    shadowBias: 0,
   }),
 });
 
@@ -134,9 +133,6 @@ const shadowCamera = createCamera3D({
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
 configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
-// Deliberately widen the light projection after fitting its view. Each shadow texel now spans enough
-// screen pixels for radius 1 to produce an observable edge instead of collapsing to radius 0 at 800x600.
-shadowCamera.projection = createOrthographicProjection({ halfHeight: 40, halfWidth: 40 });
 
 render(scene, camera, lights, shadowCamera);
 

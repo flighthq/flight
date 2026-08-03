@@ -1448,6 +1448,15 @@
           }
         },
         {
+          "scene": "shadow-sampling-controls",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "shadow-scene-scale",
           "backends": {
             "canvas": false,
