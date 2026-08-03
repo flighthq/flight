@@ -13,6 +13,7 @@ export interface FastEntryPointInventory {
 }
 
 export interface FastFunctionInfo {
+  hasBody: boolean;
   parameters: string;
   returnType: string | null;
   sourcePath: string;
@@ -126,11 +127,20 @@ function addDescriptor(filePath: string): ModuleDescriptor {
             declaration.id.name,
             filePath,
             parsed.text,
+            declaration.body !== null,
             declaration.params,
             declaration.returnType,
           );
       } else if (declaration.type === 'FunctionDeclaration') {
-        addFunctionInfo(localFunctions, 'default', filePath, parsed.text, declaration.params, declaration.returnType);
+        addFunctionInfo(
+          localFunctions,
+          'default',
+          filePath,
+          parsed.text,
+          declaration.body !== null,
+          declaration.params,
+          declaration.returnType,
+        );
       }
     }
   }
@@ -186,7 +196,15 @@ function addDeclarationFunctions(
 ): void {
   if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
     if (declaration.id !== null)
-      addFunctionInfo(functions, declaration.id.name, filePath, sourceText, declaration.params, declaration.returnType);
+      addFunctionInfo(
+        functions,
+        declaration.id.name,
+        filePath,
+        sourceText,
+        declaration.body !== null,
+        declaration.params,
+        declaration.returnType,
+      );
   } else if (declaration.type === 'VariableDeclaration') {
     for (const variable of declaration.declarations) addVariableFunction(variable, filePath, sourceText, functions);
   }
@@ -197,10 +215,12 @@ function addFunctionInfo(
   name: string,
   sourcePath: string,
   sourceText: string,
+  hasBody: boolean,
   parameters: readonly { start: number; end: number }[],
   annotation: { typeAnnotation: { start: number; end: number } } | null | undefined,
 ): void {
   const info = {
+    hasBody,
     parameters: parameters.map((parameter) => sourceText.slice(parameter.start, parameter.end)).join(', '),
     returnType:
       annotation === null || annotation === undefined
@@ -214,6 +234,7 @@ function addFunctionInfo(
     !existing.some(
       (item) =>
         item.parameters === info.parameters &&
+        item.hasBody === info.hasBody &&
         item.returnType === info.returnType &&
         item.sourcePath === info.sourcePath,
     )
@@ -233,7 +254,15 @@ function addVariableFunction(
     (variable.init.type !== 'ArrowFunctionExpression' && variable.init.type !== 'FunctionExpression')
   )
     return;
-  addFunctionInfo(functions, variable.id.name, filePath, sourceText, variable.init.params, variable.init.returnType);
+  addFunctionInfo(
+    functions,
+    variable.id.name,
+    filePath,
+    sourceText,
+    true,
+    variable.init.params,
+    variable.init.returnType,
+  );
 }
 
 function exportName(name: ModuleExportName | { kind: string; name: string | null }): string | null {

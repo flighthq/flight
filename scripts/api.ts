@@ -173,13 +173,15 @@ function collectFastCheckApi(packages: readonly PackageInfo[]): ApiPackage[] | n
 function collectFastBarrelFunctions(barrelPath: string): ApiFunction[] | null {
   const functions: ApiFunction[] = [];
   for (const [name, declarations] of collectFastEntryPointInventory(barrelPath).functions) {
-    const returnTypes = [...new Set(declarations.map((declaration) => declaration.returnType))];
+    const overloads = declarations.filter((declaration) => !declaration.hasBody);
+    const signatures = overloads.length > 0 ? overloads : declarations;
+    const returnTypes = [...new Set(signatures.map((declaration) => declaration.returnType))];
     // The fast check needs return types only for boolean-shaped accessor names. Keep the interactive
     // API's semantic path as a fallback if a future accessor intentionally relies on inferred typing.
     if (/^(?:get|is|has)[A-Z0-9]/.test(name) && returnTypes.includes(null)) return null;
     functions.push({
       name,
-      signatures: declarations.flatMap((declaration) =>
+      signatures: signatures.flatMap((declaration) =>
         declaration.returnType === null ? [] : [`${name}(${declaration.parameters}): ${declaration.returnType}`],
       ),
       source: relative(root, declarations[0]!.sourcePath).replaceAll('\\', '/'),
