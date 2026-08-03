@@ -29,14 +29,6 @@ export function getScene3DMaterialTextures(
   if (lister !== undefined) lister(material, out);
 }
 
-// Registers the built-in surface-material listers (StandardPbrMaterial and UnlitMaterial). Opt-in so
-// it carries no top-level side effect; callers that build their own registry invoke it explicitly.
-export function registerBuiltInScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
-  registerExtendedPbrScene3DMaterialTextures(registry);
-  registerScene3DMaterialTextures(registry, StandardPbrMaterialKind, listStandardPbrMaterialTextures);
-  registerScene3DMaterialTextures(registry, UnlitMaterialKind, listUnlitMaterialTextures);
-}
-
 export function registerExtendedPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DMaterialTextures(registry, ExtendedPbrMaterialKind, (material, out): void => {
     const extended = material as Readonly<ExtendedPbrMaterial>;
@@ -65,6 +57,14 @@ export function registerScene3DPbrExtensionTextures(
   lister: Scene3DPbrExtensionTextureLister,
 ): void {
   registry.extensionListers.set(kind, lister);
+}
+
+export function registerStandardPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
+  registerScene3DMaterialTextures(registry, StandardPbrMaterialKind, listStandardPbrMaterialTextures);
+}
+
+export function registerUnlitScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
+  registerScene3DMaterialTextures(registry, UnlitMaterialKind, listUnlitMaterialTextures);
 }
 
 function listStandardPbrMaterialTextures(material: Readonly<Material>, out: Texture[]): void {

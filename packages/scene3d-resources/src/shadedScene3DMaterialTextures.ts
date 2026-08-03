@@ -3,7 +3,7 @@ import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
 
-// Lists the ShadedMaterial base maps. Registered separately from registerBuiltInScene3DMaterialTextures'
+// Lists the ShadedMaterial base maps. Registered separately from the surface-material listers'
 // PBR/unlit set so an app that never uses the shaded base pays nothing for it.
 //
 // Registering it is an optimization, not a prerequisite: resolution falls back to every resource-backed
