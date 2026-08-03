@@ -6,6 +6,7 @@ import {
 import type {
   CollisionRaycastHit,
   Physics2DCollider,
+  Physics2DQueryFilter,
   Physics2DQueryResult,
   Physics2DRayHit,
   Physics2DRayResult,
@@ -17,6 +18,17 @@ import type {
 import { synchronizePhysics2DBroadphase } from './broadphase';
 import { writePhysics2DColliderBounds } from './colliderTransform';
 import { findPhysics2DBody } from './world';
+
+export function createPhysics2DQueryFilter(): Physics2DQueryFilter {
+  return {
+    categoryBits: 0xffffffff,
+    maskBits: 0xffffffff,
+    includeSensors: true,
+    includeDynamic: true,
+    includeKinematic: true,
+    includeStatic: true,
+  };
+}
 
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions
 // rewrite them and publish only `hitCount`, so pointer picking can run each frame without garbage.
@@ -32,17 +44,25 @@ export function createPhysics2DRayResult(): Physics2DRayResult {
 // collision package's exact shape predicate, so rotated boxes and convex polygons do not report their
 // empty bounding-box corners. Results are ordered by body identity and collider array index rather than
 // backend traversal history.
-export function queryPhysics2DPoint(world: Physics2DWorld, x: number, y: number, out: Physics2DQueryResult): void {
+export function queryPhysics2DPoint(
+  world: Physics2DWorld,
+  x: number,
+  y: number,
+  out: Physics2DQueryResult,
+  filter?: Readonly<Physics2DQueryFilter>,
+): void {
   out.hitCount = 0;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   synchronizePhysics2DBroadphase(world);
   world.index.querySpatialPoint(x, y, candidateBodyScratch);
   candidateBodyScratch.sort(compareNumbers);
 
   for (const bodyIndex of candidateBodyScratch) {
     const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null) continue;
+    if (body === null || !passesBodyFilter(body, filter)) continue;
     for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
       const collider = body.colliders[colliderIndex];
+      if (!passesColliderFilter(collider, filter)) continue;
       if (!getCollisionShapeContainsPoint(collider.world, x, y)) continue;
       writeQueryHit(out, body, collider, colliderIndex);
     }
@@ -60,6 +80,36 @@ export function queryPhysics2DRay(
   directionY: number,
   out: Physics2DRayResult,
   maxFraction = Number.POSITIVE_INFINITY,
+  filter?: Readonly<Physics2DQueryFilter>,
+): void {
+  queryPhysics2DRayInternal(world, originX, originY, directionX, directionY, out, maxFraction, filter, false);
+}
+
+// Writes at most the nearest exact hit. Ties use the same persistent body/collider ordering as the
+// all-hits query, so the selected result is deterministic rather than broadphase-history dependent.
+export function queryPhysics2DRayClosest(
+  world: Physics2DWorld,
+  originX: number,
+  originY: number,
+  directionX: number,
+  directionY: number,
+  out: Physics2DRayResult,
+  maxFraction = Number.POSITIVE_INFINITY,
+  filter?: Readonly<Physics2DQueryFilter>,
+): void {
+  queryPhysics2DRayInternal(world, originX, originY, directionX, directionY, out, maxFraction, filter, true);
+}
+
+function queryPhysics2DRayInternal(
+  world: Physics2DWorld,
+  originX: number,
+  originY: number,
+  directionX: number,
+  directionY: number,
+  out: Physics2DRayResult,
+  maxFraction: number,
+  filter: Readonly<Physics2DQueryFilter> | undefined,
+  closestOnly: boolean,
 ): void {
   out.hitCount = 0;
   if (
@@ -78,18 +128,20 @@ export function queryPhysics2DRay(
 
   for (const bodyIndex of candidateBodyScratch) {
     const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null) continue;
+    if (body === null || !passesBodyFilter(body, filter)) continue;
     for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
       const collider = body.colliders[colliderIndex];
+      if (!passesColliderFilter(collider, filter)) continue;
       if (
         !raycastCollisionShape(collider.world, originX, originY, directionX, directionY, raycastHitScratch, maxFraction)
       ) {
         continue;
       }
-      writeRayHit(out, body, collider, colliderIndex, raycastHitScratch);
+      if (closestOnly) writeClosestRayHit(out, body, collider, colliderIndex, raycastHitScratch);
+      else writeRayHit(out, body, collider, colliderIndex, raycastHitScratch);
     }
   }
-  sortLiveRayHits(out);
+  if (!closestOnly) sortLiveRayHits(out);
 }
 
 // Writes every collider whose current world-space AABB overlaps `region`. The spatial index is over
@@ -99,22 +151,55 @@ export function queryPhysics2DRegion(
   world: Physics2DWorld,
   region: Readonly<SpatialAabb>,
   out: Physics2DQueryResult,
+  filter?: Readonly<Physics2DQueryFilter>,
 ): void {
   out.hitCount = 0;
+  if (!isValidRegion(region)) return;
   synchronizePhysics2DBroadphase(world);
   world.index.querySpatialRegion(region, candidateBodyScratch);
   candidateBodyScratch.sort(compareNumbers);
 
   for (const bodyIndex of candidateBodyScratch) {
     const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null) continue;
+    if (body === null || !passesBodyFilter(body, filter)) continue;
     for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
       const collider = body.colliders[colliderIndex];
+      if (!passesColliderFilter(collider, filter)) continue;
       writePhysics2DColliderBounds(collider, colliderBoundsScratch);
       if (!boundsOverlap(colliderBoundsScratch, region)) continue;
       writeQueryHit(out, body, collider, colliderIndex);
     }
   }
+}
+
+function writeClosestRayHit(
+  out: Physics2DRayResult,
+  body: RigidBody2D,
+  collider: Physics2DCollider,
+  colliderIndex: number,
+  source: Readonly<CollisionRaycastHit>,
+): void {
+  if (out.hitCount === 0) {
+    writeRayHit(out, body, collider, colliderIndex, source);
+    return;
+  }
+  const current = out.hits[0];
+  if (
+    source.fraction > current.fraction ||
+    (source.fraction === current.fraction &&
+      (body.index > current.body.index ||
+        (body.index === current.body.index && colliderIndex >= current.colliderIndex)))
+  ) {
+    return;
+  }
+  current.body = body;
+  current.collider = collider;
+  current.colliderIndex = colliderIndex;
+  current.fraction = source.fraction;
+  current.normalX = source.normalX;
+  current.normalY = source.normalY;
+  current.x = source.x;
+  current.y = source.y;
 }
 
 function writeQueryHit(
@@ -187,6 +272,35 @@ function compareRayHits(a: Readonly<Physics2DRayHit>, b: Readonly<Physics2DRayHi
 
 function boundsOverlap(a: Readonly<SpatialAabb>, b: Readonly<SpatialAabb>): boolean {
   return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+}
+
+function passesBodyFilter(body: Readonly<RigidBody2D>, filter: Readonly<Physics2DQueryFilter> | undefined): boolean {
+  if (filter === undefined) return true;
+  if (body.type === 'dynamic') return filter.includeDynamic;
+  if (body.type === 'kinematic') return filter.includeKinematic;
+  return filter.includeStatic;
+}
+
+function passesColliderFilter(
+  collider: Readonly<Physics2DCollider>,
+  filter: Readonly<Physics2DQueryFilter> | undefined,
+): boolean {
+  if (filter === undefined) return true;
+  if (!filter.includeSensors && collider.sensor) return false;
+  return (
+    (collider.filter.categoryBits & filter.categoryBits) !== 0 && (collider.filter.maskBits & filter.maskBits) !== 0
+  );
+}
+
+function isValidRegion(region: Readonly<SpatialAabb>): boolean {
+  return (
+    Number.isFinite(region.minX) &&
+    Number.isFinite(region.minY) &&
+    Number.isFinite(region.maxX) &&
+    Number.isFinite(region.maxY) &&
+    region.minX <= region.maxX &&
+    region.minY <= region.maxY
+  );
 }
 
 function compareNumbers(a: number, b: number): number {

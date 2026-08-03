@@ -77,9 +77,11 @@ export {
   setPhysics2DBodyType,
 } from './world';
 export {
+  createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
   createPhysics2DRayResult,
   queryPhysics2DPoint,
   queryPhysics2DRay,
+  queryPhysics2DRayClosest,
   queryPhysics2DRegion,
 } from './worldQueries';
