@@ -11,7 +11,13 @@ import { describe, expect, it } from 'vitest';
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import { physics2DDistanceJointSolver } from './joints';
 import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import {
+  addPhysics2DBody,
+  applyPhysics2DForce,
+  createPhysics2DCollider,
+  createPhysics2DWorld,
+  createRigidBody2D,
+} from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
@@ -334,6 +340,21 @@ describe('contact solve hooks', () => {
 
     world.contactHooks.preSolve = null;
     expect(addPhysics2DBody(world, pending)).toBe(pending);
+  });
+
+  it('rejects body actions from hooks instead of applying them at a phase-dependent time', () => {
+    const world = createPhysics2DWorld(0, 0);
+    ground(world);
+    const crate = box(world, 0, 0.4);
+    world.contactHooks.postSolve = () => {
+      applyPhysics2DForce(crate, 10, 0);
+    };
+
+    expect(() => stepPhysics2D(world, 1 / 60)).toThrow(/while it is stepping/);
+    expect(crate.forceX).toBe(0);
+
+    world.contactHooks.postSolve = null;
+    expect(applyPhysics2DForce(crate, 10, 0)).toBe(true);
   });
 
   it('rejects invalid pre- and post-solve output before it can poison a later step', () => {
