@@ -294,13 +294,18 @@ function object(typeKey: number, properties: Readonly<Record<number, number>>): 
 }
 
 function artboardOf(objects: RiveCoreObject[]): RiveArtboardGraph {
-  return { objects, parentIndices: objects.map(() => -1) };
+  return { objects, parentIndices: objects.map(() => -1), streamEnd: objects.length, streamStart: 0 };
 }
 
 // A points path with its vertices as children, matching how the stream numbers them.
 function pointsPath(closed: boolean, vertices: RiveCoreObject[]) {
   const path = object(POINTS_PATH, closed ? { 32: 1 } : {});
   const objects = [path, ...vertices];
-  const graph: RiveArtboardGraph = { objects, parentIndices: objects.map((_value, index) => (index === 0 ? -1 : 0)) };
+  const graph: RiveArtboardGraph = {
+    objects,
+    parentIndices: objects.map((_value, index) => (index === 0 ? -1 : 0)),
+    streamEnd: objects.length,
+    streamStart: 0,
+  };
   return createRivePath(path, graph, 0);
 }

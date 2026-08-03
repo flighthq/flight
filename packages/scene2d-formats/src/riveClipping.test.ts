@@ -158,7 +158,12 @@ function run(
   diagnostics?: ImportDiagnostic[],
   clipped = 1,
 ): DisplayObject['clip'] {
-  const artboard: RiveArtboardGraph = { objects: scene.objects, parentIndices: scene.parents };
+  const artboard: RiveArtboardGraph = {
+    objects: scene.objects,
+    parentIndices: scene.parents,
+    streamEnd: scene.objects.length,
+    streamStart: 0,
+  };
   const nodes: Array<DisplayObject | null> = scene.objects.map((object, index) =>
     index === 0 || object.typeKey === SHAPE || object.typeKey === NODE ? createDisplayObject() : null,
   );

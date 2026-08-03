@@ -293,7 +293,36 @@ on the same node emits `rive.multiple-clipping-shapes` (8 in the corpus) rather 
 replacing the first — intersecting contour sets is a `@flighthq/path-boolean` job, not something to
 fake. A source that resolves to no geometry emits `rive.unresolved-clipping-source` (14).
 
-**Not covered:** draw-order overrides,
+**Transform animation is covered.** Each artboard returns its linear animations as named clips.
+Animations are **not components** — they follow their artboard in the stream but sit outside the
+artboard's numbering — so they are read from the raw object stream through the span the graph
+records, while their `objectId` references point back into the component numbering.
+
+Time is `frame / fps` using **the animation's own frame rate**, since each states its own rather than
+inheriting the document's. Rotation converts radians to degrees, as everywhere else.
+
+The interpolation enum was settled from the corpus rather than a header: type 2 carries an
+interpolator in 18,044 of 18,608 cases, type 1 never does, and type 0 almost never — hold, linear,
+cubic. Cubic segments use the eased curve their named interpolator states; the advanced kinds (3 and
+4, 42 cases) have no Flight equivalent and fall back to linear.
+
+**`interpolatorId` and `parentId` do not share a numbering space**, which is worth knowing before
+adding another id-valued property. `parentId` indexes components only — resolving it against all
+artboard objects lands on `SolidColor` and `GradientStop`, which cannot be parents. `interpolatorId`
+is the opposite: against all artboard objects it resolves to a real interpolator in 17,910 of 18,044
+cases, and against components only in **zero**. Each id's space has to be established rather than
+assumed from a sibling.
+
+Over the corpus this builds 383 clips, all named, carrying 2,925 channels and 11,333 keyframes with
+no non-finite time or value.
+
+**Only transform properties bind.** X, Y, rotation, scale and opacity reach `Node2DAnimationTarget`;
+animated vertex positions, colours and paint properties would need a format-owned mutable-content
+binder like the one Lottie has, so they are read past. That is why **145 of the 383 clips carry no
+channels** — they animate only geometry or paint.
+
+**Not covered:** animated geometry and paint, per above. Loop mode, work-area trimming, and playback
+speed, which the animation states and this importer does not yet carry. Draw-order overrides,
 `DrawRules` and `DrawTarget`, 96 of each. `TrimPath`, 46 instances across 11 files, which Flight has
 the pieces for — `getPathLength` and `dashPath`, as the Lottie importer already uses. `Feather`, 154
 instances, a paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes,

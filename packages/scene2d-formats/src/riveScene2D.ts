@@ -17,6 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { createRiveAnimationClips } from './riveAnimation';
 import { applyRiveClipping } from './riveClipping';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { parseRiveDocument } from './riveDocument';
@@ -39,11 +40,14 @@ export function createScene2DFromRiveDocument(
   if (document === null) return { artboards: [] };
 
   const graph = createRiveObjectGraph(document, diagnostics);
-  return { artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard, diagnostics)) };
+  return {
+    artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard, document.objects, diagnostics)),
+  };
 }
 
 function createRiveArtboardImport(
   artboard: Readonly<RiveArtboardGraph>,
+  objects: readonly Readonly<RiveCoreObject>[],
   diagnostics: ImportDiagnostic[] | undefined,
 ): RiveArtboardImport {
   const source = artboard.objects[0];
@@ -87,12 +91,13 @@ function createRiveArtboardImport(
   }
 
   applyRiveClipping(nodes, artboard, shapePaths, diagnostics);
+  const animations = createRiveAnimationClips(objects, { end: artboard.streamEnd, start: artboard.streamStart }, nodes);
   for (const [shapeIndex, paths] of shapePaths) {
     const shape = nodes[shapeIndex];
     if (shape === null || shape === undefined) continue;
     appendRiveShapePaint(shape as Shape, artboard, shapeIndex, paths);
   }
-  return { height, name, root, width };
+  return { animations, height, name, root, width };
 }
 
 function collectRivePathGeometry(
