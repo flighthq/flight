@@ -459,6 +459,79 @@ describe('createScene2DFromSwf', () => {
     expect(document!.audioResources).toHaveLength(1);
   });
 
+  it('resolves a StartSound2 class name against the character SymbolClass bound it to', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        // The trigger names a class, and SymbolClass — which says what that class is — comes after it, as
+        // it does in every real file: it is written near the end, past the sprites that trigger sounds.
+        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    expect(cue.kind).toBe('Audio');
+    expect(cue.stop).toBe(false);
+    // Resolved back to the character, so it plays the sound the document carries rather than silence.
+    expect(cue.resource).toBe(document!.audioResources[0].resource);
+    expect(document!.audioResources).toHaveLength(1);
+  });
+
+  it('shares one resource between a class-named trigger and an id-named one', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
+        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cues = (document!.root as MovieClip).data.timeline!.source!.cues as readonly TimelineAudioCue[];
+    expect(cues).toHaveLength(2);
+    // Two ways of naming one sound still decode once.
+    expect(cues[0].resource).toBe(cues[1].resource);
+    expect(cues[0].resource).toBe(document!.audioResources[0].resource);
+  });
+
+  it('converts a class-named trigger’s in point once its character resolves', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        // 0x2b is 22.05kHz, so 11025 samples is half a second.
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(44100), uint16(0), mp3())),
+        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x01]), uint32(11025))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    // The rate came from the character the class resolved to, not from a guess.
+    expect(cue.offset).toBeCloseTo(0.5);
+  });
+
+  it('keeps a class-named trigger whose class nothing declares', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Missing'), new Uint8Array([0x00]))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
+    // The trigger is real; the sound it names simply is not in this file, so its resource never fills.
+    expect(cue.resource).not.toBe(document!.audioResources[0].resource);
+    expect(cue.resource.buffer).toBeNull();
+  });
+
   it('reads a stop trigger as a stop rather than a play', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -2552,6 +2625,7 @@ const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_SOUND = 14;
 const TAG_START_SOUND = 15;
+const TAG_START_SOUND_2 = 89;
 const TAG_DEFINE_SCALING_GRID = 78;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS = 6;
