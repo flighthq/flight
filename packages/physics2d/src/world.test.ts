@@ -19,6 +19,8 @@ import {
   isPhysics2DPairOrdered,
   removePhysics2DBody,
   removePhysics2DCollider,
+  setPhysics2DBodyFixedRotation,
+  setPhysics2DBodySleepEnabled,
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
 } from './world';
@@ -297,6 +299,8 @@ describe('createRigidBody2D', () => {
     expect(body.angle).toBe(0.5);
     expect(body.mass).toBe(0);
     expect(body.index).toBe(-1);
+    expect(body.fixedRotation).toBe(false);
+    expect(body.sleepEnabled).toBe(true);
   });
 });
 
@@ -517,6 +521,69 @@ describe('removePhysics2DCollider', () => {
     const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
     expect(removePhysics2DCollider(world, body, absent)).toBe(false);
     expect(body.mass).toBe(mass);
+  });
+});
+
+describe('setPhysics2DBodyFixedRotation', () => {
+  it('preserves linear mass while clearing spin, torque, angular response, and cached contacts', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const other = addPhysics2DBody(world, boxBody(0.75, 0));
+    stepPhysics2D(world, 1 / 60);
+    body.angularVelocity = 4;
+    body.torque = 7;
+    const mass = body.mass;
+    other.sleeping = true;
+
+    expect(setPhysics2DBodyFixedRotation(world, body, true)).toBe(true);
+
+    expect(body.mass).toBe(mass);
+    expect(body.inverseMass).toBeGreaterThan(0);
+    expect(body.inverseInertia).toBe(0);
+    expect(body.angularVelocity).toBe(0);
+    expect(body.torque).toBe(0);
+    expect(world.contacts).toHaveLength(0);
+    expect(other.sleeping).toBe(false);
+    expect(applyPhysics2DTorque(body, 10)).toBe(false);
+    expect(applyPhysics2DForceAtPoint(body, 1, 0, body.x, body.y + 1)).toBe(true);
+    expect(body.torque).toBe(0);
+    expect(applyPhysics2DLinearImpulseAtPoint(body, 1, 0, body.x, body.y + 1)).toBe(true);
+    expect(body.angularVelocity).toBe(0);
+    body.angularVelocity = 100;
+    const angle = body.angle;
+    stepPhysics2D(world, 1 / 60);
+    expect(body.angle).toBe(angle);
+    expect(body.angularVelocity).toBe(0);
+
+    expect(setPhysics2DBodyFixedRotation(world, body, false)).toBe(true);
+    expect(body.inverseInertia).toBeGreaterThan(0);
+  });
+
+  it('reports false for a body outside the world', () => {
+    expect(setPhysics2DBodyFixedRotation(createPhysics2DWorld(), boxBody(0, 0), true)).toBe(false);
+  });
+});
+
+describe('setPhysics2DBodySleepEnabled', () => {
+  it('wakes on either transition and requires a new stillness interval when re-enabled', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    body.sleeping = true;
+    body.sleepTimer = 5;
+
+    expect(setPhysics2DBodySleepEnabled(world, body, false)).toBe(true);
+    expect(body.sleepEnabled).toBe(false);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
+
+    body.sleepTimer = 5;
+    expect(setPhysics2DBodySleepEnabled(world, body, true)).toBe(true);
+    expect(body.sleepEnabled).toBe(true);
+    expect(body.sleepTimer).toBe(0);
+  });
+
+  it('reports false for a body outside the world', () => {
+    expect(setPhysics2DBodySleepEnabled(createPhysics2DWorld(), boxBody(0, 0), false)).toBe(false);
   });
 });
 

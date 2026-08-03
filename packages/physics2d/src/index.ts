@@ -74,6 +74,8 @@ export {
   removePhysics2DBody,
   removePhysics2DCollider,
   setPhysics2DBodyTransform,
+  setPhysics2DBodyFixedRotation,
+  setPhysics2DBodySleepEnabled,
   setPhysics2DBodyType,
 } from './world';
 export {
