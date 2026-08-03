@@ -3,8 +3,8 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
-import { Node, Project } from 'ts-morph';
 
+import { getFunctionExports } from './completeness-core';
 import { getSelectors, selectPackages } from './select';
 
 interface FileCoverage {
@@ -28,16 +28,11 @@ const verboseMode = process.argv.includes('--verbose');
 const jsonMode = process.argv.includes('--json');
 const maxDefaultNames = 8;
 
-const project = new Project({
-  skipAddingFilesFromTsConfig: true,
-  tsConfigFilePath: join(root, 'tsconfig.base.json'),
-});
-
 const sourceFiles = findSourceFiles();
 const results: FileCoverage[] = [];
 
 for (const file of sourceFiles) {
-  const exports = getFunctionExports(project, file.absPath);
+  const exports = getFunctionExports(file.absPath, readFileSync(file.absPath, 'utf-8'));
   if (exports.length === 0) continue;
 
   if (!existsSync(file.testPath)) {
@@ -176,39 +171,6 @@ function getCoveredFunctions(testPath: string, fnNames: string[]): Set<string> {
     }
   }
   return covered;
-}
-
-function getFunctionExports(project: Project, absPath: string): string[] {
-  const sourceFile = project.addSourceFileAtPathIfExists(absPath) ?? project.addSourceFileAtPath(absPath);
-  const names: string[] = [];
-  const normalizedAbsPath = absPath.replaceAll('\\', '/');
-
-  for (const [name, declarations] of sourceFile.getExportedDeclarations()) {
-    const declaration = declarations[0];
-    if (!declaration) continue;
-
-    // Only count functions physically declared in THIS file. `getExportedDeclarations`
-    // resolves `export *` / `export { x } from './y'` re-exports to their origin, which would
-    // otherwise attribute every re-exported function to the re-exporting file — e.g. the
-    // `packages/sdk/src/*.ts` barrels would each be asked to colocate tests for the entire SDK.
-    // A re-exported function is tested where it is declared, not where it is forwarded.
-    if (declaration.getSourceFile().getFilePath().replaceAll('\\', '/') !== normalizedAbsPath) continue;
-
-    if (
-      Node.isFunctionDeclaration(declaration) ||
-      Node.isFunctionExpression(declaration) ||
-      Node.isArrowFunction(declaration)
-    ) {
-      names.push(name);
-    } else if (Node.isVariableDeclaration(declaration)) {
-      const initializer = declaration.getInitializer();
-      if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
-        names.push(name);
-      }
-    }
-  }
-
-  return names.sort();
 }
 
 function pct(n: number, d: number): string {
