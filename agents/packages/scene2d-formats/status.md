@@ -8,6 +8,97 @@ by: builder
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-03 — Rive: consolidated insight record
+
+Everything from the Rive build worth carrying forward, in one place. The entries below this one are
+the chronology; this is what a fresh agent needs before touching `rive*.ts`.
+
+### The corpus, and how to speak about it
+
+**37 real files.** Fetching Rive's Flutter example assets yields 41 paths, four of which are **Git LFS
+pointers** — 131-byte text files beginning `version https://`, which the importer correctly rejects as
+not-a-Rive-file. Any count must say 37. Corpora are fetched on demand and deleted, never committed.
+
+**Corpus-first is not optional here, it is the only thing that worked.** The container passed 30
+synthetic tests while unable to open a single real `.riv`. Every serious defect in this codec — the
+property-width table, the alternate wire codes, unnamed state machines, UTF-8-mangled asset payloads —
+was found by a real file and none by a fixture. A synthetic test encodes the same guess as the parser,
+so it can only confirm the guess.
+
+### Measurement discipline, learned the hard way twice
+
+**A measurement is only as good as the space it was taken in.** I recorded "83 of 96 draw rules cross a
+parent boundary" and used it to argue the ordering model could not serve Rive. It was counted in the
+**component tree**; ordering permutes the **display tree**, and the two disagree, because a component
+whose parent is not itself a display node reparents up to the nearest one. Measured through the real
+import path: of 61 rules, **33 honored, 13 cross-parent, 15 naming a non-display end**. The honorable
+case is the majority. Both counts were honest; one counted the wrong tree.
+
+**Verify an id's addressing before building on it.** Three id conventions here were guesses that had to
+be checked against every instance, and two came out against the obvious reading:
+- `assetId` is a **position** in the asset list, not the id an asset states — positional resolves all
+  61 image references, stated resolves none.
+- Solo's `activeComponentId` (296) **is** a component index — all 9 resolve to a component whose parent
+  is the Solo itself.
+- **Four id spaces do not interchange**: `parentId`→components, `interpolatorId`→all artboard objects,
+  `assetId`→asset list by order, `styleId`→components.
+
+**When a fresh ad-hoc probe contradicts a shipped corpus-verified result, suspect the probe.** It cost
+a false alarm on component numbering once, and a wrong `Shape.data.graphics.drawPaths` reading later
+(the real payload is `data.commands`, a flat token buffer). Dump the keys before concluding.
+
+### Format facts that are not guessable from the spec
+
+- The **table of contents is a supplement, not the source of property widths** — a built-in width table
+  is required, plus the alternate codes (keys 9 and 13) which fixed 11 files on their own.
+- ToC field codes are 2 bits packed **four to a 32-bit word**, using only that word's low byte.
+- `StateMachine` extends `Animation`, so its name is key **55**, not the component's 138. Reading 138
+  leaves every state machine unnamed.
+- Text and blob payloads **share one wire code**; asset bytes must be kept whole rather than UTF-8
+  decoded, which is what `isRiveCoreBytesProperty` exists for.
+- Rive states rotation in **radians**; `Node2D.rotation` is degrees.
+- Rive's placement enum: **0 = before, 1 = after** the target.
+- A `DrawRules` governs the node it is **parented to**, so the association needs no extra id.
+- A `ClippingShape` clips **its parent**, not its children.
+
+### The remaining gaps, ranked, and what kind of thing each is
+
+Ranked by share of the 37 real files (full table in [coverage](../../scene2d-format-coverage.md)):
+rigging 57%, layout 30%, constraints 30%, data binding 22%, variable-font axes 19%, feather 5%,
+mesh 3%. Cross-checked against animation, which ranks identically: of 3,503 keyed objects (0
+unresolved), **369 target bones and 53 target layout — rigging alone is 10.5% of all animation**, every
+other unread family under 2%.
+
+The ranking matters less than the **kind** of each:
+
+- **Rigging is the gap**, not one of seven. It is blocked on a decision, not on effort.
+- **Layout, constraints, and data binding are runtime _systems_, not document data.** Rive ships a
+  layout engine, IK solvers, and a view-model binding runtime. Whether a format importer should grow
+  those is a scope ruling, and reading the objects without the systems buys nothing.
+- **Feather belongs to the effects tier**, not here.
+- **Variable-font axes** is the one unblocked item of real size: 19% of files, and it fits inside the
+  existing text seam without crossing a boundary.
+
+### The rigging gap is *not* the skeleton2d gap — the sharpest thing to know
+
+`skeleton2d` already models bone weights: `Skin2D` carries `influenceCounts` / `influences` per vertex
+on a `MeshAttachment2D`. So Flight **has** weights-on-a-triangle-mesh. Rive weights **bezier path
+control points** (`Weight`, `CubicWeight` on vertices, with `Tendon` / `Skin` / `RootBone`). That is a
+different primitive, not a missing feature of the same one.
+
+So closing skeleton2d's own gaps would **not** unblock Rive, and the open charter direction is narrower
+than "build skinning": it is *where a second weight carrier lives* — a `skeleton2d` attachment kind, a
+`path` capability, or a new primitive. Stating it as "Rive needs skinning" invites the wrong fix.
+
+### What silence costs, and where it is spent
+
+Two Rive shortfalls are applied rather than reported, because both were **visible wrongness** rather
+than missing features: `Solo` drew every variant stacked (61 hidden across the corpus once fixed), and
+draw rules were dropped silently. Everything genuinely unrepresentable is crumbed instead —
+`rive.draw-rule-crosses-parent` for a rule that would need reparenting out of a compositing group,
+`rive.solo-unresolved-active`, `rive.draw-rule-unresolved`. The test for which: if a correct file from
+Rive's own editor produces it, it is a crumb; if it is our incompleteness, it belongs in coverage.
+
 ## 2026-08-03 — Rive Solo fixed; the remaining gaps ranked by what real files actually use
 
 **Solo was a visible wrongness, not a missing feature.** A `Solo` shows exactly one child at a time
