@@ -4,6 +4,9 @@ import type { Vector3 } from './Vector3';
 // Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its
 // facing normal, `right`/`up` its half-extent axes (length encodes half-width/half-height) in
 // world space.
+//
+// Shadow fields are reserved intent for a future area-shadow pass. Current scene3d-gl and
+// scene3d-wgpu render area lighting without shadows; setting those four fields has no rendering effect.
 export interface AreaLight extends Light {
   castsShadow: boolean;
   color: number;

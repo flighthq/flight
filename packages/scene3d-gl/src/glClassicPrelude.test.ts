@@ -185,6 +185,7 @@ describe('getGlClassicFragmentSourceForKey', () => {
     // The shared light block already declares the shadow uniforms + sampleDirectionalShadow; the classic
     // path multiplies its directional contribution by that factor, matching the PBR family.
     expect(source).toContain('sampleDirectionalShadow(v_worldPosition, geometricNormal)');
+    expect(source.match(/float sampleDirectionalShadow\(vec3 worldPos, vec3 geometricNormal\)/g)).toHaveLength(1);
     // Exactly one call — point/spot/ambient stay unshadowed, so the helper appears once in main().
     expect(source.match(/sampleDirectionalShadow\(v_worldPosition, geometricNormal\)/g)).toHaveLength(1);
   });

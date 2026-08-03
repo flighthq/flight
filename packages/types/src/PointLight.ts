@@ -7,6 +7,9 @@ import type { Vector3 } from './Vector3';
 // One exception, and it is the document stage only: inside a `Scene3DDocumentLight` this sits at the local
 // origin and the document light's `transform` carries the placement, per that type's placement convention.
 // Anything a renderer consumes — `Scene3DLights`, `packScene3DLightBlock` — is world-space.
+//
+// Shadow fields are reserved intent for a future cube-map shadow pass. Current scene3d-gl and
+// scene3d-wgpu render point lighting without shadows; setting those four fields has no rendering effect.
 export interface PointLight extends Light {
   castsShadow: boolean;
   color: number;

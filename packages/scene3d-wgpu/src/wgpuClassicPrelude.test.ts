@@ -197,6 +197,7 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(source).toContain('@group(3) @binding(0) var<uniform> shadow : Shadow;');
     expect(source).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d;');
     expect(source).toContain('@group(3) @binding(2) var shadowSampler : sampler_comparison;');
+    expect(source.match(/fn sampleDirectionalShadow\(worldPos : vec3f, geometricNormal : vec3f\)/g)).toHaveLength(1);
     // The whole directional contribution is scaled by the PCF factor; ambient stays unshadowed.
     expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)');
     expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition, geometricNormal\)/g)).toHaveLength(1);

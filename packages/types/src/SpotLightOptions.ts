@@ -1,5 +1,7 @@
 import type { Vector3Like } from './Vector3';
 
+// Shadow options are retained as future spot-shadow intent only. Current scene3d-gl/scene3d-wgpu
+// spot lights do not consume castsShadow, normalBias, pcfRadius, or shadowBias.
 export interface SpotLightOptions {
   castsShadow?: boolean;
   color?: number;
