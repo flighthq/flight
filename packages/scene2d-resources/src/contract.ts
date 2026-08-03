@@ -1,4 +1,5 @@
 export * from './builtInScene2DDocumentImporters';
+export * from './loadScene2DAudioResources';
 export * from './loadScene2DImageResources';
 export * from './resolveScene2DResources';
 export * from './scene2DDocument';
