@@ -15,6 +15,7 @@ import {
   createPhysics2DSolverConfig,
   createPhysics2DWorld,
   createRigidBody2D,
+  hydratePhysics2DWorld,
   invalidatePhysics2DCollider,
   isPhysics2DPairOrdered,
   removePhysics2DBody,
@@ -24,6 +25,7 @@ import {
   setPhysics2DBodySleepEnabled,
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
+  Physics2DWorldVersion,
 } from './world';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
@@ -324,6 +326,52 @@ describe('findPhysics2DBody', () => {
     removePhysics2DBody(world, first);
     expect(findPhysics2DBody(world, first.index)).toBeNull();
     expect(world.bodyByIndex.has(first.index)).toBe(false);
+  });
+});
+
+describe('hydratePhysics2DWorld', () => {
+  it('upgrades pre-CCD body and solver records with canonical defaults', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const legacyWorld = world as unknown as {
+      version?: number;
+      config: { continuousCollision?: boolean; maxCcdSubsteps?: number };
+    };
+    const legacyBody = body as unknown as {
+      bullet?: boolean;
+      fixedRotation?: boolean;
+      sleepEnabled?: boolean;
+    };
+    delete legacyWorld.version;
+    delete legacyWorld.config.continuousCollision;
+    delete legacyWorld.config.maxCcdSubsteps;
+    delete legacyBody.bullet;
+    delete legacyBody.fixedRotation;
+    delete legacyBody.sleepEnabled;
+
+    expect(hydratePhysics2DWorld(world)).toBe(true);
+
+    expect(world.version).toBe(Physics2DWorldVersion);
+    expect(world.config.continuousCollision).toBe(true);
+    expect(world.config.maxCcdSubsteps).toBe(8);
+    expect(body.bullet).toBe(false);
+    expect(body.fixedRotation).toBe(false);
+    expect(body.sleepEnabled).toBe(true);
+    expect(() => stepPhysics2D(world, 1 / 60)).not.toThrow();
+  });
+
+  it('preserves current values and rejects unknown future versions', () => {
+    const current = createPhysics2DWorld();
+    current.config.continuousCollision = false;
+    current.config.maxCcdSubsteps = 2;
+    expect(hydratePhysics2DWorld(current)).toBe(true);
+    expect(current.config.continuousCollision).toBe(false);
+    expect(current.config.maxCcdSubsteps).toBe(2);
+
+    const future = createPhysics2DWorld();
+    future.version = Physics2DWorldVersion + 1;
+    expect(hydratePhysics2DWorld(future)).toBe(false);
+    expect(future.version).toBe(Physics2DWorldVersion + 1);
   });
 });
 

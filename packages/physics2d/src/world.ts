@@ -238,6 +238,7 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
 // adds no second one over it.
 export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend): Physics2DWorld {
   return {
+    version: Physics2DWorldVersion,
     bodies: [],
     bodyByIndex: new Map(),
     contacts: [],
@@ -308,6 +309,34 @@ export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: numbe
 // the lookup that turns one back into the other.
 export function findPhysics2DBody(world: Readonly<Physics2DWorld>, index: number): RigidBody2D | null {
   return world.bodyByIndex.get(index) ?? null;
+}
+
+// Upgrades the serializable fields of an otherwise reconstructed legacy world in place. Runtime-owned
+// structures (the spatial index, maps, registries, and solve workspace) are deliberately outside this
+// seam: a format layer reconstructs those capabilities before handing the live record here. Missing
+// version means the pre-CCD body/config layout. Unknown future versions fail closed rather than being
+// partially downgraded by a runtime that cannot know their semantics.
+export function hydratePhysics2DWorld(world: Physics2DWorld): boolean {
+  assertPhysics2DWorldNotStepping(world);
+  const serializedVersion = (world as unknown as { version?: unknown }).version;
+  const version = serializedVersion === undefined ? 0 : serializedVersion;
+  if (!Number.isSafeInteger(version) || (version as number) < 0 || (version as number) > Physics2DWorldVersion) {
+    return false;
+  }
+  if (version === Physics2DWorldVersion) return true;
+
+  const defaults = createPhysics2DSolverConfig();
+  if (world.config.continuousCollision === undefined) {
+    world.config.continuousCollision = defaults.continuousCollision;
+  }
+  if (world.config.maxCcdSubsteps === undefined) world.config.maxCcdSubsteps = defaults.maxCcdSubsteps;
+  for (const body of world.bodies) {
+    if (body.fixedRotation === undefined) body.fixedRotation = false;
+    if (body.bullet === undefined) body.bullet = false;
+    if (body.sleepEnabled === undefined) body.sleepEnabled = true;
+  }
+  world.version = Physics2DWorldVersion;
+  return true;
 }
 
 // Rebuilds everything derived from a collider after its authored shape, material, filter, or sensor
@@ -571,3 +600,5 @@ function _wakePhysics2DBodyFromTopology(body: RigidBody2D): void {
   body.sleeping = false;
   body.sleepTimer = 0;
 }
+
+export const Physics2DWorldVersion = 1;
