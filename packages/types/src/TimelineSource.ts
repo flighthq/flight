@@ -1,4 +1,5 @@
 import type { Node2D } from './Node2D';
+import type { TimelineCue } from './TimelineCue';
 import type { TimelineLabel } from './TimelineLabel';
 
 // What a Timeline plays. A `TimelineSource` is the output of a "format" — hand-authored keyframes
@@ -9,6 +10,12 @@ import type { TimelineLabel } from './TimelineLabel';
 export interface TimelineSource {
   readonly totalFrames: number;
   readonly labels: readonly TimelineLabel[];
+  // Edge-triggered cues the format authored onto frames — sounds, playhead commands, user-defined kinds.
+  // Distinct from `constructFrame` because a cue is not idempotent and not seek-safe: it describes what
+  // *entering* a frame does, not what the frame is. Nothing fires unless a handler is registered for the
+  // kind, so a document imported for its artwork alone costs nothing here. Ordered by `frame`; a source
+  // with no authored cues carries an empty array rather than null, so callers never branch on absence.
+  readonly cues: readonly TimelineCue[];
   // Frames-per-second hint, or null to advance one frame per update (driven by the host loop's cadence).
   readonly frameRate: number | null;
   // Realizes the FULL display state for `frame` (1-based) onto `target`. Called by the engine on frame

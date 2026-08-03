@@ -509,6 +509,9 @@ function createSwfTimelineSource(
   return {
     totalFrames: frames.length,
     labels,
+    // Authored cues (sounds, playhead commands) are not recovered yet; the tag walk still folds
+    // recognized frame actions into an opaque FrameScript. See agents/timeline-cue-model.md.
+    cues: [],
     frameRate,
     constructFrame(target: Node2D, frame: number): void {
       const entries = frames[frame - 1];
