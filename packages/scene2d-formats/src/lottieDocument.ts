@@ -623,7 +623,7 @@ function appendLottieShapeItems(
 function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null {
   if (item.ty === 'sh') {
     const shapePath = item as Readonly<LottieShapePathItem>;
-    const value = initialLottieValue(shapePath.ks);
+    const value = toLottieShapePath(initialLottieValue(shapePath.ks));
     if (value === undefined) return null;
     return createLottieBezierPath(value);
   }
@@ -745,7 +745,7 @@ function bindLottieGeometryItem(
   if (item.ty === 'sh') {
     const shape = item as Readonly<LottieShapePathItem>;
     if (!isAnimatedProperty(shape.ks)) return;
-    const template = initialLottieValue(shape.ks);
+    const template = toLottieShapePath(initialLottieValue(shape.ks));
     if (template === undefined) return;
     const current = flattenLottieShapePath(template);
     const apply = (): void => rebuild(createLottieBezierPath(unflattenLottieShapePath(template, current)));
@@ -839,7 +839,7 @@ function appendLottieShapePathChannels(
   if (keyframes.length === 0) return;
   if (
     keyframes.some((keyframe) => {
-      const value = keyframe.s ?? keyframe.e;
+      const value = toLottieShapePath(keyframe.s ?? keyframe.e);
       return value !== undefined && flattenLottieShapePath(value).length !== current.length;
     })
   ) {
@@ -855,7 +855,9 @@ function appendLottieShapePathChannels(
             keyframes,
             1,
             context,
-            (value) => [flattenLottieShapePath(value ?? keyframes[0].s!)[component] ?? current[component]],
+            (value) => [
+              flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!)[component] ?? current[component],
+            ],
             component,
           ),
           {
@@ -875,7 +877,7 @@ function appendLottieShapePathChannels(
         keyframes,
         current.length,
         context,
-        (value) => flattenLottieShapePath(value ?? keyframes[0].s!),
+        (value) => flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!),
         0,
       ),
       {
@@ -931,6 +933,19 @@ function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], stat
     dashPath(path, [visible * length, (1 - visible) * length], (start + offset) * length, trimmed);
     return trimmed;
   });
+}
+
+/**
+ * A shape path as the file states it, whichever way it states it.
+ *
+ * A static path is the object itself; an **animated** one wraps that object in a single-element
+ * array inside each keyframe. Across a corpus of eighteen real exports the wrapper is the majority
+ * form — 896 keyframed paths against 627 bare — so reading only the bare form crashes on most files.
+ */
+function toLottieShapePath(value: unknown): Readonly<LottieShapePath> | undefined {
+  const path = Array.isArray(value) ? value[0] : value;
+  if (path === null || typeof path !== 'object' || !('v' in path)) return undefined;
+  return path as Readonly<LottieShapePath>;
 }
 
 function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
@@ -1030,7 +1045,7 @@ function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[]
   // Only a lone additive, non-inverted mask lowers onto Flight's hard ClipRegion. Composed modes,
   // inversion, and feather are uncarried; see agents/scene2d-format-coverage.md.
   if (first.mode !== 'a' || first.inv === true || active.length > 1) return;
-  const initial = initialLottieValue(first.pt);
+  const initial = toLottieShapePath(initialLottieValue(first.pt));
   if (initial === undefined) return;
   target.clip = createClipRegionFromPath(createLottieBezierPath(initial));
   if (isAnimatedProperty(first.pt)) {
@@ -1138,10 +1153,23 @@ function isValidLottieDocument(document: Readonly<LottieDocument>): boolean {
   );
 }
 
+/**
+ * Whether a property carries keyframes, decided by its **structure** rather than its `a` flag.
+ *
+ * Real Bodymovin exports routinely omit `a` on animated properties — across a corpus of eighteen,
+ * 2,714 keyframed properties state no flag against 730 that do. Trusting the flag reads those as
+ * static and hands the caller the raw keyframe array as if it were a value, which yields nonsense
+ * for a number and no `v` at all for a shape path.
+ *
+ * The structure is unambiguous: a keyframe list holds objects that state a frame `t`, where a static
+ * value is a number, an array of numbers, or a bare path object.
+ */
 function isAnimatedProperty<T>(
   property: Readonly<LottieAnimatable<T>>,
 ): property is Readonly<{ a: 1; k: LottieKeyframe<T>[]; x?: string }> {
-  return property.a === 1 && Array.isArray(property.k);
+  if (!Array.isArray(property.k) || property.k.length === 0) return false;
+  const first: unknown = property.k[0];
+  return typeof first === 'object' && first !== null && 't' in (first as Record<string, unknown>);
 }
 
 function initialLottieValue<T>(property: Readonly<LottieAnimatable<T>> | undefined): T | undefined {

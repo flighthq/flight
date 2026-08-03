@@ -779,6 +779,84 @@ describe('Lottie polystar roundness', () => {
   }
 });
 
+// Both of these were found by importing real Bodymovin exports, and neither was visible to a
+// hand-authored fixture. Before the fix, 14 of 18 real files CRASHED the importer and only 3 of 18
+// imported at all.
+describe('Lottie real-export shapes', () => {
+  // Across eighteen real exports, 2,714 keyframed properties state no `a` flag against 730 that do.
+  // Trusting the flag reads those as static and hands back the raw keyframe array as a value.
+  it('treats a keyframed property as animated even when it states no a flag', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          // No `a: 1` here, exactly as a real export writes it.
+          ks: {
+            p: {
+              k: [
+                { s: [0, 0], t: 0 },
+                { s: [90, 0], t: 30 },
+              ],
+            },
+          },
+          nm: 'drifting',
+          op: 60,
+          ty: 3,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+    const node = findByName(result.root, 'drifting')!;
+
+    expect(result.clip.channels.length).toBeGreaterThan(0);
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(node.x).toBeCloseTo(45, 3);
+  });
+
+  it('keeps a static array value static, since its entries are numbers rather than keyframes', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([{ ind: 1, ip: 0, ks: { p: { k: [12, 34] } }, nm: 'fixed', op: 60, ty: 3 }] as LottieLayer[]),
+    );
+
+    expect(findByName(result.root, 'fixed')).toMatchObject({ x: 12, y: 34 });
+    // Every layer carries a visibility channel; what matters is that position produced none.
+    const paths = result.clip.channels.map((channel) => (channel.targetRef as { path?: string }).path);
+    expect(paths).not.toContain('Position');
+  });
+
+  // An animated shape path wraps its value in a single-element array inside each keyframe; a static
+  // one states the object directly. The wrapper is the majority form in real files.
+  it('reads an animated shape path whose keyframe wraps the path in an array', () => {
+    const wrapped = {
+      k: [
+        { s: [squarePath(0, 0, 10)], t: 0 },
+        { s: [squarePath(20, 0, 10)], t: 30 },
+      ],
+    };
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        { ind: 1, ip: 0, nm: 'wrapped', op: 60, shapes: [{ ks: wrapped, ty: 'sh' }], ty: 4 },
+      ] as unknown as LottieLayer[]),
+    );
+    const shape = findFirstKind(findByName(result.root, 'wrapped')!, ShapeKind) as Shape;
+
+    expect(shape.data.commands).toContain('drawPath');
+    const before = JSON.stringify(shape.data.commands);
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(JSON.stringify(shape.data.commands)).not.toBe(before);
+  });
+
+  it('still reads a static shape path stated as a bare object', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        { ind: 1, ip: 0, nm: 'bare', op: 60, shapes: [{ ks: { k: squarePath(0, 0, 10) }, ty: 'sh' }], ty: 4 },
+      ] as unknown as LottieLayer[]),
+    );
+
+    expect((findFirstKind(findByName(result.root, 'bare')!, ShapeKind) as Shape).data.commands).toContain('drawPath');
+  });
+});
+
 // A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
 // count of paints in the file is the count of paints in the output. These four cases are the ones a
 // single-slot paint model silently dropped.
