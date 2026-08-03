@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-02
+updated: 2026-08-03
 ---
 
 # swf status
@@ -276,3 +276,20 @@ defect above; its exact revision,
 MIT license, source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
 [`fixture-evidence.md`](fixture-evidence.md). The external binary is not committed, and the hermetic
 test suite reproduces its zero-bit RECT compatibility case synthetically.
+
+## Known gaps
+
+Two, both real, and neither is a matter of effort alone.
+
+**No visual coverage lives in this repo.** Everything above is verified as *structure* — node kinds, command
+streams, bounds, cue payloads, byte-exact resource extraction — and none of it as pixels. SWF output has
+been rasterized by a downstream consumer, on Canvas and WebGL, so the path demonstrably works; what does not
+exist is a functional render target here that would catch a regression. Until one exists, a change that
+keeps every assertion green can still change what a file looks like. Adding one crosses into `functional/`
+and the capture tooling, which is why it has not been done in passing.
+
+**`DefineButtonSound` is unimplemented and blocked on a design decision.** It attaches sounds to a button's
+pointer-state transitions, and a button imports here as a one-frame timeline of its up state — there is no
+interaction state machine for those transitions to attach to, and a frame cue is the wrong shape because
+they do not fire on entering a frame. See [`tag-coverage.md`](tag-coverage.md). Nothing else in the audio
+surface is missing: event sounds, stream sounds, and both trigger tags are carried.

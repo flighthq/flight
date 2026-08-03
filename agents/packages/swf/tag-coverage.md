@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-02
+updated: 2026-08-03
 ---
 
 # swf — tag coverage
@@ -34,6 +34,10 @@ rare in the wild.
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
 | `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
+| `DefineScalingGrid` | A `Scale9Shape` when the sprite it names is a wrapper around one shape; see below | — |
+| `DefineSound` | An `AudioResourceReference` on the document, tagged with the format's media type | 2 |
+| `StartSound`, `StartSound2` | A `TimelineAudioCue` on the frame that carries it | 2 / — |
+| `SoundStreamHead`, `2`, `SoundStreamBlock` | One concatenated payload plus a `TimelineStreamAudioCue` on the frame the stream starts | 2 |
 
 ## Deliberately carried no further
 
@@ -46,11 +50,63 @@ These are read past. Each is a decision, not an oversight.
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
 | `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 7 |
-| `DefineSound`, `SoundStreamHead`, `2`, `SoundStreamBlock`, `StartSound` | Audio is not scene-graph content. A `Scene2DDocument` holds a 2D graph; routing sound into `@flighthq/audio` is a separate contract. | 2 / 2 |
 | `DefineBinaryData` | Arbitrary embedded bytes with no display meaning. | 2 |
 | `VideoFrame` | Video payload frames; the stream's extents are already carried. | 1 |
 | `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 |
-| `Protect`, `SetTabIndex`, `DefineScalingGrid`, `DefineButtonSound`, `DefineButtonCxform` | Absent from the corpus. `DefineScalingGrid` has an obvious Flight home in `scale9Shape` and is the most likely of these to earn support. | — |
+| `Protect`, `SetTabIndex`, `DefineButtonCxform` | Authoring and player metadata with no scene content. | — |
+| `DefineButtonSound` | **Unimplemented, and blocked on a design decision rather than on effort.** It attaches sounds to a button's *state transitions* — roll out, roll over, press, release. A button imports as a one-frame timeline of its up state, so there is no interaction state machine for those transitions to hang on, and a frame cue would be the wrong shape: these fire on pointer state, not on entering a frame. Carrying them needs an interaction-state concept this package cannot invent alone. | — |
+
+## What a sound becomes
+
+Audio is not scene-graph content, and none of it is on the graph. A sound's **bytes** become an
+`AudioResourceReference` in `Scene2DDocument.audioResources`, on exactly the image lane's terms; a sound's
+**trigger** becomes a cue on the `TimelineSource` that carried it. Nothing plays: a cue is authored data
+that only a registered handler acts on.
+
+Three things worth knowing before touching this:
+
+- **Every format is tagged, including the ones nothing can decode yet.** MP3 becomes `audio/mpeg`. The
+  formats with no registered media type take a vendor one carrying the parameters their bitstreams omit —
+  `audio/vnd.adobe.swf-adpcm; rate=22050; channels=1; bits=16` — because ADPCM, Nellymoser and raw PCM
+  cannot be decoded without a rate and channel count, and a null type is indistinguishable from bytes
+  nobody identified. A decoder registers against the type's essence, so one registration serves every
+  parameter combination. An MP3 payload's leading seek offset is not part of the bitstream and is skipped.
+- **One sound is one `AudioResource`, shared by every cue that names it.** A sound cued from forty frames
+  is forty cues holding the same resource, so it decodes once and all forty are live together. Concurrent
+  sounds are separate cues on one frame, never several resources on one reference.
+- **A trigger can precede the sound it names**, by character id or by class. In/out points are counted in
+  the sound's own samples and envelope points in 44.1kHz samples whatever the sound's rate, so the
+  conversion to seconds runs as a post-pass once every sound and every `SymbolClass` binding is known.
+
+Stream sounds are a separate cue kind from event sounds, because the two need opposite seek behaviour and
+`dispatchOnSeek` is registered per kind: scrubbing past an event sound must not fire it, while scrubbing a
+stream must resync it.
+
+## When a scaling grid becomes a nine-slice shape
+
+`DefineScalingGrid` hangs the grid on a *sprite*, but Flight's nine-slice lives on the shape whose commands
+get remapped. The two meet only where the sprite is a wrapper: one frame placing one unnamed, unmasked
+shape at identity, which is what an authoring tool emits when a designer sets `scale9Grid` on artwork. That
+sprite collapses into a single `Scale9Shape`. A grid on a multi-frame or multi-layer sprite is dropped
+rather than misapplied, because it describes a composition no single command stream can carry.
+
+## A second corpus, not in this repo
+
+The `Files` column above counts the 306-file Ruffle corpus, which is synthetic and thin on audio, buttons,
+and production-scale artwork. The audio and scaling-grid work was driven instead by a 427-file corpus of
+real authored content, which is **not committed and not redistributable** — it is fetched into a gitignored
+directory. Treat the following as observations that shaped the design rather than as a fixture anyone can
+re-run:
+
+| Observed | Count |
+| --- | --- |
+| `DefineSound` characters | 959, of which 956 MP3, 2 ADPCM, 1 Nellymoser |
+| Sounds no `StartSound` ever triggers | 264 — and all 264 are `ExportAssets`-named, which is why a reference carries `name` |
+| `StartSound` triggers | 2051, of which 132 are stops, 231 carry envelopes, 181 carry in/out points |
+| Envelope points setting the channels apart | 211 of 583, which is why an envelope point is stereo |
+| `SoundStreamHead2` tags declaring no samples | 53,740 of 53,755 — an authoring tool writes an empty one into nearly every sprite |
+| `DefineScalingGrid` target sprites that are single-shape wrappers | 634 of 634 |
+| `DefineButtonSound`, `StartSound2` | 0 — neither appears, so neither is corpus-verified |
 
 ## Edit text markup
 
