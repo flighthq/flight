@@ -110,26 +110,34 @@ process.exit(checkMode ? 1 : 0);
 function applyConcerns(filePath: string, sourceText: string): { labels: string[]; text: string } {
   const labels: string[] = [];
   let text = sourceText;
+  const packageSource = isPackageSource(filePath);
+  const statementKind = filePath.endsWith('.test.ts') || filePath.endsWith('.test.tsx') ? 'describe' : 'export';
+  const needsImports = /^\s*import(?:\s|['"])/m.test(sourceText);
+  const needsStatements =
+    packageSource &&
+    (statementKind === 'describe'
+      ? /\bdescribe\s*\(/.test(sourceText)
+      : /\bexport\s+(?:(?:default|declare|async)\s+)*(?:function|const|let|var)\b/.test(sourceText));
+  if (!needsImports && !needsStatements) return { labels, text };
 
-  const sortedImports = sortImports(filePath, text);
-  if (sortedImports !== text) {
-    labels.push('imports');
-    text = sortedImports;
+  let body = parseTopLevel(filePath, text);
+  if (body === null) return { labels, text };
+
+  if (needsImports) {
+    const sortedImports = sortImports(text, body);
+    if (sortedImports !== text) {
+      labels.push('imports');
+      text = sortedImports;
+      body = parseTopLevel(filePath, text);
+      if (body === null) return { labels, text };
+    }
   }
 
-  if (isPackageSource(filePath)) {
-    if (filePath.endsWith('.test.ts') || filePath.endsWith('.test.tsx')) {
-      const sorted = sortStatements(filePath, text, 'describe');
-      if (sorted !== text) {
-        labels.push('describe blocks');
-        text = sorted;
-      }
-    } else {
-      const sorted = sortStatements(filePath, text, 'export');
-      if (sorted !== text) {
-        labels.push('exported functions');
-        text = sorted;
-      }
+  if (needsStatements) {
+    const sorted = sortStatements(text, body, statementKind);
+    if (sorted !== text) {
+      labels.push(statementKind === 'describe' ? 'describe blocks' : 'exported functions');
+      text = sorted;
     }
   }
 
@@ -217,10 +225,7 @@ function isStringLiteral(node: Node): boolean {
 // by source, with one blank line between groups and none within. Comments attached directly above an
 // import (no blank line between) travel with it. Returns the input unchanged if nothing moves or the
 // file cannot be parsed cleanly.
-function sortImports(filePath: string, sourceText: string): string {
-  const body = parseTopLevel(filePath, sourceText);
-  if (body === null) return sourceText;
-
+function sortImports(sourceText: string, body: readonly Node[]): string {
   const runs: Array<[number, number]> = [];
   for (let i = 0; i < body.length; ) {
     if (body[i].type === 'ImportDeclaration') {
@@ -268,10 +273,7 @@ function sortImports(filePath: string, sourceText: string): string {
 // Alphabetizes either exported-function statements or top-level describe blocks, preserving the
 // separators (blank lines, interleaved non-sortable statements) between them. Each sortable
 // statement moves together with the comment lines attached directly above it.
-function sortStatements(filePath: string, sourceText: string, kind: 'describe' | 'export'): string {
-  const body = parseTopLevel(filePath, sourceText);
-  if (body === null) return sourceText;
-
+function sortStatements(sourceText: string, body: readonly Node[], kind: 'describe' | 'export'): string {
   const fullStartOf = new Map<Node, number>();
   let prevEnd = 0;
   for (const statement of body) {

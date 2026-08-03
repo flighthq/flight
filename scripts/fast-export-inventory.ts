@@ -2,13 +2,20 @@ import { existsSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { BindingPattern, Declaration, ModuleExportName } from 'oxc-parser';
+import type { BindingPattern, Declaration, ModuleExportName, VariableDeclarator } from 'oxc-parser';
 
 import { getParsedOxcSource } from './oxc-source';
 
 export interface FastEntryPointInventory {
+  functions: ReadonlyMap<string, readonly FastFunctionInfo[]>;
   names: ReadonlySet<string>;
   valueNames: ReadonlySet<string>;
+}
+
+export interface FastFunctionInfo {
+  parameters: string;
+  returnType: string | null;
+  sourcePath: string;
 }
 
 interface ImportBinding {
@@ -30,7 +37,8 @@ interface ExportRule {
 
 interface ModuleDescriptor {
   imports: Map<string, ImportBinding>;
-  inventory: { names: Set<string>; valueNames: Set<string> };
+  inventory: { functions: Map<string, readonly FastFunctionInfo[]>; names: Set<string>; valueNames: Set<string> };
+  localFunctions: Map<string, FastFunctionInfo[]>;
   localValues: Set<string>;
   path: string;
   rules: ExportRule[];
@@ -85,11 +93,13 @@ function addDescriptor(filePath: string): ModuleDescriptor {
 
   const parsed = getParsedOxcSource(filePath);
   const imports = new Map<string, ImportBinding>();
+  const localFunctions = new Map<string, FastFunctionInfo[]>();
   const localValues = new Set<string>();
   const rules: ExportRule[] = [];
   const descriptor: ModuleDescriptor = {
     imports,
-    inventory: { names: new Set(), valueNames: new Set() },
+    inventory: { functions: new Map(), names: new Set(), valueNames: new Set() },
+    localFunctions,
     localValues,
     path: filePath,
     rules,
@@ -99,8 +109,10 @@ function addDescriptor(filePath: string): ModuleDescriptor {
   for (const statement of parsed.program.body) {
     if (statement.type === 'ExportNamedDeclaration' && statement.declaration !== null) {
       addDeclarationValues(statement.declaration, localValues);
+      addDeclarationFunctions(statement.declaration, filePath, parsed.text, localFunctions);
     } else if (isValueDeclaration(statement)) {
       addDeclarationValues(statement, localValues);
+      addDeclarationFunctions(statement, filePath, parsed.text, localFunctions);
     } else if (statement.type === 'ExportDefaultDeclaration') {
       const declaration = statement.declaration;
       if (
@@ -108,6 +120,17 @@ function addDescriptor(filePath: string): ModuleDescriptor {
         declaration.id !== null
       ) {
         localValues.add(declaration.id.name);
+        if (declaration.type === 'FunctionDeclaration')
+          addFunctionInfo(
+            localFunctions,
+            declaration.id.name,
+            filePath,
+            parsed.text,
+            declaration.params,
+            declaration.returnType,
+          );
+      } else if (declaration.type === 'FunctionDeclaration') {
+        addFunctionInfo(localFunctions, 'default', filePath, parsed.text, declaration.params, declaration.returnType);
       }
     }
   }
@@ -155,6 +178,64 @@ function addSet(target: Set<string>, source: ReadonlySet<string>, excludeDefault
   return changed;
 }
 
+function addDeclarationFunctions(
+  declaration: Declaration,
+  filePath: string,
+  sourceText: string,
+  functions: Map<string, FastFunctionInfo[]>,
+): void {
+  if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
+    if (declaration.id !== null)
+      addFunctionInfo(functions, declaration.id.name, filePath, sourceText, declaration.params, declaration.returnType);
+  } else if (declaration.type === 'VariableDeclaration') {
+    for (const variable of declaration.declarations) addVariableFunction(variable, filePath, sourceText, functions);
+  }
+}
+
+function addFunctionInfo(
+  functions: Map<string, FastFunctionInfo[]>,
+  name: string,
+  sourcePath: string,
+  sourceText: string,
+  parameters: readonly { start: number; end: number }[],
+  annotation: { typeAnnotation: { start: number; end: number } } | null | undefined,
+): void {
+  const info = {
+    parameters: parameters.map((parameter) => sourceText.slice(parameter.start, parameter.end)).join(', '),
+    returnType:
+      annotation === null || annotation === undefined
+        ? null
+        : sourceText.slice(annotation.typeAnnotation.start, annotation.typeAnnotation.end),
+    sourcePath,
+  };
+  const existing = functions.get(name);
+  if (existing === undefined) functions.set(name, [info]);
+  else if (
+    !existing.some(
+      (item) =>
+        item.parameters === info.parameters &&
+        item.returnType === info.returnType &&
+        item.sourcePath === info.sourcePath,
+    )
+  )
+    existing.push(info);
+}
+
+function addVariableFunction(
+  variable: VariableDeclarator,
+  filePath: string,
+  sourceText: string,
+  functions: Map<string, FastFunctionInfo[]>,
+): void {
+  if (
+    variable.id.type !== 'Identifier' ||
+    variable.init === null ||
+    (variable.init.type !== 'ArrowFunctionExpression' && variable.init.type !== 'FunctionExpression')
+  )
+    return;
+  addFunctionInfo(functions, variable.id.name, filePath, sourceText, variable.init.params, variable.init.returnType);
+}
+
 function exportName(name: ModuleExportName | { kind: string; name: string | null }): string | null {
   if ('kind' in name) return name.kind === 'Default' ? 'default' : name.name;
   return name.type === 'Identifier' ? name.name : name.value;
@@ -167,6 +248,21 @@ function isLocalValue(descriptor: ModuleDescriptor, local: string): boolean {
   if (binding.namespace) return true;
   if (binding.source === null || binding.imported === null) return binding.source === null;
   return descriptors.get(binding.source)?.inventory.valueNames.has(binding.imported) ?? false;
+}
+
+function getLocalFunctions(descriptor: ModuleDescriptor, local: string): readonly FastFunctionInfo[] | undefined {
+  const direct = descriptor.localFunctions.get(local);
+  if (direct !== undefined) return direct;
+  const binding = descriptor.imports.get(local);
+  if (
+    binding === undefined ||
+    binding.typeOnly ||
+    binding.namespace ||
+    binding.imported === null ||
+    binding.source === null
+  )
+    return undefined;
+  return descriptors.get(binding.source)?.inventory.functions.get(binding.imported);
 }
 
 function isValueDeclaration(statement: Declaration | { type: string }): statement is Declaration {
@@ -191,6 +287,13 @@ function resolveInventories(): void {
           changed = addSet(descriptor.inventory.names, target.inventory.names, true) || changed;
           if (!rule.typeOnly)
             changed = addSet(descriptor.inventory.valueNames, target.inventory.valueNames, true) || changed;
+          if (!rule.typeOnly) {
+            for (const [name, functions] of target.inventory.functions) {
+              if (name === 'default' || descriptor.inventory.functions.has(name)) continue;
+              descriptor.inventory.functions.set(name, functions);
+              changed = true;
+            }
+          }
           continue;
         }
 
@@ -199,17 +302,28 @@ function resolveInventories(): void {
           descriptor.inventory.names.add(rule.exported);
           changed = true;
         }
-        if (rule.typeOnly || descriptor.inventory.valueNames.has(rule.exported)) continue;
-
-        const isValue = rule.namespace
-          ? true
-          : target !== null && target !== undefined && rule.imported !== null
-            ? target.inventory.valueNames.has(rule.imported)
+        if (!rule.typeOnly && !descriptor.inventory.valueNames.has(rule.exported)) {
+          const isValue = rule.namespace
+            ? true
+            : target !== null && target !== undefined && rule.imported !== null
+              ? target.inventory.valueNames.has(rule.imported)
+              : rule.local !== null
+                ? isLocalValue(descriptor, rule.local)
+                : true;
+          if (isValue) {
+            descriptor.inventory.valueNames.add(rule.exported);
+            changed = true;
+          }
+        }
+        if (rule.typeOnly || descriptor.inventory.functions.has(rule.exported)) continue;
+        const functions =
+          target !== null && target !== undefined && rule.imported !== null
+            ? target.inventory.functions.get(rule.imported)
             : rule.local !== null
-              ? isLocalValue(descriptor, rule.local)
-              : true;
-        if (isValue) {
-          descriptor.inventory.valueNames.add(rule.exported);
+              ? getLocalFunctions(descriptor, rule.local)
+              : descriptor.localFunctions.get(rule.exported);
+        if (functions !== undefined) {
+          descriptor.inventory.functions.set(rule.exported, functions);
           changed = true;
         }
       }

@@ -5,7 +5,7 @@
 //
 //   npx tsx scripts/type-home-progress.ts          # meter (always exit 0)
 //   npx tsx scripts/type-home-progress.ts --gate    # exit 1 if any exported types remain outside types
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getParsedOxcSource } from './oxc-source';
@@ -35,6 +35,8 @@ function sourceFiles(dir: string): string[] {
 }
 
 function exportedTypeNames(file: string): string[] {
+  const text = readFileSync(file, 'utf-8');
+  if (!/\bexport\s+(?:(?:declare|const)\s+)*(?:interface|type|enum)\b/.test(text)) return [];
   const names: string[] = [];
   for (const statement of getParsedOxcSource(file).program.body) {
     if (statement.type !== 'ExportNamedDeclaration') continue;
