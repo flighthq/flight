@@ -651,6 +651,18 @@ export interface Physics2DQueryResult {
   hitCount: number;
 }
 
+// Reusable, callback-free selection applied consistently by point, ray, and region queries. The bit
+// masks select colliders whose corresponding authored filter field shares at least one bit; body and
+// sensor flags then select participation. Query filtering does not mutate or wake simulation state.
+export interface Physics2DQueryFilter {
+  categoryBits: number;
+  maskBits: number;
+  includeSensors: boolean;
+  includeDynamic: boolean;
+  includeKinematic: boolean;
+  includeStatic: boolean;
+}
+
 export interface Physics2DRayHit extends Physics2DQueryHit {
   fraction: number;
   x: number;

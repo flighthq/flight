@@ -2,14 +2,29 @@ import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
 import {
+  createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
   createPhysics2DRayResult,
   queryPhysics2DPoint,
   queryPhysics2DRay,
+  queryPhysics2DRayClosest,
   queryPhysics2DRegion,
 } from './worldQueries';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
+
+describe('createPhysics2DQueryFilter', () => {
+  it('includes every body kind, sensor, category, and mask by default', () => {
+    expect(createPhysics2DQueryFilter()).toEqual({
+      categoryBits: 0xffffffff,
+      maskBits: 0xffffffff,
+      includeSensors: true,
+      includeDynamic: true,
+      includeKinematic: true,
+      includeStatic: true,
+    });
+  });
+});
 
 describe('createPhysics2DQueryResult', () => {
   it('starts with no live hits', () => {
@@ -93,6 +108,34 @@ describe('queryPhysics2DPoint', () => {
 
     expect(out.hits.slice(0, out.hitCount).map((hit) => hit.colliderIndex)).toEqual([0, 1]);
   });
+
+  it('filters body participation, sensors, collider categories, and collider masks', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const dynamic = createRigidBody2D('dynamic', 0, 0);
+    dynamic.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE, true, {
+        categoryBits: 0x2,
+        maskBits: 0x4,
+        groupIndex: 0,
+      }),
+    );
+    const fixed = createRigidBody2D('static', 0, 0);
+    fixed.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, dynamic);
+    addPhysics2DBody(world, fixed);
+    const filter = createPhysics2DQueryFilter();
+    filter.categoryBits = 0x2;
+    filter.maskBits = 0x4;
+    filter.includeSensors = false;
+    filter.includeStatic = false;
+    const out = createPhysics2DQueryResult();
+
+    queryPhysics2DPoint(world, 0, 0, out, filter);
+    expect(out.hitCount).toBe(0);
+    filter.includeSensors = true;
+    queryPhysics2DPoint(world, 0, 0, out, filter);
+    expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([dynamic]);
+  });
 });
 
 describe('queryPhysics2DRay', () => {
@@ -157,6 +200,38 @@ describe('queryPhysics2DRay', () => {
   });
 });
 
+describe('queryPhysics2DRayClosest', () => {
+  it('writes only the deterministic nearest filtered hit and reuses its retained record', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const far = createRigidBody2D('dynamic', 5, 0);
+    far.colliders.push(
+      createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE, false, {
+        categoryBits: 0x2,
+        maskBits: 0x2,
+        groupIndex: 0,
+      }),
+    );
+    const near = createRigidBody2D('dynamic', 2, 0);
+    near.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 0.5, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, far);
+    addPhysics2DBody(world, near);
+    const out = createPhysics2DRayResult();
+
+    queryPhysics2DRayClosest(world, 0, 0, 1, 0, out);
+    expect(out.hitCount).toBe(1);
+    expect(out.hits[0].body).toBe(near);
+    const retained = out.hits[0];
+
+    const filter = createPhysics2DQueryFilter();
+    filter.categoryBits = 0x2;
+    filter.maskBits = 0x2;
+    queryPhysics2DRayClosest(world, 0, 0, 1, 0, out, Number.POSITIVE_INFINITY, filter);
+    expect(out.hitCount).toBe(1);
+    expect(out.hits[0]).toBe(retained);
+    expect(out.hits[0].body).toBe(far);
+  });
+});
+
 describe('queryPhysics2DRegion', () => {
   it('refines aggregate body candidates to overlapping collider bounds', () => {
     const world = createPhysics2DWorld(0, 0);
@@ -212,5 +287,23 @@ describe('queryPhysics2DRegion', () => {
 
     expect(out.hitCount).toBe(0);
     expect(out.hits[0]).toBe(retained);
+  });
+
+  it('applies the same reusable filter and rejects invalid regions', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('kinematic', 0, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, body);
+    const filter = createPhysics2DQueryFilter();
+    filter.includeKinematic = false;
+    const out = createPhysics2DQueryResult();
+
+    queryPhysics2DRegion(world, { minX: -1, minY: -1, maxX: 1, maxY: 1 }, out, filter);
+    expect(out.hitCount).toBe(0);
+    filter.includeKinematic = true;
+    queryPhysics2DRegion(world, { minX: 1, minY: 1, maxX: -1, maxY: -1 }, out, filter);
+    expect(out.hitCount).toBe(0);
+    queryPhysics2DRegion(world, { minX: -1, minY: -1, maxX: 1, maxY: 1 }, out, filter);
+    expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([body]);
   });
 });
