@@ -33,10 +33,10 @@ export interface Scene2DSlotReference {
 // A format that embeds a whole sub-document (a nested or data-uri SVG) recurses through the importer
 // registry at parse instead, which is why neither array carries a node-producing byte payload.
 export interface Scene2DDocument {
+  audioResources: AudioResourceReference[];
   // The authored stage colour as packed RGBA, or null when the format declares none. It is document
   // metadata rather than content — a colour the viewport clears to, not a node in the graph — so an
   // application decides whether to honour it and nothing in `root` depends on it.
-  audioResources: AudioResourceReference[];
   backgroundColor: number | null;
   imageResources: ImageResourceReference[];
   root: Node2D;

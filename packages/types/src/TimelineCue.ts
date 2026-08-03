@@ -32,6 +32,7 @@ export const TimelineNextFrameCueKind = 'NextFrame';
 export const TimelinePlayCueKind = 'Play';
 export const TimelinePreviousFrameCueKind = 'PreviousFrame';
 export const TimelineStopCueKind = 'Stop';
+export const TimelineStreamAudioCueKind = 'StreamAudio';
 
 // Why the playhead arrived at the frame being dispatched. Handlers receive it so one kind can behave
 // differently on a scrub than on ordinary playback — a stream sound resyncs to the new position where an
@@ -53,16 +54,53 @@ export interface TimelineCue {
   kind: string;
 }
 
+// One point of a cue's gain automation. Stereo rather than a single level because real content uses it:
+// authoring tools write a pan by moving the two channels apart, so a scalar would silently centre it.
+export interface TimelineAudioEnvelopePoint {
+  leftGain: number;
+  rightGain: number;
+  // Seconds from the start of playback. Formats count this in their own units — SWF in 44.1kHz samples
+  // whatever the sound's own rate — so the importer converts and the handler never does format arithmetic.
+  time: number;
+}
+
 // Starts (or stops) one sound. `resource` is the live entity a document's AudioResourceReference fills on
 // decode, held directly rather than by name: the same resource is shared by every cue referencing it, so a
-// sound cued from forty frames decodes once and all forty cues are wired the moment it resolves.
+// sound cued from forty frames decodes once and all forty cues are wired the moment it resolves. Two sounds
+// at once are two cues on one frame, which is why nothing here is a list of sounds.
 export interface TimelineAudioCue extends TimelineCue {
   kind: 'Audio';
+  // Seconds of the source to play from `offset`, or null for the rest of it. Named for the platform call a
+  // handler makes — start(when, offset, duration) — rather than the authored in/out-point vocabulary.
+  duration: number | null;
   gain: number;
+  // Gain automation over the sound, empty when the format authored none. A one-point envelope is a static
+  // level-and-pan rather than a curve, which is why this cannot fold into `gain`.
+  envelope: readonly TimelineAudioEnvelopePoint[];
   loops: number;
+  // Seconds into the source where playback begins.
+  offset: number;
   resource: AudioResource;
+  // Do not start if this resource is already playing — Flash's "Start" sync, as against "Event", which
+  // stacks a fresh copy on every entry. What keeps a looping track cued on a re-entered frame from
+  // layering copies of itself.
+  skipIfPlaying: boolean;
   // Stops this resource's playback instead of starting it (SWF SOUNDINFO's SyncStop).
   stop: boolean;
+}
+
+// Starts a sound authored to run *with* a stretch of timeline rather than to fire at a point on it — a
+// SWF stream sound, whose frames were interleaved with the display list so playback and playhead advance
+// together.
+//
+// It is a separate kind from TimelineAudioCue rather than a flag on it because the two need opposite seek
+// behaviour, and dispatchOnSeek is registered per kind: scrubbing past an event sound must not fire it,
+// while scrubbing a stream must resync it to the new position. A handler computes that position from the
+// distance between the timeline's current frame and this cue's `frame`, which is where the stream starts.
+export interface TimelineStreamAudioCue extends TimelineCue {
+  kind: 'StreamAudio';
+  gain: number;
+  resource: AudioResource;
 }
 
 // Moves the playhead. Exactly one of `targetFrame` / `targetLabel` is non-null. A goto only *moves*:
