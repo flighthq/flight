@@ -23,8 +23,11 @@ lottie-web repository were run through the importer: **fourteen crashed it and o
 all.** Two structural facts about how real exports are written, neither visible to a hand-authored
 fixture, were the cause — see the Lottie section. After the fix, 17 of 18 import (the eighteenth is
 not an animation), producing 9,522 nodes and 6,445 channels where the same corpus previously produced
-566 and 301. **SVG has still never seen a real asset**, and everything claimed for it below is
-"correct against our own fixtures."
+566 and 301. **SVG has now met the W3C SVG 1.1 conformance suite** — 34 of its documents, covering
+shapes, path data, transforms, units, gradients, painting, masking, structure, styling, and text. It
+came through far better than Lottie: zero crashes, zero non-finite transform values, and every
+document produced geometry on the first run. One real defect surfaced, and one gap that belongs to a
+neighbouring package; both are recorded below.
 
 Neither corpus is committed; both are fetched on demand, for the licensing reason above.
 
@@ -141,6 +144,26 @@ guarded), with nested viewports and `viewBox` transforms; the geometry elements 
 `resolveImageResource` seam; linear and radial gradients including `objectBoundingBox` units; `clipPath`
 as a hard `ClipRegion`; and the non-rendering elements `style`, `title`, `desc`, and `metadata` skipped
 by name.
+
+**What the conformance corpus exposed.** Across the 34 documents, 410 source drawables produced 520
+`drawPath` records (more than one-to-one, because `use` instantiates). Every shortfall traced to a
+declared exclusion — `pattern` fills and soft masks, each already announced by a crumb — except two.
+
+*`inherit` silently deleted geometry.* **Fixed.** `inherit` is the CSS-wide keyword for "the parent's
+computed value" and is legal on every presentation attribute. Read as a paint value it resolved to no
+fill and no stroke, so the element imported as a shape with an **empty command list** — geometry gone,
+no diagnostic. It is now resolved at the one style seam: for an inherited property the declaration is
+dropped, since an absent declaration already resolves to the parent's value; the three non-inherited
+properties (`display`, `filter`, `opacity`) name the parent explicitly, because dropping the
+declaration would reset them to their initial value instead. Six regression tests pin it.
+
+*Internal DTD entities are dropped, and this one is not ours.* A document that declares
+`<!ENTITY Smile "<circle …/>">` and expands it with `&Smile;` loses all the expanded content, with no
+diagnostic. `@flighthq/xml` strips the DOCTYPE wholesale and decodes only the five predefined XML
+entities, so the reference survives as literal text rather than markup. The fix belongs in
+`@flighthq/xml`, not here — recorded, not built, per the cross-package rule. Entities are legal SVG 1.1
+and the conformance suite uses them, but no mainstream design tool emits them, so the practical cost is
+low; the silence is the part worth fixing.
 
 **Not covered — declared exclusions.** SVG animation (SMIL), scripts, `foreignObject`, live DOM behavior,
 and filter graphs are not retained; filters belong to `@flighthq/effects`. The charter sets the
