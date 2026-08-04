@@ -25,9 +25,14 @@ const MATRIX_STRIDE = 6;
 // Adding them to the world position afterwards would put a bone-local displacement into world space,
 // which looks correct at rest and wrong the moment the rig moves.
 //
-// A `deform` too short for what it parallels is ignored rather than read past, and reported through the
-// guard seam under `subject` so a caller can tell which attachment to fix. `out` accepts a plain array as
-// well as a Float32Array, because a Path's `data` stream is one.
+// A `deform` whose length does not EXACTLY match what it parallels is ignored and reported through the
+// guard seam under `subject`, so a caller can tell which attachment to fix. The match is exact rather than
+// a minimum in both directions on purpose: too SHORT would read past the stream, and too LONG is never
+// merely harmless — it means the stream was sized against something other than this attachment, which is
+// the same authoring defect arriving from the other side. A caller holding one oversized scratch buffer
+// for several attachments passes `buffer.subarray(0, n)`, which costs nothing and says what it means.
+//
+// `out` accepts a plain array as well as a Float32Array, because a Path's `data` stream is one.
 export function skinSkeleton2DAttachmentPoints(
   out: Float32Array | number[],
   skin: Readonly<Skin2D> | null | undefined,
@@ -42,7 +47,7 @@ export function skinSkeleton2DAttachmentPoints(
     const counts = skin.influenceCounts;
     const inf = skin.influences;
     // Hoisted out of the loop: a rig with no deform timeline pays one test for the whole attachment.
-    const offsets = deform !== null && deform.length * 2 >= inf.length ? deform : null;
+    const offsets = deform !== null && deform.length * 2 === inf.length ? deform : null;
     if (deform !== null && offsets === null) {
       reportSkeleton2DDeformLengthMismatch(subject, deform.length, inf.length / 2);
     }
@@ -71,7 +76,7 @@ export function skinSkeleton2DAttachmentPoints(
   }
 
   if (vertices === null || vertices === undefined) return;
-  const offsets = deform !== null && deform.length >= vertices.length ? deform : null;
+  const offsets = deform !== null && deform.length === vertices.length ? deform : null;
   if (deform !== null && offsets === null) {
     reportSkeleton2DDeformLengthMismatch(subject, deform.length, vertices.length);
   }

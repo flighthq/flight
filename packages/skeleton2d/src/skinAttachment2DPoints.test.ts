@@ -3,6 +3,7 @@ import { TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
 import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
@@ -81,6 +82,48 @@ describe('skinSkeleton2DAttachmentPoints', () => {
     skinSkeleton2DAttachmentPoints(out, twoBoneSkin, null, skeleton, 0, new Float32Array([9, 9]), 'test');
 
     expect(out[0]).toBeCloseTo(5, 5);
+  });
+
+  it('ignores a deform stream LONGER than the influences it parallels, not only a shorter one', () => {
+    // A too-long stream was silently accepted while the check was `>=`. It is never merely harmless: it
+    // means the buffer was sized against something other than this attachment.
+    const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+    const out = new Float32Array(2);
+
+    skinSkeleton2DAttachmentPoints(out, twoBoneSkin, null, skeleton, 0, new Float32Array(8).fill(5), 'test');
+
+    expect(out[0]).toBeCloseTo(5, 5);
+  });
+
+  it('ignores a deform stream longer than a RIGID attachment vertex stream', () => {
+    const skeleton = createSkeleton2D([makeBone({ x: 4 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+    const out = new Float32Array(2);
+
+    skinSkeleton2DAttachmentPoints(
+      out,
+      null,
+      new Float32Array([1, 1]),
+      skeleton,
+      0,
+      new Float32Array(6).fill(9),
+      'test',
+    );
+
+    expect(out[0]).toBeCloseTo(5, 5);
+  });
+
+  it('reports the over-long case through the guard seam rather than dropping it silently', () => {
+    const reports: number[] = [];
+    setSkeleton2DDeformLengthGuard((report) => reports.push(report.offsets, report.addressed));
+    const skeleton = createSkeleton2D([makeBone(), makeBone()]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    skinSkeleton2DAttachmentPoints(new Float32Array(2), twoBoneSkin, null, skeleton, 0, new Float32Array(8), 'test');
+    setSkeleton2DDeformLengthGuard(null);
+
+    expect(reports).toEqual([8, 4]);
   });
 
   it('writes nothing when neither a skin nor vertices are present', () => {
