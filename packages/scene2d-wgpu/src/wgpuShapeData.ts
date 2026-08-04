@@ -46,6 +46,8 @@ export function createWgpuShapeData(_state: RenderState, _source: Renderable): R
       indexCapacities: [],
       uniformBuffers: [],
       bindGroups: [],
+      colorScaleBiasUniformBuffers: [],
+      colorScaleBiasBindGroups: [],
     },
   });
 }
@@ -69,12 +71,15 @@ export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData)
   for (const buffer of b.vertexBuffers) buffer.destroy();
   for (const buffer of b.indexBuffers) buffer.destroy();
   for (const buffer of b.uniformBuffers) buffer.destroy();
+  for (const buffer of b.colorScaleBiasUniformBuffers) buffer.destroy();
   b.vertexBuffers.length = 0;
   b.vertexCapacities.length = 0;
   b.indexBuffers.length = 0;
   b.indexCapacities.length = 0;
   b.uniformBuffers.length = 0;
   b.bindGroups.length = 0;
+  b.colorScaleBiasUniformBuffers.length = 0;
+  b.colorScaleBiasBindGroups.length = 0;
 }
 
 export function getWgpuShapeData(data: RendererData): WgpuShapeRendererData | null {

@@ -24,16 +24,19 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 // The shape-stroke-ring-fallback functional scene exercises this path through the headless software
 // adapter and keeps its closed-ring pixels in parity with Canvas and WebGL.
 
-// Draws the shape's tessellated fill meshes. Flushes the quad-batch writer first (these go through a separate
-// pipeline). Uploads each mesh's geometry and premultiplied color into the shape's reusable per-shape
-// buffer slot (grown by replacement when that region needs more room) and issues one indexed draw per
-// mesh, gated by the active contour-clip stencil. Slots are distinct because queue writes precede render
-// pass submission; reusing one slot would make every recorded draw observe the final mesh upload.
-export function drawWgpuShapeMeshes(
+// Draws the shape's tessellated fill meshes through `pipelineEntry`. `uniformData` already carries any
+// pipeline-specific tail after the shared matrix + color fields; the driver writes only those common
+// fields. Supplying distinct uniform/bind-group arrays lets the opt-in color-adjustment feature own a
+// larger uniform without taxing or invalidating the lean path's 64-byte bindings.
+export function drawWgpuShapeMeshBatch(
   state: WgpuRenderState,
   renderProxy: RenderProxy2D,
   meshes: readonly WgpuShapeMesh[],
   buffers: WgpuShapeMeshBuffers,
+  pipelineEntry: WgpuShapeMeshPipeline,
+  uniformBuffers: GPUBuffer[],
+  bindGroups: GPUBindGroup[],
+  uniformData: Float32Array,
 ): void {
   if (meshes.length === 0) return;
   const runtime = getWgpuRenderStateRuntime(state);
@@ -42,13 +45,12 @@ export function drawWgpuShapeMeshes(
   const pass = runtime.renderPass;
   if (pass === null) return;
 
-  const pipelineEntry = ensureShapeMeshPipeline(state, renderProxy.blendMode);
   const device = state.device;
   const queue = device.queue;
 
-  // Writes the projection·world matrix into uniform columns 0..11 (it shares the same scratch array);
-  // the per-mesh color fills 12..15 in the loop below. Same matrix for every mesh of this shape.
-  shapeMeshMatrix(state, renderProxy);
+  // Writes the projection·world matrix into uniform columns 0..11; per-mesh color fills 12..15 in
+  // the loop. Any pipeline-specific tail starts at 16 and is left untouched.
+  shapeMeshMatrix(state, renderProxy, uniformData);
 
   pass.setPipeline(pipelineEntry.pipeline);
   // The cleared stencil is 0, so at depth 0 'equal 0' passes everywhere; inside a contour clip only its
@@ -62,7 +64,7 @@ export function drawWgpuShapeMeshes(
     const a = mesh.alpha * nodeAlpha;
     if (a <= 0) continue;
 
-    const uniform = ensureShapeMeshUniform(state, pipelineEntry, buffers, i);
+    ensureShapeMeshUniform(state, pipelineEntry, uniformBuffers, bindGroups, i, uniformData.byteLength);
     const vertexBuffer = ensureShapeMeshVertexBuffer(state, buffers, i, mesh.vertices.byteLength);
     const indexBuffer = ensureShapeMeshIndexBuffer(state, buffers, i, mesh.indices.byteLength);
     queue.writeBuffer(vertexBuffer, 0, mesh.vertices.buffer, mesh.vertices.byteOffset, mesh.vertices.byteLength);
@@ -72,17 +74,44 @@ export function drawWgpuShapeMeshes(
     const r = ((mesh.color >> 16) & 0xff) / 255;
     const g = ((mesh.color >> 8) & 0xff) / 255;
     const b = (mesh.color & 0xff) / 255;
-    uniform[12] = r * a;
-    uniform[13] = g * a;
-    uniform[14] = b * a;
-    uniform[15] = a;
-    queue.writeBuffer(buffers.uniformBuffers[i], 0, uniform.buffer, uniform.byteOffset, uniform.byteLength);
+    uniformData[12] = r * a;
+    uniformData[13] = g * a;
+    uniformData[14] = b * a;
+    uniformData[15] = a;
+    queue.writeBuffer(uniformBuffers[i], 0, uniformData.buffer, uniformData.byteOffset, uniformData.byteLength);
 
-    pass.setBindGroup(0, buffers.bindGroups[i]);
+    pass.setBindGroup(0, bindGroups[i]);
     pass.setVertexBuffer(0, vertexBuffer);
     pass.setIndexBuffer(indexBuffer, 'uint16');
     pass.drawIndexed(mesh.indices.length);
   }
+}
+
+// Draws the shape's tessellated fill meshes. Delegates to the registered color-adjustment feature only
+// for a resolved ColorScaleBias; a full color matrix remains outside this bounded fold. Otherwise the
+// lean flat-color pipeline and 64-byte uniform stay unchanged and carry no adjustment shader code.
+export function drawWgpuShapeMeshes(
+  state: WgpuRenderState,
+  renderProxy: RenderProxy2D,
+  meshes: readonly WgpuShapeMesh[],
+  buffers: WgpuShapeMeshBuffers,
+): void {
+  if (meshes.length === 0) return;
+  const fold = getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature;
+  if (fold?.drawShapeMeshes !== undefined && renderProxy.colorMatrix == null && renderProxy.colorScaleBias != null) {
+    fold.drawShapeMeshes(state, renderProxy, meshes, buffers);
+    return;
+  }
+  drawWgpuShapeMeshBatch(
+    state,
+    renderProxy,
+    meshes,
+    buffers,
+    ensureShapeMeshPipeline(state, renderProxy.blendMode),
+    buffers.uniformBuffers,
+    buffers.bindGroups,
+    _shapeMeshUniformScratch,
+  );
 }
 
 const SHAPE_MESH_WGSL = /* wgsl */ `
@@ -129,21 +158,22 @@ function ensureShapeMeshIndexBuffer(
 function ensureShapeMeshUniform(
   state: WgpuRenderState,
   pipelineEntry: WgpuShapeMeshPipeline,
-  buffers: WgpuShapeMeshBuffers,
+  uniformBuffers: GPUBuffer[],
+  bindGroups: GPUBindGroup[],
   meshIndex: number,
-): Float32Array {
-  if (buffers.uniformBuffers[meshIndex] === undefined) {
+  byteLength: number,
+): void {
+  if (uniformBuffers[meshIndex] === undefined) {
     const uniformBuffer = state.device.createBuffer({
-      size: SHAPE_MESH_UNIFORM_BYTES,
+      size: byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    buffers.uniformBuffers[meshIndex] = uniformBuffer;
-    buffers.bindGroups[meshIndex] = state.device.createBindGroup({
+    uniformBuffers[meshIndex] = uniformBuffer;
+    bindGroups[meshIndex] = state.device.createBindGroup({
       layout: pipelineEntry.bindGroupLayout,
       entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
     });
   }
-  return _shapeMeshUniformScratch;
 }
 
 function ensureShapeMeshPipeline(state: WgpuRenderState, blendMode: RenderProxy2D['blendMode']): WgpuShapeMeshPipeline {
@@ -224,26 +254,24 @@ function ensureShapeMeshVertexBuffer(
 // webgpuClipContours/webgpuDraw build it (so the fill lands in identical clip space). Each column is
 // padded to 4 floats (vec3 -> vec4 std140-style layout). Writes into the shared scratch view; the color
 // (floats 12..15) is filled per mesh by the caller.
-function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D): Float32Array {
+function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D, out: Float32Array): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const viewport = runtime.renderTargetViewport ?? state.canvas;
   const iw = 2 / (viewport.width || 1);
   const ih = 2 / (viewport.height || 1);
   const t = renderProxy.transform2D;
-  const m = _shapeMeshUniformScratch;
-  m[0] = t.a * iw;
-  m[1] = -t.b * ih;
-  m[2] = 0;
-  m[3] = 0;
-  m[4] = t.c * iw;
-  m[5] = -t.d * ih;
-  m[6] = 0;
-  m[7] = 0;
-  m[8] = t.tx * iw - 1;
-  m[9] = -t.ty * ih + 1;
-  m[10] = 1;
-  m[11] = 0;
-  return m;
+  out[0] = t.a * iw;
+  out[1] = -t.b * ih;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = t.c * iw;
+  out[5] = -t.d * ih;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = t.tx * iw - 1;
+  out[9] = -t.ty * ih + 1;
+  out[10] = 1;
+  out[11] = 0;
 }
 
 // Uploads uint16 indices to the index buffer. writeBuffer requires the byte count to be a multiple of 4,

@@ -47,6 +47,8 @@ function makeShapeData() {
       indexCapacities: [],
       uniformBuffers: [],
       bindGroups: [],
+      colorScaleBiasUniformBuffers: [],
+      colorScaleBiasBindGroups: [],
     },
   };
 }

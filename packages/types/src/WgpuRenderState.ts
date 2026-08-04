@@ -20,6 +20,7 @@ import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
+import type { WgpuShapeMesh } from './WgpuShapeMesh';
 import type { WgpuTextureResolver } from './WgpuTextureResolver';
 
 export interface WgpuRenderState extends RenderState {
@@ -42,6 +43,15 @@ export interface WgpuColorAdjustmentMaterialFeature {
   // material-family variants. It lives on the registered feature to preserve bundle shake-out.
   readonly fragmentShaderChunk: string;
   readonly matrixFragmentShaderChunk: string;
+  // Optional because the feature contract is also used by 3D material-family compilers, which need
+  // only the shader chunks. The scene2d implementation installs this hook so tessellated solid fills
+  // reach the same opt-in fold without the lean mesh path importing its shader implementation.
+  drawShapeMeshes?(
+    state: WgpuRenderState,
+    renderProxy: RenderProxy2D,
+    meshes: readonly WgpuShapeMesh[],
+    buffers: WgpuShapeMeshBuffers,
+  ): void;
   record(
     runtime: WgpuRenderStateRuntime,
     colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
@@ -347,6 +357,10 @@ export interface WgpuShapeMeshBuffers {
   indexCapacities: number[];
   uniformBuffers: GPUBuffer[];
   bindGroups: GPUBindGroup[];
+  // Separate opt-in slots for the larger scale/bias uniform. Untinted shapes allocate only the lean
+  // 64-byte uniforms above; registered color adjustment allocates these 96-byte siblings on demand.
+  colorScaleBiasUniformBuffers: GPUBuffer[];
+  colorScaleBiasBindGroups: GPUBindGroup[];
 }
 
 // Cached flat-color pipeline for the GPU tessellated solid-fill shape path. Position-only vertex

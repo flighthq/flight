@@ -51,6 +51,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     registerWgpuColorAdjustmentMaterialFeature(state);
     expect(runtime.wgpuColorAdjustmentMaterialFeature).toBeDefined();
     expect(runtime.wgpuColorAdjustmentMaterialFeature).not.toBeNull();
+    expect(runtime.wgpuColorAdjustmentMaterialFeature?.drawShapeMeshes).toBeTypeOf('function');
   });
 
   it('is idempotent', async () => {
