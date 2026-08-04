@@ -120,7 +120,9 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.quadBatchWriterSampler = null;
   cacheRuntime.quadBatchWriterSmoothing = null;
   // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
-  // same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
+  // same way when baked offscreen. Accumulation uses its independent base-runtime slot; per-batch CT
+  // data lives on cacheRuntime and grows lazily.
+  cacheRuntime.colorAdjustmentResolver = screenRuntime.colorAdjustmentResolver;
   cacheRuntime.wgpuColorAdjustmentMaterialFeature = screenRuntime.wgpuColorAdjustmentMaterialFeature;
   cacheRuntime.wgpuColorAdjustmentMaterialFeatureGuard = screenRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must

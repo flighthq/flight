@@ -20,6 +20,7 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
 export function copyRenderStateRegistrations(target: RenderState, source: RenderState): void {
   const targetRuntime = getRenderStateRuntime(target);
   const sourceRuntime = getRenderStateRuntime(source);
+  targetRuntime.colorAdjustmentResolver = sourceRuntime.colorAdjustmentResolver;
   const sourcePaddingRegistry = sourceRuntime.renderEffectPaddingResolverRegistry;
   targetRuntime.renderEffectPaddingResolverRegistry =
     sourcePaddingRegistry === null || sourcePaddingRegistry === undefined ? null : new Map(sourcePaddingRegistry);

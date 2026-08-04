@@ -1,4 +1,5 @@
 import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { enableColorAdjustments } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   RenderProxy2D,
@@ -15,13 +16,15 @@ import type {
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh';
 
-// Enables the opt-in inline color-adjustment fold on a WebGPU render state: the fused-color-matrix
+// Enables the opt-in color-adjustment accumulator and inline fold on a WebGPU render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
 // adjustments) folds into the batch as per-instance storage data at @group(3) — replicated across the
 // batch for a whole-batch tint, or varied per instance — without ever splitting the batch. Until a
-// state calls this, its batch renderer carries none of this module's WGSL (it tree-shakes out) and
+// state calls this, its render proxies stay unadjusted and the batch renderer carries none of this module's WGSL
+// (both tree-shake out) and
 // recordWgpuQuadBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
 export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderState): void {
+  enableColorAdjustments(state);
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.wgpuColorAdjustmentMaterialFeature = wgpuColorAdjustmentMaterialFeature;
   if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;

@@ -28,6 +28,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
 // intentionally mutable (not Readonly).
 export function createRenderStateRuntime(): RenderStateRuntime {
   const runtime = createEntityRuntime() as RenderStateRuntime;
+  runtime.colorAdjustmentResolver = null;
   runtime.colorAdjustmentUnsupportedGuard = null;
   runtime.currentFrameId = 0;
   runtime.renderAdaptHook = null;

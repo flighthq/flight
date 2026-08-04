@@ -12,6 +12,19 @@ import type {
 
 import { getRenderStateRuntime } from './renderState';
 
+// Returns whether color-adjustment accumulation is installed on `state`.
+export function areColorAdjustmentsEnabled(state: RenderState): boolean {
+  return getRenderStateRuntime(state).colorAdjustmentResolver != null;
+}
+
+// Installs color-adjustment accumulation on `state`. The base render walk reaches this module only
+// through a nullable runtime callback, so states that do not opt in retain one null check and do not
+// pull @flighthq/adjustments or @flighthq/materials into their bundle. Backend feature registrars that
+// can realize these values call this as part of their own opt-in. Idempotent.
+export function enableColorAdjustments(state: RenderState): void {
+  getRenderStateRuntime(state).colorAdjustmentResolver = updateRenderProxyColorScaleBias;
+}
+
 // Hands the node's resolved color adjustment to the render node. A node's color-adjustment stack
 // (NodeRuntime.colorAdjustments) is fused once into the affine `resolvedColorScaleBias` cache by the
 // set-accessors on change — never per frame. The render walk then applies the local value first and its
@@ -23,7 +36,7 @@ import { getRenderStateRuntime } from './renderState';
 // Matrix-tier channel mixing travels through `resolvedColorMatrix`. A non-matrix operation that cannot
 // be represented by either path leaves `colorAdjustmentsUnsupported` set, invoking the shakeable guard
 // so unsupported adjustment data is reported rather than silently discarded.
-export function updateRenderProxyColorScaleBias(state: RenderState, data: RenderProxy, parentData?: RenderProxy): void {
+function updateRenderProxyColorScaleBias(state: RenderState, data: RenderProxy, parentData?: RenderProxy): void {
   const runtime = getNodeRuntime(data.source as Node) as Readonly<Partial<ColorAdjustmentRuntime>>;
   const localColorScaleBias = runtime.resolvedColorScaleBias ?? null;
   const localColorMatrix = runtime.resolvedColorMatrix ?? null;

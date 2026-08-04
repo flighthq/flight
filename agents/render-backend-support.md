@@ -10,6 +10,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | --- | --- | --- | --- | --- | --- |
 | Per-node `alpha` | ✓ | ✓ | ✓ | ✓ | `HasAppearance.alpha` |
 | Per-node `visible` | ✓ | ✓ | ✓ | ✓ | inherits to subtree |
+| Inherited per-node color adjustments | ✗ | ✗ | ✓ | ✓ | `registerGlColorAdjustmentMaterialFeature` / `registerWgpuColorAdjustmentMaterialFeature` opt in to both render-walk accumulation and inline backend realization. Canvas intentionally has no inline registrar. Applying an Effect to a caller-owned cached-subtree surface is a post-flattening **group** operation, not a per-element inheritance fallback; its different semantics do not turn this cell into partial support. |
 | 2D transform (pos/rot/scale/pivot) | ✓ | ✓ | ✓ | ✓ | `rotation` is **degrees** (`node/transform2d.ts`) |
 | Blend modes — fixed-function set (Add/Darken/Erase/Lighten/Multiply/Screen/Subtract) | ✓ | ✓ | ✓ | ✓ | the `BlendMode` node property; gl + wgpu realize these; see gap #1 |
 | Advanced blend — the `BlendEffect` composite recipe (Overlay/HardLight/SoftLight/Difference/Exclusion/ColorDodge/ColorBurn/Hue/Saturation/Color/Luminosity) | ✓ | ✓ | ✓ | ✓ | NOT a node property — an explicit `AdvancedBlendMode` effect (`@flighthq/effects` `createBlendEffect`) over a registered backdrop. Canvas/DOM realize the set natively via `globalCompositeOperation`/`mix-blend-mode`; gl/wgpu use matching offscreen composite passes (`applyBlendEffectToGl` / `applyBlendEffectToWgpu`). `effect-blend-advanced` verifies exact gl/wgpu pixels. |

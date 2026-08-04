@@ -69,6 +69,7 @@ describe('createRenderState', () => {
 describe('createRenderStateRuntime', () => {
   it('initializes the machinery fields', () => {
     const runtime = createRenderStateRuntime();
+    expect(runtime.colorAdjustmentResolver).toBeNull();
     expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());

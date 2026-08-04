@@ -1,4 +1,5 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
@@ -44,6 +45,7 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
+    expect(areColorAdjustmentsEnabled(state)).toBe(true);
     expect(runtime.glColorAdjustmentMaterialFeature).not.toBeNull();
     expect(runtime.glColorAdjustmentMaterialFeature).toBeDefined();
   });

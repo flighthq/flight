@@ -1,6 +1,7 @@
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
@@ -49,6 +50,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
+    expect(areColorAdjustmentsEnabled(state)).toBe(true);
     expect(runtime.wgpuColorAdjustmentMaterialFeature).toBeDefined();
     expect(runtime.wgpuColorAdjustmentMaterialFeature).not.toBeNull();
     expect(runtime.wgpuColorAdjustmentMaterialFeature?.drawShapeMeshes).toBeTypeOf('function');

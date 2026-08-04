@@ -23,7 +23,6 @@ import type {
 import { BlendMode, RenderRegistry } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
-import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
 import { updateRenderProxyMaterial } from './renderMaterial';
 import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
@@ -189,7 +188,7 @@ export function updateRenderProxy2D(
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
-  updateRenderProxyColorScaleBias(state, data, parentData);
+  getRenderStateRuntime(state).colorAdjustmentResolver?.(state, data, parentData);
   updateNodeClip(state, source, data, parentData);
   // Record the local and structural revisions this adaptation consumed.
   data.lastChildrenId = getNodeChildrenRevision(source as Node);

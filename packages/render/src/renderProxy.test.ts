@@ -13,7 +13,7 @@ import {
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ClipRegion, Node, RenderProxy } from '@flighthq/types/contract';
+import type { ClipRegion, Node, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import {
@@ -569,6 +569,28 @@ describe('updateRenderProxy2D', () => {
     const data = getOrCreateRenderProxy2D(state, root);
     updateRenderProxy2D(state, root, data, undefined);
     expect(data.clipDepth).toBe(1);
+  });
+
+  it('runs the optional color resolver after material and before clip and revision bookkeeping', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const material = { kind: 'TestMaterial' } as never;
+    root.material = material;
+    setNode2DClip(root, makeClipRegion());
+    const data = getOrCreateRenderProxy2D(state, root);
+    const resolver = vi.fn((_state: RenderState, resolvedData: RenderProxy) => {
+      expect(resolvedData.material).toBe(material);
+      expect((resolvedData as RenderProxy2D).clipDepth).toBe(0);
+      expect(resolvedData.lastChildrenId).toBe(-1);
+    });
+    getRenderStateRuntime(state).colorAdjustmentResolver = resolver;
+
+    updateRenderProxy2D(state, root, data, undefined);
+
+    expect(resolver).toHaveBeenCalledWith(state, data, undefined);
+    expect(resolver).toHaveBeenCalledTimes(1);
+    expect(data.clipDepth).toBe(1);
+    expect(data.lastChildrenId).toBe(getNodeChildrenRevision(root));
   });
 });
 

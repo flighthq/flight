@@ -5,9 +5,9 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Adjustment, Renderable } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
-import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
+import { enableColorAdjustments } from './enableColorAdjustments';
 import { createRenderProxy } from './renderProxy';
-import { createRenderState } from './renderState';
+import { createRenderState, getRenderStateRuntime } from './renderState';
 
 describe('areColorAdjustmentGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
@@ -22,6 +22,7 @@ describe('enableColorAdjustmentGuards', () => {
   it('warns once when a node carries a non-inline-able non-matrix adjustment', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
+    enableColorAdjustments(state);
     const node = createDisplayObject();
     const lut: Adjustment = { kind: 'acme.Lut' };
     setNodeColorAdjustments(node, [lut]);
@@ -29,7 +30,7 @@ describe('enableColorAdjustmentGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      updateRenderProxyColorScaleBias(state, data);
+      getRenderStateRuntime(state).colorAdjustmentResolver!(state, data);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('not inline-able');
@@ -41,13 +42,14 @@ describe('enableColorAdjustmentGuards', () => {
   it('stays silent for an affine (inline-able) color-adjustment stack', () => {
     const state = createRenderState();
     enableColorAdjustmentGuards(state);
+    enableColorAdjustments(state);
     const node = createDisplayObject();
     setNodeColorAdjustments(node, [createTintAdjustment(0x7fffffff)]);
     const data = createRenderProxy(state, node as unknown as Renderable);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      updateRenderProxyColorScaleBias(state, data);
+      getRenderStateRuntime(state).colorAdjustmentResolver!(state, data);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);

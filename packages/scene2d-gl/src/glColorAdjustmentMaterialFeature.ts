@@ -1,5 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { enableColorAdjustments } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
@@ -22,13 +23,15 @@ import {
 } from './glQuadBatchWriter';
 import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 
-// Enables the opt-in inline color-adjustment fold on a WebGL render state: the fused-color-matrix
+// Enables the opt-in color-adjustment accumulator and inline fold on a WebGL render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
 // adjustments) folds into the batch as data — a whole-batch uniform tint or per-instance
 // a_colorScale/a_colorBias attributes, chosen by data cardinality — without ever splitting the batch. Until a
-// state calls this, its batch renderer carries none of this module's shader code (it tree-shakes out)
+// state calls this, its render proxies stay unadjusted and the batch renderer carries none of this module's shader
+// code (both tree-shake out)
 // and recordGlQuadBatchColorScaleBias silently skips every tint. Idempotent; safe to call per state.
 export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): void {
+  enableColorAdjustments(state);
   const runtime = getGlRenderStateRuntime(state);
   runtime.glColorAdjustmentMaterialFeature = glColorAdjustmentMaterialFeature;
   if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
