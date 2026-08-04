@@ -38,6 +38,22 @@ export function createSkeleton2DSlotAnimationTarget(
   return { attachments, kind: TargetKind.Slot, path, slotIndex };
 }
 
+/**
+ * The last keyframe at or before `time`, or -1 when the track holds none. Before the first keyframe the
+ * first value holds, which is why an early time resolves to 0 rather than to nothing.
+ *
+ * Shared by every family whose value cannot be blended — attachment indices and draw orders both — so the
+ * two walk identically instead of drifting apart in separate copies of the same loop.
+ */
+export function findSkeleton2DStepKeyframe(times: ArrayLike<number>, time: number): number {
+  const count = times.length;
+  if (count === 0) return -1;
+  for (let i = count - 1; i >= 0; i--) {
+    if (times[i] <= time) return i;
+  }
+  return 0;
+}
+
 // The binder registered for a target kind, or null when nothing claims it — the sentinel a channel with a
 // foreign or unregistered target is skipped on.
 export function getSkeleton2DAnimationTargetBinder(
@@ -174,17 +190,8 @@ function bindSkeleton2DSlotAttachment(
 ): void {
   const table = target.attachments;
   if (table === undefined || table === null) return;
-  const times = channel.track.times;
-  const count = times.length;
-  if (count === 0) return;
-  // The last keyframe at or before `time`; before the first keyframe the first value holds.
-  let keyframe = 0;
-  for (let i = count - 1; i >= 0; i--) {
-    if (times[i] <= time) {
-      keyframe = i;
-      break;
-    }
-  }
+  const keyframe = findSkeleton2DStepKeyframe(channel.track.times, time);
+  if (keyframe < 0) return;
   // The coercion is correct but must not be invisible: an author who set an easing here would
   // otherwise never learn it had no effect. enableSkeleton2DGuards turns this into a message.
   if (channel.track.interpolation !== STEP_INTERPOLATION) {

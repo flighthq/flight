@@ -12,6 +12,7 @@ import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D
 import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
 import {
   createSkeleton2DBoneAnimationTarget,
+  findSkeleton2DStepKeyframe,
   createSkeleton2DSlotAnimationTarget,
   getSkeleton2DAnimationTargetBinder,
   registerSkeleton2DAnimationTargetBinder,
@@ -44,6 +45,22 @@ describe('createSkeleton2DSlotAnimationTarget', () => {
     expect(createSkeleton2DSlotAnimationTarget(0, Skeleton2DSlotAnimationPath.Attachment, table).attachments).toBe(
       table,
     );
+  });
+});
+
+describe('findSkeleton2DStepKeyframe', () => {
+  it('returns the last keyframe at or before the time', () => {
+    expect(findSkeleton2DStepKeyframe([0, 1, 2], 1.9)).toBe(1);
+    expect(findSkeleton2DStepKeyframe([0, 1, 2], 2)).toBe(2);
+  });
+
+  it('holds the first keyframe before the track starts', () => {
+    // A value has to be in effect at every time, so an early sample takes the first rather than none.
+    expect(findSkeleton2DStepKeyframe([5, 9], 0)).toBe(0);
+  });
+
+  it('returns -1 for a track with no keyframes at all', () => {
+    expect(findSkeleton2DStepKeyframe([], 0)).toBe(-1);
   });
 });
 

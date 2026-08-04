@@ -18,3 +18,4 @@ export * from './pointAttachment2D';
 export * from './explainSkeleton2DDeformLength';
 export * from './slotDeform2D';
 export * from './deformAnimationTarget2D';
+export * from './skeleton2dDrawOrderTarget';
