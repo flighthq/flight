@@ -11,6 +11,7 @@
   "references": [
     { "path": "../scene2d" },
     { "path": "../image" },
+    { "path": "../log" },
     { "path": "../node" },
     { "path": "../spritesheet" },
     { "path": "../textureatlas" },

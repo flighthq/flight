@@ -1,9 +1,13 @@
 export {
   addMovieClipFrameScript,
+  areMovieClipGuardsEnabled,
   createMovieClip,
   createSpritesheetTimelineSource,
+  disableMovieClipGuards,
   disposeMovieClipSignals,
+  enableMovieClipGuards,
   enableMovieClipSignals,
+  explainSpritesheetTimelineSource,
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
   getMovieClipFrameScript,

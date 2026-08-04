@@ -2496,6 +2496,31 @@ describe('createScene2DImportFromSwf', () => {
     ]);
   });
 
+  it('does not invent a trailing blend mode from an unknown filter payload', () => {
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE]),
+            uint16(3),
+            uint16(7),
+            swfString('unknown-filter'),
+            // Filter 0xfe is variable-width and unknown. Its first payload byte deliberately spells
+            // Overlay; the real blend byte after it spells Multiply. Neither offset is safely reachable.
+            new Uint8Array([1, 0xfe, SWF_BLEND_OVERLAY, SWF_BLEND_MULTIPLY]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const node = result!.document.slots[0].target;
+    expect(node.blendMode).toBe(BlendMode.Normal);
+    expect(result!.appearances).toHaveLength(0);
+  });
+
   it('reports a placement filter list as effect descriptors and attaches nothing', () => {
     const result = createScene2DImportFromSwf(
       createSwf([

@@ -12,7 +12,7 @@ import type {
   RenderEffect,
 } from '@flighthq/types/contract';
 
-import { readSwfFilterList } from './swfFilter';
+import { readSwfFilterList, setSwfFilterListGuard } from './swfFilter';
 import { SwfReader } from './swfReader';
 
 describe('readSwfFilterList', () => {
@@ -181,24 +181,43 @@ describe('readSwfFilterList', () => {
   });
 
   it('reads nothing from an empty list', () => {
-    const { adjustments, effects } = read(new Uint8Array([0]));
+    const { adjustments, complete, effects } = read(new Uint8Array([0]));
 
+    expect(complete).toBe(true);
     expect(effects).toHaveLength(0);
     expect(adjustments).toHaveLength(0);
   });
 
   it('stops on a truncated filter body rather than inventing values', () => {
-    const { effects } = read(joinBytes(new Uint8Array([1, 0]), rgba(1, 2, 3, 4), fixed(1)));
+    const { complete, effects } = read(joinBytes(new Uint8Array([1, 0]), rgba(1, 2, 3, 4), fixed(1)));
 
+    expect(complete).toBe(false);
     expect(effects).toHaveLength(0);
+  });
+
+  it('stops and reports an unknown filter before its payload can be mistaken for another field', () => {
+    const seen: number[] = [];
+    setSwfFilterListGuard((filterId, filterIndex) => seen.push(filterId, filterIndex));
+    try {
+      const { complete, effects } = read(
+        joinBytes(new Uint8Array([2, 1]), fixed(4), fixed(2), new Uint8Array([0]), new Uint8Array([0xfe, 13])),
+      );
+
+      expect(complete).toBe(false);
+      expect(effects).toHaveLength(1);
+      expect(effects[0].kind).toBe('BlurEffect');
+      expect(seen).toEqual([0xfe, 1]);
+    } finally {
+      setSwfFilterListGuard(null);
+    }
   });
 });
 
-function read(bytes: Uint8Array): { adjustments: Adjustment[]; effects: RenderEffect[] } {
+function read(bytes: Uint8Array): { adjustments: Adjustment[]; complete: boolean; effects: RenderEffect[] } {
   const adjustments: Adjustment[] = [];
   const effects: RenderEffect[] = [];
-  readSwfFilterList(new SwfReader(bytes, 0, bytes.length), effects, adjustments);
-  return { adjustments, effects };
+  const complete = readSwfFilterList(new SwfReader(bytes, 0, bytes.length), effects, adjustments);
+  return { adjustments, complete, effects };
 }
 
 function fixed(value: number): Uint8Array {
