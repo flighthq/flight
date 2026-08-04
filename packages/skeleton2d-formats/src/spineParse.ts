@@ -18,6 +18,7 @@ import type {
   Skeleton2DImportAnimation,
   Skin2D,
   SkinAttachment2D,
+  Skeleton2DDrawOrderTimeline,
   Slot2D,
   TransformInherit2D,
 } from '@flighthq/types/contract';
@@ -32,32 +33,48 @@ import {
   TransformMode2D,
 } from '@flighthq/types/contract';
 
-// Parses a Spine skeleton `.json` document (text) into a Skeleton2DImport — the setup-pose Skeleton2D
-// plus its named animations. Tolerant and best-effort: a malformed / non-Spine document returns the
-// sentinel `null` (the expected "unrecognized format" failure); a recognized document with missing or
-// unmodeled pieces yields best-effort data and reports `ImportDiagnostic`s through the optional
-// `diagnostics` sink. Names mirror Spine's vocabulary (bone/slot/skin/attachment/timeline).
-//
-// This first landing parses the bone hierarchy; slots, attachments, skins, and animation timelines are
-// layered on in the same tolerant shape, and Spine features Flight does not model (IK/transform/path
-// constraints, clipping/path/point attachments, events) emit `ImportDiagnosticSeverity.Skip` crumbs.
-export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
-  let doc: unknown;
-  try {
-    doc = JSON.parse(json);
-  } catch {
-    return null;
+/**
+ * Reads a draw-order timeline into the orderings `Skeleton2DImport` carries.
+ *
+ * The wire form states, per keyframe, a time and a list of slots that MOVE, each with a signed offset
+ * from its setup position; every slot not listed keeps its relative order and closes the gaps. A track
+ * has to answer "what is in effect at time t" from one keyframe alone, so each keyframe is resolved
+ * into a WHOLE ordering here rather than left as a list of moves to be applied in sequence.
+ *
+ * Resolution is direct: place every moved slot at its stated destination, then fill the positions
+ * nobody claimed with the remaining slots in setup order. A destination outside the slot range, or two
+ * slots claiming one position, would silently reorder the rest — so the keyframe is skipped and
+ * crumbed instead.
+ *
+ * Returns `null` when the animation states no draw-order timeline, which is most of them.
+ */
+export function parseSpineDrawOrderTimeline(
+  raw: unknown,
+  slots: readonly Slot2D[],
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DDrawOrderTimeline | null {
+  if (!Array.isArray(raw) || raw.length === 0 || slots.length === 0) return null;
+
+  const times: number[] = [];
+  const orderings: number[] = [];
+  for (const frame of raw) {
+    if (frame === null || typeof frame !== 'object') continue;
+    const entry = frame as { offsets?: unknown; time?: unknown };
+    const ordering = resolveSpineDrawOrder(entry.offsets, slots);
+    if (ordering === null) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'spine.draworder-keyframe-unresolved',
+        'parseSpineSkeleton',
+        { time: numberOr(entry.time, 0) },
+      );
+      continue;
+    }
+    times.push(numberOr(entry.time, 0));
+    orderings.push(...ordering);
   }
-  if (doc === null || typeof doc !== 'object') return null;
-  const record = doc as Record<string, unknown>;
-  const bones = parseSpineBones(record.bones, diagnostics);
-  const { attachmentNames, slots } = parseSpineSlots(record.slots, bones);
-  const skins = parseSpineSkins(record.skins, slots, diagnostics);
-  resolveSpineSetupAttachments(slots, attachmentNames, skins);
-  const animations = parseSpineAnimations(record.animations, bones, slots, skins, diagnostics);
-  const skeleton = createSkeleton2D(bones, slots);
-  if (skins.length > 0) skeleton.skins = skins;
-  return { animations, skeleton };
+  return times.length === 0 ? null : { orderings, times };
 }
 
 function numberOr(value: unknown, fallback: number): number {
@@ -598,8 +615,8 @@ function parseSpineAnimations(
     skipCrumbSpineTimelineGroup(diagnostics, anim.path, 'spine.path-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.deform, 'spine.deform-timeline-unsupported');
     skipCrumbSpineTimelineGroup(diagnostics, anim.events, 'spine.event-timeline-unsupported');
-    skipCrumbSpineTimelineGroup(diagnostics, anim.drawOrder ?? anim.draworder, 'spine.draworder-timeline-unsupported');
-    animations.push({ clip: createAnimationClip(channels), name });
+    const drawOrder = parseSpineDrawOrderTimeline(anim.drawOrder ?? anim.draworder, slots, diagnostics);
+    animations.push({ clip: createAnimationClip(channels), drawOrder, name });
   }
   return animations;
 }
@@ -786,3 +803,70 @@ function spineTransformMode(value: unknown): TransformInherit2D {
       return TransformMode2D.Normal;
   }
 }
+
+// Parses a Spine skeleton `.json` document (text) into a Skeleton2DImport — the setup-pose Skeleton2D
+// plus its named animations. Tolerant and best-effort: a malformed / non-Spine document returns the
+// sentinel `null` (the expected "unrecognized format" failure); a recognized document with missing or
+// unmodeled pieces yields best-effort data and reports `ImportDiagnostic`s through the optional
+// `diagnostics` sink. Names mirror Spine's vocabulary (bone/slot/skin/attachment/timeline).
+//
+// This first landing parses the bone hierarchy; slots, attachments, skins, and animation timelines are
+// layered on in the same tolerant shape, and Spine features Flight does not model (IK/transform/path
+// constraints, clipping/path/point attachments, events) emit `ImportDiagnosticSeverity.Skip` crumbs.
+export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (doc === null || typeof doc !== 'object') return null;
+  const record = doc as Record<string, unknown>;
+  const bones = parseSpineBones(record.bones, diagnostics);
+  const { attachmentNames, slots } = parseSpineSlots(record.slots, bones);
+  const skins = parseSpineSkins(record.skins, slots, diagnostics);
+  resolveSpineSetupAttachments(slots, attachmentNames, skins);
+  const animations = parseSpineAnimations(record.animations, bones, slots, skins, diagnostics);
+  const skeleton = createSkeleton2D(bones, slots);
+  if (skins.length > 0) skeleton.skins = skins;
+  return { animations, skeleton };
+}
+
+// One keyframe's whole ordering as sort keys per slot, or null when the stated moves do not describe a
+// permutation. `positions[p]` is the slot drawn at position p while it is being built; the returned
+// array inverts that, since a track carries one value per slot rather than per position.
+function resolveSpineDrawOrder(raw: unknown, slots: readonly Slot2D[]): number[] | null {
+  const count = slots.length;
+  const positions = new Array<number>(count).fill(UNCLAIMED_POSITION);
+  const moved = new Array<boolean>(count).fill(false);
+
+  if (Array.isArray(raw)) {
+    for (const offset of raw) {
+      if (offset === null || typeof offset !== 'object') continue;
+      const move = offset as { offset?: unknown; slot?: unknown };
+      const slotIndex = indexOfSpineSlot(slots, typeof move.slot === 'string' ? move.slot : '');
+      if (slotIndex < 0) return null;
+      const destination = slotIndex + numberOr(move.offset, 0);
+      if (destination < 0 || destination >= count) return null;
+      if (positions[destination] !== UNCLAIMED_POSITION) return null;
+      positions[destination] = slotIndex;
+      moved[slotIndex] = true;
+    }
+  }
+
+  // Slots nobody moved close the gaps in setup order, which is what "keeps its relative order" means.
+  let next = 0;
+  for (let position = 0; position < count; position++) {
+    if (positions[position] !== UNCLAIMED_POSITION) continue;
+    while (next < count && moved[next]) next++;
+    if (next >= count) return null;
+    positions[position] = next;
+    next++;
+  }
+
+  const sortKeys = new Array<number>(count).fill(0);
+  for (let position = 0; position < count; position++) sortKeys[positions[position]] = position;
+  return sortKeys;
+}
+
+const UNCLAIMED_POSITION = -1;
