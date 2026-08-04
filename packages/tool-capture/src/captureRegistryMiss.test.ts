@@ -5,6 +5,13 @@ import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captur
 
 // A verbatim line from a captured page, so the shape this parses is the shape the guards actually emit
 // rather than one invented to match the parser.
+//
+// `registry` is the one field NOT kept as the captured literal. RenderRegistry takes its values from
+// declaration order and nothing persists them, so the captured `2` meant NodeRenderer only against the
+// enum as it stood that day; inserting an alphabetically earlier member silently repoints the literal at
+// a different registry — which is exactly what happened, moving NodeRenderer to 5 and making 2
+// MaterialRenderer, so this fixture started asserting that a material-renderer miss is ignored. Name the
+// member. The captured shape is what this test is about; the ordinal never was.
 const OBSERVED_NODE_RENDERER_MISS = {
   __flight: true,
   t: 176,
@@ -13,7 +20,7 @@ const OBSERVED_NODE_RENDERER_MISS = {
   data: {
     kind: 'DisplayObject',
     message: 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)',
-    registry: 2,
+    registry: RenderRegistry.NodeRenderer,
   },
 };
 
