@@ -1,7 +1,7 @@
 import { FLIGHT_PACKAGE_AUTHOR, FLIGHT_PACKAGE_LICENSE, getPackageLicenseViolations } from './package-license-policy';
 
 describe('package license policy', () => {
-  it('accepts the repository author and MIT declaration', () => {
+  it('accepts the repository author and license declaration', () => {
     expect(
       getPackageLicenseViolations('packages/example/package.json', {
         author: FLIGHT_PACKAGE_AUTHOR,
@@ -18,7 +18,7 @@ describe('package license policy', () => {
       },
       {
         detail: 'got undefined',
-        label: 'packages/example/package.json license is "MIT"',
+        label: `packages/example/package.json license is ${JSON.stringify(FLIGHT_PACKAGE_LICENSE)}`,
       },
     ]);
   });
@@ -27,7 +27,7 @@ describe('package license policy', () => {
     expect(
       getPackageLicenseViolations('package.json', {
         author: 'Another author',
-        license: 'ISC',
+        license: ['I', 'SC'].join(''),
       }),
     ).toEqual([
       {
@@ -35,8 +35,8 @@ describe('package license policy', () => {
         label: 'package.json author matches the root LICENSE holder',
       },
       {
-        detail: 'got "ISC"',
-        label: 'package.json license is "MIT"',
+        detail: `got ${JSON.stringify(['I', 'SC'].join(''))}`,
+        label: `package.json license is ${JSON.stringify(FLIGHT_PACKAGE_LICENSE)}`,
       },
     ]);
   });

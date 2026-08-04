@@ -1,0 +1,160 @@
+import { checkLicenseProvenance, formatLicenseProvenanceReport } from './check-license-provenance';
+
+describe('license and provenance declaration gate', () => {
+  it('rejects every identifier with case-sensitive word boundaries', () => {
+    const identifiers = [
+      parts('M', 'IT'),
+      parts('B', 'SD'),
+      parts('A', 'pache'),
+      parts('G', 'PL'),
+      parts('L', 'G', 'PL'),
+      parts('A', 'G', 'PL'),
+      parts('I', 'SC'),
+      parts('M', 'PL'),
+      parts('E', 'PL'),
+      parts('C', 'DDL'),
+      parts('Z', 'lib'),
+      parts('Un', 'license'),
+      parts('C', 'C0'),
+      parts('C', 'C-BY'),
+      parts('W', 'TFPL'),
+      parts('Boost', ' Software License'),
+      parts('SIL', ' OFL'),
+    ];
+    const report = checkLicenseProvenance([{ path: 'notes.md', text: identifiers.join('\n') }]);
+
+    expect(report.violations.map((entry) => entry.match)).toEqual(identifiers);
+    expect(
+      checkLicenseProvenance([{ path: 'notes.md', text: `${parts('m', 'it')} X${parts('M', 'IT')}Y` }]).violations,
+    ).toEqual([]);
+    expect(checkLicenseProvenance([{ path: 'notes.md', text: `${parts('M', 'IT')}-0` }]).violations).toHaveLength(1);
+  });
+
+  it('allows only the root notice and exact manifest property as structural sites', () => {
+    const identifier = parts('M', 'IT');
+    const report = checkLicenseProvenance([
+      { path: 'LICENSE.md', text: identifier },
+      { path: 'package.json', text: `  "license": "${identifier}",` },
+      { path: 'packages/example/package.json', text: `  "license": "${identifier}"` },
+      { path: 'package.json', text: `  "description": "${identifier}"` },
+    ]);
+
+    expect(report.structuralMatches).toBe(3);
+    expect(report.violations).toEqual([
+      { line: 1, match: identifier, path: 'package.json', rule: 'license-identifier' },
+    ]);
+  });
+
+  it('keeps generated lock metadata as an exact named escape', () => {
+    const identifier = parts('I', 'SC');
+    const report = checkLicenseProvenance([
+      { path: 'package-lock.json', text: `      "license": "${identifier}",\n      "note": "${identifier}"` },
+    ]);
+
+    expect(report.escapes.find((entry) => entry.name === 'npm-lock-license-metadata')?.matches).toBe(1);
+    expect(report.violations).toEqual([
+      { line: 2, match: identifier, path: 'package-lock.json', rule: 'license-identifier' },
+    ]);
+  });
+
+  it('rejects every unconditional derivation marker', () => {
+    const phrases = [
+      words('adapted', 'from'),
+      words('transcribed', 'from'),
+      words('translated', 'from'),
+      words('algebra', 'sourced', 'from'),
+      words('ported', 'from'),
+    ];
+    const report = checkLicenseProvenance([{ path: 'source.ts', text: phrases.join('\n') }]);
+
+    expect(report.violations.map((entry) => entry.match.toLowerCase())).toEqual(phrases);
+  });
+
+  it('requires provenance context for the conditional marker', () => {
+    const phrase = words('derived', 'from');
+    const identifier = parts('M', 'IT');
+    const report = checkLicenseProvenance([
+      {
+        path: 'source.ts',
+        text: [
+          `value ${phrase} input`,
+          `implementation ${phrase} upstream (${identifier})`,
+          `implementation ${phrase} https://example.com/source`,
+          `implementation ${phrase} ${parts('Dragon', 'Bones')}`,
+          `implementation ${phrase} Acme project`,
+          `algorithm ${phrase} UAX 9`,
+        ].join('\n'),
+      },
+    ]);
+
+    expect(
+      report.violations.filter((entry) => entry.rule === 'derived-from-with-provenance').map((entry) => entry.line),
+    ).toEqual([2, 3, 4, 5]);
+  });
+
+  it('uses adjacent source comments as context but keeps document lines independent', () => {
+    const phrase = words('derived', 'from');
+    const source = checkLicenseProvenance([
+      { path: 'source.ts', text: `// implementation ${phrase} upstream\n// https://example.com/source` },
+    ]);
+    const document = checkLicenseProvenance([
+      { path: 'notes.md', text: `implementation ${phrase} upstream\nhttps://example.com/source` },
+    ]);
+
+    expect(source.violations).toHaveLength(1);
+    expect(document.violations).toEqual([]);
+  });
+
+  it('protects negative assertions for every derivation marker', () => {
+    const lines = [
+      `never ${words('adapted', 'from')} upstream`,
+      `not ${words('transcribed', 'from')} a licensed rig`,
+      `without content ${words('translated', 'from')} elsewhere`,
+      `no algebra ${words('sourced', 'from')} another codebase`,
+      `nothing ${words('ported', 'from')} a runtime`,
+      `not ${words('derived', 'from')} https://example.com/source`,
+    ];
+
+    expect(checkLicenseProvenance([{ path: 'source.ts', text: lines.join('\n') }]).violations).toEqual([]);
+  });
+
+  it('reports the two exact policy escapes and their reasons', () => {
+    const identifier = parts('M', 'IT');
+    const projectPolicy = `Flight is ${identifier}, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
+    const example = `- **State format facts as facts about the format, not as excerpts from a document.** "PNG's magic bytes are \`89 50 4E 47\`" needs no attribution; "${words('derived', 'from')} \`<url>\` at \`<sha>\`, ${identifier}" manufactures one.`;
+    const report = checkLicenseProvenance([{ path: 'AGENTS.md', text: `${projectPolicy}\n${example}` }]);
+    const output = formatLicenseProvenanceReport(report);
+
+    expect(report.violations).toEqual([]);
+    expect(output).toContain('project-license-policy [1 matched line] —');
+    expect(output).toContain('prohibited-provenance-example [1 matched line] —');
+  });
+
+  it('does not mistake re-exports or published algorithm names for provenance', () => {
+    expect(
+      checkLicenseProvenance([
+        {
+          path: 'source.ts',
+          text: `re-exported from the root; levels ${words('derived', 'from')} UAX 9`,
+        },
+      ]).violations,
+    ).toEqual([]);
+  });
+
+  it('deduplicates a finding seen in both working and staged content', () => {
+    const identifier = parts('M', 'IT');
+    const input = { path: 'notes.md', text: identifier };
+    const report = checkLicenseProvenance([input, input]);
+
+    expect(report.scannedFiles).toBe(1);
+    expect(report.violations).toHaveLength(1);
+  });
+});
+
+function parts(...values: string[]): string {
+  return values.join('');
+}
+
+function words(...values: string[]): string {
+  return values.join(' ');
+}

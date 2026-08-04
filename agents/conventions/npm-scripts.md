@@ -49,8 +49,8 @@ are generated noise — `rg` ignores them through `.gitignore`, while plain recu
 but an orphaned distribution can masquerade as an API that still exists. This is not only disk hygiene:
 plain `grep -r` can surface declarations for a removed package and misdirect work toward an absent API.
 Tool choice removes that search noise; only pruning removes the lie. The detector gates this misleading
-case without joining `npm run check`, which stays a source-quality sweep independent of ignored clone
-state.
+case in both precommit and the bare `npm run check` sweep. A scoped package check omits it because ignored
+clone state is repository-wide rather than package-specific.
 
 The precommit detector reports the paths and asks the user to run `npm run clean`; it never mutates the
 tree itself. Detection is based only on directory and manifest existence, never timestamps. Explicit
@@ -70,6 +70,19 @@ none in three others, so this is clone residue rather than a universal checkout 
 distributions changed no gate outcome on three independent trees. The detector exists because graph-only
 cleanup cannot truthfully claim to remove renamed-away output and that output can pollute searches, not
 because stale distributions were shown to break a build or test.
+
+### Repository provenance gates
+
+`check:license-provenance` scans tracked text and keeps license identifiers plus implementation-origin
+claims out of source and documentation. The root notice and exact package-manifest license properties are
+structural sites; generated lock metadata and the two repository-policy examples are named, justified
+escapes printed on every run. Negative assertions remain valid policy and test prose rather than being
+misclassified as claims. The gate runs in precommit and the bare `npm run check` sweep.
+
+`check:fingerprint-source-hashes` requires every functional and example fingerprint column to retain its
+scene-source hash. Seven historical columns have neither a pixel hash nor a recoverable write boundary;
+the command names each one and prints why absence is the honest state. It runs beside `support:check` in
+the bare repository sweep, while focused package checks omit both repository-wide baseline invariants.
 
 ## Read vs write: `:baseline`
 
