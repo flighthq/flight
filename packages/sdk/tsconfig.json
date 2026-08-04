@@ -325,6 +325,9 @@
       "path": "../spring"
     },
     {
+      "path": "../statechart"
+    },
+    {
       "path": "../quadbatch"
     },
     {

@@ -101,6 +101,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/snapshot',
     '@flighthq/socket',
     '@flighthq/spring',
+    '@flighthq/statechart',
     '@flighthq/spritesheet',
     '@flighthq/spritesheet-formats',
     '@flighthq/statusbar',

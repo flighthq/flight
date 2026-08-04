@@ -560,6 +560,8 @@ export * from './SpecularGlossinessPbrMaterial';
 export * from './SpineParticleSchema';
 export * from './SpotLight';
 export * from './Spring';
+export * from './Statechart';
+export * from './StatechartSignals';
 export * from './Sprite';
 export * from './SwfDocumentImport';
 export * from './SpriteRenderer';

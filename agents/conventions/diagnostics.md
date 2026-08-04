@@ -85,7 +85,7 @@ which is exactly what a downstream consumer did — so the set is listed here ra
 `enableEntityRuntimeGuards` · `enableGlColorAdjustmentGuards` · `enableGlPbrExtensionGuards` ·
 `enableGlRenderEffectGuards` · `enableGlRenderStateGuards` · `enableGlRenderTextureGuards` ·
 `enableGlTextureResolverGuards` · `enableInteractionGuards` · `enableRenderRegistryGuards` ·
-`enableShortcutGuards` · `enableSnapshotGuards` · `enableTextureAtlasGuards` ·
+`enableShortcutGuards` · `enableSnapshotGuards` · `enableStatechartGuards` · `enableTextureAtlasGuards` ·
 `enableWgpuColorAdjustmentGuards` · `enableWgpuTextureResolverGuards`
 
 For a render session, `enableFlightDiagnostics(state)` in `@flighthq/debug` is the existing convenience

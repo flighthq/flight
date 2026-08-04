@@ -108,6 +108,7 @@
     { "path": "./packages/physics2d" },
     { "path": "./packages/spatial" },
     { "path": "./packages/spring" },
+    { "path": "./packages/statechart" },
     { "path": "./packages/quadbatch" },
     { "path": "./packages/spritesheet" },
     { "path": "./packages/spritesheet-formats" },
