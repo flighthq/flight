@@ -20,10 +20,6 @@ The canonical real-file check uses Ruffle's uncompressed named-shape test:
 - Container: uncompressed `FWS`, SWF version 32, declared length 883 bytes
 - Relevant records: `DefineShape3`, named `PlaceObject2`, `ShowFrame`, and `End`
 
-Ruffle offers the repository under Apache-2.0 or MIT at the recipient's option. This evidence selects
-the MIT terms in the revision-pinned
-[`LICENSE.md`](https://raw.githubusercontent.com/ruffle-rs/ruffle/f8d8de6bb15c3d7a799d7088997422b926c8478c/LICENSE.md)
-(SHA-256 `e39a2fa3dfd7238f0924f568fabb659ee1a9d95ea6460dbae4bc9b67017a1c71`).
 The SWF is not redistributed by Flight: only this provenance record and the derived manifest are
 committed.
 
@@ -123,8 +119,7 @@ SWFs. It exists to answer one question the synthetic suite cannot: does this imp
 written by real tools? Like the fixture above, no binary is committed — only this procedure and the
 aggregate result.
 
-- Repository and revision: `ruffle-rs/ruffle` at `f8d8de6bb15c3d7a799d7088997422b926c8478c`, MIT terms as
-  above.
+- Repository and revision: `ruffle-rs/ruffle` at `f8d8de6bb15c3d7a799d7088997422b926c8478c`.
 - Sample: every `.swf` in the tree under 300 KB, sorted by path, taking every sixteenth — 306 files,
   1.9 MB, spanning `avm1`, `avm2`, Shumway, Gnash/Ming, and exporter fixtures.
 
