@@ -1,11 +1,18 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { RenderProxy2D, WgpuRenderState, WgpuShapeMeshBuffers } from '@flighthq/types/contract';
+import type {
+  ColorScaleBias,
+  RenderProxy2D,
+  WgpuRenderState,
+  WgpuShapeMeshBuffers,
+  WgpuShapeMeshPipeline,
+} from '@flighthq/types/contract';
 import type { WgpuShapeMesh } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
+import { drawWgpuShapeMeshBatch, drawWgpuShapeMeshes } from './wgpuShapeMesh';
 
 beforeAll(() => {
   installWgpuMock();
@@ -26,6 +33,8 @@ function makeBuffers(): WgpuShapeMeshBuffers {
     indexCapacities: [],
     uniformBuffers: [],
     bindGroups: [],
+    colorScaleBiasUniformBuffers: [],
+    colorScaleBiasBindGroups: [],
   };
 }
 
@@ -41,8 +50,37 @@ function makePassSpy(): GPURenderPassEncoder {
   } as unknown as GPURenderPassEncoder;
 }
 
-function makeProxy(matrix = createMatrix(), alpha = 1, blendMode: BlendMode | null = null): RenderProxy2D {
-  return { alpha, blendMode, transform2D: matrix } as unknown as RenderProxy2D;
+function makeProxy(overrides?: Partial<RenderProxy2D>): RenderProxy2D {
+  return {
+    alpha: 1,
+    blendMode: null,
+    colorMatrix: null,
+    colorScaleBias: null,
+    transform2D: createMatrix(),
+    ...overrides,
+  } as unknown as RenderProxy2D;
+}
+
+function ct(
+  redScale = 1,
+  greenScale = 1,
+  blueScale = 1,
+  alphaScale = 1,
+  redBias = 0,
+  greenBias = 0,
+  blueBias = 0,
+  alphaBias = 0,
+): ColorScaleBias {
+  return {
+    redScale,
+    greenScale,
+    blueScale,
+    alphaScale,
+    redBias,
+    greenBias,
+    blueBias,
+    alphaBias,
+  } as ColorScaleBias;
 }
 
 async function makeState(): Promise<WgpuRenderState> {
@@ -50,6 +88,42 @@ async function makeState(): Promise<WgpuRenderState> {
   getWgpuRenderStateRuntime(state).renderPass = makePassSpy();
   return state;
 }
+
+describe('drawWgpuShapeMeshBatch', () => {
+  it('writes only the shared matrix and color fields, preserving a feature-owned uniform tail', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+    const uniformBuffers: GPUBuffer[] = [];
+    const bindGroups: GPUBindGroup[] = [];
+    const uniformData = new Float32Array(24);
+    uniformData.set([0.25, 0.5, 0.75, 1, 0.1, 0.2, 0.3, 0.4], 16);
+    const pipelineEntry: WgpuShapeMeshPipeline = {
+      bindGroupLayout: {} as GPUBindGroupLayout,
+      pipeline: {} as GPURenderPipeline,
+    };
+    let upload: Float32Array | undefined;
+    state.device.queue.writeBuffer = vi.fn((buffer: GPUBuffer, _offset: number, data: BufferSource) => {
+      if (buffer !== uniformBuffers[0]) return;
+      const view = ArrayBuffer.isView(data) ? data : new Uint8Array(data as ArrayBuffer);
+      upload = new Float32Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
+    }) as unknown as GPUQueue['writeBuffer'];
+
+    drawWgpuShapeMeshBatch(
+      state,
+      makeProxy({ alpha: 0.5 }),
+      [{ ...TRIANGLE, color: 0xffffff }],
+      buffers,
+      pipelineEntry,
+      uniformBuffers,
+      bindGroups,
+      uniformData,
+    );
+
+    expect(uniformBuffers).toHaveLength(1);
+    expect(upload?.slice(12, 16)).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5]));
+    expect(upload?.slice(16, 24)).toEqual(new Float32Array([0.25, 0.5, 0.75, 1, 0.1, 0.2, 0.3, 0.4]));
+  });
+});
 
 describe('drawWgpuShapeMeshes', () => {
   it('sets the shape-mesh pipeline and draws each mesh', async () => {
@@ -121,8 +195,8 @@ describe('drawWgpuShapeMeshes', () => {
   it('bakes the node blend mode into a distinct shape pipeline', async () => {
     const state = await makeState();
 
-    drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 1, BlendMode.Normal), [TRIANGLE], makeBuffers());
-    drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 1, BlendMode.Add), [TRIANGLE], makeBuffers());
+    drawWgpuShapeMeshes(state, makeProxy({ blendMode: BlendMode.Normal }), [TRIANGLE], makeBuffers());
+    drawWgpuShapeMeshes(state, makeProxy({ blendMode: BlendMode.Add }), [TRIANGLE], makeBuffers());
 
     const pipelines = [...getWgpuRenderStateRuntime(state).shapeMeshPipelines!.values()].map(
       (entry) => entry.pipeline,
@@ -145,7 +219,7 @@ describe('drawWgpuShapeMeshes', () => {
       }
     }) as unknown as GPUQueue['writeBuffer'];
 
-    drawWgpuShapeMeshes(state, makeProxy(createMatrix(), 0.5), [{ ...TRIANGLE, color: 0xffffff }], buffers);
+    drawWgpuShapeMeshes(state, makeProxy({ alpha: 0.5 }), [{ ...TRIANGLE, color: 0xffffff }], buffers);
 
     const uniformData = writes.get(buffers.uniformBuffers[0]);
     expect(uniformData).toBeDefined();
@@ -175,5 +249,71 @@ describe('drawWgpuShapeMeshes', () => {
 
     expect(pass.setPipeline).not.toHaveBeenCalled();
     expect(runtime.shapeMeshPipelines?.size ?? 0).toBe(0);
+  });
+
+  it('ignores ColorScaleBias when the opt-in feature is not registered', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+
+    drawWgpuShapeMeshes(state, makeProxy({ colorScaleBias: ct(0.5) }), [TRIANGLE], buffers);
+
+    expect(buffers.uniformBuffers).toHaveLength(1);
+    expect(buffers.colorScaleBiasUniformBuffers).toHaveLength(0);
+  });
+
+  it('keeps registered but unadjusted meshes on the lean uniform path', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+    registerWgpuColorAdjustmentMaterialFeature(state);
+
+    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE], buffers);
+
+    expect(buffers.uniformBuffers).toHaveLength(1);
+    expect(buffers.colorScaleBiasUniformBuffers).toHaveLength(0);
+  });
+
+  it('folds ColorScaleBias through a separate 96-byte uniform and shader', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+    registerWgpuColorAdjustmentMaterialFeature(state);
+    const createShaderModule = vi.spyOn(state.device, 'createShaderModule');
+    const writes = new Map<GPUBuffer, Float32Array>();
+    state.device.queue.writeBuffer = vi.fn((buffer: GPUBuffer, _offset: number, data: BufferSource) => {
+      const view = ArrayBuffer.isView(data) ? data : new Uint8Array(data as ArrayBuffer);
+      if (view.byteLength % 4 === 0) {
+        writes.set(buffer, new Float32Array(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength)));
+      }
+    }) as unknown as GPUQueue['writeBuffer'];
+
+    drawWgpuShapeMeshes(
+      state,
+      makeProxy({ alpha: 0.5, colorScaleBias: ct(0.25, 0.5, 0.75, 0.8, 0.1, 0.2, 0.3, 0.4) }),
+      [{ ...TRIANGLE, color: 0xffffff }],
+      buffers,
+    );
+
+    expect(buffers.uniformBuffers).toHaveLength(0);
+    expect(buffers.colorScaleBiasUniformBuffers).toHaveLength(1);
+    const uniform = writes.get(buffers.colorScaleBiasUniformBuffers[0]);
+    expect(uniform).toHaveLength(24);
+    expect(uniform?.slice(12, 16)).toEqual(new Float32Array([0.5, 0.5, 0.5, 0.5]));
+    expect(uniform?.slice(16, 24)).toEqual(new Float32Array([0.25, 0.5, 0.75, 0.8, 0.1, 0.2, 0.3, 0.4]));
+    const shader = createShaderModule.mock.calls
+      .map(([descriptor]) => descriptor.code)
+      .find((code) => code.includes('struct ShapeMeshUniforms'));
+    expect(shader).toContain('u.color.rgb / u.color.a');
+    expect(shader).toContain('applyFlightColorAdjustment(color, u.colorScale, u.colorBias)');
+    expect(shader).toContain('color.rgb * color.a');
+  });
+
+  it('leaves the full color-matrix path outside the bounded solid-mesh fold', async () => {
+    const state = await makeState();
+    const buffers = makeBuffers();
+    registerWgpuColorAdjustmentMaterialFeature(state);
+
+    drawWgpuShapeMeshes(state, makeProxy({ colorMatrix: new Array(20).fill(0) }), [TRIANGLE], buffers);
+
+    expect(buffers.uniformBuffers).toHaveLength(1);
+    expect(buffers.colorScaleBiasUniformBuffers).toHaveLength(0);
   });
 });

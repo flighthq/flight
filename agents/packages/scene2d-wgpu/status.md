@@ -8,6 +8,29 @@ by: builder4
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-08-04 — tessellated solid shapes fold resolved `ColorScaleBias`
+
+The opt-in WebGPU color-adjustment feature now owns a tessellated solid-fill variant. `wgpuShapeMesh`
+delegates only when that feature is registered, the render proxy carries a resolved `ColorScaleBias`,
+and it carries no full `colorMatrix`. The feature compiles its own shape shader and allocates separate
+96-byte per-mesh uniforms on demand; the untinted path retains its original 64-byte uniform, shader, and
+pipeline cache with no adjustment data or shader code. The shared driver writes the projection/world
+matrix and premultiplied mesh color, leaving the feature tail intact. The fragment shader preserves the
+existing alpha order: unpremultiply, apply the scale/bias adjustment, then repremultiply for the established
+blend state.
+
+The scope stops at the solid-mesh draw seam. `updateRenderProxyColorScaleBias`, local/parent composition,
+the `RenderProxy` color fields, full color-matrix behavior, and alpha ordering are unchanged. Full
+`colorMatrix` support therefore remains outside this fold.
+
+`functional/scenes/swf-alpha-transform.ts` now proves the imported adjusted white solid is green on both
+WebGL and WebGPU. The WebGPU capture reports `wgpuMeshCount: 1` and
+`wgpuRasterSurfaceAllocated: false`, so the result is the tessellated path rather than a raster fallback;
+Canvas and DOM retain their recorded white result. Fresh screenshots were inspected, the WebGPU baseline
+was updated, and the scoped smoke, parity, and regression gates pass. Focused unit coverage passes 29 tests
+across the mesh driver, color-adjustment feature, and shape-data teardown. The full package suite passes
+29 files / 173 tests, and the whole-repository `npm run check` gate passes.
+
 ## 2026-08-04 — tessellated solid shapes do not fold colour adjustments
 
 Standalone renderer capability gap: the default hybrid shape route in

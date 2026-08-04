@@ -5,10 +5,10 @@
 //
 // The scene deliberately records current backend behavior while the representation of SWF alpha-add is
 // under design. DOM and Canvas do honor the imported node-alpha multiplier. Every backend currently
-// culls m=0 before the non-zero alpha add can contribute. WebGL folds the RGB transform into its solid-
-// shape path; WebGPU's imported solid reaches its tessellated mesh path, which currently does not fold
-// the render proxy's colour adjustment, so that sample remains white. The runtime mesh-data assertion is
-// important: a white WebGPU pixel alone would not distinguish the mesh capability gap from raster use.
+// culls m=0 before the non-zero alpha add can contribute. WebGL and WebGPU fold the RGB transform into
+// their tessellated solid-shape paths; Canvas and DOM leave that backend-specific fold unapplied. The
+// WebGPU runtime mesh-data assertion is important: a green pixel alone would not prove the tessellated
+// path owns the fold rather than silently falling back to rasterization.
 
 import { getRenderProxy2D } from '@flighthq/render/contract';
 import type { Bitmap, ColorScaleBias, MovieClip, Shape, WgpuShapeRendererData } from '@flighthq/sdk';
@@ -88,8 +88,9 @@ export function assertRender(frame: Readonly<Bitmap>): void {
       `[swf-alpha-transform/${backend}] m=0 plus non-zero alpha-add was not culled — got #${hex(zeroMultiplyWithAdd)}`,
     );
   }
-  if (backend === 'webgl' ? !isGreen(rgbTransform) : !isWhite(rgbTransform)) {
-    const expected = backend === 'webgl' ? 'green (folded RGB transform)' : 'white (current no-fold path)';
+  const expectsGreen = backend === 'webgl' || backend === 'webgpu';
+  if (expectsGreen ? !isGreen(rgbTransform) : !isWhite(rgbTransform)) {
+    const expected = expectsGreen ? 'green (folded RGB transform)' : 'white (no GPU adjustment fold)';
     throw new Error(`[swf-alpha-transform/${backend}] adjusted solid is not ${expected} — got #${hex(rgbTransform)}`);
   }
 }

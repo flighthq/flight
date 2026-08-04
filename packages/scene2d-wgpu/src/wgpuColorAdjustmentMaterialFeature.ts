@@ -1,14 +1,19 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
+  RenderProxy2D,
   WgpuColorAdjustmentFlush,
   WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuRenderStateRuntime,
+  WgpuShapeMesh,
+  WgpuShapeMeshBuffers,
+  WgpuShapeMeshPipeline,
   TintMaterialData,
 } from '@flighthq/types/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
+import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh';
 
 // Enables the opt-in inline color-adjustment fold on a WebGPU render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise
@@ -514,6 +519,111 @@ function getColorBias(value: Readonly<ColorScaleBias | TintMaterialData>, channe
   return value.alphaBias;
 }
 
+// Draws tessellated solid fills through the same opt-in scale/bias fold as quad batches. A shape has
+// one resolved node adjustment, so the value is uploaded once in each per-mesh uniform rather than as
+// vertex data. The source color remains premultiplied by mesh alpha × node alpha in the shared driver;
+// the fragment shader preserves the established unpremultiply → adjust → repremultiply order.
+function drawWgpuShapeMeshesColorScaleBias(
+  state: WgpuRenderState,
+  renderProxy: RenderProxy2D,
+  meshes: readonly WgpuShapeMesh[],
+  buffers: WgpuShapeMeshBuffers,
+): void {
+  const colorScaleBias = renderProxy.colorScaleBias!;
+  const uniform = _shapeMeshColorScaleBiasUniformScratch;
+  uniform[16] = colorScaleBias.redScale;
+  uniform[17] = colorScaleBias.greenScale;
+  uniform[18] = colorScaleBias.blueScale;
+  uniform[19] = colorScaleBias.alphaScale;
+  uniform[20] = colorScaleBias.redBias;
+  uniform[21] = colorScaleBias.greenBias;
+  uniform[22] = colorScaleBias.blueBias;
+  uniform[23] = colorScaleBias.alphaBias;
+  drawWgpuShapeMeshBatch(
+    state,
+    renderProxy,
+    meshes,
+    buffers,
+    ensureWgpuShapeMeshColorScaleBiasPipeline(state, renderProxy.blendMode),
+    buffers.colorScaleBiasUniformBuffers,
+    buffers.colorScaleBiasBindGroups,
+    uniform,
+  );
+}
+
+function ensureWgpuShapeMeshColorScaleBiasPipeline(
+  state: WgpuRenderState,
+  blendMode: RenderProxy2D['blendMode'],
+): WgpuShapeMeshPipeline {
+  let cache = _shapeMeshColorScaleBiasPipelines.get(state.device);
+  if (cache === undefined) {
+    cache = new Map();
+    _shapeMeshColorScaleBiasPipelines.set(state.device, cache);
+  }
+  const runtime = getWgpuRenderStateRuntime(state);
+  const format = runtime.currentColorFormat ?? state.format;
+  const key = `${format}|${blendMode ?? 'null'}`;
+  const existing = cache.get(key);
+  if (existing !== undefined) return existing;
+
+  const device = state.device;
+  const module = device.createShaderModule({ code: SHAPE_MESH_COLOR_SCALE_BIAS_WGSL });
+  const bindGroupLayout = device.createBindGroupLayout({
+    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+  });
+  const layout = device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });
+  const pipeline = device.createRenderPipeline({
+    layout,
+    vertex: {
+      module,
+      entryPoint: 'vs_main',
+      buffers: [{ arrayStride: 8, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }] }],
+    },
+    fragment: {
+      module,
+      entryPoint: 'fs_main',
+      targets: [{ format, blend: getWgpuBlendState(blendMode) }],
+    },
+    primitive: { topology: 'triangle-list', cullMode: 'none' },
+    depthStencil: {
+      format: 'depth24plus-stencil8',
+      depthWriteEnabled: false,
+      depthCompare: 'always',
+      stencilFront: { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' },
+      stencilBack: { compare: 'equal', passOp: 'keep', failOp: 'keep', depthFailOp: 'keep' },
+      stencilReadMask: 0xff,
+      stencilWriteMask: 0x00,
+    },
+  });
+  const created: WgpuShapeMeshPipeline = { pipeline, bindGroupLayout };
+  cache.set(key, created);
+  return created;
+}
+
+const SHAPE_MESH_COLOR_SCALE_BIAS_WGSL = /* wgsl */ `
+${WGPU_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
+struct ShapeMeshUniforms {
+  matrix : mat3x3f,
+  color : vec4f,
+  colorScale : vec4f,
+  colorBias : vec4f,
+}
+@group(0) @binding(0) var<uniform> u : ShapeMeshUniforms;
+@vertex fn vs_main(@location(0) position : vec2f) -> @builtin(position) vec4f {
+  let p = u.matrix * vec3f(position, 1.0);
+  return vec4f(p.x, p.y, 0.0, 1.0);
+}
+@fragment fn fs_main() -> @location(0) vec4f {
+  if (u.color.a <= 0.0) { discard; }
+  var color = vec4f(u.color.rgb / u.color.a, u.color.a);
+  color = applyFlightColorAdjustment(color, u.colorScale, u.colorBias);
+  return vec4f(color.rgb * color.a, color.a);
+}
+`;
+
+const _shapeMeshColorScaleBiasPipelines = new WeakMap<GPUDevice, Map<string, WgpuShapeMeshPipeline>>();
+const _shapeMeshColorScaleBiasUniformScratch = new Float32Array(24);
+
 const COLOR_SCALE_BIAS_WGSL = /* wgsl */ `
 ${WGPU_COLOR_ADJUSTMENT_FRAGMENT_CHUNK}
 @group(3) @binding(0) var<storage, read> ctData : array<f32>;
@@ -634,6 +744,7 @@ const _colorMatrixModules = new WeakMap<GPUDevice, GPUShaderModule>();
 const wgpuColorAdjustmentMaterialFeature: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: WGPU_COLOR_ADJUSTMENT_FRAGMENT_CHUNK,
   matrixFragmentShaderChunk: WGPU_COLOR_MATRIX_FRAGMENT_CHUNK,
+  drawShapeMeshes: drawWgpuShapeMeshesColorScaleBias,
   record: recordWgpuColorAdjustment,
   resolveFlush: resolveWgpuColorAdjustmentFlush,
 };

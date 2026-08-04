@@ -29,6 +29,8 @@ function emptyData(): WgpuShapeRendererData {
       indexCapacities: [],
       uniformBuffers: [],
       bindGroups: [],
+      colorScaleBiasUniformBuffers: [],
+      colorScaleBiasBindGroups: [],
     },
   };
 }
@@ -75,12 +77,14 @@ describe('destroyWgpuShapeData', () => {
     } as never);
     const bufferDestroy = vi.fn();
     shapeData.meshBuffers.vertexBuffers.push({ destroy: bufferDestroy } as never);
+    shapeData.meshBuffers.colorScaleBiasUniformBuffers.push({ destroy: bufferDestroy } as never);
 
     destroyWgpuShapeData(state, data);
 
     expect(destroy).toHaveBeenCalled();
     expect(bufferDestroy).toHaveBeenCalled();
     expect(shapeData.meshBuffers.vertexBuffers).toHaveLength(0);
+    expect(shapeData.meshBuffers.colorScaleBiasUniformBuffers).toHaveLength(0);
   });
 });
 
