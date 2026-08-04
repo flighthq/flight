@@ -45,7 +45,7 @@ When a feature's familiar API would require hidden state, eager side effects, or
 
 ## License Provenance
 
-Flight is MIT, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.
+Flight is MIT, copyright as stated in the root `LICENSE.md` — the operative text, and the only place the holder is named. **No work may attach an attribution obligation to any outside party.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.
 
 - **Never vendor** third-party source, specification documents, definition files, corpora, or fixtures into this repo — not `packages/`, not `agents/`, not a scratch file under the repo root.
 - **Testing against licensed material is fine.** A DVD player may use a licensed DVD to test playback without taking its contents; verifying our implementation against someone's real file is use, not incorporation. Fetch on demand, keep it outside the repo, commit nothing.
