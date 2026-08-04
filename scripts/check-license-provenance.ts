@@ -38,9 +38,14 @@ export interface LicenseProvenanceEscapeResult {
 }
 
 interface MarkerRule {
-  conditional: boolean;
   name: string;
   phrase: string;
+}
+
+interface LicenseTokenMatch {
+  index: number;
+  match: string;
+  rule: string;
 }
 
 const IDENTIFIERS = [
@@ -69,19 +74,25 @@ const MARKERS: readonly MarkerRule[] = [
   marker('translated-from', 'translated', 'from'),
   marker('algebra-sourced-from', 'algebra', 'sourced', 'from'),
   marker('ported-from', 'ported', 'from'),
-  { conditional: true, name: 'derived-from-with-provenance', phrase: words('derived', 'from') },
+  marker('derived-from-with-provenance', 'derived', 'from'),
+];
+
+const LICENSE_VOCABULARY = [
+  words('third-party', 'licence'),
+  words('third-party', 'license'),
+  words('attribution', 'obligation'),
+  words('licensed', 'rig'),
+  words('licenced', 'rig'),
 ];
 
 const IDENTIFIER_PATTERN = new RegExp(
   `(?<![A-Za-z0-9])(?:${IDENTIFIERS.map(escapeRegExp).join('|')})(?![A-Za-z0-9])`,
   'g',
 );
-
-const PROJECT_BRANDS = [parts('Dragon', 'Bones'), parts('Open', 'FL'), parts('Pixi', 'JS')];
-const PROJECT_CONTEXT_PATTERN = new RegExp(
-  `(?:${PROJECT_BRANDS.map(escapeRegExp).join('|')})|\\b[A-Z][A-Za-z0-9]*(?:[ -][A-Z][A-Za-z0-9]*)* (?:codebase|corpus|framework|library|project|repo|repository|runtime)\\b`,
+const LICENSE_VOCABULARY_PATTERN = new RegExp(
+  `(?<![A-Za-z0-9])(?:${LICENSE_VOCABULARY.map(escapeRegExp).join('|')})(?![A-Za-z0-9])`,
+  'gi',
 );
-const URL_PATTERN = /https?:\/\/[^\s)>'"]+/;
 const NEGATION_PATTERN = /\b(?:never|neither|no|not|nothing|without)\b/i;
 const MANIFEST_LICENSE_LINE = /^\s*"license"\s*:\s*"[^"]+"\s*,?\s*$/;
 const MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024;
@@ -108,7 +119,7 @@ const NAMED_ESCAPES: readonly LicenseProvenanceEscape[] = [
   },
 ];
 
-/** Finds declaration and attribution markers outside the repository's narrow structural sites. */
+/** Finds licence tokens and classifies implementation-origin language only when a token is present. */
 export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]): LicenseProvenanceReport {
   const escapeLines = NAMED_ESCAPES.map(() => new Set<string>());
   const flightPackages = getFlightPackageNames(inputs);
@@ -119,21 +130,22 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
     const path = normalizePath(input.path);
     const lines = input.text.split(/\r?\n/);
     for (const [index, line] of lines.entries()) {
-      for (const match of line.matchAll(identifierPattern())) {
+      const activeTokens = licenseTokenMatches(line).filter((match) => !isNegated(line, match.index));
+      for (const token of activeTokens) {
         const disposition = dispositionOf(path, line, index, escapeLines);
         if (disposition === 'structural') {
-          structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
+          structuralMatches.add(`${path}:${index + 1}:${token.match}`);
         } else if (disposition === 'violation') {
-          violations.push({ line: index + 1, match: match[0], path, rule: 'license-identifier' });
+          violations.push({ line: index + 1, match: token.match, path, rule: token.rule });
         }
       }
 
+      if (activeTokens.length === 0) continue;
       for (const rule of MARKERS) {
         const pattern = markerPattern(rule.phrase);
         for (const match of line.matchAll(pattern)) {
           if (isNegated(line, match.index ?? 0)) continue;
-          if (rule.conditional && !hasProvenanceContext(line)) continue;
-          if (!rule.conditional && isPermittedDerivationObject(line, match, flightPackages)) continue;
+          if (isPermittedDerivationObject(line, match, flightPackages)) continue;
           const disposition = dispositionOf(path, line, index, escapeLines);
           if (disposition === 'structural') {
             structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
@@ -154,7 +166,7 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
       name: entry.name,
       reason: entry.reason,
     })),
-    matcherState: 'semantic negatives protected; token-keying ready',
+    matcherState: 'semantic negatives protected; token-keying active',
     scannedFiles: new Set(inputs.map((input) => normalizePath(input.path))).size,
     structuralMatches: structuralMatches.size,
     violations: uniqueViolations,
@@ -246,26 +258,38 @@ function getFlightPackageNames(inputs: readonly LicenseProvenanceInput[]): Set<s
   return names;
 }
 
-function hasProvenanceContext(context: string): boolean {
-  return identifierPattern().test(context) || URL_PATTERN.test(context) || PROJECT_CONTEXT_PATTERN.test(context);
-}
-
 function identifierPattern(): RegExp {
   return new RegExp(IDENTIFIER_PATTERN.source, IDENTIFIER_PATTERN.flags);
 }
 
+function licenseTokenMatches(line: string): LicenseTokenMatch[] {
+  return [
+    ...[...line.matchAll(identifierPattern())].map((match) => ({
+      index: match.index ?? 0,
+      match: match[0],
+      rule: 'license-identifier',
+    })),
+    ...[...line.matchAll(licenseVocabularyPattern())].map((match) => ({
+      index: match.index ?? 0,
+      match: match[0],
+      rule: 'license-vocabulary',
+    })),
+  ].sort((a, b) => a.index - b.index || a.match.localeCompare(b.match));
+}
+
+function licenseVocabularyPattern(): RegExp {
+  return new RegExp(LICENSE_VOCABULARY_PATTERN.source, LICENSE_VOCABULARY_PATTERN.flags);
+}
+
 function isNegated(line: string, matchIndex: number): boolean {
-  const clauseStart = Math.max(
-    line.lastIndexOf('.', matchIndex - 1),
-    line.lastIndexOf(';', matchIndex - 1),
-    line.lastIndexOf('!', matchIndex - 1),
-    line.lastIndexOf('?', matchIndex - 1),
-  );
+  const prefix = line.slice(0, matchIndex);
+  const boundaries = [...prefix.matchAll(/[;!?—]|\.(?=\s|$)/g)];
+  const clauseStart = boundaries.at(-1)?.index ?? -1;
   const wordsBefore =
     line
       .slice(clauseStart + 1, matchIndex)
       .match(/[A-Za-z]+/g)
-      ?.slice(-8)
+      ?.slice(-12)
       .join(' ') ?? '';
   return NEGATION_PATTERN.test(wordsBefore);
 }
@@ -291,7 +315,7 @@ function isPackageManifest(path: string): boolean {
 }
 
 function marker(name: string, ...phrase: string[]): MarkerRule {
-  return { conditional: false, name, phrase: words(...phrase) };
+  return { name, phrase: words(...phrase) };
 }
 
 function markerPattern(phrase: string): RegExp {
