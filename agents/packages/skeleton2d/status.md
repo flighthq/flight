@@ -37,9 +37,14 @@ a deformer, or proposing a package split on bundle-cost grounds.
 - **`computeSkeleton2DBoneWorldTransform`** extracted as the primitive `computeSkeleton2DWorldTransforms`
   is a linear pass over, because a constraint solver needs exactly it.
 
-**Path constraints are written but NOT registered pending an acknowledgment** that they stay in this
-package rather than a neighbour cell. The code is independent of that decision; only the registrar call
-and the `@flighthq/path` manifest edge embody it. See [rig model §4](./rig-model.md) for the measurement.
+**Path constraints stay in this package** — ruled on the 2051-vs-2051 measurement in
+[rig model §4](./rig-model.md), no neighbour cell. `registerSkeleton2DPathConstraintSolver` is opt-in
+exactly like the IK and transform registrars; nothing in the family registers by default.
+
+The **guard module** (`enableSkeleton2DGuards`, `skeleton2dGuards`, `explainSkeleton2DChannel`) was built
+by another cell for three callers and reports two coercions: an attachment channel walked as Step against
+its stated interpolation, and a deform offset stream too short for the stream it addresses. Both deformers
+report the second, naming the attachment kind so a caller can tell which one to fix.
 
 ## Still deferred (per charter phasing)
 

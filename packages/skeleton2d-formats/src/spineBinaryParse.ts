@@ -256,9 +256,16 @@ function readSpineBinaryValueTimeline(
   return { curves, times, values: flat };
 }
 
-// Turns one decoded bone timeline into an AnimationChannel. A per-axis timeline is widened to the path's
-// full component count by filling the untouched axis with its identity delta, and any bezier segments
-// become per-interval easings under the same absolute-units rebase the `.json` parser uses.
+// Turns one decoded bone timeline into an AnimationChannel. A per-axis timeline emits a per-axis PATH over
+// its own one-component track; a combined timeline emits the paired path. Bezier segments become
+// per-interval easings under the same absolute-units rebase the `.json` parser uses.
+//
+// It used to widen a per-axis timeline to the paired path's component count, filling the untouched axis
+// with an identity delta. That is correct for ONE such timeline and WRONG FOR TWO: a bone with both
+// translateX and translateY produced two channels on the same paired path, and since each composes onto
+// the SETUP pose the second wrote the first's axis back to setup — a silent, total loss of one animated
+// axis. Spine authors the two with independent keyframe times, so they cannot be merged into one track
+// either; the per-axis paths are what let both survive.
 function buildSpineBinaryBoneChannel(
   timeline: { curves: (number[] | null)[]; times: number[]; values: number[] },
   kind: (typeof SPINE_BINARY_BONE_TIMELINES)[number],
@@ -266,16 +273,9 @@ function buildSpineBinaryBoneChannel(
   diagnostics?: ImportDiagnostic[],
 ): AnimationChannel {
   const frames = timeline.times.length;
-  const components = kind.components;
+  const components = kind.values;
   const values = new Array<number>(frames * components);
-  for (let f = 0; f < frames; f++) {
-    for (let c = 0; c < components; c++) values[f * components + c] = kind.identity;
-    if (kind.axis < 0) {
-      for (let c = 0; c < kind.values; c++) values[f * components + c] = timeline.values[f * kind.values + c];
-    } else {
-      values[f * components + kind.axis] = timeline.values[f];
-    }
-  }
+  for (let f = 0; f < frames * components; f++) values[f] = timeline.values[f];
   const track = createAnimationTrack({
     components,
     interpolation: AnimationInterpolationLinear,
@@ -1004,20 +1004,20 @@ const SPINE_BINARY_ATTACHMENT_TYPES = [
 ] as const;
 
 // Spine's bone timeline ORDINALS, in its own enum order — the file writes an index into this table, so the
-// order is load-bearing and must not be alphabetized. `values` is how many numbers a keyframe carries;
-// `axis` is which component a per-axis form drives (-1 for the combined form); `identity` is the delta that
-// leaves the untouched axis at its setup value.
+// order is load-bearing and must not be alphabetized. `values` is how many numbers a keyframe carries,
+// which is also the track's component count: each form now maps to the path that drives exactly the fields
+// it states, so a per-axis timeline needs no widening and no identity fill.
 const SPINE_BINARY_BONE_TIMELINES = [
-  { axis: -1, components: 1, identity: 0, path: Skeleton2DAnimationPath.Rotation, values: 1 },
-  { axis: -1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 2 },
-  { axis: 0, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 1 },
-  { axis: 1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Translation, values: 1 },
-  { axis: -1, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 2 },
-  { axis: 0, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 1 },
-  { axis: 1, components: 2, identity: 1, path: Skeleton2DAnimationPath.Scale, values: 1 },
-  { axis: -1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 2 },
-  { axis: 0, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 1 },
-  { axis: 1, components: 2, identity: 0, path: Skeleton2DAnimationPath.Shear, values: 1 },
+  { path: Skeleton2DAnimationPath.Rotation, values: 1 },
+  { path: Skeleton2DAnimationPath.Translation, values: 2 },
+  { path: Skeleton2DAnimationPath.TranslationX, values: 1 },
+  { path: Skeleton2DAnimationPath.TranslationY, values: 1 },
+  { path: Skeleton2DAnimationPath.Scale, values: 2 },
+  { path: Skeleton2DAnimationPath.ScaleX, values: 1 },
+  { path: Skeleton2DAnimationPath.ScaleY, values: 1 },
+  { path: Skeleton2DAnimationPath.Shear, values: 2 },
+  { path: Skeleton2DAnimationPath.ShearX, values: 1 },
+  { path: Skeleton2DAnimationPath.ShearY, values: 1 },
 ] as const;
 
 // A slot colour timeline's channel count, indexed by its timeline ordinal (1 = RGBA, 2 = RGB, 3 = RGBA with

@@ -96,6 +96,27 @@ function bindSkeleton2DBoneChannel(
       poseBone.shearX = setupBone.shearX + _scratch[0];
       poseBone.shearY = setupBone.shearY + _scratch[1];
       break;
+    // The per-axis paths read a one-component track and touch a single field, so the other axis keeps
+    // whatever the clone of setup gave it — which is what lets two independently-timed axis channels
+    // coexist on one bone instead of overwriting each other back to setup.
+    case BonePath.TranslationX:
+      poseBone.x = setupBone.x + _scratch[0];
+      break;
+    case BonePath.TranslationY:
+      poseBone.y = setupBone.y + _scratch[0];
+      break;
+    case BonePath.ScaleX:
+      poseBone.scaleX = setupBone.scaleX * _scratch[0];
+      break;
+    case BonePath.ScaleY:
+      poseBone.scaleY = setupBone.scaleY * _scratch[0];
+      break;
+    case BonePath.ShearX:
+      poseBone.shearX = setupBone.shearX + _scratch[0];
+      break;
+    case BonePath.ShearY:
+      poseBone.shearY = setupBone.shearY + _scratch[0];
+      break;
     default:
       break;
   }
