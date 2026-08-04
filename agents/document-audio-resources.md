@@ -22,28 +22,28 @@ becomes a third array on precisely the image lane's terms:
 audioResources: AudioResourceReference[];
 ```
 
-`AudioResourceReference` mirrors `ImageResourceReference` member for member: an
-`Embedded` | `External` union, a `ResourceResolutionState` the resolver advances, a
-serialization-safe `failure` record, and — the load-bearing part — a list of the **sinks waiting on
-it**. Loading one reference fills every `AudioResource` it names, so a sound cued from forty frames
-decodes once and all forty cues are wired the moment it resolves. That is the same property that
-makes a bitmap placed a hundred times cost one decode.
+`AudioResourceReference` follows `ImageResourceReference` for its resolution lifecycle: an
+`Embedded` | `External` union, a `ResourceResolutionState` the resolver advances, and a
+serialization-safe `failure` record. Its sink is deliberately singular, however: one encoded audio
+payload decodes to one `AudioBuffer`, held by one `AudioResource`. A sound cued from forty frames
+still decodes once because all forty cues hold that same resource, not because the reference fans out
+to forty sinks.
 
 What does **not** go on the document is anything from `@flighthq/media`: no `AudioChannel`, no mixer
 reference, no play-on-load flag. That would make a parse-time data structure carry running state and
 act on it — the `displayObject.filters` anti-goal in a different costume. A document stays static.
 
-## Why the sinks are held directly
+## Why the sink is held directly
 
 A cue holds its `AudioResource` entity, not a name or an id. The importer creates the empty
-resource, wires it into every cue that references it, and lists it on the reference; decode fills
+resource, wires it into every cue that references it, and stores it on the reference; decode fills
 the buffer and every cue is live at once. No name table, no lookup, no resolution order to get
-wrong — exactly how a `Texture` waits for its `Image`.
+wrong.
 
-This is also why `AudioResourceReference.resources` is named for its sink type rather than mirroring
-`ImageResourceReference.textures` literally. For images the sink type (`Texture`) differs from the
-resource type; for audio they are the same type, so reusing the document's `audioResources` field
-name for the sink list would collide confusingly with the reference list.
+The asymmetry with images is intentional. One decoded image may back many `Texture` wrappers with
+different regions or sampling state, so `ImageResourceReference.textures` is plural. Audio has no
+equivalent wrapper between the decoded buffer and `AudioResource`; per-playback state belongs to the
+channels created later. `AudioResourceReference.resource` is therefore singular.
 
 ## Where a SWF's sound ends up
 
