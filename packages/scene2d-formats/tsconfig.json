@@ -24,6 +24,7 @@
     { "path": "../path-boolean" },
     { "path": "../path-formats" },
     { "path": "../shape" },
+    { "path": "../skeleton2d" },
     { "path": "../text" },
     { "path": "../textlayout" },
     { "path": "../texture" },

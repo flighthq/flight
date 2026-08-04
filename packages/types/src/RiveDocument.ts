@@ -5,6 +5,7 @@ import type { ImageResourceReference } from './ImageResourceReference';
 import type { LayoutTree } from './Layout';
 import type { Scene2DSlotReference } from './Scene2DDocument';
 import type { PathWinding } from './ShapeCommand';
+import type { Skeleton2D } from './Skeleton2D';
 
 /**
  * Rive `.riv` container types used by `@flighthq/scene2d-formats`.
@@ -200,6 +201,24 @@ export const RiveAnimationLoop = {
 } as const;
 
 export type RiveAnimationLoop = (typeof RiveAnimationLoop)[keyof typeof RiveAnimationLoop];
+
+/**
+ * One artboard's bone rig, flattened out of the artboard's component tree into the flat,
+ * parent-before-child array a `Skeleton2D` requires.
+ *
+ * Rive's bones are `TransformComponent`s living in the artboard's own tree, siblings of `Node` rather
+ * than nodes themselves, while `Skeleton2D` owns a decoupled bone array and propagates its own world
+ * transforms. Bridging the two is a **topological sort**, not a graph problem: the artboard tree
+ * resolves every stated parent with no cycle, so ordering by depth is well-founded.
+ *
+ * `boneIndices` maps an artboard **component index** to a bone index, or −1 where that component is
+ * not a bone. Animation keys its objects by component index, so a channel needs this to reach the
+ * bone it drives.
+ */
+export interface RiveSkeleton2DImport {
+  boneIndices: number[];
+  skeleton: Skeleton2D;
+}
 
 /**
  * A named clip. A Rive artboard carries several animations and the name is how a caller picks one.
