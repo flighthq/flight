@@ -10,6 +10,9 @@ const HEIGHT = 480;
 const LEFT_X = 210;
 const RIGHT_X = 590;
 const CENTER_Y = 240;
+const POSITIVE_CORNER_X = 360;
+const NEGATIVE_CORNER_X = 440;
+const CORNER_Y = 70;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const scale = frame.width / width;
@@ -28,6 +31,21 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   const clippedCorner = at(LEFT_X + 100, CENTER_Y + 70);
   if (!isBackground(clippedCorner)) {
     throw new Error(`[rive-import] imported clip did not remove the card corner — ${hex(clippedCorner)}`);
+  }
+
+  const intersectedEdge = at(LEFT_X + 100, CENTER_Y);
+  if (!isBackground(intersectedEdge)) {
+    throw new Error(`[rive-import] second imported clip did not intersect the first — ${hex(intersectedEdge)}`);
+  }
+
+  // Positive rounding leaves this inside the shape while an inverted (negative-radius) corner cuts
+  // through it. Sampling twins with otherwise identical geometry catches treating the sign as abs().
+  const roundedCorner = at(POSITIVE_CORNER_X + 24, CORNER_Y - 24);
+  const invertedCorner = at(NEGATIVE_CORNER_X + 24, CORNER_Y - 24);
+  if (isBackground(roundedCorner) || !isBackground(invertedCorner)) {
+    throw new Error(
+      `[rive-import] positive and inverted corners rendered alike — ${hex(roundedCorner)} vs ${hex(invertedCorner)}`,
+    );
   }
 
   // These points straddle gradient bands, the stroke, the clipped corners, and untouched background.
@@ -52,6 +70,8 @@ function createRiveFixture(): Uint8Array {
 
   addCard(objects, LEFT_X, true);
   const animatedShape = addCard(objects, RIGHT_X, false);
+  addCornerProbe(objects, POSITIVE_CORNER_X, 18);
+  addCornerProbe(objects, NEGATIVE_CORNER_X, -18);
   objects.push(
     [
       RIVE_LINEAR_ANIMATION,
@@ -114,7 +134,33 @@ function addCard(objects: RiveFixtureObject[], x: number, parametric: boolean): 
   ]);
   addComponent(objects, RIVE_ELLIPSE, clipSource, [float(RIVE_PATH_WIDTH, 230), float(RIVE_PATH_HEIGHT, 170)]);
   addComponent(objects, RIVE_CLIPPING_SHAPE, shape, [uint(RIVE_CLIP_SOURCE_ID, clipSource)]);
+
+  const intersectingSource = addComponent(objects, RIVE_SHAPE, RIVE_ARTBOARD_ID, [
+    float(RIVE_X, x),
+    float(RIVE_Y, CENTER_Y),
+    float(RIVE_OPACITY, 0),
+  ]);
+  addComponent(objects, RIVE_RECTANGLE, intersectingSource, [
+    float(RIVE_PATH_WIDTH, 180),
+    float(RIVE_PATH_HEIGHT, 190),
+  ]);
+  addComponent(objects, RIVE_CLIPPING_SHAPE, shape, [uint(RIVE_CLIP_SOURCE_ID, intersectingSource)]);
   return shape;
+}
+
+function addCornerProbe(objects: RiveFixtureObject[], x: number, radius: number): void {
+  const shape = addComponent(objects, RIVE_SHAPE, RIVE_ARTBOARD_ID, [float(RIVE_X, x), float(RIVE_Y, CORNER_Y)]);
+  const path = addComponent(objects, RIVE_POINTS_PATH, shape, [uint(RIVE_PATH_IS_CLOSED, 1)]);
+  addComponent(objects, RIVE_STRAIGHT_VERTEX, path, [float(RIVE_VERTEX_X, -30), float(RIVE_VERTEX_Y, -30)]);
+  addComponent(objects, RIVE_STRAIGHT_VERTEX, path, [
+    float(RIVE_VERTEX_X, 30),
+    float(RIVE_VERTEX_Y, -30),
+    float(RIVE_VERTEX_RADIUS, radius),
+  ]);
+  addComponent(objects, RIVE_STRAIGHT_VERTEX, path, [float(RIVE_VERTEX_X, 30), float(RIVE_VERTEX_Y, 30)]);
+  addComponent(objects, RIVE_STRAIGHT_VERTEX, path, [float(RIVE_VERTEX_X, -30), float(RIVE_VERTEX_Y, 30)]);
+  const fill = addComponent(objects, RIVE_FILL, shape);
+  addComponent(objects, RIVE_SOLID_COLOR, fill, [color(RIVE_SOLID_COLOR_VALUE, 0xff22c55e)]);
 }
 
 function addComponent(
@@ -240,6 +286,7 @@ const RIVE_PATH_WIDTH = 20;
 const RIVE_PATH_HEIGHT = 21;
 const RIVE_VERTEX_X = 24;
 const RIVE_VERTEX_Y = 25;
+const RIVE_VERTEX_RADIUS = 26;
 const RIVE_PATH_IS_CLOSED = 32;
 const RIVE_GRADIENT_START_Y = 33;
 const RIVE_GRADIENT_END_X = 34;
