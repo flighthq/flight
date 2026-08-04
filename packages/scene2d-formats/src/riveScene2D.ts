@@ -31,7 +31,7 @@ import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
 import { applyRiveSolo } from './riveSolo';
 import { createRiveStateMachines } from './riveStateMachine';
-import { createRiveTextLabel } from './riveText';
+import { createRiveRichText } from './riveText';
 
 /**
  * Imports a `.riv` into one display subtree per artboard.
@@ -48,15 +48,22 @@ export function createScene2DFromRiveDocument(
   if (document === null) return { artboards: [], assets: [] };
 
   const graph = createRiveObjectGraph(document, diagnostics);
+  const assets = createRiveFileAssets(document.objects);
+  // A text style names its typeface by a position in the asset list, the same space an image
+  // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
+  const fontNames = assets.map((asset) => asset.name);
   return {
-    artboards: graph.artboards.map((artboard) => createRiveArtboardImport(artboard, document.objects, diagnostics)),
-    assets: createRiveFileAssets(document.objects),
+    artboards: graph.artboards.map((artboard) =>
+      createRiveArtboardImport(artboard, document.objects, fontNames, diagnostics),
+    ),
+    assets,
   };
 }
 
 function createRiveArtboardImport(
   artboard: Readonly<RiveArtboardGraph>,
   objects: readonly Readonly<RiveCoreObject>[],
+  fontNames: readonly string[],
   diagnostics: ImportDiagnostic[] | undefined,
 ): RiveArtboardImport {
   const source = artboard.objects[0];
@@ -91,7 +98,7 @@ function createRiveArtboardImport(
       nodes.push(null);
       continue;
     }
-    const node = createRiveDisplayNode(object, artboard, index);
+    const node = createRiveDisplayNode(object, artboard, index, fontNames);
     applyRiveTransform(node, object);
     applyRiveBlendMode(node, object, advancedBlends);
     nodes.push(node);
@@ -127,10 +134,11 @@ function createRiveDisplayNode(
   object: Readonly<RiveCoreObject>,
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
+  fontNames: readonly string[],
 ): DisplayObject {
   const name = readRiveText(object, RIVE_NAME, '');
   if (object.typeKey === RIVE_TEXT_TYPE_KEY) {
-    const label = createRiveTextLabel(artboard, index);
+    const label = createRiveRichText(artboard, index, fontNames);
     label.name = name;
     return label;
   }

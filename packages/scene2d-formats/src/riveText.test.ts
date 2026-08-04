@@ -2,7 +2,7 @@ import { packColor } from '@flighthq/color/contract';
 import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveTextLabel } from './riveText';
+import { createRiveRichText } from './riveText';
 
 // A run's styleId indexes the artboard's component numbering — the same space parentId uses. Against
 // the corpus that resolves all 150 runs, while resolving it against the styles in declaration order
@@ -18,13 +18,14 @@ const COLOR_VALUE = 37;
 const RUN_TEXT = 268;
 const RUN_STYLE_ID = 272;
 const FONT_SIZE = 274;
+const FONT_ASSET_ID = 279;
 const ALIGN = 281;
 const WIDTH = 285;
 const HEIGHT = 286;
 const LINE_HEIGHT = 370;
 const LETTER_SPACING = 390;
 
-describe('createRiveTextLabel', () => {
+describe('createRiveRichText', () => {
   it('reads a single run as the label text', () => {
     const label = build([object(TEXT, {}), run('Hello', -1)], [-1, 0]);
 
@@ -102,6 +103,66 @@ describe('createRiveTextLabel', () => {
     expect(label.data.textFormat?.color).toBe(packColor(0, 0, 0, 1));
   });
 
+  // 28 of 117 texts in the corpus have more than one run, and a run is the unit the file authored, so
+  // each one states its own span rather than the differing ones alone being recorded.
+  it('gives every run a format range over the span it occupies in the joined string', () => {
+    const label = build([object(TEXT, {}), run('one ', -1), run('two ', -1), run('three', -1)], [-1, 0, 0, 0]);
+
+    expect(label.data.textFormatRanges.map((range) => [range.start, range.end])).toEqual([
+      [0, 4],
+      [4, 8],
+      [8, 13],
+    ]);
+    expect(label.data.text.slice(4, 8)).toBe('two ');
+  });
+
+  it('carries a different format on each run rather than flattening to the first', () => {
+    const label = build(
+      [
+        object(TEXT, {}),
+        run('big', 3),
+        run('small', 4),
+        object(STYLE_PAINT, { [FONT_SIZE]: 48 }),
+        object(STYLE_PAINT, { [FONT_SIZE]: 8 }),
+      ],
+      [-1, 0, 0, 0, 0],
+    );
+
+    expect(label.data.textFormatRanges.map((range) => range.format.size)).toEqual([48, 8]);
+    // The first run's style still doubles as the drawable's own format, so a consumer that lays out
+    // from the format alone renders the common single-style case correctly.
+    expect(label.data.textFormat?.size).toBe(48);
+  });
+
+  // familyName exists in Rive's object model but is editor-only and never written to a runtime file,
+  // so the asset's own name is the only name a .riv carries for a typeface.
+  it('names the typeface by resolving the style font asset against the asset list', () => {
+    const label = build(
+      [object(TEXT, {}), run('x', 2), object(STYLE_PAINT, { [FONT_ASSET_ID]: 1 })],
+      [-1, 0, 0],
+      ['Inter', 'Roboto'],
+    );
+
+    expect(label.data.textFormat?.font).toBe('Roboto');
+  });
+
+  it('leaves the font unnamed when the style states no asset', () => {
+    // An unset reference is -1 rather than 0, which would otherwise name the file's first asset.
+    const label = build([object(TEXT, {}), run('x', 2), object(STYLE_PAINT, {})], [-1, 0, 0], ['Inter']);
+
+    expect(label.data.textFormat?.font).toBeUndefined();
+  });
+
+  it('leaves the font unnamed when the style names an asset the file does not have', () => {
+    const label = build(
+      [object(TEXT, {}), run('x', 2), object(STYLE_PAINT, { [FONT_ASSET_ID]: 7 })],
+      [-1, 0, 0],
+      ['Inter'],
+    );
+
+    expect(label.data.textFormat?.font).toBeUndefined();
+  });
+
   it('produces an empty label for a text drawable with no runs', () => {
     const label = build([object(TEXT, { [WIDTH]: 10 })], [-1]);
 
@@ -115,14 +176,14 @@ describe('createRiveTextLabel', () => {
   });
 });
 
-function build(objects: RiveCoreObject[], parents: number[]) {
+function build(objects: RiveCoreObject[], parents: number[], fontNames: readonly string[] = []) {
   const artboard: RiveArtboardGraph = {
     objects,
     parentIndices: parents,
     streamEnd: objects.length,
     streamStart: 0,
   };
-  return createRiveTextLabel(artboard, 0);
+  return createRiveRichText(artboard, 0, fontNames);
 }
 
 function run(text: string, styleId: number): RiveCoreObject {

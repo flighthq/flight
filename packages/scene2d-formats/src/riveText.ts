@@ -1,22 +1,38 @@
 import { packColor } from '@flighthq/color/contract';
-import { createTextLabel } from '@flighthq/text/contract';
-import type { RiveArtboardGraph, RiveCoreObject, TextLabel } from '@flighthq/types/contract';
+import { createRichText } from '@flighthq/text/contract';
+import type {
+  RichText,
+  RiveArtboardGraph,
+  RiveCoreObject,
+  TextFormat,
+  TextFormatRange,
+} from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
 /**
- * Builds a text label from a Rive text drawable.
+ * Builds a rich text node from a Rive text drawable.
  *
  * The words live in the drawable's **value runs**, each naming a style, and a style's colour comes
  * from a paint child of its own — the same shape a fill takes on a shape. `styleId` indexes the
  * artboard's component numbering, the same space `parentId` uses, which was confirmed against the
  * corpus where it resolves all 150 runs and resolving it against the styles in order resolves 4.
  *
- * Runs are concatenated and the first run's style sets the format. A text whose runs differ in style
- * is rich text, which needs more than one format can carry, so that difference is recorded as
- * uncovered rather than silently flattened to the first style.
+ * Runs are joined in file order and **each run contributes one `TextFormatRange`** over the span it
+ * occupies in the joined string, which is what carries a drawable whose runs differ in style. One
+ * range per run rather than one only where the style changes: a run is the unit the file authored, so
+ * a consumer reads back the structure that was written rather than a coalesced version of it.
+ *
+ * A text drawable always becomes a `RichText`, never a `TextLabel`, even when a single run means the
+ * ranges are redundant with the format. `TextFormatRange` lives only on `RichTextData`, so the kind
+ * would otherwise depend on the *contents* of the file — a caller that registered a renderer for one
+ * kind would silently lose every multi-run text. One Rive concept maps to one Flight kind.
  */
-export function createRiveTextLabel(artboard: Readonly<RiveArtboardGraph>, index: number): TextLabel {
+export function createRiveRichText(
+  artboard: Readonly<RiveArtboardGraph>,
+  index: number,
+  fontNames: readonly string[],
+): RichText {
   const source = artboard.objects[index];
   const runs: number[] = [];
   for (let child = index + 1; child < artboard.objects.length; child++) {
@@ -24,24 +40,45 @@ export function createRiveTextLabel(artboard: Readonly<RiveArtboardGraph>, index
     if (artboard.objects[child].typeKey === RIVE_TEXT_VALUE_RUN) runs.push(child);
   }
 
+  const align = readRiveNumber(source, RIVE_TEXT_ALIGN, 0);
+  const formatRanges: TextFormatRange[] = [];
   let text = '';
-  for (const run of runs) text += readRiveText(artboard.objects[run], RIVE_RUN_TEXT, '');
-  const style = runs.length === 0 ? -1 : readRiveNumber(artboard.objects[runs[0]], RIVE_RUN_STYLE_ID, -1);
+  for (const run of runs) {
+    const value = readRiveText(artboard.objects[run], RIVE_RUN_TEXT, '');
+    const style = readRiveNumber(artboard.objects[run], RIVE_RUN_STYLE_ID, -1);
+    // A run's span is measured in the joined string, so it is stated before the run is appended.
+    formatRanges.push({
+      end: text.length + value.length,
+      format: createRiveTextFormat(artboard, style, align, fontNames),
+      start: text.length,
+    });
+    text += value;
+  }
 
-  return createTextLabel({
-    data: {
-      autoSize: 'none',
-      height: readRiveNumber(source, RIVE_TEXT_HEIGHT, 0),
-      text,
-      textFormat: createRiveTextFormat(artboard, style, readRiveNumber(source, RIVE_TEXT_ALIGN, 0)),
-      width: readRiveNumber(source, RIVE_TEXT_WIDTH, 0),
-    },
-  });
+  // The first run's style doubles as the drawable's own format, so a consumer that lays out from the
+  // format alone still renders the common single-style case correctly.
+  const baseStyle = runs.length === 0 ? -1 : readRiveNumber(artboard.objects[runs[0]], RIVE_RUN_STYLE_ID, -1);
+  const format = createRiveTextFormat(artboard, baseStyle, align, fontNames);
+
+  const node = createRichText();
+  node.data.defaultTextFormat = format;
+  node.data.height = readRiveNumber(source, RIVE_TEXT_HEIGHT, 0);
+  node.data.text = text;
+  node.data.textColor = format.color ?? RIVE_DEFAULT_TEXT_COLOR;
+  node.data.textFormat = format;
+  node.data.textFormatRanges = formatRanges;
+  node.data.width = readRiveNumber(source, RIVE_TEXT_WIDTH, 0);
+  return node;
 }
 
-function createRiveTextFormat(artboard: Readonly<RiveArtboardGraph>, styleIndex: number, align: number) {
+function createRiveTextFormat(
+  artboard: Readonly<RiveArtboardGraph>,
+  styleIndex: number,
+  align: number,
+  fontNames: readonly string[],
+): TextFormat {
   const style = styleIndex >= 0 && styleIndex < artboard.objects.length ? artboard.objects[styleIndex] : null;
-  return {
+  const format: TextFormat = {
     align:
       align === RIVE_ALIGN_RIGHT
         ? ('right' as const)
@@ -49,10 +86,21 @@ function createRiveTextFormat(artboard: Readonly<RiveArtboardGraph>, styleIndex:
           ? ('center' as const)
           : ('left' as const),
     color: readRiveStyleColor(artboard, styleIndex),
-    leading: style === null ? undefined : readRiveNumber(style, RIVE_STYLE_LINE_HEIGHT, -1),
-    letterSpacing: style === null ? undefined : readRiveNumber(style, RIVE_STYLE_LETTER_SPACING, 0),
-    size: style === null ? undefined : readRiveNumber(style, RIVE_STYLE_FONT_SIZE, 12),
   };
+  if (style === null) return format;
+
+  format.leading = readRiveNumber(style, RIVE_STYLE_LINE_HEIGHT, -1);
+  format.letterSpacing = readRiveNumber(style, RIVE_STYLE_LETTER_SPACING, 0);
+  format.size = readRiveNumber(style, RIVE_STYLE_FONT_SIZE, RIVE_DEFAULT_FONT_SIZE);
+
+  // A style names its typeface by asset rather than by family: `familyName` exists in the object
+  // model but is editor-only and never written to a runtime file, so the asset's name is the only
+  // name a `.riv` carries. The bytes behind it stay unacquired here — naming the font is this codec's
+  // job and decoding it is the resource layer's, exactly as SWF resolves a font id to a family name.
+  const fontAsset = readRiveNumber(style, RIVE_STYLE_FONT_ASSET_ID, RIVE_MISSING_ASSET_ID);
+  const fontName = fontAsset >= 0 && fontAsset < fontNames.length ? fontNames[fontAsset] : '';
+  if (fontName !== '') format.font = fontName;
+  return format;
 }
 
 // A style paints itself the way a shape does: through a fill whose own child states the colour.
@@ -99,6 +147,7 @@ const RIVE_SOLID_COLOR = 18;
 const RIVE_RUN_TEXT = 268;
 const RIVE_RUN_STYLE_ID = 272;
 const RIVE_STYLE_FONT_SIZE = 274;
+const RIVE_STYLE_FONT_ASSET_ID = 279;
 const RIVE_TEXT_ALIGN = 281;
 const RIVE_TEXT_WIDTH = 285;
 const RIVE_TEXT_HEIGHT = 286;
@@ -108,5 +157,9 @@ const RIVE_SOLID_COLOR_VALUE = 37;
 
 const RIVE_ALIGN_RIGHT = 1;
 const RIVE_ALIGN_CENTER = 2;
+// The object model's own initial values: a style with no stated size is 12, and an unset asset
+// reference is -1 rather than 0, which would otherwise name the file's first asset.
+const RIVE_DEFAULT_FONT_SIZE = 12;
+const RIVE_MISSING_ASSET_ID = -1;
 // Opaque black, matching what a text style with no paint would show.
 const RIVE_DEFAULT_TEXT_COLOR = packColor(0, 0, 0, 1);
