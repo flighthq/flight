@@ -1,8 +1,10 @@
 import { spawnSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isTestRunCoverageFailure } from './testRunCoverage';
+import { findUnrunTestPackages, isFilteredTestRun, isTestRunCoverageFailure } from './testRunCoverage';
 
 const COVERED: Readonly<Parameters<typeof isTestRunCoverageFailure>[0]> = {
   interrupted: false,
@@ -64,3 +66,46 @@ function runRootVitest(args: readonly string[]): { output: string; status: numbe
   });
   return { output: `${result.stdout}${result.stderr}`, status: result.status };
 }
+
+// A whole-repo run reads as a claim about the whole repo, so it has to name where it is not one. These
+// derive the answer from what RAN rather than from a restated exclusion list, because a second list
+// drifts from the excludes it describes.
+describe('findUnrunTestPackages', () => {
+  it('names a package that owns tests but contributed none', () => {
+    // tool-capture owns tests; pretend nothing from it executed.
+    const unrun = findUnrunTestPackages(ROOT, [join(ROOT, 'packages', 'skeleton2d', 'src', 'skeleton2d.test.ts')]);
+
+    expect(unrun).toContain('tool-capture');
+    expect(unrun).not.toContain('skeleton2d');
+  });
+
+  it('names nothing when every package with tests contributed one', () => {
+    const everyPackage = findUnrunTestPackages(ROOT, []);
+    const executed = everyPackage.map((name) => join(ROOT, 'packages', name, 'src', 'x.test.ts'));
+
+    expect(findUnrunTestPackages(ROOT, executed)).toEqual([]);
+  });
+
+  it('ignores a package that owns no test file at all', () => {
+    // A package with no tests is not an omission — there was nothing to run. Built against a synthetic
+    // tree rather than a named real package, so it cannot rot when that package gains tests.
+    const root = mkdtempSync(join(tmpdir(), 'run-coverage-'));
+    mkdirSync(join(root, 'packages', 'withtests', 'src'), { recursive: true });
+    mkdirSync(join(root, 'packages', 'notests', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'withtests', 'src', 'a.test.ts'), '');
+    writeFileSync(join(root, 'packages', 'notests', 'src', 'a.ts'), '');
+
+    expect(findUnrunTestPackages(root, [])).toEqual(['withtests']);
+  });
+});
+
+describe('isFilteredTestRun', () => {
+  it('treats a positional argument as a filter, so a subset is the request', () => {
+    expect(isFilteredTestRun(['run', 'scene2d-formats'])).toBe(true);
+  });
+
+  it('treats the bare run verb and flags as a whole-repo run', () => {
+    expect(isFilteredTestRun(['run'])).toBe(false);
+    expect(isFilteredTestRun(['run', '--reporter=dot'])).toBe(false);
+  });
+});
