@@ -1,7 +1,14 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, Node2D, RiveArtboardGraph, RiveCoreObject, Shape } from '@flighthq/types/contract';
+import type {
+  DisplayObject,
+  ImportDiagnostic,
+  Node2D,
+  RiveArtboardGraph,
+  RiveCoreObject,
+  Shape,
+} from '@flighthq/types/contract';
 import { RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation';
@@ -39,6 +46,8 @@ const INTERPOLATION = 68;
 const INTERPOLATOR_ID = 69;
 const VALUE = 70;
 const ROTATION = 15;
+const SCALE_X = 16;
+const ROOT_X = 90;
 const EASING = 405;
 const AMPLITUDE = 406;
 const PERIOD = 407;
@@ -118,10 +127,16 @@ describe('applyAnimationClipToRiveDocument', () => {
 });
 
 // One bone keyed on a single property, with the rig flattened as the importer would.
-function buildBoneProperty(propertyKey: number, value: number, setupRotation: number) {
+function buildBoneProperty(
+  propertyKey: number,
+  value: number,
+  setupRotation: number,
+  setup: Readonly<{ scaleX?: number; x?: number }> = {},
+  diagnostics?: ImportDiagnostic[],
+) {
   const objects: RiveCoreObject[] = [
     object(ARTBOARD, {}),
-    object(ROOT_BONE, { [ROTATION]: setupRotation }),
+    object(ROOT_BONE, { [ROTATION]: setupRotation, [ROOT_X]: setup.x ?? 0, [SCALE_X]: setup.scaleX ?? 1 }),
     object(LINEAR_ANIMATION, { [FPS]: 1, [DURATION]: 1 }),
     object(KEYED_OBJECT, { [OBJECT_ID]: 1 }),
     object(KEYED_PROPERTY, { [PROPERTY_KEY]: propertyKey }),
@@ -136,7 +151,15 @@ function buildBoneProperty(propertyKey: number, value: number, setupRotation: nu
   };
   const skeleton = createRiveSkeleton2D(artboard)!;
   return {
-    clips: createRiveAnimationClips(objects, { end: objects.length, start: 2 }, [], artboard, new Map(), skeleton),
+    clips: createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 2 },
+      [],
+      artboard,
+      new Map(),
+      skeleton,
+      diagnostics,
+    ),
     skeleton,
   };
 }
@@ -379,12 +402,46 @@ describe('createRiveAnimationClips', () => {
     expect(_scratch[0]).toBeCloseTo(90, 3);
   });
 
-  it('leaves a bone translate channel unbound rather than pairing axes it cannot pair', () => {
-    // Rive keys one scalar per property, while Translation reads a two-component track. Binding x
-    // alone would make the binder read an absent y as 0 and drive the bone to it.
-    const { clips } = buildBoneProperty(13, 5, 0);
+  // Rive keys ONE SCALAR PER PROPERTY, which is exactly what the per-axis paths take, so each maps
+  // straight across with no axis paired to another and no keyframe times invented.
+  it('binds each bone axis to its own per-axis path', () => {
+    const paths = [
+      [13, 'TranslationX'],
+      [14, 'TranslationY'],
+      [15, 'Rotation'],
+      [16, 'ScaleX'],
+      [17, 'ScaleY'],
+    ] as const;
+
+    for (const [propertyKey, expected] of paths) {
+      const { clips } = buildBoneProperty(propertyKey, 1, 0);
+      expect((clips[0].clip.channels[0].targetRef as { path: string }).path).toBe(expected);
+    }
+  });
+
+  it('subtracts the setup value for translation, which the binder adds back', () => {
+    const { clips } = buildBoneProperty(13, 30, 0, { x: 12 });
+
+    sampleAnimationTrack(_scratch, clips[0].clip.channels[0].track, 1);
+    expect(_scratch[0]).toBeCloseTo(18, 6);
+  });
+
+  it('divides by the setup value for scale, which the binder multiplies back', () => {
+    // Scale composes by MULTIPLICATION, so the inverse is division rather than subtraction.
+    const { clips } = buildBoneProperty(16, 3, 0, { scaleX: 2 });
+
+    sampleAnimationTrack(_scratch, clips[0].clip.channels[0].track, 1);
+    expect(_scratch[0]).toBeCloseTo(1.5, 6);
+  });
+
+  it('drops a scale channel the relative model cannot express, and says so', () => {
+    // A setup scale of zero multiplies every factor back to zero, so no channel reproduces a non-zero
+    // authored scale. Dropping it is honest; emitting one would be silently wrong.
+    const diagnostics: ImportDiagnostic[] = [];
+    const { clips } = buildBoneProperty(16, 3, 0, { scaleX: 0 }, diagnostics);
 
     expect(clips[0].clip.channels).toHaveLength(0);
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.unrepresentable-bone-scale']);
   });
 
   it('places keyframes at frame over fps seconds', () => {
