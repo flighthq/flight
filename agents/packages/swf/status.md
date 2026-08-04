@@ -223,7 +223,7 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   them with pixels. It resolves the same character kinds in the same order a placement does, so an exported
   bitmap or edit-text character imports like the identical character placed on a timeline.
 
-Four gaps stand between this and pixels a player would accept, all recorded here rather than inline:
+The known gaps between this and pixels a player would accept are recorded here rather than inline:
 
 - Filter descriptors preserve only fields the target effect vocabulary can state. `GradientGlowEffect`
   has no angle, distance, or inner/on-top placement, `BlurEffect` has no pass count, and the glow/shadow/
@@ -231,6 +231,14 @@ Four gaps stand between this and pixels a player would accept, all recorded here
   carries the default RGB but not its authored alpha. These are declared target-capability gaps, not
   parser omissions to conceal with guessed behavior; spatial filters remain appearance reports and are
   never attached implicitly to imported nodes.
+
+- WebGPU's tessellated solid-shape path does not consume `RenderProxy.colorScaleBias` or
+  `RenderProxy.colorMatrix`. An SWF placement colour transform is therefore realized by the registered
+  quad/raster colour-adjustment fold but not when that shape takes `drawWgpuShapeMeshes`; the WebGL
+  solid-shape path has dedicated adjustment shaders, while WebGPU currently uploads only the
+  node-alpha-premultiplied solid colour. This is a `scene2d-wgpu` capability gap, not something the SWF
+  parser can repair, and it constrains any future decision about moving CXFORM alpha multiply/add between
+  node alpha and the adjustment representation.
 
 - `DefineBitsJPEG3`/`4` alpha is **dropped**. The tag reader ends the colour stream at the alpha offset and
   discards the zlib-compressed alpha block after it, so a transparent JPEG imports fully opaque. Rejoining
