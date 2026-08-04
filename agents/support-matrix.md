@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-181 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+184 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 110 / 181 | 42 / 181 | 161 / 181 | 151 / 181 |
+| 111 / 184 | 43 / 184 | 164 / 184 | 154 / 184 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -209,6 +209,8 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `mesh-hierarchy-parent-transform` | · | · | ✓ | ✓ |
 | `mesh-multiple-depth` | · | · | ✓ | ✓ |
 | `mesh-plane` | · | · | ✓ | ✓ |
+| `mesh-tangent-directional-seam` | · | · | ✓ | ✓ |
+| `mesh-tangent-mirrored-uv` | · | · | ✓ | ✓ |
 | `mesh-transform-position` | · | · | ✓ | ✓ |
 | `mesh-transform-rotation` | · | · | ✓ | ✓ |
 | `mesh-transform-scale` | · | · | ✓ | ✓ |
@@ -256,6 +258,12 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `render-target-node-2d` | ✓ | · | ✓ | ✓ |
 | `render-texture` | · | · | ✓ | · |
 | `render-texture-sprite-axes` | · | · | ✓ | ✓ |
+
+### Rive
+
+| Scene | Canvas | DOM | WebGL | WebGPU |
+| --- | :-: | :-: | :-: | :-: |
+| `rive-import` | ✓ | ✓ | ✓ | ✓ |
 
 ### Scale9
 
