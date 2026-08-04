@@ -1,12 +1,30 @@
 ---
 package: '@flighthq/scene2d-wgpu'
-updated: 2026-06-25
-by: ingest:builder-67dc46d64
+updated: 2026-08-04
+by: builder4
 ---
 
 # scene2d-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-08-04 — tessellated solid shapes do not fold colour adjustments
+
+Standalone renderer capability gap: the default hybrid shape route in
+`packages/scene2d-wgpu/src/wgpuShape.ts` tries the tessellated mesh path first, but
+`packages/scene2d-wgpu/src/wgpuShapeMesh.ts` uploads only the solid fill colour multiplied by
+`RenderProxy.alpha`. It never consumes `RenderProxy.colorScaleBias` or `RenderProxy.colorMatrix`.
+Consequently, any adjusted solid `Shape` that tessellates renders its source colour; this is independent
+of which importer or application authored the node. The raster fallback does record the adjustment in
+`packages/scene2d-wgpu/src/wgpuRasterShapeRenderer.ts`, through the quad-only fold implemented by
+`packages/scene2d-wgpu/src/wgpuColorAdjustmentMaterialFeature.ts`, so the capability changes with shape
+strategy rather than node semantics.
+
+`functional/scenes/swf-alpha-transform.ts` is the permanent four-backend reproducer. Its SWF provenance
+only proves the gap affects real imported content: the adjusted white solid finishes the WebGPU draw with
+one mesh and no raster surface and remains white, while WebGL folds the same intended green transform.
+Evidence commit: `0099a0cc4 test(swf): capture alpha transform backend evidence`. Renderer-side record
+commit subject: `docs(scene2d-wgpu): record mesh colour adjustment gap`.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
