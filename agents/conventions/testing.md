@@ -87,7 +87,7 @@ Named failure shapes worth checking for directly, distinct from each other:
 
 ## Assertions that cannot fail
 
-Two shapes where the test and the code are each fine but the test still proves nothing. Both are
+Three shapes where the test and the code are each fine but the test still proves nothing. All are
 invisible on a green run and only show up under mutation.
 
 **A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
@@ -112,6 +112,17 @@ it was supposed to gate verified nothing. Drive at least one test through the re
 in the state that should trigger it, so the wiring is asserted and not assumed. The tell is that a test
 never calls the public function the guard or default exists to protect — or that more than one call site
 is free to reimplement the same condition inline. A default that call sites can bypass is not a default.
+
+**A captured or golden fixture keeps every field verbatim — except one whose meaning is POSITIONAL.** A
+numeric enum ordinal, an array index into a reorderable list, a bitfield position: name those, and keep
+the rest of the captured shape as observed. Capturing real emitted data is right, so the two rules are in
+tension; the resolution is **keep the captured shape, name the semantic value**. A serialized ordinal
+means whatever the enum said at capture time, and nothing marks it when the enum grows.
+`captureRegistryMiss.test.ts` hardcoded `registry: 2` for `RenderRegistry.NodeRenderer`; members are kept
+alphabetized, so inserting `BlendRealization`, `MaterialTextureLister` and `ModifierSnippet` above it moved
+`NodeRenderer` to 5 and made 2 mean `MaterialRenderer` — turning "a node-renderer miss is ignored" into
+"a material-renderer miss is ignored", the opposite of what the gate exists to assert, with nobody editing
+the file. The rule already existed on the enum itself, aimed at emitters; a fixture is a call site too.
 
 ## What belongs in a unit test vs. elsewhere
 
