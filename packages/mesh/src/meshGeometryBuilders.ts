@@ -972,8 +972,10 @@ const ICOSAHEDRON_FACES: ReadonlyArray<readonly [number, number, number]> = [
 ];
 
 // Dodecahedron: 20 vertices, 12 pentagonal faces (each pentagon triangulated into 3 triangles).
-// Vertex positions adapted from three.js DodecahedronGeometry (MIT). Each pentagon is split
-// into 3 triangles by fanning from the first vertex. 12 faces × 3 = 36 triangles.
+// The canonical regular dodecahedron — the eight cube corners (±1, ±1, ±1) together with the twelve
+// points of three mutually perpendicular golden-ratio rectangles: (0, ±1/φ, ±φ), (±1/φ, ±φ, 0) and
+// (±φ, 0, ±1/φ). Each pentagon is split into 3 triangles by fanning from the first vertex.
+// 12 faces × 3 = 36 triangles.
 const _d = 1 / _phi;
 const DODECAHEDRON_VERTS: ReadonlyArray<readonly [number, number, number]> = [
   [-1, -1, -1],
