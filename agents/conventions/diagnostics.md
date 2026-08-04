@@ -49,6 +49,9 @@ This is the constructive twin of the `no-warning-comments` lint rule: lint close
 - **`are<Domain>GuardsEnabled(...)`** mirror, same scoping.
 - Guards attach via existing nullable hook/runtime slots — never a new branch in a core hot path.
 - **Warn only — no strict/throw mode.** Throwing on misuse changes control flow between dev and prod and violates the sentinel rule. Tests that want hard failure assert on a memory log sink.
+- **Two modules, not one: the seam and the wording.** A `<domain>Guards.ts` holds the slots and the `report*` functions core calls, and depends on *nothing* — no logger, no messages. `enable<Domain>Guards.ts` is the only module that imports `@flighthq/log` and the only place a sentence lives. Until a caller opts in, every `report*` is a null check and a return, which is what lets the seam sit in code that must not carry a message.
+- **Several emitters behind one `enable`, not a module per case.** A domain's silent behaviours share one enable, and two cases that differ only in *what* was coerced share one emitter parameterised by subject rather than one each — `skeleton2d` reports an attachment-swap and a draw-order coercion through a single emitter, and a deform length mismatch through a second. Slots are *set* rather than accumulated, so enabling twice installs one guard.
+- **Key `logOnce` per subject, not per module.** `logOnce` keys are process-wide with no reset, so a module-scoped key lets whichever subject fails *first* silence every other one for the session. This also constrains tests: two cases sharing a subject means the second is silently suppressed by the first.
 
 ### What is NOT a missing guard
 
