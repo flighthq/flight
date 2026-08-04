@@ -11,6 +11,7 @@ import type { AnimationChannel, AnimationInterpolation, Node, NodeOrderList } fr
 import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget';
 import {
   createSkeleton2DDrawOrderAnimationTarget,
+  createSkeleton2DDrawOrderChannel,
   registerSkeleton2DDrawOrderAnimationBinder,
   unregisterSkeleton2DDrawOrderAnimationBinder,
 } from './skeleton2dDrawOrderTarget';
@@ -27,6 +28,58 @@ describe('createSkeleton2DDrawOrderAnimationTarget', () => {
     const target = createSkeleton2DDrawOrderAnimationTarget([], createNodeOrderList());
 
     expect(target.kind).toBe('Skeleton2D.DrawOrderTarget');
+  });
+});
+
+describe('createSkeleton2DDrawOrderChannel', () => {
+  it('builds a step track whose components are the slot count', () => {
+    // slotCount is derived as orderings.length / times.length rather than stored, so the two cannot
+    // disagree.
+    const { list, nodes } = rig(3);
+    const channel = createSkeleton2DDrawOrderChannel({ orderings: [0, 1, 2, 2, 0, 1], times: [0, 1] }, nodes, list)!;
+
+    expect(channel.track.components).toBe(3);
+    expect(channel.track.interpolation).toBe('Step');
+  });
+
+  it('builds the track as Step so the coercion guard has nothing to report', () => {
+    // The honest shape does not need the warning — an ordering track authored as Step is not coerced.
+    const seen: string[] = [];
+    setSkeleton2DCoercedInterpolationGuard((report) => void seen.push(report.subject));
+    const { list, nodes } = rig(2);
+    const channel = createSkeleton2DDrawOrderChannel({ orderings: [0, 1, 1, 0], times: [0, 1] }, nodes, list)!;
+
+    registerSkeleton2DDrawOrderAnimationBinder();
+    getSkeleton2DAnimationTargetBinder('Skeleton2D.DrawOrderTarget')!(
+      channel,
+      null as never,
+      null as never,
+      channel.targetRef,
+      1,
+    );
+
+    expect(seen).toEqual([]);
+    expect(list.sortKeys.slice(0, 2)).toEqual([1, 0]);
+  });
+
+  it('stamps the target so the channel binds without further wiring', () => {
+    const { list, nodes } = rig(2);
+    const channel = createSkeleton2DDrawOrderChannel({ orderings: [0, 1], times: [0] }, nodes, list)!;
+
+    expect((channel.targetRef as { kind: string }).kind).toBe('Skeleton2D.DrawOrderTarget');
+  });
+
+  it('returns null for a timeline with no keyframes', () => {
+    const { list, nodes } = rig(2);
+
+    expect(createSkeleton2DDrawOrderChannel({ orderings: [], times: [] }, nodes, list)).toBeNull();
+  });
+
+  it('returns null when the orderings are not a whole number of per-keyframe orderings', () => {
+    // A partial final ordering would silently drop the slots past its end rather than fail.
+    const { list, nodes } = rig(2);
+
+    expect(createSkeleton2DDrawOrderChannel({ orderings: [0, 1, 1], times: [0, 1] }, nodes, list)).toBeNull();
   });
 });
 

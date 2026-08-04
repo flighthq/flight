@@ -1,3 +1,4 @@
+import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
 import { addNodeOrderListEntry, clearNodeOrderList } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
@@ -5,6 +6,7 @@ import type {
   NodeOrderList,
   NodeTraits,
   Skeleton2DDrawOrderAnimationTarget,
+  Skeleton2DDrawOrderTimeline,
 } from '@flighthq/types/contract';
 import { Skeleton2DAnimationTargetKind as TargetKind } from '@flighthq/types/contract';
 
@@ -28,6 +30,44 @@ export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object =
   orderList: NodeOrderList<Traits>,
 ): Skeleton2DDrawOrderAnimationTarget<Traits> {
   return { kind: TargetKind.DrawOrder, nodes, orderList };
+}
+
+/**
+ * Turns an import's draw-order timeline into the channel that drives it — the **scene-side step** the
+ * data on `Skeleton2DImport` is waiting for.
+ *
+ * A target names what the file states, and a draw-order target names display nodes and a
+ * `NodeOrderList`, neither of which exists at parse time. So the parser reports orderings and this binds
+ * them once there are nodes: the same division `@flighthq/scene2d-formats` uses for Rive, where the
+ * codec reports `DrawRules` and the caller wires the `NodeOrderList`.
+ *
+ * The track is built as `Step` because it already holds whole orderings — interpolating two of them
+ * would produce fractional sort keys and a sequence nobody authored. Building it as `Step` here means
+ * the binder's coercion guard has nothing to report, which is the point: the honest shape does not need
+ * the warning.
+ *
+ * Returns `null` for a timeline with no keyframes, and for one whose `orderings` is not a whole number
+ * of per-keyframe orderings — a partial final ordering would silently drop the slots past its end.
+ */
+export function createSkeleton2DDrawOrderChannel<Traits extends object = NodeTraits>(
+  timeline: Readonly<Skeleton2DDrawOrderTimeline>,
+  nodes: readonly (Node<Traits> | null)[],
+  orderList: NodeOrderList<Traits>,
+): AnimationChannel | null {
+  const keyframes = timeline.times.length;
+  if (keyframes === 0) return null;
+  const slotCount = timeline.orderings.length / keyframes;
+  if (!Number.isInteger(slotCount) || slotCount === 0) return null;
+
+  return createAnimationChannel(
+    createAnimationTrack({
+      components: slotCount,
+      interpolation: STEP_INTERPOLATION,
+      times: timeline.times,
+      values: timeline.orderings,
+    }),
+    createSkeleton2DDrawOrderAnimationTarget(nodes, orderList),
+  );
 }
 
 /**
