@@ -189,13 +189,13 @@ the cycle family `svg.recursive-use`, `svg.recursive-gradient`; `svg.image-missi
 **Rive imports end to end**, from container bytes to a `Scene2DDocument`. `parseRiveDocument` decodes
 the file into its header and flat core-object stream, `createRiveObjectGraph` reconstructs the
 artboards and the component tree from it, `createScene2DFromRiveDocument` produces one display subtree
-per artboard — shapes, paint, clipping, draw order, solo switching, single-format text, and animation
+per artboard — shapes, paint, clipping, draw order, solo switching, rich text, and animation
 clips that bind geometry and paint as well as transforms — and `createScene2DDocumentFromRiveDocument`
 presents the file as a named-graph document with resource references and nested-artboard slots. Each
 of those stages has its own section below, with the corpus counts behind it.
 
-**What is not read is a bounded list, not the bulk of the format**: rich text and the typeface a style
-names, variable-font axes, text modifiers, animation loop mode / work-area / playback speed, and —
+**What is not read is a bounded list, not the bulk of the format**: variable-font axes, text
+modifiers, animation loop mode / work-area / playback speed, and —
 pending decisions above this codec — rigging and skinning, layout, constraints, data binding, Feather,
 and the state-machine *runtime*. The state-machine *descriptor* is read. The ranked table near the end
 of this section carries the corpus counts behind that list.
@@ -552,10 +552,22 @@ transitions, with 70 inputs. **A machine takes its name from the `Animation` it 
 state-machine component key its layers and inputs use** — reading it with the layer's key leaves every
 machine in the corpus unnamed, which is how the mistake showed itself.
 
-**Text is covered as a single-format label.** A text drawable's words live in its **value runs**,
-each naming a style, and a style paints itself through a fill child exactly as a shape does. Runs are
-joined in file order; the first run's style sets size, line height, letter spacing and colour; the
-drawable's own box and alignment carry over, with alignment numbered left, right, centre.
+**Text is covered, including runs that differ in style.** A text drawable's words live in its **value
+runs**, each naming a style, and a style paints itself through a fill child exactly as a shape does.
+Runs are joined in file order and **each run contributes one `TextFormatRange`** over the span it
+occupies in the joined string, so a drawable whose runs differ in size, colour or typeface keeps that
+difference — 28 of 117 texts in the corpus have more than one run. A run is the unit the file
+authored, so every run states a range rather than only the ones where the style changes. The first
+run's style also becomes the drawable's own format, which is what a consumer laying out from the
+format alone reads. The drawable's box and alignment carry over, with alignment numbered left, right,
+centre.
+
+**A text drawable always imports as a `RichText`, never a `TextLabel`**, even when a single run makes
+the ranges redundant with the format. `TextFormatRange` lives only on `RichTextData`, so keying the
+node kind on run count would make it depend on the *contents* of the file: a caller that registered a
+renderer for `TextLabel` would silently lose every multi-run text. One Rive concept maps to one Flight
+kind. This follows the SWF importer, which imports `DefineEditText` fields as `RichText` for the same
+reason.
 
 `styleId` indexes the artboard's **component numbering**, the same space `parentId` uses — against the
 corpus it resolves all 150 runs, while resolving it against the styles in declaration order resolves
@@ -564,11 +576,19 @@ corpus it resolves all 150 runs, while resolving it against the styles in declar
 Over the corpus this produces 117 labels, 113 carrying text and 112 carrying a size, with real
 strings recovered from real files.
 
-**Not covered — rich text.** A drawable whose runs differ in style needs more than one format can
-carry; 28 of 117 texts in the corpus have more than one run, though runs often share a style. Also
-uncovered: the font a style names (`fontAssetId` resolves to a font asset whose bytes are read but
-not turned into a typeface), text modifiers and their ranges — the mechanism behind Rive's animated
-per-character effects — text-follow-path, variable-font axes and OpenType features, and `TextInput`.
+**The typeface a style names is covered as a name, not as glyphs.** `fontAssetId` (property key 279)
+is a position in the asset list, the same space an image drawable's `assetId` indexes, and it resolves
+to that asset's name on `TextFormat.font`. An unset reference is −1 rather than 0, which would
+otherwise name the file's first asset. The font's *bytes* stay unacquired, exactly as image bytes do:
+naming the typeface is this codec's job and decoding it is the resource layer's, which is how SWF
+resolves a font id to a family name as well.
+
+Rive's object model also carries a `familyName` on the style (key 341), and it is **not** a shortcut
+around this: it is marked `runtime: false`, so the editor never writes it to a `.riv`. The asset's own
+name is the only name a runtime file carries.
+
+**Not covered:** text modifiers and their ranges — the mechanism behind Rive's animated per-character
+effects — text-follow-path, variable-font axes and OpenType features, and `TextInput`.
 
 **Rigging does not fit the attachment model the charter assumed, and that is the finding.** The
 charter routes Rive's "deformable meshes + bones/skinning" to `@flighthq/skeleton2d`'s
@@ -614,8 +634,8 @@ The artboards' clips, state machines and advanced blends travel alongside the do
 inside it, since `Scene2DDocument` models a static named graph and a caller that wants to play or
 blend needs the import itself.
 
-**Also not covered**, beyond the families the ranked table above counts: rich text and the typeface a
-style names, per the text section. Loop mode, work-area trimming, and playback speed, which the
+**Also not covered**, beyond the families the ranked table above counts: text modifiers and
+variable-font axes, per the text section. Loop mode, work-area trimming, and playback speed, which the
 animation states and this importer does not yet carry. Non-double and non-colour keyframe value kinds.
 Live animated or bound layout-descriptor refresh. Dashes, which no corpus file uses. Deformable meshes,
 bones and skinning. And `Feather`, a paint effect whose home is the effects tier rather than this codec
