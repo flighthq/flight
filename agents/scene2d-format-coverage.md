@@ -194,8 +194,7 @@ clips that bind geometry and paint as well as transforms — and `createScene2DD
 presents the file as a named-graph document with resource references and nested-artboard slots. Each
 of those stages has its own section below, with the corpus counts behind it.
 
-**What is not read is a bounded list, not the bulk of the format**: variable-font axes, text
-modifiers, animation loop mode / work-area / playback speed, and —
+**What is not read is a bounded list, not the bulk of the format**: text modifiers, animation loop mode / work-area / playback speed, and —
 pending decisions above this codec — rigging and skinning, layout, constraints, data binding, Feather,
 and the state-machine *runtime*. The state-machine *descriptor* is read. The ranked table near the end
 of this section carries the corpus counts behind that list.
@@ -530,7 +529,6 @@ this codec, so they are recorded rather than guessed at.
 | Rigging / skinning (`Weight`, `Tendon`, `CubicWeight`, `Skin`, `RootBone`, `Bone`) | 2,664 | 21/37 (57%) | Needs the `skeleton2d` weighted-vector-path decision |
 | Constraints (`IKConstraint`, `TranslationConstraint`, …) | 179 | 11/37 (30%) | Solvers; where they live is a charter question |
 | Data binding (`ViewModelInstance`, `DataBindContext`, `BindableProperty*`) | 691 | 8/37 (22%) | A runtime binding system, not static document data |
-| Variable-font axes (`TextStyleAxis`) | 120 | 7/37 (19%) | Reachable inside the text seam |
 | Feather | 62 | 2/37 (5%) | Belongs to the effects tier |
 | Mesh / vertex art (`MeshVertex`, `ContourMeshVertex`) | 291 | 1/37 (3%) | Deformable mesh; travels with rigging |
 
@@ -613,8 +611,16 @@ Rive's object model also carries a `familyName` on the style (key 341), and it i
 around this: it is marked `runtime: false`, so the editor never writes it to a `.riv`. The asset's own
 name is the only name a runtime file carries.
 
+**Variable-font axes are covered.** A `TextStyleAxis` is a child component of the style, and Rive
+packs the OpenType tag into a uint rather than stating it as text, so import unpacks it back into the
+four characters a shaper matches on — `wght` is `0x77676874`, most-significant byte first. Each axis
+becomes a `FontVariation` on the format's `variations`, the same shape `TextShaperOptions.variations`
+already takes, so a shaper reads them with no conversion at the seam. Absent `variations` means the
+font's own defaults stand, which is not the same as an empty list. 120 axis objects across 7 of 37
+corpus files.
+
 **Not covered:** text modifiers and their ranges — the mechanism behind Rive's animated per-character
-effects — text-follow-path, variable-font axes and OpenType features, and `TextInput`.
+effects — text-follow-path, OpenType features, and `TextInput`.
 
 **Rigging does not fit the attachment model the charter assumed, and that is the finding.** The
 charter routes Rive's "deformable meshes + bones/skinning" to `@flighthq/skeleton2d`'s
@@ -676,14 +682,14 @@ The artboards' clips, state machines and advanced blends travel alongside the do
 inside it, since `Scene2DDocument` models a static named graph and a caller that wants to play or
 blend needs the import itself.
 
-**Also not covered**, beyond the families the ranked table above counts: text modifiers and
-variable-font axes, per the text section. Elastic interpolation, per the animation section — the one
-piece of it Flight lacks is a parameterized elastic easing. Non-double and non-colour keyframe value
-kinds. Live animated or bound layout-descriptor refresh. Dashes, which no corpus file uses. Deformable
-meshes, bones and skinning. And `Feather`, a paint effect whose home is the effects tier rather than
-this codec — the table counts 62 objects across 2 files, while an earlier revision of this paragraph
-said 154 instances; the two have not been reconciled against the corpus. The state-machine runtime is
-intentionally a separate future cell rather than a codec gap.
+**Also not covered**, beyond the families the ranked table above counts: text modifiers, per the text
+section. Elastic interpolation, per the animation section — the one piece of it Flight lacks is a
+parameterized elastic easing. Non-double and non-colour keyframe value kinds. Live animated or bound
+layout-descriptor refresh. Dashes, which no corpus file uses. Deformable meshes, bones and skinning.
+And `Feather`, a paint effect whose home is the effects tier rather than this codec — the table counts
+62 objects across 2 files, while an earlier revision of this paragraph said 154 instances; the two have
+not been reconciled against the corpus. The state-machine runtime is intentionally a separate future
+cell rather than a codec gap.
 
 Import stops deliberately short in two further places, and neither is a gap in this codec. **Image
 assets resolve rather than decode**: a reference arrives with its bytes and every waiting texture

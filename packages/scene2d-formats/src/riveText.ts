@@ -1,6 +1,7 @@
 import { packColor } from '@flighthq/color/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type {
+  FontVariation,
   RichText,
   RiveArtboardGraph,
   RiveCoreObject,
@@ -100,7 +101,34 @@ function createRiveTextFormat(
   const fontAsset = readRiveNumber(style, RIVE_STYLE_FONT_ASSET_ID, RIVE_MISSING_ASSET_ID);
   const fontName = fontAsset >= 0 && fontAsset < fontNames.length ? fontNames[fontAsset] : '';
   if (fontName !== '') format.font = fontName;
+
+  const variations = readRiveStyleAxes(artboard, styleIndex);
+  // An absent list means the font's own axis defaults stand, which is not the same as an empty one.
+  if (variations.length > 0) format.variations = variations;
   return format;
+}
+
+// A variable-font axis is a child component of the style, the way its paint is. Rive packs the
+// OpenType tag into a uint rather than stating it as text, so it is unpacked back into the four
+// characters a shaper matches on.
+function readRiveStyleAxes(artboard: Readonly<RiveArtboardGraph>, styleIndex: number): FontVariation[] {
+  const variations: FontVariation[] = [];
+  if (styleIndex < 0) return variations;
+  for (let index = styleIndex + 1; index < artboard.objects.length; index++) {
+    const object = artboard.objects[index];
+    if (object.typeKey !== RIVE_TEXT_STYLE_AXIS) continue;
+    if (artboard.parentIndices[index] !== styleIndex) continue;
+    variations.push({
+      axis: toRiveOpenTypeTag(readRiveNumber(object, RIVE_AXIS_TAG, 0)),
+      value: readRiveNumber(object, RIVE_AXIS_VALUE, 0),
+    });
+  }
+  return variations;
+}
+
+// The four bytes read most-significant first, which is the order an OpenType tag is written in.
+function toRiveOpenTypeTag(packed: number): string {
+  return String.fromCharCode((packed >>> 24) & 0xff, (packed >>> 16) & 0xff, (packed >>> 8) & 0xff, packed & 0xff);
 }
 
 // A style paints itself the way a shape does: through a fill whose own child states the colour.
@@ -142,12 +170,15 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 }
 
 const RIVE_TEXT_VALUE_RUN = 135;
+const RIVE_TEXT_STYLE_AXIS = 144;
 const RIVE_SOLID_COLOR = 18;
 
 const RIVE_RUN_TEXT = 268;
 const RIVE_RUN_STYLE_ID = 272;
 const RIVE_STYLE_FONT_SIZE = 274;
 const RIVE_STYLE_FONT_ASSET_ID = 279;
+const RIVE_AXIS_VALUE = 288;
+const RIVE_AXIS_TAG = 289;
 const RIVE_TEXT_ALIGN = 281;
 const RIVE_TEXT_WIDTH = 285;
 const RIVE_TEXT_HEIGHT = 286;
