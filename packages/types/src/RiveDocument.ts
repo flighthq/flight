@@ -286,6 +286,42 @@ export interface RiveArtboardImport {
 }
 
 /**
+ * Which of a path vertex's positions a Rive weight drives.
+ *
+ * A straight vertex has only its anchor. A **cubic vertex carries three independently weighted
+ * positions** — the anchor and each of its two handles — because `CubicWeight` extends `Weight` and
+ * adds its own `inValues`/`inIndices` and `outValues`/`outIndices` alongside the inherited pair. A
+ * handle is therefore neither skipped nor bound to its anchor's influences: it states its own. Any
+ * addressing that names only vertices loses authored data on every cubic vertex in a rigged file.
+ */
+export const RiveWeightedPointKind = {
+  /** The vertex's own anchor, weighted by the inherited `values`/`indices` pair. */
+  Point: 'Point',
+  /** The incoming cubic handle, weighted by `inValues`/`inIndices`. */
+  In: 'In',
+  /** The outgoing cubic handle, weighted by `outValues`/`outIndices`. */
+  Out: 'Out',
+} as const;
+
+export type RiveWeightedPointKind = (typeof RiveWeightedPointKind)[keyof typeof RiveWeightedPointKind];
+
+/**
+ * One authored position to be skinned, named by the vertex that owns it.
+ *
+ * The coordinates come from the path reader rather than from the skin reader: a cubic handle's
+ * position is stated in polar form and the three cubic kinds disagree on sign, so deriving it a
+ * second time here would be a second place to get that wrong. The skin reader takes the resolved
+ * coordinates and contributes only the weighting.
+ */
+export interface RiveWeightedPoint {
+  kind: RiveWeightedPointKind;
+  /** The vertex component's index in the artboard's numbering — where its `Weight` child hangs. */
+  vertex: number;
+  x: number;
+  y: number;
+}
+
+/**
  * One path already resolved into its owning shape's space. Paint is applied per shape rather than
  * per path, so the shape holds its paths until the whole paint list is known.
  */
