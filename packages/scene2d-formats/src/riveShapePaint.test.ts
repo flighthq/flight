@@ -17,6 +17,8 @@ const FILL = 20;
 const LINEAR_GRADIENT = 22;
 const STROKE = 24;
 const TRIM_PATH = 47;
+const DASH_PATH = 506;
+const DASH = 507;
 
 describe('appendRiveShapePaint', () => {
   it('draws nothing when the shape has no paths', () => {
@@ -244,6 +246,69 @@ describe('appendRiveShapePaint', () => {
     expect(strokedLength(shape)).toBeCloseTo(150, 0);
   });
 
+  it('alternates every static dash length using the published type and property keys', () => {
+    const shape = createShape();
+    appendRiveShapePaint(shape, dashedStroke([{ value: 10 }, { value: 5 }]), 0, [line(40)]);
+
+    expect(strokedLength(shape)).toBeCloseTo(30, 3);
+  });
+
+  it('resolves percentage dash lengths against each path length', () => {
+    const shape = createShape();
+    appendRiveShapePaint(
+      shape,
+      dashedStroke([
+        { percentage: true, value: 0.1 },
+        { percentage: true, value: 0.05 },
+      ]),
+      0,
+      [line(100)],
+    );
+
+    expect(strokedLength(shape)).toBeCloseTo(70, 3);
+  });
+
+  it('starts the pattern at an absolute or percentage offset', () => {
+    for (const [offset, percentage] of [
+      [5, false],
+      [0.125, true],
+    ] as const) {
+      const shape = createShape();
+      appendRiveShapePaint(shape, dashedStroke([{ value: 10 }, { value: 10 }], offset, percentage), 0, [line(40)]);
+
+      expect(firstStrokedData(shape).slice(0, 4)).toEqual([5, 0, 15, 0]);
+    }
+  });
+
+  it('keeps alternating when a dash pattern has an odd number of entries', () => {
+    const shape = createShape();
+    appendRiveShapePaint(shape, dashedStroke([{ value: 10 }]), 0, [line(40)]);
+
+    expect(strokedLength(shape)).toBeCloseTo(20, 3);
+  });
+
+  it('emits no stroke geometry when every stated dash length is zero', () => {
+    const shape = createShape();
+    appendRiveShapePaint(shape, dashedStroke([{ value: 0 }, { value: 0 }]), 0, [line(40)]);
+
+    expect(drawCount(shape)).toBe(0);
+  });
+
+  it('leaves a fill untouched by a dash effect', () => {
+    const shape = createShape();
+    appendRiveShapePaint(
+      shape,
+      graph(
+        [object(SHAPE, {}), object(FILL, {}), object(SOLID_COLOR, {}), object(DASH_PATH, {}), object(DASH, { 692: 5 })],
+        [-1, 0, 1, 1, 3],
+      ),
+      0,
+      [line(40)],
+    );
+
+    expect(strokedLength(shape)).toBeCloseTo(40, 3);
+  });
+
   it('carries stroke thickness, cap and join', () => {
     const shape = createShape();
     appendRiveShapePaint(
@@ -289,6 +354,11 @@ function strokedLength(shape: { data: { commands: unknown[] } }): number {
   return total;
 }
 
+function firstStrokedData(shape: { data: { commands: unknown[] } }): number[] {
+  const at = shape.data.commands.indexOf('drawPath');
+  return shape.data.commands[at + 3] as number[];
+}
+
 function paintTokens(shape: { data: { commands: unknown[] } }): string[] {
   const starts = ['beginFill', 'beginGradientFill', 'lineStyle', 'lineGradientStyle'];
   return shape.data.commands.filter((token): token is string => typeof token === 'string' && starts.includes(token));
@@ -313,6 +383,25 @@ function trimmedStroke(start: number, end: number, mode: number) {
     ],
     [-1, 0, 1, 1],
   );
+}
+
+function dashedStroke(
+  lengths: ReadonlyArray<Readonly<{ percentage?: boolean; value: number }>>,
+  offset = 0,
+  offsetIsPercentage = false,
+) {
+  const objects: RiveCoreObject[] = [
+    object(SHAPE, {}),
+    object(STROKE, {}),
+    object(SOLID_COLOR, {}),
+    object(DASH_PATH, { 690: offset, 691: offsetIsPercentage ? 1 : 0 }),
+  ];
+  const parents = [-1, 0, 1, 1];
+  for (const length of lengths) {
+    objects.push(object(DASH, { 692: length.value, 693: length.percentage === true ? 1 : 0 }));
+    parents.push(3);
+  }
+  return graph(objects, parents);
 }
 
 function line(length: number): RivePathRecord {
