@@ -197,18 +197,28 @@ describe('readSwfFilterList', () => {
 });
 
 describe('setSwfFilterListGuard', () => {
-  it('stops and reports an unknown filter before its payload can be mistaken for another field', () => {
+  it('routes unknown filters only while a non-null guard is installed', () => {
     const seen: number[] = [];
+    const bytes = joinBytes(
+      new Uint8Array([2, 1]),
+      fixed(4),
+      fixed(2),
+      new Uint8Array([0]),
+      new Uint8Array([0xfe, 13]),
+    );
     setSwfFilterListGuard((filterId, filterIndex) => seen.push(filterId, filterIndex));
     try {
-      const { complete, effects } = read(
-        joinBytes(new Uint8Array([2, 1]), fixed(4), fixed(2), new Uint8Array([0]), new Uint8Array([0xfe, 13])),
-      );
+      const { complete, effects } = read(bytes);
 
       expect(complete).toBe(false);
       expect(effects).toHaveLength(1);
       expect(effects[0].kind).toBe('BlurEffect');
       expect(seen).toEqual([0xfe, 1]);
+
+      setSwfFilterListGuard(null);
+      seen.length = 0;
+      expect(read(bytes)).toMatchObject({ complete: false });
+      expect(seen).toEqual([]);
     } finally {
       setSwfFilterListGuard(null);
     }
