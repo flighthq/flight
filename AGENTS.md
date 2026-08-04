@@ -43,6 +43,16 @@ When a feature's familiar API would require hidden state, eager side effects, or
 - Packages must not import from `@flighthq/sdk`. Examples usually import from `@flighthq/sdk` when demonstrating application usage, but may import individual packages when intentionally demonstrating lower-level or tree-shaken usage.
 - **All exported types belong in `@flighthq/types`** — every exported `interface`, `type`, and `enum` lives there, uniformly, with no exceptions (`host-*` and `*-formats` included); an implementation package exports functions only. Do not define exported types inline in individual package files. The `types` package carries the same two lanes as every other: public types at `.`, contract-only types at `@flighthq/types/contract`. When building a new feature, define its types in `@flighthq/types` first, then implement against them — the header is the design surface. Full rules, and the port mapping they protect, in [file naming & type home](agents/conventions/file-naming.md) and [export lanes](agents/conventions/export-lanes.md).
 
+## License Provenance
+
+Flight is MIT, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.
+
+- **Never vendor** third-party source, specification documents, definition files, corpora, or fixtures into this repo — not `packages/`, not `agents/`, not a scratch file under the repo root.
+- **Testing against licensed material is fine.** A DVD player may use a licensed DVD to test playback without taking its contents; verifying our implementation against someone's real file is use, not incorporation. Fetch on demand, keep it outside the repo, commit nothing.
+- **Record how to obtain and verify a file. Never record whose license it carries.** Reciting another party's terms — or electing between them — reads as accepting a grant and implies an obligation that otherwise does not exist. Keep the fetch recipe and the hash; drop the terms.
+- **State format facts as facts about the format, not as excerpts from a document.** "PNG's magic bytes are `89 50 4E 47`" needs no attribution; "derived from `<url>` at `<sha>`, MIT" manufactures one.
+- **Interface facts and implementation are different.** Key numbers, enum values, and field names needed to read a format are what a published format is _for_. Implementing an algorithm is not: build from the specification, in Flight's own architecture, never transcribed from a reference implementation.
+
 ## Design Constraints
 
 - Exported function names include the full, unabbreviated name of the type they operate on. `getBitmapWidth` in isolation leads directly to the bitmap domain; `getNode2DBounds` to display objects. A function should be globally self-identifying without context. Never abbreviate type names in function names.
