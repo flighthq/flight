@@ -186,9 +186,19 @@ the cycle family `svg.recursive-use`, `svg.recursive-gradient`; `svg.image-missi
 
 ## Rive (`.riv`)
 
-**Container layer only.** `parseRiveDocument` decodes the file into its header and flat core-object
-stream; no interpretation is built on top of it yet, so nothing produces display nodes, shapes,
-animations, or a `Scene2DDocument` from a `.riv` today.
+**Rive imports end to end**, from container bytes to a `Scene2DDocument`. `parseRiveDocument` decodes
+the file into its header and flat core-object stream, `createRiveObjectGraph` reconstructs the
+artboards and the component tree from it, `createScene2DFromRiveDocument` produces one display subtree
+per artboard — shapes, paint, clipping, draw order, solo switching, single-format text, and animation
+clips that bind geometry and paint as well as transforms — and `createScene2DDocumentFromRiveDocument`
+presents the file as a named-graph document with resource references and nested-artboard slots. Each
+of those stages has its own section below, with the corpus counts behind it.
+
+**What is not read is a bounded list, not the bulk of the format**: rich text and the typeface a style
+names, variable-font axes, text modifiers, animation loop mode / work-area / playback speed, and —
+pending decisions above this codec — rigging and skinning, layout, constraints, data binding, Feather,
+and the state-machine *runtime*. The state-machine *descriptor* is read. The ranked table near the end
+of this section carries the corpus counts behind that list.
 
 A `.riv` is not a document tree on the wire. It is a header followed by a flat run of **core
 objects**, each a numeric type key and then numeric property keys with their values. Every structure
@@ -604,16 +614,36 @@ The artboards' clips, state machines and advanced blends travel alongside the do
 inside it, since `Scene2DDocument` models a static named graph and a caller that wants to play or
 blend needs the import itself.
 
-**Also not covered:** loop mode, work-area trimming and playback speed, which an animation states but
-the imported clip does not carry; non-double/non-colour keyframe value kinds; live animated or bound
-layout-descriptor refresh; `Feather`, whose home is the effects tier; and deformable meshes, bones and
-skinning. The state-machine runtime is intentionally a separate future cell rather than a codec gap.
+**Also not covered**, beyond the families the ranked table above counts: rich text and the typeface a
+style names, per the text section. Loop mode, work-area trimming, and playback speed, which the
+animation states and this importer does not yet carry. Non-double and non-colour keyframe value kinds.
+Live animated or bound layout-descriptor refresh. Dashes, which no corpus file uses. Deformable meshes,
+bones and skinning. And `Feather`, a paint effect whose home is the effects tier rather than this codec
+— the table counts 62 objects across 2 files, while an earlier revision of this paragraph said 154
+instances; the two have not been reconciled against the corpus. The state-machine runtime is
+intentionally a separate future cell rather than a codec gap.
 
-**Crumbs.** Three, all asset facts, and all `Reject` because each ends the parse:
-`rive.invalid-header` (missing or wrong fingerprint, or a header that ends early),
-`rive.truncated-object-stream`, and `rive.unknown-property-width` — a property key declared neither
-by this reader nor by the file's own table, after which the next key's position is unknowable. That
-last one is the format's own unrecoverable case, not a Flight limitation.
+Import stops deliberately short in two further places, and neither is a gap in this codec. **Image
+assets resolve rather than decode**: a reference arrives with its bytes and every waiting texture
+wired, and the decode is `resolveScene2DResources`' job, matching the seam SVG and Lottie use.
+**The state-machine descriptor is read but nothing drives it**: per the charter the state-machine
+*runtime* is a separate future cell and never a codec concern.
+
+**Crumbs.** Thirteen, all asset facts, in three severities.
+
+**Four are `Reject`**, because each ends the parse: `rive.invalid-header` (missing or wrong
+fingerprint, or a header that ends early), `rive.truncated-object-stream`,
+`rive.unknown-property-width` — a property key declared neither by this reader nor by the file's own
+table, after which the next key's position is unknowable — and `rive.unsupported-version`, below.
+`rive.unknown-property-width` is the format's own unrecoverable case, not a Flight limitation.
+
+**Seven are `Drop`**, where a piece of the document is lost but the rest imports:
+`rive.component-without-parent`, `rive.parent-cycle` and `rive.unresolved-parent` from the graph
+stage; `rive.multiple-clipping-shapes` and `rive.unresolved-clipping-source` from clipping;
+`rive.path-outside-shape`; and `rive.draw-rule-crosses-parent`.
+
+**Two are `Skip`**, where an override is not applied and the default stands:
+`rive.draw-rule-unresolved` and `rive.solo-unresolved-active`.
 
 A file from another format generation is **refused** rather than misread: the property numbering
 differs between generations, so a wrong-generation parse would produce a confident, wrong document
@@ -637,5 +667,7 @@ against its arithmetic definition; float and integer reads against IEEE-754 and 
 patterns), cursor discipline is checked structurally, and every wire fact is mutation-tested.
 
 **What remains unverified:** only current-generation files were tested, all major version 7. The
-reader ignores the version fields entirely, so it neither rejects a future file nor adapts to an
-older generation, and no pre-7 file has been tried.
+reader gates on the major version and refuses anything else (`rive.unsupported-version`), so a pre-7
+or future file fails loudly rather than being misread — but no such file has been tried, so the
+refusal itself is checked only against synthetic bytes. The minor version is read and not acted on,
+which is what the format intends: a minor bump is meant to stay readable.
