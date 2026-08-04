@@ -52,6 +52,7 @@ export * from '@flighthq/interaction';
 export * from '@flighthq/intl';
 export * from '@flighthq/ipc';
 export * from '@flighthq/keyboard';
+export * from '@flighthq/layout';
 export * from '@flighthq/lifecycle';
 export * from '@flighthq/lighting';
 export * from '@flighthq/loader';

@@ -332,6 +332,7 @@ export * from './LensDistortionEffect';
 export * from './LensFlareEffect';
 export * from './LibgdxAtlasSchema';
 export * from './LibgdxParticleSchema';
+export * from './Layout';
 export * from './Lifecycle';
 export * from './Light';
 export * from './LightUnit';

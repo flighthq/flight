@@ -51,6 +51,7 @@
     { "path": "./packages/intl" },
     { "path": "./packages/ipc" },
     { "path": "./packages/keyboard" },
+    { "path": "./packages/layout" },
     { "path": "./packages/lifecycle" },
     { "path": "./packages/lighting" },
     { "path": "./packages/math" },

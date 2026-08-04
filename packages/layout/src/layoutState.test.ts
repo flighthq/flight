@@ -1,0 +1,26 @@
+import type { LayoutResolver } from '@flighthq/types/contract';
+
+import { createLayoutState, registerLayoutResolver } from './layoutState';
+
+const resolver: LayoutResolver = () => null;
+
+describe('createLayoutState', () => {
+  it('starts with an empty resolver registry and no retained failure', () => {
+    const state = createLayoutState();
+    expect(state.resolvers.size).toBe(0);
+    expect(state.lastFailureKind).toBeNull();
+    expect(state.guard).toBeNull();
+  });
+});
+
+describe('registerLayoutResolver', () => {
+  it('is open, last-write-wins, and accepts null to unregister', () => {
+    const state = createLayoutState();
+    const replacement: LayoutResolver = () => 'InvalidItemStyle';
+    registerLayoutResolver(state, 'acme.Flow', resolver);
+    registerLayoutResolver(state, 'acme.Flow', replacement);
+    expect(state.resolvers.get('acme.Flow')).toBe(replacement);
+    registerLayoutResolver(state, 'acme.Flow', null);
+    expect(state.resolvers.has('acme.Flow')).toBe(false);
+  });
+});

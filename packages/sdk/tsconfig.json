@@ -172,6 +172,9 @@
       "path": "../keyboard"
     },
     {
+      "path": "../layout"
+    },
+    {
       "path": "../lifecycle"
     },
     {
