@@ -1,9 +1,10 @@
-import type { Bone2D, MeshAttachment2D, Skin2D } from '@flighthq/types/contract';
+import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -124,6 +125,23 @@ describe('deformSkeleton2DMeshAttachment', () => {
     // (3,0) rotated 90° = (0,3), + (5,0) → (5,3).
     expect(out[0]).toBeCloseTo(5, 5);
     expect(out[1]).toBeCloseTo(3, 5);
+  });
+
+  it('reaches the guard seam when it ignores a short stream, rather than dropping it silently', () => {
+    const reports: Skeleton2DDeformLengthMismatch[] = [];
+    setSkeleton2DDeformLengthGuard((report) => reports.push({ ...report }));
+    const s = createSkeleton2D([makeBone(), makeBone()]);
+    computeSkeleton2DWorldTransforms(s);
+    const skin: Skin2D = {
+      influenceCounts: new Uint16Array([2]),
+      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
+    };
+
+    // Sized from vertex count (2) rather than influence count (4) — the importer mistake the guard names.
+    deformSkeleton2DMeshAttachment(new Float32Array(2), weightedMesh(skin, 1), s, 0, new Float32Array([9, 9]));
+    setSkeleton2DDeformLengthGuard(null);
+
+    expect(reports).toEqual([{ addressed: 4, offsets: 2, subject: 'MeshAttachment2D' }]);
   });
 
   it('transforms a rigid mesh by the slot bone world matrix (alias-safe in place)', () => {

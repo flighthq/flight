@@ -17,6 +17,8 @@ import {
   Skeleton2DSlotAnimationPath as SlotPath,
 } from '@flighthq/types/contract';
 
+import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards';
+
 // The binding target for a bone transform channel. Prefer this over a literal: `kind` is what the binder
 // dispatches on, and a target that omits it binds to nothing.
 export function createSkeleton2DBoneAnimationTarget(
@@ -162,6 +164,11 @@ function bindSkeleton2DSlotAttachment(
       break;
     }
   }
+  // The coercion is correct but must not be invisible: an author who set an easing here would
+  // otherwise never learn it had no effect. enableSkeleton2DGuards turns this into a message.
+  if (channel.track.interpolation !== STEP_INTERPOLATION) {
+    reportSkeleton2DCoercedInterpolation('Attachment', channel.track.interpolation, STEP_INTERPOLATION);
+  }
   const index = Math.round(channel.track.values[keyframe * channel.track.components]);
   slot.attachment = index >= 0 && index < table.length ? table[index] : null;
 }
@@ -181,3 +188,6 @@ const _binders = new Map<Skeleton2DAnimationTargetKind, Skeleton2DAnimationTarge
   [TargetKind.Slot, bindSkeleton2DSlotChannel],
 ]);
 const _scratch = [0, 0, 0, 0];
+
+// The walk every non-blendable channel is forced onto, named once so the guard and the walk agree.
+const STEP_INTERPOLATION = 'Step';

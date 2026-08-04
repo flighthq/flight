@@ -8,3 +8,6 @@ export * from './skeleton2dConstraint';
 export * from './ikConstraint2D';
 export * from './transformConstraint2D';
 export * from './pathConstraint2D';
+export * from './skeleton2dGuards';
+export * from './enableSkeleton2DGuards';
+export * from './explainSkeleton2DChannel';

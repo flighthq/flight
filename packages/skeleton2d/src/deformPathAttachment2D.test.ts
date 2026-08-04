@@ -1,9 +1,10 @@
-import type { Bone2D, Path, PathAttachment2D, Skin2D } from '@flighthq/types/contract';
+import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
 import { PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -129,6 +130,27 @@ describe('deformSkeleton2DPathAttachment', () => {
     deformSkeleton2DPathAttachment(out, attachment, skeleton, 0, new Float32Array([4, 4]));
 
     expect(out.data[0]).toBeCloseTo(5, 5);
+  });
+
+  it('reaches the guard seam when it ignores a short stream, naming the path attachment', () => {
+    const reports: Skeleton2DDeformLengthMismatch[] = [];
+    setSkeleton2DDeformLengthGuard((report) => reports.push({ ...report }));
+    const skeleton = createSkeleton2D([makeBone(), makeBone()]);
+    computeSkeleton2DWorldTransforms(skeleton);
+    const attachment = weightedPath(
+      {
+        influenceCounts: new Uint16Array([2]),
+        influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
+      },
+      1,
+      [PathCommand.MOVE_TO],
+    );
+
+    deformSkeleton2DPathAttachment(emptyPath(), attachment, skeleton, 0, new Float32Array([9, 9]));
+    setSkeleton2DDeformLengthGuard(null);
+
+    // The subject distinguishes it from a mesh mismatch, which is what the field exists for.
+    expect(reports).toEqual([{ addressed: 4, offsets: 2, subject: 'PathAttachment2D' }]);
   });
 
   it('transforms a rigid path by the slot bone world matrix', () => {
