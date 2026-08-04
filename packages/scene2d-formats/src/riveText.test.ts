@@ -11,6 +11,7 @@ import { createRiveRichText } from './riveText';
 const TEXT = 134;
 const RUN = 135;
 const STYLE_PAINT = 137;
+const AXIS = 144;
 const FILL = 20;
 const SOLID_COLOR = 18;
 
@@ -19,6 +20,8 @@ const RUN_TEXT = 268;
 const RUN_STYLE_ID = 272;
 const FONT_SIZE = 274;
 const FONT_ASSET_ID = 279;
+const AXIS_VALUE = 288;
+const AXIS_TAG = 289;
 const ALIGN = 281;
 const WIDTH = 285;
 const HEIGHT = 286;
@@ -161,6 +164,63 @@ describe('createRiveRichText', () => {
     );
 
     expect(label.data.textFormat?.font).toBeUndefined();
+  });
+
+  // A TextStyleAxis is a child component of the style, and Rive packs the OpenType tag into a uint
+  // rather than stating it as text. 'wght' is 0x77676874 read most-significant byte first.
+  it('unpacks a variable-font axis tag back into its four characters', () => {
+    const label = build(
+      [
+        object(TEXT, {}),
+        run('x', 2),
+        object(STYLE_PAINT, {}),
+        object(AXIS, { [AXIS_TAG]: 0x77676874, [AXIS_VALUE]: 700 }),
+      ],
+      [-1, 0, 0, 2],
+    );
+
+    expect(label.data.textFormat?.variations).toEqual([{ axis: 'wght', value: 700 }]);
+  });
+
+  it('carries every axis a style states', () => {
+    const label = build(
+      [
+        object(TEXT, {}),
+        run('x', 2),
+        object(STYLE_PAINT, {}),
+        object(AXIS, { [AXIS_TAG]: 0x77676874, [AXIS_VALUE]: 300 }),
+        object(AXIS, { [AXIS_TAG]: 0x77647468, [AXIS_VALUE]: 87.5 }),
+      ],
+      [-1, 0, 0, 2, 2],
+    );
+
+    expect(label.data.textFormat?.variations).toEqual([
+      { axis: 'wght', value: 300 },
+      { axis: 'wdth', value: 87.5 },
+    ]);
+  });
+
+  it('leaves variations absent when the style states no axis', () => {
+    // Absent means the font's own defaults stand, which is not the same as an empty list.
+    const label = build([object(TEXT, {}), run('x', 2), object(STYLE_PAINT, {})], [-1, 0, 0]);
+
+    expect(label.data.textFormat?.variations).toBeUndefined();
+  });
+
+  it('ignores an axis belonging to a different style', () => {
+    const label = build(
+      [
+        object(TEXT, {}),
+        run('x', 2),
+        object(STYLE_PAINT, {}),
+        object(STYLE_PAINT, {}),
+        object(AXIS, { [AXIS_TAG]: 0x77676874, [AXIS_VALUE]: 700 }),
+      ],
+      // The axis hangs off the SECOND style, so the first must not adopt it.
+      [-1, 0, 0, 0, 3],
+    );
+
+    expect(label.data.textFormat?.variations).toBeUndefined();
   });
 
   it('produces an empty label for a text drawable with no runs', () => {

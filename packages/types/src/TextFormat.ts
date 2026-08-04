@@ -1,3 +1,5 @@
+import type { FontVariation } from './FontVariation';
+
 export type TextFormatAlign = 'center' | 'end' | 'justify' | 'left' | 'right' | 'start';
 
 // The glyph drawn at the start of a bulleted paragraph. 'none' suppresses the marker glyph while
@@ -25,4 +27,8 @@ export interface TextFormat {
   target?: string;
   underline?: boolean;
   url?: string;
+  // Variable-font axis settings for this run, as OpenType tag/value pairs — the same shape
+  // TextShaperOptions.variations takes, so a shaper reads them without a conversion at the seam.
+  // Absent means the font's own defaults stand, which is not the same as an empty list.
+  variations?: readonly FontVariation[];
 }
