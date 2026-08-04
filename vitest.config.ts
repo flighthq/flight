@@ -6,10 +6,15 @@ import baseConfig from './vitest.config.base.js';
 
 // One master config for the fast run: unit tests share a single jsdom environment per
 // worker (isolate:false) instead of one environment per file — the full suite's cost is per-file
-// environment setup, not test logic, so reuse is a ~15× speedup. Tool-capture is deliberately left
-// to the per-package CI lane: its Node environment, browser processes, and serialized e2e contracts
-// are incompatible with this shared jsdom fast path. Each package keeps its own vitest.config.ts for
-// standalone runs; this config does not recurse into them.
+// environment setup, not test logic, so reuse is a ~15× speedup. Each package keeps its own
+// vitest.config.ts for standalone runs; this config does not recurse into them.
+//
+// A package incompatible with the shared jsdom path gets its OWN PROJECT here, not an exclusion.
+// Tool-capture needs the node environment and serial files, which is a reason to route it rather than
+// to skip it — being outside the `@flighthq/sdk` barrel is a PACKAGING decision and says nothing about
+// whether the test gate should cover it. It was excluded once, and the package that decides whether a
+// capture drew anything became the one package nothing verified: a fixture there asserted the opposite
+// of its own purpose while this run reported zero failures.
 //
 // Two tiers, because hermeticity has two prices and only one of them is worth paying suite-wide.
 //
@@ -26,13 +31,15 @@ import baseConfig from './vitest.config.base.js';
 // shared — the rule is about the registry, not about the API.
 //
 // The tier list is machine-checked by `npm run mocks:check`, in both directions.
-const COMMON_EXCLUDE = [
-  '**/.claude/**',
-  '**/node_modules/**',
-  '**/surfaceWasm.test.ts',
-  'packages/tool-capture/src/**/*.test.ts',
-];
+const COMMON_EXCLUDE = ['**/.claude/**', '**/node_modules/**'];
 const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
+// `tool-capture` is ROUTED to its own project rather than excluded from the run. It needs the node
+// environment and serial files — its browser contracts launch Chromium against the host GPU, and
+// sharing that across workers has produced valid contexts whose framebuffers read back empty — so it
+// cannot join the jsdom projects. That is a reason to give it a project, not a reason to skip it: this
+// package decides whether a capture drew anything, so a defect here is the one defect nothing else
+// catches. It is listed here so the other projects can exclude it by name in one place.
+const TOOL_CAPTURE_TEST_FILES = ['packages/tool-capture/src/**/*.test.ts'];
 
 export default mergeConfig(
   baseConfig,
@@ -60,7 +67,12 @@ export default mergeConfig(
             name: 'shared',
             isolate: false,
             include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
-            exclude: [...COMMON_EXCLUDE, ...ISOLATED_MOCK_TEST_FILES, TEST_RUN_COVERAGE_FILE],
+            exclude: [
+              ...COMMON_EXCLUDE,
+              ...TOOL_CAPTURE_TEST_FILES,
+              ...ISOLATED_MOCK_TEST_FILES,
+              TEST_RUN_COVERAGE_FILE,
+            ],
             sequence: { groupOrder: 0 },
           },
         },
@@ -70,7 +82,7 @@ export default mergeConfig(
             name: 'isolated',
             isolate: true,
             include: [...ISOLATED_MOCK_TEST_FILES],
-            exclude: [...COMMON_EXCLUDE],
+            exclude: [...COMMON_EXCLUDE, ...TOOL_CAPTURE_TEST_FILES],
             sequence: { groupOrder: 0 },
           },
         },
@@ -82,9 +94,23 @@ export default mergeConfig(
             fileParallelism: false,
             isolate: true,
             include: [TEST_RUN_COVERAGE_FILE],
-            exclude: [...COMMON_EXCLUDE],
+            exclude: [...COMMON_EXCLUDE, ...TOOL_CAPTURE_TEST_FILES],
             // This file starts nested root runners to prove inert selections fail. Running it after the
             // parallel projects prevents those child processes from competing with the pool they verify.
+            sequence: { groupOrder: 1 },
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'tool-capture',
+            environment: 'node',
+            // Its browser contracts launch Chromium against the host GPU, so they run serially and
+            // after the parallel projects for the same reason the coverage gate does.
+            fileParallelism: false,
+            isolate: true,
+            include: [...TOOL_CAPTURE_TEST_FILES],
+            exclude: [...COMMON_EXCLUDE],
             sequence: { groupOrder: 1 },
           },
         },
