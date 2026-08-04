@@ -57,6 +57,11 @@ export interface RenderStateRuntime extends EntityRuntime {
   // each does it against its own state. Putting the registry here is what lets a caller wire commands
   // onto the state it already holds and lets a lookup miss report through that state's registryMiss.
   canvasShapeCommandRegistry?: Map<string, CanvasShapeCommand> | null;
+  // Opt-in color-adjustment accumulation seam. `enableColorAdjustments` installs the resolver that
+  // copies a node's cached local value to its render proxy and composes it with its parent's value.
+  // This is independent of colorAdjustmentUnsupportedGuard: enabling diagnostics never enables
+  // rendering behavior, and leaving this null keeps adjustment/material math out of the base walk.
+  colorAdjustmentResolver: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
   // Shakeable diagnostics seam (default `null` → no cost): a non-matrix operation that neither the
   // compact scale/bias path nor the full 4×5 matrix path can represent reaches this slot.
   // `enableColorAdjustmentGuards` installs a handler that warns through @flighthq/log.

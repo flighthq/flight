@@ -126,6 +126,8 @@ function makeCacheNode(source: unknown): any {
 describe('createWgpuCacheState', () => {
   it('copies renderers and shares the GPU device but keeps its own node map', () => {
     const screen = fakeScreen();
+    const resolver = vi.fn();
+    getWgpuRenderStateRuntime(screen).colorAdjustmentResolver = resolver;
     enableWgpuRenderCache(screen);
     const cacheState = createWgpuCacheState(screen);
     expect(getWgpuRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(defaultWgpuRenderCacheRenderer);
@@ -133,6 +135,7 @@ describe('createWgpuCacheState', () => {
     expect(getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
       getWgpuRenderStateRuntime(screen).renderProxyMap,
     );
+    expect(getWgpuRenderStateRuntime(cacheState).colorAdjustmentResolver).toBe(resolver);
   });
 });
 

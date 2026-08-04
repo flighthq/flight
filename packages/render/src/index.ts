@@ -1,5 +1,7 @@
 export {
+  areColorAdjustmentsEnabled,
   disableSceneRenderGuards,
+  enableColorAdjustments,
   enableSceneRenderGuards,
   createRenderCache,
   destroyRenderState,

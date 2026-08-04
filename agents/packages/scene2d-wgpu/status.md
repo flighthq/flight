@@ -19,7 +19,7 @@ matrix and premultiplied mesh color, leaving the feature tail intact. The fragme
 existing alpha order: unpremultiply, apply the scale/bias adjustment, then repremultiply for the established
 blend state.
 
-The scope stops at the solid-mesh draw seam. `updateRenderProxyColorScaleBias`, local/parent composition,
+The scope stops at the solid-mesh draw seam. The resolver installed by `enableColorAdjustments`, local/parent composition,
 the `RenderProxy` color fields, full color-matrix behavior, and alpha ordering are unchanged. Full
 `colorMatrix` support therefore remains outside this fold.
 

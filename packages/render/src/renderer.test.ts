@@ -74,10 +74,13 @@ describe('copyRenderStateRegistrations', () => {
     const source = createRenderState();
     const target = createRenderState();
     const resolver = vi.fn();
+    const colorAdjustmentResolver = vi.fn();
+    getRenderStateRuntime(source).colorAdjustmentResolver = colorAdjustmentResolver;
     getRenderStateRuntime(source).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', resolver]]);
 
     copyRenderStateRegistrations(target, source);
 
+    expect(getRenderStateRuntime(target).colorAdjustmentResolver).toBe(colorAdjustmentResolver);
     expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry).not.toBe(
       getRenderStateRuntime(source).renderEffectPaddingResolverRegistry,
     );
