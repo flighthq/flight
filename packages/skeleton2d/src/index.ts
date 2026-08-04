@@ -2,6 +2,7 @@ export {
   applyAnimationClipToSkeleton2D,
   cloneSkeleton2D,
   computeSkeleton2DBoneMatrices,
+  computeSkeleton2DBoneWorldTransform,
   computeSkeleton2DRegionAttachmentVertices,
   computeSkeleton2DWorldTransforms,
   createSkeleton2D,
@@ -14,6 +15,9 @@ export {
   getSkeleton2DBoneIndexByName,
   getSkeleton2DBoneWorldMatrix,
   registerSkeleton2DAnimationTargetBinder,
+  registerSkeleton2DConstraintSolver,
+  registerSkeleton2DIkConstraintSolver,
   setSkeleton2DBindPose,
+  solveSkeleton2DConstraints,
   validateSkeleton2D,
 } from './contract';

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cloneSkeleton2D,
   computeSkeleton2DBoneMatrices,
+  computeSkeleton2DBoneWorldTransform,
   computeSkeleton2DWorldTransforms,
   createSkeleton2D,
   disposeSkeleton2D,
@@ -69,6 +70,39 @@ describe('computeSkeleton2DBoneMatrices', () => {
     computeSkeleton2DBoneMatrices(s);
     const changed = Math.abs(s.boneMatrices[0] - 1) > 1e-3 || Math.abs(s.boneMatrices[1]) > 1e-3;
     expect(changed).toBe(true);
+  });
+});
+
+describe('computeSkeleton2DBoneWorldTransform', () => {
+  it('refreshes one bone from its already-current parent, leaving its siblings and descendants stale', () => {
+    const skeleton = createSkeleton2D([
+      makeBone(),
+      makeBone({ parentIndex: 0, x: 10 }),
+      makeBone({ parentIndex: 1, x: 10 }),
+    ]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    // A constraint solver's move: write one bone's local rotation, refresh only that bone.
+    skeleton.bones[1].rotation = 90;
+    computeSkeleton2DBoneWorldTransform(skeleton, 1);
+
+    // Bone 1's own basis turned...
+    expect(skeleton.worldMatrices[1 * 6]).toBeCloseTo(0, 5);
+    expect(skeleton.worldMatrices[1 * 6 + 1]).toBeCloseTo(1, 5);
+    // ...and its child is deliberately untouched until the caller re-runs the whole pass.
+    expect(skeleton.worldMatrices[2 * 6 + 4]).toBeCloseTo(20, 5);
+
+    computeSkeleton2DWorldTransforms(skeleton);
+    expect(skeleton.worldMatrices[2 * 6 + 4]).toBeCloseTo(10, 5);
+    expect(skeleton.worldMatrices[2 * 6 + 5]).toBeCloseTo(10, 5);
+  });
+
+  it('ignores a bone index outside the array rather than writing past the buffer', () => {
+    const skeleton = createSkeleton2D([makeBone()]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    expect(() => computeSkeleton2DBoneWorldTransform(skeleton, 7)).not.toThrow();
+    expect(() => computeSkeleton2DBoneWorldTransform(skeleton, -1)).not.toThrow();
   });
 });
 

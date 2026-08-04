@@ -38,16 +38,17 @@ export function computeSkeleton2DBoneMatrices(skeleton: Readonly<Skeleton2D>): v
   }
 }
 
-// Propagates each bone's world transform from its local setup transform (x/y/rotation/scale/shear) and its
-// parent's world transform, honoring the bone's inherit mode. One linear pass over the parent-before-child
-// ordered array (`worldMatrices[i]` reads `worldMatrices[parentIndex]`, already written). Out-parameter,
-// allocation-free. Angles are converted degrees→radians at this seam. Position always inherits fully (the
-// local origin is placed by the parent); the inherit mode only changes the linear (rotation/scale) part.
-export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>): void {
+// One bone's world transform, from its local setup transform and its parent's already-computed world
+// matrix. This is the primitive `computeSkeleton2DWorldTransforms` is a linear pass over, exported because
+// a constraint solver needs exactly it: having written a bone's local rotation, it refreshes that one bone
+// rather than re-walking the skeleton. The parent must already be current, which the parent-before-child
+// bone order guarantees for the full pass and which a solver working up a chain has to respect itself.
+export function computeSkeleton2DBoneWorldTransform(skeleton: Readonly<Skeleton2D>, boneIndex: number): void {
   const bones = skeleton.bones;
   const world = skeleton.worldMatrices;
-  const count = bones.length;
-  for (let i = 0; i < count; i++) {
+  if (boneIndex < 0 || boneIndex >= bones.length) return;
+  {
+    const i = boneIndex;
     const bone = bones[i];
     // Local linear part (Spine bone matrix, transposed b↔c into Flight's x'=a·x+c·y convention):
     // a=cos(rot+shearX)·scaleX, b=sin(rot+shearX)·scaleX, c=cos(rot+90°+shearY)·scaleY, d=sin(…)·scaleY.
@@ -65,7 +66,7 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
       world[o + 3] = ld;
       world[o + 4] = bone.x;
       world[o + 5] = bone.y;
-      continue;
+      return;
     }
     const p = bone.parentIndex * MATRIX_STRIDE;
     const pa = world[p];
@@ -126,6 +127,16 @@ export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>)
     world[o + 2] = ea * lc + ec * ld;
     world[o + 3] = eb * lc + ed * ld;
   }
+}
+
+// Propagates each bone's world transform from its local setup transform (x/y/rotation/scale/shear) and its
+// parent's world transform, honoring the bone's inherit mode. One linear pass over the parent-before-child
+// ordered array (`worldMatrices[i]` reads `worldMatrices[parentIndex]`, already written). Out-parameter,
+// allocation-free. Angles are converted degrees→radians at this seam. Position always inherits fully (the
+// local origin is placed by the parent); the inherit mode only changes the linear (rotation/scale) part.
+export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>): void {
+  const count = skeleton.bones.length;
+  for (let i = 0; i < count; i++) computeSkeleton2DBoneWorldTransform(skeleton, i);
 }
 
 // Allocates a Skeleton2D from a parent-before-child ordered bone array. Sizes the flat world/inverse-bind/

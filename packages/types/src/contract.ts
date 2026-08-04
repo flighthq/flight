@@ -836,6 +836,8 @@ export * from './RegionAttachment2D';
 export * from './Slot2D';
 export * from './Skeleton2D';
 export * from './Skeleton2DAnimationPath';
+export * from './Skeleton2DConstraint';
+export * from './Skeleton2DIkConstraint';
 export * from './Skeleton2DAnimationTarget';
 export * from './Skeleton2DAnimationTargetBinder';
 export * from './Skeleton2DAnimationTargetKind';
