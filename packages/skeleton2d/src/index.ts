@@ -15,6 +15,7 @@ export {
   deformSkeleton2DMeshAttachment,
   deformSkeleton2DPathAttachment,
   disposeSkeleton2D,
+  explainSkeleton2DDeformLength,
   equalsSkeleton2D,
   getSkeleton2DBoneIndexByName,
   getSkeleton2DBoneWorldMatrix,

@@ -15,3 +15,4 @@ export * from './skinAttachment2DPoints';
 export * from './boundingBoxAttachment2D';
 export * from './clippingAttachment2D';
 export * from './pointAttachment2D';
+export * from './explainSkeleton2DDeformLength';
