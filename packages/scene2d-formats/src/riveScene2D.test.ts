@@ -10,6 +10,7 @@ import { createScene2DFromRiveDocument } from './riveScene2D';
 
 const ARTBOARD = 1;
 const NODE = 2;
+const ROOT_BONE = 41;
 const SHAPE = 3;
 const FILL = 20;
 const NAME = 4;
@@ -267,6 +268,30 @@ describe('createScene2DFromRiveDocument', () => {
       { containerStyle: { direction: 'row' }, itemStyle: null, parentIndex: -1 },
       { containerStyle: null, parentIndex: 0 },
     ]);
+  });
+
+  // Bones are TransformComponents rather than nodes, so they never join the display tree; the rig
+  // travels beside it. An artboard with no bones carries null rather than an empty skeleton, so a
+  // caller pays nothing for a file that rigs nothing.
+  it('carries no skeleton for an artboard without bones', () => {
+    const result = createScene2DFromRiveDocument(
+      buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(NODE, [uint(PARENT_ID, 0)])]),
+    );
+
+    expect(result.artboards[0].skeleton).toBeNull();
+  });
+
+  it('carries the artboard bone rig beside the display tree rather than inside it', () => {
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        object(ROOT_BONE, [uint(PARENT_ID, 0), text(NAME, 'root')]),
+      ]),
+    );
+
+    expect(result.artboards[0].skeleton?.skeleton.bones.map((bone) => bone.name)).toEqual(['root']);
+    // The bone produced no display object, so the tree stays empty.
+    expect(getNodeChildCount(result.artboards[0].root)).toBe(0);
   });
 });
 

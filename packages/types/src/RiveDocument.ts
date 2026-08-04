@@ -277,6 +277,11 @@ export interface RiveArtboardImport {
   layouts: RiveLayoutImport[];
   name: string;
   root: DisplayObject;
+  /**
+   * The artboard's bone rig, flattened for `Skeleton2D`, or `null` when it has no bones — which is
+   * most artboards. Bones are not display objects, so they sit alongside the tree rather than in it.
+   */
+  skeleton: RiveSkeleton2DImport | null;
   width: number;
 }
 
