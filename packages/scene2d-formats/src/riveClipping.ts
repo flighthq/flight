@@ -1,6 +1,7 @@
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { intersectPaths, simplifyPath } from '@flighthq/path-boolean/contract';
 import { createPath } from '@flighthq/path/contract';
 import type {
   DisplayObject,
@@ -31,6 +32,7 @@ export function applyRiveClipping(
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const relative = createRiveRelativeTransforms(artboard);
+  const clips = new Map<DisplayObject, Path>();
   for (let index = 1; index < artboard.objects.length; index++) {
     const object = artboard.objects[index];
     if (object.typeKey !== RIVE_CLIPPING_SHAPE) continue;
@@ -39,12 +41,6 @@ export function applyRiveClipping(
     const owner = artboard.parentIndices[index];
     const target = owner >= 0 ? nodes[owner] : null;
     if (target === null || target === undefined) continue;
-    if (target.clip !== null) {
-      // Rive intersects several clips; Flight carries one region per node, and intersecting contour
-      // sets is a path-boolean job rather than something to fake by keeping the last one.
-      reportRiveClipDrop(diagnostics, 'rive.multiple-clipping-shapes', { index });
-      continue;
-    }
 
     const source = readRiveNumber(object, RIVE_CLIP_SOURCE_ID, -1);
     const paths = shapePaths.get(source);
@@ -52,16 +48,19 @@ export function applyRiveClipping(
       reportRiveClipDrop(diagnostics, 'rive.unresolved-clipping-source', { index, source });
       continue;
     }
-    target.clip = createRiveClipRegion(paths, relative[owner], relative[source], object);
+    const next = createRiveClipPath(paths, relative[owner], relative[source], object);
+    const current = clips.get(target);
+    clips.set(target, current === undefined ? next : intersectPaths(current, next));
   }
+  for (const [target, path] of clips) target.clip = createClipRegionFromPath(path);
 }
 
-function createRiveClipRegion(
+function createRiveClipPath(
   paths: readonly RivePathRecord[],
   clipped: Readonly<Matrix>,
   source: Readonly<Matrix>,
   clipping: Readonly<RiveCoreObject>,
-) {
+): Path {
   const into = createMatrix();
   const combined = createMatrix();
   // A degenerate clipped transform leaves the source where it is rather than collapsing it.
@@ -77,7 +76,10 @@ function createRiveClipRegion(
       path.data.push(combined.a * x + combined.c * y + combined.tx, combined.b * x + combined.d * y + combined.ty);
     }
   }
-  return createClipRegionFromPath(path);
+  // Resolve every clipping shape under its own fill rule before intersections. `intersectPaths`
+  // accepts contour sets, but its fill-rule option applies to both operands; normalizing each one to
+  // a non-zero outline first preserves a mixed even-odd/non-zero stack without conflating the two.
+  return simplifyPath(path, { fillRule: path.winding });
 }
 
 /**
