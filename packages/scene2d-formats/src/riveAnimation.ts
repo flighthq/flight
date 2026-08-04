@@ -7,13 +7,19 @@ import {
 import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
-import { RiveAnimationLoop as RiveAnimationLoopValue, RiveFieldType } from '@flighthq/types/contract';
+import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
+import {
+  RiveAnimationLoop as RiveAnimationLoopValue,
+  RiveFieldType,
+  Skeleton2DAnimationPath,
+} from '@flighthq/types/contract';
 import type {
   AnimationChannel,
   AnimationClip,
   RiveArtboardGraph,
   RiveAnimationClip,
   RiveAnimationLoop,
+  RiveSkeleton2DImport,
   DisplayObject,
   EasingFunction,
   Node2DAnimationPath,
@@ -55,12 +61,13 @@ export function createRiveAnimationClips(
   nodes: ReadonlyArray<DisplayObject | null>,
   artboard: Readonly<RiveArtboardGraph>,
   rebuilds: ReadonlyMap<number, () => void>,
+  skeleton: Readonly<RiveSkeleton2DImport> | null = null,
 ): RiveAnimationClip[] {
   const interpolators = collectRiveInterpolators(objects, range);
   const clips: RiveAnimationClip[] = [];
   for (let index = range.start; index < range.end; index++) {
     if (objects[index].typeKey !== RIVE_LINEAR_ANIMATION) continue;
-    clips.push(createRiveAnimationClip(objects, index, range.end, nodes, interpolators, artboard, rebuilds));
+    clips.push(createRiveAnimationClip(objects, index, range.end, nodes, interpolators, artboard, rebuilds, skeleton));
   }
   return clips;
 }
@@ -77,6 +84,7 @@ function createRiveAnimationClip(
   interpolators: ReadonlyMap<number, EasingFunction>,
   artboard: Readonly<RiveArtboardGraph>,
   rebuilds: ReadonlyMap<number, () => void>,
+  skeleton: Readonly<RiveSkeleton2DImport> | null,
 ): RiveAnimationClip {
   const source = objects[start];
   const fps = Math.max(1, readRiveNumber(source, RIVE_ANIMATION_FPS, 60));
@@ -95,6 +103,23 @@ function createRiveAnimationClip(
     }
     if (object.typeKey !== RIVE_KEYED_PROPERTY) continue;
     const propertyKey = readRiveNumber(object, RIVE_KEYED_PROPERTY_KEY, -1);
+    // A bone is a TransformComponent rather than a Node, so it never became a display object and
+    // `keyed` is null for it. Its channels drive the flattened Skeleton2D instead, which is why the
+    // rig has to be consulted before the display-object path rather than after it.
+    const boneChannel = createRiveBoneChannel(
+      objects,
+      index,
+      limit,
+      fps,
+      interpolators,
+      skeleton,
+      keyedIndex,
+      propertyKey,
+    );
+    if (boneChannel !== null) {
+      channels.push(boneChannel);
+      continue;
+    }
     const path = toRiveAnimationPath(propertyKey);
     if (path !== null && keyed !== null) {
       const channel = createRiveChannel(objects, index, limit, fps, interpolators, toRiveValueConversion(path), {
@@ -142,6 +167,50 @@ function createRiveAnimationClip(
 function toRiveAnimationLoop(value: number): RiveAnimationLoop {
   if (value === RIVE_LOOP_LOOP) return RiveAnimationLoopValue.Loop;
   return value === RIVE_LOOP_PING_PONG ? RiveAnimationLoopValue.PingPong : RiveAnimationLoopValue.OneShot;
+}
+
+/**
+ * Binds one keyed bone property to the flattened `Skeleton2D`, or `null` when the keyed object is not
+ * a bone or the property is one this cannot carry yet.
+ *
+ * **Only rotation binds today, and that is a format-shape limit rather than an omission.**
+ * `Skeleton2DAnimationTarget` groups a bone's fields into four paths, of which `Translation`, `Scale`
+ * and `Shear` each read a **two-component** track. Rive keys **one scalar per property**, so a file
+ * animating both x and y states two independently-timed channels; pairing them into one two-component
+ * track would mean resampling onto a merged time set and inventing keyframe times the file never
+ * stated. Rotation is the one single-scalar path, so it is the one that can bind without inventing
+ * anything. The rest wait on per-axis paths.
+ *
+ * **Rive states absolutes; the binder composes deltas.** `applyAnimationClipToSkeleton2D` adds each
+ * sample to the *setup* bone, which is what keeps a clip blendable, while a Rive keyframe carries the
+ * value the bone should hold outright. The conversion is therefore exact rather than approximate:
+ * subtract the setup rotation, once, at build time. Rive states radians and `Bone2D` is degrees, so
+ * that conversion happens first.
+ */
+function createRiveBoneChannel(
+  objects: readonly Readonly<RiveCoreObject>[],
+  propertyIndex: number,
+  limit: number,
+  fps: number,
+  interpolators: ReadonlyMap<number, EasingFunction>,
+  skeleton: Readonly<RiveSkeleton2DImport> | null,
+  keyedIndex: number,
+  propertyKey: number,
+): AnimationChannel | null {
+  if (skeleton === null || keyedIndex < 0 || keyedIndex >= skeleton.boneIndices.length) return null;
+  const boneIndex = skeleton.boneIndices[keyedIndex];
+  if (boneIndex < 0 || propertyKey !== RIVE_ROTATION) return null;
+
+  const setupRotation = skeleton.skeleton.bones[boneIndex].rotation;
+  return createRiveChannel(
+    objects,
+    propertyIndex,
+    limit,
+    fps,
+    interpolators,
+    (value) => value * RAD_TO_DEG - setupRotation,
+    createSkeleton2DBoneAnimationTarget(boneIndex, Skeleton2DAnimationPath.Rotation),
+  );
 }
 
 function createRiveChannel(

@@ -6,6 +6,7 @@ import { RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation';
 import { createScene2DFromRiveDocument } from './riveScene2D';
+import { createRiveSkeleton2D } from './riveSkeleton';
 
 // Time comes from the animation's OWN frame rate, and the interpolation enum was read off the corpus
 // rather than a header: type 2 carries an interpolator in 18,044 of 18,608 cases, type 1 never does,
@@ -18,6 +19,8 @@ const KEYED_PROPERTY = 26;
 const KEYFRAME_DOUBLE = 30;
 const CUBIC_INTERPOLATOR = 139;
 const KEYFRAME_BOOL = 84;
+const ARTBOARD = 1;
+const ROOT_BONE = 41;
 const ELASTIC_INTERPOLATOR = 174;
 const SCRIPTED_INTERPOLATOR = 972;
 
@@ -35,6 +38,7 @@ const FRAME = 67;
 const INTERPOLATION = 68;
 const INTERPOLATOR_ID = 69;
 const VALUE = 70;
+const ROTATION = 15;
 const EASING = 405;
 const AMPLITUDE = 406;
 const PERIOD = 407;
@@ -112,6 +116,34 @@ describe('applyAnimationClipToRiveDocument', () => {
     expect(JSON.stringify(firstShape(result).data.commands)).toBe(once);
   });
 });
+
+// One bone keyed on a single property, with the rig flattened as the importer would.
+function buildBoneProperty(propertyKey: number, value: number, setupRotation: number) {
+  const objects: RiveCoreObject[] = [
+    object(ARTBOARD, {}),
+    object(ROOT_BONE, { [ROTATION]: setupRotation }),
+    object(LINEAR_ANIMATION, { [FPS]: 1, [DURATION]: 1 }),
+    object(KEYED_OBJECT, { [OBJECT_ID]: 1 }),
+    object(KEYED_PROPERTY, { [PROPERTY_KEY]: propertyKey }),
+    object(KEYFRAME_DOUBLE, { [FRAME]: 0, [INTERPOLATION]: 1, [VALUE]: value }),
+    object(KEYFRAME_DOUBLE, { [FRAME]: 1, [INTERPOLATION]: 1, [VALUE]: value }),
+  ];
+  const artboard: RiveArtboardGraph = {
+    objects,
+    parentIndices: [-1, 0, -1, -1, -1, -1, -1],
+    streamEnd: objects.length,
+    streamStart: 0,
+  };
+  const skeleton = createRiveSkeleton2D(artboard)!;
+  return {
+    clips: createRiveAnimationClips(objects, { end: objects.length, start: 2 }, [], artboard, new Map(), skeleton),
+    skeleton,
+  };
+}
+
+function buildBoneRotation(value: number, setupRotation: number) {
+  return buildBoneProperty(15, value, setupRotation);
+}
 
 function build(
   fps: number,
@@ -323,6 +355,36 @@ describe('createRiveAnimationClips', () => {
 
     sampleAnimationTrack(_scratch, track, 0.5);
     expect(_scratch[0]).toBeCloseTo(50, 6);
+  });
+
+  // A Rive bone is a TransformComponent, never a display object, so its channels were dropped before
+  // this bound them — which is the mechanism behind the corpus clips that imported with no channels.
+  it('binds a bone rotation channel against the flattened rig', () => {
+    const { clips, skeleton } = buildBoneRotation(Math.PI / 2, 0);
+    const target = clips[0].clip.channels[0].targetRef as { boneIndex: number; path: string };
+
+    expect(clips[0].clip.channels).toHaveLength(1);
+    expect(target.boneIndex).toBe(skeleton.boneIndices[1]);
+    expect(target.path).toBe('Rotation');
+  });
+
+  // Rive states an ABSOLUTE value; applyAnimationClipToSkeleton2D composes a DELTA onto the setup bone.
+  // The conversion is exact rather than approximate: degrees first, then subtract the setup rotation.
+  it('converts an absolute rive rotation into the delta the skeleton binder composes', () => {
+    const { clips } = buildBoneRotation(Math.PI, Math.PI / 2);
+    const track = clips[0].clip.channels[0].track;
+
+    // Setup holds 90 degrees and the keyframe states 180, so the delta the binder needs is 90.
+    sampleAnimationTrack(_scratch, track, 1);
+    expect(_scratch[0]).toBeCloseTo(90, 3);
+  });
+
+  it('leaves a bone translate channel unbound rather than pairing axes it cannot pair', () => {
+    // Rive keys one scalar per property, while Translation reads a two-component track. Binding x
+    // alone would make the binder read an absent y as 0 and drive the bone to it.
+    const { clips } = buildBoneProperty(13, 5, 0);
+
+    expect(clips[0].clip.channels).toHaveLength(0);
   });
 
   it('places keyframes at frame over fps seconds', () => {

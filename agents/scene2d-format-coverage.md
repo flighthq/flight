@@ -670,18 +670,25 @@ which are **not** the `Node` x/y keys 13/14. A reader that looked for 13/14 on a
 nothing and collapse the whole chain onto the root. And bone rotation is radians here, degrees on
 `Bone2D`, as everywhere else in this codec.
 
-**Bone animation channels are not bound yet, and the reason is a real impedance mismatch worth
-recording before someone tries.** `Skeleton2DAnimationTarget` groups a bone's fields into four paths,
+**Bone rotation channels bind; the other three bone paths wait, and the split is a format-shape fact
+rather than an unfinished sweep.** `Skeleton2DAnimationTarget` groups a bone's fields into four paths,
 where `Translation`, `Scale` and `Shear` each read a **two-component** track, and
 `applyAnimationClipToSkeleton2D` composes each sample as a **relative delta** onto the setup pose (add
-for translate/rotate/shear, multiply for scale). Rive keys neither of those ways: it keys **one scalar
-per property** — `scaleX` and `scaleY` are separate channels with independently authored keyframe
-times — and its keyframe values are **absolute**, not deltas. So binding needs two conversions, and
-only one of them is mechanical. Absolute → relative is exact (subtract the setup value, or divide it
-for scale). Pairing two independently-timed scalar channels into one two-component track is not: it
-needs either a resample onto a merged time set, or per-axis paths on the `skeleton2d` side. Which of
-those is right is a `skeleton2d` API question, so it is recorded here rather than guessed at. Rotation
-is the one path that is a single scalar and would bind cleanly today.
+for translate/rotate/shear, multiply for scale). Rive matches neither shape: it keys **one scalar per
+property** — `scaleX` and `scaleY` are separate channels with independently authored keyframe times —
+and its keyframe values are **absolute**, not deltas.
+
+Those two mismatches have different characters, which is why one is done and one is not.
+**Absolute → relative is exact**: the setup rotation is subtracted once at build time, after the
+radians-to-degrees conversion, so a keyframe stating 180° against a setup of 90° becomes a delta of
+90°. **Pairing two independently-timed scalar channels is not exact**: it would need a resample onto a
+merged time set, inventing keyframe times the file never stated, so translate/scale/shear stay unbound
+pending per-axis paths on the `skeleton2d` side. Binding x alone would be worse than leaving it — the
+binder would read the absent y as 0 and drive the bone to it.
+
+That a bone channel bound to nothing at all before this is the mechanism behind the corpus clips that
+imported carrying no channels: a bone is a `TransformComponent` and never becomes a display object, so
+the display-object path skipped it and there was nothing else to catch it.
 
 **The weights are read too, and four facts about them decide correctness.** `createRiveSkin2D` turns a
 skinned path's `Weight`/`CubicWeight` records into a `Skin2D`.

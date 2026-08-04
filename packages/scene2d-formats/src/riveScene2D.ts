@@ -123,20 +123,14 @@ function createRiveArtboardImport(
   }
 
   const span = { end: artboard.streamEnd, start: artboard.streamStart };
-  const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds);
+  // The rig is flattened before the clips because bone channels bind against its setup pose — a Rive
+  // keyframe states an absolute value and the skeleton binder composes a delta, so the setup rotation
+  // has to exist before a channel can be expressed relative to it.
+  const skeleton = createRiveSkeleton2D(artboard);
+  const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds, skeleton);
   const layouts = createRiveLayoutImports(artboard, nodes, diagnostics);
   const stateMachines = createRiveStateMachines(objects, span);
-  return {
-    advancedBlends,
-    animations,
-    height,
-    layouts,
-    name,
-    root,
-    skeleton: createRiveSkeleton2D(artboard),
-    stateMachines,
-    width,
-  };
+  return { advancedBlends, animations, height, layouts, name, root, skeleton, stateMachines, width };
 }
 
 // A shape carries a command stream and a text drawable carries a label; everything else is a plain
