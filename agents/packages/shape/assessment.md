@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/shape'
-updated: 2026-07-13
+updated: 2026-08-04
 basedOn: ./review.md
 ---
 
@@ -12,13 +12,10 @@ Sorted from the 2026-07-13 rereview (solid, 82/100). Most of the 2026-07-02 Appr
 
 Sweep-safe: within `@flighthq/shape` (plus its owned header types in `@flighthq/types`, per types-first), no breaking change, no open design decision.
 
-- **Land the approved typed round-trip (`shapeGraphicsData.ts`).** `getShapeGraphicsData(source): readonly ShapeGraphicsRecord[]`, `forEachShapeCommand(source, visitor)`, `appendShapeGraphicsData(shape, records)` — plus the `ShapeGraphicsRecord` discriminated union in `@flighthq/types` keyed by `ShapeCommandKey` over `ShapeCommandRegistry`. Document the walk's allocation contract truthfully (the prior bundle's "does not allocate" comment was false). Already covered by the 2026-07-02 Approved line; it simply never landed in this tree.
+- **~~Land the approved typed round-trip (`shapeGraphicsData.ts`)~~** — retired 2026-08-04. Reconciled against source: none of `shapeGraphicsData.ts`, `getShapeGraphicsData`, `forEachShapeCommand`, `appendShapeGraphicsData`, or `ShapeGraphicsRecord` exists, and the tree reached its typed-readback goal by another route. Struck rather than deleted because the `[2026-07-02 · picked]` Approved line still blesses it, and that ledger is append-only: this note is what reconciles the standing approval with a shape the code will not take. Re-propose against current names if the capability is still wanted.
 - **Add `drawTriangles` to `ShapeCommandRegistry`.** The vocabulary emits the key and bounds/fill handle it, but the header registry lacks the entry, so `ShapeCommandKey` excludes it and a typed hit-test handler for it cannot be declared. Tuple: `[vertices: number[], indices: number[] | null, uvtData: number[] | null, culling: TriangleCulling]`.
 - **Backfill tests for the landed 2026-07-02 fixes.** Bounds: cubic-extrema (curve bulging past its hull), per-span stroke expansion (two thicknesses), `drawTriangles` vertex sweep, `drawPath` verb decoding. Fill: `drawPath` winding carried into `ShapeFillRegion.path.winding`, `drawTriangles`-with-uvtData → non-solid. The fixes are currently verified only by source reading.
-- **Fix the false `enableShapeHitTesting` doc comment.** The header claims a pen-path point-in-polygon handler is registered; only the four primitive handlers are. Correct the comment (adding the handler itself is a design item — see Backlog).
-- **Fix the round-rect hit-test radius truncation.** `((v / 2) | 0 || v / 2)` integer-truncates corner radii ≥ 2 (ellipseWidth 5 → radius 2, not 2.5). Replace with plain `v / 2`; the existing clamp already bounds it.
 - **Manifest hygiene: `@flighthq/geometry` dependency.** Used only by `shape.test.ts` (`createRectangle`). Move to the slot `packages:check` prescribes for shipped-test-only imports, and verify with `npm run packages:check`.
-- **Refresh `status.md` on next ingest.** The 2026-06-25 top entry describes a lean tree missing the arc/polygon surface; `06a0c480` recovered it the same day. (For the ingest pass — this cell's reviewer does not edit status.)
 
 ## Backlog
 
