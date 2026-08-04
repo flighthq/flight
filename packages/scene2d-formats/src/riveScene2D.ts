@@ -29,6 +29,7 @@ import { createRiveObjectGraph } from './riveObjectGraph';
 import { createRiveImageSprite, markRiveNestedArtboard } from './riveScene2DDocument';
 import { appendRiveShapePaint } from './riveShapePaint';
 import { createRivePath } from './riveShapePath';
+import { createRiveSkeleton2D } from './riveSkeleton';
 import { applyRiveSolo } from './riveSolo';
 import { createRiveStateMachines } from './riveStateMachine';
 import { createRiveRichText } from './riveText';
@@ -125,7 +126,17 @@ function createRiveArtboardImport(
   const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds);
   const layouts = createRiveLayoutImports(artboard, nodes, diagnostics);
   const stateMachines = createRiveStateMachines(objects, span);
-  return { advancedBlends, animations, height, layouts, name, root, stateMachines, width };
+  return {
+    advancedBlends,
+    animations,
+    height,
+    layouts,
+    name,
+    root,
+    skeleton: createRiveSkeleton2D(artboard),
+    stateMachines,
+    width,
+  };
 }
 
 // A shape carries a command stream and a text drawable carries a label; everything else is a plain
