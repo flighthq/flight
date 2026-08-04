@@ -7,7 +7,7 @@ import {
   getSkeleton2DSkin,
   setSkeleton2DSkin,
 } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D } from '@flighthq/types/contract';
+import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
   MeshAttachment2DKind,
@@ -16,7 +16,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSpineSkeleton } from './spineParse';
+import { parseSpineSkeleton, parseSpineDrawOrderTimeline } from './spineParse';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.
@@ -39,6 +39,80 @@ const SPINE_TWO_BONES = JSON.stringify({
     },
   ],
 });
+
+// A draw-order keyframe states only the slots that MOVE; everything else keeps its relative order and
+// closes the gaps. Each keyframe resolves to a WHOLE ordering, because a track has to answer what is in
+// effect at time t from one keyframe alone.
+describe('parseSpineDrawOrderTimeline', () => {
+  const SLOTS = [slot('a'), slot('b'), slot('c')];
+
+  it('returns null when the animation states no draw-order timeline', () => {
+    expect(parseSpineDrawOrderTimeline(undefined, SLOTS)).toBeNull();
+    expect(parseSpineDrawOrderTimeline([], SLOTS)).toBeNull();
+  });
+
+  it('keeps the setup order when a keyframe moves nothing', () => {
+    const timeline = parseSpineDrawOrderTimeline([{ offsets: [], time: 0 }], SLOTS)!;
+
+    expect(timeline.times).toEqual([0]);
+    expect(timeline.orderings).toEqual([0, 1, 2]);
+  });
+
+  it('moves a slot by its offset and closes the gap with the rest in setup order', () => {
+    // c moves back two places; a and b keep their relative order and shuffle up.
+    const timeline = parseSpineDrawOrderTimeline([{ offsets: [{ offset: -2, slot: 'c' }], time: 0 }], SLOTS)!;
+
+    // sortKeys per slot: c draws first, then a, then b.
+    expect(timeline.orderings).toEqual([1, 2, 0]);
+  });
+
+  it('carries one whole ordering per keyframe', () => {
+    const timeline = parseSpineDrawOrderTimeline(
+      [
+        { offsets: [], time: 0 },
+        { offsets: [{ offset: 2, slot: 'a' }], time: 1 },
+      ],
+      SLOTS,
+    )!;
+
+    expect(timeline.times).toEqual([0, 1]);
+    expect(timeline.orderings).toEqual([0, 1, 2, 2, 0, 1]);
+  });
+
+  it('skips and crumbs a keyframe whose moves do not describe a permutation', () => {
+    // A destination outside the slot range would silently reorder everything else.
+    const diagnostics: ImportDiagnostic[] = [];
+    const timeline = parseSpineDrawOrderTimeline(
+      [{ offsets: [{ offset: 9, slot: 'a' }], time: 0 }],
+      SLOTS,
+      diagnostics,
+    );
+
+    expect(timeline).toBeNull();
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['spine.draworder-keyframe-unresolved']);
+  });
+
+  it('skips a keyframe where two slots claim one position', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const raw = [
+      {
+        offsets: [
+          { offset: 1, slot: 'a' },
+          { offset: 0, slot: 'b' },
+        ],
+        time: 0,
+      },
+    ];
+
+    expect(parseSpineDrawOrderTimeline(raw, SLOTS, diagnostics)).toBeNull();
+    expect(diagnostics).toHaveLength(1);
+  });
+});
+
+// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
+function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
+  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+}
 
 describe('parseSpineSkeleton', () => {
   it('keeps BOTH axes when a bone carries the per-axis translatex and translatey timelines', () => {
@@ -743,7 +817,6 @@ describe('parseSpineSkeleton', () => {
   });
 });
 
-// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
-function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
-  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+function slot(name: string): Slot2D {
+  return { attachment: null, boneIndex: 0, color: 0xffffffff, name };
 }
