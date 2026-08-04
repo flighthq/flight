@@ -683,6 +683,40 @@ needs either a resample onto a merged time set, or per-axis paths on the `skelet
 those is right is a `skeleton2d` API question, so it is recorded here rather than guessed at. Rotation
 is the one path that is a single scalar and would bind cleanly today.
 
+**The weights are read too, and four facts about them decide correctness.** `createRiveSkin2D` turns a
+skinned path's `Weight`/`CubicWeight` records into a `Skin2D`.
+
+*Influences are packed four to a word.* `values` (102) and `indices` (103) are each a single uint
+holding four bytes, read **low byte first** — a 0–255 weight and a bone reference. A zero weight is an
+unused slot, which is how a fixed-width record yields `Skin2D`'s variable influence counts.
+
+*An index names a **tendon**, not a bone, and numbering starts at 1.* The runtime's bone table reserves
+slot 0 for the identity, so tendon *n* sits at index *n+1* and the tendon then names the bone. Reading
+the stored index as a bone index would silently address the wrong bone in every file with more than
+one. An influence that does name slot 0 cannot be expressed as a bone at all, so it emits
+`rive.unresolved-weight-bone` rather than vanishing — dropping it quietly would leave the vertex
+under-weighted and simply in the wrong place.
+
+*The offsets bake the bind.* Rive deforms as `Σ wᵢ · (boneWorldᵢ · tendonInverseBindᵢ) · (skinWorld · p)`,
+blending matrices and transforming once, while `Skin2D` stores per-influence offsets already in bone
+space and blends positions. Those are the same arithmetic, so the stored offset is
+`tendonInverseBindᵢ · (skinWorld · p)`. A tendon states its **bind** (96–101) which is inverted here,
+and the skin states its own transform (104–109) separately; Rive states both explicitly rather than
+deriving them from the setup pose. Both matrices are read **by name** — the key order is xx, yx, xy, yy,
+which is not the column order.
+
+*A cubic handle carries its own influences.* `CubicWeight` extends `Weight` and adds
+`inValues`/`inIndices` (110/111) and `outValues`/`outIndices` (112/113), so a cubic vertex holds three
+independently weighted positions. A handle is therefore neither skipped nor bound to its anchor's
+influences, and any addressing that names only vertices loses authored data on every cubic vertex in a
+rigged file. A plain `Weight` asked for a handle pair yields nothing rather than reusing the anchor's,
+since inheriting would invent influences the file never stated.
+
+The positions themselves come from the path reader rather than from here: a cubic handle is stated in
+polar form and the three cubic kinds disagree on sign, so deriving them a second time would be a
+second place to get that wrong. The skin reader takes resolved coordinates and contributes only the
+weighting.
+
 **Rive is not boneless, and reading it that way leads straight to designing a free-form deformer.**
 It has a full bone system — `Bone`, `RootBone`, `Tendon`, `Skin`, `Weight`, `CubicWeight` — and its
 skinning is bone-driven exactly as Spine's is. Only two things differ: *what* is skinned (a vector
