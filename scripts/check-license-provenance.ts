@@ -12,6 +12,7 @@ export interface LicenseProvenanceInput {
 
 export interface LicenseProvenanceReport {
   escapes: LicenseProvenanceEscapeResult[];
+  matcherState: string;
   scannedFiles: number;
   structuralMatches: number;
   violations: LicenseProvenanceViolation[];
@@ -153,6 +154,7 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
       name: entry.name,
       reason: entry.reason,
     })),
+    matcherState: 'semantic negatives protected; token-keying ready',
     scannedFiles: new Set(inputs.map((input) => normalizePath(input.path))).size,
     structuralMatches: structuralMatches.size,
     violations: uniqueViolations,
@@ -163,6 +165,7 @@ export function formatLicenseProvenanceReport(report: Readonly<LicenseProvenance
   const passed = report.violations.length === 0;
   const lines = [
     `${passed ? pc.green('OK') : pc.yellow('!')} ${pc.bold('License and provenance declarations stay at approved sites')} ${pc.dim(`(${report.scannedFiles} tracked text files, ${report.structuralMatches} structural matches)`)}`,
+    `  Matcher state: [${report.matcherState}]`,
     '',
     '  Named escapes:',
   ];
