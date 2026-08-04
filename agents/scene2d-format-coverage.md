@@ -381,23 +381,27 @@ policy into sampled data; the caller driving the playhead is the one that can ho
 area trims *playback*, not content, which is the other reason import reports the span rather than
 dropping the keyframes outside it.
 
-**The advanced interpolation kinds are an unread interpolator *type*, not an unknown enum value** —
-worth stating precisely, because the earlier reading of this ("kinds 3 and 4 have no Flight
-equivalent") pointed at the wrong thing. Rive's own runtime never switches on `interpolationType` at
-all: `InterpolatingKeyFrame::onAddedDirty` resolves `interpolatorId` and uses whatever
-`KeyFrameInterpolator` it lands on, so the *object* carries the behaviour and the enum is a hint.
-`KeyFrameInterpolator` (type 175) has exactly three concrete subclasses — `CubicInterpolator` (139),
-`ElasticInterpolator` (174) and `ScriptedInterpolator` (972) — and this importer collects only
-descendants of 139. An elastic interpolator therefore resolves to nothing and its segment falls back
-to linear. That is the whole mechanism behind the 42 cases.
+**Elastic interpolation is covered, and the earlier framing of this gap was pointing at the wrong
+thing.** It was recorded as "kinds 3 and 4 have no Flight equivalent". In fact Rive's runtime never
+switches on `interpolationType` at all: `InterpolatingKeyFrame::onAddedDirty` resolves
+`interpolatorId` and uses whatever `KeyFrameInterpolator` it lands on, so the *object* carries the
+behaviour and the enum is only a hint. `KeyFrameInterpolator` (type 175) has exactly three concrete
+subclasses — `CubicInterpolator` (139), `ElasticInterpolator` (174) and `ScriptedInterpolator` (972) —
+and this importer collected only descendants of 139. An elastic interpolator therefore resolved to
+nothing and its segment fell back to linear. It was a **collection gap, not an unknown kind**, which
+is why the 42 cases went unexplained for so long.
 
-Carrying elastic needs something Flight does not have yet. `ElasticInterpolator` states `easingValue`,
-`amplitude` (key 406) and `period` (407), while `@flighthq/easing` exposes `easeInElastic` /
-`easeOutElastic` / `easeInOutElastic` with those two constants **fixed** (period 0.4, unit amplitude).
-A parameterized elastic easing in `@flighthq/easing` is the missing piece, and it is that package's
-call rather than this codec's — approximating it with the fixed-parameter form would produce a curve
-that is confidently wrong wherever a file states anything else. `ScriptedInterpolator` runs Rive's own
-scripting and is out of scope for a codec entirely.
+`ElasticInterpolator` states `easingValue` (405, in/out/in-out with **out** as its initial value),
+`amplitude` (406) and `period` (407), and now maps onto `@flighthq/easing`'s parameterized
+`easeInDampedSine` / `easeOutDampedSine` / `easeInOutDampedSine`. The fixed `easeInElastic` family
+could not serve it: those hardcode period 0.4 and unit amplitude, so substituting them would be
+confidently wrong on any file stating anything else rather than approximately right. Amplitude below
+1 changes the curve's shape rather than only its scale — the amplitude ramps in over the first
+quarter-wavelength so the curve still reaches its endpoint — and that is the format's own
+construction, reproduced rather than approximated.
+
+**`ScriptedInterpolator` is deliberately not covered and is not a gap to reopen.** It runs Rive's own
+scripting language, which a codec does not execute. Its segments fall back to linear.
 
 **`interpolatorId` and `parentId` do not share a numbering space**, which is worth knowing before
 adding another id-valued property. `parentId` indexes components only — resolving it against all
@@ -683,8 +687,8 @@ inside it, since `Scene2DDocument` models a static named graph and a caller that
 blend needs the import itself.
 
 **Also not covered**, beyond the families the ranked table above counts: text modifiers, per the text
-section. Elastic interpolation, per the animation section — the one piece of it Flight lacks is a
-parameterized elastic easing. Non-double and non-colour keyframe value kinds. Live animated or bound
+section. Scripted interpolation, which runs Rive's own scripting language and is a scope boundary
+rather than a gap. Non-double and non-colour keyframe value kinds. Live animated or bound
 layout-descriptor refresh. Dashes, which no corpus file uses. Deformable meshes, bones and skinning.
 And `Feather`, a paint effect whose home is the effects tier rather than this codec — the table counts
 62 objects across 2 files, while an earlier revision of this paragraph said 154 instances; the two have
