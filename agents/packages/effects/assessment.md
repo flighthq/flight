@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/effects'
-updated: 2026-07-21
+updated: 2026-08-04
 basedOn: ./review.md
 ---
 
@@ -18,11 +18,7 @@ The package is mature — 52 effect kinds, 10 recipe math modules, full pipeline
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/effects` and `@flighthq/types`, no open design decision beyond what the charter has blessed.
-
-1. **Add `FilmicToneMapOptions` / `AgxToneMapOptions`.** Both operators bake their parameter sets with honest "approximate / hardcoded" comments. Promoting constants to optional, defaulted option structs is additive — existing callers keep today's behavior. Purely within-package; adds no kind, touches no backend. Per charter Open direction #2.
-
-2. **Add Package Map entry for effects.** Per charter Decision #7. `@flighthq/effects` and the `effects-*` backends are absent from the codebase map's Package Map. Add a complete entry reflecting the 52-effect catalog, recipe math, and pipeline-support layer.
+None. Both prior items landed and were verified against source on 2026-08-04: the tone-map option structs exist in `@flighthq/types` and are accepted by `computeAgxToneMap`/`computeFilmicToneMap`, and `effects` carries a Package Map entry alongside its three backends.
 
 ## Backlog
 

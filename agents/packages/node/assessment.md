@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/node'
-updated: 2026-07-13
+updated: 2026-08-04
 basedOn: ./review.md
 ---
 
@@ -12,11 +12,7 @@ Sorted from `review.md` (solid, 89/100, 2026-07-13 rereview). All seven 2026-07-
 
 Strictly sweep-safe: within `@flighthq/node`, no cross-package coupling, no breaking change, no open design decision.
 
-- **Fix the self-import** — `transform2d.ts` imports `computeNodeWorldTransformRevision` from `'@flighthq/node'`; change to `'./revision'` to match `transform3d.ts` and remove the circular package reference.
-- **Refresh the `invalidateNodeLocalTransform` doc comment** — it enumerates "(x, y, rotation, scaleX, scaleY)"; the 2D transform now includes `skewX`/`skewY` and pivot.
-- **Drop the type re-export in `hasTransform3d.ts`** (`export type { HasTransform3D, HasTransform3DRuntime }`) — no other trait file re-exports its types; the barrel-consistency cleanup is local and behavior-free.
-- **Unify the early-out callback convention** — `forEachNodeAncestor` requires `=> boolean` while `forEachNodeChild` accepts `=> boolean | void`; widen the ancestor walker to `boolean | void` (non-breaking) so one convention holds across the iteration family.
-- **Type the `computeViewportRenderTransform` casts** — replace the two `eslint-disable no-explicit-any` casts in `viewport.ts` with a proper narrow (e.g. a `Partial<HasBoundsRectangleRuntime>` guard over the runtime), removing the package's only typed holes.
+None. All four sweep items landed and were verified against source on 2026-08-04 (self-import, transform doc comment, trait type re-export, `boolean | void` on both walkers). A fifth item targeting `computeViewportRenderTransform` was dropped: no such function exists in the package, and it carried no approval.
 
 ## Backlog
 

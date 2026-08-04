@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene2d'
-updated: 2026-07-13
+updated: 2026-08-04
 basedOn: ./review.md
 ---
 
@@ -12,7 +12,6 @@ Sorted from `review.md` (solid — 80/100, 2026-07-13). The prior assessment (20
 
 Sweep-safe: within `@flighthq/scene2d`, no cross-package coupling, no breaking change, no open design decision.
 
-- **Delete the dead `internal.ts` module.** `DisplayObjectInternal` has zero importers repo-wide, is not exported from the barrel, and its `Omit<…, 'stage'>` names a field that no longer exists on `DisplayObject`. This also retires charter Open direction #8 (migrate-the-cast) by making it moot. Run `npm run packages:check` after. — review.md › Gaps.
 - **Drop the unused `@flighthq/geometry` dependency.** No source file imports it (`Rectangle` comes from `@flighthq/types`). Same hygiene class as the `textlayout` drop already logged in status. Remove from `package.json` and the `tsconfig.json` references. — review.md › Gaps.
 - **Add `setBitmapSmoothing` / `setBitmapSourceRectangle` setters.** Both fields are blessed by the 2026-06-25 Decision ("`Bitmap` = `image` + `smoothing` + `sourceRectangle`") but have no mutation path; `Video` already has the `setVideoSmoothing` sibling to mirror. `smoothing` invalidates local content; `sourceRectangle` invalidates local content + local bounds (it drives `computeBitmapLocalBoundsRectangle`). Additive, follows the existing shape. — review.md › Gaps.
 - **Fix the `package.json` description drift.** "bitmaps, shapes, text, masks, blend modes" describes the pre-split package; align it with the actual kind set (bitmaps, containers, stages, videos, html/render views). Within-package manifest text, no behavior. — review.md › Contract & docs fit (b).
