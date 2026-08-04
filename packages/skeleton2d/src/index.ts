@@ -17,6 +17,7 @@ export {
   registerSkeleton2DAnimationTargetBinder,
   registerSkeleton2DConstraintSolver,
   registerSkeleton2DIkConstraintSolver,
+  registerSkeleton2DPathConstraintSolver,
   registerSkeleton2DTransformConstraintSolver,
   setSkeleton2DBindPose,
   solveSkeleton2DConstraints,

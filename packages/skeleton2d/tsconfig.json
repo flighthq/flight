@@ -13,6 +13,7 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../math" },
+    { "path": "../path" },
     { "path": "../types" }
   ],
   "include": ["src"]

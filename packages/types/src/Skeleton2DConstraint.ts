@@ -32,6 +32,7 @@ export type Skeleton2DConstraintSolver = (skeleton: Skeleton2D, constraint: Read
  */
 export const Skeleton2DConstraintKind = {
   Ik: 'Skeleton2D.IkConstraint',
+  Path: 'Skeleton2D.PathConstraint',
   Transform: 'Skeleton2D.TransformConstraint',
 } as const;
 
