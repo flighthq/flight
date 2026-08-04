@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
@@ -84,6 +84,7 @@ const URL_PATTERN = /https?:\/\/[^\s)>'"]+/;
 const NEGATION_PATTERN = /\b(?:never|neither|no|not|nothing|without)\b/i;
 const MANIFEST_LICENSE_LINE = /^\s*"license"\s*:\s*"[^"]+"\s*,?\s*$/;
 const MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024;
+const DISSOLVED_FLIGHT_PACKAGES = new Set(['filters']);
 
 const PROJECT_POLICY_LINE = `Flight is ${parts('M', 'IT')}, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
 const PROHIBITED_EXAMPLE_LINE = `- **State format facts as facts about the format, not as excerpts from a document.** "PNG's magic bytes are \`89 50 4E 47\`" needs no attribution; "${words('derived', 'from')} \`<url>\` at \`<sha>\`, ${parts('M', 'IT')}" manufactures one.`;
@@ -109,13 +110,13 @@ const NAMED_ESCAPES: readonly LicenseProvenanceEscape[] = [
 /** Finds declaration and attribution markers outside the repository's narrow structural sites. */
 export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]): LicenseProvenanceReport {
   const escapeLines = NAMED_ESCAPES.map(() => new Set<string>());
+  const flightPackages = getFlightPackageNames(inputs);
   const violations: LicenseProvenanceViolation[] = [];
   const structuralMatches = new Set<string>();
 
   for (const input of inputs) {
     const path = normalizePath(input.path);
     const lines = input.text.split(/\r?\n/);
-    const contexts = commentContexts(path, lines);
     for (const [index, line] of lines.entries()) {
       for (const match of line.matchAll(identifierPattern())) {
         const disposition = dispositionOf(path, line, index, escapeLines);
@@ -130,8 +131,8 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
         const pattern = markerPattern(rule.phrase);
         for (const match of line.matchAll(pattern)) {
           if (isNegated(line, match.index ?? 0)) continue;
-          const context = contexts.get(index) ?? line;
-          if (rule.conditional && !hasProvenanceContext(context)) continue;
+          if (rule.conditional && !hasProvenanceContext(line)) continue;
+          if (!rule.conditional && isPermittedDerivationObject(line, match, flightPackages)) continue;
           const disposition = dispositionOf(path, line, index, escapeLines);
           if (disposition === 'structural') {
             structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
@@ -175,48 +176,6 @@ export function formatLicenseProvenanceReport(report: Readonly<LicenseProvenance
     }
   }
   return lines.join('\n');
-}
-
-function commentContexts(path: string, lines: readonly string[]): Map<number, string> {
-  const contexts = new Map<number, string>();
-  addDelimitedCommentContexts(lines, contexts, '/*', '*/');
-  addDelimitedCommentContexts(lines, contexts, '<!--', '-->');
-  addPrefixedCommentContexts(lines, contexts, '//');
-  if (supportsHashComments(path)) addPrefixedCommentContexts(lines, contexts, '#');
-  return contexts;
-}
-
-function addDelimitedCommentContexts(
-  lines: readonly string[],
-  contexts: Map<number, string>,
-  open: string,
-  close: string,
-): void {
-  let start = -1;
-  for (const [index, line] of lines.entries()) {
-    if (start < 0 && line.includes(open)) start = index;
-    if (start < 0 || !line.includes(close)) continue;
-    const context = lines.slice(start, index + 1).join('\n');
-    for (let member = start; member <= index; member++) contexts.set(member, context);
-    start = -1;
-  }
-  if (start >= 0) {
-    const context = lines.slice(start).join('\n');
-    for (let member = start; member < lines.length; member++) contexts.set(member, context);
-  }
-}
-
-function addPrefixedCommentContexts(lines: readonly string[], contexts: Map<number, string>, prefix: string): void {
-  for (let start = 0; start < lines.length; start++) {
-    if (!lines[start]?.trimStart().startsWith(prefix)) continue;
-    let end = start;
-    while (lines[end + 1]?.trimStart().startsWith(prefix)) end++;
-    const context = lines.slice(start, end + 1).join('\n');
-    for (let member = start; member <= end; member++) {
-      if (!contexts.has(member)) contexts.set(member, context);
-    }
-    start = end;
-  }
 }
 
 function dispositionOf(
@@ -275,6 +234,15 @@ function getTrackedTextInputs(repositoryRoot: string): LicenseProvenanceInput[] 
   return inputs;
 }
 
+function getFlightPackageNames(inputs: readonly LicenseProvenanceInput[]): Set<string> {
+  const names = new Set(DISSOLVED_FLIGHT_PACKAGES);
+  for (const input of inputs) {
+    const match = normalizePath(input.path).match(/^packages\/([^/]+)\/package\.json$/);
+    if (match?.[1]) names.add(match[1]);
+  }
+  return names;
+}
+
 function hasProvenanceContext(context: string): boolean {
   return identifierPattern().test(context) || URL_PATTERN.test(context) || PROJECT_CONTEXT_PATTERN.test(context);
 }
@@ -299,6 +267,22 @@ function isNegated(line: string, matchIndex: number): boolean {
   return NEGATION_PATTERN.test(wordsBefore);
 }
 
+function isPermittedDerivationObject(
+  line: string,
+  match: RegExpMatchArray,
+  flightPackages: ReadonlySet<string>,
+): boolean {
+  const tail = line.slice((match.index ?? 0) + match[0].length);
+  const clause = tail.split(/[.;!?—]/, 1)[0] ?? tail;
+  if (!/\bimplementation\b/i.test(clause) && /\b(?:format description|specification|standard)\b/i.test(clause)) {
+    return true;
+  }
+  const packageMatch = clause.match(
+    /^\s+(?:(?:a|an|the)\s+)?(?:(?:current|dissolved|former|internal|removed|renamed-away)\s+)?`?(?:@flighthq\/)?([a-z][a-z0-9-]*)`?/,
+  );
+  return packageMatch?.[1] !== undefined && flightPackages.has(packageMatch[1]);
+}
+
 function isPackageManifest(path: string): boolean {
   return path === 'package.json' || path.endsWith('/package.json');
 }
@@ -317,10 +301,6 @@ function normalizePath(path: string): string {
 
 function parts(...values: string[]): string {
   return values.join('');
-}
-
-function supportsHashComments(path: string): boolean {
-  return ['.ini', '.py', '.rb', '.sh', '.toml', '.yaml', '.yml'].includes(extname(path));
 }
 
 function words(...values: string[]): string {

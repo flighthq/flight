@@ -92,17 +92,13 @@ describe('license and provenance declaration gate', () => {
     ).toEqual([2, 3, 4, 5]);
   });
 
-  it('uses adjacent source comments as context but keeps document lines independent', () => {
+  it('keeps conditional evidence scoped to its line', () => {
     const phrase = words('derived', 'from');
     const source = checkLicenseProvenance([
       { path: 'source.ts', text: `// implementation ${phrase} upstream\n// https://example.com/source` },
     ]);
-    const document = checkLicenseProvenance([
-      { path: 'notes.md', text: `implementation ${phrase} upstream\nhttps://example.com/source` },
-    ]);
 
-    expect(source.violations).toHaveLength(1);
-    expect(document.violations).toEqual([]);
+    expect(source.violations).toEqual([]);
   });
 
   it('protects negative assertions for every derivation marker', () => {
@@ -139,6 +135,43 @@ describe('license and provenance declaration gate', () => {
         },
       ]).violations,
     ).toEqual([]);
+  });
+
+  it('permits an internal Flight package move but not an external one', () => {
+    const phrase = words('ported', 'from');
+    const report = checkLicenseProvenance([
+      { path: 'packages/adjustments/package.json', text: '{}' },
+      {
+        path: 'notes.md',
+        text: `${phrase} the dissolved \`filters\`\n${phrase} \`adjustments\`\n${phrase} ExternalProject`,
+      },
+    ]);
+
+    expect(report.violations).toEqual([{ line: 3, match: phrase, path: 'notes.md', rule: 'ported-from' }]);
+  });
+
+  it('permits facts taken from a published interface description but not an implementation', () => {
+    const phrase = words('transcribed', 'from');
+    const report = checkLicenseProvenance([
+      {
+        path: 'source.ts',
+        text: `${phrase} the published bytecode format description\n${phrase} a published standard\n${phrase} a standard library implementation`,
+      },
+    ]);
+
+    expect(report.violations).toEqual([{ line: 3, match: phrase, path: 'source.ts', rule: 'transcribed-from' }]);
+  });
+
+  it('keeps mathematical derivation separate from a project named on another line', () => {
+    const phrase = words('derived', 'from');
+    const report = checkLicenseProvenance([
+      {
+        path: 'source.ts',
+        text: `// World transforms are ${phrase} these by computeWorldTransforms\n// itself follows the ${parts('Dragon', 'Bones')} model`,
+      },
+    ]);
+
+    expect(report.violations).toEqual([]);
   });
 
   it('deduplicates a finding seen in both working and staged content', () => {
