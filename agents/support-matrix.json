@@ -1666,6 +1666,21 @@
       ]
     },
     {
+      "key": "swf",
+      "label": "Swf",
+      "scenes": [
+        {
+          "scene": "swf-import",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
       "key": "text",
       "label": "Text",
       "scenes": [

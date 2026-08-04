@@ -22,6 +22,7 @@ import {
   ParticleEmitter2DKind,
   prepareScene2DRender,
   QuadBatchKind,
+  registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
@@ -58,6 +59,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
+  registerCanvasBitmapTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   for (const kind of options.kinds ?? []) {
