@@ -8,6 +8,26 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-04 — Rive mutable-content composition proved; packed-colour sampling corrected
+
+The format-owned mutable binder was already present, but its proof stopped at isolated geometry and
+paint examples. A single-clip matrix now drives each shared display channel — x, y, rotation, scale x,
+scale y and opacity — beside an animated vertex and solid colour, then asserts the final transform,
+path coordinate, RGB and alpha. This verifies the ordering contract: shared channels and every
+mutable property land before the owning shape rebuilds once from its current core properties.
+
+That stronger assertion exposed a real paint defect. `KeyFrameDouble` stores its value at property 70;
+`KeyFrameColor` stores packed ARGB at property 88. The generic scalar reader asked every keyframe for
+70, so colour animation rebuilt the shape with zero and the old test passed merely because the paint
+had "changed." Colour tracks now carry four components, interpolate the ARGB bytes independently, and
+repack only at the mutable target. Endpoint and midpoint tests assert exact colour and alpha values.
+
+Adjacent gap recorded rather than hidden: `KeyFrameBool`, `KeyFrameId`, `KeyFrameString`, and
+`KeyFrameUint` need their own evidenced value fields and target semantics. The binder now refuses to
+read them through the double field. The resolved-image recommendation needed no second commit: the
+existing document resource seam already attaches each resolved image to all waiting drawable
+textures, with corpus coverage recording 53 wired textures and none orphaned.
+
 ## 2026-08-04 — Rive authored layout descriptors
 
 Rive artboard import now returns one `RiveLayoutImport` per independent authored layout root: a

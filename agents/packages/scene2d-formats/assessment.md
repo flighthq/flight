@@ -1,24 +1,25 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-03
+updated: 2026-08-04
 basedOn: ./review.md
 ---
 
 # scene2d-formats — Assessment
 
-## Standing, as of 2026-08-03
+## Standing, as of 2026-08-04
 
-The Lottie recommendations below all landed, and the cell has since gained a Rive codec. Rive is now
-the **best-verified** of the three purely because it is the only one measured against real files;
-Lottie and SVG have still never seen one, and closing that asymmetry is the highest-value work left
-in this cell.
+The prior Rive recommendations landed. Animated numeric geometry and paint now bind through the core
+property the file keyed, packed-colour keyframes interpolate their ARGB channels, and a resolved image
+resource is attached to every `Image` drawable texture that references it. The binder composes with
+all six shared transform/opacity paths in the same clip; neither recommendation below remains open.
 
-**Recommended, sweep-safe.** Bind Rive's animated geometry and paint through a format-owned
-mutable-content binder — Lottie already has the pattern, and 145 of 383 Rive clips carry no channels
-without it. Wire a resolved image onto the `Image` drawable that references it, so an image asset
-draws rather than merely arriving. Give SVG the crumb audit Lottie received, since roughly six of its
-crumbs announce our own incompleteness on correct exports. Probe SVG and Lottie for the silent-drop
-class the Rive corpus kept exposing.
+**Recommended, sweep-safe.** Audit the remaining Rive keyframe subclasses against the corpus before
+widening the binder. `KeyFrameDouble` and `KeyFrameColor` have different value keys (70 and 88), and
+the old generic scalar fallback turned a colour animation into zero while still making the clip look
+populated. `KeyFrameBool`, `KeyFrameId`, `KeyFrameString`, and `KeyFrameUint` therefore stay unbound
+until their own value fields and target semantics are evidenced. Variable-font axes remain the other
+unblocked Rive item of material size (120 objects across 7 of 37 files) and fit inside the existing
+text seam.
 
 **Backlog, parked on something.** The `Scene2DDocument` slot output waits on the slot contract
 chartered in `scene2d-resources`. A real-asset checkpoint for Lottie and SVG waits on an approved
