@@ -78,19 +78,23 @@ describe('easeOutDampedSine', () => {
     expect(peak(3)).toBeGreaterThan(peak(1));
   });
 
-  it('still reaches its endpoint when amplitude is below 1', () => {
-    // Under unit amplitude the curve cannot reach the endpoint unscaled, so the amplitude ramps in
-    // over the first quarter-wavelength. Without that ramp this lands short of 1.
-    const ease = easeOutDampedSine(0.5, 0.4);
+  it('raises an amplitude below 1 to the smallest defined curve', () => {
+    // The phase term is asin(1 / amplitude), which has no real solution below unit amplitude, so the
+    // curve is undefined there rather than merely small. Flight clamps rather than inventing a shape.
+    const clamped = easeOutDampedSine(0.5, 0.4);
+    const unit = easeOutDampedSine(1, 0.4);
 
-    expect(ease(0.0001)).toBeCloseTo(0, 2);
-    expect(ease(1)).toBe(1);
+    for (const t of [0.2, 0.5, 0.8]) expect(clamped(t)).toBeCloseTo(unit(t), 10);
+    expect(Number.isFinite(clamped(0.3))).toBe(true);
   });
 
-  it('reads a zero period as the source default rather than dividing by it', () => {
-    const ease = easeOutDampedSine(1, 0);
-
-    expect(Number.isFinite(ease(0.5))).toBe(true);
-    expect(ease(0.5)).toBeCloseTo(easeOutDampedSine(1, 0.5)(0.5), 10);
+  it('falls back to this package own fixed period when the period is not positive', () => {
+    // A period divides the wave, so zero has no meaning. Flight's choice is 0.4 — the constant
+    // easeOutElastic already uses — so the parameterized and fixed families agree with each other.
+    for (const period of [0, -1]) {
+      const ease = easeOutDampedSine(1, period);
+      expect(Number.isFinite(ease(0.5))).toBe(true);
+      expect(ease(0.5)).toBeCloseTo(easeOutDampedSine(1, 0.4)(0.5), 10);
+    }
   });
 });

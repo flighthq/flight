@@ -400,6 +400,17 @@ confidently wrong on any file stating anything else rather than approximately ri
 quarter-wavelength so the curve still reaches its endpoint — and that is the format's own
 construction, reproduced rather than approximated.
 
+**Elastic curves diverge from Rive in their degenerate cases, deliberately, and this is the statement
+of that limit.** Flight's `easeInDampedSine` / `easeOutDampedSine` / `easeInOutDampedSine` implement the
+published parameterized elastic — phase `asin(1 / amplitude)` over the wavelength — so an ordinary
+amplitude and period produce the same curve anyone implementing that mathematics would get. The two
+degenerate cases are **Flight's own choices and differ from other implementations**: an amplitude below
+1, where the phase term has no real solution, is raised to 1 rather than reshaped; and a non-positive
+period falls back to 0.4, the constant `easeOutElastic` already uses, so the parameterized and fixed
+families agree with each other. A file authoring either degenerate case will therefore not match its
+source pixel for pixel. That is a known and accepted fidelity limit rather than a defect: a stated
+divergence is fine where an unstated one would not be.
+
 **`ScriptedInterpolator` is deliberately not covered and is not a gap to reopen.** It runs Rive's own
 scripting language, which a codec does not execute. Its segments fall back to linear.
 
