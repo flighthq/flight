@@ -32,7 +32,7 @@ export function applyAnimationClipToRiveDocument(clip: Readonly<AnimationClip>, 
     const target = channel.targetRef as RiveMutableTarget | null;
     if (target === null || typeof target !== 'object' || target.riveApply === undefined) continue;
     sampleAnimationTrack(_sampleScratch, channel.track, time);
-    target.riveApply(_sampleScratch[0]);
+    target.riveApply(_sampleScratch);
   }
   // Rebuilding once per shape after every channel has landed keeps a shape with several animated
   // vertices from regenerating its whole command stream once per vertex.
@@ -65,7 +65,7 @@ export function createRiveAnimationClips(
 }
 
 interface RiveMutableTarget {
-  riveApply(value: number): void;
+  riveApply(sample: Readonly<number[] | Float32Array>): void;
 }
 
 function createRiveAnimationClip(
@@ -105,9 +105,17 @@ function createRiveAnimationClip(
     }
     // Anything else drives geometry or paint: write the value back onto the object the file keyed and
     // let the owning shape rebuild from it, which is why no property needs its own binder.
-    const target = createRiveMutableTarget(artboard, rebuilds, keyedIndex, propertyKey);
+    const keyframeType = objects[index + 1]?.typeKey;
+    if (keyframeType !== RIVE_KEYFRAME_DOUBLE && keyframeType !== RIVE_KEYFRAME_COLOR) continue;
+    const target = createRiveMutableTarget(
+      artboard,
+      rebuilds,
+      keyedIndex,
+      propertyKey,
+      keyframeType === RIVE_KEYFRAME_COLOR ? RiveFieldType.Color : RiveFieldType.Double,
+    );
     if (target === null) continue;
-    const channel = createRiveChannel(objects, index, limit, fps, interpolators, (value) => value, target);
+    const channel = createRiveMutableChannel(objects, index, limit, fps, interpolators, target);
     if (channel !== null) channels.push(channel);
   }
 
@@ -124,6 +132,55 @@ function createRiveChannel(
   convert: (value: number) => number,
   targetRef: unknown,
 ): AnimationChannel | null {
+  return createRiveTypedChannel(
+    objects,
+    propertyIndex,
+    limit,
+    fps,
+    interpolators,
+    1,
+    (keyframe) =>
+      keyframe.typeKey === RIVE_KEYFRAME_DOUBLE
+        ? [convert(readRiveNumber(keyframe, RIVE_KEYFRAME_DOUBLE_VALUE, 0))]
+        : null,
+    targetRef,
+  );
+}
+
+function createRiveMutableChannel(
+  objects: readonly Readonly<RiveCoreObject>[],
+  propertyIndex: number,
+  limit: number,
+  fps: number,
+  interpolators: ReadonlyMap<number, EasingFunction>,
+  targetRef: RiveMutableTarget,
+): AnimationChannel | null {
+  const first = objects[propertyIndex + 1];
+  if (first?.typeKey === RIVE_KEYFRAME_COLOR) {
+    return createRiveTypedChannel(
+      objects,
+      propertyIndex,
+      limit,
+      fps,
+      interpolators,
+      4,
+      readRiveColorKeyframe,
+      targetRef,
+    );
+  }
+  return createRiveChannel(objects, propertyIndex, limit, fps, interpolators, (value) => value, targetRef);
+}
+
+function createRiveTypedChannel(
+  objects: readonly Readonly<RiveCoreObject>[],
+  propertyIndex: number,
+  limit: number,
+  fps: number,
+  interpolators: ReadonlyMap<number, EasingFunction>,
+  components: number,
+  readValue: (keyframe: Readonly<RiveCoreObject>) => readonly number[] | null,
+  targetRef: unknown,
+): AnimationChannel | null {
   const times: number[] = [];
   const values: number[] = [];
   const segmentEasings: Array<EasingFunction | null> = [];
@@ -131,11 +188,13 @@ function createRiveChannel(
   for (let index = propertyIndex + 1; index < limit; index++) {
     const object = objects[index];
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_INTERPOLATING_KEYFRAME)) break;
+    const value = readValue(object);
+    if (value === null) break;
     const time = readRiveNumber(object, RIVE_KEYFRAME_FRAME, 0) / fps;
     // A repeated frame would give the track two samples at one time; the first one wins.
     if (times.length > 0 && time <= times[times.length - 1]) continue;
     times.push(time);
-    values.push(convert(readRiveNumber(object, RIVE_KEYFRAME_VALUE, 0)));
+    values.push(...value);
     // A keyframe's interpolation governs the segment that LEAVES it, so the last one contributes none.
     segmentEasings.push(toRiveSegmentEasing(object, interpolators));
   }
@@ -143,9 +202,17 @@ function createRiveChannel(
   segmentEasings.pop();
 
   return createAnimationChannel(
-    createAnimationTrack({ interpolation: 'Linear', segmentEasings, times, values }),
+    createAnimationTrack({ components, interpolation: 'Linear', segmentEasings, times, values }),
     targetRef,
   );
+}
+
+function readRiveColorKeyframe(keyframe: Readonly<RiveCoreObject>): readonly number[] | null {
+  if (keyframe.typeKey !== RIVE_KEYFRAME_COLOR) return null;
+  const packed = readRiveNumber(keyframe, RIVE_KEYFRAME_COLOR_VALUE, 0) >>> 0;
+  // Rive stores ARGB. Interpolating the packed integer would carry between bytes, so sample the four
+  // channels independently and put them back into the same wire order when the binder applies them.
+  return [(packed >>> 24) & 0xff, (packed >>> 16) & 0xff, (packed >>> 8) & 0xff, packed & 0xff];
 }
 
 /**
@@ -159,6 +226,7 @@ function createRiveMutableTarget(
   rebuilds: ReadonlyMap<number, () => void>,
   objectIndex: number,
   propertyKey: number,
+  defaultType: RiveFieldType,
 ): RiveMutableTarget | null {
   if (objectIndex < 0 || objectIndex >= artboard.objects.length || propertyKey < 0) return null;
   const object = artboard.objects[objectIndex];
@@ -167,15 +235,27 @@ function createRiveMutableTarget(
 
   const property = object.properties.find((candidate) => candidate.key === propertyKey);
   // A file may key a property it never states, in which case the value starts at the format default.
-  const slot = property ?? { key: propertyKey, type: RiveFieldType.Double, value: 0 };
+  const slot = property ?? { key: propertyKey, type: defaultType, value: 0 };
   if (property === undefined) object.properties.push(slot);
 
   return {
-    riveApply(value: number): void {
-      slot.value = value;
+    riveApply(sample: Readonly<number[] | Float32Array>): void {
+      slot.value = slot.type === RiveFieldType.Color ? packRiveColorSample(sample) : sample[0];
       _pendingRebuilds.add(rebuild);
     },
   };
+}
+
+function packRiveColorSample(sample: Readonly<number[] | Float32Array>): number {
+  const alpha = toRiveColorByte(sample[0]);
+  const red = toRiveColorByte(sample[1]);
+  const green = toRiveColorByte(sample[2]);
+  const blue = toRiveColorByte(sample[3]);
+  return ((alpha << 24) | (red << 16) | (green << 8) | blue) >>> 0;
+}
+
+function toRiveColorByte(value: number): number {
+  return Math.round(Math.min(0xff, Math.max(0, value)));
 }
 
 // The nearest ancestor that is a Shape, including the object itself.
@@ -257,8 +337,10 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 
 const RIVE_KEYED_OBJECT = 25;
 const RIVE_KEYED_PROPERTY = 26;
+const RIVE_KEYFRAME_DOUBLE = 30;
 const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_LINEAR_ANIMATION = 31;
+const RIVE_KEYFRAME_COLOR = 37;
 const RIVE_CUBIC_INTERPOLATOR = 139;
 const RIVE_INTERPOLATING_KEYFRAME = 170;
 
@@ -283,7 +365,8 @@ const RIVE_INTERPOLATOR_Y2 = 66;
 const RIVE_KEYFRAME_FRAME = 67;
 const RIVE_KEYFRAME_INTERPOLATION = 68;
 const RIVE_KEYFRAME_INTERPOLATOR_ID = 69;
-const RIVE_KEYFRAME_VALUE = 70;
+const RIVE_KEYFRAME_DOUBLE_VALUE = 70;
+const RIVE_KEYFRAME_COLOR_VALUE = 88;
 
 const RIVE_INTERPOLATION_HOLD = 0;
 const RIVE_INTERPOLATION_LINEAR = 1;

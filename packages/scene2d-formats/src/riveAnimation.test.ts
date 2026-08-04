@@ -17,6 +17,7 @@ const KEYED_OBJECT = 25;
 const KEYED_PROPERTY = 26;
 const KEYFRAME_DOUBLE = 30;
 const CUBIC_INTERPOLATOR = 139;
+const KEYFRAME_BOOL = 84;
 
 const NAME = 55;
 const FPS = 56;
@@ -32,6 +33,27 @@ const VALUE = 70;
 // rebuilding the owning shape, so the ordinary readers produce the result and there is no second
 // code path to keep in step. Before this, 145 of the corpus's 383 clips carried no channels at all.
 describe('applyAnimationClipToRiveDocument', () => {
+  it.each([
+    { expected: 20, field: 'x', from: 10, propertyKey: 13, to: 30 },
+    { expected: 20, field: 'x', from: 10, propertyKey: 9, to: 30 },
+    { expected: 20, field: 'y', from: 10, propertyKey: 14, to: 30 },
+    { expected: 20, field: 'y', from: 10, propertyKey: 10, to: 30 },
+    { expected: 90, field: 'rotation', from: 0, propertyKey: 15, to: Math.PI },
+    { expected: 2, field: 'scaleX', from: 1, propertyKey: 16, to: 3 },
+    { expected: 2, field: 'scaleY', from: 1, propertyKey: 17, to: 3 },
+    { expected: 0.75, field: 'alpha', from: 1, propertyKey: 18, to: 0.5 },
+  ] as const)('composes $field with geometry and paint mutation', ({ expected, field, from, propertyKey, to }) => {
+    const result = createScene2DFromRiveDocument(riveWithComposedAnimation(propertyKey, from, to));
+    const shape = firstShape(result);
+
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
+
+    expect(shape[field]).toBeCloseTo(expected, 3);
+    expect(pathPoints(shape)[0][0]).toBeCloseTo(30, 3);
+    expect(fillPaint(shape).color).toBe(0x304050);
+    expect(fillPaint(shape).alpha).toBeCloseTo(0x80 / 0xff, 6);
+  });
+
   it('moves a path vertex and regenerates the shape geometry', () => {
     const result = createScene2DFromRiveDocument(riveWithAnimatedVertex(24, 0, 60));
     const shape = firstShape(result);
@@ -55,15 +77,22 @@ describe('applyAnimationClipToRiveDocument', () => {
   it('animates a fill colour through the same route', () => {
     const result = createScene2DFromRiveDocument(riveWithAnimatedFill());
     const shape = firstShape(result);
-    const colourOf = (): unknown => {
-      const tokens = shape.data.commands as unknown[];
-      return tokens[tokens.indexOf('beginFill') + 2];
-    };
-    const before = colourOf();
+    const before = fillPaint(shape);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
 
-    expect(colourOf()).not.toBe(before);
+    expect(fillPaint(shape)).not.toEqual(before);
+    expect(fillPaint(shape)).toEqual({ alpha: 1, color: 0xddeeff });
+  });
+
+  it('interpolates packed ARGB by channel instead of treating it as one scalar', () => {
+    const result = createScene2DFromRiveDocument(riveWithAnimatedFill(0x40102030, 0xc0506070));
+    const shape = firstShape(result);
+
+    applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
+
+    expect(fillPaint(shape).color).toBe(0x304050);
+    expect(fillPaint(shape).alpha).toBeCloseTo(0x80 / 0xff, 6);
   });
 
   it('leaves the clip alone when nothing keyed belongs to a shape', () => {
@@ -158,7 +187,7 @@ describe('createRiveAnimationClips', () => {
     expect(target.path).toBe('X');
   });
 
-  it('maps the transform properties it can bind and skips the rest', () => {
+  it('maps the shared transform properties and requires an owning shape for mutable content', () => {
     const cases = [
       [13, 'X'],
       [9, 'X'],
@@ -174,7 +203,8 @@ describe('createRiveAnimationClips', () => {
       expect((clips[0].clip.channels[0].targetRef as { path: string }).path).toBe(path);
     }
 
-    // A vertex position animates geometry rather than a node property, so it binds to nothing yet.
+    // A vertex position needs the graph and rebuild registry supplied by the full importer; this
+    // target-only fixture deliberately has neither, so it cannot manufacture a content channel.
     const { clips } = build(30, 24, [{ frame: 0, value: 1 }]);
     expect(clips[0].clip.channels).toHaveLength(0);
   });
@@ -247,6 +277,30 @@ describe('createRiveAnimationClips', () => {
 
     expect(clips[0].clip.channels).toHaveLength(0);
   });
+
+  it('does not read another keyframe kind through the double value field', () => {
+    const artboard: RiveArtboardGraph = {
+      objects: [object(1, {}), object(3, {})],
+      parentIndices: [-1, 0],
+      streamEnd: 0,
+      streamStart: 0,
+    };
+    const objects = [
+      object(LINEAR_ANIMATION, { [FPS]: 30, [DURATION]: 30 }),
+      object(KEYED_OBJECT, { [OBJECT_ID]: 1 }),
+      object(KEYED_PROPERTY, { [PROPERTY_KEY]: 41 }),
+      object(KEYFRAME_BOOL, { [FRAME]: 0, [VALUE]: 1 }),
+    ];
+    const clips = createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      [null, createDisplayObject()],
+      artboard,
+      new Map([[1, () => undefined]]),
+    );
+
+    expect(clips[0].clip.channels).toHaveLength(0);
+  });
 });
 
 function firstShape(result: ReturnType<typeof createScene2DFromRiveDocument>): Shape {
@@ -273,6 +327,39 @@ function pathPoints(shape: Shape): number[][] {
   return points;
 }
 
+function fillPaint(shape: Shape): { alpha: number; color: number } {
+  const tokens = shape.data.commands as unknown[];
+  const at = tokens.indexOf('beginFill');
+  return { alpha: tokens[at + 3] as number, color: tokens[at + 2] as number };
+}
+
+function riveWithComposedAnimation(propertyKey: number, from: number, to: number): Uint8Array {
+  // One clip drives a shared node transform and two format-owned targets on the same shape. The
+  // final command stream proves all three samples land before the queued rebuild regenerates it.
+  return buildRiveBytes([
+    [1, [t(4, 'Board'), f(7, 100), f(8, 100)]],
+    [3, [u(5, 0)]],
+    [16, [u(5, 1)]],
+    [5, [u(5, 2), f(24, 0), f(25, 0)]],
+    [5, [u(5, 2), f(24, 50), f(25, 50)]],
+    [20, [u(5, 1)]],
+    [18, [u(5, 5), c(37, 0x40102030)]],
+    [31, [t(55, 'composed'), u(56, 30), u(57, 30)]],
+    [25, [u(51, 1)]],
+    [26, [u(53, propertyKey)]],
+    [30, [u(67, 0), f(70, from), u(68, 1)]],
+    [30, [u(67, 30), f(70, to), u(68, 1)]],
+    [25, [u(51, 3)]],
+    [26, [u(53, 24)]],
+    [30, [u(67, 0), f(70, 0), u(68, 1)]],
+    [30, [u(67, 30), f(70, 60), u(68, 1)]],
+    [25, [u(51, 6)]],
+    [26, [u(53, 37)]],
+    [37, [u(67, 0), c(88, 0x40102030), u(68, 1)]],
+    [37, [u(67, 30), c(88, 0xc0506070), u(68, 1)]],
+  ]);
+}
+
 function riveWithAnimatedVertex(propertyKey: number, from: number, to: number): Uint8Array {
   // Artboard > Shape > PointsPath > two straight vertices, with the first vertex's x keyed.
   return buildRiveBytes([
@@ -289,7 +376,7 @@ function riveWithAnimatedVertex(propertyKey: number, from: number, to: number): 
   ]);
 }
 
-function riveWithAnimatedFill(): Uint8Array {
+function riveWithAnimatedFill(from = 0xff112233, to = 0xffddeeff): Uint8Array {
   return buildRiveBytes([
     [1, [t(4, 'Board'), f(7, 100), f(8, 100)]],
     [3, [u(5, 0)]],
@@ -297,12 +384,12 @@ function riveWithAnimatedFill(): Uint8Array {
     [5, [u(5, 2), f(24, 0), f(25, 0)]],
     [5, [u(5, 2), f(24, 50), f(25, 50)]],
     [20, [u(5, 1)]],
-    [18, [u(5, 5), c(37, 0xff112233)]],
+    [18, [u(5, 5), c(37, from)]],
     [31, [t(55, 'tint'), u(56, 30), u(57, 30)]],
     [25, [u(51, 6)]],
     [26, [u(53, 37)]],
-    [37, [u(67, 0), c(88, 0xff112233), u(68, 1)]],
-    [37, [u(67, 30), c(88, 0xffddeeff), u(68, 1)]],
+    [37, [u(67, 0), c(88, from), u(68, 1)]],
+    [37, [u(67, 30), c(88, to), u(68, 1)]],
   ]);
 }
 

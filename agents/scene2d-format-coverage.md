@@ -374,13 +374,20 @@ assumed from a sibling.
 Over the corpus this builds 383 clips, all named, carrying 2,925 channels and 11,333 keyframes with
 no non-finite time or value.
 
-**Geometry and paint animate too, through the property the file keyed.** Transform properties bind to
-`Node2DAnimationTarget`; everything else — vertex positions, corner radii, colours, stroke widths,
-parametric sizes, trim spans — writes its value back onto the core object the file keyed and queues
-the owning shape to rebuild. Because every reader in this codec reads from those same properties, one
-binder serves all of them and there is no second code path to keep in step with the first. Rebuilds
-coalesce per sample, so a shape with several animated vertices regenerates once rather than once per
-vertex. Playback stays explicit through `applyAnimationClipToRiveDocument`.
+**Numeric geometry and paint animate too, through the property the file keyed.** Transform properties
+bind to `Node2DAnimationTarget`; vertex positions, corner radii, colours, stroke widths, parametric
+sizes and trim spans write their samples back onto the core object the file keyed and queue the owning
+shape to rebuild. Because every reader in this codec reads from those same properties, one binder
+serves all of them and there is no second geometry/paint path to keep in step. Rebuilds coalesce per
+sample, so a shape with several animated properties regenerates once after every channel has landed.
+Playback stays explicit through `applyAnimationClipToRiveDocument`.
+
+The keyframe's own type determines how it samples: `KeyFrameDouble` states its value at key 70, while
+`KeyFrameColor` states packed ARGB at key 88 and interpolates four byte channels rather than the packed
+integer. A composition matrix drives every shared Rive path — x, y, rotation, scale x/y and opacity —
+beside mutable vertex and colour channels in the same clip and verifies the final transform, geometry
+and paint. The other keyframe subclasses (bool, id, string and uint) are deliberately not read through
+the double field; their value fields and useful drawable targets remain an adjacent corpus audit.
 
 Over the corpus this carries 5,170 channels across 383 clips, up from 2,925 when only transforms
 bound, and drops the clips with no channels at all from 145 to 112. Sampling every clip at its
@@ -597,13 +604,10 @@ The artboards' clips, state machines and advanced blends travel alongside the do
 inside it, since `Scene2DDocument` models a static named graph and a caller that wants to play or
 blend needs the import itself.
 
-**Also not covered:** so an image
-asset arrives as data but does not yet draw. Animated geometry and paint, per above. Loop mode, work-area trimming, and playback
-speed, which the animation states and this importer does not yet carry. `Feather`, 154 instances, a
-paint effect whose home is arguably `@flighthq/effects` rather than this codec. Dashes, which no
-corpus file uses. And deformable meshes, bones and skinning; text; assets; and nested artboard
-linkage. The state-machine *descriptor* is likewise unread; per the charter its *runtime* is a
-separate future cell and never a codec concern.
+**Also not covered:** loop mode, work-area trimming and playback speed, which an animation states but
+the imported clip does not carry; non-double/non-colour keyframe value kinds; live animated or bound
+layout-descriptor refresh; `Feather`, whose home is the effects tier; and deformable meshes, bones and
+skinning. The state-machine runtime is intentionally a separate future cell rather than a codec gap.
 
 **Crumbs.** Three, all asset facts, and all `Reject` because each ends the parse:
 `rive.invalid-header` (missing or wrong fingerprint, or a header that ends early),
