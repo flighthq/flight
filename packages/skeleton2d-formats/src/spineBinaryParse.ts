@@ -1,7 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
+import {
+  createSkeleton2D,
+  createSkeleton2DBoneAnimationTarget,
+  createSkeleton2DSlotAnimationTarget,
+} from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   Attachment2D,
@@ -279,7 +283,7 @@ function buildSpineBinaryBoneChannel(
     times: timeline.times,
     values,
   });
-  return createAnimationChannel(track, { boneIndex, path: kind.path });
+  return createAnimationChannel(track, createSkeleton2DBoneAnimationTarget(boneIndex, kind.path));
 }
 
 // Rebases each bezier segment's absolute control points onto its own segment, exactly as the `.json` parser
@@ -400,7 +404,12 @@ function parseSpineBinarySlotTimelines(
         times: timeline.times,
         values: timeline.values,
       });
-      channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
+      channels.push(
+        createAnimationChannel(
+          track,
+          createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Color),
+        ),
+      );
     }
   }
 }
@@ -437,7 +446,10 @@ function addSpineBinaryAttachmentChannel(
   if (times.length === 0) return;
   const track = createAnimationTrack({ components: 1, interpolation: AnimationInterpolationStep, times, values });
   channels.push(
-    createAnimationChannel(track, { attachments, path: Skeleton2DSlotAnimationPath.Attachment, slotIndex }),
+    createAnimationChannel(
+      track,
+      createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Attachment, attachments),
+    ),
   );
 }
 

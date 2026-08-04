@@ -1,7 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
+import {
+  createSkeleton2D,
+  createSkeleton2DBoneAnimationTarget,
+  createSkeleton2DSlotAnimationTarget,
+} from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   AnimationInterpolation,
@@ -259,11 +263,10 @@ function addDragonBonesDisplayChannel(
   }
   const track = createAnimationTrack({ components: 1, interpolation: AnimationInterpolationStep, times, values });
   channels.push(
-    createAnimationChannel(track, {
-      attachments: displays.slice(),
-      path: Skeleton2DSlotAnimationPath.Attachment,
-      slotIndex,
-    }),
+    createAnimationChannel(
+      track,
+      createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Attachment, displays.slice()),
+    ),
   );
 }
 
@@ -290,7 +293,9 @@ function addDragonBonesSlotColorChannel(
     times,
     values,
   });
-  channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
+  channels.push(
+    createAnimationChannel(track, createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Color)),
+  );
 }
 
 // One DragonBones multiply-colour channel (0–100 percent) → the track's 0..1 space, clamped.
@@ -431,7 +436,7 @@ function addDragonBonesBoneChannel(
   segmentEasings: (EasingFunction | null)[] | null = null,
 ): void {
   const track = createAnimationTrack({ components, interpolation, segmentEasings, times: times.slice(), values });
-  channels.push(createAnimationChannel(track, { boneIndex, path }));
+  channels.push(createAnimationChannel(track, createSkeleton2DBoneAnimationTarget(boneIndex, path)));
 }
 
 // The keyframe time axis of one frame list. DragonBones authors each frame's `duration` in FRAMES (default 1

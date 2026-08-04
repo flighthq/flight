@@ -830,6 +830,8 @@ export * from './Slot2D';
 export * from './Skeleton2D';
 export * from './Skeleton2DAnimationPath';
 export * from './Skeleton2DAnimationTarget';
+export * from './Skeleton2DAnimationTargetBinder';
+export * from './Skeleton2DAnimationTargetKind';
 export * from './Skeleton2DSlotAnimationTarget';
 export * from './SvgDocumentImport';
 export * from './Skeleton2DImport';
