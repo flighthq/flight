@@ -1,5 +1,5 @@
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
-import { createPath, dashPath, getPathLength } from '@flighthq/path/contract';
+import { createPath, dashPath, flattenPath, getPathLength } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -18,6 +18,7 @@ import type {
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -49,7 +50,12 @@ export function appendRiveShapePaint(
       continue;
     }
     appendRiveStrokeStyle(shape, paint);
-    appendRivePaths(shape, paint.trim === null ? paths : trimRivePaths(paths, paint.trim), null);
+    let paintedPaths = [...paths];
+    for (const effect of paint.effects) {
+      paintedPaths =
+        effect.kind === 'trim' ? trimRivePaths(paintedPaths, effect.trim) : dashRivePaths(paintedPaths, effect.dash);
+    }
+    appendRivePaths(shape, paintedPaths, null);
   }
 }
 
@@ -117,14 +123,146 @@ interface RiveTrim {
   start: number;
 }
 
+interface RiveDashLength {
+  percentage: boolean;
+  value: number;
+}
+
+interface RiveDash {
+  lengths: RiveDashLength[];
+  offset: RiveDashLength;
+}
+
+type RiveStrokeEffect = { dash: RiveDash; kind: 'dash' } | { kind: 'trim'; trim: RiveTrim };
+
 interface RivePaint {
   alpha: number;
   color: number;
+  effects: RiveStrokeEffect[];
   fillRule: PathWinding;
   gradient: RiveGradientPaint | null;
   stroke: { caps: CapsStyle; joints: JointStyle; thickness: number } | null;
-  trim: RiveTrim | null;
   visible: boolean;
+}
+
+/**
+ * Applies Rive's dash effect independently to every source path.
+ *
+ * This intentionally does not delegate offset handling to `dashPath`: Flight follows the SVG phase
+ * convention, while Rive starts the alternating pattern at its offset and wraps path coordinates at
+ * the contour end. The distinction is visible when the final dash crosses that boundary.
+ */
+function dashRivePaths(paths: readonly RivePathRecord[], dash: Readonly<RiveDash>): RivePathRecord[] {
+  const results: RivePathRecord[] = [];
+  for (const record of paths) {
+    const commands: PathCommand[] = [];
+    const data: number[] = [];
+    for (const contour of flattenPath(toRivePath(record))) appendRiveDashContour(contour, dash, commands, data);
+    if (commands.length === 0) continue;
+    results.push({ commands, data, pathIndex: record.pathIndex, winding: record.winding });
+  }
+  return results;
+}
+
+function appendRiveDashContour(
+  contour: readonly number[],
+  dash: Readonly<RiveDash>,
+  commands: PathCommand[],
+  data: number[],
+): void {
+  const length = getRivePolylineLength(contour);
+  if (length <= 0 || dash.lengths.length === 0) return;
+  const pattern = dash.lengths.map((entry) => Math.min(length, Math.max(0, toRiveDashLength(entry, length))));
+  if (!pattern.some((value) => value > 0)) return;
+
+  let distance = wrapRiveDashOffset(toRiveDashLength(dash.offset, length), length);
+  let travelled = 0;
+  let index = 0;
+  let draw = true;
+  let zeroRun = 0;
+  const closed =
+    contour.length >= 4 && contour[0] === contour[contour.length - 2] && contour[1] === contour[contour.length - 1];
+  while (travelled < length) {
+    const amount = pattern[index++ % pattern.length];
+    if (amount <= 0) {
+      // Zero entries still flip on/off in Rive. A full zero cycle cannot advance, but the all-zero
+      // case returned above, so this also bounds malformed mixtures without changing valid output.
+      zeroRun++;
+      draw = !draw;
+      if (zeroRun >= pattern.length) return;
+      continue;
+    }
+    zeroRun = 0;
+    const end = distance + amount;
+    if (draw) {
+      if (end <= length) appendRiveDashInterval(contour, distance, end, true, commands, data);
+      else {
+        appendRiveDashInterval(contour, distance, length, true, commands, data);
+        appendRiveDashInterval(contour, 0, end - length, !closed, commands, data);
+      }
+    }
+    distance = end >= length ? end - length : end;
+    travelled += amount;
+    draw = !draw;
+  }
+}
+
+function appendRiveDashInterval(
+  contour: readonly number[],
+  from: number,
+  to: number,
+  move: boolean,
+  commands: PathCommand[],
+  data: number[],
+): void {
+  if (to <= from) return;
+  let travelled = 0;
+  let started = false;
+  for (let index = 2; index < contour.length; index += 2) {
+    const x0 = contour[index - 2];
+    const y0 = contour[index - 1];
+    const x1 = contour[index];
+    const y1 = contour[index + 1];
+    const segment = Math.hypot(x1 - x0, y1 - y0);
+    const segmentEnd = travelled + segment;
+    if (segment > 0 && to > travelled && from < segmentEnd) {
+      const localFrom = Math.max(from, travelled);
+      const localTo = Math.min(to, segmentEnd);
+      const startRatio = (localFrom - travelled) / segment;
+      const endRatio = (localTo - travelled) / segment;
+      const startX = x0 + (x1 - x0) * startRatio;
+      const startY = y0 + (y1 - y0) * startRatio;
+      if (!started) {
+        if (move) commands.push(PathCommand.MOVE_TO);
+        else if (data.length < 2 || data[data.length - 2] !== startX || data[data.length - 1] !== startY) {
+          commands.push(PathCommand.LINE_TO);
+        }
+        if (move || data.length < 2) data.push(startX, startY);
+        else if (data[data.length - 2] !== startX || data[data.length - 1] !== startY) data.push(startX, startY);
+        started = true;
+      }
+      commands.push(PathCommand.LINE_TO);
+      data.push(x0 + (x1 - x0) * endRatio, y0 + (y1 - y0) * endRatio);
+    }
+    travelled = segmentEnd;
+    if (travelled >= to) break;
+  }
+}
+
+function getRivePolylineLength(contour: readonly number[]): number {
+  let length = 0;
+  for (let index = 2; index < contour.length; index += 2) {
+    length += Math.hypot(contour[index] - contour[index - 2], contour[index + 1] - contour[index - 1]);
+  }
+  return length;
+}
+
+function toRiveDashLength(length: Readonly<RiveDashLength>, contourLength: number): number {
+  return length.percentage ? length.value * contourLength : length.value;
+}
+
+function wrapRiveDashOffset(offset: number, contourLength: number): number {
+  return ((offset % contourLength) + contourLength) % contourLength;
 }
 
 /**
@@ -214,20 +352,47 @@ function toRivePath(record: RivePathRecord): Path {
   return path;
 }
 
-// A trim belongs to the stroke it is a child of, not to the shape.
-function readRiveTrim(artboard: Readonly<RiveArtboardGraph>, paintIndex: number): RiveTrim | null {
+// Trim and dash effects belong to a stroke and apply in the order its component children state.
+function readRiveStrokeEffects(artboard: Readonly<RiveArtboardGraph>, paintIndex: number): RiveStrokeEffect[] {
+  const effects: RiveStrokeEffect[] = [];
   for (let index = paintIndex + 1; index < artboard.objects.length; index++) {
     if (artboard.parentIndices[index] !== paintIndex) continue;
     const object = artboard.objects[index];
-    if (object.typeKey !== RIVE_TRIM_PATH) continue;
-    return {
-      end: readRiveNumber(object, RIVE_TRIM_END, 0),
-      offset: readRiveNumber(object, RIVE_TRIM_OFFSET, 0),
-      sequential: readRiveNumber(object, RIVE_TRIM_MODE, 0) === RIVE_TRIM_SEQUENTIAL,
-      start: readRiveNumber(object, RIVE_TRIM_START, 0),
-    };
+    if (object.typeKey === RIVE_TRIM_PATH) {
+      effects.push({
+        kind: 'trim',
+        trim: {
+          end: readRiveNumber(object, RIVE_TRIM_END, 0),
+          offset: readRiveNumber(object, RIVE_TRIM_OFFSET, 0),
+          sequential: readRiveNumber(object, RIVE_TRIM_MODE, 0) === RIVE_TRIM_SEQUENTIAL,
+          start: readRiveNumber(object, RIVE_TRIM_START, 0),
+        },
+      });
+      continue;
+    }
+    if (object.typeKey !== RIVE_DASH_PATH) continue;
+    const lengths: RiveDashLength[] = [];
+    for (let child = index + 1; child < artboard.objects.length; child++) {
+      if (artboard.parentIndices[child] !== index) continue;
+      const dash = artboard.objects[child];
+      if (dash.typeKey !== RIVE_DASH) continue;
+      lengths.push({
+        percentage: readRiveFlag(dash, RIVE_DASH_LENGTH_IS_PERCENTAGE, false),
+        value: readRiveNumber(dash, RIVE_DASH_LENGTH, 0),
+      });
+    }
+    effects.push({
+      dash: {
+        lengths,
+        offset: {
+          percentage: readRiveFlag(object, RIVE_DASH_OFFSET_IS_PERCENTAGE, false),
+          value: readRiveNumber(object, RIVE_DASH_OFFSET, 0),
+        },
+      },
+      kind: 'dash',
+    });
   }
-  return null;
+  return effects;
 }
 
 function collectRivePaints(artboard: Readonly<RiveArtboardGraph>, shapeIndex: number): RivePaint[] {
@@ -256,11 +421,11 @@ function createRivePaint(
   const paint: RivePaint = {
     alpha: 1,
     color: 0,
+    effects: stroke === null ? [] : readRiveStrokeEffects(artboard, index),
     // Rive states a fill rule of 0 as non-zero and 1 as even-odd.
     fillRule: readRiveNumber(source, RIVE_FILL_RULE, 0) === 1 ? 'evenOdd' : 'nonZero',
     gradient: null,
     stroke,
-    trim: stroke === null ? null : readRiveTrim(artboard, index),
     visible: readRiveFlag(source, RIVE_PAINT_IS_VISIBLE, true),
   };
   applyRivePaintMutator(paint, artboard, index);
@@ -355,6 +520,8 @@ const RIVE_SHAPE_PAINT = 21;
 const RIVE_LINEAR_GRADIENT = 22;
 const RIVE_STROKE = 24;
 const RIVE_TRIM_PATH = 47;
+const RIVE_DASH_PATH = 506;
+const RIVE_DASH = 507;
 
 const RIVE_GRADIENT_STOP_COLOR = 38;
 const RIVE_GRADIENT_STOP_POSITION = 39;
@@ -374,6 +541,10 @@ const RIVE_TRIM_END = 115;
 const RIVE_TRIM_OFFSET = 116;
 const RIVE_TRIM_MODE = 117;
 const RIVE_TRIM_SEQUENTIAL = 1;
+const RIVE_DASH_OFFSET = 690;
+const RIVE_DASH_OFFSET_IS_PERCENTAGE = 691;
+const RIVE_DASH_LENGTH = 692;
+const RIVE_DASH_LENGTH_IS_PERCENTAGE = 693;
 
 // Rive's own stated defaults, which a file relies on by omitting the property.
 const RIVE_DEFAULT_SOLID_COLOR = 0xff747474;
