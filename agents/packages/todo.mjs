@@ -18,6 +18,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { readPackageChurn, sumChurnSince } from './todo-churn.mjs';
 import { itemHeadlines } from './todo-items.mjs';
 import { getStatusDate } from './todo-status-date.mjs';
 import { getLocalPackageTargetStatus } from './todo-target.mjs';
@@ -43,6 +44,10 @@ function section(text, heading) {
   return match ? match[1].trim() : null;
 }
 
+function formatLines(count) {
+  return count >= 1000 ? `${(count / 1000).toFixed(1)}k lines` : `${count} lines`;
+}
+
 function firstProseLine(text, heading) {
   const body = section(text, heading);
   if (!body) return null;
@@ -64,7 +69,7 @@ const deepen = [];
 // Liveness: per-cell staleness signals so the review loop knows which stage each cell needs next.
 const needsDirection = []; // charter is a stub or has never had a direction session
 const needsReview = []; // built package, no review.md
-const needsReReview = []; // status.md entry newer than the review — work landed since the survey
+const reviewed = []; // { name, reviewUpdated } — resolved into needsReReview against git churn below
 const needsAssess = []; // review newer than the assessment — findings not yet sorted
 const openQuestions = []; // { name, count } of charter Open directions awaiting the user
 
@@ -129,10 +134,9 @@ for (const name of cells) {
   const statusPath = join(cellDir, 'status.md');
   const statusText = existsSync(statusPath) ? readFileSync(statusPath, 'utf8') : '';
   const statusDate = statusText ? getStatusDate(statusText, frontMatter(statusText).updated) : null;
-  // Dates are YYYY-MM-DD strings — lexical comparison is date comparison.
-  if (review.updated && statusDate && statusDate > review.updated) {
-    needsReReview.push(`${name} (review ${review.updated} < status ${statusDate})`);
-  }
+  // The status log is a weaker signal than git (it only records work somebody wrote down), so it no
+  // longer decides re-review on its own — it just widens the window the churn scan has to cover.
+  if (review.updated) reviewed.push({ name, reviewUpdated: review.updated, statusDate });
 
   const assessmentPath = join(cellDir, 'assessment.md');
   let directedItems = [];
@@ -155,6 +159,27 @@ for (const name of cells) {
 }
 
 deepen.sort((a, b) => (a.score ?? 101) - (b.score ?? 101) || a.name.localeCompare(b.name));
+
+// One git scan bounded by the oldest review — nothing before that can make any cell stale.
+const oldestReview = reviewed.map((entry) => entry.reviewUpdated).sort()[0];
+const churn = oldestReview === undefined ? new Map() : readPackageChurn(repoRoot, oldestReview);
+// Below this, a delta is dominated by formatting sweeps, import reordering, and mechanical renames
+// rather than behavior a survey would describe differently. Reported as a tail count, not hidden.
+const CHURN_FLOOR = 200;
+const stale = reviewed
+  .map((entry) => ({ ...entry, lines: sumChurnSince(churn.get(entry.name), entry.reviewUpdated) }))
+  .filter((entry) => entry.lines > 0)
+  .sort((a, b) => b.lines - a.lines);
+const needsReReview = stale.filter((entry) => entry.lines >= CHURN_FLOOR);
+const belowFloor = stale.length - needsReReview.length;
+// A cell whose log claims work the churn scan cannot see: the entry may describe another package's
+// code, or the work may never have landed. Worth naming — it is the log and the tree disagreeing.
+const unbackedByChurn = reviewed.filter(
+  (entry) =>
+    entry.statusDate &&
+    entry.statusDate > entry.reviewUpdated &&
+    sumChurnSince(churn.get(entry.name), entry.reviewUpdated) === 0,
+);
 
 const registerText = readFileSync(join(here, 'register.md'), 'utf8');
 const buildQueue = section(registerText, 'Build queue') ?? '_No Build queue section found in register.md._';
@@ -265,16 +290,29 @@ if (noItems.length > 0) {
 
 lines.push('## Liveness — which stage each stale cell needs next');
 lines.push('');
-lines.push('Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
+lines.push('Computed from cell front matter, except re-review, which is ranked by lines committed under `packages/<name>/` since the cell was reviewed — source, tests, and manifest alike, since an export or dependency change dates a survey as surely as a rewrite does. Git is the signal there because the status log only records work somebody wrote down: it named 37 cells when 115 had newer source, and it ranked the heaviest rewrites last. The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
 lines.push('');
 const liveness = [
   ['Needs a direction session (charter stub or never directed)', needsDirection.map((n) => `\`${n}\``)],
   ['Needs a first review (built, no review.md)', needsReview.map((n) => `\`${n}\``)],
-  ['Needs re-review (work landed after the survey)', needsReReview.map((n) => `\`${n}\``)],
+  [
+    `Needs re-review (source changed since the survey — heaviest first, ${CHURN_FLOOR}+ lines)`,
+    needsReReview.map((entry) => `\`${entry.name}\` (${formatLines(entry.lines)} since ${entry.reviewUpdated})`),
+  ],
   ['Needs assess refresh (review newer than assessment)', needsAssess.map((n) => `\`${n}\``)],
 ];
 for (const [label, entries] of liveness) {
   lines.push(`- **${label}:** ${entries.length > 0 ? entries.join(' · ') : '_none_'}`);
+}
+if (belowFloor > 0) {
+  lines.push(
+    `- **Below the re-review floor:** ${belowFloor} more cells have some source change since their review but under ${CHURN_FLOOR} lines — usually a formatting sweep or a mechanical rename. Named here so the cut is visible, not silent.`,
+  );
+}
+if (unbackedByChurn.length > 0) {
+  lines.push(
+    `- **Status log claims work git cannot see:** ${unbackedByChurn.map((entry) => `\`${entry.name}\``).join(' · ')} — the log has an entry after the review but no source changed. Either the entry describes another package's code or the work never landed; worth a look before trusting the cell.`,
+  );
 }
 const questionTotal = openQuestions.reduce((sum, q) => sum + q.count, 0);
 const heaviest = openQuestions
