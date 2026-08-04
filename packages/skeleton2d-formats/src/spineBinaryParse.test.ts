@@ -44,15 +44,29 @@ describe('parseSpineSkeletonBinary', () => {
     expect(setup.bones[1].rotation).toBeCloseTo(19.5, 4); // setup left intact
   });
 
-  it('widens a PER-AXIS timeline, leaving the untouched axis at its setup value', () => {
-    // Ordinal 2 is translateX: one value per keyframe, driving only x. y must receive the identity delta,
-    // not garbage — a two-component path cannot express "x only" any other way.
+  it('drives ONE axis from a per-axis timeline, leaving the other at its setup value', () => {
+    // Ordinal 2 is translateX: one value per keyframe, emitted onto the TranslationX path so it drives x
+    // and never writes y at all. (It used to widen to the paired path with an identity in y, which read
+    // the same here but destroyed a sibling translateY channel — see the two-axis test below.)
     const result = parseSpineSkeletonBinary(buildSpineBinary({ boneTimelineType: 2 }))!;
     const setup = result.skeleton;
     const pose = cloneSkeleton2D(setup);
     applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
     expect(pose.bones[1].x).toBeCloseTo(1.25 + 90, 4); // setup x + delta
     expect(pose.bones[1].y).toBeCloseTo(247.5, 4); // setup y, untouched
+  });
+
+  it('keeps BOTH axes when one bone carries translateX AND translateY', () => {
+    // The defect the per-axis paths fixed. Both used to widen onto the paired Translation path, and since
+    // each composes onto SETUP the second wrote the first's axis back — a silent, total loss of one axis.
+    const result = parseSpineSkeletonBinary(buildSpineBinary({ boneTimelineType: 2, secondBoneTimelineType: 3 }))!;
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+
+    expect(pose.bones[1].x).toBeCloseTo(1.25 + 90, 4);
+    expect(pose.bones[1].y).toBeCloseTo(247.5 + 40, 4);
   });
 
   it('drives BOTH components from a combined translate timeline', () => {
@@ -207,6 +221,7 @@ function buildSpineBinary(
     weightedMesh?: boolean;
     animations?: boolean;
     boneTimelineType?: number;
+    secondBoneTimelineType?: number;
     bezier?: boolean;
   } = {},
 ): Uint8Array {
@@ -310,7 +325,7 @@ function buildSpineBinary(
     writeVarint(out, 0); // slot timelines
     writeVarint(out, 1); // bone timelines
     writeVarint(out, 1); // bone index
-    writeVarint(out, 1); // timelines on it
+    writeVarint(out, options.secondBoneTimelineType === undefined ? 1 : 2); // timelines on it
     out.push(options.boneTimelineType ?? 0); // 0 = rotate
     writeVarint(out, 2); // frame count
     writeVarint(out, options.bezier ? 1 : 0); // bezier count
@@ -328,6 +343,18 @@ function buildSpineBinary(
         writeFloat(out, 90); // cy2
       }
     } else {
+      out.push(0); // CURVE_LINEAR
+    }
+    // A SECOND timeline on the same bone, written with its own keyframes — the shape that used to lose an
+    // axis, since two per-axis timelines both widened onto the same paired path.
+    if (options.secondBoneTimelineType !== undefined) {
+      out.push(options.secondBoneTimelineType);
+      writeVarint(out, 2); // frame count
+      writeVarint(out, 0); // bezier count
+      writeFloat(out, 0); // time
+      writeFloat(out, 0);
+      writeFloat(out, 1); // next time
+      writeFloat(out, 40);
       out.push(0); // CURVE_LINEAR
     }
     writeVarint(out, 0); // ik timelines

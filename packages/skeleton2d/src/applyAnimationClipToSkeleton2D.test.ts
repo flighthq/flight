@@ -114,6 +114,78 @@ describe('applyAnimationClipToSkeleton2D', () => {
   });
 });
 
+describe('applyAnimationClipToSkeleton2D per-axis bone channels', () => {
+  it('keeps BOTH axes when a bone carries independently-timed X and Y channels', () => {
+    // The defect these paths exist to fix. As two PAIRED channels each composing onto setup, the second
+    // wrote x back to setup and the 7 was silently lost — measured as x=0, y=5.
+    const setup = createSkeleton2D([makeBone()]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({ components: 1, times: [0], values: [7] }),
+        createSkeleton2DBoneAnimationTarget(0, Skeleton2DAnimationPath.TranslationX),
+      ),
+      createAnimationChannel(
+        createAnimationTrack({ components: 1, times: [0], values: [5] }),
+        createSkeleton2DBoneAnimationTarget(0, Skeleton2DAnimationPath.TranslationY),
+      ),
+    ]);
+
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+
+    expect(pose.bones[0].x).toBeCloseTo(7, 5);
+    expect(pose.bones[0].y).toBeCloseTo(5, 5);
+  });
+
+  it('leaves the untouched axis at its setup value rather than at an identity', () => {
+    const setup = createSkeleton2D([makeBone({ x: 3, y: 11 })]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({ components: 1, times: [0], values: [4] }),
+        createSkeleton2DBoneAnimationTarget(0, Skeleton2DAnimationPath.TranslationX),
+      ),
+    ]);
+
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+
+    expect(pose.bones[0].x).toBeCloseTo(7, 5);
+    expect(pose.bones[0].y).toBe(11);
+  });
+
+  it('composes scale per axis by MULTIPLYING, matching the paired path', () => {
+    const setup = createSkeleton2D([makeBone({ scaleX: 2, scaleY: 3 })]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({ components: 1, times: [0], values: [4] }),
+        createSkeleton2DBoneAnimationTarget(0, Skeleton2DAnimationPath.ScaleY),
+      ),
+    ]);
+
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+
+    expect(pose.bones[0].scaleX).toBe(2);
+    expect(pose.bones[0].scaleY).toBeCloseTo(12, 5);
+  });
+
+  it('composes shear per axis by adding', () => {
+    const setup = createSkeleton2D([makeBone({ shearX: 5, shearY: 6 })]);
+    const pose = cloneSkeleton2D(setup);
+    const clip = createAnimationClip([
+      createAnimationChannel(
+        createAnimationTrack({ components: 1, times: [0], values: [10] }),
+        createSkeleton2DBoneAnimationTarget(0, Skeleton2DAnimationPath.ShearX),
+      ),
+    ]);
+
+    applyAnimationClipToSkeleton2D(clip, setup, pose, 0);
+
+    expect(pose.bones[0].shearX).toBeCloseTo(15, 5);
+    expect(pose.bones[0].shearY).toBe(6);
+  });
+});
+
 describe('applyAnimationClipToSkeleton2D slot channels', () => {
   it('WRITES an absolute slot colour rather than composing it onto the setup colour', () => {
     // Composing would double-apply the tint; Spine and DragonBones both author colour absolutely.
