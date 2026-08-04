@@ -42,6 +42,7 @@
     "capture:functional:watch": "tsx ./scripts/watch-capture.ts --tool=functional",
     "capture:reference": "tsx ./scripts/reference-tool.ts capture",
     "check": "tsx ./scripts/check.ts",
+    "check:fingerprint-source-hashes": "tsx ./scripts/check-fingerprint-source-hashes.ts",
     "check:package-dist-orphans": "tsx ./scripts/check-package-dist-orphans.ts",
     "clean": "npm run clean:build",
     "clean:build": "tsx ./scripts/clean-package-dist.ts && tsc -b tsconfig.build.json --clean",

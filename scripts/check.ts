@@ -65,6 +65,7 @@ if (!scoped) {
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
+  add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
 }
 
 // Gates are independent and still all run, but a small worker pool overlaps their repeated repository
