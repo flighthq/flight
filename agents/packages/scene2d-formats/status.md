@@ -311,8 +311,8 @@ table is only a *supplement* and a typical file ships an empty one. A reader nee
 own width table, and that table must include **alternate** keys — `Node.x` is key 13 today and was 9,
 and omitting alternates failed 11 of the first 40 files on that key alone.
 
-Verified against 64 real editor-authored files, fetched on demand and not committed. All 64 decode:
-82,543 core objects, 37,595 components, no unresolved parent.
+Verified against 64 real editor-authored files fetched on demand from Rive's Android test assets and
+never committed. All 64 decode: 82,543 core objects, 37,595 components, no unresolved parent.
 
 ## 2026-08-02 — Lottie maturity audit, and the fixes it produced
 

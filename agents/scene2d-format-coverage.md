@@ -29,11 +29,9 @@ came through far better than Lottie: zero crashes, zero non-finite transform val
 document produced geometry on the first run. One real defect surfaced, and one gap that belongs to a
 neighbouring package; both are recorded below.
 
-Neither corpus is committed; both are fetched on demand, for the licensing reason above.
+Neither corpus is committed; both are fetched on demand.
 
-**Rive is verified against 64 real editor-authored files**, fetched on demand and not committed. The
-corpus runs are reproducible rather than standing in CI and have repeatedly caught what fixtures could
-not — see the Rive section.
+**Rive is verified against 64 real editor-authored files**, fetched on demand from Rive's own Android runtime test assets and **never committed**. The suite ships synthetic fixtures only, so corpus runs are reproducible on demand rather than standing in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
 
 **No codec has a functional render scene**, so nothing under `functional/scenes` verifies any of the
 three at the pixel level on any backend. That is the largest remaining gap for the cell.
