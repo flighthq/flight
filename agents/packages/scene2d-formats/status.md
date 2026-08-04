@@ -1,12 +1,37 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-03
-by: builder
+updated: 2026-08-04
+by: builder3
 ---
 
 # scene2d-formats — Status Log
 
 > Append-only handoff log, newest entry on top.
+
+## 2026-08-04 — Rive authored layout descriptors
+
+Rive artboard import now returns one `RiveLayoutImport` per independent authored layout root: a
+parent-before-child `LayoutTree` plus display targets in matching index order. The importer does not
+allocate intrinsic or output buffers, run layout, or mutate display transforms; the caller measures
+the targets, supplies `@flighthq/layout`'s intrinsic pairs, owns resolution, and chooses the later
+rectangle-to-node binding.
+
+The translation preserves Rive's own two-pass contract: a `LayoutComponentStyle` supplies the node's
+`containerStyle`, while its sizing supplies the `itemStyle` interpreted by the parent. A
+`LayoutParticipant` contributes sizing to its display host rather than a phantom node. Flex covers
+direction/RTL/reversal, alignment, wrap, point gap and insets, fixed basis, fill fractions, and cross
+stretch. Grid covers fixed/fraction/auto template tracks and placement/spans; stack becomes one
+overlapping 1×1 grid cell. Focused unit tests cover the role split, caller-intrinsic boundary,
+independent roots, flex/grid/stack, unresolved style references, and the full `.riv` import wiring.
+
+Property names, keys, defaults, runtime flags, enums, and behavior were derived from canonical
+`rive-app/rive-runtime` revision `8efe18ec7b52a02139844ffe71438c00de13037e`: the layout definitions
+under `dev/defs`, `include/rive/layout/layout_enums.hpp`, `src/layout_component.cpp`, and the matching
+`src/layout/*.cpp` appliers. The checkout was temporary and no fetched source is committed. Coverage
+records the unsupported Yoga behavior, notably margins/absolute offsets, percentages and min/max,
+wrapped-line packing, advanced grid tracks/implicit growth/cell alignment, and live animated/bound
+descriptor refresh. The old flex/alignment fields marked `runtime:false` upstream are not treated as
+runtime gaps.
 
 ## 2026-08-03 — Rive: consolidated insight record
 

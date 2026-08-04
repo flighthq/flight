@@ -27,6 +27,10 @@ const OPACITY = 18;
 const PARENT_ID = 5;
 const POINTS_PATH = 16;
 const BLEND_MODE = 23;
+const LAYOUT_COMPONENT_STYLE = 420;
+const LAYOUT_PARTICIPANT = 1066;
+const LAYOUT_STYLE_ID = 494;
+const LAYOUT_FLEX_DIRECTION = 598;
 
 describe('createScene2DFromRiveDocument', () => {
   it('returns no artboards for bytes that are not a Rive file', () => {
@@ -244,6 +248,25 @@ describe('createScene2DFromRiveDocument', () => {
 
     expect(getNodeChildCount(root)).toBe(1);
     expect((getNodeChildAt(root, 0) as Node2D).name).toBe('orphaned');
+  });
+
+  it('returns authored layout descriptors alongside their display targets', () => {
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 100), float(HEIGHT, 50), uint(LAYOUT_STYLE_ID, 1)]),
+        object(LAYOUT_COMPONENT_STYLE, [uint(PARENT_ID, 0), uint(LAYOUT_FLEX_DIRECTION, 2)]),
+        object(SHAPE, [uint(PARENT_ID, 0), text(NAME, 'item')]),
+        object(LAYOUT_PARTICIPANT, [uint(PARENT_ID, 2)]),
+      ]),
+    );
+    const artboard = result.artboards[0];
+
+    expect(artboard.layouts).toHaveLength(1);
+    expect(artboard.layouts[0].targets).toEqual([artboard.root, getNodeChildAt(artboard.root, 0)]);
+    expect(artboard.layouts[0].tree.nodes).toMatchObject([
+      { containerStyle: { direction: 'row' }, itemStyle: null, parentIndex: -1 },
+      { containerStyle: null, parentIndex: 0 },
+    ]);
   });
 });
 

@@ -2,6 +2,7 @@ import type { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { AnimationClip } from './AnimationClip';
 import type { DisplayObject } from './DisplayObject';
 import type { ImageResourceReference } from './ImageResourceReference';
+import type { LayoutTree } from './Layout';
 import type { Scene2DSlotReference } from './Scene2DDocument';
 import type { PathWinding } from './ShapeCommand';
 
@@ -191,6 +192,20 @@ export interface RiveAnimationClip {
 }
 
 /**
+ * One independent authored-layout root inside an artboard.
+ *
+ * `tree.nodes[index]` describes `targets[index]`. The importer deliberately supplies neither an
+ * intrinsic-size buffer nor resolved rectangles: the caller measures each target's natural width and
+ * height, fills the two-number-per-target buffer accepted by `@flighthq/layout`, and owns the output
+ * buffer and the later rectangle-to-node binding. Several roots are possible when ordinary Rive nodes
+ * separate otherwise independent LayoutComponents.
+ */
+export interface RiveLayoutImport {
+  targets: DisplayObject[];
+  tree: LayoutTree;
+}
+
+/**
  * One imported artboard. A `.riv` holds several, so import returns them side by side rather than
  * choosing one; the artboard's own size travels with its subtree because nothing in the display tree
  * records it.
@@ -202,6 +217,8 @@ export interface RiveArtboardImport {
   /** The artboard's state machines, described as data. Nothing here is interpreted or driven. */
   stateMachines: RiveStateMachineDescriptor[];
   height: number;
+  /** Authored layout roots, each paired index-for-index with the display nodes it arranges. */
+  layouts: RiveLayoutImport[];
   name: string;
   root: DisplayObject;
   width: number;

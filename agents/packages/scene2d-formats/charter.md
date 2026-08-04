@@ -104,6 +104,12 @@ transitions) is a *runtime interpretation*, not a parse — it stays a distinct 
 node/sim split, à la `particles`/`particleemitter`); this codec emits the state-machine *descriptor* as
 data only.
 
+Authored layout follows the same static-data boundary. The codec translates each independent Rive
+layout root into a `LayoutTree` plus index-matched display targets; it neither measures intrinsic
+content nor runs layout nor binds resolved rectangles onto nodes. Those remain explicit caller steps
+through `@flighthq/layout`. A node's own container style and its parent-interpreted item style stay
+separate, including when the node is itself a nested `LayoutComponent`.
+
 **Rig deformation has no home yet, and this scope originally named the wrong one.** It read
 "deformable meshes + bones/skinning (`skeleton2d` — 2D mesh warp / `MeshAttachment2D`)", which the
 2026-08-03 measurement disproved: Rive skins **vector paths**, not textured meshes. 251 of 263 skins
@@ -157,6 +163,11 @@ direction below, and the 3D `mesh`/`skeleton3d` remain excluded either way. Deta
   front-end and a named-graph *output mode* (emit a `Scene2DDocument` with slots + linkage instead of a
   realized tree). No conflict with the North star: the document is static plain data, it only defers
   *when* nodes realize. User-directed 2026-07-25 (named-2D-node-graph design session).
+- **[2026-08-04] Rive layout is a static codec projection.** `RiveArtboardImport.layouts` pairs each
+  independent parent-before-child `LayoutTree` with its display targets. The importer preserves the
+  Rive runtime's container/item role split and caller-owned intrinsic-size boundary; resolution and
+  display-node binding do not enter this package. Unsupported Yoga behavior is maintained as project
+  coverage rather than emitted as one diagnostic per idiomatic asset.
 
 ## Open directions
 
