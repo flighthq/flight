@@ -7,6 +7,7 @@ import {
   findMapStatusClaims,
   findMarkdownLinkTargets,
   findOrphanDocs,
+  findReachableDocs,
   getDocBudgetStatus,
   isAuthorityBearingDoc,
   reportDocBudget,
@@ -162,6 +163,41 @@ describe('findOrphanDocs', () => {
 
   it('allows the generated work index, which is a view over cells and never committed', () => {
     expect(findOrphanDocs(['agents/packages/TODO.md'], new Set())).toEqual([]);
+  });
+});
+
+// A MINIMAL PAIR, and deliberately so: both halves use the same document, the same content, and exactly
+// one pointer. The ONLY difference is whether the file doing the pointing bears authority. A rule pinned
+// by a single positive example teaches whatever incidental feature happens to separate it from the
+// failures — pointer count, filename, directory — and that unstated discriminator is what misbehaves
+// later. Here nothing else can vary, so the pair can only be pinning the thing the rule is about.
+describe('findReachableDocs', () => {
+  const DOC = 'agents/packages/skeleton2d/rig-model.md';
+  const BODY = 'See [the rig model](rig-model.md).';
+  const FRONT = ['---', 'package: x', 'rigModel: ./rig-model.md', '---'].join('\n');
+
+  it('does NOT reach a doc pointed at only from status.md — the continuity layer is not a path', () => {
+    const reached = findReachableDocs([{ path: 'agents/packages/skeleton2d/status.md', text: BODY }]);
+    expect(reached.has(DOC)).toBe(false);
+    expect(findOrphanDocs([DOC], reached)).toEqual([DOC]);
+  });
+
+  it('DOES reach the same doc, same content, one pointer, once the charter registers it', () => {
+    const reached = findReachableDocs([{ path: 'agents/packages/skeleton2d/charter.md', text: FRONT }]);
+    expect(reached.has(DOC)).toBe(true);
+    expect(findOrphanDocs([DOC], reached)).toEqual([]);
+  });
+
+  it('reaches it from a charter body link too, so the fix is not forced into front matter alone', () => {
+    const reached = findReachableDocs([{ path: 'agents/packages/skeleton2d/charter.md', text: BODY }]);
+    expect(reached.has(DOC)).toBe(true);
+  });
+
+  it('resolves a parent-relative target, so a cross-directory pointer still counts', () => {
+    const reached = findReachableDocs([
+      { path: 'agents/conventions/index.md', text: 'See [commands](../commands.md).' },
+    ]);
+    expect(reached.has('agents/commands.md')).toBe(true);
   });
 });
 

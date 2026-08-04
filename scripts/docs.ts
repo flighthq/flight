@@ -121,6 +121,26 @@ export function findOrphanDocs(docs: readonly string[], linked: ReadonlySet<stri
   return docs.filter((doc) => !linked.has(doc) && !ORPHAN_ALLOW.some((entry) => entry.match(doc)));
 }
 
+// Which docs are reached along a path a reader would actually travel. Pure, and taking its sources as
+// values rather than reading the filesystem, so the authority rule can be pinned by a MINIMAL PAIR in
+// the test file — the same document, the same content, the same single pointer, differing only in
+// whether the pointing file bears authority. That pairing is the whole specification: a rule fixed by
+// one positive example teaches whatever incidental feature happens to separate it from the failures,
+// and the discriminator nobody wrote down is the one that later behaves wrongly.
+//
+// Paths are repo-relative on both sides, so a target resolves by joining it to its source's directory —
+// `..` included. No repo root is needed, which is precisely what makes it testable.
+export function findReachableDocs(sources: readonly Readonly<{ path: string; text: string }>[]): ReadonlySet<string> {
+  const reached = new Set<string>();
+  for (const source of sources) {
+    if (!isAuthorityBearingDoc(source.path)) continue;
+    for (const target of [...findMarkdownLinkTargets(source.text), ...findFrontMatterPointerTargets(source.text)]) {
+      reached.add(join(dirname(source.path), target));
+    }
+  }
+  return reached;
+}
+
 export function getDocBudgetStatus(length: number, limit: number): DocBudgetStatus {
   if (length > limit) return 'over';
   return length >= limit - limit * DOC_BUDGET_WARN_FRACTION ? 'near' : 'ok';
@@ -318,15 +338,9 @@ function checkOrphans(): void {
   const corpus = [join(REPO_ROOT, 'AGENTS.md'), ...walkMarkdown(join(REPO_ROOT, 'agents'))];
   if (existsSync(SKILLS_DIR)) corpus.push(...walkMarkdown(SKILLS_DIR));
 
-  const linked = new Set<string>();
-  for (const file of corpus) {
-    const rel = relative(REPO_ROOT, file);
-    if (!isAuthorityBearingDoc(rel)) continue;
-    const text = readFileSync(file, 'utf8');
-    for (const target of [...findMarkdownLinkTargets(text), ...findFrontMatterPointerTargets(text)]) {
-      linked.add(relative(REPO_ROOT, resolve(dirname(file), target)));
-    }
-  }
+  const linked = findReachableDocs(
+    corpus.map((file) => ({ path: relative(REPO_ROOT, file), text: readFileSync(file, 'utf8') })),
+  );
 
   const docs = walkMarkdown(join(REPO_ROOT, 'agents')).map((file) => relative(REPO_ROOT, file));
   for (const orphan of findOrphanDocs(docs, linked)) {
