@@ -12,6 +12,7 @@
     { "path": "../animation" },
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../math" },
     { "path": "../path" },
     { "path": "../types" }

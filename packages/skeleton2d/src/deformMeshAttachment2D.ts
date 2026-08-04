@@ -1,5 +1,7 @@
 import type { MeshAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
+import { reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards';
+
 // 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
 const MATRIX_STRIDE = 6;
 
@@ -41,6 +43,9 @@ export function deformSkeleton2DMeshAttachment(
     const inf = skin.influences;
     // Hoisted out of the loop: a rig with no deform timeline pays one test for the whole attachment.
     const offsets = deform !== null && deform.length * 2 >= inf.length ? deform : null;
+    if (deform !== null && offsets === null) {
+      reportSkeleton2DDeformLengthMismatch('MeshAttachment2D', deform.length, inf.length / 2);
+    }
     let vi = 0; // influence-stream cursor (stride 4: boneIndex, localX, localY, weight)
     let di = 0; // deform cursor (stride 2, one pair per influence)
     let oi = 0; // output cursor (stride 2)
@@ -69,6 +74,9 @@ export function deformSkeleton2DMeshAttachment(
   const vertices = attachment.vertices;
   if (vertices === null || vertices === undefined) return;
   const offsets = deform !== null && deform.length >= vertices.length ? deform : null;
+  if (deform !== null && offsets === null) {
+    reportSkeleton2DDeformLengthMismatch('MeshAttachment2D', deform.length, vertices.length);
+  }
   const b = boneIndex * MATRIX_STRIDE;
   const a = world[b];
   const bb = world[b + 1];

@@ -104,6 +104,29 @@ since an exported module is more likely to be retained than a private one — an
 package.** The proposal to split them out rested on the premise that importing the path kernel would tax
 every rig that never uses one. It does not.
 
+### The dependency invariant, in its checkable form
+
+`@flighthq/skeleton2d` **does** depend on `@flighthq/path`, and that is correct — a path constraint
+positions bones along a path, which **queries** geometry (`getPathLength`, `getPathPositionAtDistance`),
+and querying needs the kernel.
+
+**Skinning a path does not.** `deformSkeleton2DPathAttachment` and the whole attachment path **write**
+coordinates, so they need the `Path` **type** — free, from `@flighthq/types` — and no path function. If a
+change makes the deformer import from `@flighthq/path`, that is a design failure to report, not a
+dependency to add.
+
+**Query-vs-write decides placement**, and it is the durable half. What changed is only how to check it:
+an earlier version of this record verified the rule by observing that the string `@flighthq/path` appeared
+nowhere in `packages/skeleton2d` except a comment. **That check is now obsolete and would mislead** — the
+edge is real and legitimate. The checkable form is narrower: the import must appear only in constraint
+solvers, never in a deformer.
+
+    grep -l "from '@flighthq/path" packages/skeleton2d/src/*.ts   # expect pathConstraint2D.ts, nothing else
+
+Match the **import form**, not the bare package name: `deformPathAttachment2D.ts` mentions the package in a
+comment explaining why it does not import it, and a looser grep flags that comment as a violation. A check
+that cries wolf on its own documentation gets ignored, which is worse than not having one.
+
 The honest limit, which the numbers above do not cover: this measures what the edge costs a consumer that
 **never** imports path constraints. It says nothing about what they cost a consumer that **does** — that
 cost is real, it is the path kernel, and it is the honest price of the feature rather than a tax on
