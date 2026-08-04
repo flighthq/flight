@@ -46,9 +46,11 @@ It is not a substitute for `clean:build`; the action is different.
 `check:package-dist-orphans` is the standing precommit detector for clone-specific residue: it fails
 when an immediate `packages/*` directory has `dist` but no `package.json`. Live package distributions
 are generated noise — `rg` ignores them through `.gitignore`, while plain recursive `grep` does not —
-but an orphaned distribution can masquerade as an API that still exists. The detector therefore gates
-the misleading case without joining `npm run check`, which stays a source-quality sweep independent of
-ignored clone state.
+but an orphaned distribution can masquerade as an API that still exists. This is not only disk hygiene:
+plain `grep -r` can surface declarations for a removed package and misdirect work toward an absent API.
+Tool choice removes that search noise; only pruning removes the lie. The detector gates this misleading
+case without joining `npm run check`, which stays a source-quality sweep independent of ignored clone
+state.
 
 The precommit detector reports the paths and asks the user to run `npm run clean`; it never mutates the
 tree itself. Detection is based only on directory and manifest existence, never timestamps. Explicit
@@ -58,8 +60,16 @@ TypeScript cleans the current project graph.
 The test is deliberately one line of evidence: `packages/<name>/dist` is a directory and its sibling
 `package.json` does not exist. Neither apparent substitute proves the tree clean. `tsc -b --clean`
 walks only the current project graph, so it can never reach output for a package renamed out of that
-graph. A directory mtime records changes to its immediate entries, not whether an existing file below
-it contains stale output, so it is no reassurance in the stale-file case.
+graph. Running `scripts/clean-package-dist.ts` from that removed package cannot help either, because
+package-local cleanup requires a manifest; the root filesystem sweep is what reaches every directory.
+A directory mtime records changes to its entry list, not writes to existing file contents, so a fresh
+directory date from a rebuild is no reassurance that an obsolete declaration disappeared.
+
+Keep the evidence boundary honest. The investigation found 22 orphan distributions in one clone and
+none in three others, so this is clone residue rather than a universal checkout defect. Cleaning stale
+distributions changed no gate outcome on three independent trees. The detector exists because graph-only
+cleanup cannot truthfully claim to remove renamed-away output and that output can pollute searches, not
+because stale distributions were shown to break a build or test.
 
 ## Read vs write: `:baseline`
 
