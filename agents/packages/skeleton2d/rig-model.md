@@ -88,14 +88,21 @@ memory note, not an architectural one.
 regardless of what the manifest says. **A dependency edge therefore costs a consumer nothing unless that
 consumer actually imports the module behind it.**
 
-This was measured, not reasoned. Two runs, gzip bytes via `npm run size report=json`:
+This was measured, not reasoned. **The load-bearing quantity is the DIFFERENCE, which is zero** — two
+runs of the same consumer, with and without the path module and its package edge, via
+`npm run size report=json`:
 
-| Consumer | Without the path edge | With it |
-| --- | --- | --- |
-| Rig user importing skeleton2d, nothing path-related | 2051 | 2051 |
-| Rig user registering only the IK solver | 2768 | 2768 |
+| Consumer | Without the path edge | With it | Difference |
+| --- | --- | --- | --- |
+| Rig user importing skeleton2d, nothing path-related | 2051 | 2051 | **0** |
+| Rig user registering only the IK solver (at `e2b25b175`) | 2768 | 2768 | **0** |
+| The same IK-only consumer re-measured at `9626bfa75` | 2825 | 2825 | **0** |
 
-Byte-identical both times. The first run used a stub module that called the three path query functions;
+**Read the difference column, not the absolutes.** The absolute size of a rig bundle moves whenever
+anything it imports changes — the third row is the second one re-run after the guard seam became
+reachable through the animation binder, +57 bytes that have nothing to do with paths. The difference is
+what the rule rests on and it has stayed zero across that change. An absolute recorded here without a
+commit beside it is a number that quietly stops being true; that is why each row names one. The first run used a stub module that called the three path query functions;
 the second used the real `pathConstraint2D.ts` solver, so the result is not an artifact of the probe being
 small. The probe module was also exported through the package's `contract` lane — the **harder** case,
 since an exported module is more likely to be retained than a private one — and it still shook out.
