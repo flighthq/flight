@@ -1,3 +1,4 @@
+import { clipRegionContainsPoint } from '@flighthq/clip/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
@@ -95,7 +96,7 @@ describe('applyRiveClipping', () => {
     expect(clip!.contours![0].slice(0, 2)).toEqual([60, 0]);
   });
 
-  it('carries the fill rule the clipping shape states', () => {
+  it('applies the fill rule the clipping shape states', () => {
     const scene = build([
       object(ARTBOARD, {}),
       object(SHAPE, {}),
@@ -104,7 +105,12 @@ describe('applyRiveClipping', () => {
     ]);
     scene.parents = [-1, 0, 1, 0];
 
-    expect(run(scene, { 3: [square()] })!.winding).toBe('evenOdd');
+    const clip = run(scene, { 3: [rectangle(0, 0, 10, 10), rectangle(0, 0, 10, 10)] })!;
+
+    // The duplicate contours cancel under even-odd. The resolved clip is canonically non-zero, so
+    // filled-region behavior—not retention of the source tag—is the semantic contract.
+    expect(clip.winding).toBe('nonZero');
+    expect(clipRegionContainsPoint(clip, 5, 5)).toBe(false);
   });
 
   it('ignores a clipping shape the file marks invisible', () => {
@@ -128,22 +134,64 @@ describe('applyRiveClipping', () => {
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.unresolved-clipping-source']);
   });
 
-  // Rive intersects several clips on one node; Flight carries a single region, and intersecting
-  // contour sets is a path-boolean job rather than something to fake by keeping the last one.
-  it('crumbs a second clipping shape on the same node instead of replacing the first', () => {
+  it('intersects several clipping shapes on one node', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = build([
       object(ARTBOARD, {}),
       object(SHAPE, {}),
       object(CLIPPING_SHAPE, { [SOURCE_ID]: 4 }),
-      object(CLIPPING_SHAPE, { [SOURCE_ID]: 4 }),
-      object(SHAPE, { [X]: 100 }),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 5 }),
+      object(SHAPE, {}),
+      object(SHAPE, {}),
     ]);
-    scene.parents = [-1, 0, 1, 1, 0];
-    const clip = run(scene, { 4: [square()] }, diagnostics);
+    scene.parents = [-1, 0, 1, 1, 0, 0];
+    const clip = run(scene, { 4: [rectangle(0, 0, 10, 10)], 5: [rectangle(5, 0, 10, 10)] }, diagnostics)!;
 
-    expect(clip).not.toBeNull();
-    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.multiple-clipping-shapes']);
+    expect(clipRegionContainsPoint(clip, 7, 5)).toBe(true);
+    expect(clipRegionContainsPoint(clip, 2, 5)).toBe(false);
+    expect(clipRegionContainsPoint(clip, 12, 5)).toBe(false);
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('intersects the complete contour set rather than one contour from each shape', () => {
+    const scene = build([
+      object(ARTBOARD, {}),
+      object(SHAPE, {}),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 4 }),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 5 }),
+      object(SHAPE, {}),
+      object(SHAPE, {}),
+    ]);
+    scene.parents = [-1, 0, 1, 1, 0, 0];
+    const clip = run(scene, {
+      4: [rectangle(0, 0, 10, 10), rectangle(20, 0, 10, 10)],
+      5: [rectangle(5, -5, 20, 20)],
+    })!;
+
+    expect(clip.contours).toHaveLength(2);
+    expect(clipRegionContainsPoint(clip, 7, 5)).toBe(true);
+    expect(clipRegionContainsPoint(clip, 22, 5)).toBe(true);
+    expect(clipRegionContainsPoint(clip, 15, 5)).toBe(false);
+  });
+
+  it('resolves each clipping shape under its own fill rule before intersecting', () => {
+    const scene = build([
+      object(ARTBOARD, {}),
+      object(SHAPE, {}),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 4, [FILL_RULE]: 1 }),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 5 }),
+      object(SHAPE, {}),
+      object(SHAPE, {}),
+    ]);
+    scene.parents = [-1, 0, 1, 1, 0, 0];
+    const duplicate = rectangle(0, 0, 10, 10);
+    const clip = run(scene, {
+      // Even-odd removes the twice-covered first operand; the second remains ordinary non-zero.
+      4: [duplicate, rectangle(0, 0, 10, 10)],
+      5: [rectangle(0, 0, 10, 10)],
+    })!;
+
+    expect(clipRegionContainsPoint(clip, 5, 5)).toBe(false);
   });
 });
 
@@ -182,6 +230,15 @@ function square(): RivePathRecord {
   return {
     commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO],
     data: [0, 0, 10, 0, 10, 10],
+    pathIndex: 0,
+    winding: 'nonZero',
+  };
+}
+
+function rectangle(x: number, y: number, width: number, height: number): RivePathRecord {
+  return {
+    commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+    data: [x, y, x + width, y, x + width, y + height, x, y + height],
     pathIndex: 0,
     winding: 'nonZero',
   };

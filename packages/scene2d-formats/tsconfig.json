@@ -21,6 +21,7 @@
     { "path": "../math" },
     { "path": "../node" },
     { "path": "../path" },
+    { "path": "../path-boolean" },
     { "path": "../path-formats" },
     { "path": "../shape" },
     { "path": "../text" },
