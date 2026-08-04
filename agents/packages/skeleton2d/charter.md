@@ -6,6 +6,7 @@ lastDirection: 2026-07-15
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+rigModel: ./rig-model.md
 ---
 
 # skeleton2d — Charter
