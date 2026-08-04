@@ -233,12 +233,23 @@ The known gaps between this and pixels a player would accept are recorded here r
   never attached implicitly to imported nodes.
 
 - WebGPU's tessellated solid-shape path does not consume `RenderProxy.colorScaleBias` or
-  `RenderProxy.colorMatrix`. An SWF placement colour transform is therefore realized by the registered
-  quad/raster colour-adjustment fold but not when that shape takes `drawWgpuShapeMeshes`; the WebGL
-  solid-shape path has dedicated adjustment shaders, while WebGPU currently uploads only the
-  node-alpha-premultiplied solid colour. This is a `scene2d-wgpu` capability gap, not something the SWF
-  parser can repair, and it constrains any future decision about moving CXFORM alpha multiply/add between
-  node alpha and the adjustment representation.
+  `RenderProxy.colorMatrix`. The default route tries the mesh first in
+  `packages/scene2d-wgpu/src/wgpuShape.ts`; `packages/scene2d-wgpu/src/wgpuShapeMesh.ts` uploads only the
+  node-alpha-premultiplied solid colour, while
+  `packages/scene2d-wgpu/src/wgpuColorAdjustmentMaterialFeature.ts` serves the quad batch instead. The
+  functional evidence in `functional/scenes/swf-alpha-transform.ts` proves the affected node is imported
+  from a SWF placement, carries the intended green colour-scale transform on its render proxy, and ends
+  the WebGPU draw with one mesh and no raster surface while its white source pixel stays white; WebGL's
+  dedicated solid-shape adjustment shader makes the same authored pixel green. This is a standalone
+  `scene2d-wgpu` capability gap, not something the SWF parser can repair. Evidence commit subject:
+  `test(swf): capture alpha transform backend evidence`.
+
+- The same `functional/scenes/swf-alpha-transform.ts` evidence records the alpha behavior while the SWF
+  representation decision is held: an authored 0.5 alpha multiplier reaches `node.alpha` and blends a
+  red solid halfway over blue on DOM, Canvas, WebGL, and WebGPU; DOM additionally applies CSS opacity
+  `0.5` to the imported shape canvas. An authored zero multiplier plus a non-zero alpha add leaves only
+  the blue backdrop on all four because the render walk culls the zero-alpha node before the add can
+  contribute. This is measurement of current behavior, not approval of that representation.
 
 - `DefineBitsJPEG3`/`4` alpha is **dropped**. The tag reader ends the colour stream at the alpha offset and
   discards the zlib-compressed alpha block after it, so a transparent JPEG imports fully opaque. Rejoining
@@ -258,12 +269,11 @@ The known gaps between this and pixels a player would accept are recorded here r
   package resolves itself (lossless), and spares the ones that decode to an `Image` (JPEG/PNG/GIF). The fix
   is a `CanvasRenderState` over each backend's scratch rasterization canvas with the texture resolvers
   registered, in `scene2d-gl`, `scene2d-wgpu`, and `scene2d-dom` — out of this cell's scope.
-- **Nothing here has been rasterized.** There is no SWF example and no functional target, so every claim
-  about what a frame looks like rests on decoded command streams, not on pixels. Two value-level defects
-  have already hidden behind presence-only assertions (bitmap fills dropping their contours; a bitmap fill
-  matrix left in twips, drawing twenty times too large). Prefer an oracle that can disagree — the version
-  1/version 3 font test asserts that two encodings of one square produce identical geometry, which a wrong
-  EM square breaks — and treat "authoritative" as unreachable until a render gate exists.
+- SWF pixel coverage now lives in `functional/scenes/swf-import.ts` and
+  `functional/scenes/swf-alpha-transform.ts`. The former renders geometry, gradients, strokes, static
+  text, bitmap fills, timeline movement, and an inherited colour transform; the latter isolates alpha
+  multiply/add and the backend-specific solid-shape adjustment paths. Both retain structure assertions
+  alongside pixel oracles so a non-blank but misrouted frame does not pass vacuously.
 
 The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
 and lockfile, and depends on `movieclip` for the playback nodes it produces and on `shape`/`geometry` for
@@ -293,15 +303,6 @@ MIT license, source hash, derived manifest, and ignored-asset reproduction proce
 test suite reproduces its zero-bit RECT compatibility case synthetically.
 
 ## Known gaps
-
-Two, both real, and neither is a matter of effort alone.
-
-**No visual coverage lives in this repo.** Everything above is verified as *structure* — node kinds, command
-streams, bounds, cue payloads, byte-exact resource extraction — and none of it as pixels. SWF output has
-been rasterized by a downstream consumer, on Canvas and WebGL, so the path demonstrably works; what does not
-exist is a functional render target here that would catch a regression. Until one exists, a change that
-keeps every assertion green can still change what a file looks like. Adding one crosses into `functional/`
-and the capture tooling, which is why it has not been done in passing.
 
 **`DefineButtonSound` is unimplemented and blocked on a design decision.** It attaches sounds to a button's
 pointer-state transitions, and a button imports here as a one-frame timeline of its up state — there is no
