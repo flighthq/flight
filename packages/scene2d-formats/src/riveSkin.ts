@@ -30,6 +30,11 @@ import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
  * are the same arithmetic — a matrix product is linear — so the offset this writes is
  * `tendonInverseBindᵢ · (skinWorld · p)`. A tendon states its **bind**, which is inverted here, and
  * the skin states its own transform separately.
+ *
+ * Storing a vertex in each influencing bone's bind-local frame is the universal inverse-bind
+ * convention, not a quirk of this format — glTF names the same matrices `inverseBindMatrices`. The
+ * equivalence above is therefore checkable from the arithmetic alone, which is why it is stated as a
+ * derivation a reader can redo rather than as a claim to take on trust.
  */
 export function createRiveSkin2D(
   artboard: Readonly<RiveArtboardGraph>,
