@@ -109,6 +109,7 @@ function applyRiveCornerRounding(vertices: RiveVertexPoint[], closed: boolean): 
     toNextX /= nextLength;
     toNextY /= nextLength;
 
+    const inverted = vertex.radius < 0;
     const radius = Math.min(previousLength / 2, nextLength / 2, Math.abs(vertex.radius));
     const angle = Math.abs(Math.atan2(toPrevX * toNextY - toPrevY * toNextX, toPrevX * toNextX + toPrevY * toNextY));
     const spread = angle < Math.PI / 2 ? 1 + Math.cos(angle) : 2 - Math.sin(angle);
@@ -122,12 +123,19 @@ function applyRiveCornerRounding(vertices: RiveVertexPoint[], closed: boolean): 
     vertex.inY = vertex.entryY;
     vertex.outX = vertex.exitX;
     vertex.outY = vertex.exitY;
-    vertex.corner = [
-      vertex.x + toPrevX * (radius - ideal),
-      vertex.y + toPrevY * (radius - ideal),
-      vertex.x + toNextX * (radius - ideal),
-      vertex.y + toNextY * (radius - ideal),
-    ];
+    vertex.corner = inverted
+      ? [
+          vertex.entryX + toNextX * ideal,
+          vertex.entryY + toNextY * ideal,
+          vertex.exitX + toPrevX * ideal,
+          vertex.exitY + toPrevY * ideal,
+        ]
+      : [
+          vertex.x + toPrevX * (radius - ideal),
+          vertex.y + toPrevY * (radius - ideal),
+          vertex.x + toNextX * (radius - ideal),
+          vertex.y + toNextY * (radius - ideal),
+        ];
   }
 }
 
