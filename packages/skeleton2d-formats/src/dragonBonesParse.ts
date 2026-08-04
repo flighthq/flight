@@ -521,7 +521,7 @@ function dragonBonesInterpolation(
 // DragonBones stores FOUR control values ALREADY NORMALIZED to the unit square — unlike Spine, which writes
 // absolute time/value units and four numbers PER COMPONENT. So there is no rebasing to do here and no
 // dominant-component question: one curve covers the whole frame and maps straight onto the CSS-style cubic
-// bezier `easeCubicBezier` expects. Verified against the MIT DragonBones corpus — every curve across all
+// bezier `easeCubicBezier` expects. Verified against the external DragonBones corpus — every curve across all
 // three rigs is exactly 4 values, all within [0,1].
 //
 // The x components are still clamped, for the same reason as the Spine path: the solver inverts x, which is

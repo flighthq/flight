@@ -114,9 +114,8 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 - The package is portable, side-effect-free, SDK/build wired, and covered by colocated byte-level
   tests.
 - The canonical [Ruffle fixture evidence](fixture-evidence.md) records the exact upstream revision,
-  path, URL, MIT license, source hash, derived document manifest, and ignored-asset reproduction
-  procedure. The external binary is not committed and the test suite has no network or fixture
-  dependency.
+  path, URL, source hash, derived document manifest, and ignored-asset reproduction procedure. The
+  external binary is not committed and the test suite has no network or fixture dependency.
 
 ## Remaining depth
 

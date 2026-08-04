@@ -192,8 +192,8 @@ describe('computeSkeleton2DWorldTransforms', () => {
   // formulas (updateWorldTransform per transformMode), NOT from a real rig corpus. These use an ASYMMETRIC
   // parent (rotation 90°, scaleX 2, scaleY 1 → world column-lengths psx=2, psy=1) so a bug that confused
   // the two column scales, or that skipped the parent×local compose, would surface — cases the symmetric
-  // fixtures above cannot catch. Corpus parity against Spine's own runtime output remains open and requires
-  // a permissively-licensed rig AND oracle (see skeleton2d-formats charter); this proves formula match only.
+  // fixtures above cannot catch. Corpus parity against Spine's own runtime output requires an approved
+  // external rig AND oracle (see skeleton2d-formats charter); this proves formula match only.
   it('FORMULA parity: Normal composes parent × local (asymmetric 90°/2×1 parent + a 90° child)', () => {
     // Parent world = [a,b,c,d] = [cos90·2, sin90·2, cos180·1, sin180·1] = [0, 2, -1, 0].
     // Child local (rot 90°, unit scale) = [0, 1, -1, 0]. Normal: world = parentMatrix × localMatrix:

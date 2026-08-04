@@ -28,7 +28,7 @@ Built 2026-07-29.
   records plus fresh/move/replacement state and snapshot isolation, composed transforms, linkage, and
   stage / available RECT, embedded-image, lossless-bitmap, video, and sprite extents. A revision-pinned
   external Ruffle `FWS` also verifies a named placement through the shared document boundary; its
-  provenance, MIT license, hash, and derived manifest remain SWF-owned evidence. Later MovieClip
+  provenance, hash, and derived manifest remain SWF-owned evidence. Later MovieClip
   frames, visual definition bodies, compressed files, and broader fixture coverage remain SWF-side
   depth rather than resource-pipeline responsibilities.
 

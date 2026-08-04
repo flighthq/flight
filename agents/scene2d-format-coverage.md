@@ -29,13 +29,9 @@ came through far better than Lottie: zero crashes, zero non-finite transform val
 document produced geometry on the first run. One real defect surfaced, and one gap that belongs to a
 neighbouring package; both are recorded below.
 
-Neither corpus is committed; both are fetched on demand, for the licensing reason above.
+Neither corpus is committed; both are fetched on demand.
 
-**Rive is verified against 64 real editor-authored files**, fetched from Rive's own Android runtime
-test assets. They are MIT-licensed, which permits redistribution but requires carrying the copyright
-notice, so whether they may live in this repo as committed fixtures is an open licensing decision;
-until it is made they are fetched on demand and the corpus runs are reproducible rather than standing
-in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
+**Rive is verified against 64 real editor-authored files**, fetched on demand from Rive's own Android runtime test assets and **never committed**. The suite ships synthetic fixtures only, so corpus runs are reproducible on demand rather than standing in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
 
 **No codec has a functional render scene**, so nothing under `functional/scenes` verifies any of the
 three at the pixel level on any backend. That is the largest remaining gap for the cell.
@@ -211,8 +207,8 @@ backwards. A reader needs a built-in table of the widths the object model define
 table only adds keys the authoring tool believes a reader may not know. A file using only standard
 properties ships an **empty** table — every real file tested does — so a purely table-driven reader
 stalls on the first property of the first object. `getRiveCorePropertyFieldType` carries that
-built-in table, derived from the 368 object-model definitions the format publishes as data, and it
-is consulted **before** the file's table.
+built-in table for the format's 368 object-model definitions, and it is consulted **before** the
+file's table.
 
 That table must include each property's **alternate** keys, not only its current one. A property
 may carry retired key numbers, and files in circulation still write them: `Node.x` is key 13 today
@@ -620,12 +616,7 @@ differs between generations, so a wrong-generation parse would produce a confide
 instead of failing. Only major version 7 has been read, and anything else emits
 `rive.unsupported-version`.
 
-**Verification status.** The container grammar is **verified against 64 real editor-authored `.riv`
-files**, all of which decoded completely — 82,543 core objects with no unread byte and no unknown
-property. The corpus was Rive's own Android runtime test assets, fetched for verification and
-deliberately **not committed**: whether a third-party `.riv` may live in this repo as a fixture is a
-licensing decision, so the suite ships synthetic fixtures only and the corpus run is reproducible on
-demand rather than standing in CI.
+**Rive is verified against 64 real editor-authored files**, fetched on demand from Rive's own Android runtime test assets and **never committed**. The suite ships synthetic fixtures only, so corpus runs are reproducible on demand rather than standing in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
 
 That corpus earned its keep immediately. Against synthetic fixtures alone the decoder passed 30
 tests while being unable to read a single real file, because it treated the file's table of contents

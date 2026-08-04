@@ -2,7 +2,7 @@ import type { GltfDracoDecoder } from '@flighthq/types/contract';
 
 // The seam a caller plugs its own Draco decoder into. Flight ships no implementation: Draco is an
 // export-time encoding choice, so a decoder is worth nothing to a consumer whose assets do not use it,
-// and bundling one would put a third-party dependency (and its licence) into every build to serve some.
+// and bundling one would put a third-party dependency into every build to serve some.
 //
 // It mirrors the shape of `@flighthq/compression`'s decompressor registry — empty until an explicit
 // call, last-write-wins so a host can replace a portable decoder with a native or wasm one — but cannot

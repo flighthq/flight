@@ -298,7 +298,7 @@ uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`,
 Ruffle's test corpus now backs the parser end to end — nothing throws, every uncompressed file imports, and
 the only rejections are the 79% of that corpus which is compressed. The sweep is what exposed the End-tag
 defect above; its exact revision,
-MIT license, source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
+source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
 [`fixture-evidence.md`](fixture-evidence.md). The external binary is not committed, and the hermetic
 test suite reproduces its zero-bit RECT compatibility case synthetically.
 

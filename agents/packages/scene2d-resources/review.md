@@ -46,9 +46,8 @@ Later MovieClip frames and deferred asset references remain unproven.
   RECT, embedded JPEG/PNG/GIF, lossless-bitmap, video, and recursive sprite bounds preserve slot
   extents through placement transforms.
 - A real uncompressed Ruffle file verifies that the open importer boundary carries an external named
-  placement into the same `Scene2DDocument` manifest shape. Provenance, MIT license, hash, and derived
-  output live in the SWF package's evidence record; this package retains no binary or network
-  dependency.
+  placement into the same `Scene2DDocument` manifest shape. Provenance, hash, and derived output live
+  in the SWF package's evidence record; this package retains no binary or network dependency.
 - Package shape is clean: `sideEffects: false`; source imports only declared dependencies; the SDK root,
   SDK formats, package root, and `/contract` lanes agree; `npm run api`, `exports:check`,
   `type-home:check`, package checks, and package tests pass.
