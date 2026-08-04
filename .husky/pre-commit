@@ -1,4 +1,5 @@
-# `precommit` runs `lint-staged --no-stash`. The default backup stash races the Quimby agent-clone
+# `precommit` rejects orphaned package distributions, then runs `lint-staged --no-stash`. The default
+# backup stash races the Quimby agent-clone
 # working-tree capture (both git-stash the same tree), which could inject conflict markers into staged
 # files — so agents had to commit `--no-verify`, losing commit-msg validation. `--no-stash` removes that
 # stash; lint-staged still bounds work to staged files ∩ globs. The only cost is partial-stage handling
