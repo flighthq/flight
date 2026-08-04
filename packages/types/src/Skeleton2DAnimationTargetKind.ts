@@ -14,6 +14,7 @@ export const Skeleton2DAnimationTargetKind = {
   Bone: 'Skeleton2D.BoneTarget',
   Constraint: 'Skeleton2D.ConstraintTarget',
   Deform: 'Skeleton2D.DeformTarget',
+  DrawOrder: 'Skeleton2D.DrawOrderTarget',
   Slot: 'Skeleton2D.SlotTarget',
 } as const;
 

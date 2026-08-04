@@ -42,6 +42,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
+    "@flighthq/node": "*",
     "@flighthq/math": "*",
     "@flighthq/path": "*",
     "@flighthq/types": "*"

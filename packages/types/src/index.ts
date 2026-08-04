@@ -836,6 +836,7 @@ export * from './Skeleton2DTransformConstraint';
 export * from './Skeleton2DAnimationTarget';
 export * from './Skeleton2DAnimationTargetBinder';
 export * from './Skeleton2DAnimationTargetKind';
+export * from './Skeleton2DDrawOrderAnimationTarget';
 export * from './Skeleton2DGuards';
 export * from './Skeleton2DSlotAnimationTarget';
 export * from './SvgDocumentImport';
