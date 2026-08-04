@@ -670,21 +670,22 @@ which are **not** the `Node` x/y keys 13/14. A reader that looked for 13/14 on a
 nothing and collapse the whole chain onto the root. And bone rotation is radians here, degrees on
 `Bone2D`, as everywhere else in this codec.
 
-**Bone rotation channels bind; the other three bone paths wait, and the split is a format-shape fact
-rather than an unfinished sweep.** `Skeleton2DAnimationTarget` groups a bone's fields into four paths,
-where `Translation`, `Scale` and `Shear` each read a **two-component** track, and
-`applyAnimationClipToSkeleton2D` composes each sample as a **relative delta** onto the setup pose (add
-for translate/rotate/shear, multiply for scale). Rive matches neither shape: it keys **one scalar per
-property** — `scaleX` and `scaleY` are separate channels with independently authored keyframe times —
-and its keyframe values are **absolute**, not deltas.
+**Every bone property Rive keys now binds, through the per-axis paths.** Rive states one scalar per
+property — x, y, rotation, scaleX and scaleY each their own channel with independently authored keyframe
+times — and `Skeleton2DAnimationPath` carries `TranslationX`/`TranslationY` and `ScaleX`/`ScaleY`, so
+each maps straight across with no axis paired to another. Pairing was never possible without resampling
+onto a merged time set and inventing keyframe times the file never stated; the per-axis vocabulary
+removes the need rather than working around it. Bones carry no shear in this format.
 
-Those two mismatches have different characters, which is why one is done and one is not.
-**Absolute → relative is exact**: the setup rotation is subtracted once at build time, after the
-radians-to-degrees conversion, so a keyframe stating 180° against a setup of 90° becomes a delta of
-90°. **Pairing two independently-timed scalar channels is not exact**: it would need a resample onto a
-merged time set, inventing keyframe times the file never stated, so translate/scale/shear stay unbound
-pending per-axis paths on the `skeleton2d` side. Binding x alone would be worse than leaving it — the
-binder would read the absent y as 0 and drive the bone to it.
+**Rive states absolutes and the binder composes, so the conversion differs per path.**
+`applyAnimationClipToSkeleton2D` ADDS for translation and rotation and MULTIPLIES for scale, so the
+inverse is a subtraction or a division, applied once at build time rather than per sample. Rotation
+converts radians to degrees before the subtraction, as everywhere else in this codec.
+
+**One case the relative model cannot express, and it is reported rather than approximated.** A setup
+scale of zero multiplies every factor back to zero, so no channel can reproduce a non-zero authored
+scale. That channel is dropped and emits `rive.unrepresentable-bone-scale`; emitting one would be
+silently wrong, and the limit belongs to a relative pose model rather than to the per-axis vocabulary.
 
 That a bone channel bound to nothing at all before this is the mechanism behind the corpus clips that
 imported carrying no channels: a bone is a `TransformComponent` and never becomes a display object, so
@@ -769,7 +770,7 @@ wired, and the decode is `resolveScene2DResources`' job, matching the seam SVG a
 **The state-machine descriptor is read but nothing drives it**: per the charter the state-machine
 *runtime* is a separate future cell and never a codec concern.
 
-**Crumbs.** Thirteen, all asset facts, in three severities.
+**Crumbs.** Fourteen, all asset facts, in three severities.
 
 **Four are `Reject`**, because each ends the parse: `rive.invalid-header` (missing or wrong
 fingerprint, or a header that ends early), `rive.truncated-object-stream`,
@@ -777,10 +778,12 @@ fingerprint, or a header that ends early), `rive.truncated-object-stream`,
 table, after which the next key's position is unknowable — and `rive.unsupported-version`, below.
 `rive.unknown-property-width` is the format's own unrecoverable case, not a Flight limitation.
 
-**Seven are `Drop`**, where a piece of the document is lost but the rest imports:
+**Eight are `Drop`**, where a piece of the document is lost but the rest imports:
 `rive.component-without-parent`, `rive.parent-cycle` and `rive.unresolved-parent` from the graph
 stage; `rive.multiple-clipping-shapes` and `rive.unresolved-clipping-source` from clipping;
-`rive.path-outside-shape`; and `rive.draw-rule-crosses-parent`.
+`rive.path-outside-shape`; `rive.draw-rule-crosses-parent`; and `rive.unrepresentable-bone-scale`, for
+a scale channel on a bone whose setup scale is zero, where no factor multiplies zero into a non-zero
+authored scale, so the channel is dropped rather than emitted wrong.
 
 **Two are `Skip`**, where an override is not applied and the default stands:
 `rive.draw-rule-unresolved` and `rive.solo-unresolved-active`.

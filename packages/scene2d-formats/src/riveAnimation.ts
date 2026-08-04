@@ -5,11 +5,13 @@ import {
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
 import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import {
   RiveAnimationLoop as RiveAnimationLoopValue,
+  ImportDiagnosticSeverity,
   RiveFieldType,
   Skeleton2DAnimationPath,
 } from '@flighthq/types/contract';
@@ -20,6 +22,8 @@ import type {
   RiveAnimationClip,
   RiveAnimationLoop,
   RiveSkeleton2DImport,
+  Bone2D,
+  ImportDiagnostic,
   DisplayObject,
   EasingFunction,
   Node2DAnimationPath,
@@ -62,12 +66,25 @@ export function createRiveAnimationClips(
   artboard: Readonly<RiveArtboardGraph>,
   rebuilds: ReadonlyMap<number, () => void>,
   skeleton: Readonly<RiveSkeleton2DImport> | null = null,
+  diagnostics?: ImportDiagnostic[],
 ): RiveAnimationClip[] {
   const interpolators = collectRiveInterpolators(objects, range);
   const clips: RiveAnimationClip[] = [];
   for (let index = range.start; index < range.end; index++) {
     if (objects[index].typeKey !== RIVE_LINEAR_ANIMATION) continue;
-    clips.push(createRiveAnimationClip(objects, index, range.end, nodes, interpolators, artboard, rebuilds, skeleton));
+    clips.push(
+      createRiveAnimationClip(
+        objects,
+        index,
+        range.end,
+        nodes,
+        interpolators,
+        artboard,
+        rebuilds,
+        skeleton,
+        diagnostics,
+      ),
+    );
   }
   return clips;
 }
@@ -85,6 +102,7 @@ function createRiveAnimationClip(
   artboard: Readonly<RiveArtboardGraph>,
   rebuilds: ReadonlyMap<number, () => void>,
   skeleton: Readonly<RiveSkeleton2DImport> | null,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): RiveAnimationClip {
   const source = objects[start];
   const fps = Math.max(1, readRiveNumber(source, RIVE_ANIMATION_FPS, 60));
@@ -115,6 +133,7 @@ function createRiveAnimationClip(
       skeleton,
       keyedIndex,
       propertyKey,
+      diagnostics,
     );
     if (boneChannel !== null) {
       channels.push(boneChannel);
@@ -171,21 +190,21 @@ function toRiveAnimationLoop(value: number): RiveAnimationLoop {
 
 /**
  * Binds one keyed bone property to the flattened `Skeleton2D`, or `null` when the keyed object is not
- * a bone or the property is one this cannot carry yet.
+ * a bone or the property is not one a bone carries.
  *
- * **Only rotation binds today, and that is a format-shape limit rather than an omission.**
- * `Skeleton2DAnimationTarget` groups a bone's fields into four paths, of which `Translation`, `Scale`
- * and `Shear` each read a **two-component** track. Rive keys **one scalar per property**, so a file
- * animating both x and y states two independently-timed channels; pairing them into one two-component
- * track would mean resampling onto a merged time set and inventing keyframe times the file never
- * stated. Rotation is the one single-scalar path, so it is the one that can bind without inventing
- * anything. The rest wait on per-axis paths.
+ * **Every bone property Rive keys now binds, through the per-axis paths.** Rive states one scalar per
+ * property — x, y, rotation, scaleX and scaleY each their own channel with independently authored
+ * keyframe times — and `TranslationX`/`TranslationY`, `ScaleX`/`ScaleY` take exactly that, so each maps
+ * straight across with no axis paired to another. Pairing was never possible without resampling onto a
+ * merged time set and inventing keyframe times the file never stated; the per-axis vocabulary removes
+ * the need rather than working around it. Bones carry no shear in this format.
  *
- * **Rive states absolutes; the binder composes deltas.** `applyAnimationClipToSkeleton2D` adds each
- * sample to the *setup* bone, which is what keeps a clip blendable, while a Rive keyframe carries the
- * value the bone should hold outright. The conversion is therefore exact rather than approximate:
- * subtract the setup rotation, once, at build time. Rive states radians and `Bone2D` is degrees, so
- * that conversion happens first.
+ * **Rive states absolutes; the binder composes.** It ADDS for translation and rotation and MULTIPLIES
+ * for scale, so the inverse differs per path — subtract the setup value, or divide by it — and the
+ * conversion happens once at build time rather than per sample.
+ *
+ * Composing onto the setup pose rather than baking absolutes is what keeps a clip blendable, which is
+ * why the conversion belongs here rather than in the binder.
  */
 function createRiveBoneChannel(
   objects: readonly Readonly<RiveCoreObject>[],
@@ -196,21 +215,70 @@ function createRiveBoneChannel(
   skeleton: Readonly<RiveSkeleton2DImport> | null,
   keyedIndex: number,
   propertyKey: number,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): AnimationChannel | null {
   if (skeleton === null || keyedIndex < 0 || keyedIndex >= skeleton.boneIndices.length) return null;
   const boneIndex = skeleton.boneIndices[keyedIndex];
-  if (boneIndex < 0 || propertyKey !== RIVE_ROTATION) return null;
+  if (boneIndex < 0) return null;
+  const path = toRiveBoneAnimationPath(propertyKey);
+  if (path === null) return null;
 
-  const setupRotation = skeleton.skeleton.bones[boneIndex].rotation;
+  const convert = toRiveBoneValueConversion(path, skeleton.skeleton.bones[boneIndex]);
+  // A setup scale of zero has no factor that reaches a non-zero value, so the channel is dropped rather
+  // than approximated — reported, since a rig can legitimately be authored that way.
+  if (convert === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'rive.unrepresentable-bone-scale',
+      'createRiveAnimationClips',
+      { bone: boneIndex, property: propertyKey },
+    );
+    return null;
+  }
+
   return createRiveChannel(
     objects,
     propertyIndex,
     limit,
     fps,
     interpolators,
-    (value) => value * RAD_TO_DEG - setupRotation,
-    createSkeleton2DBoneAnimationTarget(boneIndex, Skeleton2DAnimationPath.Rotation),
+    convert,
+    createSkeleton2DBoneAnimationTarget(boneIndex, path),
   );
+}
+
+// Rive keys ONE SCALAR PER PROPERTY, which is exactly what the per-axis paths take — so each maps
+// straight across and no axis has to be paired with another. Bones carry no shear in this format.
+function toRiveBoneAnimationPath(propertyKey: number): Skeleton2DAnimationPath | null {
+  if (propertyKey === RIVE_X || propertyKey === RIVE_X_LEGACY) return Skeleton2DAnimationPath.TranslationX;
+  if (propertyKey === RIVE_Y || propertyKey === RIVE_Y_LEGACY) return Skeleton2DAnimationPath.TranslationY;
+  if (propertyKey === RIVE_ROTATION) return Skeleton2DAnimationPath.Rotation;
+  if (propertyKey === RIVE_SCALE_X) return Skeleton2DAnimationPath.ScaleX;
+  return propertyKey === RIVE_SCALE_Y ? Skeleton2DAnimationPath.ScaleY : null;
+}
+
+/**
+ * Turns a Rive keyframe's ABSOLUTE value into the RELATIVE one the skeleton binder composes, or `null`
+ * when no such value exists.
+ *
+ * The binder ADDS for translation and rotation and MULTIPLIES for scale, so the inverse differs per
+ * path: subtract the setup value, or divide by it. Division is why this can fail — a setup scale of
+ * zero multiplies every factor back to zero, so no channel can reproduce a non-zero authored scale.
+ * That is a real limit of a relative model rather than a gap in the vocabulary, and it is the one case
+ * here that cannot be expressed.
+ */
+function toRiveBoneValueConversion(
+  path: Skeleton2DAnimationPath,
+  setup: Readonly<Bone2D>,
+): ((value: number) => number) | null {
+  if (path === Skeleton2DAnimationPath.TranslationX) return (value) => value - setup.x;
+  if (path === Skeleton2DAnimationPath.TranslationY) return (value) => value - setup.y;
+  // Rive states rotation in radians and Bone2D is degrees, so the unit conversion precedes the delta.
+  if (path === Skeleton2DAnimationPath.Rotation) return (value) => value * RAD_TO_DEG - setup.rotation;
+  const setupScale = path === Skeleton2DAnimationPath.ScaleX ? setup.scaleX : setup.scaleY;
+  if (setupScale === 0) return null;
+  return (value) => value / setupScale;
 }
 
 function createRiveChannel(
