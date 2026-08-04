@@ -7,6 +7,7 @@ import type {
   DisplayObject,
   ImportDiagnostic,
   Matrix,
+  Path,
   RiveArtboardGraph,
   RiveCoreObject,
   RivePathRecord,
