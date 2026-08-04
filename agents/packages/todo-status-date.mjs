@@ -5,9 +5,20 @@
 // from TODO.md's re-review list as a result (worst: scene2d-gl, reviewed 2026-06-25 with work landed
 // through 2026-08-02). A list whose job is reporting staleness must not itself go stale.
 
+// How many dated entries a status log has gained strictly after `since`. Pairs with the commit count
+// in the liveness ranking: commits say how much landed, this says how much of it the log accounts for.
+export function countStatusEntriesSince(text, since) {
+  return getStatusEntryDates(text).filter((date) => date > since).length;
+}
+
+// Every `## YYYY-MM-DD` entry heading in a status log, oldest first.
+export function getStatusEntryDates(text) {
+  return [...text.matchAll(/^#{2,3}\s+(\d{4}-\d{2}-\d{2})/gm)].map((match) => match[1]).sort();
+}
+
 // The newest `## YYYY-MM-DD` entry heading in a status log, or null when it has no dated entry.
 export function getNewestStatusEntryDate(text) {
-  const dates = [...text.matchAll(/^#{2,3}\s+(\d{4}-\d{2}-\d{2})/gm)].map((match) => match[1]).sort();
+  const dates = getStatusEntryDates(text);
   return dates.length > 0 ? dates[dates.length - 1] : null;
 }
 
