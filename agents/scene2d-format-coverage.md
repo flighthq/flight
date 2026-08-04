@@ -656,6 +656,33 @@ needs no change: it is already geometry-agnostic, carrying influence counts and
 weighting math is identical for a bezier vertex. Skinning stays in one package and accommodates Spine,
 DragonBones and Rive together rather than growing a second rig runtime.
 
+**The bone rig itself is now flattened.** `createRiveSkeleton2D` turns an artboard's in-tree bones
+into a `Skeleton2D` — a flat, parent-before-child array — and returns a component-index → bone-index
+map so an animation channel can reach the bone it drives. The reordering is a **topological sort by
+tree depth**, well-founded rather than a graph problem: every stated parent resolves and the tree
+holds no cycle, so depth order already puts a parent ahead of its children. It returns `null` for an
+artboard with no bones, which is most of them.
+
+Two facts decide whether the flatten is right, and both come from the format rather than the corpus.
+**A non-root bone states no position of its own**: `Bone::x()` returns the *parent's* `length` and
+`y()` returns 0, so a child bone sits at its parent's tip; only `RootBone` states x/y, at keys 90/91,
+which are **not** the `Node` x/y keys 13/14. A reader that looked for 13/14 on a bone would find
+nothing and collapse the whole chain onto the root. And bone rotation is radians here, degrees on
+`Bone2D`, as everywhere else in this codec.
+
+**Bone animation channels are not bound yet, and the reason is a real impedance mismatch worth
+recording before someone tries.** `Skeleton2DAnimationTarget` groups a bone's fields into four paths,
+where `Translation`, `Scale` and `Shear` each read a **two-component** track, and
+`applyAnimationClipToSkeleton2D` composes each sample as a **relative delta** onto the setup pose (add
+for translate/rotate/shear, multiply for scale). Rive keys neither of those ways: it keys **one scalar
+per property** — `scaleX` and `scaleY` are separate channels with independently authored keyframe
+times — and its keyframe values are **absolute**, not deltas. So binding needs two conversions, and
+only one of them is mechanical. Absolute → relative is exact (subtract the setup value, or divide it
+for scale). Pairing two independently-timed scalar channels into one two-component track is not: it
+needs either a resample onto a merged time set, or per-axis paths on the `skeleton2d` side. Which of
+those is right is a `skeleton2d` API question, so it is recorded here rather than guessed at. Rotation
+is the one path that is a single scalar and would bind cleanly today.
+
 **Rive is not boneless, and reading it that way leads straight to designing a free-form deformer.**
 It has a full bone system — `Bone`, `RootBone`, `Tendon`, `Skin`, `Weight`, `CubicWeight` — and its
 skinning is bone-driven exactly as Spine's is. Only two things differ: *what* is skinned (a vector
