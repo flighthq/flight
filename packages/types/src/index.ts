@@ -561,6 +561,7 @@ export * from './SpineParticleSchema';
 export * from './SpotLight';
 export * from './Spring';
 export * from './Sprite';
+export * from './SwfDocumentImport';
 export * from './SpriteRenderer';
 export * from './Spritesheet';
 export * from './SpritesheetAnimation';
