@@ -44,6 +44,23 @@ describe('readSwfEditTextFactory', () => {
     expect(field.data.selectable).toBe(false);
   });
 
+  it('parses the markup of a field flagged as html into text and format ranges', () => {
+    const field = build({ html: true, text: 'Hit <b>hard</b> now' })(() => '');
+
+    // Without the parse the field would display its own tags, which is the whole point of the flag.
+    expect(field.data.text).toBe('Hit hard now');
+    expect(field.data.textFormatRanges).toEqual([{ end: 8, format: { bold: true }, start: 4 }]);
+  });
+
+  it('keeps markup verbatim in a field that is not flagged as html', () => {
+    const field = build({ text: 'Hit <b>hard</b> now' })(() => '');
+
+    // The flag is what declares the string to be markup; an unflagged field states its characters
+    // literally, so parsing it anyway would eat text the author wrote.
+    expect(field.data.text).toBe('Hit <b>hard</b> now');
+    expect(field.data.textFormatRanges).toEqual([]);
+  });
+
   it('returns null for a field that runs out mid-record', () => {
     const bytes = bytesFor({ text: 'x' });
 
@@ -55,6 +72,7 @@ interface FieldOptions {
   border?: boolean;
   fontHeight?: number;
   fontId?: number;
+  html?: boolean;
   indent?: number;
   leading?: number;
   leftMargin?: number;
@@ -85,7 +103,11 @@ function bytesFor(options: Readonly<FieldOptions>): Uint8Array {
   };
 
   const flags = 0x80 | 0x04 | 0x01 | (options.wordWrap === true ? 0x40 : 0) | (options.multiline === true ? 0x20 : 0);
-  const layoutFlags = 0x20 | (options.border === true ? 0x08 : 0) | (options.noSelect === true ? 0x10 : 0);
+  const layoutFlags =
+    0x20 |
+    (options.border === true ? 0x08 : 0) |
+    (options.noSelect === true ? 0x10 : 0) |
+    (options.html === true ? 0x02 : 0);
   u8(flags);
   u8(layoutFlags);
   u16(options.fontId ?? 1);
