@@ -114,6 +114,29 @@ describe('license and provenance declaration gate', () => {
     expect(checkLicenseProvenance([{ path: 'source.ts', text: lines.join('\n') }]).violations).toEqual([]);
   });
 
+  it('keeps all four calibration candidates as must-pass cases', () => {
+    const candidates = [
+      `Color-matrix fuse primitives ${words('ported', 'from')} the dissolved \`filters\`.`,
+      `The AVM2 instruction set is ${words('transcribed', 'from')} the published bytecode format description.`,
+      `// World transforms are ${words('derived', 'from')} these by computeWorldTransforms\n// itself follows the ${parts('Dragon', 'Bones')} model.`,
+      `Hand-written, never ${words('transcribed', 'from')} a ${words('licensed', 'rig')}.`,
+    ];
+
+    for (const text of candidates) {
+      expect(checkLicenseProvenance([{ path: 'source.ts', text }]).violations).toEqual([]);
+    }
+  });
+
+  it('keeps the model provenance denial as a must-pass case', () => {
+    const text = [
+      'The opcode table is written from the published bytecode format description.',
+      `An opcode's number and the operands it declares are facts about the format; nothing here ${words('derives', 'from')} any implementation of it,`,
+      `so the package carries no ${words('third-party', 'licence')} or ${words('attribution', 'obligation')}.`,
+    ].join(' ');
+
+    expect(checkLicenseProvenance([{ path: 'status.md', text }]).violations).toEqual([]);
+  });
+
   it('reports the two exact policy escapes and their reasons', () => {
     const identifier = parts('M', 'IT');
     const projectPolicy = `Flight is ${identifier}, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
@@ -124,6 +147,7 @@ describe('license and provenance declaration gate', () => {
     expect(report.violations).toEqual([]);
     expect(output).toContain('project-license-policy [1 matched line] —');
     expect(output).toContain('prohibited-provenance-example [1 matched line] —');
+    expect(output).toContain('Matcher state: [semantic negatives protected; token-keying ready]');
   });
 
   it('does not mistake re-exports or published algorithm names for provenance', () => {
