@@ -143,6 +143,10 @@ offset applies after the skinning pass, so where it enters the pipeline has to b
 `deformSkeleton2DPathAttachment`, not after it**. Rive's `MeshVertex`/`ContourMeshVertex` and its
 `CubicWeight` path vertices raise the same question from the other side.
 
+Read [morph-target animation](morph-target-animation.md) before designing it — that is the existing
+record for vertex deformation, it already covers where a blend-shape deformer lives and what a GPU path
+would require, and a 2D deform seam should not be invented in ignorance of it.
+
 Design this before the path deformer lands, or the deformer will be shaped without a seam it needs.
 
 ## Deferred, and named rather than skipped
