@@ -104,6 +104,7 @@ export * from '@flighthq/socket';
 export * from '@flighthq/physics2d';
 export * from '@flighthq/spatial';
 export * from '@flighthq/spring';
+export * from '@flighthq/statechart';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
 export * from '@flighthq/statusbar';

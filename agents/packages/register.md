@@ -213,7 +213,6 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 | `pathfinding` | pathfinding · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — A\*/Dijkstra/JPS/flow fields. Charter must draw the path ≠ pathfinding line |
 | `steering` | steering · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Reynolds seek/flee/arrive/flocking. Distinct from motionpath (authored) and spring (smoothing) |
 | `behaviortree` | ai · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — plain-data BTs, open node-kind registry, explicit tick, caller-owned blackboard |
-| `statechart` | state · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — hierarchical FSM. Doubly motivated: gameplay + Rive SM runtime substrate. Distinct from flow (app stack) |
 | `skeleton2d` | skeleton · primitive | naming matrix (2026-07-15) | **bedrock** — 2D skeletal animation (Spine/DragonBones territory). Separate from `skeleton3d` because the dimension changes the mathematical model. Chartered 2026-07-15 |
 
 ### Cloud / distributed tier (soon)

@@ -268,6 +268,8 @@
       "@flighthq/spatial/*": ["./packages/spatial/src/*"],
       "@flighthq/spring": ["./packages/spring/src/index.ts"],
       "@flighthq/spring/*": ["./packages/spring/src/*"],
+      "@flighthq/statechart": ["./packages/statechart/src/index.ts"],
+      "@flighthq/statechart/*": ["./packages/statechart/src/*"],
       "@flighthq/spritesheet": ["./packages/spritesheet/src/index.ts"],
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
       "@flighthq/spritesheet-formats": ["./packages/spritesheet-formats/src/index.ts"],

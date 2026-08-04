@@ -195,6 +195,7 @@
     "@flighthq/socket": "*",
     "@flighthq/spatial": "*",
     "@flighthq/spring": "*",
+    "@flighthq/statechart": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/spritesheet-formats": "*",
     "@flighthq/statusbar": "*",
