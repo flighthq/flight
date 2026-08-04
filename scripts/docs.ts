@@ -26,7 +26,7 @@
 // agent, because charter direction comes from the user alone. Gating on those would paint `npm run
 // check` red with work no agent is allowed to do.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 
 import pc from 'picocolors';
 
@@ -90,9 +90,60 @@ export function findMapStatusClaims(mapText: string): readonly MapStatusClaim[] 
   return claims;
 }
 
+// A cell charter registers its extra docs as front-matter keys (`rigModel: ./rig-model.md`), the way
+// `swf/charter.md` already carries `tagCoverage` and `fixtureEvidence`. That is a real pointer from an
+// authority-bearing file, so it counts — a gate that recognised only markdown links would turn red on
+// the established fix and push people toward the weaker one.
+export function findFrontMatterPointerTargets(text: string): readonly string[] {
+  const front = text.match(/^---\n([\s\S]*?)\n---/);
+  if (front === null) return [];
+  return [...front[1].matchAll(/^[\w-]+:\s*(\.\/[^\s'"]+\.md)\s*$/gm)].map((match) => match[1]);
+}
+
+// Link targets only — a name in prose or a code span is deliberately NOT a link. This is the whole
+// distinction the orphan gate turns on, and it is not pedantry: `seam-audit.md` was named in four
+// documents, in backticks, and was still reachable by nobody, because a reader cannot navigate a
+// mention. Anchors and external schemes are dropped so `doc.md#section` and a URL never masquerade as
+// a local target.
+export function findMarkdownLinkTargets(text: string): readonly string[] {
+  const targets: string[] = [];
+  for (const match of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+    const target = match[1].split('#')[0].trim();
+    if (target === '' || /^(https?:|mailto:)/.test(target)) continue;
+    targets.push(target);
+  }
+  return targets;
+}
+
+// Which docs nothing links to, after the named allowances. Kept pure and separate from the walking so
+// the rule can be stated in a test rather than inferred from a filesystem crawl.
+export function findOrphanDocs(docs: readonly string[], linked: ReadonlySet<string>): readonly string[] {
+  return docs.filter((doc) => !linked.has(doc) && !ORPHAN_ALLOW.some((entry) => entry.match(doc)));
+}
+
 export function getDocBudgetStatus(length: number, limit: number): DocBudgetStatus {
   if (length > limit) return 'over';
   return length >= limit - limit * DOC_BUDGET_WARN_FRACTION ? 'near' : 'ok';
+}
+
+// Which files count as a path a reader actually arrives along. Reachability is NOT binary, and this is
+// the reason: a doc can be pointed at and still be unreachable for its purpose if the only pointer sits
+// in a file that disclaims its own authority. `status.md` is the continuity layer — append-only,
+// explicitly transient, and consulted for dangling threads rather than for truth — so four durable
+// architectural rules reachable only from a status log are, in practice, findable by nobody.
+//
+// The set is ENUMERATED, never assessed. A gate must not rank how authoritative a document feels; that
+// is a judgement, and judgement in a gate becomes a habit. Membership is a filename test, so the check
+// stays mechanical and a reader can predict its answer without running it.
+export function isAuthorityBearingDoc(rel: string): boolean {
+  const name = basename(rel);
+  return (
+    rel === 'AGENTS.md' ||
+    name === 'charter.md' ||
+    name === 'index.md' ||
+    rel === join('agents', 'packages', 'catalog.md') ||
+    rel === join('agents', 'packages', 'map.md')
+  );
 }
 
 export function reportDocBudget(budget: Readonly<DocBudget>, contents: string): DocBudgetReport {
@@ -251,6 +302,48 @@ function checkOrdinals(cell: string, charterText: string): void {
   }
 }
 
+// The inverse of `checkLinks`, and the reason both have to exist: DEAD LINK AND ORPHAN ARE THE TWO
+// HALVES OF THE SAME INVARIANT, AND ONLY ONE HALF WAS GATED. `checkLinks` walks pointer → target and
+// fails when a pointer leads nowhere. Nothing walked target → pointer, so a doc that *nothing* links to
+// was invisible to every check in this file. That asymmetry is precisely how the codebase map could be
+// trimmed twice, correctly, for its character budget while two unrelated docs sat unreachable the whole
+// time — one of them a spec whose own header called it blessed, building, and superseding an earlier
+// note. A true record nobody can reach is worse than no record at all: the agent it is meant to direct
+// reaches the map, the catalog and the cell, never arrives, and builds the superseded model while the
+// spec sits on disk saying the opposite.
+//
+// Reachability means an actual resolvable markdown link, not a prose mention. You cannot navigate a
+// mention, and the whole point of the invariant is that a reader *arrives*.
+function checkOrphans(): void {
+  const corpus = [join(REPO_ROOT, 'AGENTS.md'), ...walkMarkdown(join(REPO_ROOT, 'agents'))];
+  if (existsSync(SKILLS_DIR)) corpus.push(...walkMarkdown(SKILLS_DIR));
+
+  const linked = new Set<string>();
+  for (const file of corpus) {
+    const rel = relative(REPO_ROOT, file);
+    if (!isAuthorityBearingDoc(rel)) continue;
+    const text = readFileSync(file, 'utf8');
+    for (const target of [...findMarkdownLinkTargets(text), ...findFrontMatterPointerTargets(text)]) {
+      linked.add(relative(REPO_ROOT, resolve(dirname(file), target)));
+    }
+  }
+
+  const docs = walkMarkdown(join(REPO_ROOT, 'agents')).map((file) => relative(REPO_ROOT, file));
+  for (const orphan of findOrphanDocs(docs, linked)) {
+    fail(
+      `${orphan}: reachable from no authority-bearing document — the codebase map, a cell charter, an index, the catalog or the package map must point at it, or no reader arrives`,
+    );
+  }
+
+  process.stdout.write(
+    `${pc.dim('  orphan-check counts pointers only from the map, cell charters, indexes, the catalog and the package map — a pointer from a status log does not count, because status is the append-only continuity layer and explicitly not blessed truth')}\n`,
+  );
+
+  // Printed every run, not only when one is used: an allowance whose reason is invisible is
+  // indistinguishable from an oversight, and the next careful reader deletes it.
+  for (const entry of ORPHAN_ALLOW) process.stdout.write(`${pc.dim(`  orphan-check allowance: ${entry.why}`)}\n`);
+}
+
 function checkReview(cell: string, dir: string): void {
   const path = join(dir, 'review.md');
   if (!existsSync(path)) return;
@@ -301,6 +394,7 @@ function fail(message: string): void {
 function main(): void {
   reportBudgets();
   checkLinks();
+  checkOrphans();
   checkMapStatus();
   checkCells();
   reportWarnings();
@@ -311,7 +405,9 @@ function main(): void {
     process.exit(1);
   }
 
-  process.stdout.write(`${pc.green('✓')} Agent docs valid (cell envelopes conform, links resolve)\n`);
+  process.stdout.write(
+    `${pc.green('✓')} Agent docs valid (cell envelopes conform, links resolve, every doc reachable)\n`,
+  );
 }
 
 function parseFrontMatter(text: string): Record<string, string> {
@@ -398,6 +494,23 @@ function warn(message: string): void {
 
 const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const CELLS_DIR = join(REPO_ROOT, 'agents', 'packages');
+
+const SKILLS_DIR = join(REPO_ROOT, '.claude', 'skills');
+
+// A doc can be legitimately unlinked, and the gate has to let the honest answer through — an allowance
+// with no recorded reason looks exactly like an oversight, and the next careful reader deletes it. Each
+// entry says why the doc is reachable by something other than a link, and the reason is printed on every
+// run so it stays a visible decision rather than a silent skip.
+const ORPHAN_ALLOW: { match: (rel: string) => boolean; why: string }[] = [
+  {
+    match: (rel) => (CELL_FILES as readonly string[]).includes(basename(rel)),
+    why: 'cell contract files (charter/review/assessment/status) are reached by directory enumeration in checkCells, not by pointer — every cell is visited by construction',
+  },
+  {
+    match: (rel) => rel === join('agents', 'packages', 'TODO.md'),
+    why: 'generated work index (todo.mjs), deliberately never committed — it is a view over the cells, so nothing links to it as a document',
+  },
+];
 
 const CELL_FILES = ['charter.md', 'review.md', 'assessment.md', 'status.md'] as const;
 const CHARTER_SECTIONS = ['What it is', 'North star', 'Boundaries', 'Decisions', 'Open directions'] as const;

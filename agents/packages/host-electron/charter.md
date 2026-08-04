@@ -24,7 +24,7 @@ The Electron main-process host adapter -- concrete implementations of Flight's p
 
 ## Open directions
 
-- Whether an exhaustive seam-audit table (mapping each `@flighthq/types` seam method to its Electron call or documented sentinel) should be committed as a mechanical completeness check.
+- Whether an exhaustive seam-audit table (mapping each `@flighthq/types` seam method to its Electron call or documented sentinel) should be committed as a mechanical completeness check. One has since been written — [`seam-audit.md`](seam-audit.md), in this cell — so the question is no longer whether it can be produced but whether it is the blessed check; that ruling is still open.
 - Updater path: whether `electron-updater` warrants a second factory alongside the Squirrel-only `createElectronUpdaterBackend`.
 - Renderer-targeted IPC: the current IPC backend is main-process receive-only. Main-to-renderer messaging needs a design decision.
 - Sibling-host symmetry: whether this package's seam coverage should serve as the template for future `host-tauri` / `host-capacitor` adapters.

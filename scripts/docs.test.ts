@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs';
 import {
   DOC_BUDGETS,
   DOC_BUDGET_WARN_FRACTION,
+  findFrontMatterPointerTargets,
   findMapStatusClaims,
+  findMarkdownLinkTargets,
+  findOrphanDocs,
   getDocBudgetStatus,
+  isAuthorityBearingDoc,
   reportDocBudget,
 } from './docs';
 
@@ -28,6 +32,26 @@ describe('DOC_BUDGETS', () => {
       const stated = budget.limit.toLocaleString('en-US');
       expect(readFileSync(budget.path, 'utf8')).toContain(stated);
     }
+  });
+});
+
+describe('findFrontMatterPointerTargets', () => {
+  it('counts a charter front-matter registration, the established way a cell claims an extra doc', () => {
+    const text = ['---', 'package: x', 'rigModel: ./rig-model.md', '---', '', '# Cell'].join('\n');
+    // The leading `./` is kept, not stripped: the target is resolved against the charter's own
+    // directory, and `resolve` treats both forms identically. Normalizing here would only add a
+    // second place for the two spellings to disagree.
+    expect(findFrontMatterPointerTargets(text)).toEqual(['./rig-model.md']);
+  });
+
+  it('ignores a non-pointer key, so a date or a package name is never read as a path', () => {
+    const text = ['---', 'lastDirection: 2026-08-04', 'crate: flighthq-x', '---'].join('\n');
+    expect(findFrontMatterPointerTargets(text)).toEqual([]);
+  });
+
+  it('reads only the front matter, not a body line that happens to look like a key', () => {
+    const text = ['---', 'package: x', '---', '', 'note: ./not-a-pointer.md'].join('\n');
+    expect(findFrontMatterPointerTargets(text)).toEqual([]);
   });
 });
 
@@ -101,6 +125,46 @@ describe('findMapStatusClaims', () => {
   });
 });
 
+describe('findMarkdownLinkTargets', () => {
+  it('does NOT count a name in prose or a code span, which is the distinction the gate turns on', () => {
+    const text = 'See `seam-audit.md` for the table, and seam-audit.md is in this cell.';
+    expect(findMarkdownLinkTargets(text)).toEqual([]);
+  });
+
+  it('counts a real link, so a reader who can navigate is what makes a doc reachable', () => {
+    expect(findMarkdownLinkTargets('See [the table](seam-audit.md).')).toEqual(['seam-audit.md']);
+  });
+
+  it('strips an anchor so a section link still resolves to its file', () => {
+    expect(findMarkdownLinkTargets('[x](commands.md#checkpoints)')).toEqual(['commands.md']);
+  });
+
+  it('ignores external schemes, which are never local targets', () => {
+    expect(findMarkdownLinkTargets('[a](https://example.com) [b](mailto:x@y.z)')).toEqual([]);
+  });
+});
+
+describe('findOrphanDocs', () => {
+  it('flags a doc nothing links to — the half of the invariant checkLinks cannot see', () => {
+    const docs = ['agents/reachable.md', 'agents/orphan.md'];
+    expect(findOrphanDocs(docs, new Set(['agents/reachable.md']))).toEqual(['agents/orphan.md']);
+  });
+
+  it('passes the honest answer: a cell contract file is reached by enumeration, not by pointer', () => {
+    const docs = ['agents/packages/interaction/charter.md', 'agents/packages/interaction/status.md'];
+    expect(findOrphanDocs(docs, new Set())).toEqual([]);
+  });
+
+  it('still flags a NON-contract doc inside a cell, which is exactly what sat unreachable', () => {
+    const docs = ['agents/packages/interaction/interaction-state-design.md'];
+    expect(findOrphanDocs(docs, new Set())).toEqual(docs);
+  });
+
+  it('allows the generated work index, which is a view over cells and never committed', () => {
+    expect(findOrphanDocs(['agents/packages/TODO.md'], new Set())).toEqual([]);
+  });
+});
+
 describe('getDocBudgetStatus', () => {
   it('fails only ABOVE the limit, so a doc exactly at budget still passes', () => {
     expect(getDocBudgetStatus(40_001, 40_000)).toBe('over');
@@ -116,6 +180,29 @@ describe('getDocBudgetStatus', () => {
   it('scales the warn band with the limit rather than using a fixed character count', () => {
     expect(getDocBudgetStatus(9_800, 10_000)).toBe('near');
     expect(getDocBudgetStatus(9_799, 10_000)).toBe('ok');
+  });
+});
+
+describe('isAuthorityBearingDoc', () => {
+  it('counts the map, a cell charter, an index, the catalog and the package map', () => {
+    for (const path of [
+      'AGENTS.md',
+      'agents/packages/swf/charter.md',
+      'agents/index.md',
+      'agents/packages/catalog.md',
+      'agents/packages/map.md',
+    ]) {
+      expect(isAuthorityBearingDoc(path)).toBe(true);
+    }
+  });
+
+  it('does NOT count status.md — the append-only continuity layer that disclaims its own authority', () => {
+    expect(isAuthorityBearingDoc('agents/packages/skeleton2d/status.md')).toBe(false);
+  });
+
+  it('does not count a review or assessment either, which record findings rather than direction', () => {
+    expect(isAuthorityBearingDoc('agents/packages/image/review.md')).toBe(false);
+    expect(isAuthorityBearingDoc('agents/packages/image/assessment.md')).toBe(false);
   });
 });
 

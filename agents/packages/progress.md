@@ -1,6 +1,14 @@
 # Package Direction Progress
 
-Track which packages have had a direction session, what was dispatched, and what's landed. Updated by the review agent after each session.
+Status: **superseded, kept as history** — last substantive entry 2026-07-11. This is no longer updated
+after a direction session, and its `Last visited` column is stale by design rather than by neglect: what
+it tracked moved to per-cell `lastDirection` front matter in every `charter.md`, with the generated
+`TODO.md` carrying what stage a cell needs next. Those two are authoritative; this file is not.
+
+It is still worth reading for **what was decided in a session and why** — the per-package notes below
+record blessed decisions in more detail than a date can — but do not take its state or dates as current.
+
+Originally: track which packages have had a direction session, what was dispatched, and what's landed.
 
 ## States
 
