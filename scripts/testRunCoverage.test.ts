@@ -10,7 +10,9 @@ const COVERED: Readonly<Parameters<typeof isTestRunCoverageFailure>[0]> = {
   testFiles: 1,
 };
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const ROOT_RUN_TIMEOUT_MS = 15_000;
+// The dedicated coverage-gate project runs after the parallel suite, so this is defense in depth for a
+// genuinely slow machine rather than the mechanism that makes nested root runners reliable.
+const ROOT_RUN_TIMEOUT_MS = 60_000;
 
 describe('TestRunCoverageReporter', () => {
   it(
