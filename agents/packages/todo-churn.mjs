@@ -46,11 +46,8 @@ export function readPackageChurn(repoRoot, since) {
   // counted. Held to the end of the commit rather than streamed for exactly that reason.
   const flush = () => {
     if (date === null || pending.size === 0) return;
-    const wide = pending.size > SWEEP_PACKAGE_BREADTH;
     for (const [name, delta] of pending) {
-      // In a wide commit, the package that owns the change takes the bulk of the lines and its
-      // consumers take a call-site edit apiece. Only the former is work done *on* that package.
-      const swept = wide && delta < SWEEP_OWNER_LINES;
+      const swept = isSweptCommit(pending.size, delta);
       const byDate = churn.get(name) ?? new Map();
       const bucket = byDate.get(date) ?? { commits: 0, lines: 0, sweeps: 0 };
       if (swept) bucket.sweeps += 1;
@@ -96,7 +93,11 @@ export function sumChurnSince(byDate, since) {
   return total;
 }
 
-// Sweep detection, in two parts, because neither half works alone.
+// Whether one commit reached a package only as a sweep, given how many packages the commit touched
+// and how many lines this package received. Shared with the status drafter so the ranking and the
+// draft can never disagree about what counts as work on a package.
+//
+// Sweep detection is in two parts, because neither half works alone.
 //
 // Breadth first: a commit touching more packages than this is usually repo-wide — a version bump, a
 // lint rule, a mechanical rename — not work done *on* any one package, and counting it as such
@@ -109,5 +110,9 @@ export function sumChurnSince(byDate, since) {
 // owner share settles it: in a wide commit the package that owns the change takes hundreds of lines
 // while its consumers take a call-site edit apiece. Requiring that share keeps the texture refactor
 // counted for `texture` and drops it for the 23 packages that merely followed.
+export function isSweptCommit(packageCount, packageLines) {
+  return packageCount > SWEEP_PACKAGE_BREADTH && packageLines < SWEEP_OWNER_LINES;
+}
+
 const SWEEP_OWNER_LINES = 50;
 const SWEEP_PACKAGE_BREADTH = 20;
