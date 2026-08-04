@@ -76,17 +76,13 @@ _Append-only, dated, blessed rulings._
   `FlexLayoutContainerStyle`, per-component fields to `FlexLayoutItemStyle`, and measured content to
   intrinsic sizes. The measured corpus reaches 194 objects in 11 of 37 files. Rive constraints and
   data binding do not become layout fields, and no Rive importer wiring is part of this increment.
-- **Numeric-boundary policy follows statechart rather than forking it.** The canonical source contract
-  is the comment above `setStatechartRegionDuration` in `packages/statechart/src/statechart.ts`: duration
-  uses the same millisecond unit as `advanceStatechartInstance`, must be finite and non-negative, and
-  zero means unavailable. Statechart publishes blend-weight numbers outbound, skeleton2d publishes
-  world-matrix numbers outbound, statechart receives duration numbers inbound, and layout receives
-  intrinsic-size numbers inbound. Primitive and composition layers exchange plain numbers in both
-  directions, and neither learns what the other means. Any future layout duration field must cite and
-  adopt the statechart contract instead of defining another zero/unit convention; this increment
-  introduces no duration field. **PENDING CROSS-LINK:** builder4 confirms no committed prose anchor for
-  this convention exists yet; replace this marker with that canonical heading when it lands rather than
-  inventing a layout-local formulation.
+- **Numeric-boundary policy follows statechart rather than forking it.** The canonical citation is
+  `packages/statechart/src/statechart.ts` — the source contract comment on the exported
+  `setStatechartRegionDuration`, immediately above that function. Layout instantiates the same inbound
+  boundary through the intrinsic-size buffer that its caller fills: the solver receives plain numbers
+  and never learns what content produced them. There is no committed prose heading to link. Retain the
+  path plus exported API name because `npm run api` and `exports:check` track that name; replacing it with
+  an invented heading would make the reference less durable.
 
 ## Open directions
 
