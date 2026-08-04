@@ -30,6 +30,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 
 import pc from 'picocolors';
 
+import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
+
 // Every doc with a self-declared size budget. Keep the number here identical to the one the doc states
 // in its own prose — the doc is where a reader meets the rule, this table is only what enforces it.
 export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 40_000, path: 'AGENTS.md' }];
@@ -194,6 +196,7 @@ function checkCells(): void {
 
     checkOrdinals(cell, charterText);
     checkReview(cell, dir);
+    checkStatus(cell, dir);
     checkAssessment(cell, dir);
   }
 }
@@ -257,6 +260,37 @@ function checkReview(cell: string, dir: string): void {
   }
   if (meta.updated !== undefined && meta.updated !== 'null' && !DATE.test(meta.updated)) {
     fail(`agents/packages/${cell}/review.md: updated '${meta.updated}' is not YYYY-MM-DD`);
+  }
+}
+
+// status.md was the one contract file with no envelope check, and it drifted accordingly: 48 of 116
+// cells carried an `updated:` older than their own newest entry, while the validated charter/review/
+// assessment dates stayed clean. CONTRACT.md defines the field as "date of the newest entry", so the
+// dated headings are the truth and the field is a cache of them.
+//
+// The drift warns rather than gates. todo.mjs now derives the status date (max of field and headings)
+// instead of trusting the field, so a stale one no longer corrupts the re-review list — it is
+// cosmetic, and a cosmetic mismatch across 48 cells must not turn `npm run check` red.
+function checkStatus(cell: string, dir: string): void {
+  const path = join(dir, 'status.md');
+  if (!existsSync(path)) return;
+  const text = readFileSync(path, 'utf8');
+  const meta = parseFrontMatter(text);
+
+  const declared = meta.updated !== undefined && meta.updated !== 'null' ? meta.updated : null;
+  if (declared !== null && !DATE.test(declared)) {
+    fail(`agents/packages/${cell}/status.md: updated '${declared}' is not YYYY-MM-DD`);
+    return;
+  }
+
+  // Shared with todo.mjs so the warning and the derivation can never disagree about what an entry is.
+  const newest = getNewestStatusEntryDate(text);
+  if (newest === null) return;
+
+  if (declared === null) {
+    warn(`agents/packages/${cell}/status.md: missing 'updated' — newest entry is ${newest}`);
+  } else if (newest > declared) {
+    warn(`agents/packages/${cell}/status.md: updated '${declared}' is behind its newest entry ${newest}`);
   }
 }
 

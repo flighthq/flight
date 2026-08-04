@@ -19,6 +19,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { itemHeadlines } from './todo-items.mjs';
+import { getStatusDate } from './todo-status-date.mjs';
 import { getLocalPackageTargetStatus } from './todo-target.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -126,10 +127,11 @@ for (const name of cells) {
   if (!existsSync(reviewPath)) needsReview.push(name);
 
   const statusPath = join(cellDir, 'status.md');
-  const statusMeta = existsSync(statusPath) ? frontMatter(readFileSync(statusPath, 'utf8')) : {};
+  const statusText = existsSync(statusPath) ? readFileSync(statusPath, 'utf8') : '';
+  const statusDate = statusText ? getStatusDate(statusText, frontMatter(statusText).updated) : null;
   // Dates are YYYY-MM-DD strings — lexical comparison is date comparison.
-  if (review.updated && statusMeta.updated && statusMeta.updated !== 'null' && statusMeta.updated > review.updated) {
-    needsReReview.push(`${name} (review ${review.updated} < status ${statusMeta.updated})`);
+  if (review.updated && statusDate && statusDate > review.updated) {
+    needsReReview.push(`${name} (review ${review.updated} < status ${statusDate})`);
   }
 
   const assessmentPath = join(cellDir, 'assessment.md');
