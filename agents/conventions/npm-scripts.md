@@ -26,6 +26,23 @@ Omitting a segment yields a **collapse alias** that fans over the omitted axis. 
 
 Every meaningful collapse should exist, so the obvious thing to type works. Including the fully-collapsed one: `test:baseline` (omit both subject and check, keep the write mode) rewrites every render-test baseline.
 
+### The clean family
+
+`clean` is the fully collapsed alias and must leave no generated package output behind. Its
+`clean:build` leaf removes every current or orphaned `packages/*/dist` directory and every sibling
+`*.tsbuildinfo`, then asks TypeScript to clean the outputs known to the current project graph. The
+filesystem sweep must happen before `tsc -b --clean`: a renamed-away project is unreachable from the
+current graph, and removing declarations while retaining their build metadata can make a later build
+incorrectly treat the missing declarations as current.
+
+There is deliberately no root `clean:dist` leaf. Distribution removal cannot safely be separated from
+build-metadata removal, so exposing the narrower-looking name would create the same false clean-state
+signal under a different spelling. Package-local `clean:dist` remains the final prepack sweep after
+that package's TypeScript clean.
+
+`build:clean` is the build action in clean mode: it invokes the complete `clean` alias and then builds.
+It is not a substitute for `clean:build`; the action is different.
+
 ## Read vs write: `:baseline`
 
 A check that compares against a committed baseline **reads** under its bare name and **writes** under `:baseline`. `test:size` compares; `test:size:baseline` rewrites. `test:functional:regression` compares; `test:functional:regression:baseline` rewrites. `:baseline` is always the write-mode of the check it follows — and only a check that owns a baseline has one (smoke and parity have nothing to write).
