@@ -432,6 +432,56 @@ feature and is applied rather than reported. The active child is named by a comp
 296), verified against every Solo in the corpus: all 9 resolve to a component whose parent is the Solo
 itself. Applying it hides 61 stacked variants across the corpus.
 
+**Static Rive layout descriptors are imported.** Each artboard now exposes `layouts`, one entry per
+independent authored layout root. An entry pairs a parent-before-child `LayoutTree` with display
+`targets` index-for-index. The importer deliberately supplies neither intrinsic sizes nor resolved
+rectangles: the caller measures those targets into `@flighthq/layout`'s two-number-per-node intrinsic
+buffer, owns the output buffer, and chooses how a rectangle binds back onto a display node.
+
+The translation keeps the two roles Rive itself keeps separate. A `LayoutComponent`'s style is its
+`containerStyle`, while the same component's sizing is the `itemStyle` interpreted by its parent. A
+`LayoutParticipant` attaches sizing to its host Shape/Text/Image/Node instead of creating a phantom
+target. Ordinary `Node` groups remain transparent to layout, `Solo` contributes only its active
+branch, and a styled component below an opaque non-layout ancestor becomes another independent root.
+
+For flex, direction including RTL, reversal, 12-way alignment, wrap, point gap, point padding/border
+insets, fixed main-axis basis, fill fractions, and cross-axis fill/stretch map to
+`FlexLayoutContainerStyle` / `FlexLayoutItemStyle`; hug continues through caller-supplied intrinsic
+sizes. Current Rive grid and stack data also maps onto Flight grid: explicit point/fraction/auto
+template tracks, row/column gaps, one-based placement and spans, and stack's overlapping 1×1 cell.
+
+The mapping was derived from `rive-app/rive-runtime` revision
+`8efe18ec7b52a02139844ffe71438c00de13037e`, not from remembered property names. The defining inputs
+were `dev/defs/layout_component.json`, `dev/defs/nested_artboard_layout.json`, the definitions under
+`dev/defs/layout/`, `include/rive/layout/layout_enums.hpp`, `src/layout_component.cpp`, and the
+corresponding `src/layout/*.cpp` style appliers. Those sources establish the property keys, defaults,
+runtime flags, enum values, component-index `styleId`, and the separate `applyContainerStyle` /
+`applyItemStyle` behavior. They were fetched into a temporary checkout for the derivation and are not
+committed here.
+
+The unsupported Yoga/Rive behavior is explicit project coverage, not a diagnostic emitted for every
+ordinary Rive file:
+
+- item margins, absolute positioning and edge offsets have no Flight flex item fields;
+- percentage lengths, min/max dimensions, aspect ratio, `display:none`, overflow, and intrinsic
+  container sizing have no equivalent in the current descriptor vocabulary; only point-valued
+  gap/padding/border and fixed main-axis size are retained, while fixed cross-axis size still depends
+  on the intrinsic measurement the caller supplies;
+- Flight flex has one gap and no separate wrapped-line `align-content`, so a Rive wrapped layout can
+  lose its distinct main/cross gaps and cross-axis line packing;
+- grid minmax/percent tracks, authored auto-track lists, implicit-track growth, single-axis or
+  out-of-range placement, `justifyItems` / `justifySelf`, and grid/stack cell hug/alignment are not
+  represented; stack retains overlap but not its nine-way cell alignment;
+- layout animation, interpolation, and data-binding changes are snapshots at import time; they do not
+  mutate or re-resolve the returned descriptor, and rectangle-to-node binding/clipping remains a
+  caller concern.
+
+The retired editor round-trip keys are deliberately *not* counted as gaps. Canonical definitions mark
+`flex` (520), `flexGrow` (521), `flexShrink` (522), `alignSelfValue` (602), `edgeConstraints` (545),
+`alignContentValue` (600), `alignItemsValue` (601), and `justifyContentValue` (603) `runtime:false` and
+the Rive engines do not read them; current fill weight and alignment derive from scale/fraction fields
+and `layoutAlignmentType` instead.
+
 **What the corpus says is still unread**, ranked by how many of the 37 real files use it. This is the
 honest remainder of Rive maturity, and the ranking is the point — three of these need a decision above
 this codec, so they are recorded rather than guessed at.
@@ -439,7 +489,6 @@ this codec, so they are recorded rather than guessed at.
 | gap | objects | files | note |
 | --- | --- | --- | --- |
 | Rigging / skinning (`Weight`, `Tendon`, `CubicWeight`, `Skin`, `RootBone`, `Bone`) | 2,664 | 21/37 (57%) | Needs the `skeleton2d` weighted-vector-path decision |
-| Layout (`LayoutComponent`, `LayoutComponentStyle`) | 194 | 11/37 (30%) | Rive's runtime layout engine; no Flight equivalent |
 | Constraints (`IKConstraint`, `TranslationConstraint`, …) | 179 | 11/37 (30%) | Solvers; where they live is a charter question |
 | Data binding (`ViewModelInstance`, `DataBindContext`, `BindableProperty*`) | 691 | 8/37 (22%) | A runtime binding system, not static document data |
 | Variable-font axes (`TextStyleAxis`) | 120 | 7/37 (19%) | Reachable inside the text seam |
@@ -448,7 +497,8 @@ this codec, so they are recorded rather than guessed at.
 
 Measured against animation rather than object count, the same ranking holds: of 3,503 keyed objects
 (all of which resolve), 369 target bones and 53 target layout — so **rigging alone is 10.5% of all
-animation in the corpus**, and every other unread family is under 2%.
+animation in the corpus**. The 53 layout targets are now structurally readable but remain part of the
+snapshot-only animation limitation above; every other unread family is under 2%.
 
 **The reference corpus is 37 files, not 41.** Four of the paths fetched are Git LFS pointers — 131-byte
 text files beginning `version https://` — which the importer correctly rejects as not-a-Rive-file. Any

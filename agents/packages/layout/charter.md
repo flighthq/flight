@@ -75,7 +75,8 @@ _Append-only, dated, blessed rulings._
   `LayoutParticipant` (1066), and `NestedArtboardLayout` (452) translate container fields to a
   `FlexLayoutContainerStyle`, per-component fields to `FlexLayoutItemStyle`, and measured content to
   intrinsic sizes. The measured corpus reaches 194 objects in 11 of 37 files. Rive constraints and
-  data binding do not become layout fields, and no Rive importer wiring is part of this increment.
+  data binding do not become layout fields. The codec now returns those descriptors and index-matched
+  display targets while keeping intrinsic sizes, rectangle output, and node binding caller-owned.
 - **Numeric-boundary policy follows statechart rather than forking it.** The canonical citation is
   `packages/statechart/src/statechart.ts` — the source contract comment on the exported
   `setStatechartRegionDuration`, immediately above that function. Layout instantiates the same inbound
@@ -88,7 +89,7 @@ _Append-only, dated, blessed rulings._
 
 1. A scene2d rectangle-to-node binding that consumes resolved rectangles and applies
    `ViewportScaleMode` without coupling the solver to nodes.
-2. A Rive-format translation layer after importer coverage reaches the authored layout objects; the
-   generic layout package remains free of Rive types.
+2. **Settled — Rive translation stays at the codec boundary.** `scene2d-formats` now emits generic
+   layout descriptors and targets; this package remains free of Rive types and import logic.
 3. Whether a table consumer needs named lines, implicit track growth, or dense auto-placement over the
    deliberately smaller grid core.
