@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getNewestStatusEntryDate, getStatusDate } from '../agents/packages/todo-status-date.mjs';
+import {
+  countStatusEntriesSince,
+  getNewestStatusEntryDate,
+  getStatusDate,
+  getStatusEntryDates,
+} from '../agents/packages/todo-status-date.mjs';
 
 const LOG = [
   '# render-wgpu — Status Log',
@@ -13,6 +18,18 @@ const LOG = [
   '',
   'Body.',
 ].join('\n');
+
+describe('countStatusEntriesSince', () => {
+  it('counts only the entries strictly after the cutoff', () => {
+    expect(countStatusEntriesSince(LOG, '2026-01-01')).toBe(2);
+    expect(countStatusEntriesSince(LOG, '2026-06-25')).toBe(1);
+    expect(countStatusEntriesSince(LOG, '2026-07-24')).toBe(0);
+  });
+
+  it('returns zero for a log with no dated entries', () => {
+    expect(countStatusEntriesSince('# Status\n\nNo entries yet.\n', '2026-01-01')).toBe(0);
+  });
+});
 
 describe('getNewestStatusEntryDate', () => {
   it('returns the newest dated entry regardless of file order', () => {
@@ -55,5 +72,15 @@ describe('getStatusDate', () => {
 
   it('returns null when neither source carries a date', () => {
     expect(getStatusDate('# Status Log\n', 'null')).toBeNull();
+  });
+});
+
+describe('getStatusEntryDates', () => {
+  it('returns every dated entry heading, oldest first', () => {
+    expect(getStatusEntryDates(LOG)).toEqual(['2026-06-25', '2026-07-24']);
+  });
+
+  it('returns an empty array for a log with no dated entries', () => {
+    expect(getStatusEntryDates('# Status\n\nProse only.\n')).toEqual([]);
   });
 });

@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 import { readPackageChurn, sumChurnSince } from './todo-churn.mjs';
 import { itemHeadlines } from './todo-items.mjs';
-import { getStatusDate } from './todo-status-date.mjs';
+import { countStatusEntriesSince, getStatusDate } from './todo-status-date.mjs';
 import { getLocalPackageTargetStatus } from './todo-target.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -135,8 +135,11 @@ for (const name of cells) {
   const statusText = existsSync(statusPath) ? readFileSync(statusPath, 'utf8') : '';
   const statusDate = statusText ? getStatusDate(statusText, frontMatter(statusText).updated) : null;
   // The status log is a weaker signal than git (it only records work somebody wrote down), so it no
-  // longer decides re-review on its own — it just widens the window the churn scan has to cover.
-  if (review.updated) reviewed.push({ name, reviewUpdated: review.updated, statusDate });
+  // longer decides re-review on its own — it reports how much of the landed work was written down.
+  if (review.updated) {
+    const statusEntries = statusText ? countStatusEntriesSince(statusText, review.updated) : 0;
+    reviewed.push({ name, reviewUpdated: review.updated, statusDate, statusEntries });
+  }
 
   const assessmentPath = join(cellDir, 'assessment.md');
   let directedItems = [];
@@ -163,14 +166,15 @@ deepen.sort((a, b) => (a.score ?? 101) - (b.score ?? 101) || a.name.localeCompar
 // One git scan bounded by the oldest review — nothing before that can make any cell stale.
 const oldestReview = reviewed.map((entry) => entry.reviewUpdated).sort()[0];
 const churn = oldestReview === undefined ? new Map() : readPackageChurn(repoRoot, oldestReview);
-// Below this, a delta is dominated by formatting sweeps, import reordering, and mechanical renames
-// rather than behavior a survey would describe differently. Reported as a tail count, not hidden.
-const CHURN_FLOOR = 200;
+// Commits, not lines, is the rank — see todo-churn.mjs for why, and for how repo-wide sweeps are
+// kept out of the count. Sweeps being excluded upstream, this floor is a priority cut rather than a
+// noise filter: one or two focused commits is real work, just not what to re-review first.
+const COMMIT_FLOOR = 3;
 const stale = reviewed
-  .map((entry) => ({ ...entry, lines: sumChurnSince(churn.get(entry.name), entry.reviewUpdated) }))
-  .filter((entry) => entry.lines > 0)
-  .sort((a, b) => b.lines - a.lines);
-const needsReReview = stale.filter((entry) => entry.lines >= CHURN_FLOOR);
+  .map((entry) => ({ ...entry, ...sumChurnSince(churn.get(entry.name), entry.reviewUpdated) }))
+  .filter((entry) => entry.commits > 0)
+  .sort((a, b) => b.commits - a.commits || b.lines - a.lines);
+const needsReReview = stale.filter((entry) => entry.commits >= COMMIT_FLOOR);
 const belowFloor = stale.length - needsReReview.length;
 // A cell whose log claims work the churn scan cannot see: the entry may describe another package's
 // code, or the work may never have landed. Worth naming — it is the log and the tree disagreeing.
@@ -178,8 +182,19 @@ const unbackedByChurn = reviewed.filter(
   (entry) =>
     entry.statusDate &&
     entry.statusDate > entry.reviewUpdated &&
-    sumChurnSince(churn.get(entry.name), entry.reviewUpdated) === 0,
+    sumChurnSince(churn.get(entry.name), entry.reviewUpdated).commits === 0,
 );
+// The other direction: work landed and nothing was written down. The next agent inherits the commits
+// with no continuity prose explaining them, which is exactly what status.md exists to prevent.
+const UNLOGGED_COMMIT_FLOOR = 10;
+const unlogged = needsReReview.filter(
+  (entry) => entry.statusEntries === 0 && entry.commits >= UNLOGGED_COMMIT_FLOOR,
+);
+// Cells that look busy in `git log` but saw no work of their own — every post-review commit touching
+// them was a sweep. Named so the sweep exclusion is auditable rather than a silent subtraction.
+const sweptOnly = reviewed
+  .map((entry) => ({ ...entry, ...sumChurnSince(churn.get(entry.name), entry.reviewUpdated) }))
+  .filter((entry) => entry.commits === 0 && entry.sweeps > 0);
 
 const registerText = readFileSync(join(here, 'register.md'), 'utf8');
 const buildQueue = section(registerText, 'Build queue') ?? '_No Build queue section found in register.md._';
@@ -290,14 +305,17 @@ if (noItems.length > 0) {
 
 lines.push('## Liveness — which stage each stale cell needs next');
 lines.push('');
-lines.push('Computed from cell front matter, except re-review, which is ranked by lines committed under `packages/<name>/` since the cell was reviewed — source, tests, and manifest alike, since an export or dependency change dates a survey as surely as a rewrite does. Git is the signal there because the status log only records work somebody wrote down: it named 37 cells when 115 had newer source, and it ranked the heaviest rewrites last. The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
+lines.push('Computed from cell front matter, except re-review, which is ranked by **commits** landed under `packages/<name>/` since the cell was reviewed — source, tests, and manifest alike, since an export or dependency change dates a survey as surely as a rewrite does. Commits rather than lines because a survey goes stale per distinct piece of work landed on top of it: one generated-file rewrite is 22k lines a survey can still describe in a sentence, while forty focused commits are forty decisions it never saw. Each row reads `+commits · lines · +status entries`, so a cell with many commits and no status entries is visibly undocumented. Git leads because the status log only records work somebody wrote down. The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
 lines.push('');
 const liveness = [
   ['Needs a direction session (charter stub or never directed)', needsDirection.map((n) => `\`${n}\``)],
   ['Needs a first review (built, no review.md)', needsReview.map((n) => `\`${n}\``)],
   [
-    `Needs re-review (source changed since the survey — heaviest first, ${CHURN_FLOOR}+ lines)`,
-    needsReReview.map((entry) => `\`${entry.name}\` (${formatLines(entry.lines)} since ${entry.reviewUpdated})`),
+    `Needs re-review (work landed since the survey — most commits first, ${COMMIT_FLOOR}+ commits)`,
+    needsReReview.map(
+      (entry) =>
+        `\`${entry.name}\` (+${entry.commits} commits · ${formatLines(entry.lines)} · +${entry.statusEntries} status since ${entry.reviewUpdated})`,
+    ),
   ],
   ['Needs assess refresh (review newer than assessment)', needsAssess.map((n) => `\`${n}\``)],
 ];
@@ -306,7 +324,17 @@ for (const [label, entries] of liveness) {
 }
 if (belowFloor > 0) {
   lines.push(
-    `- **Below the re-review floor:** ${belowFloor} more cells have some source change since their review but under ${CHURN_FLOOR} lines — usually a formatting sweep or a mechanical rename. Named here so the cut is visible, not silent.`,
+    `- **Below the re-review floor:** ${belowFloor} more cells saw work since their review but under ${COMMIT_FLOOR} commits — real, just not what to re-review first. Counted here so the cut is visible, not silent.`,
+  );
+}
+if (sweptOnly.length > 0) {
+  lines.push(
+    `- **Touched only by sweeps:** ${sweptOnly.map((entry) => `\`${entry.name}\``).join(' · ')} — every commit reaching these since their review was repo-wide (a rename, a version bump, a lint rule), so the survey still stands. They look busy in \`git log\` and are not.`,
+  );
+}
+if (unlogged.length > 0) {
+  lines.push(
+    `- **Work landed with no status entry:** ${unlogged.map((entry) => `\`${entry.name}\` (+${entry.commits})`).join(' · ')} — ${UNLOGGED_COMMIT_FLOOR}+ commits since the review and nothing written down. The next agent inherits the code with no continuity prose, which is the case status.md exists for.`,
   );
 }
 if (unbackedByChurn.length > 0) {
