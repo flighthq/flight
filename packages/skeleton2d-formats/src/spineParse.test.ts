@@ -41,6 +41,39 @@ const SPINE_TWO_BONES = JSON.stringify({
 });
 
 describe('parseSpineSkeleton', () => {
+  it('keeps BOTH axes when a bone carries the per-axis translatex and translatey timelines', () => {
+    // Spine 4 writes these lowercased with their own keyframe times. Merged onto the paired path they
+    // would overwrite each other back to setup, which is the defect the per-axis paths fixed.
+    const result = parseSpineSkeleton(
+      JSON.stringify({
+        bones: [{ name: 'root' }],
+        animations: {
+          walk: {
+            bones: {
+              root: {
+                translatex: [
+                  { time: 0, value: 0 },
+                  { time: 1, value: 7 },
+                ],
+                translatey: [
+                  { time: 0, value: 0 },
+                  { time: 1, value: 5 },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    )!;
+    const setup = result.skeleton;
+    const pose = cloneSkeleton2D(setup);
+
+    applyAnimationClipToSkeleton2D(result.animations[0].clip, setup, pose, 1);
+
+    expect(pose.bones[0].x).toBeCloseTo(7, 4);
+    expect(pose.bones[0].y).toBeCloseTo(5, 4);
+  });
+
   it('parses the bone hierarchy: names, parent resolution, TRS, and transform mode', () => {
     const result = parseSpineSkeleton(SPINE_TWO_BONES);
     expect(result).not.toBeNull();

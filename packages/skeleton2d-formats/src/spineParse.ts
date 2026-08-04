@@ -576,6 +576,20 @@ function parseSpineAnimations(
           (k) => [numberOr(k.x, 0), numberOr(k.y, 0)],
           diagnostics,
         );
+        // Spine 4 also writes the six PER-AXIS forms, lowercased, each a one-value keyframe under `value`
+        // exactly as `rotate` is. They carry their own keyframe times, so they map to the per-axis paths
+        // rather than being merged into the paired ones — see Skeleton2DAnimationPath.
+        for (const axis of SPINE_BONE_AXIS_TIMELINES) {
+          addSpineBoneChannel(
+            channels,
+            timelines[axis.key],
+            boneIndex,
+            axis.path,
+            1,
+            (k) => [numberOr(k.value, axis.identity)],
+            diagnostics,
+          );
+        }
       }
     }
     parseSpineSlotTimelines(channels, anim.slots, slots, skins, diagnostics);
@@ -736,6 +750,17 @@ function clampUnit(value: number): number {
 // Two normalized bezier control points closer than this are the same curve shape. Float rebasing through
 // differing per-component value ranges introduces small error, so an exact comparison would report
 // divergence on curves that are actually identical.
+// Spine 4's per-axis bone timelines: the JSON key, the path it drives, and the delta that means "no
+// change" for that field (1 for a scale multiplier, 0 for the additive ones).
+const SPINE_BONE_AXIS_TIMELINES = [
+  { identity: 0, key: 'translatex', path: Skeleton2DAnimationPath.TranslationX },
+  { identity: 0, key: 'translatey', path: Skeleton2DAnimationPath.TranslationY },
+  { identity: 1, key: 'scalex', path: Skeleton2DAnimationPath.ScaleX },
+  { identity: 1, key: 'scaley', path: Skeleton2DAnimationPath.ScaleY },
+  { identity: 0, key: 'shearx', path: Skeleton2DAnimationPath.ShearX },
+  { identity: 0, key: 'sheary', path: Skeleton2DAnimationPath.ShearY },
+] as const;
+
 const SPINE_CURVE_EPSILON = 1e-6;
 
 // Spine's name for the base skin every rig has; alternates layer over it.
