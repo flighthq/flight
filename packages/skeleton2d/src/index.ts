@@ -8,6 +8,7 @@ export {
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
   deformSkeleton2DMeshAttachment,
+  deformSkeleton2DPathAttachment,
   disposeSkeleton2D,
   equalsSkeleton2D,
   getSkeleton2DBoneIndexByName,

@@ -420,6 +420,7 @@ export * from './ParticleObjectsState';
 export * from './ParticleObjectsUpdateOptions';
 export * from './ParticleSerializeResult';
 export * from './Path';
+export * from './PathAttachment2D';
 export * from './PathBooleanBackend';
 export * from './PathBooleanFillRule';
 export * from './PathBooleanOperation';
