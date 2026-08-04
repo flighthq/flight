@@ -112,3 +112,30 @@ unrelated rigs.
 **Generalize before proposing any package split on bundle-cost grounds:** establish that the cost exists
 by measuring a consumer that does not use the feature. A plausible argument about manifest edges is not
 evidence, and this measurement retires a whole class of speculative splits.
+
+## 5. The test for a test: would it fail if the behaviour broke?
+
+The rules above are only worth what the tests behind them can detect, and this package is full of
+geometry — the domain where a test is most likely to pass while proving nothing, because the easy
+assertion is to read back the value the code just wrote.
+
+**Assert against independently-derived ground truth, not against the implementation.** The two-bone IK
+tests assert the world position of the chain **tip**, computed by hand from the triangle, rather than the
+joint angle the solver produced. That distinction was not academic: it caught two real bugs before they
+shipped — a child bend angle with the wrong sign, and a stretch that scaled both bones and so compounded
+through inheritance. A test reading back the angle would have passed on both, because the angles were
+self-consistent and the geometry was wrong.
+
+Two habits that make the standard checkable rather than aspirational:
+
+- **Pick a value only the correct behaviour can produce.** The path constraint's Chain-mode test asserts
+  45°, which is not the tangent anywhere on its L-shaped path — so it can only pass if chain aiming is
+  genuinely implemented. The deform-ordering tests assert a result reachable only if the offset is applied
+  before the weighted sum, so applying it after fails rather than silently passing.
+- **Mutate the source and confirm the suite goes red.** When the path constraint's twelve tests passed on
+  first run, that was a reason for suspicion rather than confidence; deleting the spacing advance turned
+  four of them red, which is what established they were exercising the solver at all. It costs one minute.
+
+A test written to move a coverage counter is worse than no test: a red gate is information, and a green
+gate that is wrong is anti-information. If a gate is in the way, find the cause and raise it rather than
+satisfying it.
