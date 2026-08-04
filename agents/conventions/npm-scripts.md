@@ -43,6 +43,18 @@ that package's TypeScript clean.
 `build:clean` is the build action in clean mode: it invokes the complete `clean` alias and then builds.
 It is not a substitute for `clean:build`; the action is different.
 
+`check:package-dist-orphans` is the standing precommit detector for clone-specific residue: it fails
+when an immediate `packages/*` directory has `dist` but no `package.json`. Live package distributions
+are generated noise — `rg` ignores them through `.gitignore`, while plain recursive `grep` does not —
+but an orphaned distribution can masquerade as an API that still exists. The detector therefore gates
+the misleading case without joining `npm run check`, which stays a source-quality sweep independent of
+ignored clone state.
+
+The precommit detector reports the paths and asks the user to run `npm run clean`; it never mutates the
+tree itself. Detection is based only on directory and manifest existence, never timestamps. Explicit
+cleanup retains the ordering above so `dist` and sibling `*.tsbuildinfo` disappear together before
+TypeScript cleans the current project graph.
+
 ## Read vs write: `:baseline`
 
 A check that compares against a committed baseline **reads** under its bare name and **writes** under `:baseline`. `test:size` compares; `test:size:baseline` rewrites. `test:functional:regression` compares; `test:functional:regression:baseline` rewrites. `:baseline` is always the write-mode of the check it follows — and only a check that owns a baseline has one (smoke and parity have nothing to write).
