@@ -24,14 +24,14 @@ stretch. Grid covers fixed/fraction/auto template tracks and placement/spans; st
 overlapping 1×1 grid cell. Focused unit tests cover the role split, caller-intrinsic boundary,
 independent roots, flex/grid/stack, unresolved style references, and the full `.riv` import wiring.
 
-Property names, keys, defaults, runtime flags, enums, and behavior were derived from canonical
-`rive-app/rive-runtime` revision `8efe18ec7b52a02139844ffe71438c00de13037e`: the layout definitions
-under `dev/defs`, `include/rive/layout/layout_enums.hpp`, `src/layout_component.cpp`, and the matching
-`src/layout/*.cpp` appliers. The checkout was temporary and no fetched source is committed. Coverage
-records the unsupported Yoga behavior, notably margins/absolute offsets, percentages and min/max,
-wrapped-line packing, advanced grid tracks/implicit growth/cell alignment, and live animated/bound
-descriptor refresh. The old flex/alignment fields marked `runtime:false` upstream are not treated as
-runtime gaps.
+The RIVE_* constants are the format's own property keys, type identifiers, enum values and declared
+defaults -- the interface facts a conforming reader must recognise. Rive layout is a flexbox model, so
+the importer maps its authored descriptors onto Flight's FlexLayoutContainerStyle /
+FlexLayoutItemStyle vocabulary. The solvers in @flighthq/layout are an independent implementation of
+CSS Flexbox and Grid in Flight's own architecture, written before this importer. Coverage records the
+unsupported Yoga behaviour, notably margins/absolute offsets, percentages and min/max, wrapped-line
+packing, advanced grid tracks/implicit growth/cell alignment, and live animated/bound descriptor
+refresh. The old flex/alignment fields marked `runtime:false` upstream are not treated as runtime gaps.
 
 ## 2026-08-03 — Rive: consolidated insight record
 
