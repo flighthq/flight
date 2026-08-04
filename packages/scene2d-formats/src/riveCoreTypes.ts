@@ -4,9 +4,9 @@
  * a Shape is a Node is a Component — so a reader that tests type keys for equality misses every
  * subclass. `isRiveCoreTypeDerivedFrom` is what lets a stage ask the question it actually means.
  *
- * Derived from the 368 object-model definitions the format publishes as data. Every type key is
- * unique, every declared parent resolves, and the inheritance graph is acyclic and at most eight
- * deep, all of which this table's own test re-checks.
+ * The format has 368 object-model definitions. Every type key is unique, every declared parent
+ * resolves, and the inheritance graph is acyclic and at most eight deep, all of which this table's
+ * own test re-checks.
  */
 
 /** The type's name, or undefined for a key this object model does not define. */

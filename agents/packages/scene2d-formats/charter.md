@@ -200,6 +200,6 @@ direction below, and the 3D `mesh`/`skeleton3d` remain excluded either way. Deta
 8. **Whether a `-formats` cell owns its functional render scenes.** No codec in this cell has one, so
    nothing here is verified at the pixel level on any backend — the widest structural hole for a cell
    whose whole output is visual.
-9. **Whether a third-party corpus may be committed as a fixture.** Rive's reference assets are MIT,
-    which permits redistribution but requires carrying the notice. Until that is decided the corpus is
-    fetched on demand and its runs are reproducible rather than standing in CI.
+9. **External corpus policy.** Rive's editor-authored reference assets are fetched on demand for
+   verification and never committed. The suite ships synthetic fixtures, so corpus runs are
+   reproducible on demand rather than standing in CI.

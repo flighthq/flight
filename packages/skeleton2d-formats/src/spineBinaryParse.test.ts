@@ -209,8 +209,8 @@ describe('parseSpineSkeletonBinary', () => {
 // flag, a string table, two bones, and one slot. The byte layout it writes is the layout verified
 // byte-for-byte against a real 4.1.17 export (see the package status) — the encoder REPRODUCES a confirmed
 // wire format rather than defining it, which is what keeps these tests a real check and not a round-trip
-// against the importer's own assumptions. Real Spine assets are license-restricted and never committed, so
-// the committed fixture is authored here.
+// against the importer's own assumptions. Real Spine assets are never committed, so the committed fixture
+// is authored here.
 function buildSpineBinary(
   options: {
     version?: string;

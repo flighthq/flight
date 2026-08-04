@@ -8,11 +8,10 @@ import { RiveFieldType as RiveFieldTypeValue } from '@flighthq/types/contract';
  * standard ships an empty table. A reader with no built-in table therefore cannot advance past the
  * first property of the first object in a typical file.
  *
- * Derived from the 368 object-model definitions the format publishes as data, taking each property's
- * runtime type and excluding the editor-only properties that are never written to a runtime file.
- * Alternate keys are included: a property may carry retired key numbers alongside its current one, and
- * real files in circulation still use them. Every key resolved to exactly one width across all
- * definitions, which is the consistency the format requires of a globally unique keyspace.
+ * The format's 368 object-model definitions give every runtime property a wire type; editor-only
+ * properties are never written to a runtime file. Alternate keys are included: a property may carry
+ * retired key numbers alongside its current one, and real files in circulation still use them. Every
+ * key has exactly one width across the globally unique keyspace.
  */
 export function getRiveCorePropertyFieldType(key: number): RiveFieldType | undefined {
   return _fieldTypesByKey.get(key);
@@ -20,8 +19,8 @@ export function getRiveCorePropertyFieldType(key: number): RiveFieldType | undef
 
 /**
  * Whether a property's length-prefixed bytes are a raw blob rather than text. The wire cannot say —
- * both travel under the same code — so this comes from the object model, and reading a blob as UTF-8
- * would corrupt it.
+ * both travel under the same code — but the property schema distinguishes them, and reading a blob as
+ * UTF-8 would corrupt it.
  */
 export function isRiveCoreBytesProperty(key: number): boolean {
   return RIVE_BYTES_PROPERTY_KEYS.includes(key);

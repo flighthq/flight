@@ -68,9 +68,9 @@ each is stated with the ruling it needs so the next reader does not re-derive it
    *textureInfo*, inside material resolution, so moving it means giving the seam a per-texture-info
    hook. A seam change, not a mechanical port.
 3. **Rule on a fixture policy before proving real files end to end (Depth gap 4).** Standing guidance
-   on this arc was not to commit third-party assets for licensing reasons, which is what "canonical
-   fixtures" means here. Either a licensed asset set is blessed into the repo, or this stays a
-   capture/CI concern rather than a unit-test one.
+   on this arc is not to commit third-party assets, which is what "canonical fixtures" means here.
+   Either an approved external asset set is fetched on demand, or this stays a capture/CI concern
+   rather than a unit-test one.
 
 ## Backlog
 

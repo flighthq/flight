@@ -55,7 +55,7 @@ extension is deprecated is not licence for the importer to silently remap it.
 decoder and no third-party code: `registerGltfDracoDecoder` lets a consumer plug in its own, and the
 registry starts empty so a build that never registers pulls in nothing. That split is deliberate — Draco
 is an export-time encoding choice, so a decoder is worth nothing to a consumer whose assets do not use it
-and would put a dependency (and its licence) into every build to serve only those who do.
+and would put a dependency into every build to serve only those who do.
 
 Two consequences worth knowing:
 

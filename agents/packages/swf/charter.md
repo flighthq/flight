@@ -92,9 +92,9 @@ _Append-only, dated, blessed rulings._
   duplicate SVG path is declined because `scene2d-formats` already owns SVG documents. User-directed
   2026-07-30.
 - **[2026-07-30] Keep canonical binary evidence external and reproducible.** The authorized Ruffle
-  MIT fixture is fetched only into ignored local storage. Flight commits its revision-pinned
-  provenance, source hash, derived document manifest, and reproduction procedure; hermetic tests
-  reproduce the relevant encoding synthetically and never require the asset or network.
+  fixture is fetched only into ignored local storage. Flight commits its revision-pinned provenance,
+  source hash, derived document manifest, and reproduction procedure; hermetic tests reproduce the
+  relevant encoding synthetically and never require the asset or network.
 - **[2026-08-01] Embedded outline fonts compose through the shared font/glyph stack.** `DefineFont*`
   produces the generic, glyph-index-keyed `GlyphOutlineSource` owned by the font layer rather than
   widening the raster `GlyphSource`. SWF static text walks that source as vector paths; callers can bind

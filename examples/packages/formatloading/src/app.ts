@@ -26,7 +26,7 @@ function bytesToDataUri(bytes: Readonly<Uint8Array>): string {
   return `data:application/octet-stream;base64,${btoa(binary)}`;
 }
 
-// Tiny, license-clean fixtures keep this example self-contained. Each parser consumes the same JSON
+// Tiny synthetic fixtures keep this example self-contained. Each parser consumes the same JSON
 // shape its corresponding authoring tool writes; the visuals below are derived from parsed output.
 const positions = new Float32Array([-1, -0.7, 0, 1, -0.7, 0, 0, 1, 0]);
 const gltfFixture = JSON.stringify({

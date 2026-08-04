@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSpineSkeleton } from './spineParse';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
-// never transcribed from a licensed rig). Two bones: a root, and a child that sets every transform field.
+// never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.
 const SPINE_TWO_BONES = JSON.stringify({
   skeleton: { spine: '4.1', hash: 'x' },
   bones: [

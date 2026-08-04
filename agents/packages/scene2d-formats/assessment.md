@@ -21,9 +21,9 @@ crumbs announce our own incompleteness on correct exports. Probe SVG and Lottie 
 class the Rive corpus kept exposing.
 
 **Backlog, parked on something.** The `Scene2DDocument` slot output waits on the slot contract
-chartered in `scene2d-resources`. A real-asset checkpoint for Lottie and SVG waits on the same
-licensing question Rive's corpus raised — now answered as a notice obligation, so it is a decision
-rather than an unknown. Functional render scenes wait on whether a `-formats` cell owns them.
+chartered in `scene2d-resources`. A real-asset checkpoint for Lottie and SVG waits on an approved
+external corpus and acquisition procedure. Functional render scenes wait on whether a `-formats`
+cell owns them.
 
 **Routed to the charter's open directions, not here:** where a weighted vector path belongs, whether
 `Node2D` should carry a draw index, whether `@flighthq/BlendMode` should widen, functional-scene
@@ -88,7 +88,7 @@ Parked, with the reason.
 
 - **A real-asset fidelity checkpoint.** Charter open direction 3, and the single largest remaining
   unknown — everything green today is green against fixtures we wrote. Parked on a user ruling for
-  which asset, under the licensing discipline set for scene3d-formats.
+  which asset, under the external-asset discipline set for scene3d-formats.
 - **A functional render scene for Lottie (and SVG).** Cross-package (`functional/scenes` plus backend
   baselines) and the charter is silent on whether codec cells own functional scenes. Widest
   structural hole for a codec whose whole output is visual, but not sweep-safe.
