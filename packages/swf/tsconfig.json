@@ -11,6 +11,7 @@
   },
   "references": [
     { "path": "../abc" },
+    { "path": "../adjustments" },
     { "path": "../audio" },
     { "path": "../bitmap" },
     { "path": "../clip" },
