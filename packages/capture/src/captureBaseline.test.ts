@@ -27,6 +27,7 @@ describe('formatCaptureBaseline', () => {
   it('sorts columns, orders fields, indents by two spaces, and ends with a newline', () => {
     const baseline = createCaptureBaseline();
     setCaptureBaselineField(baseline, 'flight:webgl', 'sha256', 'aaa');
+    setCaptureBaselineField(baseline, 'flight:webgl', 'sourceHash', 'source');
     setCaptureBaselineField(baseline, 'flight:webgl', 'fingerprint', '1:ffffff');
     setCaptureBaselineField(baseline, 'canvas', 'fingerprint', '1:000000');
     expect(formatCaptureBaseline(baseline)).toBe(
@@ -36,6 +37,7 @@ describe('formatCaptureBaseline', () => {
         '  },\n' +
         '  "flight:webgl": {\n' +
         '    "fingerprint": "1:ffffff",\n' +
+        '    "sourceHash": "source",\n' +
         '    "sha256": "aaa"\n' +
         '  }\n' +
         '}\n',
@@ -98,8 +100,10 @@ describe('setCaptureBaselineField', () => {
   it('creates the column entry on first write and merges later fields', () => {
     const baseline = createCaptureBaseline();
     setCaptureBaselineField(baseline, 'canvas', 'fingerprint', '1:000000');
+    setCaptureBaselineField(baseline, 'canvas', 'sourceHash', 'source');
     setCaptureBaselineField(baseline, 'canvas', 'sha256', 'hash');
     expect(getCaptureBaselineField(baseline, 'canvas', 'fingerprint')).toBe('1:000000');
+    expect(getCaptureBaselineField(baseline, 'canvas', 'sourceHash')).toBe('source');
     expect(getCaptureBaselineField(baseline, 'canvas', 'sha256')).toBe('hash');
   });
 

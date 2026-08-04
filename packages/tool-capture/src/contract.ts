@@ -13,6 +13,7 @@ export * from './captureReport';
 export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './captureSuite';
+export * from './captureSourceHash';
 export * from './captureValidation';
 export * from './captureWorkflow';
 export * from './functionalScene3Ds';

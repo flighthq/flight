@@ -16,7 +16,7 @@ import {
 } from '@flighthq/capture/contract';
 import type { CaptureBaseline } from '@flighthq/types/contract';
 
-export type BaselineField = 'fingerprint' | 'sha256';
+export type BaselineField = 'fingerprint' | 'sourceHash' | 'sha256';
 
 // Per-subject baseline root: baselines colocate with their suite (functional/examples are
 // top-level). One JSON file per test under the root's baselines/ dir.

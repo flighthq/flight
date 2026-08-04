@@ -240,6 +240,32 @@ everything and pass* — and that is the whole defect.
    than "the page loaded and a screenshot was taken". `reference` stays opt-in, since its pages only register
    a target once its own harness does.
 
+## Baseline freshness annotates reds; it is not another leg
+
+Each fingerprint baseline column records a `sourceHash`: the SHA-256 of the exact scene-source bytes when
+that renderer's fingerprint was deliberately captured. Functional targets hash their backend-specific scene
+file when one exists and otherwise their shared scene file; examples hash the shared `src/app.ts`. A comment
+or reformat therefore changes the hash even when it changes no pixel. That is intentional evidence, not a
+verdict.
+
+The regression leg reads this metadata only to explain a fingerprint mismatch it was already going to fail:
+
+- **source hash changed** — the scene changed; recapture is owed by the scene owner;
+- **source hash unchanged** — the scene did not change; classify the red as environment drift and never
+  rebaseline it;
+- **hash unavailable** — keep the original failure and say the freshness classification is unavailable.
+
+The aggregate JSON report carries the same distinction mechanically as `sourceHashStatus` plus the recorded
+and current hashes. It is absent from passing checks. No freshness command is wired into `npm run check`, no
+new warning appears on green runs, and capture remains a deliberate act. This is the reachability-style
+**report-and-accept** choice: a cosmetic source edit becomes a harmless explanation if the regression leg is
+already red. Making freshness a gate would turn whitespace into a build break and train reflexive baseline
+regeneration, destroying the evidence the annotation exists to protect.
+
+The first metadata population did not run capture. It reconstructed each existing fingerprint's scene hash
+from the Git commit that last wrote that fingerprint, so today's source is not falsely stamped onto an older
+baseline.
+
 ## Scope
 
 Not covered here: the tilemap/webgpu blank render itself (a real bug, possibly sharing a root cause with the
