@@ -14,6 +14,7 @@ import {
   getPackageLayerCoverageViolations,
   getPackageLayerDependencyViolation,
 } from './package-layers';
+import { getPackageLicenseViolations } from './package-license-policy';
 import { getPackageLockWorkspaceViolations, type PackageLockJson, type WorkspaceManifest } from './package-lock-policy';
 import { isSdkBarrelExcludedPackage } from './sdk-policy';
 
@@ -41,8 +42,10 @@ interface PackageRepository {
 }
 
 interface PackageJson {
+  author?: string;
   name?: string;
   version?: string;
+  license?: string;
   main?: string;
   module?: string;
   types?: string;
@@ -392,6 +395,14 @@ const buildRefs = new Set((tsconfigBuild?.references ?? []).map((r) => r.path.re
 const packageDirs = readdirSync(packagesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
   .map((e) => join(packagesDir, e.name));
+
+// License metadata deliberately covers root package.json and publishable packages/* manifests;
+// examples, tools, and fixtures are non-published and outside this readiness gate.
+const packageLicenseErrors = [join(root, 'package.json'), ...packageDirs.map((dir) => join(dir, 'package.json'))]
+  .filter((path) => existsSync(path))
+  .flatMap((path) =>
+    getPackageLicenseViolations(relative(root, path).replaceAll('\\', '/'), readJson<PackageJson>(path)),
+  );
 
 const workspacePackageNames = packageDirs.flatMap((pkgDir) => {
   const name = readJson<PackageJson>(join(pkgDir, 'package.json'))?.name;
@@ -876,7 +887,12 @@ const failedExamples = exampleResults.filter((r) => r.errors.length > 0);
 const exampleErrors = failedExamples.reduce((n, r) => n + r.errors.length, 0);
 
 const totalErrors =
-  packageErrors + exampleErrors + barrelSyncErrors.length + layerPolicyErrors.length + packageLockErrors.length;
+  packageErrors +
+  exampleErrors +
+  packageLicenseErrors.length +
+  barrelSyncErrors.length +
+  layerPolicyErrors.length +
+  packageLockErrors.length;
 
 if (jsonMode) {
   console.log(
@@ -890,6 +906,7 @@ if (jsonMode) {
           unpromotedExports: r.unpromotedExports,
         })),
         examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
+        licenseMetadata: { errors: packageLicenseErrors },
         packageLock: { errors: packageLockErrors },
         layerPolicy: { errors: layerPolicyErrors },
         barrelSync: { errors: barrelSyncErrors },
@@ -912,6 +929,13 @@ for (const { name, errors } of failedExamples) {
   console.log(`\n${pc.bold(name)}`);
   for (const { label, detail } of errors) {
     console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
+if (packageLicenseErrors.length > 0) {
+  console.log(`\n${pc.bold('Package license declarations')}`);
+  for (const { label, detail } of packageLicenseErrors) {
+    console.log(`  ${pc.red('✗')} ${label}${pc.dim(` — ${detail}`)}`);
   }
 }
 
@@ -971,6 +995,8 @@ if (totalErrors === 0) {
     parts.push(
       `${exampleErrors} error${exampleErrors === 1 ? '' : 's'} across ${failedExamples.length} example${failedExamples.length === 1 ? '' : 's'}`,
     );
+  if (packageLicenseErrors.length > 0)
+    parts.push(`${packageLicenseErrors.length} package license error${packageLicenseErrors.length === 1 ? '' : 's'}`);
   if (barrelSyncErrors.length > 0)
     parts.push(`${barrelSyncErrors.length} barrel sync error${barrelSyncErrors.length === 1 ? '' : 's'}`);
   if (layerPolicyErrors.length > 0)

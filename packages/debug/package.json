@@ -1,6 +1,8 @@
 {
   "name": "@flighthq/debug",
   "version": "0.2.0",
+  "author": "Joshua Granick and other contributors",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/flighthq/flight.git",
