@@ -60,6 +60,72 @@ describe('deformSkeleton2DMeshAttachment', () => {
     expect(out[1]).toBeCloseTo(0, 5);
   });
 
+  it('adds a weighted deform offset in BONE-LOCAL space, one pair per influence', () => {
+    const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const mesh = weightedMesh({ influenceCounts: new Uint16Array([1]), influences: new Float32Array([0, 1, 0, 1]) }, 1);
+    const out = new Float32Array(2);
+
+    deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([0, 2]));
+
+    // The offset displaces the bone-local (1,0) to (1,2) BEFORE the bone's 90° rotation, so it comes out
+    // along -x. Applying it after the transform would have moved the vertex along +y instead.
+    expect(out[0]).toBeCloseTo(3, 5);
+    expect(out[1]).toBeCloseTo(1, 5);
+  });
+
+  it('walks the deform stream per influence, so a two-bone vertex consumes two offset pairs', () => {
+    const s = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const skin: Skin2D = {
+      influenceCounts: new Uint16Array([2]),
+      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
+    };
+    const out = new Float32Array(2);
+
+    // Only the SECOND influence is displaced; at weight 0.5 it moves the blended vertex half as far.
+    deformSkeleton2DMeshAttachment(out, weightedMesh(skin, 1), s, 0, new Float32Array([0, 0, 4, 0]));
+
+    expect(out[0]).toBeCloseTo(7, 5);
+    expect(out[1]).toBeCloseTo(0, 5);
+  });
+
+  it('ignores a deform stream too short for the influences it parallels rather than reading past it', () => {
+    const s = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const skin: Skin2D = {
+      influenceCounts: new Uint16Array([2]),
+      influences: new Float32Array([0, 0, 0, 0.5, 1, 0, 0, 0.5]),
+    };
+    const out = new Float32Array(2);
+
+    // Sized from vertex count (one pair) instead of influence count (two) — the importer bug this guards.
+    deformSkeleton2DMeshAttachment(out, weightedMesh(skin, 1), s, 0, new Float32Array([4, 4]));
+
+    expect(out[0]).toBeCloseTo(5, 5);
+    expect(out[1]).toBeCloseTo(0, 5);
+  });
+
+  it('adds a rigid deform offset to the setup vertices before the bone transform', () => {
+    const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
+    computeSkeleton2DWorldTransforms(s);
+    const mesh: MeshAttachment2D = {
+      kind: MeshAttachment2DKind,
+      skin: null,
+      triangles: new Uint16Array(),
+      uvs: new Float32Array(2),
+      vertexCount: 1,
+      vertices: new Float32Array([2, 0]),
+    };
+    const out = new Float32Array(2);
+
+    deformSkeleton2DMeshAttachment(out, mesh, s, 0, new Float32Array([1, 0]));
+
+    // (3,0) rotated 90° = (0,3), + (5,0) → (5,3).
+    expect(out[0]).toBeCloseTo(5, 5);
+    expect(out[1]).toBeCloseTo(3, 5);
+  });
+
   it('transforms a rigid mesh by the slot bone world matrix (alias-safe in place)', () => {
     const s = createSkeleton2D([makeBone({ x: 5, rotation: 90 })]);
     computeSkeleton2DWorldTransforms(s);
