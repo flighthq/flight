@@ -1,0 +1,9 @@
+{
+  "name": "layout-all-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "layout",
+    "variant": "all"
+  }
+}

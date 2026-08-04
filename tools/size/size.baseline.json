@@ -134,5 +134,7 @@
   "flight-diagnostics:canvas": 715,
   "flight-diagnostics:canvas:diagnostics": 2431,
   "log-console:canvas": 334,
-  "cross-backend-embed:dom": 14723
+  "cross-backend-embed:dom": 14723,
+  "layout:canvas": 647,
+  "layout:canvas:all": 2620
 }

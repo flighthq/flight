@@ -136,6 +136,7 @@
     "@flighthq/intl": "*",
     "@flighthq/ipc": "*",
     "@flighthq/keyboard": "*",
+    "@flighthq/layout": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/lighting": "*",
     "@flighthq/loader": "*",

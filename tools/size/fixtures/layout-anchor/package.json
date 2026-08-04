@@ -1,0 +1,8 @@
+{
+  "name": "layout-anchor-size",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "layout"
+  }
+}
