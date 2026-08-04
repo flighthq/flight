@@ -262,6 +262,29 @@ new warning appears on green runs, and capture remains a deliberate act. This is
 already red. Making freshness a gate would turn whitespace into a build break and train reflexive baseline
 regeneration, destroying the evidence the annotation exists to protect.
 
+### A recorded hash is evidence; a back-derived one is an inference
+
+The capture pipeline records `sourceHash` at write time, hashing the scene as it stands at the moment it
+writes the column. Those values are ground truth. Columns predating the annotation could only be recovered
+from history, and a recovered value is weaker evidence — the two grades sit in the same field and are not
+distinguishable by looking.
+
+Recovery is inherently lossy because **a capture rewrites every field of a column, but Git only records the
+fields whose bytes changed.** Neither line identifies the capture on its own, and they fail on opposite
+inputs: the `fingerprint` line goes stale when a recapture moves too few pixels to change the coarse grid,
+and the `sha256` line goes stale when one backend's output is unchanged by a capture that did rewrite its
+siblings. The later of the two blames is the last commit that demonstrably wrote the column, which is the
+best history can answer. Its blind spot is a capture that changed nothing at all: Git records nothing, so
+no blame can see it, and the recovered hash silently describes an earlier scene.
+
+Two historical layouts matter to any such recovery: baselines predating the flatten refactor addressed
+scenes as `tests/functional/<name>/src/app.ts`, and `scene2d-*` scenes were `displayobject-*` before the
+package rename. Resolve a candidate path only when the file actually exists at that commit, so a wrong
+guess cannot resolve into a plausible hash for the wrong file.
+
+A column with no `sha256` line has nothing to blame and no recoverable hash. It carries none, and reports
+`unavailable` — the honest answer. Do not fill one in to raise a completeness count.
+
 The first metadata population did not run capture. It reconstructed each existing fingerprint's scene hash
 from the Git commit that last wrote that fingerprint, so today's source is not falsely stamped onto an older
 baseline.
