@@ -1,5 +1,7 @@
 {
   "name": "flight",
+  "author": "Joshua Granick and other contributors",
+  "license": "MIT",
   "private": true,
   "repository": {
     "type": "git",
