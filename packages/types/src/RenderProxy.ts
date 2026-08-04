@@ -17,13 +17,13 @@ export interface RenderProxy extends Entity {
   // The node's color-adjustment stack (NodeRuntime.colorAdjustments) resolved to a single affine
   // ColorScaleBias — the form the inline fold consumes. Folded into the draw as an Adjustment: a uniform
   // for a whole-batch tint, per-instance attributes when tints vary across a batch. Null → no tint.
-  // Populated by the color-adjustment hook during the render walk from the node's dirty-cached
-  // resolvedColorScaleBias (re-fused only when the stack changes). It is NOT a material and does not key
-  // the batch: a tinted and an untinted node with the same texture+blend batch together, the batch
+  // Populated by the color-adjustment hook during the render walk from the node's dirty-cached local
+  // value with its parent's inherited value applied second. It is NOT a material and does not key the
+  // batch: a tinted and an untinted node with the same texture+blend batch together, the batch
   // promoting to the color-adjustment shader variant when any member is tinted. Per-quad tints
   // (QuadBatch/Tilemap) come from the source's per-quad data, overriding this.
   colorScaleBias: ColorScaleBias | null;
-  // Full 4×5 pointwise matrix for the uncommon channel-mixing path. Mutually exclusive with
+  // Full inherited 4×5 pointwise matrix for the uncommon channel-mixing path. Mutually exclusive with
   // colorScaleBias; presence widens only the promoted adjustment stream.
   colorMatrix?: readonly number[] | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →

@@ -36,6 +36,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
@@ -47,7 +48,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/adjustments": "*",
     "@flighthq/camera": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/lighting": "*",

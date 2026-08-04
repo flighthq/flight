@@ -245,6 +245,9 @@ interface SwfPlacement {
   // record tints nothing. Built once at parse and shared by every frame that keeps the placement, so
   // constructFrame compares one reference rather than rebuilding a descriptor per frame.
   colorAdjustments: readonly Adjustment[] | null;
+  // Kept separate from filterAdjustments so a move can replace either authored channel without
+  // retaining or dropping the other before they are joined for the node.
+  colorTransformAdjustments: readonly Adjustment[] | null;
   characterId: number;
   // The depth this placement masks up to, inclusive, or 0 when it is ordinary content. A masking
   // placement is never drawn itself: it contributes its shape as the clip on everything it covers.
@@ -253,6 +256,9 @@ interface SwfPlacement {
   directLinkage: string | null;
   // The record's filter list as spatial effect descriptors, in authored order. Reported, never attached.
   effects: readonly RenderEffect[];
+  // The pointwise members of the record's filter list. A declared list replaces this channel, including
+  // when it is empty; silence on a move inherits it.
+  filterAdjustments: readonly Adjustment[];
   matrix: SwfMatrix;
   name: string | null;
   // A morph shape's progress, 0..1. SWF stores it as a 16-bit ratio on the placement rather than on the
@@ -1160,7 +1166,7 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const colorTransform =
     (flags & 0x08) !== 0
       ? readSwfColorTransform(body)
-      : { alpha: inherited?.alpha ?? 1, colorAdjustments: inherited?.colorAdjustments ?? null };
+      : { alpha: inherited?.alpha ?? 1, colorAdjustments: inherited?.colorTransformAdjustments ?? null };
   const ratio = (flags & 0x10) !== 0 ? body.readUint16() / MORPH_RATIO_ONE : (inherited?.ratio ?? 0);
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
@@ -1170,8 +1176,8 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   // that record rather than misread from the middle of a filter body.
   const hasFilterList = (extendedFlags & 0x01) !== 0;
   const readEffects: RenderEffect[] = [];
-  const filterAdjustments: Adjustment[] = [];
-  if (hasFilterList) readSwfFilterList(body, readEffects, filterAdjustments);
+  const readFilterAdjustments: Adjustment[] = [];
+  if (hasFilterList) readSwfFilterList(body, readEffects, readFilterAdjustments);
   const hasBlendMode = (extendedFlags & 0x02) !== 0;
   const blendModeValue = hasBlendMode ? body.readUint8() : 0;
 
@@ -1180,6 +1186,7 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   // keeps whatever the move inherited. That is why an empty list a record did declare is not the same
   // value as no list at all.
   const effects = hasFilterList ? readEffects : (inherited?.effects ?? EMPTY_EFFECTS);
+  const filterAdjustments = hasFilterList ? readFilterAdjustments : (inherited?.filterAdjustments ?? EMPTY_ADJUSTMENTS);
   placements.set(depth, {
     advancedBlendMode: hasBlendMode
       ? resolveSwfAdvancedBlendMode(blendModeValue)
@@ -1189,9 +1196,11 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
     characterId,
     clipDepth,
     colorAdjustments: joinSwfColorAdjustments(colorTransform.colorAdjustments, filterAdjustments),
+    colorTransformAdjustments: colorTransform.colorAdjustments,
     depth,
     directLinkage,
     effects,
+    filterAdjustments,
     matrix,
     name,
     ratio,
@@ -1212,9 +1221,11 @@ function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlace
     characterId,
     clipDepth: 0,
     colorAdjustments: colorTransform?.colorAdjustments ?? null,
+    colorTransformAdjustments: colorTransform?.colorAdjustments ?? null,
     depth,
     directLinkage: null,
     effects: EMPTY_EFFECTS,
+    filterAdjustments: EMPTY_ADJUSTMENTS,
     matrix,
     name: null,
     ratio: 0,
@@ -1632,9 +1643,11 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
         characterId,
         clipDepth: 0,
         colorAdjustments: colorTransform?.colorAdjustments ?? null,
+        colorTransformAdjustments: colorTransform?.colorAdjustments ?? null,
         depth,
         directLinkage: null,
         effects: EMPTY_EFFECTS,
+        filterAdjustments: EMPTY_ADJUSTMENTS,
         matrix,
         name: null,
         ratio: 0,
@@ -2318,6 +2331,7 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 
 const CWS_SIGNATURE = 0x43;
 const ALPHA_CHANNEL = 3;
+const EMPTY_ADJUSTMENTS: readonly Adjustment[] = [];
 // A placement with no filter list shares one empty array, so an untouched effect list compares equal by
 // reference across every frame and instance.
 const EMPTY_EFFECTS: readonly RenderEffect[] = [];

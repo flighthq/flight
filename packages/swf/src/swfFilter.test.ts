@@ -7,6 +7,7 @@ import type {
   DropShadowEffect,
   GradientGlowEffect,
   InnerGlowEffect,
+  InnerShadowEffect,
   OuterGlowEffect,
   RenderEffect,
 } from '@flighthq/types/contract';
@@ -38,22 +39,24 @@ describe('readSwfFilterList', () => {
     expect(shadow).toMatchObject({ blurX: 4, blurY: 6, distance: 10, quality: 3, strength: 1.5 });
   });
 
-  it('reads an inner-flagged drop shadow as an inner glow, which is the recipe Flight carries', () => {
+  it('keeps an inner drop shadow directional', () => {
     const { effects } = read(
       joinBytes(
         new Uint8Array([1, 0]),
         rgba(0, 0, 0, 0xff),
         fixed(2),
         fixed(2),
-        fixed(0),
+        fixed(Math.PI / 2),
         fixed(8),
         fixed8(1),
         new Uint8Array([0x80 | 2]),
       ),
     );
 
-    expect((effects[0] as InnerGlowEffect).kind).toBe('InnerGlowEffect');
-    expect(effects[0]).toMatchObject({ blurX: 2, blurY: 2, quality: 2 });
+    const shadow = effects[0] as InnerShadowEffect;
+    expect(shadow.kind).toBe('InnerShadowEffect');
+    expect(shadow.angle).toBeCloseTo(90, 3);
+    expect(shadow).toMatchObject({ blurX: 2, blurY: 2, distance: 8, quality: 2 });
   });
 
   it('reads a blur', () => {
