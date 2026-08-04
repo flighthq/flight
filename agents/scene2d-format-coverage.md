@@ -371,8 +371,34 @@ inheriting the document's. Rotation converts radians to degrees, as everywhere e
 
 The interpolation enum was settled from the corpus rather than a header: type 2 carries an
 interpolator in 18,044 of 18,608 cases, type 1 never does, and type 0 almost never — hold, linear,
-cubic. Cubic segments use the eased curve their named interpolator states; the advanced kinds (3 and
-4, 42 cases) have no Flight equivalent and fall back to linear.
+cubic. Cubic segments use the eased curve their named interpolator states.
+
+**Loop mode, playback speed and the work area are read, and reported rather than applied.** Each
+`RiveAnimationClip` carries `loop` (`OneShot`/`Loop`/`PingPong`), `speed` where 1 is authored speed,
+and `workAreaStart`/`workAreaEnd` in seconds — null unless the animation sets `enableWorkArea`, since
+the bounds' unset sentinel is −1 and 0 is a real frame. An `AnimationClip` is channels sampled at a
+time, with no notion of repetition, rate, or a trimmed range, so applying these would bake a playback
+policy into sampled data; the caller driving the playhead is the one that can honor them. The work
+area trims *playback*, not content, which is the other reason import reports the span rather than
+dropping the keyframes outside it.
+
+**The advanced interpolation kinds are an unread interpolator *type*, not an unknown enum value** —
+worth stating precisely, because the earlier reading of this ("kinds 3 and 4 have no Flight
+equivalent") pointed at the wrong thing. Rive's own runtime never switches on `interpolationType` at
+all: `InterpolatingKeyFrame::onAddedDirty` resolves `interpolatorId` and uses whatever
+`KeyFrameInterpolator` it lands on, so the *object* carries the behaviour and the enum is a hint.
+`KeyFrameInterpolator` (type 175) has exactly three concrete subclasses — `CubicInterpolator` (139),
+`ElasticInterpolator` (174) and `ScriptedInterpolator` (972) — and this importer collects only
+descendants of 139. An elastic interpolator therefore resolves to nothing and its segment falls back
+to linear. That is the whole mechanism behind the 42 cases.
+
+Carrying elastic needs something Flight does not have yet. `ElasticInterpolator` states `easingValue`,
+`amplitude` (key 406) and `period` (407), while `@flighthq/easing` exposes `easeInElastic` /
+`easeOutElastic` / `easeInOutElastic` with those two constants **fixed** (period 0.4, unit amplitude).
+A parameterized elastic easing in `@flighthq/easing` is the missing piece, and it is that package's
+call rather than this codec's — approximating it with the fixed-parameter form would produce a curve
+that is confidently wrong wherever a file states anything else. `ScriptedInterpolator` runs Rive's own
+scripting and is out of scope for a codec entirely.
 
 **`interpolatorId` and `parentId` do not share a numbering space**, which is worth knowing before
 adding another id-valued property. `parentId` indexes components only — resolving it against all
@@ -609,9 +635,25 @@ propagates its own world transforms rather than reading posed nodes — the Spin
 which is a different architecture rather than a different spelling.
 
 What Flight lacks is a **weighted vector path**: a path whose vertices are driven by bone influences.
-That is a `skeleton2d` or `path` design question, not something this codec can settle, and inventing
-a lossy mesh approximation would produce geometry that looks plausible and is wrong. Bones, skins,
-tendons and weights are therefore read past, and `Mesh`/`MeshVertex` with them.
+Inventing a lossy mesh approximation would produce geometry that looks plausible and is wrong, so
+bones, skins, tendons and weights are read past for now, and `Mesh`/`MeshVertex` with them.
+
+**Where that lands has since been ruled, and it is `skeleton2d`, not `path`.** The third member of the
+`Attachment2D` family, beside `RegionAttachment2D` and `MeshAttachment2D`, is `PathAttachment2D`, with
+one new deformer — `deformSkeleton2DPathAttachment(out, attachment, skeleton, boneIndex)`. `Skin2D`
+needs no change: it is already geometry-agnostic, carrying influence counts and
+`(boneIndex, localX, localY, weight)` tuples with no triangles and no UVs anywhere in it, so the
+weighting math is identical for a bezier vertex. Skinning stays in one package and accommodates Spine,
+DragonBones and Rive together rather than growing a second rig runtime.
+
+**Rive is not boneless, and reading it that way leads straight to designing a free-form deformer.**
+It has a full bone system — `Bone`, `RootBone`, `Tendon`, `Skin`, `Weight`, `CubicWeight` — and its
+skinning is bone-driven exactly as Spine's is. Only two things differ: *what* is skinned (a vector
+path rather than a textured mesh) and *where* the bones live (`TransformComponent`s in the artboard
+tree rather than `Skeleton2D`'s flat parent-before-child array). On the import side the second is a
+**topological sort**, not a graph problem: the artboard tree already resolves all 37,595 parents with
+no cycle at a maximum depth of 17, so the flatten is well-founded, and bone channels then bind through
+the existing `Skeleton2DAnimationTarget`.
 
 **A `.riv` imports as a named-graph document, and resources resolve through the shared seam.**
 `createScene2DDocumentFromRiveDocument` produces the pieces `Scene2DDocument` wants, and
@@ -635,12 +677,12 @@ inside it, since `Scene2DDocument` models a static named graph and a caller that
 blend needs the import itself.
 
 **Also not covered**, beyond the families the ranked table above counts: text modifiers and
-variable-font axes, per the text section. Loop mode, work-area trimming, and playback speed, which the
-animation states and this importer does not yet carry. Non-double and non-colour keyframe value kinds.
-Live animated or bound layout-descriptor refresh. Dashes, which no corpus file uses. Deformable meshes,
-bones and skinning. And `Feather`, a paint effect whose home is the effects tier rather than this codec
-— the table counts 62 objects across 2 files, while an earlier revision of this paragraph said 154
-instances; the two have not been reconciled against the corpus. The state-machine runtime is
+variable-font axes, per the text section. Elastic interpolation, per the animation section — the one
+piece of it Flight lacks is a parameterized elastic easing. Non-double and non-colour keyframe value
+kinds. Live animated or bound layout-descriptor refresh. Dashes, which no corpus file uses. Deformable
+meshes, bones and skinning. And `Feather`, a paint effect whose home is the effects tier rather than
+this codec — the table counts 62 objects across 2 files, while an earlier revision of this paragraph
+said 154 instances; the two have not been reconciled against the corpus. The state-machine runtime is
 intentionally a separate future cell rather than a codec gap.
 
 Import stops deliberately short in two further places, and neither is a gap in this codec. **Image
