@@ -93,6 +93,42 @@ bounding box and clipping are each a few lines of delegation. That is the decomp
 rule asks for — the primitive was already sitting inside the mesh deformer, duplicated once for paths and
 about to be duplicated twice more. Breaking one line of it turns **8** tests red across four callers.
 
+## Slot deform, and the false claim that shaped it (2026-08-04)
+
+`Slot2D.deform` carries a **`Skeleton2DSlotDeform` record** — the offsets *and* the attachment they were
+authored for — read through `getSkeleton2DSlotDeformOffsets`, which returns them only when that attachment
+is the one the slot currently shows. `Skeleton2DDeformAnimationTarget` binds a deform channel through the
+existing target registry (opt-in via `registerSkeleton2DDeformAnimationTarget`); the track is an ordinary
+numeric one whose `components` is the whole stream, so `@flighthq/animation` needed no widening, and the
+offsets **interpolate** — a morph that snapped between drawn keys would be the bug.
+
+**It is a record rather than a bare `Float32Array` because the bare version was unsafe**, and the reasoning
+is worth keeping because it was found the hard way. The original seam analysis asserted that a slot-held
+buffer "composes correctly with the attachment-swap track — swap the attachment, the deform buffer for the
+old one stops being addressed." **That claim was never tested and it is false.**
+`bindSkeleton2DSlotAttachment` writes `slot.attachment` and nothing else, so a bare buffer survives a swap
+and deforms the new art.
+
+The length check could not have covered it. Of the three ways a swap changes size, only one was detectable:
+
+| Swap to | Old `>=` guard | Now |
+| --- | --- | --- |
+| a **larger** attachment | caught — buffer too short | caught |
+| an **equal** attachment | **silent** | caught by identity |
+| a **smaller** attachment | **silent** — longer buffer satisfies `>=` | caught by identity |
+
+Equal is the common case, because matching point counts are what make a swap look continuous — so the
+failure was likeliest exactly where the feature is most used.
+
+The record is the [invalidation doctrine](../../conventions/invalidation.md) applied literally: identities
+are compared, re-read at a pull seam, with bare assignment as the API. The bare buffer was the shape that
+*violated* it, by making a reference-shaped dependency invisible and then trying to catch the consequence
+with a length heuristic. **Staleness is now unrepresentable rather than guarded against.**
+
+Separately and independently, the two length guards were changed from `>=` to `===` (`fe25ec3da`). They
+remain the only protection against a genuinely mis-sized *authored* buffer, and `>=` accepted an over-long
+one silently there too. A caller with one oversized scratch buffer passes `subarray(0, n)`.
+
 ## Still deferred (per charter phasing)
 
 - **P2 remainder:** none. The attachment family is complete.
