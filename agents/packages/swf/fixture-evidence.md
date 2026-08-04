@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-02
+updated: 2026-08-04
 fixturePolicy: provenance-and-derived-manifest-only
 ---
 
@@ -138,8 +138,8 @@ Result at the revision that added shape geometry and End-tag tolerance:
 | Rejected | 247 — **all** compressed (`CWS` 242, `ZWS` 5) |
 | Uncompressed rejected | **0** |
 
-Re-run after `registerSwfDecompressor` landed, with the repository's existing RFC 1951 inflate
-(`inflateAwdDeflate`, from `scene3d-formats`) registered for zlib:
+Re-run with a decompressor registered — today that is `registerDeflateDecompressor()` from
+`@flighthq/compression`, the one registry every container format resolves through:
 
 | Measure | Value |
 | --- | --- |
@@ -213,6 +213,55 @@ Two rankings came out of this and both contradicted the assumption they replaced
 in 83% of files and cost one tag to support. Text (`DefineEditText` plus the font tables behind it) is the
 largest remaining visual hole, while per-frame colour transform and blend mode — which had been ranked
 next — cover 5% of placements and one file respectively.
+
+## Animated sweep
+
+Every earlier sweep measured the *import*: does a file parse, and how much geometry comes out. None of
+them ever ran a second frame. Multi-frame behaviour — attach, detach, reorder, re-transform — rested
+entirely on synthetic bytes until this sweep, which steps every multi-frame clip in the corpus through
+all of its frames with `gotoAndStopMovieClip` and records what the tree does.
+
+| Measure | Value |
+| --- | --- |
+| Files swept | 306 (301 readable, the 5 `ZWS` rejected) |
+| Files carrying animation | 33 |
+| Multi-frame clips stepped | 46 |
+| Frames constructed | 411 |
+| Longest timeline | 39 frames |
+| Threw | **0** |
+
+Counting "the tree changed" is not enough on its own, because a clip that legitimately shows the same
+thing on every frame is indistinguishable from one whose per-frame data was dropped. So the 29 clips that
+are *root* timelines are cross-checked against the byte stream: the raw tags are walked, placement and
+removal tags are counted per frame, and that is compared with what the constructed tree shows.
+
+| Root timelines | Meaning |
+| --- | --- |
+| 13 | No placement tag after the first `ShowFrame` — authored to hold still, and the tree holds still |
+| 15 | The wire changes and the tree changes with it |
+| **1** | The wire changes and the tree does **not** |
+
+The single divergence is `from_gnash/misc-ming.all/Video-EmbedSquareTest`: each frame moves depth 2 with
+a new ratio, and depth 2 holds character 4, a `DefineVideoStream`. Video characters are not imported, so
+the placement resolves to no node and eleven per-frame moves land on nothing. That is the known video
+gap surfacing as animation loss, not a timeline defect — and it is the first time a real file has named
+it. Node identity is part of the comparison, which is what distinguishes a *replacement* at one depth
+(`avm1/goto_execution_order` swaps character 1 for character 2 at depth 1, inheriting the matrix) from a
+clip that truly did not move; without it that file reads as a false divergence.
+
+The limit worth stating: the wire cross-check covers root timelines only. Of the 46 clips stepped, the
+17 that are nested sprites are proven not to throw and are **not** proven to show the right thing —
+mapping a sprite's own tag stream back to its instantiated subtree is the work that would close that,
+and it is not done. Nothing here is a pixel comparison either; this measures the constructed tree.
+
+### Reproduce the animated sweep
+
+Fetch the corpus as above, then step every multi-frame clip: call `registerDeflateDecompressor()`, import
+each file with `createScene2DFromSwf`, walk the tree for `MovieClipKind` nodes, and for each one whose
+`getMovieClipTotalFrames` exceeds 1 call `gotoAndStopMovieClip` for every frame, recording child count,
+child identity, each child's local matrix and alpha. For the wire cross-check, inflate the container,
+walk the root tag stream (skipping each `DefineSprite` body whole), and count tags 4/26/70/94 and 5/28
+between `ShowFrame`s.
 
 ## Mutation sweep
 
