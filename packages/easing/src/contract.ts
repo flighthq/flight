@@ -6,6 +6,7 @@ export * from './easeCircular';
 export * from './easeCombinators';
 export * from './easeCubic';
 export * from './easeCubicBezier';
+export * from './easeDampedSine';
 export * from './easeElastic';
 export * from './easeExponential';
 export * from './easeLinear';
