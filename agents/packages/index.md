@@ -68,6 +68,13 @@ Every `Approved` entry carries a **provenance stamp** — date plus whether it w
 
 The `reviews/` tree (depth, breadth, maturation, alignment) and the `tools/agents/proposals/` pipeline were point-in-time staging areas whose findings have been migrated into this `packages/` structure — per-package cells, [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and `TODO.md`. Both were removed from the repository on 2026-07-03; their content is recoverable from git history. **The only durable structure is `packages/`.**
 
+[`progress.md`](progress.md) is a **superseded** ledger of direction sessions, kept as history and not
+maintained. What it tracked now lives in two authoritative places: per-cell `lastDirection` front matter
+in every `charter.md` (all 152 carry it), and the generated `TODO.md` for what stage a cell needs next.
+Read it for what was decided in a session and why; do not read its `Last visited` column as current,
+since it stopped at 2026-07-11 while the charters kept moving. It is listed here because a record
+reachable from nothing is a record nobody can check — retiring it outright is a separate call.
+
 Every cell carries a charter and assessment, every built package's cell carries a review (only the chartered-unbuilt candidates have none yet). The generated cross-package view is `TODO.md` (via `todo.mjs`) — the one-file index of actionable and surveyed work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Directed`, `Recommended`, and `Depth gaps` items). **Agents looking for work run `node agents/packages/todo.mjs`, start at `TODO.md`**, and read only the named cell for detail. It is a pure view over the cells and is **not committed** — generate it, never merge it.
 
 ## File layout

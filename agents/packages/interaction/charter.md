@@ -6,9 +6,16 @@ lastDirection: 2026-08-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+hitTestModel: ./interaction-state-design.md
 ---
 
 # interaction — Charter
+
+The hit-test model of record is [`interaction-state-design.md`](interaction-state-design.md), in this
+cell. Read it before changing eligibility, hit-test traversal, or the node interaction state — it is a
+signed spec that supersedes an earlier note, so this charter's older text is not the authority where the
+two differ. It states its own status in its own header, which is why that status is not copied here: a
+second copy is the thing that goes stale silently while both look current.
 
 ## What it is
 
