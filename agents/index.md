@@ -58,6 +58,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
 - [skeleton2d animation model](skeleton2d-animation-model.md) — non-bone timelines, target-kind dispatch, and where constraints live.
+- [timeline source model](timeline-source-model.md) — dictionary vs sequence, and where playback vocabulary lives.
 - [texture color space](texture-color-space-model.md) — **unratified.** the decode landed, the encode did not.
 - [timeline cue model](timeline-cue-model.md) — authored frame cues as plain kind-dispatched data, not closures.
 - [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
