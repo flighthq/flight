@@ -21,6 +21,7 @@
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
     { "path": "../image" },
+    { "path": "../log" },
     { "path": "../math" },
     { "path": "../movieclip" },
     { "path": "../node" },

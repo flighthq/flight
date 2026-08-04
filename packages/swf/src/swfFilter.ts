@@ -11,7 +11,7 @@ import {
   createOuterGlowEffect,
 } from '@flighthq/effects/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { Adjustment, RenderEffect } from '@flighthq/types/contract';
+import type { Adjustment, RenderEffect, SwfFilterListGuard } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -22,13 +22,18 @@ import type { SwfReader } from './swfReader';
 // effect descriptors the caller runs through the effect pipeline explicitly. Nothing here attaches an
 // effect to a node — see agents/anti-goals.md.
 //
-// The reader must be positioned at the filter count. A filter this does not recognize ends the list,
-// because filters are variable-width and a skipped one would desynchronize every record after it.
-export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[], outAdjustments: Adjustment[]): void {
+// The reader must be positioned at the filter count. Returns true only when the complete list was read.
+// A filter this does not recognize returns false because its variable-width payload cannot be skipped
+// without desynchronizing every record after it; callers must not read fields trailing that list.
+export function readSwfFilterList(
+  reader: SwfReader,
+  outEffects: RenderEffect[],
+  outAdjustments: Adjustment[],
+): boolean {
   const count = reader.readUint8();
   for (let index = 0; index < count && reader.valid; index++) {
     const id = reader.readUint8();
-    if (!reader.valid) return;
+    if (!reader.valid) return false;
     if (id === FILTER_DROP_SHADOW) {
       const color = readSwfFilterColor(reader);
       const blurX = readSwfFilterFixed(reader);
@@ -37,7 +42,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const distance = readSwfFilterFixed(reader);
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       outEffects.push(
         (flags & FILTER_INNER) !== 0
           ? createInnerShadowEffect({
@@ -67,7 +72,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const blurX = readSwfFilterFixed(reader);
       const blurY = readSwfFilterFixed(reader);
       reader.readUint8();
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       outEffects.push(createBlurEffect({ blurX, blurY }));
       continue;
     }
@@ -77,7 +82,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const blurY = readSwfFilterFixed(reader);
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       const options = {
         alpha: color.alpha,
         blurX,
@@ -98,7 +103,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const distance = readSwfFilterFixed(reader);
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       outEffects.push(
         createBevelEffect({
           angle,
@@ -135,7 +140,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const distance = readSwfFilterFixed(reader);
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       outEffects.push(
         id === FILTER_GRADIENT_GLOW
           ? createGradientGlowEffect({
@@ -171,7 +176,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       for (let cell = 0; cell < matrixX * matrixY && reader.valid; cell++) matrix.push(readSwfFilterFloat(reader));
       const color = readSwfFilterColor(reader);
       const flags = reader.readUint8();
-      if (!reader.valid || matrix.length !== matrixX * matrixY) return;
+      if (!reader.valid || matrix.length !== matrixX * matrixY) return false;
       outEffects.push(
         createConvolutionEffect({
           bias,
@@ -189,7 +194,7 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
     if (id === FILTER_COLOR_MATRIX) {
       const matrix: number[] = [];
       for (let cell = 0; cell < COLOR_MATRIX_LENGTH && reader.valid; cell++) matrix.push(readSwfFilterFloat(reader));
-      if (!reader.valid) return;
+      if (!reader.valid) return false;
       // SWF writes the offset column in the 0-255 byte domain; Flight's colour matrix takes a normalized
       // bias, so only that fifth column of each row converts.
       for (let row = 0; row < COLOR_MATRIX_ROWS; row++) {
@@ -198,8 +203,16 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       outAdjustments.push(createColorMatrixAdjustment(matrix));
       continue;
     }
-    return;
+    _swfFilterListGuard?.(id, index);
+    return false;
   }
+  return reader.valid;
+}
+
+// Diagnostics seam used by enableSwfGuards. Unknown filters still return false and stop the parse when
+// no guard is installed; the hook adds visibility without changing the safe production behavior.
+export function setSwfFilterListGuard(guard: SwfFilterListGuard | null): void {
+  _swfFilterListGuard = guard;
 }
 
 // A filter's RGBA, split into the packed RGB and normalized alpha every effect descriptor takes.
@@ -256,3 +269,4 @@ const FIXED_16_ONE = 0x10000;
 const _floatBuffer = new ArrayBuffer(4);
 const _floatBytes = new Uint32Array(_floatBuffer);
 const _floatValues = new Float32Array(_floatBuffer);
+let _swfFilterListGuard: SwfFilterListGuard | null = null;

@@ -1,3 +1,4 @@
+export { areSwfGuardsEnabled, disableSwfGuards, enableSwfGuards } from './enableSwfGuards';
 export {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,

@@ -1171,14 +1171,14 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
-  // A filter list is variable-width and the blend mode sits behind it, so the two are read together: a
-  // filter this reader does not recognize stops the list, and the blend mode is then out of reach for
-  // that record rather than misread from the middle of a filter body.
+  // A filter list is variable-width and the blend mode sits behind it, so the list reports whether it
+  // reached its end. An unknown filter has no skippable payload length; the blend byte is then out of
+  // reach and must not be invented from the unknown payload's first byte.
   const hasFilterList = (extendedFlags & 0x01) !== 0;
   const readEffects: RenderEffect[] = [];
   const readFilterAdjustments: Adjustment[] = [];
-  if (hasFilterList) readSwfFilterList(body, readEffects, readFilterAdjustments);
-  const hasBlendMode = (extendedFlags & 0x02) !== 0;
+  const filterListComplete = !hasFilterList || readSwfFilterList(body, readEffects, readFilterAdjustments);
+  const hasBlendMode = (extendedFlags & 0x02) !== 0 && filterListComplete;
   const blendModeValue = hasBlendMode ? body.readUint8() : 0;
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;

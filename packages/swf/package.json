@@ -45,6 +45,7 @@
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
+    "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",

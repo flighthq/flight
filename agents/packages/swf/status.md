@@ -223,7 +223,14 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   them with pixels. It resolves the same character kinds in the same order a placement does, so an exported
   bitmap or edit-text character imports like the identical character placed on a timeline.
 
-Three gaps stand between this and pixels a player would accept, all recorded here rather than inline:
+Four gaps stand between this and pixels a player would accept, all recorded here rather than inline:
+
+- Filter descriptors preserve only fields the target effect vocabulary can state. `GradientGlowEffect`
+  has no angle, distance, or inner/on-top placement, `BlurEffect` has no pass count, and the glow/shadow/
+  bevel descriptors have no mapping for SWF's composite-source and knockout flags. `ConvolutionEffect`
+  carries the default RGB but not its authored alpha. These are declared target-capability gaps, not
+  parser omissions to conceal with guessed behavior; spatial filters remain appearance reports and are
+  never attached implicitly to imported nodes.
 
 - `DefineBitsJPEG3`/`4` alpha is **dropped**. The tag reader ends the colour stream at the alpha offset and
   discards the zlib-compressed alpha block after it, so a transparent JPEG imports fully opaque. Rejoining
