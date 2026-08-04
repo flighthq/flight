@@ -13,6 +13,7 @@
 export const Skeleton2DAnimationTargetKind = {
   Bone: 'Skeleton2D.BoneTarget',
   Constraint: 'Skeleton2D.ConstraintTarget',
+  Deform: 'Skeleton2D.DeformTarget',
   Slot: 'Skeleton2D.SlotTarget',
 } as const;
 

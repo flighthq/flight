@@ -840,6 +840,8 @@ export * from './Slot2D';
 export * from './Skeleton2D';
 export * from './Skeleton2DAnimationPath';
 export * from './Skeleton2DConstraint';
+export * from './Skeleton2DDeformAnimationTarget';
+export * from './Skeleton2DSlotDeform';
 export * from './Skeleton2DDeformLengthExplanation';
 export * from './Skeleton2DIkConstraint';
 export * from './Skeleton2DPathConstraint';

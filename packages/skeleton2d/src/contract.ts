@@ -16,3 +16,5 @@ export * from './boundingBoxAttachment2D';
 export * from './clippingAttachment2D';
 export * from './pointAttachment2D';
 export * from './explainSkeleton2DDeformLength';
+export * from './slotDeform2D';
+export * from './deformAnimationTarget2D';
