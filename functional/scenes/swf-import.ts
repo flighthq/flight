@@ -1,19 +1,24 @@
+import { getRenderProxy2D } from '@flighthq/render/contract';
 // swf-import — imports one synthetic two-frame FWS file instead of rebuilding its intended scene with
 // Flight primitives. The file covers the render-bearing SWF surface that exists today: shape geometry,
-// a linear gradient, a stroke, static text, and a lossless bitmap fill. Frame 2 moves the solid shape.
+// a linear gradient, a stroke, static text, a lossless bitmap fill, and a parent placement colour
+// transform inherited by a nested bitmap-filled shape. Frame 2 moves the solid shape.
 //
 // The font pair is a deliberately disagreeing oracle. DefineFont stores a 512-unit square on a 1024-unit
 // EM grid; DefineFont3 stores the same square as 10240 units on its twenty-times-finer grid. Both text
 // records author the same height, so their rendered extents must match. A wrong SWF EM-square conversion
 // makes the modern glyph twenty times too large instead of merely leaving a non-blank frame.
-import type { Bitmap, MovieClip } from '@flighthq/sdk';
+import type { Bitmap, ColorScaleBias, MovieClip } from '@flighthq/sdk';
 import {
   createScene2DFromSwf,
   getBitmapPixelRgb,
   getMovieClipTotalFrames,
+  getNodeChildren,
   gotoAndStopMovieClip,
   MovieClipKind,
+  registerGlColorAdjustmentMaterialFeature,
   registerDeflateDecompressor,
+  registerWgpuColorAdjustmentMaterialFeature,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -47,7 +52,14 @@ const LEGACY_TEXT_X = 140;
 const MODERN_TEXT_X = 360;
 const TEXT_Y = 370;
 const TEXT_SIZE = 100;
+
+const TINTED_SPRITE_X = 600;
+const TINTED_SPRITE_Y = 400;
+const TINTED_SPRITE_SIZE = 100;
 let targetWidth = WIDTH;
+let assertTintedPixels = false;
+let nestedChildColorScaleBias: Readonly<ColorScaleBias> | null = null;
+let nestedParentColorScaleBias: Readonly<ColorScaleBias> | null = null;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const scale = frame.width / targetWidth;
@@ -58,6 +70,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   assertStroke(at);
   assertBitmapFill(at);
   assertEquivalentFontGrids(at);
+  assertNestedColorTransform(at);
 }
 
 function assertBitmapFill(at: PixelReader): void {
@@ -122,6 +135,28 @@ function assertStroke(at: PixelReader): void {
   }
 }
 
+function assertNestedColorTransform(at: PixelReader): void {
+  if (
+    nestedParentColorScaleBias === null ||
+    nestedChildColorScaleBias !== nestedParentColorScaleBias ||
+    !isExpectedNestedColorScaleBias(nestedParentColorScaleBias)
+  ) {
+    throw new Error('[swf-import] nested parent colour transform did not propagate to the child render proxy');
+  }
+
+  // Canvas and DOM deliberately do not realize node colour adjustments. The propagation claim is still
+  // universal (and asserted above), while only GL/WGPU opt into the material feature that turns those
+  // proxy values into pixels. Pre-tinting this fixture for the other backends would hide the defect.
+  if (!assertTintedPixels) return;
+  const tinted = at(TINTED_SPRITE_X + TINTED_SPRITE_SIZE / 2, TINTED_SPRITE_Y + TINTED_SPRITE_SIZE / 2);
+  const red = channel(tinted, 16);
+  const green = channel(tinted, 8);
+  const blue = channel(tinted, 0);
+  if (red < 90 || red > 190 || green < 200 || blue < 20 || blue > 130) {
+    throw new Error(`[swf-import] nested parent colour transform did not reach its child — got #${hex(tinted)}`);
+  }
+}
+
 function createBitmapShape(): Uint8Array {
   const writer = new ShapeWriter();
   writer.writeFillStyleCount(1);
@@ -146,12 +181,16 @@ function createFunctionalSwf(): Uint8Array {
     createModernFont(),
     createStaticText(LEGACY_TEXT_ID, LEGACY_FONT_ID, 0xf72585),
     createStaticText(MODERN_TEXT_ID, MODERN_FONT_ID, 0x80ff72),
+    createTintedChildBitmap(),
+    createTintedChildShape(),
+    createTintedSprite(),
     place(SOLID_SHAPE_ID, 1, SOLID_FRAME_1_X, SOLID_Y),
     place(GRADIENT_SHAPE_ID, 2, GRADIENT_X, GRADIENT_Y),
     place(STROKE_SHAPE_ID, 3, STROKE_X, STROKE_Y),
     place(BITMAP_SHAPE_ID, 4, BITMAP_X, BITMAP_Y),
     place(LEGACY_TEXT_ID, 5, LEGACY_TEXT_X, TEXT_Y),
     place(MODERN_TEXT_ID, 6, MODERN_TEXT_X, TEXT_Y),
+    placeWithColorTransform(TINTED_SPRITE_ID, 7, TINTED_SPRITE_X, TINTED_SPRITE_Y),
     createTag(TAG_SHOW_FRAME),
     move(1, SOLID_FRAME_2_X, SOLID_Y),
     createTag(TAG_SHOW_FRAME),
@@ -228,6 +267,47 @@ function createSolidShape(): Uint8Array {
   writer.writeRectangle(SOLID_SIZE * TWIPS_PER_PIXEL, SOLID_SIZE * TWIPS_PER_PIXEL);
   writer.writeEndShape();
   return defineShape(SOLID_SHAPE_ID, SOLID_SIZE, SOLID_SIZE, writer.toBytes());
+}
+
+function createTintedChildShape(): Uint8Array {
+  const writer = new ShapeWriter();
+  writer.writeFillStyleCount(1);
+  writer.writeBitmapFillStyle(0x42, TINTED_CHILD_BITMAP_ID, TWIPS_PER_PIXEL);
+  writer.writeLineStyleCount(0);
+  writer.writeStyleBits(1, 0);
+  writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+  writer.writeRectangle(TINTED_SPRITE_SIZE * TWIPS_PER_PIXEL, TINTED_SPRITE_SIZE * TWIPS_PER_PIXEL);
+  writer.writeEndShape();
+  return defineShape(TINTED_CHILD_SHAPE_ID, TINTED_SPRITE_SIZE, TINTED_SPRITE_SIZE, writer.toBytes());
+}
+
+function createTintedChildBitmap(): Uint8Array {
+  const pixels: number[] = [];
+  for (let index = 0; index < TINTED_CHILD_BITMAP_SIZE * TINTED_CHILD_BITMAP_SIZE; index++) {
+    pixels.push(0, 0xff, 0xff, 0xff);
+  }
+  const payload = new Uint8Array([
+    5,
+    TINTED_CHILD_BITMAP_SIZE,
+    0,
+    TINTED_CHILD_BITMAP_SIZE,
+    0,
+    ...storedDeflate(pixels),
+  ]);
+  return createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(TINTED_CHILD_BITMAP_ID), payload));
+}
+
+function createTintedSprite(): Uint8Array {
+  return createTag(
+    TAG_DEFINE_SPRITE,
+    joinBytes(
+      uint16(TINTED_SPRITE_ID),
+      uint16(1),
+      place(TINTED_CHILD_SHAPE_ID, 1, 0, 0),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ),
+  );
 }
 
 function createSquareGlyph(size: number): Uint8Array {
@@ -336,6 +416,31 @@ function place(characterId: number, depth: number, x: number, y: number): Uint8A
   );
 }
 
+function placeWithColorTransform(characterId: number, depth: number, x: number, y: number): Uint8Array {
+  return createTag(
+    TAG_PLACE_OBJECT_2,
+    joinBytes(
+      new Uint8Array([PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER | PLACE_HAS_MATRIX]),
+      uint16(depth),
+      uint16(characterId),
+      createMatrix(1, 0, 0, 1, x * TWIPS_PER_PIXEL, y * TWIPS_PER_PIXEL),
+      // Half red, full green, no blue, then add one fifth blue: white should render as #80ff33.
+      createColorTransform([128, 256, 0, 256], [0, 0, 51, 0]),
+    ),
+  );
+}
+
+function createColorTransform(multiply: ReadonlyArray<number>, add: ReadonlyArray<number>): Uint8Array {
+  const writer = new BitWriter();
+  const bits = signedBitCount([...multiply, ...add]);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(bits, 4);
+  for (const value of multiply) writer.writeSigned(value, bits);
+  for (const value of add) writer.writeSigned(value, bits);
+  return writer.toBytes();
+}
+
 function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty: number): Uint8Array {
   const writer = new BitWriter();
   const scales = [Math.round(a * FIXED_16_ONE), Math.round(d * FIXED_16_ONE)];
@@ -440,6 +545,19 @@ function isRedGradientEnd(rgb: number): boolean {
 
 function isYellow(rgb: number): boolean {
   return channel(rgb, 16) > 180 && channel(rgb, 8) > 150 && channel(rgb, 0) < 100;
+}
+
+function isExpectedNestedColorScaleBias(value: Readonly<ColorScaleBias>): boolean {
+  return (
+    Math.abs(value.redScale - 0.5) < 0.0001 &&
+    Math.abs(value.greenScale - 1) < 0.0001 &&
+    Math.abs(value.blueScale) < 0.0001 &&
+    Math.abs(value.alphaScale - 1) < 0.0001 &&
+    Math.abs(value.redBias) < 0.0001 &&
+    Math.abs(value.greenBias) < 0.0001 &&
+    Math.abs(value.blueBias - 0.2) < 0.0001 &&
+    Math.abs(value.alphaBias) < 0.0001
+  );
 }
 
 class BitWriter {
@@ -600,6 +718,7 @@ const MODERN_FONT_ID = 11;
 const MODERN_TEXT_ID = 13;
 const ORANGE_RGB = [0xff, 0x7a, 0x18] as const;
 const PLACE_HAS_CHARACTER = 0x02;
+const PLACE_HAS_COLOR_TRANSFORM = 0x08;
 const PLACE_HAS_MATRIX = 0x04;
 const PLACE_MOVE = 0x01;
 const SOLID_SHAPE_ID = 1;
@@ -609,11 +728,16 @@ const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_SHAPE = 2;
+const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_END = 0;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
+const TINTED_CHILD_BITMAP_ID = 14;
+const TINTED_CHILD_BITMAP_SIZE = 4;
+const TINTED_CHILD_SHAPE_ID = 15;
+const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
 registerDeflateDecompressor();
@@ -634,5 +758,12 @@ const target = await createFunctionalTarget({
   background: document.backgroundColor ?? BACKGROUND,
   kinds: [ShapeKind],
 });
+if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
+if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
+assertTintedPixels = target.kind === 'webgl' || target.kind === 'webgpu';
 targetWidth = target.width;
 target.render(root);
+const nestedParent = getNodeChildren(root).find((child) => child.kind === MovieClipKind)!;
+const nestedChild = getNodeChildren(nestedParent)[0];
+nestedParentColorScaleBias = getRenderProxy2D(target.state, nestedParent)?.colorScaleBias ?? null;
+nestedChildColorScaleBias = getRenderProxy2D(target.state, nestedChild)?.colorScaleBias ?? null;

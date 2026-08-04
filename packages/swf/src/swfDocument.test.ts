@@ -2578,6 +2578,41 @@ describe('createScene2DImportFromSwf', () => {
 
     expect(result!.appearances.map((appearance) => appearance.frame)).toEqual([1]);
   });
+
+  it('removes a declared colour-matrix filter without dropping the inherited colour transform', () => {
+    const cells: Uint8Array[] = [];
+    for (let index = 0; index < 20; index++) cells.push(float32(index % 6 === 0 ? 1 : 0));
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            uint16(3),
+            uint16(7),
+            createColorTransform([128, 256, 256, 256], [0, 0, 0, 0]),
+            swfString('remapped'),
+            new Uint8Array([1, 6]),
+            ...cells,
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), uint16(3), new Uint8Array([0])),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = result!.document.root as MovieClip;
+    const remapped = result!.document.slots[0].target;
+    expect(getNodeColorAdjustments(remapped)).toHaveLength(2);
+    gotoAndStopMovieClip(root, 2);
+    expect(getNodeColorAdjustments(remapped)).toHaveLength(1);
+    expect((getNodeColorAdjustments(remapped)![0] as ColorScaleBiasAdjustment).colorScaleBias.redScale).toBe(0.5);
+  });
 });
 
 describe('createScene2DSymbolFromSwf', () => {

@@ -7,6 +7,7 @@ import {
   createGradientBevelEffect,
   createGradientGlowEffect,
   createInnerGlowEffect,
+  createInnerShadowEffect,
   createOuterGlowEffect,
 } from '@flighthq/effects/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
@@ -37,16 +38,15 @@ export function readSwfFilterList(reader: SwfReader, outEffects: RenderEffect[],
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
       if (!reader.valid) return;
-      // An inner drop shadow is the same recipe clipped to the source silhouette, which is what the
-      // inner-glow effect already is; the offset is what makes it a shadow rather than a glow, and no
-      // inner effect carries one, so an inner shadow keeps its blur and loses its offset.
       outEffects.push(
         (flags & FILTER_INNER) !== 0
-          ? createInnerGlowEffect({
+          ? createInnerShadowEffect({
               alpha: color.alpha,
+              angle,
               blurX,
               blurY,
               color: color.rgb,
+              distance,
               quality: flags & FILTER_PASSES,
               strength,
             })

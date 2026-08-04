@@ -1,10 +1,15 @@
-import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
-import { setNodeColorAdjustments } from '@flighthq/node/contract';
+import {
+  applyColorMatrixToColor,
+  createColorMatrixAdjustment,
+  createColorScaleBiasAdjustment,
+  createTintAdjustment,
+} from '@flighthq/adjustments/contract';
+import { addNodeChild, setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Renderable } from '@flighthq/types/contract';
 
 import { updateRenderProxyColorScaleBias } from './renderColorScaleBias';
-import { createRenderProxy } from './renderProxy';
+import { createRenderProxy, getRenderProxy2D, prepareScene2DRender } from './renderProxy';
 import { createRenderState } from './renderState';
 
 describe('updateRenderProxyColorScaleBias', () => {
@@ -27,6 +32,7 @@ describe('updateRenderProxyColorScaleBias', () => {
     const data = createRenderProxy(state, node as unknown as Renderable);
     updateRenderProxyColorScaleBias(state, data);
     expect(data.colorMatrix).toEqual(matrix);
+    expect(data.colorScaleBias).toBeNull();
   });
 
   it('resolves to null when the node carries no adjustments', () => {
@@ -35,6 +41,151 @@ describe('updateRenderProxyColorScaleBias', () => {
     const data = createRenderProxy(state, node as unknown as Renderable);
     updateRenderProxyColorScaleBias(state, data);
     expect(data.colorScaleBias).toBeNull();
+    expect(data.colorMatrix).toBeNull();
+  });
+
+  it('inherits a parent adjustment when the renderer-bearing child has none of its own', () => {
+    const state = createRenderState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    setNodeColorAdjustments(parent, [createTintAdjustment(0x80ff33ff)]);
+    const parentData = createRenderProxy(state, parent as unknown as Renderable);
+    const childData = createRenderProxy(state, child as unknown as Renderable);
+    updateRenderProxyColorScaleBias(state, parentData);
+    updateRenderProxyColorScaleBias(state, childData, parentData);
+    expect(childData.colorScaleBias).toBe(parentData.colorScaleBias);
+  });
+
+  it('carries a container adjustment to its child through the real render walk', () => {
+    const state = createRenderState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(parent, child);
+    setNodeColorAdjustments(parent, [createTintAdjustment(0x80ff33ff)]);
+    prepareScene2DRender(state, parent);
+    expect(getRenderProxy2D(state, child)?.colorScaleBias).toBe(getRenderProxy2D(state, parent)?.colorScaleBias);
+  });
+
+  it('refreshes inherited adjustments through descendants when an ancestor changes', () => {
+    const state = createRenderState();
+    const root = createDisplayObject();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    addNodeChild(root, parent);
+    addNodeChild(parent, child);
+    setNodeColorAdjustments(root, [createTintAdjustment(0x80ffffff)]);
+    setNodeColorAdjustments(parent, [createTintAdjustment(0xff8033ff)]);
+
+    prepareScene2DRender(state, root);
+    const first = getRenderProxy2D(state, child)?.colorScaleBias;
+    expect(first?.redScale).toBeCloseTo(0.5 * 1);
+    expect(first?.greenScale).toBeCloseTo(1 * 0.5);
+
+    setNodeColorAdjustments(root, [createTintAdjustment(0x40ffffff)]);
+    prepareScene2DRender(state, root);
+    const second = getRenderProxy2D(state, child)?.colorScaleBias;
+    expect(second?.redScale).toBeCloseTo(0.25 * 1);
+    expect(second?.greenScale).toBeCloseTo(1 * 0.5);
+
+    setNodeColorAdjustments(parent, null);
+    prepareScene2DRender(state, root);
+    expect(getRenderProxy2D(state, child)?.colorScaleBias).toBe(getRenderProxy2D(state, root)?.colorScaleBias);
+  });
+
+  it('concatenates a parent affine adjustment after the child adjustment', () => {
+    const state = createRenderState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    setNodeColorAdjustments(parent, [
+      createColorScaleBiasAdjustment({
+        redScale: 0.5,
+        redBias: 0.1,
+        greenScale: 1,
+        greenBias: 0,
+        blueScale: 1,
+        blueBias: 0,
+        alphaScale: 1,
+        alphaBias: 0,
+      }),
+    ]);
+    setNodeColorAdjustments(child, [
+      createColorScaleBiasAdjustment({
+        redScale: 0.25,
+        redBias: 0.2,
+        greenScale: 1,
+        greenBias: 0,
+        blueScale: 1,
+        blueBias: 0,
+        alphaScale: 1,
+        alphaBias: 0,
+      }),
+    ]);
+    const parentData = createRenderProxy(state, parent as unknown as Renderable);
+    const childData = createRenderProxy(state, child as unknown as Renderable);
+    updateRenderProxyColorScaleBias(state, parentData);
+    updateRenderProxyColorScaleBias(state, childData, parentData);
+    expect(childData.colorScaleBias?.redScale).toBeCloseTo(0.125);
+    expect(childData.colorScaleBias?.redBias).toBeCloseTo(0.2);
+  });
+
+  it('promotes a parent affine and child matrix to one parent-after-child matrix', () => {
+    const state = createRenderState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    const parentAdjustment = createColorScaleBiasAdjustment({
+      redScale: 0.5,
+      redBias: 0.1,
+      greenScale: 1,
+      greenBias: 0,
+      blueScale: 1,
+      blueBias: 0,
+      alphaScale: 1,
+      alphaBias: 0,
+    });
+    const childMatrix = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    setNodeColorAdjustments(parent, [parentAdjustment]);
+    setNodeColorAdjustments(child, [createColorMatrixAdjustment(childMatrix)]);
+    const parentData = createRenderProxy(state, parent as unknown as Renderable);
+    const childData = createRenderProxy(state, child as unknown as Renderable);
+    updateRenderProxyColorScaleBias(state, parentData);
+    updateRenderProxyColorScaleBias(state, childData, parentData);
+    const source = 0x204060ff;
+    const expected = applyColorMatrixToColor(
+      parentAdjustment.colorMatrix,
+      applyColorMatrixToColor(childMatrix, source),
+    );
+    expect(applyColorMatrixToColor(childData.colorMatrix!, source)).toBe(expected);
+    expect(childData.colorScaleBias).toBeNull();
+  });
+
+  it('promotes a parent matrix and child affine to one parent-after-child matrix', () => {
+    const state = createRenderState();
+    const parent = createDisplayObject();
+    const child = createDisplayObject();
+    const parentMatrix = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0];
+    const childAdjustment = createColorScaleBiasAdjustment({
+      redScale: 0.5,
+      redBias: 0.1,
+      greenScale: 1,
+      greenBias: 0,
+      blueScale: 1,
+      blueBias: 0,
+      alphaScale: 1,
+      alphaBias: 0,
+    });
+    setNodeColorAdjustments(parent, [createColorMatrixAdjustment(parentMatrix)]);
+    setNodeColorAdjustments(child, [childAdjustment]);
+    const parentData = createRenderProxy(state, parent as unknown as Renderable);
+    const childData = createRenderProxy(state, child as unknown as Renderable);
+    updateRenderProxyColorScaleBias(state, parentData);
+    updateRenderProxyColorScaleBias(state, childData, parentData);
+    const source = 0x204060ff;
+    const expected = applyColorMatrixToColor(
+      parentMatrix,
+      applyColorMatrixToColor(childAdjustment.colorMatrix, source),
+    );
+    expect(applyColorMatrixToColor(childData.colorMatrix!, source)).toBe(expected);
+    expect(childData.colorScaleBias).toBeNull();
   });
 
   it('reads the cache the accessor fused once (the walk never re-fuses)', () => {
