@@ -6,3 +6,4 @@ export * from './skeleton2dAnimationTarget';
 export * from './deformPathAttachment2D';
 export * from './skeleton2dConstraint';
 export * from './ikConstraint2D';
+export * from './transformConstraint2D';
