@@ -1,59 +1,163 @@
-# Skeleton2D Animation Model — slot timelines, and where constraints live
+# Skeleton2D Animation Model — non-bone timelines, and where constraints live
 
-**Status: PROPOSAL, not a decision.** Written by builder2 at chief's request alongside the named-skins landing, so option (b) can start the day it is approved instead of idling. Nothing here is implemented. Chief rules on both questions together.
+**Ruled 2026-08-04**, superseding the 2026-08-02 proposal of the same name. That proposal framed the
+domain as "bone timelines, plus two missing things," recommended a second target *type* and a silent
+interpolation override, and recorded draw order as an open question. All three are corrected below.
+Its constraint-placement section survives, with its bundle argument demoted to a measurement.
 
-Read this before extending `Skeleton2DAnimationPath`, adding a non-bone timeline, or deciding where constraint solvers belong.
+Read this before extending `Skeleton2DAnimationPath`, before adding any non-bone timeline, before
+placing a constraint solver, and before adding a vertex-offset (deform) timeline.
 
-## Where the model stands today
+## The domain is eight families, not two
 
-`Skeleton2DAnimationPath` is `Translation | Rotation | Scale | Shear` — four **bone transform** groups. `Skeleton2DAnimationTarget` is `{ boneIndex, path }`, carried as an `AnimationChannel`'s opaque `targetRef`, and `applyAnimationClipToSkeleton2D` composes each sampled value onto the setup bone (add for translate/rotate/shear, multiply for scale).
+The Spine binary parser already walks — and discards — every one of these:
 
-That covers every **bone** timeline in Spine and DragonBones, and all three parsers now emit it. What it does not cover is everything the two formats animate that is *not* a bone transform. Measured on the licensed spineboy rig: slot **colour** timelines (6 in `shoot` alone), slot **attachment-swap** timelines (6 in `shoot`), and **draw order**. All are currently consumed-and-Skip-crumbed by the importers.
+> slot attachment, slot colour, IK, transform, path, deform, draw order, event
 
-## (b) Slot colour and attachment-swap timelines
+They are decoded field-for-field and `Skip`-crumbed today, so nothing here has to be
+reverse-engineered; only the mapping is missing. Sizing the domain at two families is what produced
+the wrong answer to target dispatch, so state the eight up front.
 
-### The crux: these are two different problems, not one
+Measured on the licensed spineboy rig, `shoot` alone carries 6 slot-colour and 6 attachment-swap
+timelines.
 
-They are usually named together, but they fail for opposite reasons, and conflating them is how this gets designed badly.
+## Ruling 1 — a channel names its target by `kind`, through a registry
 
-**Slot colour is numeric and already fits.** `Slot2D.color` is a packed RGBA integer; an animated colour is 4 channels of 0..255. `AnimationTrack` interpolates numbers and already supports Step and Linear. Nothing about the *track* needs to change — only the **target**, because a colour timeline drives a slot, and `Skeleton2DAnimationTarget` can only name a bone.
+`AnimationChannel.targetRef` is typed `unknown` so the binding layer can interpret more than one
+shape. Today `applyAnimationClipToSkeleton2D` interprets it by **structural probe**:
 
-**Attachment swap is not numeric at all.** It is a step function over *discrete attachment identities* — "show `muzzle01`, then `muzzle02`, then nothing". `AnimationTrack.values` is `ArrayLike<number>`; there is no representation for a string or an object reference, and interpolating between two attachments is meaningless. This is a genuine model gap, not a plumbing gap.
+```ts
+if (typeof target.boneIndex !== 'number') { … }
+```
 
-### Decision 1 — how a channel names a slot
+That is fine for two shapes and wrong for eight: it becomes an order-dependent `typeof` chain where
+adding a family means editing one central function and getting the precedence right by inspection.
+A hand-rolled tagged union (`{ index, kind: 'Bone' | 'Slot', path }`) fails the other way — it is the
+closed union this codebase's own rule says to revisit on growth, and this family is already grown.
 
-- **Option 1a — widen `Skeleton2DAnimationTarget`** to a tagged target (`{ index, kind: 'Bone' | 'Slot', path }`). One target type for everything. Costs a migration of every existing channel and the binder's dispatch, for a rig shape that is already shipped and verified.
-- **Option 1b — add a second target type**, `Skeleton2DSlotAnimationTarget { slotIndex, path }`, with its own small path vocabulary. `targetRef` is typed `unknown` precisely so the binding layer can interpret more than one shape, and the binder already probes it (`typeof target.boneIndex === 'number'`) rather than assuming. Purely additive: no existing channel, test, or parser output changes.
+**Every target carries a `kind` string and the binder dispatches through a registry**, the same
+mechanism renderers, effects, decompressors and node kinds already use:
 
-**Recommendation: 1b.** It is additive, it uses the seam `targetRef` was designed for, and it keeps each target *precise* rather than making every bone channel carry a discriminator it does not need. The cost — two target types instead of one — is the honest shape of the domain: a bone target and a slot target genuinely address different arrays.
+```
+'Skeleton2D.BoneTarget' | 'Skeleton2D.SlotTarget' | 'Skeleton2D.ConstraintTarget' | …
+```
 
-### Decision 2 — how an attachment swap is carried
+Vendor-prefixed customs are therefore possible, an unused family tree-shakes out, and adding the
+seventh target touches no existing code. The cost is honest and paid once: the shipped bone target
+gains a `kind` field. Pay it now rather than at family six.
 
-- **Option 2a — a discrete/non-numeric track in `@flighthq/animation`.** Widens `AnimationTrack` (or adds a sibling) to carry arbitrary values. Cross-package, and it taxes every track in the SDK to serve one 2D-skeletal feature. Same shape as the per-component-easing option chief already declined, and it should be declined for the same reason.
-- **Option 2b — keep swaps out of `AnimationClip` entirely**, as a separate per-slot keyframe list on `Skeleton2DImportAnimation`, applied by its own skeleton2d function. Honest, but it splits one animation across two playback mechanisms: a caller would have to advance a clip *and* a second structure, and a mixer could blend one but not the other.
-- **Option 2c — encode the swap as a numeric INDEX track plus a lookup table on the target.** The track is Step-interpolated with integer values; the target carries the attachments those indices name. `-1` means "show nothing", which is exactly what Spine writes when a keyframe has no attachment name (spineboy's `shoot` does this to hide muzzle flashes).
+This replaces both options in the superseded proposal. Do not build a second bare target type, and
+do not widen the existing one into a discriminated union.
 
-**Recommendation: 2c.** It needs no change to `@flighthq/animation` at all, reuses Step interpolation as-is, and keeps the whole feature inside skeleton2d where the domain knowledge lives. The lookup table is plain data hanging off the target — the same "opaque `targetRef` interpreted by the domain layer" pattern already in use. It also ports cleanly: an index plus a table is a C-friendly shape, where a discrete-value track is not.
+## Ruling 2 — attachment swap is a Step index track plus a lookup table
 
-The one wrinkle to state plainly: an index track **must** be Step, and a caller who forces Linear on it would interpolate *between table indices*, which is nonsense. That is a real sharp edge and wants a guard — the binder should treat any non-Step attachment channel as Step regardless of what the track claims, rather than trusting it.
+The track carries integer indices, Step-interpolated; the target carries the attachments those
+indices name. `-1` means "show nothing", which is exactly what Spine writes for a keyframe with no
+attachment name (spineboy's `shoot` hides muzzle flashes this way).
 
-### What this proposal does NOT cover
+**The reason is seekability, not convenience.** The superseded proposal justified this as "needs no
+change to `@flighthq/animation`", which is true but is an implementation argument. The real one: a
+track answers *what value is in effect at time t*, statelessly and in O(log n), which is precisely
+the attachment query — scrub to mid-animation and the correct attachment is the last swap at-or-before
+that time. Nothing else about the model has to change for seeking to be right.
 
-**Draw-order timelines.** Reordering slots is a different operation again — it mutates the draw list, not a value on a slot — and it interacts with whatever eventually owns 2D draw order. Deliberately left out; it should be its own question once slot animation lands.
+Widening `AnimationTrack` to carry non-numeric values is **declined**: it taxes every track in the SDK
+to serve one 2D-skeletal feature, the same shape as the per-component-easing option already declined.
 
-**Dark colour.** Spine's second (dark) slot colour has no representation in `Slot2D` at all. Adding slot-colour animation does not require solving it, but it will look like an omission, so it should be named as deferred rather than silently skipped — the same call already made for DragonBones' additive slot offsets.
+### The sharp edge, and how it is reported
 
-## (c) Where do IK / transform / path constraint solvers belong?
+An index track **must** be Step. A caller who forces Linear would interpolate *between table indices*,
+which is nonsense. The binder therefore treats an attachment channel as Step regardless of what the
+track claims — **and says so through `enableSkeleton2DGuards`, with a matching `explain*`.** Silently
+overriding caller data is the failure the diagnostics inversion rule exists to prevent: coercing is
+correct, coercing invisibly is not.
 
-The charter places them in **skeleton2d P2**, and for IK and transform constraints that still looks right: they are pose math over bones, they need nothing but the bone array and the world-transform pass, and they belong with the code that owns the pose. Nothing has changed to move them.
+## The track-vs-cue line
 
-**Path constraints are the exception, and the reason is a dependency, not a concept.** A path constraint positions bones along a vector path, so a solver needs `@flighthq/path` — which `@flighthq/skeleton2d` does not depend on today (its deps are `animation`, `entity`, `geometry`, `math`, `types`). Putting path constraints in skeleton2d pulls the whole path kernel into every rig that never uses one, which is exactly the "an assembly never taxes the primitive" rule. The alternative is the focused-neighbour-package pattern AGENTS already blesses (`@flighthq/spritesheet-formats` beside `@flighthq/spritesheet`): IK and transform constraints stay in skeleton2d P2, and path constraints become a small separate cell that depends on both skeleton2d and path. **Recommendation: keep P2 as the home for IK and transform; split path constraints out rather than importing `path` into the core.**
+Attachment swap and events are the two halves of this distinction, which is why they are named
+together:
 
-## If approved, the build order
+- **A track answers "what is in effect at time t."** Seekable, stateless, interpolated (or Step).
+  Slot colour, attachment swap, bone transforms.
+- **A cue answers "what fired between t0 and t1."** Edge-triggered, order-dependent, not meaningful
+  to sample. Events.
 
-1. `Skeleton2DSlotAnimationPath` + `Skeleton2DSlotAnimationTarget` in `@flighthq/types`; extend the binder to dispatch on target shape.
-2. Slot **colour** end to end — the easy half, and it validates the new target with no model risk.
-3. Attachment **swap** as the index-plus-table track, with the Step guard.
-4. Parsers: Spine `.json`, Spine `.skel` (both already *consume* these timelines — the record layouts are decoded and verified, only the mapping is missing), then DragonBones.
+Events are therefore **cue-shaped and governed by [timeline cue model](timeline-cue-model.md)**, not by
+this document — `Skeleton2DImport` carries no event vocabulary today and `spine.event-unsupported` is
+crumbed for them. Choose by which question the data answers, not by which mechanism is closer to hand.
 
-Step 4 is cheaper than it sounds: the binary decoder already walks the slot colour and attachment timelines byte-exactly, so nothing has to be reverse-engineered — the bytes are being read and thrown away today.
+## Ruling 3 — draw order is not blocked
+
+The superseded proposal deferred draw-order timelines as interacting with "whatever eventually owns 2D
+draw order." That owner exists: [draw order model](draw-order-model.md) — child order is the only
+order, ordering is a caller-owned `NodeOrderList`, never node state. **Rive already ships against it**,
+importing `DrawRules`/`DrawTarget` through `NodeOrderList`.
+
+A Spine draw-order timeline binds to the same structure and is Rive's second consumer. It is ordinary
+work, not an open question.
+
+## Ruling 4 — constraint placement
+
+**IK and transform constraints live in `@flighthq/skeleton2d`.** They are pose math over bones, need
+nothing but the bone array and the world-transform pass, and belong with the code that owns the pose.
+`Bone2D.length` is already documented as serving them.
+
+Build them as a **registered solver family keyed by kind**, not a closed switch, so a rig using only IK
+does not link the rest. Rive contributes `IKConstraint`, `TranslationConstraint` and neighbours (179
+objects across 11 of 37 corpus files); Spine contributes IK, transform and path.
+
+**Path constraints are the open case, and it is a measurement, not an argument.** A path constraint
+positions bones *along* a vector path, so a solver calls `getPathLength`, `getPathPointAtDistance` and
+`getPathContourLengths` — real `@flighthq/path` functions, which `skeleton2d` does not depend on today.
+The superseded proposal concluded from this that path constraints must split into a neighbour package,
+so the path kernel does not tax every rig.
+
+That conclusion was never measured. `skeleton2d` declares `sideEffects: false`, so if the only path
+imports sit in a module a consumer never imports, they should shake out and cost that consumer zero
+bytes — **a `package.json` edge is not automatically a bundle cost.** Probe it with `npm run size`
+against a consumer that uses only IK, then decide: kernel absent, keep path constraints in
+`skeleton2d`; kernel present, split and record the number as the reason.
+
+### The reusable distinction
+
+Two operations touch a `Path` and they place differently:
+
+- **Writing** coordinates into one — skinning a path — needs only the `Path` **type**, which lives in
+  `@flighthq/types` and is free. This is why `PathAttachment2D` sits in `skeleton2d` with no new
+  dependency.
+- **Querying** one — arc length, point-at-distance — needs the path **kernel**, and is what raises the
+  placement question at all.
+
+## Slot colour
+
+`Slot2D.color` is a packed RGBA integer and an animated colour is four 0–255 channels. `AnimationTrack`
+already interpolates numbers with Step and Linear, so nothing about the *track* changes — only the
+target, which Ruling 1 supplies. This is the low-risk half and should land first, validating the
+target registry before attachment swap exercises it harder.
+
+## Open — deform timelines, and they gate the deformer
+
+Spine's deform timelines are per-vertex offsets layered **on top of** skinning. The superseded proposal
+omitted them entirely, and they are the one family entangled with work already in flight: a deform
+offset applies after the skinning pass, so where it enters the pipeline has to be answered **alongside
+`deformSkeleton2DPathAttachment`, not after it**. Rive's `MeshVertex`/`ContourMeshVertex` and its
+`CubicWeight` path vertices raise the same question from the other side.
+
+Design this before the path deformer lands, or the deformer will be shaped without a seam it needs.
+
+## Deferred, and named rather than skipped
+
+**Dark colour.** Spine's second (tint-black) slot colour has no representation in `Slot2D`. It is a
+second packed RGBA field beside `color`, not a model problem — deferred as scope, not as difficulty,
+alongside the same call already made for DragonBones' additive slot offsets.
+
+## Build order
+
+1. Target `kind` + registry dispatch in `@flighthq/types` and the binder (Ruling 1).
+2. Slot **colour** end to end — validates the registry with no model risk.
+3. Attachment **swap** as the index-plus-table track, with the Step guard and its `explain*`.
+4. Draw-order timelines onto `NodeOrderList`.
+5. Parsers: Spine `.json`, Spine `.skel`, then DragonBones. Cheaper than it sounds — the binary decoder
+   already walks these records byte-exactly and throws the values away.
+
+Constraints (Ruling 4) and deform (Open) run on their own tracks and do not block this sequence.
