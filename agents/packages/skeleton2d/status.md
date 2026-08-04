@@ -70,8 +70,30 @@ Both parsers now emit the per-axis paths directly, and the widening and identity
 Both regression tests were **mutation-tested against the old behaviour** rather than merely passing — see
 [rig model §5](./rig-model.md).
 
+## The attachment family completed (2026-08-04)
+
+Bounding box, clipping and point join region, mesh and path, closing the P2 attachment set.
+
+- **`BoundingBoxAttachment2D`** — a skinnable polygon that is queried, never drawn. It carries no UVs, no
+  triangles and no colour, and that absence is the type: a hit box bound to the same bones as the art it
+  covers tracks that art exactly, where a static rectangle drifts as the rig moves.
+- **`ClippingAttachment2D`** — geometrically identical to a bounding box; what makes it a distinct type is
+  `endSlotIndex`. It clips a **range of the draw order** rather than a subtree, which is why it cannot be
+  a `ClipRegion` on one node. `getSkeleton2DClippingAttachmentSlotRange` owns the inclusive-to-half-open
+  conversion so no consumer re-derives that off-by-one from prose.
+- **`PointAttachment2D`** — a position and a direction, deliberately **not** skinnable: a point rides one
+  bone by definition, and anything wanting a blended position wants a weighted attachment.
+  `computeSkeleton2DPointAttachmentRotation` derives the angle from the bone's transformed **x axis**
+  rather than by adding its world rotation, because those differ under non-uniform scale or shear — the
+  axis is where the bone actually points.
+
+**One skinning primitive now serves all four deformable attachments.** `skinSkeleton2DAttachmentPoints`
+holds the weighted and rigid branches, the deform addressing rule and the guard report; mesh, path,
+bounding box and clipping are each a few lines of delegation. That is the decomposition the complexity
+rule asks for — the primitive was already sitting inside the mesh deformer, duplicated once for paths and
+about to be duplicated twice more. Breaking one line of it turns **8** tests red across four callers.
+
 ## Still deferred (per charter phasing)
 
-- **P2 remainder:** attachment variants beyond region/mesh/path — bounding box, clipping, point — as
-  open-family members.
+- **P2 remainder:** none. The attachment family is complete.
 - **P3:** skin sets (named slot→attachment collections for character customization).
