@@ -33,6 +33,8 @@ import {
   TransformMode2D,
 } from '@flighthq/types/contract';
 
+import { resolveSpineDrawOrdering } from './spineDrawOrder';
+
 /**
  * Reads a draw-order timeline into the orderings `Skeleton2DImport` carries.
  *
@@ -832,41 +834,18 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   return { animations, skeleton };
 }
 
-// One keyframe's whole ordering as sort keys per slot, or null when the stated moves do not describe a
-// permutation. `positions[p]` is the slot drawn at position p while it is being built; the returned
-// array inverts that, since a track carries one value per slot rather than per position.
+// Turns the JSON form's slot NAMES into indices and hands the moves to the shared resolver, so this and
+// the binary reader cannot disagree about what an offset list means.
 function resolveSpineDrawOrder(raw: unknown, slots: readonly Slot2D[]): number[] | null {
-  const count = slots.length;
-  const positions = new Array<number>(count).fill(UNCLAIMED_POSITION);
-  const moved = new Array<boolean>(count).fill(false);
-
+  const moves: { offset: number; slotIndex: number }[] = [];
   if (Array.isArray(raw)) {
     for (const offset of raw) {
       if (offset === null || typeof offset !== 'object') continue;
       const move = offset as { offset?: unknown; slot?: unknown };
       const slotIndex = indexOfSpineSlot(slots, typeof move.slot === 'string' ? move.slot : '');
       if (slotIndex < 0) return null;
-      const destination = slotIndex + numberOr(move.offset, 0);
-      if (destination < 0 || destination >= count) return null;
-      if (positions[destination] !== UNCLAIMED_POSITION) return null;
-      positions[destination] = slotIndex;
-      moved[slotIndex] = true;
+      moves.push({ offset: numberOr(move.offset, 0), slotIndex });
     }
   }
-
-  // Slots nobody moved close the gaps in setup order, which is what "keeps its relative order" means.
-  let next = 0;
-  for (let position = 0; position < count; position++) {
-    if (positions[position] !== UNCLAIMED_POSITION) continue;
-    while (next < count && moved[next]) next++;
-    if (next >= count) return null;
-    positions[position] = next;
-    next++;
-  }
-
-  const sortKeys = new Array<number>(count).fill(0);
-  for (let position = 0; position < count; position++) sortKeys[positions[position]] = position;
-  return sortKeys;
+  return resolveSpineDrawOrdering(moves, slots.length);
 }
-
-const UNCLAIMED_POSITION = -1;

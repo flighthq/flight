@@ -7,6 +7,7 @@ import {
   createSkeleton2DSlotAnimationTarget,
 } from '@flighthq/skeleton2d/contract';
 import type {
+  Skeleton2DDrawOrderTimeline,
   AnimationChannel,
   Attachment2D,
   AttachmentSkin2D,
@@ -45,6 +46,7 @@ import {
   readSpineBinaryVarint,
   skipSpineBinaryBytes,
 } from './spineBinaryReader';
+import { resolveSpineDrawOrdering } from './spineDrawOrder';
 
 // Parses Spine's `.skel` BINARY skeleton into the same `Skeleton2DImport` `parseSpineSkeleton` produces from
 // `.json` — the binary sibling of that parser, mirroring how `parseGlb` sits beside `parseGltf`. Tolerant and
@@ -119,7 +121,7 @@ export function parseSpineSkeletonBinary(
     }
   }
   skipSpineBinaryEvents(reader, diagnostics);
-  const animations = parseSpineBinaryAnimations(reader, strings, setup, diagnostics);
+  const animations = parseSpineBinaryAnimations(reader, strings, setup, slots.length, diagnostics);
   if (isSpineBinaryReaderOverrun(reader)) {
     reportImportDiagnostic(
       diagnostics,
@@ -170,6 +172,7 @@ function parseSpineBinaryAnimations(
   reader: ByteReader,
   strings: readonly (string | null)[],
   setup: Readonly<AttachmentSkin2D> | undefined,
+  slotCount: number,
   diagnostics?: ImportDiagnostic[],
 ): Skeleton2DImportAnimation[] {
   const animations: Skeleton2DImportAnimation[] = [];
@@ -183,9 +186,9 @@ function parseSpineBinaryAnimations(
     parseSpineBinaryBoneTimelines(reader, channels, diagnostics);
     skipSpineBinaryConstraintTimelines(reader, unmodeled);
     skipSpineBinaryDeformTimelines(reader, unmodeled);
-    skipSpineBinaryDrawOrderTimelines(reader, unmodeled);
+    const drawOrder = readSpineBinaryDrawOrderTimeline(reader, slotCount, diagnostics);
     skipSpineBinaryEventTimelines(reader, unmodeled);
-    animations.push({ clip: createAnimationClip(channels), name: name ?? '' });
+    animations.push({ clip: createAnimationClip(channels), drawOrder, name: name ?? '' });
   }
   for (const [kind, tally] of unmodeled) {
     reportImportDiagnostic(
@@ -558,17 +561,44 @@ function skipSpineBinaryDeformTimelines(reader: ByteReader, unmodeled: Map<strin
 }
 
 // The draw-order timeline: per frame, a time and a list of slot-index/offset pairs.
-function skipSpineBinaryDrawOrderTimelines(reader: ByteReader, unmodeled: Map<string, number>): void {
+// The draw-order timeline: per frame, a time and a list of slot-index/offset pairs. Resolved into whole
+// orderings through the SAME function the JSON reader uses, so the two encodings cannot disagree about
+// what an offset list means — a second implementation would agree only by inspection, and only until
+// one of them was edited.
+function readSpineBinaryDrawOrderTimeline(
+  reader: ByteReader,
+  slotCount: number,
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DDrawOrderTimeline | null {
   const frames = readSpineBinaryVarint(reader);
-  if (frames > 0) tally(unmodeled, 'draworder');
+  const times: number[] = [];
+  const orderings: number[] = [];
+
   for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
-    skipSpineBinaryBytes(reader, 4); // time
+    const time = readSpineBinaryFloat(reader);
     const offsets = readSpineBinaryVarint(reader);
+    const moves: { offset: number; slotIndex: number }[] = [];
     for (let j = 0; j < offsets && !isSpineBinaryReaderOverrun(reader); j++) {
-      readSpineBinaryVarint(reader); // slot index
-      readSpineBinaryVarint(reader); // draw-order offset
+      const slotIndex = readSpineBinaryVarint(reader);
+      moves.push({ offset: readSpineBinaryVarint(reader), slotIndex });
     }
+    if (isSpineBinaryReaderOverrun(reader)) break;
+
+    const ordering = resolveSpineDrawOrdering(moves, slotCount);
+    if (ordering === null) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'spine.draworder-keyframe-unresolved',
+        'parseSpineBinarySkeleton',
+        { time },
+      );
+      continue;
+    }
+    times.push(time);
+    orderings.push(...ordering);
   }
+  return times.length === 0 ? null : { orderings, times };
 }
 
 // The event timeline: per frame, a time, the event it fires, and any values overriding the definition.
