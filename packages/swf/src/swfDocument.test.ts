@@ -43,6 +43,8 @@ import type {
   Texture2D,
 } from '@flighthq/types/contract';
 import {
+  AdvancedBlendMode,
+  BlendMode,
   Compression,
   ImageResourceReferenceKind,
   MorphShapeKind,
@@ -57,6 +59,7 @@ import {
 import {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
+  createScene2DImportFromSwf,
   createScene2DSymbolFromSwf,
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
@@ -1656,6 +1659,27 @@ describe('createScene2DFromSwf', () => {
     expect(adjustment.colorScaleBias).toMatchObject({ alphaBias: 0, alphaScale: 1, redScale: 0.5 });
   });
 
+  it('folds a fixed-function PlaceObject3 blend mode onto the node', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+            uint16(3),
+            uint16(7),
+            swfString('multiplied'),
+            new Uint8Array([SWF_BLEND_MULTIPLY]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(document!.slots[0].target.blendMode).toBe(BlendMode.Multiply);
+  });
+
   it('keeps instances in depth order when a later frame places one between them', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -2444,6 +2468,118 @@ describe('createScene2DFromSwf morph shapes', () => {
   });
 });
 
+describe('createScene2DImportFromSwf', () => {
+  it('keeps an advanced blend mode off the node and reports it for a BlendEffect instead', () => {
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+            uint16(3),
+            uint16(7),
+            swfString('overlaid'),
+            new Uint8Array([SWF_BLEND_OVERLAY]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const overlaid = result!.document.slots[0].target;
+    // Assigning an advanced mode to the node would render as a silent Normal, which is the whole reason
+    // the two tiers are separate.
+    expect(overlaid.blendMode).toBe(BlendMode.Normal);
+    expect(result!.appearances).toEqual([
+      { advancedBlendMode: AdvancedBlendMode.Overlay, effects: [], frame: 1, node: overlaid },
+    ]);
+  });
+
+  it('reports a placement filter list as effect descriptors and attaches nothing', () => {
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            uint16(3),
+            uint16(7),
+            swfString('blurred'),
+            new Uint8Array([1, 1]),
+            uint32(4 * FIXED_16_ONE),
+            uint32(2 * FIXED_16_ONE),
+            new Uint8Array([0]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const blurred = result!.document.slots[0].target;
+    expect(result!.appearances).toHaveLength(1);
+    expect(result!.appearances[0]).toMatchObject({ advancedBlendMode: null, frame: 1, node: blurred });
+    expect(result!.appearances[0].effects[0]).toMatchObject({ blurX: 4, blurY: 2, kind: 'BlurEffect' });
+  });
+
+  it('joins a colour-matrix filter onto the node adjustments, since a pointwise remap folds into the draw', () => {
+    const cells: Uint8Array[] = [];
+    for (let index = 0; index < 20; index++) cells.push(float32(index % 6 === 0 ? 1 : 0));
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            uint16(3),
+            uint16(7),
+            swfString('remapped'),
+            new Uint8Array([1, 6]),
+            ...cells,
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const remapped = result!.document.slots[0].target;
+    expect(result!.appearances).toHaveLength(0);
+    expect(getNodeColorAdjustments(remapped)![0].kind).toBe('ColorMatrixAdjustment');
+  });
+
+  it('reports appearance per frame, so a filter list a later frame drops stops being reported', () => {
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            uint16(3),
+            uint16(7),
+            swfString('fading'),
+            new Uint8Array([1, 1]),
+            uint32(FIXED_16_ONE),
+            uint32(FIXED_16_ONE),
+            new Uint8Array([0]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        // Frame 2 declares an empty list, which is a removal rather than silence.
+        createTag(
+          TAG_PLACE_OBJECT_3,
+          joinBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), uint16(3), new Uint8Array([0])),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(result!.appearances.map((appearance) => appearance.frame)).toEqual([1]);
+  });
+});
+
 describe('createScene2DSymbolFromSwf', () => {
   it('builds a fresh instance of a symbol the file exported but never placed', () => {
     const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
@@ -2775,6 +2911,12 @@ function uint16(value: number): Uint8Array {
   return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
 }
 
+function float32(value: number): Uint8Array {
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setFloat32(0, value, true);
+  return bytes;
+}
+
 function uint32(value: number): Uint8Array {
   return new Uint8Array([value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff]);
 }
@@ -2785,11 +2927,15 @@ const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
+const PLACE3_HAS_BLEND_MODE = 0x02;
+const PLACE3_HAS_FILTER_LIST = 0x01;
 const PLACE_HAS_CLIP_DEPTH = 0x40;
 const PLACE_HAS_COLOR_TRANSFORM = 0x08;
 const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;
+const SWF_BLEND_MULTIPLY = 3;
+const SWF_BLEND_OVERLAY = 13;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_END = 0;
 const TAG_DEFINE_BITS_JPEG_2 = 21;

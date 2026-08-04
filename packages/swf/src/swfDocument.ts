@@ -49,11 +49,14 @@ import type {
   Node2DRuntime,
   Node2DTraits,
   Rectangle,
+  RenderEffect,
   RichText,
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
+  SwfDocumentImport,
+  SwfNodeAppearance,
   Scale9Shape,
   Shape,
   ShapeData,
@@ -67,6 +70,8 @@ import type {
   TimelineSource,
 } from '@flighthq/types/contract';
 import {
+  AdvancedBlendMode,
+  BlendMode,
   Compression,
   MorphShapeKind,
   TimelineAudioCueKind,
@@ -75,6 +80,7 @@ import {
 
 import { createSwfLosslessBitmap } from './swfBitmap';
 import { readSwfEditTextFactory } from './swfEditText';
+import { readSwfFilterList } from './swfFilter';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { createSwfMorphShape } from './swfMorphShape';
 import { SwfReader } from './swfReader';
@@ -89,7 +95,19 @@ export function createGlyphOutlineSourcesFromSwf(source: Uint8Array): ReadonlyMa
   return file === null ? null : new Map(file.parsed.fontOutlineSources);
 }
 
+// The document alone, for a caller that wants the graph and nothing else — the importer registry among
+// them. A file whose placements carry an advanced blend or a filter list still imports fully here; what
+// it loses is the report of them, which is what createScene2DImportFromSwf returns.
 export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
+  return createScene2DImportFromSwf(source)?.document ?? null;
+}
+
+// The full import: the document, plus the placement appearance no node can carry. SWF puts a blend mode
+// and a filter list on the same record as the matrix, and Flight expresses neither on a node — an
+// advanced blend needs a BlendEffect and an effect is a descriptor a caller runs explicitly, since
+// `displayObject.filters` is an anti-goal. Both therefore travel beside the document instead of being
+// dropped at the seam or silently flattened onto a node.
+export function createScene2DImportFromSwf(source: Uint8Array): SwfDocumentImport | null {
   const file = readSwfFile(source);
   if (file === null) return null;
   const { frameRate, parsed, stageBounds } = file;
@@ -97,6 +115,7 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
+    appearances: [],
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
@@ -105,14 +124,17 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
   if (root === null) return null;
   fillSwfLosslessBitmapTextures(parsed);
 
-  return createScene2DDocument(
-    root,
-    slots,
-    'swf',
-    parsed.backgroundColor,
-    createSwfImageResources(parsed),
-    createSwfAudioResources(parsed),
-  );
+  return {
+    appearances: instantiation.appearances,
+    document: createScene2DDocument(
+      root,
+      slots,
+      'swf',
+      parsed.backgroundColor,
+      createSwfImageResources(parsed),
+      createSwfAudioResources(parsed),
+    ),
+  };
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
@@ -140,6 +162,7 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
   const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
+    appearances: [],
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
@@ -210,8 +233,14 @@ interface SwfColorTransform {
 }
 
 interface SwfPlacement {
+  // The record's blend mode when it is destination-reading or non-separable, which no node can carry.
+  // It rides out on the import's appearance report instead; null when the mode folded onto the node.
+  advancedBlendMode: AdvancedBlendMode | null;
   // The colour transform's alpha multiplier, which is what a fade animates.
   alpha: number;
+  // The fixed-function blend the node carries. An advanced mode leaves this Normal, so a node never
+  // silently renders as ordinary alpha compositing while claiming the authored mode.
+  blendMode: BlendMode;
   // The rest of the colour transform, as the pointwise adjustment stack a node carries, or null when the
   // record tints nothing. Built once at parse and shared by every frame that keeps the placement, so
   // constructFrame compares one reference rather than rebuilding a descriptor per frame.
@@ -222,6 +251,8 @@ interface SwfPlacement {
   clipDepth: number;
   depth: number;
   directLinkage: string | null;
+  // The record's filter list as spatial effect descriptors, in authored order. Reported, never attached.
+  effects: readonly RenderEffect[];
   matrix: SwfMatrix;
   name: string | null;
   // A morph shape's progress, 0..1. SWF stores it as a 16-bit ratio on the placement rather than on the
@@ -357,6 +388,9 @@ interface SwfParseState {
 
 interface SwfInstantiationState {
   activeSymbols: Set<number>;
+  // Every placement appearance no node can carry, filled as the timelines instantiate. It rides here
+  // rather than through each call because it is per-import state exactly as the rest of this is.
+  appearances: SwfNodeAppearance[];
   frameRate: number | null;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
@@ -576,6 +610,7 @@ function populateSwfTimelineNode(
     }
   }
 
+  collectSwfNodeAppearances(frames, nodes, state.appearances);
   setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, timeline.cues, state.frameRate));
   // Frame scripts attach after the source, so the clip already knows how many frames it has when a
   // recognized command addresses one.
@@ -583,6 +618,28 @@ function populateSwfTimelineNode(
     if (frame <= frames.length) addMovieClipFrameScript(clip, frame, script);
   }
   return true;
+}
+
+// Records the appearance a frame's placements carry that their nodes cannot: an advanced blend, and the
+// filter list as effect descriptors. It is a report, not an application — nothing here touches a node,
+// because an effect is something a caller runs explicitly.
+//
+// One entry per (instance, frame) that carries either, so a filter that changes across frames reads as
+// the per-frame data it is. Frames are 1-based, matching gotoAndStopMovieClip.
+function collectSwfNodeAppearances(
+  frames: readonly (readonly Readonly<SwfFrameEntry>[])[],
+  nodes: ReadonlyMap<number, Node2D>,
+  out: SwfNodeAppearance[],
+): void {
+  for (let frame = 0; frame < frames.length; frame++) {
+    for (const entry of frames[frame]) {
+      const { advancedBlendMode, effects } = entry.placement;
+      if (advancedBlendMode === null && effects.length === 0) continue;
+      const node = nodes.get(createSwfInstanceKey(entry.placement));
+      if (node === undefined) continue;
+      out.push({ advancedBlendMode, effects: [...effects], frame: frame + 1, node });
+    }
+  }
 }
 
 // Exposes a parsed SWF timeline as the TimelineSource a MovieClip plays. The node set was allocated by
@@ -658,6 +715,12 @@ function createSwfTimelineSource(
           node.alpha = entry.placement.alpha;
           invalidateNodeAppearance(node);
           appliedAlphas.set(node, entry.placement.alpha);
+        }
+        // A fixed-function blend is per-frame data like the matrix. An advanced mode never reaches here:
+        // it left BlendMode.Normal on the placement and rode out on the import's appearance report.
+        if (node.blendMode !== entry.placement.blendMode) {
+          node.blendMode = entry.placement.blendMode;
+          invalidateNodeAppearance(node);
         }
         // The rest of the colour transform rides the same per-frame path as alpha. The stack was built at
         // parse and is shared by every frame that keeps the placement, so an unchanged tint compares equal
@@ -1102,14 +1165,33 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
+  // A filter list is variable-width and the blend mode sits behind it, so the two are read together: a
+  // filter this reader does not recognize stops the list, and the blend mode is then out of reach for
+  // that record rather than misread from the middle of a filter body.
+  const hasFilterList = (extendedFlags & 0x01) !== 0;
+  const readEffects: RenderEffect[] = [];
+  const filterAdjustments: Adjustment[] = [];
+  if (hasFilterList) readSwfFilterList(body, readEffects, filterAdjustments);
+  const hasBlendMode = (extendedFlags & 0x02) !== 0;
+  const blendModeValue = hasBlendMode ? body.readUint8() : 0;
+
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
+  // A record that declares a channel replaces it, including with nothing; one that stays silent about it
+  // keeps whatever the move inherited. That is why an empty list a record did declare is not the same
+  // value as no list at all.
+  const effects = hasFilterList ? readEffects : (inherited?.effects ?? EMPTY_EFFECTS);
   placements.set(depth, {
+    advancedBlendMode: hasBlendMode
+      ? resolveSwfAdvancedBlendMode(blendModeValue)
+      : (inherited?.advancedBlendMode ?? null),
     alpha: colorTransform.alpha,
+    blendMode: hasBlendMode ? resolveSwfBlendMode(blendModeValue) : (inherited?.blendMode ?? BlendMode.Normal),
     characterId,
     clipDepth,
-    colorAdjustments: colorTransform.colorAdjustments,
+    colorAdjustments: joinSwfColorAdjustments(colorTransform.colorAdjustments, filterAdjustments),
     depth,
     directLinkage,
+    effects,
     matrix,
     name,
     ratio,
@@ -1124,12 +1206,15 @@ function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlace
   const colorTransform = body.pos < body.end ? readSwfColorTransform(body, 3) : null;
   if (!body.valid || characterId === 0) return;
   placements.set(depth, {
+    advancedBlendMode: null,
     alpha: 1,
+    blendMode: BlendMode.Normal,
     characterId,
     clipDepth: 0,
     colorAdjustments: colorTransform?.colorAdjustments ?? null,
     depth,
     directLinkage: null,
+    effects: EMPTY_EFFECTS,
     matrix,
     name: null,
     ratio: 0,
@@ -1191,6 +1276,18 @@ function readSwfColorTransform(reader: SwfReader, channelCount = 4): SwfColorTra
   };
 }
 
+// Concatenates the two pointwise sources a placement can carry — its colour transform and a colour-matrix
+// filter from its filter list — into the single stack a node takes, in the order SWF applies them: the
+// transform tints the object, then a filter operates on the result. Returns null rather than an empty
+// array so an untinted placement compares equal to the untinted default by reference.
+function joinSwfColorAdjustments(
+  colorTransform: readonly Adjustment[] | null,
+  filters: readonly Adjustment[],
+): readonly Adjustment[] | null {
+  if (filters.length === 0) return colorTransform;
+  return colorTransform === null ? filters : [...colorTransform, ...filters];
+}
+
 function readSwfLinkages(body: SwfReader, linkages: Map<number, string>): void {
   const count = body.readUint16();
   for (let i = 0; i < count && body.valid; i++) {
@@ -1222,6 +1319,28 @@ function readSwfMatrix(reader: SwfReader): SwfMatrix {
   const ty = reader.readSignedBits(translateBits) / TWIPS_PER_PIXEL;
   reader.alignToByte();
   return { a, b, c, d, tx, ty };
+}
+
+// The advanced half of the blend split. Flight separates the modes that fold into fixed-function blend
+// state from the destination-reading and non-separable ones, which need a BlendEffect bouncing through
+// an offscreen — so a mode in the second set is reported rather than assigned, and assigning it to
+// `node.blendMode` to get a silent Normal is exactly the bug the split exists to prevent.
+//
+// SWF's remaining modes have no home in either tier: `layer` is a compositing hint rather than a blend,
+// and subtract, invert, alpha and erase are destination-alpha operations Flight does not express. They
+// stay Normal and are not reported, because there is nothing a caller could apply.
+function resolveSwfAdvancedBlendMode(value: number): AdvancedBlendMode | null {
+  if (value === SWF_BLEND_DIFFERENCE) return AdvancedBlendMode.Difference;
+  if (value === SWF_BLEND_OVERLAY) return AdvancedBlendMode.Overlay;
+  return value === SWF_BLEND_HARD_LIGHT ? AdvancedBlendMode.HardLight : null;
+}
+
+function resolveSwfBlendMode(value: number): BlendMode {
+  if (value === SWF_BLEND_MULTIPLY) return BlendMode.Multiply;
+  if (value === SWF_BLEND_SCREEN) return BlendMode.Screen;
+  if (value === SWF_BLEND_LIGHTEN) return BlendMode.Lighten;
+  if (value === SWF_BLEND_DARKEN) return BlendMode.Darken;
+  return value === SWF_BLEND_ADD ? BlendMode.Add : BlendMode.Normal;
 }
 
 function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
@@ -1507,12 +1626,15 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
     if (!reader.valid) return;
     if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
       placements.set(depth, {
+        advancedBlendMode: null,
         alpha: colorTransform?.alpha ?? 1,
+        blendMode: BlendMode.Normal,
         characterId,
         clipDepth: 0,
         colorAdjustments: colorTransform?.colorAdjustments ?? null,
         depth,
         directLinkage: null,
+        effects: EMPTY_EFFECTS,
         matrix,
         name: null,
         ratio: 0,
@@ -2196,6 +2318,9 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 
 const CWS_SIGNATURE = 0x43;
 const ALPHA_CHANNEL = 3;
+// A placement with no filter list shares one empty array, so an untouched effect list compares equal by
+// reference across every frame and instance.
+const EMPTY_EFFECTS: readonly RenderEffect[] = [];
 // A colour transform's add terms are byte-domain, where 255 adds one whole channel; a ColorScaleBias
 // carries the same quantity normalized.
 const COLOR_CHANNEL_ONE = 0xff;
@@ -2306,6 +2431,16 @@ const TAG_REMOVE_OBJECT_2 = 28;
 const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_SYMBOL_CLASS = 76;
+// PlaceObject3 blend-mode values. 0 and 1 are both normal, and `layer` (2) is a compositing hint rather
+// than a blend, so none of the three is named here.
+const SWF_BLEND_ADD = 8;
+const SWF_BLEND_DARKEN = 6;
+const SWF_BLEND_DIFFERENCE = 7;
+const SWF_BLEND_HARD_LIGHT = 14;
+const SWF_BLEND_LIGHTEN = 5;
+const SWF_BLEND_MULTIPLY = 3;
+const SWF_BLEND_OVERLAY = 13;
+const SWF_BLEND_SCREEN = 4;
 const TWIPS_PER_PIXEL = 20;
 const _fontNameDecoder = new TextDecoder();
 const _maskPoint = { x: 0, y: 0 };
