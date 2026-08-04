@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/abc": "*",
+    "@flighthq/adjustments": "*",
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/clip": "*",

@@ -17,6 +17,7 @@ import {
 } from '@flighthq/movieclip/contract';
 import {
   getNodeChildren,
+  getNodeColorAdjustments,
   getNodeLocalBoundsRectangle,
   getNodeLocalMatrix,
   getNodeParent,
@@ -30,6 +31,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { getTextureSource, getTextureWidth } from '@flighthq/texture/contract';
 import type {
+  ColorScaleBiasAdjustment,
   EmbeddedAudioResourceReference,
   TimelineAudioCue,
   MorphShape,
@@ -1496,6 +1498,164 @@ describe('createScene2DFromSwf', () => {
     expect(getNodeLocalMatrix(mover)).toMatchObject({ a: 2, d: 2, tx: 10, ty: -3 });
   });
 
+  it('splits a placement colour transform across node alpha and a colour scale/bias adjustment', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            // Half red, double green, unchanged blue, half alpha; +51/255 blue, no alpha add.
+            createColorTransform([128, 512, 256, 128], [0, 0, 51, 0]),
+            swfString('tinted'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const tinted = document!.slots[0].target;
+    const adjustment = getNodeColorAdjustments(tinted)![0] as ColorScaleBiasAdjustment;
+    expect(tinted.alpha).toBe(0.5);
+    expect(adjustment.kind).toBe('ColorScaleBiasAdjustment');
+    expect(adjustment.colorScaleBias).toMatchObject({
+      alphaBias: 0,
+      alphaScale: 1,
+      blueBias: 0.2,
+      blueScale: 1,
+      greenScale: 2,
+      redScale: 0.5,
+    });
+  });
+
+  it('carries no colour adjustment for a placement whose transform only fades', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            createColorTransform([256, 256, 256, 64], [0, 0, 0, 0]),
+            swfString('faded'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const faded = document!.slots[0].target;
+    expect(faded.alpha).toBe(0.25);
+    expect(getNodeColorAdjustments(faded)).toBeNull();
+  });
+
+  it('pre-divides an alpha add so the adjustment and node alpha compose to the authored transform', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            createColorTransform([256, 256, 256, 128], [0, 0, 0, 51]),
+            swfString('lifted'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const lifted = document!.slots[0].target;
+    const adjustment = getNodeColorAdjustments(lifted)![0] as ColorScaleBiasAdjustment;
+    // SWF wants A * 0.5 + 0.2. The adjustment biases by 0.4 and node alpha halves the sum.
+    expect(lifted.alpha).toBe(0.5);
+    expect(adjustment.colorScaleBias.alphaBias).toBeCloseTo(0.4, 10);
+    expect((1 + adjustment.colorScaleBias.alphaBias) * lifted.alpha).toBeCloseTo(1 * 0.5 + 0.2, 10);
+  });
+
+  it('replays a per-frame colour transform onto the instance the move targets', () => {
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
+            uint16(3),
+            uint16(7),
+            createColorTransform([128, 256, 256, 256], [0, 0, 0, 0]),
+            swfString('shifting'),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(
+          TAG_PLACE_OBJECT_2,
+          joinBytes(
+            new Uint8Array([PLACE_MOVE | PLACE_HAS_COLOR_TRANSFORM]),
+            uint16(3),
+            createColorTransform([256, 256, 256, 256], [64, 0, 0, 0]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        // A move that declares no transform inherits the one already in force.
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_MOVE]), uint16(3))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const root = document!.root as MovieClip;
+    const shifting = document!.slots[0].target;
+    const first = getNodeColorAdjustments(shifting)![0] as ColorScaleBiasAdjustment;
+    expect(first.colorScaleBias.redScale).toBe(0.5);
+
+    gotoAndStopMovieClip(root, 2);
+    const second = getNodeColorAdjustments(shifting)![0] as ColorScaleBiasAdjustment;
+    expect(second.colorScaleBias.redScale).toBe(1);
+    expect(second.colorScaleBias.redBias).toBeCloseTo(64 / 255, 10);
+
+    gotoAndStopMovieClip(root, 3);
+    expect(getNodeColorAdjustments(shifting)![0]).toBe(second);
+  });
+
+  it('tints through a legacy PlaceObject colour transform, which carries no alpha channel', () => {
+    const face = new ShapeWriter();
+    face.writeSolidFillStyles([0x445566]);
+    face.writeLineStyleCount(0);
+    face.writeStyleBits(1, 0);
+    face.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    face.writeStraightEdge(400, 0);
+    face.writeEndShape();
+
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), face.toBytes())),
+        createTag(
+          TAG_PLACE_OBJECT,
+          joinBytes(
+            uint16(7),
+            uint16(3),
+            createMatrix(1, 0, 0, 1, 0, 0),
+            createColorTransform([128, 256, 256], [0, 0, 0]),
+          ),
+        ),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    const placed = getNodeChildren(document!.root)[0];
+    const adjustment = getNodeColorAdjustments(placed)![0] as ColorScaleBiasAdjustment;
+    expect(placed.alpha).toBe(1);
+    expect(adjustment.colorScaleBias).toMatchObject({ alphaBias: 0, alphaScale: 1, redScale: 0.5 });
+  });
+
   it('keeps instances in depth order when a later frame places one between them', () => {
     const document = createScene2DFromSwf(
       createSwf([
@@ -2448,6 +2608,19 @@ function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty
   return writer.toBytes();
 }
 
+// A colour transform in the format's own units: multiply terms are 8.8 fixed point (256 is 1.0) and add
+// terms are signed byte offsets. Passing three channels writes the alpha-less form the legacy record uses.
+function createColorTransform(multiply: ReadonlyArray<number>, add: ReadonlyArray<number>): Uint8Array {
+  const writer = new BitWriter();
+  const bits = signedBitCount([...multiply, ...add]);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(bits, 4);
+  for (const value of multiply) writer.writeSigned(value, bits);
+  for (const value of add) writer.writeSigned(value, bits);
+  return writer.toBytes();
+}
+
 // A CXFORMWITHALPHA with neither multiply nor add terms — the shortest legal form.
 function createColorTransformWithAlpha(): Uint8Array {
   const writer = new BitWriter();
@@ -2613,6 +2786,7 @@ const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
 const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
 const PLACE_HAS_CLIP_DEPTH = 0x40;
+const PLACE_HAS_COLOR_TRANSFORM = 0x08;
 const PLACE_HAS_MATRIX = 0x04;
 const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;

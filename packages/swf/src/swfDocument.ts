@@ -1,3 +1,4 @@
+import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
@@ -14,6 +15,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalBounds,
   removeNodeChild,
+  setNodeColorAdjustments,
   setNodeLocalMatrix,
 } from '@flighthq/node/contract';
 import {
@@ -31,6 +33,7 @@ import {
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type {
+  Adjustment,
   AudioResource,
   AudioResourceReference,
   BoundsNodeAny,
@@ -200,9 +203,19 @@ interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
 
 interface SwfShapeNodeData extends ShapeData, SwfAuthoredBoundsData {}
 
+// One CXFORM, already split into the two homes a node gives it. See readSwfColorTransform.
+interface SwfColorTransform {
+  alpha: number;
+  colorAdjustments: readonly Adjustment[] | null;
+}
+
 interface SwfPlacement {
   // The colour transform's alpha multiplier, which is what a fade animates.
   alpha: number;
+  // The rest of the colour transform, as the pointwise adjustment stack a node carries, or null when the
+  // record tints nothing. Built once at parse and shared by every frame that keeps the placement, so
+  // constructFrame compares one reference rather than rebuilding a descriptor per frame.
+  colorAdjustments: readonly Adjustment[] | null;
   characterId: number;
   // The depth this placement masks up to, inclusive, or 0 when it is ordinary content. A masking
   // placement is never drawn itself: it contributes its shape as the clip on everything it covers.
@@ -592,6 +605,7 @@ function createSwfTimelineSource(
   const appliedMatrices = new Map<Node2D, Readonly<SwfMatrix>>();
   const appliedClips = new Map<Node2D, ClipRegion | null>();
   const appliedAlphas = new Map<Node2D, number>();
+  const appliedColorAdjustments = new Map<Node2D, readonly Adjustment[] | null>();
   const appliedRatios = new Map<Node2D, number>();
   return {
     totalFrames: frames.length,
@@ -644,6 +658,13 @@ function createSwfTimelineSource(
           node.alpha = entry.placement.alpha;
           invalidateNodeAppearance(node);
           appliedAlphas.set(node, entry.placement.alpha);
+        }
+        // The rest of the colour transform rides the same per-frame path as alpha. The stack was built at
+        // parse and is shared by every frame that keeps the placement, so an unchanged tint compares equal
+        // by reference and never re-resolves.
+        if (appliedColorAdjustments.get(node) !== entry.placement.colorAdjustments) {
+          setNodeColorAdjustments(node, entry.placement.colorAdjustments);
+          appliedColorAdjustments.set(node, entry.placement.colorAdjustments);
         }
         // A morph's ratio is per-frame data too — it is what animates a morph at all, since the shape
         // itself is one definition and every frame names a different point along it.
@@ -1073,26 +1094,40 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const directLinkage = hasClassName ? body.readString() : (inherited?.directLinkage ?? null);
   const characterId = hasCharacter ? body.readUint16() : (inherited?.characterId ?? 0);
   const matrix = (flags & 0x04) !== 0 ? readSwfMatrix(body) : (inherited?.matrix ?? IDENTITY_MATRIX);
-  const alpha = (flags & 0x08) !== 0 ? readSwfColorTransform(body) : (inherited?.alpha ?? 1);
+  const colorTransform =
+    (flags & 0x08) !== 0
+      ? readSwfColorTransform(body)
+      : { alpha: inherited?.alpha ?? 1, colorAdjustments: inherited?.colorAdjustments ?? null };
   const ratio = (flags & 0x10) !== 0 ? body.readUint16() / MORPH_RATIO_ONE : (inherited?.ratio ?? 0);
   const name = (flags & 0x20) !== 0 ? body.readString() : (inherited?.name ?? null);
   const clipDepth = (flags & 0x40) !== 0 ? body.readUint16() : (inherited?.clipDepth ?? 0);
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
-  placements.set(depth, { alpha, characterId, clipDepth, depth, directLinkage, matrix, name, ratio });
+  placements.set(depth, {
+    alpha: colorTransform.alpha,
+    characterId,
+    clipDepth,
+    colorAdjustments: colorTransform.colorAdjustments,
+    depth,
+    directLinkage,
+    matrix,
+    name,
+    ratio,
+  });
 }
 
 function readLegacyPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>): void {
   const characterId = body.readUint16();
   const depth = body.readUint16();
   const matrix = readSwfMatrix(body);
-  // The legacy record's colour transform has no alpha channel at all.
-  if (body.pos < body.end) readSwfColorTransform(body, 3);
+  // The legacy record's colour transform has no alpha channel at all, so it can only tint.
+  const colorTransform = body.pos < body.end ? readSwfColorTransform(body, 3) : null;
   if (!body.valid || characterId === 0) return;
   placements.set(depth, {
     alpha: 1,
     characterId,
     clipDepth: 0,
+    colorAdjustments: colorTransform?.colorAdjustments ?? null,
     depth,
     directLinkage: null,
     matrix,
@@ -1109,26 +1144,51 @@ function readLegacyRemoveObject(body: SwfReader, placements: Map<number, SwfPlac
   if (existing?.characterId === characterId) placements.delete(depth);
 }
 
-// Reads a colour transform, returning only its alpha multiplier — the one channel Flight's node model
-// carries directly. The colour channels are read past: tinting a node is a material feature rather than a
-// node property, so importing it would need a decision this codec should not make on its own.
-// A record with no multiply terms leaves alpha fully opaque.
-function readSwfColorTransform(reader: SwfReader, channelCount = 4): number {
+// Reads a colour transform (`C' = C * multiply / 256 + add`) and splits it across the two places Flight
+// carries colour on a node. The alpha multiplier becomes `node.alpha`, because that is the channel the
+// render walk concatenates down a subtree — the same thing SWF's own transform does for a sprite, and
+// the reason the multiplier does not ride in the adjustment. Everything else becomes a
+// ColorScaleBiasAdjustment: the Adjustment tier's `out = in * scale + bias` is exactly a CXFORM, with
+// SWF's byte-domain add terms normalized at this seam.
+//
+// The alpha add is pre-divided by the alpha multiply so that composing the two — the adjustment first,
+// `node.alpha` at draw — reproduces SWF's `A * multiply + add` exactly. A record with a zero alpha
+// multiply and a non-zero add cannot be expressed that way and drops its add; the node is fully
+// transparent either way in every other respect.
+function readSwfColorTransform(reader: SwfReader, channelCount = 4): SwfColorTransform {
   const hasAdd = reader.readUnsignedBits(1) !== 0;
   const hasMultiply = reader.readUnsignedBits(1) !== 0;
   const bits = reader.readUnsignedBits(4);
-  let alpha = 1;
+  const multiply = [1, 1, 1, 1];
+  const add = [0, 0, 0, 0];
   if (hasMultiply) {
-    for (let i = 0; i < channelCount; i++) {
-      const value = reader.readSignedBits(bits) / FIXED_8_8_ONE;
-      if (i === ALPHA_CHANNEL && channelCount > ALPHA_CHANNEL) alpha = Math.max(0, Math.min(1, value));
-    }
+    for (let i = 0; i < channelCount; i++) multiply[i] = reader.readSignedBits(bits) / FIXED_8_8_ONE;
   }
   if (hasAdd) {
-    for (let i = 0; i < channelCount; i++) reader.readSignedBits(bits);
+    for (let i = 0; i < channelCount; i++) add[i] = reader.readSignedBits(bits) / COLOR_CHANNEL_ONE;
   }
   reader.alignToByte();
-  return alpha;
+
+  const alpha = channelCount > ALPHA_CHANNEL ? Math.max(0, Math.min(1, multiply[ALPHA_CHANNEL])) : 1;
+  const alphaBias = alpha > 0 ? add[ALPHA_CHANNEL] / alpha : 0;
+  const tints =
+    multiply[0] !== 1 || multiply[1] !== 1 || multiply[2] !== 1 || add[0] !== 0 || add[1] !== 0 || add[2] !== 0;
+  if (!tints && alphaBias === 0) return { alpha, colorAdjustments: null };
+  return {
+    alpha,
+    colorAdjustments: [
+      createColorScaleBiasAdjustment({
+        alphaBias,
+        alphaScale: 1,
+        blueBias: add[2],
+        blueScale: multiply[2],
+        greenBias: add[1],
+        greenScale: multiply[1],
+        redBias: add[0],
+        redScale: multiply[0],
+      }),
+    ],
+  };
 }
 
 function readSwfLinkages(body: SwfReader, linkages: Map<number, string>): void {
@@ -1443,13 +1503,14 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
     const characterId = reader.readUint16();
     const depth = reader.readUint16();
     const matrix = readSwfMatrix(reader);
-    if (version === 2) readSwfColorTransform(reader);
+    const colorTransform = version === 2 ? readSwfColorTransform(reader) : null;
     if (!reader.valid) return;
     if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
       placements.set(depth, {
-        alpha: 1,
+        alpha: colorTransform?.alpha ?? 1,
         characterId,
         clipDepth: 0,
+        colorAdjustments: colorTransform?.colorAdjustments ?? null,
         depth,
         directLinkage: null,
         matrix,
@@ -2135,6 +2196,9 @@ function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean 
 
 const CWS_SIGNATURE = 0x43;
 const ALPHA_CHANNEL = 3;
+// A colour transform's add terms are byte-domain, where 255 adds one whole channel; a ColorScaleBias
+// carries the same quantity normalized.
+const COLOR_CHANNEL_ONE = 0xff;
 const FIXED_8_8_ONE = 0x100;
 const FIXED_16_ONE = 0x10000;
 const FWS_SIGNATURE = 0x46;
