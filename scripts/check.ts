@@ -40,7 +40,11 @@ const add = (label: string, command: string, args: readonly string[]): void => {
   gates.push({ args, command, label });
 };
 
-if (!scoped) add('packages:check', 'tsx', ['scripts/packages.ts']);
+if (!scoped) {
+  add('packages:check', 'tsx', ['scripts/packages.ts']);
+  add('license-provenance:check', 'tsx', ['scripts/check-license-provenance.ts']);
+  add('package-dist-orphans:check', 'tsx', ['scripts/check-package-dist-orphans.ts']);
+}
 
 // Whole-repo typecheck includes SDK source plus the separately-configured functional and tooling trees.
 // Scoped checks build just the selected projects' dependency cone (`tsc -b <project…>`) — `--noEmit`

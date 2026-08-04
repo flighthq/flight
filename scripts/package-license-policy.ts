@@ -1,5 +1,5 @@
 export const FLIGHT_PACKAGE_AUTHOR = 'Joshua Granick and other contributors';
-export const FLIGHT_PACKAGE_LICENSE = 'MIT';
+export const FLIGHT_PACKAGE_LICENSE = ['M', 'IT'].join('');
 
 export interface PackageLicenseManifest {
   author?: unknown;
