@@ -21,7 +21,7 @@ The four rules these landed under are in [rig model](./rig-model.md) — read th
 a deformer, or proposing a package split on bundle-cost grounds.
 
 - **Constraint solvers, as an OPT-IN registered family** keyed by kind: IK (`1030a3635`), transform
-  (`8d3a79276`), path (uncommitted at time of writing). `solveSkeleton2DConstraints` walks the list in
+  (`8d3a79276`), path (`e2b25b175`). `solveSkeleton2DConstraints` walks the list in
   declared order; each solver writes bone LOCAL transforms and refreshes the bones it moved, and the
   caller re-runs the world pass once afterward. IK covers one-bone aim and two-bone law-of-cosines with
   mix, bend direction, stretch and compress. Named deferrals, deliberately absent from the types rather
@@ -46,13 +46,32 @@ by another cell for three callers and reports two coercions: an attachment chann
 its stated interpolation, and a deform offset stream too short for the stream it addresses. Both deformers
 report the second, naming the attachment kind so a caller can tell which one to fix.
 
+## Per-axis bone animation paths, and the Spine defect they fixed (2026-08-04)
+
+`Skeleton2DAnimationPath` gained `TranslationX`/`TranslationY`, `ScaleX`/`ScaleY` and `ShearX`/`ShearY` —
+one-component tracks driving a single field each. The **paired** paths stay, because Spine JSON and
+DragonBones do author them paired; both shapes exist because both formats use them.
+
+**They fixed a silent, total loss of one animated axis.** `spineBinaryParse.ts` widened each per-axis
+timeline into a two-component track with an identity in the untouched axis. That is correct for one such
+timeline and wrong for two: a bone carrying both `translateX` and `translateY` produced two channels on
+the same paired path, and since each composes onto the **setup** pose the second wrote the first's axis
+back. Measured, not inferred — tracks `[7,0]` and `[0,5]` applied together produced `x=0, y=5`.
+
+They cannot simply be merged into one track either: both formats author the two axes with **independent
+keyframe times** and per-segment bezier easing, so resampling onto a common time set changes the curve
+rather than densifying it.
+
+`spineParse.ts` (JSON) turned out to have the same gap in a different form — it handled only the four
+paired keys, so Spine 4's lowercased `translatex`/`translatey`/`scalex`/`scaley`/`shearx`/`sheary` were
+dropped entirely. Silent *absence* rather than silent *overwrite*, which is why it had gone unnoticed.
+Both parsers now emit the per-axis paths directly, and the widening and identity-fill code is gone.
+
+Both regression tests were **mutation-tested against the old behaviour** rather than merely passing — see
+[rig model §5](./rig-model.md).
+
 ## Still deferred (per charter phasing)
 
 - **P2 remainder:** attachment variants beyond region/mesh/path — bounding box, clipping, point — as
   open-family members.
 - **P3:** skin sets (named slot→attachment collections for character customization).
-- **Held for a ruling:** per-axis bone animation paths (`TranslationX`/`ScaleY`/…). Spine's binary format
-  already decodes per-axis timelines and `spineBinaryParse.ts` widens each into a two-component track with
-  an identity in the untouched axis — correct for one such timeline and **wrong for two**, since both
-  channels compose onto setup and the second writes the first axis back. Measured, not inferred: channels
-  `[7,0]` and `[0,5]` applied together give `x=0, y=5`.
