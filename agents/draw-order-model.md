@@ -1,9 +1,11 @@
 # Draw Order Model — child order is the only order
 
-**Status: PROPOSAL, not implemented.** Written by principal with the user on 2026-08-03, from the
-question "should SWF and Rive import benefit from a z-index rather than parenting?". The user ruled on
-the three shape questions (representation, home, name) in that session; the model itself awaits
-approval before dispatch.
+**Ratified 2026-08-04.** Written by principal with the user on 2026-08-03, from the question "should
+SWF and Rive import benefit from a z-index rather than parenting?". The user ruled the three shape
+questions (representation, home, name) in that session, and approved the model itself on 2026-08-04
+once Rive import had shipped against it — `DrawRules`/`DrawTarget` resolve through `NodeOrderList`
+today, 33 of 61 corpus rules honored. Spine draw-order timelines are its second consumer; see
+[skeleton2d animation model](skeleton2d-animation-model.md).
 
 Read this before adding an ordering field to a node, before giving a format importer its own child
 reordering pass, and before deciding where a draw-order timeline binds.

@@ -45,7 +45,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
-- [draw order model](draw-order-model.md) — **unratified.** child order is the only order; the caller-owned `NodeOrderList`.
+- [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
@@ -57,7 +57,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
-- [skeleton2d animation model](skeleton2d-animation-model.md) — slot timelines and where constraints live.
+- [skeleton2d animation model](skeleton2d-animation-model.md) — non-bone timelines, target-kind dispatch, and where constraints live.
 - [texture color space](texture-color-space-model.md) — **unratified.** the decode landed, the encode did not.
 - [timeline cue model](timeline-cue-model.md) — authored frame cues as plain kind-dispatched data, not closures.
 - [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
