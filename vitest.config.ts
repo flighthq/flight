@@ -32,6 +32,7 @@ const COMMON_EXCLUDE = [
   '**/surfaceWasm.test.ts',
   'packages/tool-capture/src/**/*.test.ts',
 ];
+const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
 
 export default mergeConfig(
   baseConfig,
@@ -59,7 +60,8 @@ export default mergeConfig(
             name: 'shared',
             isolate: false,
             include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
-            exclude: [...COMMON_EXCLUDE, ...ISOLATED_MOCK_TEST_FILES],
+            exclude: [...COMMON_EXCLUDE, ...ISOLATED_MOCK_TEST_FILES, TEST_RUN_COVERAGE_FILE],
+            sequence: { groupOrder: 0 },
           },
         },
         {
@@ -69,6 +71,21 @@ export default mergeConfig(
             isolate: true,
             include: [...ISOLATED_MOCK_TEST_FILES],
             exclude: [...COMMON_EXCLUDE],
+            sequence: { groupOrder: 0 },
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'coverage-gate',
+            environment: 'node',
+            fileParallelism: false,
+            isolate: true,
+            include: [TEST_RUN_COVERAGE_FILE],
+            exclude: [...COMMON_EXCLUDE],
+            // This file starts nested root runners to prove inert selections fail. Running it after the
+            // parallel projects prevents those child processes from competing with the pool they verify.
+            sequence: { groupOrder: 1 },
           },
         },
       ],
