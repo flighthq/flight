@@ -81,8 +81,8 @@ const LICENSE_VOCABULARY = [
   words('third-party', 'licence'),
   words('third-party', 'license'),
   words('attribution', 'obligation'),
-  words('licensed', 'rig'),
-  words('licenced', 'rig'),
+  words('permission', 'is', 'hereby', 'granted'),
+  words('subject', 'to', 'the', 'following', 'conditions'),
 ];
 
 const IDENTIFIER_PATTERN = new RegExp(
@@ -166,7 +166,7 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
       name: entry.name,
       reason: entry.reason,
     })),
-    matcherState: 'semantic negatives protected; token-keying active',
+    matcherState: 'semantic negatives and positive verification protected; token-keying active',
     scannedFiles: new Set(inputs.map((input) => normalizePath(input.path))).size,
     structuralMatches: structuralMatches.size,
     violations: uniqueViolations,
