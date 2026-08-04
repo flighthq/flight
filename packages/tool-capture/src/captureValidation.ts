@@ -43,6 +43,7 @@ import type { CaptureParityGroup } from './captureManifest.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
+import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import type { CaptureFingerprintMap } from './captureSuite.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 
@@ -120,6 +121,10 @@ export interface CaptureValidationCheck {
   message: string;
   distance?: number;
   threshold?: number;
+  /** Classification present only on a fingerprint mismatch that the regression leg already failed. */
+  sourceHashStatus?: 'changed' | 'unchanged' | 'unavailable';
+  recordedSourceHash?: string | null;
+  currentSourceHash?: string | null;
 }
 
 interface ResolvedCaptureValidationOptions {
@@ -581,6 +586,10 @@ async function processEntry(
         continue;
       }
       setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint);
+      const sourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
+      if (sourceHash !== null) {
+        setBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash', sourceHash);
+      }
       result.output.push(statusLine('pass', renderer, 'baseline written'));
       result.updated++;
       result.checks.push({
@@ -634,18 +643,23 @@ async function processEntry(
     } else if (options.gateRegression) {
       const check = evaluateCaptureRegression(fingerprint, committed, options.regressionTolerance);
       if (!check.pass) {
-        result.output.push(
-          statusLine('fail', renderer, `regression ${dist.toFixed(2)} > ${options.regressionTolerance}`),
-        );
+        const recordedSourceHash = getBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash');
+        const currentSourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
+        const freshness = classifyCaptureBaselineFreshness(recordedSourceHash, currentSourceHash);
+        const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance} — ${freshness.message}`;
+        result.output.push(statusLine('fail', renderer, message));
         result.regressionFailures++;
         result.checks.push({
           entry: entry.name,
           renderers: [renderer],
           kind: 'regression',
           status: 'failed',
-          message: `regression ${dist.toFixed(2)} > ${options.regressionTolerance}`,
+          message,
           distance: dist,
           threshold: options.regressionTolerance,
+          sourceHashStatus: freshness.status,
+          recordedSourceHash,
+          currentSourceHash,
         });
       } else {
         result.output.push(
@@ -1028,6 +1042,34 @@ export async function runCaptureValidation(
     if (reportPath !== null) writeCaptureReport(reportPath, 'validation', result);
     return result;
   }
+}
+
+function classifyCaptureBaselineFreshness(
+  recordedSourceHash: string | null,
+  currentSourceHash: string | null,
+): { message: string; status: 'changed' | 'unchanged' | 'unavailable' } {
+  if (recordedSourceHash === null) {
+    return {
+      message: 'scene-source freshness unavailable (baseline has no recorded source hash)',
+      status: 'unavailable',
+    };
+  }
+  if (currentSourceHash === null) {
+    return {
+      message: 'scene-source freshness unavailable (current scene source could not be read)',
+      status: 'unavailable',
+    };
+  }
+  if (recordedSourceHash !== currentSourceHash) {
+    return {
+      message: 'scene source changed since baseline — recapture owed by the scene owner',
+      status: 'changed',
+    };
+  }
+  return {
+    message: 'scene source unchanged since baseline — environment drift; never rebaseline',
+    status: 'unchanged',
+  };
 }
 
 // Hex characters per fingerprint cell (one RGB triplet).

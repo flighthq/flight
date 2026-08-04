@@ -2,7 +2,7 @@
 package: '@flighthq/tool-capture'
 crate: null
 draft: false
-lastDirection: 2026-07-10
+lastDirection: 2026-08-04
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -34,6 +34,7 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Deterministic present-frame sync is the load-bearing contract.** The `waitForPresentedFrame` (2 real rAFs via the stashed real `requestAnimationFrame`) + `gl.finish()` before WebGL readback — the fix that ended the color-transform flake — lives here once, reused by every capture. A capture never screenshots frame 0 or a mid-present buffer.
 - **[2026-07-10] Agent-facing contract.** The `visual-capture` skill drives this package; the artifacts are the stable trio `screenshot.png` (read directly), `logs.jsonl` (structured), `status.json` (`{ rendered, blank, changed, error }`). Baselines are sha256 hash text (git-diffable), reconciled with the spun-out `flight-reference` for full-image references.
 - **[2026-07-10] Built as a behavior-preserving lift; two scoped deviations from the initial framing (recorded, blessed).** (1) **The Node-side capture machinery moved; `tools/harness/verify.ts` did not.** That file is *in-page browser code* that imports `@flighthq/sdk` (forbidden in any package) and is wired to the functional harness via the `@ft/verify` alias, `target.ts`, the four backend files, and 100+ scenes. It stays verbatim in `tools/harness/`, coordinating with the moved capture code through the **unchanged `window` contract** (`__ftRealRequestAnimationFrame`, `__ftRenderImage`, `__captureFramesReached`). The load-bearing sync is therefore split by substrate — Node driving in the package, in-page verifier in the harness — not centralized into one file; an end-to-end run reproduced a committed baseline hash byte-for-byte, confirming the contract is intact. (2) **`@flighthq/capture` was NOT taken as a dependency.** The existing sha256 + per-column baseline-JSON compare is self-contained; routing it through capture's record shape is a redesign, not a lift, and a dead dep would violate the deps-honest rule. Wiring the compare/tier policy onto `@flighthq/capture` is promoted to an Open direction. Existing export names were preserved (not yet fully-qualified) — a separate naming pass, since this is a dev/CI `tool-*` surface, not the SDK barrel.
+- **[2026-08-04] Baseline freshness explains existing regression failures; it never gates baseline work.** A fingerprint baseline records the scene-source hash captured with it. When that fingerprint later mismatches, the validation report classifies a changed source hash as scene-owner recapture debt and an unchanged source hash as environment drift that must never be rebaselined. Passing runs emit no freshness warning, `npm run check` contains no freshness step, and no capture is triggered or required. Raw source bytes are hashed deliberately: comments and formatting can make the annotation stale without changing pixels, which is harmless under report-and-accept and would be destructive under a hard gate.
 
 ## Open directions
 

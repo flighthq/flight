@@ -7,7 +7,7 @@ export function createCaptureBaseline(): CaptureBaseline {
 
 /**
  * Serializes a baseline to its committed text form: JSON with columns in sorted key order, each
- * column's fields in canonical `fingerprint` then `sha256` order, 2-space indent, and a trailing
+ * column's fields in canonical `fingerprint`, `sourceHash`, then `sha256` order, 2-space indent, and a trailing
  * newline. Matches the tooling's on-disk baseline store byte-for-byte, so a re-baseline of one column
  * produces a minimal diff and the format gate stays green. Only defined fields are emitted.
  */
@@ -17,6 +17,7 @@ export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): stri
     const entry = baseline[column];
     const out: CaptureColumnBaseline = {};
     if (entry.fingerprint !== undefined) out.fingerprint = entry.fingerprint;
+    if (entry.sourceHash !== undefined) out.sourceHash = entry.sourceHash;
     if (entry.sha256 !== undefined) out.sha256 = entry.sha256;
     sorted[column] = out;
   }

@@ -1,8 +1,11 @@
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { setBaselineField } from './baselineStore';
 import { setCaptureTimeoutMs } from './captureTimeout';
 import {
   explainCaptureParityUncovered,
@@ -174,4 +177,73 @@ describe('runCaptureValidation', () => {
     expect(result.skipped).toBe(1);
     expect(kill).toHaveBeenCalledOnce();
   });
+
+  it('classifies a failed regression with a changed scene source as recapture debt', async () => {
+    const fixture = createRegressionFixture('changed scene', sha256('captured scene'));
+    try {
+      const result = await validateRegressionFixture(fixture.root, fixture.kill);
+      const failure = result.checks.find((check) => check.kind === 'regression');
+
+      expect(result.shouldFail).toBe(true);
+      expect(failure).toMatchObject({
+        currentSourceHash: sha256('changed scene'),
+        recordedSourceHash: sha256('captured scene'),
+        sourceHashStatus: 'changed',
+      });
+      expect(failure?.message).toContain('recapture owed by the scene owner');
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it('classifies a failed regression with unchanged scene source as environment drift', async () => {
+    const source = 'unchanged scene';
+    const fixture = createRegressionFixture(source, sha256(source));
+    try {
+      const result = await validateRegressionFixture(fixture.root, fixture.kill);
+      const failure = result.checks.find((check) => check.kind === 'regression');
+
+      expect(result.shouldFail).toBe(true);
+      expect(failure).toMatchObject({
+        currentSourceHash: sha256(source),
+        recordedSourceHash: sha256(source),
+        sourceHashStatus: 'unchanged',
+      });
+      expect(failure?.message).toContain('environment drift; never rebaseline');
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
 });
+
+function createRegressionFixture(
+  currentSource: string,
+  recordedSourceHash: string,
+): { root: string; kill: () => void } {
+  const root = mkdtempSync(join(tmpdir(), 'capture-regression-freshness-'));
+  const scenes = join(root, 'functional', 'scenes');
+  mkdirSync(scenes, { recursive: true });
+  writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '1:000000');
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'sourceHash', recordedSourceHash);
+  return { root, kill: vi.fn() };
+}
+
+function sha256(source: string): string {
+  return createHash('sha256').update(source).digest('hex');
+}
+
+async function validateRegressionFixture(root: string, kill: () => void) {
+  return runCaptureValidation({
+    subject: 'functional',
+    entries: [{ name: 'sample', renderers: ['canvas'] }],
+    server: { url: 'http://unused.invalid', kill },
+    root,
+    gateParity: false,
+    fingerprints: { sample: { canvas: '1:ffffff' } },
+    browserSession: {
+      browser: { close: vi.fn() } as never,
+      context: { newPage: vi.fn() } as never,
+    },
+  });
+}
