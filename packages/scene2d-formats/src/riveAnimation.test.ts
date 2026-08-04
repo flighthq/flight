@@ -18,6 +18,8 @@ const KEYED_PROPERTY = 26;
 const KEYFRAME_DOUBLE = 30;
 const CUBIC_INTERPOLATOR = 139;
 const KEYFRAME_BOOL = 84;
+const ELASTIC_INTERPOLATOR = 174;
+const SCRIPTED_INTERPOLATOR = 972;
 
 const NAME = 55;
 const FPS = 56;
@@ -33,6 +35,9 @@ const FRAME = 67;
 const INTERPOLATION = 68;
 const INTERPOLATOR_ID = 69;
 const VALUE = 70;
+const EASING = 405;
+const AMPLITUDE = 406;
+const PERIOD = 407;
 
 // Geometry and paint animate by writing the value back onto the core object the file keyed and
 // rebuilding the owning shape, so the ordinary readers produce the result and there is no second
@@ -130,6 +135,30 @@ function build(
   const resolved = nodes ?? [createDisplayObject()];
   return {
     clips: createRiveAnimationClips(objects, { end: objects.length, start: 0 }, resolved, emptyArtboard(), new Map()),
+  };
+}
+
+// A keyframe naming an interpolator by id, where the interpolator object precedes the animation in
+// the stream. Interpolation type 2 is what the corpus uses whenever an interpolator is named. The
+// keyed property is x (13) rather than rotation, because rotation converts radians to degrees and a
+// sampled value would then have to be read through that conversion to mean anything.
+function buildWithInterpolator(typeKey: number, properties: Readonly<Record<number, number>>) {
+  const objects: RiveCoreObject[] = [
+    object(typeKey, properties),
+    object(LINEAR_ANIMATION, { [FPS]: 1, [DURATION]: 1 }),
+    object(KEYED_OBJECT, { [OBJECT_ID]: 0 }),
+    object(KEYED_PROPERTY, { [PROPERTY_KEY]: 13 }),
+    object(KEYFRAME_DOUBLE, { [FRAME]: 0, [INTERPOLATION]: 2, [INTERPOLATOR_ID]: 0, [VALUE]: 0 }),
+    object(KEYFRAME_DOUBLE, { [FRAME]: 1, [INTERPOLATION]: 2, [INTERPOLATOR_ID]: 0, [VALUE]: 100 }),
+  ];
+  return {
+    clips: createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      [createDisplayObject()],
+      emptyArtboard(),
+      new Map(),
+    ),
   };
 }
 
@@ -252,6 +281,48 @@ describe('createRiveAnimationClips', () => {
 
     expect(clips[0].workAreaStart).toBeNull();
     expect(clips[0].workAreaEnd).toBeCloseTo(2, 6);
+  });
+
+  // An elastic interpolator resolves through interpolatorId exactly as a cubic one does. Gathering
+  // only the cubic family is what previously left these segments resolving to nothing and silently
+  // falling back to linear.
+  it('resolves an elastic interpolator instead of falling back to linear', () => {
+    const { clips } = buildWithInterpolator(ELASTIC_INTERPOLATOR, { [AMPLITUDE]: 1, [PERIOD]: 0.4, [EASING]: 1 });
+    const track = clips[0].clip.channels[0].track;
+
+    // A linear fallback would put the midpoint exactly halfway; an elastic curve overshoots past the
+    // target and settles back, so the sampled value must leave the straight line.
+    sampleAnimationTrack(_scratch, track, 0.5);
+    expect(_scratch[0]).not.toBeCloseTo(50, 1);
+  });
+
+  it('uses the amplitude and period the interpolator states rather than fixed constants', () => {
+    const narrow = buildWithInterpolator(ELASTIC_INTERPOLATOR, { [AMPLITUDE]: 1, [PERIOD]: 0.2, [EASING]: 1 });
+    const wide = buildWithInterpolator(ELASTIC_INTERPOLATOR, { [AMPLITUDE]: 1, [PERIOD]: 0.9, [EASING]: 1 });
+
+    const sampled = (result: ReturnType<typeof buildWithInterpolator>, time: number): number => {
+      sampleAnimationTrack(_scratch, result.clips[0].clip.channels[0].track, time);
+      return _scratch[0];
+    };
+    // The widest gap across the curve, not one sample: two oscillations cross each other repeatedly,
+    // so any single time can land where they happen to agree.
+    const widest = Math.max(
+      ...Array.from({ length: 99 }, (_, index) =>
+        Math.abs(sampled(narrow, (index + 1) / 100) - sampled(wide, (index + 1) / 100)),
+      ),
+    );
+
+    expect(widest).toBeGreaterThan(20);
+  });
+
+  // ScriptedInterpolator runs Rive's own scripting language, which a codec does not execute. Its
+  // segments fall back to linear, and that is a scope boundary rather than a gap to close.
+  it('falls back to linear for a scripted interpolator', () => {
+    const { clips } = buildWithInterpolator(SCRIPTED_INTERPOLATOR, {});
+    const track = clips[0].clip.channels[0].track;
+
+    sampleAnimationTrack(_scratch, track, 0.5);
+    expect(_scratch[0]).toBeCloseTo(50, 6);
   });
 
   it('places keyframes at frame over fps seconds', () => {
@@ -520,3 +591,5 @@ function buildRiveBytes(objects: Array<[number, number[][]]>): Uint8Array {
   }
   return new Uint8Array(out);
 }
+
+const _scratch = new Array<number>(8).fill(0);

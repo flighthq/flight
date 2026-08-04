@@ -4,7 +4,7 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
-import { easeCubicBezier } from '@flighthq/easing/contract';
+import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
 import { RiveAnimationLoop as RiveAnimationLoopValue, RiveFieldType } from '@flighthq/types/contract';
@@ -289,9 +289,13 @@ function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number
   return -1;
 }
 
-// Established from the corpus rather than a header: type 2 carries an interpolator in 18,044 of
-// 18,608 cases while type 1 never does and type 0 almost never, which is hold / linear / cubic. The
-// advanced kinds (3 and 4, 42 cases) have no Flight equivalent and fall back to linear.
+// Type 0 is hold and type 1 is linear, established from the corpus: type 2 carries an interpolator in
+// 18,044 of 18,608 cases while type 1 never does and type 0 almost never.
+//
+// Every other value defers to the interpolator the keyframe names, because the *object* is what
+// carries the behaviour. Rive's own runtime never switches on this enum — `InterpolatingKeyFrame`
+// resolves `interpolatorId` and uses whatever `KeyFrameInterpolator` it lands on — so treating an
+// unrecognized enum value as unsupported would reject curves that resolve perfectly well.
 function toRiveSegmentEasing(
   keyframe: Readonly<RiveCoreObject>,
   interpolators: ReadonlyMap<number, EasingFunction>,
@@ -303,6 +307,17 @@ function toRiveSegmentEasing(
   return interpolators.get(id) ?? null;
 }
 
+/**
+ * Collects every interpolator a keyframe can name, by concrete type.
+ *
+ * `KeyFrameInterpolator` has three concrete subclasses and each states its own curve:
+ * `CubicInterpolator` (with its ease and value variants), `ElasticInterpolator`, and
+ * `ScriptedInterpolator`. Gathering only the cubic family is what left elastic segments resolving to
+ * nothing and silently falling back to linear.
+ *
+ * `ScriptedInterpolator` is **not** collected and is not a gap to close here: it runs Rive's own
+ * scripting language, which a codec does not execute. Its segments fall back to linear.
+ */
 function collectRiveInterpolators(
   objects: readonly Readonly<RiveCoreObject>[],
   range: Readonly<{ end: number; start: number }>,
@@ -310,21 +325,37 @@ function collectRiveInterpolators(
   const interpolators = new Map<number, EasingFunction>();
   // An interpolator is addressed by its position in the artboard's own numbering, which for these
   // non-component objects is their index within the file's object stream.
-  for (let index = 0; index < objects.length; index++) {
-    if (!isRiveCoreTypeDerivedFrom(objects[index].typeKey, RIVE_CUBIC_INTERPOLATOR)) continue;
-    if (index < range.start || index >= range.end) continue;
+  for (let index = range.start; index < range.end && index < objects.length; index++) {
     const source = objects[index];
-    interpolators.set(
-      index,
-      easeCubicBezier(
-        readRiveNumber(source, RIVE_INTERPOLATOR_X1, 0.42),
-        readRiveNumber(source, RIVE_INTERPOLATOR_Y1, 0),
-        readRiveNumber(source, RIVE_INTERPOLATOR_X2, 0.58),
-        readRiveNumber(source, RIVE_INTERPOLATOR_Y2, 1),
-      ),
-    );
+    if (isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_CUBIC_INTERPOLATOR)) {
+      interpolators.set(
+        index,
+        easeCubicBezier(
+          readRiveNumber(source, RIVE_INTERPOLATOR_X1, 0.42),
+          readRiveNumber(source, RIVE_INTERPOLATOR_Y1, 0),
+          readRiveNumber(source, RIVE_INTERPOLATOR_X2, 0.58),
+          readRiveNumber(source, RIVE_INTERPOLATOR_Y2, 1),
+        ),
+      );
+      continue;
+    }
+    if (!isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_ELASTIC_INTERPOLATOR)) continue;
+    interpolators.set(index, toRiveElasticEasing(source));
   }
   return interpolators;
+}
+
+// The elastic curve states its own amplitude and period, so it maps onto the parameterized damped
+// sine rather than the fixed-constant easeElastic, which would be a different curve wherever a file
+// states anything but the constants that one hardcodes.
+function toRiveElasticEasing(source: Readonly<RiveCoreObject>): EasingFunction {
+  const amplitude = readRiveNumber(source, RIVE_INTERPOLATOR_AMPLITUDE, 1);
+  const period = readRiveNumber(source, RIVE_INTERPOLATOR_PERIOD, RIVE_DEFAULT_ELASTIC_PERIOD);
+  const easing = readRiveNumber(source, RIVE_INTERPOLATOR_EASING, RIVE_ELASTIC_EASE_OUT);
+  if (easing === RIVE_ELASTIC_EASE_IN) return easeInDampedSine(amplitude, period);
+  return easing === RIVE_ELASTIC_EASE_IN_OUT
+    ? easeInOutDampedSine(amplitude, period)
+    : easeOutDampedSine(amplitude, period);
 }
 
 // Only the transform properties bind through the shared display-object target. Animated geometry and
@@ -363,6 +394,7 @@ const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_LINEAR_ANIMATION = 31;
 const RIVE_KEYFRAME_COLOR = 37;
 const RIVE_CUBIC_INTERPOLATOR = 139;
+const RIVE_ELASTIC_INTERPOLATOR = 174;
 const RIVE_INTERPOLATING_KEYFRAME = 170;
 
 const RIVE_X_LEGACY = 9;
@@ -393,12 +425,22 @@ const RIVE_KEYFRAME_INTERPOLATION = 68;
 const RIVE_KEYFRAME_INTERPOLATOR_ID = 69;
 const RIVE_KEYFRAME_DOUBLE_VALUE = 70;
 const RIVE_KEYFRAME_COLOR_VALUE = 88;
+const RIVE_INTERPOLATOR_EASING = 405;
+const RIVE_INTERPOLATOR_AMPLITUDE = 406;
+const RIVE_INTERPOLATOR_PERIOD = 407;
 
 const RIVE_LOOP_ONE_SHOT = 0;
 const RIVE_LOOP_LOOP = 1;
 const RIVE_LOOP_PING_PONG = 2;
 // The work area's unset sentinel; 0 is a real frame, so absence cannot be spelled with it.
 const RIVE_UNSET_FRAME = -1;
+
+// Rive's Easing enum, and the property's own initial value is easeOut rather than easeIn.
+const RIVE_ELASTIC_EASE_IN = 0;
+const RIVE_ELASTIC_EASE_OUT = 1;
+const RIVE_ELASTIC_EASE_IN_OUT = 2;
+// The object model's initial period. A literal 0 is meaningless and the easing reads it as 0.5.
+const RIVE_DEFAULT_ELASTIC_PERIOD = 1;
 
 const RIVE_INTERPOLATION_HOLD = 0;
 const RIVE_INTERPOLATION_LINEAR = 1;
