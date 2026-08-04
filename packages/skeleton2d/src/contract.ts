@@ -11,3 +11,7 @@ export * from './pathConstraint2D';
 export * from './skeleton2dGuards';
 export * from './enableSkeleton2DGuards';
 export * from './explainSkeleton2DChannel';
+export * from './skinAttachment2DPoints';
+export * from './boundingBoxAttachment2D';
+export * from './clippingAttachment2D';
+export * from './pointAttachment2D';

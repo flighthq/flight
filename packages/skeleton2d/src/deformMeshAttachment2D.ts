@@ -1,9 +1,6 @@
 import type { MeshAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
-import { reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards';
-
-// 6 floats per bone in the flat world-transform buffer (a, b, c, d, tx, ty).
-const MATRIX_STRIDE = 6;
+import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
 
 // Deforms a MeshAttachment2D's vertices into flat interleaved world positions `[x0, y0, x1, y1, …]` in
 // `out` (length ≥ 2 × attachment.vertexCount), for the display layer to draw. Requires
@@ -36,58 +33,13 @@ export function deformSkeleton2DMeshAttachment(
   boneIndex: number,
   deform: Readonly<Float32Array> | null = null,
 ): void {
-  const world = skeleton.worldMatrices;
-  const skin = attachment.skin;
-  if (skin !== null && skin !== undefined) {
-    const counts = skin.influenceCounts;
-    const inf = skin.influences;
-    // Hoisted out of the loop: a rig with no deform timeline pays one test for the whole attachment.
-    const offsets = deform !== null && deform.length * 2 >= inf.length ? deform : null;
-    if (deform !== null && offsets === null) {
-      reportSkeleton2DDeformLengthMismatch('MeshAttachment2D', deform.length, inf.length / 2);
-    }
-    let vi = 0; // influence-stream cursor (stride 4: boneIndex, localX, localY, weight)
-    let di = 0; // deform cursor (stride 2, one pair per influence)
-    let oi = 0; // output cursor (stride 2)
-    for (let v = 0; v < counts.length; v++) {
-      let wx = 0;
-      let wy = 0;
-      const n = counts[v];
-      for (let k = 0; k < n; k++) {
-        const b = inf[vi] * MATRIX_STRIDE;
-        const lx = offsets === null ? inf[vi + 1] : inf[vi + 1] + offsets[di];
-        const ly = offsets === null ? inf[vi + 2] : inf[vi + 2] + offsets[di + 1];
-        const weight = inf[vi + 3];
-        wx += weight * (world[b] * lx + world[b + 2] * ly + world[b + 4]);
-        wy += weight * (world[b + 1] * lx + world[b + 3] * ly + world[b + 5]);
-        vi += 4;
-        di += 2;
-      }
-      out[oi] = wx;
-      out[oi + 1] = wy;
-      oi += 2;
-    }
-    return;
-  }
-
-  // Rigid mesh: the whole attachment follows one bone's world transform.
-  const vertices = attachment.vertices;
-  if (vertices === null || vertices === undefined) return;
-  const offsets = deform !== null && deform.length >= vertices.length ? deform : null;
-  if (deform !== null && offsets === null) {
-    reportSkeleton2DDeformLengthMismatch('MeshAttachment2D', deform.length, vertices.length);
-  }
-  const b = boneIndex * MATRIX_STRIDE;
-  const a = world[b];
-  const bb = world[b + 1];
-  const c = world[b + 2];
-  const d = world[b + 3];
-  const tx = world[b + 4];
-  const ty = world[b + 5];
-  for (let i = 0; i < vertices.length; i += 2) {
-    const vx = offsets === null ? vertices[i] : vertices[i] + offsets[i];
-    const vy = offsets === null ? vertices[i + 1] : vertices[i + 1] + offsets[i + 1];
-    out[i] = a * vx + c * vy + tx;
-    out[i + 1] = bb * vx + d * vy + ty;
-  }
+  skinSkeleton2DAttachmentPoints(
+    out,
+    attachment.skin,
+    attachment.vertices,
+    skeleton,
+    boneIndex,
+    deform,
+    'MeshAttachment2D',
+  );
 }
