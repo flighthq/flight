@@ -1,0 +1,8 @@
+{
+  "name": "swf-import",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "swf-import"
+  }
+}

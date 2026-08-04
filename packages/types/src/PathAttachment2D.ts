@@ -19,12 +19,14 @@ import type { Skin2D } from './Skin2D';
 //
 // THE CONTROL-POINT RULE, and it is a rule about the DATA rather than about any code that reads it. A
 // `Path`'s `data` is a flat coordinate stream in which every pair is a point, CUBIC CONTROL POINTS
-// INCLUDED. An authoring tool weights the anchor vertices and treats a handle as a polar offset from its
-// anchor, but once lowered to a command stream a handle is an ABSOLUTE coordinate and needs influences of
-// its own. So an importer gives each control point THE INFLUENCE SET OF THE VERTEX IT BELONGS TO — the
-// same bone indices and the same weights, with its own local offsets. The handle then travels RIGIDLY
-// with its anchor, which is what "the curve follows the bone" means visually; interpolating a handle's
-// influences across the two vertices its segment spans would shear the tangent and bend the curve wrong.
+// INCLUDED. An authoring tool treats a handle as an offset from its anchor, but once lowered to a command
+// stream a handle is an ABSOLUTE coordinate and needs influences of its own. Where the source format
+// STATES a handle's weights, an importer uses them — some formats weight a cubic vertex's own position,
+// its in-handle and its out-handle independently. Where it does not, the handle INHERITS THE INFLUENCE
+// SET OF THE VERTEX IT BELONGS TO: the same bone indices and the same weights, with its own local offsets.
+// The handle then travels RIGIDLY with its anchor, which is what "the curve follows the bone" means
+// visually. Interpolating a handle's influences across the two vertices its segment spans would shear the
+// tangent and bend the curve wrong, and inheriting where authored weights exist would discard them.
 //
 // The consequence worth stating: with that rule applied at import, a handle is simply another entry in
 // the influence stream and NOTHING AT RUNTIME NEEDS A HANDLE CONCEPT. `pointCount` therefore counts every
