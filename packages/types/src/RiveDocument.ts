@@ -185,10 +185,47 @@ export interface RiveAdvancedBlend {
   node: DisplayObject;
 }
 
-/** A named clip. A Rive artboard carries several animations and the name is how a caller picks one. */
+/**
+ * How an animation repeats once it reaches its end. Rive states this per animation; Flight's
+ * `AnimationClip` carries channels and a duration and takes no position on repetition, so the mode is
+ * reported here for the caller that drives playback rather than being folded into the clip.
+ */
+export const RiveAnimationLoop = {
+  /** Plays once and holds on the last frame. */
+  OneShot: 'OneShot',
+  /** Restarts from the beginning each time it reaches the end. */
+  Loop: 'Loop',
+  /** Alternates direction, playing forward then backward. */
+  PingPong: 'PingPong',
+} as const;
+
+export type RiveAnimationLoop = (typeof RiveAnimationLoop)[keyof typeof RiveAnimationLoop];
+
+/**
+ * A named clip. A Rive artboard carries several animations and the name is how a caller picks one.
+ *
+ * `loop`, `speed` and the work area are **stated by the file and reported rather than applied**. An
+ * `AnimationClip` is a bundle of channels sampled at a time, with no notion of repetition, rate, or a
+ * trimmed play range, so applying them here would mean baking a playback policy into sampled data.
+ * The caller that drives the playhead is the one that can honor them.
+ */
 export interface RiveAnimationClip {
   clip: AnimationClip;
+  loop: RiveAnimationLoop;
   name: string;
+  /**
+   * Playback rate the animation states, where 1 is authored speed. Rive permits a negative rate,
+   * which plays the animation backward.
+   */
+  speed: number;
+  /**
+   * The end of the animation's work area in seconds, or `null` when it enables none. A work area
+   * trims playback to a span of the timeline without discarding the keyframes outside it, which is
+   * why import reports the span instead of dropping them.
+   */
+  workAreaEnd: number | null;
+  /** The start of the animation's work area in seconds, or `null` when it enables none. */
+  workAreaStart: number | null;
 }
 
 /**

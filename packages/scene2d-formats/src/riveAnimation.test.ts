@@ -22,6 +22,11 @@ const KEYFRAME_BOOL = 84;
 const NAME = 55;
 const FPS = 56;
 const DURATION = 57;
+const SPEED = 58;
+const LOOP = 59;
+const WORK_START = 60;
+const WORK_END = 61;
+const ENABLE_WORK_AREA = 62;
 const OBJECT_ID = 51;
 const PROPERTY_KEY = 53;
 const FRAME = 67;
@@ -160,6 +165,93 @@ describe('createRiveAnimationClips', () => {
     expect(clips.map((entry) => entry.name)).toEqual(['walk', 'blink']);
     expect(clips[0].clip.duration).toBeCloseTo(2, 6);
     expect(clips[1].clip.duration).toBeCloseTo(0.5, 6);
+  });
+
+  // Loop, speed and the work area are stated by the animation and reported rather than applied: an
+  // AnimationClip has no notion of repetition, rate, or a trimmed range, so folding them into sampled
+  // data would bake a playback policy into the keyframes.
+  it('carries the loop mode the animation states', () => {
+    const modes = [0, 1, 2].map(
+      (value) =>
+        createRiveAnimationClips(
+          [object(LINEAR_ANIMATION, { [FPS]: 30, [LOOP]: value })],
+          { end: 1, start: 0 },
+          [],
+          emptyArtboard(),
+          new Map(),
+        )[0].loop,
+    );
+
+    expect(modes).toEqual(['OneShot', 'Loop', 'PingPong']);
+  });
+
+  it('falls back to one shot for a loop mode this reader does not know', () => {
+    const clips = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30, [LOOP]: 99 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+
+    expect(clips[0].loop).toBe('OneShot');
+  });
+
+  it('carries playback speed, defaulting to authored speed', () => {
+    const stated = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30, [SPEED]: 2.5 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+    const absent = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+
+    expect(stated[0].speed).toBe(2.5);
+    expect(absent[0].speed).toBe(1);
+  });
+
+  it('reports the work area in seconds only when the animation enables it', () => {
+    const enabled = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30, [ENABLE_WORK_AREA]: 1, [WORK_START]: 15, [WORK_END]: 60 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+    // The same bounds with the flag clear are authored data the animation does not apply.
+    const disabled = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30, [WORK_START]: 15, [WORK_END]: 60 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+
+    expect(enabled[0].workAreaStart).toBeCloseTo(0.5, 6);
+    expect(enabled[0].workAreaEnd).toBeCloseTo(2, 6);
+    expect(disabled[0].workAreaStart).toBeNull();
+    expect(disabled[0].workAreaEnd).toBeNull();
+  });
+
+  it('leaves an unset work-area bound absent rather than reading it as frame zero', () => {
+    // The format's unset sentinel is -1, and 0 is a real frame, so the two cannot share a spelling.
+    const clips = createRiveAnimationClips(
+      [object(LINEAR_ANIMATION, { [FPS]: 30, [ENABLE_WORK_AREA]: 1, [WORK_END]: 60 })],
+      { end: 1, start: 0 },
+      [],
+      emptyArtboard(),
+      new Map(),
+    );
+
+    expect(clips[0].workAreaStart).toBeNull();
+    expect(clips[0].workAreaEnd).toBeCloseTo(2, 6);
   });
 
   it('places keyframes at frame over fps seconds', () => {

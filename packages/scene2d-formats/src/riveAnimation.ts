@@ -7,12 +7,13 @@ import {
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import { RiveAnimationLoop as RiveAnimationLoopValue, RiveFieldType } from '@flighthq/types/contract';
 import type {
   AnimationChannel,
   AnimationClip,
   RiveArtboardGraph,
   RiveAnimationClip,
+  RiveAnimationLoop,
   DisplayObject,
   EasingFunction,
   Node2DAnimationPath,
@@ -120,7 +121,27 @@ function createRiveAnimationClip(
   }
 
   const duration = readRiveNumber(source, RIVE_ANIMATION_DURATION, 60) / fps;
-  return { clip: createAnimationClip(channels, duration), name: readRiveText(source, RIVE_ANIMATION_NAME, '') };
+  // The work area is stated in frames and only applies when the animation enables it. Its unset
+  // sentinel is -1 rather than 0, which is a real frame, so an absent bound stays absent.
+  const hasWorkArea = readRiveNumber(source, RIVE_ANIMATION_ENABLE_WORK_AREA, 0) !== 0;
+  const workStart = readRiveNumber(source, RIVE_ANIMATION_WORK_START, RIVE_UNSET_FRAME);
+  const workEnd = readRiveNumber(source, RIVE_ANIMATION_WORK_END, RIVE_UNSET_FRAME);
+  return {
+    clip: createAnimationClip(channels, duration),
+    loop: toRiveAnimationLoop(readRiveNumber(source, RIVE_ANIMATION_LOOP, RIVE_LOOP_ONE_SHOT)),
+    name: readRiveText(source, RIVE_ANIMATION_NAME, ''),
+    speed: readRiveNumber(source, RIVE_ANIMATION_SPEED, 1),
+    workAreaEnd: !hasWorkArea || workEnd < 0 ? null : workEnd / fps,
+    workAreaStart: !hasWorkArea || workStart < 0 ? null : workStart / fps,
+  };
+}
+
+// An unrecognized mode falls to one-shot, which is the format's own initial value and the reading
+// that shows least: a file naming a mode this reader does not know plays once rather than repeating
+// forever.
+function toRiveAnimationLoop(value: number): RiveAnimationLoop {
+  if (value === RIVE_LOOP_LOOP) return RiveAnimationLoopValue.Loop;
+  return value === RIVE_LOOP_PING_PONG ? RiveAnimationLoopValue.PingPong : RiveAnimationLoopValue.OneShot;
 }
 
 function createRiveChannel(
@@ -358,6 +379,11 @@ const RIVE_KEYED_PROPERTY_KEY = 53;
 const RIVE_ANIMATION_NAME = 55;
 const RIVE_ANIMATION_FPS = 56;
 const RIVE_ANIMATION_DURATION = 57;
+const RIVE_ANIMATION_SPEED = 58;
+const RIVE_ANIMATION_LOOP = 59;
+const RIVE_ANIMATION_WORK_START = 60;
+const RIVE_ANIMATION_WORK_END = 61;
+const RIVE_ANIMATION_ENABLE_WORK_AREA = 62;
 const RIVE_INTERPOLATOR_X1 = 63;
 const RIVE_INTERPOLATOR_Y1 = 64;
 const RIVE_INTERPOLATOR_X2 = 65;
@@ -367,6 +393,12 @@ const RIVE_KEYFRAME_INTERPOLATION = 68;
 const RIVE_KEYFRAME_INTERPOLATOR_ID = 69;
 const RIVE_KEYFRAME_DOUBLE_VALUE = 70;
 const RIVE_KEYFRAME_COLOR_VALUE = 88;
+
+const RIVE_LOOP_ONE_SHOT = 0;
+const RIVE_LOOP_LOOP = 1;
+const RIVE_LOOP_PING_PONG = 2;
+// The work area's unset sentinel; 0 is a real frame, so absence cannot be spelled with it.
+const RIVE_UNSET_FRAME = -1;
 
 const RIVE_INTERPOLATION_HOLD = 0;
 const RIVE_INTERPOLATION_LINEAR = 1;
