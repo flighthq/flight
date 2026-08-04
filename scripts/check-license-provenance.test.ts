@@ -65,12 +65,19 @@ describe('license and provenance declaration gate', () => {
       words('algebra', 'sourced', 'from'),
       words('ported', 'from'),
     ];
-    const report = checkLicenseProvenance([{ path: 'source.ts', text: phrases.join('\n') }]);
+    const identifier = parts('M', 'IT');
+    const report = checkLicenseProvenance([
+      { path: 'source.ts', text: phrases.map((phrase) => `${phrase} external code, ${identifier}`).join('\n') },
+    ]);
 
-    expect(report.violations.map((entry) => entry.match.toLowerCase())).toEqual(phrases);
+    expect(
+      report.violations
+        .filter((entry) => entry.rule !== 'license-identifier')
+        .map((entry) => entry.match.toLowerCase()),
+    ).toEqual(phrases);
   });
 
-  it('requires provenance context for the conditional marker', () => {
+  it('requires a licence token rather than a vendor name or URL for the conditional marker', () => {
     const phrase = words('derived', 'from');
     const identifier = parts('M', 'IT');
     const report = checkLicenseProvenance([
@@ -89,7 +96,29 @@ describe('license and provenance declaration gate', () => {
 
     expect(
       report.violations.filter((entry) => entry.rule === 'derived-from-with-provenance').map((entry) => entry.line),
-    ).toEqual([2, 3, 4, 5]);
+    ).toEqual([2]);
+  });
+
+  it('treats fetch provenance as required evidence rather than a signal', () => {
+    const identifier = parts('M', 'IT');
+    const clean = `64 files fetched on demand from ${parts('R', 'ive')}'s Android runtime test assets and never committed`;
+    const report = checkLicenseProvenance([
+      { path: 'status.md', text: clean },
+      { path: 'status.md', text: `${identifier}-licensed ${clean}` },
+    ]);
+
+    expect(report.violations).toEqual([{ line: 1, match: identifier, path: 'status.md', rule: 'license-identifier' }]);
+  });
+
+  it('classifies a token-plus-derivation line without flagging the source name', () => {
+    const identifier = parts('M', 'IT');
+    const phrase = words('adapted', 'from');
+    const report = checkLicenseProvenance([{ path: 'source.ts', text: `${phrase} ExternalProject, ${identifier}` }]);
+
+    expect(report.violations).toEqual([
+      { line: 1, match: phrase, path: 'source.ts', rule: 'adapted-from' },
+      { line: 1, match: identifier, path: 'source.ts', rule: 'license-identifier' },
+    ]);
   });
 
   it('keeps conditional evidence scoped to its line', () => {
@@ -103,12 +132,12 @@ describe('license and provenance declaration gate', () => {
 
   it('protects negative assertions for every derivation marker', () => {
     const lines = [
-      `never ${words('adapted', 'from')} upstream`,
-      `not ${words('transcribed', 'from')} a licensed rig`,
-      `without content ${words('translated', 'from')} elsewhere`,
-      `no algebra ${words('sourced', 'from')} another codebase`,
-      `nothing ${words('ported', 'from')} a runtime`,
-      `not ${words('derived', 'from')} https://example.com/source`,
+      `never ${words('adapted', 'from')} upstream, ${parts('M', 'IT')}`,
+      `not ${words('transcribed', 'from')} a ${words('licensed', 'rig')}`,
+      `without content ${words('translated', 'from')} elsewhere, ${parts('B', 'SD')}`,
+      `no algebra ${words('sourced', 'from')} another codebase, ${parts('A', 'pache')}`,
+      `nothing ${words('ported', 'from')} a runtime, ${parts('G', 'PL')}`,
+      `not ${words('derived', 'from')} https://example.com/source, ${parts('I', 'SC')}`,
     ];
 
     expect(checkLicenseProvenance([{ path: 'source.ts', text: lines.join('\n') }]).violations).toEqual([]);
@@ -147,7 +176,7 @@ describe('license and provenance declaration gate', () => {
     expect(report.violations).toEqual([]);
     expect(output).toContain('project-license-policy [1 matched line] —');
     expect(output).toContain('prohibited-provenance-example [1 matched line] —');
-    expect(output).toContain('Matcher state: [semantic negatives protected; token-keying ready]');
+    expect(output).toContain('Matcher state: [semantic negatives protected; token-keying active]');
   });
 
   it('does not mistake re-exports or published algorithm names for provenance', () => {
@@ -161,7 +190,7 @@ describe('license and provenance declaration gate', () => {
     ).toEqual([]);
   });
 
-  it('permits an internal Flight package move but not an external one', () => {
+  it('does not treat an internal or external project name as a token', () => {
     const phrase = words('ported', 'from');
     const report = checkLicenseProvenance([
       { path: 'packages/adjustments/package.json', text: '{}' },
@@ -171,19 +200,22 @@ describe('license and provenance declaration gate', () => {
       },
     ]);
 
-    expect(report.violations).toEqual([{ line: 3, match: phrase, path: 'notes.md', rule: 'ported-from' }]);
+    expect(report.violations).toEqual([]);
   });
 
-  it('permits facts taken from a published interface description but not an implementation', () => {
+  it('distinguishes a published interface fact from an implementation claim when a token is present', () => {
     const phrase = words('transcribed', 'from');
+    const identifier = parts('M', 'IT');
     const report = checkLicenseProvenance([
       {
         path: 'source.ts',
-        text: `${phrase} the published bytecode format description\n${phrase} a published standard\n${phrase} a standard library implementation`,
+        text: `${phrase} the published bytecode format description, ${identifier}\n${phrase} a published standard, ${identifier}\n${phrase} a standard library implementation, ${identifier}`,
       },
     ]);
 
-    expect(report.violations).toEqual([{ line: 3, match: phrase, path: 'source.ts', rule: 'transcribed-from' }]);
+    expect(report.violations.filter((entry) => entry.rule === 'transcribed-from')).toEqual([
+      { line: 3, match: phrase, path: 'source.ts', rule: 'transcribed-from' },
+    ]);
   });
 
   it('keeps mathematical derivation separate from a project named on another line', () => {
