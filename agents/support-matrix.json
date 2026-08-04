@@ -1285,6 +1285,21 @@
       ]
     },
     {
+      "key": "rive",
+      "label": "Rive",
+      "scenes": [
+        {
+          "scene": "rive-import",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
       "key": "scale9",
       "label": "Scale9",
       "scenes": [
