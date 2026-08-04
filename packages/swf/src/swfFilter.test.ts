@@ -194,7 +194,9 @@ describe('readSwfFilterList', () => {
     expect(complete).toBe(false);
     expect(effects).toHaveLength(0);
   });
+});
 
+describe('setSwfFilterListGuard', () => {
   it('stops and reports an unknown filter before its payload can be mistaken for another field', () => {
     const seen: number[] = [];
     setSwfFilterListGuard((filterId, filterIndex) => seen.push(filterId, filterIndex));
