@@ -55,6 +55,12 @@ tree itself. Detection is based only on directory and manifest existence, never 
 cleanup retains the ordering above so `dist` and sibling `*.tsbuildinfo` disappear together before
 TypeScript cleans the current project graph.
 
+The test is deliberately one line of evidence: `packages/<name>/dist` is a directory and its sibling
+`package.json` does not exist. Neither apparent substitute proves the tree clean. `tsc -b --clean`
+walks only the current project graph, so it can never reach output for a package renamed out of that
+graph. A directory mtime records changes to its immediate entries, not whether an existing file below
+it contains stale output, so it is no reassurance in the stale-file case.
+
 ## Read vs write: `:baseline`
 
 A check that compares against a committed baseline **reads** under its bare name and **writes** under `:baseline`. `test:size` compares; `test:size:baseline` rewrites. `test:functional:regression` compares; `test:functional:regression:baseline` rewrites. `:baseline` is always the write-mode of the check it follows — and only a check that owns a baseline has one (smoke and parity have nothing to write).
