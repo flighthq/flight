@@ -219,6 +219,27 @@ describe('createRivePath', () => {
     expect(points).toContainEqual([20, 10]);
   });
 
+  it('turns a negative radius into an inverted corner', () => {
+    const radius = 10;
+    const path = pointsPath(true, [
+      object(STRAIGHT_VERTEX, { 24: 0, 25: 0 }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 0, 26: -radius }),
+      object(STRAIGHT_VERTEX, { 24: 100, 25: 100 }),
+    ])!;
+    const points = pointPairs(path);
+    const cubic = cubicAfter(path, [90, 0]);
+
+    // The tangent points stay one radius down each adjoining edge, but the cubic bends around the
+    // authored vertex rather than toward it. At a right angle that is a concave quarter circle
+    // centred on (100,0): its controls leave (90,0) downward and enter (100,10) from the left.
+    expect(points).toContainEqual([90, 0]);
+    expect(points).toContainEqual([100, 10]);
+    expect(cubic![0]).toBeCloseTo(90, 6);
+    expect(cubic![1]).toBeCloseTo(radius * 0.5522847498307936, 4);
+    expect(cubic![2]).toBeCloseTo(100 - radius * 0.5522847498307936, 4);
+    expect(cubic![3]).toBeCloseTo(10, 6);
+  });
+
   it("leaves an open path's endpoints sharp, since a corner needs two edges", () => {
     const path = pointsPath(false, [
       object(STRAIGHT_VERTEX, { 24: 0, 25: 0, 26: 5 }),
