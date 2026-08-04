@@ -315,7 +315,8 @@ at its target point; every other light is a `PointLight`, which is the format's 
 commented-out constants only), and the canonical spec host is behind the sandbox's default-deny network
 policy. Two independent implementations were consulted for the FORMAT FACTS only — byte order, field
 order, units — and no code, naming, or structure was taken from either; the sources were deleted before
-the parser was written. They conflicted on two fields, resolved on the format's own terms:
+the parser was written, deliberately, because their licenses (BSD-3 attribution and GPL) make copying a
+problem the facts themselves are not. They conflicted on two fields, resolved on the format's own terms:
 
 - **The camera's 4th float is a focal length in MILLIMETRES, not an angle.** One reference reads it as a
   degree FOV. The format documents a lens, and the other reference's round trip (its exporter writes a
