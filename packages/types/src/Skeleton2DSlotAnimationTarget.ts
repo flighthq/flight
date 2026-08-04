@@ -1,4 +1,5 @@
 import type { Attachment2D } from './Attachment2D';
+import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
 
 // Which part of a `Slot2D`'s appearance an AnimationChannel drives — the slot-side counterpart of
 // `Skeleton2DAnimationPath`, which covers only bone transforms.
@@ -25,9 +26,9 @@ export type Skeleton2DSlotAnimationPath =
 // (by index into the skeleton's draw-order slot array) and which appearance group.
 //
 // This is a SECOND target type rather than a widening of `Skeleton2DAnimationTarget`, because a bone target
-// and a slot target address different arrays and a bone channel should not have to carry a discriminator it
-// never reads. A channel's `targetRef` is typed `unknown` precisely so the binding layer can interpret more
-// than one shape; `applyAnimationClipToSkeleton2D` probes for the field that identifies each.
+// and a slot target address different arrays. What tells them apart is `kind`, not their field shapes: a
+// channel's `targetRef` is typed `unknown` so the binding layer can interpret more than one shape, and
+// `applyAnimationClipToSkeleton2D` looks the kind up in a registry rather than probing for a field.
 //
 // SEMANTIC ASYMMETRY WORTH KNOWING: a bone channel carries a RELATIVE delta that the binder composes onto
 // the setup pose (add, or multiply for scale). A slot colour channel carries an ABSOLUTE value that the
@@ -46,6 +47,7 @@ export type Skeleton2DSlotAnimationPath =
 // is a named deferral rather than an oversight.
 export interface Skeleton2DSlotAnimationTarget {
   attachments?: readonly (Attachment2D | null)[] | null;
+  kind: Skeleton2DAnimationTargetKind;
   path: Skeleton2DSlotAnimationPath;
   slotIndex: number;
 }

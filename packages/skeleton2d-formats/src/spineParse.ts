@@ -1,7 +1,11 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
+import {
+  createSkeleton2D,
+  createSkeleton2DBoneAnimationTarget,
+  createSkeleton2DSlotAnimationTarget,
+} from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
   AttachmentSkin2D,
@@ -382,7 +386,7 @@ function addSpineBoneChannel(
   const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
   const segmentEasings = buildSpineSegmentEasings(keys, times, values, components, diagnostics);
   const track = createAnimationTrack({ components, interpolation, segmentEasings, times, values });
-  channels.push(createAnimationChannel(track, { boneIndex, path }));
+  channels.push(createAnimationChannel(track, createSkeleton2DBoneAnimationTarget(boneIndex, path)));
 }
 
 // Converts Spine's per-keyframe bezier `curve` arrays into one `EasingFunction` per INTERVAL, which is the
@@ -656,7 +660,9 @@ function addSpineSlotColorChannel(
   const interpolation = allStepped ? AnimationInterpolationStep : AnimationInterpolationLinear;
   const segmentEasings = buildSpineSegmentEasings(keys, times, values, 4, diagnostics);
   const track = createAnimationTrack({ components: 4, interpolation, segmentEasings, times, values });
-  channels.push(createAnimationChannel(track, { path: Skeleton2DSlotAnimationPath.Color, slotIndex }));
+  channels.push(
+    createAnimationChannel(track, createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Color)),
+  );
 }
 
 // One `attachment` slot timeline → a STEP channel of indices into a per-channel attachment table.
@@ -705,7 +711,10 @@ function addSpineSlotAttachmentChannel(
     values,
   });
   channels.push(
-    createAnimationChannel(track, { attachments, path: Skeleton2DSlotAnimationPath.Attachment, slotIndex }),
+    createAnimationChannel(
+      track,
+      createSkeleton2DSlotAnimationTarget(slotIndex, Skeleton2DSlotAnimationPath.Attachment, attachments),
+    ),
   );
 }
 
