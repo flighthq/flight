@@ -80,7 +80,7 @@ describe('createScene2DFromSvgDocument', () => {
   it('composes image geometry before its SVG transform', () => {
     const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
-      '<svg><image href="asset.png" x="3" y="4" width="40" height="30" transform="translate(10 20)"/></svg>',
+      '<svg><image href="asset.png" x="3" y="4" width="40" height="30" preserveAspectRatio="none" transform="translate(10 20)"/></svg>',
       undefined,
       { resolveImageResource: () => image },
     );
@@ -90,6 +90,23 @@ describe('createScene2DFromSvgDocument', () => {
     expect(bitmap.y).toBe(24);
     expect(bitmap.scaleX).toBe(2);
     expect(bitmap.scaleY).toBe(3);
+  });
+
+  it('maps image intrinsic dimensions with default preserveAspectRatio and explicit none', () => {
+    const image = createReadyImageResourceForTest(20, 10);
+    const root = createScene2DFromSvgDocument(
+      `
+        <svg>
+          <image href="asset.png" x="10" y="20" width="100" height="100"/>
+          <image href="asset.png" x="10" y="20" width="100" height="100" preserveAspectRatio="none"/>
+        </svg>
+      `,
+      undefined,
+      { resolveImageResource: () => image },
+    );
+
+    expect(getNodeChildAt(root, 0)).toMatchObject({ scaleX: 5, scaleY: 5, x: 10, y: 45 });
+    expect(getNodeChildAt(root, 1)).toMatchObject({ scaleX: 5, scaleY: 10, x: 10, y: 20 });
   });
 
   it('composes authored geometry before transforms uniformly across element types', () => {
@@ -397,7 +414,7 @@ describe('createScene2DFromSvgDocument', () => {
   it('resolves image resources through an explicit no-I/O seam', () => {
     const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(
-      '<svg><image id="photo" href="asset.png" x="3" y="4" width="40" height="30"/></svg>',
+      '<svg><image id="photo" href="asset.png" x="3" y="4" width="40" height="30" preserveAspectRatio="none"/></svg>',
       undefined,
       { resolveImageResource: (href) => (href === 'asset.png' ? image : null) },
     );

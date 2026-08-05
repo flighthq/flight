@@ -249,6 +249,40 @@ describe('Lottie document conformance census', () => {
     expect(gradient.data.commands).toContain('beginGradientFill');
   });
 
+  it('preserves packed gradient opacity stops and combines them with paint opacity', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'gradient-opacity',
+          op: 60,
+          shapes: [
+            { p: { k: [10, 10] }, r: { k: 0 }, s: { k: [20, 20] }, ty: 'rc' },
+            {
+              e: { k: [20, 0] },
+              g: {
+                k: { k: [0, 1, 0, 0, 0.5, 0, 1, 0, 1, 0, 0, 1, 0, 0.2, 1, 0.8] },
+                p: 3,
+              },
+              o: { k: 50 },
+              s: { k: [0, 0] },
+              t: 1,
+              ty: 'gf',
+            },
+          ],
+          ty: 4,
+        },
+      ] as LottieLayer[]),
+    );
+    const shape = findFirstKind(findByName(result.root, 'gradient-opacity')!, ShapeKind) as Shape;
+    const gradientIndex = shape.data.commands.indexOf('beginGradientFill');
+
+    expect(shape.data.commands[gradientIndex + 3]).toEqual([0xff0000, 0x00ff00, 0x0000ff]);
+    expect(shape.data.commands[gradientIndex + 4]).toEqual([0.1, 0.25, 0.4]);
+    expect(shape.data.commands[gradientIndex + 5]).toEqual([0, 128, 255]);
+  });
+
   it('updates animated path, fill, stroke, gradient, and hard-mask content through the format binder', () => {
     const animatedPath = {
       a: 1 as const,
@@ -290,8 +324,8 @@ describe('Lottie document conformance census', () => {
             k: {
               a: 1,
               k: [
-                { s: [0, 1, 0, 0, 1, 0, 0, 1], t: 0 },
-                { s: [0, 0, 1, 0, 1, 1, 1, 0], t: 30 },
+                { s: [0, 1, 0, 0, 1, 0, 0, 1, 0, 0.2, 1, 0.8], t: 0 },
+                { s: [0, 0, 1, 0, 1, 1, 1, 0, 0, 0.4, 1, 1], t: 30 },
               ],
             },
             p: 2,
@@ -310,11 +344,19 @@ describe('Lottie document conformance census', () => {
     const gradientShape = findFirstKind(findByName(result.root, 'animated-gradient')!, ShapeKind) as Shape;
     const before = JSON.stringify(shape.data.commands);
     const gradientBefore = JSON.stringify(gradientShape.data.commands);
+    const gradientBeforeIndex = gradientShape.data.commands.indexOf('beginGradientFill');
+
+    expect(gradientShape.data.commands[gradientBeforeIndex + 4]).toEqual([0.2, 0.8]);
 
     applyAnimationClipToLottieDocument(result.clip, 0.5);
 
     expect(JSON.stringify(shape.data.commands)).not.toBe(before);
     expect(JSON.stringify(gradientShape.data.commands)).not.toBe(gradientBefore);
+    const gradientAfterIndex = gradientShape.data.commands.indexOf('beginGradientFill');
+    const gradientAlphas = gradientShape.data.commands[gradientAfterIndex + 4] as number[];
+    expect(gradientAlphas).toHaveLength(2);
+    expect(gradientAlphas[0]).toBeCloseTo(0.3);
+    expect(gradientAlphas[1]).toBeCloseTo(0.9);
     expect(node.clip?.rect.x).toBeCloseTo(10);
   });
 
