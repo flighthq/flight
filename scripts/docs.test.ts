@@ -10,6 +10,7 @@ import {
   findReachableDocs,
   findUncoveredPackages,
   getDocBudgetStatus,
+  hasTrackedFile,
   isAuthorityBearingDoc,
   reportDocBudget,
 } from './docs';
@@ -261,6 +262,23 @@ describe('getDocBudgetStatus', () => {
   it('scales the warn band with the limit rather than using a fixed character count', () => {
     expect(getDocBudgetStatus(9_800, 10_000)).toBe('near');
     expect(getDocBudgetStatus(9_799, 10_000)).toBe('ok');
+  });
+});
+
+describe('hasTrackedFile', () => {
+  it('treats a package with tracked files as present', () => {
+    expect(hasTrackedFile(new Set(['packages/mesh/src/mesh.ts']), 'mesh')).toBe(true);
+  });
+
+  // `packages/sprite` is exactly this after the responsibility split: an empty directory left on the
+  // disk of whoever had it checked out, tracking nothing. Judging the disk would demand a cell for it
+  // from those developers only — red locally, green in CI.
+  it('treats an untracked residue directory as not a package', () => {
+    expect(hasTrackedFile(new Set(['packages/mesh/src/mesh.ts']), 'sprite')).toBe(false);
+  });
+
+  it('does not match a package whose name is a prefix of another', () => {
+    expect(hasTrackedFile(new Set(['packages/scene2d-gl/src/a.ts']), 'scene2d')).toBe(false);
   });
 });
 
