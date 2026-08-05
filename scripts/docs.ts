@@ -335,6 +335,13 @@ function checkOrdinals(cell: string, charterText: string): void {
 // Reachability means an actual resolvable markdown link, not a prose mention. You cannot navigate a
 // mention, and the whole point of the invariant is that a reader *arrives*.
 function checkOrphans(): void {
+  // Prose documents only — deliberately NOT `scripts/`, and that exclusion is load-bearing rather than
+  // incidental. This checker's own tests build fixtures out of REAL document names (`rig-model.md`,
+  // `seam-audit.md`), because each one records an actual incident. Widen this corpus to source files and
+  // every one of those fixtures becomes a phantom pointer that marks a genuinely unreachable document as
+  // reached — the gate would then go quiet in exactly the case it exists to catch, and quiet is
+  // indistinguishable from clean. Verified by probing the running gate, not by reading it: a link planted
+  // inside `scripts/docs.test.ts` is still reported orphaned.
   const corpus = [join(REPO_ROOT, 'AGENTS.md'), ...walkMarkdown(join(REPO_ROOT, 'agents'))];
   if (existsSync(SKILLS_DIR)) corpus.push(...walkMarkdown(SKILLS_DIR));
 
