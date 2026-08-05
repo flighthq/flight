@@ -79,8 +79,8 @@ keyframed paths against 627 bare — so reading only the bare form is what crash
 
 **Not covered — silent, and verified so.** The text and radial-highlight cases were confirmed by importing
 each case beside its reduction and diffing the emitted shape command stream; the systematic source trace at
-Flight `28301ec6d` confirms the remaining field-to-consumer gaps below. None is announced, and per the rule
-above none should be:
+the current source confirms the remaining field-to-consumer gaps below. None is announced, and per the
+rule above none should be:
 
 - **Text stroke (`sc`, `sw`) is not read**, and **embedded glyph outlines (`chars`) are not read**.
   `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
@@ -201,8 +201,8 @@ to `xMidYMid meet`. Image placement now reuses that rule: the default maps to sc
 while explicit `preserveAspectRatio="none"` retains scale 5×10 at `(10, 20)`. A focused regression pins
 both outcomes.
 
-**Systematic silent gaps confirmed at Flight `28301ec6d`.** These are recorded rather than guessed
-across a semantic or runtime boundary:
+**Systematic silent gaps confirmed in the current source.** These are recorded rather than guessed across
+a semantic or runtime boundary:
 
 - Radial-gradient focal coordinates `fx`/`fy` are parsed and inherited but do not reach the gradient
   matrix or a focal-ratio field. The conversion depends on the gradient's coordinate space and transform.

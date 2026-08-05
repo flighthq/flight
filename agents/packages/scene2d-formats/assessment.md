@@ -9,10 +9,16 @@ basedOn: ./review.md
 ## Audit basis
 
 This assessment was checked against `packages/scene2d-formats/src`, its boundary types, colocated tests,
-the shared resource seam, and the functional scenes. The systematic Lottie/SVG source pass is pinned to
-Flight `28301ec6d`; the Rive corpus and functional-scene evidence remains pinned to Flight `a3707655f`.
-Historical corpus statements below name the Flight commit that recorded them; they are evidence from
-that revision, not floating claims about an unnamed checkout.
+the shared resource seam, and the functional scenes. The Rive corpus and functional-scene evidence is
+pinned to Flight `a3707655f`. Historical corpus statements below name the Flight commit that recorded
+them; they are evidence from that revision, not floating claims about an unnamed checkout.
+
+A Flight commit pin is valid only when `git merge-base --is-ancestor <sha> origin/develop` succeeds in a
+clone whose remote-tracking ref is current. `git cat-file -e` is insufficient: a pre-rebase object can
+remain locally after every integrated ref has stopped reaching it. In an isolated Quimby clone,
+`origin/develop` can be a stale seed, so a negative is ambiguous until the original subject is mapped to
+its replayed twin on a current integrated ref. This assessment therefore uses commit pins for already-
+reachable historical measurements, not for in-flight implementation prose.
 
 The current Rive measurement is reproducible without committing external bytes: clone
 `https://github.com/rive-app/rive-flutter.git`, check out
@@ -139,11 +145,10 @@ pinned Rive baseline, and the historical unpinned Lottie/SVG and older Rive corp
 ## Systematic SVG/Lottie silent-drop completion
 
 The backstop was completed as a field-to-consumer read-through, not stopped after the first two defects.
-Flight `b0bca6552` carries the bounded source fixes: nested Lottie group names; solid-stroke static dash,
-offset, cap, join, and miter data; SVG HSL/HSLA and percentage alpha; and computed `currentColor` for
-gradient stops. Flight `28301ec6d` corrects the Lottie boundary type and applies the same line-style data
-to gradient strokes. Animated dash remains undashed and uses the existing author-actionable modifier
-diagnostic rather than freezing its first keyframe.
+The current source carries the bounded fixes: nested Lottie group names; solid- and gradient-stroke
+static dash, offset, cap, join, and miter data; SVG HSL/HSLA and percentage alpha; and computed
+`currentColor` for gradient stops. Animated dash remains undashed and uses the existing author-actionable
+modifier diagnostic rather than freezing its first keyframe.
 
 Every other candidate examined is listed below. “No loss” means the value was followed through its
 consumer rather than merely absent from the gap list. “Left” names the reason it was not turned into an
@@ -151,9 +156,9 @@ implementation choice.
 
 | codec path or field | disposition | named reason |
 | --- | --- | --- |
-| Lottie solid stroke `d`, `lc`, `lj`, `ml` | fixed at `b0bca6552` | Static line styling maps directly onto existing shape/path commands. |
-| Lottie gradient stroke `d`, `lc`, `lj`, `ml` | fixed at `28301ec6d` | The fields were missing from the boundary type even though the gradient-stroke output uses the same line-style seam. |
-| Lottie nested shape-group `nm` | fixed at `b0bca6552` | A nested group already creates a one-to-one display container that can carry its name. |
+| Lottie solid stroke `d`, `lc`, `lj`, `ml` | fixed | Static line styling maps directly onto existing shape/path commands. |
+| Lottie gradient stroke `d`, `lc`, `lj`, `ml` | fixed | The fields were missing from the boundary type even though the gradient-stroke output uses the same line-style seam. |
+| Lottie nested shape-group `nm` | fixed | A nested group already creates a one-to-one display container that can carry its name. |
 | Lottie animated dash entries | left, declared exclusion | Sampling dash arrays would require a mutable path rebuild contract; freezing the first keyframe would misstate animation. The existing modifier diagnostic remains. |
 | Lottie keyframe `ti` / `to` | left, unread | Tracks represent value samples and temporal easing, not a spatial motion-path target; endpoints survive but curved trajectories do not. |
 | Lottie transform `sa` | left, unread | Skew axis changes transform composition; assigning it to `skewX` would be a guessed relation. |
@@ -170,8 +175,8 @@ implementation choice.
 | Lottie markers `cm` / `dr` / `tm` | examined, no loss | All three reach the emitted clip event name, duration, and time. |
 | Lottie document `nm` / `v` | left, metadata-only | The import result has no document-name/schema-version fields; neither changes emitted scene pixels. |
 | SVG geometry, transforms, `use`, gradient inheritance, image `href` | examined, no loss found | Each attribute family reaches its path, matrix, reference resolver, or injected image seam; image aspect mapping was repaired in the predecessor audit. |
-| SVG HSL/HSLA and percentage RGB alpha | fixed at `b0bca6552` | They are CSS colour syntax with a direct mapping to the existing RGB/alpha paint representation. |
-| SVG gradient-stop `currentColor` | fixed at `b0bca6552` | Definition ancestry already computes `color`; the stop parser had bypassed it. |
+| SVG HSL/HSLA and percentage RGB alpha | fixed | They are CSS colour syntax with a direct mapping to the existing RGB/alpha paint representation. |
+| SVG gradient-stop `currentColor` | fixed | Definition ancestry already computes `color`; the stop parser had bypassed it. |
 | SVG radial-gradient `fx` / `fy` | left, parsed then unused | Converting focal coordinates needs a focal-ratio relation across object-bounds/user-space coordinates and the gradient transform. |
 | SVG `switch` predicates | left, unread | Feature, extension, and language selection needs a caller environment and fallback policy; emitting all children remains explicitly documented. |
 | SVG complex CSS selectors | left, unread | A correct descendant/child/sibling/attribute/pseudo implementation is a selector engine, not an extension of the simple matcher. |
