@@ -159,6 +159,24 @@ unrelated rigs.
 by measuring a consumer that does not use the feature. A plausible argument about manifest edges is not
 evidence, and this measurement retires a whole class of speculative splits.
 
+## Re-checking this document against the tree
+
+Every rule above is a claim about code, so each one has a command that settles it. Run these rather than
+trusting the prose — the doc is older than the tree by construction.
+
+| Rule | Check | Expected |
+| --- | --- | --- |
+| 1 — binders preloaded | `grep -A3 "_binders = new Map" packages/skeleton2d/src/skeleton2dAnimationTarget.ts` | Bone and Slot entered at construction |
+| 1 — solvers opt-in | `grep "_solvers = new Map" packages/skeleton2d/src/skeleton2dConstraint.ts` | constructed **empty** |
+| 2 — deform addressing | `grep "inf.length\|vertices.length" packages/skeleton2d/src/skinAttachment2DPoints.ts` | `length * 2 === inf.length` weighted, `length === vertices.length` rigid — **`===`, not `>=`** |
+| 3 — no handle concept | `grep -c handle packages/skeleton2d/src/skinAttachment2DPoints.ts` | `0`. In `deformPathAttachment2D.ts` the only hits are the comment saying why |
+| 4 — path dependency | `grep -l "from '@flighthq/path" packages/skeleton2d/src/*.ts` | `pathConstraint2D.ts` **alone** |
+| pins | `git merge-base --is-ancestor <sha> origin/develop` for each | all reachable |
+
+All six passed on the tree this section was added to. That statement is deliberately **not** pinned to a
+commit: this change is not yet on the integration branch, and by the rule above a pin naming a commit only
+this clone can resolve would be worse than no pin at all.
+
 ## 5. The test for a test: would it fail if the behaviour broke?
 
 The rules above are only worth what the tests behind them can detect, and this package is full of
