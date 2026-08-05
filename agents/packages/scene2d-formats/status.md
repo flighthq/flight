@@ -8,6 +8,20 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-05 — Reachability correction for in-flight commit identities
+
+The two local SHAs named in the immediately following entry are pre-integration identities, not durable
+Flight pins: neither is an ancestor of this clone's seeded `origin/develop`, and this clone cannot see a
+landed replayed twin. The assessment and coverage document no longer cite them; their claims are source
+truth and state no counts that require a revision pin. Historical Flight measurement pins were checked
+with `git merge-base --is-ancestor <sha> origin/develop` and are reachable from the seed. The two 40-digit
+Rive revisions are explicitly upstream pins and are not expected to resolve in Flight.
+
+`git cat-file -e` is not a validity check for a documentation pin because unreferenced pre-rebase objects
+remain in an author's clone until garbage collection. Against a current integrated ref, use
+`git merge-base --is-ancestor <sha> origin/develop`; against Quimby's stale seed, map by subject on the
+integrated side or mark the result unverified rather than guessing a twin.
+
 ## 2026-08-05 — SVG/Lottie silent-drop sweep completed field by field
 
 The follow-up backstop walked Lottie's typed document boundary and every SVG parse/style/reference path
