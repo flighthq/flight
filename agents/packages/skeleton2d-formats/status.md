@@ -159,6 +159,60 @@ The two formats encode curves quite differently, and DragonBones is the simpler 
 3. **DragonBones `.json`** (after Spine) — its own `armature` container + bone/slot model deltas; registered behind the same seam.
 4. **Spine `.skel` binary** — later pass, same registry.
 
+## Format-registry audit — two open forks, RECORDED NOT CHOSEN (2026-08-05)
+
+Audited every module-global registry this cell and `@flighthq/skeleton2d` write into, asking the question
+that the test-hygiene sweep raised: **does a PRODUCTION path leave global state a later caller inherits?**
+
+**Answer for the `register*` paths: tests only.** Every production write is an explicit caller opt-in —
+`registerSkeleton2DFormat`, the constraint-solver registrars, the animation-target binders, the guard
+seam. None of them fires as a side effect of doing something else. The module-level scratch buffers
+(`_scratch`, `_positions`, `_tangents`) grow monotonically but are written before being read on every
+call, and `setSkeleton2DSlotDeform` copies rather than aliasing, so no value crosses a call boundary.
+
+**But one production READ path writes:** `getRegistry()` in `skeletonDetect.ts` lazily materialises the
+registry, so the first `parseSkeleton2D` — or the first `registerSkeleton2DFormat` — inserts the built-ins.
+That is not itself a defect, but it produces two consequences that are forks rather than bugs. Both are
+**measured, not reasoned**: each was confirmed by a throwaway probe, not by reading the code.
+
+### Fork 1 — a custom format can never take precedence over a built-in
+
+`parseSkeleton2D` returns the first registered detector that matches, and lazy init always inserts the
+built-ins first, so a later `registerSkeleton2DFormat` is always appended behind them. **Probed: a custom
+format whose detector matches everything still loses to Spine on Spine-shaped input.** A vendor wanting to
+change how a Spine-looking file is parsed must unregister `'Spine'` first, which is not obvious from the
+API.
+
+- **(a) Leave it.** Insertion order is a simple, explainable rule and overriding by *kind* already works.
+- **(b) Try non-built-in kinds first.** Makes vendor formats win by default; needs a definition of
+  "built-in" the registry does not currently carry.
+- **(c) Give `registerSkeleton2DFormat` an explicit priority.** Most flexible, most surface.
+
+**What would settle it:** whether any real consumer needs to reinterpret a file a built-in already claims.
+If none does, (a) is free.
+
+### Fork 2 — unregistering a built-in is one-way
+
+The built-in **parsers** are exported (`parseSpineSkeleton`, `parseDragonBonesSkeleton`) but the built-in
+**detectors** are not (`detectSpine`, `detectDragonBones` are module-private). **Probed: after
+`unregisterSkeleton2DFormat('Spine')`, `parseSkeleton2D` returns null for Spine input and nothing in the
+public API restores it** — a caller can supply the parser back but must re-implement the detector, which
+is precisely the reimplementation that will drift.
+
+Note this asymmetry is specific to *this* registry: `@flighthq/skeleton2d`'s solver registry is reversible
+because its built-in solvers are exported functions.
+
+- **(a) Export the detectors**, so re-registration is exact. Smallest change; adds two exports.
+- **(b) Add `resetSkeleton2DFormats()`** restoring the built-in set. One export, and it also covers a
+  registry a test has scrambled.
+- **(c) Accept one-way removal** and say so in the doc comment, on the grounds that last-write-wins
+  override already lets a caller break built-in parsing.
+
+**What would settle it:** whether removal is meant to be a caller-facing capability or only the inverse of
+a caller's own registration. If the latter, (c) is honest and free.
+
+**Neither fork was acted on** — quimby is offline and both change public shape.
+
 ## Deferred (charter non-goals / skeleton2d P2)
 
 Posing/deforming/drawing and per-frame apply live in `@flighthq/skeleton2d` (the `applyAnimationClipToSkeleton2D` binder landed there first). IK/transform/path **constraint solvers**, events, and clipping/path/point attachments are skeleton2d P2 — `Skip`-crumbed here, not blockers for the animated demo. The `.atlas` texture-region half stays with `@flighthq/spritesheet-formats`.
