@@ -249,11 +249,12 @@ function checkAssessment(cell: string, dir: string): void {
 // fixable envelope violation here (CONTRACT.md: "charter.md is required"), so it fails. A missing
 // review/assessment does not: those are stage outputs, and "this stage has not run yet" is what the
 // generated liveness list is for, not a gate.
-function checkCellCoverage(cells: ReadonlySet<string>): void {
-  const packages = readdirSync(PACKAGES_DIR, { withFileTypes: true })
+function checkCellCoverage(cells: ReadonlySet<string>, tracked: ReadonlySet<string> | undefined): void {
+  const onDisk = readdirSync(PACKAGES_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
+  const packages = tracked === undefined ? onDisk : onDisk.filter((name) => hasTrackedFile(tracked, name));
 
   for (const name of findUncoveredPackages(packages, cells)) {
     fail(`packages/${name}/: no agents/packages/${name}/ cell — run \`node agents/packages/scaffold.mjs\``);
@@ -267,13 +268,27 @@ export function findUncoveredPackages(packages: readonly string[], cells: Readon
   return packages.filter((name) => !cells.has(name));
 }
 
+// Whether git tracks anything under `packages/<name>`, which is what makes it a package rather than a
+// directory. A removed package leaves an untracked empty residue behind on the disk of whoever had it
+// checked out — `packages/sprite` is exactly that today, tracking zero paths after the responsibility
+// split. Reading the disk would demand a cell for a package the repository no longer contains, and
+// would do it only for those developers: red locally, green in CI, which is the failure mode the
+// orphan check above already documents. Tracked-ness is the same fact there and here.
+export function hasTrackedFile(tracked: ReadonlySet<string>, name: string): boolean {
+  const prefix = `packages/${name}/`;
+  for (const file of tracked) {
+    if (file.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
 function checkCells(): void {
   const cells = readdirSync(CELLS_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
 
-  checkCellCoverage(new Set(cells));
+  checkCellCoverage(new Set(cells), listTrackedFiles());
 
   for (const cell of cells) {
     const dir = join(CELLS_DIR, cell);
