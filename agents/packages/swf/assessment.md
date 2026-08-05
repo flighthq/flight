@@ -49,7 +49,12 @@ the measurement so a later corpus or importer change cannot silently rewrite the
    from the MIME-keyed `@flighthq/image-codec` `DecodedImage` result into the loader, or an additive third
    `ImageResourceReference` kind with both 2D and 3D loader dispatch. Straight versus premultiplied alpha
    is part of the first route. No route is selected here, and the working eager lossless path must remain
-   unchanged until the ruling.
+   unchanged until the ruling. The status-quo bundle has a separate non-SWF before-number: on the source
+   tree identified by the in-flight subject `test: strengthen assertion contracts`, a
+   `@flighthq/scene2d-resources` consumer resolving an embedded PNG through `loadScene2DImageResources` is
+   1,864 bytes gzip (`scene2d-embedded-png:canvas`). The subject is used instead of its non-final replay
+   hash. That measurement selects neither alternative; it exists so a later ruled implementation has a
+   comparison point.
 2. **Rank only the remaining local fidelity gaps after that decision.** `DefineBitsJPEG3`/`4` drops its
    separate alpha stream (one file in the fixed 301-readable-file sample at `8dd53f4a2`); nested masks keep
    only the innermost clip; scene names have no timeline-scene home; and some SWF filter fields exceed the

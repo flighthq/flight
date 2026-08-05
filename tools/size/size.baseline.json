@@ -137,5 +137,6 @@
   "cross-backend-embed:dom": 14944,
   "layout:canvas": 647,
   "layout:canvas:all": 2634,
-  "swf-import:canvas": 31089
+  "swf-import:canvas": 31089,
+  "scene2d-embedded-png:canvas": 1864
 }

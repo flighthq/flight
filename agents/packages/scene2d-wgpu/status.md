@@ -46,7 +46,7 @@ strategy rather than node semantics.
 `functional/scenes/swf-alpha-transform.ts` is the permanent four-backend reproducer. Its SWF provenance
 only proves the gap affects real imported content: the adjusted white solid finishes the WebGPU draw with
 one mesh and no raster surface and remains white, while WebGL folds the same intended green transform.
-Evidence commit: `0099a0cc4 test(swf): capture alpha transform backend evidence`. Renderer-side record
+Evidence commit: `541a361a5 test(swf): capture alpha transform backend evidence`. Renderer-side record
 commit subject: `docs(scene2d-wgpu): record mesh colour adjustment gap`.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
