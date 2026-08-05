@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/path-boolean'
+role: package
 crate: flighthq-path-boolean
 draft: false
 lastDirection: 2026-07-09

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { PackageChurn } from '../agents/packages/todo-churn.mjs';
-import { readPackageChurn, sumChurnSince } from '../agents/packages/todo-churn.mjs';
+import { isOwnedCommit, readPackageChurn, sumChurnSince } from '../agents/packages/todo-churn.mjs';
 
 const temporaryDirectories: string[] = [];
 
@@ -71,7 +71,7 @@ describe('readPackageChurn', () => {
     commit(repo, sweepFiles(25, 'x\n'), 'refactor: rename everything');
 
     const churn = readPackageChurn(repo, '2000-01-01');
-    expect(totalFor(churn, 'pkg00')).toEqual({ commits: 0, lines: 0, sweeps: 1 });
+    expect(totalFor(churn, 'pkg00')).toEqual({ commits: 0, lines: 0, owned: 0, sweeps: 1 });
   });
 
   // ...but the package that owns a wide refactor takes the bulk of it, and that is real work.
@@ -101,27 +101,66 @@ describe('readPackageChurn', () => {
     expect(totalFor(churn, 'mesh').commits).toBe(1);
     expect(totalFor(churn, 'path').commits).toBe(1);
   });
+
+  // The header-layer shape end to end: a feature lands in one package and adds its exported type to
+  // `types`. Both are credited a commit — the touch is real — but only the owner is credited owning
+  // it, which is what keeps `types` off the top of the re-review ranking.
+  it('separates the package owning a narrow commit from the one following it', () => {
+    const repo = createRepo();
+    commit(
+      repo,
+      [
+        ['packages/mesh/src/meshSkinning.ts', 'owner line\n'.repeat(300)],
+        ['packages/types/src/MeshSkin.ts', 'follower line\n'.repeat(12)],
+      ],
+      'feat(mesh): add skinning',
+    );
+
+    const churn = readPackageChurn(repo, '2000-01-01');
+    expect(totalFor(churn, 'mesh')).toEqual({ commits: 1, lines: 300, owned: 1, sweeps: 0 });
+    expect(totalFor(churn, 'types')).toEqual({ commits: 1, lines: 12, owned: 0, sweeps: 0 });
+  });
+});
+
+describe('isOwnedCommit', () => {
+  it('treats a commit touching only this package as owned', () => {
+    expect(isOwnedCommit(1, 12, 12)).toBe(true);
+  });
+
+  it('treats a majority share of the lines as owned', () => {
+    expect(isOwnedCommit(3, 300, 400)).toBe(true);
+  });
+
+  // The header layer's case: a feature lands in another package and adds its type here, so the touch
+  // is real but tiny. Counting it as work on the header layer put `types` top of the re-review list.
+  it('treats a small share of a multi-package commit as following, not owning', () => {
+    expect(isOwnedCommit(2, 57, 357)).toBe(false);
+  });
+
+  it('counts an exactly even split as owned by both packages', () => {
+    expect(isOwnedCommit(2, 50, 100)).toBe(true);
+  });
 });
 
 describe('sumChurnSince', () => {
   const byDate = new Map([
-    ['2026-06-01', { commits: 1, lines: 10, sweeps: 0 }],
-    ['2026-07-01', { commits: 2, lines: 100, sweeps: 1 }],
-    ['2026-08-01', { commits: 3, lines: 1000, sweeps: 0 }],
+    ['2026-06-01', { commits: 1, lines: 10, owned: 1, sweeps: 0 }],
+    ['2026-07-01', { commits: 2, lines: 100, owned: 1, sweeps: 1 }],
+    ['2026-08-01', { commits: 3, lines: 1000, owned: 0, sweeps: 0 }],
   ]);
 
   it('sums only the dates strictly after the cutoff', () => {
-    expect(sumChurnSince(byDate, '2026-06-30')).toEqual({ commits: 5, lines: 1100, sweeps: 1 });
-    expect(sumChurnSince(byDate, '2026-07-31')).toEqual({ commits: 3, lines: 1000, sweeps: 0 });
+    expect(sumChurnSince(byDate, '2026-06-30')).toEqual({ commits: 5, lines: 1100, owned: 1, sweeps: 1 });
+    expect(sumChurnSince(byDate, '2026-07-31')).toEqual({ commits: 3, lines: 1000, owned: 0, sweeps: 0 });
   });
 
   // A review written the same day as a commit is treated as having seen it, so same-day is excluded.
   it('excludes a commit dated the same day as the review', () => {
-    expect(sumChurnSince(byDate, '2026-08-01')).toEqual({ commits: 0, lines: 0, sweeps: 0 });
+    expect(sumChurnSince(byDate, '2026-08-01')).toEqual({ commits: 0, lines: 0, owned: 0, sweeps: 0 });
   });
 
   it('returns zero for a package with no recorded churn', () => {
-    expect(sumChurnSince(undefined, '2026-01-01')).toEqual({ commits: 0, lines: 0, sweeps: 0 });
+    expect(sumChurnSince(undefined, '2026-01-01')).toEqual({ commits: 0, lines: 0, owned: 0, sweeps: 0 });
   });
 });
 

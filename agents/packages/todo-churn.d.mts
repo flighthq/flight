@@ -1,8 +1,11 @@
 export interface PackageChurn {
   commits: number;
   lines: number;
+  owned: number;
   sweeps: number;
 }
+
+export function isOwnedCommit(packageCount: number, packageLines: number, commitLines: number): boolean;
 
 export function isSweptCommit(packageCount: number, packageLines: number): boolean;
 

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textlayout'
+role: package
 crate: flighthq-textlayout
 draft: false
 lastDirection: 2026-07-02

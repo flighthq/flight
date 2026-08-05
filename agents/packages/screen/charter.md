@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/screen'
+role: package
 crate: flighthq-screen
 draft: false
 lastDirection: 2026-07-02

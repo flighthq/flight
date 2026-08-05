@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/image-codec'
+role: package
 crate: flighthq-image-codec
 draft: false
 lastDirection: 2026-07-09

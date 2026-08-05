@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/tray'
+role: package
 crate: flighthq-tray
 draft: false
 lastDirection: 2026-07-30

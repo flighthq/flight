@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/text-markup'
+role: package
 crate: flighthq-text-markup
 draft: false
 lastDirection: 2026-07-11

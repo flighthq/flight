@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textshaper-harfbuzz'
+role: package
 crate: flighthq-textshaper-harfbuzz
 rust: flight-rs
 draft: false

@@ -46,14 +46,17 @@ export function readPackageChurn(repoRoot, since) {
   // counted. Held to the end of the commit rather than streamed for exactly that reason.
   const flush = () => {
     if (date === null || pending.size === 0) return;
+    let total = 0;
+    for (const delta of pending.values()) total += delta;
     for (const [name, delta] of pending) {
       const swept = isSweptCommit(pending.size, delta);
       const byDate = churn.get(name) ?? new Map();
-      const bucket = byDate.get(date) ?? { commits: 0, lines: 0, sweeps: 0 };
+      const bucket = byDate.get(date) ?? { commits: 0, lines: 0, owned: 0, sweeps: 0 };
       if (swept) bucket.sweeps += 1;
       else {
         bucket.commits += 1;
         bucket.lines += delta;
+        if (isOwnedCommit(pending.size, delta, total)) bucket.owned += 1;
       }
       byDate.set(date, bucket);
       churn.set(name, byDate);
@@ -82,15 +85,32 @@ export function readPackageChurn(repoRoot, since) {
 // Commits and lines landed in one package strictly after `since`. Dates are YYYY-MM-DD, so lexical
 // comparison is date comparison. A review dated the same day as a commit is treated as having seen it.
 export function sumChurnSince(byDate, since) {
-  const total = { commits: 0, lines: 0, sweeps: 0 };
+  const total = { commits: 0, lines: 0, owned: 0, sweeps: 0 };
   if (byDate === undefined) return total;
   for (const [date, bucket] of byDate) {
     if (date <= since) continue;
     total.commits += bucket.commits;
     total.lines += bucket.lines;
+    total.owned += bucket.owned;
     total.sweeps += bucket.sweeps;
   }
   return total;
+}
+
+// Whether a package owned a commit rather than followed one: it was the only package touched, or it
+// took at least half the lines. Recorded for every package but only *ranked on* by the `header` and
+// `barrel` roles, which is what keeps the coin-flip case harmless — a `render`/`render-gl` commit
+// splitting 53/47 would be a poor owner signal, and neither of those cells is ranked this way.
+//
+// The reason those two roles need it: `types` is the declared home of every exported type in the SDK
+// and `sdk` is the barrel, so a feature landing in `mesh` MUST touch both. Measured over the same
+// window, 86% of `types` commits and 87% of `sdk` commits are follower commits, against 47-67% for
+// ordinary packages — and the follower touch is tiny (median 57 and 27 lines, against 191-275
+// elsewhere). Counting those as work landing *on* the header layer put `types` at the top of the
+// re-review list with +422 commits when its own shape had barely moved.
+export function isOwnedCommit(packageCount, packageLines, commitLines) {
+  if (packageCount === 1) return true;
+  return packageLines * 2 >= commitLines;
 }
 
 // Whether one commit reached a package only as a sweep, given how many packages the commit touched

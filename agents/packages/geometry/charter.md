@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/geometry'
+role: package
 crate: flighthq-geometry
 draft: false
 lastDirection: 2026-07-03

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/materials'
+role: package
 crate: flighthq-materials
 draft: false
 lastDirection: 2026-07-03

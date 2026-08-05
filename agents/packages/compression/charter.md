@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/compression'
+role: package
 crate: flighthq-compression
 draft: true
 lastDirection: null

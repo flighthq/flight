@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/velocity'
+role: package
 crate: flighthq-velocity
 draft: false
 lastDirection: 2026-07-02

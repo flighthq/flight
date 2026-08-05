@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/storage'
+role: package
 crate: flighthq-storage
 draft: false
 lastDirection: 2026-07-02

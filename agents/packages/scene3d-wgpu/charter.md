@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/scene3d-wgpu'
+role: package
 crate: flighthq-scene-wgpu
 draft: false
 lastDirection: 2026-07-02

@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/xml"
+role: package
 crate: flighthq-xml
 lastDirection: null
 review: ./review.md

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/movieclip'
+role: package
 crate: flighthq-movieclip
 draft: false
 lastDirection: 2026-07-10

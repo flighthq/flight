@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/statechart'
+role: package
 crate: flighthq-statechart
 draft: false
 lastDirection: 2026-08-04

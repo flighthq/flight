@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/glyphatlas'
+role: package
 crate: flighthq-glyphatlas
 draft: false
 lastDirection: 2026-07-10

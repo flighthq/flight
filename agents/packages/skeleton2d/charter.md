@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/skeleton2d'
+role: package
 crate: flighthq-skeleton2d
 draft: false
 lastDirection: 2026-07-15

@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/animation"
+role: package
 draft: false
 lastDirection: 2026-08-02
 crate: "flighthq-animation"

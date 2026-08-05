@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/swf'
+role: package
 draft: false
 lastDirection: 2026-07-30
 review: ./review.md

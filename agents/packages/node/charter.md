@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/node'
+role: package
 crate: flighthq-node
 draft: false
 lastDirection: 2026-07-01

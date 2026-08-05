@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/binpack'
+role: package
 crate: flighthq-binpack
 draft: false
 lastDirection: 2026-07-10

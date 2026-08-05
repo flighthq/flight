@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/filesystem'
+role: package
 crate: flighthq-filesystem
 draft: false
 lastDirection: 2026-07-02

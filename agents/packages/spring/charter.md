@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/spring'
+role: package
 crate: flighthq-spring
 draft: false
 lastDirection: 2026-07-10

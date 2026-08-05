@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/particleemitter'
+role: package
 crate: flighthq-particleemitter
 draft: false
 lastDirection: 2026-07-10

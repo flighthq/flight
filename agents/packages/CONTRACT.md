@@ -18,6 +18,7 @@ YAML front matter is the only machine-read surface. Keys below are required unle
 
 ```yaml
 package: '@flighthq/<name>'
+role: package # package | header | barrel | tooling | host
 crate: flighthq-<name> # or null
 lastDirection: null # YYYY-MM-DD of the last time you gave direction; null until then
 review: ./review.md
@@ -27,6 +28,13 @@ absorbed: '@flighthq/target' # optional; historical cell folded into another pac
 ```
 
 The charter carries **no status or score** — that lives in `review.md`/`assessment.md`. This keeps the charter's git history meaningful: it changes only when _direction_ changes.
+
+`role` is the cell's architectural position, and it exists because generators must not treat every cell as an ordinary package. `package` is the default and covers all but six cells today.
+
+- `header` (`types`) and `barrel` (`sdk`) are **obliged to absorb other packages' work**: every exported type in the SDK lives in `types` by rule, and `sdk` re-exports the tree, so a feature landing in `mesh` must touch both. Generators ranking staleness count only the commits such a cell **owned** — sole package touched, or at least half the lines — because a commit that merely passed through is not drift of that cell's own shape.
+- `tooling` (`tool-*`) and `host` (`host-*`) sit outside the `@flighthq/sdk` barrel and are not tree-shakable, an exclusion `scripts/sdk-policy.ts` enforces. Their surveys do not gate SDK depth, so generators rank them separately rather than against SDK packages.
+
+Declare the role rather than inferring it from churn statistics. The statistics are only correlated: `types` follows 86% of the commits touching it and `sdk` 87%, but `render` follows 67% against `mesh`'s 47%, so any threshold tuned to catch the first two misfiles `render` on the way. The architecture is the signal; the percentage is a symptom.
 
 `absorbed` is optional and records a package that was deliberately folded into another package. The cell remains as architectural history, but generators must exclude it from build/deepen queues and must not propose recreating it.
 

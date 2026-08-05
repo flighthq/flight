@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/lottie-formats'
+role: package
 absorbed: scene2d-formats
 supersededBy: '@flighthq/scene2d-formats'
 draft: true

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/particles-formats'
+role: package
 crate: flighthq-particles-formats
 draft: false
 lastDirection: 2026-07-03

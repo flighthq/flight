@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/flow'
+role: package
 crate: flighthq-flow
 draft: false
 lastDirection: 2026-07-10

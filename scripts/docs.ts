@@ -285,6 +285,23 @@ function checkCells(): void {
       fail(`agents/packages/${cell}/charter.md: lastDirection '${charter.lastDirection}' is not YYYY-MM-DD`);
     }
 
+    // `role` drives how generators rank staleness, so an unknown value silently degrades a cell to
+    // the default rather than erroring at the generator — fail here, where the typo is visible.
+    if (charter.role !== undefined && !CHARTER_ROLES.has(charter.role)) {
+      fail(
+        `agents/packages/${cell}/charter.md: role '${charter.role}' is outside CONTRACT.md's vocabulary (${[...CHARTER_ROLES].join(' | ')})`,
+      );
+    }
+
+    // The naming families the roles describe are mechanical, so a mismatch is a mis-stamp rather than
+    // a judgement call. Warned, not failed: a future family may legitimately want a different role.
+    const expectedRole = cell.startsWith('tool-') ? 'tooling' : cell.startsWith('host-') ? 'host' : null;
+    if (expectedRole !== null && (charter.role ?? 'package') !== expectedRole) {
+      warn(
+        `agents/packages/${cell}/charter.md: role '${charter.role ?? 'package'}' but the name implies '${expectedRole}'`,
+      );
+    }
+
     // The contract says crate is `flighthq-<name>`. Several cells deliberately diverge to record an
     // intended rename ahead of the Rust port (bitmap → flighthq-surface, the scene3d family →
     // flighthq-scene-*). No Cargo.toml exists in this repo yet, so the divergence costs nothing today
@@ -587,6 +604,10 @@ const ORPHAN_ALLOW: { match: (rel: string) => boolean; why: string }[] = [
 const CELL_FILES = ['charter.md', 'review.md', 'assessment.md', 'status.md'] as const;
 const CHARTER_SECTIONS = ['What it is', 'North star', 'Boundaries', 'Decisions', 'Open directions'] as const;
 const REVIEW_STATUSES = ['stub', 'partial', 'solid', 'authoritative'] as const;
+// A cell's architectural position, per CONTRACT.md. `header`/`barrel` absorb other packages' work by
+// design and rank on owned commits; `tooling`/`host` sit outside the SDK barrel and rank separately.
+const CHARTER_ROLES = new Set(['barrel', 'header', 'host', 'package', 'tooling']);
+
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const failures: string[] = [];

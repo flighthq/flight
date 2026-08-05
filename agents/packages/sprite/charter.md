@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/sprite'
+role: package
 crate: flighthq-sprite
 draft: false
 lastDirection: 2026-07-02

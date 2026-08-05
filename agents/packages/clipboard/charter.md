@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/clipboard'
+role: package
 crate: flighthq-clipboard
 draft: false
 lastDirection: 2026-07-02

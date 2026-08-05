@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/shading'
+role: package
 crate: flighthq-shading
 draft: false
 lastDirection: 2026-07-17

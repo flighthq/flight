@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/haptics'
+role: package
 crate: flighthq-haptics
 draft: false
 lastDirection: 2026-07-02

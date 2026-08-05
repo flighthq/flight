@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/sensors'
+role: package
 crate: flighthq-sensors
 draft: false
 lastDirection: 2026-07-02

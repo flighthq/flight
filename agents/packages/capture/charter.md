@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/capture'
+role: package
 crate: flighthq-capture
 draft: false
 lastDirection: 2026-07-09

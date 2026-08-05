@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/skeleton2d-formats'
+role: package
 crate: flighthq-skeleton2d-formats
 draft: false
 lastDirection: 2026-07-25

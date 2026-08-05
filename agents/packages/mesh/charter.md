@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/mesh'
+role: package
 crate: flighthq-mesh
 draft: false
 lastDirection: 2026-07-03

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/intl'
+role: package
 crate: flighthq-intl
 draft: false
 lastDirection: 2026-07-10

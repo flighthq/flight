@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/scene3d-formats"
+role: package
 draft: false
 lastDirection: 2026-07-03
 crate: "flighthq-scene-formats"

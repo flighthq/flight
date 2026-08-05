@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/markup-tokenizer'
+role: package
 draft: true
 lastDirection: 2026-07-12
 review: ./review.md

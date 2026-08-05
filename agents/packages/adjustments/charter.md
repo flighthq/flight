@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/adjustments'
+role: package
 crate: flighthq-adjustments
 draft: false
 lastDirection: 2026-07-11

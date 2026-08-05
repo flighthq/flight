@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/picking"
+role: package
 draft: false
 lastDirection: 2026-07-03
 crate: "flighthq-picking"

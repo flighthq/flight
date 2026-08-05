@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/session'
+role: package
 crate: flighthq-session
 draft: false
 reserved: true

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textinput'
+role: package
 crate: flighthq-textinput
 draft: false
 lastDirection: 2026-07-02

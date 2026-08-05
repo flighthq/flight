@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/bitmapfont-formats'
+role: package
 crate: flighthq-bitmapfont-formats
 draft: false
 lastDirection: 2026-07-10

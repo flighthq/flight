@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/loader'
+role: package
 crate: flighthq-loader
 draft: false
 lastDirection: 2026-07-30

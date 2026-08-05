@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/sdk'
+role: barrel
 crate: null
 draft: false
 lastDirection: 2026-07-02

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/tool-capture'
+role: tooling
 crate: null
 draft: false
 lastDirection: 2026-08-04

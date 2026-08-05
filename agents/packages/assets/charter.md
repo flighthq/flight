@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/assets'
+role: package
 crate: flighthq-assets
 draft: false
 lastDirection: 2026-07-22

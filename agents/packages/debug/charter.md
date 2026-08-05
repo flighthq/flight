@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/debug'
+role: package
 crate: flighthq-debug
 draft: false
 lastDirection: 2026-07-30

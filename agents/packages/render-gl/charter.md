@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/render-gl'
+role: package
 crate: flighthq-render-gl
 draft: false
 lastDirection: 2026-07-02

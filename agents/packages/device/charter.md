@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/device'
+role: package
 crate: flighthq-device
 draft: false
 lastDirection: 2026-07-02

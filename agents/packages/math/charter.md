@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/math'
+role: package
 crate: flighthq-math
 draft: false
 lastDirection: 2026-07-02

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/image'
+role: package
 crate: flighthq-image
 draft: false
 lastDirection: 2026-07-02

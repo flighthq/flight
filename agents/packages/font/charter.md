@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/font'
+role: package
 crate: flighthq-font
 draft: false
 lastDirection: 2026-07-02

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/dialog'
+role: package
 crate: flighthq-dialog
 draft: false
 lastDirection: 2026-07-02

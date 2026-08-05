@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textshaper-canvas'
+role: package
 crate: null
 lastDirection: 2026-07-02
 review: ./review.md

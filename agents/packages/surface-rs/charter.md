@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/surface-rs'
+role: package
 crate: null
 draft: false
 spunOut: flight-rs
