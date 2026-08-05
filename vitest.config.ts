@@ -41,6 +41,19 @@ const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
 // catches. It is listed here so the other projects can exclude it by name in one place.
 const TOOL_CAPTURE_TEST_FILES = ['packages/tool-capture/src/**/*.test.ts'];
 
+// The browser contracts, split out because this list has two OPPOSITE jobs and only one of them may
+// narrow. `TOOL_CAPTURE_TEST_FILES` is the EXCLUDE for the three parallel projects and must stay the
+// full set: narrowing it there would stop excluding these two files, and they would be picked up and
+// run by the jsdom projects instead — the same browser launch failing in a different place. So the
+// full list keeps guarding the other projects, and only the tool-capture project's own include is
+// reduced, by excluding these.
+//
+// They are not skipped. `npm run test:unit` runs each package under its own config, whose include is
+// `src/**/*.test.ts`, and that CI leg installs Chromium — so the browser contract is verified where a
+// browser exists, while the root run keeps the 25 files that need none. That split is what the
+// tool-capture routing was for: the logic a defect would hide in stays covered by something that runs.
+const TOOL_CAPTURE_E2E_TEST_FILES = ['packages/tool-capture/src/**/*.e2e.test.ts'];
+
 export default mergeConfig(
   baseConfig,
   defineConfig({
@@ -110,7 +123,7 @@ export default mergeConfig(
             fileParallelism: false,
             isolate: true,
             include: [...TOOL_CAPTURE_TEST_FILES],
-            exclude: [...COMMON_EXCLUDE],
+            exclude: [...COMMON_EXCLUDE, ...TOOL_CAPTURE_E2E_TEST_FILES],
             sequence: { groupOrder: 1 },
           },
         },
