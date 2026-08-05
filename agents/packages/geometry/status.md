@@ -1,12 +1,21 @@
 ---
 package: '@flighthq/geometry'
-updated: 2026-07-09
-by: builder
+updated: 2026-08-05
+by: auditor
 ---
 
 # geometry — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+Later work added Transform2D/Transform3D carriers, aligned Matrix3 storage with the column-major Matrix4/GL
+ABI, expanded alias/edge-case coverage, and made the perspective infinite-far limit explicit. None of the
+seven 2026-07-13 Recommended rows has otherwise closed: 2D translation still leaves a distinct output's
+linear terms stale; perspective still names its half-FOV tangent `fov`; OBB paths still allocate; the four
+pair predicates and requested conventional singles remain absent; `transformVector3ByMatrix3` still uses an
+inline matrix shape; and the byte-offset/transpose/`var` hygiene defects remain in source.
 
 ## 2026-07-09 — setPerspectiveMatrix4 m[15] fix (correctness — was halving 3D size)
 

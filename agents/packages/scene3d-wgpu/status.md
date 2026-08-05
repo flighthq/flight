@@ -1,12 +1,21 @@
 ---
 package: '@flighthq/scene3d-wgpu'
-updated: 2026-07-31
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: auditor
 ---
 
 # scene-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+The backend has since completed the directional-shadow pass and its controls, posed-skin caster coverage,
+surface alpha/blend handling, texture-source resolution, and a proactive scene-coverage explanation. The
+old inert-UV1 annotation item is obsolete because that define/key path was removed entirely. The directed
+PBR-extension migration remains open: GL now composes the open `PbrExtension` registry, while this package
+still exposes only its older built-in StandardPbr/extension-specific renderer lane and has no WebGPU
+`ExtendedPbrMaterial` registry counterpart.
 
 ## [2026-07-31 · prose-name correction] — verified
 

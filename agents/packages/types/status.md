@@ -1,12 +1,22 @@
 ---
 package: '@flighthq/types'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: auditor
 ---
 
 # types — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+The header layer has expanded substantially with the 2D/3D naming migration, contract/public export lanes,
+texture/storage and render-target ownership, open PBR extensions, scene coverage/requirements diagnostics,
+directional-shadow controls, physics and skeleton descriptors, and format-import data models. For the four
+still-open rows in the 2026-07 assessment, the particle closed-union rationale, shared `TextDirection`, and
+`ShapedRun.glyphCount` explanation are now present. The proposed Stage-prefixed viewport enum rename is
+obsolete: Stage was replaced by Scene2D, while the types now also serve Scene2D fit context and generic
+anchor layout.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

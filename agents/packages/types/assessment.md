@@ -13,11 +13,11 @@ Sorted from `review.md` (solid, 89/100), the depth review (solid, 82/100), and t
 Strictly sweep-safe: within `@flighthq/types`, no open design decision.
 
 - ~~**Lift the notification seam to `id`.**~~ _Already done._ `notify` returns `Promise<string>` (the id), all subscribers use `id`. The seam is consistent. Per Decision #6 — verified landed.
-- **Remove the "should become open" note from ParticleForce/ParticleCollider.** The note is outdated — these are intentionally closed for performance (Decision #4). Replace with a rationale comment: hot per-particle per-frame dispatch, closed by design.
+- **~~Remove the "should become open" note from ParticleForce/ParticleCollider.~~** — retired 2026-08-05. Both union headers now state that they are closed by design because force/collider dispatch runs per particle per frame and registry dispatch would impose measurable hot-path cost; the provisional note is gone.
 - ~~**Fix DOM/Dom casing.**~~ _Already done._ Files are `DomRenderOptions.ts`, `DomStageRectangle.ts`. Consistent `Dom` PascalCase throughout.
-- **Extract `TextDirection` alias.** `'LeftToRight' | 'RightToLeft'` is inline in both `ShapedRun.direction` and `ShapeRunOptions.direction`. Extract to a shared `TextDirection` type in its own file, reference from both.
-- **Document `glyphCount` on `ShapedRun`.** Add a one-line comment explaining why `glyphCount` coexists with `glyphs.length` (over-allocated result buffer), or drop it if it is always `glyphs.length`.
-- **Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`.** The Viewport reshape (`d1b12413`) deliberately moved *fit* off `Viewport` (now the bedrock drawable-rect) onto `Stage`, and these two enums are now consumed only by `Stage.ts`/`stageFit.ts` — `Viewport.ts` no longer references them. Keeping the `Viewport` prefix breaks the "globally self-identifying" naming rule (a reader greps `ViewportAlign` expecting it to live on `Viewport`, finds it owns nothing there). Rename to `StageAlign`/`StageScaleMode`, or a neutral `FitAlign`/`FitScaleMode` if non-Stage fit consumers are foreseen. Within-`types`, sweep-safe.
+- **~~Extract `TextDirection` alias.~~** — retired 2026-08-05. `TextDirection.ts` now owns the shared direction vocabulary and constants, is exported from both header lanes, and `ShapedRun` consumes the alias rather than an inline union; the vocabulary has also grown to include vertical `TopToBottom` shaping.
+- **~~Document `glyphCount` on `ShapedRun`.~~** — retired 2026-08-05. The field now carries the requested contract comment: it is the valid glyph count while `glyphs` may be an over-allocated reusable result buffer.
+- **~~Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`.~~** — retired 2026-08-05. OBSOLETE: the Stage type named by the proposal was replaced by Scene2D, and these fit values now serve `Scene2D`, `Scene2DFitContext`, and the generic `Layout`/anchor-layout surface. A Stage-prefixed rename would mis-home a shared viewport-alignment vocabulary rather than clarify it.
 
 ## Backlog
 

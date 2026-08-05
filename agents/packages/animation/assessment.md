@@ -13,9 +13,7 @@ composition tier; remaining work is playback events and separable authoring/runt
 
 ## Depth gaps
 
-1. **Keep mixing policy decoupled from bindings.** N-way override/additive blend trees, crossfades,
-   named state transitions, and channel-index-masked ordered layers now compose complete target-free
-   poses. Skeleton joint-mask authoring remains a binding-layer adapter over those indices.
+1. **~~Keep mixing policy decoupled from bindings.~~** — retired 2026-08-05. N-way override/additive blend trees, crossfades, named state transitions, and channel-index-masked ordered layers compose target-free poses in animation, while Skeleton3D and MorphShape interpret opaque target references in their own binding layers; no target or skeleton dependency entered the sampling/composition core.
 2. **Complete playback semantics.** Clip markers/events and root-motion delta extraction are complete.
    Explicit seek-event policy and interruption policy for active state transitions remain separable.
 3. **Add authoring/runtime utilities without a kitchen sink.** Key reduction, additive rebasing, and cursor
