@@ -1,9 +1,13 @@
 import type { Bone2D, Skeleton2DTransformConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { getSkeleton2DConstraintSolver, unregisterSkeleton2DConstraintSolver } from './skeleton2dConstraint';
+import {
+  getSkeleton2DConstraintSolver,
+  registerSkeleton2DConstraintSolver,
+  unregisterSkeleton2DConstraintSolver,
+} from './skeleton2dConstraint';
 import {
   registerSkeleton2DTransformConstraintSolver,
   solveSkeleton2DTransformConstraint,
@@ -48,6 +52,15 @@ function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skel
     ...overrides,
   };
 }
+
+// This file registers a built-in solver into a module-global registry, so it restores whatever it found
+// rather than leaving the kind claimed for whichever file runs next.
+const PRIOR = getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);
+
+afterEach(() => {
+  if (PRIOR === null) unregisterSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform);
+  else registerSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform, PRIOR);
+});
 
 describe('registerSkeleton2DTransformConstraintSolver', () => {
   it('claims the transform kind, which nothing does until a caller opts in', () => {
