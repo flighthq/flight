@@ -56,8 +56,8 @@ const TEXT_SIZE = 100;
 const TINTED_SPRITE_X = 600;
 const TINTED_SPRITE_Y = 400;
 const TINTED_SPRITE_SIZE = 100;
+let backend: 'canvas' | 'dom' | 'webgl' | 'webgpu' = 'canvas';
 let targetWidth = WIDTH;
-let assertTintedPixels = false;
 let nestedChildColorScaleBias: Readonly<ColorScaleBias> | null = null;
 let nestedParentColorScaleBias: Readonly<ColorScaleBias> | null = null;
 
@@ -136,24 +136,35 @@ function assertStroke(at: PixelReader): void {
 }
 
 function assertNestedColorTransform(at: PixelReader): void {
-  if (
-    nestedParentColorScaleBias === null ||
-    nestedChildColorScaleBias !== nestedParentColorScaleBias ||
-    !isExpectedNestedColorScaleBias(nestedParentColorScaleBias)
-  ) {
-    throw new Error('[swf-import] nested parent colour transform did not propagate to the child render proxy');
+  const realizesColorAdjustment = backend === 'webgl' || backend === 'webgpu';
+  if (realizesColorAdjustment) {
+    if (
+      nestedParentColorScaleBias === null ||
+      nestedChildColorScaleBias !== nestedParentColorScaleBias ||
+      !isExpectedNestedColorScaleBias(nestedParentColorScaleBias)
+    ) {
+      throw new Error(
+        `[swf-import/${backend}] nested parent colour transform did not propagate to the child render proxy`,
+      );
+    }
+  } else if (nestedParentColorScaleBias !== null || nestedChildColorScaleBias !== null) {
+    throw new Error(`[swf-import/${backend}] unsupported colour adjustment unexpectedly reached a render proxy`);
   }
 
-  // Canvas and DOM deliberately do not realize node colour adjustments. The propagation claim is still
-  // universal (and asserted above), while only GL/WGPU opt into the material feature that turns those
-  // proxy values into pixels. Pre-tinting this fixture for the other backends would hide the defect.
-  if (!assertTintedPixels) return;
-  const tinted = at(TINTED_SPRITE_X + TINTED_SPRITE_SIZE / 2, TINTED_SPRITE_Y + TINTED_SPRITE_SIZE / 2);
-  const red = channel(tinted, 16);
-  const green = channel(tinted, 8);
-  const blue = channel(tinted, 0);
-  if (red < 90 || red > 190 || green < 200 || blue < 20 || blue > 130) {
-    throw new Error(`[swf-import] nested parent colour transform did not reach its child — got #${hex(tinted)}`);
+  // The absence of a Canvas/DOM registrar is the capability signal: those backends must leave the
+  // imported white checker cell untinted. GL/WGPU explicitly opt into accumulation and the inline fold.
+  const pixel = at(TINTED_SPRITE_X + TINTED_SPRITE_SIZE / 2, TINTED_SPRITE_Y + TINTED_SPRITE_SIZE / 2);
+  if (realizesColorAdjustment) {
+    const red = channel(pixel, 16);
+    const green = channel(pixel, 8);
+    const blue = channel(pixel, 0);
+    if (red < 90 || red > 190 || green < 200 || blue < 20 || blue > 130) {
+      throw new Error(
+        `[swf-import/${backend}] nested parent colour transform did not reach its child — got #${hex(pixel)}`,
+      );
+    }
+  } else if (!isWhite(pixel)) {
+    throw new Error(`[swf-import/${backend}] unsupported colour adjustment changed its child — got #${hex(pixel)}`);
   }
 }
 
@@ -547,6 +558,10 @@ function isYellow(rgb: number): boolean {
   return channel(rgb, 16) > 180 && channel(rgb, 8) > 150 && channel(rgb, 0) < 100;
 }
 
+function isWhite(rgb: number): boolean {
+  return channel(rgb, 16) > 220 && channel(rgb, 8) > 220 && channel(rgb, 0) > 220;
+}
+
 function isExpectedNestedColorScaleBias(value: Readonly<ColorScaleBias>): boolean {
   return (
     Math.abs(value.redScale - 0.5) < 0.0001 &&
@@ -760,7 +775,7 @@ const target = await createFunctionalTarget({
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
-assertTintedPixels = target.kind === 'webgl' || target.kind === 'webgpu';
+backend = target.kind;
 targetWidth = target.width;
 target.render(root);
 const nestedParent = getNodeChildren(root).find((child) => child.kind === MovieClipKind)!;
