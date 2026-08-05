@@ -558,7 +558,11 @@ function appendLottieShapeItems(
       );
     } else if (item.ty === 'gf' || item.ty === 'gs') {
       const gradient = item as Readonly<LottieGradientShapeItem>;
-      const values = numericValue(initialLottieValue(gradient.g.k), gradient.g.p * 4);
+      const initialGradient = initialLottieValue(gradient.g.k);
+      const values = numericValue(
+        initialGradient,
+        Math.max(gradient.g.p * 4, Array.isArray(initialGradient) ? initialGradient.length : 0),
+      );
       const start = numericValue(initialLottieValue(gradient.s), 2);
       const end = numericValue(initialLottieValue(gradient.e), 2);
       const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
@@ -1249,12 +1253,41 @@ function createLottieTextFormat(document: Readonly<LottieTextDocument>) {
 function parseLottieGradient(values: readonly number[], count: number, opacity: number) {
   const colors: number[] = [];
   const ratios: number[] = [];
+  const opacityStops: Array<Readonly<{ alpha: number; offset: number }>> = [];
+  for (let index = count * 4; index + 1 < values.length; index += 2) {
+    opacityStops.push({
+      alpha: clamp(values[index + 1], 0, 1),
+      offset: clamp(values[index], 0, 1),
+    });
+  }
+  opacityStops.sort((left, right) => left.offset - right.offset);
+  const alphas: number[] = [];
   for (let index = 0; index < count; index++) {
     const offset = index * 4;
-    ratios.push(Math.round(clamp(values[offset] ?? 0, 0, 1) * 255));
+    const ratio = clamp(values[offset] ?? 0, 0, 1);
+    ratios.push(Math.round(ratio * 255));
     colors.push(lottieRgb(values.slice(offset + 1, offset + 4)));
+    alphas.push(opacity * interpolateLottieGradientOpacity(opacityStops, ratio));
   }
-  return { alphas: new Array<number>(count).fill(opacity), colors, ratios };
+  return { alphas, colors, ratios };
+}
+
+function interpolateLottieGradientOpacity(
+  stops: readonly Readonly<{ alpha: number; offset: number }>[],
+  offset: number,
+): number {
+  if (stops.length === 0) return 1;
+  if (offset <= stops[0].offset) return stops[0].alpha;
+  for (let index = 1; index < stops.length; index++) {
+    const previous = stops[index - 1];
+    const next = stops[index];
+    if (offset > next.offset) continue;
+    const distance = next.offset - previous.offset;
+    if (distance === 0) return next.alpha;
+    const progress = (offset - previous.offset) / distance;
+    return previous.alpha + (next.alpha - previous.alpha) * progress;
+  }
+  return stops[stops.length - 1].alpha;
 }
 
 function createLottieGradientMatrix(start: readonly number[], end: readonly number[]) {

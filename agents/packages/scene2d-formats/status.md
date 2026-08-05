@@ -8,6 +8,27 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-04 — Current assessment audited; Lottie and SVG silent drops repaired
+
+The assessment was rebuilt from the current artifact rather than carrying its old queue forward. A
+refreshable Rive run pins Flight `a3707655f` to rive-flutter
+`fc9fd0445a205092ad340491d48ec16f42d2562e`: 38 fingerprint-valid files from 42 paths, 108 artboards,
+359 clips, 8,333 keyed-property tracks, 7,617 emitted channels, and 85 empty clips. The sorted
+42-path `sha256sum` manifest has SHA-256
+`5625f3d481aa22ad9f0c736725ac021e901853136fe2fd9e8f31db2cdf30b31e`; no external byte entered the
+repository. The older Lottie and SVG corpus runs are real evidence but lacked upstream pins, and Rive
+already has a four-backend functional scene, so the old ranking was retired without inventing a new
+one.
+
+The authorized backstop found two silent drops inside stated coverage. Lottie gradient vectors pack
+optional opacity-stop pairs after their `p * 4` colour fields, but the importer truncated the vector to
+that colour prefix. It now carries the whole vector through static import and animation, interpolates
+opacity onto each colour stop, and multiplies by overall paint opacity. SVG images likewise ignored
+their `preserveAspectRatio` viewport rule and always stretched independently; they now share the same
+default `xMidYMid meet` mapping as other SVG viewports, while explicit `none` retains the stretch.
+Exact regressions cover both modes and animated Lottie alphas. Lottie radial highlight `a`/`h` remains
+typed but unread and is recorded rather than mapped without a format-derived relation.
+
 ## 2026-08-04 — Rive mutable-content composition proved; packed-colour sampling corrected
 
 The format-owned mutable binder was already present, but its proof stopped at isolated geometry and

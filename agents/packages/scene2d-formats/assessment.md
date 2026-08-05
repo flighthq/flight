@@ -116,13 +116,30 @@ choice is respectively: a named rig-to-display contract and real rigged-file com
 keyframe census with intended runtime owners; or a decision that the Rive functional-scene precedent
 authorizes equivalent Lottie/SVG scenes and what reference pixels they must prove.
 
+## Backstop result
+
+The pre-authorized Lottie/SVG silent-drop probe found two bounded defects inside features the charter
+already calls covered:
+
+- `LottieGradient.k` explicitly types colour stops followed by optional opacity-stop pairs, but the
+  importer allocated exactly `p * 4` components. That truncated the opacity tail both initially and in
+  the mutable animation binder. The parser now preserves the full packed vector, interpolates opacity at
+  every colour stop, and multiplies it by overall paint opacity. Exact static and halfway-through-animation
+  assertions pin the resulting alpha arrays. Radial highlight angle/length (`a`, `h`) remain typed but
+  unread; their mapping needs a format-derived focal-point relation rather than a guess.
+- A resolved SVG `<image>` always scaled its intrinsic width and height independently, silently treating
+  the element as `preserveAspectRatio="none"`. Image placement now reuses the importer's existing viewBox
+  rule. A 20×10 resource in a 100×100 viewport maps to uniform scale 5 and centered y=45 by default;
+  explicit `none` retains scale 5×10 at y=20.
+
+Coverage now distinguishes those repaired drops, the remaining Lottie radial-highlight gap, the current
+pinned Rive baseline, and the historical unpinned Lottie/SVG and older Rive corpus counts.
+
 ## Recommended
 
-Do not start a generic Rive binder widening or silently invent the rig-to-display contract. The
-pre-authorized sweep-safe follow-on is an artifact audit: probe the existing Lottie and SVG importers for
-the silent-drop class, record exact reproductions, and correct coverage from source. That improves the
-evidence used for the next ruling without selecting one of the incomparable implementation directions
-above.
+Do not start a generic Rive binder widening or silently invent the rig-to-display contract. The backstop
+improved the artifact and evidence but does not make the remaining Rive bridge, unbound runtime tracks,
+or Lottie/SVG functional-scene work comparable. No replacement priority is selected here.
 
 ## Backlog after a ruling
 

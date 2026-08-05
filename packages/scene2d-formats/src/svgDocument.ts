@@ -697,12 +697,17 @@ function createSvgImageNode(
   const height = numberAttribute(element, 'height', image.height);
   const x = numberAttribute(element, 'x', 0);
   const y = numberAttribute(element, 'y', 0);
-  const scaleX = image.width > 0 && width >= 0 ? width / image.width : 1;
-  const scaleY = image.height > 0 && height >= 0 ? height / image.height : 1;
   const bitmap = createSprite({
     data: { texture: createTexture({ dimension: '2d', source: image }) },
   });
-  const geometry = createMatrix(scaleX, 0, 0, scaleY, x, y);
+  const geometry =
+    image.width > 0 && image.height > 0 && width >= 0 && height >= 0
+      ? createSvgViewBoxMatrix(
+          [0, 0, image.width, image.height],
+          { height, width, x, y },
+          attribute(element, 'preserveAspectRatio') ?? 'xMidYMid meet',
+        )
+      : createMatrix(1, 0, 0, 1, x, y);
   applySvgElementAppearance(bitmap, element, parentStyle, context, geometry);
   const bounds = createRectangle(0, 0, image.width, image.height);
   applySvgElementClip(bitmap, element, context, bounds);
@@ -1082,9 +1087,22 @@ function createSvgViewportMatrix(
   if (viewBox.length < 4) return x === 0 && y === 0 ? null : createMatrix(1, 0, 0, 1, x, y);
   const width = viewport?.width ?? parseSvgLength(attribute(element, 'width'), viewBox[2]);
   const height = viewport?.height ?? parseSvgLength(attribute(element, 'height'), viewBox[3]);
+  return createSvgViewBoxMatrix(
+    viewBox,
+    { height, width, x, y },
+    attribute(element, 'preserveAspectRatio') ?? 'xMidYMid meet',
+  );
+}
+
+function createSvgViewBoxMatrix(
+  viewBox: readonly number[],
+  viewport: Readonly<{ height: number; width: number; x: number; y: number }>,
+  preserveAspectRatioValue: string,
+): Matrix {
+  const { height, width, x, y } = viewport;
   let sx = viewBox[2] === 0 ? 1 : width / viewBox[2];
   let sy = viewBox[3] === 0 ? 1 : height / viewBox[3];
-  const preserveAspectRatio = (attribute(element, 'preserveAspectRatio') ?? 'xMidYMid meet').trim();
+  const preserveAspectRatio = preserveAspectRatioValue.trim();
   if (preserveAspectRatio === 'none') {
     return createMatrix(sx, 0, 0, sy, x - viewBox[0] * sx, y - viewBox[1] * sy);
   }

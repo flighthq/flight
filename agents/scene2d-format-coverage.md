@@ -18,23 +18,32 @@ The 3D sibling is [scene3d format coverage](scene3d-format-coverage.md).
 
 ## How far each codec has been verified
 
-**Lottie has now met real exports, and they were brutal.** Eighteen real Bodymovin files from the
-lottie-web repository were run through the importer: **fourteen crashed it and only three imported at
-all.** Two structural facts about how real exports are written, neither visible to a hand-authored
-fixture, were the cause — see the Lottie section. After the fix, 17 of 18 import (the eighteenth is
-not an animation), producing 9,522 nodes and 6,445 channels where the same corpus previously produced
-566 and 301. **SVG has now met the W3C SVG 1.1 conformance suite** — 34 of its documents, covering
+At Flight commit `550c1b042`, **Lottie met real exports, and they were brutal.** Eighteen real
+Bodymovin files from the lottie-web repository were run through the importer: **fourteen crashed it
+and only three imported at all.** Two structural facts about how real exports are written, neither
+visible to a hand-authored fixture, were the cause — see the Lottie section. After the fix, 17 of 18
+imported (the eighteenth was not an animation), producing 9,522 nodes and 6,445 channels where the
+same corpus previously produced 566 and 301. At Flight commit `62359229b`, **SVG met the W3C SVG 1.1
+conformance suite** — 34 of its documents, covering
 shapes, path data, transforms, units, gradients, painting, masking, structure, styling, and text. It
 came through far better than Lottie: zero crashes, zero non-finite transform values, and every
 document produced geometry on the first run. One real defect surfaced, and one gap that belongs to a
 neighbouring package; both are recorded below.
 
-Neither corpus is committed; both are fetched on demand.
+Neither corpus was committed. Their upstream revisions and manifest hashes were not recorded, so the
+counts are historical evidence from the named Flight revisions rather than refreshable baselines.
 
-**Rive is verified against 64 real editor-authored files**, fetched on demand from Rive's own Android runtime test assets and **never committed**. The suite ships synthetic fixtures only, so corpus runs are reproducible on demand rather than standing in CI. That corpus has repeatedly caught what fixtures could not — see the Rive section.
+The current refreshable Rive baseline is Flight `a3707655f` against rive-flutter
+`fc9fd0445a205092ad340491d48ec16f42d2562e`: 42 `*.riv` paths, four non-RIVE pointer texts, and 38
+files beginning with the `RIVE` fingerprint. All 38 import into 108 artboards. The SHA-256 of the
+sorted `sha256sum` manifest for all 42 paths is
+`5625f3d481aa22ad9f0c736725ac021e901853136fe2fd9e8f31db2cdf30b31e`; no corpus bytes are committed.
+Older 37- and 64-file Rive measurements retained below are explicitly historical because their
+upstream revisions and manifests were not recorded.
 
-**No codec has a functional render scene**, so nothing under `functional/scenes` verifies any of the
-three at the pixel level on any backend. That is the largest remaining gap for the cell.
+Rive has a generated Flight-owned functional scene with Canvas, DOM, WebGL, and WebGPU baselines.
+Lottie and SVG still have no functional render scene. This is an evidence asymmetry, not by itself a
+priority ruling.
 
 ## Lottie (Bodymovin JSON)
 
@@ -46,8 +55,9 @@ order; static and animated 2D transforms including separated position (`p.x`/`p.
 rotation, opacity, and skew angle; analytic segment-local cubic-Bezier easing, split into per-component
 scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op` visibility; bezier
 paths, rectangles (with corner radius), ellipses, and polystars including corner roundness (`os`/`is`,
-animatable); solid and gradient fills and strokes,
-linear and radial, each animatable through the format-owned mutable-content binder; static dash;
+animatable); solid and gradient fills and strokes, linear and radial, including packed colour and
+opacity stops combined with overall paint opacity, each animatable through the format-owned
+mutable-content binder; static dash;
 static trim paths; a single additive non-inverted mask recovered to `ClipRegion`; images resolved through
 the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
 stretch folded exactly into root time; recursion-guarded precomposition references; and markers as
@@ -74,6 +84,9 @@ absence. None of them is announced, and per the rule above none of them should b
   `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
   export ships text that renders without the author's font present, so a `chars`-bearing file falls back
   to whatever font the text stack resolves.
+- **Radial highlight angle and length (`a`, `h`) are not read.** Both are typed on
+  `LottieGradientShapeItem`, but neither reaches the gradient matrix or Flight's focal-point field.
+  The mapping needs a format-derived relation before it can be implemented without guessing.
 
 Paint is a **list** per shape group, not one of each: multiple fills, multiple strokes, and a gradient
 beside a solid one all survive, and each paint restates the group's whole path set the way a Bodymovin
@@ -137,7 +150,9 @@ the caller to realize through a `BlendEffect`.
 **Covered:** the structural elements `svg`, `g`, `a`, `switch`, `symbol`, `defs`, and `use` (recursion-
 guarded), with nested viewports and `viewBox` transforms; the geometry elements `path`, `rect`, `circle`,
 `ellipse`, `line`, `polygon`, and `polyline`; `text` with `tspan`; `image` through the injected
-`resolveImageResource` seam; linear and radial gradients including `objectBoundingBox` units; `clipPath`
+`resolveImageResource` seam, with intrinsic dimensions mapped through the image viewport's default
+`xMidYMid meet` or explicit `preserveAspectRatio`; linear and radial gradients including
+`objectBoundingBox` units; `clipPath`
 as a hard `ClipRegion`; and the non-rendering elements `style`, `title`, `desc`, and `metadata` skipped
 by name.
 
@@ -165,6 +180,12 @@ identically to the literal spelling. Two forms are deliberately **not** honored 
 whatever the process can reach, and parameter entities. Expansion carries a size-and-pass budget,
 because entities that reference each other expand exponentially; the six-level bomb that materializes
 ten million characters unbudgeted stays bounded, and a self-referencing declaration terminates.
+
+*Image aspect-ratio mapping was dropped.* **Fixed.** A resolved 20×10 image placed into a 100×100
+viewport was independently scaled to 5×10 even though the importer's existing viewport rule defaults
+to `xMidYMid meet`. Image placement now reuses that rule: the default maps to scale 5 at `(10, 45)`,
+while explicit `preserveAspectRatio="none"` retains scale 5×10 at `(10, 20)`. A focused regression pins
+both outcomes.
 
 **Not covered — declared exclusions.** SVG animation (SMIL), scripts, `foreignObject`, live DOM behavior,
 and filter graphs are not retained; filters belong to `@flighthq/effects`. The charter sets the
@@ -194,10 +215,16 @@ clips that bind geometry and paint as well as transforms — and `createScene2DD
 presents the file as a named-graph document with resource references and nested-artboard slots. Each
 of those stages has its own section below, with the corpus counts behind it.
 
-**What is not read is a bounded list, not the bulk of the format**: text modifiers, animation loop mode / work-area / playback speed, and —
-pending decisions above this codec — rigging and skinning, layout, constraints, data binding, Feather,
-and the state-machine *runtime*. The state-machine *descriptor* is read. The ranked table near the end
-of this section carries the corpus counts behind that list.
+The detailed corpus observations in this section were accumulated across earlier 37- and 64-file runs;
+their Flight snapshots are `3169afdcf` and `ced9d49c4` respectively. They remain useful historical
+evidence, but the upstream corpus revisions were not pinned. Current ranking and animation counts are
+only the measurements explicitly tied to the 38-file baseline named above.
+
+**What is not connected is a bounded list, not the bulk of the format**: text modifiers, the parsed
+rig/weight data's production bridge to displayed paths, constraints, data binding, Feather, and the
+state-machine *runtime*. Static layout descriptors and animation loop mode / work area / playback speed
+are read; the state-machine *descriptor* is read. The ranked table near the end of this section carries
+the current pinned counts behind the unconnected list.
 
 A `.riv` is not a document tree on the wire. It is a header followed by a flat run of **core
 objects**, each a numeric type key and then numeric property keys with their values. Every structure
@@ -421,8 +448,7 @@ is the opposite: against all artboard objects it resolves to a real interpolator
 cases, and against components only in **zero**. Each id's space has to be established rather than
 assumed from a sibling.
 
-Over the corpus this builds 383 clips, all named, carrying 2,925 channels and 11,333 keyframes with
-no non-finite time or value.
+At the current pinned baseline, 359 clips carry 8,333 keyed-property tracks.
 
 **Numeric geometry and paint animate too, through the property the file keyed.** Transform properties
 bind to `Node2DAnimationTarget`; vertex positions, corner radii, colours, stroke widths, parametric
@@ -439,12 +465,17 @@ beside mutable vertex and colour channels in the same clip and verifies the fina
 and paint. The other keyframe subclasses (bool, id, string and uint) are deliberately not read through
 the double field; their value fields and useful drawable targets remain an adjacent corpus audit.
 
-Over the corpus this carries 5,170 channels across 383 clips, up from 2,925 when only transforms
-bound, and drops the clips with no channels at all from 145 to 112. Sampling every clip at its
-midpoint visibly changes 139 shapes and produces no non-finite coordinate.
+At the current pinned baseline the importer emits 7,617 channels, leaving 85 of 359 clips empty and
+716 keyed-property tracks without a channel. The non-double subclasses account for 123 of those:
+50 `KeyFrameId`, 34 `KeyFrameUint`, 13 `KeyFrameString`, 8 `KeyFrameBool`, and 18
+`KeyFrameCallback`. The remainder are mostly double or colour tracks aimed at systems outside the
+static geometry/paint binder — constraints, layout refresh, text modifiers, data binding, and Feather
+— so widening the value reader alone would not connect them.
 
-**The 112 clips still carrying no channels** animate properties on objects that are not shapes —
-chiefly bones, whose deformation has no home yet (see the rigging note above).
+**The 85 clips still carrying no channels** are a mixed population rather than one generic binder gap.
+Some target visible local data; others target constraint, layout, event, audio, script, data-binding,
+text-modifier, or Feather runtimes. The 716 unbound-track count above ranks further audit, not a scalar
+fallback.
 
 **Trim paths are covered**, and they belong to a **stroke** rather than to a shape — all 46 in the
 corpus are a stroke's child, so a trim narrows only the stroke that owns it and leaves that shape's
@@ -534,26 +565,22 @@ The retired editor round-trip keys are deliberately *not* counted as gaps. Canon
 the Rive engines do not read them; current fill weight and alignment derive from scale/fraction fields
 and `layoutAlignmentType` instead.
 
-**What the corpus says is still unread**, ranked by how many of the 37 real files use it. This is the
-honest remainder of Rive maturity, and the ranking is the point — three of these need a decision above
-this codec, so they are recorded rather than guessed at.
+**What the current pinned corpus says is still unconnected**, measured at Flight `a3707655f` against
+rive-flutter `fc9fd0445a205092ad340491d48ec16f42d2562e`. These counts rank prevalence; they do not
+choose among runtime and architecture questions.
 
 | gap | objects | files | note |
 | --- | --- | --- | --- |
-| Rigging / skinning (`Weight`, `Tendon`, `CubicWeight`, `Skin`, `RootBone`, `Bone`) | 2,664 | 21/37 (57%) | Needs the `skeleton2d` weighted-vector-path decision |
-| Constraints (`IKConstraint`, `TranslationConstraint`, …) | 179 | 11/37 (30%) | Solvers; where they live is a charter question |
-| Data binding (`ViewModelInstance`, `DataBindContext`, `BindableProperty*`) | 691 | 8/37 (22%) | A runtime binding system, not static document data |
-| Feather | 62 | 2/37 (5%) | Belongs to the effects tier |
-| Mesh / vertex art (`MeshVertex`, `ContourMeshVertex`) | 291 | 1/37 (3%) | Deformable mesh; travels with rigging |
+| Rigging / skinning (`Weight`, `Tendon`, `CubicWeight`, `Skin`, `RootBone`, `Bone`) | 3,031 | 22/38 | Bones, bone animation, and weights parse; weighted paths never enter the production import path |
+| Constraints (`*Constraint`) | 191 | 12/38 | Solvers; where they live is a charter question |
+| Data binding (`ViewModel*`, `DataBind*`, `BindableProperty*`, `DataConverter*`, `FormulaToken*`) | 2,444 | 9/38 | A runtime binding system, not static document data |
+| Text modifiers | 22 | 4/38 | Modifier groups and ranges do not reach rich-text output |
+| Feather | 150 | 3/38 | Belongs to the effects tier |
+| Mesh / vertex art | 291 | 1/38 | Travels with the unresolved rig-to-display bridge |
 
-Measured against animation rather than object count, the same ranking holds: of 3,503 keyed objects
-(all of which resolve), 369 target bones and 53 target layout — so **rigging alone is 10.5% of all
-animation in the corpus**. The 53 layout targets are now structurally readable but remain part of the
-snapshot-only animation limitation above; every other unread family is under 2%.
-
-**The reference corpus is 37 files, not 41.** Four of the paths fetched are Git LFS pointers — 131-byte
-text files beginning `version https://` — which the importer correctly rejects as not-a-Rive-file. Any
-future count should say 37.
+**The refreshable reference corpus is 38 files, not 42 paths.** Four `*.riv` paths do not begin with
+the `RIVE` fingerprint and are pointer text rather than Rive bytes. The exact checkout and manifest
+hash are recorded in the verification section above; future comparisons must name both.
 
 **Assets are covered as data, with no acquisition.** Every asset the file declares is returned in
 declaration order — image, font, audio, script and manifest — with its name, kind, stated dimensions
@@ -803,12 +830,13 @@ differs between generations, so a wrong-generation parse would produce a confide
 instead of failing. Only major version 7 has been read, and anything else emits
 `rive.unsupported-version`.
 
-**Verification status.** The container grammar is **verified against 64 real editor-authored `.riv`
-files**, all of which decoded completely — 82,543 core objects with no unread byte and no unknown
-property. The corpus was Rive's own Android runtime test assets, fetched for verification and
-deliberately **not committed**: whether a third-party `.riv` may live in this repo as a fixture is a
-licensing decision, so the suite ships synthetic fixtures only and the corpus run is reproducible on
-demand rather than standing in CI.
+**Verification status.** At Flight `a3707655f`, the container grammar imports all 38 fingerprint-valid
+files from rive-flutter `fc9fd0445a205092ad340491d48ec16f42d2562e` into 108 artboards. The sorted
+42-path manifest SHA-256 is
+`5625f3d481aa22ad9f0c736725ac021e901853136fe2fd9e8f31db2cdf30b31e`, and no corpus byte is committed.
+The older 64-file Android run recorded at Flight `ced9d49c4` decoded 82,543 core objects with no unread
+byte or unknown property, but its upstream revision and manifest were not recorded; it is historical
+evidence, not the refreshable baseline.
 
 That corpus earned its keep immediately. Against synthetic fixtures alone the decoder passed 30
 tests while being unable to read a single real file, because it treated the file's table of contents
