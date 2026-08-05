@@ -8,6 +8,12 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-08-05 — post-review implementation continuity
+
+Source verification across the 26 commits since the 2026-07-13 review found the composable PBR material redesign landed end to end at the model layer. `ExtendedPbrMaterial` holds an ordered list of open, kind-keyed entity descriptors over a structural standard property block; the seven built-ins each have independent headers, creators, validators, map/UV inputs, and backend registration doors. The former standalone extension-material families are gone, the wrapped-diffuse approximation is no longer mislabeled as subsurface transport, and the glass preset composes a property block plus transmission/volume descriptor rather than nesting a second material entity.
+
+The type and utility relocations also settled: linear/HSL/HSV tuples live in `@flighthq/types`, the color kernel and corrected HSL conversion documentation live in `@flighthq/color`, and the retired color-transform creator has been replaced by the readonly-option `ColorScaleBias` model. Specular-glossiness remains a distinct legacy workflow; its scalar conversion deliberately clears the incompatible metallic-roughness map instead of aliasing packed specular RGB/glossiness A. The surviving gap is diagnostic rather than conversion correctness: callers still have no shakeable `explainSpecularGlossinessConversion` or opt-in material-conversion guard to reveal that map drop, and any actual packed-texture bake remains a separate unimplemented operation with ownership/color-space semantics to design.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 Executed the sweep-safe items from `assessment.md` › Recommended. The package source had been refactored since the review that seeded the assessment, so two of the four Recommended items no longer describe the live code and were parked.
