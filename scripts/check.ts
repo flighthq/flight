@@ -68,6 +68,7 @@ add('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 if (!scoped) {
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
+  add('append-only-ledgers:check', 'tsx', ['scripts/check-append-only-ledgers.ts']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
   add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
 }
