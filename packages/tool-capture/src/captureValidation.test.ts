@@ -165,6 +165,7 @@ describe('runCaptureValidation', () => {
       server: { url: 'http://unused.invalid', kill },
       root: join(tmpdir(), 'tool-capture-reuse-fixture'),
       report: true,
+      quiet: true,
       fingerprints: { sample: { canvas: '1:000000' } },
       browserSession: {
         browser: { close: vi.fn() } as never,
@@ -240,6 +241,10 @@ async function validateRegressionFixture(root: string, kill: () => void) {
     server: { url: 'http://unused.invalid', kill },
     root,
     gateParity: false,
+    // These assert how a FAILURE is classified, so the run legitimately produces a failing summary.
+    // Printing it would put a real-looking "✗ FAILED" block in the CI log of a file whose tests all
+    // pass, which is the kind of noise that teaches a reader to scroll past a genuine one.
+    quiet: true,
     fingerprints: { sample: { canvas: '1:ffffff' } },
     browserSession: {
       browser: { close: vi.fn() } as never,

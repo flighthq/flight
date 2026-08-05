@@ -66,6 +66,18 @@ export interface CaptureValidationOptions {
   workerCount?: number;
   fingerprintSkip?: Readonly<string[]>;
   paritySkip?: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+  /**
+   * Suppress the human-facing progress and summary output. The returned `CaptureValidationResult`
+   * carries every fact those lines report, so a programmatic caller loses nothing by silencing them.
+   *
+   * This exists because a caller that is *asserting how a failure is classified* still renders a real
+   * failure summary — a `✗ FAILED … 1 regression failed` block printed by a test that passes. In a CI
+   * log those lines are indistinguishable from an actual failure, which is worse than merely untidy:
+   * it trains a reader to scroll past the exact string they should stop at. Printing is a side effect
+   * the caller should ask for rather than one it has to work around, which is why this is an explicit
+   * option and not a check of the ambient environment.
+   */
+  quiet?: boolean;
   /** Explicit visual comparison groups. Unlike legacy parity, these may include DOM and arbitrary targets. */
   parityGroups?: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   /** Assertion-passed fingerprints from a preceding capture pass. Avoids reloading those pages. */
@@ -129,6 +141,7 @@ export interface CaptureValidationCheck {
 
 interface ResolvedCaptureValidationOptions {
   subject: string;
+  quiet: boolean;
   root: string;
   rendererFilter: readonly string[];
   captureFrames: number;
@@ -796,6 +809,7 @@ export async function runCaptureValidation(
     rendererFilter: input.rendererFilter ?? [],
     captureFrames: Math.max(1, input.captureFrames ?? 1),
     report: input.report ?? false,
+    quiet: input.quiet ?? false,
     updateFingerprints: input.updateFingerprints ?? false,
     gateRegression: input.gateRegression ?? true,
     gateParity: input.gateParity ?? true,
@@ -882,7 +896,7 @@ export async function runCaptureValidation(
           updated += result.updated;
           skipped += result.skipped;
           checks.push(...result.checks);
-          for (const line of result.output) console.log(line);
+          if (!options.quiet) for (const line of result.output) console.log(line);
         }
       });
       await Promise.all(workers);
@@ -900,7 +914,7 @@ export async function runCaptureValidation(
         updated += result.updated;
         skipped += result.skipped;
         checks.push(...result.checks);
-        for (const line of result.output) console.log(line);
+        if (!options.quiet) for (const line of result.output) console.log(line);
       }
     }
   } finally {
@@ -912,15 +926,16 @@ export async function runCaptureValidation(
   const note = interrupted ? pc.yellow('   — interrupted (partial run)') : '';
 
   if (options.updateFingerprints) {
-    console.log(
-      '\n' +
-        formatSummaryLine(loadFailures > 0, [
-          formatSummaryCount(updated, 'baselines written', 'pass'),
-          formatSummaryCount(skipped, 'skipped', 'warn'),
-          formatSummaryCount(loadFailures, 'load failures', 'fail'),
-        ]) +
-        note,
-    );
+    if (!options.quiet)
+      console.log(
+        '\n' +
+          formatSummaryLine(loadFailures > 0, [
+            formatSummaryCount(updated, 'baselines written', 'pass'),
+            formatSummaryCount(skipped, 'skipped', 'warn'),
+            formatSummaryCount(loadFailures, 'load failures', 'fail'),
+          ]) +
+          note,
+      );
     if (loadFailures > 0) {
       console.error(pc.red(`${loadFailures} test(s) failed to load/verify — not a clean baseline run.`));
       return createResult(true);
@@ -928,15 +943,16 @@ export async function runCaptureValidation(
     return createResult(loadFailures > 0);
   }
   if (options.report) {
-    console.log(
-      '\n' +
-        formatSummaryLine(loadFailures > 0, [
-          formatSummaryCount(skipped, 'skipped', 'warn'),
-          formatSummaryCount(loadFailures, 'load failures', 'fail'),
-        ]) +
-        pc.dim('   (report only — nothing gated)') +
-        note,
-    );
+    if (!options.quiet)
+      console.log(
+        '\n' +
+          formatSummaryLine(loadFailures > 0, [
+            formatSummaryCount(skipped, 'skipped', 'warn'),
+            formatSummaryCount(loadFailures, 'load failures', 'fail'),
+          ]) +
+          pc.dim('   (report only — nothing gated)') +
+          note,
+      );
     return createResult(loadFailures > 0);
   }
   // Same doctrine, other tier: a gated regression leg that compared NOTHING is unconfigured, not clean.
@@ -960,20 +976,21 @@ export async function runCaptureValidation(
     loadFailures > 0 ||
     parityCoverageFailed ||
     regressionCoverageFailed;
-  console.log(
-    '\n' +
-      formatSummaryLine(failed, [
-        formatSummaryCount(regressionPasses, 'regression passed', 'pass'),
-        formatSummaryCount(regressionFailures, 'regression failed', 'fail'),
-        formatSummaryCount(parityPasses, 'parity passed', 'pass'),
-        formatSummaryCount(parityFailures, 'parity failed', 'fail'),
-        formatSummaryCount(parityUncovered, 'parity uncovered', parityCoverageFailed ? 'fail' : 'warn'),
-        formatSummaryCount(regressionUncovered, 'regression uncovered', regressionCoverageFailed ? 'fail' : 'warn'),
-        formatSummaryCount(skipped, 'skipped', 'warn'),
-        formatSummaryCount(loadFailures, 'load failures', 'fail'),
-      ]) +
-      note,
-  );
+  if (!options.quiet)
+    console.log(
+      '\n' +
+        formatSummaryLine(failed, [
+          formatSummaryCount(regressionPasses, 'regression passed', 'pass'),
+          formatSummaryCount(regressionFailures, 'regression failed', 'fail'),
+          formatSummaryCount(parityPasses, 'parity passed', 'pass'),
+          formatSummaryCount(parityFailures, 'parity failed', 'fail'),
+          formatSummaryCount(parityUncovered, 'parity uncovered', parityCoverageFailed ? 'fail' : 'warn'),
+          formatSummaryCount(regressionUncovered, 'regression uncovered', regressionCoverageFailed ? 'fail' : 'warn'),
+          formatSummaryCount(skipped, 'skipped', 'warn'),
+          formatSummaryCount(loadFailures, 'load failures', 'fail'),
+        ]) +
+        note,
+    );
   // Name the entries behind an "N uncovered" count: a bare number tells a reader something is missing but
   // not what to go look at, and the entries differ in why.
   for (const [label, uncovered, failedTier] of [
@@ -990,7 +1007,7 @@ export async function runCaptureValidation(
     ];
     if (names.length > 0) {
       const line = `  ${label} uncovered: ${names.join(', ')}`;
-      console.log(failedTier ? pc.red(line) : pc.yellow(line));
+      if (!options.quiet) console.log(failedTier ? pc.red(line) : pc.yellow(line));
     }
   }
 
