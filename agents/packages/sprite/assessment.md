@@ -6,12 +6,13 @@ basedOn: ./review.md
 
 # sprite — Assessment
 
-Sorted from `review.md` (solid, 78/100 — full re-survey of the live three-quartet package post-`particleemitter` extraction). All three previously Approved items are verified landed in the live tree (signals dep declared; `Vector2Like` out-params; `QUAD_BATCH_DELETED_ID` exported).
+Sorted from `review.md` (solid, 78/100 — full re-survey of the former three-quartet package post-`particleemitter` extraction). Two previously Approved outcomes remain landed in the split owners (`Vector2Like` out-params; `QUAD_BATCH_DELETED_ID` exported). The package-local signals-dependency row is retired below because `@flighthq/sprite` no longer exists in the tracked tree.
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/sprite`, no cross-package coupling, no open design decision.
+Historical sweep list for the former `@flighthq/sprite`; do not dispatch these rows by that package name. Re-home any still-relevant work in the split owner before execution.
 
+- **~~Add `@flighthq/signals` to `@flighthq/sprite/package.json`.~~** — retired 2026-08-05. OBSOLETE: Git tracks zero paths under `packages/sprite`; any on-disk directory there is an untracked empty residue, not a package. Responsibility moved to split owners, and both `@flighthq/scene2d` and `@flighthq/quadbatch` already declare `@flighthq/signals`. The `[2026-07-02 · picked]` Approved row remains below because that ledger is append-only; this note retires its no-longer-existing target without rewriting history.
 - **Rewrite the `compactQuadBatch` doc comment to match Decision #1.** The body correctly filters `QUAD_BATCH_DELETED_ID`, but the comment still claims the function "does NOT filter by id," references an `id==-1` sentinel and "zero-out ids," and calls itself a no-op. Replace with the blessed mark-then-compact workflow (write `QUAD_BATCH_DELETED_ID` to `ids[i]`, then compact). _(Review Gap 3.)_
 - **Fix out-param hygiene in `computeSpriteLocalBoundsRectangle`.** On the `data.rect` path, write `out.x`/`out.y` (from `rect.x`/`rect.y`) instead of leaving stale caller values; on the no-atlas/no-region path, zero all four fields. Add tests asserting a pre-dirtied `out` is fully written on every path. _(Review Gap 2.)_
 - **Zero the out in QuadBatch's default bounds method when `runtime.localBoundsRectangle` is null.** `copyLocalBoundsRectangle` currently leaves `out` untouched — write `0,0,0,0` like `computeQuadBatchLocalBoundsRectangle` does. (Whether the compute function should be wired as the default is a posture question — routed to Open directions, not changed here.) _(Review Gap 2.)_
