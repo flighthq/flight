@@ -1,10 +1,42 @@
 ---
 package: '@flighthq/sdk'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: principal
 ---
 
 # sdk — Status Log
+
+## [2026-08-05 · principal] — barrel churn is other packages' churn
+
+The 73 commits since the 2026-06-25 review are almost entirely *not* changes to this package's own
+logic — they are the barrel tracking package creation, renames, and splits elsewhere. Roughly fifty
+new packages were re-exported (statechart, abc, compression, layout, skeleton2d, textbidi,
+textsegment, mediasession, binpack, spring, flow, collision, spatial, net, socket, assets,
+glyphatlas, bitmaptext, importdiagnostics, and more), and every large rename swept through here:
+`scene`→`scene3d`, `displayobject`→`scene2d`, `camera2d` folded into `camera`, `skeleton`→
+`skeleton3d`, `gamestate`→`flow`, `permission`→`permissions`, `network`→`connectivity`, `filters*`
+deleted into `adjustments`+`effects`, `bitmap` merged into `sprite`, `movieclip` extracted from
+`timeline`+`spritesheet`, `particleemitter` extracted from `sprite`+`particles`.
+
+Two threads a future agent should not have to rediscover:
+
+**A `chore` commit claims `bitmapfont` and `bitmapfont-formats` were removed as "superseded by
+downstream glyphsource". They exist and are exported from the barrel today.** They came back. Do not
+trust that commit subject as current state; check the tree.
+
+**The barrel now ships categorized group subpaths** — `./animation`, `./application`, `./core`,
+`./formats`, `./game`, `./interaction`, `./media` alongside `.` and `./contract`. AGENTS.md's export
+rule says a package exposes "exactly two blessed lanes" and that "no other subpath is allowed", with
+the ban aimed at *file-mirroring* subpaths. These are categorized groups, not file mirrors, and
+`packages:check` passes them — so mechanism and map disagree in wording even where they may agree in
+intent. Whether `sdk` is a deliberate exception to the two-lane rule, or the rule's text needs to
+name the group-subpath carve-out, is an open question for the user and not something to settle by
+editing either side unilaterally.
+
+The three Gold items in the older entries below are still open: the committed namespace snapshot,
+the direct-vs-barrel tree-shake conformance mode in `size-runner.ts`, and extending the collision
+sentinel list as domains are added.
+
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 

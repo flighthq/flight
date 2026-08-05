@@ -1,10 +1,31 @@
 ---
 package: '@flighthq/bitmap'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: principal
 ---
 
 # bitmap — Status Log
+
+## [2026-08-05 · principal] — pixel vocabulary renamed; readback explains its refusals
+
+The 10 commits since the 2026-06-25 review are a rename and a diagnostics fix, both finished.
+
+The package and its operations were renamed into the pixel vocabulary, and a follow-up commit
+finished the sweep — so mixed old/new naming should not survive anywhere. If you find some, it is a
+straggler worth closing, not a convention.
+
+Readback now returns `null` **and explains the reason** when a source cannot be read back, rather
+than failing opaquely. That is the sentinel-plus-`explain*` shape the diagnostics inversion rule
+asks for, and it is the pattern to copy for the next silent failure found here.
+
+Displacement now honors edge modes per sample — a correctness fix; it was previously applied
+uniformly across samples.
+
+This package also carried its share of the texture-source reshape: `alphaType` and `gamut` lifted
+onto `TextureSource`, backings renamed to sources, the fused backing shape retired, representation
+kinds declared, readback made explicit, and `createImageResourceFromBitmap` moved to its output
+package. See the `image` cell for the other half; `ImageBacking` is gone tree-wide.
+
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 

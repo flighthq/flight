@@ -1,10 +1,29 @@
 ---
 package: '@flighthq/spritesheet-formats'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: principal
 ---
 
 # spritesheet-formats — Status Log
+
+## [2026-08-05 · principal] — parsers return sentinels, never throw
+
+The 11 commits since the 2026-06-25 review are small, and mostly one rule being applied: every
+`*Document` `JSON.parse` is guarded to return an empty result rather than throw, matching the
+codebase rule that expected failure is a sentinel and only programmer error throws. The same guard
+went into the `textureatlas` parsers in the same sweep, so the two packages are consistent — keep
+them that way if you touch either.
+
+Direction and repeat playback were corrected. That was a real behavioral bug, not cleanup.
+
+The load-bearing detector order is now pinned by a test. That ordering is significant: format
+detection is sequential, so a reordering changes which parser claims an ambiguous document. Do not
+reorder detectors without deliberately updating that test.
+
+Structural: types moved to `@flighthq/types`, the package routes through contract lanes, a stray
+`@flighthq/types` re-export was dropped from the barrel, and it now relies on `textureatlas-formats`
+rather than duplicating that parsing.
+
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 

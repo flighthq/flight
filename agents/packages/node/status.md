@@ -1,10 +1,39 @@
 ---
 package: '@flighthq/node'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: principal
 ---
 
 # node — Status Log
+
+## [2026-08-05 · principal] — root rename and revision propagation settled; order list matured
+
+The 31 commits since the 2026-07-13 review land three separable things.
+
+**The 2D root rename is complete.** `Stage` is gone from this package — no reference survives — and
+the root is `Scene2D`. `Viewport` was reshaped into a bedrock drawable-rect Entity with *fit* moved
+off it, and the former `createStage` composes from `createViewport`. Note the consequence recorded in
+the `types` cell: `ViewportAlign`/`ViewportScaleMode` now serve `Scene2D`, `Scene2DFitContext`,
+`Layout`, and `anchorLayout`, so they are a shared fit vocabulary rather than root-owned, and an
+earlier proposal to rename them `StageAlign`/`StageScaleMode` was retired as obsolete.
+
+**Revision propagation was genuinely broken and is fixed.** World transform and appearance revisions
+now propagate to descendants at any depth (they previously did not), prepared proxies invalidate on
+hierarchy changes, and a traversal-consistency sweep followed. `computeNodeWorldTransformRevision` is
+imported relatively to break a self-import cycle — leave that import style alone unless the cycle
+itself is addressed.
+
+**`NodeOrderList` matured** into entry query, removal, swap, capture, and relative placement, with
+children ordered by an explicit key list permuting members among the slots they hold. This is the
+caller-owned ordering model from the draw-order record: child order remains the only order, and
+ordering is never node state.
+
+Also landed: per-node effect lane, named content primitives, appearance split into `HasAppearance` +
+`HasBlendMode` with 3D appearance unified, 3D nodes authoring TRS with a cached local matrix,
+`setNodeLocalMatrix` plus Transform2D carrier accessors, and a `findNode` result that narrows when
+the predicate is a type guard. The public lane was aggressively restricted to externally-consumed
+symbols, with runtime accessors pushed to `contract`.
+
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
