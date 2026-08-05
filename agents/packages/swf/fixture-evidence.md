@@ -334,11 +334,14 @@ removal tags are counted per frame, and that is compared with what the construct
 | 15 | The wire changes and the tree changes with it |
 | **1** | The wire changes and the tree does **not** |
 
-The single divergence is `from_gnash/misc-ming.all/Video-EmbedSquareTest`: each frame moves depth 2 with
-a new ratio, and depth 2 holds character 4, a `DefineVideoStream`. Video characters are not imported, so
-the placement resolves to no node and eleven per-frame moves land on nothing. That is the known video
-gap surfacing as animation loss, not a timeline defect — and it is the first time a real file has named
-it. Node identity is part of the comparison, which is what distinguishes a *replacement* at one depth
+The single divergence at that measurement commit is
+`from_gnash/misc-ming.all/Video-EmbedSquareTest`: each frame moves depth 2 with a new ratio, and depth 2
+holds character 4, a `DefineVideoStream`. Video characters were not imported there, so the placement
+resolved to no node and eleven per-frame moves landed on nothing. That was the video gap surfacing as
+animation loss, not a timeline defect — and it is the first time a real file named it. Ratified Stage A
+now materializes that unnamed character as a sourceless `Sprite`; the hermetic test reproduces the eleven
+move records, while this pinned table remains the pre-fix measurement rather than claiming an unrun corpus
+resweep. Node identity is part of the comparison, which is what distinguishes a *replacement* at one depth
 (`avm1/goto_execution_order` swaps character 1 for character 2 at depth 1, inheriting the matrix) from a
 clip that truly did not move; without it that file reads as a false divergence.
 

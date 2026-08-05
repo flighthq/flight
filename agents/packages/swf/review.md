@@ -26,8 +26,8 @@ real clip, morph definitions become painted retained geometry, and both bytecode
 commands without either being executed. Placement colour transforms, ordinary blend modes, advanced-blend
 reports, and filter reports now preserve per-frame appearance instead of being parsed past. Both encoded
 and SWF-lossless bitmap fills reach pixels, although their two loader contracts remain an unruled API fork.
-The remaining SWF-local work is narrower: structural video placement, JPEG3/4 alpha, nested-mask
-intersection, scene ranges, and interaction-state sound all wait on explicit target shapes. A
+The remaining SWF-local work is narrower: JPEG3/4 alpha, nested-mask intersection, scene ranges, and
+interaction-state sound all wait on explicit target shapes. A
 revision-pinned Ruffle pair supplies named-graph and two-frame replacement evidence, while fixed corpus
 sweeps pin breadth, frequency, and the one observed video divergence.
 
@@ -114,9 +114,10 @@ sweeps pin breadth, frequency, and the one observed video divergence.
 - The stage RECT persists as root-local authored bounds. `DefineShape*`, `DefineText*`,
   `DefineEditText`, and `DefineMorphShape*` bound prefixes persist on placed targets; first-frame sprite
   bounds recursively transform and union all available child extents.
-- `DefineBitsLossless`/`DefineBitsLossless2` and `DefineVideoStream` retain their bounded dimension
-  prefixes as zero-origin local extents without decoding compressed pixels or video frames. Invalid
-  formats, truncated headers, zero dimensions, and duplicate character IDs reject.
+- `DefineBitsLossless`/`DefineBitsLossless2` retain their bounded dimension prefixes before compressed
+  pixels decode. `DefineVideoStream` becomes a sourceless `Sprite` at its zero-origin declared extent, so
+  named, unnamed, and exported placements participate in the graph without claiming video-frame pixels.
+  Invalid formats, truncated headers, zero dimensions, and duplicate character IDs reject.
 - `DefineBitsJPEG2`/`DefineBitsJPEG3`/`DefineBitsJPEG4` use bounded JPEG SOF, PNG IHDR, and GIF header
   scans for local extents. JPEG3/4 respect their pre-alpha byte range, so compressed alpha data remains
   opaque; malformed headers, zero dimensions, and invalid offsets reject.
@@ -140,10 +141,10 @@ sweeps pin breadth, frequency, and the one observed video divergence.
   Choosing a `DecodedImage` bridge or a third image-reference kind remains an API ruling, not a
   missing-pixel bug. JPEG3/4's separate alpha stream cannot be rejoined honestly until that resolved-image
   hand-back point is selected.
-- Video definitions retain extents but do not materialize unnamed placements, and `VideoFrame` bodies stay
-  opaque. The pinned animated sweep found this as the only wire/tree divergence among 29 multi-frame root
-  timelines. The unruled structural-first proposal would add a sourceless `Sprite` without claiming pixel
-  support; full decode is a separate cross-package resource project.
+- Video definitions now materialize named, unnamed, and exported characters as sourceless `Sprite` nodes;
+  the pinned animated sweep's only wire/tree divergence among 29 multi-frame root timelines is the exact
+  shape Stage A closes. `VideoFrame` bodies stay opaque. Payload preservation and full decode remain
+  separate, unauthorized projects rather than implied support.
 - Nested masks collapse to the innermost rather than intersecting, because a node carries one clip. A file
   that genuinely nests two masks over one instance will clip to the inner one alone.
 - Scene names are read past because Flight has frame labels but no subject for a named frame range.

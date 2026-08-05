@@ -294,6 +294,17 @@ interface SwfImagePayload {
   mimeType: string;
 }
 
+// The bounded header of one video character. Stage A retains enough identity to materialize the display
+// leaf honestly; the timeline-indexed VideoFrame packets remain unsupported and are not retained here.
+interface SwfVideoDefinition {
+  codecId: number;
+  deblocking: number;
+  frameCount: number;
+  height: number;
+  smoothing: boolean;
+  width: number;
+}
+
 // One trigger's SOUNDINFO, with positions still in the samples the format counted.
 interface SwfSoundInfo {
   envelope: TimelineAudioEnvelopePoint[];
@@ -336,6 +347,8 @@ interface SwfTagResult {
   streamSounds: { bytes: Uint8Array; mimeType: string; resource: AudioResource }[];
   sprites: Map<number, SwfTimeline>;
   timeline: SwfTimeline;
+  videoTextures: Map<number, Texture2D>;
+  videos: Map<number, SwfVideoDefinition>;
 }
 
 // A static text definition, held until every font in the file is known. Text records address glyphs by
@@ -390,6 +403,10 @@ interface SwfParseState {
   soundResources: Map<number, AudioResource>;
   sounds: Map<number, SwfSoundPayload>;
   sprites: Map<number, SwfTimeline>;
+  // Created only when a video character is placed or exported. A character's placements share the
+  // sourceless Texture that a later payload implementation can fill without changing the node kind.
+  videoTextures: Map<number, Texture2D>;
+  videos: Map<number, SwfVideoDefinition>;
 }
 
 interface SwfInstantiationState {
@@ -559,18 +576,20 @@ function populateSwfTimelineNode(
       const morphShape = parsed.morphShapes.get(placement.characterId);
       const image = parsed.images.get(placement.characterId);
       const editText = parsed.editTexts.get(placement.characterId);
+      const video = parsed.videos.get(placement.characterId);
       // A masking placement is never drawn — it contributes its shape as a clip on what it covers, so it
       // earns no node of its own.
       if (placement.clipDepth > 0) continue;
-      // A placement earns a node when it is named, when it carries a timeline, or now when it has content —
-      // geometry to draw or pixels to load. An unnamed shape is most of what a still frame is made of.
+      // A placement earns a node when it is named, when it carries a timeline, or when its definition is
+      // visual content — geometry, pixels, a text field, or a deliberately sourceless video leaf.
       if (
         !placement.name &&
         sprite === undefined &&
         shape === undefined &&
         morphShape === undefined &&
         image === undefined &&
-        editText === undefined
+        editText === undefined &&
+        video === undefined
       ) {
         continue;
       }
@@ -591,10 +610,15 @@ function populateSwfTimelineNode(
           : editText !== undefined
             ? createSwfEditTextTarget(editText, parsed, targetBounds)
             : image !== undefined
-              ? createSwfBitmapNode(acquireSwfImageTexture(parsed, placement.characterId, false, true), targetBounds)
-              : morphShape !== undefined
-                ? createSwfMorphShapeTarget(morphShape, targetBounds, parsed.morphBounds.get(placement.characterId))
-                : createSwfPlacementNode(sprite, shape, targetBounds);
+              ? createSwfTexturedSprite(
+                  acquireSwfImageTexture(parsed, placement.characterId, false, true),
+                  targetBounds,
+                )
+              : video !== undefined
+                ? createSwfTexturedSprite(acquireSwfVideoTexture(parsed, placement.characterId, video), targetBounds)
+                : morphShape !== undefined
+                  ? createSwfMorphShapeTarget(morphShape, targetBounds, parsed.morphBounds.get(placement.characterId))
+                  : createSwfPlacementNode(sprite, shape, targetBounds);
       nodes.set(key, target);
       if (placement.name) {
         slots.push(
@@ -891,6 +915,28 @@ function acquireSwfImageTexture(
   return texture;
 }
 
+// Allocates the stable 2D texture identity a video character's Sprites share. Its source deliberately
+// stays null: DefineVideoStream declares a packet sequence rather than a browser-playable file, and
+// Stage A promises graph structure and authored extents without pretending those packets are pixels.
+function acquireSwfVideoTexture(
+  parsed: Readonly<SwfTagResult>,
+  characterId: number,
+  definition: Readonly<SwfVideoDefinition>,
+): Texture2D {
+  let texture = parsed.videoTextures.get(characterId);
+  if (texture === undefined) {
+    texture = createTexture({
+      sampler: createSampler({
+        magFilter: definition.smoothing ? 'linear' : 'nearest',
+        minFilter: definition.smoothing ? 'linear' : 'nearest',
+        mipmaps: false,
+      }),
+    });
+    parsed.videoTextures.set(characterId, texture);
+  }
+  return texture;
+}
+
 // Pairs every bitmap character that something actually samples with the bytes it was defined from. A
 // payload nothing references costs no reference, and a reference names every Texture waiting on it, so
 // loading one binds all of them.
@@ -934,7 +980,7 @@ function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceR
   return resources;
 }
 
-function createSwfBitmapNode(texture: Texture2D, bounds: SwfRectangle | null): Sprite {
+function createSwfTexturedSprite(texture: Texture2D, bounds: SwfRectangle | null): Sprite {
   const target = createSprite();
   target.data.texture = texture;
   if (bounds !== null) {
@@ -1090,8 +1136,10 @@ function createSwfSymbolNode(
   const editText = parsed.editTexts.get(characterId);
   if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds);
   if (parsed.images.has(characterId)) {
-    return createSwfBitmapNode(acquireSwfImageTexture(parsed, characterId, false, true), bounds);
+    return createSwfTexturedSprite(acquireSwfImageTexture(parsed, characterId, false, true), bounds);
   }
+  const video = parsed.videos.get(characterId);
+  if (video !== undefined) return createSwfTexturedSprite(acquireSwfVideoTexture(parsed, characterId, video), bounds);
   const sprite = parsed.sprites.get(characterId);
   if (sprite !== undefined) return createSwfTimelineNode(sprite, bounds, parsed, slots, state, 0);
   const shape = parsed.shapes.get(characterId);
@@ -1401,6 +1449,8 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     soundResources: new Map<number, AudioResource>(),
     sounds: new Map<number, SwfSoundPayload>(),
     sprites: new Map<number, SwfTimeline>(),
+    videoTextures: new Map<number, Texture2D>(),
+    videos: new Map<number, SwfVideoDefinition>(),
   };
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
@@ -1431,6 +1481,8 @@ function readSwfTags(reader: SwfReader): SwfTagResult | null {
     streamSounds: state.streamSounds,
     sprites: state.sprites,
     timeline,
+    videoTextures: state.videoTextures,
+    videos: state.videos,
   };
 }
 
@@ -2316,16 +2368,24 @@ function resolveSwfSoundSampleRate(format: number, flags: number): number {
 
 function readSwfVideoDefinition(body: SwfReader, state: SwfParseState): boolean {
   const characterId = body.readUint16();
-  body.readUint16();
+  const frameCount = body.readUint16();
   const width = body.readUint16();
   const height = body.readUint16();
-  body.readUint8();
-  body.readUint8();
+  const flags = body.readUint8();
+  const codecId = body.readUint8();
   if (!body.valid || characterId === 0 || width === 0 || height === 0 || state.definedCharacters.has(characterId)) {
     return false;
   }
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, { height, width, x: 0, y: 0 });
+  state.videos.set(characterId, {
+    codecId,
+    deblocking: (flags >> 1) & 0x07,
+    frameCount,
+    height,
+    smoothing: (flags & 0x01) !== 0,
+    width,
+  });
   return true;
 }
 

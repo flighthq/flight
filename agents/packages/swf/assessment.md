@@ -37,22 +37,20 @@ the measurement so a later corpus or importer change cannot silently rewrite the
   named-graph and a two-frame depth replacement. The broader animated sweep steps 46 clips and
   wire-cross-checks 29 root timelines; the nested 17 are stepped without a wire comparison, an explicit
   evidence limit rather than an importer claim.
+- **Structural video placement is honest.** A `DefineVideoStream` character now becomes a `Sprite` over a
+  sourceless `Texture`, including for unnamed placements and exported symbols. The existing timeline path
+  preserves its identity through the measured eleven-move shape while `VideoFrame` packets remain skipped
+  and no decoder, media element, or generic resource contract is implied.
 
 ## Ranked remaining decisions
 
-1. **Rule on structural video import before implementing it.** At measurement commit `59fa8c6fc`, one of
-   29 multi-frame root timelines diverged from its wire records because an unnamed `DefineVideoStream`
-   placement earns no node; the fixed sample contains video in 1 of 306 files. The unruled
-   [video proposal](../../swf-video-import-proposal.md) recommends a bounded first stage: a sourceless
-   `Sprite` preserves extents, identity, moves, masks, and seeks while continuing to state that
-   `VideoFrame` pixels are unsupported. It does not authorize a decoder or a generic video resource.
-2. **Rule on the shared bitmap-loading contract.** Encoded images currently resolve through the browser
+1. **Rule on the shared bitmap-loading contract.** Encoded images currently resolve through the browser
    `Image` path while SWF-lossless data becomes a `Bitmap` eagerly. The two honest designs remain a bridge
    from the MIME-keyed `@flighthq/image-codec` `DecodedImage` result into the loader, or an additive third
    `ImageResourceReference` kind with both 2D and 3D loader dispatch. Straight versus premultiplied alpha
    is part of the first route. No route is selected here, and the working eager lossless path must remain
    unchanged until the ruling.
-3. **Rank only the remaining local fidelity gaps after those decisions.** `DefineBitsJPEG3`/`4` drops its
+2. **Rank only the remaining local fidelity gaps after that decision.** `DefineBitsJPEG3`/`4` drops its
    separate alpha stream (one file in the fixed 301-readable-file sample at `8dd53f4a2`); nested masks keep
    only the innermost clip; scene names have no timeline-scene home; and some SWF filter fields exceed the
    target effect vocabulary. `DefineButtonSound` still needs an interaction-state subject rather than a
@@ -77,10 +75,9 @@ the measurement so a later corpus or importer change cannot silently rewrite the
 
 ## Recommended
 
-Do not start either unruled fork. If structural video Stage A is authorized, it is the next bounded local
-slice because it has an exact real-file divergence and does not pretend to decode pixels. Report the
-bitmap-routing alternatives for a ruling in parallel. No LZMA or broader AVM2 implementation belongs in
-this repository.
+Structural video Stage A is complete. Do not extend it into packet preservation or decode without the
+separate Stage B or C rulings, and do not choose a bitmap-routing alternative without its pending ruling.
+No LZMA or broader AVM2 implementation belongs in this repository.
 
 ## Backlog after the rulings
 

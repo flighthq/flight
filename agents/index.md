@@ -82,9 +82,8 @@ which is why they are not in the map.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
 - [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
-- [swf video import proposal](swf-video-import-proposal.md) — **unratified.** An investigation proposal
-  awaiting a ruling; it authorizes no implementation and changes nothing about `@flighthq/video`,
-  `Scene2DDocument`, or the SWF tag-coverage decision. Listed so it is reachable, not because it is settled.
+- [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
+  structural import through a sourceless `Sprite`; payload preservation and decode remain unratified.
 - [breadth synthesis](breadth-synthesis.md) — convergences across the four breadth reviews:
   [adjacent content](breadth-adjacent-content.md), [platform variance](breadth-platform-variance.md),
   [cloud & distributed](breadth-cloud-distributed.md), [domain deepening](breadth-domain-deepening.md).

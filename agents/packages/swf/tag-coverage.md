@@ -26,7 +26,7 @@ rare in the wild.
 | `DefineBits` + `JPEGTables` | A spliced JPEG payload on an asset reference | 1 |
 | `DefineBitsJPEG2` … `JPEG4` | An encoded payload on an asset reference, with extents | 1 |
 | `DefineBitsLossless`, `2` | Decoded pixels plus declared extents when deflate is registered | 5 |
-| `DefineVideoStream` | Declared frame extents (payload opaque) | 1 |
+| `DefineVideoStream` | A `Sprite` over a sourceless `Texture`, with declared extents (payload opaque) | 1 |
 | `SetBackgroundColor` | `Scene2DDocument.backgroundColor` | 250 |
 | `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
 | `SymbolClass`, `ExportAssets` | Slot linkage identity, and the library `createScene2DSymbolFromSwf` instantiates from | 186 / 44 |
@@ -51,7 +51,7 @@ These are read past. Each is a decision, not an oversight.
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
 | `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 7 |
 | `DefineBinaryData` | Arbitrary embedded bytes with no display meaning. | 2 |
-| `VideoFrame` | Video payload frames; the stream's extents are already carried. | 1 |
+| `VideoFrame` | Codec packets, not browser-playable files. Stage A carries the stream character and its graph placement but deliberately creates no decoder or pixel source. | 1 |
 | `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 |
 | `Protect`, `SetTabIndex`, `DefineButtonCxform` | Authoring and player metadata with no scene content. | — |
 | `DefineButtonSound` | **Unimplemented, and blocked on a design decision rather than on effort.** It attaches sounds to a button's *state transitions* — roll out, roll over, press, release. A button imports as a one-frame timeline of its up state, so there is no interaction state machine for those transitions to hang on, and a frame cue would be the wrong shape: these fire on pointer state, not on entering a frame. Carrying them needs an interaction-state concept this package cannot invent alone. | — |

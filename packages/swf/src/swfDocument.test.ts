@@ -2134,33 +2134,87 @@ describe('createScene2DFromSwf', () => {
     });
   });
 
-  it('preserves authored dimensions from a video stream definition', () => {
-    const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
-          TAG_DEFINE_VIDEO_STREAM,
-          joinBytes(uint16(13), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+  it('materializes an unnamed video stream through eleven consecutive move records without pixels', () => {
+    const timelineTags: Uint8Array[] = [
+      createTag(
+        TAG_DEFINE_VIDEO_STREAM,
+        joinBytes(uint16(4), uint16(12), uint16(320), uint16(180), new Uint8Array([0x07, 2])),
+      ),
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(
+          new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_MATRIX]),
+          uint16(2),
+          uint16(4),
+          createMatrix(1, 0, 0, 1, 0, 0),
         ),
+      ),
+      createTag(TAG_VIDEO_FRAME, joinBytes(uint16(4), uint16(0), new Uint8Array([0xde, 0xad, 0]))),
+      createTag(TAG_SHOW_FRAME),
+    ];
+    for (let move = 1; move <= 11; move++) {
+      timelineTags.push(
         createTag(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(13),
-            swfString('videoSlot'),
-          ),
+          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_RATIO]), uint16(2), uint16(move)),
         ),
+        // The packet stays a bounded unsupported payload: it neither rejects the file nor supplies a
+        // texture source, even while the character itself participates in every frame.
+        createTag(TAG_VIDEO_FRAME, joinBytes(uint16(4), uint16(move), new Uint8Array([0xde, 0xad, move]))),
         createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
-      ]),
-    );
+      );
+    }
+    timelineTags.push(createTag(TAG_END));
 
-    expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
-      height: 180,
-      width: 320,
-      x: 0,
-      y: 0,
+    const document = createScene2DFromSwf(createSwf(timelineTags))!;
+    const root = document.root as MovieClip;
+    const video = getNodeChildren(root)[0] as Sprite;
+
+    expect(document.slots).toEqual([]);
+    expect(getMovieClipTotalFrames(root)).toBe(12);
+    expect(video.kind).toBe(SpriteKind);
+    expect(getNodeLocalBoundsRectangle(video)).toMatchObject({ height: 180, width: 320, x: 0, y: 0 });
+    expect(video.data.texture?.dimension).toBe('2d');
+    expect(video.data.texture === null ? undefined : getTextureSource(video.data.texture)).toBeNull();
+    expect(video.data.texture?.sampler).toMatchObject({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmaps: false,
     });
+
+    const observed = Array.from({ length: 12 }, (_, frame) => {
+      gotoAndStopMovieClip(root, frame + 1);
+      const matrix = getNodeLocalMatrix(video);
+      return {
+        children: [...getNodeChildren(root)],
+        matrix: { a: matrix.a, b: matrix.b || 0, c: matrix.c || 0, d: matrix.d, tx: matrix.tx, ty: matrix.ty || 0 },
+      };
+    });
+    expect(observed).toEqual(
+      Array.from({ length: 12 }, () => ({
+        children: [video],
+        matrix: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+      })),
+    );
+  });
+
+  it('instantiates an exported video stream as a sourceless Sprite', () => {
+    const source = createSwf([
+      createTag(
+        TAG_DEFINE_VIDEO_STREAM,
+        joinBytes(uint16(13), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+      ),
+      createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(13), swfString('Video'))),
+      createTag(TAG_END),
+    ]);
+    const symbol = createScene2DSymbolFromSwf(source, 'Video')!;
+
+    expect(symbol.slots).toEqual([]);
+    expect(symbol.root.kind).toBe(SpriteKind);
+    expect(getNodeLocalBoundsRectangle(symbol.root)).toMatchObject({ height: 180, width: 320, x: 0, y: 0 });
+    const texture = (symbol.root as Sprite).data.texture;
+    expect(texture === null ? undefined : getTextureSource(texture)).toBeNull();
+    expect(texture?.sampler).toMatchObject({ magFilter: 'nearest', minFilter: 'nearest', mipmaps: false });
   });
 
   it('preserves PNG and GIF dimensions embedded by DefineBitsJPEG2', () => {
@@ -3019,6 +3073,7 @@ const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
+const TAG_VIDEO_FRAME = 61;
 const TAG_DO_ACTION = 12;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FILE_ATTRIBUTES = 69;

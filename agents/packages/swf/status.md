@@ -184,8 +184,8 @@ bitmap fills followed by 2026-08-04.
   explicitly anticipates an additive third member; that route would instead widen shared types and the 2D
   and 3D loader dispatch. No route is selected here, and eager lossless resolution remains unchanged.
 - Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
-  headers, and video stream definitions retain declared frame dimensions. A video payload stays opaque
-  and no visual body is materialized.
+  headers. Video stream definitions become `Sprite` nodes over sourceless `Texture`s at their declared
+  dimensions; the payload stays opaque and draws no pixels.
 - `DefineBitsJPEG2` through `DefineBitsJPEG4` retain dimensions from bounded JPEG SOF, PNG IHDR, and
   GIF header scans, including the legacy layout where the encoding tables and the pixels are two
   concatenated streams — the end-of-image marker between them no longer ends the scan, and it is removed
@@ -280,7 +280,8 @@ the geometry it decodes. Synthetic byte-level tests
 cover all four placement generations, both removal generations, fresh/move/replacement state, linkage,
 transforms, opt-in registration, compressed rejection, malformed/truncated input, recursively nested
 sprites, composed transforms, recursive-graph rejection, stage bounds, RECT-based definition bounds,
-embedded JPEG/PNG/GIF, lossless-bitmap and video dimensions, and recursively composed sprite extents.
+embedded JPEG/PNG/GIF, lossless-bitmap dimensions, sourceless video placement through eleven move records,
+and recursively composed sprite extents.
 Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
 replayed onto the instance it targets, depth ordering when a later frame places an instance between two
 others, labels from both label tags with the header frame rate, an independently seekable nested sprite
@@ -305,10 +306,10 @@ test suite reproduces the relevant encodings without it.
 
 ## Known gaps and decision boundaries
 
-- **Structural video is unruled.** The fixed animated sweep at Flight commit `59fa8c6fc` found its only
-  wire/tree divergence in one of 29 multi-frame roots: an unnamed video placement has no node. The
-  [proposal](../../swf-video-import-proposal.md) recommends a sourceless `Sprite` as an honest first stage,
-  while leaving `VideoFrame` pixels unsupported. No implementation is authorized by that record.
+- **Video payload support remains staged.** The fixed animated sweep at Flight commit `59fa8c6fc` found
+  its only wire/tree divergence in one of 29 multi-frame roots: an unnamed video placement had no node.
+  Ratified Stage A now creates a sourceless `Sprite` and preserves that eleven-move graph shape.
+  `VideoFrame` bodies remain skipped; payload preservation and decode still require separate rulings.
 - **The bitmap-loader fork is unruled.** Encoded images use the browser `Image` load and SWF-lossless
   rasters become `Bitmap`s eagerly. Bridging the `DecodedImage` registry or adding a third resource kind
   changes shared contracts; eager lossless resolution remains until a route is selected. JPEG3/4 alpha
