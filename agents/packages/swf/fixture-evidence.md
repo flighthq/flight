@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-04
+updated: 2026-08-05
 fixturePolicy: provenance-and-derived-manifest-only
 ---
 
@@ -22,6 +22,25 @@ The canonical real-file check uses Ruffle's uncompressed named-shape test:
 
 The SWF is not redistributed by Flight: only this provenance record and the derived manifest are
 committed.
+
+## Flight commit-pin verification
+
+A Flight commit pin must already be landed and reachable from the integrated development ref, not merely
+present in the author's object database. Never pin an in-flight author or integration commit: its replay
+hash is not final. Cite its subject, date, and relevant content until it lands. Rebase replay leaves the old
+object locally resolvable until garbage collection, so `git cat-file -e` cannot detect a dead historical
+pin. Use the ancestry question instead:
+
+```sh
+git merge-base --is-ancestor <flight-commit> origin/develop
+```
+
+A negative in a Quimby workspace is not sufficient by itself because `origin/develop` may still be the
+workspace seed while integration has landed newer work. Reconcile that case with integration's landed
+commit before changing the pin; do not guess at a replay twin.
+
+This rule applies to Flight commits. The pinned Ruffle revisions and source SHA-256 values in this record
+are third-party fetch provenance, not candidates for ancestry in Flight's development ref.
 
 ## Derived document manifest
 
