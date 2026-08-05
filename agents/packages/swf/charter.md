@@ -7,6 +7,7 @@ assessment: ./assessment.md
 status: ./status.md
 tagCoverage: ./tag-coverage.md
 fixtureEvidence: ./fixture-evidence.md
+shaPinIncidentalAudit: ./sha-pin-incidental-audit.md
 ---
 
 # swf — Charter (reserved home)
