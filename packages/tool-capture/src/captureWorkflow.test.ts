@@ -8,11 +8,17 @@ describe('runCaptureBatch', () => {
   });
 
   it('rejects an empty batch before launching browser work', async () => {
-    await expect(runCaptureBatch({ subjects: [] })).rejects.toThrow(/No capture batch subjects/);
+    await expect(
+      runCaptureBatch({
+        quiet: true,
+        subjects: [],
+      }),
+    ).rejects.toThrow(/No capture batch subjects/);
   });
 
   it('continues after a subject setup error and aggregates the verdict', async () => {
     const result = await runCaptureBatch({
+      quiet: true,
       subjectWorkerCount: 2,
       subjects: [
         {
@@ -46,6 +52,7 @@ describe('runCaptureWorkflow', () => {
   it('owns the subject server once across the workflow', async () => {
     let kills = 0;
     const result = await runCaptureWorkflow({
+      quiet: true,
       subject: 'fixture',
       entries: [],
       server: { url: 'http://localhost:1', kill: () => kills++ },

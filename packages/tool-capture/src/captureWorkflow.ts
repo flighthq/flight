@@ -44,6 +44,12 @@ export interface CaptureWorkflowOptions {
   /** Synchronized performance samples and regression pass. Disabled unless configured. */
   benchmark?: Readonly<CaptureWorkflowBenchmarkOptions> | false;
   reportPath?: string | false;
+  /**
+   * Suppress the human-facing subject summary, and pass the same suppression down to validation. The
+   * returned result carries every fact the line reports. See `CaptureValidationOptions.quiet`: a caller
+   * asserting how a failure is classified should not have to emit a real-looking failure line to do it.
+   */
+  quiet?: boolean;
 }
 
 export interface CaptureWorkflowResult {
@@ -69,9 +75,11 @@ export async function runCaptureBatch(options: Readonly<CaptureBatchOptions>): P
       while (true) {
         const job = jobs.shift();
         if (job === undefined) return;
-        console.log(`${pc.bold(`Subject ${job.index + 1}/${results.length}:`)} ${job.subject.name}\n`);
+        if (options.quiet !== true) {
+          console.log(`${pc.bold(`Subject ${job.index + 1}/${results.length}:`)} ${job.subject.name}\n`);
+        }
         try {
-          const result = await runCaptureWorkflow(await job.subject.resolve());
+          const result = await runCaptureWorkflow({ quiet: options.quiet, ...(await job.subject.resolve()) });
           results[job.index] = { error: null, name: job.subject.name, result };
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -86,9 +94,11 @@ export async function runCaptureBatch(options: Readonly<CaptureBatchOptions>): P
   const aborted = results.some((subject) => subject.result?.aborted === true);
   const passed = results.length - failed;
   const shouldFail = failed > 0;
-  console.log(
-    `${shouldFail ? pc.red('✗ failed') : pc.green('✓ passed')}   ${passed} subjects passed   ${failed} subjects failed${aborted ? pc.yellow('   — interrupted') : ''}`,
-  );
+  if (options.quiet !== true) {
+    console.log(
+      `${shouldFail ? pc.red('✗ failed') : pc.green('✓ passed')}   ${passed} subjects passed   ${failed} subjects failed${aborted ? pc.yellow('   — interrupted') : ''}`,
+    );
+  }
   const reportPath =
     options.reportPath === false
       ? null
@@ -116,6 +126,8 @@ export interface CaptureBatchSubject {
 
 export interface CaptureBatchOptions {
   subjects: Readonly<CaptureBatchSubject[]>;
+  /** Suppress the human-facing per-subject and summary output, and pass it down to each subject. */
+  quiet?: boolean;
   /** Number of subjects processed concurrently. Resource concurrency remains configured per subject. */
   subjectWorkerCount?: number;
   reportPath?: string | false;
@@ -187,6 +199,7 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
       if (capture?.aborted !== true && validationOptions !== null) {
         validation = await runCaptureValidation({
           ...validationOptions,
+          quiet: options.quiet,
           subject: options.subject,
           entries: options.entries,
           server: borrowedServer,
