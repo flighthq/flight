@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/swf'
 status: solid
-score: 86
+score: 92
 updated: 2026-08-04
 ingested:
   - charter.md
@@ -14,7 +14,7 @@ ingested:
 
 ## Verdict
 
-**Solid — 86/100.** The package supplies the first honest end-to-end proof of the shared named-graph
+**Solid — 92/100.** The package supplies the first honest end-to-end proof of the shared named-graph
 contract: bounded `FWS` parsing turns named instances, transforms, and class linkage into enumerable
 `Scene2DDocument` slot references. `DefineSprite` symbols instantiate recursively, so named descendants
 survive unnamed MovieClip containers with their composed transforms. Structure is no longer frozen at one
@@ -22,12 +22,14 @@ frame: every timeline in the file crosses as `movieclip` playback data, so a doc
 ordinary `MovieClip` API with no SWF runtime retained. Shape definitions decode to real geometry, embedded fonts cross as
 path outlines, static text places them, edit-text fields arrive as assignable text nodes, compressed
 containers open through a registered decompressor, buttons contribute their up state, clip depth becomes a
-real clip, and both bytecodes give up their timeline commands without either being executed. What remains
-unbuilt is narrower than what is built: morph geometry, per-frame colour beyond alpha, blend modes and
-filters, and one deferred path shared by encoded and SWF-lossless bitmap payloads. Stage, shape, text, morph,
-embedded-image, lossless-bitmap, video, and recursively composed sprite extents cover the available
-named-graph sizing contract. A revision-pinned uncompressed Ruffle fixture supplies real-file evidence for
-the named-slot path and exposed the zero-bit RECT compatibility case now covered synthetically.
+real clip, morph definitions become painted retained geometry, and both bytecodes give up bounded timeline
+commands without either being executed. Placement colour transforms, ordinary blend modes, advanced-blend
+reports, and filter reports now preserve per-frame appearance instead of being parsed past. Both encoded
+and SWF-lossless bitmap fills reach pixels, although their two loader contracts remain an unruled API fork.
+The remaining SWF-local work is narrower: structural video placement, JPEG3/4 alpha, nested-mask
+intersection, scene ranges, and interaction-state sound all wait on explicit target shapes. A
+revision-pinned Ruffle pair supplies named-graph and two-frame replacement evidence, while fixed corpus
+sweeps pin breadth, frequency, and the one observed video divergence.
 
 ## What is solid
 
@@ -65,8 +67,9 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   decoder cannot read costs that character's drawing and nothing else — the document still imports, with
   the definition as the bounded placeholder it was before geometry existed.
 - Fill coverage is honest about its edge: gradients pass through with ratios, spread, and a matrix that
-  needed only a translation change because Flight's gradient box is SWF's gradient square; bitmap fills are
-  read for alignment and left unpainted rather than approximated by a solid colour.
+  needed only a translation change because Flight's gradient box is SWF's gradient square. Bitmap fills
+  retain sampler intent and paint through a character-keyed texture: encoded images bind during the shared
+  image-resource load, while lossless rasters unpack at import through the registered decompressor.
 - Embedded images cross as undecoded bytes on an asset reference, with the media type sniffed from the
   payload's magic. Import stays synchronous and allocates no pixels; decoding belongs to the resolve step,
   which may be asynchronous and which a caller that does not need an image never runs. The reference is
@@ -80,9 +83,20 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   shapes decode through the same edge-record reader the shape tags use — minus the style array a glyph
   does not carry — and static text places them by index, scaled and recoloured per record. No text stack
   is involved, and nothing is flattened that should not be.
+- `DefineEditText` becomes assignable `RichText` rather than flattened artwork. It keeps the authored
+  string, box, colour, format, selection and wrapping flags; the HTML-markup branch is parsed explicitly
+  because the tag declares that the stored string is markup.
+- `DefineMorphShape`/`2` become painted `MorphShape` nodes. Start and end edge streams are walked together,
+  the placement ratio drives geometry and paint per frame, and authored bounds interpolate with it.
 - Timelines cross as data, not as a player. Each one becomes a `TimelineSource` on a `MovieClip`, so
   playback, seeking, looping, and label lookup are the `movieclip`/`timeline` engine's, and the codec
   keeps no runtime of its own — the seam `TimelineSource` was written for.
+- AVM1 `DoAction`/`DoInitAction` and AVM2 `addFrameScript` handlers contribute frame scripts only when the
+  whole bounded body is recognized as playback commands. The AVM2 parse composes through
+  `@flighthq/abc`; the SWF package does not own a general ABC parser or execute bytecode.
+- Per-frame placement appearance is preserved across Flight's two tiers. Colour transforms become node
+  alpha and adjustments, ordinary blend modes live on the node, and advanced blends plus spatial filters
+  leave on `SwfDocumentImport.appearances` for explicit application.
 - Frames are whole display lists, so any seek is a lookup rather than a replay, and the allocation
   boundary is explicit: every node a timeline can show exists before playback starts, and
   `constructFrame` only attaches, detaches, reorders by depth, and re-transforms. An instance keeps its
@@ -120,43 +134,36 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 
 ## Remaining depth
 
-- Bitmap resolution currently has two complete paths rather than one. Embedded PNG, JPEG, and GIF bytes
-  leave on `Scene2DDocument.imageResources`; `loadScene2DImageResources` decodes each reference once and
-  binds the resulting `Image` into every waiting bitmap-fill texture. A focused integration test starts
-  with a full 1x1 PNG inside `DefineBitsJPEG2` and proves that exact SWF texture is sourceless before the
-  load and image-backed after it. SWF-lossless payloads instead inflate and unpack synchronously at import.
-  Unifying those paths remains an API decision, not a missing-pixel bug; no routing choice is made here.
-- `DefineEditText` is still structural only, and deliberately so: it carries a string plus a font
-  reference rather than glyph indices, so it needs the font's code table, its advance table, and line
-  breaking — and flattening it to paths would destroy the editability that defines it. The outlines are
-  imported; a path-backed glyph source to consume them is the unbuilt piece. The measured corpus puts
-  `DefineEditText` in 49 files against 6 for static text, so this is the larger half of text by usage.
-- Morph shapes keep bounds alone; their paired start/end geometry has no 2D-morph home to land in.
-- Playback carries placement transforms and clip-depth masks. Per-frame color transforms, blend modes,
-  filters, and `DoAction`/`DoInitAction` frame scripts are still parsed past rather than imported, so a
-  frame's visual state remains narrower than its structural state. Frame scripts in particular have a
-  natural home in `Timeline.frameScripts` and none is used yet.
+- Bitmap resolution has two working paths rather than one. Embedded PNG, JPEG, and GIF bytes leave on
+  `Scene2DDocument.imageResources`; `loadScene2DImageResources` decodes each reference once and binds it
+  into every waiting texture. SWF-lossless payloads instead inflate and unpack synchronously at import.
+  Choosing a `DecodedImage` bridge or a third image-reference kind remains an API ruling, not a
+  missing-pixel bug. JPEG3/4's separate alpha stream cannot be rejoined honestly until that resolved-image
+  hand-back point is selected.
+- Video definitions retain extents but do not materialize unnamed placements, and `VideoFrame` bodies stay
+  opaque. The pinned animated sweep found this as the only wire/tree divergence among 29 multi-frame root
+  timelines. The unruled structural-first proposal would add a sourceless `Sprite` without claiming pixel
+  support; full decode is a separate cross-package resource project.
 - Nested masks collapse to the innermost rather than intersecting, because a node carries one clip. A file
   that genuinely nests two masks over one instance will clip to the inner one alone.
-- Bounds coverage follows definitions with immediate RECT or dimension prefixes. Legacy table-based
-  JPEG, button, and font extents require their own tag interpretation. A symbol's extent is the union
-  across its frames, so it is stable but looser than a per-frame extent would be.
-- `CWS`/`ZWS` are recognized but rejected until the chartered registered decompression seam exists.
-  `DoABC` remains skipped rather than exposed as an opaque blob.
+- Scene names are read past because Flight has frame labels but no subject for a named frame range.
+- Some SWF filter fields have no honest target-effect member and remain reported at the supported fidelity
+  rather than guessed. `DefineButtonSound` likewise waits for a shared button-state transition subject.
+- `CWS` works through the shared deflate registration. The same seam already recognizes `ZWS`, but the
+  LZMA registrant is Rust/wasm work in the separate `flight-rs` repository and cannot be built here.
+- Broader AVM2 parsing belongs to the separate `abc` cell behind the existing seam. It is not an SWF
+  package direction, and execution remains outside Flight.
 - Real-file evidence now spans a 306-file sweep of Ruffle's test corpus as well as the canonical
-  fixture: nothing throws, every uncompressed file imports, and all 247 rejections are compressed
-  containers. That retires the "no external file has crossed this importer" caveat for parsing. It does
-  not retire it for rendering — nothing in the sweep is rasterized, so geometry is checked as commands,
-  never as pixels, and no external file has been compared against a reference player. The separate pinned
-  animated fixture does cross one real two-frame root replacement and node restoration. There is still no
-  diagnostic query or representative external proof for nested timelines, linkage variants, or the
-  broader supported extent prefixes. Other display-list opcode generations, move/update state, and nested
-  traversal remain covered synthetically, including unnamed intermediate symbols, removal, truncation,
-  and cycle rejection.
+  pair. Deflate registration imports 301 of 306 files; the remaining five are all `ZWS`. The sweep checks
+  decoded commands and constructed trees, not reference-player pixels. The 17 nested clips are stepped but
+  not wire-cross-checked, so nested-timeline evidence remains deliberately weaker than the 29 checked root
+  timelines. Functional synthetic scenes now provide DOM/Canvas/WebGL/WebGPU pixels for the supported
+  geometry, text, lossless bitmap, alpha, and colour-adjustment paths.
 
 ## Boundary conclusion
 
 SWF remains a codec into Flight data, not a player: it constructs a document plus the frame data
-`movieclip` plays, and retains no VM or SWF runtime of its own. The named-graph importer, its animated
-timelines, and one provenance-backed external proof are present. Visual-tag breadth, per-frame appearance
-state, compression, and broader compatibility evidence should remain separately staged.
+`movieclip` plays, and retains no VM or SWF runtime of its own. The named-graph importer, animated
+timelines, appearance data, visual definitions, resource references, and provenance-backed external
+evidence are present. The next local change is whichever bounded decision is authorized — structural
+video or bitmap-loader unification — while LZMA and broader ABC work stay outside this repository or cell.

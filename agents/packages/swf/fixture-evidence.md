@@ -217,6 +217,7 @@ aggregate result.
 - Repository and revision: `ruffle-rs/ruffle` at `f8d8de6bb15c3d7a799d7088997422b926c8478c`.
 - Sample: every `.swf` in the tree under 300 KB, sorted by path, taking every sixteenth — 306 files,
   1.9 MB, spanning `avm1`, `avm2`, Shumway, Gnash/Ming, and exporter fixtures.
+- Flight measurement commit: `f0c56ba7d0d92b4bbd8910b458b22213d3ebac0d`.
 
 Result at the revision that added shape geometry and End-tag tolerance:
 
@@ -280,7 +281,8 @@ Fetch that list into `.test-assets/swf/corpus/` (flattening `/` to `__`), then i
 Run over the same corpus with deflate registered, counting how many of the 301 readable files carry each
 tag. It exists to rank remaining work by what real files actually contain rather than by what a reader of
 the spec would assume. The corpus skews toward AVM behaviour tests, so scripting tags are over-represented
-— the visual-tag rows are the usable signal.
+— the visual-tag rows are the usable signal. Absolute counts below were recorded at Flight commit
+`8dd53f4a24b493182514956cfdc0880d745b729e`.
 
 | Tag | Files |
 | --- | --- |
@@ -309,7 +311,8 @@ next — cover 5% of placements and one file respectively.
 Every earlier sweep measured the *import*: does a file parse, and how much geometry comes out. None of
 them ever ran a second frame. Multi-frame behaviour — attach, detach, reorder, re-transform — rested
 entirely on synthetic bytes until this sweep, which steps every multi-frame clip in the corpus through
-all of its frames with `gotoAndStopMovieClip` and records what the tree does.
+all of its frames with `gotoAndStopMovieClip` and records what the tree does. Absolute counts below were
+recorded at Flight commit `59fa8c6fc6b959351ab94156866a382898996266`.
 
 | Measure | Value |
 | --- | --- |

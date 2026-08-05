@@ -6,55 +6,88 @@ basedOn: ./review.md
 
 # swf — Assessment
 
+## Audit basis
+
+This assessment was checked against `packages/swf/src`, its colocated tests, and the functional SWF scenes
+at Flight commit `4074fdc8f`. Corpus statements use the fixed Ruffle sample and revision recorded in
+[`fixture-evidence.md`](fixture-evidence.md); every absolute below names the Flight commit that recorded
+the measurement so a later corpus or importer change cannot silently rewrite the claim.
+
 ## Closed since review
 
-- **Embedded image resolution is complete.** `DefineBitsJPEG2`/`3`/`4` payloads whose magic identifies
-  JPEG, PNG, or GIF leave the synchronous importer as embedded image references, with every sampler
-  variant's waiting texture attached. `loadScene2DImageResources` decodes each reference once and binds the
-  resulting `Image` into all of those textures. The cross-package proof builds bitmap-filled SWF artwork
-  around a complete 1x1 PNG, checks the emitted bytes and texture identity, runs the shared loader, and
-  observes the browser-backed image on that exact fill texture.
-- **A real animated file now crosses the importer.** The pinned `goto_execution_order` fixture declares
-  two root frames and replaces character 1 with character 2 at one occupied depth. The derived manifest
-  proves `gotoAndStopMovieClip` changes the imported node identity on frame 2 and restores the original
-  node on frame 1. Its source recipe, size, SHA-256, wire records, and derived behavior are recorded without
-  committing the binary.
+- **Text and morph content are real nodes.** `DefineEditText` creates assignable `RichText`, including the
+  authored format and explicitly parsed HTML-markup branch. `DefineMorphShape`/`2` create painted
+  `MorphShape` geometry whose per-placement ratio and bounds change with the timeline. Neither is a
+  bounds-only placeholder now.
+- **Per-frame appearance crosses the importer.** A placement colour transform becomes node alpha plus a
+  colour adjustment; ordinary blend modes live on the node; advanced blends and spatial filters leave on
+  `SwfDocumentImport.appearances`; colour-matrix filters join the node adjustment stack. Move records
+  inherit or replace each channel on the frame that authored it. At measurement commit `8dd53f4a2`, the
+  fixed corpus contained colour transforms on 41 of 784 placements and a blend mode in one file. Those
+  low-prevalence items are implemented, not work that should still outrank measured gaps.
+- **Both script generations supply bounded playback data.** AVM1 `DoAction` and `DoInitAction` recognize
+  all-playback blocks. AVM2 frame control is recovered through the separate `@flighthq/abc` seam by
+  reading `addFrameScript` and the handler it names; no bytecode is executed. Wider ABC parsing belongs to
+  the `abc` cell under the charter's 2026-07-25 ruling and is not SWF-package work.
+- **Bitmap payloads reach pixels.** Encoded JPEG/PNG/GIF references bind through
+  `loadScene2DImageResources`; SWF-lossless rasters unpack at import through the registered deflate seam.
+  The functional SWF scene renders its lossless checker on DOM, Canvas, WebGL, and WebGPU. The remaining
+  question is one loader contract for both paths, not whether the pixels exist.
+- **Real-file evidence covers structure and animation.** The revision-pinned canonical pair crosses the
+  named-graph and a two-frame depth replacement. The broader animated sweep steps 46 clips and
+  wire-cross-checks 29 root timelines; the nested 17 are stepped without a wire comparison, an explicit
+  evidence limit rather than an importer claim.
 
-## Depth gaps
+## Ranked remaining decisions
 
-1. **AVM2 timeline control, then per-frame appearance.** AVM1 playback commands now import; AVM2 does not,
-   and it is the larger share — `DoABC` appears in 187 corpus files against 101 for `DoAction`. Recognizing
-   a frame's `stop()` there needs the ABC constant pool, method bodies, and the `addFrameScript` calls a
-   compiler-generated MovieClip subclass constructor makes, which the charter's blessed 2026-07-25 ruling
-   places in its own cell behind a seam rather than here. Then per-frame appearance (lower than it looks — see the measurements above). Placement transforms and clip-depth masks replay; the
-   color transform, blend mode, and filter list on the same records are parsed past, and
-   `DoAction`/`DoInitAction` frame scripts have a home in `Timeline.frameScripts` that nothing fills
-   yet. A frame's visual state is narrower than its structural state until these cross.
-2. **Add LZMA, and expand compatibility evidence.** Deflate is settled: `@flighthq/compression` owns the
-   inflate and the shared registry, and one `registerDeflateDecompressor()` takes the corpus from 59 to
-   301 of 306 files. Only `ZWS` remains, at 5 of 306 files, and it is the natural first candidate for a
-   Rust/wasm registrant rather than a hand-written TypeScript decoder. Also expose `DoABC` payloads
-   opaquely. The broader external animated sweep steps 46 clips and wire-cross-checks 29 root timelines;
-   the canonical pinned fixture records one exact replacement manifest. Nested-timeline correctness still
-   relies on synthetic bytes.
+1. **Rule on structural video import before implementing it.** At measurement commit `59fa8c6fc`, one of
+   29 multi-frame root timelines diverged from its wire records because an unnamed `DefineVideoStream`
+   placement earns no node; the fixed sample contains video in 1 of 306 files. The unruled
+   [video proposal](../../swf-video-import-proposal.md) recommends a bounded first stage: a sourceless
+   `Sprite` preserves extents, identity, moves, masks, and seeks while continuing to state that
+   `VideoFrame` pixels are unsupported. It does not authorize a decoder or a generic video resource.
+2. **Rule on the shared bitmap-loading contract.** Encoded images currently resolve through the browser
+   `Image` path while SWF-lossless data becomes a `Bitmap` eagerly. The two honest designs remain a bridge
+   from the MIME-keyed `@flighthq/image-codec` `DecodedImage` result into the loader, or an additive third
+   `ImageResourceReference` kind with both 2D and 3D loader dispatch. Straight versus premultiplied alpha
+   is part of the first route. No route is selected here, and the working eager lossless path must remain
+   unchanged until the ruling.
+3. **Rank only the remaining local fidelity gaps after those decisions.** `DefineBitsJPEG3`/`4` drops its
+   separate alpha stream (one file in the fixed 301-readable-file sample at `8dd53f4a2`); nested masks keep
+   only the innermost clip; scene names have no timeline-scene home; and some SWF filter fields exceed the
+   target effect vocabulary. `DefineButtonSound` still needs an interaction-state subject rather than a
+   frame cue. The committed samples do not establish an ordering among those items beyond the one-file
+   JPEG-alpha observation.
+
+## External and out-of-cell work
+
+- **`ZWS` is not local implementation work.** At measurement commit `f0c56ba7d`, registering the settled
+  deflate decoder moves the fixed corpus from 59 to 301 imports out of 306; the remaining 5 are all the
+  LZMA `ZWS` form. `swf` already maps that container to the shared `Compression.Lzma` registry key. The
+  natural implementation is a Rust/wasm registrant built in the separate `flight-rs` repository. It
+  cannot be built in this repository and must not be re-scoped as a hand-written TypeScript decoder.
+- **AVM2 is not a new SWF-package direction.** The bounded frame-command recognition already composes
+  through `@flighthq/abc`. Any broader ABC format work belongs to its own cell behind that seam, and a VM
+  remains outside Flight entirely.
+- **Backend capability is not parser loss.** WebGL and WebGPU opt into colour-adjustment accumulation and
+  render the imported transform. Canvas and DOM have no such registrar, so their honest result is a null
+  render-proxy adjustment and untinted pixels. The importer preserves the authored adjustment in both
+  cases; adding a Canvas registrar or unconditional accumulation would be a renderer decision, not an SWF
+  repair.
 
 ## Recommended
 
-_None. The canonical uncompressed real-file evidence is revision-pinned and reproducible without
-committing the external asset or making tests network-dependent._
+Do not start either unruled fork. If structural video Stage A is authorized, it is the next bounded local
+slice because it has an exact real-file divergence and does not pretend to decode pixels. Report the
+bitmap-routing alternatives for a ruling in parallel. No LZMA or broader AVM2 implementation belongs in
+this repository.
 
-## Backlog
+## Backlog after the rulings
 
-- A single deferred route for both encoded images and SWF-lossless rasters. The current seams support two
-  materially different designs: teach the embedded resolver to consult the MIME-keyed
-  `@flighthq/image-codec` registry and bridge its raw `DecodedImage` into a texture source, or add the
-  explicitly anticipated third member to the v1-closed `ImageResourceReference` union and teach resource
-  loaders how it resolves. The first crosses an existing `Image`-returning browser path and must settle
-  straight versus premultiplied alpha; the second widens shared types and both 2D/3D loader dispatch. This
-  assessment records the fork without selecting one, and keeps the working eager lossless path unchanged.
-- Visual definition breadth beyond the canonical named-shape fixture's structural bounds.
-- Scene names from `DefineSceneAndFrameLabelData`, read past today because a scene is a named frame
-  range rather than a frame label and has no Flight home yet.
-- Registered `CWS`/`ZWS` decompression seams.
-- Opaque `DoABC` payload exposure and any separate ABC parser. ABC execution remains out of scope.
-- Structured parse diagnostics and broad version/tag compatibility reporting.
+- Rejoin `DefineBitsJPEG3`/`4` colour and alpha once the resolved-image hand-back point is chosen.
+- Represent intersecting nested masks if the clip vocabulary gains a multi-region subject.
+- Represent scene ranges from `DefineSceneAndFrameLabelData` if the timeline vocabulary gains scenes.
+- Preserve filter fields only after their target effect types can state them without approximation.
+- Add structured parse diagnostics and a reference-player pixel comparison; extend the wire cross-check
+  from root timelines to instantiated nested sprites.
+- Carry `DefineButtonSound` only after button interaction states have a shared subject.

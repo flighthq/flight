@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-03
+updated: 2026-08-04
 ---
 
 # swf — tag coverage
@@ -15,7 +15,7 @@ rare in the wild.
 | Tag | Becomes | Files |
 | --- | --- | --- |
 | `End`, `ShowFrame` | Frame boundaries — every frame's display list | 301 |
-| `PlaceObject` … `PlaceObject4` | Placements: depth, character, name, transform, linkage, clip depth, colour-transform alpha | 80 |
+| `PlaceObject` … `PlaceObject4` | Placements: depth, character, name, transform, linkage, clip depth, colour transform, blend mode, filters | 80 |
 | `RemoveObject`, `RemoveObject2` | Display-list removal before the frame closes | — |
 | `DefineSprite` | A nested `MovieClip` with its own playhead | 75 |
 | `DefineShape` … `DefineShape4` | `Shape` geometry: fills, gradients, strokes | 49 |
@@ -25,7 +25,7 @@ rare in the wild.
 | `DefineButton`, `DefineButton2` | The up state, as a one-frame timeline | 6 |
 | `DefineBits` + `JPEGTables` | A spliced JPEG payload on an asset reference | 1 |
 | `DefineBitsJPEG2` … `JPEG4` | An encoded payload on an asset reference, with extents | 1 |
-| `DefineBitsLossless`, `2` | An encoded payload plus declared extents | 5 |
+| `DefineBitsLossless`, `2` | Decoded pixels plus declared extents when deflate is registered | 5 |
 | `DefineVideoStream` | Declared frame extents (payload opaque) | 1 |
 | `SetBackgroundColor` | `Scene2DDocument.backgroundColor` | 250 |
 | `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
@@ -33,6 +33,7 @@ rare in the wild.
 | `DefineMorphShape`, `2` | Geometry and paint, driven by the placement ratio | 4 |
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
+| `DoInitAction` | A frame-1 script on the sprite it names, under the same recognition rule as `DoAction` | 11 |
 | `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
 | `DefineScalingGrid` | A `Scale9Shape` when the sprite it names is a wrapper around one shape; see below | — |
 | `DefineSound` | An `AudioResourceReference` on the document, tagged with the format's media type | 2 |
@@ -45,7 +46,6 @@ These are read past. Each is a decision, not an oversight.
 
 | Tag | Why | Files |
 | --- | --- | --- |
-| `DoInitAction` | A frame-1 script on the sprite it names, under the same recognition rule as `DoAction` | 11 |
 | Everything else in a `DoABC` payload | Read, never run. Only `addFrameScript` and the playback calls its handlers make are recognized; all other bytecode is inert data. | — |
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
