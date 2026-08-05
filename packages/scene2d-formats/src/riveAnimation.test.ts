@@ -345,10 +345,10 @@ describe('createRiveAnimationClips', () => {
     const { clips } = buildWithInterpolator(ELASTIC_INTERPOLATOR, { [AMPLITUDE]: 1, [PERIOD]: 0.4, [EASING]: 1 });
     const track = clips[0].clip.channels[0].track;
 
-    // A linear fallback would put the midpoint exactly halfway; an elastic curve overshoots past the
-    // target and settles back, so the sampled value must leave the straight line.
+    // With amplitude 1 and period 0.4, t=0.5 is one full wave after the 0.1 phase and therefore lands
+    // exactly on the target. A linear fallback would instead produce 50.
     sampleAnimationTrack(_scratch, track, 0.5);
-    expect(_scratch[0]).not.toBeCloseTo(50, 1);
+    expect(_scratch[0]).toBeCloseTo(100, 6);
   });
 
   it('uses the amplitude and period the interpolator states rather than fixed constants', () => {
@@ -359,15 +359,10 @@ describe('createRiveAnimationClips', () => {
       sampleAnimationTrack(_scratch, result.clips[0].clip.channels[0].track, time);
       return _scratch[0];
     };
-    // The widest gap across the curve, not one sample: two oscillations cross each other repeatedly,
-    // so any single time can land where they happen to agree.
-    const widest = Math.max(
-      ...Array.from({ length: 99 }, (_, index) =>
-        Math.abs(sampled(narrow, (index + 1) / 100) - sampled(wide, (index + 1) / 100)),
-      ),
-    );
-
-    expect(widest).toBeGreaterThan(20);
+    // At t=0.1 the stated damped-sine formula gives 150 for period 0.2 and 61.6977778440511 for 0.9.
+    // Fixed constants, ignored properties, or a linear fallback cannot produce this pair.
+    expect(sampled(narrow, 0.1)).toBeCloseTo(150, 6);
+    expect(sampled(wide, 0.1)).toBeCloseTo(61.6977778440511, 6);
   });
 
   // ScriptedInterpolator runs Rive's own scripting language, which a codec does not execute. Its
@@ -535,8 +530,7 @@ describe('createRiveAnimationClips', () => {
     const out = [0];
 
     sampleAnimationTrack(out, clips[0].clip.channels[0].track, 0.5);
-    expect(out[0]).toBeGreaterThan(0);
-    expect(out[0]).toBeLessThan(40);
+    expect(out[0]).toBeCloseTo(2.401618414996858, 6);
   });
 
   it('drops a repeated frame rather than giving the track two samples at one time', () => {

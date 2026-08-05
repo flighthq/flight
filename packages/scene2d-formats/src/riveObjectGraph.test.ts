@@ -73,8 +73,8 @@ describe('createRiveObjectGraph', () => {
       diagnostics,
     );
 
-    expect(graph.artboards[0].parentIndices.filter((parent) => parent === -1).length).toBeGreaterThan(1);
-    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('rive.parent-cycle');
+    expect(graph.artboards[0].parentIndices).toEqual([-1, -1, 1]);
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.parent-cycle']);
   });
 
   it('roots a component that states no parent at all', () => {

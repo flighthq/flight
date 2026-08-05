@@ -37,7 +37,6 @@ describe('createRiveSkeleton2D', () => {
       ),
     );
 
-    expect(result).not.toBeNull();
     expect(result!.skeleton.bones.map((bone) => bone.name)).toEqual(['root', 'tip']);
     expect(result!.skeleton.bones[1].parentIndex).toBe(0);
     expect(result!.skeleton.bones[0].parentIndex).toBe(-1);

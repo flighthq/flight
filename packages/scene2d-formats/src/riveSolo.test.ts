@@ -64,7 +64,7 @@ describe('applyRiveSolo', () => {
       ),
     );
 
-    expect(diagnostics.map((entry) => entry.kind)).toContain('rive.solo-unresolved-active');
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.solo-unresolved-active']);
     expect(visibility(solo)).toEqual([['a', true]]);
   });
 
@@ -76,7 +76,7 @@ describe('applyRiveSolo', () => {
       diagnostics,
     );
 
-    expect(diagnostics.map((entry) => entry.kind)).toContain('rive.solo-unresolved-active');
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.solo-unresolved-active']);
   });
 });
 
