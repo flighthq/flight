@@ -20,18 +20,18 @@ The package exists, is registered (tsconfig paths/build refs, sdk barrel + `scen
 The four rules these landed under are in [rig model](./rig-model.md) — read that before adding a registry,
 a deformer, or proposing a package split on bundle-cost grounds.
 
-- **Constraint solvers, as an OPT-IN registered family** keyed by kind: IK (`1030a3635`), transform
-  (`8d3a79276`), path (`e2b25b175`). `solveSkeleton2DConstraints` walks the list in
+- **Constraint solvers, as an OPT-IN registered family** keyed by kind: IK (`3f65ab9de`), transform
+  (`142004ac5`), path (`f692eb630`). `solveSkeleton2DConstraints` walks the list in
   declared order; each solver writes bone LOCAL transforms and refreshes the bones it moved, and the
   caller re-runs the world pass once afterward. IK covers one-bone aim and two-bone law-of-cosines with
   mix, bend direction, stretch and compress. Named deferrals, deliberately absent from the types rather
   than accepted and ignored: Spine's IK `softness`, the transform constraint's `local`/`relative`
   variants, and chains longer than two bones (a different, iterative algorithm).
-- **`PathAttachment2D`** (`0fe76d2d4`) as the third attachment family member beside region and mesh, with
+- **`PathAttachment2D`** (`97a387a9b`) as the third attachment family member beside region and mesh, with
   `deformSkeleton2DPathAttachment` — weighted branch byte-identical to the mesh deformer's, since `Skin2D`
   carries no triangles and no UVs and was already geometry-agnostic.
-- **Deform offsets** (`20466a2d5`) on both deformers, as a trailing parameter.
-- **Animation channels dispatch on a target kind through a binder registry** (`7f2f72624`), replacing the
+- **Deform offsets** (`de78e0dd8`) on both deformers, as a trailing parameter.
+- **Animation channels dispatch on a target kind through a binder registry** (`4a1be1497`), replacing the
   structural `typeof target.boneIndex` probe. Slot colour and attachment swap were already implemented
   before this arc despite the animation-model doc describing them as unbuilt.
 - **`computeSkeleton2DBoneWorldTransform`** extracted as the primitive `computeSkeleton2DWorldTransforms`
@@ -125,7 +125,7 @@ are compared, re-read at a pull seam, with bare assignment as the API. The bare 
 *violated* it, by making a reference-shaped dependency invisible and then trying to catch the consequence
 with a length heuristic. **Staleness is now unrepresentable rather than guarded against.**
 
-Separately and independently, the two length guards were changed from `>=` to `===` (`fe25ec3da`). They
+Separately and independently, the two length guards were changed from `>=` to `===` (`31a95b210`). They
 remain the only protection against a genuinely mis-sized *authored* buffer, and `>=` accepted an over-long
 one silently there too. A caller with one oversized scratch buffer passes `subarray(0, n)`.
 

@@ -15,15 +15,31 @@ skinned geometry, or proposing that anything in here move to a package of its ow
 **Pinning convention.** Every claim about what the tree currently contains names a SHA and a path, so a
 reader can check it rather than trust it. A claim without one is a claim about intent, not about code.
 
+**A pin must name a commit REACHABLE FROM THE INTEGRATION BRANCH, and that is not the same as one your
+own clone can resolve.** A rebase rewrites every commit it replays, so the SHAs you wrote yesterday become
+dangling objects — still resolvable locally, because your clone keeps them until it garbage-collects, and
+dead for everyone else. Every pin in this file was silently in that state once: `git cat-file -e` said all
+eight were fine while `git merge-base --is-ancestor <sha> origin/<branch>` said none of them was.
+
+So the check is the second command, not the first:
+
+    for sha in $(grep -ohE '\b[0-9a-f]{9}\b' agents/packages/<cell>/*.md | sort -u); do
+      git merge-base --is-ancestor "$sha" origin/develop || echo "UNREACHABLE $sha"
+    done
+
+Re-pin after any rebase, mapping each old commit to its replayed twin by subject line. **The failure is
+worth naming because it is this convention's own blind spot:** pinning exists so a reader can verify a
+claim, and a pin that resolves only for its author verifies nothing while looking rigorous.
+
 ## 1. Two registries, opposite defaults, and the rule that decides which
 
 This package carries two registries and they behave differently on purpose. Reading one and assuming the
 other matches will produce a bug that only shows up as something silently not happening.
 
 **Animation target binders are PRELOADED** — `packages/skeleton2d/src/skeleton2dAnimationTarget.ts` at
-`7f2f72624` enters the bone and slot binders into its private map at module scope. Nothing has to opt in.
+`4a1be1497` enters the bone and slot binders into its private map at module scope. Nothing has to opt in.
 
-**Constraint solvers are OPT-IN** — `packages/skeleton2d/src/skeleton2dConstraint.ts` at `1030a3635`
+**Constraint solvers are OPT-IN** — `packages/skeleton2d/src/skeleton2dConstraint.ts` at `3f65ab9de`
 starts empty, and each family has its own registrar (`registerSkeleton2DIkConstraintSolver`,
 `registerSkeleton2DTransformConstraintSolver`, `registerSkeleton2DPathConstraintSolver`).
 
@@ -52,7 +68,7 @@ It is the detail most likely to be got wrong by reasoning from the name.
 **Offsets apply to the BONE-LOCAL offset, before the weighted sum** — never to the world position after
 it. Adding a bone-local displacement to a world position produces a deformation that looks correct at
 rest and wrong the moment the rig moves, which is the hardest kind of bug to attribute. The tests at
-`20466a2d5` (`packages/skeleton2d/src/deformMeshAttachment2D.test.ts`) assert a value only reachable if
+`de78e0dd8` (`packages/skeleton2d/src/deformMeshAttachment2D.test.ts`) assert a value only reachable if
 the offset is applied first, so getting the order wrong fails rather than silently passing.
 
 A `deform` stream too short for what it parallels is **ignored entirely** rather than read past. An
@@ -71,7 +87,7 @@ stream a handle is an absolute coordinate and needs influences of its own.
   indices and the same weights, with its own local offsets, so it travels rigidly with its anchor.
 
 **This is an import-time DATA rule, not a runtime one.** With it applied, nothing in
-`deformSkeleton2DPathAttachment` (`0fe76d2d4`) distinguishes an anchor from a handle, and the two failure
+`deformSkeleton2DPathAttachment` (`97a387a9b`) distinguishes an anchor from a handle, and the two failure
 modes become unreachable rather than guarded against: handles cannot be skipped (they occupy positions in
 the same stream) and tangents cannot shear (copying the anchor's bone-and-weight pairs *is* rigid travel).
 
@@ -95,8 +111,8 @@ runs of the same consumer, with and without the path module and its package edge
 | Consumer | Without the path edge | With it | Difference |
 | --- | --- | --- | --- |
 | Rig user importing skeleton2d, nothing path-related | 2051 | 2051 | **0** |
-| Rig user registering only the IK solver (at `e2b25b175`) | 2768 | 2768 | **0** |
-| The same IK-only consumer re-measured at `9626bfa75` | 2825 | 2825 | **0** |
+| Rig user registering only the IK solver (at `f692eb630`) | 2768 | 2768 | **0** |
+| The same IK-only consumer re-measured at `d8f6b638b` | 2825 | 2825 | **0** |
 
 **Read the difference column, not the absolutes.** The absolute size of a rig bundle moves whenever
 anything it imports changes — the third row is the second one re-run after the guard seam became
