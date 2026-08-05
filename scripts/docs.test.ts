@@ -244,6 +244,14 @@ describe('isAuthorityBearingDoc', () => {
     expect(isAuthorityBearingDoc('agents/packages/skeleton2d/status.md')).toBe(false);
   });
 
+  // The second half of the corpus exclusion's boundary, and the reason it is safe for the fixtures in
+  // this very file to name real documents. Even if a source tree were ever added to the scanned corpus,
+  // a test file could not exonerate a doc: authority is a filename test and no source file passes it.
+  it('does not count a source file, so a link in a test fixture can never mark a doc reached', () => {
+    expect(isAuthorityBearingDoc('scripts/docs.test.ts')).toBe(false);
+    expect(isAuthorityBearingDoc('packages/tool-capture/src/captureValidation.ts')).toBe(false);
+  });
+
   it('does not count a review or assessment either, which record findings rather than direction', () => {
     expect(isAuthorityBearingDoc('agents/packages/image/review.md')).toBe(false);
     expect(isAuthorityBearingDoc('agents/packages/image/assessment.md')).toBe(false);
