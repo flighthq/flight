@@ -43,6 +43,36 @@ export function findUnrunTestPackages(root: string, executedFiles: readonly stri
   return unrun.sort();
 }
 
+/**
+ * Test files a whole-repo run deliberately does not execute, and where the coverage actually lives.
+ *
+ * A DELIBERATE OMISSION IS STILL AN OMISSION. The package-level report above catches a package that
+ * vanished entirely; this catches the subtler case where a package still runs and only some of its files
+ * quietly do not — which no count reveals, because the remaining files all pass. If the named leg ever
+ * stops running these, this line is the only place a reader would learn the contract is now covered
+ * nowhere, rather than reading "1439 passed" and believing it.
+ */
+export function findOmittedTestFiles(root: string, executedFiles: readonly string[]): string[] {
+  const packagesDir = join(root, 'packages');
+  if (!existsSync(packagesDir)) return [];
+  const ran = new Set(executedFiles.map((file) => relative(root, file)));
+  const omitted: string[] = [];
+  collectMatchingTestFiles(packagesDir, root, omitted);
+  return omitted.filter((file) => !ran.has(file)).sort();
+}
+
+function collectMatchingTestFiles(dir: string, root: string, out: string[]): void {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== 'node_modules' && entry.name !== 'dist') collectMatchingTestFiles(full, root, out);
+      continue;
+    }
+    if (DELIBERATELY_OMITTED_TEST_FILE.test(entry.name)) out.push(relative(root, full));
+  }
+}
+
 function hasTestFile(dir: string): boolean {
   if (!existsSync(dir)) return false;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -54,6 +84,12 @@ function hasTestFile(dir: string): boolean {
   }
   return false;
 }
+
+// Browser contracts. They launch Chromium, which the root run has no browser for, so they are excluded
+// from the tool-capture project and run by `npm run test:unit` under each package's own config — on the
+// CI leg that installs it. Kept as a pattern rather than a file list so a NEW e2e file is announced the
+// day it is added instead of joining the silence.
+const DELIBERATELY_OMITTED_TEST_FILE = /\.e2e\.test\.ts$/;
 
 // A positional argument is a name or path filter, so the run is a subset BY REQUEST rather than by
 // omission. Flags are not, and neither is the `run` verb itself.
@@ -109,6 +145,16 @@ export class TestRunCoverageReporter implements Reporter {
       process.cwd(),
       testModules.map((testModule) => testModule.moduleId),
     );
+    const omittedFiles = findOmittedTestFiles(
+      process.cwd(),
+      testModules.map((testModule) => testModule.moduleId),
+    );
+    if (omittedFiles.length > 0) {
+      console.error(
+        `\nThis run did NOT execute ${omittedFiles.length} browser-contract file${omittedFiles.length === 1 ? '' : 's'}: ${omittedFiles.join(', ')}.` +
+          `\nThey need a browser this run has none for; \`npm run test:unit\` runs them under each package's own config. If that leg stops, they are covered nowhere.`,
+      );
+    }
     if (omitted.length === 0) return;
     console.error(
       `\nThis run OMITTED ${omitted.length} package${omitted.length === 1 ? '' : 's'} that own test files: ${omitted.join(', ')}.` +
