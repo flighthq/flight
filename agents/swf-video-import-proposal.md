@@ -1,7 +1,7 @@
-# SWF Video Import Proposal
+# SWF Video Import Decision
 
-_Investigation proposal, 2026-08-04. No implementation is authorized by this record. In particular,
-this does not change `@flighthq/video`, `Scene2DDocument`, or the SWF tag-coverage decision._
+_Investigated and decided 2026-08-04. Stage A is authorized and implemented. Stages B and C remain
+unauthorized; this decision adds no `@flighthq/video` dependency or `Scene2DDocument` resource lane._
 
 ## Recommendation
 
@@ -10,15 +10,14 @@ Do not describe SWF video payloads as supported, and do not pass their bytes to 
 browser-playable video file. Loading those packets as though they were MP4, WebM, or Ogg would be a false
 implementation.
 
-If the measured graph divergence is worth closing, the smallest honest change is **structural support
-only**:
+The measured graph divergence earned the smallest honest change: **structural support only**:
 
 1. retain `DefineVideoStream` as a real definition rather than only as an entry in the bounds table;
 2. instantiate every placement of that definition, named or unnamed, as a `Sprite` with a sourceless
    `Texture` and the authored width and height; and
 3. let the existing timeline snapshots attach, move, mask, and remove that node normally.
 
-That slice would preserve extents and placement while continuing to say explicitly that `VideoFrame`
+That slice preserves extents and placement while continuing to say explicitly that `VideoFrame`
 pixels are unsupported. It requires no document-side resource array, no decoder, and no dependency on
 `@flighthq/video`. It also gives a later payload implementation the correct stable node kind: Flight has
 no dedicated Video display node, because video is a changing texture source, so a video-backed 2D leaf is
@@ -152,7 +151,7 @@ each packet occurred. That would stop byte loss for migration and analysis tools
 video resource and must not be presented as visual support. Once a generic resolution product is settled,
 those records can feed it without changing the scene node.
 
-## Measured cost of leaving video unsupported
+## Measured cost that warranted Stage A
 
 The 306-file, revision-pinned Ruffle sample contains `DefineVideoStream` and `VideoFrame` in exactly one
 file. A follow-up comparison examined the 29 files with multi-frame root timelines and found exactly one
@@ -171,11 +170,11 @@ sample provides no evidence that a decoder-sized project outranks broader import
 AVM-test-skewed corpus, so these numbers rank the observed work; they do not estimate video prevalence in
 production SWFs.
 
-## Staged implementation, if authorized
+## Staged implementation
 
 ### Stage A — extents and placement only
 
-This is the recommended smallest slice.
+**Implemented.** This is the authorized smallest slice.
 
 - Store a lightweight video-definition record keyed by character id, at least width, height, smoothing,
   and the fact that the character is video. Keeping declared frame count, deblocking, and codec id is
@@ -224,12 +223,12 @@ an independent clock and asynchronous seeking. Those are architectural choices, 
 
 ## Decision boundary
 
-The corpus evidence warrants Stage A if structural timeline fidelity is the goal: it is a small,
-well-bounded correction with an exact failing asset shape and it does not pretend to decode video. The
-evidence does **not** warrant silently growing `Scene2DDocument` or `@flighthq/video`, and it does not
-justify a bundled SWF codec implementation.
+The corpus evidence warranted Stage A for structural timeline fidelity: it is a small, well-bounded
+correction with an exact failing asset shape and it does not pretend to decode video. That decision does
+**not** warrant silently growing `Scene2DDocument` or `@flighthq/video`, and it does not justify a bundled
+SWF codec implementation.
 
-Authorize Stage B only for explicit payload-preservation demand. Authorize Stage C only after choosing
-the generic resolution product and the predecode/provider/media-element timing model. Until then, leaving
-pixels unsupported is honest; leaving unnamed placement unmaterialized is the narrow defect the present
-evidence supports fixing.
+Stage B still requires explicit payload-preservation demand. Stage C still requires a chosen generic
+resolution product and predecode/provider/media-element timing model. Until then, leaving pixels
+unsupported is honest; Stage A closes the narrower unnamed-placement defect without crossing either
+boundary.
