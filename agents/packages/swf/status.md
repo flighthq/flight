@@ -301,10 +301,12 @@ plus end-to-end placement, per-instance geometry, and the unparseable-body place
 uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`, and a 306-file sweep of
 Ruffle's test corpus now backs the parser end to end — nothing throws, every uncompressed file imports, and
 the only rejections are the 79% of that corpus which is compressed. The sweep is what exposed the End-tag
-defect above; its exact revision,
-source hash, derived manifest, and ignored-asset reproduction procedure are recorded in
-[`fixture-evidence.md`](fixture-evidence.md). The external binary is not committed, and the hermetic
-test suite reproduces its zero-bit RECT compatibility case synthetically.
+defect above. A second pinned Ruffle fixture now supplies the missing real-file animation proof: its root
+wire stream replaces character 1 with character 2 at depth 1 on frame 2, and
+`gotoAndStopMovieClip` changes node identity there before restoring the original node on frame 1. Exact
+revisions, paths, URLs, source hashes, derived manifests, and outside-repository obtain procedures are
+recorded in [`fixture-evidence.md`](fixture-evidence.md). No external binary is committed, and the hermetic
+test suite reproduces the relevant encodings without it.
 
 ## Known gaps
 
