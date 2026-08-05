@@ -73,13 +73,16 @@ because stale distributions were shown to break a build or test.
 
 ### Repository provenance gates
 
-`check:license-provenance` scans tracked text and uses declared terms as the signal, never a vendor or
-corpus name. A token-only finding can be removed while its fetch recipe stays intact; a token beside an
-implementation-origin claim freezes the whole line for review. Semantic negatives are must-pass cases.
-Positive verification against licensed material is equally valid: `licensed` describes how an external
-asset was used and is not itself a token. The root notice and exact package-manifest properties are
-structural sites; generated lock metadata and the two repository-policy examples are named, justified
-escapes printed on every run. The gate runs in precommit and the bare `npm run check` sweep.
+`check:license-provenance` has two independent signals. The token lane scans declared terms, never a
+vendor or corpus name; a token-only finding can be removed while its fetch recipe stays intact. The
+origin lane does not need a token: it freezes a sentence only when an origin verb takes a third-party
+implementation object — external code, a branded or pronoun-owned symbol/function, or an external
+repository path — while format facts, standards, mathematical relations, internal Flight history and
+API-pattern comparisons remain valid. Semantic negatives are must-pass cases. Positive verification
+against licensed material is equally valid: `licensed` describes how an external asset was used and is
+not itself a token. The root notice and exact package-manifest properties are structural sites;
+generated lock metadata and the two repository-policy examples are named, justified escapes printed on
+every run. The gate runs in precommit and the bare `npm run check` sweep.
 
 `check:fingerprint-source-hashes` requires every functional and example fingerprint column to retain its
 scene-source hash. Seven historical columns have neither a pixel hash nor a recoverable write boundary;

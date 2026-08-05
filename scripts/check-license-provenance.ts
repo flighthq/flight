@@ -69,12 +69,16 @@ const IDENTIFIERS = [
 ];
 
 const MARKERS: readonly MarkerRule[] = [
+  marker('sourced-from', 'sourced', 'from'),
   marker('adapted-from', 'adapted', 'from'),
   marker('transcribed-from', 'transcribed', 'from'),
   marker('translated-from', 'translated', 'from'),
-  marker('algebra-sourced-from', 'algebra', 'sourced', 'from'),
   marker('ported-from', 'ported', 'from'),
   marker('derived-from-with-provenance', 'derived', 'from'),
+  marker('replicates-origin', 'replicates'),
+  marker('reproduces-origin', 'reproduces'),
+  marker('mirrors-origin', 'mirrors'),
+  marker('follows-origin', 'follows'),
 ];
 
 const LICENSE_VOCABULARY = [
@@ -119,7 +123,7 @@ const NAMED_ESCAPES: readonly LicenseProvenanceEscape[] = [
   },
 ];
 
-/** Finds licence tokens and classifies implementation-origin language only when a token is present. */
+/** Finds licence tokens and independently classifies claims that take from an external implementation object. */
 export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]): LicenseProvenanceReport {
   const escapeLines = NAMED_ESCAPES.map(() => new Set<string>());
   const flightPackages = getFlightPackageNames(inputs);
@@ -140,12 +144,12 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
         }
       }
 
-      if (activeTokens.length === 0) continue;
       for (const rule of MARKERS) {
         const pattern = markerPattern(rule.phrase);
         for (const match of line.matchAll(pattern)) {
           if (isNegated(line, match.index ?? 0)) continue;
           if (isPermittedDerivationObject(line, match, flightPackages)) continue;
+          if (!isImplementationDerivationObject(line, match)) continue;
           const disposition = dispositionOf(path, line, index, escapeLines);
           if (disposition === 'structural') {
             structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
@@ -166,7 +170,7 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
       name: entry.name,
       reason: entry.reason,
     })),
-    matcherState: 'semantic negatives and positive verification protected; token-keying active',
+    matcherState: 'semantic negatives and verification protected; implementation derivations token-independent',
     scannedFiles: new Set(inputs.map((input) => normalizePath(input.path))).size,
     structuralMatches: structuralMatches.size,
     violations: uniqueViolations,
@@ -310,6 +314,45 @@ function isPermittedDerivationObject(
   return packageMatch?.[1] !== undefined && flightPackages.has(packageMatch[1]);
 }
 
+function isImplementationDerivationObject(line: string, match: RegExpMatchArray): boolean {
+  const matchIndex = match.index ?? 0;
+  const prefix = line.slice(0, matchIndex);
+  const boundaries = [...prefix.matchAll(/[;!?—]|\.(?=\s|$)/g)];
+  const clauseStart = boundaries.at(-1)?.index ?? -1;
+  const clauseTail = line.slice(matchIndex + match[0].length);
+  const relativeEnd = clauseTail.search(/[;!?—]|\.(?=\s|$)/);
+  const clauseEnd = relativeEnd < 0 ? line.length : matchIndex + match[0].length + relativeEnd;
+  const object = line.slice(matchIndex + match[0].length, clauseEnd);
+  const objectHead = object.split(/,\s*(?:but|not|rather)\b|\b(?:but|not|rather)\b/i, 1)[0] ?? object;
+  const claimPrefix = line.slice(clauseStart + 1, matchIndex);
+
+  // Format/interface provenance is allowed even when it names a project. An implementation noun in
+  // the same clause makes the opposite claim: the sentence says it took from executable code.
+  if (/\bimplementation(?:\s+[A-Za-z]+){0,3}\s*$/i.test(claimPrefix)) return true;
+  if (IMPLEMENTATION_CONTEXT_PATTERN.test(objectHead)) return true;
+  if (ANALOGY_OBJECT_PATTERN.test(objectHead)) return false;
+
+  let implementationIndex = EXTERNAL_OBJECT_PATTERN.exec(object)?.index ?? Number.POSITIVE_INFINITY;
+  implementationIndex = Math.min(implementationIndex, externalRepositoryPathIndex(object));
+  const artifactIndex = IMPLEMENTATION_ARTIFACT_PATTERN.exec(object)?.index ?? Number.POSITIVE_INFINITY;
+  if (
+    artifactIndex < Number.POSITIVE_INFINITY &&
+    (THIRD_PERSON_IMPLEMENTATION_PATTERN.test(object) || BRAND_IMPLEMENTATION_PATTERN.test(object))
+  ) {
+    implementationIndex = Math.min(implementationIndex, artifactIndex);
+  }
+  const formatIndex = FORMAT_OBJECT_PATTERN.exec(objectHead)?.index ?? Number.POSITIVE_INFINITY;
+  return implementationIndex < formatIndex;
+}
+
+function externalRepositoryPathIndex(object: string): number {
+  const match = object.match(/`([A-Za-z0-9_.-]+\/[A-Za-z0-9_./-]+)`/);
+  if (match?.[1] === undefined) return Number.POSITIVE_INFINITY;
+  return /^(?:@flighthq|agents|crates|functional|packages|scripts|tools)\//.test(match[1])
+    ? Number.POSITIVE_INFINITY
+    : (match.index ?? Number.POSITIVE_INFINITY);
+}
+
 function isPackageManifest(path: string): boolean {
   return path === 'package.json' || path.endsWith('/package.json');
 }
@@ -333,6 +376,26 @@ function parts(...values: string[]): string {
 function words(...values: string[]): string {
   return values.join(' ');
 }
+
+const ANALOGY_OBJECT_PATTERN =
+  /\b(?:contract|convention|data model|design|model|naming|parameters?|pattern|principle|rules?|shape)\b/i;
+const FORMAT_OBJECT_PATTERN =
+  /\b(?:algorithm|equation|facts?|format(?: description)?|identity|inputs?|matrix|protocol|ramp|schema|semantics|spec(?:ification)?|standard|test data|these|UAX|RFC|ISO|IEC|ECMA|CSS)\b/i;
+const IMPLEMENTATION_CONTEXT_PATTERN =
+  /\b(?:codebase|external code|external implementation|implementation|repository|source code|source file|third-party code|upstream)\b/i;
+const IMPLEMENTATION_ROLE_PATTERN =
+  /\b[A-Za-z_$][A-Za-z0-9_$]*(?:Adapter|Animator|Builder|Compiler|Controller|Decoder|Encoder|Factory|Interpreter|Loader|Manager|Module|Parser|Plugin|Reader|Renderer|Runtime|Writer)\b/;
+const IMPLEMENTATION_CALL_PATTERN = /\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*\(/;
+const IMPLEMENTATION_FILE_PATTERN = /\b[A-Za-z0-9_$./-]+\.(?:c|cc|cpp|cxx|h|hh|hpp|js|jsx|mjs|rs|ts|tsx)\b/i;
+const IMPLEMENTATION_ARTIFACT_PATTERN = new RegExp(
+  `(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source})`,
+);
+const EXTERNAL_OBJECT_PATTERN = /\bExternal[A-Z][A-Za-z0-9]*\b|https?:\/\/|<(?:file|path|url)>/i;
+const IMPLEMENTATION_ARTIFACT_SOURCE = `\`?(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source})`;
+const THIRD_PERSON_IMPLEMENTATION_PATTERN = new RegExp(`\\btheir\\b[^{.!?;—}]*${IMPLEMENTATION_ARTIFACT_SOURCE}`, 'i');
+const BRAND_IMPLEMENTATION_PATTERN = new RegExp(
+  `^\\s+(?:(?:a|an|the)\\s+)?[A-Z][A-Za-z0-9]*(?:['’]s)?[^.!?;—]{0,120}${IMPLEMENTATION_ARTIFACT_SOURCE}`,
+);
 
 function main(): void {
   const report = checkLicenseProvenance(getTrackedTextInputs(root));

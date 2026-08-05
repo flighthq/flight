@@ -57,28 +57,128 @@ describe('license and provenance declaration gate', () => {
     ]);
   });
 
-  it('pairs every derivation marker with and without an actual token', () => {
+  it('rejects implementation derivation markers independently of an actual token', () => {
     const phrases = [
+      words('sourced', 'from'),
       words('adapted', 'from'),
       words('transcribed', 'from'),
       words('translated', 'from'),
-      words('algebra', 'sourced', 'from'),
       words('ported', 'from'),
       words('derived', 'from'),
+      words('replicates'),
+      words('reproduces'),
+      words('mirrors'),
+      words('follows'),
     ];
     const identifier = parts('M', 'IT');
 
     for (const phrase of phrases) {
-      const withoutToken = checkLicenseProvenance([{ path: 'source.ts', text: `${phrase} external code` }]);
-      const withToken = checkLicenseProvenance([{ path: 'source.ts', text: `${phrase} external code, ${identifier}` }]);
+      const withoutToken = checkLicenseProvenance([{ path: 'source.ts', text: `${phrase} external implementation` }]);
+      const withToken = checkLicenseProvenance([
+        { path: 'source.ts', text: `${phrase} external implementation, ${identifier}` },
+      ]);
 
-      expect(withoutToken.violations).toEqual([]);
+      expect(withoutToken.violations).toHaveLength(1);
+      expect(withoutToken.violations[0].match).toBe(phrase);
       expect(withToken.violations).toHaveLength(2);
       expect(withToken.violations.map((entry) => entry.match)).toEqual(expect.arrayContaining([phrase, identifier]));
     }
   });
 
-  it('requires a licence token rather than a vendor name or URL for the conditional marker', () => {
+  it('rejects the exact ObjectDataParser claim with or without an incidental token', () => {
+    const phrase = words('algebra', 'sourced', 'from');
+    const marker = words('sourced', 'from');
+    const object = `the ${parts('Dragon', 'Bones')} ${parts('Object', 'Data', 'Parser')}`;
+    const identifier = parts('M', 'IT');
+    const withoutToken = checkLicenseProvenance([{ path: 'status.md', text: `${phrase} ${object}` }]);
+    const withToken = checkLicenseProvenance([
+      { path: 'status.md', text: `${phrase} the ${identifier} ${object.slice(4)}` },
+    ]);
+
+    expect(withoutToken.violations).toEqual([{ line: 1, match: marker, path: 'status.md', rule: 'sourced-from' }]);
+    expect(withToken.violations).toEqual([
+      { line: 1, match: identifier, path: 'status.md', rule: 'license-identifier' },
+      { line: 1, match: marker, path: 'status.md', rule: 'sourced-from' },
+    ]);
+  });
+
+  it.each([
+    { phrase: words('sourced', 'from'), rule: 'sourced-from' },
+    { phrase: words('adapted', 'from'), rule: 'adapted-from' },
+    { phrase: words('transcribed', 'from'), rule: 'transcribed-from' },
+    { phrase: words('translated', 'from'), rule: 'translated-from' },
+    { phrase: words('ported', 'from'), rule: 'ported-from' },
+    { phrase: words('derived', 'from'), rule: 'derived-from-with-provenance' },
+    { phrase: words('replicates'), rule: 'replicates-origin' },
+    { phrase: words('reproduces'), rule: 'reproduces-origin' },
+    { phrase: words('mirrors'), rule: 'mirrors-origin' },
+    { phrase: words('follows'), rule: 'follows-origin' },
+  ])('distinguishes an implementation symbol from a format for $phrase', ({ phrase, rule }) => {
+    const project = parts('Dragon', 'Bones');
+    const implementation = parts('Object', 'Data', 'Parser');
+    const positive = checkLicenseProvenance([
+      { path: 'source.ts', text: `${phrase} the ${project} ${implementation}` },
+    ]);
+    const format = checkLicenseProvenance([{ path: 'source.ts', text: `${phrase} the ${project} format` }]);
+
+    expect(positive.violations).toEqual([{ line: 1, match: phrase, path: 'source.ts', rule }]);
+    expect(format.violations).toEqual([]);
+  });
+
+  it('recognises pronoun-owned symbols and runtime functions without a brand list', () => {
+    const derived = words('derived', 'from');
+    const comparisonPhrase = words('mirrors');
+    const replicationPhrase = words('replicates');
+    const symbol = parts('Object', 'Data', 'Parser');
+    const project = parts('Dragon', 'Bones');
+    const report = checkLicenseProvenance([
+      {
+        path: 'source.ts',
+        text: `${derived} their \`${symbol}\`\n${comparisonPhrase} the ${project} runtime \`addDisplay(slot, null)\`\n${replicationPhrase} the ${project} runtime geometry bake (\`${symbol}._parseGeometry()\`) through a bind matrix\n${derived} their format\n${comparisonPhrase} the ${project} model`,
+      },
+    ]);
+
+    expect(report.violations).toEqual([
+      { line: 1, match: derived, path: 'source.ts', rule: 'derived-from-with-provenance' },
+      { line: 2, match: comparisonPhrase, path: 'source.ts', rule: 'mirrors-origin' },
+      { line: 3, match: replicationPhrase, path: 'source.ts', rule: 'replicates-origin' },
+    ]);
+  });
+
+  it('keeps rules, standards, dependency values, and local expressions separate from implementation sources', () => {
+    const follows = words('follows');
+    const mirrors = words('mirrors');
+    const derived = words('derived', 'from');
+    const sourced = words('sourced', 'from');
+    const report = checkLicenseProvenance([
+      {
+        path: 'source.ts',
+        text: [
+          `${follows} the SDK's plain-data rule`,
+          `${mirrors} the CSS spec`,
+          `${derived} UAX 9 test data`,
+          `${sourced} \`@vendor/plugin-os\``,
+          `${derived} \`sub.split('/')\``,
+          `${mirrors} the Electron \`menu.popup({ x, y })\` pattern`,
+        ].join('\n'),
+      },
+    ]);
+
+    expect(report.violations).toEqual([]);
+  });
+
+  it('treats an external repository path as implementation provenance', () => {
+    const phrase = words('derived', 'from');
+    const report = checkLicenseProvenance([
+      { path: 'source.ts', text: `${phrase} \`vendor/runtime\` revision abc123` },
+    ]);
+
+    expect(report.violations).toEqual([
+      { line: 1, match: phrase, path: 'source.ts', rule: 'derived-from-with-provenance' },
+    ]);
+  });
+
+  it('does not require a licence token when the clause claims an implementation source', () => {
     const phrase = words('derived', 'from');
     const identifier = parts('M', 'IT');
     const report = checkLicenseProvenance([
@@ -97,7 +197,7 @@ describe('license and provenance declaration gate', () => {
 
     expect(
       report.violations.filter((entry) => entry.rule === 'derived-from-with-provenance').map((entry) => entry.line),
-    ).toEqual([2]);
+    ).toEqual([2, 3, 4, 5]);
   });
 
   it('treats fetch provenance as required evidence rather than a signal', () => {
@@ -150,7 +250,7 @@ describe('license and provenance declaration gate', () => {
     ]);
   });
 
-  it('pairs same-line token evidence with a token on the next line', () => {
+  it('classifies an implementation derivation whether its token is on the same or next line', () => {
     const phrase = words('derived', 'from');
     const identifier = parts('M', 'IT');
     const report = checkLicenseProvenance([
@@ -160,6 +260,7 @@ describe('license and provenance declaration gate', () => {
 
     expect(report.violations.filter((entry) => entry.rule === 'derived-from-with-provenance')).toEqual([
       { line: 1, match: phrase, path: 'joined.ts', rule: 'derived-from-with-provenance' },
+      { line: 1, match: phrase, path: 'split.ts', rule: 'derived-from-with-provenance' },
     ]);
   });
 
@@ -168,7 +269,7 @@ describe('license and provenance declaration gate', () => {
       [words('adapted', 'from'), parts('M', 'IT')],
       [words('transcribed', 'from'), parts('I', 'SC')],
       [words('translated', 'from'), parts('B', 'SD')],
-      [words('algebra', 'sourced', 'from'), parts('A', 'pache')],
+      [words('sourced', 'from'), parts('A', 'pache')],
       [words('ported', 'from'), parts('G', 'PL')],
       [words('derived', 'from'), parts('C', 'C0')],
     ];
@@ -228,7 +329,7 @@ describe('license and provenance declaration gate', () => {
     expect(output).toContain('project-license-policy [1 matched line] —');
     expect(output).toContain('prohibited-provenance-example [1 matched line] —');
     expect(output).toContain(
-      'Matcher state: [semantic negatives and positive verification protected; token-keying active]',
+      'Matcher state: [semantic negatives and verification protected; implementation derivations token-independent]',
     );
   });
 
@@ -261,6 +362,7 @@ describe('license and provenance declaration gate', () => {
     ]);
 
     expect(report.violations.filter((entry) => entry.rule === 'ported-from')).toEqual([
+      { line: 3, match: phrase, path: 'notes.md', rule: 'ported-from' },
       { line: 5, match: phrase, path: 'notes.md', rule: 'ported-from' },
     ]);
     expect(report.violations.filter((entry) => entry.rule === 'license-identifier')).toHaveLength(2);
