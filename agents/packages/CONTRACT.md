@@ -9,6 +9,7 @@ The checker splits its findings by who can act on them. **Failures** are unambig
 - One folder per package: `agents/packages/<name>/`, where `<name>` is the `packages/<name>` directory name (the unscoped package name).
 - Files: `charter.md`, `status.md`, `review.md`, `assessment.md`. No other names; no compound `<name>.charter.md` form (the folder already carries the package identity).
 - `charter.md` is **required**. The other three are created by their producing stage.
+- **Every `packages/<name>` must have a cell**, checked from the `packages/` side and failing if absent. Adding a package therefore means scaffolding its cell in the same change (`node agents/packages/scaffold.mjs` writes the stubs). A blank charter is a valid flagpole — it marks where review content will land — but no cell at all makes the package invisible to every generator, which is how `quadbatch` kept seven consumers and no survey. The reverse is not checked: a cell with no package is a chartered-unbuilt, absorbed, external, or reserved cell, all legitimate and already classified by the generated index.
 
 ## Front matter
 
