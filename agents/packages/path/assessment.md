@@ -24,7 +24,7 @@ Sweep-safe: within `@flighthq/path`, no cross-package coupling, no breaking chan
 
 6. **Update the `package.json` description.** "Curve flattening and tessellation of GraphicsPath outlines" names a dead type and understates the surface. Charter open direction #3 already gestures at this; the write itself is a sweep-safe chore: construction + conversion + measurement/analysis + transformation + editing + stroking.
 
-7. **Replace `strokePath`'s result object literal with `createPath()`** — source-style conformance (constructors over literals for entity types). One-line, fold into item 2's touch of the file.
+7. **~~Replace `strokePath`'s result object literal with `createPath()`~~** — retired 2026-08-05. `strokePath` now imports the package constructor and initializes its non-zero-winding result with `createPath('nonZero')` before appending the generated outline; no Path entity literal remains in that result path.
 
 ## Backlog
 

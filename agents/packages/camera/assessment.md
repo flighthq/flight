@@ -11,13 +11,11 @@ See [charter](./charter.md) for blessed direction.
 ## Directed
 
 1. **Finish the single camera package migration.** `Camera2D` and `Camera3D` share `@flighthq/camera`; remove the obsolete `@flighthq/camera2d` cell/package references and rename any example workspace whose name still implies a separate package.
-2. **Use draw-time viewport aspect for rendered projection.** A stored perspective aspect remains useful for headless/standalone matrix queries, but a render pass with a viewport is authoritative. Functional coverage must render one camera into differently shaped viewports without editing camera state between draws.
+2. **~~Use draw-time viewport aspect for rendered projection.~~** — retired 2026-08-05. `prepareScene3DRender` accepts an authoritative draw-time aspect without mutating the camera's authored fallback, both backend draw paths derive it from the active viewport, and `render-pass-viewport.webgl.ts` renders one untouched Camera3D into tall and wide viewports on the same target with pixel assertions.
 3. **Complete the Entity constructor invariant.** Camera2D must match Camera3D's Entity shape. The two
    projection create functions must either return Entity-backed descriptors or move to an explicitly
    non-create descriptor vocabulary.
-4. **Migrate every Flight functional off the removed Camera surface.** Search all functional sources,
-   update Camera3D types/constructors/view operations, and require build:functional plus representative
-   GL captures so stale API usage cannot hide behind package-only checks.
+4. **~~Migrate every Flight functional off the removed Camera surface.~~** — retired 2026-08-05. Functional scene source now uses `Camera3D`, `createCamera3D`, and the `setCamera3D*` view operations throughout; a source-wide check finds no remaining imports or calls to the removed `Camera`/`createCamera`/unqualified view-matrix surface, and the GL viewport functional exercises the migrated path.
 
 ## Depth gaps
 

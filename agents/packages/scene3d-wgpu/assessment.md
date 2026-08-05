@@ -18,7 +18,7 @@ The result is a near-empty Recommended set. That is the honest read: the package
 
 Sweep-safe: within `@flighthq/scene3d-wgpu` only, no cross-package coupling, no breaking change, no open design decision.
 
-- **Mark the dormant `HAS_UV1` key field as inert in-source.** `hasUv1` is threaded through the define key and emits a `HAS_UV1` const, but `vs_main` carries no second UV and `VERTEX_BUFFER_LAYOUTS` is unchanged — a declared-but-inert field (review › Gaps). _Wiring_ uv1 is a cross-package vertex-layout change (Backlog / Open direction #5), but adding a colocated comment at the key field and the const emission noting it is reserved-and-inert keeps the next reader from assuming it works. Pure in-file documentation of an already-shipped state; touches no other surface. (review.md#gaps)
+- **~~Mark the dormant `HAS_UV1` key field as inert in-source.~~** — retired 2026-08-05. OBSOLETE: `hasUv1`, the `HAS_UV1` emission, and every UV1 reference were removed from the live WebGPU shader key and prelude, so there is no dormant field left to annotate; reintroducing it solely for a warning would restore the stale surface this item meant to contain.
 
 > Recommended is intentionally minimal. The forward-light wiring, transparency parity scenes, shadows, IBL, instancing/skinning/morph, real transmission, MSAA/tonemap ownership, and the barrel-surface narrowing are all either cross-package, breaking, or gated on a charter decision — they are in Backlog with a reason each, and their underlying questions are surfaced to the charter's Open directions. A blanket "do all recommended" must remain safe, so none of them appear here.
 

@@ -10,16 +10,13 @@ See [charter](./charter.md) for blessed direction.
 
 ## Directed
 
-1. **Enforce create-to-Entity naming and shape.** The four current value/scalar create functions cannot
-   remain exceptions. Entity-back the returned SDK objects where identity is intended and rename pure
-   value allocation/calculation where it is not.
+1. **~~Enforce create-to-Entity naming and shape.~~** — retired 2026-08-05. The package no longer exports any `create*` value/scalar function: HSL/HSV scratch tuples use `allocate*`, Kelvin conversion is `colorFromKelvin`, and the remaining APIs are calculation/get/pack operations, so no structural product claims Entity-constructor semantics.
 
 ## Recommended
 
-1. **Split unclamped OkLab inversion from gamut handling.** Make the inverse preserve negative/out-of-
-   gamut linear channels; provide explicit clamp or gamut-map composition and round-trip tests.
-2. **Move exported HslColor and HsvColor types to the header layer.**
-3. **Correct the Kelvin out-of-range documentation to match endpoint clamping.**
+1. **~~Split unclamped OkLab inversion from gamut handling.~~** — retired 2026-08-05. `oklabToLinearRgb` now preserves negative and greater-than-one channels, `clampLinearRgb` is the explicit displayable-sRGB composition, and tests cover out-of-gamut output plus unclamped round trips.
+2. **~~Move exported HslColor and HsvColor types to the header layer.~~** — retired 2026-08-05. `HslColor.ts` and `HsvColor.ts` now live in `@flighthq/types`, are exported from both header lanes, and color imports them through the contract lane.
+3. **~~Correct the Kelvin out-of-range documentation to match endpoint clamping.~~** — retired 2026-08-05. `colorFromKelvin` documents that values outside 1000–40000 K clamp to the nearest endpoint, and tests pin both low and high clamps.
 
 ## Depth gaps
 
