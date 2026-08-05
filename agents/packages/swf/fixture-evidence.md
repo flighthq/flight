@@ -42,6 +42,10 @@ commit before changing the pin; do not guess at a replay twin.
 This rule applies to Flight commits. The pinned Ruffle revisions and source SHA-256 values in this record
 are third-party fetch provenance, not candidates for ancestry in Flight's development ref.
 
+The audit that produced this rule also recorded its out-of-cell findings as a data-only
+[incidental SHA-token inventory](sha-pin-incidental-audit.md). That inventory does not classify or rewrite
+the other cells; it preserves the locations for their owners.
+
 ## Derived document manifest
 
 Running the fetched bytes through `createScene2DFromSwf` at this package revision produces:
