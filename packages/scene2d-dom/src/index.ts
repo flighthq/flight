@@ -10,6 +10,7 @@ export {
   defaultDomTextLabelRenderer,
   enableDomBlendModeSupport,
   enableDomClipSupport,
+  enableDomCssFilterSupport,
   enableDomRenderCache,
   enableDomTextInput,
   enableDomTextureResolverGuards,
@@ -19,5 +20,6 @@ export {
   registerDomTextureResolver,
   renderDomBackground,
   renderDomScene2D,
+  setDomCssFilter,
 } from './contract';
 export { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer';
