@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { findUnrunTestPackages, isFilteredTestRun, isTestRunCoverageFailure } from './testRunCoverage';
+import {
+  findOmittedTestFiles,
+  findUnrunTestPackages,
+  isFilteredTestRun,
+  isTestRunCoverageFailure,
+} from './testRunCoverage';
 
 const COVERED: Readonly<Parameters<typeof isTestRunCoverageFailure>[0]> = {
   interrupted: false,
@@ -70,6 +75,37 @@ function runRootVitest(args: readonly string[]): { output: string; status: numbe
 // A whole-repo run reads as a claim about the whole repo, so it has to name where it is not one. These
 // derive the answer from what RAN rather than from a restated exclusion list, because a second list
 // drifts from the excludes it describes.
+// A minimal pair on the one thing this rule is about: the SAME package, the SAME directory, two files
+// differing only in whether the name marks a browser contract. Pinning the boundary rather than the
+// centre — an ordinary test file must never be excused as "deliberately omitted", or the report would
+// quietly absolve a file that simply stopped running.
+describe('findOmittedTestFiles', () => {
+  it('names an unrun browser contract, so a deliberate omission is still announced', () => {
+    const root = mkdtempSync(join(tmpdir(), 'omitted-files-'));
+    mkdirSync(join(root, 'packages', 'tool', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'tool', 'src', 'a.e2e.test.ts'), '');
+
+    expect(findOmittedTestFiles(root, [])).toEqual([join('packages', 'tool', 'src', 'a.e2e.test.ts')]);
+  });
+
+  it("says nothing about an ordinary test file that did not run — that is the package report's job", () => {
+    const root = mkdtempSync(join(tmpdir(), 'omitted-files-'));
+    mkdirSync(join(root, 'packages', 'tool', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'tool', 'src', 'a.test.ts'), '');
+
+    expect(findOmittedTestFiles(root, [])).toEqual([]);
+  });
+
+  it('stays silent once the contract actually ran', () => {
+    const root = mkdtempSync(join(tmpdir(), 'omitted-files-'));
+    mkdirSync(join(root, 'packages', 'tool', 'src'), { recursive: true });
+    const file = join(root, 'packages', 'tool', 'src', 'a.e2e.test.ts');
+    writeFileSync(file, '');
+
+    expect(findOmittedTestFiles(root, [file])).toEqual([]);
+  });
+});
+
 describe('findUnrunTestPackages', () => {
   it('names a package that owns tests but contributed none', () => {
     // tool-capture owns tests; pretend nothing from it executed.
