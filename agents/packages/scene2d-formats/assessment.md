@@ -6,111 +6,134 @@ basedOn: ./review.md
 
 # scene2d-formats — Assessment
 
-## Standing, as of 2026-08-04
+## Audit basis
 
-The prior Rive recommendations landed. Animated numeric geometry and paint now bind through the core
-property the file keyed, packed-colour keyframes interpolate their ARGB channels, and a resolved image
-resource is attached to every `Image` drawable texture that references it. The binder composes with
-all six shared transform/opacity paths in the same clip; neither recommendation below remains open.
+This assessment was checked against `packages/scene2d-formats/src`, its colocated tests, the shared
+resource seam, and the functional scenes at Flight commit `a3707655f`. Historical corpus statements
+below name the Flight commit that recorded them; they are evidence from that revision, not floating
+claims about an unnamed checkout.
 
-**Recommended, sweep-safe.** Audit the remaining Rive keyframe subclasses against the corpus before
-widening the binder. `KeyFrameDouble` and `KeyFrameColor` have different value keys (70 and 88), and
-the old generic scalar fallback turned a colour animation into zero while still making the clip look
-populated. `KeyFrameBool`, `KeyFrameId`, `KeyFrameString`, and `KeyFrameUint` therefore stay unbound
-until their own value fields and target semantics are evidenced. Variable-font axes remain the other
-unblocked Rive item of material size (120 objects across 7 of 37 files) and fit inside the existing
-text seam.
+The current Rive measurement is reproducible without committing external bytes: clone
+`https://github.com/rive-app/rive-flutter.git`, check out
+`fc9fd0445a205092ad340491d48ec16f42d2562e`, find every `*.riv`, and accept only files beginning with
+the `RIVE` fingerprint. The checkout holds 42 paths, 4 of which are pointer text rather than Rive
+bytes, leaving 38 files. The SHA-256 of the sorted `sha256sum` manifest for all 42 paths is
+`5625f3d481aa22ad9f0c736725ac021e901853136fe2fd9e8f31db2cdf30b31e`. All current Rive counts in this
+assessment were measured at that corpus commit against Flight `a3707655f`; no corpus file entered the
+repository.
 
-**Backlog, parked on something.** The `Scene2DDocument` slot output waits on the slot contract
-chartered in `scene2d-resources`. A real-asset checkpoint for Lottie and SVG waits on an approved
-external corpus and acquisition procedure. Functional render scenes wait on whether a `-formats`
-cell owns them.
+## Findings that invalidate the old ranking
 
-**Routed to the charter's open directions, not here:** where a weighted vector path belongs, whether
-`Node2D` should carry a draw index, whether `@flighthq/BlendMode` should widen, functional-scene
-ownership, and corpus committal. Each is a decision above this codec, and each is measured in
-[coverage](../../scene2d-format-coverage.md).
+The previous assessment is not a safe work queue. Its highest-value recommendation was to create the
+coverage document, audit Lottie diagnostics, correct the charter, add a format-derived invariant,
+split out the conformance census, implement polystar roundness, and preserve every paint. Every one of
+those items is now present in source and tests. Carrying them forward would ask a builder to rebuild
+finished work.
 
-## The 2026-08-02 Lottie assessment
+The claimed verification asymmetry is also false. At Flight commit `550c1b042`, 18 real Bodymovin
+exports exposed two structural parser defects; after the repair, 17 imported and the remaining file
+was not an animation. At Flight commit `62359229b`, 34 W3C SVG conformance documents all produced
+geometry and exposed the `inherit` defect later fixed there. Rive is not the only codec that has read
+real files, so “give Lottie and SVG their first real asset” cannot remain the cell's top item. Those
+older runs did not record their upstream revisions or manifest hashes, so their absolute counts are
+historical evidence rather than refreshable baselines; that provenance weakness should not be hidden
+by restating the old conclusion more confidently.
 
-Scoped to the Lottie codec, per the review. The governing question — is Lottie mature enough to move
-on from — resolves to: **the breadth is there; what is missing is the written record of where it
-stops.** The five silent losses in the review are real, but they are project facts, so the artifact
-they are waiting on is a coverage document, not a runtime diagnostic and not necessarily an
-implementation.
+Several Rive gaps in the old text are likewise closed. The current artifact carries static authored
+layout descriptors, multi-run rich text and variable-font axes, loop/work-area/speed metadata, stroke
+dashes, intersected clips, negative corner radii, a flattened bone rig, every keyed bone axis, and a
+weight reader. `createScene2DDocumentFromRiveDocument` already emits nested-artboard slots and image
+resource references whose waiting texture identities are preserved. The mutable-content binder now
+composes geometry and paint with all shared display channels, and `KeyFrameColor` samples four ARGB
+components rather than pretending the packed integer is a scalar.
+
+The old functional-scene claim is stale too. `functional/scenes/rive-import.ts` imports a generated
+Rive file, samples its animation, and has Canvas, DOM, WebGL, and WebGPU baselines plus pixel assertions
+for geometry encodings, multiple paints, clipping, corner sign, and gradient output. Lottie and SVG
+still have no functional scene, but whether this Rive precedent settles ownership for the other codecs
+has not been ruled.
+
+## Current measurements, not a priority ruling
+
+The pinned 38-file Rive run imports all 38 files into 108 artboards. It finds 8,333 keyed-property
+tracks across 359 clips; the importer emits 7,617 channels and 85 clips remain empty. The old
+“145 of 383 before the binder” and “112 after” figures predate bone binding and a changed corpus, so
+neither describes the current artifact.
+
+The unread or only partly connected families in the same run are:
+
+| family | objects | files | source truth at Flight `a3707655f` |
+| --- | ---: | ---: | --- |
+| rig (`Weight`, `CubicWeight`, `Tendon`, `Skin`, `RootBone`, `Bone`) | 3,031 | 22/38 | bones, bone animation, and weights parse; weighted paths never enter the production import path |
+| constraints (`*Constraint`) | 191 | 12/38 | names decode, but no constraint solver is built or emitted here |
+| data binding (`ViewModel*`, `DataBind*`, `BindableProperty*`, `DataConverter*`, `FormulaToken*`) | 2,444 | 9/38 | a runtime binding system, not a static projection |
+| text modifiers | 22 | 4/38 | modifier groups and ranges do not reach rich-text output |
+| `Feather` | 150 | 3/38 | an effects-tier paint operation, not a shape field |
+| mesh / vertex art | 291 | 1/38 | travels with the unresolved rig-to-display bridge |
+
+The rig row is the most important source correction. `PathAttachment2D` and
+`deformSkeleton2DPathAttachment` already exist in `@flighthq/skeleton2d`, so the old weighted-path
+*home* question is settled. `scene2d-formats` also has `createRiveSkeleton2D`, bone animation binding,
+and `createRiveSkin2D`. But production source calls only the first; `createRiveSkin2D` is referenced by
+its own tests and nowhere in the importer. The artifact therefore reads the pieces without attaching a
+weighted path to the rig or replacing the displayed shape with its deformed coordinates. That is an
+incomplete bridge, not an absent primitive and not proof that rigging is visually covered.
+
+The adjacent keyframe audit is now measured rather than speculative. At the same Flight and corpus
+commits, the value subclasses the binder does not consume appear as follows:
+
+| keyframe value | tracks | files | targets seen |
+| --- | ---: | ---: | --- |
+| `KeyFrameId` | 50 | 10/38 | Solo active child, draw-rule target, text-run style |
+| `KeyFrameUint` | 34 | 3/38 | layout-style enum and sizing fields |
+| `KeyFrameString` | 13 | 2/38 | text-run content |
+| `KeyFrameBool` | 8 | 2/38 | nested-animation enablement and a custom boolean |
+| `KeyFrameCallback` | 18 | 5/38 | audio/event callbacks and one script input |
+
+These rows explain only 123 of the 716 keyed-property tracks that emit no channel. The remainder are
+mostly double or colour values aimed at systems the static geometry/paint binder does not own, including
+constraints, layout refresh, text modifiers, data binding, and feather. Widening the value reader alone
+would therefore recreate the original `KeyFrameColor` failure in another form: a populated track with no
+evidenced target meaning.
+
+## Ranking versus ruling
+
+The audit removes the old top priority and does **not** choose a replacement. The remaining evidence is
+not one comparable queue:
+
+- The Rive weighted-path bridge has the largest measured file share above, and its target primitive now
+  exists, but the output/binding contract between a deformed attachment, the imported display shape, and
+  explicit playback still needs to be stated before implementation.
+- The 716 unbound Rive tracks are a mixed population. Some target visible local data; others target
+  constraint, layout, event, audio, script, or data-binding runtimes. Their counts rank the audit work,
+  not one generic binder change.
+- Lottie and SVG have real-file parser evidence but no pixel-level functional scene. Rive has a
+  four-backend functional scene, but it is generated from Flight-owned bytes rather than compared with a
+  reference rendering. These are different evidence gaps, not a numeric fidelity ordering.
+
+Choosing among those would be a product or architecture ruling. The evidence that would settle the
+choice is respectively: a named rig-to-display contract and real rigged-file comparison; a per-target
+keyframe census with intended runtime owners; or a decision that the Rive functional-scene precedent
+authorizes equivalent Lottie/SVG scenes and what reference pixels they must prove.
 
 ## Recommended
 
-Sweep-safe: all within `@flighthq/scene2d-formats` and its `agents/` docs, no cross-package coupling,
-no open design decision.
+Do not start a generic Rive binder widening or silently invent the rig-to-display contract. The
+pre-authorized sweep-safe follow-on is an artifact audit: probe the existing Lottie and SVG importers for
+the silent-drop class, record exact reproductions, and correct coverage from source. That improves the
+evidence used for the next ruling without selecting one of the incomparable implementation directions
+above.
 
-1. **Write `agents/scene2d-format-coverage.md`.** The scene3d sibling has one and scene2d does not,
-   which is why five real gaps are recorded nowhere. Mirror its structure: per-codec, what is read
-   and what is not, verified against source rather than changelog. Seed it with the five findings
-   (multiple fills per group, gradient-beside-solid, polystar roundness, paint z-order, text stroke
-   and `chars`) plus the already-declared exclusions and SVG's own deferred set. This is the highest
-   -value item in the cell, it costs a shipped app nothing, and it is what makes "move on" a
-   defensible choice — the gaps become known rather than merely absent.
+## Backlog after a ruling
 
-2. **Audit the existing `lottie.unsupported-*` family against the mechanical test.** Roughly a dozen
-   crumbs announce our incompleteness on correct idiomatic exports; the review lists them. Retire
-   those into the coverage document from item 1, keep the six unambiguous asset facts, and rule on
-   the contingent-with-a-next-action middle band (`unsupported-expression`, `unsupported-blend-mode`,
-   repeater). The precedent is `mtl.pbr-extension-unbound`, dropped last session for this exact
-   reason. Do this *with* item 1, since the retired crumbs are the document's first entries.
-
-3. **Correct the charter's degradation sentence.** It currently mandates a Skip crumb for any
-   unresolvable case, which read literally requires the crumbs the convention forbids. It needs the
-   narrower asset-fact wording. (Note for the charter — I do not edit it.)
-
-4. **Add a format-derived invariant to the Lottie suite.** The suite's fixture-and-expected-value
-   pattern demonstrably missed all five findings. Follow the `expectWorldPositionsPreserved`
-   precedent: assert a relation the *format* states — sampling the emitted clip at a keyframe's own
-   time reproduces that keyframe's stated value, across easing kinds, separated position, and hold
-   segments — and mutation-test it so it is load-bearing rather than assumption-echoing.
-
-5. **Promote the Lottie census into `lottieDocumentConformance.test.ts`.** Matches the SVG sibling's
-   existing 531-line structure and gives the matrix a greppable home separate from unit tests.
-
-6. **Read polystar roundness (`os`/`is`).** Bounded geometry work in `createLottiePolystarPath`; the
-   fields are already typed. Closing it is cheap and removes one line from the coverage document.
-
-7. **Support multiple fills and strokes per shape group.** Widen `LottieShapeState`'s three
-   single-value slots to ordered paint entries emitted in item order — one root cause behind three of
-   the five findings. Larger than item 6 but still local. Where Flight's shape recorder cannot
-   express a resulting stacking order, that limit is itself a coverage-document entry.
-
-Items 6 and 7 are the only ones that change behavior; 1–5 are the ones that make the cell honest
-about itself. If only part of this lands, land 1–3.
-
-## Backlog
-
-Parked, with the reason.
-
-- **A real-asset fidelity checkpoint.** Charter open direction 3, and the single largest remaining
-  unknown — everything green today is green against fixtures we wrote. Parked on a user ruling for
-  which asset, under the external-asset discipline set for scene3d-formats.
-- **A functional render scene for Lottie (and SVG).** Cross-package (`functional/scenes` plus backend
-  baselines) and the charter is silent on whether codec cells own functional scenes. Widest
-  structural hole for a codec whose whole output is visual, but not sweep-safe.
-- **Embedded glyph outlines (`chars`) as real text geometry.** Routes glyph outlines into the shape
-  path builder; interacts with `@flighthq/text` / `glyphatlas` ownership.
-- **The unimplemented shape modifiers** — repeater, merge-paths, rounded-corners, animated trim,
-  animated dash. Declared deferrals; merge-paths additionally wants `@flighthq/path-boolean`.
-- **Text animators and animated text documents.** Declared exclusions; a feature area, not a patch.
-
-## Open directions for the charter
-
-Design forks, routed here rather than into Recommended.
-
-1. **Registry versus closed dispatch for shape items.** The `ty` chain in `appendLottieShapeItems` is
-   a closed `if/else` over a family that is still growing. The structural forks' registry-by-default
-   rule favors opening it so users supply vendor-prefixed items and unused ones tree-shake out.
-2. **Does a `-formats` cell own its functional render scenes?** Unblocks the Backlog item above and
-   applies equally to SVG, Rive, and the `@flighthq/swf` peer.
-3. **What "done" means for a codec without a real asset.** Lottie is the first cell to reach a
-   complete hand-authored gate having never imported a real input. The answer generalizes to every
-   remaining `-formats` cell.
+- Connect Rive weighted paths to the existing `PathAttachment2D` deformer once the display/playback
+  contract is explicit, then rerun the pinned corpus and a real rigged-file visual comparison.
+- Bind non-double Rive keyframes only per evidenced target family; never through a scalar fallback.
+- Add Lottie and SVG functional scenes if their ownership and reference-oracle requirements are ruled.
+- Keep constraint solvers, data binding, state-machine execution, callbacks, and scripted interpolation
+  out of the codec until their runtime homes are chartered.
+- Route feather through the effects tier and text modifiers through the text/runtime seam only when those
+  target vocabularies can preserve what the file states.
 
 ## Approved
 
