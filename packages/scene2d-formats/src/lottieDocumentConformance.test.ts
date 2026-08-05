@@ -1014,6 +1014,34 @@ describe('Lottie shape group paint', () => {
     ]);
   });
 
+  it('carries the line style of a static gradient stroke', () => {
+    const stroke = importPaints([
+      OPEN_LINE,
+      {
+        ...GRADIENT_FILL,
+        d: [
+          { n: 'd', v: { k: 3 } },
+          { n: 'g', v: { k: 3 } },
+        ],
+        lc: 3,
+        lj: 2,
+        ml: 7,
+        ty: 'gs',
+        w: { k: 2 },
+      },
+    ]);
+    const lineStyle = stroke.data.commands.indexOf('lineStyle');
+
+    expect(stroke.data.commands.slice(lineStyle + 7, lineStyle + 10)).toEqual(['square', 'round', 7]);
+    expect(pathAnchorsOf(stroke)).toEqual([
+      [0, 0],
+      [3, 0],
+      [6, 0],
+      [9, 0],
+      [12, 0],
+    ]);
+  });
+
   const RECT = { p: { k: [0, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
   const OTHER_RECT = { p: { k: [40, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
   const OPEN_LINE = {
