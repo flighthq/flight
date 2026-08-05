@@ -1,5 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { Node2D, Sprite } from '@flighthq/types/contract';
+import type { Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
 import { ResourceResolutionState, SpriteKind } from '@flighthq/types/contract';
 
 import {
@@ -36,7 +36,9 @@ describe('createRiveImageSprite', () => {
 
     expect(sprite.name).toBe('logo');
     // The texture exists but carries no pixels until a resource reference resolves into it.
-    expect(sprite.data.texture).not.toBeNull();
+    const texture = sprite.data.texture as Texture2D;
+    expect(texture.dimension).toBe('2d');
+    expect(texture.source).toBeNull();
   });
 });
 
@@ -86,11 +88,15 @@ describe('createScene2DDocumentFromRiveDocument', () => {
       ]),
     )!;
 
-    expect(result.imageResources[0].textures).toHaveLength(2);
+    const textures = result.imageResources[0].textures ?? [];
+    expect(textures).toHaveLength(2);
     // The sprites are in the tree and their textures are the ones the reference lists.
-    const first = getNodeChildAt(getNodeChildAt(result.root, 0) as Node2D, 0) as Sprite;
+    const board = getNodeChildAt(result.root, 0) as Node2D;
+    const first = getNodeChildAt(board, 0) as Sprite;
+    const second = getNodeChildAt(board, 1) as Sprite;
     expect(first.kind).toBe(SpriteKind);
-    expect(result.imageResources[0].textures).toContain(first.data.texture);
+    expect(textures[0]).toBe(first.data.texture);
+    expect(textures[1]).toBe(second.data.texture);
   });
 
   it('leaves an asset with no bytes out of the resource list', () => {

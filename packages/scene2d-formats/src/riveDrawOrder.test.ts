@@ -67,7 +67,7 @@ describe('applyRiveDrawOrder', () => {
       diagnostics,
     );
 
-    expect(diagnostics.map((entry) => entry.kind)).toContain('rive.draw-rule-crosses-parent');
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.draw-rule-crosses-parent']);
     // The governed node stays inside the group whose alpha, blend, and clip it composites under.
     expect(childNames(root)).toEqual(['a', 'group']);
   });
@@ -76,7 +76,7 @@ describe('applyRiveDrawOrder', () => {
     const diagnostics: ImportDiagnostic[] = [];
     build([shape('a', 0), object(DRAW_RULES, [uint(PARENT_ID, 1), uint(DRAW_TARGET_ID, 99)])], diagnostics);
 
-    expect(diagnostics.map((entry) => entry.kind)).toContain('rive.draw-rule-unresolved');
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.draw-rule-unresolved']);
   });
 });
 

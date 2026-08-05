@@ -130,8 +130,25 @@ describe('createRivePath', () => {
     const square = createRivePath(object(RECTANGLE, { 20: 100, 21: 100 }), artboardOf([]), 0)!;
     const rounded = createRivePath(object(RECTANGLE, { 20: 100, 21: 100, 31: 10 }), artboardOf([]), 0)!;
 
-    expect(square.commands).not.toContain(PathCommand.CUBIC_CURVE_TO);
-    expect(rounded.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(square.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CLOSE,
+    ]);
+    expect(rounded.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CLOSE,
+    ]);
   });
 
   it('honours four distinct corner radii when they are unlinked', () => {
@@ -151,7 +168,14 @@ describe('createRivePath', () => {
     const polygon = createRivePath(object(POLYGON, { 20: 40, 21: 40, 125: 6 }), artboardOf([]), 0)!;
     const star = createRivePath(object(STAR, { 20: 40, 21: 40, 125: 5, 127: 0.5 }), artboardOf([]), 0)!;
 
-    expect(ellipse.commands).toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(ellipse.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CUBIC_CURVE_TO,
+      PathCommand.CLOSE,
+    ]);
     expect(triangle.data).toEqual([0, -10, 20, 10, -20, 10]);
     expect(polygon.data).toHaveLength(12);
     // A five-pointed star alternates outer and inner vertices, so it carries ten points.
@@ -261,7 +285,13 @@ describe('createRivePath', () => {
       object(STRAIGHT_VERTEX, { 24: 100, 25: 100 }),
     ])!;
 
-    expect(sharp.commands).not.toContain(PathCommand.CUBIC_CURVE_TO);
+    expect(sharp.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CLOSE,
+    ]);
   });
 });
 

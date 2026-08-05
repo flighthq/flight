@@ -54,8 +54,7 @@ describe('isRiveCoreTypeDerivedFrom', () => {
       deepest = Math.max(deepest, depth);
     }
 
-    expect(deepest).toBeGreaterThan(0);
-    expect(deepest).toBeLessThanOrEqual(8);
+    expect(deepest).toBe(8);
   });
 });
 
