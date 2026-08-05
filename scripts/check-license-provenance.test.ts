@@ -190,6 +190,27 @@ describe('license and provenance declaration gate', () => {
     expect(report.violations).toEqual([{ line: 1, match: mirrors, path: 'source.ts', rule: 'mirrors-origin' }]);
   });
 
+  it('does not let a Flight analogue mention conceal an implementation derivation', () => {
+    const mirrors = words('mirrors');
+    const transcribedFrom = words('transcribed', 'from');
+    const skeletonData = parts('Skeleton', 'Data');
+    const skeletonBinary = parts('Skeleton', 'Binary');
+    const readAnimation = parts('_read', 'Animation');
+    const flightFirst = [
+      `the 2D analogue of \`@flighthq/scene3d\` \`applyAnimationClipToScene3D\`,`,
+      `but relative rather than absolute. This ${mirrors} Spine's ${skeletonData}(setup)/Skeleton(instance) split:`,
+    ].join('\n');
+    const implementationSource = `${mirrors} \`@flighthq/scene3d\` approach; the parse is ${transcribedFrom} Spine \`${skeletonBinary}.${readAnimation}\``;
+    const report = checkLicenseProvenance([
+      { path: 'flight-first.ts', text: flightFirst },
+      { path: 'implementation-source.ts', text: implementationSource },
+    ]);
+
+    expect(report.violations).toEqual([
+      { line: 1, match: transcribedFrom, path: 'implementation-source.ts', rule: 'transcribed-from' },
+    ]);
+  });
+
   it('keeps rules, standards, dependency values, and local expressions separate from implementation sources', () => {
     const follows = words('follows');
     const mirrors = words('mirrors');

@@ -430,6 +430,7 @@ const IMPLEMENTATION_ROLE_PATTERN =
   /\b[A-Za-z_$][A-Za-z0-9_$]*(?:Adapter|Animator|Builder|Compiler|Controller|Decoder|Encoder|Factory|Interpreter|Loader|Manager|Module|Parser|Plugin|Reader|Renderer|Runtime|Writer)\b/;
 const IMPLEMENTATION_CALL_PATTERN = /\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*\(/;
 const IMPLEMENTATION_FILE_PATTERN = /\b[A-Za-z0-9_$./-]+\.(?:c|cc|cpp|cxx|h|hh|hpp|js|jsx|mjs|rs|ts|tsx)\b/i;
+const IMPLEMENTATION_MEMBER_PATTERN = /\b[A-Z][A-Za-z0-9_$]*\.[A-Za-z_$][A-Za-z0-9_$]*\b/;
 const LICENSE_NON_COPY_REASON_PATTERN =
   /\bbecause\b.{0,120}\blicen[cs]es?\b.{0,120}(?:(?:make|made|render)\b.{0,80}\bcopy(?:ing)?\b.{0,80}\b(?:problem|prohibited|forbidden|incompatible)\b|\b(?:forbid|prevent|prohibit)\w*\b.{0,80}\bcopy(?:ing)?\b)/i;
 const NON_COPY_CLAIM_PATTERN =
@@ -439,10 +440,10 @@ const PROJECT_POLICY_OBLIGATION_PATTERN = new RegExp(
   'i',
 );
 const IMPLEMENTATION_ARTIFACT_PATTERN = new RegExp(
-  `(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source})`,
+  `(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source}|${IMPLEMENTATION_MEMBER_PATTERN.source})`,
 );
 const EXTERNAL_OBJECT_PATTERN = /\bExternal[A-Z][A-Za-z0-9]*\b|https?:\/\/|<(?:file|path|url)>/i;
-const IMPLEMENTATION_ARTIFACT_SOURCE = `\`?(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source})`;
+const IMPLEMENTATION_ARTIFACT_SOURCE = `\`?(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source}|${IMPLEMENTATION_MEMBER_PATTERN.source})`;
 const THIRD_PERSON_IMPLEMENTATION_PATTERN = new RegExp(`\\btheir\\b[^{.!?;—}]*${IMPLEMENTATION_ARTIFACT_SOURCE}`, 'i');
 const BRAND_IMPLEMENTATION_PATTERN = new RegExp(
   `^\\s+(?:(?:a|an|the)\\s+)?[A-Z][A-Za-z0-9]*(?:['’]s)?[^.!?;—]{0,120}${IMPLEMENTATION_ARTIFACT_SOURCE}`,
