@@ -1,12 +1,26 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-04
+updated: 2026-08-05
 by: builder3
 ---
 
 # scene2d-formats — Status Log
 
 > Append-only handoff log, newest entry on top.
+
+## 2026-08-05 — SVG/Lottie silent-drop sweep completed field by field
+
+The follow-up backstop walked Lottie's typed document boundary and every SVG parse/style/reference path
+through its consumer. Flight `b0bca6552` carries nested Lottie group names, static solid-stroke dash/cap/
+join/miter data, SVG HSL/HSLA plus percentage alpha, and gradient-stop `currentColor`. The boundary pass
+then found that gradient-stroke line fields were not even typed; Flight `28301ec6d` adds and carries them.
+Animated dash stays a declared exclusion and now has an exact diagnostic/non-corruption regression.
+
+The assessment and coverage document name every examined candidate left alone and why: spatial tangents,
+skew axis, 3D, gradient focal/highlight data, text/glyph/runtime fields, masks, precomp bounds, CSS cascade
+and selectors, relative lengths/viewports/mask regions, advanced text paint/layout, non-scaling stroke,
+paint order, elliptical rectangle corners, and paint-server fallback grammar. No open design/runtime fork
+was selected, and the approval gate remains empty.
 
 ## 2026-08-04 — Current assessment audited; Lottie and SVG silent drops repaired
 

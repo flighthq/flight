@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene2d-formats'
-updated: 2026-08-04
+updated: 2026-08-05
 basedOn: ./review.md
 ---
 
@@ -8,10 +8,11 @@ basedOn: ./review.md
 
 ## Audit basis
 
-This assessment was checked against `packages/scene2d-formats/src`, its colocated tests, the shared
-resource seam, and the functional scenes at Flight commit `a3707655f`. Historical corpus statements
-below name the Flight commit that recorded them; they are evidence from that revision, not floating
-claims about an unnamed checkout.
+This assessment was checked against `packages/scene2d-formats/src`, its boundary types, colocated tests,
+the shared resource seam, and the functional scenes. The systematic Lottie/SVG source pass is pinned to
+Flight `28301ec6d`; the Rive corpus and functional-scene evidence remains pinned to Flight `a3707655f`.
+Historical corpus statements below name the Flight commit that recorded them; they are evidence from
+that revision, not floating claims about an unnamed checkout.
 
 The current Rive measurement is reproducible without committing external bytes: clone
 `https://github.com/rive-app/rive-flutter.git`, check out
@@ -134,6 +135,58 @@ already calls covered:
 
 Coverage now distinguishes those repaired drops, the remaining Lottie radial-highlight gap, the current
 pinned Rive baseline, and the historical unpinned Lottie/SVG and older Rive corpus counts.
+
+## Systematic SVG/Lottie silent-drop completion
+
+The backstop was completed as a field-to-consumer read-through, not stopped after the first two defects.
+Flight `b0bca6552` carries the bounded source fixes: nested Lottie group names; solid-stroke static dash,
+offset, cap, join, and miter data; SVG HSL/HSLA and percentage alpha; and computed `currentColor` for
+gradient stops. Flight `28301ec6d` corrects the Lottie boundary type and applies the same line-style data
+to gradient strokes. Animated dash remains undashed and uses the existing author-actionable modifier
+diagnostic rather than freezing its first keyframe.
+
+Every other candidate examined is listed below. “No loss” means the value was followed through its
+consumer rather than merely absent from the gap list. “Left” names the reason it was not turned into an
+implementation choice.
+
+| codec path or field | disposition | named reason |
+| --- | --- | --- |
+| Lottie solid stroke `d`, `lc`, `lj`, `ml` | fixed at `b0bca6552` | Static line styling maps directly onto existing shape/path commands. |
+| Lottie gradient stroke `d`, `lc`, `lj`, `ml` | fixed at `28301ec6d` | The fields were missing from the boundary type even though the gradient-stroke output uses the same line-style seam. |
+| Lottie nested shape-group `nm` | fixed at `b0bca6552` | A nested group already creates a one-to-one display container that can carry its name. |
+| Lottie animated dash entries | left, declared exclusion | Sampling dash arrays would require a mutable path rebuild contract; freezing the first keyframe would misstate animation. The existing modifier diagnostic remains. |
+| Lottie keyframe `ti` / `to` | left, unread | Tracks represent value samples and temporal easing, not a spatial motion-path target; endpoints survive but curved trajectories do not. |
+| Lottie transform `sa` | left, unread | Skew axis changes transform composition; assigning it to `skewX` would be a guessed relation. |
+| Lottie separated `z` and layer/document `ddd` | left, declared exclusion | The importer emits a 2D display tree and has no 3D layer projection contract. |
+| Lottie gradient highlight `a` / `h` | left, unread | A focal-point mapping must account for radial gradient geometry and transform; no format-derived relation is present here. |
+| Lottie text `sc` / `sw`, document `chars` / `fonts` | left, known gap | `TextFormat` emission is fill-only and embedded glyph outlines need a font/glyph resource seam. |
+| Lottie text `a` / `m` / `p` and multiple text documents | left, declared exclusion | These describe animator/layout runtime behavior; selecting one static document is the current contract. |
+| Lottie mask `o` / `f` / `x`, composed modes, inversion | left, known gap | Flight's emitted `ClipRegion` is a hard clip and cannot encode opacity, feather, expansion, or Boolean mask composition at this seam. |
+| Lottie `ef`, `tt` / `td`, `tm`, audio, camera | left, declared exclusions | They require effects, matte composition, time-remap, audio, or camera runtimes rather than a local field assignment. |
+| Lottie precomposition asset `w` / `h` | left, unread | Child timing and layers survive, but turning the asset rectangle into a viewport requires a clipping contract. |
+| Lottie path/paint item `nm` | left, metadata loss | Group paths and paints consolidate into one emitted `Shape`; no one-to-one node exists for each item name. |
+| Lottie shape `ix` / `ind` and group `np` | examined, no visual loss | They are expression/property indices or a declared count, not display values; expressions remain excluded. |
+| Lottie image asset `e` / `u` / `p` / dimensions | examined, no codec loss | The entire typed image asset reaches the injected resolver, which owns URL/data-URI interpretation and intrinsic pixels. |
+| Lottie markers `cm` / `dr` / `tm` | examined, no loss | All three reach the emitted clip event name, duration, and time. |
+| Lottie document `nm` / `v` | left, metadata-only | The import result has no document-name/schema-version fields; neither changes emitted scene pixels. |
+| SVG geometry, transforms, `use`, gradient inheritance, image `href` | examined, no loss found | Each attribute family reaches its path, matrix, reference resolver, or injected image seam; image aspect mapping was repaired in the predecessor audit. |
+| SVG HSL/HSLA and percentage RGB alpha | fixed at `b0bca6552` | They are CSS colour syntax with a direct mapping to the existing RGB/alpha paint representation. |
+| SVG gradient-stop `currentColor` | fixed at `b0bca6552` | Definition ancestry already computes `color`; the stop parser had bypassed it. |
+| SVG radial-gradient `fx` / `fy` | left, parsed then unused | Converting focal coordinates needs a focal-ratio relation across object-bounds/user-space coordinates and the gradient transform. |
+| SVG `switch` predicates | left, unread | Feature, extension, and language selection needs a caller environment and fallback policy; emitting all children remains explicitly documented. |
+| SVG complex CSS selectors | left, unread | A correct descendant/child/sibling/attribute/pseudo implementation is a selector engine, not an extension of the simple matcher. |
+| SVG `!important` | left, parsed away | Importance must participate in origin/specificity/order as cascade metadata; stripping or blindly winning both give wrong cases. |
+| SVG named colours outside the local table | left, unread | A complete CSS table exists only behind another package's private resolver; copying it or creating a shared colour resolver is a dependency/ownership decision. |
+| SVG stylesheet `stop-color` / `stop-opacity` | left, unread | Computed `SvgStyle` has no stop-paint fields; inline attributes/styles and inherited `color` are the current definition seam. |
+| SVG percentage and relative length units | left, partially read | `parseFloat` preserves numeric prefixes but property-specific reference boxes and font/viewport unit contexts are absent. |
+| SVG viewport overflow and mask region | left, unread | Viewports without `viewBox` are not clipped; `maskUnits` plus region `x`/`y`/`width`/`height` need viewport-region composition beyond `maskContentUnits`. |
+| SVG text stroke and advanced text layout | left, unread | `TextFormat` emission carries fill/font/alignment, while baselines, spacing, direction, rotation, and per-glyph positioning need the text-layout seam. |
+| SVG `vector-effect` / `paint-order` | left, unread | Non-scaling stroke requires transform-aware paint evaluation and paint ordering requires separate fill/stroke emission order. |
+| SVG distinct rectangle `rx` / `ry` | left, approximated | The available round-rectangle helper takes one circular radius; using one value cannot preserve elliptical corners. |
+| SVG paint-server fallback tokens | left, unread | `url(...)` parsing resolves only the server id; selecting a fallback paint requires a tokenized paint grammar. |
+
+This table is evidence, not a replacement ranking. It deliberately records the remaining semantic and
+runtime forks without choosing them while the approval gate is empty.
 
 ## Recommended
 
