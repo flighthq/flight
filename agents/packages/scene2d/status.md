@@ -1,12 +1,22 @@
 ---
 package: '@flighthq/scene2d'
-updated: 2026-08-02
-by: builder4
+updated: 2026-08-05
+by: auditor
 ---
 
 # scene2d — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+The package now centers on containers, scenes, sprites, HTML views, and render-target nodes. The former
+Bitmap, Video, and RenderView-specific surfaces were consolidated into Texture-backed Sprite and
+RenderTargetNode2D ownership; scene inspection now reports used kinds, blend modes, and shape commands.
+That makes the old Bitmap smoothing/source-rectangle setter recommendation obsolete: sampler policy and UV
+cropping belong to Texture, whose revisions drive sprite invalidation. Two small assessment gaps remain live:
+geometry is still a test-only manifest dependency, and the package description still names the pre-split
+bitmaps/shapes/text surface.
 
 ## [2026-08-02 · builder4] — MorphShape boundary resolved
 
