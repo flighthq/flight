@@ -29,8 +29,9 @@ import {
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { getTextureSource, getTextureWidth } from '@flighthq/texture/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import type {
+  Bitmap,
   ColorScaleBiasAdjustment,
   EmbeddedAudioResourceReference,
   TimelineAudioCue,
@@ -44,8 +45,10 @@ import type {
 } from '@flighthq/types/contract';
 import {
   AdvancedBlendMode,
+  BitmapTextureSourceKind,
   BlendMode,
   Compression,
+  DisplayObjectKind,
   ImageResourceReferenceKind,
   MorphShapeKind,
   MovieClipKind,
@@ -65,6 +68,9 @@ import {
   registerSwfScene2DDocumentImporter,
 } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
+
+beforeEach(() => unregisterDecompressor(Compression.Deflate));
+afterEach(() => unregisterDecompressor(Compression.Deflate));
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {
@@ -253,7 +259,7 @@ describe('createScene2DFromSwf', () => {
     );
 
     const target = document!.slots[0].target;
-    expect(target.kind).not.toBe(ShapeKind);
+    expect(target.kind).toBe(DisplayObjectKind);
     expect(getNodeLocalBoundsRectangle(target)).toMatchObject({ height: 5, width: 10, x: 0, y: 0 });
   });
 
@@ -287,7 +293,7 @@ describe('createScene2DFromSwf', () => {
     expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({ height: 0, width: 0 });
     const drawn = getNodeChildren(document!.root).filter((child) => child.kind === ShapeKind) as Shape[];
     expect(drawn).toHaveLength(1);
-    expect(drawn[0].data.commands.length).toBeGreaterThan(0);
+    expect(drawn[0].data.commands.filter((token) => token === 'lineTo')).toHaveLength(1);
   });
 
   it('collapses a scaling-grid wrapper sprite into one nine-slice shape', () => {
@@ -327,7 +333,7 @@ describe('createScene2DFromSwf', () => {
     // Twips convert to pixels, and the shape's own commands come with it rather than staying behind a
     // MovieClip that the nine-slice rewrite could never reach.
     expect(target.data.scale9Grid).toMatchObject({ height: 10, width: 10, x: 5, y: 5 });
-    expect(target.data.commands.length).toBeGreaterThan(0);
+    expect(target.data.commands.filter((token) => token === 'lineTo')).toHaveLength(1);
     expect(getNodeChildren(target)).toHaveLength(0);
   });
 
@@ -770,12 +776,14 @@ describe('createScene2DFromSwf', () => {
     const masked = children[0];
     const unmasked = children[1];
     expect(unmasked.clip).toBeNull();
-    expect(masked.clip).not.toBeNull();
 
     // The mask is a 40x40px square at x=5px; the covered instance sits at x=2px, so in that instance's
     // own local space — where a ClipRegion's contours live — the square starts at x=3px.
-    expect(masked.clip?.contours).not.toBeNull();
-    expect(masked.clip?.rect).toMatchObject({ height: 40, width: 40, x: 3, y: 0 });
+    expect(masked.clip).toMatchObject({
+      contours: [[3, 0, 43, 0, 43, 40, 3, 40, 3, 0]],
+      rect: { height: 40, width: 40, x: 3, y: 0 },
+      winding: 'nonZero',
+    });
   });
 
   it('imports a compressed document through a registered decompressor', () => {
@@ -1118,7 +1126,7 @@ describe('createScene2DFromSwf', () => {
     }
     // Some mutants must still import, or the property would be passing only because everything is
     // rejected before any real parsing happens.
-    expect(imported).toBeGreaterThan(0);
+    expect(imported).toBe(171);
   });
 
   it('instantiates a symbol that was exported but never placed', () => {
@@ -1182,7 +1190,7 @@ describe('createScene2DFromSwf', () => {
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.kind).toBe(ShapeKind);
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
-    expect(drawn.data.commands.filter((token) => token === 'lineTo').length).toBeGreaterThan(0);
+    expect(drawn.data.commands.filter((token) => token === 'lineTo')).toHaveLength(2);
   });
 
   it('resolves a lossless bitmap fill to pixels at import, with no image resource left to load', () => {
@@ -1215,8 +1223,7 @@ describe('createScene2DFromSwf', () => {
     // A lossless payload is not an image file, so it resolves here rather than through @flighthq/image —
     // which is why it leaves nothing on the document's image-resource contract.
     const texture = drawn.data.commands[2] as Texture2D;
-    expect(getTextureSource(texture)).not.toBeNull();
-    expect(getTextureWidth(texture)).toBe(1);
+    expectLosslessTexturePixel(texture);
     expect(document!.imageResources).toEqual([]);
   });
 
@@ -2741,7 +2748,7 @@ describe('createScene2DSymbolFromSwf', () => {
 
     const drawn = symbol!.root as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
-    expect(getTextureSource(drawn.data.commands[2] as Texture2D)).not.toBeNull();
+    expectLosslessTexturePixel(drawn.data.commands[2] as Texture2D);
   });
 
   it('hands an encoded bitmap out on the image-resource contract, naming the waiting texture', () => {
@@ -2836,6 +2843,28 @@ class BitWriter {
   writeUnsigned(value: number, count: number): void {
     for (let i = count - 1; i >= 0; i--) this.bits.push(Math.floor(value / 2 ** i) & 1);
   }
+}
+
+function expectLosslessTexturePixel(texture: Texture2D): void {
+  const source = getTextureSource(texture);
+  expect(source?.kind).toBe(BitmapTextureSourceKind);
+  if (source?.kind !== BitmapTextureSourceKind) throw new Error('expected a lossless bitmap source');
+  const bitmap = source as Bitmap;
+  expect({
+    alphaType: bitmap.alphaType,
+    data: [...bitmap.data],
+    gamut: bitmap.gamut,
+    height: bitmap.height,
+    kind: bitmap.kind,
+    width: bitmap.width,
+  }).toEqual({
+    alphaType: 'opaque',
+    data: [0x11, 0x22, 0x33, 0xff],
+    gamut: 'srgb',
+    height: 1,
+    kind: BitmapTextureSourceKind,
+    width: 1,
+  });
 }
 
 function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty: number): Uint8Array {

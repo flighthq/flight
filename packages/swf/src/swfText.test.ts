@@ -144,7 +144,7 @@ describe('readSwfFontGlyphs', () => {
     const glyphs = readSwfFontGlyphs(new SwfReader(bytes, 0, bytes.length), 2);
 
     expect(glyphs).toHaveLength(1);
-    expect(glyphs![0]).not.toBeNull();
+    expect(glyphs![0]?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0, 1]);
   });
 
   it('returns null for a font whose offset table runs past its tag', () => {
