@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textshaper'
+role: package
 crate: flighthq-textshaper
 draft: false
 lastDirection: 2026-07-02

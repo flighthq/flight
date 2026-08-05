@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/timeline'
+role: package
 crate: flighthq-timeline
 draft: false
 lastDirection: 2026-07-02

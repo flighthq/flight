@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/entity'
+role: package
 crate: flighthq-entity
 draft: false
 lastDirection: 2026-07-03

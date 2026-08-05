@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/lighting'
+role: package
 crate: flighthq-lighting
 draft: false
 lastDirection: 2026-07-31

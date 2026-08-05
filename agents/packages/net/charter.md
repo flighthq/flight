@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/net'
+role: package
 crate: flighthq-net
 draft: false
 lastDirection: 2026-07-10

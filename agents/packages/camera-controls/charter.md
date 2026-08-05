@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/camera-controls"
+role: package
 crate: flighthq-camera-controls
 lastDirection: 2026-07-22
 review: ./review.md

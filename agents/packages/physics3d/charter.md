@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/physics3d'
+role: package
 crate: flighthq-physics3d
 draft: false
 lastDirection: 2026-07-15

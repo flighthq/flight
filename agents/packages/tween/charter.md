@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/tween'
+role: package
 crate: flighthq-tween
 draft: false
 lastDirection: 2026-07-02

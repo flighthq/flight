@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/signals'
+role: package
 crate: flighthq-signals
 draft: false
 lastDirection: 2026-07-31

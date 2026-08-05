@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/scene2d-resources'
+role: package
 draft: false
 lastDirection: 2026-07-25
 review: ./review.md

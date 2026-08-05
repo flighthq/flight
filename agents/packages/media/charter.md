@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/media'
+role: package
 crate: flighthq-media
 draft: false
 lastDirection: 2026-07-02

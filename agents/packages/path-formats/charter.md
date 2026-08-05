@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/path-formats'
+role: package
 crate: flighthq-path-formats
 draft: false
 lastDirection: 2026-07-09

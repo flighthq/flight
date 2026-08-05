@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/render-wgpu'
+role: package
 crate: flighthq-render-wgpu
 draft: false
 lastDirection: 2026-07-31

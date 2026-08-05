@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/audio'
+role: package
 crate: flighthq-audio
 draft: false
 lastDirection: 2026-07-02

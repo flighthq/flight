@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/lifecycle'
+role: package
 crate: flighthq-lifecycle
 draft: false
 lastDirection: 2026-07-02

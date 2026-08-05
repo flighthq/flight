@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/texture-formats'
+role: package
 crate: flighthq-texture-formats
 draft: false
 lastDirection: 2026-07-10

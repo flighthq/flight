@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/snapshot'
+role: package
 crate: flighthq-snapshot
 draft: false
 lastDirection: 2026-07-10

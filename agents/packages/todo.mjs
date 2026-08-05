@@ -138,7 +138,13 @@ for (const name of cells) {
   // longer decides re-review on its own — it reports how much of the landed work was written down.
   if (review.updated) {
     const statusEntries = statusText ? countStatusEntriesSince(statusText, review.updated) : 0;
-    reviewed.push({ name, reviewUpdated: review.updated, statusDate, statusEntries });
+    reviewed.push({
+      name,
+      reviewUpdated: review.updated,
+      role: charterMeta.role ?? 'package',
+      statusDate,
+      statusEntries,
+    });
   }
 
   const assessmentPath = join(cellDir, 'assessment.md');
@@ -170,11 +176,32 @@ const churn = oldestReview === undefined ? new Map() : readPackageChurn(repoRoot
 // kept out of the count. Sweeps being excluded upstream, this floor is a priority cut rather than a
 // noise filter: one or two focused commits is real work, just not what to re-review first.
 const COMMIT_FLOOR = 3;
-const stale = reviewed
+// What counts as a commit landing *on* a cell depends on the cell's declared role, because two roles
+// are architecturally obliged to absorb other packages' work. `types` is the declared home of every
+// exported type in the SDK and `sdk` is the barrel, so a feature landing in `mesh` must touch both —
+// that is the architecture working, not either survey going stale. Ranking them on owned commits
+// (see isOwnedCommit) moves `types` from +422 to a figure about its own shape.
+//
+// The role is declared in charter front matter rather than inferred from the churn statistics,
+// because the statistic is only correlated: `types` follows 86% of its commits and `sdk` 87%, but
+// `render` follows 67% against `mesh`'s 47%, so any threshold that catches the first two misfiles
+// `render` on the way. Declared architecture is the signal; the percentage is a symptom of it.
+const ABSORBING_ROLES = new Set(['barrel', 'header']);
+const countsFor = (entry) => (ABSORBING_ROLES.has(entry.role) ? entry.owned : entry.commits);
+// tool-* and host-* are deliberately outside the SDK barrel and not tree-shakable (enforced by
+// scripts/sdk-policy.ts), so their surveys do not gate SDK depth. They rank in their own section
+// rather than competing with SDK packages for the top of the list.
+const OUTSIDE_ROLES = new Set(['host', 'tooling']);
+const ranked = reviewed
   .map((entry) => ({ ...entry, ...sumChurnSince(churn.get(entry.name), entry.reviewUpdated) }))
-  .filter((entry) => entry.commits > 0)
-  .sort((a, b) => b.commits - a.commits || b.lines - a.lines);
-const needsReReview = stale.filter((entry) => entry.commits >= COMMIT_FLOOR);
+  .map((entry) => ({ ...entry, ranked: countsFor(entry) }))
+  .filter((entry) => entry.ranked > 0)
+  .sort((a, b) => b.ranked - a.ranked || b.lines - a.lines);
+const stale = ranked.filter((entry) => !OUTSIDE_ROLES.has(entry.role));
+const outsideSdk = ranked.filter(
+  (entry) => OUTSIDE_ROLES.has(entry.role) && entry.ranked >= COMMIT_FLOOR,
+);
+const needsReReview = stale.filter((entry) => entry.ranked >= COMMIT_FLOOR);
 const belowFloor = stale.length - needsReReview.length;
 // A cell whose log claims work the churn scan cannot see: the entry may describe another package's
 // code, or the work may never have landed. Worth naming — it is the log and the tree disagreeing.
@@ -187,8 +214,8 @@ const unbackedByChurn = reviewed.filter(
 // The other direction: work landed and nothing was written down. The next agent inherits the commits
 // with no continuity prose explaining them, which is exactly what status.md exists to prevent.
 const UNLOGGED_COMMIT_FLOOR = 10;
-const unlogged = needsReReview.filter(
-  (entry) => entry.statusEntries === 0 && entry.commits >= UNLOGGED_COMMIT_FLOOR,
+const unlogged = ranked.filter(
+  (entry) => entry.statusEntries === 0 && entry.ranked >= UNLOGGED_COMMIT_FLOOR,
 );
 // Cells that look busy in `git log` but saw no work of their own — every post-review commit touching
 // them was a sweep. Named so the sweep exclusion is auditable rather than a silent subtraction.
@@ -307,15 +334,18 @@ lines.push('## Liveness — which stage each stale cell needs next');
 lines.push('');
 lines.push('Computed from cell front matter, except re-review, which is ranked by **commits** landed under `packages/<name>/` since the cell was reviewed — source, tests, and manifest alike, since an export or dependency change dates a survey as surely as a rewrite does. Commits rather than lines because a survey goes stale per distinct piece of work landed on top of it: one generated-file rewrite is 22k lines a survey can still describe in a sentence, while forty focused commits are forty decisions it never saw. Each row reads `+commits · lines · +status entries`, so a cell with many commits and no status entries is visibly undocumented. Git leads because the status log only records work somebody wrote down. The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
 lines.push('');
+lines.push('The `role` a cell declares in its charter changes what counts. A `header` or `barrel` cell (`types`, `sdk`) is architecturally obliged to absorb other packages\' work — every exported type in the SDK lives in `types` by rule, so a feature landing in `mesh` must touch it — and those two rank on the commits they **owned** (sole package touched, or at least half the lines) rather than every commit that reached them. A `tooling` or `host` cell sits outside the SDK barrel and is not tree-shakable, so its survey does not gate SDK depth and it ranks in its own section below.');
+lines.push('');
+const ownedRow = (entry) =>
+  ABSORBING_ROLES.has(entry.role)
+    ? `\`${entry.name}\` (+${entry.owned} owned of ${entry.commits} commits · ${formatLines(entry.lines)} · +${entry.statusEntries} status since ${entry.reviewUpdated})`
+    : `\`${entry.name}\` (+${entry.commits} commits · ${formatLines(entry.lines)} · +${entry.statusEntries} status since ${entry.reviewUpdated})`;
 const liveness = [
   ['Needs a direction session (charter stub or never directed)', needsDirection.map((n) => `\`${n}\``)],
   ['Needs a first review (built, no review.md)', needsReview.map((n) => `\`${n}\``)],
   [
     `Needs re-review (work landed since the survey — most commits first, ${COMMIT_FLOOR}+ commits)`,
-    needsReReview.map(
-      (entry) =>
-        `\`${entry.name}\` (+${entry.commits} commits · ${formatLines(entry.lines)} · +${entry.statusEntries} status since ${entry.reviewUpdated})`,
-    ),
+    needsReReview.map(ownedRow),
   ],
   ['Needs assess refresh (review newer than assessment)', needsAssess.map((n) => `\`${n}\``)],
 ];
@@ -325,6 +355,11 @@ for (const [label, entries] of liveness) {
 if (belowFloor > 0) {
   lines.push(
     `- **Below the re-review floor:** ${belowFloor} more cells saw work since their review but under ${COMMIT_FLOOR} commits — real, just not what to re-review first. Counted here so the cut is visible, not silent.`,
+  );
+}
+if (outsideSdk.length > 0) {
+  lines.push(
+    `- **Outside the SDK — \`tool-*\` / \`host-*\`:** ${outsideSdk.map(ownedRow).join(' · ')} — not tree-shakable and not in the \`@flighthq/sdk\` barrel (\`scripts/sdk-policy.ts\` enforces the exclusion), so these rank separately and do not gate SDK depth.`,
   );
 }
 if (sweptOnly.length > 0) {

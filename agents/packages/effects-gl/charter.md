@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/effects-gl'
+role: package
 crate: flighthq-effects-gl
 draft: false
 lastDirection: 2026-07-31

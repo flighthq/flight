@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/shape'
+role: package
 crate: flighthq-shape
 draft: false
 lastDirection: 2026-08-02

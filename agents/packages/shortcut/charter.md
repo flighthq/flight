@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/shortcut'
+role: package
 crate: flighthq-shortcut
 draft: false
 lastDirection: 2026-07-30

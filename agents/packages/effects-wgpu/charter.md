@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/effects-wgpu'
+role: package
 crate: flighthq-effects-wgpu
 draft: false
 lastDirection: 2026-07-31

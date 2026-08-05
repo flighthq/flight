@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/tilemap-formats'
+role: package
 crate: flighthq-tilemap-formats
 draft: false
 lastDirection: 2026-07-10

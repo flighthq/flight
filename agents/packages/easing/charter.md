@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/easing'
+role: package
 crate: flighthq-easing
 draft: false
 lastDirection: 2026-07-02

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/host-tauri'
+role: host
 crate: null
 draft: false
 lastDirection: 2026-07-11

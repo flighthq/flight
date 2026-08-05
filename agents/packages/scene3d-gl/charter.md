@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/scene3d-gl'
+role: package
 crate: flighthq-scene-gl
 draft: false
 lastDirection: 2026-07-02

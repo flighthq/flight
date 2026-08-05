@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/permissions'
+role: package
 crate: flighthq-permissions
 draft: false
 lastDirection: 2026-07-10

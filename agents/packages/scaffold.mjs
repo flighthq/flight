@@ -42,6 +42,14 @@ function domainSeed(name) {
     .trim();
 }
 
+// The name-driven roles are mechanical, so the scaffold sets them; `header` and `barrel` are one cell
+// each and are set by hand. See CONTRACT.md for what each role changes.
+function charterRole(name) {
+  if (name.startsWith('tool-')) return 'tooling';
+  if (name.startsWith('host-')) return 'host';
+  return 'package';
+}
+
 function charterStub(name) {
   const crate = NO_CRATE.has(name) ? 'null' : `flighthq-${name}`;
   const seed = domainSeed(name);
@@ -50,6 +58,7 @@ function charterStub(name) {
     : `_TODO — capture what this package is for, in your framing._`;
   return `---
 package: "@flighthq/${name}"
+role: ${charterRole(name)}
 crate: ${crate}
 lastDirection: null
 review: ./review.md

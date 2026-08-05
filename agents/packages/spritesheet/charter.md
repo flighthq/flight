@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/spritesheet'
+role: package
 crate: flighthq-spritesheet
 draft: false
 lastDirection: 2026-07-02

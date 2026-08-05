@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/collision'
+role: package
 crate: flighthq-collision
 draft: false
 lastDirection: 2026-07-10

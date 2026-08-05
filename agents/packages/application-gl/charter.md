@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/application-gl'
+role: package
 crate: flighthq-application-gl
 draft: true
 lastDirection: null

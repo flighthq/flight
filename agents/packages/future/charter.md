@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/future'
+role: package
 crate: flighthq-future
 draft: true
 lastDirection: null

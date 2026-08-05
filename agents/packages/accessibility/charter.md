@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/accessibility'
+role: package
 crate: flighthq-accessibility
 draft: false
 lastDirection: 2026-07-10

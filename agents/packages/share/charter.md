@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/share'
+role: package
 crate: flighthq-share
 draft: false
 lastDirection: 2026-07-30

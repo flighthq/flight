@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textbidi'
+role: package
 crate: null
 draft: false
 lastDirection: 2026-07-11

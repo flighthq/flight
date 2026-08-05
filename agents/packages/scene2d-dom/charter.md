@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/scene2d-dom'
+role: package
 crate: null
 lastDirection: 2026-07-02
 draft: false

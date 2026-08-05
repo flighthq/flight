@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/camera2d'
+role: package
 crate: flighthq-camera2d
 draft: false
 lastDirection: 2026-07-10

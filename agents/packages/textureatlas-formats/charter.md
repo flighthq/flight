@@ -1,5 +1,6 @@
 ---
 package: "@flighthq/textureatlas-formats"
+role: package
 crate: flighthq-textureatlas-formats
 lastDirection: null
 review: ./review.md

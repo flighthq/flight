@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/clock'
+role: package
 crate: flighthq-clock
 draft: false
 lastDirection: 2026-07-09

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/color'
+role: package
 crate: flighthq-color
 draft: false
 lastDirection: 2026-07-17

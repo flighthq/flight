@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/shell'
+role: package
 crate: flighthq-shell
 draft: false
 lastDirection: 2026-07-02

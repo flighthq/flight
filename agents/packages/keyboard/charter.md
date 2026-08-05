@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/keyboard'
+role: package
 crate: flighthq-keyboard
 draft: false
 lastDirection: 2026-07-02

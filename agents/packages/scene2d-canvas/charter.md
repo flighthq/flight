@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/scene2d-canvas'
+role: package
 crate: null
 draft: false
 lastDirection: 2026-07-02

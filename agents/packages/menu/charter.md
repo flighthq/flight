@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/menu'
+role: package
 crate: flighthq-menu
 draft: false
 lastDirection: 2026-07-02

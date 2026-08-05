@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/notification'
+role: package
 crate: flighthq-notification
 draft: false
 lastDirection: 2026-07-02

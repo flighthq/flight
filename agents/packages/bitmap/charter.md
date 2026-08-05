@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/bitmap'
+role: package
 crate: flighthq-surface
 draft: false
 lastDirection: 2026-07-02

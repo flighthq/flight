@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/clip'
+role: package
 crate: flighthq-clip
 draft: false
 lastDirection: 2026-07-02

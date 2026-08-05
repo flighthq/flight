@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/textureatlas'
+role: package
 crate: flighthq-textureatlas
 draft: false
 lastDirection: 2026-07-30

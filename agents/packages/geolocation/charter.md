@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/geolocation'
+role: package
 crate: flighthq-geolocation
 draft: false
 lastDirection: 2026-07-02

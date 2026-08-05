@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/types'
+role: header
 crate: flighthq-types
 draft: false
 lastDirection: 2026-07-02

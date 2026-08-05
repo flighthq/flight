@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/video'
+role: package
 crate: flighthq-video
 draft: false
 lastDirection: 2026-07-02

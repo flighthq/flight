@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/protocol'
+role: package
 crate: flighthq-protocol
 draft: false
 lastDirection: 2026-07-02

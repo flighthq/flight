@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/log'
+role: package
 crate: flighthq-log
 draft: false
 lastDirection: 2026-07-02

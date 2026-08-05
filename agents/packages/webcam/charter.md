@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/webcam'
+role: package
 crate: flighthq-webcam
 draft: false
 lastDirection: 2026-07-02

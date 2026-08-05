@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/power'
+role: package
 crate: flighthq-power
 draft: false
 lastDirection: 2026-07-02

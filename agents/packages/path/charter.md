@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/path'
+role: package
 crate: flighthq-path
 draft: false
 lastDirection: 2026-08-02

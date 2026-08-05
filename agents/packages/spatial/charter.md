@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/spatial'
+role: package
 crate: flighthq-spatial
 draft: false
 lastDirection: 2026-07-30

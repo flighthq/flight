@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/interaction'
+role: package
 crate: flighthq-interaction
 draft: false
 lastDirection: 2026-08-02

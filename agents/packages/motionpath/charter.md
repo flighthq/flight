@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/motionpath'
+role: package
 crate: flighthq-motionpath
 draft: false
 lastDirection: 2026-07-10

@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/socket'
+role: package
 crate: flighthq-socket
 draft: false
 lastDirection: 2026-07-10

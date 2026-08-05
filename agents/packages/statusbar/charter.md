@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/statusbar'
+role: package
 crate: flighthq-statusbar
 draft: false
 lastDirection: 2026-07-30

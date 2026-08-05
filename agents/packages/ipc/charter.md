@@ -1,5 +1,6 @@
 ---
 package: '@flighthq/ipc'
+role: package
 crate: flighthq-ipc
 draft: false
 lastDirection: 2026-07-02
