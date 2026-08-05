@@ -507,7 +507,9 @@ describe('parseSpineSkeleton', () => {
     const pose = cloneSkeleton2D(result.skeleton);
     applyAnimationClipToSkeleton2D(result.animations[0].clip, result.skeleton, pose, 0.5);
     expect(Number.isFinite(pose.bones[0].rotation)).toBe(true);
-    expect(pose.bones[0].rotation).toBeGreaterThan(0);
+    // Clamping the overshoot leaves a segment whose alpha is linear, so the midpoint of a 0..90 rotation
+    // is exactly 45. Asserting merely "greater than zero" would have passed for any positive garbage.
+    expect(pose.bones[0].rotation).toBeCloseTo(45, 4);
   });
 
   it('leaves a y overshoot UNCLAMPED, since anticipation is legitimate', () => {

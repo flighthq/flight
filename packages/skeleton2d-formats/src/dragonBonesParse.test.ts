@@ -598,7 +598,9 @@ describe('parseDragonBonesSkeleton', () => {
     const result = parseDragonBonesSkeleton(JSON.stringify(doc))!;
     expect(result.animations.map((a) => a.name)).toEqual(['keyframed', 'blended']);
     expect(result.animations[1].clip.channels.length).toBe(0);
-    expect(result.animations[0].clip.channels.length).toBeGreaterThan(0);
+    // The keyframed animation keeps its one channel. Asserting only "more than zero" here, opposite an
+    // exact 0 on the line above, would have passed if channels were silently dropped.
+    expect(result.animations[0].clip.channels.length).toBe(1);
   });
 
   it('HONORS a bezier curve frame, whose control points are already normalized', () => {
