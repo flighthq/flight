@@ -22,7 +22,7 @@ defaults:
 
 roles:
   principal:
-    directs: [manager]
+    directs: [manager, auditor]
     nudge: directed
     instructions: |
       You are the user-facing layer. Review documents under agents/ to prepare the overall
