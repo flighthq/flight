@@ -724,13 +724,12 @@ function parseDragonBonesMeshDisplay(
   };
 }
 
-// Converts a DragonBones WEIGHTED mesh to a MeshAttachment2D whose Skin2D carries per-bone LOCAL offsets, by
-// replicating the DragonBones runtime's geometry bake (ObjectDataParser._parseGeometry): each raw vertex is
-// pushed through `slotPose`, then through the INVERSE of each influencing bone's `bonePose` bind matrix, and
-// the result is that vertex expressed in the bone's bind-local frame — exactly what Skin2D + Flight's deform
-// consume (Σ w·(boneWorld·localOffset)). All matrices share Flight's `x'=a·x+c·y` convention (as does
-// DragonBones), so no transposition; the offsets are computed wholly within DragonBones' own space, so the
-// global y-down↔y-up question (charter #4) is orthogonal and unaffected here.
+// Converts a DragonBones WEIGHTED mesh to a MeshAttachment2D whose Skin2D carries per-bone LOCAL offsets by
+// inverse-bind skinning: each raw vertex is transformed by `slotPose` into armature bind space, then by the
+// INVERSE of each influencing bone's `bonePose` into that bone's bind-local frame — exactly what Skin2D +
+// Flight's deform consume (Σ w·(boneWorld·localOffset)). The format's matrices use Flight's
+// `x'=a·x+c·y` convention, so no transposition is needed; the offsets remain in the format's own coordinate
+// space, making the global y-down↔y-up question (charter #4) orthogonal and unaffected here.
 //
 // The `weights` stream references bones by ARMATURE FILE-ORDER index; `remapBoneIndex` re-points each
 // influence at the topo-sorted OUTPUT bone (the axis-12 remap). Every read is bounded against the actual
