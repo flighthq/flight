@@ -57,6 +57,27 @@ describe('license and provenance declaration gate', () => {
     ]);
   });
 
+  it('keeps identifiers that explain why no implementation was copied', () => {
+    const firstIdentifier = parts('B', 'SD');
+    const secondIdentifier = parts('G', 'PL');
+    const clean = [
+      'policy. Two independent implementations were consulted for the FORMAT FACTS only — byte order, field',
+      'order, units — and no code, naming, or structure was taken from either; the sources were deleted before',
+      `the parser was written, deliberately, because their licenses (${firstIdentifier}-3 attribution and ${secondIdentifier}) make copying a`,
+      'problem the facts themselves are not.',
+    ].join('\n');
+    const copied = [
+      'Two implementations were consulted and their code, naming, and structure were taken.',
+      `The parser retained them because their licenses (${firstIdentifier} and ${secondIdentifier}) make copying a problem.`,
+    ].join('\n');
+
+    expect(checkLicenseProvenance([{ path: 'status.md', text: clean }]).violations).toEqual([]);
+    expect(checkLicenseProvenance([{ path: 'status.md', text: copied }]).violations).toEqual([
+      { line: 2, match: firstIdentifier, path: 'status.md', rule: 'license-identifier' },
+      { line: 2, match: secondIdentifier, path: 'status.md', rule: 'license-identifier' },
+    ]);
+  });
+
   it('rejects implementation derivation markers independently of an actual token', () => {
     const phrases = [
       words('sourced', 'from'),
@@ -143,6 +164,30 @@ describe('license and provenance declaration gate', () => {
       { line: 2, match: comparisonPhrase, path: 'source.ts', rule: 'mirrors-origin' },
       { line: 3, match: replicationPhrase, path: 'source.ts', rule: 'replicates-origin' },
     ]);
+  });
+
+  it('keeps independently corroborated conventions separate from implementation sources', () => {
+    const mirrors = words('mirrors');
+    const vertexAnimator = parts('Vertex', 'Animator');
+    const skeletonAnimator = parts('Skeleton', 'Animator');
+    const skeletonData = parts('Skeleton', 'Data');
+    const standardFirst = [
+      `same clip, same animator, same clock — only the sink differs. This is exactly glTF's model`,
+      `(\`channel.target.path\` already admits "weights") and ${mirrors} AwayJS's \`${vertexAnimator}\`/\`VertexAnimationSet\``,
+      `vs \`${skeletonAnimator}\`/\`SkeletonAnimationSet\` split under one \`AnimatorBase\`.`,
+    ].join('\n');
+    const flightFirst = [
+      `corresponding \`setup\` bone — the 2D-skeletal analogue of @flighthq/scene3d's \`applyAnimationClipToScene3D\`,`,
+      `but relative rather than absolute. This ${mirrors} Spine's ${skeletonData}(setup)/Skeleton(instance) split:`,
+    ].join('\n');
+    const implementationSource = `Flight's ${vertexAnimator} ${mirrors} Acme's ${vertexAnimator}`;
+    const report = checkLicenseProvenance([
+      { path: 'morph.md', text: standardFirst },
+      { path: 'skeleton.ts', text: flightFirst },
+      { path: 'source.ts', text: implementationSource },
+    ]);
+
+    expect(report.violations).toEqual([{ line: 1, match: mirrors, path: 'source.ts', rule: 'mirrors-origin' }]);
   });
 
   it('keeps rules, standards, dependency values, and local expressions separate from implementation sources', () => {
@@ -314,22 +359,27 @@ describe('license and provenance declaration gate', () => {
     expect(checkLicenseProvenance([{ path: 'status.md', text: assertedObligation }]).violations).toHaveLength(2);
   });
 
-  it('reports the two exact policy escapes and their reasons', () => {
+  it('keys the project policy escape on its file and rule rather than fixed prose', () => {
     const identifier = parts('M', 'IT');
-    const projectPolicy = `Flight is ${identifier}, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
+    const otherIdentifier = parts('B', 'SD');
+    const projectPolicy = `Flight is ${identifier}, copyright as stated in the root \`LICENSE.md\` — the operative text, and the only place the holder is named. **No work may attach an attribution obligation to any outside party.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
     const example = `- **State format facts as facts about the format, not as excerpts from a document.** "PNG's magic bytes are \`89 50 4E 47\`" needs no attribution; "${words('derived', 'from')} \`<url>\` at \`<sha>\`, ${identifier}" manufactures one.`;
     const report = checkLicenseProvenance([
-      { path: 'AGENTS.md', text: `${projectPolicy}\n${example}` },
+      { path: 'AGENTS.md', text: `${projectPolicy}\nA third-party package uses ${otherIdentifier}.\n${example}` },
       { path: 'notes.md', text: `${projectPolicy}\n${example}` },
     ]);
     const output = formatLicenseProvenanceReport(report);
 
-    expect(report.violations).toHaveLength(3);
-    expect(report.violations.every((entry) => entry.path === 'notes.md')).toBe(true);
+    expect(report.violations).toEqual([
+      { line: 2, match: otherIdentifier, path: 'AGENTS.md', rule: 'license-identifier' },
+      { line: 1, match: identifier, path: 'notes.md', rule: 'license-identifier' },
+      { line: 2, match: words('derived', 'from'), path: 'notes.md', rule: 'derived-from-with-provenance' },
+      { line: 2, match: identifier, path: 'notes.md', rule: 'license-identifier' },
+    ]);
     expect(output).toContain('project-license-policy [1 matched line] —');
     expect(output).toContain('prohibited-provenance-example [1 matched line] —');
     expect(output).toContain(
-      'Matcher state: [semantic negatives and verification protected; implementation derivations token-independent]',
+      'Matcher state: [semantic negatives, independent convention comparisons, and verification protected; implementation derivations token-independent]',
     );
   });
 
