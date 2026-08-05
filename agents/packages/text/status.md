@@ -1,12 +1,21 @@
 ---
 package: '@flighthq/text'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-05
+by: auditor
 ---
 
 # text — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+Since the 2026-07 review, text display entities gained vertical alignment, corrected TextLabel auto-size
+bounds invalidation, and consolidated their invalidation calls onto the shared node content path. RichText
+markup parsing moved out to the text-markup seam, textlayout query parameters were tightened, and package
+exports were routed through the contract lanes. The string-setter no-op guard landed, but the assessment's
+single design question remains live: the five object/range setters still replace or append values and
+invalidate unconditionally, with no recorded identity-versus-structural comparison rule.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/shape'
-updated: 2026-08-02
-by: builder4
+updated: 2026-08-05
+by: auditor
 ---
 
 # shape — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-05 · auditor] — post-review continuity reconciliation
+
+The retained MorphShape work matured into compound geometry and paint sampling with stable command buffers,
+animation bindings, gradient/bitmap/stroke interpolation, and renderer aliases; the stroke path also gained
+shared ring tessellation and explicit raster fallback. Shape command storage now has typed tokens and safe
+large-buffer copying, while the superseded per-command hit-test registry was removed. Against that current
+tree, the old geometry-manifest recommendation is obsolete because `morphShapePaint.ts` uses geometry in
+production. The typed registry still omits `drawTriangles`, and the 2026-07-02 correctness backfill remains
+incomplete: cubic extrema and raw `drawPath` decoding are covered, but the requested per-span bounds,
+triangle-bounds, winding-carry, and UV/non-solid assertions are not all present.
 
 ## [2026-08-02 · builder4] — compound MorphShape geometry and paint
 
