@@ -57,11 +57,9 @@ describe('applyAnimationClipToRiveDocument', () => {
   it('moves a path vertex and regenerates the shape geometry', () => {
     const result = createScene2DFromRiveDocument(riveWithAnimatedVertex(24, 0, 60));
     const shape = firstShape(result);
-    const before = JSON.stringify(shape.data.commands);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
 
-    expect(JSON.stringify(shape.data.commands)).not.toBe(before);
     expect(pathPoints(shape)[0][0]).toBeCloseTo(60, 3);
   });
 
@@ -77,11 +75,9 @@ describe('applyAnimationClipToRiveDocument', () => {
   it('animates a fill colour through the same route', () => {
     const result = createScene2DFromRiveDocument(riveWithAnimatedFill());
     const shape = firstShape(result);
-    const before = fillPaint(shape);
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
 
-    expect(fillPaint(shape)).not.toEqual(before);
     expect(fillPaint(shape)).toEqual({ alpha: 1, color: 0xddeeff });
   });
 

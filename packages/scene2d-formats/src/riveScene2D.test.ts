@@ -233,7 +233,7 @@ describe('createScene2DFromRiveDocument', () => {
       ]),
     );
 
-    expect((getNodeChildAt(result.artboards[0].root, 0) as Node2D).blendMode).not.toBe('Multiply');
+    expect((getNodeChildAt(result.artboards[0].root, 0) as Node2D).blendMode).toBeNull();
   });
 
   it('reparents past a non-node ancestor rather than dropping its descendants', () => {
