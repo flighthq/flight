@@ -59,8 +59,14 @@ function entryModule(name: string, backend: string): string {
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
-    `const __testModule = await import(${JSON.stringify(scenePath)});`,
-    `const { verifyCaptureTarget } = await import('@ft/capture');`,
+    `const { failCaptureTargetVerification, verifyCaptureTarget } = await import('@ft/capture');`,
+    `let __testModule;`,
+    `try {`,
+    `  __testModule = await import(${JSON.stringify(scenePath)});`,
+    `} catch (__error) {`,
+    `  failCaptureTargetVerification(${JSON.stringify(backend)}, __error);`,
+    `  throw __error;`,
+    `}`,
     `await verifyCaptureTarget(__testModule, ${JSON.stringify(backend)});`,
   ].join('\n');
 }
