@@ -11,9 +11,20 @@ export function countStatusEntriesSince(text, since) {
   return getStatusEntryDates(text).filter((date) => date > since).length;
 }
 
-// Every `## YYYY-MM-DD` entry heading in a status log, oldest first.
+// Every dated entry heading in a status log, oldest first.
+//
+// Two heading shapes are in use and both are read: the bare `## YYYY-MM-DD` (191 entries) and the
+// bracketed `## [YYYY-MM-DD · <author>]` (78) that mirrors the `Approved` provenance stamp. Matching
+// only the bare form hid 29% of every entry in the tree, which surfaced as six cells reported as
+// having no continuity prose while their logs carried it — the liveness list then sent agents to
+// write what was already written.
+//
+// CONTRACT.md fixes the front matter and says nothing about the heading, so the heading is prose and
+// agents are free in it by design. The parser widens to the prose rather than the contract narrowing
+// to the parser: a derived signal that reads free-form text owns the variation it will meet, and the
+// bracketed form is the better one anyway since it carries who wrote the entry.
 export function getStatusEntryDates(text) {
-  return [...text.matchAll(/^#{2,3}\s+(\d{4}-\d{2}-\d{2})/gm)].map((match) => match[1]).sort();
+  return [...text.matchAll(/^#{2,3}\s+\[?\s*(\d{4}-\d{2}-\d{2})/gm)].map((match) => match[1]).sort();
 }
 
 // The newest `## YYYY-MM-DD` entry heading in a status log, or null when it has no dated entry.

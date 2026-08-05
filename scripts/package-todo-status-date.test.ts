@@ -19,6 +19,20 @@ const LOG = [
   'Body.',
 ].join('\n');
 
+// The provenance-stamped heading shape, which mirrors the `Approved` ledger stamp and is used by 78
+// entries across the tree.
+const BRACKETED_LOG = [
+  '# types — Status Log',
+  '',
+  '## [2026-08-05 · auditor] — post-review continuity reconciliation',
+  '',
+  'Body.',
+  '',
+  '## [2026-07-13 · builder-a1b2c3d] — header extraction',
+  '',
+  'Body.',
+].join('\n');
+
 describe('countStatusEntriesSince', () => {
   it('counts only the entries strictly after the cutoff', () => {
     expect(countStatusEntriesSince(LOG, '2026-01-01')).toBe(2);
@@ -82,5 +96,22 @@ describe('getStatusEntryDates', () => {
 
   it('returns an empty array for a log with no dated entries', () => {
     expect(getStatusEntryDates('# Status\n\nProse only.\n')).toEqual([]);
+  });
+
+  it('reads the bracketed provenance heading as well as the bare date', () => {
+    expect(getStatusEntryDates(BRACKETED_LOG)).toEqual(['2026-07-13', '2026-08-05']);
+  });
+
+  it('reads both heading shapes in one log', () => {
+    expect(getStatusEntryDates(`${LOG}\n\n${BRACKETED_LOG}`)).toEqual([
+      '2026-06-25',
+      '2026-07-13',
+      '2026-07-24',
+      '2026-08-05',
+    ]);
+  });
+
+  it('does not read a date that is not the start of the heading', () => {
+    expect(getStatusEntryDates('## Landed before 2026-08-05 — prose\n')).toEqual([]);
   });
 });
