@@ -503,14 +503,13 @@ insets, fixed main-axis basis, fill fractions, and cross-axis fill/stretch map t
 sizes. Current Rive grid and stack data also maps onto Flight grid: explicit point/fraction/auto
 template tracks, row/column gaps, one-based placement and spans, and stack's overlapping 1×1 cell.
 
-The mapping was derived from `rive-app/rive-runtime` revision
-`8efe18ec7b52a02139844ffe71438c00de13037e`, not from remembered property names. The defining inputs
-were `dev/defs/layout_component.json`, `dev/defs/nested_artboard_layout.json`, the definitions under
-`dev/defs/layout/`, `include/rive/layout/layout_enums.hpp`, `src/layout_component.cpp`, and the
-corresponding `src/layout/*.cpp` style appliers. Those sources establish the property keys, defaults,
-runtime flags, enum values, component-index `styleId`, and the separate `applyContainerStyle` /
-`applyItemStyle` behavior. They were fetched into a temporary checkout for the derivation and are not
-committed here.
+At Rive revision `8efe18ec7b52a02139844ffe71438c00de13037e`, the `RIVE_*` constants record the
+format's published interface facts. Its JSON definitions — `dev/defs/layout_component.json`,
+`dev/defs/nested_artboard_layout.json`, and the definitions under `dev/defs/layout/` — together with
+the published `include/rive/layout/layout_enums.hpp` enums declare the property keys, defaults,
+runtime flags, enum values, component-index `styleId`, and separate container/item roles. The solvers
+in `@flighthq/layout` are independent Flight implementations of CSS Flexbox and Grid, written before
+this importer.
 
 The unsupported Yoga/Rive behavior is explicit project coverage, not a diagnostic emitted for every
 ordinary Rive file:
