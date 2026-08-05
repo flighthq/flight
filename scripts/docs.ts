@@ -241,11 +241,39 @@ function checkAssessment(cell: string, dir: string): void {
   }
 }
 
+// Every built package must have a cell, because the cell is where review content lands. Checked from
+// the `packages/` side: the per-cell checks below iterate cells, so a package with no cell directory at
+// all is not a violation to them — it is simply never visited. That blind spot let `importdiagnostics`,
+// `quadbatch`, and `tilemap` sit uncovered for weeks; they surfaced only when someone happened to run
+// `scaffold.mjs`, which nothing schedules. A missing charter is the one unambiguous, mechanically
+// fixable envelope violation here (CONTRACT.md: "charter.md is required"), so it fails. A missing
+// review/assessment does not: those are stage outputs, and "this stage has not run yet" is what the
+// generated liveness list is for, not a gate.
+function checkCellCoverage(cells: ReadonlySet<string>): void {
+  const packages = readdirSync(PACKAGES_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  for (const name of findUncoveredPackages(packages, cells)) {
+    fail(`packages/${name}/: no agents/packages/${name}/ cell — run \`node agents/packages/scaffold.mjs\``);
+  }
+}
+
+// Built packages with no cell, in the order given. The reverse direction is deliberately not reported:
+// a cell with no package is a chartered-unbuilt, absorbed, external, or reserved cell, all of which are
+// legitimate and already classified by the generated index.
+export function findUncoveredPackages(packages: readonly string[], cells: ReadonlySet<string>): readonly string[] {
+  return packages.filter((name) => !cells.has(name));
+}
+
 function checkCells(): void {
   const cells = readdirSync(CELLS_DIR, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
+
+  checkCellCoverage(new Set(cells));
 
   for (const cell of cells) {
     const dir = join(CELLS_DIR, cell);
@@ -583,6 +611,7 @@ function warn(message: string): void {
 
 const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const CELLS_DIR = join(REPO_ROOT, 'agents', 'packages');
+const PACKAGES_DIR = join(REPO_ROOT, 'packages');
 
 const SKILLS_DIR = join(REPO_ROOT, '.claude', 'skills');
 

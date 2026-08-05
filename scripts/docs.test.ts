@@ -8,6 +8,7 @@ import {
   findMarkdownLinkTargets,
   findOrphanDocs,
   findReachableDocs,
+  findUncoveredPackages,
   getDocBudgetStatus,
   isAuthorityBearingDoc,
   reportDocBudget,
@@ -226,6 +227,22 @@ describe('findReachableDocs', () => {
       { path: 'agents/conventions/index.md', text: 'See [commands](../commands.md).' },
     ]);
     expect(reached.has('agents/commands.md')).toBe(true);
+  });
+});
+
+describe('findUncoveredPackages', () => {
+  // The blind spot this closes: the per-cell checks iterate cells, so a package with no cell is never
+  // visited and never fails. `quadbatch` sat uncovered for weeks with seven consumers.
+  it('flags a built package that has no cell', () => {
+    expect(findUncoveredPackages(['mesh', 'quadbatch'], new Set(['mesh']))).toEqual(['quadbatch']);
+  });
+
+  it('does not flag a cell with no package — chartered-unbuilt and absorbed cells are legitimate', () => {
+    expect(findUncoveredPackages(['mesh'], new Set(['mesh', 'physics3d', 'camera2d']))).toEqual([]);
+  });
+
+  it('returns nothing when every package is covered', () => {
+    expect(findUncoveredPackages(['mesh', 'path'], new Set(['mesh', 'path']))).toEqual([]);
   });
 });
 
