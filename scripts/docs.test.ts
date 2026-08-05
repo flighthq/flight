@@ -161,8 +161,16 @@ describe('findOrphanDocs', () => {
     expect(findOrphanDocs(docs, new Set())).toEqual(docs);
   });
 
+  // The other half of that allowance's boundary. An allowance is a ruling with class scope — it
+  // exonerates every future member of the class, including files nobody has looked at — so it is pinned
+  // by where it STOPS, not by its centre. Keyed to the one generated path; a hand-written sibling in the
+  // same directory is still required to be reachable.
   it('allows the generated work index, which is a view over cells and never committed', () => {
     expect(findOrphanDocs(['agents/packages/TODO.md'], new Set())).toEqual([]);
+  });
+
+  it('does NOT extend that allowance to a hand-written sibling in the same directory', () => {
+    expect(findOrphanDocs(['agents/packages/progress.md'], new Set())).toEqual(['agents/packages/progress.md']);
   });
 });
 
