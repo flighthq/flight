@@ -26,9 +26,14 @@ export interface LicenseProvenanceViolation {
 }
 
 interface LicenseProvenanceEscape {
-  match: (path: string, line: string) => boolean;
+  match: (context: Readonly<LicenseProvenanceEscapeContext>) => boolean;
   name: string;
   reason: string;
+}
+
+interface LicenseProvenanceEscapeContext extends LicenseTokenMatch {
+  line: string;
+  path: string;
 }
 
 export interface LicenseProvenanceEscapeResult {
@@ -102,22 +107,21 @@ const MANIFEST_LICENSE_LINE = /^\s*"license"\s*:\s*"[^"]+"\s*,?\s*$/;
 const MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024;
 const DISSOLVED_FLIGHT_PACKAGES = new Set(['filters']);
 
-const PROJECT_POLICY_LINE = `Flight is ${parts('M', 'IT')}, copyright Joshua Granick alone. **No work may attach an attribution obligation to anyone else.** This outranks any feature, unblock, or deadline. If you think you need third-party material for anything, stop and ask.`;
 const PROHIBITED_EXAMPLE_LINE = `- **State format facts as facts about the format, not as excerpts from a document.** "PNG's magic bytes are \`89 50 4E 47\`" needs no attribution; "${words('derived', 'from')} \`<url>\` at \`<sha>\`, ${parts('M', 'IT')}" manufactures one.`;
 
 const NAMED_ESCAPES: readonly LicenseProvenanceEscape[] = [
   {
-    match: (path, line) => path === 'package-lock.json' && MANIFEST_LICENSE_LINE.test(line),
+    match: ({ line, path }) => path === 'package-lock.json' && MANIFEST_LICENSE_LINE.test(line),
     name: 'npm-lock-license-metadata',
     reason: 'generated dependency metadata; only an exact license property line is allowed',
   },
   {
-    match: (path, line) => path === 'AGENTS.md' && line.trim() === PROJECT_POLICY_LINE,
+    match: isProjectPolicyToken,
     name: 'project-license-policy',
-    reason: 'the repository policy must be able to name its own declaration',
+    reason: 'the repository policy must be able to name its own declaration; keyed by file and policy rule',
   },
   {
-    match: (path, line) => path === 'AGENTS.md' && line.trim() === PROHIBITED_EXAMPLE_LINE,
+    match: ({ line, path }) => path === 'AGENTS.md' && line.trim() === PROHIBITED_EXAMPLE_LINE,
     name: 'prohibited-provenance-example',
     reason: 'the repository policy includes one exact hypothetical showing what contributors must not add',
   },
@@ -134,9 +138,11 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
     const path = normalizePath(input.path);
     const lines = input.text.split(/\r?\n/);
     for (const [index, line] of lines.entries()) {
-      const activeTokens = licenseTokenMatches(line).filter((match) => !isNegated(line, match.index));
+      const activeTokens = licenseTokenMatches(line).filter(
+        (match) => !isNegated(line, match.index) && !isNonCopyLicenseReason(lines, index),
+      );
       for (const token of activeTokens) {
-        const disposition = dispositionOf(path, line, index, escapeLines);
+        const disposition = dispositionOf(path, line, index, escapeLines, token);
         if (disposition === 'structural') {
           structuralMatches.add(`${path}:${index + 1}:${token.match}`);
         } else if (disposition === 'violation') {
@@ -149,8 +155,12 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
         for (const match of line.matchAll(pattern)) {
           if (isNegated(line, match.index ?? 0)) continue;
           if (isPermittedDerivationObject(line, match, flightPackages)) continue;
-          if (!isImplementationDerivationObject(line, match)) continue;
-          const disposition = dispositionOf(path, line, index, escapeLines);
+          if (!isImplementationDerivationObject(line, match, lines[index - 1] ?? '')) continue;
+          const disposition = dispositionOf(path, line, index, escapeLines, {
+            index: match.index ?? 0,
+            match: match[0],
+            rule: rule.name,
+          });
           if (disposition === 'structural') {
             structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
           } else if (disposition === 'violation') {
@@ -170,7 +180,8 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
       name: entry.name,
       reason: entry.reason,
     })),
-    matcherState: 'semantic negatives and verification protected; implementation derivations token-independent',
+    matcherState:
+      'semantic negatives, independent convention comparisons, and verification protected; implementation derivations token-independent',
     scannedFiles: new Set(inputs.map((input) => normalizePath(input.path))).size,
     structuralMatches: structuralMatches.size,
     violations: uniqueViolations,
@@ -202,15 +213,27 @@ function dispositionOf(
   line: string,
   lineIndex: number,
   escapeLines: readonly Set<string>[],
+  finding: Readonly<LicenseTokenMatch>,
 ): 'escape' | 'structural' | 'violation' {
   if (path === 'LICENSE.md') return 'structural';
   if (isPackageManifest(path) && MANIFEST_LICENSE_LINE.test(line)) return 'structural';
   for (const [index, escape] of NAMED_ESCAPES.entries()) {
-    if (!escape.match(path, line)) continue;
+    if (!escape.match({ ...finding, line, path })) continue;
     escapeLines[index]?.add(`${path}:${lineIndex + 1}`);
     return 'escape';
   }
   return 'violation';
+}
+
+function isProjectPolicyToken(context: Readonly<LicenseProvenanceEscapeContext>): boolean {
+  if (context.path !== 'AGENTS.md' || context.rule !== 'license-identifier') return false;
+  const declaration = context.line.match(/^Flight\s+is\s+([A-Za-z0-9-]+)/);
+  if (declaration?.[1] !== context.match || context.line.indexOf(context.match) !== context.index) return false;
+  return (
+    /\bcopyright\b/i.test(context.line) &&
+    PROJECT_POLICY_OBLIGATION_PATTERN.test(context.line) &&
+    /\bthird-party material\b/i.test(context.line)
+  );
 }
 
 function escapeRegExp(value: string): string {
@@ -314,7 +337,7 @@ function isPermittedDerivationObject(
   return packageMatch?.[1] !== undefined && flightPackages.has(packageMatch[1]);
 }
 
-function isImplementationDerivationObject(line: string, match: RegExpMatchArray): boolean {
+function isImplementationDerivationObject(line: string, match: RegExpMatchArray, previousLine: string): boolean {
   const matchIndex = match.index ?? 0;
   const prefix = line.slice(0, matchIndex);
   const boundaries = [...prefix.matchAll(/[;!?—]|\.(?=\s|$)/g)];
@@ -325,6 +348,8 @@ function isImplementationDerivationObject(line: string, match: RegExpMatchArray)
   const object = line.slice(matchIndex + match[0].length, clauseEnd);
   const objectHead = object.split(/,\s*(?:but|not|rather)\b|\b(?:but|not|rather)\b/i, 1)[0] ?? object;
   const claimPrefix = line.slice(clauseStart + 1, matchIndex);
+
+  if (isIndependentConventionComparison(previousLine, line, match)) return false;
 
   // Format/interface provenance is allowed even when it names a project. An implementation noun in
   // the same clause makes the opposite claim: the sentence says it took from executable code.
@@ -343,6 +368,21 @@ function isImplementationDerivationObject(line: string, match: RegExpMatchArray)
   }
   const formatIndex = FORMAT_OBJECT_PATTERN.exec(objectHead)?.index ?? Number.POSITIVE_INFINITY;
   return implementationIndex < formatIndex;
+}
+
+function isIndependentConventionComparison(
+  previousLine: string,
+  line: string,
+  match: Readonly<RegExpMatchArray>,
+): boolean {
+  if (!/^mirrors$/i.test(match[0])) return false;
+  const prefix = `${previousLine} ${line.slice(0, match.index ?? 0)}`;
+  return INDEPENDENT_STANDARD_MODEL_PATTERN.test(prefix) || FLIGHT_PRIMARY_ANALOGUE_PATTERN.test(prefix);
+}
+
+function isNonCopyLicenseReason(lines: readonly string[], index: number): boolean {
+  const context = lines.slice(Math.max(0, index - 2), index + 2).join(' ');
+  return NON_COPY_CLAIM_PATTERN.test(context) && LICENSE_NON_COPY_REASON_PATTERN.test(context);
 }
 
 function externalRepositoryPathIndex(object: string): number {
@@ -379,14 +419,25 @@ function words(...values: string[]): string {
 
 const ANALOGY_OBJECT_PATTERN =
   /\b(?:contract|convention|data model|design|model|naming|parameters?|pattern|principle|rules?|shape)\b/i;
+const FLIGHT_PRIMARY_ANALOGUE_PATTERN = /\banalogue of\b.{0,160}@flighthq\/[a-z0-9-]+(?:['’]s)?\b/i;
 const FORMAT_OBJECT_PATTERN =
   /\b(?:algorithm|equation|facts?|format(?: description)?|identity|inputs?|matrix|protocol|ramp|schema|semantics|spec(?:ification)?|standard|test data|these|UAX|RFC|ISO|IEC|ECMA|CSS)\b/i;
+const INDEPENDENT_STANDARD_MODEL_PATTERN =
+  /\b(?:exactly|same as)\s+(?:the\s+)?[A-Za-z][A-Za-z0-9_.-]*(?:['’]s)?\s+(?:contract|convention|data model|design|format|model|pattern|protocol|schema|specification|standard)\b.{0,240}\band\s*$/i;
 const IMPLEMENTATION_CONTEXT_PATTERN =
   /\b(?:codebase|external code|external implementation|implementation|repository|source code|source file|third-party code|upstream)\b/i;
 const IMPLEMENTATION_ROLE_PATTERN =
   /\b[A-Za-z_$][A-Za-z0-9_$]*(?:Adapter|Animator|Builder|Compiler|Controller|Decoder|Encoder|Factory|Interpreter|Loader|Manager|Module|Parser|Plugin|Reader|Renderer|Runtime|Writer)\b/;
 const IMPLEMENTATION_CALL_PATTERN = /\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*\(/;
 const IMPLEMENTATION_FILE_PATTERN = /\b[A-Za-z0-9_$./-]+\.(?:c|cc|cpp|cxx|h|hh|hpp|js|jsx|mjs|rs|ts|tsx)\b/i;
+const LICENSE_NON_COPY_REASON_PATTERN =
+  /\bbecause\b.{0,120}\blicen[cs]es?\b.{0,120}(?:(?:make|made|render)\b.{0,80}\bcopy(?:ing)?\b.{0,80}\b(?:problem|prohibited|forbidden|incompatible)\b|\b(?:forbid|prevent|prohibit)\w*\b.{0,80}\bcopy(?:ing)?\b)/i;
+const NON_COPY_CLAIM_PATTERN =
+  /\b(?:no|not|never|without)\b[^.!?;—]{0,160}\b(?:code|implementation|naming|structure)\b[^.!?;—]{0,160}\b(?:copied|taken|used|adapted|ported|transcribed|translated)\b/i;
+const PROJECT_POLICY_OBLIGATION_PATTERN = new RegExp(
+  `\\bNo work may attach an ${escapeRegExp(words('attribution', 'obligation'))}\\b`,
+  'i',
+);
 const IMPLEMENTATION_ARTIFACT_PATTERN = new RegExp(
   `(?:${IMPLEMENTATION_ROLE_PATTERN.source}|${IMPLEMENTATION_CALL_PATTERN.source}|${IMPLEMENTATION_FILE_PATTERN.source})`,
 );
