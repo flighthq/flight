@@ -1,7 +1,7 @@
 import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSkeleton2D, registerSkeleton2DFormat } from './skeletonDetect';
+import { parseSkeleton2D, registerSkeleton2DFormat, unregisterSkeleton2DFormat } from './skeletonDetect';
 
 describe('parseSkeleton2D', () => {
   it('auto-detects a Spine JSON document and parses it', () => {
@@ -45,6 +45,27 @@ describe('registerSkeleton2DFormat', () => {
       (text) => text.startsWith('ACME'),
       () => sentinel,
     );
-    expect(parseSkeleton2D('ACME rig v1')).toBe(sentinel);
+
+    const parsed = parseSkeleton2D('ACME rig v1');
+    // The registry is a module global, so this leaves it as it was found rather than claiming the kind —
+    // and its detector matches a bare prefix, which would otherwise sit in front of every later parse.
+    unregisterSkeleton2DFormat('acme.Rig');
+
+    expect(parsed).toBe(sentinel);
+  });
+});
+
+describe('unregisterSkeleton2DFormat', () => {
+  it('removes a format, after which parseSkeleton2D no longer dispatches to it', () => {
+    const sentinel = { animations: [], skeleton: { bones: [], slots: null } } as unknown as Skeleton2DImport;
+    registerSkeleton2DFormat(
+      'acme.Rig',
+      (text) => text.startsWith('ACME'),
+      () => sentinel,
+    );
+
+    unregisterSkeleton2DFormat('acme.Rig');
+
+    expect(parseSkeleton2D('ACME rig v1')).toBeNull();
   });
 });
