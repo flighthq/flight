@@ -4,6 +4,7 @@ import type { DomRenderState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  failCaptureTargetVerification,
   installCaptureElementTarget,
   installCaptureTarget,
   registerCaptureBenchmarkTarget,
@@ -20,6 +21,21 @@ afterEach(() => {
   flags.__ftTarget = undefined;
   flags.__ftVerification = undefined;
   flags.__ftBenchmarkTarget = undefined;
+});
+
+describe('failCaptureTargetVerification', () => {
+  it('publishes a terminal reason when setup fails before verification starts', () => {
+    const result = failCaptureTargetVerification('canvas', new Error('unsupported backend capability'));
+
+    expect(result).toMatchObject({
+      protocolVersion: CAPTURE_PROTOCOL_VERSION,
+      render: 'canvas',
+      state: 'failed',
+      stage: 'done',
+      error: 'unsupported backend capability',
+    });
+    expect((window as typeof window & { __ftVerification?: unknown }).__ftVerification).toBe(result);
+  });
 });
 
 describe('installCaptureElementTarget', () => {

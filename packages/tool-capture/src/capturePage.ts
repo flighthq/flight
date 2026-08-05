@@ -41,6 +41,21 @@ export interface CaptureElementTargetOptions {
   verify?: boolean;
 }
 
+/** Publishes a terminal page-side failure when setup fails before the normal verifier can start. */
+export function failCaptureTargetVerification(renderer: string, error: unknown): CaptureVerification {
+  const verification: CaptureVerification = {
+    protocolVersion: CAPTURE_PROTOCOL_VERSION,
+    render: renderer,
+    coverage: null,
+    fingerprint: null,
+    state: 'failed',
+    stage: 'done',
+    error: error instanceof Error ? error.message : String(error),
+  };
+  (window as typeof window & { __ftVerification?: CaptureVerification }).__ftVerification = verification;
+  return verification;
+}
+
 /** Adapts a DOM or canvas element owned by another Flight-ecosystem renderer to the capture protocol. */
 export function installCaptureElementTarget(
   options: Readonly<CaptureElementTargetOptions>,

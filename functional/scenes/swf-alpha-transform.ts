@@ -403,8 +403,18 @@ if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.
 target.render(root);
 
 const adjustedProxy = getRenderProxy2D(target.state, rgbAdjustedSolid);
-if (adjustedProxy === undefined || !isGreenTransform(adjustedProxy.colorScaleBias)) {
-  throw new Error('[swf-alpha-transform] imported RGB CXFORM did not reach the adjusted solid render proxy');
+if (adjustedProxy === undefined) {
+  throw new Error(`[swf-alpha-transform/${backend}] adjusted solid has no render proxy`);
+}
+const realizesColorAdjustment = target.kind === 'webgl' || target.kind === 'webgpu';
+if (realizesColorAdjustment) {
+  if (!isGreenTransform(adjustedProxy.colorScaleBias)) {
+    throw new Error(
+      `[swf-alpha-transform/${backend}] imported RGB CXFORM did not reach the adjusted solid render proxy`,
+    );
+  }
+} else if (adjustedProxy.colorScaleBias !== null) {
+  throw new Error(`[swf-alpha-transform/${backend}] unsupported RGB CXFORM unexpectedly reached the render proxy`);
 }
 const halfAlphaProxy = getRenderProxy2D(target.state, halfAlpha);
 if (halfAlphaProxy === undefined || Math.abs(halfAlphaProxy.alpha - 0.5) > 0.0001) {
