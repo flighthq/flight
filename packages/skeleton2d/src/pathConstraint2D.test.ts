@@ -8,11 +8,15 @@ import {
   Skeleton2DPathSpacingMode,
   TransformMode2D,
 } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { registerSkeleton2DPathConstraintSolver, solveSkeleton2DPathConstraint } from './pathConstraint2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { getSkeleton2DConstraintSolver, unregisterSkeleton2DConstraintSolver } from './skeleton2dConstraint';
+import {
+  getSkeleton2DConstraintSolver,
+  registerSkeleton2DConstraintSolver,
+  unregisterSkeleton2DConstraintSolver,
+} from './skeleton2dConstraint';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {
@@ -74,6 +78,15 @@ function rig(chainLength: number, attachment: PathAttachment2D | null = straight
   computeSkeleton2DWorldTransforms(skeleton);
   return skeleton;
 }
+
+// This file registers a built-in solver into a module-global registry, so it restores whatever it found
+// rather than leaving the kind claimed for whichever file runs next.
+const PRIOR = getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Path);
+
+afterEach(() => {
+  if (PRIOR === null) unregisterSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Path);
+  else registerSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Path, PRIOR);
+});
 
 describe('registerSkeleton2DPathConstraintSolver', () => {
   it('claims the path kind, which nothing does until a caller opts in', () => {

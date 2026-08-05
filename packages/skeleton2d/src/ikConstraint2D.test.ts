@@ -1,11 +1,12 @@
 import type { Bone2D, Skeleton2D, Skeleton2DIkConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { registerSkeleton2DIkConstraintSolver, solveSkeleton2DIkConstraint } from './ikConstraint2D';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
 import {
   getSkeleton2DConstraintSolver,
+  registerSkeleton2DConstraintSolver,
   solveSkeleton2DConstraints,
   unregisterSkeleton2DConstraintSolver,
 } from './skeleton2dConstraint';
@@ -48,6 +49,15 @@ function tipOf(skeleton: Readonly<Skeleton2D>, boneIndex: number): { x: number; 
   const length = skeleton.bones[boneIndex].length;
   return { x: world[o] * length + world[o + 4], y: world[o + 1] * length + world[o + 5] };
 }
+
+// This file registers a built-in solver into a module-global registry, so it restores whatever it found
+// rather than leaving the kind claimed for whichever file runs next.
+const PRIOR = getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Ik);
+
+afterEach(() => {
+  if (PRIOR === null) unregisterSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Ik);
+  else registerSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Ik, PRIOR);
+});
 
 describe('registerSkeleton2DIkConstraintSolver', () => {
   it('claims the IK kind, which nothing does until a caller opts in', () => {

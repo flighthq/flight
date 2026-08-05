@@ -1,6 +1,6 @@
 import type { Bone2D, Skeleton2DConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
 import {
@@ -30,6 +30,21 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 function constraint(kind: string): Skeleton2DConstraint {
   return { kind, mix: 1 };
 }
+
+// The registry is a module GLOBAL, deliberately: last-write-wins is what lets a caller replace a built-in
+// solver, and skeleton2d has no state object to scope it to. So a test may not assert anything about a kind
+// it did not itself set — another file registering a built-in would decide the result. Every kind this file
+// touches is restored to whatever it was found holding.
+const TOUCHED = ['acme.First', 'acme.Present', 'acme.Rope', 'acme.RopeConstraint', 'acme.Second'];
+const PRIOR = new Map(TOUCHED.map((kind) => [kind, getSkeleton2DConstraintSolver(kind)]));
+
+afterEach(() => {
+  for (const kind of TOUCHED) {
+    const prior = PRIOR.get(kind) ?? null;
+    if (prior === null) unregisterSkeleton2DConstraintSolver(kind);
+    else registerSkeleton2DConstraintSolver(kind, prior);
+  }
+});
 
 describe('getSkeleton2DConstraintSolver', () => {
   it('returns null for a kind nothing has claimed, since nothing registers by default', () => {
@@ -100,6 +115,5 @@ describe('unregisterSkeleton2DConstraintSolver', () => {
     unregisterSkeleton2DConstraintSolver('acme.Rope');
 
     expect(getSkeleton2DConstraintSolver('acme.Rope')).toBeNull();
-    expect(getSkeleton2DConstraintSolver(Skeleton2DConstraintKind.Transform)).toBeNull();
   });
 });

@@ -1,12 +1,16 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
 import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';
 import { registerSkeleton2DDeformAnimationTarget } from './deformAnimationTarget2D';
 import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
-import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget';
+import {
+  getSkeleton2DAnimationTargetBinder,
+  registerSkeleton2DAnimationTargetBinder,
+  unregisterSkeleton2DAnimationTargetBinder,
+} from './skeleton2dAnimationTarget';
 import { getSkeleton2DSlotDeformOffsets } from './slotDeform2D';
 
 function makeBone(): Bone2D {
@@ -48,6 +52,15 @@ function rig(attachment: MeshAttachment2D | null): {
   const setup = createSkeleton2D([makeBone()], [slot]);
   return { pose: cloneSkeleton2D(setup), setup };
 }
+
+// This file registers into a module-global binder registry, so it restores whatever it found rather than
+// leaving the Deform kind claimed for whichever file runs next.
+const PRIOR = getSkeleton2DAnimationTargetBinder(Skeleton2DAnimationTargetKind.Deform);
+
+afterEach(() => {
+  if (PRIOR === null) unregisterSkeleton2DAnimationTargetBinder(Skeleton2DAnimationTargetKind.Deform);
+  else registerSkeleton2DAnimationTargetBinder(Skeleton2DAnimationTargetKind.Deform, PRIOR);
+});
 
 describe('registerSkeleton2DDeformAnimationTarget', () => {
   it('claims the deform kind, which nothing does until a caller opts in', () => {
