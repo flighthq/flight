@@ -8,6 +8,14 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-08-05 — post-review implementation continuity
+
+Source verification across the 55 commits since the 2026-07-21 review found the extension architecture substantially landed: independently registered PBR contributions now participate in versioned program identity, invalid combinations use structured explain/sentinel behavior with opt-in log guards, and transmission consumes a caller-owned resolved scene-color target with projected refraction, roughness filtering, Beer–Lambert attenuation, and feedback detection. The header contracts and curated public/internal export lanes also now keep third-party extension binders off private program records. Composition is not finished: anisotropy still pairs its distribution with isotropic visibility, there is no combined-extension raster proof or exhaustive map coverage, and the legacy specular-glossiness renderer still ignores its packed RGB/A map.
+
+The intervening render/texture work established explicit texture resolution, linear target declaration, color-space-correct environment cube upload, channel color adjustments, and nested partial-target pass support. Environment lifetime remains the main unfinished thread: source-cube caching is not identity/version aware, rebake abandons prior irradiance/prefiltered textures, the documented invalidation call does not exist, skybox program/VAO/buffer resources have no deterministic teardown, auxiliary passes do not restore all touched GL state, and the convenience present path still applies no explicit HDR tone map.
+
+Directional shadows now honor light controls, bound PCF radius, texel-scale normal bias, skinned casters, and topology, but `drawGlScene3DShadowMap` still allocates a fixed target internally, re-traverses the scene instead of consuming prepared entries, and restores a hand-picked baseline rather than bracketing exact state. Alpha and blend handling improved across material families, while transparent particles and mesh subsets still lack one shared depth-ordering seam; prepared instancing/LOD/deformation/invalidation/picking coherence also remains broader scene-semantic work.
+
 ## 2026-07-03 — inline TODO relocation (lint sweep)
 
 `no-warning-comments` is now enforced over `packages/*/src` (see `.oxlintrc.json`); inline TODO markers move here per the Source Style convention.

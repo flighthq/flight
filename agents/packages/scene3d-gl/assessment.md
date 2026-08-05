@@ -8,40 +8,20 @@ basedOn: ./review.md
 
 ## Directed
 
-1. **Realize ExtendedPbrMaterial through separately imported extension registrations.** Standard PBR
-   stays lean and open: neither its prelude nor its define/cache key enumerates built-in extensions;
-   extension kinds and contributed source provide extended-program identity. Each PbrExtension kind
-   registers its own GL realization. Last-write-wins re-registration must advance a registry version
-   or otherwise invalidate compiled variants—a kind-only program key cannot retain stale shader code.
+1. **~~Realize ExtendedPbrMaterial through separately imported extension registrations.~~** — retired 2026-08-05. `extendedPbrGlMeshMaterialRenderer` composes independently registered contributions, `registerGlPbrExtension` advances `pbrExtensionRegistryVersion` on every last-write-wins registration, and `ensureGlPbrProgram` keys compiled variants by that version plus contribution keys without enumerating extensions in the standard PBR path.
 2. **Sample every declared extension map and compose lobes coherently.** Bind each map's own UV set and
    texture transform rather than sampling every slot through the base-color map's shared `v_uv0`.
    Extension energy and orientation must survive both punctual and IBL paths—do not implement
    clearcoat/sheen/anisotropy/subsurface as direct-light-only decorations, and use anisotropic
    visibility with the anisotropic distribution. Combined extensions need raster proof, not only
    source-string tests.
-3. **Implement transmission as explicit reusable passes.** Capture opaque scene color, sample the
-   refractive path, and apply Beer–Lambert absorption from thickness/attenuation/IOR inputs. Project
-   refraction through the camera rather than adding world-space XY directly to screen UV, preserve the
-   Fresnel-reflected surface lobe instead of mixing all surface radiance away, filter scene color by
-   roughness, and prevent sampling a texture attached to the active draw framebuffer.
-4. **Follow diagnostics inversion.** Missing registrations, duplicate kinds, texture-unit exhaustion,
-   and unsupported combinations return sentinels with shakeable explain/guard layers rather than
-   unconditional draw-path throws; normal rendering skips invalid duplicates deterministically and
-   an explicitly enabled guard warns through `@flighthq/log` without changing control flow. Keep the
-   explainer/strings in a sibling diagnostic module, use the standard message-with-fixing-call shape,
-   and test both fire and silent cases.
+3. **~~Implement transmission as explicit reusable passes.~~** — retired 2026-08-05. `setGlPbrTransmissionSceneColor` accepts caller-owned resolved opaque pass output, `transmissionVolumePbrGlExtension` projects refracted world positions through `u_viewProjection`, filters by roughness LOD, applies Beer–Lambert attenuation, and preserves the reflected Fresnel lobe, while `explainGlPbrExtensions` rejects active-attachment feedback; `material-transmission-volume.webgl.ts` proves the assembled raster path.
+4. **~~Follow diagnostics inversion.~~** — retired 2026-08-05. `explainGlPbrExtensions` returns structured missing-registration, duplicate-kind, unsupported-extension, framebuffer-feedback, and texture-unit-exhaustion issues, invalid draws take a null-program sentinel, and the separately enabled `enableGlPbrExtensionGuards` layer emits fixing-call messages through `@flighthq/log`; its tests cover warning and silent cases.
 5. **Add exhaustive GL behavior tests.** Cover scalar and map inputs, multi-extension composition,
    diagnostics, punctual plus IBL realization, and transmission assembled from a real rendered and
    resolved opaque target against a distinguishable background.
-6. **Keep backend caches private to state/runtime.** Export operations, not caches.
-7. **Keep the vendor-extension seam in the header layer.** Any exported registration contract that a
-   third-party extension must implement—including the GL snippet, bind context, support diagnostic,
-   shader contribution, and caller-owned transmission scene-color shape—belongs in
-   `@flighthq/types`; `@flighthq/scene3d-gl` should export implementations against those shared types,
-   not define cross-package API shapes inline. The public bind context should provide the necessary
-   uniform and texture operations without exposing private `GlPbrProgram` or `GlPbrDefineKey`
-   implementation shapes. Prelude, program-cache, standard-block, raw uniform-location, and scene
-   runtime helpers are backend implementation modules, not root-barrel API atoms.
+6. **~~Keep backend caches private to state/runtime.~~** — retired 2026-08-05. Scene program, upload, registry, environment, light, particle, skybox, and wireframe caches are held on the state-scoped private runtime or module-local WeakMaps, while the curated public barrel exposes the operations that consume them rather than the cache objects.
+7. **~~Keep the vendor-extension seam in the header layer.~~** — retired 2026-08-05. The registration, shader-contribution, issue, bind-context, and transmission-scene-color contracts now live in `@flighthq/types`; `GlPbrExtensionBindContext` exposes named uniform/texture operations without raw program records, and the curated scene3d-gl public barrel omits the prelude, program-cache, standard-block, raw-location, and runtime helpers retained on the internal contract lane.
 
 ## Recommended
 
@@ -64,8 +44,7 @@ basedOn: ./review.md
 1. **Make environment caches identity/version aware.** Switching CubeTexture, changing faces, or updating
    a dynamic probe must invalidate/rebuild source cube and IBL data explicitly; intensity-only changes
    should not force a radiance rebake.
-2. **Honor CubeTexture.colorSpace.** Skybox and both IBL bake shaders unconditionally apply sRGB decode,
-   so a linear/HDR cube is decoded incorrectly despite the descriptor declaring its space.
+2. **~~Honor CubeTexture.colorSpace.~~** — retired 2026-08-05. `ensureGlEnvironmentSourceCube` chooses `SRGB8_ALPHA8` only for sRGB cubes and keeps linear cubes linear, so hardware performs the sole sample-time decode used by skybox and IBL bake shaders; `glEnvironmentCube.test.ts` covers both descriptor paths.
 3. **Preserve or explicitly own GL state across auxiliary passes.** IBL bake disables depth/cull/blend
    without restoring them; skybox restores only part of depth state and forces blend off. Either bracket
    all touched state or define these as pass boundaries that re-establish a documented baseline.
