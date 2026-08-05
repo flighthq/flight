@@ -6,6 +6,7 @@ lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+outParameterSweep: ./out-parameter-sweep.md
 ---
 
 # geometry — Charter

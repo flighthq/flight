@@ -1091,38 +1091,47 @@ describe('setTransformMatrix', () => {
 });
 
 describe('translateMatrix', () => {
-  it('should translate the matrix3x2 correctly', () => {
-    const m = createMatrix();
-    translateMatrix(m, m, 10, 20);
-    expect(m.tx).toBe(10);
-    expect(m.ty).toBe(20);
+  it('writes every component to a distinct output', () => {
+    const source = createMatrix(2, 3, 4, 5, 6, 7);
+    const out = createMatrix();
+    translateMatrix(out, source, 10, 20);
+    expect(out).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 16, ty: 27 });
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
+    translateMatrix(matrix, matrix, 10, 20);
+    expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 16, ty: 27 });
   });
 });
 
 describe('translateMatrixByVector', () => {
-  it('translates tx/ty by the transformed vector', () => {
-    const m = createMatrix(2, 0, 0, 2, 5, 10);
+  it('writes every component to a distinct output', () => {
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
     const out = createMatrix();
-    translateMatrixByVector(out, m, { x: 3, y: 4 });
-    expect(out.tx).toBeCloseTo(5 + 2 * 3 + 0 * 4); // 11
-    expect(out.ty).toBeCloseTo(10 + 0 * 3 + 2 * 4); // 18
+    translateMatrixByVector(out, matrix, { x: 3, y: 4 });
+    expect(out).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 28, ty: 36 });
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
+    translateMatrixByVector(matrix, matrix, { x: 3, y: 4 });
+    expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 28, ty: 36 });
   });
 });
 
 describe('translateMatrixByVectorXY', () => {
-  it('translates tx/ty by the transformed x and y components', () => {
-    const m = createMatrix(2, 0, 0, 2, 5, 10);
+  it('writes every component to a distinct output', () => {
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
     const out = createMatrix();
-    translateMatrixByVectorXY(out, m, 3, 4);
-    expect(out.tx).toBeCloseTo(11);
-    expect(out.ty).toBeCloseTo(18);
+    translateMatrixByVectorXY(out, matrix, 3, 4);
+    expect(out).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 28, ty: 36 });
   });
 
   it('supports out === source', () => {
-    const m = createMatrix(1, 0, 0, 1, 5, 10);
-    translateMatrixByVectorXY(m, m, 2, 3);
-    expect(m.tx).toBeCloseTo(7);
-    expect(m.ty).toBeCloseTo(13);
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
+    translateMatrixByVectorXY(matrix, matrix, 3, 4);
+    expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 28, ty: 36 });
   });
 });
 

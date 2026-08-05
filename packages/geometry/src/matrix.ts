@@ -412,7 +412,7 @@ export function multiplyMatrix(out: MatrixLike, a: Readonly<MatrixLike>, b: Read
  * Applies a rotation transformation to the given Matrix object
  * and writes the result to out.
  *
- * This is a 2x2 rotation, it will not rotate
+ * Rotates the complete 2D affine transform, including its translation.
  **/
 export function rotateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, theta: number): void {
   /**
@@ -585,20 +585,24 @@ export function setTransformMatrix(
  * by the `dx` and `dy` parameters.
  **/
 export function translateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, dx: number, dy: number): void {
-  out.tx = source.tx + dx;
-  out.ty = source.ty + dy;
+  const { a, b, c, d, tx, ty } = source;
+  setMatrix(out, a, b, c, d, tx + dx, ty + dy);
 }
 
 /**
  * Transforms a vector, then translates by the result.
  */
-export function translateMatrixByVector(out: MatrixLike, matrix: Readonly<MatrixLike>, vector: Readonly<Vector2Like>) {
+export function translateMatrixByVector(
+  out: MatrixLike,
+  matrix: Readonly<MatrixLike>,
+  vector: Readonly<Vector2Like>,
+): void {
   translateMatrixByVectorXY(out, matrix, vector.x, vector.y);
 }
 
-export function translateMatrixByVectorXY(out: MatrixLike, source: Readonly<MatrixLike>, x: number, y: number) {
-  out.tx = source.tx + source.a * x + source.c * y;
-  out.ty = source.ty + source.b * x + source.d * y;
+export function translateMatrixByVectorXY(out: MatrixLike, source: Readonly<MatrixLike>, x: number, y: number): void {
+  const { a, b, c, d, tx, ty } = source;
+  setMatrix(out, a, b, c, d, tx + a * x + c * y, ty + b * x + d * y);
 }
 
 export function writeMatrixToFloat32Array(out: Float32Array, offset: number, source: Readonly<MatrixLike>): void {
