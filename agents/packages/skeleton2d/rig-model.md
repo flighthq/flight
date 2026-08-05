@@ -27,9 +27,20 @@ So the check is the second command, not the first:
       git merge-base --is-ancestor "$sha" origin/develop || echo "UNREACHABLE $sha"
     done
 
-Re-pin after any rebase, mapping each old commit to its replayed twin by subject line. **The failure is
-worth naming because it is this convention's own blind spot:** pinning exists so a reader can verify a
-claim, and a pin that resolves only for its author verifies nothing while looking rigorous.
+Re-pin after any rebase, mapping each old commit to its replayed twin by subject line — and check that the
+subject matches *exactly once* before rewriting, because a pin moved to the wrong twin is worse than one
+flagged unverified. **The trigger to re-check is a REBASE, not the passage of time:** a pin that is never
+replayed never dies, which is why a cell whose commits were never rebased can show zero of these.
+
+**Never pin to a commit that has not landed.** There are two classes and only one is checkable: a pin to a
+landed commit is verifiable by reachability, while a pin to your own in-flight commit is dangling *by
+construction* — unreachable now because it has not landed, and doomed to be replayed under a new hash when
+it does. No amount of checking distinguishes "not landed yet" from "dead". Cite in-flight work by **subject
+line and content**, which survives a replay when a hash does not. A parcel may name a hash, because its
+reader can see your tree; a doc may not, because its reader cannot.
+
+**The failure is worth naming because it is this convention's own blind spot:** pinning exists so a reader
+can verify a claim, and a pin that resolves only for its author verifies nothing while looking rigorous.
 
 ## 1. Two registries, opposite defaults, and the rule that decides which
 
