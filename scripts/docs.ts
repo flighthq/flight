@@ -25,6 +25,7 @@
 // WARNINGS are drift needing a human ruling — a charter missing its North star cannot be fixed by an
 // agent, because charter direction comes from the user alone. Gating on those would paint `npm run
 // check` red with work no agent is allowed to do.
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 
@@ -117,8 +118,44 @@ export function findMarkdownLinkTargets(text: string): readonly string[] {
 
 // Which docs nothing links to, after the named allowances. Kept pure and separate from the walking so
 // the rule can be stated in a test rather than inferred from a filesystem crawl.
-export function findOrphanDocs(docs: readonly string[], linked: ReadonlySet<string>): readonly string[] {
-  return docs.filter((doc) => !linked.has(doc) && !ORPHAN_ALLOW.some((entry) => entry.match(doc)));
+export function findOrphanDocs(
+  docs: readonly string[],
+  linked: ReadonlySet<string>,
+  tracked?: ReadonlySet<string>,
+): readonly string[] {
+  return docs.filter(
+    (doc) =>
+      (tracked === undefined || tracked.has(doc)) &&
+      !linked.has(doc) &&
+      !ORPHAN_ALLOW.some((entry) => entry.match(doc)),
+  );
+}
+
+/**
+ * The files git tracks. A docs gate must judge THE REPOSITORY, not whatever happens to sit on the disk
+ * of whoever ran it — and generated output is the difference between the two. `agents/reviews/` is
+ * gitignored, so a clone that has run that generator carries ~179 unreferenced documents the repository
+ * deliberately does not keep, and a clone that has not carries zero. Same commit, opposite verdicts.
+ *
+ * That is worse than a flake: it FAILS LOCALLY AND PASSES IN CI, because CI starts from a clean
+ * checkout. The pipeline looks healthy while a developer is told to go fix 179 files the project already
+ * decided not to track — pressure to delete exactly the wrong thing to go green.
+ *
+ * Tracked-ness is a fact rather than an opinion, so this needs no allow-list and cannot rot as the
+ * generated set changes.
+ */
+function listTrackedFiles(): ReadonlySet<string> | undefined {
+  try {
+    const output = execFileSync('git', ['ls-files', '-z'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    const tracked = new Set(output.split('\0').filter((entry) => entry !== ''));
+    return tracked.size === 0 ? undefined : tracked;
+  } catch {
+    return undefined;
+  }
 }
 
 // Which docs are reached along a path a reader would actually travel. Pure, and taking its sources as
@@ -345,17 +382,31 @@ function checkOrphans(): void {
   const corpus = [join(REPO_ROOT, 'AGENTS.md'), ...walkMarkdown(join(REPO_ROOT, 'agents'))];
   if (existsSync(SKILLS_DIR)) corpus.push(...walkMarkdown(SKILLS_DIR));
 
+  const tracked = listTrackedFiles();
+  // Untracked generated output is filtered from the POINTER SOURCES too, not just from the docs being
+  // judged. A generated document that links to a tracked one would otherwise mark it reached on the
+  // clone that ran the generator and leave it reported on the clone that did not — the same
+  // per-machine divergence, arriving as a false pass rather than a false failure.
   const linked = findReachableDocs(
-    corpus.map((file) => ({ path: relative(REPO_ROOT, file), text: readFileSync(file, 'utf8') })),
+    corpus
+      .map((file) => ({ path: relative(REPO_ROOT, file), text: readFileSync(file, 'utf8') }))
+      .filter((source) => tracked === undefined || tracked.has(source.path)),
   );
 
   const docs = walkMarkdown(join(REPO_ROOT, 'agents')).map((file) => relative(REPO_ROOT, file));
-  for (const orphan of findOrphanDocs(docs, linked)) {
+  for (const orphan of findOrphanDocs(docs, linked, tracked)) {
     fail(
       `${orphan}: reachable from no authority-bearing document — the codebase map, a cell charter, an index, the catalog or the package map must point at it, or no reader arrives`,
     );
   }
 
+  process.stdout.write(
+    `${pc.dim(
+      tracked === undefined
+        ? '  orphan-check could NOT determine which files git tracks, so it scanned the working tree — generated output on disk may be reported'
+        : `  orphan-check scope: the ${tracked.size} files git tracks — generated output on disk is deliberately not judged, so this gate reads the repository rather than the machine`,
+    )}\n`,
+  );
   process.stdout.write(
     `${pc.dim('  orphan-check counts pointers only from the map, cell charters, indexes, the catalog and the package map — a pointer from a status log does not count, because status is the append-only continuity layer and explicitly not blessed truth')}\n`,
   );

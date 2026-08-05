@@ -165,6 +165,26 @@ describe('findOrphanDocs', () => {
   // exonerates every future member of the class, including files nobody has looked at — so it is pinned
   // by where it STOPS, not by its centre. Keyed to the one generated path; a hand-written sibling in the
   // same directory is still required to be reachable.
+  // The tracked-scope boundary, and the pair differs ONLY in tracked-ness. A docs gate must judge the
+  // repository, not the disk of whoever ran it: `agents/reviews/` is gitignored, so a clone that ran that
+  // generator reported ~179 unreferenced documents while a clone that had not reported none — the same
+  // commit, opposite verdicts, failing locally while CI stayed green because CI checks out clean.
+  it('does NOT report an untracked generated doc, which the repository already decided not to keep', () => {
+    const doc = 'agents/reviews/alignment/api/generated.md';
+    expect(findOrphanDocs([doc], new Set(), new Set())).toEqual([]);
+  });
+
+  it('DOES report the same unreferenced doc once git tracks it', () => {
+    const doc = 'agents/reviews/alignment/api/generated.md';
+    expect(findOrphanDocs([doc], new Set(), new Set([doc]))).toEqual([doc]);
+  });
+
+  it('falls back to judging everything when tracked-ness cannot be determined, rather than going quiet', () => {
+    // A gate that silently passes when it cannot tell is worse than one that over-reports: quiet reads
+    // as clean. Omitting the set is how `listTrackedFiles` reports that git was unavailable.
+    expect(findOrphanDocs(['agents/x.md'], new Set(), undefined)).toEqual(['agents/x.md']);
+  });
+
   it('allows the generated work index, which is a view over cells and never committed', () => {
     expect(findOrphanDocs(['agents/packages/TODO.md'], new Set())).toEqual([]);
   });
