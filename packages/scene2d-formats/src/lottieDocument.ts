@@ -169,9 +169,14 @@ type LottiePaint =
       width: number;
     }
   | {
+      caps: 'none' | 'round' | 'square';
       count: number;
+      dash: number[];
+      dashOffset: number;
       end: number[];
+      joints: 'bevel' | 'miter' | 'round';
       kind: 'gradient';
+      miterLimit: number;
       opacity: number;
       shape: 1 | 2;
       start: number[];
@@ -597,10 +602,28 @@ function appendLottieShapeItems(
       const end = numericValue(initialLottieValue(gradient.e), 2);
       const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
       const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
+      const dashEntries = gradient.d ?? [];
+      const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
+      const dash = hasAnimatedDash
+        ? []
+        : dashEntries
+            .filter((entry) => entry.n !== 'o')
+            .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
+      const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
+      const dashOffset =
+        hasAnimatedDash || dashOffsetEntry === undefined
+          ? 0
+          : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
+      if (hasAnimatedDash) reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: 'dash' });
       const paint = {
+        caps: mapLottieLineCap(gradient.lc),
         count: gradient.g.p,
+        dash: dash.some((value) => value > 0) ? dash : [],
+        dashOffset,
         end,
+        joints: mapLottieLineJoin(gradient.lj),
         kind: 'gradient' as const,
+        miterLimit: gradient.ml ?? 4,
         opacity: opacity[0] / 100,
         shape: gradient.t,
         start,
@@ -1046,7 +1069,7 @@ function renderLottieShapeState(state: LottieShapeState): void {
       appendShapeEndFill(state.shape);
     } else {
       appendLottieGradientStroke(state.shape, paint);
-      appendLottieShapePaths(state, null);
+      appendLottieShapePaths(state, null, paint.dash, paint.dashOffset);
     }
   }
 }
@@ -1081,7 +1104,7 @@ function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): voi
 
 function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
   const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeLineStyle(shape, paint.width);
+  appendShapeLineStyle(shape, paint.width, 0, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
   appendShapeLineGradientStyle(
     shape,
     paint.shape === 2 ? 'radial' : 'linear',

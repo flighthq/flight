@@ -175,12 +175,19 @@ export interface LottieGradient {
 }
 
 export interface LottieGradientShapeItem extends LottieShapeItemBase {
+  d?: LottieDashEntry[];
   /** End point. */
   e: LottieAnimatable<number[]>;
   g: LottieGradient;
   /** Radial highlight angle and length. */
   a?: LottieAnimatable<number>;
   h?: LottieAnimatable<number>;
+  /** Line cap: 1 = butt, 2 = round, 3 = square. Gradient strokes only. */
+  lc?: 1 | 2 | 3;
+  /** Line join: 1 = miter, 2 = round, 3 = bevel. Gradient strokes only. */
+  lj?: 1 | 2 | 3;
+  /** Miter limit. Gradient strokes only. */
+  ml?: number;
   o?: LottieAnimatable<number>;
   /** Gradient kind: 1 = linear, 2 = radial. */
   t: 1 | 2;
