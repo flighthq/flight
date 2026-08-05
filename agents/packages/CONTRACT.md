@@ -76,6 +76,34 @@ by: null # the pass that merged the newest entry (e.g. ingest:builder-<sha>)
 
 Two sections are **append-only**: `charter.md › Decisions` and `assessment.md › Approved`. A mechanical check (git diff) asserts that existing lines in these sections are never edited or deleted — only added. A reversed decision is recorded as a **new** dated line that supersedes the old one; the old line stays. This is what makes "frozen approval" and "a decision is never rewritten" mechanical without a content schema.
 
+### Completion and obsolescence are not approval changes
+
+The `Approved` ledger records an **authorization event**, not a work state. An entry says that the user
+authorized an item, on a date, by a named route; that historical fact cannot become false. Whether the
+tree later implements the item or removes its target is a separate fact, on a different timescale,
+authored by the tree rather than by the user. Recording completion as a change to approval would make
+"we finished it" indistinguishable from "the user changed their mind."
+
+Completion or obsolescence is therefore **not** a reversed approval. It never edits, annotates, or
+appends to `Approved`. Only a new user ruling may append a dated `Approved` line that supersedes an
+earlier approval.
+
+Record the later tree fact as a dated, struck evidence note in the corresponding **non-ledger**
+section, normally `assessment.md › Recommended`, labelled **LANDED** or **OBSOLETE**. Checkable source
+evidence is mandatory: a `LANDED` note names the implementation source, manifest, or test that proves
+the item exists; a bare label is not evidence. An `OBSOLETE` note must additionally name what obsoleted
+the item — for example the split, ruling, or commit — so the claim can be checked. For example:
+
+```markdown
+- ~~Recommendation text.~~ — **LANDED 2026-08-05:** `packages/example/src/example.ts` and its test.
+- ~~Recommendation text.~~ — **OBSOLETE 2026-08-05:** target replaced by the split in commit `abc123`.
+```
+
+These notes are a **cache, not the truth**. Completion and obsolescence remain facts about the tree and
+can be re-derived from source at any time; losing a note costs a re-derivation, not the fact. That is
+why the reworked `Recommended` section is an acceptable home while the authorization ledger remains
+immutable.
+
 ## Provenance stamp (`Approved` entries)
 
 Every `assessment.md › Approved` line begins with a stamp:
