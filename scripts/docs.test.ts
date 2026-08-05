@@ -4,19 +4,33 @@ import {
   DOC_BUDGETS,
   DOC_BUDGET_WARN_FRACTION,
   findFrontMatterPointerTargets,
+  findGateDirectories,
+  findGateEntries,
+  findGateMarkdown,
   findMapStatusClaims,
   findMarkdownLinkTargets,
   findOrphanDocs,
   findReachableDocs,
   findUncoveredPackages,
   getDocBudgetStatus,
-  hasTrackedFile,
+  hasGatePath,
   isAuthorityBearingDoc,
   reportDocBudget,
 } from './docs';
 
 function mapWith(...entries: readonly string[]): string {
   return ['# Map', '', '## Domain Conventions', '', ...entries, '', '## Next Section', ''].join('\n');
+}
+
+// Which named functions in the gate's source contain a call to something. Crude by design: the rule it
+// pins is about the source text, so reading the source text is the honest way to check it.
+function scanCallSites(source: string, call: string): readonly string[] {
+  const named: string[] = [];
+  for (const block of source.split(/\n(?=(?:export )?function |const )/)) {
+    const name = block.match(/^(?:export )?function (\w+)/);
+    if (name !== null && block.includes(call)) named.push(name[1]);
+  }
+  return named;
 }
 
 describe('DOC_BUDGETS', () => {
@@ -38,6 +52,35 @@ describe('DOC_BUDGETS', () => {
   });
 });
 
+// THE RULE ITSELF, not an instance of it. Two separate fixes have now scoped one check to git while a
+// sibling check kept walking the disk — the second time from twelve lines away — because both fixes were
+// pinned to the check that happened to fail. A test on one more check would have been the third such
+// pin. This one fails the moment ANY new check reaches for the filesystem, including checks nobody has
+// written yet, which is the only form that cannot come back.
+describe('docs gate scanning policy', () => {
+  const SOURCE = readFileSync('scripts/docs.ts', 'utf8');
+
+  it('resolves every scan from git, so exactly one function may enumerate the disk', () => {
+    // The named survivor is the last-resort fallback for a checkout with no git, and it exists so no
+    // check needs a second code path. An UNEXPLAINED survivor is the next recurrence, so the list is
+    // exact rather than a maximum.
+    expect(scanCallSites(SOURCE, 'readdirSync(')).toEqual(['listWorkingTreeFiles']);
+  });
+
+  it('asks the filesystem whether a file is PRESENT in exactly one place', () => {
+    // `existsSync` is the other way a check silently starts judging the disk: membership must come from
+    // the gate's file set, and only reading content may consult the working tree.
+    expect(scanCallSites(SOURCE, 'existsSync(')).toEqual(['readGateFile']);
+  });
+
+  it('reads file content in exactly one place, which is what may legitimately touch the disk', () => {
+    // Content has to come from the working tree — a gate that read committed content could never see
+    // the edit it is being run on. Routing it through one function is what keeps that concession from
+    // spreading into membership.
+    expect(scanCallSites(SOURCE, 'readFileSync(')).toEqual(['readGateFile']);
+  });
+});
+
 describe('findFrontMatterPointerTargets', () => {
   it('counts a charter front-matter registration, the established way a cell claims an extra doc', () => {
     const text = ['---', 'package: x', 'rigModel: ./rig-model.md', '---', '', '# Cell'].join('\n');
@@ -55,6 +98,72 @@ describe('findFrontMatterPointerTargets', () => {
   it('reads only the front matter, not a body line that happens to look like a key', () => {
     const text = ['---', 'package: x', '---', '', 'note: ./not-a-pointer.md'].join('\n');
     expect(findFrontMatterPointerTargets(text)).toEqual([]);
+  });
+});
+
+// A MINIMAL PAIR for the phantom-package defect, and the pair differs in ONE thing: whether the
+// repository has a file under the directory. `packages/scene`, `packages/surface` and the four
+// `packages/displayobject-…` are emptied husks of directories renamed long ago; a scan that enumerated
+// them off the disk reported six phantom packages as missing their cell, and four clones produced four
+// different counts — 8, 2, 11 and zero — with none of the four wrong.
+describe('findGateDirectories', () => {
+  it('does NOT see a directory the repository has no file under — the emptied rename husk', () => {
+    expect(findGateDirectories(new Set(['packages/mesh/package.json']), 'packages')).toEqual(['mesh']);
+  });
+
+  it('DOES see the same directory once the repository has one file in it', () => {
+    const files = new Set(['packages/mesh/package.json', 'packages/scene/package.json']);
+    expect(findGateDirectories(files, 'packages')).toEqual(['mesh', 'scene']);
+  });
+
+  it('names a directory once however many files sit under it, at any depth', () => {
+    const files = new Set(['packages/mesh/package.json', 'packages/mesh/src/deep/a.ts']);
+    expect(findGateDirectories(files, 'packages')).toEqual(['mesh']);
+  });
+
+  it('does not mistake a sibling whose name merely starts the same', () => {
+    // `packagesold/x` shares five characters with `packages` and none of its meaning.
+    expect(findGateDirectories(new Set(['packagesold/x/y.ts']), 'packages')).toEqual([]);
+  });
+
+  it('does not report a file sitting directly in the directory as a directory', () => {
+    expect(findGateDirectories(new Set(['packages/README.md']), 'packages')).toEqual([]);
+  });
+});
+
+describe('findGateEntries', () => {
+  it('names the files directly inside a directory', () => {
+    const files = new Set(['agents/packages/swf/charter.md', 'agents/packages/swf/tag-coverage.md']);
+    expect(findGateEntries(files, 'agents/packages/swf')).toEqual(['charter.md', 'tag-coverage.md']);
+  });
+
+  it('does NOT descend, so a nested file is not reported as an entry of the parent', () => {
+    expect(findGateEntries(new Set(['agents/packages/swf/notes/deep.md']), 'agents/packages/swf')).toEqual([]);
+  });
+});
+
+// The other minimal pair, for the corpus this gate judges. The scope decision used to sit inside
+// `findOrphanDocs` as an extra argument, which is exactly why the sibling check twelve lines away kept
+// scanning the disk: the fix was pinned to one check rather than to the gate. It lives here now, where
+// every scan draws from it.
+describe('findGateMarkdown', () => {
+  it('does NOT judge a doc the repository does not track — generated output nobody committed', () => {
+    const files = new Set(['agents/commands.md']);
+    expect(findGateMarkdown(files, 'agents')).toEqual(['agents/commands.md']);
+  });
+
+  it('DOES judge the same doc once git tracks it', () => {
+    const doc = 'agents/reviews/alignment/api/generated.md';
+    expect(findGateMarkdown(new Set(['agents/commands.md', doc]), 'agents')).toContain(doc);
+  });
+
+  it('finds docs at any depth and ignores non-markdown', () => {
+    const files = new Set(['agents/a.md', 'agents/conventions/b.md', 'agents/packages/todo.mjs']);
+    expect(findGateMarkdown(files, 'agents')).toEqual(['agents/a.md', 'agents/conventions/b.md']);
+  });
+
+  it('stays inside the directory it was asked about', () => {
+    expect(findGateMarkdown(new Set(['AGENTS.md', 'packages/mesh/README.md']), 'agents')).toEqual([]);
   });
 });
 
@@ -167,26 +276,6 @@ describe('findOrphanDocs', () => {
   // exonerates every future member of the class, including files nobody has looked at — so it is pinned
   // by where it STOPS, not by its centre. Keyed to the one generated path; a hand-written sibling in the
   // same directory is still required to be reachable.
-  // The tracked-scope boundary, and the pair differs ONLY in tracked-ness. A docs gate must judge the
-  // repository, not the disk of whoever ran it: `agents/reviews/` is gitignored, so a clone that ran that
-  // generator reported ~179 unreferenced documents while a clone that had not reported none — the same
-  // commit, opposite verdicts, failing locally while CI stayed green because CI checks out clean.
-  it('does NOT report an untracked generated doc, which the repository already decided not to keep', () => {
-    const doc = 'agents/reviews/alignment/api/generated.md';
-    expect(findOrphanDocs([doc], new Set(), new Set())).toEqual([]);
-  });
-
-  it('DOES report the same unreferenced doc once git tracks it', () => {
-    const doc = 'agents/reviews/alignment/api/generated.md';
-    expect(findOrphanDocs([doc], new Set(), new Set([doc]))).toEqual([doc]);
-  });
-
-  it('falls back to judging everything when tracked-ness cannot be determined, rather than going quiet', () => {
-    // A gate that silently passes when it cannot tell is worse than one that over-reports: quiet reads
-    // as clean. Omitting the set is how `listTrackedFiles` reports that git was unavailable.
-    expect(findOrphanDocs(['agents/x.md'], new Set(), undefined)).toEqual(['agents/x.md']);
-  });
-
   it('allows the generated work index, which is a view over cells and never committed', () => {
     expect(findOrphanDocs(['agents/packages/TODO.md'], new Set())).toEqual([]);
   });
@@ -265,20 +354,25 @@ describe('getDocBudgetStatus', () => {
   });
 });
 
-describe('hasTrackedFile', () => {
-  it('treats a package with tracked files as present', () => {
-    expect(hasTrackedFile(new Set(['packages/mesh/src/mesh.ts']), 'mesh')).toBe(true);
+describe('hasGatePath', () => {
+  it('accepts a file the repository has', () => {
+    expect(hasGatePath(new Set(['agents/commands.md']), 'agents/commands.md')).toBe(true);
   });
 
-  // `packages/sprite` is exactly this after the responsibility split: an empty directory left on the
-  // disk of whoever had it checked out, tracking nothing. Judging the disk would demand a cell for it
-  // from those developers only — red locally, green in CI.
-  it('treats an untracked residue directory as not a package', () => {
-    expect(hasTrackedFile(new Set(['packages/mesh/src/mesh.ts']), 'sprite')).toBe(false);
+  it('accepts a directory, which the map links to as readily as a file', () => {
+    // `AGENTS.md` links `[agents/](agents/)`, so a link checker that only accepted files would call
+    // the map's own pointer broken.
+    expect(hasGatePath(new Set(['agents/commands.md']), 'agents')).toBe(true);
   });
 
-  it('does not match a package whose name is a prefix of another', () => {
-    expect(hasTrackedFile(new Set(['packages/scene2d-gl/src/a.ts']), 'scene2d')).toBe(false);
+  it('REJECTS a target the repository does not have, even where a disk check would accept it', () => {
+    // The inverted failure: a link satisfied only by untracked residue resolves on the machine holding
+    // it and dangles for everyone else — a false PASS, which is the harder half to notice.
+    expect(hasGatePath(new Set(['agents/commands.md']), 'agents/packages/TODO.md')).toBe(false);
+  });
+
+  it('does not accept a path that is merely a prefix of a real one', () => {
+    expect(hasGatePath(new Set(['agents/commands.md']), 'agents/comm')).toBe(false);
   });
 });
 
