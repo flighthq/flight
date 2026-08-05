@@ -25,9 +25,14 @@
 // WARNINGS are drift needing a human ruling — a charter missing its North star cannot be fixed by an
 // agent, because charter direction comes from the user alone. Gating on those would paint `npm run
 // check` red with work no agent is allowed to do.
+//
+// ONE SCANNING POLICY, GATE-WIDE: every check resolves its file set from `listGateFiles`, never from a
+// directory walk of its own. See that function for why, and for the two ways disk and repository
+// diverge. A new check that reaches for `readdirSync` reintroduces a defect this file has already had
+// twice.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import pc from 'picocolors';
 
@@ -70,6 +75,14 @@ export interface DocBudgetReport {
 
 // `over` fails the gate; `near` warns and passes; `ok` is silent.
 export type DocBudgetStatus = 'near' | 'ok' | 'over';
+
+// The file set every scan resolves against, and where it came from. `source` is carried rather than
+// inferred so the gate can say which one it used — a fallback that does not announce itself is how a
+// per-machine verdict passes for a repository-wide one.
+export interface GateFileSet {
+  files: ReadonlySet<string>;
+  source: 'disk' | 'git';
+}
 
 // Scans only the link-led pointer entries (`- [name](path) — trigger`) under Domain Conventions, which
 // is where every historical violation sat. Deliberately not the whole file: the surrounding rules are
@@ -116,34 +129,94 @@ export function findMarkdownLinkTargets(text: string): readonly string[] {
   return targets;
 }
 
+// The immediate child DIRECTORIES of a directory, named by the files under them. A directory exists to
+// this gate exactly when the repository has a file in it, which is what makes an emptied rename husk
+// (`packages/scene/`, left behind by the scene2d rename) invisible without an allow-list naming it.
+export function findGateDirectories(files: ReadonlySet<string>, dir: string): readonly string[] {
+  const prefix = dir === '' ? '' : `${dir}${sep}`;
+  const names = new Set<string>();
+  for (const file of files) {
+    if (!file.startsWith(prefix)) continue;
+    const rest = file.slice(prefix.length).split(sep);
+    if (rest.length > 1) names.add(rest[0]);
+  }
+  return [...names].sort();
+}
+
+// The file names directly inside a directory, excluding anything nested deeper.
+export function findGateEntries(files: ReadonlySet<string>, dir: string): readonly string[] {
+  const prefix = dir === '' ? '' : `${dir}${sep}`;
+  const names: string[] = [];
+  for (const file of files) {
+    if (!file.startsWith(prefix)) continue;
+    const rest = file.slice(prefix.length);
+    if (!rest.includes(sep)) names.push(rest);
+  }
+  return names.sort();
+}
+
+// Every markdown file at or below a directory, repo-relative. The replacement for the recursive disk
+// walk this file used to carry — same shape of answer, drawn from the repository instead of the disk.
+export function findGateMarkdown(files: ReadonlySet<string>, dir: string): readonly string[] {
+  const prefix = `${dir}${sep}`;
+  return [...files].filter((file) => file.startsWith(prefix) && file.endsWith('.md')).sort();
+}
+
 // Which docs nothing links to, after the named allowances. Kept pure and separate from the walking so
-// the rule can be stated in a test rather than inferred from a filesystem crawl.
-export function findOrphanDocs(
-  docs: readonly string[],
-  linked: ReadonlySet<string>,
-  tracked?: ReadonlySet<string>,
-): readonly string[] {
-  return docs.filter(
-    (doc) =>
-      (tracked === undefined || tracked.has(doc)) &&
-      !linked.has(doc) &&
-      !ORPHAN_ALLOW.some((entry) => entry.match(doc)),
-  );
+// the rule can be stated in a test rather than inferred from a filesystem crawl. It takes no scope
+// argument: the scope decision belongs to the gate's file set, not to this one check — pinning it here
+// is what let the sibling check twelve lines away keep scanning the disk.
+export function findOrphanDocs(docs: readonly string[], linked: ReadonlySet<string>): readonly string[] {
+  return docs.filter((doc) => !linked.has(doc) && !ORPHAN_ALLOW.some((entry) => entry.match(doc)));
+}
+
+// Whether a path names something the repository has — a file, or a directory with any file under it.
+// Both forms are legitimate link targets (`agents/` and `agents/commands.md` are each linked from the
+// map), so a link checker has to accept either without asking the disk.
+export function hasGatePath(files: ReadonlySet<string>, path: string): boolean {
+  if (files.has(path)) return true;
+  const prefix = `${path}${sep}`;
+  for (const file of files) {
+    if (file.startsWith(prefix)) return true;
+  }
+  return false;
 }
 
 /**
- * The files git tracks. A docs gate must judge THE REPOSITORY, not whatever happens to sit on the disk
- * of whoever ran it — and generated output is the difference between the two. `agents/reviews/` is
- * gitignored, so a clone that has run that generator carries ~179 unreferenced documents the repository
- * deliberately does not keep, and a clone that has not carries zero. Same commit, opposite verdicts.
+ * THE ONE FILE SET EVERY SCAN IN THIS GATE RESOLVES AGAINST.
  *
- * That is worse than a flake: it FAILS LOCALLY AND PASSES IN CI, because CI starts from a clean
- * checkout. The pipeline looks healthy while a developer is told to go fix 179 files the project already
- * decided not to track — pressure to delete exactly the wrong thing to go green.
+ * A docs gate must judge THE REPOSITORY, not whatever happens to sit on the disk of whoever ran it. The
+ * two diverge in two ways, and both have already produced a wrong verdict here:
  *
- * Tracked-ness is a fact rather than an opinion, so this needs no allow-list and cannot rot as the
- * generated set changes.
+ * - GENERATED OUTPUT. `agents/reviews/` is gitignored, so a clone that has run that generator carries
+ *   ~179 unreferenced documents the repository deliberately does not keep, and a clone that has not
+ *   carries zero.
+ * - RENAME RESIDUE. `packages/scene`, `packages/surface`, and the four `packages/displayobject-…` are
+ *   emptied husks of directories renamed long ago. Four clones produced four missing-cell counts — 8, 2, 11,
+ *   and zero — and NONE of the four was wrong, so two agents comparing numbers could not reconcile
+ *   them and argued about the count instead of about the gate.
+ *
+ * The zero is the dangerous one. CI starts from a clean checkout, so a check keyed to residue is GREEN
+ * IN THE ONLY ENVIRONMENT THAT GATES ANYTHING and red only for developers carrying it — the inverse of
+ * a flake, the version nobody debugs, except it blocks.
+ *
+ * So the rule is the GATE'S, not one check's: every scan resolves its file set from here. Fixing the
+ * one check that happened to fail is why this came back in a sibling check twelve lines from the fix.
+ * Membership comes from git; CONTENT still comes from the working tree, because a gate that read
+ * committed content could never see the edit it is being run on.
+ *
+ * The cost is stated rather than hidden: a brand-new uncommitted doc is not judged until it is added.
+ * That is the right trade against a per-clone verdict, and it is now the same trade everywhere rather
+ * than one check making it alone.
  */
+function listGateFiles(): GateFileSet {
+  const tracked = listTrackedFiles();
+  return tracked === undefined ? { files: listWorkingTreeFiles(), source: 'disk' } : { files: tracked, source: 'git' };
+}
+
+// Tracked-ness is a fact rather than an opinion, so this needs no allow-list and cannot rot as the
+// generated set changes. Git reports `/`-separated paths; they are converted to the platform separator
+// so one spelling of a path is used everywhere in this file.
 function listTrackedFiles(): ReadonlySet<string> | undefined {
   try {
     const output = execFileSync('git', ['ls-files', '-z'], {
@@ -151,11 +224,34 @@ function listTrackedFiles(): ReadonlySet<string> | undefined {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
     });
-    const tracked = new Set(output.split('\0').filter((entry) => entry !== ''));
+    const tracked = new Set(
+      output
+        .split('\0')
+        .filter((entry) => entry !== '')
+        .map((entry) => entry.split('/').join(sep)),
+    );
     return tracked.size === 0 ? undefined : tracked;
   } catch {
     return undefined;
   }
+}
+
+// The last resort when git cannot be queried — a checkout with no `.git`, or no git on PATH. It yields
+// the same SHAPE of answer as `listTrackedFiles` so no check needs a second code path: there is one
+// file set, and only its provenance differs. The gate says which it used on every run, because a
+// silent fallback turns "this machine" into "the repository" without anyone noticing.
+function listWorkingTreeFiles(): ReadonlySet<string> {
+  const found = new Set<string>();
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (SCAN_SKIP_DIRECTORIES.has(entry.name)) continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else found.add(relative(REPO_ROOT, full));
+    }
+  };
+  walk(REPO_ROOT);
+  return found;
 }
 
 // Which docs are reached along a path a reader would actually travel. Pure, and taking its sources as
@@ -208,10 +304,9 @@ export function reportDocBudget(budget: Readonly<DocBudget>, contents: string): 
   return { length, limit: budget.limit, path: budget.path, status: getDocBudgetStatus(length, budget.limit) };
 }
 
-function checkAssessment(cell: string, dir: string): void {
-  const path = join(dir, 'assessment.md');
-  if (!existsSync(path)) return;
-  const text = readFileSync(path, 'utf8');
+function checkAssessment(files: ReadonlySet<string>, cell: string, dir: string): void {
+  const text = readGateFile(files, join(dir, 'assessment.md'));
+  if (text === null) return;
   const meta = parseFrontMatter(text);
 
   if (meta.basedOn === undefined) {
@@ -249,14 +344,8 @@ function checkAssessment(cell: string, dir: string): void {
 // fixable envelope violation here (CONTRACT.md: "charter.md is required"), so it fails. A missing
 // review/assessment does not: those are stage outputs, and "this stage has not run yet" is what the
 // generated liveness list is for, not a gate.
-function checkCellCoverage(cells: ReadonlySet<string>, tracked: ReadonlySet<string> | undefined): void {
-  const onDisk = readdirSync(PACKAGES_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
-  const packages = tracked === undefined ? onDisk : onDisk.filter((name) => hasTrackedFile(tracked, name));
-
-  for (const name of findUncoveredPackages(packages, cells)) {
+function checkCellCoverage(files: ReadonlySet<string>, cells: ReadonlySet<string>): void {
+  for (const name of findUncoveredPackages(findGateDirectories(files, PACKAGES_DIR), cells)) {
     fail(`packages/${name}/: no agents/packages/${name}/ cell — run \`node agents/packages/scaffold.mjs\``);
   }
 }
@@ -268,44 +357,26 @@ export function findUncoveredPackages(packages: readonly string[], cells: Readon
   return packages.filter((name) => !cells.has(name));
 }
 
-// Whether git tracks anything under `packages/<name>`, which is what makes it a package rather than a
-// directory. A removed package leaves an untracked empty residue behind on the disk of whoever had it
-// checked out — `packages/sprite` is exactly that today, tracking zero paths after the responsibility
-// split. Reading the disk would demand a cell for a package the repository no longer contains, and
-// would do it only for those developers: red locally, green in CI, which is the failure mode the
-// orphan check above already documents. Tracked-ness is the same fact there and here.
-export function hasTrackedFile(tracked: ReadonlySet<string>, name: string): boolean {
-  const prefix = `packages/${name}/`;
-  for (const file of tracked) {
-    if (file.startsWith(prefix)) return true;
-  }
-  return false;
-}
+function checkCells(files: ReadonlySet<string>): void {
+  const cells = findGateDirectories(files, CELLS_DIR);
 
-function checkCells(): void {
-  const cells = readdirSync(CELLS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
-
-  checkCellCoverage(new Set(cells), listTrackedFiles());
+  checkCellCoverage(files, new Set(cells));
 
   for (const cell of cells) {
     const dir = join(CELLS_DIR, cell);
-    const charterPath = join(dir, 'charter.md');
+    const charterText = readGateFile(files, join(dir, 'charter.md'));
 
-    if (!existsSync(charterPath)) {
+    if (charterText === null) {
       fail(`agents/packages/${cell}/: charter.md is required and missing`);
       continue;
     }
 
-    for (const entry of readdirSync(dir)) {
+    for (const entry of findGateEntries(files, dir)) {
       if (!(CELL_FILES as readonly string[]).includes(entry)) {
         warn(`agents/packages/${cell}/${entry}: not a contract file (${CELL_FILES.join(', ')})`);
       }
     }
 
-    const charterText = readFileSync(charterPath, 'utf8');
     const charter = parseFrontMatter(charterText);
     const isDraft = charter.draft === 'true';
     // An absorbed / reserved / rust-intended / spun-out cell is architectural history or an upstream
@@ -363,20 +434,24 @@ function checkCells(): void {
     }
 
     checkOrdinals(cell, charterText);
-    checkReview(cell, dir);
-    checkStatus(cell, dir);
-    checkAssessment(cell, dir);
+    checkReview(files, cell, dir);
+    checkStatus(files, cell, dir);
+    checkAssessment(files, cell, dir);
   }
 }
 
-function checkLinks(): void {
-  for (const file of walkMarkdown(join(REPO_ROOT, 'agents'))) {
-    const text = readFileSync(file, 'utf8');
+// Pointer → target. A target is resolved against the repository rather than the disk for the same
+// reason everything else here is: a link satisfied only by untracked residue resolves on the machine
+// that has it and dangles for everyone else, which is the failure mode inverted — a false PASS.
+function checkLinks(files: ReadonlySet<string>): void {
+  for (const file of findGateMarkdown(files, AGENTS_DIR)) {
+    const text = readGateFile(files, file);
+    if (text === null) continue;
     for (const match of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
       const target = match[1].split('#')[0].trim();
       if (target === '' || /^(https?:|mailto:)/.test(target)) continue;
-      if (!existsSync(resolve(dirname(file), target))) {
-        fail(`${relative(REPO_ROOT, file)}: broken link → ${target}`);
+      if (!hasGatePath(files, join(dirname(file), target))) {
+        fail(`${file}: broken link → ${target}`);
       }
     }
   }
@@ -388,11 +463,11 @@ function checkLinks(): void {
 // itself have become a recurring reason CI is red and commits stop promoting. A one-word style rule must
 // not stop the line. Moving it earlier does not help either: a pre-commit hook blocks the commit
 // instead. So it reports, and a reviewer rules on what it finds.
-function checkMapStatus(): void {
+function checkMapStatus(files: ReadonlySet<string>): void {
   for (const budget of DOC_BUDGETS) {
-    const path = join(REPO_ROOT, budget.path);
-    if (!existsSync(path)) continue;
-    for (const claim of findMapStatusClaims(readFileSync(path, 'utf8'))) {
+    const text = readGateFile(files, budget.path);
+    if (text === null) continue;
+    for (const claim of findMapStatusClaims(text)) {
       warn(
         `${budget.path}: pointer entry '${claim.entry}' reports progress (${claim.words.join(', ')}) — ` +
           `status belongs in the linked doc's own header, not in the map every agent reads in full`,
@@ -431,7 +506,7 @@ function checkOrdinals(cell: string, charterText: string): void {
 //
 // Reachability means an actual resolvable markdown link, not a prose mention. You cannot navigate a
 // mention, and the whole point of the invariant is that a reader *arrives*.
-function checkOrphans(): void {
+function checkOrphans(files: ReadonlySet<string>): void {
   // Prose documents only — deliberately NOT `scripts/`, and that exclusion is load-bearing rather than
   // incidental. This checker's own tests build fixtures out of REAL document names (`rig-model.md`,
   // `seam-audit.md`), because each one records an actual incident. Widen this corpus to source files and
@@ -439,34 +514,26 @@ function checkOrphans(): void {
   // reached — the gate would then go quiet in exactly the case it exists to catch, and quiet is
   // indistinguishable from clean. Verified by probing the running gate, not by reading it: a link planted
   // inside `scripts/docs.test.ts` is still reported orphaned.
-  const corpus = [join(REPO_ROOT, 'AGENTS.md'), ...walkMarkdown(join(REPO_ROOT, 'agents'))];
-  if (existsSync(SKILLS_DIR)) corpus.push(...walkMarkdown(SKILLS_DIR));
+  //
+  // Untracked output is out of the POINTER SOURCES as well as out of the docs being judged, and that
+  // falls out of drawing both from the gate's file set. A generated document that links to a tracked one
+  // would otherwise mark it reached on the clone that ran the generator and leave it reported on the
+  // clone that did not — the same per-machine divergence, arriving as a false pass.
+  const docs = findGateMarkdown(files, AGENTS_DIR);
+  const corpus = ['AGENTS.md', ...docs, ...findGateMarkdown(files, SKILLS_DIR)];
 
-  const tracked = listTrackedFiles();
-  // Untracked generated output is filtered from the POINTER SOURCES too, not just from the docs being
-  // judged. A generated document that links to a tracked one would otherwise mark it reached on the
-  // clone that ran the generator and leave it reported on the clone that did not — the same
-  // per-machine divergence, arriving as a false pass rather than a false failure.
   const linked = findReachableDocs(
     corpus
-      .map((file) => ({ path: relative(REPO_ROOT, file), text: readFileSync(file, 'utf8') }))
-      .filter((source) => tracked === undefined || tracked.has(source.path)),
+      .map((path) => ({ path, text: readGateFile(files, path) }))
+      .filter((source): source is { path: string; text: string } => source.text !== null),
   );
 
-  const docs = walkMarkdown(join(REPO_ROOT, 'agents')).map((file) => relative(REPO_ROOT, file));
-  for (const orphan of findOrphanDocs(docs, linked, tracked)) {
+  for (const orphan of findOrphanDocs(docs, linked)) {
     fail(
       `${orphan}: reachable from no authority-bearing document — the codebase map, a cell charter, an index, the catalog or the package map must point at it, or no reader arrives`,
     );
   }
 
-  process.stdout.write(
-    `${pc.dim(
-      tracked === undefined
-        ? '  orphan-check could NOT determine which files git tracks, so it scanned the working tree — generated output on disk may be reported'
-        : `  orphan-check scope: the ${tracked.size} files git tracks — generated output on disk is deliberately not judged, so this gate reads the repository rather than the machine`,
-    )}\n`,
-  );
   process.stdout.write(
     `${pc.dim('  orphan-check counts pointers only from the map, cell charters, indexes, the catalog and the package map — a pointer from a status log does not count, because status is the append-only continuity layer and explicitly not blessed truth')}\n`,
   );
@@ -476,10 +543,10 @@ function checkOrphans(): void {
   for (const entry of ORPHAN_ALLOW) process.stdout.write(`${pc.dim(`  orphan-check allowance: ${entry.why}`)}\n`);
 }
 
-function checkReview(cell: string, dir: string): void {
-  const path = join(dir, 'review.md');
-  if (!existsSync(path)) return;
-  const meta = parseFrontMatter(readFileSync(path, 'utf8'));
+function checkReview(files: ReadonlySet<string>, cell: string, dir: string): void {
+  const text = readGateFile(files, join(dir, 'review.md'));
+  if (text === null) return;
+  const meta = parseFrontMatter(text);
   if (meta.status !== undefined && !(REVIEW_STATUSES as readonly string[]).includes(meta.status)) {
     fail(`agents/packages/${cell}/review.md: status '${meta.status}' is not one of ${REVIEW_STATUSES.join(' | ')}`);
   }
@@ -496,10 +563,9 @@ function checkReview(cell: string, dir: string): void {
 // The drift warns rather than gates. todo.mjs now derives the status date (max of field and headings)
 // instead of trusting the field, so a stale one no longer corrupts the re-review list — it is
 // cosmetic, and a cosmetic mismatch across 48 cells must not turn `npm run check` red.
-function checkStatus(cell: string, dir: string): void {
-  const path = join(dir, 'status.md');
-  if (!existsSync(path)) return;
-  const text = readFileSync(path, 'utf8');
+function checkStatus(files: ReadonlySet<string>, cell: string, dir: string): void {
+  const text = readGateFile(files, join(dir, 'status.md'));
+  if (text === null) return;
   const meta = parseFrontMatter(text);
 
   const declared = meta.updated !== undefined && meta.updated !== 'null' ? meta.updated : null;
@@ -524,11 +590,13 @@ function fail(message: string): void {
 }
 
 function main(): void {
-  reportBudgets();
-  checkLinks();
-  checkOrphans();
-  checkMapStatus();
-  checkCells();
+  const { files, source } = listGateFiles();
+  reportGateScope(files, source);
+  reportBudgets(files);
+  checkLinks(files);
+  checkOrphans(files);
+  checkMapStatus(files);
+  checkCells(files);
   reportWarnings();
 
   if (failures.length > 0) {
@@ -540,6 +608,15 @@ function main(): void {
   process.stdout.write(
     `${pc.green('✓')} Agent docs valid (cell envelopes conform, links resolve, every doc reachable)\n`,
   );
+}
+
+// Membership from the gate's file set, CONTENT from the working tree — the split the whole scanning
+// policy rests on. A file the repository tracks but the working tree no longer has is an uncommitted
+// deletion, and reporting it missing is the honest answer rather than a crash.
+function readGateFile(files: ReadonlySet<string>, path: string): string | null {
+  if (!files.has(path)) return null;
+  const full = join(REPO_ROOT, path);
+  return existsSync(full) ? readFileSync(full, 'utf8') : null;
 }
 
 function parseFrontMatter(text: string): Record<string, string> {
@@ -563,9 +640,14 @@ function readSection(text: string, heading: string): string | null {
   return match === null ? null : match[1];
 }
 
-function reportBudgets(): void {
+function reportBudgets(files: ReadonlySet<string>): void {
   for (const budget of DOC_BUDGETS) {
-    const report = reportDocBudget(budget, readFileSync(join(REPO_ROOT, budget.path), 'utf8'));
+    const text = readGateFile(files, budget.path);
+    if (text === null) {
+      fail(`${budget.path}: declared a size budget but the repository does not have it`);
+      continue;
+    }
+    const report = reportDocBudget(budget, text);
     const headroom = report.limit - report.length;
     const measured = `${report.length.toLocaleString('en-US')} / ${report.limit.toLocaleString('en-US')} characters`;
     if (report.status === 'over') {
@@ -582,6 +664,20 @@ function reportBudgets(): void {
     }
     process.stdout.write(`${pc.green('✓')} ${report.path} ${measured}\n`);
   }
+}
+
+// Printed once, at the top, because it is a property of the GATE rather than of any one check — and
+// because a scope nobody states is a scope nobody can compare. Four clones reported four different
+// missing-cell counts and spent the reconciliation arguing about the numbers; this line is what would
+// have ended that in one message.
+function reportGateScope(files: ReadonlySet<string>, source: GateFileSet['source']): void {
+  process.stdout.write(
+    `${pc.dim(
+      source === 'git'
+        ? `  docs gate scope: the ${files.size} files git tracks. Every scan here resolves its file set from git, so untracked generated output and emptied rename husks on disk are not judged and the verdict is identical in every clone.`
+        : '  docs gate could NOT query git, so every scan fell back to the working tree — untracked generated output and rename residue MAY be reported, and this verdict is about this machine rather than about the repository',
+    )}\n`,
+  );
 }
 
 // Warnings are grouped by shape rather than listed one per line: 30-odd charters missing the same
@@ -610,25 +706,22 @@ function reportWarnings(): void {
   }
 }
 
-function walkMarkdown(dir: string): string[] {
-  const found: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) found.push(...walkMarkdown(full));
-    else if (entry.endsWith('.md')) found.push(full);
-  }
-  return found;
-}
-
 function warn(message: string): void {
   warnings.push(message);
 }
 
 const REPO_ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
-const CELLS_DIR = join(REPO_ROOT, 'agents', 'packages');
-const PACKAGES_DIR = join(REPO_ROOT, 'packages');
 
-const SKILLS_DIR = join(REPO_ROOT, '.claude', 'skills');
+// Repo-relative, because that is the spelling the gate's file set uses. An absolute directory here
+// would be an invitation to walk it, which is the thing this file no longer does.
+const AGENTS_DIR = 'agents';
+const CELLS_DIR = join('agents', 'packages');
+const PACKAGES_DIR = 'packages';
+const SKILLS_DIR = join('.claude', 'skills');
+
+// Only reached in the no-git fallback. `.git` and `node_modules` are excluded because walking them is
+// pure cost; `dist` because it is build output no scan here is about.
+const SCAN_SKIP_DIRECTORIES = new Set(['.git', 'dist', 'node_modules']);
 
 // A doc can be legitimately unlinked, and the gate has to let the honest answer through — an allowance
 // with no recorded reason looks exactly like an oversight, and the next careful reader deletes it. Each
