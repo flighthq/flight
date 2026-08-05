@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { DomRenderState } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   failCaptureTargetVerification,
@@ -12,16 +12,23 @@ import {
 } from './capturePage';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
 
-afterEach(() => {
+function resetCapturePageWindow(): void {
   const flags = window as typeof window & {
+    __flightCapture?: boolean;
+    __flightCaptureVerify?: boolean;
     __ftTarget?: unknown;
     __ftVerification?: unknown;
     __ftBenchmarkTarget?: unknown;
   };
+  flags.__flightCapture = undefined;
+  flags.__flightCaptureVerify = undefined;
   flags.__ftTarget = undefined;
   flags.__ftVerification = undefined;
   flags.__ftBenchmarkTarget = undefined;
-});
+}
+
+beforeEach(resetCapturePageWindow);
+afterEach(resetCapturePageWindow);
 
 describe('failCaptureTargetVerification', () => {
   it('publishes a terminal reason when setup fails before verification starts', () => {

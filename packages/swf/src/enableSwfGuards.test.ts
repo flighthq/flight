@@ -21,6 +21,10 @@ function readUnknownFilter(): boolean {
   return readSwfFilterList(new SwfReader(bytes, 0, bytes.length), [], []);
 }
 
+beforeEach(() => {
+  disableSwfGuards();
+});
+
 afterEach(() => {
   disableSwfGuards();
 });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { DomRenderState } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FunctionalTarget } from './functionalVerify';
 import {
@@ -52,7 +52,7 @@ function verification(): Record<string, unknown> {
   return (window as unknown as VerificationWindowLike).__ftVerification as Record<string, unknown>;
 }
 
-afterEach(() => {
+function resetVerificationWindow(): void {
   const w = window as unknown as VerificationWindowLike;
   w.__ftTarget = undefined;
   w.__ftVerification = undefined;
@@ -60,7 +60,10 @@ afterEach(() => {
   w.__ftBenchmarkTarget = undefined;
   w.__ftRealRequestAnimationFrame = undefined;
   w.__ftCaptureTimeoutMs = undefined;
-});
+}
+
+beforeEach(resetVerificationWindow);
+afterEach(resetVerificationWindow);
 
 // A minimal DOM target — the only backend snapshot/verification handles without a real GPU context.
 function domTarget(element: HTMLElement): FunctionalTarget {

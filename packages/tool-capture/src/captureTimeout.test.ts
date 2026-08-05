@@ -1,9 +1,18 @@
 import { getCaptureTimeoutMs, resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout';
 
 describe('getCaptureTimeoutMs', () => {
-  afterEach(() => {
+  let originalEnvironmentTimeout: string | undefined;
+
+  beforeEach(() => {
+    originalEnvironmentTimeout = process.env['FLIGHT_CAPTURE_TIMEOUT_MS'];
     setCaptureTimeoutMs(null);
     delete process.env['FLIGHT_CAPTURE_TIMEOUT_MS'];
+  });
+
+  afterEach(() => {
+    setCaptureTimeoutMs(null);
+    if (originalEnvironmentTimeout === undefined) delete process.env['FLIGHT_CAPTURE_TIMEOUT_MS'];
+    else process.env['FLIGHT_CAPTURE_TIMEOUT_MS'] = originalEnvironmentTimeout;
   });
 
   it('defaults to the budget the edited constants used, so an unconfigured run is unchanged', () => {
