@@ -60,3 +60,10 @@ export function registerSkeleton2DFormat(
 ): void {
   getRegistry().set(kind, { detect, parse });
 }
+
+// Removes a registered format, so the registry is not write-only. Every other registry in the SDK pairs
+// its `register*` with this — a caller that can add a vendor format must be able to take it back out, and
+// a test that registers one has no way to leave the module global as it found it otherwise.
+export function unregisterSkeleton2DFormat(kind: string): void {
+  getRegistry().delete(kind);
+}
