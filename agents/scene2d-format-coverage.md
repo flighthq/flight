@@ -57,8 +57,9 @@ scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op
 paths, rectangles (with corner radius), ellipses, and polystars including corner roundness (`os`/`is`,
 animatable); solid and gradient fills and strokes, linear and radial, including packed colour and
 opacity stops combined with overall paint opacity, each animatable through the format-owned
-mutable-content binder; static dash;
-static trim paths; a single additive non-inverted mask recovered to `ClipRegion`; images resolved through
+mutable-content binder; static stroke dash/offset, cap, join, and miter-limit data on solid and gradient
+strokes; nested shape-group names; static trim paths; a single additive non-inverted mask recovered to
+`ClipRegion`; images resolved through
 the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
 stretch folded exactly into root time; recursion-guarded precomposition references; and markers as
 `AnimationClipEvent`s.
@@ -76,9 +77,10 @@ where a static value is a number, an array of numbers, or a bare path object.
 directly; a keyframed one nests it one level deeper. The wrapper is the **majority** form — 896
 keyframed paths against 627 bare — so reading only the bare form is what crashed most files.
 
-**Not covered — silent, and verified so.** Each of the following was confirmed by importing the case and
-the reduced document side by side and diffing the emitted shape command stream; the loss is byte-identical
-absence. None of them is announced, and per the rule above none of them should be:
+**Not covered — silent, and verified so.** The text and radial-highlight cases were confirmed by importing
+each case beside its reduction and diffing the emitted shape command stream; the systematic source trace at
+Flight `28301ec6d` confirms the remaining field-to-consumer gaps below. None is announced, and per the rule
+above none should be:
 
 - **Text stroke (`sc`, `sw`) is not read**, and **embedded glyph outlines (`chars`) are not read**.
   `chars` and `fonts` are typed on `LottieDocument` and consumed by nothing. `chars` is how a Bodymovin
@@ -87,6 +89,15 @@ absence. None of them is announced, and per the rule above none of them should b
 - **Radial highlight angle and length (`a`, `h`) are not read.** Both are typed on
   `LottieGradientShapeItem`, but neither reaches the gradient matrix or Flight's focal-point field.
   The mapping needs a format-derived relation before it can be implemented without guessing.
+- **Spatial keyframe tangents (`ti`, `to`) are not read.** The animation seam carries sampled scalar or
+  vector values plus temporal segment easing; it has no motion-path target on which those tangents can
+  land. Linear value interpolation remains correct at keyframe times but not along curved motion paths.
+- **Precomposition asset bounds (`w`, `h`) do not clip their layer subtree.** The child timing and layers
+  are carried, but turning the asset rectangle into a viewport would require a stated clipping contract.
+- **Shape-item names below a group are not retained.** A group name lands on its display container, but
+  paths and paints are consolidated into one emitted `Shape`, so there is no one-to-one node for each
+  item's `nm`. Expression-only indices (`ix`, shape `ind`) and the group's declared property count (`np`)
+  likewise have no visual output.
 
 Paint is a **list** per shape group, not one of each: multiple fills, multiple strokes, and a gradient
 beside a solid one all survive, and each paint restates the group's whole path set the way a Bodymovin
@@ -147,12 +158,15 @@ the caller to realize through a `BlendEffect`.
 
 `createScene2DFromSvgDocument` produces a display subtree from a static SVG document.
 
-**Covered:** the structural elements `svg`, `g`, `a`, `switch`, `symbol`, `defs`, and `use` (recursion-
-guarded), with nested viewports and `viewBox` transforms; the geometry elements `path`, `rect`, `circle`,
+**Covered:** the structural elements `svg`, `g`, `a`, `switch` as an all-children container, `symbol`,
+`defs`, and `use` (recursion-guarded), with nested viewports and `viewBox` transforms; the geometry
+elements `path`, `rect`, `circle`,
 `ellipse`, `line`, `polygon`, and `polyline`; `text` with `tspan`; `image` through the injected
 `resolveImageResource` seam, with intrinsic dimensions mapped through the image viewport's default
 `xMidYMid meet` or explicit `preserveAspectRatio`; linear and radial gradients including
-`objectBoundingBox` units; `clipPath`
+`objectBoundingBox` units and gradient-stop `currentColor`; hex, RGB/RGBA, HSL/HSLA, percentage alpha,
+and the importer's bounded named-colour table; simple id/class/tag/tag.class stylesheet selectors;
+`clipPath`
 as a hard `ClipRegion`; and the non-rendering elements `style`, `title`, `desc`, and `metadata` skipped
 by name.
 
@@ -186,6 +200,27 @@ viewport was independently scaled to 5×10 even though the importer's existing v
 to `xMidYMid meet`. Image placement now reuses that rule: the default maps to scale 5 at `(10, 45)`,
 while explicit `preserveAspectRatio="none"` retains scale 5×10 at `(10, 20)`. A focused regression pins
 both outcomes.
+
+**Systematic silent gaps confirmed at Flight `28301ec6d`.** These are recorded rather than guessed
+across a semantic or runtime boundary:
+
+- Radial-gradient focal coordinates `fx`/`fy` are parsed and inherited but do not reach the gradient
+  matrix or a focal-ratio field. The conversion depends on the gradient's coordinate space and transform.
+- `switch` does not evaluate `requiredFeatures`, `requiredExtensions`, or `systemLanguage`; it emits every
+  child because the importer has no feature/language environment contract.
+- Stylesheets deliberately skip descendant/child/sibling/attribute/pseudo selectors. `!important` is
+  stripped rather than participating in the cascade, and the named-colour table is only a bounded subset.
+  Gradient-stop `stop-color`/`stop-opacity` from a matching stylesheet rule are also not computed.
+- Length parsing accepts numeric prefixes but does not resolve percentage, font-relative, or viewport-
+  relative units against a property-specific reference box. A viewport without `viewBox` is translated but
+  not sized/clipped; `overflow` is not modeled; mask region `x`/`y`/`width`/`height` and `maskUnits` are not
+  applied (only `maskContentUnits` affects content geometry).
+- Text paint is fill-only and layout is deliberately flattened; text stroke and advanced baseline,
+  spacing, direction, and per-glyph positioning fields do not reach `TextFormat`. `vector-effect` and
+  `paint-order` are not presentation fields here.
+- A rectangle with distinct `rx` and `ry` is lowered through Flight's circular-radius round-rectangle
+  helper using the larger radius, so elliptical corners are not preserved. Paint-server fallback tokens
+  after `url(...)` are not parsed.
 
 **Not covered — declared exclusions.** SVG animation (SMIL), scripts, `foreignObject`, live DOM behavior,
 and filter graphs are not retained; filters belong to `@flighthq/effects`. The charter sets the
