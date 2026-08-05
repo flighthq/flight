@@ -2,7 +2,7 @@
 package: '@flighthq/swf'
 status: solid
 score: 86
-updated: 2026-08-02
+updated: 2026-08-04
 ingested:
   - charter.md
   - status.md
@@ -24,7 +24,7 @@ path outlines, static text places them, edit-text fields arrive as assignable te
 containers open through a registered decompressor, buttons contribute their up state, clip depth becomes a
 real clip, and both bytecodes give up their timeline commands without either being executed. What remains
 unbuilt is narrower than what is built: morph geometry, per-frame colour beyond alpha, blend modes and
-filters, and the resolver that turns embedded image bytes into pixels. Stage, shape, text, morph,
+filters, and one deferred path shared by encoded and SWF-lossless bitmap payloads. Stage, shape, text, morph,
 embedded-image, lossless-bitmap, video, and recursively composed sprite extents cover the available
 named-graph sizing contract. A revision-pinned uncompressed Ruffle fixture supplies real-file evidence for
 the named-slot path and exposed the zero-bit RECT compatibility case now covered synthetically.
@@ -119,11 +119,12 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 
 ## Remaining depth
 
-- Bitmap pixels reach a resolver but nothing decodes them yet. No resolver ships that turns
-  `image/png`, `image/jpeg`, `image/gif`, or the lossless payloads into a textured node, so an imported
-  document still draws its images as empty bounded containers until an application supplies one. A
-  lossless payload additionally needs an inflate, which an asynchronous resolver can take from the
-  platform rather than vendoring.
+- Bitmap resolution currently has two complete paths rather than one. Embedded PNG, JPEG, and GIF bytes
+  leave on `Scene2DDocument.imageResources`; `loadScene2DImageResources` decodes each reference once and
+  binds the resulting `Image` into every waiting bitmap-fill texture. A focused integration test starts
+  with a full 1x1 PNG inside `DefineBitsJPEG2` and proves that exact SWF texture is sourceless before the
+  load and image-backed after it. SWF-lossless payloads instead inflate and unpack synchronously at import.
+  Unifying those paths remains an API decision, not a missing-pixel bug; no routing choice is made here.
 - `DefineEditText` is still structural only, and deliberately so: it carries a string plus a font
   reference rather than glyph indices, so it needs the font's code table, its advance table, and line
   breaking — and flattening it to paths would destroy the editability that defines it. The outlines are

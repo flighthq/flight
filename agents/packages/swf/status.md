@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-03
+updated: 2026-08-04
 ---
 
 # swf status
@@ -171,12 +171,16 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   its magic (`image/png`, `image/gif`, `image/jpeg`). Pixels are shared and sampling is not — each
   (character, sampler) pair is its own Texture over the one image resource, which is how one character
   serves a smoothed placement and a tiled non-smoothed fill at once. Decoding stays the load step's job,
-  so it can be asynchronous and a caller that never loads an image never pays for its pixels.
-- The two bitmap paths are asymmetric on purpose, and the asymmetry is a seam gap rather than a design:
-  `loadImageResourceFromBytes` decodes through an `HTMLImageElement` and never consults the
-  `@flighthq/image-codec` decoder registry, so a lossless payload has no way to reach `createSwfLosslessBitmap`
-  through the resource path. Routing it there — so every format loads the same way and lossless stops being
-  eager — needs that loader to resolve through the registry first.
+  so it can be asynchronous and a caller that never loads an image never pays for its pixels. The
+  cross-package proof builds a complete 1x1 PNG into a bitmap-filled SWF shape, then observes
+  `loadScene2DImageResources` invoke the browser decoder and bind its `Image` to that exact waiting texture.
+- The two bitmap paths are asymmetric, and unifying them remains an unchosen design fork.
+  `loadImageResourceFromBytes` returns an `Image` through `HTMLImageElement` and does not consult the
+  MIME-keyed `@flighthq/image-codec` registry, whose decoders instead return raw straight-RGBA
+  `DecodedImage` data. One route would bridge those contracts and settle how SWF's premultiplied lossless
+  alpha crosses them. The v1 `ImageResourceReference` union is closed over Embedded and External but
+  explicitly anticipates an additive third member; that route would instead widen shared types and the 2D
+  and 3D loader dispatch. No route is selected here, and eager lossless resolution remains unchanged.
 - Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
   headers, and video stream definitions retain declared frame dimensions. A video payload stays opaque
   and no visual body is materialized.
