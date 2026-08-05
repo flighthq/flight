@@ -903,6 +903,23 @@ describe('Lottie real-export shapes', () => {
 // count of paints in the file is the count of paints in the output. These four cases are the ones a
 // single-slot paint model silently dropped.
 describe('Lottie shape group paint', () => {
+  it('retains the name of a nested shape group', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'layer',
+          op: 60,
+          shapes: [{ it: [RECT, RED_FILL], nm: 'named-group', ty: 'gr' }],
+          ty: 4,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+
+    expect(findByName(result.root, 'named-group')).not.toBeNull();
+  });
+
   it('keeps both fills when a group states two', () => {
     const two = importPaints([RECT, RED_FILL, BLUE_FILL]);
     const blueOnly = importPaints([RECT, BLUE_FILL]);
@@ -941,8 +958,84 @@ describe('Lottie shape group paint', () => {
     expect(paintStartsOf(unpainted)).toEqual([]);
   });
 
+  it('carries static stroke dashes, caps, joins, and miter limits', () => {
+    const stroke = importPaints([
+      OPEN_LINE,
+      {
+        c: { k: [0, 1, 0] },
+        d: [
+          { n: 'd', v: { k: 4 } },
+          { n: 'g', v: { k: 2 } },
+          { n: 'o', v: { k: 0 } },
+        ],
+        lc: 2,
+        lj: 3,
+        ml: 9,
+        o: { k: 100 },
+        ty: 'st',
+        w: { k: 2 },
+      },
+    ]);
+    const lineStyle = stroke.data.commands.indexOf('lineStyle');
+
+    expect(stroke.data.commands.slice(lineStyle + 7, lineStyle + 10)).toEqual(['round', 'bevel', 9]);
+    expect(pathAnchorsOf(stroke)).toEqual([
+      [0, 0],
+      [4, 0],
+      [6, 0],
+      [10, 0],
+      [12, 0],
+    ]);
+  });
+
+  it('diagnoses animated stroke dashes and leaves the source path intact', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const stroke = importPaints(
+      [
+        OPEN_LINE,
+        {
+          c: { k: [0, 1, 0] },
+          d: [
+            { n: 'd', v: animatedScalar(4, 8) },
+            { n: 'g', v: { k: 2 } },
+          ],
+          o: { k: 100 },
+          ty: 'st',
+          w: { k: 2 },
+        },
+      ],
+      diagnostics,
+    );
+
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['lottie.unsupported-shape-modifier']);
+    expect(pathAnchorsOf(stroke)).toEqual([
+      [0, 0],
+      [12, 0],
+    ]);
+  });
+
   const RECT = { p: { k: [0, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
   const OTHER_RECT = { p: { k: [40, 0] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' };
+  const OPEN_LINE = {
+    ks: {
+      k: {
+        c: false,
+        i: [
+          [0, 0],
+          [0, 0],
+        ],
+        o: [
+          [0, 0],
+          [0, 0],
+        ],
+        v: [
+          [0, 0],
+          [12, 0],
+        ],
+      },
+    },
+    ty: 'sh',
+  };
   const RED_FILL = { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' };
   const BLUE_FILL = { c: { k: [0, 0, 1] }, o: { k: 100 }, ty: 'fl' };
   const STROKE = { c: { k: [0, 1, 0] }, o: { k: 100 }, ty: 'st', w: { k: 2 } };
@@ -955,9 +1048,10 @@ describe('Lottie shape group paint', () => {
     ty: 'gf',
   };
 
-  function importPaints(items: unknown[]): Shape {
+  function importPaints(items: unknown[], diagnostics?: ImportDiagnostic[]): Shape {
     const result = createScene2DFromLottieDocument(
       createDocument([{ ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 }] as unknown as LottieLayer[]),
+      diagnostics,
     );
     return findFirstKind(result.root, ShapeKind) as Shape;
   }

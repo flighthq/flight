@@ -77,6 +77,36 @@ describe('createScene2DFromSvgDocument', () => {
     expect(shape.data.commands).toContain(0xff0000);
   });
 
+  it('parses HSL colors and percentage alpha components', () => {
+    const root = createScene2DFromSvgDocument(
+      '<svg><rect width="10" height="10" fill="hsla(120 100% 25% / 50%)" stroke="rgba(0 0 255 / 25%)"/></svg>',
+    );
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const fill = shape.data.commands.indexOf('beginFill');
+    const stroke = shape.data.commands.indexOf('lineStyle');
+
+    expect(shape.data.commands.slice(fill + 2, fill + 4)).toEqual([0x008000, 0.5]);
+    expect(shape.data.commands.slice(stroke + 3, stroke + 5)).toEqual([0x0000ff, 0.25]);
+  });
+
+  it('resolves currentColor in gradient stops', () => {
+    const root = createScene2DFromSvgDocument(`
+      <svg>
+        <defs>
+          <linearGradient id="current" color="#123456">
+            <stop offset="0" stop-color="CURRENTCOLOR"/>
+            <stop offset="1" color="#abcdef" stop-color="currentColor"/>
+          </linearGradient>
+        </defs>
+        <rect width="10" height="10" fill="url(#current)"/>
+      </svg>
+    `);
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const gradient = shape.data.commands.indexOf('beginGradientFill');
+
+    expect(shape.data.commands[gradient + 3]).toEqual([0x123456, 0xabcdef]);
+  });
+
   it('composes image geometry before its SVG transform', () => {
     const image = createReadyImageResourceForTest(20, 10);
     const root = createScene2DFromSvgDocument(

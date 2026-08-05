@@ -157,7 +157,17 @@ interface LottieMutableAnimationTarget {
 // solid one, survive instead of overwriting its predecessor.
 type LottiePaint =
   | { color: number[]; kind: 'fill'; opacity: number; winding: 'evenOdd' | 'nonZero' }
-  | { color: number[]; kind: 'stroke'; opacity: number; width: number }
+  | {
+      caps: 'none' | 'round' | 'square';
+      color: number[];
+      dash: number[];
+      dashOffset: number;
+      joints: 'bevel' | 'miter' | 'round';
+      kind: 'stroke';
+      miterLimit: number;
+      opacity: number;
+      width: number;
+    }
   | {
       count: number;
       end: number[];
@@ -478,8 +488,9 @@ function appendLottieShapeItems(
   parent: DisplayObject,
   items: readonly Readonly<LottieShapeItem>[],
   context: LottieImportContext,
+  name: string | null = null,
 ): void {
-  const group = createDisplayObject();
+  const group = createDisplayObject({ name });
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const state: LottieShapeState = {
@@ -492,7 +503,8 @@ function appendLottieShapeItems(
   for (const item of items) {
     if (item.hd === true) continue;
     if (item.ty === 'gr') {
-      appendLottieShapeItems(group, (item as Readonly<LottieShapeGroup>).it, context);
+      const shapeGroup = item as Readonly<LottieShapeGroup>;
+      appendLottieShapeItems(group, shapeGroup.it, context, shapeGroup.nm ?? null);
       continue;
     }
     const path = createLottieShapeItemPath(item);
@@ -528,9 +540,27 @@ function appendLottieShapeItems(
       const color = numericValue(initialLottieValue(stroke.c), 3);
       const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
       const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
+      const dashEntries = stroke.d ?? [];
+      const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
+      const dash = hasAnimatedDash
+        ? []
+        : dashEntries
+            .filter((entry) => entry.n !== 'o')
+            .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
+      const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
+      const dashOffset =
+        hasAnimatedDash || dashOffsetEntry === undefined
+          ? 0
+          : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
+      if (hasAnimatedDash) reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: 'dash' });
       const paint = {
+        caps: mapLottieLineCap(stroke.lc),
         color,
+        dash: dash.some((value) => value > 0) ? dash : [],
+        dashOffset,
+        joints: mapLottieLineJoin(stroke.lj),
         kind: 'stroke' as const,
+        miterLimit: stroke.ml ?? 4,
         opacity: opacity[0],
         width: width[0],
       };
@@ -998,8 +1028,18 @@ function renderLottieShapeState(state: LottieShapeState): void {
       appendLottieShapePaths(state, paint.winding);
       appendShapeEndFill(state.shape);
     } else if (paint.kind === 'stroke') {
-      appendShapeLineStyle(state.shape, paint.width, lottieRgb(paint.color), paint.opacity);
-      appendLottieShapePaths(state, null);
+      appendShapeLineStyle(
+        state.shape,
+        paint.width,
+        lottieRgb(paint.color),
+        paint.opacity,
+        false,
+        'normal',
+        paint.caps,
+        paint.joints,
+        paint.miterLimit,
+      );
+      appendLottieShapePaths(state, null, paint.dash, paint.dashOffset);
     } else if (paint.type === 'gf') {
       appendLottieGradientFill(state.shape, paint);
       appendLottieShapePaths(state, null);
@@ -1011,9 +1051,19 @@ function renderLottieShapeState(state: LottieShapeState): void {
   }
 }
 
-function appendLottieShapePaths(state: LottieShapeState, winding: 'evenOdd' | 'nonZero' | null): void {
+function appendLottieShapePaths(
+  state: LottieShapeState,
+  winding: 'evenOdd' | 'nonZero' | null,
+  dash: readonly number[] = [],
+  dashOffset = 0,
+): void {
   for (const path of state.paths) {
-    appendShapePath(state.shape, path.commands.slice(), path.data.slice(), winding ?? path.winding);
+    let output = path;
+    if (dash.length > 0) {
+      output = createPath(path.winding);
+      dashPath(path, dash.length % 2 === 0 ? dash : [...dash, ...dash], dashOffset, output);
+    }
+    appendShapePath(state.shape, output.commands.slice(), output.data.slice(), winding ?? output.winding);
   }
 }
 
@@ -1308,6 +1358,14 @@ function lottieRgb(color: readonly number[]): number {
     (Math.round(clamp(color[1] ?? 0, 0, 1) * 255) << 8) |
     Math.round(clamp(color[2] ?? 0, 0, 1) * 255)
   );
+}
+
+function mapLottieLineCap(value: 1 | 2 | 3 | undefined): 'none' | 'round' | 'square' {
+  return value === 2 ? 'round' : value === 3 ? 'square' : 'none';
+}
+
+function mapLottieLineJoin(value: 1 | 2 | 3 | undefined): 'bevel' | 'miter' | 'round' {
+  return value === 2 ? 'round' : value === 3 ? 'bevel' : 'miter';
 }
 
 function parseHexColor(value: string): number {

@@ -1225,9 +1225,9 @@ function parseSvgColor(value: string): SvgColor | null {
     }
   }
   const functionMatch = /^(rgba?|hsla?)\((.*)\)$/.exec(normalized);
-  if (functionMatch !== null && (functionMatch[1] === 'rgb' || functionMatch[1] === 'rgba')) {
+  if (functionMatch !== null) {
     const components = functionMatch[2].split(/[\s,/]+/).filter(Boolean);
-    if (components.length >= 3) {
+    if ((functionMatch[1] === 'rgb' || functionMatch[1] === 'rgba') && components.length >= 3) {
       const component = (index: number): number => {
         const text = components[index];
         return text.endsWith('%') ? (Number.parseFloat(text) * 255) / 100 : Number.parseFloat(text);
@@ -1235,8 +1235,17 @@ function parseSvgColor(value: string): SvgColor | null {
       const r = Math.round(clamp(component(0), 0, 255));
       const g = Math.round(clamp(component(1), 0, 255));
       const b = Math.round(clamp(component(2), 0, 255));
-      const alpha = components[3] === undefined ? 1 : clamp(Number.parseFloat(components[3]), 0, 1);
+      const alpha = components[3] === undefined ? 1 : parseCssAlpha(components[3]);
       if (Number.isFinite(r + g + b + alpha)) return { alpha, rgb: (r << 16) | (g << 8) | b };
+    }
+    if ((functionMatch[1] === 'hsl' || functionMatch[1] === 'hsla') && components.length >= 3) {
+      const hue = parseCssHue(components[0]);
+      const saturation = parseCssFraction(components[1]);
+      const lightness = parseCssFraction(components[2]);
+      const alpha = components[3] === undefined ? 1 : parseCssAlpha(components[3]);
+      if (Number.isFinite(hue + saturation + lightness + alpha)) {
+        return { alpha, rgb: hslToRgb(hue, saturation, lightness) };
+      }
     }
   }
   const named = svgNamedColors[normalized];
@@ -1273,7 +1282,10 @@ function parseSvgGradient(element: Readonly<XmlElement>, context: SvgImportConte
   for (const child of element.children) {
     if (localName(child.name) !== 'stop') continue;
     const declarations = parseStyleDeclarations(attribute(child, 'style') ?? '');
-    const color = parseSvgColor(attribute(child, 'stop-color') ?? declarations['stop-color'] ?? '#000000');
+    const color = resolveSvgColor(
+      attribute(child, 'stop-color') ?? declarations['stop-color'] ?? '#000000',
+      resolveSvgDefinitionStyle(child, context).color,
+    );
     if (color === null) continue;
     color.alpha *= clamp(parseCssNumber(attribute(child, 'stop-opacity') ?? declarations['stop-opacity'], 1), 0, 1);
     stops.push({
@@ -1313,6 +1325,51 @@ function parseSvgCoordinate(value: string | null, fallback: number): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed)) return fallback;
   return value.trim().endsWith('%') ? parsed / 100 : parsed;
+}
+
+function parseCssAlpha(value: string): number {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return Number.NaN;
+  return clamp(value.endsWith('%') ? parsed / 100 : parsed, 0, 1);
+}
+
+function parseCssFraction(value: string): number {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return Number.NaN;
+  return clamp(value.endsWith('%') ? parsed / 100 : parsed, 0, 1);
+}
+
+function parseCssHue(value: string): number {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return Number.NaN;
+  if (value.endsWith('turn')) return parsed * 360;
+  if (value.endsWith('grad')) return parsed * 0.9;
+  if (value.endsWith('rad')) return (parsed * 180) / Math.PI;
+  return parsed;
+}
+
+function hslToRgb(hue: number, saturation: number, lightness: number): number {
+  const normalizedHue = (((hue % 360) + 360) % 360) / 60;
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const secondary = chroma * (1 - Math.abs((normalizedHue % 2) - 1));
+  const [red, green, blue] =
+    normalizedHue < 1
+      ? [chroma, secondary, 0]
+      : normalizedHue < 2
+        ? [secondary, chroma, 0]
+        : normalizedHue < 3
+          ? [0, chroma, secondary]
+          : normalizedHue < 4
+            ? [0, secondary, chroma]
+            : normalizedHue < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+  const offset = lightness - chroma / 2;
+  return (
+    (Math.round((red + offset) * 255) << 16) |
+    (Math.round((green + offset) * 255) << 8) |
+    Math.round((blue + offset) * 255)
+  );
 }
 
 function parseSvgLength(value: string | null, fallback: number): number {
@@ -1411,7 +1468,7 @@ function reportUnsupportedSvgElement(element: Readonly<XmlElement>, context: Svg
 }
 
 function resolveSvgColor(value: string, currentColor: string): SvgColor | null {
-  return parseSvgColor(value === 'currentColor' ? currentColor : value);
+  return parseSvgColor(value.trim().toLowerCase() === 'currentcolor' ? currentColor : value);
 }
 
 function resolveSvgGradient(value: string, context: Readonly<SvgImportContext>): SvgGradient | null {
