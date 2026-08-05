@@ -114,8 +114,9 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
 - The package is portable, side-effect-free, SDK/build wired, and covered by colocated byte-level
   tests.
 - The canonical [Ruffle fixture evidence](fixture-evidence.md) records the exact upstream revision,
-  path, URL, source hash, derived document manifest, and ignored-asset reproduction procedure. The
-  external binary is not committed and the test suite has no network or fixture dependency.
+  paths, URLs, source hashes, derived document/frame manifests, and external-asset reproduction
+  procedures. The real-file pair now covers both named-graph import and a two-frame depth replacement.
+  Neither external binary is committed and the test suite has no network or fixture dependency.
 
 ## Remaining depth
 
@@ -146,11 +147,12 @@ the named-slot path and exposed the zero-bit RECT compatibility case now covered
   fixture: nothing throws, every uncompressed file imports, and all 247 rejections are compressed
   containers. That retires the "no external file has crossed this importer" caveat for parsing. It does
   not retire it for rendering — nothing in the sweep is rasterized, so geometry is checked as commands,
-  never as pixels, and no external file has been compared against a reference player. There is still no diagnostic query, fuzz/property coverage,
-  or representative external corpus for nested timelines, linkage variants, or the broader supported
-  extent prefixes. Display-list opcode generations, move/update/replacement state, frame sequencing, and
-  nested traversal remain covered synthetically, including unnamed intermediate symbols, removal,
-  truncation, and cycle rejection.
+  never as pixels, and no external file has been compared against a reference player. The separate pinned
+  animated fixture does cross one real two-frame root replacement and node restoration. There is still no
+  diagnostic query or representative external proof for nested timelines, linkage variants, or the
+  broader supported extent prefixes. Other display-list opcode generations, move/update state, and nested
+  traversal remain covered synthetically, including unnamed intermediate symbols, removal, truncation,
+  and cycle rejection.
 
 ## Boundary conclusion
 

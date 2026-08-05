@@ -14,6 +14,11 @@ basedOn: ./review.md
   resulting `Image` into all of those textures. The cross-package proof builds bitmap-filled SWF artwork
   around a complete 1x1 PNG, checks the emitted bytes and texture identity, runs the shared loader, and
   observes the browser-backed image on that exact fill texture.
+- **A real animated file now crosses the importer.** The pinned `goto_execution_order` fixture declares
+  two root frames and replaces character 1 with character 2 at one occupied depth. The derived manifest
+  proves `gotoAndStopMovieClip` changes the imported node identity on frame 2 and restores the original
+  node on frame 1. Its source recipe, size, SHA-256, wire records, and derived behavior are recorded without
+  committing the binary.
 
 ## Depth gaps
 
@@ -28,9 +33,10 @@ basedOn: ./review.md
 2. **Add LZMA, and expand compatibility evidence.** Deflate is settled: `@flighthq/compression` owns the
    inflate and the shared registry, and one `registerDeflateDecompressor()` takes the corpus from 59 to
    301 of 306 files. Only `ZWS` remains, at 5 of 306 files, and it is the natural first candidate for a
-   Rust/wasm registrant rather than a hand-written TypeScript decoder. Also expose `DoABC` payloads opaquely, and expand the revision-pinned real-file evidence
-   beyond the canonical single-frame named-shape fixture — no external animated file has crossed the
-   importer, so multi-frame behavior rests on synthetic bytes alone.
+   Rust/wasm registrant rather than a hand-written TypeScript decoder. Also expose `DoABC` payloads
+   opaquely. The broader external animated sweep steps 46 clips and wire-cross-checks 29 root timelines;
+   the canonical pinned fixture records one exact replacement manifest. Nested-timeline correctness still
+   relies on synthetic bytes.
 
 ## Recommended
 

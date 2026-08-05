@@ -112,6 +112,101 @@ console.log(JSON.stringify({
 This procedure is intentionally separate from `npm run test`: the committed suite remains hermetic and
 synthetic, and no checkout needs the network or the external SWF to pass.
 
+## Canonical animated fixture
+
+The real-file animation check uses a second file from the same pinned source tree:
+
+- Repository: [ruffle-rs/ruffle](https://github.com/ruffle-rs/ruffle)
+- Revision: `f8d8de6bb15c3d7a799d7088997422b926c8478c`
+- Path: `tests/tests/swfs/avm1/goto_execution_order/test.swf`
+- Pinned source:
+  [test.swf](https://raw.githubusercontent.com/ruffle-rs/ruffle/f8d8de6bb15c3d7a799d7088997422b926c8478c/tests/tests/swfs/avm1/goto_execution_order/test.swf)
+- Source size: 164 bytes
+- Source SHA-256: `ea14536fb2d7c5bc4cb4d18b676fa70e5f36f57a7730d855f3eba666c01cb0d1`
+- Container: zlib-compressed `CWS`, SWF version 15, declared uncompressed length 209 bytes
+- Timeline: two declared root frames
+
+An independent walk of the root tag stream gives the authored state change before Flight imports it:
+
+| Frame | Root timeline record |
+| --- | --- |
+| 1 | `PlaceObject2`, character 1 at depth 1, fresh placement |
+| 2 | `PlaceObject2`, character 2 at depth 1, move plus character flags |
+
+The second record replaces the character at an occupied depth; it must not mutate the first character's
+node into the second one. With `registerDeflateDecompressor()` registered, `createScene2DFromSwf` imports
+the file as a two-frame `MovieClip`. Frame 1 has one identity-matrix `Shape`; after
+`gotoAndStopMovieClip(root, 2)`, frame 2 has one identity-matrix `Shape` with the same authored bounds but
+a different node identity. Returning to frame 1 restores the original node. This crosses a real compressed
+external file through container decompression, timeline parsing, frame construction, depth replacement,
+and retained-node reuse; those claims previously rested only on synthetic bytes.
+
+| Derived manifest fact | Value |
+| --- | --- |
+| Source kind | `swf` |
+| Root bounds | `(0, 0)`, 550 × 400 pixels |
+| Total frames | 2 |
+| Frame 1 | one `Shape`, identity matrix, bounds `(43.5, 37.5)`, 76 × 69 pixels |
+| Frame 2 | one different `Shape`, with the same matrix and bounds |
+| Seek back to frame 1 | restores the original frame-1 node |
+
+### Reproduce the animated fixture
+
+Fetch outside the repository and verify the pinned bytes:
+
+```sh
+mkdir -p /tmp/flight-swf-evidence
+curl --fail --location \
+  https://raw.githubusercontent.com/ruffle-rs/ruffle/f8d8de6bb15c3d7a799d7088997422b926c8478c/tests/tests/swfs/avm1/goto_execution_order/test.swf \
+  --output /tmp/flight-swf-evidence/ruffle-goto-execution-order.swf
+echo 'ea14536fb2d7c5bc4cb4d18b676fa70e5f36f57a7730d855f3eba666c01cb0d1  /tmp/flight-swf-evidence/ruffle-goto-execution-order.swf' \
+  | sha256sum --check
+```
+
+Then derive the frame manifest from the working tree:
+
+```sh
+npx tsx -e '
+import { readFileSync } from "node:fs";
+import { registerDeflateDecompressor } from "@flighthq/compression/contract";
+import { getMovieClipTotalFrames, gotoAndStopMovieClip } from "@flighthq/movieclip/contract";
+import { getNodeChildren, getNodeLocalBoundsRectangle, getNodeLocalMatrix } from "@flighthq/node/contract";
+import type { MovieClip } from "@flighthq/types/contract";
+import { MovieClipKind } from "@flighthq/types/contract";
+import { createScene2DFromSwf } from "./packages/swf/src/swfDocument.ts";
+
+registerDeflateDecompressor();
+const source = readFileSync("/tmp/flight-swf-evidence/ruffle-goto-execution-order.swf");
+const document = createScene2DFromSwf(source);
+if (document === null || document.root.kind !== MovieClipKind) throw new Error("fixture rejected");
+
+const root = document.root as MovieClip;
+const firstNodes = [...getNodeChildren(root)];
+gotoAndStopMovieClip(root, 2);
+const secondNodes = [...getNodeChildren(root)];
+gotoAndStopMovieClip(root, 1);
+console.log(JSON.stringify({
+  sourceKind: document.sourceKind,
+  totalFrames: getMovieClipTotalFrames(root),
+  rootBounds: getNodeLocalBoundsRectangle(root),
+  frames: [firstNodes, secondNodes].map((nodes, index) => ({
+    frame: index + 1,
+    children: nodes.map((node) => ({
+      kind: node.kind,
+      bounds: getNodeLocalBoundsRectangle(node),
+      matrix: getNodeLocalMatrix(node),
+    })),
+  })),
+  frameChangedIdentity: firstNodes[0] !== secondNodes[0],
+  firstFrameRestored: getNodeChildren(root)[0] === firstNodes[0],
+}, null, 2));
+'
+```
+
+Verification was performed on the licensed rig. The file remains external; the repository commits only
+its pinned provenance, hash, derived behavior, and obtain recipe. The ordinary test suite remains
+network-independent.
+
 ## Corpus sweep
 
 Beyond the single canonical fixture, a breadth sweep runs the importer across a sample of Ruffle's test
