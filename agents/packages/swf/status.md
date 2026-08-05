@@ -6,7 +6,8 @@ updated: 2026-08-04
 # swf status
 
 Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated timelines landed
-2026-08-01; shape geometry 2026-08-02.
+2026-08-01; shape geometry 2026-08-02; morphs, editable text, audio, per-frame appearance, and resolved
+bitmap fills followed by 2026-08-04.
 
 - `createScene2DFromSwf` safely reads `FWS` headers and bounded tag records, and reads `CWS`/`ZWS` through
   a registered decompressor. Compression is not SWF's domain — a `CWS` body is a zlib stream and a `ZWS`
@@ -68,8 +69,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
 - `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
   names, since an init action runs once before that sprite's first frame.
 - A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so
-  an authored fade follows. The colour channels are read past: tinting a node is a material feature rather
-  than a node property, and importing it would need a decision this codec should not make alone.
+  an authored fade follows. RGB multiply/add terms become a `ColorScaleBiasAdjustment`, while the alpha
+  add is normalized across the adjustment and node-alpha tiers when its multiplier permits it. The
+  adjustment is inherited through nested placements and recomputed only when a frame changes the authored
+  channel.
 - AVM2 `DoABC` timeline commands are recognized too, through `@flighthq/abc`. AVM2 has no playback
   opcodes: a compiler turns frame scripts into an `addFrameScript` call in the generated class
   constructor, pairing a zero-based frame index with a handler that is usually a *method on the class*
@@ -103,11 +106,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   pen advances by the recorded amount. It consumes the same `GlyphOutlineSource` exposed to other font
   consumers. Composition is deferred until the whole file is walked, because a text record may address a
   font declared after it.
-- `DefineEditText` still materializes nothing. It carries a *string* plus a font reference and layout
-  properties, not glyph indices, so drawing it needs the font's code table and advances plus line
-  breaking — and flattening it to paths at import would destroy the one thing that makes it edit text.
-  The reusable path-backed source, codepoint lookup, advances, and metrics now exist; materializing an
-  editable/layout node over that source is the remaining text-layer work.
+- `DefineEditText` materializes as assignable `RichText`, not flattened paths. It preserves the authored
+  string, box, colour, margins, alignment, selection, maximum length, multiline, word-wrap, and font-name
+  data. When the tag declares HTML, the importer explicitly calls `parseTextMarkup` and stores the plain
+  text plus format ranges rather than displaying the markup itself.
 - A placement earns a node when it is named, carries a timeline, or now has geometry, so unnamed shapes —
   most of what a still frame is made of — are materialized. Each placement of a shape character gets its
   own copy of the decoded commands.
@@ -216,8 +218,10 @@ Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated
   symbol graphs, excessive nesting, and excessive instantiated-node counts still reject safely. Retaining whole frames added an amplification path —
   a display list placed once can be multiplied by every ShowFrame that follows it — so a per-document
   snapshot budget rejects a file that would exceed it, rather than materializing it.
-- Text definition bodies, legacy table-based JPEG/button/font extents, frame scripts, and opaque `DoABC`
-  exposure remain staged rather than being represented incompletely.
+- Scene ranges, `VideoFrame` payloads, JPEG3/4's separate alpha stream, nested-mask intersection, and
+  button-state sound transitions remain staged rather than being represented incompletely. Limited AVM1
+  and AVM2 playback frame scripts are already carried; broader ABC work belongs to the separate `abc`
+  cell behind that seam.
 - Opaque bitmap pixels are complete: JPEG/PNG/GIF payloads reach their waiting textures through
   `loadScene2DImageResources`, and lossless payloads unpack at import. What remains is unifying the two
   paths behind one loader, noted above.
@@ -236,17 +240,13 @@ The known gaps between this and pixels a player would accept are recorded here r
   parser omissions to conceal with guessed behavior; spatial filters remain appearance reports and are
   never attached implicitly to imported nodes.
 
-- WebGPU's tessellated solid-shape path does not consume `RenderProxy.colorScaleBias` or
-  `RenderProxy.colorMatrix`. The default route tries the mesh first in
-  `packages/scene2d-wgpu/src/wgpuShape.ts`; `packages/scene2d-wgpu/src/wgpuShapeMesh.ts` uploads only the
-  node-alpha-premultiplied solid colour, while
-  `packages/scene2d-wgpu/src/wgpuColorAdjustmentMaterialFeature.ts` serves the quad batch instead. The
-  functional evidence in `functional/scenes/swf-alpha-transform.ts` proves the affected node is imported
-  from a SWF placement, carries the intended green colour-scale transform on its render proxy, and ends
-  the WebGPU draw with one mesh and no raster surface while its white source pixel stays white; WebGL's
-  dedicated solid-shape adjustment shader makes the same authored pixel green. This is a standalone
-  `scene2d-wgpu` capability gap, not something the SWF parser can repair. Evidence commit subject:
-  `test(swf): capture alpha transform backend evidence`.
+- The functional evidence in `functional/scenes/swf-alpha-transform.ts` proves the affected node is
+  imported from a SWF placement before testing backend realization. WebGL and WebGPU explicitly register
+  their colour-adjustment material feature, retain the imported adjustment on the render proxy, and fold
+  the white solid to green. Canvas and DOM have no colour-adjustment registrar: their honest
+  capability-absent result is a null proxy adjustment and an untinted white pixel. The importer has
+  preserved the authored data in both cases; no Canvas registrar or unconditional accumulation tax is
+  introduced to make an unsupported backend pretend otherwise.
 
 - The same `functional/scenes/swf-alpha-transform.ts` evidence records the alpha behavior while the SWF
   representation decision is held: an authored 0.5 alpha multiplier reaches `node.alpha` and blends a
@@ -264,15 +264,10 @@ The known gaps between this and pixels a player would accept are recorded here r
 - The image path decodes through a `Blob`/`HTMLImageElement` in `loadImageResourceFromBytes`, which never
   consults `getImageDecoder`. That path is browser-only, so headless and native hosts get no encoded
   pixels at all — the same unification noted above, seen from the other side.
-- A lossless bitmap fill draws on Canvas 2D and is **blank on WebGL and WebGPU**, and the cause is not in
-  this package. Those backends rasterize a non-solid shape through `renderCanvasShapeCommands(ctx,
-  commands, null, state)` — a **null** `CanvasRenderState` — and `resolveCanvasTextureWindowSource` falls
-  back to `image.source` when the state is null. A `Bitmap`-sourced texture has no `.source`, so no pattern
-  is made and the fill silently paints nothing. Isolated three ways: bitmap + null state → null, bitmap +
-  real state → a pattern, image + null state → a pattern. It therefore hits exactly the payloads this
-  package resolves itself (lossless), and spares the ones that decode to an `Image` (JPEG/PNG/GIF). The fix
-  is a `CanvasRenderState` over each backend's scratch rasterization canvas with the texture resolvers
-  registered, in `scene2d-gl`, `scene2d-wgpu`, and `scene2d-dom` — out of this cell's scope.
+- Lossless bitmap fills now draw on DOM, Canvas, WebGL, and WebGPU. The shared Canvas shape rasterizer
+  receives an explicit resolver set, so a GPU or DOM scratch pass can resolve a `Bitmap`-sourced texture
+  without pretending it is an `Image`. `functional/scenes/swf-import.ts` asserts the checker colours and
+  authored repetition on all four backends.
 - SWF pixel coverage now lives in `functional/scenes/swf-import.ts` and
   `functional/scenes/swf-alpha-transform.ts`. The former renders geometry, gradients, strokes, static
   text, bitmap fills, timeline movement, and an inherited colour transform; the latter isolates alpha
@@ -308,10 +303,25 @@ revisions, paths, URLs, source hashes, derived manifests, and outside-repository
 recorded in [`fixture-evidence.md`](fixture-evidence.md). No external binary is committed, and the hermetic
 test suite reproduces the relevant encodings without it.
 
-## Known gaps
+## Known gaps and decision boundaries
 
-**`DefineButtonSound` is unimplemented and blocked on a design decision.** It attaches sounds to a button's
-pointer-state transitions, and a button imports here as a one-frame timeline of its up state — there is no
-interaction state machine for those transitions to attach to, and a frame cue is the wrong shape because
-they do not fire on entering a frame. See [`tag-coverage.md`](tag-coverage.md). Nothing else in the audio
-surface is missing: event sounds, stream sounds, and both trigger tags are carried.
+- **Structural video is unruled.** The fixed animated sweep at Flight commit `59fa8c6fc` found its only
+  wire/tree divergence in one of 29 multi-frame roots: an unnamed video placement has no node. The
+  [proposal](../../swf-video-import-proposal.md) recommends a sourceless `Sprite` as an honest first stage,
+  while leaving `VideoFrame` pixels unsupported. No implementation is authorized by that record.
+- **The bitmap-loader fork is unruled.** Encoded images use the browser `Image` load and SWF-lossless
+  rasters become `Bitmap`s eagerly. Bridging the `DecodedImage` registry or adding a third resource kind
+  changes shared contracts; eager lossless resolution remains until a route is selected. JPEG3/4 alpha
+  rejoining waits on the same resolved-image hand-back point.
+- **`ZWS` cannot be completed here.** The fixed corpus measurement at `f0c56ba7d` moves from 59 to 301 of
+  306 imports when `registerDeflateDecompressor()` is called; the remaining five files are all LZMA `ZWS`.
+  The shared `Compression.Lzma` registration seam already exists. Its natural implementation is a
+  Rust/wasm registrant in the separate `flight-rs` repository, not a hand-written TypeScript decoder in
+  this one.
+- **Broader AVM2 is not SWF-package work.** Limited playback recognition already composes through
+  `@flighthq/abc`. General ABC parsing belongs to that cell behind the seam, and execution remains outside
+  Flight.
+- **`DefineButtonSound` is blocked on a design decision.** It attaches sounds to pointer-state
+  transitions, while a button imports here as a one-frame timeline of its up state. A frame cue is the
+  wrong shape because the sound does not fire on entering a frame. See
+  [`tag-coverage.md`](tag-coverage.md). Event sounds, stream sounds, and both trigger tags are carried.
