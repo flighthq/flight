@@ -37,6 +37,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 
 import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
+import { readSection } from './markdownSection';
 
 // Every doc with a self-declared size budget. Keep the number here identical to the one the doc states
 // in its own prose — the doc is where a reader meets the rule, this table is only what enforces it.
@@ -324,13 +325,15 @@ function checkAssessment(files: ReadonlySet<string>, cell: string, dir: string):
     if (stamp === null) {
       // Not a failure: Approved is an append-only ledger, so repairing the stamp in place is itself a
       // contract violation, and only the approver knows which provenance the entry should carry.
-      warn(`agents/packages/${cell}/assessment.md: Approved entry lacks a '[YYYY-MM-DD · provenance]' stamp`);
+      warn(
+        `agents/packages/${cell}/assessment.md: Approved entry lacks a '[YYYY-MM-DD · provenance]' stamp${LAWFUL_REMEDY}`,
+      );
       continue;
     }
     const provenance = stamp[2].trim();
     if (!/^picked$|^blanket "/.test(provenance)) {
       warn(
-        `agents/packages/${cell}/assessment.md: Approved provenance '${provenance}' is outside CONTRACT.md's vocabulary (picked | blanket "…")`,
+        `agents/packages/${cell}/assessment.md: Approved provenance '${provenance}' is outside CONTRACT.md's vocabulary (picked | blanket "…")${LAWFUL_REMEDY}`,
       );
     }
   }
@@ -630,16 +633,6 @@ function parseFrontMatter(text: string): Record<string, string> {
   return result;
 }
 
-// Terminates at the next `## ` heading, a `---` horizontal rule, or true end-of-string. The
-// end-of-string form must be `$(?![\s\S])` — under the `m` flag a bare `$` matches every line end, so
-// the lazy quantifier stops at the first newline and the capture comes back empty. That exact bug
-// silently zeroed the Open-directions term of every bless-queue attention score.
-function readSection(text: string, heading: string): string | null {
-  const pattern = new RegExp(`^## ${heading}[^\\n]*\\n([\\s\\S]*?)(?=^## |^---\\s*$|$(?![\\s\\S]))`, 'm');
-  const match = text.match(pattern);
-  return match === null ? null : match[1];
-}
-
 function reportBudgets(files: ReadonlySet<string>): void {
   for (const budget of DOC_BUDGETS) {
     const text = readGateFile(files, budget.path);
@@ -738,6 +731,14 @@ const ORPHAN_ALLOW: { match: (rel: string) => boolean; why: string }[] = [
   },
 ];
 
+// Every warning about an Approved line carries this, because A REPORTED LINE APPLIES PRESSURE TO EDIT
+// THE THING BEING REPORTED and editing is the fastest way to make it go quiet — which is precisely the
+// violation. Both of these warnings are UNFIXABLE in place: the ledger is append-only, so the only
+// lawful remedy is a new superseding line. Naming it converts an invitation-to-violate into an
+// instruction. `check:append-only-ledgers` fails anyone who tries the quiet route anyway.
+const LAWFUL_REMEDY =
+  ' — Approved is append-only, so do NOT edit this line: the only lawful remedy is a NEW dated line that supersedes it, left for the approver to write';
+
 const CELL_FILES = ['charter.md', 'review.md', 'assessment.md', 'status.md'] as const;
 const CHARTER_SECTIONS = ['What it is', 'North star', 'Boundaries', 'Decisions', 'Open directions'] as const;
 const REVIEW_STATUSES = ['stub', 'partial', 'solid', 'authoritative'] as const;
@@ -750,6 +751,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const failures: string[] = [];
 const warnings: string[] = [];
 
-// Guarded so the colocated test can import the exported budget API without running the gate as a side
-// effect of the import.
-if (process.argv.includes('--check')) main();
+// Guarded so an importer gets the exported API without running the gate as a side effect. Keyed to
+// THIS FILE BEING THE ENTRY POINT rather than to a `--check` flag anywhere in argv: the ledger check
+// imports `readSection` from here, and a flag test would have fired the whole gate inside any process
+// that happened to carry that word.
+if (resolve(process.argv[1] ?? '') === resolve(dirname(new URL(import.meta.url).pathname), 'docs.ts')) main();
