@@ -126,7 +126,16 @@ describe('parseSpineSkeletonBinary', () => {
     // Constraints cannot be skipped — they carry no length — so mis-walking one desynchronizes the skin.
     // A resolved attachment on the far side is therefore the proof that the walk was byte-exact.
     const result = parseSpineSkeletonBinary(buildSpineBinary({ ikConstraints: 2 }))!;
-    expect(result.skeleton.slots![0].attachment).not.toBeNull();
+    // Byte-exactness means the attachment reads back with the SAME field values it has when no constraint
+    // records precede it. A bare not-null would pass on a desynchronized walk that produced garbage.
+    expect(result.skeleton.slots![0].attachment).toMatchObject({
+      height: 32,
+      name: 'body-attachment',
+      rotation: 12.5,
+      width: 64,
+      x: 3.5,
+      y: 4.5,
+    });
     const kinds = collectImportDiagnostics((sink) =>
       parseSpineSkeletonBinary(buildSpineBinary({ ikConstraints: 2 }), sink),
     ).map((c) => c.kind);
