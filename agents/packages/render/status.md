@@ -8,6 +8,14 @@ by: builder
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-08-05 — post-review implementation continuity
+
+Source verification across the 54 commits since the 2026-07-13 review found the explicit state/runtime boundary intact: backend draws and registrations receive a render state, while renderer maps, bindings, caches, registry signals, and scratch collections stay on runtime tiers or behind operations. Render-target axes now resolve once with explainable requested/effective differences, and the GL backend has allocation-free partial-target passes plus viewport-derived camera aspect; the equivalent WGPU draw path still falls back to the camera-authored aspect, so cross-backend viewport authority and the held `RenderView`/sub-target ownership question remain unsettled.
+
+The package gained opt-in color-adjustment propagation, material/shape/render-registry coverage diagnostics, hierarchy-change proxy invalidation, and broader 3D light packing. These do not complete the older combined guard contract: there is still no `enableRenderGuards`/`explainRenderState` surface covering draw-before-prepare and missing clip hooks. Likewise `requiresInvalidation` now controls transform refresh behavior but does not provide the requested O(1) cached 3D prepare short-circuit; preparation still recursively rebuilds a pooled `Mesh[]`, pending a scene-root aggregate revision and truthful shared draw-entry seam.
+
+The residual sweep items remain literal in current source: `RenderViewport2D` and its pivot-field duck typing survive, `RenderTargetSizeOptions` remains an unused exported header, `renderQueue.ts` still names nonexistent `drawDriver._drawStack`, `collectVisibleMeshes` is recursive, and `computeRenderTargetSize` allocates its result. No general render graph has been introduced; explicit pass/attachment and view ownership contracts remain prerequisites.
+
 ## 2026-07-09 — light-block version made honest (3D dirty-render groundwork)
 
 Landed the #1 half of a scene-render dirtiness review (the full 3D dirty short-circuit is now Recommended + Approved in `assessment.md`, gated on a node-side prerequisite in Backlog).
