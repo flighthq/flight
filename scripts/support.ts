@@ -112,6 +112,12 @@ const DECLARED_GAPS: readonly DeclaredGap[] = [
     note: 'GL and WebGPU native block upload plus display draw paths are implemented behind opt-in uploader seams, with RGBA decode fallbacks. WebGPU supports native BC/ETC2/ASTC and decoder-backed PVRTC/unavailable families. Canvas/DOM have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel.',
   },
   {
+    area: 'Materials (3D)',
+    capability: 'Per-vertex color (mesh color0 → VertexColorMaterial)',
+    status: 'partial',
+    note: 'WebGL multiplies the mesh color0 attribute into the tint (material-vertex-color-interpolated covers it). The WebGPU mesh pipeline binds one fixed arrayStride-48 position/normal/tangent/uv0 layout with no color0 slot, so a color0-carrying geometry is not just untinted per-vertex there — its wider record is read at the wrong stride and the positions are wrong too. material-vertex-color uses color0-free geometry on both backends and so does not detect this.',
+  },
+  {
     area: 'Effects',
     capability: 'Screen-space effects (SSAO/SSR/TAA/motion-blur/contact-shadow/volumetric)',
     status: 'implemented-unverified',
