@@ -4,6 +4,7 @@ import {
   findLedgerSections,
   formatAppendOnlyLedgerReport,
   getLedgerCellName,
+  selectLedgerBaseline,
 } from './check-append-only-ledgers';
 import type { LedgerSection } from './check-append-only-ledgers';
 
@@ -170,6 +171,54 @@ describe('formatAppendOnlyLedgerReport', () => {
       'baseline: merge-base',
     );
     expect(output).toContain('sprite no longer exists');
+  });
+});
+
+// THREE WRONG VERSIONS OF ONE RULE, each pinned by the case that broke it. Every one of them made the
+// check judge the wrong revision range, and two of them were only visible by RUNNING it — the first on
+// its first run, the second on the rebase that integrated it. That is why the selection is pure and
+// separated from the git calls: the git-shaped version could only be tested by having the right history.
+describe('selectLedgerBaseline', () => {
+  const SELF = { distance: 0, name: 'main', revision: '49953c97b' };
+  const DEVELOP = { distance: 0, name: 'origin/develop', revision: '49953c97b' };
+  const MAIN = { distance: 366, name: 'origin/main', revision: '1b4fb2bdf' };
+
+  it('IGNORES the checked-out branch, which contains HEAD by definition and proves nothing', () => {
+    // Third wrong version: treating this as evidence of integration made the check report "already
+    // integrated" in every clone, always — inertness wearing a reason.
+    expect(selectLedgerBaseline([SELF, { ...DEVELOP, distance: 1 }], 'main').revision).toBe('49953c97b');
+  });
+
+  it('checks NOTHING when a REMOTE candidate contains HEAD — the tree really is integrated', () => {
+    // Second wrong version: "this candidate is unusable, try the next one". An integrated tree has no
+    // work in flight, and the distant ref is not a fallback — reaching for it re-judged 366 commits
+    // that had already landed and reported them at whoever ran the check.
+    const chosen = selectLedgerBaseline([SELF, DEVELOP, MAIN], 'main');
+    expect(chosen.revision).toBeNull();
+    expect(chosen.how).toContain('no work in flight');
+  });
+
+  it('uses that same candidate as the baseline once it no longer contains HEAD', () => {
+    // The pair for the case above: identical inputs but for the one distance that decides it.
+    expect(selectLedgerBaseline([SELF, { ...DEVELOP, distance: 2 }, MAIN], 'main').revision).toBe('49953c97b');
+  });
+
+  it('takes the nearest merge-base, not the first candidate offered', () => {
+    // First wrong version: in an agent clone `@{upstream}` is `origin/main`, hundreds of commits back,
+    // so first-that-resolves made months of everyone's history the branch under review.
+    expect(selectLedgerBaseline([MAIN, { ...DEVELOP, distance: 1 }], 'main').revision).toBe('49953c97b');
+  });
+
+  it('reports that it resolved nothing rather than throwing, when there are no candidates at all', () => {
+    const chosen = selectLedgerBaseline([], 'main');
+    expect(chosen.revision).toBeNull();
+    expect(chosen.how).toContain('no baseline revision could be resolved');
+  });
+
+  it('reports the same when the checked-out branch was the only candidate', () => {
+    // A detached head or a clone with no remote refs at all lands here, and it must skip rather than
+    // throw: the sweep must not stop for a reason unrelated to the invariant.
+    expect(selectLedgerBaseline([SELF], 'main').revision).toBeNull();
   });
 });
 
