@@ -11,7 +11,7 @@ Packaging policy is enforced by `npm run packages:check`, not by memory or hand-
 
 The whole `@flighthq/*` graph publishes to public npm under **locked versioning** — every package shares one version, so `@flighthq/sdk@X` implies its entire dependency graph at `X`. Two scripts and one workflow drive it:
 
-- `npm run version:packages <version>` — sets every `packages/*` manifest to one version (the locked bump). Run before tagging.
+- `npm run version:packages <version>` — sets every `packages/*` manifest to one version, regenerates `package-lock.json` offline, and verifies every workspace lock entry carries that version (the locked bump). It reports non-version lockfile drift as a signal to stop and inspect rather than silently blessing it. Run before tagging.
 - `npm run release` (`scripts/publish-packages.ts`) — builds the graph once, then publishes each package with `--access public --ignore-scripts`. Idempotent: a version already on the registry is skipped, so a re-run after a partial failure completes the set. `--dry-run` packs and reports without uploading; a bare name-substring arg limits to matching packages.
 - `.github/workflows/release.yml` — on a pushed `v*.*.*` tag, runs `npm ci && npm run build && npm run release` (authenticating with the `NPM_TOKEN` secret, attaching npm provenance), then builds the examples site at that tag and attaches `examples-dist-<tag>.tgz` as a GitHub release asset. The examples build is source-built but published-faithful: at the release commit the workspace source *is* the version just published. The separate site repo downloads that asset to serve `flighthq.ai/examples` (and flight-reference's own release asset for `/reference/`).
 
