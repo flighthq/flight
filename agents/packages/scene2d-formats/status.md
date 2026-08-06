@@ -8,6 +8,25 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-06 — Second SVG/Lottie schema-to-consumer pass
+
+A fresh comparison against the official Lottie field tables found bounded consumers for layer `hd`,
+drawable direction `d`, gradient-fill winding `r`, and the animatable miter-limit alternative `ml2`.
+Hidden layers now omit their own content without losing the spatial transform used by a parented child;
+direction is applied both initially and on mutable geometry rebuilds; gradient winding reaches
+`drawPath`; and `ml2` takes precedence over `ml` and rerenders when animated. SVG text now keeps
+`fill="none"` transparent, suppresses `display="none"` subtrees, honors visibility descendant override,
+and composes nested `tspan` opacity into text runs without applying root opacity twice. Focused package
+tests cover all repaired cases.
+
+The same pass typed but did not invent consumers for layer auto-orientation `ao`, newer matte source
+`tp`, and shape-style blend mode `bm`. Auto-orientation shares the unmodeled spatial-motion-path seam;
+matte composition remains a declared runtime exclusion; and a style blend cannot land on the current
+one-Shape-per-group output. The official style model also disproved the older local-order caveat:
+styles/modifiers scope to preceding shapes including nested groups and repeated styles render in reverse
+order, while the importer currently collects all local paths/paints and emits file order. Assessment and
+coverage now record that as a scoped render-stack rewrite rather than guessing a field mapping.
+
 ## 2026-08-05 — Reachability correction for in-flight commit identities
 
 The two local SHAs named in the immediately following entry are pre-integration identities, not durable

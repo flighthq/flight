@@ -150,6 +150,14 @@ static dash, offset, cap, join, and miter data; SVG HSL/HSLA and percentage alph
 `currentColor` for gradient stops. Animated dash remains undashed and uses the existing author-actionable
 modifier diagnostic rather than freezing its first keyframe.
 
+A second comparison against the official field tables found another bounded set. Hidden Lottie layers
+now suppress their own content without losing the spatial transform a child can parent to; drawable
+direction, gradient-fill winding, and the animatable miter-limit alternative reach their existing path
+and line-style consumers. SVG text no longer turns `fill="none"` into black, and nested `tspan`
+display, visibility, and opacity now reach the emitted text runs. The same comparison exposed a larger
+shape rendering-stack mismatch and runtime-owned auto-orientation/matte/blend fields; those are recorded
+below instead of being forced through unrelated consumers.
+
 Every other candidate examined is listed below. “No loss” means the value was followed through its
 consumer rather than merely absent from the gap list. “Left” names the reason it was not turned into an
 implementation choice.
@@ -158,18 +166,25 @@ implementation choice.
 | --- | --- | --- |
 | Lottie solid stroke `d`, `lc`, `lj`, `ml` | fixed | Static line styling maps directly onto existing shape/path commands. |
 | Lottie gradient stroke `d`, `lc`, `lj`, `ml` | fixed | The fields were missing from the boundary type even though the gradient-stroke output uses the same line-style seam. |
+| Lottie stroke/gradient-stroke `ml2` | fixed | The animatable alternative takes precedence over static `ml`; its initial value and mutable samples rebuild the existing line-style command. |
+| Lottie drawable shape `d` | fixed | Direction `3` reverses path geometry on initial import and every animated rebuild through the existing path reversal operation. |
+| Lottie gradient-fill `r` | fixed | The fill rule now reaches `drawPath` winding just as solid-fill `r` already did. |
+| Lottie layer `hd` | fixed | Own content is omitted while the layer's spatial transform remains available to a child that references it as a parent; hidden opacity and visibility do not leak through that hierarchy. |
 | Lottie nested shape-group `nm` | fixed | A nested group already creates a one-to-one display container that can carry its name. |
 | Lottie animated dash entries | left, declared exclusion | Sampling dash arrays would require a mutable path rebuild contract; freezing the first keyframe would misstate animation. The existing modifier diagnostic remains. |
 | Lottie keyframe `ti` / `to` | left, unread | Tracks represent value samples and temporal easing, not a spatial motion-path target; endpoints survive but curved trajectories do not. |
+| Lottie layer `ao` | left, unread | Auto-orientation depends on the tangent of the spatial position path; the current animation target has neither that path nor an orientation binder. |
 | Lottie transform `sa` | left, unread | Skew axis changes transform composition; assigning it to `skewX` would be a guessed relation. |
 | Lottie separated `z` and layer/document `ddd` | left, declared exclusion | The importer emits a 2D display tree and has no 3D layer projection contract. |
 | Lottie gradient highlight `a` / `h` | left, unread | A focal-point mapping must account for radial gradient geometry and transform; no format-derived relation is present here. |
 | Lottie text `sc` / `sw`, document `chars` / `fonts` | left, known gap | `TextFormat` emission is fill-only and embedded glyph outlines need a font/glyph resource seam. |
 | Lottie text `a` / `m` / `p` and multiple text documents | left, declared exclusion | These describe animator/layout runtime behavior; selecting one static document is the current contract. |
 | Lottie mask `o` / `f` / `x`, composed modes, inversion | left, known gap | Flight's emitted `ClipRegion` is a hard clip and cannot encode opacity, feather, expansion, or Boolean mask composition at this seam. |
-| Lottie `ef`, `tt` / `td`, `tm`, audio, camera | left, declared exclusions | They require effects, matte composition, time-remap, audio, or camera runtimes rather than a local field assignment. |
+| Lottie `ef`, `tt` / `td` / `tp`, `tm`, audio, camera | left, declared exclusions | They require effects, matte composition, time-remap, audio, or camera runtimes rather than a local field assignment. Newer explicit matte-source `tp` does not remove that runtime boundary. |
 | Lottie precomposition asset `w` / `h` | left, unread | Child timing and layers survive, but turning the asset rectangle into a viewport requires a clipping contract. |
 | Lottie path/paint item `nm` | left, metadata loss | Group paths and paints consolidate into one emitted `Shape`; no one-to-one node exists for each item name. |
+| Lottie shape-style `bm` | left, unread | Blend mode belongs to an individual style, while the current group consolidates all paint commands into one `Shape`; there is no per-style display/effect target to receive it. |
+| Lottie shape style scope and order | left, rendering-model gap | The current importer applies every local paint to every local path and emits paint passes in file order. The format scopes styles/modifiers to preceding shapes, includes subgroup-nested shapes, and renders repeated styles in reverse order; honoring that requires a scoped render-stack rewrite. |
 | Lottie shape `ix` / `ind` and group `np` | examined, no visual loss | They are expression/property indices or a declared count, not display values; expressions remain excluded. |
 | Lottie image asset `e` / `u` / `p` / dimensions | examined, no codec loss | The entire typed image asset reaches the injected resolver, which owns URL/data-URI interpretation and intrinsic pixels. |
 | Lottie markers `cm` / `dr` / `tm` | examined, no loss | All three reach the emitted clip event name, duration, and time. |
@@ -177,6 +192,8 @@ implementation choice.
 | SVG geometry, transforms, `use`, gradient inheritance, image `href` | examined, no loss found | Each attribute family reaches its path, matrix, reference resolver, or injected image seam; image aspect mapping was repaired in the predecessor audit. |
 | SVG HSL/HSLA and percentage RGB alpha | fixed | They are CSS colour syntax with a direct mapping to the existing RGB/alpha paint representation. |
 | SVG gradient-stop `currentColor` | fixed | Definition ancestry already computes `color`; the stop parser had bypassed it. |
+| SVG text `fill="none"` | fixed | No resolved fill now produces transparent text rather than the unrelated opaque-black fallback. |
+| SVG `tspan` display, visibility, opacity | fixed | `display="none"` suppresses its whole subtree, visibility can be overridden by a descendant, and nested non-inherited opacity is composed into each emitted run without double-applying the root text opacity. |
 | SVG radial-gradient `fx` / `fy` | left, parsed then unused | Converting focal coordinates needs a focal-ratio relation across object-bounds/user-space coordinates and the gradient transform. |
 | SVG `switch` predicates | left, unread | Feature, extension, and language selection needs a caller environment and fallback policy; emitting all children remains explicitly documented. |
 | SVG complex CSS selectors | left, unread | A correct descendant/child/sibling/attribute/pseudo implementation is a selector engine, not an extension of the simple matcher. |
