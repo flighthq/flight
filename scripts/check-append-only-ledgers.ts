@@ -42,6 +42,12 @@ import pc from 'picocolors';
 
 import { readSection } from './markdownSection';
 
+export interface LedgerBaseCandidate {
+  distance: number;
+  name: string;
+  revision: string;
+}
+
 export interface LedgerDocument {
   path: string;
   text: string;
@@ -202,6 +208,63 @@ export function formatAppendOnlyLedgerReport(report: Readonly<AppendOnlyLedgerRe
 
 // The cell a ledger path belongs to. Anything outside `agents/packages/<cell>/` is not a cell file, and
 // `agents/packages/CONTRACT.md` sits one level up — it is the contract, not a ledger.
+/**
+ * Which candidate revision the guarded sections are compared against, from their distances alone.
+ *
+ * Pure, and separated from the git calls, because this rule has been wrong THREE TIMES in three
+ * different ways. A rule that keeps being wrong belongs where a minimal pair can pin every case, and
+ * all three are pinned in the colocated test.
+ *
+ * THE CHECKED-OUT BRANCH IS NOT AN INTEGRATION REF. It contains HEAD by definition — the check runs on
+ * the branch it is checking — so it carries no information and is dropped by name before anything else.
+ * Treating it as evidence made the check report "already integrated" in every clone, everywhere, which
+ * is inertness wearing a reason.
+ *
+ * ANY OTHER CANDIDATE THAT CONTAINS HEAD SETTLES THE QUESTION — it is not merely unusable as a
+ * baseline. It means this tree has been integrated, so there is no work in flight and no baseline to
+ * want. Skipping such a candidate and falling through to a more distant one is how the check came to
+ * re-judge 366 commits of other people's landed history and report seven long-settled edits at whoever
+ * happened to run it.
+ *
+ * Otherwise THE NEAREST MERGE-BASE WINS, not the first candidate that resolved. The nearest common
+ * ancestor is exactly the newest point HEAD is known to share with an integration branch, so the
+ * commits after it are the work under review. Taking the first ref that resolved was the first version
+ * of the same bug: in an agent clone `@{upstream}` is `origin/main`, hundreds of commits back.
+ *
+ * Measuring in commits rather than trusting a branch name means the answer does not depend on which
+ * branch a clone happens to call canonical. The chosen ref and its commit count are always printed, so
+ * a clone missing its nearest integration ref shows a large count rather than hiding one.
+ */
+export function selectLedgerBaseline(
+  allCandidates: readonly Readonly<LedgerBaseCandidate>[],
+  currentBranch: string | null,
+): Readonly<{ how: string; revision: string | null }> {
+  const candidates = allCandidates.filter((candidate) => candidate.name !== currentBranch);
+
+  const integrated = candidates.find((candidate) => candidate.distance === 0);
+  if (integrated !== undefined) {
+    return {
+      how: `${integrated.name} already contains HEAD, so this tree is integrated and there is no work in flight — nothing was checked`,
+      revision: null,
+    };
+  }
+
+  let best: Readonly<LedgerBaseCandidate> | null = null;
+  for (const candidate of candidates) {
+    if (best === null || candidate.distance < best.distance) best = candidate;
+  }
+  if (best === null) {
+    return {
+      how: 'no baseline revision could be resolved (detached head, missing remote, or shallow clone) — nothing was checked',
+      revision: null,
+    };
+  }
+  return {
+    how: `baseline: merge-base with ${best.name} (${best.revision.slice(0, 9)}), ${best.distance} commit${best.distance === 1 ? '' : 's'} of work in flight`,
+    revision: best.revision,
+  };
+}
+
 export function getLedgerCellName(path: string): string | null {
   const parts = path.split(/[/\\]/);
   const index = parts.indexOf('packages');
@@ -240,7 +303,7 @@ function capture(args: readonly string[]): string | null {
  */
 function resolveLedgerBase(): Readonly<{ how: string; revision: string | null }> {
   const explicit = process.env.FLIGHT_LEDGER_BASE?.trim();
-  const candidates = explicit
+  const names = explicit
     ? [explicit]
     : [
         capture(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']),
@@ -250,36 +313,17 @@ function resolveLedgerBase(): Readonly<{ how: string; revision: string | null }>
         'main',
       ];
 
-  let best: { distance: number; name: string; revision: string } | null = null;
-  let resolved = 0;
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    if (capture(['rev-parse', '--verify', '--quiet', `${candidate}^{commit}`]) === null) continue;
-    const mergeBase = capture(['merge-base', 'HEAD', candidate]);
-    if (mergeBase === null) continue;
-    const distance = Number.parseInt(capture(['rev-list', '--count', `${mergeBase}..HEAD`]) ?? '', 10);
+  const candidates: LedgerBaseCandidate[] = [];
+  for (const name of names) {
+    if (!name) continue;
+    if (capture(['rev-parse', '--verify', '--quiet', `${name}^{commit}`]) === null) continue;
+    const revision = capture(['merge-base', 'HEAD', name]);
+    if (revision === null) continue;
+    const distance = Number.parseInt(capture(['rev-list', '--count', `${revision}..HEAD`]) ?? '', 10);
     if (!Number.isFinite(distance)) continue;
-    resolved++;
-    // A ref that already contains HEAD cannot be a baseline for work in flight — it IS the work. The
-    // check runs on the branch it is checking, so the local branch is always one of these; excluding by
-    // distance rather than by name also covers a remote that has already taken the commits.
-    if (distance === 0) continue;
-    if (best === null || distance < best.distance) best = { distance, name: candidate, revision: mergeBase };
+    candidates.push({ distance, name, revision });
   }
-
-  if (best === null) {
-    return {
-      how:
-        resolved === 0
-          ? 'no baseline revision could be resolved (detached head, missing remote, or shallow clone) — nothing was checked'
-          : 'every integration branch already contains HEAD, so there is no work in flight — nothing was checked',
-      revision: null,
-    };
-  }
-  return {
-    how: `baseline: merge-base with ${best.name} (${best.revision.slice(0, 9)}), ${best.distance} commit${best.distance === 1 ? '' : 's'} of work in flight`,
-    revision: best.revision,
-  };
+  return selectLedgerBaseline(candidates, capture(['rev-parse', '--abbrev-ref', 'HEAD']));
 }
 
 function listLedgerDocumentsAt(revision: string): readonly LedgerDocument[] {
