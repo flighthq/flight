@@ -74,7 +74,7 @@ by: null # the pass that merged the newest entry (e.g. ingest:builder-<sha>)
 
 ## Append-only ledgers
 
-Two sections are **append-only**: `charter.md › Decisions` and `assessment.md › Approved`. Existing lines in these sections are never edited or deleted — only added, and `npm run check:append-only-ledgers` enforces it: every line present in a guarded section at the merge-base must still be present, byte-identical. A reversed decision is recorded as a **new** dated line that supersedes the old one; the old line stays. This preserves "frozen approval" and "a decision is never rewritten" without requiring a content schema.
+Two sections are **append-only**: `charter.md › Decisions` and `assessment.md › Approved`. Existing lines in these sections are never edited or deleted — only added. A reversed decision is recorded as a **new** dated line that supersedes the old one; the old line stays. This preserves "frozen approval" and "a decision is never rewritten" without requiring a content schema.
 
 ### Completion and obsolescence are not approval changes
 
