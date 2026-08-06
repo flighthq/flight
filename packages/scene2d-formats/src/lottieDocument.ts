@@ -1068,9 +1068,10 @@ function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
   return path;
 }
 
-// Each paint restates the group's whole path set, because that is what a Bodymovin paint means: it
-// applies to every path in its group. Paints are emitted in the order the file lists them, so a
-// second fill lands on top of the first rather than replacing it.
+// The current representation restates every local path for every local paint. This preserves
+// multiple paints when all paths precede all styles, but it does not yet implement Lottie's general
+// render stack: styles scope only over preceding shapes (including shapes in nested groups), and
+// repeated styles render in reverse order. That needs a scoped stack rather than another field here.
 function renderLottieShapeState(state: LottieShapeState): void {
   clearShapeCommands(state.shape);
   if (state.paths.length === 0) return;

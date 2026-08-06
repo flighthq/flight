@@ -915,9 +915,9 @@ describe('Lottie real-export shapes', () => {
   });
 });
 
-// A Bodymovin group carries a LIST of paints and each one paints every path in the group, so the
-// count of paints in the file is the count of paints in the output. These four cases are the ones a
-// single-slot paint model silently dropped.
+// These fixtures put every paint after the same local paths, so each paint is in scope. They pin the
+// multiple-paint cases that a single-slot model silently dropped without claiming the importer's
+// current local path/paint collection implements the format's full scoped render stack.
 describe('Lottie shape group paint', () => {
   it('retains the name of a nested shape group', () => {
     const result = createScene2DFromLottieDocument(
@@ -1074,6 +1074,59 @@ describe('Lottie shape group paint', () => {
     expect(pathAnchorsOf(reversed)).toEqual([
       [12, 0],
       [0, 0],
+    ]);
+  });
+
+  it('keeps direction 3 when animated shape geometry rebuilds', () => {
+    const shiftedLine = {
+      c: false,
+      i: [
+        [0, 0],
+        [0, 0],
+      ],
+      o: [
+        [0, 0],
+        [0, 0],
+      ],
+      v: [
+        [4, 0],
+        [16, 0],
+      ],
+    };
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'animated-direction',
+          op: 60,
+          shapes: [
+            {
+              d: 3,
+              ks: {
+                k: [
+                  { s: [OPEN_LINE.ks.k], t: 0 },
+                  { s: [shiftedLine], t: 30 },
+                ],
+              },
+              ty: 'sh',
+            },
+            STROKE,
+          ],
+          ty: 4,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+    const shape = findFirstKind(findByName(result.root, 'animated-direction')!, ShapeKind) as Shape;
+
+    expect(pathAnchorsOf(shape)).toEqual([
+      [12, 0],
+      [0, 0],
+    ]);
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(pathAnchorsOf(shape)).toEqual([
+      [14, 0],
+      [2, 0],
     ]);
   });
 
