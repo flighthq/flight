@@ -15,11 +15,11 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Coverage summary
 
-184 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
+185 functional scenes with committed baselines. Scenes carrying a fingerprint per backend:
 
 | Canvas | DOM | WebGL | WebGPU |
 | --- | --- | --- | --- |
-| 111 / 184 | 43 / 184 | 164 / 184 | 154 / 184 |
+| 111 / 185 | 43 / 185 | 165 / 185 | 154 / 185 |
 
 All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
@@ -30,6 +30,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Area | Capability | Status | Note |
 | --- | --- | --- | --- |
 | Effects | Screen-space effects (SSAO/SSR/TAA/motion-blur/contact-shadow/volumetric) | `implemented-unverified` | Effect pipeline is color-only (no depth/normal/velocity/history buffers) — these render a passthrough/approximate stub, so their baselines captured the STUB, not correct output. |
+| Materials (3D) | Per-vertex color (mesh color0 → VertexColorMaterial) | `partial` | WebGL multiplies the mesh color0 attribute into the tint (material-vertex-color-interpolated covers it). The WebGPU mesh pipeline binds one fixed arrayStride-48 position/normal/tangent/uv0 layout with no color0 slot, so a color0-carrying geometry is not just untinted per-vertex there — its wider record is read at the wrong stride and the positions are wrong too. material-vertex-color uses color0-free geometry on both backends and so does not detect this. |
 | Model Import | FBX / USD / COLLADA / PLY / STL | `not-implemented` | No parser exists. |
 | Model Import | glTF materials / textures / animations | `not-implemented` | glTF imports geometry + skins only; drops materials, textures, animation channels, external .bin (gltfParse.ts header). |
 | Model Import | OBJ / 3DS / MD2 / MD5 textures | `not-implemented` | Only AWD emits SceneResourceRefs; other parsers leave textures unresolved. |
@@ -196,6 +197,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `material-transmission-volume` | · | · | ✓ | · |
 | `material-unlit` | · | · | ✓ | ✓ |
 | `material-vertex-color` | · | · | ✓ | ✓ |
+| `material-vertex-color-interpolated` | · | · | ✓ | · |
 | `material-video-map` | · | · | ✓ | ✓ |
 | `material-wireframe` | · | · | ✓ | ✓ |
 
