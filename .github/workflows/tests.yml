@@ -67,13 +67,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Full history for the same reason `quality` needs it: the ledger gate below resolves its
+      # baseline from a merge-base, which a depth-1 clone cannot provide.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
       - run: npm ci
       - run: npm run docs:check
+      # The guarded ledgers are `agents/packages/*/{charter,assessment}.md` — `.md` files, which the
+      # `code` filter excludes by construction. So a commit that edits ONLY a ledger sets `code` to
+      # false, `quality` never runs, and the gate guarding those files misses the exact change class
+      # it exists for. Running it here too closes that: `docs` fires on any `.md`. On a mixed commit
+      # both jobs run it, the same cheap overlap docs:check already accepts above.
+      - run: npm run check:append-only-ledgers
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
@@ -216,7 +226,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # `npm run check` includes `append-only-ledgers:check`, which compares the guarded ledger
+      # sections against their MERGE-BASE. A bare checkout is a depth-1 single-branch clone with no
+      # second integration ref, so that comparison has nothing to resolve: the gate exits 0 having
+      # read nothing. It reported that honestly and still passed, which is the shape of failure that
+      # makes a green CI a lie. Full history is what gives the gate a baseline to compare against.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
