@@ -179,15 +179,16 @@ console.log(
   `\n[publish] ${dryRun ? '(dry run) ' : ''}published ${published.length} to ` +
     `dist-tag \`${distTag ?? 'latest'}\`, skipped ${skipped.length}, failed ${failed.length}`,
 );
-if (skipped.length > 0) {
-  console.log(`[publish] skipped by reason: ${summarizeSkipReasons(skipped)}`);
-}
+console.log(`[publish] skipped by reason: ${skipped.length === 0 ? '0 skipped' : summarizeSkipReasons(skipped)}`);
 if (failed.length > 0) {
   console.error(`[publish] failed: ${failed.join(', ')}`);
   process.exit(1);
 }
 if (!dryRun && targetTag === 'latest' && published.length === 0) {
-  console.error('[publish] stable release published zero packages; refusing to report success.');
+  console.error(
+    '[publish] stable release published zero packages: nothing was published. ' +
+      'This is expected for a rerun of an already-complete release; otherwise the package version bump was missed.',
+  );
   process.exit(1);
 }
 
