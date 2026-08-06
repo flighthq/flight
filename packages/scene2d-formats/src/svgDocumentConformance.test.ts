@@ -405,6 +405,21 @@ describe('SVG conformance matrix', () => {
     expect(text.data.text).toBe('ACF');
   });
 
+  it('composes nested tspan opacity without applying the text opacity twice', () => {
+    const root = createScene2DFromSvgDocument(
+      '<svg><text opacity=".8">A<tspan opacity=".5">B<tspan opacity=".5">C</tspan></tspan></text></svg>',
+    );
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.text).toBe('ABC');
+    expect(text.alpha).toBeCloseTo(0.8);
+    expect(text.data.textFormat.color).toBe(0x000000ff);
+    expect(text.data.textFormatRanges).toEqual([
+      expect.objectContaining({ end: 2, format: expect.objectContaining({ color: 0x00000080 }), start: 1 }),
+      expect.objectContaining({ end: 3, format: expect.objectContaining({ color: 0x00000040 }), start: 2 }),
+    ]);
+  });
+
   it('suppresses display none while allowing visibility descendants to override', () => {
     const root = createScene2DFromSvgDocument(`
       <svg>
