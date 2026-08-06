@@ -3,8 +3,8 @@ name: Release
 # On a version tag: publishes the whole @flighthq/* package graph to npm, then builds the examples
 # site at that tag (source == published at the release commit, so it faithfully demonstrates the
 # published SDK) and attaches it as a GitHub release asset the site repo serves at flighthq.ai/examples.
-# Bump first with `npm run version:packages <version>`, commit, then tag `<version>` and push:
-#   npm run version:packages 0.1.0 && git commit -am "release: 0.1.0" && git tag 0.1.0 && git push --tags
+# On `develop`, run `npm run version:packages <version>`, commit, and push; wait for green CI so
+# Promote advances `main` to that commit. Tag that promoted commit and push only the tag.
 on:
   push:
     # Bare numeric version tags (no "v" prefix), e.g. 0.1.0. The release asset is named after the tag.
@@ -30,6 +30,12 @@ jobs:
           node-version: 20
           # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
           registry-url: https://registry.npmjs.org
+      - name: Verify release ref is a tag
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "::error::release workflow publishes from a version tag; got ${GITHUB_REF_TYPE} ref ${GITHUB_REF_NAME}"
+            exit 1
+          fi
       - name: Verify release tag matches package version
         run: |
           node --input-type=module <<'NODE'
