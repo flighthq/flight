@@ -60,6 +60,13 @@ jobs:
   # second output comparing exactly equal to 'false' is the failure mode this job exists to
   # fix. On a mixed code+docs commit `quality` also runs docs:check; that overlap is one cheap
   # job, and it is the safe direction to be wrong in.
+  #
+  # `check:append-only-ledgers` lives here for exactly the reason `docs` exists as its own output.
+  # Its subject is `agents/packages/*/charter.md › Decisions` and `assessment.md › Approved` — .md
+  # files, precisely what `code` excludes — so reaching it only through `quality` (which needs
+  # `code == 'true'`) meant A COMMIT THAT EDITS ONLY A LEDGER, THE EXACT COMMIT IT EXISTS TO POLICE,
+  # RAN IT NOT AT ALL. That is the same mistake this job was created to fix, made one gate later with
+  # the warning sitting fifteen lines above. See agents/inert-gate-audit.md.
   docs:
     name: Documentation
     needs: changes
@@ -67,8 +74,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Full history for the same reason `quality` needs it: the ledger gate below resolves its
-      # baseline from a merge-base, which a depth-1 clone cannot provide.
+      # Full history: the ledger check compares each guarded section against its MERGE-BASE with the
+      # integration branch, so a depth-1 clone leaves it with nothing to compare and it correctly
+      # reports that it verified nothing. `fetch-depth: 0` fetches all branches, so origin/develop
+      # and origin/main are both present to resolve a baseline from — the same reason promote.yml
+      # gives for its own. Without this line the job runs the check and the check checks nothing.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -78,11 +88,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run docs:check
-      # The guarded ledgers are `agents/packages/*/{charter,assessment}.md` — `.md` files, which the
-      # `code` filter excludes by construction. So a commit that edits ONLY a ledger sets `code` to
-      # false, `quality` never runs, and the gate guarding those files misses the exact change class
-      # it exists for. Running it here too closes that: `docs` fires on any `.md`. On a mixed commit
-      # both jobs run it, the same cheap overlap docs:check already accepts above.
       - run: npm run check:append-only-ledgers
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
