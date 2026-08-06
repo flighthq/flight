@@ -840,7 +840,7 @@ function createSvgTextNode(
 }
 
 function createSvgTextFormat(style: Readonly<SvgStyle>): TextFormat {
-  const color = resolveSvgColor(style.fill, style.color) ?? { alpha: 1, rgb: 0 };
+  const color = resolveSvgColor(style.fill, style.color) ?? { alpha: 0, rgb: 0 };
   return {
     align: style.textAnchor === 'middle' ? 'center' : style.textAnchor === 'end' ? 'right' : 'left',
     bold: style.fontWeight === 'bold' || Number(style.fontWeight) >= 600,
@@ -1015,9 +1015,10 @@ function collectSvgTextRuns(
   context: Readonly<SvgImportContext>,
   out: SvgTextRun[],
 ): void {
+  if (style.display === 'none') return;
   for (const content of element.content) {
     if (typeof content === 'string') {
-      appendSvgTextRun(out, style, content);
+      if (style.visibility === 'visible') appendSvgTextRun(out, style, content);
       continue;
     }
     if (localName(content.name) !== 'tspan') continue;

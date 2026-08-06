@@ -386,6 +386,25 @@ describe('SVG conformance matrix', () => {
     expect(text.data.textFormatRanges[0].format.color).toBe(0x0000ffff);
   });
 
+  it('keeps fill-none text transparent while a painted tspan remains visible', () => {
+    const root = createScene2DFromSvgDocument('<svg><text fill="none">A<tspan fill="red">B</tspan></text></svg>');
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.text).toBe('AB');
+    expect(text.data.textFormat.color).toBe(0x00000000);
+    expect(text.data.textFormatRanges[0].format.color).toBe(0xff0000ff);
+  });
+
+  it('omits hidden tspan content while permitting a visible descendant override', () => {
+    const root = createScene2DFromSvgDocument(
+      '<svg><text>A<tspan visibility="hidden">B<tspan visibility="visible">C</tspan></tspan>' +
+        '<tspan display="none">D<tspan display="inline">E</tspan></tspan>F</text></svg>',
+    );
+    const text = getNodeChildAt(root, 0) as RichText;
+
+    expect(text.data.text).toBe('ACF');
+  });
+
   it('suppresses display none while allowing visibility descendants to override', () => {
     const root = createScene2DFromSvgDocument(`
       <svg>

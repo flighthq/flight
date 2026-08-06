@@ -157,6 +157,22 @@ describe('Lottie document conformance census', () => {
     expect(getNodeChildAt(parentNode, 0)).toBe(childNode);
   });
 
+  it('hides a layer own content without hiding a child that references its transform', () => {
+    const parent = shapeLayer(1, 'hidden-parent');
+    parent.hd = true;
+    parent.ks = { o: { k: 0 }, p: { k: [10, 20] } };
+    const child = shapeLayer(2, 'visible-child');
+    child.parent = 1;
+    const result = createScene2DFromLottieDocument(createDocument([parent, child]));
+    const parentNode = findByName(result.root, 'hidden-parent')!;
+    const childNode = findByName(result.root, 'visible-child')!;
+
+    expect(parentNode).toMatchObject({ alpha: 1, visible: true, x: 10, y: 20 });
+    expect(getNodeChildCount(parentNode)).toBe(1);
+    expect(getNodeChildAt(parentNode, 0)).toBe(childNode);
+    expect(findFirstKind(childNode, ShapeKind)).not.toBeNull();
+  });
+
   it('maps uniform vector easing to one channel and component-specific easing to scalar channels', () => {
     const uniform = animatedVector([0, 0], [10, 20], [0.42], [0], [1], [1]);
     const split = animatedVector([0, 0], [10, 20], [0.42, 0], [0, 0], [1, 1], [1, 1]);
@@ -936,6 +952,13 @@ describe('Lottie shape group paint', () => {
     expect(JSON.stringify(both.data.commands)).not.toBe(JSON.stringify(solidOnly.data.commands));
   });
 
+  it('carries the fill rule a gradient fill states', () => {
+    const gradient = importPaints([RECT, { ...GRADIENT_FILL, r: 2 }]);
+    const drawPath = gradient.data.commands.indexOf('drawPath');
+
+    expect(gradient.data.commands[drawPath + 4]).toBe('evenOdd');
+  });
+
   it('emits paints in the order the file lists them', () => {
     const strokeFirst = importPaints([RECT, STROKE, RED_FILL]);
     const fillFirst = importPaints([RECT, RED_FILL, STROKE]);
@@ -1014,6 +1037,46 @@ describe('Lottie shape group paint', () => {
     ]);
   });
 
+  it('prefers and animates the ml2 miter-limit property', () => {
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ind: 1,
+          ip: 0,
+          nm: 'animated-miter',
+          op: 60,
+          shapes: [
+            OPEN_LINE,
+            {
+              c: { k: [0, 1, 0] },
+              ml: 3,
+              ml2: animatedScalar(5, 13),
+              o: { k: 100 },
+              ty: 'st',
+              w: { k: 2 },
+            },
+          ],
+          ty: 4,
+        },
+      ] as unknown as LottieLayer[]),
+    );
+    const shape = findFirstKind(findByName(result.root, 'animated-miter')!, ShapeKind) as Shape;
+    const miterLimit = (): unknown => shape.data.commands[shape.data.commands.indexOf('lineStyle') + 9];
+
+    expect(miterLimit()).toBe(5);
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(miterLimit()).toBe(9);
+  });
+
+  it('reverses a shape path when its direction is 3', () => {
+    const reversed = importPaints([{ ...OPEN_LINE, d: 3 }, STROKE]);
+
+    expect(pathAnchorsOf(reversed)).toEqual([
+      [12, 0],
+      [0, 0],
+    ]);
+  });
+
   it('carries the line style of a static gradient stroke', () => {
     const stroke = importPaints([
       OPEN_LINE,
@@ -1026,13 +1089,14 @@ describe('Lottie shape group paint', () => {
         lc: 3,
         lj: 2,
         ml: 7,
+        ml2: { k: 11 },
         ty: 'gs',
         w: { k: 2 },
       },
     ]);
     const lineStyle = stroke.data.commands.indexOf('lineStyle');
 
-    expect(stroke.data.commands.slice(lineStyle + 7, lineStyle + 10)).toEqual(['square', 'round', 7]);
+    expect(stroke.data.commands.slice(lineStyle + 7, lineStyle + 10)).toEqual(['square', 'round', 11]);
     expect(pathAnchorsOf(stroke)).toEqual([
       [0, 0],
       [3, 0],
