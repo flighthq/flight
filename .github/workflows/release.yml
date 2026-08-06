@@ -40,6 +40,8 @@ jobs:
       # Release deliberately verifies the tagged commit's CI directly rather than requiring Promote
       # to have adopted it as `main`: a newer green commit can legitimately advance main past this one.
       # Exact head_sha lookup also keeps an intentionally old tag from falling outside a recent-run window.
+      # There is deliberately no branch filter: this gate proves the exact tree passed CI wherever its
+      # run originated, without recoupling release intent to `develop` membership or `main` adoption.
       - name: Verify tagged commit passed CI
         env:
           GH_TOKEN: ${{ github.token }}
