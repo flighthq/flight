@@ -54,7 +54,9 @@ playback stays explicit through `applyAnimationClipToLottieDocument`.
 order; hidden layers whose own content is suppressed while their spatial transform remains usable by a
 parented child; static and animated 2D transforms including separated position (`p.x`/`p.y`), anchor, scale,
 rotation, opacity, and skew angle; analytic segment-local cubic-Bezier easing, split into per-component
-scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op` visibility; bezier
+scalar tracks when component handles differ; spatial position curves (`to`/`ti`) traversed by arc length;
+combined and separated-position auto-orientation (`ao`) added to authored rotation; hold (`h`) segments;
+layer `ip`/`op` visibility; bezier
 paths, rectangles (with corner radius), ellipses, and polystars including direction (`d`) and corner
 roundness (`os`/`is`, animatable); solid and gradient fills and strokes, linear and radial, including
 gradient-fill winding (`r`), packed colour and
@@ -91,11 +93,6 @@ rule above none should be:
 - **Radial highlight angle and length (`a`, `h`) are not read.** Both are typed on
   `LottieGradientShapeItem`, but neither reaches the gradient matrix or Flight's focal-point field.
   The mapping needs a format-derived relation before it can be implemented without guessing.
-- **Spatial keyframe tangents (`ti`, `to`) are not read.** The animation seam carries sampled scalar or
-  vector values plus temporal segment easing; it has no motion-path target on which those tangents can
-  land. Linear value interpolation remains correct at keyframe times but not along curved motion paths.
-- **Layer auto-orientation (`ao`) is not read.** It depends on that spatial path's tangent, so the same
-  missing motion-path/orientation target prevents a local assignment.
 - **Precomposition asset bounds (`w`, `h`) do not clip their layer subtree.** The child timing and layers
   are carried, but turning the asset rectangle into a viewport would require a stated clipping contract.
 - **Shape-item names below a group are not retained.** A group name lands on its display container, but
@@ -121,8 +118,9 @@ circle relation constrains it) this would diverge subtly. A real-asset compariso
 
 **Not covered — declared exclusions.** These were scoped out in the blessed charter rather than missed:
 expressions (`x`, never executed); text animators and animated text documents; effect layers (`ef`);
-audio and camera layers; 3D layers, `position.z`, and skew axis (`sa`); track mattes (`tt`, `td`, `tp`); blend modes
-with no Flight equivalent; arbitrary time remapping (`tm`); and the shape modifiers repeater (`rp`),
+audio and camera layers; 3D layers, `position.z`, and skew axis (`sa`); track mattes (`tt`, `td`, `tp`);
+shape-style blend mode (`bm`) until styles have scoped display/effect targets; arbitrary time remapping
+(`tm`); and the shape modifiers repeater (`rp`),
 merge-paths (`mm`), and rounded-corners (`rd`), plus animated trim and animated dash. Trim with `m: 2`
 (individually) is approximated as simultaneous.
 

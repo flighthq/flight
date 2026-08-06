@@ -573,6 +573,88 @@ describe('Lottie keyframe time/value fidelity', () => {
       expect(node.y).toBeCloseTo(22, 5);
     }
   });
+
+  it('follows the spatial Bezier stated by outgoing and incoming motion tangents', () => {
+    const position = {
+      a: 1 as const,
+      k: [
+        { s: [0, 0], t: 0, ti: [-20, 0], to: [0, 90] },
+        { s: [100, 0], t: 30 },
+      ],
+    };
+    const result = createScene2DFromLottieDocument(
+      createDocument([{ ind: 1, ip: 0, ks: { p: position }, nm: 'curved', op: 60, ty: 3 }] as LottieLayer[]),
+    );
+    const node = findByName(result.root, 'curved')!;
+    const positionTrack = result.clip.channels.find(
+      (channel) => (channel.targetRef as { path?: string }).path === 'Position',
+    )!.track;
+
+    const quarterPoints = [0, 0.25, 0.5, 0.75, 1].map((time) => {
+      applyAnimationClipToLottieDocument(result.clip, time);
+      return [node.x, node.y];
+    });
+    const quarterChords = quarterPoints.slice(1).map((point, index) => {
+      return Math.hypot(point[0] - quarterPoints[index][0], point[1] - quarterPoints[index][1]);
+    });
+
+    // Both endpoints lie on y=0. A positive interior y therefore comes from the source's spatial
+    // control points rather than value interpolation along the endpoint chord.
+    expect(quarterPoints[2][0]).toBeGreaterThan(0);
+    expect(quarterPoints[2][0]).toBeLessThan(100);
+    expect(quarterPoints[2][1]).toBeGreaterThan(20);
+    // With linear temporal easing, equal time quarters cover equal arc lengths. Their endpoint
+    // chords differ only with curvature; raw parametric-t traversal makes this fixture differ by 47%.
+    expect(Math.max(...quarterChords) / Math.min(...quarterChords)).toBeLessThan(1.12);
+    expect(positionTrack.interpolation).toBe('Cubic');
+    expect([node.x, node.y]).toEqual([100, 0]);
+  });
+
+  it('adds auto-orientation from the motion path to the authored layer rotation', () => {
+    const curvedPosition = {
+      a: 1 as const,
+      k: [
+        { s: [0, 0], t: 0, ti: [-20, 0], to: [0, 90] },
+        { s: [100, 0], t: 30 },
+      ],
+    };
+    const result = createScene2DFromLottieDocument(
+      createDocument([
+        {
+          ao: 1,
+          ind: 1,
+          ip: 0,
+          ks: { p: curvedPosition, r: animatedScalar(15, 45) },
+          nm: 'oriented',
+          op: 60,
+          ty: 3,
+        },
+        {
+          ao: 1,
+          ind: 2,
+          ip: 0,
+          ks: { p: { s: true, x: animatedScalar(0, 100), y: animatedScalar(0, 100) }, r: { k: 10 } },
+          nm: 'separated',
+          op: 60,
+          ty: 3,
+        },
+      ] as LottieLayer[]),
+    );
+    const oriented = findByName(result.root, 'oriented')!;
+    const separated = findByName(result.root, 'separated')!;
+
+    // The first spatial control leaves straight down, so its 90-degree direction is added to the
+    // authored 15 degrees. The last control enters horizontally, leaving the animated authored 45°.
+    expect(oriented.rotation).toBeCloseTo(105, 0);
+    applyAnimationClipToLottieDocument(result.clip, 1);
+    expect(Math.abs(oriented.rotation - 45)).toBeLessThan(1.1);
+
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(separated.rotation).toBeCloseTo(55, 4);
+    // Applying the same sample again must recompute from the authored rotation, not accumulate 45°.
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(separated.rotation).toBeCloseTo(55, 4);
+  });
 });
 
 function paintStartsOf(shape: Shape): string[] {
@@ -697,8 +779,8 @@ function animatedVector(
   return {
     a: 1 as const,
     k: [
-      { o: { x: ox, y: oy }, s: start, t: 0 },
-      { i: { x: ix, y: iy }, s: end, t: 30 },
+      { i: { x: ix, y: iy }, o: { x: ox, y: oy }, s: start, t: 0 },
+      { s: end, t: 30 },
     ],
   };
 }

@@ -10,7 +10,7 @@ import { packColor } from '@flighthq/color/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { addNodeChild } from '@flighthq/node/contract';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import {
   appendPathCubicCurveTo,
   appendPathEllipse,
@@ -40,6 +40,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import type {
   AnimationChannel,
   AnimationClip,
+  AnimationTrack,
   DisplayObject,
   Node2D,
   Node2DAnimationPath,
@@ -85,7 +86,7 @@ export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>
     const target = channel.targetRef as LottieMutableAnimationTarget | null;
     if (target === null || typeof target !== 'object' || target.lottieApply === undefined) continue;
     sampleAnimationTrack(_sampleScratch, channel.track, time);
-    target.lottieApply(_sampleScratch);
+    target.lottieApply(_sampleScratch, time);
   }
 }
 
@@ -150,7 +151,7 @@ interface LottieImportContext {
 }
 
 interface LottieMutableAnimationTarget {
-  lottieApply(sample: Readonly<number[] | Float32Array>): void;
+  lottieApply(sample: Readonly<number[] | Float32Array>, time: number): void;
 }
 
 // A Bodymovin group carries a LIST of paints, not one of each: two fills are legal and each paints
@@ -222,7 +223,7 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
   // A hidden layer still contributes its spatial transform when another layer parents to it. Its
   // opacity, visibility window, paint, and masks affect only its own content, so none may leak onto
   // the referencing child through Flight's hierarchy.
-  applyLottieTransform(container, layer.ks, context, !hidden);
+  applyLottieTransform(container, layer.ks, context, !hidden, layer.ao === 1);
   reportLottieExpression(layer.ks, context);
   if (hidden) return container;
   applyLottieLayerVisibility(container, layer, context);
@@ -250,6 +251,7 @@ function applyLottieTransform(
   transform: Readonly<LottieTransform> | undefined,
   context: LottieImportContext,
   includeOpacity = true,
+  autoOrient = false,
 ): void {
   if (transform === undefined) return;
   if (isSeparatedPosition(transform.p)) {
@@ -268,6 +270,7 @@ function applyLottieTransform(
   if (transform.sk !== undefined) {
     applyScalarProperty(target, transform.sk, 'SkewX', (value) => value, context);
   }
+  if (autoOrient) appendLottieAutoOrientation(target, transform.p, transform.r ?? transform.rz, context);
 }
 
 function applyVectorProperty(
@@ -293,6 +296,7 @@ function applyVectorProperty(
       }) satisfies Node2DAnimationTarget,
     convert,
     context,
+    vectorPath === 'Position',
   );
 }
 
@@ -321,11 +325,13 @@ function appendNumericPropertyChannels<T>(
   target: (component: number | null) => unknown,
   convert: (value: number, component: number) => number,
   context: LottieImportContext,
+  spatialTangents = false,
 ): void {
   if (!isAnimatedProperty(property)) return;
   const keyframes = property.k;
   if (keyframes.length === 0) return;
-  const componentSpecific = hasComponentSpecificEasing(keyframes, components);
+  const spatial = spatialTangents && hasSpatialTangents(keyframes);
+  const componentSpecific = !spatial && hasComponentSpecificEasing(keyframes, components);
   if (componentSpecific && components > 1) {
     for (let component = 0; component < components; component++) {
       context.channels.push(
@@ -345,10 +351,131 @@ function appendNumericPropertyChannels<T>(
   }
   context.channels.push(
     createAnimationChannel(
-      createLottieTrack(keyframes, components, context, (value) => numericValue(value, components).map(convert), 0),
+      createLottieTrack(
+        keyframes,
+        components,
+        context,
+        (value) => numericValue(value, components).map(convert),
+        0,
+        spatial,
+        (value, component) => convert(value, component) - convert(0, component),
+      ),
       target(null),
     ),
   );
+}
+
+function appendLottieAutoOrientation(
+  target: Node2D,
+  property: Readonly<LottiePositionProperty> | undefined,
+  rotation: Readonly<LottieAnimatable<number>> | undefined,
+  context: LottieImportContext,
+): void {
+  const sampler = createLottiePositionSampler(property, context);
+  if (sampler === null) return;
+  const baseRotation = target.rotation;
+  const rotationTrack =
+    rotation !== undefined && isAnimatedProperty(rotation)
+      ? createLottieTrack(rotation.k, 1, context, (value) => numericValue(value, 1), 0)
+      : null;
+  const previous = [0, 0];
+  const current = [0, 0];
+  const frameStep = Math.abs(context.frameScale) / context.document.fr;
+
+  const applyOrientation = (time: number): void => {
+    let previousTime: number;
+    let currentTime: number;
+    if (time <= sampler.firstTime) {
+      previousTime = sampler.firstTime;
+      currentTime = sampler.firstTime + frameStep * 0.01;
+    } else if (time >= sampler.lastTime) {
+      previousTime = sampler.lastTime - frameStep * (sampler.separated ? 0.01 : 0.05);
+      currentTime = sampler.lastTime;
+    } else {
+      previousTime = time - frameStep * 0.01;
+      currentTime = time;
+    }
+    sampler.sample(previous, previousTime);
+    sampler.sample(current, currentTime);
+    const orientation = (Math.atan2(current[1] - previous[1], current[0] - previous[0]) * 180) / Math.PI;
+    if (rotationTrack !== null) sampleAnimationTrack(_autoOrientRotationScratch, rotationTrack, time);
+    target.rotation = (rotationTrack === null ? baseRotation : _autoOrientRotationScratch[0]) + orientation;
+    invalidateNodeLocalTransform(target);
+  };
+
+  applyOrientation(sampler.firstTime);
+  context.channels.push(
+    createAnimationChannel(sampler.carrier, {
+      lottieApply(_sample, time) {
+        applyOrientation(time);
+      },
+    } satisfies LottieMutableAnimationTarget),
+  );
+}
+
+interface LottiePositionSampler {
+  carrier: AnimationTrack;
+  firstTime: number;
+  lastTime: number;
+  sample(out: number[], time: number): void;
+  separated: boolean;
+}
+
+function createLottiePositionSampler(
+  property: Readonly<LottiePositionProperty> | undefined,
+  context: LottieImportContext,
+): LottiePositionSampler | null {
+  if (property === undefined) return null;
+  if (isSeparatedPosition(property)) {
+    const xTrack = isAnimatedProperty(property.x)
+      ? createLottieTrack(property.x.k, 1, context, (value) => numericValue(value, 1), 0)
+      : null;
+    const yTrack = isAnimatedProperty(property.y)
+      ? createLottieTrack(property.y.k, 1, context, (value) => numericValue(value, 1), 0)
+      : null;
+    const carrier = xTrack ?? yTrack;
+    if (carrier === null) return null;
+    const x = numericValue(initialLottieValue(property.x), 1)[0];
+    const y = numericValue(initialLottieValue(property.y), 1)[0];
+    const tracks = [xTrack, yTrack].filter(
+      (track): track is AnimationTrack => track !== null && track.times.length > 0,
+    );
+    if (tracks.length === 0) return null;
+    return {
+      carrier,
+      firstTime: Math.min(...tracks.map((track) => track.times[0])),
+      lastTime: Math.max(...tracks.map((track) => track.times[track.times.length - 1])),
+      sample(out, time) {
+        out[0] = x;
+        out[1] = y;
+        if (xTrack !== null) sampleAnimationTrack(out, xTrack, time);
+        if (yTrack !== null) {
+          sampleAnimationTrack(_autoOrientScalarScratch, yTrack, time);
+          out[1] = _autoOrientScalarScratch[0];
+        }
+      },
+      separated: true,
+    };
+  }
+  if (!isAnimatedProperty(property)) return null;
+  const track = createLottieTrack(
+    property.k,
+    2,
+    context,
+    (value) => numericValue(value, 2),
+    0,
+    hasSpatialTangents(property.k),
+  );
+  if (track.times.length === 0) return null;
+  return {
+    carrier: track,
+    firstTime: track.times[0],
+    lastTime: track.times[track.times.length - 1],
+    sample(out, time) {
+      sampleAnimationTrack(out, track, time);
+    },
+    separated: false,
+  };
 }
 
 function bindMutableNumericProperty<T>(
@@ -384,9 +511,11 @@ function createLottieTrack<T>(
   context: LottieImportContext,
   valueOf: (value: T | undefined, keyframe: number) => number[],
   easingComponent: number,
-) {
+  spatialTangents = false,
+  tangentOf: (value: number, component: number) => number = (value) => value,
+): AnimationTrack {
   const times: number[] = [];
-  const values: number[] = [];
+  const samples: number[][] = [];
   const retained: Array<Readonly<LottieKeyframe<T>>> = [];
   for (let index = 0; index < keyframes.length; index++) {
     const keyframe = keyframes[index];
@@ -395,24 +524,128 @@ function createLottieTrack<T>(
     times.push(time);
     retained.push(keyframe);
     const source = keyframe.s ?? keyframes[index - 1]?.e;
-    values.push(...valueOf(source, index));
+    samples.push(valueOf(source, index));
   }
+  const spatial = spatialTangents && hasSpatialTangents(retained);
+  const values = spatial
+    ? createLottieSpatialTrackValues(retained, samples, times, components, tangentOf)
+    : samples.flat();
   const segmentEasings: Array<EasingFunction | null> = [];
   for (let index = 0; index < retained.length - 1; index++) {
     const keyframe = retained[index];
-    if (keyframe.h === 1) {
-      segmentEasings.push(_holdEasing);
-    } else {
-      segmentEasings.push(createLottieSegmentEasing(keyframe.o, retained[index + 1].i, easingComponent));
-    }
+    const temporal =
+      keyframe.h === 1 ? _holdEasing : createLottieSegmentEasing(keyframe.o, keyframe.i, easingComponent);
+    const outgoing = spatialTangent(keyframe.to, components, tangentOf);
+    const incoming = spatialTangent(keyframe.ti, components, tangentOf);
+    segmentEasings.push(
+      spatial && outgoing !== null && incoming !== null
+        ? createLottieSpatialSegmentEasing(temporal, samples[index], samples[index + 1], outgoing, incoming)
+        : temporal,
+    );
   }
   return createAnimationTrack({
     components,
-    interpolation: 'Linear',
+    interpolation: spatial ? 'Cubic' : 'Linear',
     segmentEasings,
     times,
     values,
   });
+}
+
+function createLottieSpatialTrackValues<T>(
+  keyframes: readonly Readonly<LottieKeyframe<T>>[],
+  samples: readonly number[][],
+  times: readonly number[],
+  components: number,
+  tangentOf: (value: number, component: number) => number,
+): number[] {
+  const incoming = samples.map(() => new Array<number>(components).fill(0));
+  const outgoing = samples.map(() => new Array<number>(components).fill(0));
+  for (let index = 0; index < samples.length - 1; index++) {
+    const dt = times[index + 1] - times[index];
+    const spatialOut = spatialTangent(keyframes[index].to, components, tangentOf);
+    const spatialIn = spatialTangent(keyframes[index].ti, components, tangentOf);
+    for (let component = 0; component < components; component++) {
+      if (spatialOut !== null && spatialIn !== null) {
+        outgoing[index][component] = (3 * spatialOut[component]) / dt;
+        incoming[index + 1][component] = (-3 * spatialIn[component]) / dt;
+      } else {
+        const slope = (samples[index + 1][component] - samples[index][component]) / dt;
+        outgoing[index][component] = slope;
+        incoming[index + 1][component] = slope;
+      }
+    }
+  }
+  const values: number[] = [];
+  for (let index = 0; index < samples.length; index++) {
+    values.push(...incoming[index], ...samples[index], ...outgoing[index]);
+  }
+  return values;
+}
+
+function spatialTangent(
+  value: readonly number[] | undefined,
+  components: number,
+  tangentOf: (value: number, component: number) => number,
+): number[] | null {
+  if (!Array.isArray(value)) return null;
+  return numericValue(value, components).map(tangentOf);
+}
+
+const LOTTIE_SPATIAL_CURVE_SAMPLES = 150;
+
+function createLottieSpatialSegmentEasing(
+  temporal: EasingFunction | null,
+  start: readonly number[],
+  end: readonly number[],
+  outgoing: readonly number[],
+  incoming: readonly number[],
+): EasingFunction {
+  const lengths = new Array<number>(LOTTIE_SPATIAL_CURVE_SAMPLES).fill(0);
+  let previous = start;
+  for (let index = 1; index < LOTTIE_SPATIAL_CURVE_SAMPLES; index++) {
+    const point = sampleLottieSpatialBezier(start, end, outgoing, incoming, index / (LOTTIE_SPATIAL_CURVE_SAMPLES - 1));
+    let distanceSquared = 0;
+    for (let component = 0; component < start.length; component++) {
+      distanceSquared += (point[component] - previous[component]) ** 2;
+    }
+    lengths[index] = lengths[index - 1] + Math.sqrt(distanceSquared);
+    previous = point;
+  }
+  const total = lengths[lengths.length - 1];
+  return (alpha) => {
+    const distanceFraction = temporal?.(alpha) ?? alpha;
+    if (distanceFraction <= 0 || total === 0) return 0;
+    if (distanceFraction >= 1) return 1;
+    const distance = total * distanceFraction;
+    let low = 0;
+    let high = lengths.length - 1;
+    while (low + 1 < high) {
+      const middle = (low + high) >> 1;
+      if (lengths[middle] <= distance) low = middle;
+      else high = middle;
+    }
+    const span = lengths[high] - lengths[low];
+    const fraction = span > 0 ? (distance - lengths[low]) / span : 0;
+    return (low + fraction) / (LOTTIE_SPATIAL_CURVE_SAMPLES - 1);
+  };
+}
+
+function sampleLottieSpatialBezier(
+  start: readonly number[],
+  end: readonly number[],
+  outgoing: readonly number[],
+  incoming: readonly number[],
+  time: number,
+): number[] {
+  const inverse = 1 - time;
+  return start.map(
+    (value, component) =>
+      inverse ** 3 * value +
+      3 * inverse ** 2 * time * (value + outgoing[component]) +
+      3 * inverse * time ** 2 * (end[component] + incoming[component]) +
+      time ** 3 * end[component],
+  );
 }
 
 function createLottieSegmentEasing(
@@ -1319,13 +1552,18 @@ function hasComponentSpecificEasing<T>(keyframes: readonly Readonly<LottieKeyfra
   if (components < 2) return false;
   for (let index = 0; index < keyframes.length - 1; index++) {
     const current = keyframes[index];
-    const next = keyframes[index + 1];
-    for (const handle of [current.o, next.i]) {
+    for (const handle of [current.o, current.i]) {
       if (handle === undefined) continue;
       if (handleVaries(handle.x, components) || handleVaries(handle.y, components)) return true;
     }
   }
   return false;
+}
+
+function hasSpatialTangents<T>(keyframes: readonly Readonly<LottieKeyframe<T>>[]): boolean {
+  return keyframes.some((keyframe, index) => {
+    return index < keyframes.length - 1 && Array.isArray(keyframe.to) && Array.isArray(keyframe.ti);
+  });
 }
 
 function handleVaries(value: number | number[], components: number): boolean {
@@ -1462,6 +1700,8 @@ function reportLottieDrop(
 }
 
 const _sampleScratch = new Array<number>(256).fill(0);
+const _autoOrientRotationScratch = [0];
+const _autoOrientScalarScratch = [0];
 const _holdEasing: EasingFunction = () => 0;
 
 // Bodymovin's own numbering. The five that fold into blend state:

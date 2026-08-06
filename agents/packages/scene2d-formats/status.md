@@ -8,6 +8,29 @@ by: builder3
 
 > Append-only handoff log, newest entry on top.
 
+## 2026-08-06 — Lottie motion paths and auto-orientation reach existing runtime consumers
+
+The non-local-gap audit found that the recorded spatial-animation premise was stale: Flight's shared
+`AnimationTrack` already supports cubic Hermite values and segment-local easing. Position `to`/`ti`
+controls now lower into that consumer, with a 150-sample arc-length lookup composed after temporal
+easing to match [lottie-web's property traversal](https://github.com/airbnb/lottie-web/blob/master/player/js/utils/PropertyFactory.js).
+The same read-through corrected temporal `i` ownership: the [official property schema](https://lottie.github.io/lottie-spec/dev/specs/properties/)
+defines both easing handles on the segment's starting keyframe, not one on each endpoint.
+
+Layer `ao` now has a format-owned playback target that samples combined or separated animated position
+around the playhead, derives the direction used by
+[lottie-web's transform](https://github.com/airbnb/lottie-web/blob/master/player/js/utils/TransformProperty.js),
+adds it to authored static or animated rotation, and invalidates the node transform without accumulation.
+Format-derived tests prove curved interior motion, approximately equal arc travel over equal linear-time
+quarters, endpoint fidelity, curved-path orientation, separated-position orientation, and repeat-sample
+stability.
+
+The other audited candidates remain real render-model boundaries. `CompositeEffect` provides Porter-Duff
+operators but no importer-owned matte source/target isolation attachment, so `tt`/`td`/`tp` cannot be
+lowered by assigning an operator. Fixed and advanced blend consumers likewise need one node per style;
+shape-style `bm`, preceding-shape scope including nested groups, and reverse repeated-style order remain
+one scoped render-stack rewrite rather than separable field fixes.
+
 ## 2026-08-06 — Second SVG/Lottie schema-to-consumer pass
 
 A fresh comparison against the official Lottie field tables found bounded consumers for layer `hd`,
