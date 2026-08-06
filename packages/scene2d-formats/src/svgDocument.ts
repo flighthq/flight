@@ -203,6 +203,7 @@ interface SvgStyle {
 }
 
 interface SvgTextRun {
+  opacity: number;
   style: Readonly<SvgStyle>;
   text: string;
 }
@@ -787,7 +788,9 @@ function createSvgTextNode(
   let offset = 0;
   for (const run of runs) {
     const end = offset + run.text.length;
-    if (run.style !== style) ranges.push(createTextFormatRange(createSvgTextFormat(run.style), offset, end));
+    if (run.style !== style) {
+      ranges.push(createTextFormatRange(createSvgTextFormat(run.style, run.opacity), offset, end));
+    }
     offset = end;
   }
   const firstTspan = directTspans[0];
@@ -839,7 +842,7 @@ function createSvgTextNode(
   return label;
 }
 
-function createSvgTextFormat(style: Readonly<SvgStyle>): TextFormat {
+function createSvgTextFormat(style: Readonly<SvgStyle>, opacity = 1): TextFormat {
   const color = resolveSvgColor(style.fill, style.color) ?? { alpha: 0, rgb: 0 };
   return {
     align: style.textAnchor === 'middle' ? 'center' : style.textAnchor === 'end' ? 'right' : 'left',
@@ -848,7 +851,7 @@ function createSvgTextFormat(style: Readonly<SvgStyle>): TextFormat {
       ((color.rgb >>> 16) & 0xff) / 255,
       ((color.rgb >>> 8) & 0xff) / 255,
       (color.rgb & 0xff) / 255,
-      color.alpha * style.fillOpacity,
+      color.alpha * style.fillOpacity * opacity,
     ),
     font: style.fontFamily.replace(/^['"]|['"]$/g, ''),
     italic: style.fontStyle === 'italic' || style.fontStyle === 'oblique',
@@ -1014,15 +1017,17 @@ function collectSvgTextRuns(
   style: Readonly<SvgStyle>,
   context: Readonly<SvgImportContext>,
   out: SvgTextRun[],
+  opacity = 1,
 ): void {
   if (style.display === 'none') return;
   for (const content of element.content) {
     if (typeof content === 'string') {
-      if (style.visibility === 'visible') appendSvgTextRun(out, style, content);
+      if (style.visibility === 'visible') appendSvgTextRun(out, style, content, opacity);
       continue;
     }
     if (localName(content.name) !== 'tspan') continue;
-    collectSvgTextRuns(content, resolveSvgStyle(content, style, context), context, out);
+    const childStyle = resolveSvgStyle(content, style, context);
+    collectSvgTextRuns(content, childStyle, context, out, opacity * childStyle.opacity);
   }
 }
 
@@ -1035,7 +1040,7 @@ function collectSvgTspanElements(element: Readonly<XmlElement>): XmlElement[] {
   return out;
 }
 
-function appendSvgTextRun(out: SvgTextRun[], style: Readonly<SvgStyle>, source: string): void {
+function appendSvgTextRun(out: SvgTextRun[], style: Readonly<SvgStyle>, source: string, opacity: number): void {
   let text = source
     .replace(/[\n\r]/g, '')
     .replace(/\t/g, ' ')
@@ -1043,7 +1048,7 @@ function appendSvgTextRun(out: SvgTextRun[], style: Readonly<SvgStyle>, source: 
   if (out.length === 0) text = text.trimStart();
   const previous = out[out.length - 1];
   if (previous?.text.endsWith(' ') === true && text.startsWith(' ')) text = text.slice(1);
-  if (text !== '') out.push({ style, text });
+  if (text !== '') out.push({ opacity, style, text });
 }
 
 function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly<Path>): Matrix {
