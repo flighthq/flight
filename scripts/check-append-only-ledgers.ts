@@ -24,15 +24,25 @@
 // LEDGER FILE while the cell remains is the opposite case and does fail, because that is exactly how a
 // ledger would be laundered.
 //
-// KNOWN AND UNRESOLVED: THIS CHECK VERIFIES NOTHING IN CI AS THE WORKFLOW IS WIRED TODAY. The `quality`
-// job in `.github/workflows/tests.yml` uses a bare `actions/checkout@v4`, which is a depth-1
-// single-branch clone: no second integration ref exists, so no merge-base can be computed and the run
-// reports that it compared nothing. Verified by cloning `--depth 1 --branch main` and running it, not
-// by reading the workflow. It is live in every developer and agent clone and in pre-push; making it
-// live in CI needs `fetch-depth: 0` on that job, which is a file this change deliberately does not
-// touch. Until then the gate is real locally and inert where it would block — the same shape as the
-// residue defect the docs gate was just fixed for, which is why it is written down here rather than
-// left in a handoff note.
+// WHERE IT RUNS, AND THE TWO CONDITIONS THAT ONCE DEFEATED IT. This check first shipped enforcing
+// nothing in CI, in two independent ways, and both are named here because a gate is only trustworthy
+// once the conditions that defeat it are written down and shown defeated.
+//
+// 1. DOCS-ONLY COMMIT. It was reachable only through `npm run check` in the `quality` job, which is
+//    gated on `code == 'true'`, and the `code` filter excludes `**/*.md`. Its guarded sections ARE .md
+//    files, so a commit editing only a ledger — the exact commit it exists to police — did not run it
+//    at all. It now runs in the `docs` job, keyed to the `docs` filter, which is what its subject
+//    matches. That REMOVES the cross-file coupling rather than annotating it.
+// 2. SHALLOW CLONE. A depth-1 checkout has no second integration ref, so no merge-base resolves and
+//    the run correctly reports that it compared nothing. The `docs` job carries `fetch-depth: 0`.
+//
+// The `quality` job's copy, via `npm run check`, keeps a bare checkout and so still self-reports as
+// having compared nothing. That is redundant rather than false: any commit touching a ledger sets
+// `docs == 'true'`, so the real run always happens. Locally `npm run check` is the real one.
+//
+// A PASS YOU DID NOT FIRST PROVE COULD FAIL IS NOT EVIDENCE. The colocated tests pin the rules; the
+// end-to-end proof is a ledger-only commit editing one existing Approved line, which must exit 1 with
+// history present and is the input this check must never be trusted without failing on.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -272,9 +282,18 @@ export function getLedgerCellName(path: string): string | null {
   return parts.length === index + 3 ? parts[index + 1] : null;
 }
 
+// A failed probe is an ANSWER here, not an error: "this ref does not exist" is how the baseline is
+// resolved. So git's stderr is discarded rather than inherited — an unconfigured upstream otherwise
+// printed a bare `fatal: no upstream configured` into the middle of an ordinary run, which reads as a
+// broken gate to everyone who did not write it.
 function capture(args: readonly string[]): string | null {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim();
+    return execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return null;
   }
