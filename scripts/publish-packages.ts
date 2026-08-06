@@ -179,8 +179,15 @@ console.log(
   `\n[publish] ${dryRun ? '(dry run) ' : ''}published ${published.length} to ` +
     `dist-tag \`${distTag ?? 'latest'}\`, skipped ${skipped.length}, failed ${failed.length}`,
 );
+if (skipped.length > 0) {
+  console.log(`[publish] skipped by reason: ${summarizeSkipReasons(skipped)}`);
+}
 if (failed.length > 0) {
   console.error(`[publish] failed: ${failed.join(', ')}`);
+  process.exit(1);
+}
+if (!dryRun && targetTag === 'latest' && published.length === 0) {
+  console.error('[publish] stable release published zero packages; refusing to report success.');
   process.exit(1);
 }
 
@@ -318,4 +325,17 @@ async function runPool<T>(items: readonly T[], limit: number, worker: (item: T) 
       }
     }),
   );
+}
+
+function summarizeSkipReasons(entries: readonly string[]): string {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    const match = / \((.+)\)$/.exec(entry);
+    const reason = match?.[1] ?? entry;
+    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([reason, count]) => `${count} ${reason}`)
+    .join(', ');
 }
