@@ -36,9 +36,18 @@
 // 2. SHALLOW CLONE. A depth-1 checkout has no second integration ref, so no merge-base resolves and
 //    the run correctly reports that it compared nothing. The `docs` job carries `fetch-depth: 0`.
 //
-// The `quality` job's copy, via `npm run check`, keeps a bare checkout and so still self-reports as
-// having compared nothing. That is redundant rather than false: any commit touching a ledger sets
-// `docs == 'true'`, so the real run always happens. Locally `npm run check` is the real one.
+// The `quality` job's copy, via `npm run check`, carries `fetch-depth: 0` too, so it is a real run
+// rather than a redundant self-report. `docs` remains the one keyed to this check's own subject: any
+// commit touching a ledger sets `docs == 'true'`, so the run that matters always happens even when
+// `code` is false. Locally `npm run check` is the real one.
+//
+// 3. INTEGRATED HEAD, AND THIS ONE IS STILL OPEN. `selectLedgerBaseline` returns no baseline as soon
+//    as any remote candidate contains HEAD, without falling through to one that is behind. On a PUSH
+//    build the checked-out branch is that candidate, so the run compares nothing AT ANY FETCH DEPTH —
+//    proven with a pair of clones off a source whose develop tip carried a tampered Approved line:
+//    depth-1 and full-history both exited 0 saying so. Fixing the two conditions above makes this
+//    check real on a PR head; a push to develop is still unguarded, which is why CONTRACT.md keeps
+//    its claim soft.
 //
 // A PASS YOU DID NOT FIRST PROVE COULD FAIL IS NOT EVIDENCE. The colocated tests pin the rules; the
 // end-to-end proof is a ledger-only commit editing one existing Approved line, which must exit 1 with
