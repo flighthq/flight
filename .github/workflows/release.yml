@@ -30,6 +30,27 @@ jobs:
           node-version: 20
           # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
           registry-url: https://registry.npmjs.org
+      - name: Verify release tag matches package version
+        run: |
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync, readdirSync } from 'node:fs';
+
+          const versions = new Set(
+            readdirSync('packages', { withFileTypes: true })
+              .filter((entry) => entry.isDirectory())
+              .map((entry) => `packages/${entry.name}/package.json`)
+              .filter((path) => existsSync(path))
+              .map((path) => JSON.parse(readFileSync(path, 'utf8')).version),
+          );
+          const manifestVersions = [...versions];
+          if (manifestVersions.length !== 1 || manifestVersions[0] !== process.env.GITHUB_REF_NAME) {
+            console.error(
+              `tag ${process.env.GITHUB_REF_NAME} but manifests are at ${manifestVersions.join(', ')} — ` +
+                `run \`npm run version:packages ${process.env.GITHUB_REF_NAME}\``,
+            );
+            process.exit(1);
+          }
+          NODE
       - run: npm ci
       - run: npm run build
       - name: Publish packages to npm
