@@ -51,14 +51,16 @@ priority ruling.
 playback stays explicit through `applyAnimationClipToLottieDocument`.
 
 **Covered:** shape, precomposition, image, null, solid, and text layers; layer parenting and stacking
-order; static and animated 2D transforms including separated position (`p.x`/`p.y`), anchor, scale,
+order; hidden layers whose own content is suppressed while their spatial transform remains usable by a
+parented child; static and animated 2D transforms including separated position (`p.x`/`p.y`), anchor, scale,
 rotation, opacity, and skew angle; analytic segment-local cubic-Bezier easing, split into per-component
 scalar tracks when component handles differ; hold (`h`) segments; layer `ip`/`op` visibility; bezier
-paths, rectangles (with corner radius), ellipses, and polystars including corner roundness (`os`/`is`,
-animatable); solid and gradient fills and strokes, linear and radial, including packed colour and
+paths, rectangles (with corner radius), ellipses, and polystars including direction (`d`) and corner
+roundness (`os`/`is`, animatable); solid and gradient fills and strokes, linear and radial, including
+gradient-fill winding (`r`), packed colour and
 opacity stops combined with overall paint opacity, each animatable through the format-owned
 mutable-content binder; static stroke dash/offset, cap, join, and miter-limit data on solid and gradient
-strokes; nested shape-group names; static trim paths; a single additive non-inverted mask recovered to
+strokes, plus the animatable `ml2` miter-limit alternative; nested shape-group names; static trim paths; a single additive non-inverted mask recovered to
 `ClipRegion`; images resolved through
 the injected `resolveImageResource` seam; ordinary precomposition timing with `st` offset and `sr`
 stretch folded exactly into root time; recursion-guarded precomposition references; and markers as
@@ -92,6 +94,8 @@ rule above none should be:
 - **Spatial keyframe tangents (`ti`, `to`) are not read.** The animation seam carries sampled scalar or
   vector values plus temporal segment easing; it has no motion-path target on which those tangents can
   land. Linear value interpolation remains correct at keyframe times but not along curved motion paths.
+- **Layer auto-orientation (`ao`) is not read.** It depends on that spatial path's tangent, so the same
+  missing motion-path/orientation target prevents a local assignment.
 - **Precomposition asset bounds (`w`, `h`) do not clip their layer subtree.** The child timing and layers
   are carried, but turning the asset rectangle into a viewport would require a stated clipping contract.
 - **Shape-item names below a group are not retained.** A group name lands on its display container, but
@@ -99,14 +103,14 @@ rule above none should be:
   item's `nm`. Expression-only indices (`ix`, shape `ind`) and the group's declared property count (`np`)
   likewise have no visual output.
 
-Paint is a **list** per shape group, not one of each: multiple fills, multiple strokes, and a gradient
-beside a solid one all survive, and each paint restates the group's whole path set the way a Bodymovin
-paint applies to every path in its group.
-
-**Covered, with a caveat worth knowing.** Paints are emitted in the order the file lists them. Whether
-Bodymovin treats an earlier item as painting *above* or *below* a later one is a z-order convention that
-no relation in the data settles, and no real export has been compared, so a group with two overlapping
-paints may stack inverted. A single-paint group — overwhelmingly the common export — is unaffected.
+Multiple fills, strokes, and gradients all survive when the fixture places them after the same local
+paths, but the general shape rendering model is **not covered**. The importer currently collects every
+local path and paint into one `Shape`, applies every paint to every local path regardless of item index,
+isolates nested groups from an outer style, and emits paint passes in file order. The format instead
+scopes styles and modifiers to preceding shapes (including subgroup-nested shapes) and renders repeated
+styles in reverse order. Shape-style blend mode (`bm`) likewise has no per-style node/effect target in
+the consolidated output. Fixing these together requires a scoped render-stack representation, not a
+field fallback; single-style groups with their style after their paths are unaffected.
 
 Polystar roundness is built from the relation the format
 itself fixes — a polygon at 100% outer roundness is the circumscribed circle — which pins the tangent
@@ -117,7 +121,7 @@ circle relation constrains it) this would diverge subtly. A real-asset compariso
 
 **Not covered — declared exclusions.** These were scoped out in the blessed charter rather than missed:
 expressions (`x`, never executed); text animators and animated text documents; effect layers (`ef`);
-audio and camera layers; 3D layers, `position.z`, and skew axis (`sa`); track mattes (`tt`); blend modes
+audio and camera layers; 3D layers, `position.z`, and skew axis (`sa`); track mattes (`tt`, `td`, `tp`); blend modes
 with no Flight equivalent; arbitrary time remapping (`tm`); and the shape modifiers repeater (`rp`),
 merge-paths (`mm`), and rounded-corners (`rd`), plus animated trim and animated dash. Trim with `m: 2`
 (individually) is approximated as simultaneous.
@@ -161,7 +165,9 @@ the caller to realize through a `BlendEffect`.
 **Covered:** the structural elements `svg`, `g`, `a`, `switch` as an all-children container, `symbol`,
 `defs`, and `use` (recursion-guarded), with nested viewports and `viewBox` transforms; the geometry
 elements `path`, `rect`, `circle`,
-`ellipse`, `line`, `polygon`, and `polyline`; `text` with `tspan`; `image` through the injected
+`ellipse`, `line`, `polygon`, and `polyline`; `text` with `tspan`, including transparent `fill="none"`,
+subtree display/visibility suppression with descendant visibility override, and nested run opacity;
+`image` through the injected
 `resolveImageResource` seam, with intrinsic dimensions mapped through the image viewport's default
 `xMidYMid meet` or explicit `preserveAspectRatio`; linear and radial gradients including
 `objectBoundingBox` units and gradient-stop `currentColor`; hex, RGB/RGBA, HSL/HSLA, percentage alpha,
@@ -200,6 +206,13 @@ viewport was independently scaled to 5×10 even though the importer's existing v
 to `xMidYMid meet`. Image placement now reuses that rule: the default maps to scale 5 at `(10, 45)`,
 while explicit `preserveAspectRatio="none"` retains scale 5×10 at `(10, 20)`. A focused regression pins
 both outcomes.
+
+*Text paint and subtree appearance were dropped.* **Fixed.** `fill="none"` previously became opaque
+black at the text-format fallback. Hidden `tspan` text was still appended, `display="none"` descendants
+could escape their suppressed subtree, and nested non-inherited opacity did not reach the flattened
+text runs. The run collector now retains transparent paint, applies display and visibility with their
+different subtree semantics, and multiplies nested `tspan` opacity into range colour alpha while the
+root text opacity remains on the node exactly once.
 
 **Systematic silent gaps confirmed in the current source.** These are recorded rather than guessed across
 a semantic or runtime boundary:
