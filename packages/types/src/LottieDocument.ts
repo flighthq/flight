@@ -14,7 +14,7 @@ export interface LottieKeyframe<T> {
   e?: T;
   /** Hold keyframe: 1 means step interpolation. */
   h?: 0 | 1;
-  /** Incoming temporal Bezier handle. */
+  /** Temporal Bezier handle entering the next keyframe. */
   i?: LottieBezierHandle;
   /** Incoming spatial tangent for multidimensional motion paths. */
   ti?: number[];
