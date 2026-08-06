@@ -1,12 +1,40 @@
 ---
 package: '@flighthq/scene3d-wgpu'
-updated: 2026-08-05
-by: auditor
+updated: 2026-08-06
+by: builder2
 ---
 
 # scene-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-08-06 · builder2] — the fixed vertex buffer layout is one gap, not three
+
+`VERTEX_BUFFER_LAYOUTS` (`wgpuMeshPipeline.ts`) is a module constant: `arrayStride: 48` over
+position/normal/tangent/uv0. Consequence, **measured** rather than inferred — a stride-64 geometry
+carrying `color0` renders on this backend as a solid white triangle: every vertex past the first is read
+16 bytes early, so the positions are wrong too, and only the default tint reaches the fragment. So a
+color0-carrying mesh is not merely untinted per-vertex here; it is misread. `functional/scenes/
+material-vertex-color-interpolated.webgl.ts` covers the working WebGL side and is scoped away from this
+backend for that reason, with the absence declared in `scripts/support.ts` `DECLARED_GAPS`.
+
+The same missing capability is behind **three** separately-tracked items, and they retire together:
+
+- `color0` (this entry),
+- `uv1` — already suggestion 2 below, which prices it as "stride 48 → 56",
+- `joints0`/`weights0` — already shipped, but by **duplicating** the constant (`wgpuSkinPalette.ts`
+  carries its own `arrayStride: 80`) rather than deriving one. A third fixed layout sits in
+  `wgpuShadowMap.ts` (`arrayStride: 48`, position-only depth pass).
+
+The constant multiplies once per channel added. The single fix is to derive the buffer layout **and** the
+`getWgpuMeshPreludeWgsl` VertexInput from the geometry's own `VertexAttributeLayout`. Note the coupling
+that makes this more than a two-line change: `ensureWgpuScene3DPipeline` keys the pipeline cache on
+`family:format|defineKey|blend|skin` with **no vertex-layout component**, so a derived layout must add a
+layout token to that key or the first geometry's stride is baked into a pipeline the next geometry reuses.
+A second constraint is structural: WebGPU has no equivalent of `gl.vertexAttrib4f`, which is how the GL
+path defaults a missing `color0` to opaque white, so "geometry without color0" has to be a compiled
+variant (a `vertexColor` flag on `WgpuUnlitDefineKey`, which `GlUnlitDefineKey` already carries) rather
+than a runtime default.
 
 ## [2026-08-05 · auditor] — post-review continuity reconciliation
 
