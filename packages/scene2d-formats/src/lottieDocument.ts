@@ -22,6 +22,7 @@ import {
   createPath,
   dashPath,
   getPathLength,
+  reversePath,
 } from '@flighthq/path/contract';
 import { applyAnimationClipToNode2D, createSprite, createDisplayObject } from '@flighthq/scene2d/contract';
 import {
@@ -183,6 +184,7 @@ type LottiePaint =
       type: 'gf' | 'gs';
       values: number[];
       width: number;
+      winding: 'evenOdd' | 'nonZero';
     };
 
 type LottieGradientPaint = Extract<LottiePaint, { kind: 'gradient' }>;
@@ -216,10 +218,15 @@ function appendLottieLayers(
 
 function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImportContext): DisplayObject {
   const container = createDisplayObject({ name: layer.nm ?? null });
-  applyLottieTransform(container, layer.ks, context);
+  const hidden = layer.hd === true;
+  // A hidden layer still contributes its spatial transform when another layer parents to it. Its
+  // opacity, visibility window, paint, and masks affect only its own content, so none may leak onto
+  // the referencing child through Flight's hierarchy.
+  applyLottieTransform(container, layer.ks, context, !hidden);
+  reportLottieExpression(layer.ks, context);
+  if (hidden) return container;
   applyLottieLayerVisibility(container, layer, context);
   applyLottieBlendMode(container, layer, context);
-  reportLottieExpression(layer.ks, context);
 
   if (layer.ty === 0) appendLottiePrecomposition(container, layer, context);
   else if (layer.ty === 1) appendLottieSolid(container, layer);
@@ -242,6 +249,7 @@ function applyLottieTransform(
   target: Node2D,
   transform: Readonly<LottieTransform> | undefined,
   context: LottieImportContext,
+  includeOpacity = true,
 ): void {
   if (transform === undefined) return;
   if (isSeparatedPosition(transform.p)) {
@@ -256,7 +264,7 @@ function applyLottieTransform(
   // pass through unconverted. The radians live below the seam, where nodeTransform2d applies
   // DEG_TO_RAD.
   applyScalarProperty(target, transform.r ?? transform.rz, 'Rotation', (value) => value, context);
-  applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
+  if (includeOpacity) applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
   if (transform.sk !== undefined) {
     applyScalarProperty(target, transform.sk, 'SkewX', (value) => value, context);
   }
@@ -545,6 +553,9 @@ function appendLottieShapeItems(
       const color = numericValue(initialLottieValue(stroke.c), 3);
       const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
       const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
+      const miterLimit = [
+        stroke.ml2 === undefined ? (stroke.ml ?? 4) : numericValue(initialLottieValue(stroke.ml2), 1)[0],
+      ];
       const dashEntries = stroke.d ?? [];
       const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
       const dash = hasAnimatedDash
@@ -565,7 +576,7 @@ function appendLottieShapeItems(
         dashOffset,
         joints: mapLottieLineJoin(stroke.lj),
         kind: 'stroke' as const,
-        miterLimit: stroke.ml ?? 4,
+        miterLimit: miterLimit[0],
         opacity: opacity[0],
         width: width[0],
       };
@@ -591,6 +602,18 @@ function appendLottieShapeItems(
         },
         context,
       );
+      if (stroke.ml2 !== undefined) {
+        bindMutableNumericProperty(
+          stroke.ml2,
+          miterLimit,
+          (value) => value,
+          () => {
+            paint.miterLimit = miterLimit[0];
+            rerender();
+          },
+          context,
+        );
+      }
     } else if (item.ty === 'gf' || item.ty === 'gs') {
       const gradient = item as Readonly<LottieGradientShapeItem>;
       const initialGradient = initialLottieValue(gradient.g.k);
@@ -602,6 +625,9 @@ function appendLottieShapeItems(
       const end = numericValue(initialLottieValue(gradient.e), 2);
       const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
       const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
+      const miterLimit = [
+        gradient.ml2 === undefined ? (gradient.ml ?? 4) : numericValue(initialLottieValue(gradient.ml2), 1)[0],
+      ];
       const dashEntries = gradient.d ?? [];
       const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
       const dash = hasAnimatedDash
@@ -623,13 +649,14 @@ function appendLottieShapeItems(
         end,
         joints: mapLottieLineJoin(gradient.lj),
         kind: 'gradient' as const,
-        miterLimit: gradient.ml ?? 4,
+        miterLimit: miterLimit[0],
         opacity: opacity[0] / 100,
         shape: gradient.t,
         start,
         type: gradient.ty,
         values,
         width: width[0],
+        winding: gradient.r === 2 ? ('evenOdd' as const) : ('nonZero' as const),
       };
       state.paints.push(paint);
       bindMutableNumericProperty(gradient.g.k, values, (value) => value, rerender, context);
@@ -659,6 +686,18 @@ function appendLottieShapeItems(
           context,
         );
       }
+      if (gradient.ml2 !== undefined) {
+        bindMutableNumericProperty(
+          gradient.ml2,
+          miterLimit,
+          (value) => value,
+          () => {
+            paint.miterLimit = miterLimit[0];
+            rerender();
+          },
+          context,
+        );
+      }
     } else if (item.ty === 'tm') {
       const trim = item as Readonly<LottieTrimPathShapeItem>;
       if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) {
@@ -682,7 +721,7 @@ function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null
     const shapePath = item as Readonly<LottieShapePathItem>;
     const value = toLottieShapePath(initialLottieValue(shapePath.ks));
     if (value === undefined) return null;
-    return createLottieBezierPath(value);
+    return applyLottieShapeDirection(createLottieBezierPath(value), shapePath.d);
   }
   const path = createPath();
   if (item.ty === 'rc') {
@@ -695,14 +734,14 @@ function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null
     } else {
       appendPathRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1]);
     }
-    return path;
+    return applyLottieShapeDirection(path, rectangle.d);
   }
   if (item.ty === 'el') {
     const ellipse = item as Readonly<LottieEllipseShapeItem>;
     const position = numericValue(initialLottieValue(ellipse.p), 2);
     const size = numericValue(initialLottieValue(ellipse.s), 2);
     appendPathEllipse(path, position[0], position[1], size[0] / 2, size[1] / 2);
-    return path;
+    return applyLottieShapeDirection(path, ellipse.d);
   }
   if (item.ty === 'sr') {
     const polystar = item as Readonly<LottiePolystarShapeItem>;
@@ -714,15 +753,9 @@ function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null
     const outerRoundness = polystar.os === undefined ? 0 : numericValue(initialLottieValue(polystar.os), 1)[0];
     const innerRoundness =
       polystar.sy === 1 && polystar.is !== undefined ? numericValue(initialLottieValue(polystar.is), 1)[0] : 0;
-    return createLottiePolystarPath(
-      polystar.sy,
-      center,
-      points,
-      outer,
-      inner,
-      rotation,
-      outerRoundness,
-      innerRoundness,
+    return applyLottieShapeDirection(
+      createLottiePolystarPath(polystar.sy, center, points, outer, inner, rotation, outerRoundness, innerRoundness),
+      polystar.d,
     );
   }
   return null;
@@ -796,7 +829,7 @@ function bindLottieGeometryItem(
   context: LottieImportContext,
 ): void {
   const rebuild = (path: Path): void => {
-    state.paths[pathIndex] = path;
+    state.paths[pathIndex] = applyLottieShapeDirection(path, (item as Readonly<{ d?: 1 | 3 }>).d);
     rerender();
   };
   if (item.ty === 'sh') {
@@ -1065,7 +1098,7 @@ function renderLottieShapeState(state: LottieShapeState): void {
       appendLottieShapePaths(state, null, paint.dash, paint.dashOffset);
     } else if (paint.type === 'gf') {
       appendLottieGradientFill(state.shape, paint);
-      appendLottieShapePaths(state, null);
+      appendLottieShapePaths(state, paint.winding);
       appendShapeEndFill(state.shape);
     } else {
       appendLottieGradientStroke(state.shape, paint);
@@ -1113,6 +1146,13 @@ function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): v
     gradient.ratios,
     createLottieGradientMatrix(paint.start, paint.end),
   );
+}
+
+function applyLottieShapeDirection(path: Path, direction: 1 | 3 | undefined): Path {
+  if (direction !== 3) return path;
+  const reversed = createPath(path.winding);
+  reversePath(path, reversed);
+  return reversed;
 }
 
 function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[], context: LottieImportContext): void {

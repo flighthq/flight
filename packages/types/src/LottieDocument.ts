@@ -100,12 +100,16 @@ export interface LottieShapeGroup extends LottieShapeItemBase {
 }
 
 export interface LottieShapePathItem extends LottieShapeItemBase {
+  /** Drawing direction: 1 = normal, 3 = reversed. */
+  d?: 1 | 3;
   ind?: number;
   ks: LottieAnimatable<LottieShapePath>;
   ty: 'sh';
 }
 
 export interface LottieRectangleShapeItem extends LottieShapeItemBase {
+  /** Drawing direction: 1 = normal, 3 = reversed. */
+  d?: 1 | 3;
   /** Position. */
   p: LottieAnimatable<number[]>;
   /** Corner radius. */
@@ -116,12 +120,16 @@ export interface LottieRectangleShapeItem extends LottieShapeItemBase {
 }
 
 export interface LottieEllipseShapeItem extends LottieShapeItemBase {
+  /** Drawing direction: 1 = normal, 3 = reversed. */
+  d?: 1 | 3;
   p: LottieAnimatable<number[]>;
   s: LottieAnimatable<number[]>;
   ty: 'el';
 }
 
 export interface LottiePolystarShapeItem extends LottieShapeItemBase {
+  /** Drawing direction: 1 = normal, 3 = reversed. */
+  d?: 1 | 3;
   /** Inner radius and roundness for stars. */
   ir?: LottieAnimatable<number>;
   is?: LottieAnimatable<number>;
@@ -138,6 +146,8 @@ export interface LottiePolystarShapeItem extends LottieShapeItemBase {
 }
 
 export interface LottieFillShapeItem extends LottieShapeItemBase {
+  /** Shape-style blend mode. */
+  bm?: number;
   /** RGB components in normalized authoring space. */
   c: LottieAnimatable<number[]>;
   /** Fill rule: 1 = non-zero, 2 = even-odd. */
@@ -155,6 +165,8 @@ export interface LottieDashEntry {
 }
 
 export interface LottieStrokeShapeItem extends LottieShapeItemBase {
+  /** Shape-style blend mode. */
+  bm?: number;
   c: LottieAnimatable<number[]>;
   d?: LottieDashEntry[];
   /** Line cap: 1 = butt, 2 = round, 3 = square. */
@@ -162,6 +174,8 @@ export interface LottieStrokeShapeItem extends LottieShapeItemBase {
   /** Line join: 1 = miter, 2 = round, 3 = bevel. */
   lj?: 1 | 2 | 3;
   ml?: number;
+  /** Animatable alternative to `ml`. */
+  ml2?: LottieAnimatable<number>;
   o: LottieAnimatable<number>;
   ty: 'st';
   w: LottieAnimatable<number>;
@@ -175,6 +189,8 @@ export interface LottieGradient {
 }
 
 export interface LottieGradientShapeItem extends LottieShapeItemBase {
+  /** Shape-style blend mode. */
+  bm?: number;
   d?: LottieDashEntry[];
   /** End point. */
   e: LottieAnimatable<number[]>;
@@ -188,7 +204,11 @@ export interface LottieGradientShapeItem extends LottieShapeItemBase {
   lj?: 1 | 2 | 3;
   /** Miter limit. Gradient strokes only. */
   ml?: number;
+  /** Animatable alternative to `ml`. Gradient strokes only. */
+  ml2?: LottieAnimatable<number>;
   o?: LottieAnimatable<number>;
+  /** Fill rule for gradient fills: 1 = non-zero, 2 = even-odd. */
+  r?: 1 | 2;
   /** Gradient kind: 1 = linear, 2 = radial. */
   t: 1 | 2;
   /** Start point. */
@@ -304,11 +324,15 @@ export interface LottieEffect {
 }
 
 export interface LottieLayer {
+  /** Auto-orient the layer to its animated position path. */
+  ao?: 0 | 1;
   /** Blend-mode code. */
   bm?: number;
   /** 3D layer flag. */
   ddd?: 0 | 1;
   ef?: LottieEffect[];
+  /** Hidden layers retain their transform for parenting but do not render their own content. */
+  hd?: boolean;
   /** Stable layer index and optional parent index. */
   ind?: number;
   parent?: number;
@@ -331,6 +355,8 @@ export interface LottieLayer {
   /** Track-matte mode and matte-source marker. */
   tt?: number;
   td?: number;
+  /** Explicit matte-layer index used by newer exporters. */
+  tp?: number;
   /** Layer type: precomp, solid, image, null, shape, text, audio, camera, and exporter extensions. */
   ty: number;
   /** Time-remapping property. */
