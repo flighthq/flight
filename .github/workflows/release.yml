@@ -3,8 +3,8 @@ name: Release
 # On a version tag: publishes the whole @flighthq/* package graph to npm, then builds the examples
 # site at that tag (source == published at the release commit, so it faithfully demonstrates the
 # published SDK) and attaches it as a GitHub release asset the site repo serves at flighthq.ai/examples.
-# On `develop`, run `npm run version:packages <version>`, commit, and push; wait for green CI so
-# Promote advances `main` to that commit. Tag that promoted commit and push only the tag.
+# On `develop`, run `npm run version:packages <version>`, commit, and push; wait for green CI.
+# Tag that tested commit and push only the tag. `main` remains machine-managed by Promote.
 on:
   push:
     # Bare numeric version tags (no "v" prefix), e.g. 0.1.0. The release asset is named after the tag.
@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read # verify tests.yml passed for the exact tagged commit
   contents: write # create the GitHub release + upload the examples asset
   id-token: write # npm provenance
 
@@ -36,6 +37,32 @@ jobs:
             echo "::error::release workflow publishes from a version tag; got ${GITHUB_REF_TYPE} ref ${GITHUB_REF_NAME}"
             exit 1
           fi
+      # Release deliberately verifies the tagged commit's CI directly rather than requiring Promote
+      # to have adopted it as `main`: a newer green commit can legitimately advance main past this one.
+      # Exact head_sha lookup also keeps an intentionally old tag from falling outside a recent-run window.
+      - name: Verify tagged commit passed CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          ci_result=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${GITHUB_SHA}" \
+            --jq '[.total_count, ([.workflow_runs[] | select(.conclusion == "success")] | length), ([.workflow_runs[] | (.conclusion // .status)] | join(", "))] | .[]')
+          mapfile -t ci_fields <<<"${ci_result}"
+          run_count=${ci_fields[0]:-0}
+          success_count=${ci_fields[1]:-0}
+          run_states=${ci_fields[2]:-unknown}
+
+          if (( run_count == 0 )); then
+            echo "::error::no tests.yml run exists for tagged commit ${GITHUB_SHA}; push it to develop and wait for CI before releasing."
+            exit 1
+          fi
+          if (( success_count == 0 )); then
+            echo "::error::tests.yml ran for tagged commit ${GITHUB_SHA} but no run succeeded (states: ${run_states}); fix the build before releasing."
+            exit 1
+          fi
+          echo "tests.yml has a successful run for tagged commit ${GITHUB_SHA}."
       - name: Verify release tag matches package version
         run: |
           node --input-type=module <<'NODE'
