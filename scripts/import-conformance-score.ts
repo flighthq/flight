@@ -7,6 +7,11 @@ export interface ImportConformanceOutcomeCounts {
 
 export interface ImportConformanceMeasuredCapability {
   id: string;
+  /**
+   * Stable ids from the committed capability-to-fire-test mapping. The producer must emit UNKNOWN unless
+   * every proof required by that mapping exists and its firing test is part of the verified test suite.
+   */
+  instrumentationProofs: [string, ...string[]];
   outcomes: ImportConformanceOutcomeCounts;
   result: 'fail' | 'pass';
   state: 'measured';
@@ -232,8 +237,12 @@ function parseCapability(value: unknown, path: string): ImportConformanceCapabil
     };
   }
   if (state === 'measured') {
-    expectKeys(capability, ['id', 'outcomes', 'result', 'state', 'witnesses'], path);
+    expectKeys(capability, ['id', 'instrumentationProofs', 'outcomes', 'result', 'state', 'witnesses'], path);
     const witnesses = expectInteger(capability.witnesses, `${path}.witnesses`, 1);
+    const instrumentationProofs = parseInstrumentationProofs(
+      capability.instrumentationProofs,
+      `${path}.instrumentationProofs`,
+    );
     const result = parseCapabilityResult(capability.result, `${path}.result`);
     const outcomes = parseOutcomes(capability.outcomes, `${path}.outcomes`);
     const defects = outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong;
@@ -243,7 +252,7 @@ function parseCapability(value: unknown, path: string): ImportConformanceCapabil
     if (result === 'fail' && defects === 0) {
       fail(`${path}.result`, "cannot be 'fail' without a defect outcome");
     }
-    return { id, outcomes, result, state, witnesses };
+    return { id, instrumentationProofs, outcomes, result, state, witnesses };
   }
   if (state === 'not-run') {
     expectKeys(capability, ['completedWitnesses', 'expectedWitnesses', 'id', 'reason', 'state'], path);
@@ -272,6 +281,13 @@ function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCo
     threw: expectInteger(outcomes.threw, `${path}.threw`, 0),
     unsupportedClean: expectInteger(outcomes.unsupportedClean, `${path}.unsupportedClean`, 0),
   };
+}
+
+function parseInstrumentationProofs(value: unknown, path: string): [string, ...string[]] {
+  if (!Array.isArray(value) || value.length === 0) fail(path, 'must be a non-empty array');
+  const proofs = value.map((proof, index) => expectNonemptyString(proof, `${path}[${index}]`));
+  expectSortedUnique(proofs, path, 'instrumentation proof id');
+  return proofs as [string, ...string[]];
 }
 
 function parseSharding(value: unknown, path: string): ImportConformanceSharding {

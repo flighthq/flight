@@ -325,6 +325,15 @@ function compareCapabilities(
       );
       continue;
     }
+    if (!sameKeys(baselineCapability.instrumentationProofs, currentCapability.instrumentationProofs)) {
+      findings.push(
+        finding(
+          'instrumentation-proof-changed',
+          `firing-test proofs changed from [${baselineCapability.instrumentationProofs.join(', ')}] to [${currentCapability.instrumentationProofs.join(', ')}]`,
+          baselineCapability.id,
+        ),
+      );
+    }
     if (baselineCapability.result === 'pass' && currentCapability.result === 'fail') {
       findings.push(finding('capability-regressed', 'changed from passing to failing', baselineCapability.id));
     }
