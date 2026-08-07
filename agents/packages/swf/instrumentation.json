@@ -9,9 +9,11 @@
         "reports a non-MP3 sound stream, whose blocks do not concatenate"
       ],
       "id": "swf.axis.sound-format-non-mp3",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about an MP3 stream, whose blocks do concatenate"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -22,9 +24,11 @@
         "reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread"
       ],
       "id": "swf.bitmap.define-bits-jpeg-3",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -35,9 +39,11 @@
         "reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3"
       ],
       "id": "swf.bitmap.define-bits-jpeg-4",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -49,9 +55,11 @@
         "reports a legacy split JPEG with no tables in the file as a Drop"
       ],
       "id": "swf.bitmap.define-bits-jpeg-tables",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -63,10 +71,18 @@
         "reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2"
       ],
       "id": "swf.font.define-font",
+      "lossFamily": "F10 font character id reused",
       "staysSilent": [
         "stays silent about a font whose character id is used once, so the entry carries information",
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-d49e3e033dc7ea00",
+        "auditedAt": "2026-08-07T11:36:15-07:00",
+        "auditor": "builder2",
+        "family": "F10 font character id reused",
+        "subjectHash": "git-tree:ce025e140304a629778340e1a85c9317f22c44fe"
+      }
     },
     {
       "audits": [
@@ -79,9 +95,17 @@
         "reports one glyph whose outline does not decode, which costs that glyph and not the font"
       ],
       "id": "swf.font.define-font-2",
+      "lossFamily": "F10 font character id reused",
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-20102afd65f46d8d",
+        "auditedAt": "2026-08-07T09:27:31-07:00",
+        "auditor": "builder2",
+        "family": "F10 font character id reused",
+        "subjectHash": "git-tree:2ebe7cf3e9d426dc4ad7f73773be6b07cc3fd959"
+      }
     },
     {
       "audits": [
@@ -92,9 +116,17 @@
         "reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2"
       ],
       "id": "swf.font.define-font-3",
+      "lossFamily": "F10 font character id reused",
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-ab30604e2abb9c98",
+        "auditedAt": "2026-08-07T09:27:31-07:00",
+        "auditor": "builder2",
+        "family": "F10 font character id reused",
+        "subjectHash": "git-tree:2ebe7cf3e9d426dc4ad7f73773be6b07cc3fd959"
+      }
     },
     {
       "audits": [
@@ -105,9 +137,17 @@
         "reports a morph definition that does not decode, which otherwise leaves no trace at all"
       ],
       "id": "swf.morph.define-morph-shape",
+      "lossFamily": "F1 morph definition undecodable",
       "staysSilent": [
         "stays silent about a morph definition that decodes, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-44fba77b8ae31d5b",
+        "auditedAt": "2026-08-07T11:02:58-07:00",
+        "auditor": "builder2",
+        "family": "F1 morph definition undecodable",
+        "subjectHash": "git-tree:4c8d7b6b39594b44bec8793f148d38175625ec6c"
+      }
     },
     {
       "audits": [
@@ -117,9 +157,17 @@
         "reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on"
       ],
       "id": "swf.morph.define-morph-shape-2",
+      "lossFamily": "F1 morph definition undecodable",
       "staysSilent": [
         "stays silent when every path pair morphs, so the declined count carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-1f7f885ad467167e",
+        "auditedAt": "2026-08-07T12:04:56-07:00",
+        "auditor": "builder2",
+        "family": "F1 morph definition undecodable",
+        "subjectHash": "git-tree:8d82b4efe024ef622a60ce024ad7e11de2c5e498"
+      }
     },
     {
       "audits": [
@@ -131,10 +179,18 @@
         "reports an advanced blend that had no node to carry it, which the appearance report alone holds"
       ],
       "id": "swf.placement.blend-mode",
+      "lossFamily": "F4 blend mode behind an unfinished filter list",
       "staysSilent": [
         "stays silent when a declared blend mode is reachable, so the drop entry carries information",
         "stays silent when an advanced blend has a node to carry it, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-514320f84337e7eb",
+        "auditedAt": "2026-08-07T11:26:20-07:00",
+        "auditor": "builder2",
+        "family": "F4 blend mode behind an unfinished filter list",
+        "subjectHash": "git-tree:1ddbca5efbfb144d94ac1c13a990dfab298ea5c4"
+      }
     },
     {
       "audits": [
@@ -145,9 +201,11 @@
         "reports nested masks collapsing, since the outer one is not applied at all"
       ],
       "id": "swf.placement.clip-depth",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a frame script and a mask that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -159,10 +217,18 @@
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
       ],
       "id": "swf.placement.filter-list",
+      "lossFamily": "F8 appearance channel with no node",
       "staysSilent": [
         "reports a blur pass count it cannot represent, and stays silent at one pass",
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-c0b2cad573bae625",
+        "auditedAt": "2026-08-07T09:13:20-07:00",
+        "auditor": "builder2",
+        "family": "F8 appearance channel with no node",
+        "subjectHash": "git-tree:d05593ea3d8d998fd8ec73ec8b956b7139eaa98c"
+      }
     },
     {
       "audits": [
@@ -176,9 +242,17 @@
         "reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was"
       ],
       "id": "swf.script.do-abc",
+      "lossFamily": "F5 ABC blob yielding no frame scripts",
       "staysSilent": [
         "stays silent about a frame script it does obey, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-e009faf1062a7713",
+        "auditedAt": "2026-08-07T11:12:36-07:00",
+        "auditor": "builder2",
+        "family": "F5 ABC blob yielding no frame scripts",
+        "subjectHash": "git-tree:8ba2ca6fb6278edbd5e2d951d12122752fb1d1ac"
+      }
     },
     {
       "audits": [
@@ -189,9 +263,17 @@
         "names the anonymous DoABC form separately, since the two are different capabilities"
       ],
       "id": "swf.script.do-abc-anonymous",
+      "lossFamily": "F5 ABC blob yielding no frame scripts",
       "staysSilent": [
         "stays silent about an anonymous DoABC it does obey, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-69de79dd9aa246a3",
+        "auditedAt": "2026-08-07T11:12:36-07:00",
+        "auditor": "builder2",
+        "family": "F5 ABC blob yielding no frame scripts",
+        "subjectHash": "git-tree:8ba2ca6fb6278edbd5e2d951d12122752fb1d1ac"
+      }
     },
     {
       "audits": [
@@ -201,9 +283,11 @@
         "reports a frame script declined for carrying more than playback commands"
       ],
       "id": "swf.script.do-action",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a frame script and a mask that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -214,9 +298,17 @@
         "reports an init action declined the same way DoAction is, which it silently did not"
       ],
       "id": "swf.script.do-init-action",
+      "lossFamily": "F12 init action declined without a crumb",
       "staysSilent": [
         "stays silent about an init action it does obey, so the skip entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-93c916aaf2cf1717",
+        "auditedAt": "2026-08-07T11:57:55-07:00",
+        "auditor": "builder2",
+        "family": "F12 init action declined without a crumb",
+        "subjectHash": "git-tree:720c756de8359e7f2a16e2f67eca82003be43c05"
+      }
     },
     {
       "audits": [
@@ -227,9 +319,11 @@
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
       "id": "swf.shape.define-shape",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -240,9 +334,11 @@
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
       "id": "swf.shape.define-shape-2",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -253,9 +349,11 @@
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
       "id": "swf.shape.define-shape-3",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -266,9 +364,11 @@
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
       "id": "swf.shape.define-shape-4",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -280,10 +380,18 @@
         "reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied"
       ],
       "id": "swf.text.define-edit-text",
+      "lossFamily": "F3 edit text unparseable",
       "staysSilent": [
         "stays silent about an edit text body that parses, so the drop entry carries information",
         "stays silent when an edit text font id does resolve, so the unresolved entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-997cc1f5a768592b",
+        "auditedAt": "2026-08-07T11:08:46-07:00",
+        "auditor": "builder2",
+        "family": "F3 edit text unparseable",
+        "subjectHash": "git-tree:fa5f87cc6055e58f1936d1bbc646b9f2e1752180"
+      }
     },
     {
       "audits": [
@@ -294,9 +402,17 @@
         "reports a static text body that does not compose, which the deferred pass would otherwise swallow"
       ],
       "id": "swf.text.define-text",
+      "lossFamily": "F2 static text uncomposable",
       "staysSilent": [
         "stays silent about a static text body that composes, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-2c875d0d8ef236c3",
+        "auditedAt": "2026-08-07T11:05:55-07:00",
+        "auditor": "builder2",
+        "family": "F2 static text uncomposable",
+        "subjectHash": "git-tree:01e7ac7c2f43e9848d2be18e412adfb4b8f98426"
+      }
     },
     {
       "audits": [
@@ -307,9 +423,17 @@
         "reports an uncomposable body for DefineText2, not only the generation the wire was written on"
       ],
       "id": "swf.text.define-text-2",
+      "lossFamily": "F2 static text uncomposable",
       "staysSilent": [
         "stays silent about a DefineText2 body that composes, so the drop entry carries information"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-04b19e11e9b03b1c",
+        "auditedAt": "2026-08-07T12:04:56-07:00",
+        "auditor": "builder2",
+        "family": "F2 static text uncomposable",
+        "subjectHash": "git-tree:8d82b4efe024ef622a60ce024ad7e11de2c5e498"
+      }
     },
     {
       "audits": [
@@ -320,9 +444,11 @@
         "reports scene names as a Skip, since labels import and the named range has no subject"
       ],
       "id": "swf.timeline.define-scene-and-frame-label-data",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -333,9 +459,17 @@
         "counts the children a sprite bounds union could not include, since the box survives smaller"
       ],
       "id": "swf.timeline.define-sprite",
+      "lossFamily": "F7 sprite bounds union short",
       "staysSilent": [
         "stays silent when every child of a sprite contributes its bounds"
-      ]
+      ],
+      "lossPath": {
+        "auditId": "swf-loss-75a9982e73d5cf0c",
+        "auditedAt": "2026-08-07T11:29:21-07:00",
+        "auditor": "builder2",
+        "family": "F7 sprite bounds union short",
+        "subjectHash": "git-tree:8f03e49e6d09f2eb02ddb64f4f0da64bd573e9cb"
+      }
     },
     {
       "audits": [
@@ -346,9 +480,11 @@
         "reports a label naming a frame the timeline never reaches, and stays silent when it does"
       ],
       "id": "swf.timeline.frame-label",
+      "lossFamily": null,
       "staysSilent": [
         "reports a label naming a frame the timeline never reaches, and stays silent when it does"
-      ]
+      ],
+      "lossPath": null
     },
     {
       "audits": [
@@ -359,13 +495,16 @@
         "reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure"
       ],
       "id": "swf.video.video-frame",
+      "lossFamily": null,
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
-      ]
+      ],
+      "lossPath": null
     }
   ],
   "fireProven": 27,
   "payloadAudited": 27,
   "scopeAudited": 25,
+  "lossPathAudited": 14,
   "silenceProven": 27
 }
