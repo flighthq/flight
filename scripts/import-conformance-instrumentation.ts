@@ -15,18 +15,20 @@ export function parseImportConformanceInstrumentationMapping(
   value: unknown,
   definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
 ): ImportConformanceInstrumentationMapping {
+  const lossPathByCapability = new Map<string, ImportConformanceLossPath>(
+    definitions.map((definition) => [definition.id, { state: 'unaudited' }]),
+  );
   if (!isRecord(value) || !Array.isArray(value.capabilities)) {
     return {
-      lossPathByCapability: new Map(),
+      lossPathByCapability,
       problems: ['Instrumentation mapping root is invalid'],
       proofs: new Map(),
     };
   }
   const declared = new Set(definitions.map((definition) => definition.id));
   const problems: string[] = [];
-  const lossPathByCapability = parseLossPaths(value.lossPaths, definitions, problems);
   const proofs = new Map<string, ImportConformanceInstrumentationProofs>();
-  const duplicates = new Set<string>();
+  const seen = new Set<string>();
   let previousId = '';
 
   for (const candidate of value.capabilities) {
@@ -41,75 +43,56 @@ export function parseImportConformanceInstrumentationMapping(
       problems.push(`Instrumentation mapping names undeclared capability ${id}`);
       continue;
     }
-    if (proofs.has(id) || duplicates.has(id)) {
+    if (seen.has(id)) {
       proofs.delete(id);
-      duplicates.add(id);
+      lossPathByCapability.set(id, { state: 'unaudited' });
       problems.push(`Instrumentation mapping repeats capability ${id}`);
       continue;
     }
+    seen.add(id);
+    const audits = parseAudits(candidate.audits);
     const fires = parseProofs(candidate.fires);
     const staysSilent = parseProofs(candidate.staysSilent);
-    if (fires === null || staysSilent === null || (fires.length === 0 && staysSilent.length === 0)) {
+    if (audits === null || fires === null || staysSilent === null || (fires.length === 0 && staysSilent.length === 0)) {
       problems.push(`Instrumentation mapping for ${id} lacks a valid proof role`);
       continue;
     }
-    proofs.set(id, { fires, staysSilent });
+    proofs.set(id, { audits, fires, staysSilent });
+    const lossPath = parseLossPath(candidate.lossPath);
+    if (lossPath === null) {
+      problems.push(`Instrumentation mapping for ${id} lacks a valid singular loss-path declaration`);
+      continue;
+    }
+    lossPathByCapability.set(id, lossPath);
   }
-  invalidateMismatchedProofPopulation(value.fireReferenced, 'fire', proofs, problems);
-  invalidateMismatchedProofPopulation(value.silenceReferenced, 'silence', proofs, problems);
+  invalidateMismatchedProofPopulation(value.fireProven, 'fire', proofs, problems);
+  invalidateMismatchedProofPopulation(value.silenceProven, 'silence', proofs, problems);
   for (const id of proofs.keys()) {
     if (lossPathByCapability.get(id)?.state === 'identified') continue;
     problems.push(`Instrumentation proof for ${id} lacks an identified loss path`);
-    lossPathByCapability.delete(id);
+    proofs.delete(id);
   }
   return { lossPathByCapability, problems, proofs };
 }
 
-function parseLossPaths(
-  value: unknown,
-  definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
-  problems: string[],
-): Map<string, ImportConformanceLossPath> {
-  if (!Array.isArray(value)) {
-    problems.push('Instrumentation mapping lacks exhaustive loss-path declarations');
-    return new Map();
+function parseAudits(value: unknown): ('payload' | 'scope')[] | null {
+  if (!Array.isArray(value) || value.some((audit) => audit !== 'payload' && audit !== 'scope')) return null;
+  const audits = value as ('payload' | 'scope')[];
+  for (let index = 1; index < audits.length; index++) {
+    if (audits[index - 1]! >= audits[index]!) return null;
   }
-  const declared = new Set(definitions.map((definition) => definition.id));
-  const lossPaths = new Map<string, ImportConformanceLossPath>();
-  let invalid = false;
-  let previousId = '';
-  for (const candidate of value) {
-    if (
-      !isRecord(candidate) ||
-      typeof candidate.id !== 'string' ||
-      (candidate.state !== 'audited-none' && candidate.state !== 'identified' && candidate.state !== 'unaudited')
-    ) {
-      invalid = true;
-      continue;
-    }
-    if (candidate.id <= previousId || !declared.has(candidate.id)) invalid = true;
-    previousId = candidate.id;
-    if (candidate.state === 'unaudited') {
-      if (Object.keys(candidate).sort().join('\0') !== ['id', 'state'].join('\0')) invalid = true;
-      lossPaths.set(candidate.id, { state: 'unaudited' });
-      continue;
-    }
-    const audit = parseLossPathAudit(candidate.audit);
-    if (Object.keys(candidate).sort().join('\0') !== ['audit', 'id', 'state'].join('\0') || audit === null) {
-      invalid = true;
-      continue;
-    }
-    lossPaths.set(candidate.id, { audit, state: candidate.state });
+  return [...audits];
+}
+
+function parseLossPath(value: unknown): ImportConformanceLossPath | null {
+  if (!isRecord(value)) return null;
+  if (value.state === 'unaudited') {
+    return Object.keys(value).sort().join('\0') === 'state' ? { state: 'unaudited' } : null;
   }
-  if (
-    invalid ||
-    lossPaths.size !== definitions.length ||
-    definitions.some((definition) => !lossPaths.has(definition.id))
-  ) {
-    problems.push('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
-    return new Map();
-  }
-  return lossPaths;
+  if (value.state !== 'audited-none' && value.state !== 'identified') return null;
+  const audit = parseLossPathAudit(value.audit);
+  if (Object.keys(value).sort().join('\0') !== ['audit', 'state'].join('\0') || audit === null) return null;
+  return { audit, state: value.state };
 }
 
 function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | null {
@@ -165,11 +148,10 @@ function invalidateMismatchedProofPopulation(
   const key = role === 'fire' ? 'fires' : 'staysSilent';
   const actualCount = [...proofs.values()].filter((candidate) => candidate[key].length > 0).length;
   if (Number.isSafeInteger(declaredCount) && declaredCount === actualCount) return;
-  problems.push(`Instrumentation mapping ${role}-referenced count is stale`);
+  problems.push(`Instrumentation mapping ${role}-proven count is stale`);
   for (const [id, candidate] of proofs) {
     if (candidate[key].length === 0) continue;
-    const retained =
-      role === 'fire' ? { fires: [], staysSilent: candidate.staysSilent } : { fires: candidate.fires, staysSilent: [] };
+    const retained = role === 'fire' ? { ...candidate, fires: [] } : { ...candidate, staysSilent: [] };
     if (retained.fires.length === 0 && retained.staysSilent.length === 0) proofs.delete(id);
     else proofs.set(id, retained);
   }

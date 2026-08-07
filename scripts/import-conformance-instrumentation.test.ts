@@ -6,37 +6,37 @@ const DEFINITIONS = [
 ] as const;
 
 describe('parseImportConformanceInstrumentationMapping', () => {
-  it('retains independent fire and silence proof populations', () => {
+  it('left-joins sparse proof rows onto the frozen capability population', () => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
         capabilities: [
-          {
-            fires: ['packages/swf/src/swfDocument.test.ts#reports loss'],
-            id: 'swf.fill.solid',
-            staysSilent: [],
-          },
-          {
-            fires: [],
-            id: 'swf.text.define-text',
-            staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported input silent'],
-          },
+          row('swf.fill.solid', ['packages/swf/src/swfDocument.test.ts#reports loss'], []),
+          row('swf.text.define-text', [], ['packages/swf/src/swfDocument.test.ts#keeps supported input silent']),
         ],
-        fireReferenced: 1,
-        lossPaths: lossPaths(true, true),
-        silenceReferenced: 1,
+        fireProven: 1,
+        silenceProven: 1,
       },
       DEFINITIONS,
     );
+
     expect(mapping.problems).toEqual([]);
     expect([...mapping.lossPathByCapability]).toEqual([
-      ['swf.fill.solid', { audit: audit('swf.fill.solid'), state: 'identified' }],
-      ['swf.text.define-text', { audit: audit('swf.text.define-text'), state: 'identified' }],
+      ['swf.fill.solid', identifiedLossPath('swf.fill.solid')],
+      ['swf.text.define-text', identifiedLossPath('swf.text.define-text')],
     ]);
     expect([...mapping.proofs]).toEqual([
-      ['swf.fill.solid', { fires: ['packages/swf/src/swfDocument.test.ts#reports loss'], staysSilent: [] }],
+      [
+        'swf.fill.solid',
+        {
+          audits: ['payload', 'scope'],
+          fires: ['packages/swf/src/swfDocument.test.ts#reports loss'],
+          staysSilent: [],
+        },
+      ],
       [
         'swf.text.define-text',
         {
+          audits: ['payload', 'scope'],
           fires: [],
           staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported input silent'],
         },
@@ -44,17 +44,46 @@ describe('parseImportConformanceInstrumentationMapping', () => {
     ]);
   });
 
+  it('defaults frozen ids absent from sparse evidence to unaudited and unreferenced', () => {
+    const mapping = parseImportConformanceInstrumentationMapping(
+      { capabilities: [], fireProven: 0, silenceProven: 0 },
+      DEFINITIONS,
+    );
+
+    expect(mapping.problems).toEqual([]);
+    expect([...mapping.lossPathByCapability]).toEqual([
+      ['swf.fill.solid', { state: 'unaudited' }],
+      ['swf.text.define-text', { state: 'unaudited' }],
+    ]);
+    expect(mapping.proofs.size).toBe(0);
+  });
+
+  it('does not credit a proof whose owner audit identity is absent', () => {
+    const candidate = row('swf.fill.solid', ['test#fires'], []);
+    delete (candidate as { lossPath?: unknown }).lossPath;
+    const mapping = parseImportConformanceInstrumentationMapping(
+      { capabilities: [candidate], fireProven: 1, silenceProven: 0 },
+      DEFINITIONS,
+    );
+
+    expect(mapping.lossPathByCapability.get('swf.fill.solid')).toEqual({ state: 'unaudited' });
+    expect(mapping.proofs.has('swf.fill.solid')).toBe(false);
+    expect(mapping.problems).toContain(
+      'Instrumentation mapping for swf.fill.solid lacks a valid singular loss-path declaration',
+    );
+    expect(mapping.problems).toContain('Instrumentation proof for swf.fill.solid lacks an identified loss path');
+  });
+
   it.each([
     { fires: [], staysSilent: [] },
     { fires: ['z', 'a'], staysSilent: [] },
     { fires: [], staysSilent: [''] },
-  ])('leaves a capability UNKNOWN when its represented proof role is invalid', (row) => {
+  ])('leaves a capability unreferenced when its represented proof role is invalid', (proofs) => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
-        capabilities: [{ id: 'swf.fill.solid', ...row }],
-        fireReferenced: row.fires.length === 0 ? 0 : 1,
-        lossPaths: lossPaths(true, false),
-        silenceReferenced: row.staysSilent.length === 0 ? 0 : 1,
+        capabilities: [{ ...row('swf.fill.solid', [], []), ...proofs }],
+        fireProven: 0,
+        silenceProven: 0,
       },
       DEFINITIONS,
     );
@@ -65,39 +94,32 @@ describe('parseImportConformanceInstrumentationMapping', () => {
   it('invalidates only the proof population whose declared count is stale', () => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
-        capabilities: [
-          {
-            fires: ['test#fires'],
-            id: 'swf.fill.solid',
-            staysSilent: ['test#silent'],
-          },
-        ],
-        fireReferenced: 75,
-        lossPaths: lossPaths(true, false),
-        silenceReferenced: 1,
+        capabilities: [row('swf.fill.solid', ['test#fires'], ['test#silent'])],
+        fireProven: 75,
+        silenceProven: 1,
       },
       DEFINITIONS,
     );
-    expect(mapping.proofs.get('swf.fill.solid')).toEqual({ fires: [], staysSilent: ['test#silent'] });
-    expect(mapping.problems).toEqual(['Instrumentation mapping fire-referenced count is stale']);
+    expect(mapping.proofs.get('swf.fill.solid')).toEqual({
+      audits: ['payload', 'scope'],
+      fires: [],
+      staysSilent: ['test#silent'],
+    });
+    expect(mapping.problems).toEqual(['Instrumentation mapping fire-proven count is stale']);
   });
 
   it('removes duplicated and undeclared rows instead of manufacturing instrumentation', () => {
-    const row = {
-      fires: ['test#fires'],
-      id: 'swf.fill.solid',
-      staysSilent: [],
-    };
+    const candidate = row('swf.fill.solid', ['test#fires'], []);
     const mapping = parseImportConformanceInstrumentationMapping(
       {
-        capabilities: [row, row, { ...row, id: 'swf.unknown' }],
-        fireReferenced: 0,
-        lossPaths: lossPaths(true, false),
-        silenceReferenced: 0,
+        capabilities: [candidate, candidate, { ...candidate, id: 'swf.unknown' }],
+        fireProven: 0,
+        silenceProven: 0,
       },
       DEFINITIONS,
     );
     expect(mapping.proofs.size).toBe(0);
+    expect(mapping.lossPathByCapability.get('swf.fill.solid')).toEqual({ state: 'unaudited' });
     expect(mapping.problems).toEqual([
       'Instrumentation mapping capability ids are not sorted and unique',
       'Instrumentation mapping repeats capability swf.fill.solid',
@@ -105,87 +127,67 @@ describe('parseImportConformanceInstrumentationMapping', () => {
     ]);
   });
 
-  it('refuses to infer a loss-path state from a missing declaration', () => {
-    const mapping = parseImportConformanceInstrumentationMapping(
-      {
-        capabilities: [],
-        fireReferenced: 0,
-        lossPaths: [{ id: 'swf.fill.solid', state: 'unaudited' }],
-        silenceReferenced: 0,
-      },
-      DEFINITIONS,
-    );
-    expect(mapping.lossPathByCapability.size).toBe(0);
-    expect(mapping.problems).toContain('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
-  });
-
-  it('retains an explicit audited-none member without manufacturing a proof role', () => {
-    const mapping = parseImportConformanceInstrumentationMapping(
-      {
-        capabilities: [],
-        fireReferenced: 0,
-        lossPaths: [
-          { audit: audit('swf.fill.solid'), id: 'swf.fill.solid', state: 'audited-none' },
-          { id: 'swf.text.define-text', state: 'unaudited' },
-        ],
-        silenceReferenced: 0,
-      },
-      DEFINITIONS,
-    );
-    expect(mapping.problems).toEqual([]);
-    expect([...mapping.lossPathByCapability]).toEqual([
-      ['swf.fill.solid', { audit: audit('swf.fill.solid'), state: 'audited-none' }],
-      ['swf.text.define-text', { state: 'unaudited' }],
-    ]);
-    expect(mapping.proofs.size).toBe(0);
-  });
-
   it.each([
-    { id: 'swf.fill.solid', state: 'identified' },
-    { audit: audit('swf.fill.solid'), id: 'swf.fill.solid', state: 'unaudited' },
-    {
-      audit: { ...audit('swf.fill.solid'), auditedAt: '2026-08-07' },
-      id: 'swf.fill.solid',
-      state: 'audited-none',
-    },
-  ])('refuses an audited-population row whose audit membership can drift: $state', (fill) => {
+    { audit: audit('swf.fill.solid'), state: 'unaudited' },
+    { state: 'identified' },
+    { audit: { ...audit('swf.fill.solid'), auditedAt: '2026-08-07' }, state: 'identified' },
+  ])('refuses an invalid singular loss-path declaration: $state', (lossPath) => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
-        capabilities: [],
-        fireReferenced: 0,
-        lossPaths: [fill, { id: 'swf.text.define-text', state: 'unaudited' }],
-        silenceReferenced: 0,
+        capabilities: [{ ...row('swf.fill.solid', ['test#fires'], []), lossPath }],
+        fireProven: 1,
+        silenceProven: 0,
       },
       DEFINITIONS,
     );
-    expect(mapping.lossPathByCapability.size).toBe(0);
-    expect(mapping.problems).toContain('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
+    expect(mapping.lossPathByCapability.get('swf.fill.solid')).toEqual({ state: 'unaudited' });
+    expect(mapping.proofs.has('swf.fill.solid')).toBe(false);
+    expect(mapping.problems).toContain(
+      'Instrumentation mapping for swf.fill.solid lacks a valid singular loss-path declaration',
+    );
   });
 
-  it('rejects a proof that contradicts a loss-path declaration without an identified path', () => {
+  it('does not credit a proof that contradicts an audited-none loss-path declaration', () => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
-        capabilities: [{ fires: ['test#fires'], id: 'swf.fill.solid', staysSilent: [] }],
-        fireReferenced: 1,
-        lossPaths: lossPaths(false, false),
-        silenceReferenced: 0,
+        capabilities: [
+          {
+            ...row('swf.fill.solid', ['test#fires'], []),
+            lossPath: { audit: audit('swf.fill.solid'), state: 'audited-none' },
+          },
+        ],
+        fireProven: 1,
+        silenceProven: 0,
       },
       DEFINITIONS,
     );
-    expect(mapping.lossPathByCapability.has('swf.fill.solid')).toBe(false);
+    expect(mapping.lossPathByCapability.get('swf.fill.solid')).toEqual({
+      audit: audit('swf.fill.solid'),
+      state: 'audited-none',
+    });
+    expect(mapping.proofs.has('swf.fill.solid')).toBe(false);
     expect(mapping.problems).toContain('Instrumentation proof for swf.fill.solid lacks an identified loss path');
+  });
+
+  it('retains the frozen fallback population when the sparse artifact root is invalid', () => {
+    const mapping = parseImportConformanceInstrumentationMapping(null, DEFINITIONS);
+    expect([...mapping.lossPathByCapability.values()]).toEqual([{ state: 'unaudited' }, { state: 'unaudited' }]);
+    expect(mapping.problems).toEqual(['Instrumentation mapping root is invalid']);
   });
 });
 
-function lossPaths(fillIdentified: boolean, textIdentified: boolean) {
-  return [
-    fillIdentified
-      ? { audit: audit('swf.fill.solid'), id: 'swf.fill.solid', state: 'identified' }
-      : { id: 'swf.fill.solid', state: 'unaudited' },
-    textIdentified
-      ? { audit: audit('swf.text.define-text'), id: 'swf.text.define-text', state: 'identified' }
-      : { id: 'swf.text.define-text', state: 'unaudited' },
-  ];
+function row(id: string, fires: string[], staysSilent: string[]) {
+  return {
+    audits: ['payload', 'scope'],
+    fires,
+    id,
+    lossPath: identifiedLossPath(id),
+    staysSilent,
+  };
+}
+
+function identifiedLossPath(id: string) {
+  return { audit: audit(id), state: 'identified' };
 }
 
 function audit(id: string) {
