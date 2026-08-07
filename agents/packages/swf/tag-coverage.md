@@ -41,7 +41,7 @@ been reporting the dominant tag's count as the row's.
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
 | `DoInitAction` | A frame-1 script on the sprite it names, under the same recognition rule as `DoAction` | 11 |
-| `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
+| `DoABC` (AVM2), and its anonymous form | A frame script, by reading `addFrameScript` and the handler it names. Both the named tag and the earlier anonymous one carry an ABC block, and both are read the same way. | 187 / 1 |
 | `DefineScalingGrid` | A `Scale9Shape` when the sprite it names is a wrapper around one shape; see below | — |
 | `DefineSound` | An `AudioResourceReference` on the document, tagged with the format's media type | 2 |
 | `StartSound`, `StartSound2` | A `TimelineAudioCue` on the frame that carries it | — / — |
@@ -61,6 +61,7 @@ These are read past. Each is a decision, not an oversight.
 | `VideoFrame` | Codec packets, not browser-playable files. Stage A carries the stream character and its graph placement but deliberately creates no decoder or pixel source. | 1 |
 | `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 / — |
 | `Protect`, `SetTabIndex`, `DefineButtonCxform` | Authoring and player metadata with no scene content. | — |
+| `DefineFont4` | Its glyphs are embedded CFF/OpenType bytes rather than SWF edge records, so it is a *carried* font format the way `CWS` is a carried compression format — reading it needs a general font-format producer of `GlyphOutlineSource`, not more SWF decoding. Whether that is exposed opaquely or parsed elsewhere is an open charter direction. | — |
 | `DefineButtonSound` | **Unimplemented, and blocked on a design decision rather than on effort.** It attaches sounds to a button's *state transitions* — roll out, roll over, press, release. A button imports as a one-frame timeline of its up state, so there is no interaction state machine for those transitions to hang on, and a frame cue would be the wrong shape: these fire on pointer state, not on entering a frame. Carrying them needs an interaction-state concept this package cannot invent alone. | — |
 
 ## What a sound becomes
