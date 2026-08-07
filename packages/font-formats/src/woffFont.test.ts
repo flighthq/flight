@@ -51,6 +51,26 @@ describe('readWoffFont', () => {
     expect(tags).toEqual([...tags].sort((a, b) => a - b));
   });
 
+  it('starts every rebuilt table on a four-byte boundary', () => {
+    // The rebuilt sfnt is a public output, so it follows the alignment every real font is written
+    // with. Justified as a PRODUCER convention, not as a consumer requirement: a misaligned font was
+    // measured against fontconfig/FreeType and accepted, so the claim that a consumer rejects one is
+    // not supported and is deliberately not the reason recorded here.
+    //
+    // This reader indexes tables by explicit offset and length, so nothing else in the suite can
+    // notice if the padding stops — which is why the assertion is on the byte layout rather than on
+    // a round trip.
+    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont()), null)!;
+    const view = new DataView(rebuilt.buffer, rebuilt.byteOffset, rebuilt.byteLength);
+    const count = view.getUint16(4);
+    const lengths = Array.from({ length: count }, (_, index) => view.getUint32(12 + index * 16 + 12));
+    // A fixture whose tables all happened to be multiples of four would satisfy the alignment claim
+    // without any padding ever running, which is how the tag-order test above was once vacuous.
+    expect(lengths.some((length) => length % 4 !== 0)).toBe(true);
+    const offsets = Array.from({ length: count }, (_, index) => view.getUint32(12 + index * 16 + 8));
+    expect(offsets.filter((offset) => offset % 4 !== 0)).toEqual([]);
+  });
+
   it('reads a deflated table when a decompressor is registered', () => {
     registerDeflateDecompressor();
     // The synthetic wrapper stores tables uncompressed, so this proves the registered path is reached
