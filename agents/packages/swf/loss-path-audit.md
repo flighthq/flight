@@ -185,6 +185,26 @@ for a scope audit to check. **A scope audit can only audit existing claims; it c
 make none.** That is precisely why this loss-path audit is not redundant with it: **it is the only
 instrument that reaches a loss which never announces itself.**
 
+## A gap in the census itself, and why its self-check could not see it
+
+The declared enumeration had **no button capability**, while `readSwfButtonDefinition` ends in
+`state.sprites.set(buttonId, { frames: [placements], … })` — a button *is* retained content, and
+`MAX_BUTTON_RECORDS` truncates that retained list. `swf.button.define-button` and
+`swf.button.define-button-2` are now declared; the count moved from 80 to 82.
+
+**The census probe's self-check reports any capability the walk emitted that the explicit list forgot, and
+it could never have caught this.** No button `hit()` was ever added to the walk and no button entry to the
+list, so the two agree and the check is silent. **It detects list-versus-walk disagreement, not
+walk-versus-reality** — a capability absent from both is invisible to it by construction. Two artifacts by
+one author agreeing is not corroboration, and it removes the trigger to look further.
+
+What found it was comparing `capabilities.json` against [tag-coverage.md](tag-coverage.md) — **two
+artifacts with different provenance**, which had never been compared. That cross-check is cheap and found
+a real denominator gap on its first run. **Its own honest limit: it flagged four tags and two were false
+positives** (`DefineBitsLossless` is covered under labels naming pixel formats rather than the tag;
+`ShowFrame` is a frame boundary, not a capability). A one-in-two hit rate makes it a candidate detector,
+not a proof.
+
 ## Capabilities audited and found to have no loss path
 
 These are not gaps. A capability that cannot silently lose anything is correctly outside the
