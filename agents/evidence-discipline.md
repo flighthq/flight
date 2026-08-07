@@ -13,6 +13,14 @@ what upgrades or retires it. Until then, read them as findings with good instanc
 The instances are the valuable part. A rule without an instance is a slogan; these are holdable only
 because each one has concrete cases behind it.
 
+**This file must stay under 12,000 characters.** The number is derived from the job, not from the
+current size: five sections, each a law plus four or five instances of roughly a paragraph, plus this
+framing. **It is stated here before the file has been cut to fit it — at the time of writing the file
+is over — because a budget set after a tidying pass ratifies whatever that pass happened to produce.**
+A doc that grows by accretion never has a moment where anyone decides its size; this is that moment,
+taken deliberately and in advance. Enforcement joins `npm run docs:check` once the file is under, on
+the same principle as any other gate: **the number before the gate, never a check that arrives red.**
+
 **Everything below is a search instruction, not a test.** Each entry tells you where to look or what
 to read next; none of them tells you a claim is wrong. Used as verdicts they invert — the vividness
 tell would discredit whoever describes a genuinely severe finding accurately, and the fidelity axis
