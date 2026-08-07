@@ -17,6 +17,11 @@ export function classifyImportConformanceObservation(
     const capability = diagnostic.detail?.capability;
     if (typeof capability !== 'string') continue;
     if (!known.has(capability)) {
+      // An unreadable independent probe intentionally contributes no partial capability
+      // evidence. The importer can still reach and diagnose a tag before failing at a
+      // later byte, so retain that diagnostic in the fixture outcome without inventing
+      // a capability witness for it.
+      if (fixture.probeState === 'unreadable') continue;
       throw new Error(`Diagnostic for ${fixture.reference} names capability absent from its index: ${capability}`);
     }
     const existing = keyed.get(capability);
