@@ -52,7 +52,9 @@ describe('formatImportConformanceScore', () => {
     );
 
     expect(formatImportConformanceScore(score)).toContain(
-      'exercised-of-total: 1/2\n' +
+      'instrument-assurance: payload-validity=external-audit-required trigger-correctness=proof-reference-presence trigger-scope=external-audit-required trigger-specificity=proof-reference-presence\n' +
+        'swf-ruffle-fixtures 0.1.0 [full]\n' +
+        'exercised-of-total: 1/2\n' +
         'fire-proven-of-exercised: 1/1\n' +
         'pass-of-fire-proven: 1/1\n' +
         'silence-proven-of-exercised: 1/1\n' +

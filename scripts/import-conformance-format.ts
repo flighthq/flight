@@ -1,7 +1,10 @@
 import type { ImportConformanceScore } from './import-conformance-core';
 
 export function formatImportConformanceScore(score: Readonly<ImportConformanceScore>): string {
-  const lines: string[] = [];
+  const assurance = score.instrumentAssurance;
+  const lines = [
+    `instrument-assurance: payload-validity=${assurance.payloadValidity} trigger-correctness=${assurance.triggerCorrectness} trigger-scope=${assurance.triggerScope} trigger-specificity=${assurance.triggerSpecificity}`,
+  ];
   for (const pack of score.packs) {
     lines.push(`${pack.id} ${pack.release} [${pack.variant}]`);
     if (pack.state === 'not-run') {
