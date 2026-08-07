@@ -22,10 +22,16 @@ import { readCffIndex } from './cffIndex';
 
 // Returns the null sentinel for anything this package cannot read, INCLUDING a CID-keyed font. That is a
 // deliberate refusal rather than a gap: a CID font reaches its charstrings through an FDSelect/FDArray
-// indirection, so each glyph has its own private DICT and its own local subroutines. Reading it with the
-// single-private-DICT assumption below would not fail — it would silently use the wrong subroutine pool
-// for every glyph, which is exactly the plausible-garbage outcome the format's biasing rules already make
-// easy. Refusing is the honest answer until the indirection is implemented.
+// indirection this package does not implement, so each glyph has its own private DICT and its own local
+// subroutines, and the single-private-DICT read below is not reading what it assumes it is.
+//
+// WHAT THE REFUSAL IS **NOT** JUSTIFIED BY, since the first version of this comment claimed it: it is not
+// established that such a font would fail silently. Measured instead of predicted — with no local
+// subroutine pool, a charstring that calls one returns false, which is a VISIBLE failure rather than
+// plausible garbage. Whether a given CID font lands there depends on whether its top DICT happens to
+// carry a private entry at all, and that is not something this reader can know in advance.
+// ⇒ SO THE REASON TO REFUSE IS THAT THE OUTCOME IS UNPREDICTABLE PER FONT, NOT THAT IT IS KNOWN TO BE
+// SILENT. That is the narrower claim and the one the evidence supports.
 export function readCffTable(bytes: Readonly<Uint8Array>, directory: Readonly<SfntTableDirectory>): CffTable | null {
   const table = directory.tables.get('CFF ');
   if (table === undefined || table.length < 4) return null;
