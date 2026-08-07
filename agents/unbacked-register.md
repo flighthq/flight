@@ -125,6 +125,7 @@ what this entry exists to prevent.**
 | 4 | An evidence summary addressed to one builder, sent upward | Four paragraphs read before the reader established it was not about them | the reader |
 | 5 | A merge-strategy warning about one agent's instrument, copied to two more | **One line each: `NOT MINE`** | the readers, once each, cheaply |
 | 6 | A parcel addressed to one builder in the second person, copied upward | **A full read** before the reader established it was not theirs | the reader, at full cost |
+| 7 | A parcel addressed to one builder in the second person, copied upward | **A full read again**, by the same reader | the reader, at full cost |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
@@ -152,9 +153,17 @@ earlier and reported the lapse against themselves.
 
 ⇒ **The saving is conditional on a behaviour the protocol cannot enforce: stopping at the first
 sign.** **A `NOT MINE` that arrives after the reader has finished the parcel has already paid the cost
-it exists to avoid.** And the pull is strongest on the most careful readers, **because reading on to
-be sure is what care looks like** — so the protocol is likeliest to decay exactly where it is most
-relied on.
+it exists to avoid.**
+
+★ **And the cause of the two consecutive full reads is sharper than carelessness, and worse: THE
+PROTOCOL ASKS ABOUT ADDRESSING, AND THE READER WAS SUBSTITUTING RELEVANCE.** Both parcels contained
+something bearing on a ruling of theirs; they read on because it was relevant, **and it WAS relevant —
+and it still was not addressed to them, and the cost was identical.**
+⇒ **So the hard case is RELEVANT-BUT-NOT-ADDRESSED, which the protocol does not name.** A parcel with
+nothing in it for you is easy to drop; **a parcel with something for you addressed to someone else is
+where it fails — and that is most of them.** ⇒ **This is worse than "reading on to be sure is what
+care looks like", because relevance is a real signal rather than an anxiety**, so the pull cannot be
+dismissed as over-caution.
 
 **The lapse rate has not dropped across six instances.** Detection is cheaper than prevention was and
 **is not free**, and no third remedy is offered here: **this is the measurement, recorded because the
