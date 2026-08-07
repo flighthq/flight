@@ -17,6 +17,27 @@ Each is marked:
 *All instances are arc-local, from the SWF-import/conformance arc of 2026-08-07, and untested on any
 other work.*
 
+
+## Claim markers — what kind of claim, not how much the author liked it
+
+**Emphasis is a claim, and a uniform emphasis is a misaddressed one.** These mark the KIND, so a
+reader can tell strength apart without trusting the author's formatting:
+
+- **[MEASURED]** — the author ran it and read the output. Name what was run.
+- **[INFERENCE]** — reasoned from what the author holds. **Not falsifiable by anything scheduled.**
+- **[PREDICTION, falsifier: X]** — falsifiable by something **scheduled**, named up front. ⇒ **Distinct
+  from inference, and the distinction is what makes a later result mean anything**: a prediction
+  stated after the fact is unfalsifiable in practice, because the repair and the explanation arrive
+  together.
+- **[RELAYED-VERIFIED]** — carried from another author **and checked by the relayer**, who says how.
+- **[RELAYED-UNCHECKED]** — carried faithfully and **not** independently checked. ★ **This is the
+  normal, correct state for most relays, which is exactly why it needs a name rather than a silence** —
+  unnamed, it reads as verified, and two failures came of that: a stale figure propagated through a
+  relay, and a finding that detached from its author and read as the relayer's.
+- **[UNVERIFIED]** — the author's own claim that nothing has yet checked.
+
+**A relay is not weaker for being unchecked; it is weaker for not saying so.**
+
 ## Serving: evidence is about whatever produced it
 
 - **filed — The repo you can reach is not the repo the claim is about.** Say it in those words; **the
