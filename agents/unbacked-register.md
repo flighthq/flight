@@ -50,7 +50,14 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
 | 7 | `untested-instrument` | `d77b5c2fa` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree |
 
-**Row 7 carries no magnitudes, deliberately.** It first read *415 lines, 19 functions, 7 dependents*;
+**Where nothing recomputes, no number — and this file is the one place that rule inverts.** A claim
+column records *what a sender asserted*, so its figures are the evidence and must be kept verbatim
+with their provenance mark; stripping them would leave a register that cannot say what it registered.
+**The rule binds the register's own assertions, not the claims it quotes** — U2 carried a repo-wide
+guard count that nothing recomputed, and that figure is now a command. **Applying the rule to the
+quoted claims instead would be the over-compliance direction: an absence that looks like discipline.**
+
+**Row 7 carries no magnitudes, deliberately, and anticipated that rule without generalising it.** It first read *415 lines, 19 functions, 7 dependents*;
 a reader at the integrated tree reported *240, 13-of-which-3-exported, 5*; and the author then measured
 every commit that touched the file and found **both sets exactly right, at different commits.** Neither
 had mis-measured, and **nobody could disagree, because the row carried no tree identity for them to
@@ -125,7 +132,7 @@ deciding.**
 
 | # | Capability | Why it went unbuilt |
 |---|---|---|
-| U2 | Guard modules for `font-formats` — the caller-facing half of the diagnostics inversion rule | The rule is one sentence with two halves: guards for caller-facing warnings, `explain*` queries for silent sentinels. The second half was built deliberately and remembered; **there is no memory of considering the first.** The package ships zero guards where the repo has 87 across ~43 packages, so it is the established norm rather than a declined option — and a comment in the same package tells a caller the remedy is one line of registration, which the rule itself calls a missing guard. Which situations are caller misuse rather than bad data is a judgement the conventions doc governs, unread. |
+| U2 | Guard modules for `font-formats` — the caller-facing half of the diagnostics inversion rule | The rule is one sentence with two halves: guards for caller-facing warnings, `explain*` queries for silent sentinels. The second half was built deliberately and remembered; **there is no memory of considering the first.** The package ships zero guards — `grep -rlE "export function enable[A-Za-z0-9]*Guards" packages/font-formats/src/*.ts` — while the same command across `packages/*/src/*.ts` shows guards are the established norm rather than a declined option — and a comment in the same package tells a caller the remedy is one line of registration, which the rule itself calls a missing guard. Which situations are caller misuse rather than bad data is a judgement the conventions doc governs, unread. |
 | U1 | A durable real-font verification harness for `font-formats`, using the existing sha256-verified on-demand fetcher | *No vendored fixtures* had collapsed into *real-font verification is inherently throwaway*, so every corpus this session was scratchpad-only. **The author had built the permitted mechanism earlier in the same arc and then did not use it**, which removes every cheaper explanation. Wiring font packs into the conformance fixture system is phase-2 scope. |
 
 ## Skips inside the backed set
