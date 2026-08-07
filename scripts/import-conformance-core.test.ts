@@ -98,7 +98,7 @@ describe('createImportConformanceNotRunScore', () => {
 });
 
 describe('createImportConformanceScore', () => {
-  it('reports exercised over total, pass over exercised, and single-witness depth together', () => {
+  it('nests exercised, instrumented, pass, and single-witness populations', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
       index.fixtures.map((fixture) => fixture.reference),
@@ -109,21 +109,25 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
+      new Set(['swf.fill.solid']),
+      'measured',
       hash('importer'),
       PROVENANCE,
     );
 
     expect(score.packs[0]!.summary).toEqual({
-      exercisedCapabilities: 1,
-      passedCapabilities: 1,
-      singleWitnessCapabilities: 0,
       totalCapabilities: 2,
+      exercised: {
+        capabilities: 1,
+        instrumented: { capabilities: 1, passedCapabilities: 1 },
+        singleWitnessCapabilities: 0,
+      },
     });
     expect(score.packs[0]!.capabilities).toEqual([
       {
         id: 'swf.fill.solid',
         outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 1 },
-        passed: true,
+        result: 'pass',
         state: 'measured',
         witnesses: 2,
       },
@@ -142,10 +146,12 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], outcome), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Set(['swf.fill.solid']),
+      'measured',
       hash('importer'),
       PROVENANCE,
     );
-    expect(score.packs[0]!.capabilities[0]).toMatchObject({ passed: false, state: 'measured' });
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({ result: 'fail', state: 'measured' });
   });
 
   it('makes the whole pack NOT RUN without shrinking the denominator when one shard is missing', () => {
@@ -159,6 +165,8 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed')],
+      new Set(['swf.fill.solid']),
+      'measured',
       hash('importer'),
       PROVENANCE,
     );
@@ -186,10 +194,73 @@ describe('createImportConformanceScore', () => {
         plan,
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed')],
+        new Set(['swf.fill.solid']),
+        'measured',
         hash('importer'),
         PROVENANCE,
       ),
     ).toThrow(/does not match the exhaustive capability index/);
+  });
+
+  it('makes instrumentation-blind exercised capabilities explicit in the nested score', () => {
+    const index = makeIndex();
+    const plan = createImportConformanceShardPlan(
+      index.fixtures.map((fixture) => fixture.reference),
+      1,
+    );
+    const score = createImportConformanceScore(
+      index,
+      plan,
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Set(),
+      'measured',
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]).toMatchObject({
+      state: 'measured',
+      summary: {
+        totalCapabilities: 2,
+        exercised: {
+          capabilities: 1,
+          instrumented: { capabilities: 0, passedCapabilities: 0 },
+          singleWitnessCapabilities: 0,
+        },
+      },
+    });
+    expect(score.packs[0]!.capabilities[0]).toEqual({
+      id: 'swf.fill.solid',
+      reason: 'diagnostic-instrumentation-missing',
+      state: 'unknown',
+      witnesses: 2,
+    });
+    expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
+  });
+
+  it('can fail a fully executed score safe while UNKNOWN baseline policy is pending', () => {
+    const index = makeIndex();
+    const plan = createImportConformanceShardPlan(
+      index.fixtures.map((fixture) => fixture.reference),
+      1,
+    );
+    const score = createImportConformanceScore(
+      index,
+      plan,
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Set(),
+      'not-run',
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]).toMatchObject({
+      outcomes: null,
+      reason: 'instrumentation-incomplete',
+      state: 'not-run',
+      summary: null,
+    });
+    expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
   });
 });
 
@@ -244,5 +315,10 @@ function result(
   capabilities: string[],
   outcome: 'importedWrong' | 'passed' | 'silentlyWrong' | 'threw' | 'unsupportedClean',
 ) {
-  return { capabilities, outcome, reference, sourceHash: hash(reference) };
+  return {
+    capabilityOutcomes: capabilities.map((id) => ({ id, outcome })),
+    outcome,
+    reference,
+    sourceHash: hash(reference),
+  };
 }

@@ -48,7 +48,10 @@ export interface ImportConformanceProvenance {
 }
 
 export interface ImportConformanceResult {
-  capabilities: string[];
+  capabilityOutcomes: {
+    id: string;
+    outcome: keyof ImportConformanceOutcomeCounts | 'passed';
+  }[];
   outcome: keyof ImportConformanceOutcomeCounts | 'passed';
   reference: string;
   sourceHash: string;
@@ -75,7 +78,7 @@ export interface ImportConformanceScore {
 export interface ImportConformanceScoreCapabilityMeasured {
   id: string;
   outcomes: ImportConformanceOutcomeCounts;
-  passed: boolean;
+  result: 'fail' | 'pass';
   state: 'measured';
   witnesses: number;
 }
@@ -93,17 +96,25 @@ export interface ImportConformanceScoreCapabilityUnmeasured {
   state: 'unmeasured';
 }
 
+export interface ImportConformanceScoreCapabilityUnknown {
+  id: string;
+  reason: 'diagnostic-instrumentation-missing';
+  state: 'unknown';
+  witnesses: number;
+}
+
 export type ImportConformanceScoreCapability =
   | ImportConformanceScoreCapabilityMeasured
   | ImportConformanceScoreCapabilityNotRun
-  | ImportConformanceScoreCapabilityUnmeasured;
+  | ImportConformanceScoreCapabilityUnmeasured
+  | ImportConformanceScoreCapabilityUnknown;
 
 export interface ImportConformanceScorePack {
   capabilities: ImportConformanceScoreCapability[];
   id: string;
   importerSourceHash: string;
   outcomes: ImportConformanceOutcomeCounts | null;
-  reason?: 'missing-shard' | 'pack-unavailable';
+  reason?: 'instrumentation-incomplete' | 'missing-shard' | 'pack-unavailable';
   release: string;
   sharding: {
     algorithm: 'fixture-count-v1';
@@ -112,10 +123,15 @@ export interface ImportConformanceScorePack {
   } | null;
   state: 'measured' | 'not-run';
   summary: {
-    exercisedCapabilities: number;
-    passedCapabilities: number;
-    singleWitnessCapabilities: number;
     totalCapabilities: number;
+    exercised: {
+      capabilities: number;
+      instrumented: {
+        capabilities: number;
+        passedCapabilities: number;
+      };
+      singleWitnessCapabilities: number;
+    };
   } | null;
   variant: string;
 }
@@ -223,6 +239,8 @@ export function createImportConformanceScore(
   plan: Readonly<ImportConformanceShardPlan>,
   completedShardIds: ReadonlySet<number>,
   results: readonly Readonly<ImportConformanceResult>[],
+  trustworthySilenceCapabilityIds: ReadonlySet<string>,
+  unknownPolicy: 'measured' | 'not-run',
   importerSourceHash: string,
   provenance: Readonly<ImportConformanceProvenance>,
 ): ImportConformanceScore {
@@ -240,6 +258,15 @@ export function createImportConformanceScore(
   );
   const hasMissingShard = shards.some((shard) => shard.state === 'not-run');
   const shardByReference = new Map(plan.assignments.map((assignment) => [assignment.reference, assignment.shardId]));
+  for (const assignment of plan.assignments) {
+    const result = resultByReference.get(assignment.reference);
+    if (completedShardIds.has(assignment.shardId) && result === undefined) {
+      throw new Error(`Completed shard has no result for ${assignment.reference}`);
+    }
+    if (!completedShardIds.has(assignment.shardId) && result !== undefined) {
+      throw new Error(`Missing shard unexpectedly has a result for ${assignment.reference}`);
+    }
+  }
   const capabilities: ImportConformanceScoreCapability[] = [];
   for (const capability of index.capabilities) {
     if (capability.witnesses.length === 0) {
@@ -259,17 +286,27 @@ export function createImportConformanceScore(
       });
       continue;
     }
+    if (!trustworthySilenceCapabilityIds.has(capability.id)) {
+      capabilities.push({
+        id: capability.id,
+        reason: 'diagnostic-instrumentation-missing',
+        state: 'unknown',
+        witnesses: capability.witnesses.length,
+      });
+      continue;
+    }
 
     const outcomes = emptyOutcomeCounts();
     for (const reference of capability.witnesses) {
       const result = resultByReference.get(reference);
       if (result === undefined) throw new Error(`Completed shard has no result for ${reference}`);
-      if (result.outcome !== 'passed') outcomes[result.outcome]++;
+      const outcome = result.capabilityOutcomes.find((candidate) => candidate.id === capability.id)!.outcome;
+      if (outcome !== 'passed') outcomes[outcome]++;
     }
     capabilities.push({
       id: capability.id,
       outcomes,
-      passed: outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong === 0,
+      result: outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong === 0 ? 'pass' : 'fail',
       state: 'measured',
       witnesses: capability.witnesses.length,
     });
@@ -302,6 +339,24 @@ export function createImportConformanceScore(
   const measured = capabilities.filter(
     (capability): capability is ImportConformanceScoreCapabilityMeasured => capability.state === 'measured',
   );
+  const unknown = capabilities.filter(
+    (capability): capability is ImportConformanceScoreCapabilityUnknown => capability.state === 'unknown',
+  );
+  if (unknown.length > 0 && unknownPolicy === 'not-run') {
+    return {
+      packs: [
+        {
+          ...packBase,
+          outcomes: null,
+          reason: 'instrumentation-incomplete',
+          state: 'not-run',
+          summary: null,
+        },
+      ],
+      provenance: { ...provenance },
+      schemaVersion: 1,
+    };
+  }
   const outcomes = emptyOutcomeCounts();
   for (const result of results) {
     if (result.outcome !== 'passed') outcomes[result.outcome]++;
@@ -313,10 +368,17 @@ export function createImportConformanceScore(
         outcomes,
         state: 'measured',
         summary: {
-          exercisedCapabilities: measured.length,
-          passedCapabilities: measured.filter((capability) => capability.passed).length,
-          singleWitnessCapabilities: measured.filter((capability) => capability.witnesses === 1).length,
           totalCapabilities: capabilities.length,
+          exercised: {
+            capabilities: measured.length + unknown.length,
+            instrumented: {
+              capabilities: measured.length,
+              passedCapabilities: measured.filter((capability) => capability.result === 'pass').length,
+            },
+            singleWitnessCapabilities:
+              measured.filter((capability) => capability.witnesses === 1).length +
+              unknown.filter((capability) => capability.witnesses === 1).length,
+          },
         },
       },
     ],
@@ -416,7 +478,7 @@ function assertResultMatchesIndex(
   if (fixture === undefined) throw new Error(`Result names unknown fixture ${result.reference}`);
   if (fixture.sourceHash !== result.sourceHash) throw new Error(`Result source hash is stale for ${result.reference}`);
   const expected = fixture.capabilities.join('\0');
-  if ([...result.capabilities].sort().join('\0') !== expected) {
+  if (result.capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== expected) {
     throw new Error(`Result capability evidence is stale for ${result.reference}`);
   }
 }
