@@ -27,9 +27,96 @@ interface SwfInstrumentation {
 // silently degrading the mapping, which is the property that makes the artifact trustworthy.
 const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   {
+    fires: ['reports a non-MP3 sound stream, whose blocks do not concatenate'],
+    id: 'swf.axis.sound-format-non-mp3',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
+    id: 'swf.bitmap.define-bits-jpeg-3',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
+    id: 'swf.bitmap.define-bits-jpeg-4',
+    staysSilent: [],
+  },
+  {
+    fires: [
+      'reports a legacy split JPEG whose halves will not splice into a readable image',
+      'reports a legacy split JPEG with no tables in the file as a Drop',
+    ],
+    id: 'swf.bitmap.define-bits-jpeg-tables',
+    staysSilent: [],
+  },
+  {
+    fires: [
+      'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
+      'reports one glyph whose outline does not decode, which costs that glyph and not the font',
+    ],
+    id: 'swf.font.define-font',
+    staysSilent: [],
+  },
+  {
+    fires: [
+      'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
+      'reports one glyph whose outline does not decode, which costs that glyph and not the font',
+    ],
+    id: 'swf.font.define-font-2',
+    staysSilent: [],
+  },
+  {
+    fires: [
+      'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
+      'reports one glyph whose outline does not decode, which costs that glyph and not the font',
+    ],
+    id: 'swf.font.define-font-3',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
+    id: 'swf.placement.clip-depth',
+    staysSilent: [],
+  },
+  {
     fires: ['reports a gradient glow angle and distance it cannot represent, and stays silent without them'],
     id: 'swf.placement.filter-list',
     staysSilent: ['reports a gradient glow angle and distance it cannot represent, and stays silent without them'],
+  },
+  {
+    fires: ['reports a frame script declined for carrying more than playback commands'],
+    id: 'swf.script.do-action',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    id: 'swf.shape.define-shape',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    id: 'swf.shape.define-shape-2',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    id: 'swf.shape.define-shape-3',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    id: 'swf.shape.define-shape-4',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports scene names as a Skip, since labels import and the named range has no subject'],
+    id: 'swf.timeline.define-scene-and-frame-label-data',
+    staysSilent: [],
+  },
+  {
+    fires: ['reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure'],
+    id: 'swf.video.video-frame',
+    staysSilent: [],
   },
 ];
 
@@ -63,9 +150,9 @@ export function verifySwfInstrumentation(): string[] {
     if (seen.has(entry.id)) problems.push(`duplicate id: ${entry.id}`);
     seen.add(entry.id);
     if (!declared.has(entry.id)) problems.push(`not a declared capability: ${entry.id}`);
-    // Both roles are required, so an empty array is a malformed row rather than a partial one.
-    if (entry.fires.length === 0) problems.push(`no firing proof: ${entry.id}`);
-    if (entry.staysSilent.length === 0) problems.push(`no silence proof: ${entry.id}`);
+    // A row must carry at least one proven role; the two roles are counted as SEPARATE populations
+    // rather than collapsed, because a fire proof and a silence proof license different guarantees.
+    if (entry.fires.length === 0 && entry.staysSilent.length === 0) problems.push(`no proof at all: ${entry.id}`);
     for (const role of [entry.fires, entry.staysSilent]) {
       for (const proof of role) if (!tests.has(proof)) problems.push(`proof names no test: ${entry.id} — ${proof}`);
       const sorted = [...role].sort();
@@ -80,7 +167,18 @@ export function verifySwfInstrumentation(): string[] {
 }
 
 export function formatSwfInstrumentationJson(): string {
-  return `${JSON.stringify({ capabilities: INSTRUMENTATION, count: INSTRUMENTATION.length }, null, 2)}\n`;
+  // `count` is deliberately absent: there is no single count. A fire proof licenses "silence here means
+  // nothing was lost"; a silence proof licenses "a firing here means something really was lost". They
+  // underwrite different outcomes, so one number would have to pick one and hide the other.
+  return `${JSON.stringify(
+    {
+      capabilities: INSTRUMENTATION,
+      fireProven: INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length,
+      silenceProven: INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length,
+    },
+    null,
+    2,
+  )}\n`;
 }
 
 function main(): void {
@@ -104,12 +202,18 @@ function main(): void {
       process.exitCode = 1;
       return;
     }
-    console.log(`OK ${INSTRUMENTATION.length} SWF capabilities carry both a firing and a silence proof`);
+    console.log(
+      `OK ${INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length} fire-proven, ` +
+        `${INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length} silence-proven`,
+    );
     return;
   }
 
   writeFileSync(ARTIFACT_PATH, json);
-  console.log(`✓ wrote ${INSTRUMENTATION.length} fully-proven SWF capabilities`);
+  console.log(
+    `✓ wrote ${INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length} fire-proven, ` +
+      `${INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length} silence-proven`,
+  );
 }
 
 main();

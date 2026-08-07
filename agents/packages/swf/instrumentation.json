@@ -2,13 +2,123 @@
   "capabilities": [
     {
       "fires": [
+        "reports a non-MP3 sound stream, whose blocks do not concatenate"
+      ],
+      "id": "swf.axis.sound-format-non-mp3",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread"
+      ],
+      "id": "swf.bitmap.define-bits-jpeg-3",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread"
+      ],
+      "id": "swf.bitmap.define-bits-jpeg-4",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a legacy split JPEG whose halves will not splice into a readable image",
+        "reports a legacy split JPEG with no tables in the file as a Drop"
+      ],
+      "id": "swf.bitmap.define-bits-jpeg-tables",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a font whose glyph table does not decode, which costs the whole font not one glyph",
+        "reports one glyph whose outline does not decode, which costs that glyph and not the font"
+      ],
+      "id": "swf.font.define-font",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a font whose glyph table does not decode, which costs the whole font not one glyph",
+        "reports one glyph whose outline does not decode, which costs that glyph and not the font"
+      ],
+      "id": "swf.font.define-font-2",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a font whose glyph table does not decode, which costs the whole font not one glyph",
+        "reports one glyph whose outline does not decode, which costs that glyph and not the font"
+      ],
+      "id": "swf.font.define-font-3",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports nested masks collapsing, since the outer one is not applied at all"
+      ],
+      "id": "swf.placement.clip-depth",
+      "staysSilent": []
+    },
+    {
+      "fires": [
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
       ],
       "id": "swf.placement.filter-list",
       "staysSilent": [
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
       ]
+    },
+    {
+      "fires": [
+        "reports a frame script declined for carrying more than playback commands"
+      ],
+      "id": "swf.script.do-action",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
+      ],
+      "id": "swf.shape.define-shape",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
+      ],
+      "id": "swf.shape.define-shape-2",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
+      ],
+      "id": "swf.shape.define-shape-3",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
+      ],
+      "id": "swf.shape.define-shape-4",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports scene names as a Skip, since labels import and the named range has no subject"
+      ],
+      "id": "swf.timeline.define-scene-and-frame-label-data",
+      "staysSilent": []
+    },
+    {
+      "fires": [
+        "reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure"
+      ],
+      "id": "swf.video.video-frame",
+      "staysSilent": []
     }
   ],
-  "count": 1
+  "fireProven": 16,
+  "silenceProven": 1
 }
