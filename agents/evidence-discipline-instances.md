@@ -290,6 +290,24 @@ of, and the question that was actually asked.
 
 ## Serving: honest limit
 
+- **filed — A route is only a route if someone can walk it.** Figures were stamped historical on the
+  explicit justification that **a stale figure is safe only when the reader has a route back to a
+  current one** — and the routes themselves were never executed. One was walkable, because its
+  procedure was recorded inline as runnable snippets. **One was not: it pointed at a census tool that
+  lived in a gitignored directory and dies with the clone**, so four stamped figures referenced a
+  route nobody could take. ⇒ **A recompute route IS a falsifier, and the standing rule that a
+  falsifier table nobody executed is a caution with extra steps applies to it** — the author had run
+  all eight falsifiers in one file and **not one of the routes they wrote an hour earlier, in the same
+  session, for the same reason.**
+
+- **filed — Where a corpus cannot be committed, the INSTRUMENT is the only reproducible half.** The
+  licence rule forbids vendoring a corpus; **it says nothing about the tool that measures one.** Those
+  two collapsed into *probes are inherently throwaway*, **so the census tool was never considered for
+  committing and there was no decision to review** — the over-compliance shape, found by asking what
+  the rule permits rather than whether it was obeyed. ⇒ **The usual instinct is inverted here: it is
+  precisely because the corpus is unvendorable that its measuring tool carries all of the
+  reproducibility, and discarding the tool discards the only durable half.**
+
 - **filed — State what an instrument cannot see, beside what it checks.** A hand-maintained audit list
   makes *forgetting* to record an audit visible and cannot make a *false* audit claim visible.
 - **filed — A judgement recorded as a judgement can be overturned; a judgement made silently becomes a
