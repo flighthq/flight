@@ -166,9 +166,30 @@ where it fails — and that is most of them.** ⇒ **This is worse than "reading
 care looks like", because relevance is a real signal rather than an anxiety**, so the pull cannot be
 dismissed as over-caution.
 
-**The lapse rate has not dropped across six instances.** Detection is cheaper than prevention was and
-**is not free**, and no third remedy is offered here: **this is the measurement, recorded because the
-prediction that it might decay was made before it did.**
+**The lapse rate has not dropped across eight instances.** Detection is cheaper than prevention was
+and **is not free**, and no third remedy is offered here: **this is the measurement, recorded because
+the prediction that it might decay was made before it did.**
+
+## The mechanical cause, and the one completion that follows from it
+
+★★ **THE STOPPING POINT THE PROTOCOL NAMES DOES NOT EXIST IN THE INTERFACE.**
+`./agent.sh inbox show <parcel>` runs an unconditional `cat` of the note — **verified at source** —
+so there is no read-the-first-paragraph operation. ⇒ **The first sign and the whole parcel arrive in
+the same output, and the reader has already paid before they can act.**
+
+**That is not carelessness.** ⇒ **A protocol that names an action the interface cannot perform is
+INCOMPLETE, not weak, and no amount of care closes the gap.** It is why *stop at the first sign*
+failed three consecutive times in the person who ruled it.
+
+**THE COMPLETION, AND IT COSTS THE SENDER ONE LINE: PUT THE ADDRESSEE ON THE FIRST LINE.** It does
+not try to stop the misdirected send — **it makes the detection remedy executable by making a first
+sign exist.** Tested against instances 6, 7 and 8: **in all three the recipient was unambiguous from
+the content and unavailable from the position.**
+
+★ **And it is cheaper than one line: `./agent.sh inbox` already prints each parcel's FIRST LINE in
+the listing.** ⇒ **An addressee on line one is visible without opening the parcel at all**, so the
+cost of a misdirected parcel falls to **zero** rather than to one line. **The mechanism already
+existed; nobody was feeding it.**
 
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
