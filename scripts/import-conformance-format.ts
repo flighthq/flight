@@ -5,6 +5,7 @@ import type {
   ImportConformanceScorePackMeasured,
   ImportConformanceUnknownObservation,
 } from './import-conformance-core';
+import { IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL } from './import-conformance-score';
 
 export function formatImportConformanceScore(score: Readonly<ImportConformanceScore>): string {
   const assurance = score.instrumentAssurance;
@@ -23,6 +24,7 @@ export function formatImportConformanceScore(score: Readonly<ImportConformanceSc
     }
     const { exercised, instrumentAudited, proofReferenced } = pack.summary;
     lines.push(
+      ...formatFixtureOutcomes(pack),
       `importer-capability-evidence: ${formatExercisedDenominator(pack, oracle)}`,
       `configuration-limits: ${formatConfigurationLimits(pack)}`,
       `loss-path-audit: ${formatLossPathPopulation(pack)}`,
@@ -54,6 +56,29 @@ function formatExercisedDenominator(
 
 function formatCapabilityRowTally(count: number, members: string): string {
   return `capability-row tally ${count} ${members}`;
+}
+
+function formatFixtureOutcomes(pack: Readonly<ImportConformanceScorePackMeasured>): string[] {
+  const evidence = pack.fixtureOutcomes;
+  const populations = evidence.populations;
+  const unreadable = evidence.capabilityProbeUnreadable;
+  const unreadablePopulations = unreadable.outcomePopulations;
+  const diagnosticPopulations = unreadable.diagnosticExplanationPopulations;
+  const fixtureRows = unreadable.fixtures.map((fixture) => {
+    const diagnostics = fixture.diagnostics.map((diagnostic) => {
+      const detail = diagnostic.detail === undefined ? '' : ` detail=${JSON.stringify(diagnostic.detail)}`;
+      return `${diagnostic.kind}@${diagnostic.origin}:${diagnostic.severity}${detail}`;
+    });
+    return `${fixture.reference} {outcome=${fixture.outcome}; imported=${fixture.imported}; threw=${fixture.threw}; capability-outcome-count=${fixture.capabilityOutcomeCount}; diagnostics=[${diagnostics.join(', ')}]}`;
+  });
+  return [
+    `silently-wrong-fixtures: fixture-population tally ${evidence.silentlyWrongFixtures.length} [${evidence.silentlyWrongFixtures.join(', ')}]`,
+    `fixture-outcome-populations: passed fixture-population tally ${populations.passed}; imported wrong fixture-population tally ${populations.importedWrong}; silently wrong fixture-population tally ${populations.silentlyWrong}; unsupported clean fixture-population tally ${populations.unsupportedClean}; ${IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL} fixture-population tally ${populations.threw}`,
+    `fixture-outcome-definitions: passed=${evidence.definitions.passed}; importedWrong=${evidence.definitions.importedWrong}; silentlyWrong=${evidence.definitions.silentlyWrong}; unsupportedClean=${evidence.definitions.unsupportedClean}; threw=${evidence.definitions.threw}`,
+    `capability-probe-unreadable-outcomes: fixture-population tally ${unreadable.fixtures.length}; passed fixture-population tally ${unreadablePopulations.passed}; imported wrong fixture-population tally ${unreadablePopulations.importedWrong}; silently wrong fixture-population tally ${unreadablePopulations.silentlyWrong}; unsupported clean fixture-population tally ${unreadablePopulations.unsupportedClean}; ${IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL} fixture-population tally ${unreadablePopulations.threw}`,
+    `capability-probe-unreadable-diagnostic-explanations: document failure named fixture-population tally ${diagnosticPopulations.documentFailureNamed}; diagnostic present without document failure fixture-population tally ${diagnosticPopulations.presentWithoutDocumentFailure}; diagnostics absent fixture-population tally ${diagnosticPopulations.absent}`,
+    `capability-probe-unreadable-fixtures: [${fixtureRows.join('; ')}]`,
+  ];
 }
 
 function formatLaneResults(pack: Readonly<ImportConformanceScorePackMeasured>, lane: 'fire' | 'silence'): string {
@@ -95,11 +120,24 @@ function formatSingleWitnessMembers(pack: Readonly<ImportConformanceScorePackMea
 
 function formatLossPathPopulation(pack: Readonly<ImportConformanceScorePackMeasured>): string {
   const auditedMembers = pack.capabilities.flatMap((capability) => {
-    if (capability.state === 'not-run' || capability.lossPath.state === 'unaudited') return [];
+    if (
+      capability.state === 'not-run' ||
+      capability.lossPath.state === 'unaudited' ||
+      capability.lossPath.state === 'unidentified'
+    ) {
+      return [];
+    }
+    const { audit } = capability.lossPath;
     return [
-      `${capability.id}@${capability.lossPath.audit.auditId} by ${capability.lossPath.audit.auditor} at ${capability.lossPath.audit.auditedAt} subject ${capability.lossPath.audit.subjectHash}: ${capability.lossPath.state}`,
+      `${capability.id}@${audit.auditId} by ${audit.auditor} at ${audit.auditedAt} subject ${audit.subjectHash}: ${capability.lossPath.state}`,
     ];
   });
+  const unidentifiedMembers = pack.capabilities
+    .filter(
+      (capability): capability is Exclude<ImportConformanceScoreCapability, { state: 'not-run' }> =>
+        capability.state !== 'not-run' && capability.lossPath.state === 'unidentified',
+    )
+    .map((capability) => capability.id);
   const unauditedMembers = pack.capabilities
     .filter(
       (capability): capability is Exclude<ImportConformanceScoreCapability, { state: 'not-run' }> =>
@@ -107,7 +145,7 @@ function formatLossPathPopulation(pack: Readonly<ImportConformanceScorePackMeasu
     )
     .map((capability) => capability.id);
   const summary = pack.summary.lossPathPopulation;
-  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
+  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; audit-identity-unavailable capability-row tally ${summary.unidentifiedAuditCapabilities} [${unidentifiedMembers.join(', ')}]; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
 }
 
 function formatDiagnosticChannels(pack: Readonly<ImportConformanceScorePackMeasured>): string {
@@ -160,13 +198,14 @@ function formatUnknownObservations(pack: Readonly<ImportConformanceScorePackMeas
       });
     return `keyed-observation count ${members.length} [${members.join(', ')}]`;
   };
-  return `configuration-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
+  return `configuration-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-audit-unidentified ${lane('loss-path-audit-unidentified')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
 }
 
 function isCapabilityScopedUnknownReason(reason: ImportConformanceUnknownObservation['reason']): boolean {
   return (
     reason === 'instrument-audit-incomplete' ||
     reason === 'loop-bounded-configuration-limit' ||
+    reason === 'loss-path-audit-unidentified' ||
     reason === 'loss-path-known-not-wired' ||
     reason === 'loss-path-not-identified'
   );

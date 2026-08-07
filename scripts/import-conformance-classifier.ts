@@ -2,11 +2,13 @@ import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
+import { retainImportConformanceDiagnostic } from './import-conformance-diagnostic-evidence';
 import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol';
 
 export function classifyImportConformanceObservation(
   fixture: Readonly<ImportConformanceIndexedFixture>,
   observation: Readonly<SwfImportConformanceObservation>,
+  capabilityIds: ReadonlySet<string> = new Set(fixture.capabilities),
 ): ImportConformanceResult {
   if (fixture.reference !== observation.reference || fixture.sourceHash !== observation.sourceHash) {
     throw new Error(`Worker observation does not match indexed fixture ${fixture.reference}`);
@@ -29,7 +31,7 @@ export function classifyImportConformanceObservation(
     else existing.push(diagnostic);
   }
 
-  return {
+  const result: ImportConformanceResult = {
     capabilityOutcomes: fixture.capabilities.map((id) => ({
       diagnosticCause: keyed.get(id)?.some(isCauseUnknownDiagnostic) === true ? 'unknown' : 'separable',
       diagnosticReported: keyed.has(id),
@@ -40,6 +42,16 @@ export function classifyImportConformanceObservation(
     reference: fixture.reference,
     sourceHash: fixture.sourceHash,
   };
+  if (fixture.probeState === 'unreadable') {
+    result.probeUnreadableEvidence = {
+      diagnostics: observation.diagnostics.map((diagnostic) =>
+        retainImportConformanceDiagnostic(diagnostic, capabilityIds),
+      ),
+      imported: observation.imported,
+      threw: observation.threw,
+    };
+  }
+  return result;
 }
 
 function classifyCapabilityOutcome(

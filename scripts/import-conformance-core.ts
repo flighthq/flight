@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import { deriveImportConformanceCapabilityScopedUnknownEvidence } from './import-conformance-score';
+import {
+  deriveImportConformanceCapabilityScopedUnknownEvidence,
+  IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
+} from './import-conformance-score';
 import type {
   ImportConformanceCapability,
   ImportConformanceCapabilityScopedUnknownMappings,
@@ -8,6 +11,10 @@ import type {
   ImportConformanceConfigurationLimits,
   ImportConformanceDiagnosticChannel,
   ImportConformanceExercisedCapability,
+  ImportConformanceFixtureDiagnosticEvidence,
+  ImportConformanceFixtureOutcome,
+  ImportConformanceFixtureOutcomePopulations,
+  ImportConformanceFixtureOutcomes,
   ImportConformanceInstrumentAssurance,
   ImportConformanceInstrumentAudit,
   ImportConformanceInstrumentation,
@@ -97,6 +104,11 @@ export interface ImportConformanceResult {
     outcome: keyof ImportConformanceOutcomeCounts | 'passed';
   }[];
   outcome: keyof ImportConformanceOutcomeCounts | 'passed';
+  probeUnreadableEvidence?: {
+    diagnostics: ImportConformanceFixtureDiagnosticEvidence[];
+    imported: boolean;
+    threw: boolean;
+  };
   reference: string;
   sourceHash: string;
 }
@@ -238,6 +250,7 @@ export function createImportConformanceNotRunScore(
           state: 'not-run',
         })),
         ...pack,
+        fixtureOutcomes: null,
         importerSourceHash,
         outcomes: null,
         reason: 'pack-unavailable',
@@ -305,6 +318,7 @@ export function createImportConformanceScore(
         {
           capabilities,
           ...index.pack,
+          fixtureOutcomes: null,
           importerSourceHash,
           outcomes: null,
           reason: 'missing-shard',
@@ -493,6 +507,7 @@ export function createImportConformanceScore(
     packs: [
       {
         ...packBase,
+        fixtureOutcomes: createFixtureOutcomes(index, results),
         state: 'measured',
         summary,
       },
@@ -615,7 +630,7 @@ function assertLossPaths(
     if (!declared.has(id)) {
       throw new Error(`Invalid loss-path state for ${id}`);
     }
-    if (lossPath.state === 'unaudited') continue;
+    if (lossPath.state === 'unaudited' || lossPath.state === 'unidentified') continue;
     assertLossPathAudit(lossPath.audit, id);
   }
 }
@@ -726,6 +741,12 @@ function assertResultMatchesIndex(
   const fixture = index.fixtures.find((candidate) => candidate.reference === result.reference);
   if (fixture === undefined) throw new Error(`Result names unknown fixture ${result.reference}`);
   if (fixture.sourceHash !== result.sourceHash) throw new Error(`Result source hash is stale for ${result.reference}`);
+  if (fixture.probeState === 'unreadable' && result.probeUnreadableEvidence === undefined) {
+    throw new Error(`Probe-unreadable result ${result.reference} must retain its import observation evidence`);
+  }
+  if (fixture.probeState === 'readable' && result.probeUnreadableEvidence !== undefined) {
+    throw new Error(`Probe-readable result ${result.reference} must not carry probe-unreadable evidence`);
+  }
   const expected = fixture.capabilities.join('\0');
   if (result.capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== expected) {
     throw new Error(`Result capability evidence is stale for ${result.reference}`);
@@ -793,8 +814,8 @@ function createScoreInstrumentationRole(proofs: readonly string[]): ImportConfor
 }
 
 function cloneLossPath(lossPath: Readonly<ImportConformanceLossPath>): ImportConformanceLossPath {
-  return lossPath.state === 'unaudited'
-    ? { state: 'unaudited' }
+  return lossPath.state === 'unaudited' || lossPath.state === 'unidentified'
+    ? { state: lossPath.state }
     : { audit: { ...lossPath.audit }, state: lossPath.state };
 }
 
@@ -812,6 +833,89 @@ function cloneConfigurationLimits(
       };
 }
 
+function createFixtureOutcomes(
+  index: Readonly<ImportConformanceCapabilityIndex>,
+  results: readonly Readonly<ImportConformanceResult>[],
+): ImportConformanceFixtureOutcomes {
+  const resultByReference = new Map(results.map((result) => [result.reference, result]));
+  const populations = emptyFixtureOutcomePopulations();
+  const silentlyWrongFixtures: string[] = [];
+  for (const result of results) {
+    populations[result.outcome]++;
+    if (result.outcome === 'silentlyWrong') silentlyWrongFixtures.push(result.reference);
+  }
+  silentlyWrongFixtures.sort();
+
+  const outcomePopulations = emptyFixtureOutcomePopulations();
+  const diagnosticExplanationPopulations = {
+    absent: 0,
+    documentFailureNamed: 0,
+    presentWithoutDocumentFailure: 0,
+  };
+  const fixtures = index.fixtures
+    .filter((fixture) => fixture.probeState === 'unreadable')
+    .map((fixture) => {
+      const result = resultByReference.get(fixture.reference);
+      if (result === undefined) throw new Error(`Measured run has no result for ${fixture.reference}`);
+      const evidence = result.probeUnreadableEvidence;
+      if (evidence === undefined) {
+        throw new Error(`Probe-unreadable result ${fixture.reference} must retain its import observation evidence`);
+      }
+      const expectedOutcome = classifyRetainedProbeEvidence(evidence);
+      if (result.outcome !== expectedOutcome) {
+        throw new Error(
+          `Probe-unreadable result ${fixture.reference} outcome must equal retained evidence (${expectedOutcome})`,
+        );
+      }
+      outcomePopulations[result.outcome]++;
+      if (evidence.diagnostics.length === 0) diagnosticExplanationPopulations.absent++;
+      else if (evidence.diagnostics.some((diagnostic) => diagnostic.severity === 'Reject')) {
+        diagnosticExplanationPopulations.documentFailureNamed++;
+      } else diagnosticExplanationPopulations.presentWithoutDocumentFailure++;
+      return {
+        capabilityOutcomeCount: result.capabilityOutcomes.length,
+        diagnostics: evidence.diagnostics.map((diagnostic) => ({
+          ...diagnostic,
+          ...(diagnostic.detail === undefined ? {} : { detail: { ...diagnostic.detail } }),
+        })),
+        imported: evidence.imported,
+        outcome: result.outcome,
+        reference: result.reference,
+        threw: evidence.threw,
+      };
+    });
+
+  return {
+    capabilityProbeUnreadable: { diagnosticExplanationPopulations, fixtures, outcomePopulations },
+    definitions: IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
+    populations,
+    silentlyWrongFixtures,
+  };
+}
+
+function classifyRetainedProbeEvidence(
+  evidence: Readonly<NonNullable<ImportConformanceResult['probeUnreadableEvidence']>>,
+): ImportConformanceFixtureOutcome {
+  if (evidence.threw) return 'threw';
+  if (evidence.diagnostics.some((diagnostic) => diagnostic.kind === 'swf.no-decompressor-registered')) {
+    return 'unsupportedClean';
+  }
+  if (
+    evidence.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.severity === 'Drop' || diagnostic.severity === 'Recover' || diagnostic.severity === 'Reject',
+    )
+  ) {
+    return 'importedWrong';
+  }
+  if (evidence.diagnostics.some((diagnostic) => diagnostic.severity === 'Skip')) return 'unsupportedClean';
+  return evidence.imported ? 'passed' : 'silentlyWrong';
+}
+
+function emptyFixtureOutcomePopulations(): ImportConformanceFixtureOutcomePopulations {
+  return { importedWrong: 0, passed: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 };
+}
+
 function createCapabilityScopedUnknownObservations(
   capabilityId: string,
   instrumentation: Readonly<ImportConformanceScoreCapabilityExercised['instrumentation']>,
@@ -823,6 +927,8 @@ function createCapabilityScopedUnknownObservations(
   }));
   if (lossPath.state === 'unaudited') {
     observations.push({ reason: 'loss-path-not-identified', reference: capabilityId });
+  } else if (lossPath.state === 'unidentified') {
+    observations.push({ reason: 'loss-path-audit-unidentified', reference: capabilityId });
   } else if (
     lossPath.state === 'identified' &&
     instrumentation.channel === 'structured-crumb' &&
@@ -865,11 +971,15 @@ function summarizeLossPathPopulation(
   const auditedNoLossPathCapabilities = capabilities.filter(
     (capability) => capability.lossPath.state === 'audited-none',
   ).length;
+  const unidentifiedAuditCapabilities = capabilities.filter(
+    (capability) => capability.lossPath.state === 'unidentified',
+  ).length;
   return {
-    auditedCapabilities: capabilities.length - unauditedCapabilities,
+    auditedCapabilities: capabilities.length - unauditedCapabilities - unidentifiedAuditCapabilities,
     auditedNoLossPathCapabilities,
-    auditState: unauditedCapabilities === 0 ? 'complete' : 'partial',
+    auditState: unauditedCapabilities === 0 && unidentifiedAuditCapabilities === 0 ? 'complete' : 'partial',
     canSilentlyLoseCapabilities: capabilities.filter((capability) => capability.lossPath.state === 'identified').length,
+    unidentifiedAuditCapabilities,
     unauditedCapabilities,
   };
 }

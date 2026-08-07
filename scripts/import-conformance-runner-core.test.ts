@@ -55,6 +55,48 @@ describe('import conformance result cache', () => {
 
     expect(readImportConformanceCachedResult(cache, fixture, importerHash)).toBeNull();
   });
+
+  it('keeps readable legacy cache rows but reruns only unreadable rows without retained evidence', () => {
+    const cache = mkdtempSync(join(tmpdir(), 'flight-import-cache-'));
+    const importerHash = hash('importer-a');
+    const readable = makeFixture('readable.swf');
+    const unreadable = { ...makeFixture('unreadable.swf'), capabilities: [], probeState: 'unreadable' as const };
+    writeImportConformanceCachedResult(cache, makeResult(readable), importerHash);
+    writeImportConformanceCachedResult(
+      cache,
+      {
+        capabilityOutcomes: [],
+        outcome: 'silentlyWrong',
+        reference: unreadable.reference,
+        sourceHash: unreadable.sourceHash,
+      },
+      importerHash,
+    );
+
+    expect(readImportConformanceCachedResult(cache, readable, importerHash)).toEqual(makeResult(readable));
+    expect(readImportConformanceCachedResult(cache, unreadable, importerHash)).toBeNull();
+
+    const retained: ImportConformanceResult = {
+      capabilityOutcomes: [],
+      outcome: 'unsupportedClean',
+      probeUnreadableEvidence: {
+        diagnostics: [
+          {
+            detail: { compression: 'lzma' },
+            kind: 'swf.no-decompressor-registered',
+            origin: 'uncompressSwfSource',
+            severity: 'Reject',
+          },
+        ],
+        imported: false,
+        threw: false,
+      },
+      reference: unreadable.reference,
+      sourceHash: unreadable.sourceHash,
+    };
+    writeImportConformanceCachedResult(cache, retained, importerHash);
+    expect(readImportConformanceCachedResult(cache, unreadable, importerHash)).toEqual(retained);
+  });
 });
 
 describe('import conformance shard results', () => {

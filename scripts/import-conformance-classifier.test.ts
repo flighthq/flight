@@ -70,14 +70,33 @@ describe('classifyImportConformanceObservation', () => {
   it('keeps an unreadable probe diagnostic at fixture level without inventing a capability witness', () => {
     const fixture = { ...FIXTURE, capabilities: [], probeState: 'unreadable' as const };
     expect(
-      classifyImportConformanceObservation(fixture, {
-        diagnostics: [diagnostic(ImportDiagnosticSeverity.Drop, 'swf.scene-names')],
+      classifyImportConformanceObservation(
+        fixture,
+        {
+          diagnostics: [diagnostic(ImportDiagnosticSeverity.Drop, 'swf.scene-names')],
+          imported: true,
+          reference: fixture.reference,
+          sourceHash: fixture.sourceHash,
+          threw: false,
+        },
+        new Set(['swf.video.video-frame']),
+      ),
+    ).toMatchObject({
+      capabilityOutcomes: [],
+      outcome: 'importedWrong',
+      probeUnreadableEvidence: {
+        diagnostics: [
+          {
+            detail: { capability: 'swf.video.video-frame' },
+            kind: 'swf.scene-names',
+            origin: 'readSwfTimeline',
+            severity: ImportDiagnosticSeverity.Drop,
+          },
+        ],
         imported: true,
-        reference: fixture.reference,
-        sourceHash: fixture.sourceHash,
         threw: false,
-      }),
-    ).toMatchObject({ capabilityOutcomes: [], outcome: 'importedWrong' });
+      },
+    });
   });
 
   it('marks a configuration-or-input crumb as cause-unknown instead of attributing it to the file', () => {

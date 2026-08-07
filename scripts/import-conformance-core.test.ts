@@ -218,6 +218,7 @@ describe('createImportConformanceScore', () => {
         auditedNoLossPathCapabilities: 0,
         auditState: 'partial',
         canSilentlyLoseCapabilities: 1,
+        unidentifiedAuditCapabilities: 0,
         unauditedCapabilities: 1,
       },
       proofReferenced: { fireCapabilities: 1, silenceCapabilities: 1 },
@@ -718,6 +719,98 @@ describe('createImportConformanceScore', () => {
         state: 'unmeasured',
       },
     ]);
+  });
+
+  it('derives fixture populations and probe-unreadable evidence from the complete result set', () => {
+    const index = buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, [
+      { capabilities: [], probeState: 'unreadable', reference: 'a.swf', sourceHash: hash('a.swf') },
+      { capabilities: [], probeState: 'unreadable', reference: 'b.swf', sourceHash: hash('b.swf') },
+      { capabilities: [], probeState: 'unreadable', reference: 'c.swf', sourceHash: hash('c.swf') },
+    ]);
+    const results = [
+      {
+        ...result('a.swf', [], 'unsupportedClean'),
+        probeUnreadableEvidence: {
+          diagnostics: [
+            { kind: 'swf.no-decompressor-registered', origin: 'uncompressSwfSource', severity: 'Reject' as const },
+          ],
+          imported: false,
+          threw: false,
+        },
+      },
+      {
+        ...result('b.swf', [], 'importedWrong'),
+        probeUnreadableEvidence: {
+          diagnostics: [
+            {
+              detail: { capability: 'swf.fill.solid', frame: 1 },
+              kind: 'swf.shape-body-unreadable',
+              origin: 'readSwfBoundedDefinition',
+              severity: 'Drop' as const,
+            },
+          ],
+          imported: false,
+          threw: false,
+        },
+      },
+      {
+        ...result('c.swf', [], 'silentlyWrong'),
+        probeUnreadableEvidence: { diagnostics: [], imported: false, threw: false },
+      },
+    ];
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      results,
+      new Map(),
+      lossPathStates(false, false),
+      hash('importer'),
+      PROVENANCE,
+    );
+
+    expect(parseImportConformanceScore(score).packs[0]).toMatchObject({
+      fixtureOutcomes: {
+        capabilityProbeUnreadable: {
+          diagnosticExplanationPopulations: {
+            absent: 1,
+            documentFailureNamed: 1,
+            presentWithoutDocumentFailure: 1,
+          },
+          outcomePopulations: {
+            importedWrong: 1,
+            passed: 0,
+            silentlyWrong: 1,
+            threw: 0,
+            unsupportedClean: 1,
+          },
+        },
+        populations: { importedWrong: 1, passed: 0, silentlyWrong: 1, threw: 0, unsupportedClean: 1 },
+        silentlyWrongFixtures: ['c.swf'],
+      },
+    });
+  });
+
+  it('refuses to publish a probe-unreadable result whose old cache row lacks retained evidence', () => {
+    const index = buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, [
+      { capabilities: [], probeState: 'unreadable', reference: 'old.swf', sourceHash: hash('old.swf') },
+    ]);
+
+    expect(() =>
+      createImportConformanceScore(
+        index,
+        createImportConformanceShardPlan(['old.swf'], 1),
+        new Set([0]),
+        [result('old.swf', [], 'silentlyWrong')],
+        new Map(),
+        lossPathStates(false, false),
+        hash('importer'),
+        PROVENANCE,
+      ),
+    ).toThrow(/must retain its import observation evidence/);
   });
 
   it('lets an audited-none member license clean observations without inherited proof references', () => {

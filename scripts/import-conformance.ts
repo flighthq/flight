@@ -92,7 +92,12 @@ export async function runImportConformanceProcess(
       .map((assignment) => assignment.reference),
   );
   const currentFixtures = index.fixtures.filter((fixture) => currentReferences.has(fixture.reference));
-  const currentResults = await runFixtures(currentFixtures, tree.directory, importerSourceHash);
+  const currentResults = await runFixtures(
+    currentFixtures,
+    tree.directory,
+    importerSourceHash,
+    new Set(index.capabilities.map((capability) => capability.id)),
+  );
   writeImportConformanceShardResult(SHARD_DIRECTORY, plan, shard.index, currentResults, importerSourceHash);
   const collected = readImportConformanceShardResults(SHARD_DIRECTORY, plan, index.fixtures, importerSourceHash);
   const instrumentation = readInstrumentationMapping(definitions);
@@ -185,6 +190,7 @@ async function runFixtures(
   fixtures: readonly Readonly<ImportConformanceIndexedFixture>[],
   treeDirectory: string,
   importerSourceHash: string,
+  capabilityIds: ReadonlySet<string>,
 ): Promise<ImportConformanceResult[]> {
   const results = new Map<string, ImportConformanceResult>();
   const cold: ImportConformanceIndexedFixture[] = [];
@@ -201,7 +207,7 @@ async function runFixtures(
     })),
   );
   for (let index = 0; index < cold.length; index++) {
-    const result = classifyImportConformanceObservation(cold[index]!, observations[index]!);
+    const result = classifyImportConformanceObservation(cold[index]!, observations[index]!, capabilityIds);
     writeImportConformanceCachedResult(CACHE_DIRECTORY, result, importerSourceHash);
     results.set(result.reference, result);
   }
@@ -218,7 +224,12 @@ async function runSubset(
     throw new Error(`Unknown SWF capability ${capabilityId}`);
   }
   const selected = index.fixtures.filter((fixture) => fixture.capabilities.includes(capabilityId));
-  const results = await runFixtures(selected, treeDirectory, importerSourceHash);
+  const results = await runFixtures(
+    selected,
+    treeDirectory,
+    importerSourceHash,
+    new Set(index.capabilities.map((capability) => capability.id)),
+  );
   process.stdout.write(
     formatImportConformanceSubset(
       results.map((result) => ({
