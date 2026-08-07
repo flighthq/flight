@@ -86,6 +86,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['reports a morph definition that does not decode, which otherwise leaves no trace at all'],
+    id: 'swf.morph.define-morph-shape',
+    staysSilent: ['stays silent about a morph definition that decodes, so the drop entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
     id: 'swf.placement.clip-depth',
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
