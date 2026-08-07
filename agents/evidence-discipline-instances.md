@@ -353,6 +353,23 @@ of, and the question that was actually asked.
 
 ## Serving: denominators
 
+- **filed — Two true counts for one question is a BOUNDARY difference, not a contradiction, and the
+  hazard is the reconciliation.** A survey answered *derives into a committed artifact* — **one** —
+  while the request had asked *derives into an artifact* — **three**, admitting a published package
+  and a hand-carried status entry. **Same files, same classification, different boundary.** ⇒ **The
+  requester relayed the narrower number against their own broader definition**, which is the
+  misaddressed-answer law arriving as a **coordination** hazard rather than an authoring one. **The
+  author's fix was to put all three boundaries in the durable artifact rather than only in messages,
+  because crossed messages race and a committed file does not.**
+
+- **filed — History is not an ambient fact; it is an OUTPUT of a decision made later and elsewhere.**
+  Three history-dependent sites failed differently and **no per-artifact fix generalised**: one could
+  be materialised because the value had a natural home; one **could not**, because a version derived
+  from a commit count is *meant* to move with history and freezing it breaks its purpose; one could
+  not be fixed in code at all, **because the unstable step was a person reading stdout.** ⇒ **The
+  common factor was never the artifact — each treated history as a stable substrate.** A general
+  answer names history as a **boundary-crossing input** each site declares its behaviour against.
+
 - **filed — Stamp every claim about a mutable artifact, including the ones you attach.** Attaching
   removes the need to describe; it does not remove the need to say *when*. **An unstamped attachment
   is worse than an unstamped description, because it carries the artifact's authority without its
