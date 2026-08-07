@@ -18,6 +18,9 @@ export interface SyntheticFontOptions {
   advances?: readonly number[];
   // Maps a codepoint to a glyph index; emitted as a cmap format 4 sub-table.
   codepoints?: ReadonlyMap<number, number>;
+  // Raw Type 2 charstrings, used when `flavor` is 'opentype'. Defaults to a single `endchar`, which is
+  // a well-formed glyph that draws nothing.
+  charstrings?: readonly Uint8Array[];
   glyphs?: readonly SyntheticGlyph[];
   // 'truetype' emits the 0x00010000 sfnt version, 'opentype' emits 'OTTO' with a `CFF ` table and no
   // `glyf`, which is what an unsupported-outlines rejection is tested against.
@@ -26,12 +29,22 @@ export interface SyntheticFontOptions {
   unitsPerEm?: number;
 }
 
+// A charstring operand in the one-byte range, which covers -107..107 — enough for every fixture here.
+export function cffOperand(value: number): number {
+  return value + 139;
+}
+
 // A complete, readable TrueType font carrying the requested glyphs.
 export function createSyntheticFont(options: Readonly<SyntheticFontOptions> = {}): Uint8Array {
   const flavor = options.flavor ?? 'truetype';
   const unitsPerEm = options.unitsPerEm ?? 1000;
   const glyphs = options.glyphs ?? [emptySyntheticGlyph()];
-  const advances = options.advances ?? glyphs.map(() => 500);
+  const charstrings = options.charstrings ?? [new Uint8Array([14])];
+  // In a CFF font the CHARSTRINGS are the glyphs, so the declared glyph count and the advance table must
+  // follow them. Counting `glyphs` in both flavors would make every CFF fixture internally inconsistent —
+  // the source would refuse indices the charstrings index really has.
+  const glyphCount = flavor === 'truetype' ? glyphs.length : charstrings.length;
+  const advances = options.advances ?? Array.from({ length: glyphCount }, () => 500);
 
   const glyphData = glyphs.map((glyph) => encodeSyntheticGlyph(glyph));
   const locaOffsets: number[] = [0];
@@ -44,16 +57,14 @@ export function createSyntheticFont(options: Readonly<SyntheticFontOptions> = {}
   const tables = new Map<string, Uint8Array>();
   tables.set('head', encodeSyntheticHead(unitsPerEm));
   tables.set('hhea', encodeSyntheticHhea(advances.length));
-  tables.set('maxp', encodeSyntheticMaxp(glyphs.length));
+  tables.set('maxp', encodeSyntheticMaxp(glyphCount));
   tables.set('hmtx', encodeSyntheticHmtx(advances));
   tables.set('cmap', encodeSyntheticCmap(options.codepoints ?? new Map()));
   if (flavor === 'truetype') {
     tables.set('loca', encodeSyntheticLoca(locaOffsets));
     tables.set('glyf', concatenateBytes(glyphData));
   } else {
-    // An OTTO container carrying PostScript charstrings. Contents are irrelevant: the reader must
-    // reject it on the table's presence, before ever interpreting a charstring.
-    tables.set('CFF ', new Uint8Array([1, 0, 4, 1]));
+    tables.set('CFF ', encodeSyntheticCff(charstrings));
   }
   if (options.omitTable !== undefined) tables.delete(options.omitTable);
 
@@ -62,6 +73,51 @@ export function createSyntheticFont(options: Readonly<SyntheticFontOptions> = {}
 
 export function emptySyntheticGlyph(): SyntheticGlyph {
   return { endPoints: [], points: [] };
+}
+
+// Builds a real `CFF ` table: header, the four fixed INDEXes, and a charstrings INDEX reached by an
+// offset from the top DICT. Assembled byte by byte like every other fixture here, so the CFF reader is
+// proved against the layout the format specifies rather than against a stub that resembles it.
+export function encodeSyntheticCff(charstrings: readonly Uint8Array[]): Uint8Array {
+  const name = encodeCffIndex([new Uint8Array([0x46])]);
+  const strings = encodeCffIndex([]);
+  const gsubrs = encodeCffIndex([]);
+  const charstringsIndex = encodeCffIndex(charstrings);
+
+  // The top DICT holds one operator whose operand is the charstrings offset from the table start. The
+  // operand is written five-wide (a 32-bit integer) so its size does not change as the offset does,
+  // which would otherwise make the offset depend on its own encoding.
+  const topDictBody = (offset: number): Uint8Array => {
+    const out = new Uint8Array(6);
+    out[0] = 29;
+    new DataView(out.buffer).setInt32(1, offset);
+    out[5] = 17;
+    return out;
+  };
+  const header = new Uint8Array([1, 0, 4, 1]);
+  const probe = encodeCffIndex([topDictBody(0)]);
+  const charstringsAt = header.length + name.length + probe.length + strings.length + gsubrs.length;
+  const topDicts = encodeCffIndex([topDictBody(charstringsAt)]);
+
+  return concatenateBytes([header, name, topDicts, strings, gsubrs, charstringsIndex]);
+}
+
+// A CFF INDEX: count, offset width, count+1 one-based offsets, then the data.
+function encodeCffIndex(entries: readonly Uint8Array[]): Uint8Array {
+  if (entries.length === 0) return new Uint8Array([0, 0]);
+  const offsets: number[] = [1];
+  for (const entry of entries) offsets.push(offsets[offsets.length - 1]! + entry.length);
+  const bytes = new Uint8Array(3 + offsets.length * 4 + offsets[offsets.length - 1]! - 1);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, entries.length);
+  view.setUint8(2, 4);
+  offsets.forEach((offset, index) => view.setUint32(3 + index * 4, offset));
+  let cursor = 3 + offsets.length * 4;
+  for (const entry of entries) {
+    bytes.set(entry, cursor);
+    cursor += entry.length;
+  }
+  return bytes;
 }
 
 // A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.

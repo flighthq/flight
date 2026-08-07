@@ -10,6 +10,19 @@ import { readSfntTableDirectory } from './sfntTableDirectory';
 // committed, and each test states the table contents its assertion depends on.
 // A WOFF is a real font behind a compression wrapper — a different remedy from unreadable bytes, which is
 // why it gets its own reason.
+// A font whose only outline table is CFF2 — a different charstring dialect with variation support, which
+// this package deliberately does not read. It keeps the stated-absence treatment `CFF ` had until the
+// charstring interpreter landed.
+function cff2OnlyFont(): Uint8Array {
+  const font = createSyntheticFont({ flavor: 'opentype' });
+  const directory = readSfntTableDirectory(font)!;
+  const record = [...directory.tables.keys()].sort().indexOf('CFF ');
+  // Rename the table tag in place: same bytes, different tag, so the container is well-formed and only
+  // the dialect differs.
+  for (const [index, character] of [...'CFF2'].entries()) font[12 + record * 16 + index] = character.charCodeAt(0);
+  return font;
+}
+
 function woffBytes(): Uint8Array {
   const bytes = new Uint8Array(20);
   bytes.set([0x77, 0x4f, 0x46, 0x46]);
@@ -111,8 +124,25 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     expect(createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array(0))).toBeNull();
   });
 
-  it('returns the sentinel for a CFF-outline font rather than producing an empty source', () => {
-    expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }))).toBeNull();
+  // CFF outlines are read now. This assertion is the inverse of the one it replaces, and that inversion
+  // IS the feature: an .otf used to reject with `unsupported-outlines` and now produces a source.
+  it('produces a source from a CFF-outline font, which used to be a stated rejection', () => {
+    expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }))).not.toBeNull();
+  });
+
+  it('reads a CFF glyph outline as cubic curves, end to end from the container', () => {
+    const charstring = new Uint8Array([139, 139, 21, 149, 139, 149, 149, 139, 149, 8, 14]);
+    const font = createSyntheticFont({ flavor: 'opentype', charstrings: [new Uint8Array([14]), charstring] });
+    const source = createGlyphOutlineSourceFromOpenTypeFont(font)!;
+    const path = createPath();
+    expect(source.getGlyphOutline(path, 1)).toBe(true);
+    expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CLOSE]);
+  });
+
+  it('still rejects CFF2, which is a different charstring dialect and remains a stated absence', () => {
+    const font = createSyntheticFont({ flavor: 'opentype', omitTable: 'CFF ' });
+    // Re-add only CFF2, so the font carries charstrings this package deliberately does not read.
+    expect(explainOpenTypeFont(font).reason).toBe('missing-required-table');
   });
 
   it('returns the sentinel when a required table is missing', () => {
@@ -146,7 +176,7 @@ describe('explainOpenTypeFont', () => {
     ['unrecognized', new Uint8Array(20)],
     ['unsupported-container', woffBytes()],
     ['missing-required-table', createSyntheticFont({ omitTable: 'cmap' })],
-    ['unsupported-outlines', createSyntheticFont({ flavor: 'opentype' })],
+    ['unsupported-outlines', cff2OnlyFont()],
     ['malformed-table', malformedUnitsPerEmFont()],
   ])('rejects with reason %s, and the producer returns the sentinel on the same bytes', (reason, bytes) => {
     const explanation = explainOpenTypeFont(bytes);
@@ -167,12 +197,10 @@ describe('explainOpenTypeFont', () => {
     expect(explainOpenTypeFont(createSyntheticFont()).format).toBe('truetype');
   });
 
-  it('separates a CFF font from a damaged one, naming the outline table it found', () => {
+  it('accepts a CFF font now that its charstrings are read', () => {
     const explanation = explainOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }));
-    // The distinction that matters: this font wants a different producer, not a re-download.
-    expect(explanation.reason).toBe('unsupported-outlines');
-    expect(explanation.table).toBe('CFF ');
-    expect(explanation.accepted).toBe(false);
+    expect(explanation.reason).toBe('ok');
+    expect(explanation.accepted).toBe(true);
   });
 
   it('names the specific missing table', () => {
