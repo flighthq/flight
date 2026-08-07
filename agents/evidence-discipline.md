@@ -223,12 +223,15 @@ the same intuition.
   behaviour-preserving refactor, and of a grain the consumer would accept — and expect the
   hand-maintained part you removed to reappear at the joint between the rule and the rows, where
   nobody looks because the rule is now "mechanical".
-- **Any number computed over a mutable artifact carries that artifact's identity, or it is not a
-  measurement.** One arc required this four times before anyone stated it once — a fixture release, a
-  variant, a convention revision, and a file version were each discovered separately and argued from
-  scratch. **"2,611 of 2,611 lines" is the sharpest form: 100% is the most convincing number available
-  and says nothing at all without which 2,611.** Two readers grepping the same file for the same thing
-  got different true answers all evening because nobody named the tree.
+- **Stamping makes a claim checkable; attaching makes it unnecessary.** Stamp when you must describe,
+  attach when you can deliver. **Any number computed over a mutable artifact carries that artifact's
+  identity or it is not a measurement** — one arc needed that four times before stating it once, and
+  *"2,611 of 2,611 lines"* is its sharpest form, since 100% is the most convincing number available
+  and says nothing without which 2,611. **But most of the day's version of this was not a stamping
+  problem at all: five readers stated true, exact numbers about trees other people could not see, and
+  at least two of them could simply have sent the file.** A dependency is relational — confirming
+  something landed tells you nothing about whether it arrived — **so read the consumer's side, or
+  hand them the artifact and remove the question.**
 - **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
   bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
   implemented, so a ratio over it measures the corpus against our own model and reads as coverage of
