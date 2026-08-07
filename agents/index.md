@@ -57,7 +57,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [render architecture](render-architecture.md) — the render and scene architecture in full.
 - [render backend support](render-backend-support.md) — the narrative behind the generated [support matrix](support-matrix.md).
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
-- [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and generated wiring.
+- [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
 - [registry table model](registry-table-model.md) — **unratified.** the storage under the registration doors: three table shapes, and which tier owns a registry.
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
