@@ -97,6 +97,9 @@ export async function runImportConformanceProcess(
   const collected = readImportConformanceShardResults(SHARD_DIRECTORY, plan, index.fixtures, importerSourceHash);
   const instrumentation = readInstrumentationMapping(definitions);
   for (const problem of instrumentation.problems) process.stderr.write(`⚠ ${problem}.\n`);
+  if (instrumentation.blockingProblems.length > 0) {
+    throw new Error(`Instrumentation mapping cannot be projected: ${instrumentation.blockingProblems.join('; ')}`);
+  }
   const score = createImportConformanceScore(
     index,
     plan,
