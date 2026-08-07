@@ -229,8 +229,14 @@ cannot mistake the table's existence for coverage.
 is returned unchanged, every compressed path writes the FWS byte into the decompressed header, and bytes
 1 and 2 are validated before either runs. So no input reaches it.
 
+**This is a contingent fact and it carries a stamp, because with no registry to hold it the stamp is the
+only thing between a contingent fact and an inherited one.** Derived by reading `swfDocument.ts` at the
+commit whose subject is `feat(swf): report each whole-document header rejection with its own cause`, from
+the two container paths present there. **Re-derive it; do not inherit it.** If a later reader quotes this
+without re-checking, they are quoting a claim about a tree they have not seen.
+
 It is kept rather than deleted because unreachability here is a property of the **two container paths
-that exist now**, not of the format. A third container form, or a decompressor that stops rewriting the
+that existed at that commit**, not of the format. A third container form, or a decompressor that stops rewriting the
 header, makes it reachable — and deleting the wire would mean silence arriving with that change.
 
 **For a consumer this means one thing: never treat this kind's absence as information.** Every other kind
