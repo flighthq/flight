@@ -75,6 +75,21 @@ reader can tell strength apart without trusting the author's formatting:
   is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
   without one is pending** — and only the mechanism tells you which you have.
 
+- **filed — THE LEVEL CAN BE CHOSEN PER BEHAVIOUR, WHICH NO PROPERTY OF THE TYPE GRAPH PREDICTS.** A
+  dispatch measurement answered the level question with **neither axis**: the importer dispatches
+  **entirely by ancestor** — ~46 derived-from sites across 13 files, **no type-key equality anywhere**,
+  so it never asks *is this a Rectangle* but *is this a kind of Shape*. ⇒ **That rules out a leaf
+  census immediately — and it does not decide at the interior either:** of 42 distinct constants
+  tested, **17 are interior, 24 are leaves, 1 is the root.**
+  ★★ **So the set the code decides between is drawn from BOTH levels: an ancestor where behaviour is
+  shared, a leaf where it is not.** **Not the leaves, not the interior, not either declared total.**
+  ⇒ **A unit can be level-heterogeneous, and only the dispatch shows it** — every graph-derived
+  candidate was homogeneous by construction and therefore wrong in the same way.
+  ★ **And the individuation question RETURNS at the new level rather than being settled by it:** 42
+  counts *constants used in dispatch*, **one may be tested at several sites for different purposes and
+  two may jointly define one capability.** **Ceiling measured rather than assumed: four sites dispatch
+  on a variable the regex cannot resolve, so the true set may be larger.**
+
 - **filed — A LEVEL failure is not a MEMBERSHIP failure, and no refinement of the membership rule
   reaches it.** Two candidate units failed by containing entries that were not independent live
   members. A third objection — *the behaviour may live at an interior node* — **is different in kind:
