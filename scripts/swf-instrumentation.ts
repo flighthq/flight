@@ -390,6 +390,21 @@ export function verifySwfInstrumentation(): string[] {
 // the commit that landed this row's proof. A tree oid is already a content hash of the whole directory,
 // so this is git's own value rather than one invented here.
 //
+// THIS IS A HISTORICAL CHECK, AND A HISTORICAL CHECK HAS A BASELINE THAT LANDING CAN MOVE. The test for
+// any gate is whether landing the change alters what it should say: a property check is idempotent under
+// landing, a historical one is not. This one asks *when was this audited*, which is historical.
+//
+// VERIFIED IDEMPOTENT UNDER REBASE, and for a reason worth keeping: `subjectHash` is a git TREE OID, which
+// is content-addressed, so rewriting commits does not move it. Two rebases across 161 peer commits left
+// all 14 identities byte-identical. Had this pinned a commit SHA instead, every rebase would have
+// restamped every audit.
+//
+// NOT VERIFIED, AND PREDICTED TO MOVE: a SQUASH merge. `git log -S` would then resolve to the squashed
+// commit, whose `packages/swf/src` tree is the FINAL state rather than the state at the audit, so both
+// `auditedAt` and `subjectHash` would silently take post-merge values. That cannot be tested from inside
+// this clone. **A reader who finds every identity sharing one timestamp and one tree oid is looking at
+// that failure, not at fourteen audits that happened at once.**
+//
 // WHY NOT HASH THE CURRENT SOURCE. A hash recomputed at generation time changes whenever ANY file in the
 // package changes, and the artifact regenerates automatically — so an unrelated edit would silently
 // restamp every audit as covering a subject nobody re-audited. That is the audit-drift shape with a
