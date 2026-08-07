@@ -229,6 +229,18 @@ sub-states, or an entry lands in a someone-should-act bucket where nobody may:
 | L1 | The delivered base fails `npm run check` on its own — two typecheck errors where the fixture-stamp consumers were not carried with their rename | integration ran it against the base with nothing of theirs applied | **FIXABLE** — patch exists and is verified appliable; delivery, not authoring |
 | L2 | A guarded `Decisions` line in a package charter was **removed rather than superseded**, and the mutation is in the delivered base | Baselined against the commit that introduced the guarded line: one violation | **MUST-NOT-BE-FIXED, AWAITING A DECISION** — report only; whether it stands is the user's call |
 
+★★ **L2's options are TWO, not three, and the third was never available.** The ruling against repair
+rested on the invariant — repairing substitutes our reconstruction for the approver's text. **A
+mechanical reason now stands beside it: the repair would not STICK.** An append-only ledger and a
+rebase disagree about what history means — **the ledger judges the WORKING TREE while a replay
+reconstructs COMMITS** — so **a fix that edits the line keeps coming back until the branch carries NO
+diff on it**, and L2's base already carries one.
+⇒ **So: accept it standing, or rewrite the history that removed it. "Edit it back" is not an option
+that exists.**
+**The join is marked because it does not fully transfer:** the observed case was a **resurrection**
+and L2 is a **removal**. **The general finding transfers; the instance does not**, and saying which
+is which is what keeps the narrowing honest.
+
 **L2 is presented as a chosen state rather than an oversight.** It is the one entry here that **the
 user rather than the fleet has to close**, and leaving it in a generic act-on-it category would have
 invited exactly the repair the ruling forbids.
