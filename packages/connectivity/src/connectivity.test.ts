@@ -201,16 +201,37 @@ describe('detachConnectivity', () => {
 });
 
 describe('detectConnectivityReachability', () => {
+  // A backend without detectReachability falls through to the web backend's own implementation, which
+  // calls fetch against options.url. BOTH CASES BELOW STUB fetch, because leaving it alone made this a
+  // real request to the public internet from a unit test: 4.1s measured here against a 5000ms default
+  // timeout, which full-suite load pushes it over. Egress is not what makes that a hazard — a sandboxed
+  // runner with no outbound network fails it every time rather than intermittently, so the current
+  // flakiness is a property of this machine's network rather than of the test. `unstubGlobals` restores
+  // the real fetch between tests.
+  //
+  // The assertion is the sentinel itself — reachable false AND latency -1 — rather than the shape of
+  // the value. A `typeof result.reachable === 'boolean'` check passes on a live success too, so it held
+  // for a test whose name promises a sentinel while checking nothing that distinguishes one.
   it('returns a sentinel when fetch is unavailable (SSR/jsdom guard)', async () => {
-    // The web backend's detectReachability returns a sentinel in jsdom where fetch is absent or HEAD
-    // requests fail. We install a backend without detectReachability to test the fallback path.
     setConnectivityBackend(fakeBackend());
+    vi.stubGlobal('fetch', undefined);
     const out: ConnectivityReachability = { latency: 0, reachable: true };
-    // fetch is undefined in vitest/jsdom by default — expect sentinel
     const result = await detectConnectivityReachability({ url: 'https://example.com' }, out);
     expect(result).toBe(out);
-    // In jsdom fetch may not exist or may fail; either way we get reachable=false or a live result
-    expect(typeof result.reachable).toBe('boolean');
+    expect(result.reachable).toBe(false);
+    expect(result.latency).toBe(-1);
+  });
+
+  // The fallback's other sentinel path: fetch exists and the HEAD request rejects. Same contract, and
+  // it was unpinned — the absent-fetch branch could have returned the sentinel while this one did not.
+  it('returns a sentinel when the HEAD request fails', async () => {
+    setConnectivityBackend(fakeBackend());
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('network unreachable')));
+    const out: ConnectivityReachability = { latency: 0, reachable: true };
+    const result = await detectConnectivityReachability({ url: 'https://example.com' }, out);
+    expect(result).toBe(out);
+    expect(result.reachable).toBe(false);
+    expect(result.latency).toBe(-1);
   });
 
   it('uses the backend detectReachability when available', async () => {
