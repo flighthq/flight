@@ -10,9 +10,20 @@ What each tag becomes is a live assertion about the importer and is checked by t
 frequency figures below are a *record* of one measurement run, and they keep their numbers rather than
 being deleted — a register that registers nothing is the over-compliance direction. Each is marked
 `HISTORICAL:` per figure rather than by a whole-document marker, because the rest of the file asserts.
-**RECOMPUTE ROUTE for every figure so marked:** refetch `ruffle-rs/ruffle` at the revision pinned in
-[fixture-evidence.md](fixture-evidence.md) and re-run the tag census. A stale figure is safe only when
-the reader has a route to a current one.
+**RECOMPUTE ROUTE for every figure so marked**, stated as a procedure rather than as the name of a tool.
+*A route is only a route if someone can walk it* — this one previously named a census script that lived
+in a gitignored scratch directory, so the route could not be walked from a fresh clone at all.
+
+1. Refetch the corpus at the revision pinned in [fixture-evidence.md](fixture-evidence.md). Nothing from
+   it is committed here; fetch, measure, discard.
+2. For each file, uncompress the container when byte 0 is `C` (zlib body after the 8-byte header) and
+   take it as-is when it is `F`.
+3. Walk the tag stream from the end of the header: each record is a `uint16` whose top 10 bits are the
+   tag code and whose low 6 bits are the length, with `0x3f` meaning a `uint32` length follows. **Recurse
+   into `DefineSprite` bodies**, since a definition may sit inside one.
+4. Count each tag code **once per file**, not once per occurrence — that is what these figures are.
+
+`npm run capabilities:tag-census -- <corpus-directory>` does exactly this and prints the table.
 
 What every core SWF tag becomes in a `Scene2DDocument`, and for the ones that become nothing, why. The
 frequency column counts how many of the **301 readable** files in the 306-file Ruffle corpus described in
