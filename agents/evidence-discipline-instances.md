@@ -291,6 +291,18 @@ reader can tell strength apart without trusting the author's formatting:
   the line keeps coming back until the branch carries NO diff on it** — made durable by carrying a
   zero diff against the base rather than by re-editing.
 
+- **filed — CLASSIFY BY THE REMEDY, NOT BY THE RESEMBLANCE: a misgrouping costs you the wrong fix.**
+  Four things looked like one family — *ways a claim gets past scrutiny*. ⇒ **But alarm, reassurance
+  and cheapness are reasons NOBODY LOOKS, while INAPPLICABILITY is a case where scrutiny WAS applied
+  and returned a false negative.** ★★ **The first three need a TRIGGER TO LOOK; the fourth needs THE
+  INSTRUMENT TO DISTINGUISH "cannot apply" FROM "applied, found nothing".** **Grouped with the other
+  three it would have been given a trigger it does not need and denied the encoding it does.**
+  ★★★ **So inapplicability belongs to the THREE-STATE family, and its fix is one already applied twice
+  in the same arc — third instance of a single remedy:** a tool that prints **`0 commits behind`**
+  rather than nothing; a register that records **`measured, none`** rather than staying blank; **and a
+  check that reports INAPPLICABLE distinctly rather than falling silent.** ⇒ **Wherever an instrument
+  can fail to apply, silence must be split into three states, not two.**
+
 - **filed — ONE ASYMMETRY WITH THREE LIMBS: ALARM BUYS SUBJECT-SCRUTINY, COSTS INSTRUMENT-SCRUTINY,
   AND REASSURANCE BUYS NEITHER YET TRAVELS ANYWAY.** ⇒ **Alarm REDIRECTS scrutiny from the instrument
   to the subject: you interrogate what the finding SAYS, not whether the finding is REAL.** Two probes
