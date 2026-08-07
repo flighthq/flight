@@ -194,6 +194,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['counts the children a sprite bounds union could not include, since the box survives smaller'],
+    id: 'swf.timeline.define-sprite',
+    staysSilent: ['stays silent when every child of a sprite contributes its bounds'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
     id: 'swf.timeline.frame-label',
     staysSilent: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
