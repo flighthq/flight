@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-05
+updated: 2026-08-07
 fixturePolicy: provenance-and-derived-manifest-only
 ---
 
@@ -59,9 +59,8 @@ Running the fetched bytes through `createScene2DFromSwf` at this package revisio
     "width": 10,
     "height": 10
   },
-  "references": [
+  "slots": [
     {
-      "kind": "Slot",
       "name": "empty",
       "linkage": null,
       "localBounds": {
@@ -120,13 +119,12 @@ if (document === null) throw new Error("fixture rejected");
 console.log(JSON.stringify({
   sourceKind: document.sourceKind,
   rootBounds: getNodeLocalBoundsRectangle(document.root),
-  references: document.references.map((reference) => ({
-    kind: reference.kind,
-    name: reference.name,
-    linkage: reference.kind === "Slot" ? reference.linkage : null,
-    localBounds: getNodeLocalBoundsRectangle(reference.target),
-    localMatrix: getNodeLocalMatrix(reference.target),
-    parentIsRoot: getNodeParent(reference.target) === document.root,
+  slots: document.slots.map((slot) => ({
+    name: slot.name,
+    linkage: slot.linkage,
+    localBounds: getNodeLocalBoundsRectangle(slot.target),
+    localMatrix: getNodeLocalMatrix(slot.target),
+    parentIsRoot: getNodeParent(slot.target) === document.root,
   })),
 }, null, 2));
 '
@@ -239,7 +237,9 @@ aggregate result.
 
 - Repository and revision: `ruffle-rs/ruffle` at `f8d8de6bb15c3d7a799d7088997422b926c8478c`.
 - Sample: every `.swf` in the tree under 300 KB, sorted by path, taking every sixteenth — 306 files,
-  1.9 MB, spanning `avm1`, `avm2`, Shumway, Gnash/Ming, and exporter fixtures.
+  1,166,258 bytes, spanning `avm1`, `avm2`, Shumway, Gnash/Ming, and exporter fixtures. The byte total is
+  the summed file size of a fetched selection, measured independently in two workspaces; an earlier
+  "1.9 MB" here was on-disk rounding rather than a measurement.
 - Flight measurement commit: `f0c56ba7d0d92b4bbd8910b458b22213d3ebac0d`.
 
 Result at the revision that added shape geometry and End-tag tolerance:
@@ -357,30 +357,87 @@ removal tags are counted per frame, and that is compared with what the construct
 | 15 | The wire changes and the tree changes with it |
 | **1** | The wire changes and the tree does **not** |
 
-The single divergence at that measurement commit is
-`from_gnash/misc-ming.all/Video-EmbedSquareTest`: each frame moves depth 2 with a new ratio, and depth 2
-holds character 4, a `DefineVideoStream`. Video characters were not imported there, so the placement
-resolved to no node and eleven per-frame moves landed on nothing. That was the video gap surfacing as
-animation loss, not a timeline defect — and it is the first time a real file named it. Ratified Stage A
-now materializes that unnamed character as a sourceless `Sprite`; the hermetic test reproduces the eleven
-move records, while this pinned table remains the pre-fix measurement rather than claiming an unrun corpus
-resweep. Node identity is part of the comparison, which is what distinguishes a *replacement* at one depth
-(`avm1/goto_execution_order` swaps character 1 for character 2 at depth 1, inheriting the matrix) from a
-clip that truly did not move; without it that file reads as a false divergence.
+The single divergence is `from_gnash/misc-ming.all/Video-EmbedSquareTest`, and it **survives Stage A** —
+see the resweep below. Node identity is part of the comparison, which is what distinguishes a
+*replacement* at one depth (`avm1/goto_execution_order` swaps character 1 for character 2 at depth 1,
+inheriting the matrix) from a clip that truly did not move; without it that file reads as a false
+divergence.
 
-The limit worth stating: the wire cross-check covers root timelines only. Of the 46 clips stepped, the
-17 that are nested sprites are proven not to throw and are **not** proven to show the right thing —
-mapping a sprite's own tag stream back to its instantiated subtree is the work that would close that,
-and it is not done. Nothing here is a pixel comparison either; this measures the constructed tree.
+Nothing here is a pixel comparison; this measures the constructed tree.
+
+## Animated resweep, and the nested cross-check
+
+Re-run at Flight commit `6aff889db9f76f8a0fa827772809e82cc418591f`, after structural video Stage A
+landed. Every aggregate above reproduces exactly: 306 swept, 5 `ZWS` rejected, 0 threw, 33 files carrying
+animation, 46 clips stepped, 411 frames constructed, 39-frame longest timeline. The root cross-check also
+reproduces exactly — 13 authored-static, 15 agreed, **1** divergent.
+
+That last row is the finding. **Stage A did not close the divergence**, and the earlier record implied it
+had. What changed is the reason, and the correction matters because the two look identical to a check
+that only asks whether the tree moved:
+
+- *Before Stage A*: character 4 was not imported at all, so the placement resolved to **no node**.
+- *At this commit*: the character materializes as a named `Sprite` (`vid`, 128×96) present on all 12
+  frames — the graph shape is right — and the tree still does not change across frames, because the only
+  thing the per-frame records change is the placement **ratio**, and Flight applies a placement ratio to
+  `MorphShapeKind` alone.
+
+The earlier "eleven per-frame moves" is also imprecise. Measured at this commit, depth 2 carries **eleven
+placement records**: one `PlaceObject2` on frame 1 (character, matrix, and name) and **ten** ratio-only
+moves on frames 2–11. The stream declares `DefineVideoStream` character 4, 11 frames, 128×96, codec id 2,
+and carries 11 `VideoFrame` packets numbered 0–10.
+
+The ratio's meaning here is measured rather than asserted: on every one of the ten move frames the
+placement ratio equals the `VideoFrame` packet number carried on that same frame (1↔1 through 10↔10). So
+on a video placement the ratio selects which decoded video frame to show — a different quantity from the
+morph progress the same field carries on a `DefineMorphShape` placement. Flight has nowhere to put it: a
+`Sprite` over a sourceless `Texture` has no frame to select, and `VideoFrame` payloads are skipped. This
+is a representation question for the video Stage B/C rulings, not a timeline defect — `constructFrame`
+applies every field that has a home.
+
+### Nested sprites are now cross-checked too
+
+The stated limit — root timelines only — is closed. Each `DefineSprite` body is walked for the
+placement and removal records after its own first `ShowFrame`, each instantiated nested `MovieClip` is
+paired to a sprite character by declared frame count, and the two are compared the way roots are.
+
+| Nested multi-frame instances | Meaning |
+| --- | --- |
+| 8 | No placement record after the sprite's first `ShowFrame` — authored to hold still, and the tree holds still |
+| 9 | The wire changes and the tree changes with it |
+| **0** | Divergent |
+| **0** | Unpaired (frame-count pairing was unambiguous for all 17) |
+
+All 17 clips the earlier record listed as stepped-but-unproven are now proven. Pairing is by declared
+frame count; where several sprite characters share one, the instance is only checked if those characters
+agree on whether the wire changes at all, and is otherwise counted as unpaired rather than guessed. The
+corpus needed no such exclusion.
+
+Both cross-checks describe a child by identity, kind, local matrix, alpha, visibility, **and morph
+progress** — the last added here, since a placement whose only per-frame change is its ratio moves
+nothing a matrix can see, and without it a real morph animation reads as static.
+
+The nested check was falsified before being believed: freezing the tree side to frame 1 flips all 9
+agreements to divergences, so those 9 are observations rather than a check that cannot fail.
+
+Still not a pixel comparison, and the ratio representation above remains open.
 
 ### Reproduce the animated sweep
 
 Fetch the corpus as above, then step every multi-frame clip: call `registerDeflateDecompressor()`, import
 each file with `createScene2DFromSwf`, walk the tree for `MovieClipKind` nodes, and for each one whose
 `getMovieClipTotalFrames` exceeds 1 call `gotoAndStopMovieClip` for every frame, recording child count,
-child identity, each child's local matrix and alpha. For the wire cross-check, inflate the container,
+child identity, each child's local matrix, alpha, visibility, and — for a `MorphShapeKind` child — its
+morph progress. For the wire cross-check, inflate the container,
 walk the root tag stream (skipping each `DefineSprite` body whole), and count tags 4/26/70/94 and 5/28
 between `ShowFrame`s.
+
+For the nested cross-check, walk each `DefineSprite` body instead of skipping it: read its character id,
+then count the same placement and removal tags appearing after its own first `ShowFrame`, and record how
+many `ShowFrame`s the body carries. Pair each instantiated nested `MovieClip` to a sprite character by
+declared frame count, skipping any instance whose candidate characters disagree on whether the wire
+changes, and compare as for roots. To confirm the check can fail, re-run it with the frame argument to
+`gotoAndStopMovieClip` pinned to 1: every agreement must turn into a divergence.
 
 ## Mutation sweep
 

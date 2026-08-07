@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-04
+updated: 2026-08-07
 ---
 
 # swf status
@@ -282,6 +282,11 @@ transforms, opt-in registration, compressed rejection, malformed/truncated input
 sprites, composed transforms, recursive-graph rejection, stage bounds, RECT-based definition bounds,
 embedded JPEG/PNG/GIF, lossless-bitmap dimensions, sourceless video placement through eleven move records,
 and recursively composed sprite extents.
+The corpus wire cross-check now covers **instantiated nested sprites** as well as root timelines: all 17
+nested multi-frame instances are paired to their `DefineSprite` character by declared frame count and
+compared against that body's own per-frame placement records, with 0 divergent and 0 unpaired. Both
+cross-checks describe a child by identity, kind, matrix, alpha, visibility, and morph progress — the
+last because a placement whose only per-frame change is its ratio moves nothing a matrix can see.
 Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
 replayed onto the instance it targets, depth ordering when a later frame places an instance between two
 others, labels from both label tags with the header frame rate, an independently seekable nested sprite
@@ -306,10 +311,16 @@ test suite reproduces the relevant encodings without it.
 
 ## Known gaps and decision boundaries
 
-- **Video payload support remains staged.** The fixed animated sweep at Flight commit `59fa8c6fc` found
-  its only wire/tree divergence in one of 29 multi-frame roots: an unnamed video placement had no node.
-  Ratified Stage A now creates a sourceless `Sprite` and preserves that eleven-move graph shape.
-  `VideoFrame` bodies remain skipped; payload preservation and decode still require separate rulings.
+- **Video payload support remains staged, and the corpus divergence is still open.** The animated sweep
+  found its only wire/tree divergence in one of 29 multi-frame roots. Ratified Stage A fixed the *graph
+  shape* — the character now materializes as a named sourceless `Sprite` — but the resweep at
+  `6aff889db` shows the **divergence survives**, for a different reason: the ten per-frame records at
+  that depth change only the placement **ratio**, and Flight applies a ratio to `MorphShapeKind` alone.
+  On a video placement the ratio names which decoded video frame to show — measured, not assumed: it
+  equals the `VideoFrame` packet number on every move frame — so it is a different quantity from morph
+  progress carried in the same field. `VideoFrame` bodies remain skipped, and where that ratio lives is
+  part of the Stage B/C rulings rather than a timeline defect. Full measurement in
+  [`fixture-evidence.md`](fixture-evidence.md).
 - **The bitmap-loader fork is unruled.** Encoded images use the browser `Image` load and SWF-lossless
   rasters become `Bitmap`s eagerly. Bridging the `DecodedImage` registry or adding a third resource kind
   changes shared contracts; eager lossless resolution remains until a route is selected. JPEG3/4 alpha
