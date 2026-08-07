@@ -888,6 +888,7 @@ function buildSwfFrameEntries(
         'swf.mask-without-geometry',
         'buildSwfFrameEntries',
         {
+          capability: 'swf.placement.clip-depth',
           depth: placement.depth,
           maskCharacterId: mask.characterId,
         },
@@ -1755,6 +1756,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
           'swf.stream-sound-format',
           'readSwfTimeline',
           {
+            capability: 'swf.axis.sound-format-non-mp3',
             format: streamFormat,
           },
         );
@@ -1788,7 +1790,14 @@ function reportSwfDeclinedTag(diagnostics: ImportDiagnostic[] | undefined, code:
   if (diagnostics === undefined) return;
   const kind = SWF_DECLINED_TAG_KINDS.get(code);
   if (kind === undefined) return;
-  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'readSwfTimeline', { tag: code });
+  const capability = SWF_DECLINED_TAG_CAPABILITIES.get(code);
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Skip,
+    kind,
+    'readSwfTimeline',
+    capability === undefined ? { tag: code } : { capability, tag: code },
+  );
 }
 
 // The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
@@ -2055,6 +2064,7 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
       'swf.shape-body-unreadable',
       'readSwfShapeDefinition',
       {
+        capability: version === 1 ? 'swf.shape.define-shape' : `swf.shape.define-shape-${version}`,
         characterId,
         version,
       },
@@ -2626,6 +2636,11 @@ const TAG_SOUND_STREAM_HEAD_2 = 45;
 // `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry`, `Protect`,
 // `SetTabIndex`, `DefineButtonCxform`, and the font hinting/naming tables — are deliberately absent: they
 // carry no scene content, so skipping one is not a loss to report.
+// The declared capability a declined tag costs, where one exists. Deliberately partial: `DefineFont4`,
+// `DefineBinaryData`, `ImportAssets` and `DefineButtonSound` name no declared capability, and inventing
+// one so every crumb could carry a join key would put entries in the denominator that nothing measures.
+const SWF_DECLINED_TAG_CAPABILITIES = new Map<number, string>([[61, 'swf.video.video-frame']]);
+
 const SWF_DECLINED_TAG_KINDS = new Map<number, string>([
   [17, 'swf.define-button-sound'],
   [57, 'swf.import-assets'],
