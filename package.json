@@ -47,6 +47,7 @@
     "check": "tsx ./scripts/check.ts",
     "check:append-only-ledgers": "tsx ./scripts/check-append-only-ledgers.ts",
     "check:fingerprint-source-hashes": "tsx ./scripts/check-fingerprint-source-hashes.ts",
+    "check:import-conformance": "tsx ./scripts/check-import-conformance-ratchet.ts",
     "check:license-provenance": "tsx ./scripts/check-license-provenance.ts",
     "check:package-dist-orphans": "tsx ./scripts/check-package-dist-orphans.ts",
     "clean": "npm run clean:build",
