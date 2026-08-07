@@ -236,6 +236,14 @@ of, and the question that was actually asked.
   which members to report puts a judgement inside an instrument, where it is invisible to everyone
   reading its output** — and the grouping the curator had in mind is a view the reader can build
   afterwards, while the members they dropped are gone.
+  ★★ **REFINEMENT, and it is the harder half: "the reader can group afterwards" presupposes the
+  MEASUREMENT SURVIVED.** A bounds oracle returned *contained / exact / exceeds* — **a total
+  partition, so nothing was curated — and threw away the magnitudes.** ⇒ **Grouping afterwards cannot
+  reconstruct a number that was never returned**, so a classifier can be lossy without being
+  selective. **A 1-unit overshoot and a 900-unit overshoot classify identically, and only the
+  measurement separates a rounding slip from a decode fault.** Split into a function that returns
+  signed per-edge deltas and one that classifies deltas somebody else measured. ⇒ **Return the
+  measurement; let the verdict be a function of it.**
 
 - **filed — Promote the MEASUREMENT half, never the checker with its expectations baked in.** The
   scratch file nearest the documentation **held the doc's own figures as a typed comparison table.**
@@ -354,6 +362,12 @@ of, and the question that was actually asked.
   does not defer to the recipient's judgement, it blocks them.
 
 ## Serving: honest limit
+
+- **filed — An observation of someone else's corpus, standing in as test data, is a stale figure with
+  no route back.** A test carried three magnitudes measured off one real font. **Not licensed bytes,
+  and not reproducible either** — they would be wrong the moment the corpus changed, and nothing in
+  the repository could recompute them. ⇒ **Replaced with obviously synthetic values demonstrating the
+  same relationship**, which is the only form that survives an unvendorable corpus.
 
 - **filed — A route is only a route if someone can walk it.** Figures were stamped historical on the
   explicit justification that **a stale figure is safe only when the reader has a route back to a
