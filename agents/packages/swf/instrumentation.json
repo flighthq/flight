@@ -58,7 +58,9 @@
         "reports nested masks collapsing, since the outer one is not applied at all"
       ],
       "id": "swf.placement.clip-depth",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a frame script and a mask that lose nothing"
+      ]
     },
     {
       "fires": [
@@ -74,51 +76,65 @@
         "reports a frame script declined for carrying more than playback commands"
       ],
       "id": "swf.script.do-action",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a frame script and a mask that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
       "id": "swf.shape.define-shape",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
       "id": "swf.shape.define-shape-2",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
       "id": "swf.shape.define-shape-3",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
       "id": "swf.shape.define-shape-4",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports scene names as a Skip, since labels import and the named range has no subject"
       ],
       "id": "swf.timeline.define-scene-and-frame-label-data",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     },
     {
       "fires": [
         "reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure"
       ],
       "id": "swf.video.video-frame",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about a shape, a video stream and a scene table that lose nothing"
+      ]
     }
   ],
   "fireProven": 16,
-  "silenceProven": 1
+  "silenceProven": 9
 }
