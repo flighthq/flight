@@ -10,8 +10,10 @@ import {
   createInnerShadowEffect,
   createOuterGlowEffect,
 } from '@flighthq/effects/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { Adjustment, RenderEffect, SwfFilterListGuard } from '@flighthq/types/contract';
+import type { Adjustment, ImportDiagnostic, RenderEffect, SwfFilterListGuard } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -29,6 +31,7 @@ export function readSwfFilterList(
   reader: SwfReader,
   outEffects: RenderEffect[],
   outAdjustments: Adjustment[],
+  diagnostics?: ImportDiagnostic[],
 ): boolean {
   const count = reader.readUint8();
   for (let index = 0; index < count && reader.valid; index++) {
@@ -141,6 +144,24 @@ export function readSwfFilterList(
       const strength = reader.readFixed8();
       const flags = reader.readUint8();
       if (!reader.valid) return false;
+      // GradientGlowEffect has no angle, distance, or inner/on-top member, so a gradient glow authored
+      // with any of them loses that placement. Skip rather than Drop: the target effect vocabulary cannot
+      // state these fields, so it is a capability gap rather than data this decoder failed to read.
+      if (
+        id === FILTER_GRADIENT_GLOW &&
+        (angle !== 0 || distance !== 0 || (flags & (FILTER_INNER | FILTER_BEVEL_ON_TOP)) !== 0)
+      ) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'swf.filter-field-unrepresentable',
+          'readSwfFilterList',
+          {
+            capability: 'swf.placement.filter-list',
+            filterId: id,
+          },
+        );
+      }
       outEffects.push(
         id === FILTER_GRADIENT_GLOW
           ? createGradientGlowEffect({

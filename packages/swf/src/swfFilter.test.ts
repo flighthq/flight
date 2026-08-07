@@ -1,3 +1,4 @@
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import type {
   Adjustment,
   BevelEffect,
@@ -6,11 +7,13 @@ import type {
   ConvolutionEffect,
   DropShadowEffect,
   GradientGlowEffect,
+  ImportDiagnostic,
   InnerGlowEffect,
   InnerShadowEffect,
   OuterGlowEffect,
   RenderEffect,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfFilterList, setSwfFilterListGuard } from './swfFilter';
 import { SwfReader } from './swfReader';
@@ -124,6 +127,19 @@ describe('readSwfFilterList', () => {
     expect(glow.ratios).toEqual([0, 255]);
   });
 
+  it('reports a gradient glow angle and distance it cannot represent, and stays silent without them', () => {
+    // GradientGlowEffect has no angle, distance, or inner/on-top member, so a glow authored with any of
+    // them loses that placement. The zero case is the load-bearing half: no crumb when nothing is lost.
+    const withPlacement = collectImportDiagnostics((sink) => {
+      readGlow(fixed(45), fixed(4), sink);
+    });
+    expect(withPlacement.map((entry) => entry.kind)).toEqual(['swf.filter-field-unrepresentable']);
+    expect(withPlacement[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(withPlacement[0].detail).toEqual({ capability: 'swf.placement.filter-list', filterId: 4 });
+
+    expect(collectImportDiagnostics((sink) => readGlow(fixed(0), fixed(0), sink))).toEqual([]);
+  });
+
   it('reads a convolution kernel with its flags', () => {
     const { effects } = read(
       joinBytes(
@@ -224,6 +240,22 @@ describe('setSwfFilterListGuard', () => {
     }
   });
 });
+
+function readGlow(angle: Uint8Array, distance: Uint8Array, diagnostics: ImportDiagnostic[]): void {
+  const bytes = joinBytes(
+    new Uint8Array([1, 4, 2]),
+    rgba(0xff, 0, 0, 0),
+    rgba(0, 0, 0xff, 0xff),
+    new Uint8Array([0, 255]),
+    fixed(6),
+    fixed(6),
+    angle,
+    distance,
+    fixed8(1),
+    new Uint8Array([0]),
+  );
+  readSwfFilterList(new SwfReader(bytes, 0, bytes.length), [], [], diagnostics);
+}
 
 function read(bytes: Uint8Array): { adjustments: Adjustment[]; complete: boolean; effects: RenderEffect[] } {
   const adjustments: Adjustment[] = [];
