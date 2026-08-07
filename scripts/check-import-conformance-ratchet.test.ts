@@ -376,6 +376,38 @@ describe('compareImportConformanceScores', () => {
     });
   });
 
+  it('refuses corpus-driven capability merges or splits within one frozen convention revision', () => {
+    const alpha = measuredCapability('alpha');
+    const beta = measuredCapability('beta');
+    const attempts = [
+      {
+        baseline: [alpha, beta],
+        current: [alpha],
+        detail: 'capability ids changed from [alpha, beta] to [alpha]',
+      },
+      {
+        baseline: [alpha],
+        current: [alpha, beta],
+        detail: 'capability ids changed from [alpha] to [alpha, beta]',
+      },
+    ];
+
+    for (const attempt of attempts) {
+      const report = compareImportConformanceScores(
+        score(measuredPack(attempt.baseline), '100'),
+        score(measuredPack(attempt.current), '101'),
+      );
+
+      expect(report.state).toBe('incomparable');
+      expect(report.packs[0].findings).toContainEqual({
+        capabilityId: null,
+        code: 'capability-set-changed',
+        detail: attempt.detail,
+      });
+      expect(getImportConformanceRatchetExitCode(report)).toBe(2);
+    }
+  });
+
   // Defeating condition 4: one dead shard makes the whole pack NOT RUN. The completed capability below
   // looks perfect on purpose; its partial aggregate is structurally unreachable from the formatter.
   it('reports a DEAD SHARD as whole-pack NOT RUN and never formats its partial denominator', () => {
