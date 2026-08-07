@@ -86,6 +86,32 @@ reader can tell strength apart without trusting the author's formatting:
   required it.** ⇒ **This is enumerate-what-your-vocabulary-excludes applied to a CANDIDATE SET rather
   than to a search pattern** — the same blind-spot question, one level up.
 
+- **filed — CO-ORIGINATION CREATES CO-FATE, so a closure must NAME THE REMAINDER rather than the
+  closure.** Two limits arose in the same breath when a count was produced. ⇒ **Items introduced
+  together are assumed to RESOLVE together in a reader's model, whether or not they are related** —
+  and that reaches past limits to caveats, blockers and open questions.
+  ★★ **Naming which one closed is not enough: it leaves the reader to infer what is left, AND THEY
+  WILL INFER ZERO, because the closure is the salient event and the survivors are silent.** ⇒ **So a
+  closure reports WHAT STILL STANDS** — *complete over production dispatch, and still counting
+  constants rather than capabilities* — **not merely which half went away.**
+
+- **filed — A UNIT DERIVED FROM CODE STRUCTURE IS UNSTABLE UNDER BEHAVIOUR-PRESERVING REFACTOR, and
+  that is testable rather than arguable.** Every available grouping of a dispatch set — by constant,
+  by call site, by module — **is a SYNTACTIC feature of the code.** ⇒ **A capability is a behaviour,
+  individuated by what it does to the OUTPUT, so it need not be syntactic** — and the search space is
+  wrong again, one level along from the first four candidates.
+  ★★ **The precedent is measured, not hypothetical: an earlier syntax-derived unit MOVED — 80 to 77 —
+  when an `if`-chain became an equivalent `Map`, with no change to what the importer does.** ⇒ **Any
+  code-structure grouping inherits that instability, and a refactor tests it, so the objection is
+  falsifiable.**
+  ★★★ **And it was demonstrated rather than anticipated: three constants are tested in DIFFERENT
+  MODULES** — a solid colour in a shape paint and in text **are plausibly two capabilities or one
+  shared one, and THE CONSTANT CANNOT TELL YOU.**
+  ⇒ **What escapes the space: individuate by OBSERVABLE CONSEQUENCE — what the produced output differs
+  by — which is not syntactic and is stable under refactor by construction.** ★ **And it converges
+  with the purpose finding rather than sitting beside it: content loss versus descriptor loss is
+  already a consequence distinction, so the loss kinds and the unit would come from ONE source.**
+
 - **filed — CLOSE A CEILING BY COUNTING, NOT BY ABSENCE — and say WHICH limit closed.** An author who
   had reported *the true set may be larger* traced the unresolved sites and **retracted their own
   uncertainty rather than leaving it in circulation.** ⇒ **They verified by enumeration, not by a
