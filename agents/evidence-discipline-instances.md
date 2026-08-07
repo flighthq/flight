@@ -75,6 +75,23 @@ reader can tell strength apart without trusting the author's formatting:
   is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
   without one is pending** — and only the mechanism tells you which you have.
 
+- **filed — A LEVEL failure is not a MEMBERSHIP failure, and no refinement of the membership rule
+  reaches it.** Two candidate units failed by containing entries that were not independent live
+  members. A third objection — *the behaviour may live at an interior node* — **is different in kind:
+  the set IS independent and may simply be at the wrong GRANULARITY.** ⇒ **Independence is a property
+  of the graph; the level is not**, so tightening independence cannot fix it.
+  ★★★ **THIRD NECESSARY PROPERTY, WITH A DIFFERENT SOURCE: A UNIT MUST SIT AT THE LEVEL WHERE THE
+  BEHAVIOUR LIVES — and the declarations cannot say where that is. THE DISPATCH CAN.** A capability is
+  something the code either does or does not do, **so it exists at whatever level the code DECIDES
+  BETWEEN**: switch on interior nodes and capability lives there; on leaves, there; **on something
+  neither axis names, that is the unit and the search was in the wrong artifact.**
+  ★★ **And the reason to prefer the dispatch is epistemic, not convenient: it is the one source NOT
+  derived from anyone's model of the format.** Declarations are a model; the dispatch is what the code
+  actually distinguishes. **The same move settled the earlier format's capability list against its tag
+  dispatch rather than its type table.**
+  **Limit stated with the answer: a dispatch yields CAPABILITIES-OF-THE-IMPORTER — and that denominator
+  cannot see a capability nobody implemented.**
+
 - **filed — A leaf-only census counts the sharers and misses the shared thing.** Where capability
   plausibly lives at an INTERIOR node of an inheritance graph, **enumerating leaves is independent by
   construction and still the wrong unit** ⇒ **which is why independence was named NECESSARY AND NOT
