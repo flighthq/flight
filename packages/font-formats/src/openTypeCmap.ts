@@ -11,11 +11,18 @@ import type { SfntTableDirectory } from '@flighthq/types/contract';
 // A font carrying neither maps nothing, and every codepoint lookup returns -1 rather than guessing.
 
 // Picks the best Unicode sub-table the font offers, preferring one that can express codepoints above
-// the BMP. Returns -1 when the font declares no Unicode mapping at all.
+// the BMP. Returns -1 when the font declares no Unicode mapping this reader can read.
 //
 // Platform 3 encoding 10 and platform 0 encoding 4/6 are the full-repertoire mappings; platform 3
 // encoding 1 and platform 0 encodings 0-3 are BMP-only. Preferring the former matters for emoji and for
 // CJK extensions, which is exactly the material a BMP-only map silently drops.
+//
+// ★ READABILITY IS PART OF THE CHOICE, NOT A TEST APPLIED AFTERWARDS. Ranking on encoding alone picks
+// the widest-repertoire sub-table even when it is stored in a format this reader does not implement,
+// and the font is then refused whole while a readable sub-table sits beside it. That is not
+// hypothetical: a real font in this shape carries a readable format 4 at rank 1 and a format 0 at
+// rank 2, and ranking alone rejected the entire font. A narrower map that works beats a wider one that
+// cannot be read.
 export function findOpenTypeUnicodeSubtable(
   view: Readonly<DataView>,
   cmapOffset: number,
@@ -36,12 +43,19 @@ export function findOpenTypeUnicodeSubtable(
     if (offset + 4 > byteLength) continue;
 
     const rank = rankOpenTypeUnicodeEncoding(platform, encoding);
-    if (rank > bestRank) {
-      best = offset;
-      bestRank = rank;
-    }
+    if (rank <= bestRank) continue;
+    if (!isOpenTypeCmapFormatReadable(view.getUint16(offset))) continue;
+    best = offset;
+    bestRank = rank;
   }
   return best;
+}
+
+// Whether `readOpenTypeCodepointMap` can turn this sub-table format into a map. Kept beside the chooser
+// because the two must agree: a format the chooser accepts and the reader then declines produces the
+// refusal this function exists to prevent.
+function isOpenTypeCmapFormatReadable(format: number): boolean {
+  return format === 4 || format === 12;
 }
 
 // 2 = full Unicode repertoire, 1 = BMP only, -1 = not a Unicode mapping.
