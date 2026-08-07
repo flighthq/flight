@@ -91,6 +91,16 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a morph definition that decodes, so the drop entry carries information'],
   },
   {
+    // No `fires` proof, and the reason is structural rather than pending: `readSwfMorphShapePaths` builds
+    // both halves of a pair in lockstep, so the mismatches `createPathMorph` declines on cannot arise from
+    // SWF bytes. The wire guards the branch; nobody has seen it fire and this records that rather than
+    // manufacturing a fixture that does not reach it.
+    audits: ['payload'],
+    fires: [],
+    id: 'swf.morph.define-morph-shape-2',
+    staysSilent: ['stays silent when every path pair morphs, so the declined count carries information'],
+  },
+  {
     audits: ['payload', 'scope'],
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
     id: 'swf.placement.clip-depth',

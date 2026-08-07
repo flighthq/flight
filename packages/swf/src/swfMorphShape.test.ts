@@ -1,5 +1,7 @@
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { setMorphShapeProgress } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Texture2D } from '@flighthq/types/contract';
 
 import { createSwfMorphShape } from './swfMorphShape';
@@ -59,6 +61,22 @@ describe('createSwfMorphShape', () => {
     expect(shape.data.paintBindings.map((binding) => binding.kind)).toEqual(['texture']);
     const index = shape.data.commands.indexOf('beginTextureFill');
     expect(shape.data.commands[index + 2]).toBe(texture);
+  });
+
+  // No fire proof: the two edge streams are read in lockstep by readSwfMorphShapePaths, which breaks the
+  // moment either runs out, so both paths of a pair are built with identical structure and the mismatches
+  // createPathMorph declines on cannot arise from SWF bytes. The wire stays as a guard; the absence of a
+  // fire proof is recorded rather than papered over with a fixture that does not reach it.
+  it('stays silent when every path pair morphs, so the declined count carries information', () => {
+    const body = buildMorph({ endWidth: 400, startWidth: 200 });
+    let shape: ReturnType<typeof createSwfMorphShape> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      shape = createSwfMorphShape(new SwfReader(body, 0, body.length), 1, null, sink);
+    });
+
+    // Non-vacuous: a run that produced no morph at all would be silent for the wrong reason.
+    expect(shape).not.toBeNull();
+    expect(diagnostics).toEqual([]);
   });
 
   it('returns null for a body that does not decode rather than throwing', () => {

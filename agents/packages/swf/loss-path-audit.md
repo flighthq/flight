@@ -5,8 +5,13 @@ updated: 2026-08-07
 
 # swf — the loss-path audit
 
-Where this importer can lose something without saying so. **Enumeration only: nothing here is wired, on
-purpose.** Wiring is separate work that can be estimated from this list rather than guessed at.
+Where this importer can lose something without saying so. **The enumerate-only rule has been lifted:
+families are now wired as they are confirmed, one commit each.** A row's wiring state is stated on the row;
+`agents/packages/swf/instrumentation.json` is the machine record of which wires have a fire proof and which
+have a silence proof.
+
+**Wiring a family is also the strongest test of whether it is one.** Family 6's third member survived
+three readings as a loss and did not survive an attempt to make it fire.
 
 **The real output is a denominator, not a list of wires.** A capability with no loss path needs no
 instrument, so "how much can we see" is a fraction of the capabilities that *can* silently lose something
@@ -79,9 +84,14 @@ the first three did not have:
   bound to it silently never appears.
 - `swfFrameAction.ts:164` — an AVM2 **frame script** whose commands do not parse is dropped. Affects
   `swf.script.do-abc` and `swf.script.do-abc-anonymous`.
-- `swfMorphShape.ts:180` — **a single morph path pair that fails is skipped and the morph continues with
-  fewer paths.** This is a *partial* loss inside a surviving object, unlike the other six which lose a
-  whole character. Nothing distinguishes a morph that decoded fully from one that lost a path.
+- `swfMorphShape.ts` — **a single morph path pair that fails is skipped and the morph continues with
+  fewer paths.** **Corrected on wiring: this branch could not be shown reachable.**
+  `readSwfMorphShapePaths` walks the start and end record streams in lockstep and breaks the moment
+  either runs out, so both halves of a pair are built with identical structure and the winding,
+  contour-count and closedness mismatches `createPathMorph` declines on cannot arise from SWF bytes. It
+  is a defensive guard, not a demonstrated loss path. **I listed it as a loss because it matched the
+  searched-for shape, without asking whether it could fire — a search finds syntax, not losses.** The
+  wire is in place with a silence proof and no fire proof, and the gap is recorded as a gap.
 
 **This is the argument for a pattern-level remedy rather than seven wires.** The shape is mechanically
 greppable, which means it is also mechanically *enforceable* — a lint rule over
