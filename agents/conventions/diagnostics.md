@@ -14,11 +14,12 @@ The unit of tree-shaking is the **import graph**, not the branch:
 
 So diagnostics must be *separately importable*, and then they cost production nothing — enforced by the module system, not by a `__DEV__` define in someone else's build config. Flight deliberately does not use the `process.env.NODE_ENV` pattern: import-shedding is strictly more durable than define-shedding.
 
-## The inversion rule: core exposes seams, never messages
+## The inversion rule: core runtime exposes seams, never messages
 
-Core modules never contain diagnostic strings. Diagnostics live in **sibling modules within the same package** that import core and attach through the nullable hook/runtime slots that already exist. Core's cost when guards are unused is a null check that is already there. A shipped app that never imports a guard sheds every byte of its prose by construction.
+Core runtime modules never contain diagnostic strings. Diagnostics live in **sibling modules within the same package** that import core and attach through the nullable hook/runtime slots that already exist. Core's cost when guards are unused is a null check that is already there. A shipped app that never imports a guard sheds every byte of its prose by construction.
 
-`enableEntityRuntimeGuards` (`@flighthq/entity`) is the proven shape; `enableRenderGuards(state)` / `explainRenderState(state, root)` generalize it.
+`enableEntityRuntimeGuards` (`@flighthq/entity`) is the proven module-scoped shape;
+`enableGlRenderStateGuards(state)` is an existing state-scoped counterpart.
 
 Kind-keyed render registries share one concrete seam: `enableRenderRegistrySignals(state)` allocates
 the nullable `onRegistryMiss` signal used by node renderers, texture resolvers, shape-command
@@ -45,11 +46,15 @@ This is the constructive twin of the `no-warning-comments` lint rule: lint close
 
 ## Guard API convention
 
-- **`enable<Domain>Guards(...)`** — one per owning package, in a sibling module, idempotent, never called at module top level, no effect on `"sideEffects": false`. State-scoped where a state object exists (`enableRenderGuards(state)`); module-scoped otherwise (`enableGeometryPoolGuards()`).
+The log-backed default follows these rules. A package may instead expose an explicitly caller-composed
+sink or seam-plus-formatter when that is its chosen public shape; the current core examples are recorded
+below so their missing log-backed enabler is not mistaken for unfinished work.
+
+- **`enable<Domain>Guards(...)`** — one per owning package that chooses the enabler shape, in a sibling module, idempotent, never called at module top level, no effect on `"sideEffects": false`. State-scoped where a state object exists (`enableGlRenderStateGuards(state)`); module-scoped otherwise (`enableEasingGuards()`).
 - **`are<Domain>GuardsEnabled(...)`** mirror, same scoping.
 - Guards attach via existing nullable hook/runtime slots — never a new branch in a core hot path.
 - **Warn only — no strict/throw mode.** Throwing on misuse changes control flow between dev and prod and violates the sentinel rule. Tests that want hard failure assert on a memory log sink.
-- **Two modules, not one: the seam and the wording.** A `<domain>Guards.ts` holds the slots and the `report*` functions core calls, and depends on *nothing* — no logger, no messages. `enable<Domain>Guards.ts` is the only module that imports `@flighthq/log` and the only place a sentence lives. Until a caller opts in, every `report*` is a null check and a return, which is what lets the seam sit in code that must not carry a message.
+- **The log-backed shape uses two modules, not one: the seam and the wording.** A `<domain>Guards.ts` holds the slots and the `report*` functions core calls, and depends on *nothing* — no logger, no messages. `enable<Domain>Guards.ts` is the only module that imports `@flighthq/log` and the only place a sentence lives. Until a caller opts in, every `report*` is a null check and a return, which is what lets the seam sit in code that must not carry a message.
 - **Several emitters behind one `enable`, not a module per case.** A domain's silent behaviours share one enable, and two cases that differ only in *what* was coerced share one emitter parameterised by subject rather than one each — `skeleton2d` reports an attachment-swap and a draw-order coercion through a single emitter, and a deform length mismatch through a second. Slots are *set* rather than accumulated, so enabling twice installs one guard.
 - **Key `logOnce` per subject, not per module.** `logOnce` keys are process-wide with no reset, so a module-scoped key lets whichever subject fails *first* silence every other one for the session. This also constrains tests: two cases sharing a subject means the second is silently suppressed by the first.
 
@@ -73,23 +78,39 @@ that warns about **misuse the runtime could detect and report**. These are not t
 - **Internal preconditions.** A non-exported helper's "callers must resolve X first" is an internal
   invariant, which the sentinel rule says not to validate — correct usage cannot reach it.
 
-The three that *were* real — `easeSteps`' degenerate `jumpNone`, `clipRegion`'s double release, and
+The three real examples from that sweep — `easeSteps`' degenerate `jumpNone`, `clipRegion`'s double release, and
 `audioMixer`'s writes that reach no mixer — share one property none of the above have: a wrong call is
 silently accepted and the damage surfaces later somewhere else. That is the test.
 
 ### Which guards exist
 
-Per-package enablers are the primitive, and there is deliberately no single global switch that turns
-everything on. But a caller who cannot *find* the enabler for their subsystem will ask for that global —
-which is exactly what a downstream consumer did — so the set is listed here rather than left to a grep:
+Per-package enablers—or an explicitly documented caller-composed seam—are the primitive, and there is
+deliberately no single global switch that turns everything on. But a caller who cannot *find* the entry
+point for their subsystem will ask for that global—which is exactly what a downstream consumer did—so
+the enabler set is listed here rather than left to a grep:
 
-`enableAudioMixerGuards` · `enableCanvasTextureResolverGuards` · `enableClipGuards` ·
+`enableAssetGuards` · `enableAudioMixerGuards` · `enableBitmapFontGuards` ·
+`enableCanvasTextureResolverGuards` · `enableClipGuards` · `enableCollisionGuards` ·
 `enableColorAdjustmentGuards` · `enableDomTextureResolverGuards` · `enableEasingGuards` ·
 `enableEntityRuntimeGuards` · `enableGlColorAdjustmentGuards` · `enableGlPbrExtensionGuards` ·
 `enableGlRenderEffectGuards` · `enableGlRenderStateGuards` · `enableGlRenderTextureGuards` ·
-`enableGlTextureResolverGuards` · `enableInteractionGuards` · `enableRenderRegistryGuards` ·
-`enableShortcutGuards` · `enableSnapshotGuards` · `enableStatechartGuards` · `enableTextureAtlasGuards` ·
-`enableWgpuColorAdjustmentGuards` · `enableWgpuTextureResolverGuards`
+`enableGlScene3DColorSpaceGuards` · `enableGlScene3DCustomShaderGuards` ·
+`enableGlScene3DDeformGuards` · `enableGlScene3DForwardLightSelectionGuards` ·
+`enableGlTextureResolverGuards` · `enableGlyphAtlasGuards` · `enableInteractionGuards` ·
+`enableLayoutGuards` · `enableMovieClipGuards` · `enablePermissionGuards` ·
+`enableRenderRegistryGuards` · `enableScene3DResourceFailureGuards` · `enableSceneRenderGuards` ·
+`enableShortcutGuards` · `enableSkeleton2DGuards` · `enableSnapshotGuards` · `enableSocketGuards` ·
+`enableStatechartGuards` · `enableSwfGuards` · `enableTextShaperGuards` · `enableTextureAtlasGuards` ·
+`enableTrayGuards` · `enableWgpuColorAdjustmentGuards` · `enableWgpuScene3DCustomShaderGuards` ·
+`enableWgpuScene3DForwardLightSelectionGuards` · `enableWgpuTextureResolverGuards`
+
+The core-tier census has seven packages with a concrete caller-facing guard need, in three deliberately
+different states. `easing` and `entity` have complete log-backed enablers. `layout` has the complete
+caller-sink form `enableLayoutGuards(state, warningSink)`. `spatial` deliberately has no
+`enableSpatialGuards`: it exposes `setSpatialIndexingGuard` plus `formatSpatialIndexingNotice`, leaving
+their one-line composition to the caller as a package-specific choice rather than a layer restriction.
+The three remaining implementation candidates are `geometry`, `math`, and `path`; that is a work list,
+not authorization to build them.
 
 For a render session, `enableFlightDiagnostics(state)` in `@flighthq/debug` is the existing convenience
 that composes several of these — an assembly built *from* the primitives, which is allowed, rather than a
@@ -98,7 +119,8 @@ state-less (`enableGuards?: () => void`), so state-scoped guards must still be e
 
 ## Emission: through `@flighthq/log`
 
-Guards emit via `@flighthq/log`, not bare `console.warn`:
+Log-backed guards emit via `@flighthq/log`, not bare `console.warn`. Caller-composed guards hand the
+record or warning sink to the application; they do not grow an ad hoc console path in the core package.
 
 - **`logOnce(key, LogLevel.Warn, data, channel)`** — one warning per key, ever; per-frame spam is impossible by construction. No hand-rolled dedup sets.
 - **Channel = the owning package's short name** (`'render'`, `'entity'`, `'geometry'`). Users silence or focus per channel via `setLogChannelLevel`.
@@ -106,7 +128,9 @@ Guards emit via `@flighthq/log`, not bare `console.warn`:
 - **Tests assert via `createMemoryLogSink`** — every guard's test proves both that it fires on misuse and stays silent on correct use.
 - **Capture integration for free** — guard warnings land in the capture tooling's `logs.jsonl`, so the artifact an agent reads after a capture explains the blank frame. This is what makes warnings an agent *sensor*, not console noise.
 
-Only guard/explain sibling modules import `@flighthq/log`; core never does, so the dependency sheds with the guards.
+Log-backed guard modules import `@flighthq/log` only behind the sibling-module boundary; core runtime
+modules never do, so the dependency sheds with the guards. Core enablers use the narrow exception below.
+The caller-composed `layout` and `spatial` forms carry no logger dependency themselves.
 
 ## Message convention
 
@@ -188,8 +212,9 @@ Throws stay reserved for programmer error, so they are rare and cheap — keep m
 ## Core-tier packages and the guard exception
 
 A guard module in a **core-tier** package may import `@flighthq/log`, even though the dependency-layer rule
-otherwise forbids core → feature. This is a deliberate, narrow exception [chief ruling 2026-07-31], and the
-reasoning matters more than the permission, because it is what stops the exception from being generalized.
+otherwise forbids core → feature. This is a deliberate, narrow exception [chief ruling 2026-07-31;
+ratified 2026-08-07 after the neighbor-package ruling was retracted], and the reasoning matters more
+than the permission, because it is what stops the exception from being generalized.
 
 **Why the two rules coexist rather than conflict.** The layer rule protects two things: core's runtime bundle
 weight, and its dependency-free portability. A guard module threatens neither, because it is *shakeable* — it
@@ -198,17 +223,21 @@ A build that does not import the guard never pulls `@flighthq/log`; a build that
 diagnostics and has already accepted the logger. So the exception costs exactly the thing the rule was
 protecting: nothing.
 
-**The exception is file-scoped and machine-enforced, not a blanket allowance.** `packages:check` permits the
-manifest dependency and then separately asserts that `@flighthq/log` is imported *only* from
-`enable*Guards`-named files in that package (`getCoreGuardImportViolations` in `scripts/package-layers.ts`).
-A core runtime file importing the logger fails the check by name and path. Without that pairing the manifest
-allowance would quietly widen into "core may depend on log", which is the thing the layer rule exists to stop.
+**The exception is file-scoped and doubly machine-enforced, not a blanket allowance.** `packages:check`
+permits the manifest dependency, then `getCoreGuardImportViolations` asserts that `@flighthq/log` is
+imported *only* from `enable*Guards`-named files in that package. A second check,
+`getCoreGuardRuntimeImportViolations`, forbids a core runtime file from importing its own guard module;
+package barrels are the deliberate shakeable exception. The first gate keeps the logger out of runtime
+files directly, and the second keeps the enabler—and therefore its logger import—out of the runtime graph.
+Without both gates the manifest allowance could widen into "core may depend on log" or stop being
+shakeable, which are the two failures the layer rule exists to prevent.
 
-**What this replaces.** Before the ruling, a core package that wanted a guard had two bad options: emit through
-a bespoke channel, or route through a caller-supplied reporter that duplicates what `@flighthq/log` already
-abstracts. `@flighthq/entity` had taken the first — a raw `console.warn` behind an `eslint-disable` — which
-bypassed the sink, the levels, and the once-per-cause dedupe every other guard gets. It now uses the standard
-convention like any other package.
+**What this replaces.** Before the ruling, a core package that wanted the standard log-backed shape could
+not import the logger: it had to emit through a bespoke channel or expose caller wiring even when that was
+not the package's chosen API. The exception removes that architectural constraint without outlawing
+deliberate caller-composed designs such as `layout` and `spatial`. `@flighthq/entity` had taken the bespoke
+route—a raw `console.warn` behind an `eslint-disable`—which bypassed the sink, levels, and once-per-cause
+dedupe every other log-backed guard gets. It now uses the standard convention like any other package.
 
 **Applies to core only.** Feature, backend, and application tiers already permit the dependency outright; they
 need no exception and should not cite this one.
