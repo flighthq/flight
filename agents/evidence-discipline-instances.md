@@ -75,6 +75,26 @@ reader can tell strength apart without trusting the author's formatting:
   is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
   without one is pending** — and only the mechanism tells you which you have.
 
+- **filed — CHEAPNESS RECOMMENDS A CHECK, AND THE PRECONDITION NEVER GETS PRICED.** A coherence check
+  was adopted because it **needed no corpus** — ⇒ **and that is exactly what got it adopted before
+  anyone asked what else it needed.** **It required a completed diagnostic set, which nobody costed.**
+  ★★ **A cheap check attracts no scrutiny of its preconditions the way a reassuring result attracts
+  none of its instrument** — the same asymmetry, a third surface. **Price the preconditions before the
+  cost recommends it.**
+
+- **filed — AN INSTRUMENT OFFERED AS A PRECURSOR CAN BE A CONSEQUENCE OF THE WORK IT WAS MEANT TO
+  PRECEDE.** The check was proposed as the first thing runnable and **requires the completion of the
+  very work it was to precede.** ⇒ **Ask what a check CONSUMES, not only what it costs to run** — the
+  ordering claim is separate from the cost claim, and cheapness says nothing about position.
+
+- **filed — A CHECK STATED SYMMETRICALLY INVITES THE ASSUMPTION THAT ITS DIRECTIONS ARE EQUALLY
+  WARRANTED.** One sentence, two halves, matched grammar — **and the two directions turned out to
+  degrade differently under a partial input, one still informative and one worthless.**
+  ⇒ ★★ **This is co-origination-creates-co-fate tighter than the original: not two ITEMS assumed to
+  resolve together, but HALVES OF ONE ITEM, in parallel grammar, assumed equally sound.** ★ **Remedy:
+  state each direction's precondition separately — PARALLEL GRAMMAR HAS TO BE PAID FOR WITH SEPARATE
+  QUALIFICATION**, because the form itself is making a claim about the halves.
+
 - **filed — A CROSS-CHECK BETWEEN TWO SETS REQUIRES BOTH TO BE COMPLETE; WITH ONE PARTIAL IT MEASURES
   THE PARTIALITY INSTEAD.** A coherence check was run between 15 diagnostic kinds and 42 dispatch
   constants. ⇒ **The diagnostic set is demonstrably mid-instrumentation — it had been 12 — so the
