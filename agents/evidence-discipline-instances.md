@@ -40,6 +40,25 @@ reader can tell strength apart without trusting the author's formatting:
 
 ## Serving: evidence is about whatever produced it
 
+- **filed — A scripted edit that does not match is a SILENT NO-OP, and the commit succeeds anyway.**
+  A `str.replace` whose anchor had been reflowed by a formatter returned the file unchanged; the
+  surrounding one-line change still applied, **so the commit landed, the gate passed, and the author
+  reported the finding as landed.** ⇒ **Green commit, honest message, absent content.** ★ **Choose the
+  tool that cannot silently no-op: an editor that ERRORS on no-match makes the failure
+  unrepresentable, where string replacement makes it invisible** — structure over convention, applied
+  to one's own tooling. **Found only by chasing a diffstat that read `1 insertion` where a paragraph
+  was expected.**
+
+- **filed — A verification probe fails in more ways than the thing it verifies.** One content check
+  reported six of six items MISSING that were all present, from **three independent causes**: the
+  probe was case-sensitive against text that uses capitals for emphasis; the phrases were **line-
+  wrapped**, and the probe was line-based; and inline **markdown emphasis markers** split a phrase in
+  the middle. ⇒ **Each false negative read exactly like lost work**, and the natural response — report
+  the loss — would have been wrong three times. ★★ **A probe with no POSITIVE CONTROL cannot tell "the
+  content is gone" from "my probe is broken"**, and running one known-present string first costs one
+  line and settles it. **The one genuine loss was found by pursuing the anomaly to source, not by the
+  probe.**
+
 - **filed — A cast ASSERTS a shape; only a check ESTABLISHES one — and the value came from a file.** A
   stamp reader validated a tag, a variant, and that a field was an array, **and never the array's
   contents.** ⇒ **A stamp written by an older build parses cleanly and returns typed, with a required
