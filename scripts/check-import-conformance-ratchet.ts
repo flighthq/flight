@@ -13,6 +13,10 @@ import type {
 
 export type ImportConformanceRatchetState = 'incomparable' | 'not-run' | 'pass' | 'regression';
 
+export interface ImportConformanceRatchetPolicy {
+  unknownBaseline: 'allow' | 'reject';
+}
+
 export interface ImportConformanceRatchetFinding {
   capabilityId: string | null;
   code: string;
@@ -40,6 +44,7 @@ export const IMPORT_CONFORMANCE_CURRENT_PATH = '.artifacts/import-conformance/sc
 export function compareImportConformanceScores(
   baseline: Readonly<ImportConformanceScore>,
   current: Readonly<ImportConformanceScore>,
+  policy: Readonly<ImportConformanceRatchetPolicy> = { unknownBaseline: 'reject' },
 ): ImportConformanceRatchetReport {
   const comparisons: ImportConformancePackComparison[] = [];
   const currentById = new Map(current.packs.map((pack) => [pack.id, pack]));
@@ -52,6 +57,24 @@ export function compareImportConformanceScores(
         baseline: null,
         current: currentPack?.state === 'measured' ? currentPack : null,
         findings: [finding('baseline-not-measured', 'the baseline pack is not measured and cannot seed a ratchet')],
+        id: baselinePack.id,
+        state: 'incomparable',
+      });
+      continue;
+    }
+    if (
+      policy.unknownBaseline === 'reject' &&
+      baselinePack.capabilities.some((capability) => capability.state === 'unknown')
+    ) {
+      comparisons.push({
+        baseline: baselinePack,
+        current: currentPack?.state === 'measured' ? currentPack : null,
+        findings: [
+          finding(
+            'baseline-contains-unknown',
+            'the caller policy rejects a baseline with instrumentation-unknown exercised capabilities',
+          ),
+        ],
         id: baselinePack.id,
         state: 'incomparable',
       });
@@ -162,9 +185,9 @@ export function formatImportConformanceRatchetReport(report: Readonly<ImportConf
   for (const pack of report.packs) {
     lines.push('', `  ${stateMark(pack.state)} ${pc.bold(pack.id)} ${stateLabel(pack.state)}`);
     if (pack.baseline !== null && pack.current !== null) {
-      lines.push(`    ${formatThreeNumbers(pack.baseline, pack.current)}`);
+      lines.push(`    ${formatScoreNumbers(pack.baseline, pack.current)}`);
     } else if (pack.current !== null) {
-      lines.push(`    ${formatThreeNumbers(null, pack.current)}`);
+      lines.push(`    ${formatScoreNumbers(null, pack.current)}`);
     }
     for (const entry of pack.findings) {
       const capability = entry.capabilityId === null ? '' : ` [${entry.capabilityId}]`;
@@ -189,7 +212,9 @@ export function runImportConformanceRatchet(
     const paths = parseArguments(args);
     const baseline = readScore(paths.baseline, 'baseline');
     const current = readScore(paths.current, 'current');
-    const report = compareImportConformanceScores(baseline, current);
+    const report = compareImportConformanceScores(baseline, current, {
+      unknownBaseline: paths.allowUnknownBaseline ? 'allow' : 'reject',
+    });
     write(formatImportConformanceRatchetReport(report));
     return getImportConformanceRatchetExitCode(report);
   } catch (error) {
@@ -262,12 +287,18 @@ function compareCapabilities(
   const currentById = new Map(current.map((capability) => [capability.id, capability]));
   for (const baselineCapability of baseline) {
     const currentCapability = currentById.get(baselineCapability.id);
-    if (currentCapability === undefined || baselineCapability.state !== 'measured') continue;
+    if (
+      currentCapability === undefined ||
+      baselineCapability.state === 'not-run' ||
+      baselineCapability.state === 'unmeasured'
+    ) {
+      continue;
+    }
     if (currentCapability.state === 'unmeasured') {
       findings.push(
         finding(
           'capability-lost-witnesses',
-          `was measured with ${baselineCapability.witnesses} witness${baselineCapability.witnesses === 1 ? '' : 'es'} and is now UNMEASURED`,
+          `had ${baselineCapability.witnesses} witness${baselineCapability.witnesses === 1 ? '' : 'es'} and is now UNMEASURED`,
           baselineCapability.id,
         ),
       );
@@ -283,7 +314,18 @@ function compareCapabilities(
         ),
       );
     }
-    if (baselineCapability.passed && !currentCapability.passed) {
+    if (baselineCapability.state === 'unknown') continue;
+    if (currentCapability.state === 'unknown') {
+      findings.push(
+        finding(
+          'capability-instrumentation-regressed',
+          'was measured and is now UNKNOWN because diagnostic instrumentation is missing',
+          baselineCapability.id,
+        ),
+      );
+      continue;
+    }
+    if (baselineCapability.result === 'pass' && currentCapability.result === 'fail') {
       findings.push(finding('capability-regressed', 'changed from passing to failing', baselineCapability.id));
     }
   }
@@ -301,41 +343,52 @@ function finding(code: string, detail: string, capabilityId: string | null = nul
   return { capabilityId, code, detail };
 }
 
-function formatThreeNumbers(
+function formatScoreNumbers(
   baseline: Readonly<ImportConformanceMeasuredPack> | null,
   current: Readonly<ImportConformanceMeasuredPack>,
 ): string {
   const currentSummary = current.summary;
   const currentNumbers = [
-    `${currentSummary.exercisedCapabilities}/${currentSummary.totalCapabilities}`,
-    `${currentSummary.passedCapabilities}/${currentSummary.exercisedCapabilities}`,
-    `${currentSummary.singleWitnessCapabilities}`,
+    `${currentSummary.exercised.capabilities}/${currentSummary.totalCapabilities}`,
+    `${currentSummary.exercised.instrumented.capabilities}/${currentSummary.exercised.capabilities}`,
+    `${currentSummary.exercised.instrumented.passedCapabilities}/${currentSummary.exercised.instrumented.capabilities}`,
+    `${currentSummary.exercised.singleWitnessCapabilities}`,
   ];
   if (baseline === null) {
-    return `exercised ${currentNumbers[0]}; pass ${currentNumbers[1]}; single-witness ${currentNumbers[2]}`;
+    return `exercised ${currentNumbers[0]}; instrumented ${currentNumbers[1]}; pass ${currentNumbers[2]}; single-witness ${currentNumbers[3]}`;
   }
   const baselineSummary = baseline.summary;
   return [
-    `exercised ${baselineSummary.exercisedCapabilities}/${baselineSummary.totalCapabilities} → ${currentNumbers[0]}`,
-    `pass ${baselineSummary.passedCapabilities}/${baselineSummary.exercisedCapabilities} → ${currentNumbers[1]}`,
-    `single-witness ${baselineSummary.singleWitnessCapabilities} → ${currentNumbers[2]}`,
+    `exercised ${baselineSummary.exercised.capabilities}/${baselineSummary.totalCapabilities} → ${currentNumbers[0]}`,
+    `instrumented ${baselineSummary.exercised.instrumented.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[1]}`,
+    `pass ${baselineSummary.exercised.instrumented.passedCapabilities}/${baselineSummary.exercised.instrumented.capabilities} → ${currentNumbers[2]}`,
+    `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} → ${currentNumbers[3]}`,
   ].join('; ');
 }
 
-function parseArguments(args: readonly string[]): Readonly<{ baseline: string; current: string }> {
+function parseArguments(
+  args: readonly string[],
+): Readonly<{ allowUnknownBaseline: boolean; baseline: string; current: string }> {
+  let allowUnknownBaseline = false;
   let baseline = IMPORT_CONFORMANCE_BASELINE_PATH;
   let current = IMPORT_CONFORMANCE_CURRENT_PATH;
   for (let index = 0; index < args.length; index++) {
     const option = args[index];
+    if (option === '--allow-unknown-baseline') {
+      allowUnknownBaseline = true;
+      continue;
+    }
     if (option !== '--baseline' && option !== '--current') {
-      throw new Error(`Unknown argument '${option}'. Expected --baseline <path> or --current <path>.`);
+      throw new Error(
+        `Unknown argument '${option}'. Expected --allow-unknown-baseline, --baseline <path>, or --current <path>.`,
+      );
     }
     const path = args[++index];
     if (path === undefined || path.trim() === '') throw new Error(`Missing path after ${option}.`);
     if (option === '--baseline') baseline = path;
     else current = path;
   }
-  return { baseline, current };
+  return { allowUnknownBaseline, baseline, current };
 }
 
 function readScore(path: string, label: string): ImportConformanceScore {

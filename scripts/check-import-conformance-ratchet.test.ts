@@ -16,13 +16,14 @@ import type {
   ImportConformanceNotRunPack,
   ImportConformanceOutcomeCounts,
   ImportConformanceScore,
+  ImportConformanceUnknownCapability,
 } from './import-conformance-score';
 
 describe('compareImportConformanceScores', () => {
   it('passes stable keyed evidence and allows an unmeasured capability to gain its first witness', () => {
-    const baseline = score(measuredPack([measuredCapability('alpha', 2, true), unmeasuredCapability('beta')]), '100');
+    const baseline = score(measuredPack([measuredCapability('alpha', 2, 'pass'), unmeasuredCapability('beta')]), '100');
     const current = score(
-      measuredPack([measuredCapability('alpha', 2, true), measuredCapability('beta', 1, true)]),
+      measuredPack([measuredCapability('alpha', 2, 'pass'), measuredCapability('beta', 1, 'pass')]),
       '101',
     );
 
@@ -47,37 +48,43 @@ describe('compareImportConformanceScores', () => {
   // Defeating condition 2: one newly measured capability cannot replace a witness lost by another.
   // The two aggregate counts below are identical; only the stable capability key exposes the regression.
   it('fails a NO-WITNESS capability even when another capability masks it in the aggregate', () => {
-    const baseline = score(measuredPack([measuredCapability('alpha', 2, true), unmeasuredCapability('beta')]), '100');
-    const current = score(measuredPack([unmeasuredCapability('alpha'), measuredCapability('beta', 2, true)]), '101');
+    const baseline = score(measuredPack([measuredCapability('alpha', 2, 'pass'), unmeasuredCapability('beta')]), '100');
+    const current = score(measuredPack([unmeasuredCapability('alpha'), measuredCapability('beta', 2, 'pass')]), '101');
 
     const report = compareImportConformanceScores(baseline, current);
 
-    expect(report.packs[0].baseline?.summary.exercisedCapabilities).toBe(
-      report.packs[0].current?.summary.exercisedCapabilities,
+    expect(report.packs[0].baseline?.summary.exercised.capabilities).toBe(
+      report.packs[0].current?.summary.exercised.capabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
       capabilityId: 'alpha',
       code: 'capability-lost-witnesses',
-      detail: 'was measured with 2 witnesses and is now UNMEASURED',
+      detail: 'had 2 witnesses and is now UNMEASURED',
     });
     expect(getImportConformanceRatchetExitCode(report)).toBe(1);
   });
 
   it('fails a keyed pass regression that an equal aggregate pass count would hide', () => {
     const baseline = score(
-      measuredPack([measuredCapability('alpha', 2, true), measuredCapability('beta', 2, false)]),
+      measuredPack([
+        measuredCapability('alpha', 2, 'pass'),
+        measuredCapability('beta', 2, 'fail', outcomes({ threw: 1 })),
+      ]),
       '100',
     );
     const current = score(
-      measuredPack([measuredCapability('alpha', 2, false), measuredCapability('beta', 2, true)]),
+      measuredPack([
+        measuredCapability('alpha', 2, 'fail', outcomes({ silentlyWrong: 1 })),
+        measuredCapability('beta', 2, 'pass'),
+      ]),
       '101',
     );
 
     const report = compareImportConformanceScores(baseline, current);
 
-    expect(report.packs[0].baseline?.summary.passedCapabilities).toBe(
-      report.packs[0].current?.summary.passedCapabilities,
+    expect(report.packs[0].baseline?.summary.exercised.instrumented.passedCapabilities).toBe(
+      report.packs[0].current?.summary.exercised.instrumented.passedCapabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
@@ -89,8 +96,8 @@ describe('compareImportConformanceScores', () => {
 
   it('fails a witness-depth decrease without weighting aggregates', () => {
     const report = compareImportConformanceScores(
-      score(measuredPack([measuredCapability('alpha', 3, true)]), '100'),
-      score(measuredPack([measuredCapability('alpha', 1, true)]), '101'),
+      score(measuredPack([measuredCapability('alpha', 3, 'pass')]), '100'),
+      score(measuredPack([measuredCapability('alpha', 1, 'pass')]), '101'),
     );
 
     expect(report.state).toBe('regression');
@@ -98,6 +105,57 @@ describe('compareImportConformanceScores', () => {
       capabilityId: 'alpha',
       code: 'witness-depth-regressed',
     });
+  });
+
+  it('requires the caller to explicitly allow a baseline with UNKNOWN instrumentation', () => {
+    const baseline = score(measuredPack([unknownCapability('alpha', 2)]), '100');
+    const current = score(
+      measuredPack([measuredCapability('alpha', 2, 'fail', outcomes({ importedWrong: 1 }))]),
+      '101',
+    );
+
+    const strict = compareImportConformanceScores(baseline, current);
+    const dayOne = compareImportConformanceScores(baseline, current, { unknownBaseline: 'allow' });
+
+    expect(strict.state).toBe('incomparable');
+    expect(strict.packs[0].findings[0].code).toBe('baseline-contains-unknown');
+    expect(dayOne.state).toBe('pass');
+    expect(dayOne.packs[0].findings).toEqual([]);
+  });
+
+  it('fails measured-to-UNKNOWN instrumentation loss even when another keyed gain masks the aggregate', () => {
+    const baseline = score(measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 2)]), '100');
+    const current = score(measuredPack([unknownCapability('alpha', 2), measuredCapability('beta', 2, 'pass')]), '101');
+
+    const report = compareImportConformanceScores(baseline, current, { unknownBaseline: 'allow' });
+
+    expect(report.packs[0].baseline?.summary.exercised.instrumented.capabilities).toBe(
+      report.packs[0].current?.summary.exercised.instrumented.capabilities,
+    );
+    expect(report.state).toBe('regression');
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'capability-instrumentation-regressed',
+      detail: 'was measured and is now UNKNOWN because diagnostic instrumentation is missing',
+    });
+  });
+
+  it('ratchets witnesses for UNKNOWN rows and fails UNKNOWN-to-UNMEASURED loss', () => {
+    const shallower = compareImportConformanceScores(
+      score(measuredPack([unknownCapability('alpha', 3)]), '100'),
+      score(measuredPack([unknownCapability('alpha', 1)]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+    const absent = compareImportConformanceScores(
+      score(measuredPack([unknownCapability('alpha', 3)]), '100'),
+      score(measuredPack([unmeasuredCapability('alpha')]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+
+    expect(shallower.state).toBe('regression');
+    expect(shallower.packs[0].findings[0].code).toBe('witness-depth-regressed');
+    expect(absent.state).toBe('regression');
+    expect(absent.packs[0].findings[0].code).toBe('capability-lost-witnesses');
   });
 
   // Defeating condition 3: scores over different fixture material may both be internally correct, but
@@ -126,11 +184,11 @@ describe('compareImportConformanceScores', () => {
   // Defeating condition 4: one dead shard makes the whole pack NOT RUN. The completed capability below
   // looks perfect on purpose; its partial aggregate is structurally unreachable from the formatter.
   it('reports a DEAD SHARD as whole-pack NOT RUN and never formats its partial denominator', () => {
-    const baselinePack = measuredPack([measuredCapability('alpha', 2, true), measuredCapability('beta', 2, true)]);
+    const baselinePack = measuredPack([measuredCapability('alpha', 2, 'pass'), measuredCapability('beta', 2, 'pass')]);
     const currentPack: ImportConformanceNotRunPack = {
       ...baselinePack,
       capabilities: [
-        measuredCapability('alpha', 2, true),
+        measuredCapability('alpha', 2, 'pass'),
         {
           completedWitnesses: 1,
           expectedWitnesses: 2,
@@ -210,11 +268,11 @@ describe('compareImportConformanceScores', () => {
 });
 
 describe('formatImportConformanceRatchetReport', () => {
-  it('reports exercised, pass, and single-witness numbers together for every measured pack', () => {
+  it('reports all four nested population levels together for every measured pack', () => {
     const report = compareImportConformanceScores(score(measuredPack(), '100'), score(measuredPack(), '101'));
     const output = formatImportConformanceRatchetReport(report);
 
-    expect(output).toContain('exercised 1/2 → 1/2; pass 1/1 → 1/1; single-witness 0 → 0');
+    expect(output).toContain('exercised 1/2 → 1/2; instrumented 1/1 → 1/1; pass 1/1 → 1/1; single-witness 0 → 0');
   });
 });
 
@@ -240,7 +298,7 @@ describe('parseImportConformanceScore', () => {
   });
 
   it('refuses a measured capability with zero witnesses before reading it as pass or fail', () => {
-    const invalid = score(measuredPack([measuredCapability('alpha', 0, true)]), '100');
+    const invalid = score(measuredPack([measuredCapability('alpha', 0, 'pass')]), '100');
 
     expect(() => parseImportConformanceScore(invalid)).toThrow(
       'witnesses: must be an integer greater than or equal to 1',
@@ -249,11 +307,65 @@ describe('parseImportConformanceScore', () => {
 
   it('refuses aggregates that do not exactly follow the stable capability rows', () => {
     const pack = measuredPack();
-    pack.summary.passedCapabilities = 0;
+    pack.summary.exercised.instrumented.passedCapabilities = 0;
 
     expect(() => parseImportConformanceScore(score(pack, '100'))).toThrow(
-      'passedCapabilities: must equal the capability rows (1)',
+      'exercised.instrumented.passedCapabilities: must equal the capability rows (1)',
     );
+  });
+
+  it('accepts UNKNOWN as exercised but structurally outside the instrumented denominator', () => {
+    const pack = measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 1)]);
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+
+    expect(parsed.packs[0]).toMatchObject({
+      state: 'measured',
+      summary: {
+        exercised: {
+          capabilities: 2,
+          instrumented: { capabilities: 1, passedCapabilities: 1 },
+          singleWitnessCapabilities: 1,
+        },
+        totalCapabilities: 2,
+      },
+    });
+  });
+
+  it('rejects a flat UNKNOWN alias and UNKNOWN without a witness', () => {
+    const flat = measuredPack([unknownCapability('alpha', 1)]) as unknown as Record<string, unknown>;
+    flat.summary = {
+      exercisedCapabilities: 1,
+      passedCapabilities: 0,
+      singleWitnessCapabilities: 1,
+      totalCapabilities: 1,
+      unknownCapabilities: 1,
+    };
+    const noWitness = measuredPack([unknownCapability('alpha', 0)]);
+
+    expect(() => parseImportConformanceScore(score(flat as never, '100'))).toThrow(
+      'summary: must contain exactly: exercised, totalCapabilities',
+    );
+    expect(() => parseImportConformanceScore(score(noWitness, '100'))).toThrow(
+      'witnesses: must be an integer greater than or equal to 1',
+    );
+  });
+
+  it('keeps strict instrumentation-incomplete NOT RUN expressible with no numeric aggregate', () => {
+    const measured = measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 2)]);
+    const notRun: ImportConformanceNotRunPack = {
+      ...measured,
+      outcomes: null,
+      reason: 'instrumentation-incomplete',
+      state: 'not-run',
+      summary: null,
+    };
+
+    const parsed = parseImportConformanceScore(score(notRun, '101'));
+    const report = compareImportConformanceScores(score(measuredPack(), '100'), parsed);
+
+    expect(parsed.packs[0]).toMatchObject({ outcomes: null, reason: 'instrumentation-incomplete', summary: null });
+    expect(report.state).toBe('not-run');
+    expect(formatImportConformanceRatchetReport(report)).not.toContain('exercised ');
   });
 
   it('refuses a measured pack that labels any shard not-run', () => {
@@ -266,25 +378,61 @@ describe('parseImportConformanceScore', () => {
   });
 
   it('allows cleanly reported unsupported evidence to pass but never a defect outcome', () => {
-    const clean = measuredCapability('alpha', 1, true, outcomes({ unsupportedClean: 1 }));
+    const clean = measuredCapability('alpha', 1, 'pass', outcomes({ unsupportedClean: 1 }));
     expect(parseImportConformanceScore(score(measuredPack([clean]), '100')).packs[0].state).toBe('measured');
 
-    const silent = measuredCapability('alpha', 1, true, outcomes({ silentlyWrong: 1 }));
+    const silent = measuredCapability('alpha', 1, 'pass', outcomes({ silentlyWrong: 1 }));
     expect(() => parseImportConformanceScore(score(measuredPack([silent]), '100'))).toThrow(
-      'passed: cannot be true when a defect outcome is present',
+      "result: cannot be 'pass' when a defect outcome is present",
+    );
+
+    const unexplainedFailure = measuredCapability('alpha', 1, 'fail');
+    expect(() => parseImportConformanceScore(score(measuredPack([unexplainedFailure]), '100'))).toThrow(
+      "result: cannot be 'fail' without a defect outcome",
     );
   });
 });
 
 describe('runImportConformanceRatchet', () => {
+  it('only consumes an UNKNOWN baseline when the CLI policy flag selects it', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'flight-import-conformance-'));
+    const baselinePath = join(directory, 'baseline.json');
+    const currentPath = join(directory, 'current.json');
+    writeFileSync(baselinePath, JSON.stringify(score(measuredPack([unknownCapability('alpha', 2)]), '100')));
+    writeFileSync(currentPath, JSON.stringify(score(measuredPack([measuredCapability('alpha', 2, 'pass')]), '101')));
+
+    try {
+      const args = ['--baseline', baselinePath, '--current', currentPath];
+      expect(
+        runImportConformanceRatchet(
+          args,
+          () => {},
+          () => {},
+        ),
+      ).toBe(2);
+      expect(
+        runImportConformanceRatchet(
+          ['--allow-unknown-baseline', ...args],
+          () => {},
+          () => {},
+        ),
+      ).toBe(0);
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   // The synthetic importer break is deliberately written to files and driven through the real command
   // boundary. A later arc checkpoint repeats this against the real runner/importer before enforcement.
   it('returns red for a deliberately broken importer score', () => {
     const directory = mkdtempSync(join(tmpdir(), 'flight-import-conformance-'));
     const baselinePath = join(directory, 'baseline.json');
     const currentPath = join(directory, 'current.json');
-    const baseline = score(measuredPack([measuredCapability('alpha', 2, true)]), '100');
-    const current = score(measuredPack([measuredCapability('alpha', 2, false, outcomes({ silentlyWrong: 1 }))]), '101');
+    const baseline = score(measuredPack([measuredCapability('alpha', 2, 'pass')]), '100');
+    const current = score(
+      measuredPack([measuredCapability('alpha', 2, 'fail', outcomes({ silentlyWrong: 1 }))]),
+      '101',
+    );
     writeFileSync(baselinePath, JSON.stringify(baseline));
     writeFileSync(currentPath, JSON.stringify(current));
     const output: string[] = [];
@@ -310,10 +458,10 @@ describe('runImportConformanceRatchet', () => {
 function measuredCapability(
   id: string,
   witnesses = 2,
-  passed = true,
+  result: ImportConformanceMeasuredCapability['result'] = 'pass',
   outcomeCounts = outcomes(),
 ): ImportConformanceMeasuredCapability {
-  return { id, outcomes: outcomeCounts, passed, state: 'measured', witnesses };
+  return { id, outcomes: outcomeCounts, result, state: 'measured', witnesses };
 }
 
 function measuredPack(
@@ -322,6 +470,9 @@ function measuredPack(
 ): ImportConformanceMeasuredPack {
   const measured = capabilities.filter(
     (capability): capability is ImportConformanceMeasuredCapability => capability.state === 'measured',
+  );
+  const unknown = capabilities.filter(
+    (capability): capability is ImportConformanceUnknownCapability => capability.state === 'unknown',
   );
   return {
     capabilities,
@@ -339,9 +490,16 @@ function measuredPack(
     },
     state: 'measured',
     summary: {
-      exercisedCapabilities: measured.length,
-      passedCapabilities: measured.filter((capability) => capability.passed).length,
-      singleWitnessCapabilities: measured.filter((capability) => capability.witnesses === 1).length,
+      exercised: {
+        capabilities: measured.length + unknown.length,
+        instrumented: {
+          capabilities: measured.length,
+          passedCapabilities: measured.filter((capability) => capability.result === 'pass').length,
+        },
+        singleWitnessCapabilities:
+          measured.filter((capability) => capability.witnesses === 1).length +
+          unknown.filter((capability) => capability.witnesses === 1).length,
+      },
       totalCapabilities: capabilities.length,
     },
     variant: 'without-licenses',
@@ -363,6 +521,10 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
 
 function unmeasuredCapability(id: string): ImportConformanceCapability {
   return { id, state: 'unmeasured' };
+}
+
+function unknownCapability(id: string, witnesses: number): ImportConformanceUnknownCapability {
+  return { id, reason: 'diagnostic-instrumentation-missing', state: 'unknown', witnesses };
 }
 
 const PLAN_HASH = 'sha256:plan';
