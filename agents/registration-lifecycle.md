@@ -18,6 +18,27 @@ The narrow question is what a queried asset emits and how that becomes source. T
 registration is a fact derivable from content plus backend — so who derives it, and why does anyone
 bother when a shotgun is one line?**
 
+## The frame: this is linking
+
+The clearest statement of what these pieces are, and the one that decides most of the arguments below:
+
+| linker | here |
+|---|---|
+| undefined symbol references in an object file | the **requirement set** an asset produces |
+| the symbol table | the **catalog** of what each registrar binds |
+| resolution — match references to definitions, pull in only those | **codegen** emitting exactly the calls the content needs |
+| `--whole-archive` | `registerEverything` |
+
+The analogy is load-bearing, not decorative. It settles three things at once:
+
+- **Nobody hand-maintains a symbol table.** The catalog is generated, never declared — see
+  [Built-in entries are generated](#built-in-entries-are-generated).
+- **Minimal is the default and inclusion is earned.** A compiler does not link every translation unit
+  because linking selectively is inconvenient. Registration should not either. "Just make it work"
+  is the same instinct as making tree-shaking opt-in.
+- **Resolution is a pure function over two tables.** That is why the emitter is an SDK function and not
+  a script — see [Cells this needs](#cells-this-needs).
+
 ## What already exists, and what it is missing
 
 The scene↔consumer seam is built and correct in shape. `getScene2DKindUsage` /
@@ -91,12 +112,29 @@ of evidence rather than a measurement.
 
 ### 2. The catalog — what serves a facet+key on a backend
 
-The consumer half, and the one that must never be hand-written.
+The consumer half, and the symbol table of the analogy above.
 
-```json
-{ "backend": "gl", "facet": "render-effect", "key": "BlurEffect",
-  "registrar": "registerGlBlurEffect", "module": "@flighthq/effects-gl" }
+```ts
+interface CatalogEntry {
+  readonly facet: RequirementFacet;  // 'render-effect'
+  readonly key: Kind;                // 'BlurEffect'
+  readonly module: string;           // '@flighthq/effects-gl'
+  readonly registrar: string;        // 'registerGlBlurEffect'
+}
 ```
+
+**It is an open, caller-owned registry, not a static table.** This is not a preference — it is forced by
+the rule in [AGENTS.md](../AGENTS.md): *"Prefer an open registry over a closed `switch (kind)` … so users
+add their own (vendor-prefixed) kinds."* A consumer who ships `acme.Kaleidoscope` with
+`registerAcmeKaleidoscope` must be able to add an entry, or their asset scans clean, resolves to nothing,
+and codegen errors on content that works. A catalog baked into this repo's build cannot serve them, which
+is why the catalog is an SDK package and not a script output. `Scene2DDocumentImporterRegistry` is the
+shape: `create*`, `register*`, caller-held, no module global.
+
+Flight's own built-ins are entries in that registry like any other — they are simply
+[generated](#built-in-entries-are-generated) rather than typed by hand.
+
+#### Built-in entries are generated
 
 **It is derived from source, and the derivation already exists.** `scripts/reachability-core.ts:151`
 `registrationMaps()` walks a registrar body for a `CallExpression`, reads `arguments[1]` as the kind
@@ -111,6 +149,26 @@ Coverage is high by construction: the census in [registry table model](registry-
 **A registrar the walk cannot read is reported as uncatalogued, never silently omitted.** That is the
 property that keeps the catalog honest as the codebase grows, and it applies steady pressure toward the
 single-delegating-statement shape rather than letting an unreadable registrar disappear from the map.
+
+**The generator writes package source**, and `catalog:check` regenerates in memory and fails on drift —
+the `support.ts` and `swf-capabilities.ts` mechanism, pointed at `packages/registry-catalog/src/`
+instead of at `agents/`. This is the repository's **first generated `.ts` inside a package**, and the
+novelty is deliberate rather than overlooked:
+
+- The alternative — a hand-declared list the script only *verifies* — matches existing convention but
+  fails on the criterion this document is built around. Keeping 295 entries current by hand is friction
+  on the person adding a registrar; they skip it, the catalog goes stale, codegen errors on a kind that
+  genuinely works, and the fastest repair is the bundle. **A declared list regenerates the exact failure
+  mode the design exists to remove**, one level up: not an agent reaching for the shotgun while using
+  the system, but a maintainer making the shotgun necessary while extending it.
+- The convention it breaks has no reason behind it here. Package source is hand-authored because nothing
+  has needed generating, not because generating is forbidden.
+- And nobody hand-maintains a symbol table. See [the frame](#the-frame-this-is-linking).
+
+What the novelty costs, and must be handled rather than discovered: the file carries a
+`GENERATED … DO NOT EDIT` header like `capabilities.md` already does; the generator emits in sorted
+order so `order:fix` is a no-op over it; and `exports:check` wants a colocated test, which asserts shape
+invariants over the whole table rather than one case per entry.
 
 ### 3. The generated registries module — committed, readable source
 
@@ -235,16 +293,36 @@ The one thing a plugin might buy — failing the build on stale wiring — is `c
 
 ## Cells this needs
 
-| Cell | Kind | Why |
-|---|---|---|
-| `@flighthq/registry` | new SDK package | table storage (the [registry table model](registry-table-model.md) proposal) plus `RequirementSet` construction, merge, and diff |
-| `@flighthq/tool-registry` | new `tool-*` package | `generate` and `check`; outside the SDK barrel, non-tree-shakable, `bin` entry. Pairs with `@flighthq/registry` exactly as `@flighthq/tool-capture` pairs with `@flighthq/capture` — the existing precedent for a `tool-X` CLI over an SDK `X` |
-| `scripts/catalog.ts` | script | catalog generation from source, plus `catalog:check` |
-| `scene2d` / `scene3d` `sceneKindUsage.ts` | edit | facet emitter replacing the struct walk |
-| the `*-formats` cells | edit | requirements sink at the sites that already carry the diagnostics sink |
-| `types` + the twelve `explain*` functions | edit | `registrar` / `module` on `SceneCoverageEntry` |
+**Each stage is an SDK package. The CLI holds only what cannot be anything else.** The first revision put
+the catalog in `scripts/` while citing `@flighthq/capture` as the precedent for the CLI's name — but that
+package's own description is *"render capture verification policy **and baseline format**"*. The format is
+the SDK cell; the tool is a shell over it. A catalog is a format.
 
-One new SDK package, one new tool package, one script. No new format packages and no prescan packages —
+| Cell | Kind | Owns | Precedent |
+|---|---|---|---|
+| `@flighthq/requirements` | new SDK package | the sink, `collectScene2DRequirements`, `RequirementSet` merge/diff, the declared facet vocabulary | `@flighthq/importdiagnostics` — same sink shape, same collector, `deps: types only` |
+| `@flighthq/registry` | new SDK package | `KeyedTable` / `SlotTable` / `OrdinalTable`, `GlRenderRegistries` (the [registry table model](registry-table-model.md) proposal) | — |
+| `@flighthq/registry-catalog` | new SDK package | `CatalogEntry`, the open catalog registry, and the generated built-in entries | `Scene2DDocumentImporterRegistry` for shape; `-subpackage` naming per `spritesheet-formats` |
+| `@flighthq/registry-codegen` | new SDK package | `emitRegistriesModule(catalog, requirements, backend): string` — pure, no fs, no argv | — |
+| `@flighthq/tool-registry` | new `tool-*` package | argv, glob, file writes, exit codes. Outside the SDK barrel, non-tree-shakable, `bin` entry | `@flighthq/tool-capture` over `@flighthq/capture` |
+| `scripts/catalog.ts` | script | generates the built-in entries into `registry-catalog`; `catalog:check` | `support.ts`, `swf-capabilities.ts` |
+| `scene2d` / `scene3d` `sceneKindUsage.ts` | edit | facet emitter replacing the struct walk | — |
+| the `*-formats` cells | edit | requirements sink at the sites that already carry the diagnostics sink | — |
+| `types` + the twelve `explain*` functions | edit | `registrar` / `module` on `SceneCoverageEntry` | — |
+
+**Why `requirements` and `registry-catalog` are separate cells and not one.** The seam rule this whole
+design rests on is that a producer must never name a registry — *"a producer that named the registry would
+be asserting a backend it cannot know."* Two packages make that structural: `requirements` cannot express
+a registrar because it does not depend on anything that defines one. A single package would leave the rule
+to reviewer memory.
+
+**Why `registry-codegen` is separate.** An application doing runtime coverage checks — the
+`has*Coverage` path, which is the majority case — should carry no TypeScript string emitter. Package
+boundaries are the stated mechanism: *"If adding something forces a user to pull in unrelated weight, the
+boundary is wrong."* It is also the most arguable split in the table, since resolution and emission always
+travel together.
+
+Four new SDK packages, one tool package, one script. No new format packages and no prescan packages —
 that is what the sink decision buys.
 
 ## Build the generator first
@@ -267,7 +345,7 @@ in the design** — not as an aggregate, not as a package, not as a generated fi
 
 | Slot | Name |
 |---|---|
-| package (storage) | `@flighthq/registry` |
+| packages | `@flighthq/requirements`, `@flighthq/registry`, `@flighthq/registry-catalog`, `@flighthq/registry-codegen` |
 | aggregate | `GlRenderRegistries` / `CanvasRenderRegistries` / `WgpuRenderRegistries` |
 | members | `KeyedTable` / `SlotTable` / `OrdinalTable` |
 | CLI package | `@flighthq/tool-registry`, bin `tool-registry` |
@@ -290,11 +368,10 @@ recorded as fact and was load-bearing for a naming argument.
 
 ## Open questions
 
-- **Does the catalog ship to end users?** Not ruled. Shipping it inside `@flighthq/tool-registry` means a
-  consumer with an asset and no Flight checkout can run the tool, which is the only version that helps
-  someone hitting a blank screen in their own app. Repo-internal (`agents/registry-catalog.json`, beside
-  `support-matrix.json`) is simpler and matches the `swf-capabilities` precedent, but helps only people
-  working in this repo. No longer blocked on naming.
+- ~~**Does the catalog ship to end users?**~~ — **answered by the cell decision.** It is
+  `@flighthq/registry-catalog`, an SDK package, so it ships by construction and a consumer can extend it
+  with their own kinds at runtime. The repo-internal alternative (`agents/registry-catalog.json`, beside
+  `support-matrix.json`) was rejected as a closed vocabulary.
 - **Does the facet vocabulary cover non-render registries?** The ~65 tables include decompressors,
   importers, and joint solvers. [registry table model](registry-table-model.md) already asks whether
   `Satisfied` / `Fallback` / `Missing` generalize; the facet list inherits that question.
