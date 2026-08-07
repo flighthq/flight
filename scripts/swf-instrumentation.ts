@@ -109,6 +109,24 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     ],
   },
   {
+    // `staysSilent` is empty on purpose: proving silence needs a DoABC payload that actually yields frame
+    // scripts, and the only builder for one lives in swfFrameAction.test.ts. Recording the gap keeps the
+    // silence count honest rather than duplicating a fixture to make a row look complete.
+    audits: ['payload', 'scope'],
+    fires: [
+      'names the anonymous DoABC form separately, since the two are different capabilities',
+      'reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was',
+    ],
+    id: 'swf.script.do-abc',
+    staysSilent: [],
+  },
+  {
+    audits: ['payload', 'scope'],
+    fires: ['names the anonymous DoABC form separately, since the two are different capabilities'],
+    id: 'swf.script.do-abc-anonymous',
+    staysSilent: [],
+  },
+  {
     // `scope` withdrawn because property (3) does NOT hold here: the wire covers a DECLINED block and not
     // one TRUNCATED at MAX_FRAME_ACTIONS, so its tested case is not the whole of what can be lost. This is
     // not a failure of the scope audit — a scope audit can only audit EXISTING claims, and a silent

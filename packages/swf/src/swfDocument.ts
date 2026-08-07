@@ -414,7 +414,10 @@ interface SwfParseState {
   pendingInitActions: { characterId: number; script: FrameScript }[];
   // Every DoABC payload in the file, held until the whole thing is walked: a class binds to a character
   // through SymbolClass, which may be read after the script that declares its frame scripts.
-  abcBlobs: Uint8Array[];
+  // The named flag is retained so a blob that yields nothing can name which of the two DoABC forms it
+  // came from: the two are separate capabilities and a diagnostic that cannot tell them apart is not a
+  // join key.
+  abcBlobs: { bytes: Uint8Array; named: boolean }[];
   // A field's node factory per DefineEditText character, and the family name of each embedded font, so a
   // field declared before its font tag still resolves the family.
   editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
@@ -1644,8 +1647,17 @@ function appendSwfAbcFrameScripts(state: SwfParseState, timeline: SwfTimeline): 
   for (const [characterId, className] of state.linkages) charactersByClass.set(className, characterId);
 
   for (const blob of state.abcBlobs) {
-    const byClass = readSwfAbcFrameScripts(blob);
-    if (byClass === null) continue;
+    const byClass = readSwfAbcFrameScripts(blob.bytes);
+    if (byClass === null) {
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.abc-frame-scripts-unreadable',
+        'appendSwfAbcFrameScripts',
+        { capability: blob.named ? 'swf.script.do-abc' : 'swf.script.do-abc-anonymous' },
+      );
+      continue;
+    }
     for (const [className, frames] of byClass) {
       const characterId = charactersByClass.get(className);
       if (characterId === undefined) continue;
@@ -1709,7 +1721,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       if (state.remainingFrameEntries < 0) return null;
       frames.push(new Map(placements));
     } else if (code === TAG_DO_ABC || code === TAG_DO_ABC_ANONYMOUS) {
-      state.abcBlobs.push(readSwfAbcPayload(body, code === TAG_DO_ABC));
+      state.abcBlobs.push({ bytes: readSwfAbcPayload(body, code === TAG_DO_ABC), named: code === TAG_DO_ABC });
     } else if (code === TAG_DO_INIT_ACTION) {
       // An init action runs once for the sprite it names, before that sprite's own first frame, so a
       // recognized block belongs to frame 1 of that sprite rather than to the timeline reading the tag.
