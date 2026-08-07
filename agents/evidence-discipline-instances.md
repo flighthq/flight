@@ -60,6 +60,19 @@ other work.*
   three readers lost a day's claims to this, and the countermeasure cannot be more care.
 - **filed — Put a coverage caveat in a table, not a sentence.** A sentence can be skimmed past; a
   table of which files were read in full, partially, and not at all cannot.
+- **filed, and a LAW-CANDIDATE — a safe default and a measured negative are the same value, so the
+  third state must be encoded rather than interpreted.** A mechanism that speaks only when something
+  is wrong makes *nothing is wrong* and *the mechanism did not run* produce an identical observation.
+  On the floor question this is exact: `agent.sh` prints a behindness footer only when behind, **so
+  "0 commits behind" and "the command never executed" are both a silent footer.** The reading is
+  rescued by taking it from a command that also produced other output — `wake` prints a whole packet,
+  **so the silence becomes a measurement rather than a hole.** ⇒ **Read a zero from a command whose
+  other output proves it ran; a bare exit status will not do it.**
+  **Promotion note:** this recurred across capability rows, silent drops, the numbers gate, and the
+  floor — **four distinct surfaces, which is what a law looks like.** It sits here rather than in the
+  parent only because the parent has no headroom, and it is recorded as owed a place in the next pass
+  rather than left to be rediscovered. **The parent is where it belongs.**
+
 - **filed — A register is a caution, not a structure.** A process lapse was recorded, dated, and read,
   and **recurred about an hour later** — because recording a lapse prevents none. The remedy was a
   rule that made the shape unrepresentable: a message with more than one recipient may not contain
