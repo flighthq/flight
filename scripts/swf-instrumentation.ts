@@ -12,6 +12,12 @@
 // whole set. The declaration below is checked against the tests that must exist and the capability ids
 // that must be declared, so the same error fails the build instead of shipping.
 //
+// WHAT THESE COUNTS DO NOT MEAN. `fireProven` and `silenceProven` count wires that FIRE and STAY SILENT
+// at a tested input. Neither counts a wire that says something TRUE. A proof asserts the entry's severity
+// and detail at the case it exercises; whether the severity is the right one of four, and whether the
+// `capability` attribution names the capability a user would agree lost something, is UNAUDITED. A wrong
+// name leaves a consumer confidently wrong and acting, where silence only leaves them uninformed.
+//
 // Run `npm run instrumentation` to regenerate; `npm run instrumentation:check` (wired into `npm run
 // check`) fails if the committed artifact is stale or any named proof has gone missing.
 import { execFileSync } from 'node:child_process';

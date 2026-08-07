@@ -25,6 +25,18 @@ rigour.
 
 **12 candidates · 11 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified.**
 
+**Wired and fire-proven; the correctness of what each diagnostic *says* is unaudited.** The count is of
+wires that FIRE, not of wires that say something TRUE — *has a reporting path* is not *reports
+correctly*. Nothing here is withdrawn; the number simply stops carrying a meaning it never had.
+
+What that caveat does and does not cover, so it is not read as wider than it is. Every fire proof asserts
+the entry's `severity` and its full `detail` object, so the **payload at the tested input** is checked.
+What is unaudited is whether those values are right across the inputs nobody tested: whether a severity is
+the correct one of four, whether a `capability` attribution points at the capability a user would agree
+lost something, whether a count is counting the right thing. **A wrong name leaves a caller confidently
+wrong and acting; silence only leaves them uninformed** — so this is the more dangerous half, and it is
+the half no instrument here measures.
+
 **The twelfth arrived after the list was called settled, and the way it arrived is the finding.**
 `npm run capabilities:silent-drops` sweeps for the shape that hides a silent drop. It reported three
 matches, two already accounted for, and one that was not: `DoInitAction` declined its script and reported
