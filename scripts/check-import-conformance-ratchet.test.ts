@@ -326,13 +326,15 @@ describe('compareImportConformanceScores', () => {
 });
 
 describe('formatImportConformanceRatchetReport', () => {
-  it('reports all four nested population levels together for every measured pack', () => {
+  it('reports proof populations without inventing exercised capabilities as their target denominator', () => {
     const report = compareImportConformanceScores(score(measuredPack(), '100'), score(measuredPack(), '101'));
     const output = formatImportConformanceRatchetReport(report);
 
     expect(output).toContain(
-      'exercised 1/2 → 1/2; fire-proven 1/1 → 1/1; fire results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1; silence-proven 1/1 → 1/1; silence results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1',
+      'exercised 1/2 → 1/2; fire-proven 1 → 1; fire results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1; silence-proven 1 → 1; silence results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1',
     );
+    expect(output).not.toContain('fire-proven 1/1');
+    expect(output).not.toContain('silence-proven 1/1');
   });
 });
 

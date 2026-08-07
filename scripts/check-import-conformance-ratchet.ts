@@ -422,9 +422,9 @@ function formatScoreNumbers(
   const currentSummary = current.summary;
   const currentNumbers = [
     `${currentSummary.exercised.capabilities}/${currentSummary.totalCapabilities}`,
-    `${currentSummary.exercised.fireProven.capabilities}/${currentSummary.exercised.capabilities}`,
+    `${currentSummary.exercised.fireProven.capabilities}`,
     formatLaneResults(currentSummary.exercised.fireProven),
-    `${currentSummary.exercised.silenceProven.capabilities}/${currentSummary.exercised.capabilities}`,
+    `${currentSummary.exercised.silenceProven.capabilities}`,
     formatLaneResults(currentSummary.exercised.silenceProven),
     `${currentSummary.exercised.singleWitnessCapabilities}`,
     ...formatUnknownObservationCounts(current),
@@ -436,9 +436,9 @@ function formatScoreNumbers(
   const baselineUnknowns = formatUnknownObservationCounts(baseline);
   return [
     `exercised ${baselineSummary.exercised.capabilities}/${baselineSummary.totalCapabilities} → ${currentNumbers[0]}`,
-    `fire-proven ${baselineSummary.exercised.fireProven.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[1]}`,
+    `fire-proven ${baselineSummary.exercised.fireProven.capabilities} → ${currentNumbers[1]}`,
     `fire results ${formatLaneResults(baselineSummary.exercised.fireProven)} → ${currentNumbers[2]}`,
-    `silence-proven ${baselineSummary.exercised.silenceProven.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[3]}`,
+    `silence-proven ${baselineSummary.exercised.silenceProven.capabilities} → ${currentNumbers[3]}`,
     `silence results ${formatLaneResults(baselineSummary.exercised.silenceProven)} → ${currentNumbers[4]}`,
     `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} → ${currentNumbers[5]}`,
     `unknown observations known-unwired ${baselineUnknowns[0]} → ${currentNumbers[6]}, loss-path-unidentified ${baselineUnknowns[1]} → ${currentNumbers[7]}, no-fire ${baselineUnknowns[2]} → ${currentNumbers[8]}, no-silence ${baselineUnknowns[3]} → ${currentNumbers[9]}`,
