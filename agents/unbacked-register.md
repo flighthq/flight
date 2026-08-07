@@ -123,6 +123,7 @@ what this entry exists to prevent.**
 | 2 | A task addressed to one builder, copied to five | The wrong recipient analysed it, falsified four preconditions, and wrote a rejection parcel | the wrong recipient |
 | 3 | A correction of fact, carrying one builder's task approval, copied to five | Another agent began reconciling a task that was never theirs against their own assignment, then blocked pending a priority answer | the wrong recipient, plus their idle time |
 | 4 | An evidence summary addressed to one builder, sent upward | Four paragraphs read before the reader established it was not about them | the reader |
+| 5 | A merge-strategy warning about one agent's instrument, copied to two more | **One line each: `NOT MINE`** | the readers, once each, cheaply |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
@@ -143,6 +144,12 @@ reconciling a task that was never theirs* to *stopped at the first sign*. **The 
 sender because they get a reply** — which is the half every sender-side remedy could not supply. And
 it **asks nothing of the sender's memory**, which is what the three failed remedies all depended on.
 ⇒ **The party who can see it acts.** Same move as every other correction that worked in this arc.
+
+**Measured on its first live test, within the hour: instance 5 recurred and cost two one-line
+replies.** ⇒ **The lapse rate did not drop and the cost per instance did** — four paragraphs and a
+blocked agent became `NOT MINE` twice, **which is what a detection remedy is supposed to do and what
+the three prevention remedies never achieved.** **The recurrence is still the sender's; the protocol
+does not fix that and was not meant to.** Recorded as one data point, not a trend.
 
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
