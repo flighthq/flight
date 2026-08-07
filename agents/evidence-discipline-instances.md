@@ -169,6 +169,18 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — A self-criticism that stays a confession is the transient-corrected/durable-stale shape
+  again.** Two sweeps were reported as having weaker epistemic status than a third — **said in a
+  message, while the scripts kept printing confident ceilings.** ⇒ **Acting on a self-criticism means
+  changing the artifact, not repeating the criticism**, so the limitation went into the script headers
+  where a reader of the output meets it, **rather than in a thread they will never see.** The sweep
+  whose ceiling genuinely held was left unchanged — **grading is not blanket apology.**
+
+- **filed — A ruling that lands only in a thread is a conditional forever.** A count was recorded as
+  *four IF a CI gate counts as an artifact*, correctly deferring a call that was not the author's.
+  When the call was made, **they settled the conditional in the durable file and carried the REASONING
+  rather than only the answer** — because an answer alone does not survive being questioned again.
+
 - **filed — A set you cannot enumerate can still be BOUNDED, if each member declares itself.** Four
   history-dependent sites needed four different remedies, so no per-artifact fix generalised and no
   list could ever be complete — **yet a declaration of *what this site does when history changes* came
