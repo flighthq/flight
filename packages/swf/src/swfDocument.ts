@@ -1796,7 +1796,20 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       // recognized block belongs to frame 1 of that sprite rather than to the timeline reading the tag.
       const spriteId = body.readUint16();
       const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
-      if (script !== null) state.pendingInitActions.push({ characterId: spriteId, script });
+      if (script === null) {
+        // Same decline as DoAction below and the same Skip reasoning: the bytecode is outside this
+        // importer's scope by charter rather than data it failed to read. It reports the sprite it names
+        // rather than a frame, because an init action runs before that sprite's first frame.
+        reportImportDiagnostic(
+          state.diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'swf.frame-script-declined',
+          'readSwfTimeline',
+          { capability: 'swf.script.do-init-action', characterId: spriteId },
+        );
+      } else {
+        state.pendingInitActions.push({ characterId: spriteId, script });
+      }
     } else if (code === TAG_DO_ACTION) {
       // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
       const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));

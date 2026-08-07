@@ -35,6 +35,7 @@
     "capabilities:check": "tsx ./scripts/swf-capabilities.ts --check",
     "capabilities:individuation": "tsx ./scripts/swf-individuation.ts",
     "capabilities:sites": "tsx ./scripts/swf-diagnostic-sites.ts",
+    "capabilities:silent-drops": "tsx ./scripts/swf-silent-drop-shape.ts",
     "capabilities:tag-dispatch": "tsx ./scripts/swf-tag-dispatch.ts",
     "capture:baseline": "npm run capture:examples:baseline && npm run capture:functional:baseline",
     "capture:check": "npm run capture:examples:check && npm run capture:functional:check",

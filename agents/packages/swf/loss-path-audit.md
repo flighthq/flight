@@ -23,7 +23,15 @@ Counts rather than a ratio, deliberately. A denominator that shrinks when you in
 numerator grows from the same investigation improves from effort alone, and would arrive dressed as
 rigour.
 
-**11 candidates · 10 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified.**
+**12 candidates · 11 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified.**
+
+**The twelfth arrived after the list was called settled, and the way it arrived is the finding.**
+`npm run capabilities:silent-drops` sweeps for the shape that hides a silent drop. It reported three
+matches, two already accounted for, and one that was not: `DoInitAction` declined its script and reported
+nothing, while `DoAction` — **four lines below it, the identical decline, the identical shape** — reported
+`swf.frame-script-declined`. Three passes over this file read both branches and nobody saw the asymmetry.
+**A mechanical sweep found in one run what reading did not find in three**, which is the argument for the
+sweep and equally the limit of the reading.
 
 | # | Family | State |
 | --- | --- | --- |
@@ -39,6 +47,7 @@ rigour.
 | 9 | edit text font id unresolved | wired · fire only — **silence proof absent and recorded as absent** |
 | 10 | font character id reused | wired · fire + silence |
 | 11 | whole-document reject path | wired · eight container `Reject` kinds |
+| 12 | init action declined without a crumb | wired · fire + silence — **found by the shape sweep, not by reading** |
 
 Two rows carry an honest hole rather than a manufactured proof: **6c** has no fire proof because the
 branch could not be reached, and **9** has no silence proof because it needs a `DefineFont2` that parses

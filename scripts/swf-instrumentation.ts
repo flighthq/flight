@@ -165,6 +165,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['reports an init action declined the same way DoAction is, which it silently did not'],
+    id: 'swf.script.do-init-action',
+    staysSilent: ['stays silent about an init action it does obey, so the skip entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
     id: 'swf.shape.define-shape',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],

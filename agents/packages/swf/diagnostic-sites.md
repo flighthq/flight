@@ -10,7 +10,7 @@ generated: true
 Every place `packages/swf` reports an import diagnostic, as of the commit this file was committed in.
 Regenerate rather than trust the line column: **kind and severity survive edits, line numbers do not.**
 
-**36 sites across 5 files.** By severity: Drop 18 · Recover 2 · Reject 8 · Skip 8. By file: `swfDocument.ts` 31 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
+**37 sites across 5 files.** By severity: Drop 18 · Recover 2 · Reject 8 · Skip 9. By file: `swfDocument.ts` 32 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
 
 **A site count is not a coverage number, and the two must never be divided.** These sites and the loss
 families in `loss-path-audit.md` are different populations that only partly intersect: most of these
@@ -35,21 +35,22 @@ stated per family in that document and derived by checking each family, never by
 | `swfDocument.ts` | 1426 | Drop | `swf.blend-mode-behind-unread-filters` |
 | `swfDocument.ts` | 1721 | Drop | `swf.abc-frame-scripts-unreadable` |
 | `swfDocument.ts` | 1751 | Drop | `swf.text-shape-uncomposable` |
-| `swfDocument.ts` | 1808 | Skip | `swf.frame-script-declined` |
-| `swfDocument.ts` | 1889 | Skip | `swf.stream-sound-format` |
-| `swfDocument.ts` | 1917 | Drop | `swf.label-past-last-frame` |
-| `swfDocument.ts` | 1930 | Drop | `swf.cue-past-last-frame` |
-| `swfDocument.ts` | 1959 | Skip | `via SWF_DECLINED_TAG_KINDS` |
-| `swfDocument.ts` | 1999 | Skip | `swf.button-interaction-state` |
-| `swfDocument.ts` | 2051 | Drop | `swf.font-glyph-table` |
-| `swfDocument.ts` | 2068 | Drop | `swf.font-character-id-reused` |
-| `swfDocument.ts` | 2176 | Skip | `swf.scene-names` |
-| `swfDocument.ts` | 2241 | Drop | `swf.edit-text-unparseable` |
-| `swfDocument.ts` | 2286 | Recover | `swf.shape-body-unreadable` |
-| `swfDocument.ts` | 2330 | Drop | `swf.morph-shape-undecodable` |
-| `swfDocument.ts` | 2366 | Drop | `swf.jpeg-tables-missing` |
-| `swfDocument.ts` | 2391 | Drop | `swf.jpeg-tables-unsplittable` |
-| `swfDocument.ts` | 2425 | Drop | `swf.jpeg-alpha-stream` |
+| `swfDocument.ts` | 1803 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 1821 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 1902 | Skip | `swf.stream-sound-format` |
+| `swfDocument.ts` | 1930 | Drop | `swf.label-past-last-frame` |
+| `swfDocument.ts` | 1943 | Drop | `swf.cue-past-last-frame` |
+| `swfDocument.ts` | 1972 | Skip | `via SWF_DECLINED_TAG_KINDS` |
+| `swfDocument.ts` | 2012 | Skip | `swf.button-interaction-state` |
+| `swfDocument.ts` | 2064 | Drop | `swf.font-glyph-table` |
+| `swfDocument.ts` | 2081 | Drop | `swf.font-character-id-reused` |
+| `swfDocument.ts` | 2189 | Skip | `swf.scene-names` |
+| `swfDocument.ts` | 2254 | Drop | `swf.edit-text-unparseable` |
+| `swfDocument.ts` | 2299 | Recover | `swf.shape-body-unreadable` |
+| `swfDocument.ts` | 2343 | Drop | `swf.morph-shape-undecodable` |
+| `swfDocument.ts` | 2379 | Drop | `swf.jpeg-tables-missing` |
+| `swfDocument.ts` | 2404 | Drop | `swf.jpeg-tables-unsplittable` |
+| `swfDocument.ts` | 2438 | Drop | `swf.jpeg-alpha-stream` |
 | `swfFilter.ts` | 82 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFilter.ts` | 169 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFrameAction.ts` | 180 | Drop | `swf.abc-frame-script-declined` |
