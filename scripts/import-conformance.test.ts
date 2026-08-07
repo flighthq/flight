@@ -70,7 +70,15 @@ function writeFixtureTree(root: string): void {
   writeFileSync(
     join(directory, '.flight-fixtures.json'),
     JSON.stringify({
-      packs: [{ file: 'unused.tar.gz', files: 1, pack: 'swf-ruffle-fixtures', sha256: 'a'.repeat(64) }],
+      packs: [
+        {
+          file: 'unused.tar.gz',
+          metadataFiles: 0,
+          pack: 'swf-ruffle-fixtures',
+          sha256: 'a'.repeat(64),
+          verifiedFixtureFiles: 1,
+        },
+      ],
       tag: '0.1.0',
       variant: 'full',
     }),

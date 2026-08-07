@@ -151,7 +151,7 @@ function findFixtureTree(): { corpusFiles: number; directory: string } | null {
   if (stamp === null || pack === undefined || stamp.tag !== FIXTURE_RELEASE_TAG || stamp.variant !== PACK_VARIANT) {
     return null;
   }
-  return { corpusFiles: pack.files, directory };
+  return { corpusFiles: pack.verifiedFixtureFiles, directory };
 }
 
 function findPotentialScoreTarget(argv: readonly string[]): string {
