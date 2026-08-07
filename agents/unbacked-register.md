@@ -100,6 +100,17 @@ keeps having an answer.**
 
 | P7 | `broadcast-second-person` | foreman | Repeat of P5, ~1h after registering it: a task addressed to one builder in the second person was copied to five recipients, so every non-assignee received an instruction false about them in four checkable ways |
 
+| P8 | `broadcast-second-person` | foreman | Third occurrence, **inside the message correcting a different error and after P7 declared the remedy structural**: a second-person correction addressed to one builder was broadcast verbatim to five, and a recipient began reconciling a task that was never theirs |
+
+**P8 retires the claim that P7 fixed anything, and that retraction is the entry.** The stated remedy —
+*a message with more than one recipient may not contain second-person instruction* — **is a rule in a
+file, and a rule in a file is encountered nowhere near the moment of sending.** Durable and reachable
+and met after the mistake: the third axis, firing on the remedy rather than on the hazard.
+**Nothing available from inside this role makes it structural**, because the send path is the
+coordination tool and not this repository. **So it is recorded as an honest limit rather than as a
+fix, and anyone reading P7's confident remedy should read this line with it** — a register that
+reports a lapse as remedied is worse than one that reports it open.
+
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
 prevents none.** The remedy is structural and one rule: **a message with more than one recipient may
