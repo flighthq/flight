@@ -14,7 +14,9 @@ export function formatImportConformanceScore(score: Readonly<ImportConformanceSc
     `oracle-assurance: ratchet=${oracle.ratchet} first-capture-defects=${oracle.firstCaptureDefects} format-derived-properties=${oracle.formatDerivedProperties}`,
   ];
   for (const pack of score.packs) {
-    lines.push(`${pack.id} ${pack.release} [${pack.variant}]`);
+    lines.push(
+      `${pack.id} ${pack.release} [${pack.variant}; capability-convention-revision=${pack.capabilityConventionRevision}]`,
+    );
     if (pack.state === 'not-run') {
       lines.push(`NOT RUN: ${pack.reason ?? 'unspecified'}`);
       continue;
@@ -25,15 +27,15 @@ export function formatImportConformanceScore(score: Readonly<ImportConformanceSc
       `configuration-limits: ${formatConfigurationLimits(pack)}`,
       `loss-path-audit: ${formatLossPathPopulation(pack)}`,
       `diagnostic-channels: ${formatDiagnosticChannels(pack)}`,
-      `instrument-payload-audited: ${instrumentAudited.payloadCapabilities} ${formatInstrumentAuditMembers(pack, 'payload')}`,
-      `instrument-scope-audited: ${instrumentAudited.scopeCapabilities} ${formatInstrumentAuditMembers(pack, 'scope')}`,
-      `fire-proof-referenced-all: ${proofReferenced.fireCapabilities} ${formatProofReferences(pack, 'fires')}`,
-      `fire-proof-referenced-and-exercised: ${exercised.fireReferenced.capabilities} ${formatProofReferences(pack, 'fires', true)}`,
+      `instrument-payload-audited: ${formatCapabilityRowTally(instrumentAudited.payloadCapabilities, formatInstrumentAuditMembers(pack, 'payload'))}`,
+      `instrument-scope-audited: ${formatCapabilityRowTally(instrumentAudited.scopeCapabilities, formatInstrumentAuditMembers(pack, 'scope'))}`,
+      `fire-proof-referenced-all: ${formatCapabilityRowTally(proofReferenced.fireCapabilities, formatProofReferences(pack, 'fires'))}`,
+      `fire-proof-referenced-and-exercised: ${formatCapabilityRowTally(exercised.fireReferenced.capabilities, formatProofReferences(pack, 'fires', true))}`,
       `fire-results: ${formatLaneResults(pack, 'fire')}`,
-      `silence-proof-referenced-all: ${proofReferenced.silenceCapabilities} ${formatProofReferences(pack, 'staysSilent')}`,
-      `silence-proof-referenced-and-exercised: ${exercised.silenceReferenced.capabilities} ${formatProofReferences(pack, 'staysSilent', true)}`,
+      `silence-proof-referenced-all: ${formatCapabilityRowTally(proofReferenced.silenceCapabilities, formatProofReferences(pack, 'staysSilent'))}`,
+      `silence-proof-referenced-and-exercised: ${formatCapabilityRowTally(exercised.silenceReferenced.capabilities, formatProofReferences(pack, 'staysSilent', true))}`,
       `silence-results: ${formatLaneResults(pack, 'silence')}`,
-      `witness-depth: ${exercised.singleWitnessCapabilities} single-witness ${formatSingleWitnessMembers(pack)}`,
+      `witness-depth: single-witness ${formatCapabilityRowTally(exercised.singleWitnessCapabilities, formatSingleWitnessMembers(pack))}`,
       `unknown-observations: ${formatUnknownObservations(pack)}`,
     );
   }
@@ -46,7 +48,12 @@ function formatExercisedDenominator(
 ): string {
   const denominator = pack.summary.denominators.importerDeclared;
   const census = denominator.census;
-  return `exercised importer-declared capability rows ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; declared capability row tally ${denominator.declaredRows}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} (${census.falsePositiveHits} false positives in ${census.candidateHits} candidate hits; single author); SWF-format capability denominator UNMEASURED; ratchet honest limit ${oracle.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracle.formatDerivedProperties}`;
+  const margin = denominator.individuationMargin;
+  return `exercised importer-declared ${formatCapabilityRowTally(pack.summary.exercised.capabilities, formatExercisedMembers(pack))}; declared capability-row tally ${denominator.declaredRows}; individuation margin counts [same-dispatch-arm row count ${margin.sameDispatchArmRows}; behavior-preserving-refactor row count ${margin.behaviorPreservingRefactorRows}; discriminated-source row count ${margin.discriminatedSourceRows}; frozen-declared row count ${margin.frozenDeclaredRows}; ${margin.state}]; rejected circular individuation candidate ${margin.rejectedCircularCandidate}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} [false-positive-hit tally ${census.falsePositiveHits}; candidate-hit tally ${census.candidateHits}; single author]; SWF-format capability denominator UNMEASURED; ratchet honest limit ${oracle.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracle.formatDerivedProperties}`;
+}
+
+function formatCapabilityRowTally(count: number, members: string): string {
+  return `capability-row tally ${count} ${members}`;
 }
 
 function formatLaneResults(pack: Readonly<ImportConformanceScorePackMeasured>, lane: 'fire' | 'silence'): string {
@@ -61,7 +68,7 @@ function formatLaneResults(pack: Readonly<ImportConformanceScorePackMeasured>, l
       .filter((capability) => capability.results[lane].state === state)
       .map((capability) => capability.id)
       .join(', ')}]`;
-  return `pass ${summary.results.passedCapabilities}/${summary.capabilities} ${ids('pass')}, fail ${summary.results.failedCapabilities}/${summary.capabilities} ${ids('fail')}, unknown ${summary.results.unknownCapabilities}/${summary.capabilities} ${ids('unknown')}`;
+  return `referenced capability-row population tally ${summary.capabilities}; pass capability-row tally ${summary.results.passedCapabilities} ${ids('pass')}, fail capability-row tally ${summary.results.failedCapabilities} ${ids('fail')}, unknown capability-row tally ${summary.results.unknownCapabilities} ${ids('unknown')}`;
 }
 
 function formatExercisedMembers(pack: Readonly<ImportConformanceScorePackMeasured>): string {
@@ -76,7 +83,7 @@ function formatConfigurationLimits(pack: Readonly<ImportConformanceScorePackMeas
     if (capability.state !== 'exercised' || capability.configurationLimits.state === 'not-applicable') return [];
     return capability.configurationLimits.limits.map((limit) => `${capability.id}@${limit.id}=${limit.reporting}`);
   });
-  return `${members.length} [${members.join(', ')}]`;
+  return `keyed-limit count ${members.length} [${members.join(', ')}]`;
 }
 
 function formatSingleWitnessMembers(pack: Readonly<ImportConformanceScorePackMeasured>): string {
@@ -100,7 +107,7 @@ function formatLossPathPopulation(pack: Readonly<ImportConformanceScorePackMeasu
     )
     .map((capability) => capability.id);
   const summary = pack.summary.lossPathPopulation;
-  return `${summary.auditState}; audited ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose ${summary.canSilentlyLoseCapabilities}; audited-none ${summary.auditedNoLossPathCapabilities}; unaudited ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
+  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
 }
 
 function formatDiagnosticChannels(pack: Readonly<ImportConformanceScorePackMeasured>): string {
@@ -108,7 +115,7 @@ function formatDiagnosticChannels(pack: Readonly<ImportConformanceScorePackMeasu
     const members = pack.capabilities
       .filter((capability) => capability.state !== 'not-run' && capability.instrumentation.channel === channel)
       .map((capability) => capability.id);
-    return `${channel} ${members.length} [${members.join(', ')}]`;
+    return `${channel} capability-row tally ${members.length} [${members.join(', ')}]`;
   };
   return `${lane('structured-crumb')}; ${lane('human-log-only')}; ${lane('none')}`;
 }
@@ -151,7 +158,7 @@ function formatUnknownObservations(pack: Readonly<ImportConformanceScorePackMeas
           observation.reason === 'loss-path-known-not-wired' ? ` content-fidelity=${observation.contentFidelity}` : '';
         return `${observation.capabilityId}@${observation.reference} (${scope}${fidelity})`;
       });
-    return `${members.length} [${members.join(', ')}]`;
+    return `keyed-observation count ${members.length} [${members.join(', ')}]`;
   };
   return `configuration-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
 }

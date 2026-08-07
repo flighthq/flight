@@ -1,5 +1,59 @@
 import { createHash } from 'node:crypto';
 
+import { deriveImportConformanceCapabilityScopedUnknownEvidence } from './import-conformance-score';
+import type {
+  ImportConformanceCapability,
+  ImportConformanceCapabilityScopedUnknownMappings,
+  ImportConformanceConfigurationLimit,
+  ImportConformanceConfigurationLimits,
+  ImportConformanceDiagnosticChannel,
+  ImportConformanceExercisedCapability,
+  ImportConformanceInstrumentAssurance,
+  ImportConformanceInstrumentAudit,
+  ImportConformanceInstrumentation,
+  ImportConformanceLossPath,
+  ImportConformanceLossPathAudit,
+  ImportConformanceMeasuredPack,
+  ImportConformanceNotRunCapability,
+  ImportConformanceNotRunPack,
+  ImportConformanceOracleAssurance,
+  ImportConformanceOutcomeCounts,
+  ImportConformanceProvenance,
+  ImportConformanceReferencedSummary,
+  ImportConformanceScore,
+  ImportConformanceSummary,
+  ImportConformanceUnknownObservation,
+  ImportConformanceUnmeasuredCapability,
+  ImportConformanceUnwiredLossObservation,
+} from './import-conformance-score';
+
+export type {
+  ImportConformanceConfigurationLimit,
+  ImportConformanceConfigurationLimits,
+  ImportConformanceDiagnosticChannel,
+  ImportConformanceInstrumentAssurance,
+  ImportConformanceInstrumentAudit,
+  ImportConformanceLossPath,
+  ImportConformanceLossPathAudit,
+  ImportConformanceOracleAssurance,
+  ImportConformanceOutcomeCounts,
+  ImportConformanceProvenance,
+  ImportConformanceScore,
+  ImportConformanceUnknownObservation,
+  ImportConformanceUnwiredLossObservation,
+} from './import-conformance-score';
+
+export type ImportConformanceScoreCapability = ImportConformanceCapability;
+export type ImportConformanceScoreCapabilityExercised = ImportConformanceExercisedCapability;
+export type ImportConformanceScoreCapabilityNotRun = ImportConformanceNotRunCapability;
+export type ImportConformanceScoreCapabilityUnmeasured = ImportConformanceUnmeasuredCapability;
+export type ImportConformanceScoreInstrumentationRole = ImportConformanceInstrumentation;
+export type ImportConformanceScoreLaneResult = ImportConformanceExercisedCapability['results']['fire'];
+export type ImportConformanceScorePackMeasured = ImportConformanceMeasuredPack;
+export type ImportConformanceScorePackNotRun = ImportConformanceNotRunPack;
+export type ImportConformanceScoreReferencedSummary = ImportConformanceReferencedSummary;
+export type ImportConformanceScoreSummary = ImportConformanceSummary;
+
 export interface ImportConformanceCapabilityDefinition {
   id: string;
   label: string;
@@ -28,24 +82,11 @@ export interface ImportConformanceIndexedFixture {
   sourceHash: string;
 }
 
-export interface ImportConformanceOutcomeCounts {
-  importedWrong: number;
-  silentlyWrong: number;
-  threw: number;
-  unsupportedClean: number;
-}
-
 export interface ImportConformancePackIdentity {
   capabilityConventionRevision: string;
   id: string;
   release: string;
   variant: string;
-}
-
-export interface ImportConformanceProvenance {
-  mode: 'exhaustive';
-  runId: string;
-  runUrl: string;
 }
 
 export interface ImportConformanceResult {
@@ -60,22 +101,6 @@ export interface ImportConformanceResult {
   sourceHash: string;
 }
 
-export interface ImportConformanceConfigurationLimit {
-  id: string;
-  reporting: 'structured' | 'unobservable';
-}
-
-export type ImportConformanceConfigurationLimits =
-  | {
-      limits: readonly [ImportConformanceConfigurationLimit, ...ImportConformanceConfigurationLimit[]];
-      state: 'declared';
-    }
-  | { state: 'not-applicable' };
-
-export type ImportConformanceDiagnosticChannel = 'human-log-only' | 'none' | 'structured-crumb';
-
-export type ImportConformanceInstrumentAudit = 'payload' | 'scope';
-
 export interface ImportConformanceShardPlan {
   algorithm: 'fixture-count-v1';
   assignments: ImportConformanceShardAssignment[];
@@ -88,55 +113,6 @@ export interface ImportConformanceShardAssignment {
   shardId: number;
 }
 
-export interface ImportConformanceScore {
-  instrumentAssurance: ImportConformanceInstrumentAssurance;
-  oracleAssurance: ImportConformanceOracleAssurance;
-  packs: ImportConformanceScorePack[];
-  provenance: ImportConformanceProvenance;
-  schemaVersion: 1;
-}
-
-export interface ImportConformanceInstrumentAssurance {
-  payloadValidity: 'external-audit-required';
-  triggerCorrectness: 'proof-reference-presence';
-  triggerScope: 'external-audit-required';
-  triggerSpecificity: 'proof-reference-presence';
-}
-
-export interface ImportConformanceOracleAssurance {
-  firstCaptureDefects: 'undetectable';
-  formatDerivedProperties: 'required-not-implemented';
-  ratchet: 'recorded-run-regression-only';
-}
-
-export interface ImportConformanceScoreCapabilityExercised {
-  configurationLimits: ImportConformanceConfigurationLimits;
-  id: string;
-  instrumentation: {
-    audits: ImportConformanceInstrumentAudit[];
-    channel: ImportConformanceDiagnosticChannel;
-    fires: ImportConformanceScoreInstrumentationRole;
-    staysSilent: ImportConformanceScoreInstrumentationRole;
-  };
-  lossPath: ImportConformanceLossPath;
-  outcomes: ImportConformanceOutcomeCounts;
-  results: {
-    fire: ImportConformanceScoreLaneResult;
-    silence: ImportConformanceScoreLaneResult;
-  };
-  state: 'exercised';
-  unknownObservations: ImportConformanceUnknownObservation[];
-  witnesses: number;
-}
-
-export type ImportConformanceScoreInstrumentationRole =
-  | { proofs: readonly [string, ...string[]]; state: 'referenced' }
-  | { state: 'unreferenced' };
-
-export interface ImportConformanceScoreLaneResult {
-  state: 'fail' | 'pass' | 'unknown';
-}
-
 export interface ImportConformanceInstrumentationProofs {
   audits?: readonly ImportConformanceInstrumentAudit[];
   channel?: ImportConformanceDiagnosticChannel;
@@ -144,152 +120,16 @@ export interface ImportConformanceInstrumentationProofs {
   staysSilent: readonly string[];
 }
 
-export type ImportConformanceLossPathState = 'audited-none' | 'identified' | 'unaudited';
-
-export interface ImportConformanceLossPathAudit {
-  auditId: string;
-  auditor: string;
-  auditedAt: string;
-  subjectHash: string;
-}
-
-export type ImportConformanceLossPath =
-  | { audit: ImportConformanceLossPathAudit; state: 'audited-none' | 'identified' }
-  | { state: 'unaudited' };
-
-export interface ImportConformanceScoreCapabilityNotRun {
-  completedWitnesses: number;
-  expectedWitnesses: number;
-  id: string;
-  reason: 'missing-shard' | 'pack-unavailable';
-  state: 'not-run';
-}
-
-export interface ImportConformanceScoreCapabilityUnmeasured {
-  id: string;
-  instrumentation: {
-    audits: ImportConformanceInstrumentAudit[];
-    channel: ImportConformanceDiagnosticChannel;
-    fires: ImportConformanceScoreInstrumentationRole;
-    staysSilent: ImportConformanceScoreInstrumentationRole;
-  };
-  lossPath: ImportConformanceLossPath;
-  state: 'unmeasured';
-}
-
-export type ImportConformanceUnknownObservationReason =
-  | 'diagnostic-cause-unknown'
-  | 'fire-proof-missing-for-no-crumb'
-  | 'instrument-audit-incomplete'
-  | 'loop-bounded-configuration-limit'
-  | 'loss-path-known-not-wired'
-  | 'loss-path-not-identified'
-  | 'silence-proof-missing-for-crumb';
-
-export interface ImportConformanceOtherUnknownObservation {
-  reason: Exclude<ImportConformanceUnknownObservationReason, 'loss-path-known-not-wired'>;
-  reference: string;
-}
-
-export interface ImportConformanceUnwiredLossObservation {
-  contentFidelity: 'diminished' | 'missing' | 'substituted';
-  reason: 'loss-path-known-not-wired';
-  reference: string;
-}
-
-export type ImportConformanceUnknownObservation =
-  | ImportConformanceOtherUnknownObservation
-  | ImportConformanceUnwiredLossObservation;
-
 export interface ImportConformanceScoreDeclarations {
-  configurationLimitsByCapability: ReadonlyMap<string, Readonly<ImportConformanceConfigurationLimits>>;
+  capabilityScopedUnknownMappings: Readonly<ImportConformanceCapabilityScopedUnknownMappings>;
   importerDeclaredCensus: ImportConformanceImporterDeclaredCensus;
-  unwiredLossesByCapability: ReadonlyMap<string, readonly Readonly<ImportConformanceUnwiredLossObservation>[]>;
+  individuationMargin: ImportConformanceIndividuationMargin;
 }
 
-export interface ImportConformanceImporterDeclaredCensus {
-  basis: 'single-artifact-cross-check';
-  candidateHits: number;
-  falsePositiveHits: number;
-  provenance: 'single-author';
-  reference: string;
-  state: 'provisional';
-}
-
-export type ImportConformanceScoreCapability =
-  | ImportConformanceScoreCapabilityExercised
-  | ImportConformanceScoreCapabilityNotRun
-  | ImportConformanceScoreCapabilityUnmeasured;
-
-interface ImportConformanceScorePackBase {
-  capabilityConventionRevision: string;
-  capabilities: ImportConformanceScoreCapability[];
-  id: string;
-  importerSourceHash: string;
-  release: string;
-  sharding: {
-    algorithm: 'fixture-count-v1';
-    planHash: string;
-    shards: ({ id: number; state: 'measured' } | { id: number; reason: string; state: 'not-run' })[];
-  } | null;
-  variant: string;
-}
-
-export interface ImportConformanceScorePackMeasured extends ImportConformanceScorePackBase {
-  state: 'measured';
-  summary: ImportConformanceScoreSummary;
-}
-
-export interface ImportConformanceScorePackNotRun extends ImportConformanceScorePackBase {
-  outcomes: null;
-  reason: 'missing-shard' | 'pack-unavailable';
-  state: 'not-run';
-  summary: null;
-}
-
-export type ImportConformanceScorePack = ImportConformanceScorePackMeasured | ImportConformanceScorePackNotRun;
-
-export interface ImportConformanceScoreSummary {
-  denominators: {
-    importerDeclared: {
-      census: ImportConformanceImporterDeclaredCensus;
-      declaredRows: number;
-      limitation: 'individuation-rule-not-operational';
-      state: 'unresolved';
-    };
-    swfFormat: { state: 'unmeasured' };
-  };
-  exercised: {
-    capabilities: number;
-    fireReferenced: ImportConformanceScoreReferencedSummary;
-    silenceReferenced: ImportConformanceScoreReferencedSummary;
-    singleWitnessCapabilities: number;
-  };
-  instrumentAudited: {
-    payloadCapabilities: number;
-    scopeCapabilities: number;
-  };
-  lossPathPopulation: {
-    auditedCapabilities: number;
-    auditedNoLossPathCapabilities: number;
-    auditState: 'complete' | 'partial';
-    canSilentlyLoseCapabilities: number;
-    unauditedCapabilities: number;
-  };
-  proofReferenced: {
-    fireCapabilities: number;
-    silenceCapabilities: number;
-  };
-}
-
-export interface ImportConformanceScoreReferencedSummary {
-  capabilities: number;
-  results: {
-    failedCapabilities: number;
-    passedCapabilities: number;
-    unknownCapabilities: number;
-  };
-}
+export type ImportConformanceImporterDeclaredCensus =
+  ImportConformanceSummary['denominators']['importerDeclared']['census'];
+export type ImportConformanceIndividuationMargin =
+  ImportConformanceSummary['denominators']['importerDeclared']['individuationMargin'];
 
 interface ImportConformanceFixtureEvidence {
   capabilities: readonly string[];
@@ -465,6 +305,12 @@ export function createImportConformanceScore(
   assertInstrumentationProofs(instrumentationProofs, index);
   assertLossPaths(lossPathByCapability, index);
   assertScoreDeclarations(declarations, instrumentationProofs, lossPathByCapability, index);
+  const capabilityScopedUnknownEvidence = new Map(
+    deriveImportConformanceCapabilityScopedUnknownEvidence(
+      index.capabilities.map((capability) => capability.id),
+      declarations.capabilityScopedUnknownMappings,
+    ).map((evidence) => [evidence.capabilityId, evidence]),
+  );
   for (const id of instrumentationProofs.keys()) {
     if (lossPathByCapability.get(id)?.state !== 'identified') {
       throw new Error(`Instrumentation proof for ${id} requires an identified loss path`);
@@ -495,16 +341,14 @@ export function createImportConformanceScore(
       capabilities.push({ id: capability.id, instrumentation, lossPath, state: 'unmeasured' });
       continue;
     }
-    const configurationLimits = cloneConfigurationLimits(
-      declarations.configurationLimitsByCapability.get(capability.id) ?? { state: 'not-applicable' },
-    );
+    const derivedUnknownEvidence = capabilityScopedUnknownEvidence.get(capability.id)!;
+    const configurationLimits = cloneConfigurationLimits(derivedUnknownEvidence.configurationLimits);
     const outcomes = emptyOutcomeCounts();
     const unknownObservations = createCapabilityScopedUnknownObservations(
       capability.id,
-      configurationLimits,
       instrumentation,
       lossPath,
-      declarations.unwiredLossesByCapability.get(capability.id) ?? [],
+      derivedUnknownEvidence.unknownObservations,
     );
     const hasCapabilityScopedUnknown = unknownObservations.length > 0;
     for (const reference of capability.witnesses) {
@@ -596,6 +440,7 @@ export function createImportConformanceScore(
       importerDeclared: {
         census: { ...declarations.importerDeclaredCensus },
         declaredRows: capabilities.length,
+        individuationMargin: { ...declarations.individuationMargin },
         limitation: 'individuation-rule-not-operational',
         state: 'unresolved',
       },
@@ -780,15 +625,14 @@ function assertScoreDeclarations(
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
   assertImporterDeclaredCensus(declarations.importerDeclaredCensus);
+  assertIndividuationMargin(declarations.individuationMargin, index.capabilities.length);
   const declared = new Set(index.capabilities.map((capability) => capability.id));
-  for (const [id, configurationLimits] of declarations.configurationLimitsByCapability) {
-    if (!declared.has(id)) throw new Error(`Configuration limits name undeclared capability ${id}`);
-    assertConfigurationLimits(configurationLimits, id);
-  }
-  for (const [id, unwiredLosses] of declarations.unwiredLossesByCapability) {
-    if (!declared.has(id)) throw new Error(`Unwired loss declaration names undeclared capability ${id}`);
-    assertUnwiredLosses(unwiredLosses, id);
-  }
+  const capabilityScopedUnknownEvidence = new Map(
+    deriveImportConformanceCapabilityScopedUnknownEvidence(
+      index.capabilities.map((capability) => capability.id),
+      declarations.capabilityScopedUnknownMappings,
+    ).map((evidence) => [evidence.capabilityId, evidence]),
+  );
 
   for (const id of declared) {
     const proofs = instrumentationProofs.get(id);
@@ -798,13 +642,35 @@ function assertScoreDeclarations(
         ? 'structured-crumb'
         : 'none');
     const lossPath = lossPaths.get(id)!;
-    const unwiredLosses = declarations.unwiredLossesByCapability.get(id) ?? [];
+    const unwiredLosses = capabilityScopedUnknownEvidence
+      .get(id)!
+      .unknownObservations.filter(
+        (observation): observation is ImportConformanceUnwiredLossObservation =>
+          observation.reason === 'loss-path-known-not-wired',
+      );
     if (unwiredLosses.length > 0 && (lossPath.state !== 'identified' || channel === 'structured-crumb')) {
       throw new Error(`Unwired loss declarations for ${id} require an identified loss path without a structured crumb`);
     }
     if (lossPath.state === 'identified' && channel !== 'structured-crumb' && unwiredLosses.length === 0) {
       throw new Error(`Identified loss path for ${id} without a structured crumb requires its raw unwired family`);
     }
+  }
+}
+
+function assertIndividuationMargin(margin: Readonly<ImportConformanceIndividuationMargin>, declaredRows: number): void {
+  if (
+    margin.state !== 'frozen-no-election' ||
+    margin.rejectedCircularCandidate !== 'corpus-differential-behavior' ||
+    !Number.isSafeInteger(margin.sameDispatchArmRows) ||
+    margin.sameDispatchArmRows < 0 ||
+    !Number.isSafeInteger(margin.behaviorPreservingRefactorRows) ||
+    margin.behaviorPreservingRefactorRows < 0 ||
+    !Number.isSafeInteger(margin.discriminatedSourceRows) ||
+    margin.discriminatedSourceRows < 0 ||
+    !Number.isSafeInteger(margin.frozenDeclaredRows) ||
+    margin.frozenDeclaredRows !== declaredRows
+  ) {
+    throw new Error('Individuation margin must be valid frozen producer counts matching the declared rows');
   }
 }
 
@@ -821,51 +687,6 @@ function assertImporterDeclaredCensus(census: Readonly<ImportConformanceImporter
     census.falsePositiveHits > census.candidateHits
   ) {
     throw new Error('Importer-declared census must be a valid provisional single-artifact cross-check');
-  }
-}
-
-function assertConfigurationLimits(
-  configurationLimits: Readonly<ImportConformanceConfigurationLimits>,
-  id: string,
-): void {
-  if (configurationLimits.state === 'not-applicable') return;
-  if (configurationLimits.limits.length === 0) {
-    throw new Error(`Declared configuration limits for ${id} must not be empty`);
-  }
-  assertSortedUnique(
-    configurationLimits.limits.map((limit) => limit.id),
-    `configuration limit ids for ${id}`,
-  );
-  for (const limit of configurationLimits.limits) {
-    if (!/^[A-Z][A-Z0-9_]+$/.test(limit.id)) {
-      throw new Error(`Configuration limit for ${id} requires a stable uppercase id`);
-    }
-    if (limit.reporting !== 'structured' && limit.reporting !== 'unobservable') {
-      throw new Error(`Configuration limit ${limit.id} for ${id} has an invalid reporting state`);
-    }
-  }
-}
-
-function assertUnwiredLosses(
-  unwiredLosses: readonly Readonly<ImportConformanceUnwiredLossObservation>[],
-  id: string,
-): void {
-  if (unwiredLosses.length === 0) throw new Error(`Unwired loss declarations for ${id} must not be empty`);
-  assertSortedUnique(
-    unwiredLosses.map((observation) => observation.reference),
-    `unwired loss family references for ${id}`,
-  );
-  for (const observation of unwiredLosses) {
-    if (observation.reason !== 'loss-path-known-not-wired' || observation.reference.trim() === '') {
-      throw new Error(`Unwired loss declaration for ${id} requires a non-empty raw family reference`);
-    }
-    if (
-      observation.contentFidelity !== 'diminished' &&
-      observation.contentFidelity !== 'missing' &&
-      observation.contentFidelity !== 'substituted'
-    ) {
-      throw new Error(`Unwired loss declaration ${observation.reference} for ${id} has invalid content fidelity`);
-    }
   }
 }
 
@@ -976,25 +797,18 @@ function cloneConfigurationLimits(
 
 function createCapabilityScopedUnknownObservations(
   capabilityId: string,
-  configurationLimits: Readonly<ImportConformanceConfigurationLimits>,
   instrumentation: Readonly<ImportConformanceScoreCapabilityExercised['instrumentation']>,
   lossPath: Readonly<ImportConformanceLossPath>,
-  unwiredLosses: readonly Readonly<ImportConformanceUnwiredLossObservation>[],
+  derivedObservations: readonly Readonly<ImportConformanceUnknownObservation>[],
 ): ImportConformanceUnknownObservation[] {
-  const observations: ImportConformanceUnknownObservation[] = [];
-  if (configurationLimits.state === 'declared') {
-    observations.push(
-      ...configurationLimits.limits
-        .filter((limit) => limit.reporting === 'unobservable')
-        .map((limit) => ({ reason: 'loop-bounded-configuration-limit' as const, reference: limit.id })),
-    );
-  }
+  const observations: ImportConformanceUnknownObservation[] = derivedObservations.map((observation) => ({
+    ...observation,
+  }));
   if (lossPath.state === 'unaudited') {
     observations.push({ reason: 'loss-path-not-identified', reference: capabilityId });
-  } else if (lossPath.state === 'identified' && instrumentation.channel !== 'structured-crumb') {
-    observations.push(...unwiredLosses.map((observation) => ({ ...observation })));
   } else if (
     lossPath.state === 'identified' &&
+    instrumentation.channel === 'structured-crumb' &&
     (!instrumentation.audits.includes('payload') || !instrumentation.audits.includes('scope'))
   ) {
     observations.push({ reason: 'instrument-audit-incomplete', reference: capabilityId });
@@ -1065,6 +879,11 @@ function assertSummaryMatchesCapabilities(
       summary.denominators.importerDeclared.declaredRows,
       capabilities.length,
       'denominators.importerDeclared.declaredRows',
+    ],
+    [
+      summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows,
+      capabilities.length,
+      'denominators.importerDeclared.individuationMargin.frozenDeclaredRows',
     ],
     [summary.exercised.capabilities, exercised.length, 'exercised.capabilities'],
     [summary.exercised.fireReferenced.capabilities, fireReferenced.length, 'exercised.fireReferenced.capabilities'],
