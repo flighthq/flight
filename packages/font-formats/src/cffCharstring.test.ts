@@ -33,6 +33,15 @@ describe('cffSubroutineBias', () => {
 });
 
 describe('runCffCharstring', () => {
+  it('writes the winding rather than leaving whatever the caller had', () => {
+    // Seeded with the wrong rule for the same reason as the glyf reader's twin test: a fresh path
+    // already defaults to nonZero, so only a deliberately wrong seed can show the field is written.
+    // `createPath` in this file already seeds the WRONG rule, so every fixture here was positioned
+    // to expose this and nothing had asserted on it.
+    const { path } = run(n(10), n(20), 21, 14);
+    expect(path.winding).toBe('nonZero');
+  });
+
   it('emits a move and closes on endchar', () => {
     const { ok, path } = run(n(10), n(20), 21, 14);
     expect(ok).toBe(true);

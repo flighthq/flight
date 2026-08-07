@@ -28,6 +28,24 @@ function readGlyph(glyphs: readonly SyntheticGlyph[], glyphIndex: number): { ok:
 }
 
 describe('readOpenTypeGlyphOutline', () => {
+  it('writes the winding rather than leaving whatever the caller had', () => {
+    // Seeded with the WRONG rule on purpose. A fresh `createPath` already defaults to nonZero, so a
+    // test that built one would pass whether or not this reader writes the field — and a caller
+    // reusing a scratch path across glyphs is exactly the case that keeps a stale value and renders
+    // a counter as a solid blob.
+    const path: Path = { commands: [], data: [], winding: 'evenOdd' };
+    const font = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
+    const directory = readSfntTableDirectory(font)!;
+    const ranges = readOpenTypeGlyphRanges(
+      font,
+      directory,
+      readOpenTypeGlyphCount(font, directory),
+      readOpenTypeLocaFormat(font, directory),
+    )!;
+    readOpenTypeGlyphOutline(path, font, directory, ranges, 1);
+    expect(path.winding).toBe('nonZero');
+  });
+
   it('emits one line per edge and closes, without a redundant segment back to the start', () => {
     const { ok, path } = readGlyph([emptySyntheticGlyph(), squareSyntheticGlyph(100)], 1);
     expect(ok).toBe(true);
