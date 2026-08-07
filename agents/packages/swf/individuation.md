@@ -62,8 +62,15 @@ measured numbers are below the committed one.
 
 Rewriting `resolveSwfShapeVersion`'s if-chain as an equivalent `Map` lookup — same inputs, same outputs,
 same behaviour for every byte of every file — collapses the four `DefineShape` versions into one class
-and moves the total from **80 to 77**. Measured, not predicted: the same script run against the rewritten
-source.
+and lowers the total. Measured, not predicted: the same script run against the rewritten source.
+
+**The measurement was 80 → 77, and that pair is a one-off historical result, not a live property.** It was
+taken against a deliberately modified tree that no longer exists, at the commit whose subject is
+`docs(swf): measure both individuation readings; reading A moves under a no-op refactor`. Nothing
+recomputes it — `npm run capabilities:numbers` gates the 80 because that is the current tree, and cannot
+gate the 77 because reproducing it requires editing the source first. **A reader who needs the current
+figure must redo the experiment; quoting 77 as today's value is quoting a tree nobody has seen.** The
+finding is the *direction* and the fact that it moves at all, which is what survives.
 
 A rule whose denominator moves when only the source style moves is **measuring the source, not the
 importer**. That is a third axis of incomparability of exactly the kind already known — a number that

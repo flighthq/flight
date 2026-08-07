@@ -10,8 +10,10 @@
 //
 // WHAT IT FOUND, AND WHY THAT MATTERS MORE THAN EITHER NUMBER. Reading A is not stable under a
 // behaviour-preserving refactor: rewriting `resolveSwfShapeVersion`'s if-chain as an equivalent `Map`
-// lookup collapses the four DefineShape versions into one and moves the total from 80 to 77 with no
-// change to what the importer does. A rule whose denominator moves when only the source style moves is
+// lookup collapses the four DefineShape versions into one and lowers the total, with no change to what
+// the importer does. The measured pair is in `agents/packages/swf/individuation.md`, stamped, because it
+// came from a modified tree that no longer exists and nothing here can recompute it. A rule whose
+// denominator moves when only the source style moves is
 // measuring the source, not the importer. Reading B is stable under that rewrite but coarse enough to
 // call shapes, text, morph shapes, and edit text a single capability. Neither is ratifiable as it
 // stands; `agents/packages/swf/individuation.md` carries the full result.
