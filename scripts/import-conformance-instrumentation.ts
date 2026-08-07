@@ -2,7 +2,6 @@ import type {
   ImportConformanceCapabilityDefinition,
   ImportConformanceInstrumentationProofs,
   ImportConformanceLossPath,
-  ImportConformanceLossPathAudit,
 } from './import-conformance-core';
 
 export interface ImportConformanceInstrumentationMapping {
@@ -58,7 +57,7 @@ export function parseImportConformanceInstrumentationMapping(
       continue;
     }
     proofs.set(id, { audits, fires, staysSilent });
-    const lossPath = parseLossPath(candidate.lossPath);
+    const lossPath = parseLossPath(candidate.lossPath, candidate.lossFamily);
     if (lossPath === null) {
       problems.push(`Instrumentation mapping for ${id} lacks a valid singular loss-path declaration`);
       continue;
@@ -67,6 +66,7 @@ export function parseImportConformanceInstrumentationMapping(
   }
   invalidateMismatchedProofPopulation(value.fireProven, 'fire', proofs, problems);
   invalidateMismatchedProofPopulation(value.silenceProven, 'silence', proofs, problems);
+  invalidateMismatchedLossPathPopulation(value.lossPathAudited, lossPathByCapability, problems);
   for (const id of proofs.keys()) {
     if (lossPathByCapability.get(id)?.state === 'identified') continue;
     problems.push(`Instrumentation proof for ${id} lacks an identified loss path`);
@@ -84,21 +84,15 @@ function parseAudits(value: unknown): ('payload' | 'scope')[] | null {
   return [...audits];
 }
 
-function parseLossPath(value: unknown): ImportConformanceLossPath | null {
-  if (!isRecord(value)) return null;
-  if (value.state === 'unaudited') {
-    return Object.keys(value).sort().join('\0') === 'state' ? { state: 'unaudited' } : null;
-  }
-  if (value.state !== 'audited-none' && value.state !== 'identified') return null;
-  const audit = parseLossPathAudit(value.audit);
-  if (Object.keys(value).sort().join('\0') !== ['audit', 'state'].join('\0') || audit === null) return null;
-  return { audit, state: value.state };
-}
-
-function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | null {
+function parseLossPath(value: unknown, family: unknown): ImportConformanceLossPath | null {
+  if (value === null) return family === null ? { state: 'unaudited' } : null;
   if (
     !isRecord(value) ||
-    Object.keys(value).sort().join('\0') !== ['auditId', 'auditedAt', 'auditor', 'subjectHash'].sort().join('\0')
+    typeof family !== 'string' ||
+    family.trim() === '' ||
+    Object.keys(value).sort().join('\0') !==
+      ['auditId', 'auditedAt', 'auditor', 'family', 'subjectHash'].sort().join('\0') ||
+    value.family !== family
   ) {
     return null;
   }
@@ -115,17 +109,20 @@ function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | nu
   }
   const timestamp = Date.parse(value.auditedAt);
   if (
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.auditedAt) ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value.auditedAt) ||
     Number.isNaN(timestamp) ||
-    new Date(timestamp).toISOString() !== value.auditedAt
+    typeof value.family !== 'string'
   ) {
     return null;
   }
   return {
-    auditId: value.auditId,
-    auditedAt: value.auditedAt,
-    auditor: value.auditor,
-    subjectHash: value.subjectHash,
+    audit: {
+      auditId: value.auditId,
+      auditedAt: new Date(timestamp).toISOString(),
+      auditor: value.auditor,
+      subjectHash: value.subjectHash,
+    },
+    state: 'identified',
   };
 }
 
@@ -154,6 +151,19 @@ function invalidateMismatchedProofPopulation(
     const retained = role === 'fire' ? { ...candidate, fires: [] } : { ...candidate, staysSilent: [] };
     if (retained.fires.length === 0 && retained.staysSilent.length === 0) proofs.delete(id);
     else proofs.set(id, retained);
+  }
+}
+
+function invalidateMismatchedLossPathPopulation(
+  declaredCount: unknown,
+  lossPaths: Map<string, ImportConformanceLossPath>,
+  problems: string[],
+): void {
+  const actualCount = [...lossPaths.values()].filter((candidate) => candidate.state !== 'unaudited').length;
+  if (Number.isSafeInteger(declaredCount) && declaredCount === actualCount) return;
+  problems.push('Instrumentation mapping loss-path-audited count is stale');
+  for (const [id, lossPath] of lossPaths) {
+    if (lossPath.state !== 'unaudited') lossPaths.set(id, { state: 'unaudited' });
   }
 }
 
