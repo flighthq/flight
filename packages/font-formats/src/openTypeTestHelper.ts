@@ -458,16 +458,30 @@ export function encodeSyntheticWoff2(sfnt: Readonly<Uint8Array>, transformTags: 
   return out;
 }
 
-// A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.
-export function squareSyntheticGlyph(size: number): SyntheticGlyph {
+// A RING: an outer square and an inner counter wound the OTHER way. Under the nonzero rule the inner
+// contour cancels the outer and leaves a hole, so this is the shape that makes contour DIRECTION
+// observable at all — a bounding box and a contour count are both identical whichever way it is wound.
+//
+// `reverseCounter` winds the counter the same way as the outer, which fills the hole. `flipBoth`
+// reverses both, which is NOT a defect: measured against a browser's nonzero fill, both-flipped
+// renders the identical hole, because only the RELATIVE direction of the two contours matters.
+export function ringSyntheticGlyph(reverseCounter = false, flipBoth = false): SyntheticGlyph {
+  const outer: [number, number, boolean][] = [
+    [0, 0, true],
+    [600, 0, true],
+    [600, 600, true],
+    [0, 600, true],
+  ];
+  const inner: [number, number, boolean][] = [
+    [200, 200, true],
+    [200, 400, true],
+    [400, 400, true],
+    [400, 200, true],
+  ];
+  const counter = reverseCounter ? [...inner].reverse() : inner;
   return {
-    endPoints: [3],
-    points: [
-      [0, 0, true],
-      [size, 0, true],
-      [size, size, true],
-      [0, size, true],
-    ],
+    endPoints: [3, 7],
+    points: flipBoth ? [...[...outer].reverse(), ...[...counter].reverse()] : [...outer, ...counter],
   };
 }
 
@@ -560,4 +574,17 @@ function syntheticTableChecksum(data: Readonly<Uint8Array>, isHead: boolean): nu
     sum = (sum + word) % 0x100000000;
   }
   return sum >>> 0;
+}
+
+// A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.
+export function squareSyntheticGlyph(size: number): SyntheticGlyph {
+  return {
+    endPoints: [3],
+    points: [
+      [0, 0, true],
+      [size, 0, true],
+      [size, size, true],
+      [0, size, true],
+    ],
+  };
 }
