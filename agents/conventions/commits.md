@@ -107,6 +107,15 @@ already happened: a rename shipped without its call-site migration and the deliv
 things worse whenever the extra seams are red. **Before splitting, ask whether each half compiles on
 its own; if one does not, it is not a seam.**
 
+**And atomic also means the diffstat is legible enough that a missing piece shows.** A scripted edit
+that silently failed stayed invisible **only because it rode in a commit with a second, unrelated
+change**: alone, it would have produced an empty diff and failed loudly. ⇒ **Batching made the
+failure representable.**
+
+**So read the diffstat as a completion check — but it only works against a STATED expectation.** *One
+insertion* is unremarkable until someone expected a paragraph. **Say what the commit should contain
+before you look at what it did**, or the diffstat confirms whatever happened.
+
 ### If a mechanical fix offers a choice, it is not mechanical
 
 A repair that is genuinely mechanical has **exactly one correct form**. When the "obvious one-line

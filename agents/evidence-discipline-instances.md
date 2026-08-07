@@ -49,12 +49,35 @@ reader can tell strength apart without trusting the author's formatting:
   to one's own tooling. **Found only by chasing a diffstat that read `1 insertion` where a paragraph
   was expected.**
 
+- **filed — ALARM SUPPRESSES ITS OWN CONTROL, and that is exactly backwards.** Two instances: a probe
+  reporting **108,515 disagreements**, and a probe reporting **six of six items missing.** Both were
+  false, **both were catchable by a control the author already knew about, and in both the control ran
+  only after the result was alarming enough to doubt.** ⇒ **The more alarming a result, the less
+  likely its own validation is to run — because alarm creates urgency, and urgency spends the minute
+  the control would have cost.** ★★ **Alarm is precisely the signal that should TRIGGER the control**,
+  so the natural response and the correct one point opposite ways. **Treat a startling number as a
+  reason to validate the instrument before reporting the finding.**
+
+- **filed — Seeing an artifact's OUTPUT is not the same as knowing what the artifact DOES.** Two
+  instances in one session: an agent had **written** a fixture command and did not connect it when the
+  need arose; another had **read** an inbox listing all session and did not connect it to a stopping
+  point they had just declared did not exist — **the preview was on their screen every time.** ⇒
+  **Output tells you what happened, never how**, so a tool can be used for an entire session with its
+  mechanism invisible. ★ **That is why "the answer was in the repo" keeps recurring: the repo is full
+  of mechanisms we have only ever met as results.**
+
 - **filed — A verification probe fails in more ways than the thing it verifies.** One content check
   reported six of six items MISSING that were all present, from **three independent causes**: the
   probe was case-sensitive against text that uses capitals for emphasis; the phrases were **line-
   wrapped**, and the probe was line-based; and inline **markdown emphasis markers** split a phrase in
   the middle. ⇒ **Each false negative read exactly like lost work**, and the natural response — report
-  the loss — would have been wrong three times. ★★ **A probe with no POSITIVE CONTROL cannot tell "the
+  the loss — would have been wrong three times.
+  ★★ **The three have ONE source: case, wrapping and emphasis markers are all the text's own
+  FORMATTING, so the probe searched for content in a form the content is never stored in.** ⇒ **A true
+  answer to *does this byte sequence appear on one line* and a wrong answer to *is this content
+  present*** — the misaddressed-answer law with a cause it had not shown before: **not faulty
+  reasoning, but STORAGE FORMAT.** **Normalise away the formatting, or search for something the
+  format cannot break.** ★★ **A probe with no POSITIVE CONTROL cannot tell "the
   content is gone" from "my probe is broken"**, and running one known-present string first costs one
   line and settles it. **The one genuine loss was found by pursuing the anomaly to source, not by the
   probe.**
