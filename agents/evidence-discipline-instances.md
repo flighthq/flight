@@ -158,6 +158,13 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — Attach the audit to the member, not to the count.** With each capability carrying which
+  audits reached it, **the totals are derived and can never outrun their audit** — a bare `17/17/17`
+  stops being discouraged and becomes **unrepresentable.** ⇒ **The general move: find the
+  representation in which the false claim cannot be written down.** And note what it is structurally:
+  **an aggregate that discarded which-members, repaired by carrying the members** — the same shape as
+  replacing a contested ratio with a per-member measure.
+
 - **filed — Choose a channel without the hazard instead of remembering to avoid it.** Prose through
   `-m`, anything carrying an identifier through `--file`: shell substitution then cannot occur, rather
   than being something each author must remember not to trigger.
