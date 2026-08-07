@@ -789,20 +789,35 @@ describe('parseImportConformanceScore', () => {
     );
   });
 
-  it('states that a recorded-run ratchet cannot detect first-capture defects and names the missing oracle class', () => {
+  it('states the ratchet, oracle, and collapsed-unmeasured-cause limitations', () => {
     const parsed = parseImportConformanceScore(score(measuredPack(), '100'));
     const falseAssurance = score(measuredPack(), '100') as unknown as {
       oracleAssurance: { formatDerivedProperties: string };
     };
     falseAssurance.oracleAssurance.formatDerivedProperties = 'hash-baseline';
+    const collapsedCause = score(measuredPack(), '100') as unknown as {
+      oracleAssurance: { unmeasuredCapabilityCause: string };
+    };
+    collapsedCause.oracleAssurance.unmeasuredCapabilityCause = 'no-fixture';
 
     expect(parsed.oracleAssurance).toEqual({
       firstCaptureDefects: 'undetectable',
       formatDerivedProperties: 'required-not-implemented',
       ratchet: 'recorded-run-regression-only',
+      unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     });
     expect(() => parseImportConformanceScore(falseAssurance)).toThrow(
       "oracleAssurance.formatDerivedProperties: must be exactly 'required-not-implemented'",
+    );
+    expect(() => parseImportConformanceScore(collapsedCause)).toThrow(
+      "oracleAssurance.unmeasuredCapabilityCause: must be exactly 'no-fixture-vs-upstream-unreachable-not-distinguished'",
+    );
+    expect(
+      formatImportConformanceRatchetReport(
+        compareImportConformanceScores(parsed, parseImportConformanceScore(score(measuredPack(), '101'))),
+      ),
+    ).toContain(
+      'unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; no-fixture-vs-upstream-unreachable-not-distinguished)',
     );
   });
 
@@ -1670,6 +1685,7 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
       firstCaptureDefects: 'undetectable',
       formatDerivedProperties: 'required-not-implemented',
       ratchet: 'recorded-run-regression-only',
+      unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     },
     packs: pack === null ? [] : [pack],
     provenance: { mode: 'exhaustive', runId, runUrl: `https://ci.invalid/runs/${runId}` },
