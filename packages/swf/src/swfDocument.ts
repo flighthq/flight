@@ -697,7 +697,7 @@ function populateSwfTimelineNode(
         scale9 !== null
           ? scale9
           : editText !== undefined
-            ? createSwfEditTextTarget(editText, parsed, targetBounds)
+            ? createSwfEditTextTarget(editText, parsed, targetBounds, state.diagnostics)
             : image !== undefined
               ? createSwfTexturedSprite(
                   acquireSwfImageTexture(parsed, placement.characterId, false, true),
@@ -1164,8 +1164,27 @@ function createSwfEditTextTarget(
   create: (resolveFontName: (fontId: number) => string) => RichText,
   parsed: Readonly<SwfTagResult>,
   bounds: SwfRectangle | null,
+  diagnostics?: ImportDiagnostic[],
 ): Node2D {
-  const node = create((fontId) => parsed.fontNames.get(fontId) ?? '');
+  // The field survives with its size, box and colour and simply has no font family, which is the
+  // diminished case: it exists, it is smaller than authored, and nothing else says so. Reported once per
+  // unresolved id rather than per call, since the resolver runs for every run of text.
+  const unresolved = new Set<number>();
+  const node = create((fontId) => {
+    const name = parsed.fontNames.get(fontId);
+    if (name !== undefined) return name;
+    if (!unresolved.has(fontId)) {
+      unresolved.add(fontId);
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.edit-text-font-name-unresolved',
+        'createSwfEditTextTarget',
+        { capability: 'swf.text.define-edit-text', fontId },
+      );
+    }
+    return '';
+  });
   if (bounds !== null) {
     (node.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
     (getNodeRuntime(node) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
@@ -1281,7 +1300,7 @@ function createSwfSymbolNode(
 ): Node2D | null {
   const bounds = resolveSwfCharacterBounds(parsed, characterId, state, 0);
   const editText = parsed.editTexts.get(characterId);
-  if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds);
+  if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds, state.diagnostics);
   if (parsed.images.has(characterId)) {
     return createSwfTexturedSprite(acquireSwfImageTexture(parsed, characterId, false, true), bounds);
   }

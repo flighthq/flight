@@ -188,8 +188,15 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
-    fires: ['reports an edit text body that does not parse, which otherwise loses the field with no signal'],
+    fires: [
+      'reports an edit text body that does not parse, which otherwise loses the field with no signal',
+      'reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied',
+    ],
     id: 'swf.text.define-edit-text',
+    // The silence proof for the font-name wire is absent, not pending on effort: it needs an edit text
+    // whose font id DOES resolve, which needs a DefineFont2 that parses, and no builder for one exists in
+    // this test file. The body-parse wire's silence proof below does not cover the font-name wire, and
+    // recording that beats letting one row's proof stand in for two.
     staysSilent: ['stays silent about an edit text body that parses, so the drop entry carries information'],
   },
   {
