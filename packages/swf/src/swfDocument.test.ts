@@ -2715,6 +2715,55 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable')).toEqual([]);
   });
 
+  it('reports an edit text body that does not parse, which otherwise loses the field with no signal', () => {
+    // HasFont is set and the font id and height that must follow it are not there.
+    const field = joinBytes(uint16(12), createRectangle(0, 4000, 0, 800), new Uint8Array([0x80 | 0x01, 0x00]));
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_EDIT_TEXT, field), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.edit-text-unparseable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.text.define-edit-text', characterId: 12 });
+  });
+
+  it('stays silent about an edit text body that parses, so the drop entry carries information', () => {
+    const field = joinBytes(
+      uint16(12),
+      createRectangle(0, 4000, 0, 800),
+      new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
+      uint16(7),
+      uint16(240),
+      new Uint8Array([0x11, 0x22, 0x33, 0xff]),
+      new Uint8Array([2]),
+      uint16(20),
+      uint16(40),
+      uint16(60),
+      uint16(80),
+      swfString('varName'),
+      swfString('Hello'),
+    );
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_EDIT_TEXT, field),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // Non-vacuous: a run that parsed no edit text would be silent for the wrong reason.
+    expect(getNodeChildren(document!.root)).toHaveLength(1);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.edit-text-unparseable')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([

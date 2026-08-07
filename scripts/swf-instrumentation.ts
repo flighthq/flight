@@ -144,6 +144,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['reports an edit text body that does not parse, which otherwise loses the field with no signal'],
+    id: 'swf.text.define-edit-text',
+    staysSilent: ['stays silent about an edit text body that parses, so the drop entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports a static text body that does not compose, which the deferred pass would otherwise swallow'],
     id: 'swf.text.define-text',
     staysSilent: ['stays silent about a static text body that composes, so the drop entry carries information'],
