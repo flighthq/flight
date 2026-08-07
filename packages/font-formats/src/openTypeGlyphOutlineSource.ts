@@ -56,7 +56,11 @@ export function createGlyphOutlineSourceFromOpenTypeFont(bytes: Readonly<Uint8Ar
       if (cff !== null) {
         const charstring = cff.charstrings[glyphIndex];
         if (charstring === undefined) return false;
-        return runCffCharstring(out, bytes, charstring, cff.localSubrs, cff.globalSubrs);
+        // A CID font selects the pool per glyph; every other font shares one. Reading the wrong pool
+        // draws plausible geometry rather than failing, so the choice is made here from the table's own
+        // structure rather than defaulted anywhere.
+        const localSubrs = cff.localSubrsByGlyph?.[glyphIndex] ?? cff.localSubrs;
+        return runCffCharstring(out, bytes, charstring, localSubrs, cff.globalSubrs);
       }
       return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
     },

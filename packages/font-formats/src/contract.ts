@@ -9,6 +9,7 @@ export {
   CFF_OPERATOR_SUBRS,
   readCffDict,
 } from './cffDict';
+export { readCffFdSelect } from './cffFdSelect';
 export { readCffIndex } from './cffIndex';
 export { readCffTable } from './cffTable';
 export { findOpenTypeUnicodeSubtable, rankOpenTypeUnicodeEncoding, readOpenTypeCodepointMap } from './openTypeCmap';

@@ -5,10 +5,10 @@ import {
   CFF_OPERATOR_FD_ARRAY,
   CFF_OPERATOR_FD_SELECT,
   CFF_OPERATOR_PRIVATE,
-  CFF_OPERATOR_ROS,
   CFF_OPERATOR_SUBRS,
   readCffDict,
 } from './cffDict';
+import { readCffFdSelect } from './cffFdSelect';
 import { readCffIndex } from './cffIndex';
 
 // Assembles the parts of a `CFF ` table an outline reader needs: the charstrings, and the two subroutine
@@ -19,6 +19,72 @@ import { readCffIndex } from './cffIndex';
 // are from the start of the TABLE; the local subroutine offset is from the start of the PRIVATE DICT.
 // Mixing those two bases is the mistake that yields a real-but-wrong subroutine pool, which draws
 // plausible garbage instead of failing.
+
+// Local subroutines are optional: a font whose glyphs call none simply omits the operator, and an empty
+// pool is the correct answer rather than a failure. Returned as an empty array so a caller never has to
+// distinguish "absent" from "present but empty" — the biasing arithmetic treats them identically.
+function readCffLocalSubrs(
+  bytes: Readonly<Uint8Array>,
+  top: ReadonlyMap<number, number[]>,
+  tableOffset: number,
+  tableEnd: number,
+): readonly CffIndexEntry[] {
+  const privateEntry = top.get(CFF_OPERATOR_PRIVATE);
+  if (privateEntry === undefined || privateEntry.length < 2) return [];
+
+  const [privateSize, privateOffset] = privateEntry as [number, number];
+  const privateAt = tableOffset + privateOffset;
+  if (privateAt < tableOffset || privateAt + privateSize > tableEnd) return [];
+
+  const privateDict = readCffDict(bytes, privateAt, privateAt + privateSize);
+  const subrsOffset = privateDict?.get(CFF_OPERATOR_SUBRS)?.[0];
+  if (subrsOffset === undefined) return [];
+
+  // Relative to the PRIVATE dict, not the table. This is the base that is easy to get wrong.
+  const subrs = readCffIndex(bytes, privateAt + subrsOffset);
+  return subrs === null ? [] : subrs.entries;
+}
+
+// One local-subroutine pool per glyph, resolved through FDSelect into the FDArray. Returns the null
+// sentinel when either structure is unreadable, because a partial answer here binds some glyphs to the
+// wrong pool — which draws something rather than failing, and is the reason CID fonts were refused until
+// this landed.
+function readCffCidSubrs(
+  bytes: Readonly<Uint8Array>,
+  top: ReadonlyMap<number, number[]>,
+  tableOffset: number,
+  tableEnd: number,
+  glyphCount: number,
+): readonly (readonly CffIndexEntry[])[] | null {
+  const fdArrayOffset = top.get(CFF_OPERATOR_FD_ARRAY)?.[0];
+  const fdSelectOffset = top.get(CFF_OPERATOR_FD_SELECT)?.[0];
+  if (fdArrayOffset === undefined || fdSelectOffset === undefined) return null;
+
+  const fdArray = readCffIndex(bytes, tableOffset + fdArrayOffset);
+  if (fdArray === null || fdArray.entries.length === 0) return null;
+
+  // Each FDArray entry is a font DICT whose private DICT is read exactly as the non-CID top DICT's is —
+  // same operator, same table-relative base — so the two paths cannot drift apart in how they resolve it.
+  const pools: (readonly CffIndexEntry[])[] = [];
+  for (const entry of fdArray.entries) {
+    const fontDict = readCffDict(bytes, entry.start, entry.end);
+    if (fontDict === null) return null;
+    pools.push(readCffLocalSubrs(bytes, fontDict, tableOffset, tableEnd));
+  }
+
+  const select = readCffFdSelect(bytes, tableOffset + fdSelectOffset, glyphCount);
+  if (select === null) return null;
+
+  const byGlyph: (readonly CffIndexEntry[])[] = [];
+  for (let glyph = 0; glyph < glyphCount; glyph += 1) {
+    const pool = pools[select[glyph]!];
+    // An FDSelect naming an FD the FDArray does not have is malformed. Defaulting to pool 0 would be the
+    // wrong-pool outcome wearing a reasonable-looking fallback.
+    if (pool === undefined) return null;
+    byGlyph.push(pool);
+  }
+  return byGlyph;
+}
 
 // Returns the null sentinel for anything this package cannot read, INCLUDING a CID-keyed font. That is a
 // deliberate refusal rather than a gap: a CID font reaches its charstrings through an FDSelect/FDArray
@@ -52,7 +118,6 @@ export function readCffTable(bytes: Readonly<Uint8Array>, directory: Readonly<Sf
 
   const top = readCffDict(bytes, topDicts.entries[0]!.start, topDicts.entries[0]!.end);
   if (top === null) return null;
-  if (top.has(CFF_OPERATOR_ROS) || top.has(CFF_OPERATOR_FD_ARRAY) || top.has(CFF_OPERATOR_FD_SELECT)) return null;
 
   const charstringsOffset = top.get(CFF_OPERATOR_CHARSTRINGS)?.[0];
   if (charstringsOffset === undefined) return null;
@@ -61,34 +126,27 @@ export function readCffTable(bytes: Readonly<Uint8Array>, directory: Readonly<Sf
   const charstrings = readCffIndex(bytes, charstringsAt);
   if (charstrings === null) return null;
 
+  // A CID-keyed font is several fonts in one table: an FDArray of font DICTs, each with its own private
+  // DICT and therefore ITS OWN local subroutine pool, plus an FDSelect saying which glyph uses which.
+  // Detected by the operators rather than by `ROS` alone, since the pools are what actually matter here.
+  const isCid = top.has(CFF_OPERATOR_FD_ARRAY) && top.has(CFF_OPERATOR_FD_SELECT);
+  if (isCid) {
+    const perGlyph = readCffCidSubrs(bytes, top, table.offset, tableEnd, charstrings.entries.length);
+    // Refused rather than fallen back to the single-pool read. A fallback here is the precise failure
+    // this branch exists to prevent: it would bind every glyph to one pool and draw plausible geometry.
+    if (perGlyph === null) return null;
+    return {
+      charstrings: charstrings.entries,
+      globalSubrs: globals.entries,
+      localSubrs: [],
+      localSubrsByGlyph: perGlyph,
+    };
+  }
+
   return {
     charstrings: charstrings.entries,
     globalSubrs: globals.entries,
     localSubrs: readCffLocalSubrs(bytes, top, table.offset, tableEnd),
+    localSubrsByGlyph: null,
   };
-}
-
-// Local subroutines are optional: a font whose glyphs call none simply omits the operator, and an empty
-// pool is the correct answer rather than a failure. Returned as an empty array so a caller never has to
-// distinguish "absent" from "present but empty" — the biasing arithmetic treats them identically.
-function readCffLocalSubrs(
-  bytes: Readonly<Uint8Array>,
-  top: ReadonlyMap<number, number[]>,
-  tableOffset: number,
-  tableEnd: number,
-): readonly CffIndexEntry[] {
-  const privateEntry = top.get(CFF_OPERATOR_PRIVATE);
-  if (privateEntry === undefined || privateEntry.length < 2) return [];
-
-  const [privateSize, privateOffset] = privateEntry as [number, number];
-  const privateAt = tableOffset + privateOffset;
-  if (privateAt < tableOffset || privateAt + privateSize > tableEnd) return [];
-
-  const privateDict = readCffDict(bytes, privateAt, privateAt + privateSize);
-  const subrsOffset = privateDict?.get(CFF_OPERATOR_SUBRS)?.[0];
-  if (subrsOffset === undefined) return [];
-
-  // Relative to the PRIVATE dict, not the table. This is the base that is easy to get wrong.
-  const subrs = readCffIndex(bytes, privateAt + subrsOffset);
-  return subrs === null ? [] : subrs.entries;
 }

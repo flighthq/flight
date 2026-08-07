@@ -139,6 +139,31 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CLOSE]);
   });
 
+  // THE CID CASE, END TO END. Both glyphs call subroutine index -107, and each FD's pool holds a
+  // DIFFERENT subroutine — one drawing a horizontal line, one vertical. If both glyphs resolved against
+  // one pool they would draw the same shape, which is exactly the plausible-garbage failure the
+  // per-glyph binding prevents.
+  it('resolves the same subroutine index differently per glyph in a CID font', () => {
+    const call = new Uint8Array([139, 139, 21, 32, 10, 14]);
+    const font = createSyntheticFont({
+      charstrings: [call, call],
+      cid: {
+        fdSelect: [0, 1],
+        pools: [[new Uint8Array([149, 139, 5, 11])], [new Uint8Array([139, 149, 5, 11])]],
+      },
+      flavor: 'opentype',
+    });
+    const source = createGlyphOutlineSourceFromOpenTypeFont(font)!;
+    const first = createPath();
+    const second = createPath();
+    expect(source.getGlyphOutline(first, 0)).toBe(true);
+    expect(source.getGlyphOutline(second, 1)).toBe(true);
+    expect(first.data).not.toEqual(second.data);
+    // FD 0 draws +10 on x; FD 1 draws +10 on y, negated into the y-down convention.
+    expect(first.data).toEqual([0, -0, 10, -0]);
+    expect(second.data).toEqual([0, -0, 0, -10]);
+  });
+
   it('still rejects CFF2, which is a different charstring dialect and remains a stated absence', () => {
     const font = createSyntheticFont({ flavor: 'opentype', omitTable: 'CFF ' });
     // Re-add only CFF2, so the font carries charstrings this package deliberately does not read.

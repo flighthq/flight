@@ -21,6 +21,8 @@ export interface SyntheticFontOptions {
   // Raw Type 2 charstrings, used when `flavor` is 'opentype'. Defaults to a single `endchar`, which is
   // a well-formed glyph that draws nothing.
   charstrings?: readonly Uint8Array[];
+  // When present, the CFF table is built CID-keyed: an FDArray, per-FD private DICTs and an FDSelect.
+  cid?: Readonly<SyntheticCidOptions>;
   glyphs?: readonly SyntheticGlyph[];
   // 'truetype' emits the 0x00010000 sfnt version, 'opentype' emits 'OTTO' with a `CFF ` table and no
   // `glyf`, which is what an unsupported-outlines rejection is tested against.
@@ -64,7 +66,7 @@ export function createSyntheticFont(options: Readonly<SyntheticFontOptions> = {}
     tables.set('loca', encodeSyntheticLoca(locaOffsets));
     tables.set('glyf', concatenateBytes(glyphData));
   } else {
-    tables.set('CFF ', encodeSyntheticCff(charstrings));
+    tables.set('CFF ', encodeSyntheticCff(charstrings, options.cid));
   }
   if (options.omitTable !== undefined) tables.delete(options.omitTable);
 
@@ -78,7 +80,10 @@ export function emptySyntheticGlyph(): SyntheticGlyph {
 // Builds a real `CFF ` table: header, the four fixed INDEXes, and a charstrings INDEX reached by an
 // offset from the top DICT. Assembled byte by byte like every other fixture here, so the CFF reader is
 // proved against the layout the format specifies rather than against a stub that resembles it.
-export function encodeSyntheticCff(charstrings: readonly Uint8Array[]): Uint8Array {
+export function encodeSyntheticCff(
+  charstrings: readonly Uint8Array[],
+  cid?: Readonly<SyntheticCidOptions>,
+): Uint8Array {
   const name = encodeCffIndex([new Uint8Array([0x46])]);
   const strings = encodeCffIndex([]);
   const gsubrs = encodeCffIndex([]);
@@ -95,11 +100,80 @@ export function encodeSyntheticCff(charstrings: readonly Uint8Array[]): Uint8Arr
     return out;
   };
   const header = new Uint8Array([1, 0, 4, 1]);
-  const probe = encodeCffIndex([topDictBody(0)]);
-  const charstringsAt = header.length + name.length + probe.length + strings.length + gsubrs.length;
-  const topDicts = encodeCffIndex([topDictBody(charstringsAt)]);
+  if (cid === undefined) {
+    const probe = encodeCffIndex([topDictBody(0)]);
+    const charstringsAt = header.length + name.length + probe.length + strings.length + gsubrs.length;
+    const topDicts = encodeCffIndex([topDictBody(charstringsAt)]);
+    return concatenateBytes([header, name, topDicts, strings, gsubrs, charstringsIndex]);
+  }
 
-  return concatenateBytes([header, name, topDicts, strings, gsubrs, charstringsIndex]);
+  // A CID font: an FDArray of font DICTs each pointing at its own private DICT, plus an FDSelect. Every
+  // offset is table-relative except the private DICT's subrs offset, which is private-relative — the two
+  // bases the reader must not confuse, so the fixture exercises both.
+  const fdSelect = encodeSyntheticFdSelect(cid.fdSelect);
+  const cidTop = (charstringsAt: number, fdArrayAt: number, fdSelectAt: number): Uint8Array => {
+    const out: number[] = [];
+    // ROS takes three operands; the two string ids are irrelevant to outline reading.
+    out.push(139, 139, 139, 12, 30);
+    out.push(29, ...int32(charstringsAt), 17);
+    out.push(29, ...int32(fdArrayAt), 12, 36);
+    out.push(29, ...int32(fdSelectAt), 12, 37);
+    return new Uint8Array(out);
+  };
+  // Each pool becomes a private DICT (subrs offset, private-relative) followed by its subrs INDEX.
+  const privates = cid.pools.map((pool) => {
+    const subrs = encodeCffIndex(pool);
+    const dict = new Uint8Array([29, ...int32(6), 19]);
+    return { bytes: concatenateBytes([dict, subrs]), dictSize: dict.length };
+  });
+  const probeTop = encodeCffIndex([cidTop(0, 0, 0)]);
+  const fixed = header.length + name.length + probeTop.length + strings.length + gsubrs.length;
+  const charstringsAt = fixed;
+  const privatesAt = charstringsAt + charstringsIndex.length;
+  let running = privatesAt;
+  const privateAt = privates.map((entry) => {
+    const at = running;
+    running += entry.bytes.length;
+    return at;
+  });
+  const fdArray = encodeCffIndex(
+    privates.map((entry, index) => new Uint8Array([29, ...int32(entry.dictSize), 29, ...int32(privateAt[index]!), 18])),
+  );
+  const fdArrayAt = running;
+  const fdSelectAt = fdArrayAt + fdArray.length;
+  const topDicts = encodeCffIndex([cidTop(charstringsAt, fdArrayAt, fdSelectAt)]);
+
+  return concatenateBytes([
+    header,
+    name,
+    topDicts,
+    strings,
+    gsubrs,
+    charstringsIndex,
+    ...privates.map((entry) => entry.bytes),
+    fdArray,
+    fdSelect,
+  ]);
+}
+
+export interface SyntheticCidOptions {
+  // One entry per glyph, naming which FD it uses. Emitted as an FDSelect format 0.
+  fdSelect: readonly number[];
+  // One local-subroutine pool per FD.
+  pools: readonly (readonly Uint8Array[])[];
+}
+
+function int32(value: number): number[] {
+  const out = new Uint8Array(4);
+  new DataView(out.buffer).setInt32(0, value);
+  return [...out];
+}
+
+// FDSelect format 0: one byte per glyph.
+function encodeSyntheticFdSelect(perGlyph: readonly number[]): Uint8Array {
+  const bytes = new Uint8Array(1 + perGlyph.length);
+  perGlyph.forEach((fd, index) => (bytes[1 + index] = fd));
+  return bytes;
 }
 
 // A CFF INDEX: count, offset width, count+1 one-based offsets, then the data.
