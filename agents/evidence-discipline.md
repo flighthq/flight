@@ -99,11 +99,9 @@ its own and it fills with exactly the claims that most need checking. **But the 
 cost without every member being expensive:** "I confirmed this test can fail" costs seconds and is
 unverified only because nobody asks; it rode in on the same list as a 1.6 GB fetch and inherited its
 excuse. **A true general law is an excellent place for a cheap fix to hide**, so split the list by
-*why* before accepting any of it as unfixable — measured on the first register built this way, three
-of six entries were cheap. **Mark each unbacked claim with a fixed greppable token rather than
-prose**, because the point is not that a reader is warned but that the set becomes countable; keep
-the register (see [unbacked register](unbacked-register.md)), and **give it its own limit at the top
-or it becomes the best false-assurance instrument in the building.**
+*why* before accepting any of it as unfixable. **Mark each unbacked claim with a fixed greppable
+token rather than prose**, because the point is not that a reader is warned but that the set becomes
+countable; the [unbacked register](unbacked-register.md) carries the practice and its own limit.
 
 ## Search instructions — where to look next
 
@@ -155,6 +153,14 @@ measurement's population is defined by the consumer, not by the corpus.**
 
 Not a fourth rule — the check you run when a number is about to do work in an argument.
 
+- **Where nothing recomputes, no number.** Not a better warning — **delete the figure and leave the
+  recompute command.** A stamp warns without supplying a substitute, so it loses to any use that needs
+  a value: the reader's choice becomes *subtract with a known-stale number* or *say nothing*, and the
+  annotated figure is what makes the wrong option available. **Stamped-historical is the rule violated
+  with a disclaimer attached.**
+- **An instrument's scope must be derived, not chosen — its population, not only its vocabulary.** A
+  gate built to catch stale numbers took its shape list from the grammar and its *file* list from what
+  was in front of its author, **so the instrument inherited the very bias it existed to remove.**
 - **Quote the source line rather than restating the number.** A quoted figure carries its own tree and
   is checkable against its source; a restated one is a new claim with nothing behind it, **and cannot
   be silently reunited with a different denominator in passing.**
