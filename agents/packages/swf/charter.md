@@ -42,11 +42,12 @@ recorded; a document that silently misrepresents what the file said is worse tha
 ## Peer, not a child (the dependency shape)
 
 `swf` is a **peer** of `scene2d-formats`, not a codec inside it and not `scene2d-formats-swf`. It
-depends on the **shared lower layer** directly — `@flighthq/types` (`Scene2DDocument`, options),
+depends on the **shared lower layer** directly — `@flighthq/types` (`Scene2DDocument`),
 `@flighthq/importdiagnostics`, and the output primitives (`shape`, `scene2d`, `movieclip`, `timeline`,
 `image`, `text`, `path`, `clip`) — the same layer `scene2d-formats` uses. It does **not** depend on
-`scene2d-formats`, and `scene2d-formats` does not consume it. Entry: `createScene2DFromSwf(bytes,
-options) → Scene2DDocument`. It optionally registers into the `scene2d-resources` import registry (an
+`scene2d-formats`, and `scene2d-formats` does not consume it. Entry:
+`createScene2DFromSwf(source: Uint8Array) → Scene2DDocument | null`. It optionally registers into the
+`scene2d-resources` import registry (an
 open registry it registers *into*; the registry depends on no codec — see that charter).
 
 ## Scope
