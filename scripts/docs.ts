@@ -669,6 +669,30 @@ function main(): void {
 // Membership from the gate's file set, CONTENT from the working tree — the split the whole scanning
 // policy rests on. A file the repository tracks but the working tree no longer has is an uncommitted
 // deletion, and reporting it missing is the honest answer rather than a crash.
+// Largest top-level (`## `) section by character count, so an over-budget report can name the block
+// worth moving instead of leaving the reader to pick one. Returns null when the document has no
+// top-level sections to move.
+function findLargestDocSection(text: string): Readonly<{ heading: string; length: number }> | null {
+  let largest: { heading: string; length: number } | null = null;
+  let heading: string | null = null;
+  let length = 0;
+  const close = (): void => {
+    if (heading !== null && (largest === null || length > largest.length)) {
+      largest = { heading, length };
+    }
+  };
+  for (const line of text.split('\n')) {
+    if (line.startsWith('## ')) {
+      close();
+      heading = line.slice(3).trim();
+      length = 0;
+    }
+    length += line.length + 1;
+  }
+  close();
+  return largest;
+}
+
 function readGateFile(files: ReadonlySet<string>, path: string): string | null {
   if (!files.has(path)) return null;
   const full = join(REPO_ROOT, path);
@@ -697,8 +721,17 @@ function reportBudgets(files: ReadonlySet<string>): void {
     const headroom = report.limit - report.length;
     const measured = `${report.length.toLocaleString('en-US')} / ${report.limit.toLocaleString('en-US')} characters`;
     if (report.status === 'over') {
+      // The magnitude suggests its own remedy — "486 over" reads as "cut 486 characters" — and a
+      // generic pointer to the structural fix loses to it every time. Naming the specific section to
+      // move, and saying outright that trimming will not clear the overrun, is what makes the
+      // structural response the available one.
+      const largest = findLargestDocSection(text);
+      const move =
+        largest === null
+          ? 'move a whole section into the agents/ doc that owns it and leave a pointer'
+          : `move a whole section into the agents/ doc that owns it and leave a pointer — the largest is "${largest.heading}" at ${largest.length.toLocaleString('en-US')} characters`;
       fail(
-        `${report.path} is ${(-headroom).toLocaleString('en-US')} characters OVER budget (${measured}) — move the elaboration into the agents/ doc that owns it and leave a pointer`,
+        `${report.path} is ${(-headroom).toLocaleString('en-US')} characters OVER budget (${measured}) — ${move}. Trimming wording is not the remedy.`,
       );
       continue;
     }
