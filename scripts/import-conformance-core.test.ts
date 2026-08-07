@@ -4,18 +4,53 @@ import {
   buildImportConformanceCapabilityIndex,
   createImportConformanceCacheKey,
   createImportConformanceNotRunScore,
-  createImportConformanceScore,
+  createImportConformanceScore as createImportConformanceScoreCore,
   createImportConformanceShardPlan,
   isImportConformanceFixtureReference,
   parseImportConformanceCapabilityDefinitions,
+} from './import-conformance-core';
+import type {
+  ImportConformanceConfigurationLimits,
+  ImportConformanceLossPath,
+  ImportConformanceScoreDeclarations,
+  ImportConformanceUnwiredLossObservation,
 } from './import-conformance-core';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },
   { id: 'swf.text.define-text', label: 'text: DefineText' },
 ] as const;
-const PACK = { id: 'swf-ruffle-fixtures', release: '0.1.0', variant: 'full' } as const;
+const PACK = {
+  capabilityConventionRevision: 'unresolved-individuation-v1',
+  id: 'swf-ruffle-fixtures',
+  release: '0.1.0',
+  variant: 'full',
+} as const;
 const PROVENANCE = { mode: 'exhaustive', runId: 'run-17', runUrl: 'https://ci.invalid/run-17' } as const;
+
+function createImportConformanceScore(
+  index: Parameters<typeof createImportConformanceScoreCore>[0],
+  plan: Parameters<typeof createImportConformanceScoreCore>[1],
+  completedShardIds: Parameters<typeof createImportConformanceScoreCore>[2],
+  results: Parameters<typeof createImportConformanceScoreCore>[3],
+  instrumentationProofs: Parameters<typeof createImportConformanceScoreCore>[4],
+  lossPathByCapability: Parameters<typeof createImportConformanceScoreCore>[5],
+  importerSourceHash: Parameters<typeof createImportConformanceScoreCore>[6],
+  provenance: Parameters<typeof createImportConformanceScoreCore>[7],
+  scoreDeclarations: Parameters<typeof createImportConformanceScoreCore>[8] = declarations(),
+) {
+  return createImportConformanceScoreCore(
+    index,
+    plan,
+    completedShardIds,
+    results,
+    instrumentationProofs,
+    lossPathByCapability,
+    importerSourceHash,
+    provenance,
+    scoreDeclarations,
+  );
+}
 
 describe('buildImportConformanceCapabilityIndex', () => {
   it('retains every declared capability and every fixture without a stride or size selector', () => {
@@ -86,7 +121,13 @@ describe('createImportConformanceNotRunScore', () => {
       triggerScope: 'external-audit-required',
       triggerSpecificity: 'proof-reference-presence',
     });
+    expect(score.oracleAssurance).toEqual({
+      firstCaptureDefects: 'undetectable',
+      formatDerivedProperties: 'required-not-implemented',
+      ratchet: 'recorded-run-regression-only',
+    });
     expect(score.packs[0]).toMatchObject({
+      capabilityConventionRevision: 'unresolved-individuation-v1',
       outcomes: null,
       reason: 'pack-unavailable',
       release: '0.1.0',
@@ -135,7 +176,7 @@ describe('createImportConformanceScore', () => {
     );
 
     expect(score.packs[0]!.summary).toEqual({
-      totalCapabilities: 2,
+      denominators: expectedDenominators(2),
       exercised: {
         capabilities: 1,
         fireReferenced: {
@@ -148,6 +189,7 @@ describe('createImportConformanceScore', () => {
         },
         singleWitnessCapabilities: 0,
       },
+      instrumentAudited: { payloadCapabilities: 1, scopeCapabilities: 1 },
       lossPathPopulation: {
         auditedCapabilities: 1,
         auditedNoLossPathCapabilities: 0,
@@ -159,8 +201,11 @@ describe('createImportConformanceScore', () => {
     });
     expect(score.packs[0]!.capabilities).toEqual([
       {
+        configurationLimits: { state: 'not-applicable' },
         id: 'swf.fill.solid',
         instrumentation: {
+          audits: ['payload', 'scope'],
+          channel: 'structured-crumb',
           fires: {
             proofs: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
             state: 'referenced',
@@ -179,7 +224,12 @@ describe('createImportConformanceScore', () => {
       },
       {
         id: 'swf.text.define-text',
-        instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+        instrumentation: {
+          audits: [],
+          channel: 'none',
+          fires: { state: 'unreferenced' },
+          staysSilent: { state: 'unreferenced' },
+        },
         lossPath: { state: 'unaudited' },
         state: 'unmeasured',
       },
@@ -295,7 +345,7 @@ describe('createImportConformanceScore', () => {
     expect(score.packs[0]).toMatchObject({
       state: 'measured',
       summary: {
-        totalCapabilities: 2,
+        denominators: expectedDenominators(2),
         exercised: {
           capabilities: 1,
           fireReferenced: {
@@ -318,16 +368,19 @@ describe('createImportConformanceScore', () => {
       },
     });
     expect(score.packs[0]!.capabilities[0]).toEqual({
+      configurationLimits: { state: 'not-applicable' },
       id: 'swf.fill.solid',
-      instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+      instrumentation: {
+        audits: [],
+        channel: 'none',
+        fires: { state: 'unreferenced' },
+        staysSilent: { state: 'unreferenced' },
+      },
       lossPath: { state: 'unaudited' },
       outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
       results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
       state: 'exercised',
-      unknownObservations: [
-        { reason: 'loss-path-not-identified', reference: 'one.swf' },
-        { reason: 'loss-path-not-identified', reference: 'two.swf' },
-      ],
+      unknownObservations: [{ reason: 'loss-path-not-identified', reference: 'swf.fill.solid' }],
       witnesses: 2,
     });
     expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
@@ -347,12 +400,171 @@ describe('createImportConformanceScore', () => {
       lossPathStates(true),
       hash('importer'),
       PROVENANCE,
+      declarations({
+        'swf.fill.solid': [
+          {
+            contentFidelity: 'diminished',
+            reason: 'loss-path-known-not-wired',
+            reference: 'filter-list-drops-blend-mode',
+          },
+          {
+            contentFidelity: 'missing',
+            reason: 'loss-path-known-not-wired',
+            reference: 'static-text-body-drop',
+          },
+        ],
+      }),
     );
     expect(score.packs[0]!.capabilities[0]).toMatchObject({
       unknownObservations: [
-        { reason: 'loss-path-known-not-wired', reference: 'one.swf' },
-        { reason: 'loss-path-known-not-wired', reference: 'two.swf' },
+        {
+          contentFidelity: 'diminished',
+          reason: 'loss-path-known-not-wired',
+          reference: 'filter-list-drops-blend-mode',
+        },
+        {
+          contentFidelity: 'missing',
+          reason: 'loss-path-known-not-wired',
+          reference: 'static-text-body-drop',
+        },
       ],
+    });
+  });
+
+  it('makes every unobservable configuration limit a same-id capability-scoped UNKNOWN', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'importedWrong'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      instrumentationProofs('swf.fill.solid'),
+      lossPathStates(),
+      hash('importer'),
+      PROVENANCE,
+      declarations(
+        {},
+        {
+          'swf.fill.solid': {
+            limits: [{ id: 'MAX_FILL_RECORDS', reporting: 'unobservable' }],
+            state: 'declared',
+          },
+        },
+      ),
+    );
+
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      configurationLimits: {
+        limits: [{ id: 'MAX_FILL_RECORDS', reporting: 'unobservable' }],
+        state: 'declared',
+      },
+      outcomes: { importedWrong: 1, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_FILL_RECORDS' }],
+    });
+  });
+
+  it('does not force UNKNOWN for a configuration limit with structured reporting', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map(),
+      new Map<string, ImportConformanceLossPath>([
+        ['swf.fill.solid', auditedLossPath('swf.fill.solid', 'audited-none')],
+        ['swf.text.define-text', { state: 'unaudited' as const }],
+      ]),
+      hash('importer'),
+      PROVENANCE,
+      declarations(
+        {},
+        {
+          'swf.fill.solid': {
+            limits: [{ id: 'MAX_FILL_RECORDS', reporting: 'structured' }],
+            state: 'declared',
+          },
+        },
+      ),
+    );
+
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
+      unknownObservations: [],
+    });
+  });
+
+  it('rejects declaration drift instead of repairing it in the score', () => {
+    const index = makeIndex();
+    expect(() =>
+      createImportConformanceScore(
+        index,
+        createImportConformanceShardPlan(
+          index.fixtures.map((fixture) => fixture.reference),
+          1,
+        ),
+        new Set([0]),
+        [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+        new Map(),
+        new Map<string, ImportConformanceLossPath>([
+          ['swf.fill.solid', auditedLossPath('swf.fill.solid', 'audited-none')],
+          ['swf.text.define-text', { state: 'unaudited' as const }],
+        ]),
+        hash('importer'),
+        PROVENANCE,
+        declarations(
+          {},
+          {
+            'swf.fill.solid': {
+              limits: [
+                { id: 'MAX_Z_RECORDS', reporting: 'unobservable' },
+                { id: 'MAX_A_RECORDS', reporting: 'unobservable' },
+              ],
+              state: 'declared',
+            },
+          },
+        ),
+      ),
+    ).toThrow(/configuration limit ids .* must be sorted and unique/);
+  });
+
+  it('makes a structured crumb with an incomplete member audit capability-scoped UNKNOWN', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map([
+        [
+          'swf.fill.solid',
+          {
+            audits: ['payload'] as const,
+            channel: 'structured-crumb' as const,
+            fires: ['test#fires'],
+            staysSilent: ['test#silent'],
+          },
+        ],
+      ]),
+      lossPathStates(),
+      hash('importer'),
+      PROVENANCE,
+    );
+
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'instrument-audit-incomplete', reference: 'swf.fill.solid' }],
     });
   });
 
@@ -383,7 +595,7 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [],
       new Map(),
-      new Map([
+      new Map<string, ImportConformanceLossPath>([
         ['swf.fill.solid', auditedLossPath('swf.fill.solid', 'audited-none')],
         ['swf.text.define-text', { state: 'unaudited' as const }],
       ]),
@@ -404,13 +616,23 @@ describe('createImportConformanceScore', () => {
     expect(score.packs[0]!.capabilities).toEqual([
       {
         id: 'swf.fill.solid',
-        instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+        instrumentation: {
+          audits: [],
+          channel: 'none',
+          fires: { state: 'unreferenced' },
+          staysSilent: { state: 'unreferenced' },
+        },
         lossPath: auditedLossPath('swf.fill.solid', 'audited-none'),
         state: 'unmeasured',
       },
       {
         id: 'swf.text.define-text',
-        instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+        instrumentation: {
+          audits: [],
+          channel: 'none',
+          fires: { state: 'unreferenced' },
+          staysSilent: { state: 'unreferenced' },
+        },
         lossPath: { state: 'unaudited' },
         state: 'unmeasured',
       },
@@ -428,7 +650,7 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
       new Map(),
-      new Map([
+      new Map<string, ImportConformanceLossPath>([
         ['swf.fill.solid', auditedLossPath('swf.fill.solid', 'audited-none')],
         ['swf.text.define-text', { state: 'unaudited' as const }],
       ]),
@@ -436,7 +658,12 @@ describe('createImportConformanceScore', () => {
       PROVENANCE,
     );
     expect(score.packs[0]!.capabilities[0]).toMatchObject({
-      instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+      instrumentation: {
+        audits: [],
+        channel: 'none',
+        fires: { state: 'unreferenced' },
+        staysSilent: { state: 'unreferenced' },
+      },
       results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
       unknownObservations: [],
     });
@@ -478,7 +705,17 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
-      new Map([['swf.fill.solid', { fires: ['test#fires'], staysSilent: [] }]]),
+      new Map([
+        [
+          'swf.fill.solid',
+          {
+            audits: ['payload', 'scope'] as const,
+            channel: 'structured-crumb' as const,
+            fires: ['test#fires'],
+            staysSilent: [],
+          },
+        ],
+      ]),
       lossPathStates(),
       hash('importer'),
       PROVENANCE,
@@ -512,7 +749,17 @@ describe('createImportConformanceScore', () => {
       ),
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Map([['swf.fill.solid', { fires: ['test#fires'], staysSilent: [] }]]),
+      new Map([
+        [
+          'swf.fill.solid',
+          {
+            audits: ['payload', 'scope'] as const,
+            channel: 'structured-crumb' as const,
+            fires: ['test#fires'],
+            staysSilent: [],
+          },
+        ],
+      ]),
       lossPathStates(),
       hash('importer'),
       PROVENANCE,
@@ -546,7 +793,17 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'unsupportedClean'), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Map([['swf.fill.solid', { fires: [], staysSilent: ['test#is silent'] }]]),
+      new Map([
+        [
+          'swf.fill.solid',
+          {
+            audits: ['payload', 'scope'] as const,
+            channel: 'structured-crumb' as const,
+            fires: [],
+            staysSilent: ['test#is silent'],
+          },
+        ],
+      ]),
       lossPathStates(),
       hash('importer'),
       PROVENANCE,
@@ -570,7 +827,7 @@ describe('createImportConformanceScore', () => {
     });
   });
 
-  it('lets a direct failure dominate an unlicensed observation', () => {
+  it('retains a direct defect while capability-scoped uncertainty forces the result UNKNOWN', () => {
     const index = makeIndex();
     const score = createImportConformanceScore(
       index,
@@ -587,12 +844,12 @@ describe('createImportConformanceScore', () => {
     );
     expect(score.packs[0]!.capabilities[0]).toMatchObject({
       outcomes: { importedWrong: 1, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
-      results: { fire: { state: 'fail' }, silence: { state: 'fail' } },
-      unknownObservations: [{ reason: 'loss-path-not-identified', reference: 'two.swf' }],
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'loss-path-not-identified', reference: 'swf.fill.solid' }],
     });
   });
 
-  it('refuses a proof mapping row that represents neither role', () => {
+  it('refuses proof references on a non-structured diagnostic channel', () => {
     const index = makeIndex();
     expect(() =>
       createImportConformanceScore(
@@ -603,12 +860,17 @@ describe('createImportConformanceScore', () => {
         ),
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-        new Map([['swf.fill.solid', { fires: [], staysSilent: [] }]]),
+        new Map([
+          [
+            'swf.fill.solid',
+            { audits: [], channel: 'human-log-only' as const, fires: ['test#fires'], staysSilent: [] },
+          ],
+        ]),
         lossPathStates(),
         hash('importer'),
         PROVENANCE,
       ),
-    ).toThrow(/must represent at least one proof role/);
+    ).toThrow(/requires a structured diagnostic crumb/);
   });
 });
 
@@ -656,6 +918,8 @@ function instrumentationProofs(id: string) {
     [
       id,
       {
+        audits: ['payload', 'scope'] as const,
+        channel: 'structured-crumb' as const,
         fires: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
         staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
       },
@@ -680,11 +944,51 @@ function auditedLossPath(id: string, state: 'audited-none' | 'identified') {
   return {
     audit: {
       auditId: 'audit:loss-path-v1',
+      auditor: 'builder2',
       auditedAt: '2026-08-07T00:00:00.000Z',
       subjectHash: `sha256:subject:${id}`,
     },
     state,
   } as const;
+}
+
+function declarations(
+  unwiredLossesByCapability: Readonly<
+    Record<string, readonly Readonly<ImportConformanceUnwiredLossObservation>[]>
+  > = {},
+  configurationLimitsByCapability: Readonly<Record<string, Readonly<ImportConformanceConfigurationLimits>>> = {},
+): ImportConformanceScoreDeclarations {
+  return {
+    configurationLimitsByCapability: new Map(Object.entries(configurationLimitsByCapability)),
+    importerDeclaredCensus: {
+      basis: 'single-artifact-cross-check',
+      candidateHits: 4,
+      falsePositiveHits: 2,
+      provenance: 'single-author',
+      reference: 'synthetic-capabilities-vs-tag-coverage.md',
+      state: 'provisional',
+    },
+    unwiredLossesByCapability: new Map(Object.entries(unwiredLossesByCapability)),
+  };
+}
+
+function expectedDenominators(declaredRows: number) {
+  return {
+    importerDeclared: {
+      census: {
+        basis: 'single-artifact-cross-check',
+        candidateHits: 4,
+        falsePositiveHits: 2,
+        provenance: 'single-author',
+        reference: 'synthetic-capabilities-vs-tag-coverage.md',
+        state: 'provisional',
+      },
+      declaredRows,
+      limitation: 'individuation-rule-not-operational',
+      state: 'unresolved',
+    },
+    swfFormat: { state: 'unmeasured' },
+  };
 }
 
 function makeIndex() {

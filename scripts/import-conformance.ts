@@ -41,7 +41,11 @@ import {
   writeImportConformanceShardResult,
 } from './import-conformance-runner-core';
 import { formatImportConformanceSubset } from './import-conformance-subset';
-import { buildSwfCapabilityIndex } from './swf-capability-index';
+import {
+  buildSwfCapabilityIndex,
+  SWF_CAPABILITY_CONVENTION_REVISION,
+  SWF_IMPORTER_DECLARED_CENSUS,
+} from './swf-capability-index';
 import { runSwfImportConformanceWorkerPool } from './swf-import-conformance-worker-pool';
 
 export async function runImportConformanceProcess(
@@ -55,7 +59,12 @@ export async function runImportConformanceProcess(
   if (tree === null) {
     if (args.mode === 'subset') throw new Error(`${PACK_ID} ${PACK_VARIANT} fixture tree is unavailable`);
     const score = createImportConformanceNotRunScore(
-      { id: PACK_ID, release: FIXTURE_RELEASE_TAG, variant: PACK_VARIANT },
+      {
+        capabilityConventionRevision: SWF_CAPABILITY_CONVENTION_REVISION,
+        id: PACK_ID,
+        release: FIXTURE_RELEASE_TAG,
+        variant: PACK_VARIANT,
+      },
       definitions,
       importerSourceHash,
       { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
@@ -93,6 +102,11 @@ export async function runImportConformanceProcess(
     instrumentation.lossPathByCapability,
     importerSourceHash,
     { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
+    {
+      configurationLimitsByCapability: new Map(),
+      importerDeclaredCensus: SWF_IMPORTER_DECLARED_CENSUS,
+      unwiredLossesByCapability: new Map(),
+    },
   );
   writeImportConformanceScoreAtomically(args.scoreFile, score);
   process.stdout.write(formatImportConformanceScore(score));

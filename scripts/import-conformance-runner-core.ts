@@ -152,23 +152,25 @@ function parseCachedResult(
     throw new Error('stale fixture result');
   }
   if (!isOutcome(value.outcome) || !Array.isArray(value.capabilityOutcomes)) throw new Error('invalid fixture result');
-  const capabilityOutcomes = value.capabilityOutcomes.map((candidate) => {
-    if (
-      !isRecord(candidate) ||
-      (candidate.diagnosticCause !== 'separable' && candidate.diagnosticCause !== 'unknown') ||
-      typeof candidate.diagnosticReported !== 'boolean' ||
-      typeof candidate.id !== 'string' ||
-      !isOutcome(candidate.outcome)
-    ) {
-      throw new Error('invalid capability result');
-    }
-    return {
-      diagnosticCause: candidate.diagnosticCause,
-      diagnosticReported: candidate.diagnosticReported,
-      id: candidate.id,
-      outcome: candidate.outcome,
-    };
-  });
+  const capabilityOutcomes: ImportConformanceResult['capabilityOutcomes'] = value.capabilityOutcomes.map(
+    (candidate) => {
+      if (
+        !isRecord(candidate) ||
+        (candidate.diagnosticCause !== 'separable' && candidate.diagnosticCause !== 'unknown') ||
+        typeof candidate.diagnosticReported !== 'boolean' ||
+        typeof candidate.id !== 'string' ||
+        !isOutcome(candidate.outcome)
+      ) {
+        throw new Error('invalid capability result');
+      }
+      return {
+        diagnosticCause: candidate.diagnosticCause,
+        diagnosticReported: candidate.diagnosticReported,
+        id: candidate.id,
+        outcome: candidate.outcome,
+      };
+    },
+  );
   if (capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== fixture.capabilities.join('\0')) {
     throw new Error('stale capability result');
   }
