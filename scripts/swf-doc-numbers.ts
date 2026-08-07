@@ -9,11 +9,20 @@
 // It is not hypothetical here: `individuation.md` shipped "25 of 30" when the measured value was 23,
 // caught by re-reading rather than by any instrument. This is that instrument.
 //
-// WHAT IT CANNOT VERIFY, PRINTED EVERY RUN RATHER THAN OMITTED. The loss-family counts have no
-// independent recomputation — the families are a declared enumeration, so checking the doc against a
-// parse of the same doc would be circular and would prove nothing. Those numbers are named below as
-// unverified. A checker that silently verified seven of eight and printed OK would be the same defect it
-// exists to catch.
+// WHAT IT CANNOT VERIFY, PRINTED EVERY RUN RATHER THAN OMITTED — AND NARROWED, BECAUSE THE FIRST VERSION
+// OF THIS DISCLAIMER CLAIMED MORE IGNORANCE THAN IT HAD. It said the loss-family counts could not be
+// checked at all, on the grounds that checking a doc against a parse of the same doc is circular. That
+// collapsed two different questions:
+//
+//   EXTERNAL VALIDITY — are these the right families? — is genuinely unavailable. That is the vocabulary
+//   ceiling and it stays.
+//   INTERNAL CONSISTENCY — does the stated count match the stated list? — is available and cheap, and is
+//   exactly the failure that has bitten this doc three times.
+//
+// Circular is checking a count against a parse of the same STATEMENT. Deriving the count from the LIST is
+// not circular, because the list is the primary artifact and the sentence is a summary of it. So the
+// counts below are computed from the table and never typed. A checker that says CANNOT VERIFY where it
+// partly can is the same defect one notch quieter than saying OK.
 //
 // Run `npm run capabilities:numbers` (or `:check`, wired into `npm run check`).
 import { execFileSync } from 'node:child_process';
@@ -79,8 +88,23 @@ const expectations: Expectation[] = [
 // Numbers in these docs that nothing can independently recompute. Listed so the check's own coverage is
 // visible: an unlisted number that also cannot be verified would pass silently.
 const UNVERIFIABLE: readonly string[] = [
-  'loss-path-audit.md — the loss-family counts (12 candidates / 11 wired / 1 demonstrated not-a-loss)',
+  'loss-path-audit.md — whether the enumerated families are the RIGHT families (external validity, not internal consistency)',
 ];
+
+// The loss-family table is the primary artifact; the counts sentence is a summary of it. Rows are the
+// unit — one row is one enumerated loss path — and the `#` column groups them into numbered families,
+// which is why the row count and the family count differ and both have to be stated.
+const auditBody = readFileSync(join(CELL, 'loss-path-audit.md'), 'utf8');
+const familyRows = [...auditBody.matchAll(/^\| ([0-9][0-9a-z/]*) \| ([^|]+)\| ([^|]+)\|$/gm)];
+if (familyRows.length === 0) throw new Error('could not recompute the loss-family counts: table not found');
+const notALoss = familyRows.filter((row) => /demonstrated not reachable/.test(row[3])).length;
+const families = new Set(familyRows.map((row) => /^([0-9]+)/.exec(row[1])?.[1])).size;
+
+expectations.push({
+  doc: 'loss-path-audit.md',
+  label: 'loss-path counts',
+  text: `**${familyRows.length} loss paths · ${familyRows.length - notALoss} wired with a fire proof · ${notALoss} demonstrated not-a-loss · 0 unfalsified**, across ${families} numbered families.`,
+});
 
 const problems: string[] = [];
 for (const expectation of expectations) {

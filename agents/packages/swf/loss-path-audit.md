@@ -23,7 +23,17 @@ Counts rather than a ratio, deliberately. A denominator that shrinks when you in
 numerator grows from the same investigation improves from effort alone, and would arrive dressed as
 rigour.
 
-**12 candidates · 11 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified.**
+**13 loss paths · 12 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified**, across 12 numbered families.
+
+**These are derived from the table below and never typed** — `npm run capabilities:numbers` recomputes
+them and fails when this sentence drifts. **The first run of that derivation corrected them.** The figure
+quoted all session was *12 candidates · 11 wired*, which was neither a row count nor a family count: it
+took the family numbering as the unit and then subtracted 6c as though it were a family of its own, when
+6c shares family 6 with 6a/6b. **A count with two units in it, which is the individuation defect in
+miniature, in the doc that records that defect.**
+
+The unit is the **row** — one enumerated loss path. The `#` column groups rows into families, which is
+why 13 and 12 both appear and why neither alone is the answer.
 
 **Wired and fire-proven; the correctness of what each diagnostic *says* is unaudited.** The count is of
 wires that FIRE, not of wires that say something TRUE — *has a reporting path* is not *reports
