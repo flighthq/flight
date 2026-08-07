@@ -49,6 +49,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/image-codec": "*",
     "typescript": "^5.3.0"
   },
   "description": "Renderer-neutral Scene2D documents with explicit application slot and image resource resolution",

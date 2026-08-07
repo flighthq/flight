@@ -44,6 +44,26 @@ describe('createImageResourceFromBitmap', () => {
     expect(resource.height).toBe(4);
     expect(resource.source).not.toBeNull();
   });
+
+  it('normalizes premultiplied Bitmap pixels for the straight-alpha ImageData bridge', () => {
+    const bitmap: Bitmap = createEntity({
+      alphaType: 'premultiplied',
+      gamut: 'srgb',
+      data: new Uint8ClampedArray([0x40, 0x20, 0x10, 0x80]),
+      format: 'rgba8unorm',
+      height: 1,
+      kind: BitmapTextureSourceKind,
+      version: 0,
+      width: 1,
+    });
+    const putImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'putImageData');
+
+    createImageResourceFromBitmap(bitmap);
+
+    const imageData = putImageData.mock.calls[0][0];
+    expect([...imageData.data]).toEqual([0x80, 0x40, 0x20, 0x80]);
+    expect([...bitmap.data]).toEqual([0x40, 0x20, 0x10, 0x80]);
+  });
 });
 
 describe('createImageResourceFromCanvas', () => {

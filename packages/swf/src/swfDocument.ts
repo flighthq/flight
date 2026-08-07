@@ -31,7 +31,7 @@ import {
   getShapeFillRegions,
   setMorphShapeProgress,
 } from '@flighthq/shape/contract';
-import { createSampler, createTexture, setTextureSource } from '@flighthq/texture/contract';
+import { createSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   Adjustment,
   AudioResource,
@@ -78,10 +78,10 @@ import {
   TimelineStreamAudioCueKind,
 } from '@flighthq/types/contract';
 
-import { createSwfLosslessBitmap } from './swfBitmap';
 import { readSwfEditTextFactory } from './swfEditText';
 import { readSwfFilterList } from './swfFilter';
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
+import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
 import { createSwfMorphShape } from './swfMorphShape';
 import { SwfReader } from './swfReader';
 import { createSwfShape } from './swfShape';
@@ -122,7 +122,6 @@ export function createScene2DImportFromSwf(source: Uint8Array): SwfDocumentImpor
   };
   const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, slots, instantiation, 0);
   if (root === null) return null;
-  fillSwfLosslessBitmapTextures(parsed);
 
   return {
     appearances: instantiation.appearances,
@@ -169,7 +168,6 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
   };
   const root = createSwfSymbolNode(parsed, characterId, slots, instantiation);
   if (root === null) return null;
-  fillSwfLosslessBitmapTextures(parsed);
 
   return createScene2DDocument(
     root,
@@ -456,30 +454,6 @@ function readSwfFile(source: Uint8Array): SwfFile | null {
 
   const parsed = readSwfTags(body);
   return parsed === null ? null : { frameRate, parsed, stageBounds };
-}
-
-// Fills in the pixels this package can unpack on its own. A lossless definition is not an image file — it
-// is a raw raster plus zlib — so no generic decoder reaches it, but both halves needed to read it are
-// already here: the shared decompressor the caller registered, and the layout knowledge in swfBitmap. Its
-// pixels therefore resolve at import, and it earns no image resource because there is nothing left to
-// load. The encoded formats leave as references and decode through @flighthq/image later.
-//
-// Only characters something actually samples are unpacked, so a library full of unused bitmaps costs
-// nothing. That is the whole reason this walks the texture map rather than the payload map.
-function fillSwfLosslessBitmapTextures(parsed: Readonly<SwfTagResult>): void {
-  for (const [characterId, variants] of parsed.imageTextures) {
-    if (!isSwfLosslessImage(parsed.images.get(characterId))) continue;
-    const image = parsed.images.get(characterId);
-    if (image === undefined) continue;
-    const bitmap = createSwfLosslessBitmap(image.bytes, image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE);
-    if (bitmap === null) continue;
-    for (const texture of variants.values()) setTextureSource(texture, bitmap);
-  }
-}
-
-function isSwfLosslessImage(image: Readonly<SwfImagePayload> | undefined): boolean {
-  if (image === undefined) return false;
-  return image.mimeType === SWF_LOSSLESS_MIME_TYPE || image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE;
 }
 
 // Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
@@ -970,10 +944,14 @@ function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceR
   const resources: ImageResourceReference[] = [];
   for (const [characterId, variants] of parsed.imageTextures) {
     const image = parsed.images.get(characterId);
-    // A lossless payload already resolved at import through swfBitmap, so a reference for it would report
-    // work that does not exist and would fail if anything tried to decode it as an image file.
-    if (image === undefined || isSwfLosslessImage(image)) continue;
-    const reference = createEmbeddedImageResourceReference(image.bytes, image.mimeType);
+    if (image === undefined) continue;
+    const alphaType =
+      image.mimeType === SWF_LOSSLESS_ALPHA_MIME_TYPE
+        ? 'premultiplied'
+        : image.mimeType === SWF_LOSSLESS_MIME_TYPE
+          ? 'opaque'
+          : 'straight';
+    const reference = createEmbeddedImageResourceReference(image.bytes, image.mimeType, alphaType);
     reference.textures = [...variants.values()];
     resources.push(reference);
   }
@@ -2428,8 +2406,6 @@ const S_SIGNATURE = 0x53;
 const MORPH_RATIO_ONE = 0xffff;
 const SWF_INSTANCE_KEY_SCALE = 0x10000;
 const SWF_LZMA_PREFIX_LENGTH = 17;
-const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';
-const SWF_LOSSLESS_MIME_TYPE = 'image/x-swf-lossless';
 const SWF_MIME_TYPE = 'application/x-shockwave-flash';
 const SWF_PREFIX_LENGTH = 8;
 const SOUND_ENVELOPE_LEVEL_ONE = 32768;
