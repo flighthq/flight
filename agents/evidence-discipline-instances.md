@@ -75,6 +75,24 @@ reader can tell strength apart without trusting the author's formatting:
   is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
   without one is pending** — and only the mechanism tells you which you have.
 
+- **filed — WHEN EVERY CANDIDATE SHARES A PROPERTY THE ANSWER NEED NOT HAVE, THE SEARCH SPACE IS THE
+  PROBLEM AND NOT THE CHOICE.** Four candidate units — leaves, interiors, roots, property keys — were
+  each **a level of one graph, and therefore homogeneous by construction.** The answer was
+  **level-heterogeneous**. ⇒ **So the search space could not have contained it: not "we had not found
+  it yet" but "IT WAS NOT IN THERE."**
+  ★★★ **And the tell was available IN ADVANCE, which is what makes this prospective rather than a
+  post-mortem: ask what all your candidates have in common, then ask whether the answer must have
+  it.** Level-homogeneity was shared by every candidate **and nothing about the thing being sought
+  required it.** ⇒ **This is enumerate-what-your-vocabulary-excludes applied to a CANDIDATE SET rather
+  than to a search pattern** — the same blind-spot question, one level up.
+
+- **filed — A RETURNING INDIVIDUATION QUESTION IS THE EXPECTED SHAPE, NOT A SETBACK OR A REGRESS.**
+  **Individuation is a property of a SET**, so a newly-grounded set gets a **new** question rather than
+  inheriting the previous answer. ⇒ **Not circular and not infinite: each iteration is asked of a set
+  with BETTER PROVENANCE** — here, one grounded in what the code **decides** rather than what the
+  format **declares**. ★ **The convergence criterion is provenance, not agreement**, so "we are asking
+  again" is progress whenever the set being asked about is better sourced than the last one.
+
 - **filed — THE LEVEL CAN BE CHOSEN PER BEHAVIOUR, WHICH NO PROPERTY OF THE TYPE GRAPH PREDICTS.** A
   dispatch measurement answered the level question with **neither axis**: the importer dispatches
   **entirely by ancestor** — ~46 derived-from sites across 13 files, **no type-key equality anywhere**,
