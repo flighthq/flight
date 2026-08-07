@@ -40,6 +40,27 @@ reader can tell strength apart without trusting the author's formatting:
 
 ## Serving: evidence is about whatever produced it
 
+- **filed — A FRAME-RELATIVE correctness cannot be audited in place; it can only be tested by
+  TRANSFER.** Where a conflation is correct *in its own frame*, **the question and the answer match**,
+  so **no restatement, no control and no independent reader exposes it** — every check confirms it,
+  correctly. ⇒ ★★ **Everything validated in one arc is validated WITHIN ITS FRAME, and nothing built
+  there can detect a frame error.** **So the first transfer to a second domain is the first real test
+  of the first domain's work, and a failure there is evidence about the ORIGIN, not only about the
+  destination.** **[Stated before that transfer completes, so it cannot be read back as an excuse.]**
+
+- **filed — A pipe reports its LAST command's exit code, so `exit: 0` can sit directly beneath the
+  errors that contradict it.** A typecheck was piped through `head`; **the captured status was
+  `head`'s.** ⇒ **The author nearly reported a self-contradictory pair — two errors and a success —
+  and the tell was that it was self-contradictory rather than that anything looked wrong.** ★ **Same
+  shape as trusting a grep over the gate verdict, through the opposite hole: nothing was filtered out
+  of the OUTPUT, the EXIT CODE was replaced.** **Re-measure by writing output to a file and capturing
+  the command's own status.**
+
+- **filed — A gitignored scratch file can still break a repository gate.** An ordering check scans
+  tracked and untracked alike, **so a probe in an ignored directory failed a gate for its author and
+  would fail it for anyone** — **gitignore hides a file from git, not from every tool that walks the
+  tree.**
+
 - **filed — A scripted edit that does not match is a SILENT NO-OP, and the commit succeeds anyway.**
   A `str.replace` whose anchor had been reflowed by a formatter returned the file unchanged; the
   surrounding one-line change still applied, **so the commit landed, the gate passed, and the author

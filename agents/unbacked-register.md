@@ -226,7 +226,7 @@ sub-states, or an entry lands in a someone-should-act bucket where nobody may:
 
 | # | Defect | Verified how | Sub-state |
 |---|---|---|---|
-| L1 | **CLOSED.** Both consumers now read `pack.verifiedFixtureFiles` and `tsc --noEmit` exits 0 — measured on the delivered base, not reported. *(Was: the base failed `npm run check` on its own, two typecheck errors where the fixture-stamp consumers were not carried with their rename)* | integration ran it against the base with nothing of theirs applied | **FIXABLE** — patch exists and is verified appliable; delivery, not authoring |
+| L1 | **CLOSED — and confirmed independently after a disagreement.** Both consumers now read `pack.verifiedFixtureFiles` and `tsc --noEmit` exits 0 — measured on the delivered base, not reported. *(Was: the base failed `npm run check` on its own, two typecheck errors where the fixture-stamp consumers were not carried with their rename)* | integration ran it against the base with nothing of theirs applied | **FIXABLE** — patch exists and is verified appliable; delivery, not authoring |
 | L2 | A guarded `Decisions` line in a package charter was **removed rather than superseded**, and the mutation is in the delivered base | Baselined against the commit that introduced the guarded line: one violation | **MUST-NOT-BE-FIXED, AWAITING A DECISION** — report only; whether it stands is the user's call |
 
 ★★ **L2's options are TWO, not three, and the third was never available.** The ruling against repair
