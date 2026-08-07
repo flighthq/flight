@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
 
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 import { filterPaths, getSelectors } from './select';
 
 interface OrderIssue {
@@ -36,24 +37,11 @@ const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
 const jsonMode = process.argv.includes('--json');
 
-// Directory names skipped everywhere during the file walk. Mirrors the oxlint/oxfmt ignore set so
-// the two tools agree on what counts as hand-authored source.
-const IGNORED_DIRS = new Set([
-  'node_modules',
-  'dist',
-  'build',
-  'coverage',
-  'target',
-  '.cache',
-  '.git',
-  '.idea',
-  '.vscode',
-  '.claude',
-  '.quimby',
-  'worktrees',
-  'incoming',
-  'docs',
-]);
+// Directory names skipped everywhere during the file walk: the shared generated-output set, plus the
+// five this scan skips for its own reasons — agent and editor state, sibling checkouts, and `docs`
+// prose. Together these mirror the oxlint/oxfmt ignore set, so the three tools agree on what counts as
+// hand-authored source. (`agents/` is excluded separately in `walk`, by path rather than by name.)
+const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming', 'docs']);
 
 if (fixMode) {
   let fixedCount = 0;
