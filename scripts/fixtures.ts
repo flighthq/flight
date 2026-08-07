@@ -39,6 +39,14 @@
 // built on `files` versus a recursive count of the tree cannot subtract a constant; it has to exclude
 // the metadata by name or it reports a phantom shortfall on every pack.
 //
+// ★ AND EXCLUDING THEM BY NAME IS THE ONLY THING ANY LATER PHASE EVER DOES WITH THOSE FILES. The two
+// facts belong together because the count delta is what sends a reader looking at them in the first
+// place. NO COMMITTED ARTIFACT MAY BE DERIVED FROM THEM AT ALL — not a copy, not a concatenation, not a
+// summary, AND NOT A COUNT BROKEN DOWN BY TERMS, which records what they say by arithmetic. A table
+// reading "N packs under X, M under Y" quotes nothing and still states whose terms the corpus carries;
+// it launders the prohibited thing through counting, and a scoreboard is exactly the artifact that
+// grows such a column because it looks informative. Count fixtures, never their provenance.
+//
 // And the inverse rule, which is easy to get backwards: record how to OBTAIN and how to VERIFY — the
 // URL, the pinned tag, the sha256 — and record nothing about whose terms any pack carries. The
 // published manifest states no terms anywhere; this file states none either, and no variant name may be
