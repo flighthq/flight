@@ -112,11 +112,25 @@ check needs no tooling and is one question: **is there anything here that only o
 act on?** If yes, it is not a broadcast — split it. **This is checkable before sending rather than
 discoverable after**, which is what P7's version was not.
 
-**Recorded as re-specified and under test, not as fixed.** P7 was declared structural and recurred
-within the hour; **a second confident remedy in the same file, for the same lapse, is exactly the
-shape that should not be believed on its author's word.** The standing ask is a recurrence count
-under the new rule, and **an entry here that reports a lapse as remedied is worse than one that
-reports it open.**
+**No remedy is recorded here, deliberately.** Three remedies were written for this lapse and it
+recurred four times. **Three mis-specifications in a row is the signature of a problem being re-ruled
+rather than understood**, so what follows is the instance data and nothing else. **A fourth rule is
+what this entry exists to prevent.**
+
+| # | What was sent | What it cost | Who paid |
+|---|---|---|---|
+| 1 | A second-person note to one agent, copied to five | A reader audited their own workspace for a lapse that was another agent's | a peer, not the sender |
+| 2 | A task addressed to one builder, copied to five | The wrong recipient analysed it, falsified four preconditions, and wrote a rejection parcel | the wrong recipient |
+| 3 | A correction of fact, carrying one builder's task approval, copied to five | Another agent began reconciling a task that was never theirs against their own assignment, then blocked pending a priority answer | the wrong recipient, plus their idle time |
+| 4 | An evidence summary addressed to one builder, sent upward | Four paragraphs read before the reader established it was not about them | the reader |
+
+**The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
+attention or in wasted work, and **it is invisible from the sending side in every instance** — which
+is why three rounds of sender-side care produced three rounds of recurrence. **Instance 4 also passed
+the then-current rule**: it was almost entirely state, which the *may-carry-state-not-instruction*
+formulation permits, and it cost four paragraphs anyway.
+
+**Two of the four were paid by the same reader, and none by the author.** Recorded as open.
 
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
