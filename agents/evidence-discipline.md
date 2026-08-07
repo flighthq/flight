@@ -15,8 +15,8 @@ because each one has concrete cases behind it.
 
 **Everything below is a search instruction, not a test.** Each entry tells you where to look or what
 to read next; none of them tells you a claim is wrong. Used as verdicts they invert — the vividness
-tell would discredit whoever describes a genuinely severe finding accurately, and the granularity
-axis would rank losses instead of directing a search. **A document of search instructions read as a
+tell would discredit whoever describes a genuinely severe finding accurately, and the fidelity axis
+would rank losses by harm instead of naming the check each one defeats. **A document of search instructions read as a
 document of tests is this file's failure mode.** If an entry ever licenses rejecting someone's work
 rather than reading something, it is being misused.
 
