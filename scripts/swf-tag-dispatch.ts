@@ -15,6 +15,12 @@
 // importer never dispatches on (a claim with no code behind it), and a tag constant declared but never
 // referenced (code with no claim). Both are silent today.
 //
+// AND ITS VOCABULARY IS SEMANTIC, NOT GRAMMAR-DERIVED, WHICH MAKES THE CEILING BELOW WEAKER THAN IT
+// LOOKS. A detector's vocabulary is closed only when derived from a grammar; here I CHOSE that a
+// capability is tag-shaped and that a tag is one the importer dispatches on. So this reports what someone
+// thought to look for, and a clean run is weaker than the same-shaped result on a grammatical question.
+// What it excludes is found by asking, never by running it again.
+//
 // Run `npm run capabilities:tag-dispatch`.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

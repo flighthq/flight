@@ -21,6 +21,11 @@
 // express one. They do not cover a collision spread across two files, or one mediated by a type rather
 // than a literal.
 //
+// AND ITS VOCABULARY IS SEMANTIC, NOT GRAMMAR-DERIVED. The five forms below are shapes I CHOSE as
+// collisions, unlike the silent-drop sweep whose forms are closed over a stated predicate. So the ceiling
+// this prints bounds what it looked for rather than what exists, and a clean run here is weaker evidence
+// than the same-shaped result on a grammatical question. What it excludes is found by asking, not running.
+//
 // Reports and does not enforce; deliberately absent from `npm run check`.
 // Run `npm run capabilities:default-collisions`.
 import { readFileSync, readdirSync } from 'node:fs';
