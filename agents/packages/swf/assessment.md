@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-04
+updated: 2026-08-07
 basedOn: ./review.md
 ---
 
@@ -35,12 +35,15 @@ the measurement so a later corpus or importer change cannot silently rewrite the
   question is one loader contract for both paths, not whether the pixels exist.
 - **Real-file evidence covers structure and animation.** The revision-pinned canonical pair crosses the
   named-graph and a two-frame depth replacement. The broader animated sweep steps 46 clips and
-  wire-cross-checks 29 root timelines; the nested 17 are stepped without a wire comparison, an explicit
-  evidence limit rather than an importer claim.
-- **Structural video placement is honest.** A `DefineVideoStream` character now becomes a `Sprite` over a
-  sourceless `Texture`, including for unnamed placements and exported symbols. The existing timeline path
-  preserves its identity through the measured eleven-move shape while `VideoFrame` packets remain skipped
-  and no decoder, media element, or generic resource contract is implied.
+  wire-cross-checks 29 root timelines **and all 17 instantiated nested sprites** — the nested check
+  closed at `6aff889db` with 0 divergent and 0 unpaired, retiring the evidence limit this section
+  previously recorded.
+- **Structural video placement is honest, and its remaining loss is now named.** A `DefineVideoStream`
+  character becomes a `Sprite` over a sourceless `Texture`, including for unnamed placements and exported
+  symbols, and the timeline path preserves its identity. What Stage A did *not* close is the corpus
+  divergence: the ten per-frame records on that placement carry only a ratio, which on a video placement
+  selects the decoded video frame, and Flight applies a ratio to `MorphShapeKind` alone. `VideoFrame`
+  packets remain skipped and no decoder, media element, or generic resource contract is implied.
 
 ## Ranked remaining decisions
 
@@ -90,6 +93,7 @@ No LZMA or broader AVM2 implementation belongs in this repository.
 - Represent intersecting nested masks if the clip vocabulary gains a multi-region subject.
 - Represent scene ranges from `DefineSceneAndFrameLabelData` if the timeline vocabulary gains scenes.
 - Preserve filter fields only after their target effect types can state them without approximation.
-- Add structured parse diagnostics and a reference-player pixel comparison; extend the wire cross-check
-  from root timelines to instantiated nested sprites.
+- Add structured parse diagnostics and a reference-player pixel comparison.
+- Rule where a video placement's per-frame ratio lives, as part of the video Stage B/C decision. It is
+  the one measured animation loss the corpus still shows.
 - Carry `DefineButtonSound` only after button interaction states have a shared subject.
