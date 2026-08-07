@@ -110,6 +110,17 @@ other work.*
 
 ## Serving: search instructions
 
+- **filed — separate the signal axis from the fidelity axis.** Signal: is the failure reported,
+  misreported, or absent? Fidelity: is the content missing, diminished, or substituted? Orthogonal,
+  and **the worst cells are the ones no cheap check reaches** — searching them on purpose found a
+  morph losing one path pair, a sprite whose bounds omit an unresolvable child, rich text keeping its
+  size and box while losing its font family, and a duplicate font id leaving the wrong font in place.
+  **The fidelity values order by which check they defeat — existence, then count, then content
+  comparison — which makes the axis an oracle specification rather than a severity scale.** Demand
+  that property of the next axis rather than treating it as a happy accident of this one.
+- **filed — building the report for a suspected defect is the strongest test of whether it is one.**
+  Deferring that is not caution: **an unexercised finding is a claim nothing has contradicted yet.**
+
 - **filed — A search finds syntax, not the thing you were looking for.** A sweep for
   `if (x !== null) push(x)` produced eleven candidates; one could not be made to fire at all, because
   the streams it guards are built in lockstep. **It survived three readings because at no point did
