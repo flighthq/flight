@@ -729,7 +729,7 @@ function populateSwfTimelineNode(
     }
   }
 
-  collectSwfNodeAppearances(frames, nodes, state.appearances);
+  collectSwfNodeAppearances(frames, nodes, state.appearances, state.diagnostics);
   setMovieClipSource(clip, createSwfTimelineSource(frames, nodes, timeline.labels, timeline.cues, state.frameRate));
   // Frame scripts attach after the source, so the clip already knows how many frames it has when a
   // recognized command addresses one.
@@ -749,13 +749,30 @@ function collectSwfNodeAppearances(
   frames: readonly (readonly Readonly<SwfFrameEntry>[])[],
   nodes: ReadonlyMap<number, Node2D>,
   out: SwfNodeAppearance[],
+  diagnostics?: ImportDiagnostic[],
 ): void {
   for (let frame = 0; frame < frames.length; frame++) {
     for (const entry of frames[frame]) {
       const { advancedBlendMode, effects } = entry.placement;
       if (advancedBlendMode === null && effects.length === 0) continue;
       const node = nodes.get(createSwfInstanceKey(entry.placement));
-      if (node === undefined) continue;
+      if (node === undefined) {
+        // The appearance report is the only carrier for these two channels, so a placement whose node was
+        // never allocated loses them outright. Reaching here means the placement declared one or both,
+        // which is why the earlier `continue` is not a loss and this one is. A masking placement cannot
+        // reach here despite also earning no node: masks are excluded from frame entries upstream.
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'swf.appearance-without-node',
+          'collectSwfNodeAppearances',
+          {
+            capability: advancedBlendMode !== null ? 'swf.placement.blend-mode' : 'swf.placement.filter-list',
+            frame: frame + 1,
+          },
+        );
+        continue;
+      }
       out.push({ advancedBlendMode, effects: [...effects], frame: frame + 1, node });
     }
   }
