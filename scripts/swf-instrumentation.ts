@@ -65,9 +65,15 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
-    fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
+    fires: [
+      'reports a reused font character id, the one case where the document imports and is simply wrong',
+      'reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2',
+    ],
     id: 'swf.font.define-font',
-    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
+    staysSilent: [
+      'stays silent about a font whose character id is used once, so the entry carries information',
+      'stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing',
+    ],
   },
   {
     audits: ['payload', 'scope'],

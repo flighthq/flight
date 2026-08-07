@@ -2042,6 +2042,21 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
     return;
   }
   if (fontId === 0) return;
+  if (state.fontOutlineSources.has(fontId)) {
+    // Every other definition kind rejects the document on a repeated character id; fonts do not, so the
+    // second table silently replaces the first. The document imports, the font exists, and it is the
+    // wrong font — no existence check and no count can see that, which is why it is reported here.
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.font-character-id-reused',
+      'readSwfFontDefinition',
+      {
+        capability: version === 1 ? 'swf.font.define-font' : `swf.font.define-font-${version}`,
+        characterId: fontId,
+      },
+    );
+  }
   state.fontOutlineSources.set(fontId, source);
   const fontName = readSwfFontName(body, version);
   if (fontName !== '') state.fontNames.set(fontId, fontName);
