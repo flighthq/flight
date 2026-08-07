@@ -126,6 +126,7 @@
     "@flighthq/filesystem": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",
+    "@flighthq/font-formats": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/glyphatlas": "*",
