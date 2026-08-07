@@ -335,6 +335,9 @@ describe('formatImportConformanceRatchetReport', () => {
     );
     expect(output).not.toContain('fire-proven 1/1');
     expect(output).not.toContain('silence-proven 1/1');
+    expect(output).toContain(
+      'instrument assurance observed: trigger correctness proof-reference-presence; trigger specificity proof-reference-presence; trigger scope external-audit-required; payload validity external-audit-required',
+    );
   });
 });
 
@@ -346,7 +349,25 @@ describe('parseImportConformanceScore', () => {
     delete missingProvenance.provenance;
 
     expect(() => parseImportConformanceScore(missingProvenance, 'baseline')).toThrow(
-      'must contain exactly: packs, provenance, schemaVersion',
+      'must contain exactly: instrumentAssurance, packs, provenance, schemaVersion',
+    );
+  });
+
+  it('makes all four independent instrument assurance properties structural without inventing audit verdicts', () => {
+    const parsed = parseImportConformanceScore(score(measuredPack(), '100'));
+    const falsePayloadAssurance = score(measuredPack(), '100') as unknown as {
+      instrumentAssurance: { payloadValidity: string };
+    };
+    falsePayloadAssurance.instrumentAssurance.payloadValidity = 'proof-reference-presence';
+
+    expect(parsed.instrumentAssurance).toEqual({
+      payloadValidity: 'external-audit-required',
+      triggerCorrectness: 'proof-reference-presence',
+      triggerScope: 'external-audit-required',
+      triggerSpecificity: 'proof-reference-presence',
+    });
+    expect(() => parseImportConformanceScore(falsePayloadAssurance)).toThrow(
+      "instrumentAssurance.payloadValidity: must be exactly 'external-audit-required'",
     );
   });
 
@@ -712,6 +733,12 @@ function outcomes(overrides: Partial<ImportConformanceOutcomeCounts> = {}): Impo
 
 function score(pack: ImportConformanceScore['packs'][number] | null, runId: string): ImportConformanceScore {
   return {
+    instrumentAssurance: {
+      payloadValidity: 'external-audit-required',
+      triggerCorrectness: 'proof-reference-presence',
+      triggerScope: 'external-audit-required',
+      triggerSpecificity: 'proof-reference-presence',
+    },
     packs: pack === null ? [] : [pack],
     provenance: { mode: 'exhaustive', runId, runUrl: `https://ci.invalid/runs/${runId}` },
     schemaVersion: 1,

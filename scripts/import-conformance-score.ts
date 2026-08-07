@@ -157,7 +157,15 @@ export interface ImportConformanceProvenance {
   runUrl: string;
 }
 
+export interface ImportConformanceInstrumentAssurance {
+  payloadValidity: 'external-audit-required';
+  triggerCorrectness: 'proof-reference-presence';
+  triggerScope: 'external-audit-required';
+  triggerSpecificity: 'proof-reference-presence';
+}
+
 export interface ImportConformanceScore {
+  instrumentAssurance: ImportConformanceInstrumentAssurance;
   packs: ImportConformancePack[];
   provenance: ImportConformanceProvenance;
   schemaVersion: 1;
@@ -165,7 +173,7 @@ export interface ImportConformanceScore {
 
 export function parseImportConformanceScore(value: unknown, source = 'score'): ImportConformanceScore {
   const root = expectRecord(value, source);
-  expectKeys(root, ['packs', 'provenance', 'schemaVersion'], source);
+  expectKeys(root, ['instrumentAssurance', 'packs', 'provenance', 'schemaVersion'], source);
   if (root.schemaVersion !== 1) fail(`${source}.schemaVersion`, 'must be exactly 1');
   if (!Array.isArray(root.packs)) fail(`${source}.packs`, 'must be an array');
 
@@ -175,7 +183,35 @@ export function parseImportConformanceScore(value: unknown, source = 'score'): I
     `${source}.packs`,
     'pack id',
   );
-  return { packs, provenance: parseProvenance(root.provenance, `${source}.provenance`), schemaVersion: 1 };
+  return {
+    instrumentAssurance: parseInstrumentAssurance(root.instrumentAssurance, `${source}.instrumentAssurance`),
+    packs,
+    provenance: parseProvenance(root.provenance, `${source}.provenance`),
+    schemaVersion: 1,
+  };
+}
+
+function parseInstrumentAssurance(value: unknown, path: string): ImportConformanceInstrumentAssurance {
+  const assurance = expectRecord(value, path);
+  expectKeys(assurance, ['payloadValidity', 'triggerCorrectness', 'triggerScope', 'triggerSpecificity'], path);
+  if (assurance.payloadValidity !== 'external-audit-required') {
+    fail(`${path}.payloadValidity`, "must be exactly 'external-audit-required'");
+  }
+  if (assurance.triggerCorrectness !== 'proof-reference-presence') {
+    fail(`${path}.triggerCorrectness`, "must be exactly 'proof-reference-presence'");
+  }
+  if (assurance.triggerScope !== 'external-audit-required') {
+    fail(`${path}.triggerScope`, "must be exactly 'external-audit-required'");
+  }
+  if (assurance.triggerSpecificity !== 'proof-reference-presence') {
+    fail(`${path}.triggerSpecificity`, "must be exactly 'proof-reference-presence'");
+  }
+  return {
+    payloadValidity: 'external-audit-required',
+    triggerCorrectness: 'proof-reference-presence',
+    triggerScope: 'external-audit-required',
+    triggerSpecificity: 'proof-reference-presence',
+  };
 }
 
 function parseProvenance(value: unknown, path: string): ImportConformanceProvenance {

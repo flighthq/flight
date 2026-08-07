@@ -180,6 +180,7 @@ export function formatImportConformanceRatchetReport(report: Readonly<ImportConf
     `${stateMark(report.state)} ${pc.bold('Import conformance ratchet')} ${stateLabel(report.state)}`,
     `  baseline run: ${report.baseline.provenance.runId} (${report.baseline.provenance.runUrl})`,
     `  current run: ${report.current.provenance.runId} (${report.current.provenance.runUrl})`,
+    `  instrument assurance observed: trigger correctness ${report.current.instrumentAssurance.triggerCorrectness}; trigger specificity ${report.current.instrumentAssurance.triggerSpecificity}; trigger scope ${report.current.instrumentAssurance.triggerScope}; payload validity ${report.current.instrumentAssurance.payloadValidity}`,
   ];
   for (const pack of report.packs) {
     lines.push('', `  ${stateMark(pack.state)} ${pc.bold(pack.id)} ${stateLabel(pack.state)}`);
