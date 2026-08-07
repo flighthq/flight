@@ -11,6 +11,7 @@ import { getScene3DResourceTextures, getScene3DTextureResourceReference } from '
 
 function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
   return {
+    alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,
     kind: ImageResourceReferenceKind.Embedded,

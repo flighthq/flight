@@ -1,5 +1,10 @@
+import { createEntity } from '@flighthq/entity/contract';
+import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
 import type {
+  AlphaType,
+  Bitmap,
   EmbeddedImageResourceReference,
+  EntityWithoutRuntime,
   ExternalImageResourceReference,
   ImageResourceFailure,
   ImageResourceFetch,
@@ -8,12 +13,11 @@ import type {
   TextureSource,
 } from '@flighthq/types/contract';
 import {
+  BitmapTextureSourceKind,
   ImageResourceFailureKind,
   ImageResourceReferenceKind,
   ResourceResolutionState,
 } from '@flighthq/types/contract';
-
-import { loadImageResourceFromBytes } from './imageResourceFrom';
 
 // `bytes` is retained as the view the container handed over, not a copy: a parser carves an image payload
 // out of its source and the reference borrows it, so a document that never resolves an image never pays for
@@ -21,8 +25,10 @@ import { loadImageResourceFromBytes } from './imageResourceFrom';
 export function createEmbeddedImageResourceReference(
   bytes: Uint8Array,
   mimeType: string | null = null,
+  alphaType: AlphaType = 'straight',
 ): EmbeddedImageResourceReference {
   return {
+    alphaType,
     bytes,
     failure: null,
     kind: ImageResourceReferenceKind.Embedded,
@@ -30,6 +36,33 @@ export function createEmbeddedImageResourceReference(
     state: ResourceResolutionState.Unresolved,
     textures: [],
   };
+}
+
+// The one encoded-byte producer for image resource references. A registered decoder owns format
+// knowledge; this async resource layer turns its RGBA result into the live Bitmap entity renderers
+// dispatch by kind. The reference's alpha request is carried onto the source verbatim, so bytes that
+// are already premultiplied never get multiplied a second time at renderer upload.
+async function decodeEmbeddedImageResourceReference(
+  ref: Readonly<EmbeddedImageResourceReference>,
+  signal: AbortSignal,
+): Promise<Bitmap | null> {
+  signal.throwIfAborted();
+  const decoded = await (ref.alphaType === 'premultiplied'
+    ? decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined)
+    : decodeImage(ref.bytes, ref.mimeType ?? undefined));
+  signal.throwIfAborted();
+  if (decoded === null) return null;
+  const bitmap: EntityWithoutRuntime<Bitmap> = {
+    alphaType: ref.alphaType,
+    data: new Uint8ClampedArray(decoded.data),
+    format: 'rgba8unorm' as const,
+    gamut: 'srgb' as const,
+    height: decoded.height,
+    kind: BitmapTextureSourceKind,
+    version: 0,
+    width: decoded.width,
+  };
+  return createEntity(bitmap);
 }
 
 export function createExternalImageResourceReference(
@@ -96,7 +129,7 @@ export async function resolveImageResourceReference(
   try {
     const source =
       ref.kind === ImageResourceReferenceKind.Embedded
-        ? await loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal)
+        ? await decodeEmbeddedImageResourceReference(ref, signal)
         : await fetch(ref, signal);
     if (source === null) {
       ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'Image resource unavailable', name: null };

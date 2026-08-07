@@ -24,6 +24,7 @@ import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 function shadedUsage(withModifier = false): Scene3DKindUsage {
   const ref: ImageResourceReference = {
+    alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,
     kind: ImageResourceReferenceKind.Embedded,

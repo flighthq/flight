@@ -1,4 +1,4 @@
-import { createImageResourceFailure, loadImageResourceFromBytes } from '@flighthq/image/contract';
+import { createImageResourceFailure, resolveImageResourceReference } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
@@ -12,11 +12,7 @@ import type {
   TextureSource,
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
-import {
-  ImageResourceFailureKind,
-  ImageResourceReferenceKind,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
+import { ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
@@ -27,13 +23,10 @@ import { getScene3DResourceTextures, getScene3DTextureResourceReference } from '
 // carried by `signal` (both paths reject on abort). Exported for direct testing of the two ref kinds.
 export function resolveOneScene3DResourceTexture(
   resolver: Readonly<Scene3DResourceResolver>,
-  ref: Readonly<ImageResourceReference>,
+  ref: ImageResourceReference,
   signal: AbortSignal,
 ): Promise<TextureSource | null> {
-  if (ref.kind === ImageResourceReferenceKind.Embedded) {
-    return loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal);
-  }
-  return resolver.fetch(ref, signal);
+  return resolveImageResourceReference(ref, resolver.fetch, signal);
 }
 
 // Reconciles the selected working set entirely synchronously. It groups shared references, recognizes
@@ -145,7 +138,7 @@ function finishScene3DResourceResolution(
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
   if (source === null) {
-    ref.failure = {
+    ref.failure ??= {
       kind: ImageResourceFailureKind.Unavailable,
       message: 'Image resource resolution returned no source',
       name: null,

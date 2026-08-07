@@ -17,6 +17,7 @@ describe('ImageResourceReference', () => {
   describe('descriptor shape', () => {
     it('models an embedded ref carrying encoded bytes and a starting Unresolved state', () => {
       const ref: EmbeddedImageResourceReference = {
+        alphaType: 'straight',
         bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
         failure: null,
         kind: 'Embedded',
