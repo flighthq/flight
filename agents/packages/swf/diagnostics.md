@@ -3,12 +3,13 @@
 
 | Population | Count | What it licenses |
 | --- | --- | --- |
-| Wired | **17 of 80** | every loss path for the capability reports |
-| **Fire-proven** | **17 of 80** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
-| **Silence-proven** | **17 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
+| Wired | **27 of 82** | every loss path for the capability reports |
+| **Fire-proven** | **27 of 82** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
+| **Silence-proven** | **27 of 82** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
 
-**Say the smaller number plainly.** A reader entitled to know that sixteen of eighty can **detect** a
-loss is equally entitled to know how many have been shown not to **invent** one.
+**Say the smaller number plainly.** A reader entitled to know how many capabilities can **detect** a loss
+is equally entitled to know how many have been shown not to **invent** one. They are currently equal;
+when they diverge again, the smaller one is the honest headline.
 
 Silence proofs were prioritised by **which capabilities actually emit a crumb on a corpus**, because a
 fire-proof-only capability yields a verdict when it stays quiet and UNKNOWN the moment it speaks — so
@@ -197,18 +198,17 @@ reads as covered.
 `swf.fill.bitmap`, which is **not** in this table. Do not read a shape row as "everything in that tag
 survived".
 
-**Three numbers, and only the third is what a scoreboard may count.** Stating one would overstate the
-other two.
+**Three numbers, reported separately because they license different things.** Stating one would overstate
+the other two.
 
 | Level | Count | Meaning |
 | --- | --- | --- |
-| Wired | **16 of 80** | every loss path for the capability reports |
-| — and fire-proven | **16 of 80** | every one of those paths has a test proving it fires |
-| — and silence-proven | **1 of 80** | `swf.placement.filter-list` also has a test proving it stays quiet when nothing is lost |
+| Wired | **27 of 82** | every loss path for the capability reports |
+| — and fire-proven | **27 of 82** | every one of those paths has a test proving it fires |
+| — and silence-proven | **27 of 82** | each also has a test proving it stays quiet when nothing is lost |
 
-**Only the fire-proven set may be counted as instrumented**, and it now equals the wired set: all
-fourteen loss paths behind those sixteen capabilities have a test that fires them. A wire nobody has seen
-fire is a gate nobody has seen fail.
+**Only the fire-proven set may be counted as instrumented.** A wire nobody has seen fire is a gate nobody
+has seen fail.
 
 The two numbers were 16 and 10 an hour before this, and the gap was found by measuring the tests against
 the wires rather than by trusting an earlier claim of mine that every wire was fire-tested — a claim that

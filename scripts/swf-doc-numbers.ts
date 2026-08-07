@@ -106,6 +106,56 @@ expectations.push({
   text: `**${familyRows.length} loss paths · ${familyRows.length - notALoss} wired with a fire proof · ${notALoss} demonstrated not-a-loss · 0 unfalsified**, across ${families} numbered families.`,
 });
 
+// The consumer contract states the same three populations twice, so both tables are covered rather than
+// the first one only. They read `of 82` because the denominator is the declared capability list.
+const wiredRows = String(instrumentation.capabilities.length);
+for (const label of ['wired', 'fire-proven', 'silence-proven']) {
+  expectations.push({
+    doc: 'diagnostics.md',
+    label: `${label} population`,
+    text: `**${wiredRows} of ${declaredCount}**`,
+  });
+}
+
+// A number nobody maintains is the state this gate exists to fail on. Recomputable numbers are checked
+// above; a HISTORICAL one is exempt; anything else is unclassified and fails.
+//
+// THE TOKEN IS FIXED — one spelling, `HISTORICAL:`, no paraphrase — for the same reason `UNBACKED:` is:
+// the point is not that a reader is warned, it is that THE SET IS COUNTABLE. An exemption you cannot
+// enumerate is indistinguishable from a gap.
+const HISTORICAL_TOKEN = 'HISTORICAL:';
+const SCANNED_DOCS = ['individuation.md', 'loss-path-audit.md', 'diagnostics.md'];
+// Count-shaped: a bolded figure, an `N of M` ratio, or a number followed by a counting noun. Anything
+// else in these files — dates, tag codes, byte values, line references — is OUT OF SCOPE, and the ceiling
+// printed below says how much that is rather than leaving it implied.
+const COUNT_SHAPE =
+  /\*\*[0-9]+(?: of [0-9]+)?\*\*|\b[0-9]+ of [0-9]+\b|\b[0-9]+ (?:candidates|rows|sites|families|proofs|loss paths|kinds|forms|matches|capabilities|gates|tests)\b/g;
+
+const classified = { historical: 0, recomputable: 0 };
+const unclassified: string[] = [];
+// Every numeric token in the scanned docs, so the ceiling below is measured rather than asserted: the
+// gate reaches only the count-shaped ones, and the rest are dates, tag codes, byte values and line
+// references it makes no claim about.
+let numericTokens = 0;
+
+for (const doc of SCANNED_DOCS) {
+  const body = readFileSync(join(CELL, doc), 'utf8');
+  numericTokens += (body.match(/\b[0-9]+\b/g) ?? []).length;
+  const lines = body.split('\n');
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    for (const match of line.matchAll(COUNT_SHAPE)) {
+      if (expectations.some((expectation) => expectation.text.includes(match[0]))) {
+        classified.recomputable++;
+      } else if (line.includes(HISTORICAL_TOKEN)) {
+        classified.historical++;
+      } else {
+        unclassified.push(`${doc}:${index + 1} — "${match[0]}" is live-tense and nothing recomputes it`);
+      }
+    }
+  }
+}
+
 const problems: string[] = [];
 for (const expectation of expectations) {
   const body = readFileSync(join(CELL, expectation.doc), 'utf8');
@@ -114,10 +164,22 @@ for (const expectation of expectations) {
   }
 }
 
+for (const entry of unclassified) problems.push(entry);
+
 if (problems.length > 0) {
   process.stderr.write(`✗ doc numbers are stale against recomputation:\n  ${problems.join('\n  ')}\n`);
   process.exitCode = 1;
 } else {
   process.stdout.write(`OK ${expectations.length} quoted numbers match recomputation\n`);
+  const reached = classified.recomputable + classified.historical;
+  process.stdout.write(
+    `  count-shaped numbers classified across ${SCANNED_DOCS.length} docs: ${classified.recomputable} recomputable, ${classified.historical} historical\n`,
+  );
+  process.stdout.write(
+    `  CEILING: ${reached} of ${numericTokens} numeric tokens in those docs are count-shaped and reached. The other ${numericTokens - reached} are dates, tag codes, byte values and line references, and this gate makes NO claim about them.\n`,
+  );
+  process.stdout.write(
+    '  OUT OF SCOPE: source comments are not scanned, so a format fact like the eight SWF filter ids in swfFilter.ts is unreached. A format fact appearing in a scanned doc would FAIL here and must NOT be marked HISTORICAL — it is recomputable by an external maintainer, and separating it would take its own token.\n',
+  );
   for (const entry of UNVERIFIABLE) process.stdout.write(`  not verifiable by any recomputation: ${entry}\n`);
 }
