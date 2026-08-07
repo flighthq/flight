@@ -66,6 +66,12 @@ describe('classifyImportConformanceObservation', () => {
       ]),
     ).toThrow(/capability absent from its index/);
   });
+
+  it('marks a configuration-or-input crumb as cause-unknown instead of attributing it to the file', () => {
+    expect(
+      classify([diagnostic(ImportDiagnosticSeverity.Drop, 'swf.shape-body-unreadable')]).capabilityOutcomes[0],
+    ).toMatchObject({ diagnosticCause: 'unknown', diagnosticReported: true });
+  });
 });
 
 function classify(diagnostics: ImportDiagnostic[], imported = true) {

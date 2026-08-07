@@ -26,6 +26,7 @@ export function classifyImportConformanceObservation(
 
   return {
     capabilityOutcomes: fixture.capabilities.map((id) => ({
+      diagnosticCause: keyed.get(id)?.some(isCauseUnknownDiagnostic) === true ? 'unknown' : 'separable',
       diagnosticReported: keyed.has(id),
       id,
       outcome: classifyCapabilityOutcome(observation, keyed.get(id) ?? []),
@@ -67,6 +68,10 @@ function isDefectDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {
     diagnostic.severity === ImportDiagnosticSeverity.Recover ||
     (diagnostic.severity === ImportDiagnosticSeverity.Reject && !isNoDecompressorDiagnostic(diagnostic))
   );
+}
+
+function isCauseUnknownDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {
+  return diagnostic.kind === 'swf.shape-body-unreadable';
 }
 
 function isNoDecompressorDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {

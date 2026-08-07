@@ -28,7 +28,9 @@ describe('formatImportConformanceScore', () => {
       new Set([0]),
       [
         {
-          capabilityOutcomes: [{ diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' }],
+          capabilityOutcomes: [
+            { diagnosticCause: 'separable', diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' },
+          ],
           outcome: 'passed',
           reference: 'fixture.swf',
           sourceHash: hash('fixture'),
@@ -44,8 +46,18 @@ describe('formatImportConformanceScore', () => {
         ],
       ]),
       new Map([
-        ['swf.fill.solid', 'identified' as const],
-        ['swf.text.define-text', 'not-identified' as const],
+        [
+          'swf.fill.solid',
+          {
+            audit: {
+              auditId: 'audit:loss-path-v1',
+              auditedAt: '2026-08-07T00:00:00.000Z',
+              subjectHash: 'sha256:subject:swf.fill.solid',
+            },
+            state: 'identified' as const,
+          },
+        ],
+        ['swf.text.define-text', { state: 'unaudited' as const }],
       ]),
       hash('importer'),
       PROVENANCE,
@@ -54,12 +66,16 @@ describe('formatImportConformanceScore', () => {
     expect(formatImportConformanceScore(score)).toContain(
       'instrument-assurance: payload-validity=external-audit-required trigger-correctness=proof-reference-presence trigger-scope=external-audit-required trigger-specificity=proof-reference-presence\n' +
         'swf-ruffle-fixtures 0.1.0 [full]\n' +
-        'exercised-of-total: 1/2\n' +
-        'fire-proven-of-exercised: 1/1\n' +
-        'pass-of-fire-proven: 1/1\n' +
-        'silence-proven-of-exercised: 1/1\n' +
-        'pass-of-silence-proven: 1/1\n' +
-        'witness-depth: 1 single-witness/1 exercised\n',
+        'exercised-of-total: 1/2 [exercised: swf.fill.solid; total: swf.fill.solid, swf.text.define-text]\n' +
+        'loss-path-audit: partial; audited 1 [swf.fill.solid@audit:loss-path-v1/2026-08-07T00:00:00.000Z/sha256:subject:swf.fill.solid:identified]; can-silently-lose 1; audited-none 0; unaudited 1 [swf.text.define-text]\n' +
+        'fire-proof-referenced-all: 1 [swf.fill.solid [packages/swf/src/swfDocument.test.ts#reports solid-fill loss]]\n' +
+        'fire-proof-referenced-and-exercised: 1 [swf.fill.solid [packages/swf/src/swfDocument.test.ts#reports solid-fill loss]]\n' +
+        'fire-results: pass 1/1 [swf.fill.solid], fail 0/1 [], unknown 0/1 []\n' +
+        'silence-proof-referenced-all: 1 [swf.fill.solid [packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent]]\n' +
+        'silence-proof-referenced-and-exercised: 1 [swf.fill.solid [packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent]]\n' +
+        'silence-results: pass 1/1 [swf.fill.solid], fail 0/1 [], unknown 0/1 []\n' +
+        'witness-depth: 1 single-witness [swf.fill.solid]\n' +
+        'unknown-observations: cause-unknown 0 [], known-unwired 0 [], loss-path-unidentified 0 [], no-fire 0 [], no-silence 0 []\n',
     );
   });
 
@@ -76,6 +92,7 @@ describe('formatImportConformanceScore', () => {
     expect(source).not.toContain('pass-of-exercised');
     expect(source).not.toContain('pass-of-instrumented');
     expect(source).not.toContain('instrumented-of-exercised');
+    expect(source).not.toMatch(/proof-referenced-(?:all|and-exercised):[^\n]*\d+\/\d+/);
   });
 });
 

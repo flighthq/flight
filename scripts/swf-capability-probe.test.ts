@@ -101,6 +101,14 @@ describe('probeSwfCapabilities', () => {
     const truncated = createSwf([tag(9), tag(0)]).subarray(0, 9);
     expect(probeSwfCapabilities(truncated).readable).toBe(false);
   });
+
+  it('discards capability ids accumulated before a later malformed tag body', () => {
+    const malformedShape = tag(32, new Uint8Array([1]));
+    expect(probeSwfCapabilities(createSwf([tag(9), malformedShape, tag(0)]))).toEqual({
+      capabilities: [],
+      readable: false,
+    });
+  });
 });
 
 function colorTransformWithAlphaAdd(): Uint8Array {

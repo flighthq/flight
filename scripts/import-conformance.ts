@@ -90,7 +90,7 @@ export async function runImportConformanceProcess(
     collected.completedShardIds,
     collected.results,
     instrumentation.proofs,
-    instrumentation.lossPathStateByCapability,
+    instrumentation.lossPathByCapability,
     importerSourceHash,
     { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
   );
