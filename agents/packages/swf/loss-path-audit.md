@@ -31,7 +31,7 @@ read, not as evidence that it was read well.
 | `swfFilter.ts` | yes, in full | one unreported family |
 | `swfFrameAction.ts` | yes, in full | three unreported families, plus the truncation below |
 | `swfReader.ts` | yes, in full | **no independent loss path** — every overrun sets the `valid` flag its callers check |
-| `swfDocument.ts` | **partially** — the reject set and the definition-storing patterns; ~2,850 lines not read line by line | three unreported families found so far |
+| `swfDocument.ts` | **partially** — the reject set, the definition-storing patterns, every cap call site, and a search for each known drop shape; not read line by line | five unreported families found so far |
 
 **Only `swfDocument.ts` remains partially read.** Everything else in the package has now been read in
 full.
@@ -88,7 +88,21 @@ greppable, which means it is also mechanically *enforceable* — a lint rule ove
 `if (… !== null) …set(…)` with no `else` would prevent the eighth instance rather than wait for someone
 to find it. A three-patch fix would have left these three, and the same search would have found them.
 
-### 7. The whole-document reject path is almost entirely unreported
+### 7. A sprite's bounds are silently too small when a child's bounds do not resolve
+
+`swfDocument.ts:1303` — `if (childBounds === null) continue` inside the bounds union. The child is skipped
+and the sprite's extent is computed from the remainder, so the sprite reports **a smaller box than it
+occupies** and nothing says a child was left out. **The second *partial* loss in a surviving object**,
+after the morph path pair. Affects `swf.timeline.define-sprite`.
+
+### 8. The appearance report silently omits placements whose node was never allocated
+
+`swfDocument.ts:755` — a placement carrying an advanced blend or a filter list is skipped when
+`nodes.get(...)` returns undefined, which happens when its character was never imported. The appearance
+report is the *only* carrier for those two channels, so the placement's blend and filters are lost with no
+crumb. Affects `swf.placement.blend-mode` and `swf.placement.filter-list`.
+
+### 9. The whole-document reject path is almost entirely unreported
 
 The tag loop has roughly eight distinct `return null` causes — snapshot-budget exhaustion, a duplicate
 sprite id, a sprite body that does not end where it should, malformed lossless/video/bounded definitions,
