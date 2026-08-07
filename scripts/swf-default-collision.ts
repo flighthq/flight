@@ -28,7 +28,10 @@ import { join } from 'node:path';
 
 import ts from 'typescript';
 
-const SOURCE_DIRECTORY = join('packages', 'swf', 'src');
+// Overridable so the detector can be pointed at another corpus WITHOUT changing what this cell's own
+// figures measure. A sweep whose default scope moves silently would make every previously reported
+// number unreproducible.
+const SOURCE_DIRECTORY = process.env.SWEEP_DIR ?? join('packages', 'swf', 'src');
 const DISPLAY_CAP = 6;
 
 const FORM_MULTI_CAUSE_SENTINEL = 'one sentinel value returned from several distinct causes';
