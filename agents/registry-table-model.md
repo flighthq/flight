@@ -121,7 +121,7 @@ across roots — and `createGlCacheState` spawns one per cached node. So the obj
 is among the shortest-lived things in the system, and it re-copies the longest-lived data every time it is
 born. That diagnosis survives the audit intact; only the tier count and the tier's contents changed.
 
-Naming for the aggregate is open. This document writes it `GlRenderWiring` as a placeholder.
+The aggregate is `GlRenderRegistries` — settled 2026-08-07, see [registration lifecycle](registration-lifecycle.md#names--settled-and-one-root-word).
 
 ## Table shapes
 
@@ -343,22 +343,22 @@ the consumer-side policy the producer must not carry:
 ```ts
 export function explainGlScene2DCoverage(
   out: SceneCoverageEntry[],
-  wiring: Readonly<GlRenderWiring>,
+  registries: Readonly<GlRenderRegistries>,
   requirements: Readonly<RequirementSet>,
 ): void;
 ```
 
-`wiring.shapeRasterizer` belonging in that list is the bug fix: a `SlotTable` is addressable, so the six
+`registries.shapeRasterizer` belonging in that list is the bug fix: a `SlotTable` is addressable, so the six
 borrowed-kind miss sites collapse to one honest report.
 
 Access stays concrete and monomorphic per family. The hot path does **not** call `getRegistryTableEntry`:
 
 ```ts
 export function getGlRenderEffectRunner(
-  wiring: Readonly<GlRenderWiring>,
+  registries: Readonly<GlRenderRegistries>,
   kind: Kind,
 ): GlRenderEffectRunner | null {
-  return wiring.renderEffects.entries.get(kind) ?? null;
+  return registries.renderEffects.entries.get(kind) ?? null;
 }
 ```
 
@@ -401,11 +401,13 @@ registry that cannot be shaken out.
 
 ## Open questions
 
-- **Package name.** `@flighthq/registry` matches the vocabulary the docs use, but `RenderRegistry` (an
-  identifier) and `ShapeCommandRegistry` (an interface of argument tuples) are both already taken.
-- **The aggregate's name.** `Wiring` is native vocabulary — 124 non-`wireframe` uses across 96 files — but
-  `wireframe` appears 296 times, so it lands in a polluted grep namespace. `Vocabulary` is clean.
-  `Capabilities` and `Support` collide with existing meanings.
+- ~~**Package name**~~ and ~~**the aggregate's name**~~ — **settled 2026-08-07, see
+  [registration lifecycle](registration-lifecycle.md#names--settled-and-one-root-word).** The package is
+  `@flighthq/registry` (the collision with `RenderRegistry` and `ShapeCommandRegistry` is cosmetic —
+  package specifiers and type names do not share a namespace); the aggregate is `GlRenderRegistries`,
+  not `Wiring`. **The `wireframe` counts this entry cited as grounds do not reproduce** — measured
+  2026-08-07, `wiring` is 240 lines / 155 files and `wireframe` 102 / 35 repo-wide, the ratio inverted
+  from the 124-vs-296 stated here. The ruling does not rest on either count.
 - **`RenderRegistry` as a numeric enum.** 121 call sites, and the numeric form is deliberate: diagnostics
   emit IDs to keep policy and messages out of render core, and capture tooling plus tests consume the
   type. A string identity may be right for an external manifest; the migration must price the diagnostics
