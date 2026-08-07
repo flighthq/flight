@@ -2230,11 +2230,17 @@ function readSwfMorphShapeBody(
   const source = body.source;
   const start = body.pos;
   const end = body.end;
-  const decode = (): MorphShape | null =>
-    createSwfMorphShape(new SwfReader(source, start, end), version, (fillCharacterId, repeat, smoothed) =>
-      acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+  // Only the parse-time validation call carries the sink. The stored closure runs again per placement,
+  // potentially long after import returned, and a sink written to then would append to a collection
+  // whose consumer has already read it.
+  const decode = (diagnostics?: ImportDiagnostic[]): MorphShape | null =>
+    createSwfMorphShape(
+      new SwfReader(source, start, end),
+      version,
+      (fillCharacterId, repeat, smoothed) => acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+      diagnostics,
     );
-  if (decode() === null) {
+  if (decode(state.diagnostics) === null) {
     // The character is simply absent from the document afterwards, so without this the loss has no
     // signal at all: a placement of it resolves to nothing and the import still reports success.
     reportImportDiagnostic(

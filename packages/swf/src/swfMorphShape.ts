@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPathMorph } from '@flighthq/path/contract';
 import {
   appendMorphShapeBeginFill,
@@ -8,6 +9,8 @@ import {
   appendMorphShapePath,
   createMorphShape,
 } from '@flighthq/shape/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type {
   CapsStyle,
   GradientType,
@@ -39,6 +42,7 @@ export function createSwfMorphShape(
   reader: SwfReader,
   version: number,
   resolveBitmapFill: SwfMorphBitmapFillResolver | null = null,
+  diagnostics?: ImportDiagnostic[],
 ): MorphShape | null {
   // MorphShape2 adds per-endpoint edge bounds and the scaling-stroke flags before the edge offset.
   if (version >= 2) {
@@ -63,7 +67,20 @@ export function createSwfMorphShape(
   );
   if (paths === null) return null;
 
-  return createSwfMorphShapeNode(fills, lines, paths.fills, paths.lines);
+  // A declined pair leaves a shape that still draws, so the count is the only thing that separates a
+  // morph that decoded whole from one carrying fewer paths than it was authored with.
+  const declined = { count: 0 };
+  const node = createSwfMorphShapeNode(fills, lines, paths.fills, paths.lines, declined);
+  if (declined.count > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.morph-path-pair-declined',
+      'createSwfMorphShape',
+      { lostPairs: declined.count },
+    );
+  }
+  return node;
 }
 
 function createSwfMorphShapeNode(
@@ -71,9 +88,10 @@ function createSwfMorphShapeNode(
   lines: readonly Readonly<SwfMorphLine>[],
   fillPaths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
   linePaths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
+  declined: { count: number },
 ): MorphShape | null {
-  const paired = pairSwfMorphPaths(fillPaths);
-  const pairedLines = pairSwfMorphPaths(linePaths);
+  const paired = pairSwfMorphPaths(fillPaths, declined);
+  const pairedLines = pairSwfMorphPaths(linePaths, declined);
   if (paired.length === 0 && pairedLines.length === 0) return null;
 
   // The node is created around the first morph and every morph — including that one — is appended under
@@ -172,12 +190,14 @@ interface SwfMorphPathPair {
 // intact rather than failing the definition.
 function pairSwfMorphPaths(
   paths: ReadonlyMap<number, { readonly end: Path; readonly start: Path }>,
+  declined: { count: number },
 ): SwfMorphPathPair[] {
   const pairs: SwfMorphPathPair[] = [];
   for (const index of [...paths.keys()].sort(compareSwfMorphIndex)) {
     const pair = paths.get(index)!;
     const morph = createPathMorph(pair.start, pair.end);
-    if (morph !== null) pairs.push({ index, morph });
+    if (morph === null) declined.count++;
+    else pairs.push({ index, morph });
   }
   return pairs;
 }

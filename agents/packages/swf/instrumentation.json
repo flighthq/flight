@@ -108,6 +108,16 @@
     },
     {
       "audits": [
+        "payload"
+      ],
+      "fires": [],
+      "id": "swf.morph.define-morph-shape-2",
+      "staysSilent": [
+        "stays silent when every path pair morphs, so the declined count carries information"
+      ]
+    },
+    {
+      "audits": [
         "payload",
         "scope"
       ],
@@ -288,7 +298,7 @@
     }
   ],
   "fireProven": 22,
-  "payloadAudited": 22,
+  "payloadAudited": 23,
   "scopeAudited": 21,
-  "silenceProven": 20
+  "silenceProven": 21
 }
