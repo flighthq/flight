@@ -596,6 +596,25 @@ of, and the question that was actually asked.
   each carrying its condition, with no aggregate at all.** **One step past replacing a ratio with
   per-member presence: this replaces the member SET with conditioned facts.**
 
+- **filed — A transfer can fail on DIMENSION rather than on shape, and that is why it transfers
+  mechanically and starts printing.** One format's silent-drop detectors are **arity-1 over CODE**;
+  its dispatch sweep is **arity-2 over CODE**; a **relational** loss in another format needs **arity-2
+  over DATA** — source structure against imported structure. ⇒ **Nothing about the detectors' shape
+  objects to the move: they run, they match, they report.** ★★ **They are simply looking in a
+  dimension where the loss cannot appear**, and a per-site instrument has no site at which a
+  relational loss occurs.
+  ★ **Scheduling consequence, and it is not a detail: an arity-2-over-DATA instrument needs BOTH
+  SIDES, so it is CORPUS-DEPENDENT where a code sweep is not.** **Code sweeps ran with no fixtures at
+  all; a relational-loss detector cannot run without material** ⇒ **so a format whose losses are
+  relational needs its corpus EARLIER in the arc, and that is a plan input rather than a discovery.**
+
+- **filed — A loss TAXONOMY transfers no better than an instrument, and importing one imports its
+  conflations.** Where an importer is deliberately **not** a runtime, **lost content and lost
+  uninterpreted data come apart** — two kinds that a runtime-shaped format had merged into one. ⇒
+  **Carrying the earlier categories across would have imported a conflation the new format does not
+  have**, and the resulting counts would have been unarguable and meaningless. **Further evidence for
+  unit-first: the categories are part of the unit question, not a consequence of it.**
+
 - **filed — UNIT, THEN TRANSFER, THEN NUMBERS — and the ordering exists to protect a transfer from
   its own SUCCESS.** ⇒ **An instrument that transfers mechanically can still produce a number over
   the wrong population** — a true count of a denominator nobody chose, which reads as coverage.
