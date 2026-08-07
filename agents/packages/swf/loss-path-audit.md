@@ -24,12 +24,12 @@ read, not as evidence that it was read well.
 | File | Read? | Result |
 | --- | --- | --- |
 | `swfShape.ts` | yes, in full | **no unreported loss path** — every early exit nulls the whole shape, which *is* reported |
-| `swfMorphShape.ts` | yes, in full | one unreported family |
+| `swfMorphShape.ts` | yes, in full | two unreported families, one of them a *partial* loss |
 | `swfBitmap.ts` | yes, in full | **none at import** — its failure surfaces as a throw in the resolve lane |
 | `swfText.ts` | yes, in full | one unreported family |
 | `swfEditText.ts` | yes, in full | one unreported family |
 | `swfFilter.ts` | yes, in full | one unreported family |
-| `swfFrameAction.ts` | yes, in full | one unreported family, plus the truncation below |
+| `swfFrameAction.ts` | yes, in full | three unreported families, plus the truncation below |
 | `swfReader.ts` | yes, in full | **no independent loss path** — every overrun sets the `valid` flag its callers check |
 | `swfDocument.ts` | **partially** — the reject set and the definition-storing patterns; ~2,850 lines not read line by line | three unreported families found so far |
 
@@ -69,7 +69,26 @@ not the structured one — a caller enumerating losses sees nothing. Affects `sw
 
 `if (byClass === null) continue`. Affects `swf.script.do-abc` and `swf.script.do-abc-anonymous`.
 
-### 6. The whole-document reject path is almost entirely unreported
+### 6. The house-style pattern has three more instances, found by searching for the shape
+
+Foreman predicted a fourth instance on the evidence of three. A single search for
+`if (x !== null) collection.set/push(...)` with no `else` found **three** more, one of them a kind of loss
+the first three did not have:
+
+- `swfFrameAction.ts:30` — an ABC **method body** that does not parse is skipped, so any frame script
+  bound to it silently never appears.
+- `swfFrameAction.ts:164` — an AVM2 **frame script** whose commands do not parse is dropped. Affects
+  `swf.script.do-abc` and `swf.script.do-abc-anonymous`.
+- `swfMorphShape.ts:180` — **a single morph path pair that fails is skipped and the morph continues with
+  fewer paths.** This is a *partial* loss inside a surviving object, unlike the other six which lose a
+  whole character. Nothing distinguishes a morph that decoded fully from one that lost a path.
+
+**This is the argument for a pattern-level remedy rather than seven wires.** The shape is mechanically
+greppable, which means it is also mechanically *enforceable* — a lint rule over
+`if (… !== null) …set(…)` with no `else` would prevent the eighth instance rather than wait for someone
+to find it. A three-patch fix would have left these three, and the same search would have found them.
+
+### 7. The whole-document reject path is almost entirely unreported
 
 The tag loop has roughly eight distinct `return null` causes — snapshot-budget exhaustion, a duplicate
 sprite id, a sprite body that does not end where it should, malformed lossless/video/bounded definitions,
