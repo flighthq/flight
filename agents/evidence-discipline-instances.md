@@ -216,6 +216,21 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — SPLIT rather than MARK: commit only the half that can run.** An instrument was to be
+  committed without its corpus and **marked `untested-until-the-pack-arrives`**, because it could not
+  execute. The author instead **committed only the pure comparison logic — which runs today, with
+  tests and both mutation rungs — and did not commit the corpus-walking half at all.** ⇒ **The
+  wire-nobody-has-seen-fire case is ELIMINATED rather than labelled: there is no unrun code to
+  mislabel, and nothing to mistake for coverage.** ★ **A caution avoided by construction beats a
+  caution recorded** — which is this section's own law turned back on a caution written under it.
+
+- **filed — SKIPPED is not AGREED, and CONTAINED is not EQUAL.** Two comparison oracles refused to
+  fold weaker outcomes into their pass count: composites are reported **skipped** rather than agreeing,
+  **because folding them in would inflate the figure with glyphs nothing checked**; and a bounds check
+  reports **contained** separately as a weak pass, **because containment cannot separate a loose
+  declared box from a glyph the reader failed to draw.** ⇒ **An instrument that collapses its outcome
+  vocabulary inflates its own result, and the collapse is invisible in the number it prints.**
+
 - **filed — Keep the semantic decision out of the measurement; let the consumer group.** A scratch
   tool reported a curated eleven tag codes; the promoted version prints **every** code. ⇒ **Choosing
   which members to report puts a judgement inside an instrument, where it is invisible to everyone
