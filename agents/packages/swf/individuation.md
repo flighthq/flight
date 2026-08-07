@@ -94,10 +94,11 @@ everything individuated by a fill kind, a stroke property, a placement flag bit 
 invisible to it. The script measures and prints that number on every run rather than carrying it in
 prose, so it cannot go stale while looking authoritative.
 
-**HISTORICAL: I estimated this ceiling at "about 50 of 82, roughly 60%" before building it. The measured value is 42
-of 82, 51%.** The estimate was wrong by eight rows and in the flattering direction. It is recorded here
-because an estimate quoted later as a measurement is the failure this whole effort exists to remove, and
-mine would have been.
+**I estimated this ceiling before building it, and the estimate was high — wrong in the flattering
+direction.** The measured value is whatever `npm run capabilities:tag-dispatch` prints; the estimate is
+deliberately not repeated here, because a stamped stale figure still supplies a value to anyone who needs
+one, and supplying it is the whole harm. What is worth keeping is that the estimate was wrong and which
+way.
 
 ### What it catches, and the hole found by trying to make it fail
 

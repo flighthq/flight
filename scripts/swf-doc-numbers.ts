@@ -26,7 +26,7 @@
 //
 // Run `npm run capabilities:numbers` (or `:check`, wired into `npm run check`).
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const CELL = join('agents', 'packages', 'swf');
@@ -124,17 +124,20 @@ for (const label of ['wired', 'fire-proven', 'silence-proven']) {
 // the point is not that a reader is warned, it is that THE SET IS COUNTABLE. An exemption you cannot
 // enumerate is indistinguishable from a gap.
 const HISTORICAL_TOKEN = 'HISTORICAL:';
-// COVERAGE IS CHOSEN BY WHAT A CONSUMER READS, NEVER BY WHAT THE AUTHOR IS CURRENTLY TOUCHING. The first
-// version of this list held the three docs being edited at the time, and the two stale-number findings
-// that followed were both in docs that had been FINISHED — the consumer contract and the corpus evidence.
-// Finishing an artifact removes the reason to look at it, which is exactly when it stops being guarded.
-const SCANNED_DOCS = [
-  'diagnostics.md',
-  'fixture-evidence.md',
-  'individuation.md',
-  'loss-path-audit.md',
-  'tag-coverage.md',
-];
+// THE POPULATION IS DERIVED FROM THE TREE, NOT CHOSEN. Three times the hand-picked list missed a doc —
+// the status file, the consumer contract, the corpus evidence — and each time the patch was to add a
+// file BY HAND, which is choosing again. An instrument whose scope is chosen inherits the bias it was
+// built to remove: I derived the count SHAPES from the grammar and picked the FILES from what was in
+// front of me. Enumerating the directory means a new document is covered the moment it exists rather
+// than when someone remembers it.
+//
+// Generated docs are excluded because their own generator gates them; including them would report a
+// second opinion on a value that is already checked at its source.
+const GENERATED_DOCS = new Set(['capabilities.md', 'diagnostic-sites.md']);
+const SCANNED_DOCS = readdirSync(CELL)
+  .filter((name) => name.endsWith('.md') && !GENERATED_DOCS.has(name))
+  .sort();
+
 // Count-shaped: a bolded figure, an `N of M` ratio, or a number followed by a counting noun. Anything
 // else in these files — dates, tag codes, byte values, line references — is OUT OF SCOPE, and the ceiling
 // printed below says how much that is rather than leaving it implied.
