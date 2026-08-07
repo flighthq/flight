@@ -11,12 +11,11 @@ import {
 import { parseImportConformanceScore } from './import-conformance-score';
 import type {
   ImportConformanceCapability,
-  ImportConformanceMeasuredCapability,
+  ImportConformanceExercisedCapability,
   ImportConformanceMeasuredPack,
   ImportConformanceNotRunPack,
   ImportConformanceOutcomeCounts,
   ImportConformanceScore,
-  ImportConformanceUnknownCapability,
 } from './import-conformance-score';
 
 describe('compareImportConformanceScores', () => {
@@ -83,14 +82,14 @@ describe('compareImportConformanceScores', () => {
 
     const report = compareImportConformanceScores(baseline, current);
 
-    expect(report.packs[0].baseline?.summary.exercised.instrumented.passedCapabilities).toBe(
-      report.packs[0].current?.summary.exercised.instrumented.passedCapabilities,
+    expect(report.packs[0].baseline?.summary.exercised.fireProven.results.passedCapabilities).toBe(
+      report.packs[0].current?.summary.exercised.fireProven.results.passedCapabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
       capabilityId: 'alpha',
-      code: 'capability-regressed',
-      detail: 'changed from passing to failing',
+      code: 'fire-result-regressed',
+      detail: 'fire lane changed from passing to failing',
     });
   });
 
@@ -129,14 +128,14 @@ describe('compareImportConformanceScores', () => {
 
     const report = compareImportConformanceScores(baseline, current, { unknownBaseline: 'allow' });
 
-    expect(report.packs[0].baseline?.summary.exercised.instrumented.capabilities).toBe(
-      report.packs[0].current?.summary.exercised.instrumented.capabilities,
+    expect(report.packs[0].baseline?.summary.exercised.fireProven.capabilities).toBe(
+      report.packs[0].current?.summary.exercised.fireProven.capabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
       capabilityId: 'alpha',
-      code: 'capability-instrumentation-regressed',
-      detail: 'was measured and is now UNKNOWN because diagnostic instrumentation is missing',
+      code: 'instrumentation-firing-proof-lost',
+      detail: 'firing-test instrumentation was proven and is now UNPROVEN',
     });
   });
 
@@ -160,12 +159,21 @@ describe('compareImportConformanceScores', () => {
 
   it('ratchets firing-test proof removal and replacement on the stable capability key', () => {
     const baselineCapability = measuredCapability('alpha');
-    baselineCapability.instrumentationProofs.fires = ['fire-test:alpha-primary', 'fire-test:alpha-secondary'];
+    baselineCapability.instrumentation.fires = {
+      proofs: ['fire-test:alpha-primary', 'fire-test:alpha-secondary'],
+      state: 'proven',
+    };
     const removedCapability = measuredCapability('alpha');
-    removedCapability.instrumentationProofs.fires = ['fire-test:alpha-primary'];
+    removedCapability.instrumentation.fires = { proofs: ['fire-test:alpha-primary'], state: 'proven' };
     const replacedCapability = measuredCapability('alpha');
-    replacedCapability.instrumentationProofs.fires = ['fire-test:alpha-primary', 'fire-test:alpha-secondary'];
-    replacedCapability.instrumentationProofs.staysSilent = ['silence-test:alpha-replacement'];
+    replacedCapability.instrumentation.fires = {
+      proofs: ['fire-test:alpha-primary', 'fire-test:alpha-secondary'],
+      state: 'proven',
+    };
+    replacedCapability.instrumentation.staysSilent = {
+      proofs: ['silence-test:alpha-replacement'],
+      state: 'proven',
+    };
 
     const removed = compareImportConformanceScores(
       score(measuredPack([baselineCapability]), '100'),
@@ -180,6 +188,32 @@ describe('compareImportConformanceScores', () => {
     expect(removed.packs[0].findings[0].code).toBe('instrumentation-firing-proof-changed');
     expect(replaced.state).toBe('regression');
     expect(replaced.packs[0].findings[0].code).toBe('instrumentation-silence-proof-changed');
+  });
+
+  it('ratchets licensed pass to per-observation UNKNOWN independently in each proof lane', () => {
+    const fire = compareImportConformanceScores(
+      score(measuredPack([fireOnlyPass('alpha')]), '100'),
+      score(measuredPack([fireOnlyUnknownCrumb('alpha')]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+    const silence = compareImportConformanceScores(
+      score(measuredPack([silenceOnlyPass('alpha')]), '100'),
+      score(measuredPack([silenceOnlyUnknownNoCrumb('alpha')]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+
+    expect(fire.state).toBe('regression');
+    expect(fire.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'fire-result-became-unknown',
+      detail: 'fire lane changed from PASS to UNKNOWN because an observation is unlicensed',
+    });
+    expect(silence.state).toBe('regression');
+    expect(silence.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'silence-result-became-unknown',
+      detail: 'silence lane changed from PASS to UNKNOWN because an observation is unlicensed',
+    });
   });
 
   // Defeating condition 3: scores over different fixture material may both be internally correct, but
@@ -296,7 +330,9 @@ describe('formatImportConformanceRatchetReport', () => {
     const report = compareImportConformanceScores(score(measuredPack(), '100'), score(measuredPack(), '101'));
     const output = formatImportConformanceRatchetReport(report);
 
-    expect(output).toContain('exercised 1/2 → 1/2; instrumented 1/1 → 1/1; pass 1/1 → 1/1; single-witness 0 → 0');
+    expect(output).toContain(
+      'exercised 1/2 → 1/2; fire-proven 1/1 → 1/1; fire results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1; silence-proven 1/1 → 1/1; silence results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1',
+    );
   });
 });
 
@@ -331,14 +367,14 @@ describe('parseImportConformanceScore', () => {
 
   it('refuses aggregates that do not exactly follow the stable capability rows', () => {
     const pack = measuredPack();
-    pack.summary.exercised.instrumented.passedCapabilities = 0;
+    pack.summary.exercised.fireProven.results.passedCapabilities = 0;
 
     expect(() => parseImportConformanceScore(score(pack, '100'))).toThrow(
-      'exercised.instrumented.passedCapabilities: must equal the capability rows (1)',
+      'exercised.fireProven.results.passedCapabilities: must equal the capability rows (1)',
     );
   });
 
-  it('accepts UNKNOWN as exercised but structurally outside the instrumented denominator', () => {
+  it('accepts UNKNOWN observations as exercised but outside both proven populations', () => {
     const pack = measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 1)]);
     const parsed = parseImportConformanceScore(score(pack, '100'));
 
@@ -347,7 +383,14 @@ describe('parseImportConformanceScore', () => {
       summary: {
         exercised: {
           capabilities: 2,
-          instrumented: { capabilities: 1, passedCapabilities: 1 },
+          fireProven: {
+            capabilities: 1,
+            results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
+          },
+          silenceProven: {
+            capabilities: 1,
+            results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
+          },
           singleWitnessCapabilities: 1,
         },
         totalCapabilities: 2,
@@ -407,35 +450,116 @@ describe('parseImportConformanceScore', () => {
 
     const silent = measuredCapability('alpha', 1, 'pass', outcomes({ silentlyWrong: 1 }));
     expect(() => parseImportConformanceScore(score(measuredPack([silent]), '100'))).toThrow(
-      "result: cannot be 'pass' when a defect outcome is present",
+      "results.fire.state: must equal the licensed observations ('fail')",
     );
 
     const unexplainedFailure = measuredCapability('alpha', 1, 'fail');
     expect(() => parseImportConformanceScore(score(measuredPack([unexplainedFailure]), '100'))).toThrow(
-      "result: cannot be 'fail' without a defect outcome",
+      "results.fire.state: must equal the licensed observations ('pass')",
     );
   });
 
-  it('cannot represent an instrumented capability without stable firing-test proof', () => {
-    const absent = measuredCapability('alpha') as unknown as Record<string, unknown>;
-    delete absent.instrumentationProofs;
+  it('keeps the fire-proven and silence-proven populations and verdicts independent', () => {
+    const pack = measuredPack([
+      fireOnlyPass('alpha'),
+      fireOnlyUnknownCrumb('beta'),
+      mixedDirectFailAndUnknown('delta'),
+      silenceOnlyPass('epsilon'),
+      silenceOnlyUnknownNoCrumb('gamma'),
+    ]);
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+
+    expect(parsed.packs[0]).toMatchObject({
+      summary: {
+        exercised: {
+          capabilities: 5,
+          fireProven: {
+            capabilities: 3,
+            results: { failedCapabilities: 1, passedCapabilities: 1, unknownCapabilities: 1 },
+          },
+          silenceProven: {
+            capabilities: 2,
+            results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 1 },
+          },
+        },
+      },
+    });
+    const exercised = parsed.packs[0].capabilities.filter(
+      (capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised',
+    );
+    expect(exercised.find((capability) => capability.id === 'delta')?.unknownObservations).toEqual([
+      { reason: 'silence-proof-missing-for-crumb', reference: 'fixture:delta:crumb' },
+    ]);
+  });
+
+  it('never counts an unlicensed semantic observation under the four outcome fields', () => {
+    const noFire = silenceOnlyUnknownNoCrumb('alpha');
+    noFire.witnesses = 2;
+    noFire.outcomes.silentlyWrong = 1;
+    const noSilence = fireOnlyUnknownCrumb('alpha');
+    noSilence.witnesses = 2;
+    noSilence.outcomes.unsupportedClean = 1;
+
+    expect(() => parseImportConformanceScore(score(measuredPack([noFire]), '100'))).toThrow(
+      'no-crumb pass or silently-wrong outcomes require proven firing instrumentation',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([noSilence]), '100'))).toThrow(
+      'outcomes.unsupportedClean: requires proven silence instrumentation',
+    );
+  });
+
+  it('requires every UNKNOWN observation to retain a unique reference and an exact actionable reason', () => {
+    const duplicate = fireOnlyUnknownCrumb('alpha');
+    duplicate.witnesses = 2;
+    duplicate.unknownObservations.push({
+      reason: 'fire-proof-missing-for-no-crumb',
+      reference: 'fixture:alpha:crumb',
+    });
+    const wrongReason = fireOnlyUnknownCrumb('alpha');
+    wrongReason.unknownObservations[0].reason = 'diagnostic-instrumentation-missing';
+
+    expect(() => parseImportConformanceScore(score(measuredPack([duplicate]), '100'))).toThrow(
+      'observation references must be unique and sorted in ascending order',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([wrongReason]), '100'))).toThrow(
+      'requires both instrumentation directions to be unproven',
+    );
+  });
+
+  it('removes the incoherent flat measured pack outcome aggregate', () => {
+    const pack = { ...measuredPack(), outcomes: outcomes() };
+
+    expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
+      'must contain exactly: capabilities, id, importerSourceHash, release, sharding, state, summary, variant',
+    );
+  });
+
+  it('cannot represent proven instrumentation without stable proof ids', () => {
+    const absent = measuredPack();
+    delete (absent.capabilities[0] as unknown as Record<string, unknown>).instrumentation;
     const empty = {
       ...measuredCapability('alpha'),
-      instrumentationProofs: { fires: [], staysSilent: ['silence-test:alpha'] },
+      instrumentation: {
+        fires: { proofs: [], state: 'proven' },
+        staysSilent: { proofs: ['silence-test:alpha'], state: 'proven' },
+      },
     };
     const duplicate = {
       ...measuredCapability('alpha'),
-      instrumentationProofs: { fires: ['proof-a', 'proof-a'], staysSilent: ['silence-test:alpha'] },
+      instrumentation: {
+        fires: { proofs: ['proof-a', 'proof-a'], state: 'proven' },
+        staysSilent: { proofs: ['silence-test:alpha'], state: 'proven' },
+      },
     };
 
-    expect(() => parseImportConformanceScore(score(measuredPack([absent as never]), '100'))).toThrow(
-      'must contain exactly: id, instrumentationProofs, outcomes, result, state, witnesses',
+    expect(() => parseImportConformanceScore(score(absent, '100'))).toThrow(
+      'must contain exactly: id, instrumentation, outcomes, results, state, unknownObservations, witnesses',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([empty as never]), '100'))).toThrow(
-      'instrumentationProofs.fires: must be a non-empty array',
+      'instrumentation.fires.proofs: must be a non-empty array',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([duplicate as never]), '100'))).toThrow(
-      'instrumentationProofs.fires: instrumentation proof ids must be unique and sorted in ascending order',
+      'instrumentation.fires.proofs: instrumentation proof ids must be unique and sorted in ascending order',
     );
   });
 });
@@ -495,7 +619,7 @@ describe('runImportConformanceRatchet', () => {
       expect(code).toBe(1);
       expect(errors).toEqual([]);
       expect(output.join('\n')).toContain('REGRESSION');
-      expect(output.join('\n')).toContain('capability-regressed [alpha]');
+      expect(output.join('\n')).toContain('fire-result-regressed [alpha]');
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }
@@ -505,15 +629,19 @@ describe('runImportConformanceRatchet', () => {
 function measuredCapability(
   id: string,
   witnesses = 2,
-  result: ImportConformanceMeasuredCapability['result'] = 'pass',
+  result: ImportConformanceExercisedCapability['results']['fire']['state'] = 'pass',
   outcomeCounts = outcomes(),
-): ImportConformanceMeasuredCapability {
+): ImportConformanceExercisedCapability {
   return {
     id,
-    instrumentationProofs: { fires: [`fire-test:${id}`], staysSilent: [`silence-test:${id}`] },
+    instrumentation: {
+      fires: { proofs: [`fire-test:${id}`], state: 'proven' },
+      staysSilent: { proofs: [`silence-test:${id}`], state: 'proven' },
+    },
     outcomes: outcomeCounts,
-    result,
-    state: 'measured',
+    results: { fire: { state: result }, silence: { state: result } },
+    state: 'exercised',
+    unknownObservations: [],
     witnesses,
   };
 }
@@ -523,16 +651,14 @@ function measuredPack(
   overrides: Partial<ImportConformanceMeasuredPack> = {},
 ): ImportConformanceMeasuredPack {
   const measured = capabilities.filter(
-    (capability): capability is ImportConformanceMeasuredCapability => capability.state === 'measured',
+    (capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised',
   );
-  const unknown = capabilities.filter(
-    (capability): capability is ImportConformanceUnknownCapability => capability.state === 'unknown',
-  );
+  const fireProven = measured.filter((capability) => capability.instrumentation.fires.state === 'proven');
+  const silenceProven = measured.filter((capability) => capability.instrumentation.staysSilent.state === 'proven');
   return {
     capabilities,
     id: 'swf-ruffle-fixtures',
     importerSourceHash: 'sha256:importer',
-    outcomes: outcomes(),
     release: 'ruffle-fixtures-2026-08-07',
     sharding: {
       algorithm: 'fixture-count-v1',
@@ -545,14 +671,10 @@ function measuredPack(
     state: 'measured',
     summary: {
       exercised: {
-        capabilities: measured.length + unknown.length,
-        instrumented: {
-          capabilities: measured.length,
-          passedCapabilities: measured.filter((capability) => capability.result === 'pass').length,
-        },
-        singleWitnessCapabilities:
-          measured.filter((capability) => capability.witnesses === 1).length +
-          unknown.filter((capability) => capability.witnesses === 1).length,
+        capabilities: measured.length,
+        fireProven: provenSummary(fireProven, 'fire'),
+        silenceProven: provenSummary(silenceProven, 'silence'),
+        singleWitnessCapabilities: measured.filter((capability) => capability.witnesses === 1).length,
       },
       totalCapabilities: capabilities.length,
     },
@@ -577,8 +699,69 @@ function unmeasuredCapability(id: string): ImportConformanceCapability {
   return { id, state: 'unmeasured' };
 }
 
-function unknownCapability(id: string, witnesses: number): ImportConformanceUnknownCapability {
-  return { id, reason: 'diagnostic-instrumentation-missing', state: 'unknown', witnesses };
+function unknownCapability(id: string, witnesses: number): ImportConformanceExercisedCapability {
+  return {
+    id,
+    instrumentation: { fires: { state: 'unproven' }, staysSilent: { state: 'unproven' } },
+    outcomes: outcomes(),
+    results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+    state: 'exercised',
+    unknownObservations: Array.from({ length: witnesses }, (_, index) => ({
+      reason: 'diagnostic-instrumentation-missing',
+      reference: `fixture:${id}:${index.toString().padStart(6, '0')}`,
+    })),
+    witnesses,
+  };
+}
+
+function fireOnlyPass(id: string): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id, 1);
+  capability.instrumentation.staysSilent = { state: 'unproven' };
+  capability.results.silence = { state: 'unknown' };
+  return capability;
+}
+
+function fireOnlyUnknownCrumb(id: string): ImportConformanceExercisedCapability {
+  const capability = fireOnlyPass(id);
+  capability.results.fire = { state: 'unknown' };
+  capability.unknownObservations = [{ reason: 'silence-proof-missing-for-crumb', reference: `fixture:${id}:crumb` }];
+  return capability;
+}
+
+function silenceOnlyPass(id: string): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id, 1, 'pass', outcomes({ unsupportedClean: 1 }));
+  capability.instrumentation.fires = { state: 'unproven' };
+  capability.results.fire = { state: 'unknown' };
+  return capability;
+}
+
+function silenceOnlyUnknownNoCrumb(id: string): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id, 1);
+  capability.instrumentation.fires = { state: 'unproven' };
+  capability.results = { fire: { state: 'unknown' }, silence: { state: 'unknown' } };
+  capability.unknownObservations = [{ reason: 'fire-proof-missing-for-no-crumb', reference: `fixture:${id}:no-crumb` }];
+  return capability;
+}
+
+function mixedDirectFailAndUnknown(id: string): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id, 2, 'fail', outcomes({ importedWrong: 1 }));
+  capability.instrumentation.staysSilent = { state: 'unproven' };
+  capability.unknownObservations = [{ reason: 'silence-proof-missing-for-crumb', reference: `fixture:${id}:crumb` }];
+  return capability;
+}
+
+function provenSummary(
+  capabilities: ImportConformanceExercisedCapability[],
+  lane: 'fire' | 'silence',
+): ImportConformanceMeasuredPack['summary']['exercised']['fireProven'] {
+  return {
+    capabilities: capabilities.length,
+    results: {
+      failedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'fail').length,
+      passedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'pass').length,
+      unknownCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'unknown').length,
+    },
+  };
 }
 
 const PLAN_HASH = 'sha256:plan';
