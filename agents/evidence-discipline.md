@@ -18,6 +18,11 @@ pass happened to produce.** The instances the cut removed are not lost: they are
 serves. **A rule without an instance is a slogan**, so each law below keeps the single instance with
 the highest diagnostic value per character, and the companion holds the rest.
 
+**Offer a ruling as an instance rather than as a rule.** Stated as a law it invites compliance;
+stated as an instance it invites the law — **and three times in one arc a correct local ruling was
+made for a narrower reason than the one that actually held**, which only surfaced because someone
+generalised the instance rather than obeying the rule.
+
 **Everything below is a search instruction, not a test.** Each entry tells you where to look or what
 to read next; none tells you a claim is wrong. Used as verdicts they invert — the vividness tell
 would discredit whoever describes a genuinely severe finding accurately, and the fidelity axis would
@@ -35,9 +40,8 @@ what it carried** — so to get evidence about the payload, you need something t
 payload. Every instance in this section derives from that in one step.
 
 **Elevated instance — the repo you can reach is not the repo the claim is about.** Say it in those
-words; the sophisticated version did not save anyone. **Five readers stated true, exact, checkable
-numbers about trees that were not the one under discussion, several while actively hunting that
-failure.** Remedy is one question, not a technique: *which tree is this number about?*
+words; the sophisticated version saved nobody. **Five readers stated true, exact numbers about trees
+that were not the one under discussion.** One question, not a technique: *which tree is this about?*
 
 **The same law applied to EXPLANATIONS: a mechanism constructed to fit an observation always fits
 it.** This is the self-diffing generator one level up — **an explanation built from the observation
@@ -74,11 +78,9 @@ before it becomes a priority.** Instances in the companion.
 Make the false claim unrepresentable rather than discouraged. A rule you hold is a rule you can drift
 off; three agents in one day each drifted off a rule they had written down.
 
-**Elevated instance — attach the audit to the member, not to the count.** With each capability
-carrying which audits reached it, the totals are derived and **can never outrun their audit** — a
-bare `17/17/17` stops being discouraged and becomes unrepresentable. It is elevated because it is the
-only instance that shows the general move: find the representation in which the false claim cannot be
-written down.
+**Elevated instance — attach the audit to the member, not to the count**, so totals are derived and
+**can never outrun their audit.** ⇒ **This is the structural form of the denominators law below:
+the fix for an aggregate that discards members is to carry the members.** Worked in the companion.
 
 **The two-rung floor — the minimum for landing any gate.** A gate that cannot fail is
 indistinguishable from a gate that passes, and green is what both look like. Two mutations, in order,
@@ -143,15 +145,22 @@ the companion under this heading.
 
 ## Denominators
 
-**Elevated instance — before ratifying a count, ratify the rule that decides when two things are one
-entry or two.** A count with no stated individuation rule is not a measurement, it is a tally — and
-unlike a missing member, **it cannot be closed by finding more.** The tell costs one question, asked
-of the artifact rather than of its contents: *what would make these one entry instead of two?* If
-nobody can answer, there is no denominator yet — **the question is about the set, not the rows**,
-which is why auditing members never reaches it. Demand three properties: **mechanically evaluable,
-invariant under behaviour-preserving refactor, and of a grain the consumer would accept.**
-**Mechanical evaluability is necessary and not sufficient** — the companion carries the rule that ran
-cleanly and still moved a total when only the source style moved.
+**A contested denominator is often a sign the aggregate is the wrong instrument.** A ratio
+aggregates, and **what a ratio discards is WHICH MEMBERS** — so when a population cannot be defined,
+the usual reason is that **the question was never about a population. It is about members.** ⇒ **When
+a denominator is contested, ask whether the question needs a ratio at all: often it does not, and the
+contest DISSOLVES rather than being settled.** This is the invariance rule at its sharpest — **an
+aggregate is blind to exactly what it is invariant under**, and no choice of denominator repairs an
+instrument that discards the thing being asked about. The companion carries the case: **two
+defensible denominators giving opposite conclusions, replaced by a per-member measure needing
+neither.**
+
+**Where a count is genuinely the right instrument, ratify the individuation rule first.** A count with
+no stated rule is a tally, and **unlike a missing member it cannot be closed by finding more.** One
+question: *what would make these one entry instead of two?* **It is about the set, not the rows**,
+which is why auditing members never reaches it. Demand **mechanically evaluable, invariant under
+behaviour-preserving refactor, and of a grain the consumer would accept** — and **mechanical
+evaluability is necessary and not sufficient.**
 
 **And name the population in the output, in words.** "N of 82 importer-declared capabilities", never
 a bare "N of 82" and never *total* unqualified. **A count you produced is a denominator over whatever
