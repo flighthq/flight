@@ -2672,6 +2672,33 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(skipped[0].detail).toEqual({ capability: 'swf.script.do-action', frame: 1 });
   });
 
+  it('reports nested masks collapsing, since the outer one is not applied at all', () => {
+    // Two clip depths covering one instance: Flight carries one clip per node, so the outer mask is
+    // simply not applied and the instance shows more than the file said. The crumb is the only signal.
+    const file = createSwf([
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(1), uint16(1), uint16(9)),
+      ),
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(2), uint16(2), uint16(9)),
+      ),
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(3))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      createScene2DFromSwf(file, sink);
+    });
+
+    const collapsed = diagnostics.filter((entry) => entry.kind === 'swf.nested-mask-collapsed');
+    expect(collapsed.length).toBeGreaterThan(0);
+    expect(collapsed[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(collapsed[0].detail?.capability).toBe('swf.placement.clip-depth');
+    expect(collapsed[0].detail?.covering).toBe(2);
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {

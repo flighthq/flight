@@ -1,3 +1,4 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, getPathBounds, transformPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
@@ -8,8 +9,8 @@ import {
   createShape,
   getShapeFillRegions,
 } from '@flighthq/shape/contract';
-import type { GlyphOutlineSource, Path, RectangleLike, Shape } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import type { GlyphOutlineSource, ImportDiagnostic, Path, RectangleLike, Shape } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape } from './swfShape';
@@ -85,12 +86,35 @@ export function createSwfTextShape(
 // tables add Unicode lookup, advances, and vertical metrics. DefineFont1 has no code or layout table in
 // its own tag, so this tag-level source derives advances/metrics from ink; the file decoder composes a
 // separate DefineFontInfo tag over it when one exists.
-export function readSwfFontGlyphOutlineSource(reader: SwfReader, version: number): GlyphOutlineSource | null {
+export function readSwfFontGlyphOutlineSource(
+  reader: SwfReader,
+  version: number,
+  diagnostics?: ImportDiagnostic[],
+  characterId = 0,
+): GlyphOutlineSource | null {
   const glyphReader = new SwfReader(reader.source, reader.pos, reader.end);
   const glyphs = readSwfFontGlyphs(glyphReader, version);
   if (glyphs === null) return null;
 
   const outlines = glyphs.map(createSwfGlyphOutlinePath);
+  // A glyph whose outline does not decode costs that glyph rather than the font, so the font still
+  // imports and every other glyph still draws. Drop rather than Recover: nothing is substituted for it,
+  // and a text record addressing that index gets nothing.
+  const lostGlyphs = outlines.reduce((count, outline) => (outline === null ? count + 1 : count), 0);
+  if (lostGlyphs > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.font-glyph-outline',
+      'readSwfFontGlyphOutlineSource',
+      {
+        capability: version === 1 ? 'swf.font.define-font' : `swf.font.define-font-${version}`,
+        characterId,
+        glyphCount: outlines.length,
+        lostGlyphs,
+      },
+    );
+  }
   const fallback = deriveSwfGlyphOutlineData(outlines, resolveSwfFontUnitsPerEm(version));
   const metadata = version === 1 ? null : readSwfFontMetadata(reader, version, outlines.length);
   const advances = metadata?.advances ?? fallback.advances;

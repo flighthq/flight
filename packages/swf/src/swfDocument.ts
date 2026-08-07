@@ -876,7 +876,7 @@ function buildSwfFrameEntries(
   const entries: SwfFrameEntry[] = [];
   for (const placement of ordered) {
     if (placement.clipDepth > 0) continue;
-    const mask = resolveSwfPlacementMask(ordered, placement);
+    const mask = resolveSwfPlacementMask(ordered, placement, diagnostics);
     const clip = mask === null ? null : resolveSwfMaskClip(mask, placement, parsed, clips);
     // A mask that resolves to no region leaves its covered instance UNCLIPPED, which is a visible
     // difference and not a no-op: the mask character had no decoded geometry, so imposing nothing was
@@ -904,12 +904,31 @@ function buildSwfFrameEntries(
 function resolveSwfPlacementMask(
   ordered: readonly Readonly<SwfPlacement>[],
   placement: Readonly<SwfPlacement>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): Readonly<SwfPlacement> | null {
   let mask: Readonly<SwfPlacement> | null = null;
+  let covering = 0;
   for (const candidate of ordered) {
     if (candidate.clipDepth <= 0 || candidate.depth >= placement.depth) continue;
     if (placement.depth > candidate.clipDepth) continue;
+    covering++;
     if (mask === null || candidate.depth > mask.depth) mask = candidate;
+  }
+  // Two masks over one instance means the outer one is not applied at all, so the instance shows more
+  // than the file said it should. Skip rather than Recover: a node carries one clip, so this is a
+  // vocabulary gap in the clip subject rather than geometry this decoder failed to read.
+  if (covering > 1) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'swf.nested-mask-collapsed',
+      'resolveSwfPlacementMask',
+      {
+        capability: 'swf.placement.clip-depth',
+        covering,
+        depth: placement.depth,
+      },
+    );
   }
   return mask;
 }
@@ -1893,7 +1912,7 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
   const version = code === TAG_DEFINE_FONT ? 1 : code === TAG_DEFINE_FONT_2 ? 2 : 3;
   const reader = new SwfReader(body.source, body.pos, body.end);
   const fontId = reader.source[body.pos] + reader.source[body.pos + 1] * 0x100;
-  const source = readSwfFontGlyphOutlineSource(reader, version);
+  const source = readSwfFontGlyphOutlineSource(reader, version, state.diagnostics, fontId);
   if (source === null || fontId === 0) return;
   state.fontOutlineSources.set(fontId, source);
   const fontName = readSwfFontName(body, version);
