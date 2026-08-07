@@ -17,6 +17,33 @@ three readings as a loss and did not survive an attempt to make it fire.
 instrument, so "how much can we see" is a fraction of the capabilities that *can* silently lose something
 — and that population was unknown before this audit. 80 was never the target.
 
+## Wiring state, as counts
+
+Counts rather than a ratio, deliberately. A denominator that shrinks when you investigate while the
+numerator grows from the same investigation improves from effort alone, and would arrive dressed as
+rigour.
+
+**11 candidates · 10 wired with a fire proof · 1 demonstrated not-a-loss · 0 unfalsified.**
+
+| # | Family | State |
+| --- | --- | --- |
+| 1 | morph definition undecodable | wired · fire + silence |
+| 2 | static text uncomposable | wired · fire + silence |
+| 3 | edit text unparseable | wired · fire + silence |
+| 4 | blend mode behind an unfinished filter list | wired · fire + silence |
+| 5 | ABC blob yielding no frame scripts | wired · fire + silence, names which DoABC form |
+| 6a/6b | AVM2 frame script declined | wired · fire + silence, separates unreadable body from declined commands |
+| 6c | morph path pair declined | wired as a guard · **demonstrated not reachable from SWF bytes**, silence proof only |
+| 7 | sprite bounds union short | wired · fire + silence, reports a **count** |
+| 8 | appearance channel with no node | wired · fire + silence |
+| 9 | edit text font id unresolved | wired · fire only — **silence proof absent and recorded as absent** |
+| 10 | font character id reused | wired · fire + silence |
+| 11 | whole-document reject path | wired · eight container `Reject` kinds |
+
+Two rows carry an honest hole rather than a manufactured proof: **6c** has no fire proof because the
+branch could not be reached, and **9** has no silence proof because it needs a `DefineFont2` that parses
+and no builder for one exists. Both are recorded in `instrumentation.json` with the reason.
+
 ## What this audit has actually read
 
 Stated per file, because an audit certifies a population at a moment and its own report is not evidence of
