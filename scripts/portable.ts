@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
 
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 import { filterPaths, getSelectors } from './select';
 
 // Portable-subset gate. Flight is authored to lower to a **C++-family compiled target** (and Rust/Haxe;
@@ -51,21 +52,11 @@ const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
   },
 ];
 
-const IGNORED_DIRS = new Set([
-  'node_modules',
-  'dist',
-  'build',
-  'coverage',
-  'target',
-  '.cache',
-  '.git',
-  '.idea',
-  '.vscode',
-  '.claude',
-  '.quimby',
-  'worktrees',
-  'incoming',
-]);
+// The shared generated-output set, plus the four this scan skips for its own reasons: agent and editor
+// state, and sibling checkouts whose sources are not this tree's to judge. This walk is rooted at
+// `packages/`, so the shared entries are defensive rather than load-bearing here — it shares the set so
+// the list cannot drift into a fifth spelling, which is the whole reason the set was extracted.
+const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming']);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
