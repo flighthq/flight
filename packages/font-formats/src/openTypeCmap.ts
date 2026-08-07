@@ -54,6 +54,16 @@ export function findOpenTypeUnicodeSubtable(
 // Whether `readOpenTypeCodepointMap` can turn this sub-table format into a map. Kept beside the chooser
 // because the two must agree: a format the chooser accepts and the reader then declines produces the
 // refusal this function exists to prevent.
+//
+// ★ FORMAT 6 IS ABSENT DELIBERATELY, AND ADDING IT WOULD BE UNREACHABLE CODE. A format 6 sub-table is
+// a trimmed 16-bit range, and in practice it is written at platform 1 encoding 0 — the legacy Macintosh
+// encoding, which `rankOpenTypeUnicodeEncoding` scores -1 as *not a Unicode mapping*. So the chooser
+// never offers one to this predicate, whatever it answers: the exclusion happens a layer earlier, for a
+// reason that has nothing to do with the format. Measured across a corpus of real system fonts rather
+// than assumed — every format 6 found sat at platform 1 encoding 0, and none would have been selected
+// over a readable rival. Implementing it would close nothing and add a branch no font reaches.
+// Format 14 is likewise absent on purpose: it carries variation-selector sequences, not a codepoint
+// map, so it answers a different question and is correctly scored out of the ranking too.
 function isOpenTypeCmapFormatReadable(format: number): boolean {
   return format === 4 || format === 12;
 }
