@@ -1,6 +1,7 @@
+import type { WoffChecksumMismatch } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
 
-import { assembleSfntFont } from './sfntAssembly';
+import { assembleSfntFont, computeSfntTableChecksum } from './sfntAssembly';
 
 // WOFF is a wrapper, not a font format: the same sfnt tables, each optionally deflated, behind a header
 // that says where they went. So the whole job is to REBUILD THE SFNT and hand it to the reader that
@@ -18,6 +19,56 @@ import { assembleSfntFont } from './sfntAssembly';
 
 const WOFF_HEADER_BYTES = 44;
 const WOFF_DIRECTORY_ENTRY_BYTES = 20;
+
+// Which tables' stored checksums disagree with their own bytes. Returns an empty array when every
+// table agrees, and for a container this reader cannot open at all — a caller distinguishes those by
+// whether `readWoffFont` returned a font.
+//
+// ★ REPORTED, NEVER ENFORCED. A mismatch is bad data rather than API misuse, so it takes a sentinel
+// and not a throw, and the font still loads: deciding that a font is unacceptable belongs to the
+// caller, and a reader that refused one which would otherwise work would have taken that decision
+// away with no way to opt out. Kept as a separate query so a caller who never asks does not link the
+// arithmetic — the same shape as `explainOpenTypeFont`, for the same reason.
+export function readWoffChecksumMismatches(
+  bytes: Readonly<Uint8Array>,
+  decompress: ((compressed: Readonly<Uint8Array>, uncompressedLength: number) => Uint8Array | null) | null,
+): readonly WoffChecksumMismatch[] {
+  if (bytes.byteLength < WOFF_HEADER_BYTES) return [];
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+  const tableCount = view.getUint16(12);
+  const directoryEnd = WOFF_HEADER_BYTES + tableCount * WOFF_DIRECTORY_ENTRY_BYTES;
+  if (tableCount === 0 || directoryEnd > bytes.byteLength) return [];
+
+  const mismatches: WoffChecksumMismatch[] = [];
+  for (let index = 0; index < tableCount; index += 1) {
+    const record = WOFF_HEADER_BYTES + index * WOFF_DIRECTORY_ENTRY_BYTES;
+    const tag = view.getUint32(record);
+    const offset = view.getUint32(record + 4);
+    const compressedLength = view.getUint32(record + 8);
+    const originalLength = view.getUint32(record + 12);
+    const stored = view.getUint32(record + 16);
+    if (offset + compressedLength > bytes.byteLength) continue;
+
+    const raw = bytes.subarray(offset, offset + compressedLength);
+    let data: Uint8Array | null = raw as Uint8Array;
+    if (compressedLength !== originalLength) {
+      if (decompress === null) continue;
+      data = decompress(raw, originalLength);
+      if (data === null || data.byteLength !== originalLength) continue;
+    }
+
+    const computed = computeSfntTableChecksum(data, tag === HEAD_TAG);
+    if (computed !== stored) {
+      mismatches.push({ computed, stored, tag: readWoffTagText(view, record) });
+    }
+  }
+  return mismatches;
+}
+
+// The compression this container uses. Named through the shared vocabulary rather than a local constant so
+// a caller registering a codec and this module asking for one cannot drift apart.
+export const WOFF_COMPRESSION: Compression = Compression.Deflate;
 
 // Rebuilds the plain sfnt a WOFF wraps. Returns the null sentinel for a malformed container, and for a
 // deflated table when no decompressor is registered — the caller distinguishes those through
@@ -71,6 +122,14 @@ export function readWoffFont(
   return assembleSfntFont(flavor, tables);
 }
 
-// The compression this container uses. Named through the shared vocabulary rather than a local constant so
-// a caller registering a codec and this module asking for one cannot drift apart.
-export const WOFF_COMPRESSION: Compression = Compression.Deflate;
+// The four-character tag as text, for a caller that will show it or key on it.
+function readWoffTagText(view: Readonly<DataView>, record: number): string {
+  return String.fromCharCode(
+    view.getUint8(record),
+    view.getUint8(record + 1),
+    view.getUint8(record + 2),
+    view.getUint8(record + 3),
+  );
+}
+
+const HEAD_TAG = 0x68656164;

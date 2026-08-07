@@ -11,9 +11,43 @@ import {
   emptySyntheticGlyph,
 } from './openTypeTestHelper';
 import { readSfntTableDirectory } from './sfntTableDirectory';
-import { readWoffFont } from './woffFont';
+import { readWoffChecksumMismatches, readWoffFont } from './woffFont';
 
 afterEach(() => unregisterDecompressor(Compression.Deflate));
+
+describe('readWoffChecksumMismatches', () => {
+  it('reports nothing when the container states its tables truthfully', () => {
+    expect(readWoffChecksumMismatches(encodeSyntheticWoff(createSyntheticFont()), null)).toEqual([]);
+  });
+
+  it('names the table, what the file claimed, and what the bytes actually sum to', () => {
+    const woff = encodeSyntheticWoff(createSyntheticFont());
+    // Corrupt the FIRST entry's stored checksum only, so the report must single it out rather than
+    // flagging everything — a check that reported all tables would pass a weaker assertion.
+    const view = new DataView(woff.buffer);
+    const tag = view.getUint32(44);
+    view.setUint32(44 + 16, 0xdeadbeef);
+    const found = readWoffChecksumMismatches(woff, null);
+    expect(found.length).toBe(1);
+    expect(found[0]!.stored).toBe(0xdeadbeef);
+    expect(found[0]!.computed).not.toBe(0xdeadbeef);
+    expect(found[0]!.tag).toBe(
+      String.fromCharCode((tag >>> 24) & 0xff, (tag >>> 16) & 0xff, (tag >>> 8) & 0xff, tag & 0xff),
+    );
+  });
+
+  it('still loads the font it reported a mismatch for, rather than refusing it', () => {
+    // The whole point of the seam: a mismatch is information, not a verdict.
+    const woff = encodeSyntheticWoff(createSyntheticFont());
+    new DataView(woff.buffer).setUint32(44 + 16, 0xdeadbeef);
+    expect(readWoffChecksumMismatches(woff, null).length).toBe(1);
+    expect(readWoffFont(woff, null)).not.toBeNull();
+  });
+
+  it('returns an empty report for a container it cannot read at all', () => {
+    expect(readWoffChecksumMismatches(new Uint8Array(8), null)).toEqual([]);
+  });
+});
 
 describe('readWoffFont', () => {
   it('produces the same glyph outlines as the uncompressed font it wraps', () => {
