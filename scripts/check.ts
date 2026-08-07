@@ -73,6 +73,7 @@ if (!scoped) {
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
   add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);
+  add('capabilities:numbers', 'tsx', ['scripts/swf-doc-numbers.ts']);
   add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
 }
 
