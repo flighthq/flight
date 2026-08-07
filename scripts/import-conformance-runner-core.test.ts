@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -38,6 +38,22 @@ describe('import conformance result cache', () => {
     expect(
       readImportConformanceCachedResult(cache, { ...fixture, sourceHash: hash('changed') }, importerHash),
     ).toBeNull();
+  });
+
+  it('rejects a cache payload that omits diagnostic cause attribution', () => {
+    const cache = mkdtempSync(join(tmpdir(), 'flight-import-cache-'));
+    const fixture = makeFixture('a.swf');
+    const importerHash = hash('importer-a');
+    writeImportConformanceCachedResult(cache, makeResult(fixture), importerHash);
+    const resultsDirectory = join(cache, 'results');
+    const path = join(resultsDirectory, readdirSync(resultsDirectory)[0]!);
+    const payload = JSON.parse(readFileSync(path, 'utf8')) as {
+      result: { capabilityOutcomes: { diagnosticCause?: string }[] };
+    };
+    delete payload.result.capabilityOutcomes[0]!.diagnosticCause;
+    writeFileSync(path, `${JSON.stringify(payload)}\n`);
+
+    expect(readImportConformanceCachedResult(cache, fixture, importerHash)).toBeNull();
   });
 });
 
