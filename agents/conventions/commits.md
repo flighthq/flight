@@ -90,6 +90,33 @@ moment someone is checking. **The remedy is not "write better subjects"** — a 
 change the author has not separated out. Split the commit, and the reader who greps for the rename
 still finds the meaning change beside it.
 
+**The two halves compose, and the order is fixed.** Commit one renames **and migrates every call
+site**, leaving the tree green throughout. Commit two changes what the field counts. **Split by
+meaning, never by mechanism:** a rename separated from the sites that read it is not a smaller commit,
+it is a broken one.
+
+### Green at every commit is load-bearing here, not tidy
+
+In an ordinary repository a broken intermediate commit is invisible — the branch merges as a unit and
+nobody ever checks out the middle. **Agent work is delivered commit by commit**, so an intermediate
+state that never existed for its author can become the base every other agent builds on. That has
+already happened: a rename shipped without its call-site migration and the delivered base failed
+`typecheck` for everyone.
+
+⇒ **"Small atomic commits" here means GREEN, not SMALL.** Splitting a change into more commits makes
+things worse whenever the extra seams are red. **Before splitting, ask whether each half compiles on
+its own; if one does not, it is not a seam.**
+
+### If a mechanical fix offers a choice, it is not mechanical
+
+A repair that is genuinely mechanical has **exactly one correct form**. When the "obvious one-line
+fix" presents two or three candidate spellings — `verifiedFixtureFiles`, `metadataFiles`, or their
+sum — **the choice is the tell that a meaning is in play and the change is not mechanical at all.**
+
+**This is a local test and needs no outside data.** It fires from inside the position of whoever hits
+the broken build, before they know which figure any consumer used, and it is cheaper than the caution
+that otherwise has to substitute for it: **stop and route it to whoever owns the meaning.**
+
 ## Picking type vs scope
 
 Two questions, in order:
