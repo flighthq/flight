@@ -28,9 +28,9 @@
 // AND THE EXTRACTED TREE IS NOT ALL FIXTURES. A pack root carries its own metadata alongside the corpus
 // — a `LICENSES/` directory, `NOTICE.md`, `README.md`, and a per-pack `manifest.json`. In a gitignored
 // fetch cache that is exactly right and needs no handling: none of it is incorporated. What must never
-// happen is a later step copying, vendoring, or concatenating any of it INTO the repository, which is
-// the one action that would convert a fetched tree into an attribution obligation. Read the corpus in
-// place; copy nothing out.
+// happen is a later step copying, vendoring, or concatenating any of it INTO the repository — that one
+// action is what turns using a fetched tree into taking from it. Read the corpus in place; copy nothing
+// out.
 //
 // That metadata is also why a pack's `files` count is not its archive entry count: `files` counts the
 // FIXTURES. `swf-ruffle-fixtures` unpacks 16,650 entries against a recorded 16,639, and `atf-fixtures`
