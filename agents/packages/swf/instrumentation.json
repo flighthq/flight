@@ -136,6 +136,29 @@
     },
     {
       "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
+        "names the anonymous DoABC form separately, since the two are different capabilities",
+        "reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was"
+      ],
+      "id": "swf.script.do-abc",
+      "staysSilent": []
+    },
+    {
+      "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
+        "names the anonymous DoABC form separately, since the two are different capabilities"
+      ],
+      "id": "swf.script.do-abc-anonymous",
+      "staysSilent": []
+    },
+    {
+      "audits": [
         "payload"
       ],
       "fires": [
@@ -264,8 +287,8 @@
       ]
     }
   ],
-  "fireProven": 20,
-  "payloadAudited": 20,
-  "scopeAudited": 19,
+  "fireProven": 22,
+  "payloadAudited": 22,
+  "scopeAudited": 21,
   "silenceProven": 20
 }

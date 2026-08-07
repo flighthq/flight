@@ -2764,6 +2764,33 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.edit-text-unparseable')).toEqual([]);
   });
 
+  it('reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was', () => {
+    // A DoABC payload whose ABC body is not readable. The two tag forms are separate capabilities, so
+    // the entry has to name which one it was or it cannot be joined to either.
+    const named = joinBytes(uint32(0), swfString('frame'), new Uint8Array([0xff, 0xff, 0xff, 0xff]));
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC, named), createTag(TAG_END)]), sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-scripts-unreadable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.script.do-abc' });
+  });
+
+  it('names the anonymous DoABC form separately, since the two are different capabilities', () => {
+    const anonymous = new Uint8Array([0xff, 0xff, 0xff, 0xff]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC_ANONYMOUS, anonymous), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-scripts-unreadable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.script.do-abc-anonymous' });
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
@@ -3935,6 +3962,8 @@ const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
 const TAG_VIDEO_FRAME = 61;
+const TAG_DO_ABC = 82;
+const TAG_DO_ABC_ANONYMOUS = 72;
 const TAG_DO_ACTION = 12;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FILE_ATTRIBUTES = 69;
