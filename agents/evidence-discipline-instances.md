@@ -1,0 +1,175 @@
+# Evidence discipline — the worked instances
+
+Companion to [evidence discipline](evidence-discipline.md), which carries the laws and one elevated
+instance each. **This file holds the instances the parent's 12,000-character budget could not.** It
+has no budget of its own: instances accumulate, laws do not.
+
+**Organised by the law each instance serves**, because an instance filed under no law is an anecdote.
+Each is marked:
+
+- **filed** — it demonstrates the law it sits under.
+- **orphan-and-flagged** — real, reproducible, and **not** an instance of any law here. Kept
+  deliberately: **an orphan is where the next law comes from, and discarding it to keep the taxonomy
+  tidy is how a rule set stops learning.**
+- **never forced** — nothing below was reassigned to a law it did not fit in order to file it. Where
+  an instance nearly fits, the near-miss is stated rather than smoothed over.
+
+*All instances are arc-local, from the SWF-import/conformance arc of 2026-08-07, and untested on any
+other work.*
+
+## Serving: evidence is about whatever produced it
+
+- **filed — Evidence that X exists is not evidence that only X exists.** A parcel format was assumed
+  squash-only because a `squashed.diff` was visible; it also carried ten per-commit patches with full
+  SHAs, and a whole remedy was nearly abandoned on the strength of the thing that *was* seen. **Seeing
+  one member of a set tells you nothing about its other members.**
+- **filed — Announcing a change is not shipping it, and the announcement travels faster.** A note
+  saying "I am landing this in the doc" went out in a parcel whose commits did not contain it; the
+  wording was present-tense, the work was real, and it landed two commits later — so every reader held
+  a true-sounding claim about a file none of them had. **It surfaced only because a reader opened the
+  file and grepped for the words.** The author was the person who wrote this rule.
+- **filed — An importer that returns a document reports success by being non-null.**
+  `createScene2DFromSwf` returned a document while having silently dropped content. This is why
+  `importdiagnostics` exists: it is the independent reader for the importer, not a feature beside it.
+- **filed — A generator that diffs against itself has no independent reader.** Regenerating in memory
+  and comparing to the committed file verifies that the file matches what the generator would produce,
+  and nothing about whether what it produces is true. **Six proof records naming tests that never
+  exercised the capability they were cited for passed this gate.**
+- **filed — A proof identifier certifies that the producer asserted something, not that the assertion
+  was right.** Checking that a proof name resolves is checking resolvability; checking that the named
+  test exercises the named capability is checking validity.
+- **filed — A count of your own verification work is a self-report.** Three separate counts were
+  audited and all three were smaller than claimed.
+- **filed — An audit certifies a population at a moment, and anything added afterwards — including the
+  fix the audit produced — is outside it.** A count and its audit drift apart by default, and the
+  drift hides because **both numbers are still true of something, just not of each other.**
+
+## Serving: preservation ordering
+
+- **filed — Inspect before `drop_caches`; capture before restore.** The mechanical form of the rule,
+  kept because it is the case where the ordering is obvious and therefore the one to reason from.
+
+## Serving: structure over convention
+
+- **filed — Choose a channel without the hazard instead of remembering to avoid it.** Prose through
+  `-m`, anything carrying an identifier through `--file`: shell substitution then cannot occur, rather
+  than being something each author must remember not to trigger.
+- **filed — Name the tree in the assignment, not in the report.** An order that will produce a
+  coverage claim should already say which version it covers. **An exhaustive read of a file under
+  active edit is stale before it lands, which is a property of the schedule and not of the reader** —
+  three readers lost a day's claims to this, and the countermeasure cannot be more care.
+- **filed — Put a coverage caveat in a table, not a sentence.** A sentence can be skimmed past; a
+  table of which files were read in full, partially, and not at all cannot.
+- **filed — A register is a caution, not a structure.** A process lapse was recorded, dated, and read,
+  and **recurred about an hour later** — because recording a lapse prevents none. The remedy was a
+  rule that made the shape unrepresentable: a message with more than one recipient may not contain
+  second-person instruction. **A register names; only a structure prevents.**
+- **filed — An order states its own preconditions, so the recipient can falsify it in one line.** A
+  task reached the wrong builder, who rejected it by checking four preconditions: the gate did not
+  exist in their tree, the sweep was not theirs, the praised comment was in no file they authored, the
+  named cell was not theirs. **The sender cannot see that an instruction is false about its recipient,
+  so only the recipient can** — which recovers exactly the errors the sender is blind to by
+  construction. **Its time-axis twin: an order sent to a busy agent must state preempt-or-queue**,
+  because the sender knows the priority and the recipient knows the state, and leaving it unstated
+  does not defer to the recipient's judgement, it blocks them.
+
+## Serving: honest limit
+
+- **filed — State what an instrument cannot see, beside what it checks.** A hand-maintained audit list
+  makes *forgetting* to record an audit visible and cannot make a *false* audit claim visible.
+- **filed — A judgement recorded as a judgement can be overturned; a judgement made silently becomes a
+  fact.** Marginal calls cost one sentence to record and are otherwise unrevisitable.
+- **filed — Say what would change the claim.** "Three data points, two producers" is a live caution
+  because it names its own upgrade: a fourth from a third producer would move it, a fourth from the
+  same producer would not.
+- **filed — The register must also cover skips inside the backed set.** A gate that runs green while
+  skipping files every run is backed for what it ran and silent about what it did not — and the
+  boundary that re-ran every gate could not run suites needing a browser, a GPU, or the network. **The
+  subsumption is near-total, and the exceptions are predictably the expensive ones.**
+- **filed — A clean result is a result, not an absence of one.** A file with no unreported loss path
+  settles a chunk of the denominator; recording it as a positive finding is the only way it counts.
+- **filed — Permitted-and-unbuilt is a third state beside permitted-and-built and forbidden.** A
+  capability the rules allow, that nobody built, **and that nobody declined to build.** Erring toward
+  a safety rule produces an absence, and **an absence looks like discipline.** The trigger: audit the
+  rules that stopped being checked and started being assumed. **The tell is that you cannot remember
+  deciding.**
+
+## Serving: a surface property that correlates with care
+
+- **filed — Vividness.** A CFF reader's stated reason for refusing CID-keyed fonts was that they fail
+  *silently, for every glyph*; measured, they fail loudly. The true reason — the outcome is
+  unpredictable per font — was the stronger argument for the same refusal. **A rationale more vivid
+  than its conclusion needs is doing rhetorical work.**
+- **filed — Deliberation.** A guard shows someone anticipated a failure, a comment that they
+  considered it, a three-of-four convention that a rule exists — **and none gives a caller anything to
+  enumerate.** A comment above a silent decline answers *was this considered* while leaving *is this
+  reported* untouched, so it suppresses the search while looking like diligence.
+- **filed — Mechanicalness.** A rule a script can evaluate looks settled: **a stated rule shows
+  someone decided, not that the rule decides.**
+- **Expect a fifth surface** — grepping `explain*` functions, TODOs, or tests would be the next one.
+
+## Serving: search instructions
+
+- **filed — A search finds syntax, not the thing you were looking for.** A sweep for
+  `if (x !== null) push(x)` produced eleven candidates; one could not be made to fire at all, because
+  the streams it guards are built in lockstep. **It survived three readings because at no point did
+  anyone try to make it happen.** The cut runs both ways — the same sweep would miss a loss whose
+  syntax it does not match. **Corollary: absence from a grep is only as good as the name** — search
+  for the constructor that must exist, rather than for the label.
+- **filed — A hedge written for a negative result silently expires when the result comes back
+  positive.** A search command carried a note — *empty above means not wired in my clone* — the search
+  returned data, and the caveat evaporated with no decision. **A positive result removes the trigger
+  to re-read your own qualifier.**
+- **filed — Do not renumber a denominator because investigation shrank it.** When effort both grows
+  the numerator and shrinks the denominator, the ratio improves from effort alone regardless of what
+  the effort found — **and it arrives dressed as rigour.** Report counts instead.
+
+## Serving: denominators
+
+- **filed — Stamp every claim about a mutable artifact, including the ones you attach.** Attaching
+  removes the need to describe; it does not remove the need to say *when*. **An unstamped attachment
+  is worse than an unstamped description, because it carries the artifact's authority without its
+  currency.** And **a stamp pins *when*, not *what*: a correctly stamped file can still be described
+  as containing fields it never had** — so put the description in a form the artifact can cheaply
+  contradict. **A dependency is relational — confirming something landed tells you nothing about
+  whether it arrived** — so read the consumer's side, or hand them the artifact.
+- **filed — Marking a number historical does not stop it being quoted as current.** A figure was
+  stamped with an explicit warning that it would go stale on the next edit; **the next edit was two
+  commits later, and the reader who then quoted it as live was the one who had ruled on the stamp.**
+  Only recomputation removes the hazard, which is why the third state in a numbers gate is
+  *recomputable / stamped-historical / neither* and **stamped-historical is a concession, not a
+  safe state.**
+- **filed — When two populations have been quoted as one number, say which is unmeasured.** What our
+  importer handles and what the format has are different totals.
+- **filed — A ceiling on a count is also a release from waiting for it.** If a population can never be
+  known complete, it cannot be a precondition for anything downstream, and work gated on it waits
+  forever **while the wait looks like diligence the whole time.** Read half of that ruling alone and
+  you get an indefinite hold justified by rigour. State both directions together.
+- **filed — A denominator can be arbitrary rather than wrong, and that is worse.** A missing member is
+  an error you can close; **an undeclared convention is a denominator that moves whenever someone else
+  applies it**, and nothing flags the shift.
+- **filed — Two units in one count.** "12 candidates / 11 wired" was relayed for an entire arc; the
+  true figure was **13 loss paths, 12 wired, 1 demonstrated not-a-loss, across 12 numbered families.**
+  Loss paths and families are different units, and the count silently mixed them.
+
+## Orphans — real, and not instances of any law here
+
+- **orphan-and-flagged — the transient channel gets corrected and the durable one does not.** A figure
+  was corrected in messages, in three docs, and to two peers within an hour, **and left wrong in the
+  append-only status journal, which is the only artifact a reset successor reads.** The journal kept
+  every superseded copy, all in the present tense, with nothing marking which held. **Being diligent
+  in the channel with an audience and lax in the one without is not a different failure from
+  over-compliance — it is the same attention following the same gradient.** Near-miss: it looks like
+  *structure over convention*, but the remedy that worked was not a structure — it was a closing
+  current-state block declaring everything above it superseded, **where every claim carries the single
+  command that falsifies it**, ending with *if a claim above has no falsifier in that table, I did not
+  make it*, **which turns an absent falsifier into a signal instead of a silence.** Filed as an orphan
+  until a second instance shows whether the law is about channels or about audiences.
+- **orphan-and-flagged — the same text can be a drifting claim or a durable fact, and only its
+  maintainer distinguishes them.** A count of another package's internals in a comment drifts on the
+  next edit; a count of a published format's constants is recomputed by the format, which does not
+  change. **The two are identical as text and opposite as claims**, and the discriminator is *who
+  maintains this number?* Applying a no-numbers-in-comments rule by pattern-match would have deleted a
+  correct fact — **the over-compliance direction, caught in the act rather than reconstructed.** Near
+  miss: it nearly serves *denominators*, but it is about the maintainer of a fact rather than about a
+  population.
