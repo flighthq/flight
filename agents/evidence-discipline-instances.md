@@ -50,6 +50,22 @@ other work.*
 
 ## Serving: the wrong answer is a true answer to the question you did not ask
 
+- **filed — Emphasis is a claim, and a uniform emphasis is a misaddressed one.** Reports marked
+  measured results, untested hypotheses and restatements of other people's work **with the same
+  emphasis throughout.** ⇒ **The marking answers "did the author think this mattered" while being read
+  as "how strong is this"** — and a reader has nothing in the report to separate them. **The check is
+  one question, asked of the artifact rather than of its contents: do the strong and the weak results
+  in this report LOOK different?** If they do not, the formatting is flattening exactly the
+  distinction the content depends on.
+
+- **filed — Attribution error is asymmetric by construction, so it runs one way every time.** **The
+  under-credited party notices; the over-credited one does not.** ⇒ **Errors drift toward whoever
+  holds the pen, and only one direction ever generates a complaint** — which means the absence of
+  complaints is not evidence that credit is being kept straight. ★ **Remedy, and it is the arc's own
+  attach-do-not-describe rule pointed at credit: a finding travels with its author as a COMMIT and
+  detaches from its author as PROSE.** Relaying a finding in your own words is the mechanism, not the
+  accident.
+
 - **filed — Equal confidence across unequal epistemic status is ITSELF a misaddressed answer.** Three
   sweeps were reported in one voice: one vocabulary was **grammar-derived** and could state a ceiling;
   two were **semantic**, their author having chosen which shapes counted. ⇒ **A uniform confidence
