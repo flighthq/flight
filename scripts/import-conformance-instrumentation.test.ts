@@ -140,6 +140,28 @@ describe('parseImportConformanceInstrumentationMapping', () => {
     expect(mapping.proofs.size).toBe(0);
   });
 
+  it.each([
+    { id: 'swf.fill.solid', state: 'identified' },
+    { audit: audit('swf.fill.solid'), id: 'swf.fill.solid', state: 'unaudited' },
+    {
+      audit: { ...audit('swf.fill.solid'), auditedAt: '2026-08-07' },
+      id: 'swf.fill.solid',
+      state: 'audited-none',
+    },
+  ])('refuses an audited-population row whose audit membership can drift: $state', (fill) => {
+    const mapping = parseImportConformanceInstrumentationMapping(
+      {
+        capabilities: [],
+        fireReferenced: 0,
+        lossPaths: [fill, { id: 'swf.text.define-text', state: 'unaudited' }],
+        silenceReferenced: 0,
+      },
+      DEFINITIONS,
+    );
+    expect(mapping.lossPathByCapability.size).toBe(0);
+    expect(mapping.problems).toContain('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
+  });
+
   it('rejects a proof that contradicts a loss-path declaration without an identified path', () => {
     const mapping = parseImportConformanceInstrumentationMapping(
       {
