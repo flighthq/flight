@@ -103,8 +103,10 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     ],
   },
   {
-    // `scope` withdrawn: the wire covers a DECLINED block and not one TRUNCATED at MAX_FRAME_ACTIONS,
-    // which the scope audit missed. Recorded rather than repaired, so the audit's own miss stays visible.
+    // `scope` withdrawn because property (3) does NOT hold here: the wire covers a DECLINED block and not
+    // one TRUNCATED at MAX_FRAME_ACTIONS, so its tested case is not the whole of what can be lost. This is
+    // not a failure of the scope audit — a scope audit can only audit EXISTING claims, and a silent
+    // truncation makes none. Only the loss-path audit could reach it. Recorded rather than repaired.
     audits: ['payload'],
     fires: ['reports a frame script declined for carrying more than playback commands'],
     id: 'swf.script.do-action',
