@@ -299,6 +299,30 @@ const ARTIFACT_PATH = join(CELL_DIR, 'instrumentation.json');
 const CAPABILITIES_PATH = join(CELL_DIR, 'capabilities.json');
 const SOURCE_DIR = join(REPO_ROOT, 'packages', 'swf', 'src');
 
+// A capability whose wire emits no `capability` field in its diagnostic detail, so its fire proof has
+// nothing to name and the relevance check below cannot apply. EXEMPTIONS ARE LISTED, NOT INFERRED: an
+// unlisted miss is a failure, so a wire that stops carrying its capability id breaks the build rather
+// than quietly joining this set.
+const RELEVANCE_EXEMPT: ReadonlyMap<string, string> = new Map([
+  ['swf.script.do-abc', 'the frame-script wire reports { frame, reason } and carries no capability field'],
+]);
+
+// Test bodies, keyed by test name. Needed because verifying a proof EXISTS is invariant under swapping
+// two proofs between rows — a permutation preserves existence by construction, so no number of extra
+// proofs could ever catch it. Verified by experiment: permuting two unrelated rows' fire proofs and
+// regenerating left the gate reporting OK. Relevance is the property that distinguishes them.
+function readTestBodies(): Map<string, string> {
+  const bodies = new Map<string, string>();
+  for (const file of readdirSync(SOURCE_DIR)) {
+    if (!file.endsWith('.test.ts')) continue;
+    const source = readFileSync(join(SOURCE_DIR, file), 'utf8');
+    for (const match of source.matchAll(/\bit\('((?:[^'\\]|\\.)*)',[\s\S]*?\n  \}\);/g)) {
+      bodies.set(match[1].replace(/\\'/g, "'"), match[0]);
+    }
+  }
+  return bodies;
+}
+
 function readTestNames(): Set<string> {
   const names = new Set<string>();
   for (const file of readdirSync(SOURCE_DIR)) {
@@ -317,6 +341,7 @@ export function verifySwfInstrumentation(): string[] {
     ),
   );
   const tests = readTestNames();
+  const bodies = readTestBodies();
   const seen = new Set<string>();
 
   for (const entry of INSTRUMENTATION) {
@@ -338,6 +363,21 @@ export function verifySwfInstrumentation(): string[] {
       const sorted = [...role].sort();
       if (role.some((proof, index) => proof !== sorted[index])) problems.push(`proofs unsorted: ${entry.id}`);
       if (new Set(role).size !== role.length) problems.push(`duplicate proof: ${entry.id}`);
+    }
+
+    // A FIRE proof must name a test that actually mentions this capability id, not merely a test that
+    // exists. Existence is invariant under swapping two rows' proofs; relevance is not.
+    //
+    // A SILENCE proof is NOT exempted by oversight and cannot be checked this way at all: it asserts that
+    // NO diagnostic fired, so it has no detail object and no capability id to name. That half of the
+    // mapping stays permutable, and saying so is the only honest option available.
+    if (!RELEVANCE_EXEMPT.has(entry.id)) {
+      for (const proof of entry.fires) {
+        const body = bodies.get(proof);
+        if (body !== undefined && !body.includes(`'${entry.id}'`)) {
+          problems.push(`fire proof does not exercise this capability: ${entry.id} — ${proof}`);
+        }
+      }
     }
   }
   const ids = INSTRUMENTATION.map((entry) => entry.id);
