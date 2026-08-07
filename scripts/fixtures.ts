@@ -239,6 +239,13 @@ export function readFixtureTreeStamp(treeDirectory: string): FixtureTreeStamp | 
     if (typeof parsed !== 'object' || parsed === null) return null;
     const { packs, tag, variant } = parsed as Partial<FixtureTreeStamp>;
     if (typeof tag !== 'string' || typeof variant !== 'string' || !Array.isArray(packs)) return null;
+    // ★ EVERY PACK IS CHECKED, NOT JUST THE ARRAY. A stamp written by an older build carries the fields
+    // that build had, and this file is READ FROM DISK — so no compiler can reach the site that wrote it.
+    // Returning it unchecked hands back an object whose declared type promises numbers the runtime does
+    // not have, and a consumer reading `undefined` as a count produces a plan rather than an error. A
+    // stamp this reader cannot vouch for is treated as NO stamp, which is the sentinel this function
+    // already uses and makes the caller re-fetch and re-verify rather than proceed on a silent gap.
+    if (!packs.every(isFixtureTreeStampPack)) return null;
     return { packs, tag, variant };
   } catch {
     return null;
@@ -440,4 +447,19 @@ if (resolve(process.argv[1] ?? '') === resolve(scriptPath)) {
     console.error(`✗ ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   });
+}
+
+// Whether a parsed pack entry actually carries what `FixtureTreeStampPack` declares. A runtime check
+// rather than a cast because the value came from a file: a cast ASSERTS a shape, only a check
+// ESTABLISHES one.
+function isFixtureTreeStampPack(value: unknown): value is FixtureTreeStampPack {
+  if (typeof value !== 'object' || value === null) return false;
+  const pack = value as Partial<FixtureTreeStampPack>;
+  return (
+    typeof pack.file === 'string' &&
+    typeof pack.metadataFiles === 'number' &&
+    typeof pack.pack === 'string' &&
+    typeof pack.sha256 === 'string' &&
+    typeof pack.verifiedFixtureFiles === 'number'
+  );
 }
