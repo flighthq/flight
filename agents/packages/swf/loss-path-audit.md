@@ -91,9 +91,19 @@ to find it. A three-patch fix would have left these three, and the same search w
 ### 7. A sprite's bounds are silently too small when a child's bounds do not resolve
 
 `swfDocument.ts:1303` — `if (childBounds === null) continue` inside the bounds union. The child is skipped
-and the sprite's extent is computed from the remainder, so the sprite reports **a smaller box than it
-occupies** and nothing says a child was left out. **The second *partial* loss in a surviving object**,
-after the morph path pair. Affects `swf.timeline.define-sprite`.
+and the sprite's authored extent is computed from the remainder, so the authored rectangle is **smaller
+than the sprite's contents** and nothing says a child was left out. **The second *partial* loss in a
+surviving object**, after the morph path pair. Affects `swf.timeline.define-sprite`.
+
+**What it does *not* cost, narrowed by an independent read after I first wrote this row.** I originally
+implied the short box is what culling, hit testing, and layout read. It is not. Node existence is decided
+from the parsed definitions, not from bounds: `populateSwfTimelineNode` retains the node when
+`targetBounds` is null, a placed sprite is populated recursively regardless, the GL renderer traverses
+visible children without testing authored bounds, and aggregate world bounds merge enabled child world
+bounds — so the descendants still contribute. **The skip omits an authored local-bounds shortcut, not the
+child, its rendering, or the aggregate box.** The loss is real and stays *diminished*; the consequence is
+a reporting gap, not wrong output. Recording the narrowing because the alarming reading is the one that
+would have jumped the queue.
 
 ### 8. The appearance report silently omits placements whose node was never allocated
 
