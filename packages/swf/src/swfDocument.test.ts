@@ -3173,6 +3173,66 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.edit-text-font-name-unresolved')).toEqual([]);
   });
 
+  it('stays silent about an anonymous DoABC it does obey, so the drop entry carries information', () => {
+    // An anonymous DoABC carries the raw ABC with no flags-and-name header, so the shared builder is
+    // enough on its own. Recorded earlier as an absent silence proof; the helper closed it.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DO_ABC_ANONYMOUS, buildFrameScriptAbc()), createTag(TAG_END)]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-scripts-unreadable')).toEqual([]);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-script-declined')).toEqual([]);
+  });
+
+  it('stays silent about a DefineText2 body that composes, so the drop entry carries information', () => {
+    const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
+    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+    const record = new BitWriter();
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 3);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 1);
+    record.writeUnsigned(0, 1);
+    const text = joinBytes(
+      uint16(6),
+      createRectangle(0, 1024, 0, 1024),
+      createMatrix(1, 0, 0, 1, 0, 0),
+      new Uint8Array([4, 8]),
+      record.toBytes(),
+      uint16(4),
+      // DefineText2 records carry RGBA where DefineText carries RGB — the version difference that makes
+      // this a separate silence proof rather than the same one relabelled.
+      new Uint8Array([0xff, 0x00, 0x00, 0xff]),
+      uint16(1024),
+      new Uint8Array([1]),
+      packGlyphEntry(0, 600),
+      new Uint8Array([0]),
+    );
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_FONT, font),
+          createTag(TAG_DEFINE_TEXT_2, text),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // Non-vacuous: a run that composed nothing would be silent for the wrong reason.
+    expect((getNodeChildren(document!.root)[0] as Shape).kind).toBe(ShapeKind);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([

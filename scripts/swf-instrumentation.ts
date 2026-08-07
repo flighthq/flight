@@ -98,11 +98,14 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a morph definition that decodes, so the drop entry carries information'],
   },
   {
-    // The `swf.morph-path-pair-declined` wire on this capability still has NO fire proof, and the reason is
-    // structural rather than pending: `readSwfMorphShapePaths` builds both halves of a pair in lockstep, so
-    // the mismatches `createPathMorph` declines on cannot arise from SWF bytes. The `fires` entry below
-    // proves the undecodable-morph wire routes to this generation; it does not cover the path-pair wire.
-    audits: ['payload', 'scope'],
+    // `scope` is WITHDRAWN, and that withdrawal is the only way this hole is visible in the artifact.
+    // This capability carries TWO wires. The `fires` entry below proves the undecodable-morph one; the
+    // `swf.morph-path-pair-declined` one has no fire proof and structurally cannot get one, because
+    // `readSwfMorphShapePaths` builds both halves of a pair in lockstep so the mismatches
+    // `createPathMorph` declines on cannot arise from SWF bytes. The schema keys proofs by CAPABILITY, so
+    // a non-empty `fires` would otherwise read as "this capability is fire-proven" and hide a wire that
+    // is not. A consumer following bytes alone would have been right and still wrong.
+    audits: ['payload'],
     fires: ['reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on'],
     id: 'swf.morph.define-morph-shape-2',
     staysSilent: ['stays silent when every path pair morphs, so the declined count carries information'],
@@ -152,7 +155,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: ['names the anonymous DoABC form separately, since the two are different capabilities'],
     id: 'swf.script.do-abc-anonymous',
-    staysSilent: [],
+    staysSilent: ['stays silent about an anonymous DoABC it does obey, so the drop entry carries information'],
   },
   {
     // `scope` withdrawn because property (3) does NOT hold here: the wire covers a DECLINED block and not
@@ -219,7 +222,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: ['reports an uncomposable body for DefineText2, not only the generation the wire was written on'],
     id: 'swf.text.define-text-2',
-    staysSilent: [],
+    staysSilent: ['stays silent about a DefineText2 body that composes, so the drop entry carries information'],
   },
   {
     audits: ['payload', 'scope'],

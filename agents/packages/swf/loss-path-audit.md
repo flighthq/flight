@@ -49,7 +49,17 @@ sweep and equally the limit of the reading.
 | 11 | whole-document reject path | wired · eight container `Reject` kinds |
 | 12 | init action declined without a crumb | wired · fire + silence — **found by the shape sweep, not by reading** |
 
-**One row still carries an honest hole: 6c has no fire proof, because the branch could not be reached.**
+**One hole remains, and it is WIRE-level rather than row-level — which the artifact could not express.**
+6c's `swf.morph-path-pair-declined` wire has no fire proof and structurally cannot get one. Its capability
+row also carries a *second* wire that IS fire-proven, so a non-empty `fires` made the row read as covered.
+**A consumer following the artifact bytes would have counted zero holes there and been right about the
+bytes.** The fix within the existing schema is to withdraw the row's `scope` audit, which is now done:
+`scopeAudited` is 25 of 27, and the two withdrawn rows are where a wire is not covered by its row's proof.
+
+**Found by builder4 asking an exact reconciliation question about two empty arrays, not by me.** They
+also caught a third gap my hand-written note omitted — `swf.script.do-abc-anonymous` had no silence
+proof and I had listed only two. **A note about an artifact is a third population again, and mine
+disagreed with the bytes.** Both silence gaps are now closed.
 
 **Row 9's hole closed, and how it closed is the point.** It was recorded as an absent silence proof for
 want of a `DefineFont2` that parses. Nobody went back to try harder. It closed because a separate check —
