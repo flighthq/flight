@@ -23,12 +23,9 @@ stated as an instance it invites the law — **and three times in one arc a corr
 made for a narrower reason than the one that actually held**, which only surfaced because someone
 generalised the instance rather than obeying the rule.
 
-**Everything below is a search instruction, not a test.** Each entry tells you where to look or what
-to read next; none tells you a claim is wrong. Used as verdicts they invert — the vividness tell
-would discredit whoever describes a genuinely severe finding accurately, and the fidelity axis would
-rank losses by harm instead of naming the check each one defeats. **A document of search instructions
-read as a document of tests is this file's failure mode.** If an entry ever licenses rejecting
-someone's work rather than reading something, it is being misused.
+**Everything below is a search instruction, not a test** — where to look, never that a claim is
+wrong. **Used as verdicts they invert**, and the companion shows how. **If an entry ever licenses
+rejecting someone's work rather than reading something, it is being misused.**
 
 *Every section is arc-local, from the SWF-import/conformance arc of 2026-08-07, and untested on any
 other work — if you quote a rule from this file, quote that fact with it.*
@@ -48,15 +45,13 @@ and the remedy is reading the source.** ⇒ **An observation may be reported wit
 unexplained fact is a complete report.** Worked in the companion.
 
 **The adversarial twin: the wrong answer is a TRUE answer to the question you did not ask.** Not
-false — **misaddressed.** Checking whether it is true never finds it, because **it verifies as true
-every time: it is true of the question it actually answers.** ⇒ **Evidence is about whatever QUESTION
-produced it, and a question is easier to substitute than a producer, because nobody writes the
-question down.**
-**Its home is RETRIEVAL, not reasoning.** Every instance was a retrieval — a grep, a compiler lookup,
-a git ref, a field access, a listing — and **a retrieval always answers the query as posed against
-the store as structured, never the question as intended.** ⇒ **The gap is not a mistake in retrieval;
-it is what retrieval IS**, so it needs no bad reasoning, only a store shaped differently from the
-query.
+false — **misaddressed**, so checking whether it is true never finds it: **it verifies as true every
+time, being true of the question it actually answers.** ⇒ **Evidence is about whatever QUESTION
+produced it, and a question is easier to substitute than a producer because nobody writes it down.**
+**Its home is RETRIEVAL, not reasoning** — a grep, a compiler lookup, a git ref, a listing — and **a
+retrieval always answers the query as posed against the store as structured.** ⇒ **The gap is not a
+mistake in retrieval; it is what retrieval IS**, needing no bad reasoning, only a store shaped
+differently from the query.
 ★ **Which makes the check executable: RESTATE THE QUERY AS THE STORE RECEIVED IT.** You can **inspect
 a query**; you cannot inspect an intent — for a grep the pattern, for the compiler the type graph,
 for git the ref, for a listing the line it printed. **Compare that to the question you meant.**
@@ -100,12 +95,17 @@ nothing. Worked in the companion.
 encountered** — and only a gate fires at the moment of the action, which is why the third usually
 resolves to *make it a gate*. The companion works each axis with its instance.
 
-**Before building a gate, ask whether landing the change alters what the gate should say.** ⇒ **A
-property check is idempotent under landing; a historical check is not.** *Is this ledger well-formed*
-answers the same after the commit lands as before it; *did someone mutate a guarded line* does not,
-**and implementing it against a moving baseline means landing the mutation makes the gate go quiet
-about it forever.** A historical question needs a fixed baseline or it becomes a property check that
-has silently changed its subject.
+**A rule with no attached moment is met too late.** *The third state must be encoded, not
+interpreted* went three instances before anyone asked WHEN to apply it. ⇒ **The moment is
+CONSTRUCTION: building any instrument, ask CAN THIS FAIL TO APPLY — and if it can, three states from
+the start rather than two plus a later discovery.** ★ **Recurrence is evidence about a construction
+habit, not only about a fix: instruments keep being built with two-state outputs.** **Instances buy
+the encoding; the trigger is what stops the next one.**
+
+**Before building a gate, ask whether landing the change alters what the gate should say** — **a
+property check is idempotent under landing; a historical check is not**, and a historical question
+against a moving baseline goes quiet forever once the thing it watches for lands. Worked in the
+companion.
 
 ## Honest limit — *what to do when you cannot*
 
