@@ -197,7 +197,7 @@ describe('resolveScene3DResources', () => {
     const resources = resolveScene3DResources(scene, resolver);
 
     expect(resources.unresolved).toEqual([]);
-    expect(resources.resolved).toEqual([{ image: fakeImage, ref, textures: [a, b] }]);
+    expect(resources.resolved).toEqual([{ ref, source: fakeImage, textures: [a, b] }]);
     expect(getTextureSource(b)).toBe(fakeImage);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     disposeScene3DResourceResolver(resolver);
@@ -315,7 +315,7 @@ describe('updateScene3DResourceStreaming', () => {
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(resourceOf(texture)?.failure).toEqual({
       kind: ImageResourceFailureKind.Unavailable,
-      message: 'Image resource resolution returned no image',
+      message: 'Image resource resolution returned no source',
       name: null,
     });
     disposeScene3DResourceResolver(resolver);

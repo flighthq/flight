@@ -1,6 +1,5 @@
 import type { EasingFunction } from './EasingFunction';
 import type { Entity, Kind } from './Entity';
-import type { Image } from './Image';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Material } from './Material';
 import type { PbrExtension } from './PbrExtension';
@@ -8,6 +7,7 @@ import type { ResourceLoader } from './ResourceLoader';
 import type { Scene3D } from './Scene3D';
 import type { Signal } from './Signal';
 import type { Texture } from './Texture';
+import type { TextureSource } from './TextureSource';
 
 export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
 
@@ -28,7 +28,7 @@ export interface Scene3DResourceSignals extends Entity {
   onResourceResolved: Signal<(event: Readonly<Scene3DResourceEvent>) => void>;
 }
 
-// The public, caller-composable resolver atom. Queueing, settled-image retention, subscribers, and
+// The public, caller-composable resolver atom. Queueing, settled-source retention, subscribers, and
 // optional signals are package-private runtime state: callers select the fetch and texture-discovery
 // seams, then advance/query the resolver through named functions rather than mutating its machinery.
 export interface Scene3DResourceResolver extends Entity {
@@ -53,7 +53,7 @@ export interface Scene3DResourceInFlight {
 export interface Scene3DResourceResolverRuntime {
   inFlight: Map<ImageResourceReference, Scene3DResourceInFlight>;
   loader: ResourceLoader;
-  resolved: Map<ImageResourceReference, Image>;
+  resolved: Map<ImageResourceReference, TextureSource>;
   signals: Scene3DResourceSignals | null;
 }
 
@@ -92,10 +92,10 @@ export interface ResolveScene3DResourcesOptions {
 }
 
 export interface Scene3DResourceResolution extends Scene3DResourceWorkingSet {
-  image: Image;
+  source: TextureSource;
 }
 
-// One synchronous selected-working-set snapshot. Resolved groups name the ready image and every Texture
+// One synchronous selected-working-set snapshot. Resolved groups name the ready source and every Texture
 // subscriber it was bound to; unresolved groups remain directly usable by loading/streaming policy.
 export interface Scene3DResources {
   resolved: Scene3DResourceResolution[];

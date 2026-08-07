@@ -1,11 +1,11 @@
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
-  Image,
   ImageResourceFailure,
   ImageResourceFetch,
   ImageResourceReference,
   ImageResourceReferenceResolutionExplanation,
+  TextureSource,
 } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
@@ -78,7 +78,7 @@ export function resetFailedImageResourceReference(ref: ImageResourceReference): 
   return true;
 }
 
-// Advances one reference through its lifecycle and returns the decoded image, or null for an expected
+// Advances one reference through its lifecycle and returns the decoded texture source, or null for an expected
 // failure. Embedded bytes decode through @flighthq/image-codec; an External uri goes through the caller's
 // fetch seam. An abort is a cancel rather than a failure, so the reference reverts to Unresolved and the
 // rejection propagates — a caller racing several loads against one signal sees one cancellation, not a
@@ -90,21 +90,21 @@ export async function resolveImageResourceReference(
   ref: ImageResourceReference,
   fetch: ImageResourceFetch,
   signal: AbortSignal,
-): Promise<Image | null> {
+): Promise<TextureSource | null> {
   ref.failure = null;
   ref.state = ResourceResolutionState.Loading;
   try {
-    const image =
+    const source =
       ref.kind === ImageResourceReferenceKind.Embedded
         ? await loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal)
         : await fetch(ref, signal);
-    if (image === null) {
+    if (source === null) {
       ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'Image resource unavailable', name: null };
       ref.state = ResourceResolutionState.Failed;
       return null;
     }
     ref.state = ResourceResolutionState.Resolved;
-    return image;
+    return source;
   } catch (cause) {
     if (signal.aborted) {
       ref.state = ResourceResolutionState.Unresolved;
