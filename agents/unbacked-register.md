@@ -130,7 +130,19 @@ is why three rounds of sender-side care produced three rounds of recurrence. **I
 the then-current rule**: it was almost entirely state, which the *may-carry-state-not-instruction*
 formulation permits, and it cost four paragraphs anyway.
 
-**Two of the four were paid by the same reader, and none by the author.** Recorded as open.
+**Two of the four were paid by the same reader, and none by the author.** That is the diagnosis, and
+it is why the next move is **not** a fourth prevention rule.
+
+**STOP PREVENTING; MAKE DETECTION CHEAP.** All four were caught by recipients, **so detection was
+never the failing half — only its cost was.** The standing protocol:
+
+> **A recipient who sees a message is not addressed to them replies `NOT MINE` and stops reading.**
+
+**One line, at the first sign.** Cost falls from four paragraphs to one line, and from *began
+reconciling a task that was never theirs* to *stopped at the first sign*. **The signal reaches the
+sender because they get a reply** — which is the half every sender-side remedy could not supply. And
+it **asks nothing of the sender's memory**, which is what the three failed remedies all depended on.
+⇒ **The party who can see it acts.** Same move as every other correction that worked in this arc.
 
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
@@ -151,6 +163,24 @@ intermediate commit is checkoutable, and running one focused test there costs se
 that route: hashes do not survive `git am`, so subject lines are the only durable reference; and a
 red result shows *that* a test failed, never *why* — if it fails because the fix's scaffolding does
 not exist yet, that is a compile failure wearing a test failure's clothes and the route does not apply.
+
+## Landed defects — a third state beside unbacked and unbuilt
+
+**An unbacked claim is unverified; a landed defect is verified and wrong, and already in the merged
+tree.** It gets its own section because the remedies differ completely: an unbacked claim needs
+someone to look, **a landed defect needs someone to act, and neither the register's cause split nor
+the unbuilt table has a slot for it.**
+
+| # | Defect | Verified how | State |
+|---|---|---|---|
+| L1 | The delivered base fails `npm run check` on its own — two typecheck errors where the fixture-stamp consumers were not carried with their rename | integration ran it against the base with nothing of theirs applied | Migration patch exists and is verified appliable; **delivery, not authoring** |
+| L2 | A guarded `Decisions` line in a package charter was **removed rather than superseded**, and the mutation is in the delivered base | Baselined against the commit that introduced the guarded line: one violation | **Report, do not repair** — the ledger ruling stands |
+
+★ **L2 carries a second defect worse than itself: the append-only gate compares against
+`origin/develop`, so once a mutation lands the baseline absorbs it and the gate goes permanently
+quiet.** ⇒ **The gate answers *has anything unlanded mutated a guarded line* while being read as
+*has a guarded line been mutated*** — the misaddressed-answer law, in a CI gate, still live. **It will
+never report L2 again.**
 
 ## Permitted and unbuilt
 
