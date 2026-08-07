@@ -3,7 +3,12 @@ import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphOutlineSourceFromOpenTypeFont, explainOpenTypeFont } from './openTypeGlyphOutlineSource';
-import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper';
+import {
+  createSyntheticFont,
+  emptySyntheticGlyph,
+  encodeSyntheticWoff,
+  squareSyntheticGlyph,
+} from './openTypeTestHelper';
 import { readSfntTableDirectory } from './sfntTableDirectory';
 
 // Every font here is assembled byte by byte by the helper. Nothing third-party is read, fetched, or
@@ -23,9 +28,9 @@ function cff2OnlyFont(): Uint8Array {
   return font;
 }
 
-function woffBytes(): Uint8Array {
+function woff2Bytes(): Uint8Array {
   const bytes = new Uint8Array(20);
-  bytes.set([0x77, 0x4f, 0x46, 0x46]);
+  bytes.set([0x77, 0x4f, 0x46, 0x32]);
   return bytes;
 }
 
@@ -164,6 +169,24 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     expect(second.data).toEqual([0, -0, 0, -10]);
   });
 
+  // WOFF END TO END. The whole design claim is that it needs no new outline code: unwrap once, and the
+  // directory, both flavors and CID all read the rebuilt sfnt without knowing it arrived wrapped.
+  it('produces a source from a WOFF, which used to be an unsupported container', () => {
+    const woff = encodeSyntheticWoff(
+      createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] }),
+    );
+    const source = createGlyphOutlineSourceFromOpenTypeFont(woff)!;
+    expect(source).not.toBeNull();
+    const path = createPath();
+    expect(source.getGlyphOutline(path, 1)).toBe(true);
+    expect(path.data).toEqual([0, -0, 100, -0, 100, -100, 0, -100]);
+  });
+
+  it('reads a CFF font through the WOFF wrapper, since the wrapper is flavor-agnostic', () => {
+    const woff = encodeSyntheticWoff(createSyntheticFont({ flavor: 'opentype' }));
+    expect(createGlyphOutlineSourceFromOpenTypeFont(woff)).not.toBeNull();
+  });
+
   it('still rejects CFF2, which is a different charstring dialect and remains a stated absence', () => {
     const font = createSyntheticFont({ flavor: 'opentype', omitTable: 'CFF ' });
     // Re-add only CFF2, so the font carries charstrings this package deliberately does not read.
@@ -199,7 +222,7 @@ describe('explainOpenTypeFont', () => {
   it.each([
     ['too-short', new Uint8Array([0, 1, 0, 0])],
     ['unrecognized', new Uint8Array(20)],
-    ['unsupported-container', woffBytes()],
+    ['unsupported-container', woff2Bytes()],
     ['missing-required-table', createSyntheticFont({ omitTable: 'cmap' })],
     ['unsupported-outlines', cff2OnlyFont()],
     ['malformed-table', malformedUnitsPerEmFont()],
@@ -243,11 +266,20 @@ describe('explainOpenTypeFont', () => {
 
   it('distinguishes bytes that are no font at all from a font it will not open', () => {
     expect(explainOpenTypeFont(new Uint8Array(20)).reason).toBe('unrecognized');
-    // A WOFF is a real font behind a compression wrapper — a different remedy from unreadable bytes.
-    const woff = new Uint8Array(20);
-    woff.set([0x77, 0x4f, 0x46, 0x46]);
-    expect(explainOpenTypeFont(woff).reason).toBe('unsupported-container');
-    expect(explainOpenTypeFont(woff).format).toBe('woff');
+    // WOFF2 needs Brotli and a table-transform reversal, so it stays a container this package does not
+    // open — unlike WOFF, which is read now.
+    const woff2 = new Uint8Array(20);
+    woff2.set([0x77, 0x4f, 0x46, 0x32]);
+    expect(explainOpenTypeFont(woff2).reason).toBe('unsupported-container');
+    expect(explainOpenTypeFont(woff2).format).toBe('woff2');
+  });
+
+  // The decompressor is deliberately not bundled, so an unregistered one is a real outcome with a
+  // one-line remedy — distinct from a container needing a different producer entirely.
+  it('reports a missing decompressor as its own reason rather than an unsupported container', () => {
+    const woff = encodeSyntheticWoff(createSyntheticFont());
+    new DataView(woff.buffer).setUint32(44 + 8, 4);
+    expect(explainOpenTypeFont(woff).reason).toBe('missing-decompressor');
   });
 
   it('reports too-short for bytes below the sfnt header', () => {
