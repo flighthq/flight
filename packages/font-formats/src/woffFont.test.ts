@@ -1,14 +1,39 @@
 import { registerDeflateDecompressor, unregisterDecompressor } from '@flighthq/compression/contract';
 import { Compression } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createSyntheticFont, encodeSyntheticWoff } from './openTypeTestHelper';
+import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource';
+import {
+  createSyntheticFont,
+  encodeSyntheticWoff,
+  squareSyntheticGlyph,
+  emptySyntheticGlyph,
+} from './openTypeTestHelper';
 import { readSfntTableDirectory } from './sfntTableDirectory';
 import { readWoffFont } from './woffFont';
 
 afterEach(() => unregisterDecompressor(Compression.Deflate));
 
 describe('readWoffFont', () => {
+  it('produces the same glyph outlines as the uncompressed font it wraps', () => {
+    // The end-to-end falsifier: byte-equality of table CONTENTS is a stronger claim per table, but it
+    // never runs the outline readers. This drives the whole producer — directory, offsets, `loca`,
+    // `glyf` — through both the plain font and its wrapper and compares what a caller actually gets.
+    const original = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
+    const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
+    const before = createGlyphOutlineSourceFromOpenTypeFont(original)!;
+    const after = createGlyphOutlineSourceFromOpenTypeFont(rebuilt)!;
+    const a: Path = { commands: [], data: [], winding: 'nonZero' };
+    const b: Path = { commands: [], data: [], winding: 'nonZero' };
+    expect(before.getGlyphOutline(a, 1)).toBe(true);
+    expect(after.getGlyphOutline(b, 1)).toBe(true);
+    expect(b.commands).toEqual(a.commands);
+    expect(b.data).toEqual(a.data);
+    expect(a.commands.length).toBeGreaterThan(0);
+    expect(after.getGlyphOutlineAdvance(1)).toBe(before.getGlyphOutlineAdvance(1));
+  });
+
   it('rebuilds an sfnt whose tables match the original', () => {
     const original = createSyntheticFont();
     const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
