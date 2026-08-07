@@ -15,6 +15,8 @@ because each one has concrete cases behind it.
 
 ## The law: evidence is about whatever produced it
 
+*Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+
 Its sharpest case is the self-report. **A self-report is evidence about the self-reporter, not about
 what it carried** — so to get evidence about the payload, you need something that looked at the
 payload. Everything below in this section derives from that in one step.
@@ -38,6 +40,8 @@ payload. Everything below in this section derives from that in one step.
 
 ## Preservation ordering — *when*
 
+*Arc-local, 3 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+
 Order competing actions by how much they destroy. Destructive last.
 
 - Inspect before `drop_caches`; capture before restore.
@@ -48,6 +52,8 @@ Order competing actions by how much they destroy. Destructive last.
 - Composed: **audit before you report the count; report the weakness before you fix it.**
 
 ## Structure over convention — *how to enforce*
+
+*Arc-local, 3 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Make the false claim unrepresentable rather than discouraged. A rule you hold is a rule you can drift
 off; three agents in one day each drifted off a rule they had written down.
@@ -62,6 +68,8 @@ off; three agents in one day each drifted off a rule they had written down.
   which files were read in full, partially, and not at all cannot.
 
 ## Honest limit — *what to do when you cannot*
+
+*Arc-local, 4 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Name the hole. When nothing can close it, naming it is the whole of what can be done, and it is what
 stops an artifact claiming more than it has.
@@ -78,6 +86,8 @@ stops an artifact claiming more than it has.
   chunk of the denominator; recording it as a positive finding is the only way it counts.
 
 ## The test before quoting a number
+
+*Arc-local, 3 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Not a fourth rule — the check you run when a number is about to do work in an argument.
 
