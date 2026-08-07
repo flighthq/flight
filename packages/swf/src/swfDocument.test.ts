@@ -2905,6 +2905,61 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(kinds).not.toContain('swf.nested-mask-collapsed');
   });
 
+  it('stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing', () => {
+    // The three capabilities that fire on the corpus without a silence proof yet. Each assertion is
+    // paired with a positive check, so silence cannot come from the construct simply being absent.
+    const glyph = new ShapeWriter();
+    glyph.writeStyleBits(1, 0);
+    glyph.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    glyph.writeStraightEdge(256, 0);
+    glyph.writeStraightEdge(0, 256);
+    glyph.writeStraightEdge(-256, 0);
+    glyph.writeStraightEdge(0, -256);
+    glyph.writeEndShape();
+    const glyphBytes = glyph.toBytes();
+    const tables = new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]);
+    const jpeg3 = createJpegHeader(23, 17);
+
+    const file = createSwf([
+      createTag(
+        TAG_DEFINE_FONT_2,
+        joinBytes(
+          uint16(4),
+          new Uint8Array([0, 0, 0]),
+          uint16(1),
+          joinBytes(uint16(4), uint16(4 + glyphBytes.length)),
+          glyphBytes,
+          new Uint8Array([0x41]),
+        ),
+      ),
+      createTag(TAG_JPEG_TABLES, tables),
+      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), createJpegHeader(11, 13))),
+      // alphaDataOffset equal to the payload length: the colour stream is the whole body, so there is
+      // no alpha block to discard and nothing is lost.
+      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3)),
+      // Placed, because an image earns a resource only when something samples it — without these the
+      // silence below would be silence about constructs that never entered the document.
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(16))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const document = createScene2DFromSwf(file, sink);
+      // All three constructs really imported: two image resources plus a recoverable font.
+      expect(document?.imageResources.length).toBe(2);
+      expect(createGlyphOutlineSourcesFromSwf(file)?.size).toBe(1);
+    });
+
+    const kinds = diagnostics.map((entry) => entry.kind);
+    expect(kinds).not.toContain('swf.font-glyph-table');
+    expect(kinds).not.toContain('swf.font-glyph-outline');
+    expect(kinds).not.toContain('swf.jpeg-tables-missing');
+    expect(kinds).not.toContain('swf.jpeg-tables-unsplittable');
+    expect(kinds).not.toContain('swf.jpeg-alpha-stream');
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {

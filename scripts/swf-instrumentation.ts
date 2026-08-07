@@ -34,12 +34,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   {
     fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
     id: 'swf.bitmap.define-bits-jpeg-3',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
     id: 'swf.bitmap.define-bits-jpeg-4',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: [
@@ -47,7 +47,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports a legacy split JPEG with no tables in the file as a Drop',
     ],
     id: 'swf.bitmap.define-bits-jpeg-tables',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: [
@@ -55,7 +55,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
     ],
     id: 'swf.font.define-font',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: [
@@ -63,7 +63,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
     ],
     id: 'swf.font.define-font-2',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: [
@@ -71,7 +71,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
     ],
     id: 'swf.font.define-font-3',
-    staysSilent: [],
+    staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
