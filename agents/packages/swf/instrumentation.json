@@ -122,11 +122,13 @@
         "scope"
       ],
       "fires": [
-        "reports a declared blend mode left unread behind a filter list that did not finish"
+        "reports a declared blend mode left unread behind a filter list that did not finish",
+        "reports an advanced blend that had no node to carry it, which the appearance report alone holds"
       ],
       "id": "swf.placement.blend-mode",
       "staysSilent": [
-        "stays silent when a declared blend mode is reachable, so the drop entry carries information"
+        "stays silent when a declared blend mode is reachable, so the drop entry carries information",
+        "stays silent when an advanced blend has a node to carry it, so the drop entry carries information"
       ]
     },
     {

@@ -2917,6 +2917,62 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.sprite-bounds-short')).toEqual([]);
   });
 
+  it('reports an advanced blend that had no node to carry it, which the appearance report alone holds', () => {
+    // An unnamed placement of a character that was never defined earns no node, so the appearance report
+    // — the only carrier for advanced blends and filter lists — has nothing to attach to.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([
+            createTag(
+              TAG_PLACE_OBJECT_3,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+                uint16(1),
+                uint16(7),
+                new Uint8Array([SWF_BLEND_OVERLAY]),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.appearance-without-node');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.placement.blend-mode', frame: 1 });
+  });
+
+  it('stays silent when an advanced blend has a node to carry it, so the drop entry carries information', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const result = createScene2DImportFromSwf(
+        createSwf([
+          createTag(
+            TAG_PLACE_OBJECT_3,
+            joinBytes(
+              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+              uint16(3),
+              uint16(7),
+              swfString('overlaid'),
+              new Uint8Array([SWF_BLEND_OVERLAY]),
+            ),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+      // Non-vacuous: the appearance really was recorded against a node.
+      expect(result!.appearances).toHaveLength(1);
+    });
+
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.appearance-without-node')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
