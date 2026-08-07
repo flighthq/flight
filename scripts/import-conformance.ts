@@ -83,15 +83,14 @@ export async function runImportConformanceProcess(
   writeImportConformanceShardResult(SHARD_DIRECTORY, plan, shard.index, currentResults, importerSourceHash);
   const collected = readImportConformanceShardResults(SHARD_DIRECTORY, plan, index.fixtures, importerSourceHash);
   const instrumentation = readInstrumentationMapping(definitions);
-  for (const problem of instrumentation.problems)
-    process.stderr.write(`⚠ ${problem}; affected capability stays UNKNOWN.\n`);
+  for (const problem of instrumentation.problems) process.stderr.write(`⚠ ${problem}.\n`);
   const score = createImportConformanceScore(
     index,
     plan,
     collected.completedShardIds,
     collected.results,
     instrumentation.proofs,
-    'measured',
+    instrumentation.lossPathIdentifiedByCapability,
     importerSourceHash,
     { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
   );

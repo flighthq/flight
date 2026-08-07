@@ -98,7 +98,7 @@ describe('createImportConformanceNotRunScore', () => {
 });
 
 describe('createImportConformanceScore', () => {
-  it('nests exercised, instrumented, pass, and single-witness populations', () => {
+  it('nests independent fire-proven and silence-proven pass populations', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
       index.fixtures.map((fixture) => fixture.reference),
@@ -110,7 +110,7 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
       instrumentationProofs('swf.fill.solid'),
-      'measured',
+      lossPathStates(),
       hash('importer'),
       PROVENANCE,
     );
@@ -119,24 +119,39 @@ describe('createImportConformanceScore', () => {
       totalCapabilities: 2,
       exercised: {
         capabilities: 1,
-        instrumented: { capabilities: 1, passedCapabilities: 1 },
+        fireProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
+        },
+        silenceProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
+        },
         singleWitnessCapabilities: 0,
       },
     });
     expect(score.packs[0]!.capabilities).toEqual([
       {
         id: 'swf.fill.solid',
-        instrumentationProofs: {
-          fires: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
-          staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
+        instrumentation: {
+          fires: {
+            proofs: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
+            state: 'proven',
+          },
+          staysSilent: {
+            proofs: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
+            state: 'proven',
+          },
         },
         outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 1 },
-        result: 'pass',
-        state: 'measured',
+        results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
+        state: 'exercised',
+        unknownObservations: [],
         witnesses: 2,
       },
       { id: 'swf.text.define-text', state: 'unmeasured' },
     ]);
+    expect(score.packs[0]).not.toHaveProperty('outcomes');
   });
 
   it.each(['threw', 'importedWrong', 'silentlyWrong'] as const)('treats %s as a failing outcome', (outcome) => {
@@ -151,11 +166,26 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], outcome), result('two.swf', ['swf.fill.solid'], 'passed')],
       instrumentationProofs('swf.fill.solid'),
-      'measured',
+      lossPathStates(),
       hash('importer'),
       PROVENANCE,
     );
-    expect(score.packs[0]!.capabilities[0]).toMatchObject({ result: 'fail', state: 'measured' });
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      results: { fire: { state: 'fail' }, silence: { state: 'fail' } },
+      state: 'exercised',
+    });
+    expect(score.packs[0]!.summary).toMatchObject({
+      exercised: {
+        fireProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 1, passedCapabilities: 0, unknownCapabilities: 0 },
+        },
+        silenceProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 1, passedCapabilities: 0, unknownCapabilities: 0 },
+        },
+      },
+    });
   });
 
   it('makes the whole pack NOT RUN without shrinking the denominator when one shard is missing', () => {
@@ -170,7 +200,7 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed')],
       instrumentationProofs('swf.fill.solid'),
-      'measured',
+      lossPathStates(),
       hash('importer'),
       PROVENANCE,
     );
@@ -199,7 +229,7 @@ describe('createImportConformanceScore', () => {
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed')],
         instrumentationProofs('swf.fill.solid'),
-        'measured',
+        lossPathStates(),
         hash('importer'),
         PROVENANCE,
       ),
@@ -218,7 +248,7 @@ describe('createImportConformanceScore', () => {
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
       new Map(),
-      'measured',
+      lossPathStates(false),
       hash('importer'),
       PROVENANCE,
     );
@@ -228,21 +258,76 @@ describe('createImportConformanceScore', () => {
         totalCapabilities: 2,
         exercised: {
           capabilities: 1,
-          instrumented: { capabilities: 0, passedCapabilities: 0 },
+          fireProven: {
+            capabilities: 0,
+            results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 0 },
+          },
+          silenceProven: {
+            capabilities: 0,
+            results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 0 },
+          },
           singleWitnessCapabilities: 0,
         },
       },
     });
     expect(score.packs[0]!.capabilities[0]).toEqual({
       id: 'swf.fill.solid',
-      reason: 'diagnostic-instrumentation-missing',
-      state: 'unknown',
+      instrumentation: { fires: { state: 'unproven' }, staysSilent: { state: 'unproven' } },
+      outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      state: 'exercised',
+      unknownObservations: [
+        { reason: 'loss-path-not-identified', reference: 'one.swf' },
+        { reason: 'loss-path-not-identified', reference: 'two.swf' },
+      ],
       witnesses: 2,
     });
     expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
   });
 
-  it('can fail a fully executed score safe while UNKNOWN baseline policy is pending', () => {
+  it('distinguishes an identified-but-unwired loss path from one not identified', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map(),
+      lossPathStates(true),
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      unknownObservations: [
+        { reason: 'loss-path-known-not-wired', reference: 'one.swf' },
+        { reason: 'loss-path-known-not-wired', reference: 'two.swf' },
+      ],
+    });
+  });
+
+  it('refuses to infer a loss-path state from an absent artifact declaration', () => {
+    const index = makeIndex();
+    expect(() =>
+      createImportConformanceScore(
+        index,
+        createImportConformanceShardPlan(
+          index.fixtures.map((fixture) => fixture.reference),
+          1,
+        ),
+        new Set([0]),
+        [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+        new Map(),
+        new Map([['swf.fill.solid', false]]),
+        hash('importer'),
+        PROVENANCE,
+      ),
+    ).toThrow(/Every declared capability requires an explicit loss-path state/);
+  });
+
+  it('requires silence proof only for a crumb observation', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
       index.fixtures.map((fixture) => fixture.reference),
@@ -252,42 +337,138 @@ describe('createImportConformanceScore', () => {
       index,
       plan,
       new Set([0]),
-      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Map(),
-      'not-run',
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
+      new Map([['swf.fill.solid', { fires: ['test#fires'], staysSilent: [] }]]),
+      lossPathStates(),
       hash('importer'),
       PROVENANCE,
     );
-    expect(score.packs[0]).toMatchObject({
-      outcomes: null,
-      reason: 'instrumentation-incomplete',
-      state: 'not-run',
-      summary: null,
+    expect(score.packs[0]!.summary).toMatchObject({
+      exercised: {
+        fireProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 1 },
+        },
+        silenceProven: {
+          capabilities: 0,
+          results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 0 },
+        },
+      },
     });
-    expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'silence-proof-missing-for-crumb', reference: 'two.swf' }],
+    });
   });
 
-  it.each([
-    [{ fires: [], staysSilent: ['test#is silent'] }, /firing proofs.*must be non-empty/],
-    [{ fires: ['test#fires'], staysSilent: [] }, /silence proofs.*must be non-empty/],
-  ] as const)('refuses to count an instrument without both proof roles', (proofs, message) => {
+  it('keeps an unproven lane UNKNOWN without collapsing the proven lane result', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map([['swf.fill.solid', { fires: ['test#fires'], staysSilent: [] }]]),
+      lossPathStates(),
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      results: { fire: { state: 'pass' }, silence: { state: 'unknown' } },
+      unknownObservations: [],
+    });
+    expect(score.packs[0]!.summary).toMatchObject({
+      exercised: {
+        fireProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
+        },
+        silenceProven: {
+          capabilities: 0,
+          results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 0 },
+        },
+      },
+    });
+  });
+
+  it('requires fire proof only for a no-crumb observation', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
       index.fixtures.map((fixture) => fixture.reference),
       1,
     );
+    const score = createImportConformanceScore(
+      index,
+      plan,
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'unsupportedClean'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map([['swf.fill.solid', { fires: [], staysSilent: ['test#is silent'] }]]),
+      lossPathStates(),
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]!.summary).toMatchObject({
+      exercised: {
+        fireProven: {
+          capabilities: 0,
+          results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 0 },
+        },
+        silenceProven: {
+          capabilities: 1,
+          results: { failedCapabilities: 0, passedCapabilities: 0, unknownCapabilities: 1 },
+        },
+      },
+    });
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 1 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'fire-proof-missing-for-no-crumb', reference: 'two.swf' }],
+    });
+  });
+
+  it('lets a direct failure dominate an unlicensed observation', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'importedWrong'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map(),
+      lossPathStates(false),
+      hash('importer'),
+      PROVENANCE,
+    );
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      outcomes: { importedWrong: 1, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+      results: { fire: { state: 'fail' }, silence: { state: 'fail' } },
+      unknownObservations: [{ reason: 'loss-path-not-identified', reference: 'two.swf' }],
+    });
+  });
+
+  it('refuses a proof mapping row that represents neither role', () => {
+    const index = makeIndex();
     expect(() =>
       createImportConformanceScore(
         index,
-        plan,
+        createImportConformanceShardPlan(
+          index.fixtures.map((fixture) => fixture.reference),
+          1,
+        ),
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-        new Map([['swf.fill.solid', proofs]]),
-        'measured',
+        new Map([['swf.fill.solid', { fires: [], staysSilent: [] }]]),
+        lossPathStates(),
         hash('importer'),
         PROVENANCE,
       ),
-    ).toThrow(message);
+    ).toThrow(/must represent at least one proof role/);
   });
 });
 
@@ -342,6 +523,13 @@ function instrumentationProofs(id: string) {
   ]);
 }
 
+function lossPathStates(fillIdentified = true, textIdentified = false) {
+  return new Map([
+    ['swf.fill.solid', fillIdentified],
+    ['swf.text.define-text', textIdentified],
+  ]);
+}
+
 function makeIndex() {
   return buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, [
     { capabilities: ['swf.fill.solid'], reference: 'one.swf', sourceHash: hash('one.swf') },
@@ -355,7 +543,11 @@ function result(
   outcome: 'importedWrong' | 'passed' | 'silentlyWrong' | 'threw' | 'unsupportedClean',
 ) {
   return {
-    capabilityOutcomes: capabilities.map((id) => ({ id, outcome })),
+    capabilityOutcomes: capabilities.map((id) => ({
+      diagnosticReported: outcome === 'importedWrong' || outcome === 'unsupportedClean',
+      id,
+      outcome,
+    })),
     outcome,
     reference,
     sourceHash: hash(reference),

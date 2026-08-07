@@ -39,7 +39,7 @@ export function readImportConformanceCachedResult(
   if (!existsSync(path)) return null;
   try {
     const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
-    if (!isRecord(value) || value.schemaVersion !== 1) return null;
+    if (!isRecord(value) || value.schemaVersion !== 2) return null;
     if (value.sourceHash !== fixture.sourceHash || value.importerSourceHash !== importerSourceHash) return null;
     return parseCachedResult(value.result, fixture);
   } catch {
@@ -65,7 +65,7 @@ export function readImportConformanceShardResults(
     if (!existsSync(path)) continue;
     try {
       const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
-      if (!isRecord(value) || value.schemaVersion !== 1 || value.planHash !== plan.planHash) continue;
+      if (!isRecord(value) || value.schemaVersion !== 2 || value.planHash !== plan.planHash) continue;
       if (value.importerSourceHash !== importerSourceHash || value.shardId !== id || !Array.isArray(value.results)) {
         continue;
       }
@@ -95,7 +95,7 @@ export function writeImportConformanceCachedResult(
   writeJsonAtomically(path, {
     importerSourceHash,
     result,
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceHash: result.sourceHash,
   });
 }
@@ -117,7 +117,7 @@ export function writeImportConformanceShardResult(
     importerSourceHash,
     planHash: plan.planHash,
     results,
-    schemaVersion: 1,
+    schemaVersion: 2,
     shardId,
   });
 }
@@ -153,10 +153,15 @@ function parseCachedResult(
   }
   if (!isOutcome(value.outcome) || !Array.isArray(value.capabilityOutcomes)) throw new Error('invalid fixture result');
   const capabilityOutcomes = value.capabilityOutcomes.map((candidate) => {
-    if (!isRecord(candidate) || typeof candidate.id !== 'string' || !isOutcome(candidate.outcome)) {
+    if (
+      !isRecord(candidate) ||
+      typeof candidate.diagnosticReported !== 'boolean' ||
+      typeof candidate.id !== 'string' ||
+      !isOutcome(candidate.outcome)
+    ) {
       throw new Error('invalid capability result');
     }
-    return { id: candidate.id, outcome: candidate.outcome };
+    return { diagnosticReported: candidate.diagnosticReported, id: candidate.id, outcome: candidate.outcome };
   });
   if (capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== fixture.capabilities.join('\0')) {
     throw new Error('stale capability result');

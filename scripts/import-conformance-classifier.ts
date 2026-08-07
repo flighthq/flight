@@ -26,6 +26,7 @@ export function classifyImportConformanceObservation(
 
   return {
     capabilityOutcomes: fixture.capabilities.map((id) => ({
+      diagnosticReported: keyed.has(id),
       id,
       outcome: classifyCapabilityOutcome(observation, keyed.get(id) ?? []),
     })),

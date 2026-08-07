@@ -13,7 +13,7 @@ const FIXTURE = {
 describe('classifyImportConformanceObservation', () => {
   it('classifies a keyed Skip as unsupportedClean', () => {
     expect(classify([diagnostic(ImportDiagnosticSeverity.Skip, 'swf.video-frame-payload')])).toMatchObject({
-      capabilityOutcomes: [{ id: 'swf.video.video-frame', outcome: 'unsupportedClean' }],
+      capabilityOutcomes: [{ diagnosticReported: true, id: 'swf.video.video-frame', outcome: 'unsupportedClean' }],
       outcome: 'unsupportedClean',
     });
   });
@@ -22,7 +22,7 @@ describe('classifyImportConformanceObservation', () => {
     'classifies a keyed %s as importedWrong',
     (severity) => {
       expect(classify([diagnostic(severity, 'swf.video-frame-payload')])).toMatchObject({
-        capabilityOutcomes: [{ id: 'swf.video.video-frame', outcome: 'importedWrong' }],
+        capabilityOutcomes: [{ diagnosticReported: true, id: 'swf.video.video-frame', outcome: 'importedWrong' }],
         outcome: 'importedWrong',
       });
     },
@@ -45,11 +45,11 @@ describe('classifyImportConformanceObservation', () => {
 
   it('distinguishes a silent refusal from successful diagnostic silence', () => {
     expect(classify([], false)).toMatchObject({
-      capabilityOutcomes: [{ outcome: 'silentlyWrong' }],
+      capabilityOutcomes: [{ diagnosticReported: false, outcome: 'silentlyWrong' }],
       outcome: 'silentlyWrong',
     });
     expect(classify([], true)).toMatchObject({
-      capabilityOutcomes: [{ outcome: 'passed' }],
+      capabilityOutcomes: [{ diagnosticReported: false, outcome: 'passed' }],
       outcome: 'passed',
     });
   });
