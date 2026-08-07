@@ -43,8 +43,10 @@ import {
 import { formatImportConformanceSubset } from './import-conformance-subset';
 import {
   buildSwfCapabilityIndex,
+  SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
   SWF_CAPABILITY_CONVENTION_REVISION,
   SWF_IMPORTER_DECLARED_CENSUS,
+  SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
 } from './swf-capability-index';
 import { runSwfImportConformanceWorkerPool } from './swf-import-conformance-worker-pool';
 
@@ -103,9 +105,9 @@ export async function runImportConformanceProcess(
     importerSourceHash,
     { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
     {
-      configurationLimitsByCapability: new Map(),
+      capabilityScopedUnknownMappings: SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
       importerDeclaredCensus: SWF_IMPORTER_DECLARED_CENSUS,
-      unwiredLossesByCapability: new Map(),
+      individuationMargin: SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
     },
   );
   writeImportConformanceScoreAtomically(args.scoreFile, score);

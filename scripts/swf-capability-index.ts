@@ -17,7 +17,11 @@ import {
   parseImportConformanceCapabilityDefinitions,
 } from './import-conformance-core';
 import type { ImportConformanceCapabilityIndex } from './import-conformance-core';
-import type { ImportConformanceImporterDeclaredCensus } from './import-conformance-core';
+import type {
+  ImportConformanceImporterDeclaredCensus,
+  ImportConformanceIndividuationMargin,
+  ImportConformanceScoreDeclarations,
+} from './import-conformance-core';
 import { probeSwfCapabilities } from './swf-capability-probe';
 
 export const SWF_CAPABILITY_CONVENTION_REVISION = 'unresolved-individuation-v1';
@@ -29,6 +33,35 @@ export const SWF_IMPORTER_DECLARED_CENSUS = {
   reference: 'capabilities.json-vs-tag-coverage.md',
   state: 'provisional',
 } as const satisfies ImportConformanceImporterDeclaredCensus;
+export const SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN = {
+  behaviorPreservingRefactorRows: 77,
+  discriminatedSourceRows: 80,
+  frozenDeclaredRows: 82,
+  rejectedCircularCandidate: 'corpus-differential-behavior',
+  sameDispatchArmRows: 66,
+  state: 'frozen-no-election',
+} as const satisfies ImportConformanceIndividuationMargin;
+export const SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS = {
+  configurationLimits: [
+    {
+      capabilityIds: ['swf.button.define-button', 'swf.button.define-button-2'],
+      id: 'MAX_BUTTON_RECORDS',
+      reporting: 'unobservable',
+    },
+    {
+      capabilityIds: ['swf.script.do-action', 'swf.script.do-init-action'],
+      id: 'MAX_FRAME_ACTIONS',
+      reporting: 'unobservable',
+    },
+    {
+      capabilityIds: ['swf.text.define-text', 'swf.text.define-text-2'],
+      id: 'MAX_TEXT_RECORDS',
+      reporting: 'unobservable',
+    },
+  ],
+  // Audited reachable loss families are added only from builder2's settled capability-keyed site list.
+  unwiredLossFamilies: [],
+} as const satisfies ImportConformanceScoreDeclarations['capabilityScopedUnknownMappings'];
 
 export interface ImportConformanceCorpusInventory {
   corpusFiles: number;

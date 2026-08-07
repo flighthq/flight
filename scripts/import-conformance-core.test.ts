@@ -15,6 +15,7 @@ import type {
   ImportConformanceScoreDeclarations,
   ImportConformanceUnwiredLossObservation,
 } from './import-conformance-core';
+import { parseImportConformanceScore } from './import-conformance-score';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },
@@ -235,6 +236,29 @@ describe('createImportConformanceScore', () => {
       },
     ]);
     expect(score.packs[0]).not.toHaveProperty('outcomes');
+    expect(parseImportConformanceScore(score, 'producer score')).toEqual(score);
+  });
+
+  it('refuses a frozen individuation reading that drifts from the declared capability rows', () => {
+    const index = makeIndex();
+    const scoreDeclarations = declarations();
+    scoreDeclarations.individuationMargin.frozenDeclaredRows = 3;
+    expect(() =>
+      createImportConformanceScore(
+        index,
+        createImportConformanceShardPlan(
+          index.fixtures.map((fixture) => fixture.reference),
+          1,
+        ),
+        new Set([0]),
+        [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+        instrumentationProofs('swf.fill.solid'),
+        lossPathStates(),
+        hash('importer'),
+        PROVENANCE,
+        scoreDeclarations,
+      ),
+    ).toThrow(/Individuation margin .* matching the declared rows/);
   });
 
   it.each(['threw', 'importedWrong', 'silentlyWrong'] as const)('treats %s as a failing outcome', (outcome) => {
@@ -532,7 +556,7 @@ describe('createImportConformanceScore', () => {
           },
         ),
       ),
-    ).toThrow(/configuration limit ids .* must be sorted and unique/);
+    ).toThrow(/configuration limit ids must be unique and sorted in ascending order/);
   });
 
   it('makes a structured crumb with an incomplete member audit capability-scoped UNKNOWN', () => {
@@ -959,7 +983,20 @@ function declarations(
   configurationLimitsByCapability: Readonly<Record<string, Readonly<ImportConformanceConfigurationLimits>>> = {},
 ): ImportConformanceScoreDeclarations {
   return {
-    configurationLimitsByCapability: new Map(Object.entries(configurationLimitsByCapability)),
+    capabilityScopedUnknownMappings: {
+      configurationLimits: Object.entries(configurationLimitsByCapability).flatMap(([capabilityId, limits]) =>
+        limits.state === 'not-applicable'
+          ? []
+          : limits.limits.map((limit) => ({ capabilityIds: [capabilityId] as [string], ...limit })),
+      ),
+      unwiredLossFamilies: Object.entries(unwiredLossesByCapability).flatMap(([capabilityId, observations]) =>
+        observations.map((observation) => ({
+          capabilityIds: [capabilityId] as [string],
+          contentFidelity: observation.contentFidelity,
+          reference: observation.reference,
+        })),
+      ),
+    },
     importerDeclaredCensus: {
       basis: 'single-artifact-cross-check',
       candidateHits: 4,
@@ -968,7 +1005,14 @@ function declarations(
       reference: 'synthetic-capabilities-vs-tag-coverage.md',
       state: 'provisional',
     },
-    unwiredLossesByCapability: new Map(Object.entries(unwiredLossesByCapability)),
+    individuationMargin: {
+      behaviorPreservingRefactorRows: 1,
+      discriminatedSourceRows: 2,
+      frozenDeclaredRows: 2,
+      rejectedCircularCandidate: 'corpus-differential-behavior',
+      sameDispatchArmRows: 1,
+      state: 'frozen-no-election',
+    },
   };
 }
 
@@ -984,6 +1028,14 @@ function expectedDenominators(declaredRows: number) {
         state: 'provisional',
       },
       declaredRows,
+      individuationMargin: {
+        behaviorPreservingRefactorRows: 1,
+        discriminatedSourceRows: 2,
+        frozenDeclaredRows: 2,
+        rejectedCircularCandidate: 'corpus-differential-behavior',
+        sameDispatchArmRows: 1,
+        state: 'frozen-no-election',
+      },
       limitation: 'individuation-rule-not-operational',
       state: 'unresolved',
     },
