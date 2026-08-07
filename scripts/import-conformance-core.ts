@@ -767,6 +767,7 @@ function createImportConformanceOracleAssurance(): ImportConformanceOracleAssura
     firstCaptureDefects: 'undetectable',
     formatDerivedProperties: 'required-not-implemented',
     ratchet: 'recorded-run-regression-only',
+    unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
   };
 }
 
