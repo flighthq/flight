@@ -1,44 +1,51 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-04
+updated: 2026-08-07
 ---
 
 # swf — tag coverage
 
 What every core SWF tag becomes in a `Scene2DDocument`, and for the ones that become nothing, why. The
-frequency column counts files in the 306-file Ruffle corpus described in
-[`fixture-evidence.md`](fixture-evidence.md); a dash means the tag does not appear there, not that it is
-rare in the wild.
+frequency column counts how many of the **301 readable** files in the 306-file Ruffle corpus described in
+[`fixture-evidence.md`](fixture-evidence.md) carry the tag; a dash means the tag does not appear there,
+not that it is rare in the wild. **Where a row names several tags, the column gives one figure per tag in
+the same order, separated by `/`** — a single figure on a multi-tag row would silently be one tag's count
+standing in for the row.
+
+Every figure below was re-measured at Flight commit `6aff889db`. That pass corrected three that were
+false — `DefineFontInfo` and `StartSound` carried counts belonging to neighbouring tags, and
+`RemoveObject2` was marked absent while appearing in twelve files — and split the grouped rows, which had
+been reporting the dominant tag's count as the row's.
 
 ## Carried into the document
 
 | Tag | Becomes | Files |
 | --- | --- | --- |
 | `End`, `ShowFrame` | Frame boundaries — every frame's display list | 301 |
-| `PlaceObject` … `PlaceObject4` | Placements: depth, character, name, transform, linkage, clip depth, colour transform, blend mode, filters | 80 |
-| `RemoveObject`, `RemoveObject2` | Display-list removal before the frame closes | — |
+| `PlaceObject` … `PlaceObject4` | Placements: depth, character, name, transform, linkage, clip depth, colour transform, blend mode, filters | — / 80 / 6 / — |
+| `RemoveObject`, `RemoveObject2` | Display-list removal before the frame closes | — / 12 |
 | `DefineSprite` | A nested `MovieClip` with its own playhead | 75 |
 | `DefineShape` … `DefineShape4` | `Shape` geometry: fills, gradients, strokes | 49 |
-| `DefineFont`, `DefineFont2`, `DefineFont3` | Index-keyed `GlyphOutlineSource` paths, advances, metrics, and embedded code tables | 38 / 18 |
-| `DefineFontInfo`, `2` | Legacy `DefineFont` codepoint table, composed over its outline source | 14 |
-| `DefineText`, `DefineText2` | Placed glyph outlines, scaled and coloured per record | 6 |
-| `DefineButton`, `DefineButton2` | The up state, as a one-frame timeline | 6 |
+| `DefineFont`, `DefineFont2`, `DefineFont3` | Index-keyed `GlyphOutlineSource` paths, advances, metrics, and embedded code tables | — / 38 / 18 |
+| `DefineFontInfo`, `2` | Legacy `DefineFont` codepoint table, composed over its outline source | — / — |
+| `DefineText`, `DefineText2` | Placed glyph outlines, scaled and coloured per record | 5 / 1 |
+| `DefineButton`, `DefineButton2` | The up state, as a one-frame timeline | — / 6 |
 | `DefineBits` + `JPEGTables` | A spliced JPEG payload on an asset reference | 1 |
-| `DefineBitsJPEG2` … `JPEG4` | An encoded payload on an asset reference, with extents | 1 |
-| `DefineBitsLossless`, `2` | Decoded pixels plus declared extents when deflate is registered | 5 |
+| `DefineBitsJPEG2` … `JPEG4` | An encoded payload on an asset reference, with extents | — / 1 / — |
+| `DefineBitsLossless`, `2` | Decoded pixels plus declared extents when deflate is registered | 3 / 2 |
 | `DefineVideoStream` | A `Sprite` over a sourceless `Texture`, with declared extents (payload opaque) | 1 |
 | `SetBackgroundColor` | `Scene2DDocument.backgroundColor` | 250 |
-| `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 |
+| `FrameLabel`, `DefineSceneAndFrameLabelData` | `TimelineSource.labels` | 125 / 56 |
 | `SymbolClass`, `ExportAssets` | Slot linkage identity, and the library `createScene2DSymbolFromSwf` instantiates from | 186 / 44 |
-| `DefineMorphShape`, `2` | Geometry and paint, driven by the placement ratio | 4 |
+| `DefineMorphShape`, `2` | Geometry and paint, driven by the placement ratio | 4 / 3 |
 | `DefineEditText` | A `RichText` node: the authored string (markup parsed), box, colour, and format | 49 |
 | `DoAction` (AVM1) | A frame script, when the block is *only* playback commands | 101 |
 | `DoInitAction` | A frame-1 script on the sprite it names, under the same recognition rule as `DoAction` | 11 |
 | `DoABC` (AVM2) | A frame script, by reading `addFrameScript` and the handler it names | 187 |
 | `DefineScalingGrid` | A `Scale9Shape` when the sprite it names is a wrapper around one shape; see below | — |
 | `DefineSound` | An `AudioResourceReference` on the document, tagged with the format's media type | 2 |
-| `StartSound`, `StartSound2` | A `TimelineAudioCue` on the frame that carries it | 2 / — |
-| `SoundStreamHead`, `2`, `SoundStreamBlock` | One concatenated payload plus a `TimelineStreamAudioCue` on the frame the stream starts | 2 |
+| `StartSound`, `StartSound2` | A `TimelineAudioCue` on the frame that carries it | — / — |
+| `SoundStreamHead`, `2`, `SoundStreamBlock` | One concatenated payload plus a `TimelineStreamAudioCue` on the frame the stream starts | — / 2 / — |
 
 ## Deliberately carried no further
 
@@ -49,10 +56,10 @@ These are read past. Each is a decision, not an oversight.
 | Everything else in a `DoABC` payload | Read, never run. Only `addFrameScript` and the playback calls its handlers make are recognized; all other bytecode is inert data. | — |
 | `DoAction` blocks that are not purely playback | Declined whole. Honouring the legible half of a script misrepresents what the frame does. | — |
 | `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry` | Authoring and player metadata with no scene content. | 250 / 155 / 122 / 122 / 27 / 60 / 13 |
-| `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 7 |
+| `DefineFontAlignZones`, `DefineFontName`, `CSMTextSettings` | Font hinting and naming metadata not used by the outline source. | 15 / 14 / 7 |
 | `DefineBinaryData` | Arbitrary embedded bytes with no display meaning. | 2 |
 | `VideoFrame` | Codec packets, not browser-playable files. Stage A carries the stream character and its graph placement but deliberately creates no decoder or pixel source. | 1 |
-| `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 |
+| `ImportAssets`, `2` | Names characters in *another* file, which a single-document import cannot resolve. | 1 / — |
 | `Protect`, `SetTabIndex`, `DefineButtonCxform` | Authoring and player metadata with no scene content. | — |
 | `DefineButtonSound` | **Unimplemented, and blocked on a design decision rather than on effort.** It attaches sounds to a button's *state transitions* — roll out, roll over, press, release. A button imports as a one-frame timeline of its up state, so there is no interaction state machine for those transitions to hang on, and a frame cue would be the wrong shape: these fire on pointer state, not on entering a frame. Carrying them needs an interaction-state concept this package cannot invent alone. | — |
 
