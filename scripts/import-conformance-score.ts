@@ -313,6 +313,7 @@ export interface ImportConformanceOracleAssurance {
   firstCaptureDefects: 'undetectable';
   formatDerivedProperties: 'required-not-implemented';
   ratchet: 'recorded-run-regression-only';
+  unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished';
 }
 
 export interface ImportConformanceScore {
@@ -434,7 +435,11 @@ export function parseImportConformanceScore(value: unknown, source = 'score'): I
 
 function parseOracleAssurance(value: unknown, path: string): ImportConformanceOracleAssurance {
   const assurance = expectRecord(value, path);
-  expectKeys(assurance, ['firstCaptureDefects', 'formatDerivedProperties', 'ratchet'], path);
+  expectKeys(
+    assurance,
+    ['firstCaptureDefects', 'formatDerivedProperties', 'ratchet', 'unmeasuredCapabilityCause'],
+    path,
+  );
   if (assurance.firstCaptureDefects !== 'undetectable') {
     fail(`${path}.firstCaptureDefects`, "must be exactly 'undetectable'");
   }
@@ -444,10 +449,14 @@ function parseOracleAssurance(value: unknown, path: string): ImportConformanceOr
   if (assurance.ratchet !== 'recorded-run-regression-only') {
     fail(`${path}.ratchet`, "must be exactly 'recorded-run-regression-only'");
   }
+  if (assurance.unmeasuredCapabilityCause !== 'no-fixture-vs-upstream-unreachable-not-distinguished') {
+    fail(`${path}.unmeasuredCapabilityCause`, "must be exactly 'no-fixture-vs-upstream-unreachable-not-distinguished'");
+  }
   return {
     firstCaptureDefects: assurance.firstCaptureDefects,
     formatDerivedProperties: assurance.formatDerivedProperties,
     ratchet: assurance.ratchet,
+    unmeasuredCapabilityCause: assurance.unmeasuredCapabilityCause,
   };
 }
 
