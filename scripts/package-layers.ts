@@ -221,9 +221,11 @@ export function getPackageLayerCoverageViolations(workspacePackageNames: Iterabl
 // core's runtime bundle light and its dependency graph portable; a guard module is separately importable
 // and `sideEffects: false`, so it is tree-shaken out of every build that does not import it. Only a caller
 // who deliberately asks for diagnostics pulls `@flighthq/log` in — and that caller asked. The manifest
-// allowance below is therefore paired with `getCoreGuardImportViolations`, which enforces that the import
-// appears ONLY in guard-module files; without that pairing this would silently widen into a blanket
-// permission. [chief ruling 2026-07-31]
+// allowance below is therefore paired with two checks: `getCoreGuardImportViolations` confines the log
+// import to guard-module files, and `getCoreGuardRuntimeImportViolations` prevents a core runtime path from
+// importing its own guard module. Without both halves this would silently widen into a blanket permission
+// or pull the otherwise-shakeable logger into the runtime graph. [chief ruling 2026-07-31; ratified
+// 2026-08-07 after the neighbor-package ruling was retracted]
 export const CORE_GUARD_LOG_DEPENDENCY = '@flighthq/log';
 
 // Whether `file` is a guard module — the only place a core package may import `@flighthq/log`.
@@ -244,7 +246,8 @@ export function getPackageLayerDependencyViolation(
   const dependencyLayer = packageLayerByName.get(dependencyName);
   if (packageLayer === undefined || dependencyLayer === undefined) return null;
   if (allowedDependencyLayers[packageLayer].has(dependencyLayer)) return null;
-  // File-scoped guard exception; `getCoreGuardImportViolations` keeps it honest.
+  // File-scoped guard exception: one check confines the log import to enable*Guards modules, and the other
+  // keeps those modules out of core runtime paths.
   if (packageLayer === 'core' && dependencyName === CORE_GUARD_LOG_DEPENDENCY) return null;
 
   return {
