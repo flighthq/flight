@@ -11,6 +11,35 @@ The checker splits its findings by who can act on them. **Failures** are unambig
 - `charter.md` is **required**. The other three are created by their producing stage.
 - **Every `packages/<name>` must have a cell**, checked from the `packages/` side and failing if absent. Adding a package therefore means scaffolding its cell in the same change (`node agents/packages/scaffold.mjs` writes the stubs). A blank charter is a valid flagpole — it marks where review content will land — but no cell at all makes the package invisible to every generator, which is how `quadbatch` kept seven consumers and no survey. The reverse is not checked: a cell with no package is a chartered-unbuilt, absorbed, external, or reserved cell, all legitimate and already classified by the generated index.
 
+### Supplementary evidence documents
+
+- **[2026-08-07] Charter-reachable supplementary evidence is permitted.** The preceding “No other names”
+  rule defines the four standard contract files; it does not prohibit a cell from carrying evidence
+  beside them. A supplementary document belongs to a cell only when that cell's `charter.md` acknowledges
+  it through a resolvable Markdown link or front-matter `./…md` pointer. The charter carries the cell's
+  blessed direction, so a review or assessment reference is a finding and a status reference is a
+  transient mention—not durable membership. The orphan gate mechanically enforces reachability from an
+  authority-bearing document; it does not machine-check that the authority is the cell charter. Charter
+  acknowledgement is therefore a stricter, currently unenforced cell-membership requirement. This ruling
+  adds no gate machinery. The four contract files remain required and retain the only uniform envelope;
+  supplementary evidence is not a fifth contract-file kind. A `docs:check` “not a contract file” label is
+  classification, not prohibition.
+
+  The existing evidence set demonstrates why the distinction is load-bearing:
+  [`geometry/out-parameter-sweep.md`](geometry/out-parameter-sweep.md),
+  [`host-electron/seam-audit.md`](host-electron/seam-audit.md),
+  [`interaction/interaction-state-design.md`](interaction/interaction-state-design.md),
+  [`scene2d-dom/public-lane-audit.md`](scene2d-dom/public-lane-audit.md),
+  [`skeleton2d/rig-model.md`](skeleton2d/rig-model.md),
+  [`swf/fixture-evidence.md`](swf/fixture-evidence.md),
+  [`swf/sha-pin-incidental-audit.md`](swf/sha-pin-incidental-audit.md), and
+  [`swf/tag-coverage.md`](swf/tag-coverage.md). Seven were already acknowledged by their cell charters;
+  the scene2d-dom public-lane audit is acknowledged by the companion charter repair. The SWF fixture
+  record is also license evidence: it commits provenance and a derived manifest instead of redistributing
+  the upstream binary. When eight files across several cells independently violate an apparent contract,
+  the contract is usually what is wrong, not eight authors. The defect here was the contract's silence
+  being read by a gate as prohibition.
+
 ## Front matter
 
 YAML front matter is the only machine-read surface. Keys below are required unless marked optional. Values that are dates use `YYYY-MM-DD`. `package` must equal `"@flighthq/<name>"` and match the folder. `crate` is `flighthq-<name>` (identity) or `null` for packages with no Rust crate (`scene2d-canvas`, `scene2d-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`).
