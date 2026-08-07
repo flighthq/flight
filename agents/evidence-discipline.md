@@ -117,7 +117,10 @@ stops an artifact claiming more than it has.
   selected by cost without every member being expensive** — "I confirmed the test can fail" costs
   seconds to check and is unverified only because nobody asks; it rode in on the same list as a 1.6 GB
   fetch and inherited its excuse. **A true general law is an excellent place for a cheap fix to hide**,
-  so split the list by *why* before accepting any of it as unfixable. **Mark each unbacked claim with a
+  so split the list by *why* before accepting any of it as unfixable. **Measured on the first register
+  built this way: three of six entries were cheap or trivially reproducible** — a higher free fraction
+  than the correlation alone would predict, which is the law's own falsification condition returning
+  data rather than agreement. **Mark each unbacked claim with a
   fixed greppable token rather than prose** — a sentence saying you considered backing lets nobody
   enumerate anything, and the point is not that a reader is warned but that the set becomes countable.
   Keep a register of merged-but-unbacked claims with class and commit: when a constraint lifts, that
