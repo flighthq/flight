@@ -10,10 +10,11 @@ probe (written, run, removed; repository left clean). What it changed:
 
 - The **diagnosis got stronger.** The probe confirmed every derivation loss claimed here and found more,
   including one copy that looks correct and is dead.
-- The **prescription got weaker.** `OrdinalTable` is rejected on facts from source. The wiring tier is
-  narrower than claimed, because the argument for its device-independence was invalid. There are four
-  ownership tiers, not three. The requirements model leaked consumer policy into producers and has been
-  rebuilt around facets.
+- The **prescription got weaker.** The wiring tier is narrower than claimed, because the argument for its
+  device-independence was invalid. There are four ownership tiers, not three. The requirements model
+  leaked consumer policy into producers and has been rebuilt around facets. `OrdinalTable` lost its
+  proposed member and was rejected, then re-admitted on a different one under a sharper criterion — see
+  [`OrdinalTable`](#ordinaltable--integer-token-formats-only).
 
 The narrow question is why a missing texture resolver breaks silently at runtime. The wider one this
 document exists to settle: **a registry is a value with a lifetime — which value, whose lifetime, and how
@@ -151,26 +152,49 @@ Earns a shape on **cardinality** — its key domain has exactly one member, so i
 `RegistryId` — and on **miss identity**: this is what makes the six borrowed-kind `registryMiss` sites
 report once, and what makes the 23 silent registries reportable at all.
 
-### Rejected: `OrdinalTable`
+### `OrdinalTable` — integer-token formats only
 
-Proposed as a dense array indexed into a closed vocabulary, on the strength of this comment in
-`RenderState.ts`:
+A dense array indexed by a token the wire format already carries as an integer. The admission criterion
+is exactly that, and it is narrow on purpose:
 
-> *"ShapeCommandKey is a closed union — the authored vocabulary is fixed by ShapeCommandRegistry."*
+> An `OrdinalTable` is warranted only where the **serialized token is already a small dense integer**. If
+> the stream carries a string and something must convert it to an index, the shape has bought nothing.
 
-Source says otherwise. `ShapeCommand.ts` declares the opposite of its only cited authority —
-*"May be extended via declaration merging"* — recorded streams store each command as a **string key**, the
-hot replay path reads that string and calls `getCanvasShapeCommand(state, key)`, and the public registrar
-accepts consumer-extended `keyof ShapeCommandRegistry` values. Indexing an array by a string needs a
-string→index map, a switch, or `indexOf`: the first restores the hash, the second centralizes a vocabulary
-that is meant to be extensible, the third is slower. There is no index-instead-of-hash win to collect.
+**Rejected member: shape commands.** This shape was originally proposed on the strength of a comment in
+`RenderState.ts` — *"ShapeCommandKey is a closed union — the authored vocabulary is fixed by
+ShapeCommandRegistry"* — and source contradicts it. `ShapeCommand.ts` says *"May be extended via
+declaration merging"*, recorded streams store each command as a **string key**, the hot replay path reads
+that string and calls `getCanvasShapeCommand(state, key)`, and the registrar accepts consumer-extended
+`keyof ShapeCommandRegistry` values. Indexing an array by a string needs a string→index map, a switch, or
+`indexOf`: the first restores the hash, the second centralizes a vocabulary meant to be extensible, the
+third is slower. Shape commands stay a `KeyedTable`.
 
-Its miss claim was also conflated: a known command with no handler is ordinary under-wiring, and a token
-outside the vocabulary is malformed input. Two conditions, not one policy.
+**Admitted member: SWF tag readers.** The framing loop derives `const code = tagHeader >> 6` — an integer,
+never a string — and the format's tag space is dense and closed at 94. Dispatch today is a chain of 55
+`code === TAG_*` comparisons, so an average tag walks roughly half of them; a dense array is one index.
+
+It earns the shape on three axes of the algebra, not one:
+
+- **Key domain.** Integer, dense, closed by the format. Categorically different from an open string domain.
+- **Lookup.** Direct index, no hash and no string, on a path that runs once per tag in the file.
+- **Miss semantics.** The bounds check *is* the unknown-tag path. TLV framing exists so a reader can skip
+  what it does not know, so out-of-range is correct behavior, not an error — while in-range-but-unregistered
+  is "this parser was not built with that feature," which is reportable and is exactly what a requirements
+  manifest wants to say. Those are genuinely two conditions with two responses, which is what the shape-
+  command case conflated.
+
+Honest margin: most of the win over today comes from being a table at all rather than an `else if` chain,
+and a `Map<number, …>` would capture much of it. What justifies a distinct shape is the key domain and the
+bounds-check-as-skip-path, not raw speed.
+
+**The cost this does not pay.** A tag table only tree-shakes if the readers are separately registered.
+`swfDocument.ts` is a single 2,522-line module whose dispatch statically references all 28 readers, so the
+table is a precondition for a lean parser, not the thing that delivers one. Restructuring that module is
+its own piece of work and is not proposed here.
 
 **Independent defect, worth fixing regardless of this proposal:** two comments in `@flighthq/types` assert
-opposite things about whether `ShapeCommandRegistry` is closed. One of them is wrong and both are load
--bearing for readers.
+opposite things about whether `ShapeCommandRegistry` is closed. One of them is wrong and both are
+load-bearing for readers.
 
 ### Rejected: `ChainTable`
 
@@ -246,10 +270,20 @@ export interface SlotTable<T> extends RegistryTableBase {
   value: T | null;
 }
 
+// Dense array indexed by a token the wire format already carries as an integer — a SWF tag id, never a
+// string command key. `vocabulary` maps ordinal to Kind so explain can name a slot; the hot path never
+// consults it, because the decoder already holds the integer. An out-of-range token is the format's
+// skip-what-you-do-not-know path, not a miss.
+export interface OrdinalTable<T> extends RegistryTableBase {
+  readonly entries: (T | null)[];
+  readonly shape: 'ordinal';
+  readonly vocabulary: readonly Kind[];
+}
+
 // Closed by design: entries are open forever, shapes are not. Plain data with a discriminant rather than
 // a method table, so a table lowers to a Haxe/Rust struct and the hot path reads its concrete member
 // without dispatch.
-export type RegistryTable<T> = KeyedTable<T> | SlotTable<T>;
+export type RegistryTable<T> = KeyedTable<T> | OrdinalTable<T> | SlotTable<T>;
 
 // A fact about content, named in the producer's own vocabulary — NEVER a registry id. A non-default
 // blend mode needs a BlendRealization on GL and no registry at all on Canvas, so only the consumer can
@@ -283,7 +317,14 @@ export function concatRegistryTable<T>(
   overlay: Readonly<RegistryTable<T>>,
 ): RegistryTable<T>;
 
+// Addresses any shape by Kind, which for an OrdinalTable means resolving through `vocabulary`. That
+// resolution is why this form is cold-only: a decoder already holds the integer and indexes directly.
 export function getRegistryTableEntry<T>(table: Readonly<RegistryTable<T>>, key: Kind): T | null;
+
+// The ordinal hot-path form. Out-of-range returns null, which is the format's skip path rather than a
+// miss — a caller distinguishing "unknown tag" from "unregistered reader" compares against
+// `vocabulary.length`.
+export function getOrdinalTableEntry<T>(table: Readonly<OrdinalTable<T>>, ordinal: number): T | null;
 
 // Clears `out`, then appends every bound key in sorted order, so two tables diff and compare equal
 // regardless of registration order. Sorting here rather than in storage is what lets the keyed shape
