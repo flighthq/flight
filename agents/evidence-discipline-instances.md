@@ -44,10 +44,48 @@ other work.*
   fix the audit produced — is outside it.** A count and its audit drift apart by default, and the
   drift hides because **both numbers are still true of something, just not of each other.**
 
+## Serving: the wrong answer is a true answer to the question you did not ask
+
+Seven, all from one day, all real, **all correct work.** Each names the question the answer was true
+of, and the question that was actually asked.
+
+- **filed — the compiler, and the cheapest demonstration of the law.** `tsc` offered *"Did you mean
+  `file`?"* for a missing `files`. **True answer to:** which declared name is nearest? **Wrong answer
+  to:** which field holds the corpus count? — that is `verifiedFixtureFiles`; `file` is the archive
+  name, a string. **The tool answered its own question perfectly.**
+- **filed — the net-zero diff.** An agent installed a peer's exact bytes, verified, then removed them:
+  net zero **in their tree.** **True answer to:** what did I add to my base? **Wrong answer to:** what
+  will this do to a tree that already holds that peer's work? — applied, it deleted 389 lines and 12
+  exported symbols from the schema owner. **Their description of their own parcel was accurate.**
+- **filed, relayed rather than verified here — two clean clones.** Two workspaces were sampled and the
+  sync fault called localised. **True answer to:** are these two clones clean? **Wrong answer to:** is
+  the fleet affected? — **and those two were the least able to exhibit a fault that needs a working
+  tree held across a sync.** Another agent had it twice.
+- **filed — the stamped figure.** *240/13/5* against *415/19/7* for one helper, both true, of
+  different commits. **True answer to:** what does this file say at the tree I hold? **Wrong answer
+  to:** what does it say? — **a question with no answer until a tree is named.**
+- **filed — `seed..base`.** A net-deletion detector treated any file created after the seed as the
+  sender's own iteration. **True when written; wrong once two agents write one post-seed file** —
+  which is exactly how the net-zero diff walked past it.
+- **filed — already up to date.** A rebase named a ref a clone could not reach, and the tool answered
+  *already up to date*. **True answer to:** is there anything here to rebase onto? **Wrong answer
+  to:** is this work rebased onto the landed tip?
+- **filed — the ledger gate baseline, and the one that is still live.** The append-only check compares
+  against `origin/develop`. **True answer to:** has anything *unlanded* mutated a guarded line?
+  **Wrong answer to:** has a guarded line been mutated? — **because once the mutation lands, the
+  baseline absorbs it and the gate goes permanently quiet.** A charter `Decisions` line is in that
+  state in the delivered base right now: removed rather than superseded, **and the gate will never
+  report it again.**
+
 ## Serving: preservation ordering
 
 - **filed — Inspect before `drop_caches`; capture before restore.** The mechanical form of the rule,
   kept because it is the case where the ordering is obvious and therefore the one to reason from.
+
+- **filed — Report an instrument's weakness before you fix it.** A fix is a state change and a finding
+  is a fact about the prior state, so **the fix destroys what the finding is about.** A repo where
+  every instrument was silently improved on discovery would look, from its history, **like a repo
+  whose instruments were always sound.**
 
 - **filed — A priority set on a wrong diagnosis is harder to undo than a claim, because work has
   already started against it.** A wrong statement is retracted in a sentence; **a wrong statement that
@@ -295,3 +333,21 @@ other work.*
   correct fact — **the over-compliance direction, caught in the act rather than reconstructed.** Near
   miss: it nearly serves *denominators*, but it is about the maintainer of a fact rather than about a
   population.
+
+## Serving: the test before quoting a number
+
+- **filed — Where nothing recomputes, no number.** Not a better warning — **delete the figure and
+  leave the recompute command.** A stamp warns without supplying a substitute, so it loses to any use
+  that needs a value: the reader's choice becomes *subtract with a known-stale number* or *say
+  nothing*, and **the annotated figure is what makes the wrong option available.** One stamped figure
+  was quoted as live two commits later **by the reader who had ruled on the stamp.**
+- **filed — An instrument's scope must be derived, not chosen — its population, not only its
+  vocabulary.** A gate built to catch stale numbers took its shape list from the grammar and its
+  *file* list from what was in front of its author, **so the instrument inherited the very bias it
+  existed to remove**, and missed a consumer contract understating coverage by roughly half.
+- **filed — Quote the source line rather than restating the number.** A quoted figure carries its own
+  tree; **a restated one is a new claim with nothing behind it, and cannot be silently reunited with a
+  different denominator in passing.**
+- **filed — Quantities with different meanings cannot be compared for direction**; **a tally is
+  evidence about how often you looked, a mechanism about what must be true**; and **a prediction
+  asserts a base rate the way a ratio asserts a denominator** — both need the population stated.

@@ -36,10 +36,8 @@ payload. Every instance in this section derives from that in one step.
 
 **Elevated instance — the repo you can reach is not the repo the claim is about.** Say it in those
 words; the sophisticated version did not save anyone. **Five readers stated true, exact, checkable
-numbers about trees that were not the one under discussion — all on the same day, several while
-actively hunting that exact failure.** It is elevated because it recurred more than any other
-instance, it defeats the checks people actually run, and its remedy is one question rather than a
-technique: *which tree is this number about?*
+numbers about trees that were not the one under discussion, several while actively hunting that
+failure.** Remedy is one question, not a technique: *which tree is this number about?*
 
 **The same law applied to EXPLANATIONS: a mechanism constructed to fit an observation always fits
 it.** This is the self-diffing generator one level up — **an explanation built from the observation
@@ -51,15 +49,25 @@ did not produce.**
 The pressure runs the other way — **an unexplained fact reads as unfinished, and the only material
 available to close it is the observation itself** — and that feeling is the whole defect.
 
+**The adversarial twin: the wrong answer is a TRUE answer to the question you did not ask.** Not
+false — **misaddressed.** Checking whether it is true never finds it, because **it verifies as true
+every time: it is true of the question it actually answers.** ⇒ **Evidence is about whatever QUESTION
+produced it, and a question is easier to substitute than a producer, because nobody writes the
+question down.**
+**The only check that works: before accepting an answer, restate the question it actually answers,
+and compare that restatement to the question you asked.** If they differ the answer is adjacent, and
+**no amount of re-verifying will surface it.**
+**What this does not license:** rejecting an answer for being confident or for being precise. **The
+instances behind it were all correct work** — the defect is in the addressing, so **the remedy is a
+restatement, not a suspicion.** The companion carries seven, of which the sharpest pair is **a
+compiler hint and a CI gate — the two artifacts a reader is least likely to interrogate**, both
+answering adjacent questions with total confidence.
+
 ## Preservation ordering — *when*
 
-Order competing actions by how much they destroy. Destructive last.
-
-**Elevated instance — report an instrument's weakness before you fix it.** A fix is a state change
-and a finding is a fact about the prior state, so **the fix destroys what the finding is about.** A
-repo where every instrument was silently improved on discovery would look, from its history, like a
-repo whose instruments were always sound. Composed with the section above: **audit before you report
-the count; report the weakness before you fix it.**
+Order competing actions by how much they destroy. Destructive last. **Audit before you report the
+count; report the weakness before you fix it; and dispatching is destructive, so verify a diagnosis
+before it becomes a priority.** Instances in the companion.
 
 ## Structure over convention — *how to enforce*
 
@@ -132,14 +140,11 @@ the companion under this heading.
 entry or two.** A count with no stated individuation rule is not a measurement, it is a tally — and
 unlike a missing member, **it cannot be closed by finding more.** The tell costs one question, asked
 of the artifact rather than of its contents: *what would make these one entry instead of two?* If
-nobody can answer, there is no denominator yet. One capability list split some format versions into
-separate entries and collapsed others by no stated rule, and **a whole day of auditing its members
-never reached it, because the question is about the set and not the rows.** Demand three properties
-— mechanically evaluable, invariant under
-behaviour-preserving refactor, and of a grain the consumer would accept. **Mechanical evaluability is
-necessary and not sufficient:** one candidate rule ran cleanly and still moved the total from 80 to
-77 when an `if`-chain became an equivalent `Map`, and **a rule whose count moves when only the source
-style moves is measuring the source, not the thing.**
+nobody can answer, there is no denominator yet — **the question is about the set, not the rows**,
+which is why auditing members never reaches it. Demand three properties: **mechanically evaluable,
+invariant under behaviour-preserving refactor, and of a grain the consumer would accept.**
+**Mechanical evaluability is necessary and not sufficient** — the companion carries the rule that ran
+cleanly and still moved a total when only the source style moved.
 
 **And name the population in the output, in words.** "N of 82 importer-declared capabilities", never
 a bare "N of 82" and never *total* unqualified. **A count you produced is a denominator over whatever
@@ -149,22 +154,6 @@ measurement's population is defined by the consumer, not by the corpus.**
 
 ## The test before quoting a number
 
-Not a fourth rule — the check you run when a number is about to do work in an argument.
-
-- **Where nothing recomputes, no number.** Not a better warning — **delete the figure and leave the
-  recompute command.** A stamp warns without supplying a substitute, so it loses to any use that needs
-  a value: the reader's choice becomes *subtract with a known-stale number* or *say nothing*, and the
-  annotated figure is what makes the wrong option available. **Stamped-historical is the rule violated
-  with a disclaimer attached.**
-- **An instrument's scope must be derived, not chosen — its population, not only its vocabulary.** A
-  gate built to catch stale numbers took its shape list from the grammar and its *file* list from what
-  was in front of its author, **so the instrument inherited the very bias it existed to remove.**
-- **Quote the source line rather than restating the number.** A quoted figure carries its own tree and
-  is checkable against its source; a restated one is a new claim with nothing behind it, **and cannot
-  be silently reunited with a different denominator in passing.**
-- **Quantities with different meanings cannot be compared for direction.** Three counts moving "the
-  same way" is not a pattern if the three measure different things.
-- **A tally is evidence about how often you looked; a mechanism is evidence about what must be true.**
-  Different kinds of claim, not different strengths of one.
-- **A prediction asserts a base rate the way a ratio asserts a denominator.** Both are form-level
-  claims and both need the population stated.
+Not a fourth rule — the checks you run when a number is about to do work in an argument. **Quote the
+source line rather than restating it; where nothing recomputes, no number; derive an instrument's
+scope rather than choosing it.** The companion carries these with their instances.
