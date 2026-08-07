@@ -120,7 +120,24 @@ reads as covered.
 `swf.fill.bitmap`, which is **not** in this table. Do not read a shape row as "everything in that tag
 survived".
 
-**15 of 80 declared capabilities have trustworthy silence.** Every other one is **not yet wired**, so
+**Three numbers, and only the third is what a scoreboard may count.** Stating one would overstate the
+other two.
+
+| Level | Count | Meaning |
+| --- | --- | --- |
+| Wired | **16 of 80** | every loss path for the capability reports |
+| — and fire-proven | **10 of 80** | every one of those paths has a test proving it fires |
+| — and silence-proven | **1 of 80** | `swf.placement.filter-list` also has a test proving it stays quiet when nothing is lost |
+
+**Only the fire-proven set may be counted as instrumented.** Six capabilities are wired but carry an
+untested loss path — `swf.placement.clip-depth`, `swf.axis.sound-format-non-mp3`,
+`swf.bitmap.define-bits-jpeg-tables`, and the three `swf.font.define-font*` ids — and a wire nobody has
+seen fire is a gate nobody has seen fail. They are listed above because the wiring is real; they are
+excluded from the countable set because the proof is not.
+
+This gap was found by measuring the tests against the wires rather than by trusting an earlier claim of
+mine that every wire was fire-tested. That claim was true of the batch it was made about and false across
+the whole set. Every other one is **not yet wired**, so
 silence about it is uninformative today. This table grows as drop sites are wired; it is the list a
 consumer should read rather than assuming coverage, and the count is deliberately stated so a reader
 cannot mistake the table's existence for coverage.
