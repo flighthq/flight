@@ -22,7 +22,47 @@ describe('findOpenTypeUnicodeSubtable', () => {
     view.setUint16(cmap.offset + 6, 0);
     expect(findOpenTypeUnicodeSubtable(view, cmap.offset, cmap.length, font.byteLength)).toBe(-1);
   });
+
+  it('skips a wider-repertoire sub-table stored in a format this reader cannot read', () => {
+    // A real font is shaped exactly like this: a readable format 4 at rank 1 and a format 0 at rank 2.
+    // Ranking on encoding alone picks the format 0 and the whole font is refused, while a readable
+    // sub-table sits beside it. Built by hand rather than through the font helper, because the helper
+    // only ever writes formats this reader supports and so could never express the case.
+    const table = buildCmapWithTwoSubtables(0);
+    const view = new DataView(table.buffer);
+    const chosen = findOpenTypeUnicodeSubtable(view, 0, table.byteLength, table.byteLength);
+    expect(chosen).toBe(20);
+    expect(view.getUint16(chosen)).toBe(4);
+  });
+
+  it('still prefers the wider repertoire when that sub-table IS readable', () => {
+    // The mirror of the case above, and what stops the fix from degenerating into "always take rank 1":
+    // same layout, but the rank-2 sub-table is a format 12 rather than a format 0.
+    const table = buildCmapWithTwoSubtables(12);
+    const view = new DataView(table.buffer);
+    const chosen = findOpenTypeUnicodeSubtable(view, 0, table.byteLength, table.byteLength);
+    expect(chosen).toBe(24);
+    expect(view.getUint16(chosen)).toBe(12);
+  });
 });
+
+// A `cmap` carrying two Unicode sub-tables: platform 3 encoding 1 (rank 1) holding a format 4 at offset
+// 20, and platform 3 encoding 10 (rank 2) holding `widerFormat` at offset 24. Only the format words
+// matter to the chooser, so the sub-table bodies are left empty.
+function buildCmapWithTwoSubtables(widerFormat: number): Uint8Array {
+  const table = new Uint8Array(32);
+  const view = new DataView(table.buffer);
+  view.setUint16(2, 2);
+  view.setUint16(4, 3);
+  view.setUint16(6, 1);
+  view.setUint32(8, 20);
+  view.setUint16(12, 3);
+  view.setUint16(14, 10);
+  view.setUint32(16, 24);
+  view.setUint16(20, 4);
+  view.setUint16(24, widerFormat);
+  return table;
+}
 
 describe('rankOpenTypeUnicodeEncoding', () => {
   // Preferring the full-repertoire mapping is what keeps emoji and CJK extensions reachable; a BMP-only
