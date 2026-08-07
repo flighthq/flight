@@ -14,8 +14,17 @@
 //
 // Run `npm run instrumentation` to regenerate; `npm run instrumentation:check` (wired into `npm run
 // check`) fails if the committed artifact is stale or any named proof has gone missing.
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+// The loss family from `agents/packages/swf/loss-path-audit.md` whose audit covered this capability, or
+// `null` where none did. NULL IS A REAL ANSWER AND NOT A HOLE TO FILL: most rows below predate the
+// loss-path audit entirely, and inventing a family for them would manufacture exactly the audited-looking
+// coverage the audit exists to measure. THIS MAPPING IS HAND-MAINTAINED AND IS THE PART THAT DRIFTS —
+// nothing detects a new family failing to be recorded here.
+type SwfLossFamily = string | null;
 
 interface SwfInstrumentation {
   // Which audits have actually reached this capability. An audit certifies a population AT A MOMENT, and
@@ -24,6 +33,7 @@ interface SwfInstrumentation {
   audits: readonly SwfAudit[];
   fires: readonly string[];
   id: string;
+  lossFamily: SwfLossFamily;
   staysSilent: readonly string[];
 }
 
@@ -40,18 +50,21 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: ['reports a non-MP3 sound stream, whose blocks do not concatenate'],
     id: 'swf.axis.sound-format-non-mp3',
+    lossFamily: null,
     staysSilent: ['stays silent about an MP3 stream, whose blocks do concatenate'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
     id: 'swf.bitmap.define-bits-jpeg-3',
+    lossFamily: null,
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3'],
     id: 'swf.bitmap.define-bits-jpeg-4',
+    lossFamily: null,
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
@@ -61,6 +74,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports a legacy split JPEG with no tables in the file as a Drop',
     ],
     id: 'swf.bitmap.define-bits-jpeg-tables',
+    lossFamily: null,
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
@@ -70,6 +84,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2',
     ],
     id: 'swf.font.define-font',
+    lossFamily: 'F10 font character id reused',
     staysSilent: [
       'stays silent about a font whose character id is used once, so the entry carries information',
       'stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing',
@@ -83,18 +98,21 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
     ],
     id: 'swf.font.define-font-2',
+    lossFamily: 'F10 font character id reused',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
     id: 'swf.font.define-font-3',
+    lossFamily: 'F10 font character id reused',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a morph definition that does not decode, which otherwise leaves no trace at all'],
     id: 'swf.morph.define-morph-shape',
+    lossFamily: 'F1 morph definition undecodable',
     staysSilent: ['stays silent about a morph definition that decodes, so the drop entry carries information'],
   },
   {
@@ -108,6 +126,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload'],
     fires: ['reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on'],
     id: 'swf.morph.define-morph-shape-2',
+    lossFamily: 'F1 morph definition undecodable',
     staysSilent: ['stays silent when every path pair morphs, so the declined count carries information'],
   },
   {
@@ -117,6 +136,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports an advanced blend that had no node to carry it, which the appearance report alone holds',
     ],
     id: 'swf.placement.blend-mode',
+    lossFamily: 'F4 blend mode behind an unfinished filter list',
     staysSilent: [
       'stays silent when a declared blend mode is reachable, so the drop entry carries information',
       'stays silent when an advanced blend has a node to carry it, so the drop entry carries information',
@@ -126,6 +146,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
     id: 'swf.placement.clip-depth',
+    lossFamily: null,
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
   },
   {
@@ -135,6 +156,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports a gradient glow angle and distance it cannot represent, and stays silent without them',
     ],
     id: 'swf.placement.filter-list',
+    lossFamily: 'F8 appearance channel with no node',
     staysSilent: [
       'reports a blur pass count it cannot represent, and stays silent at one pass',
       'reports a gradient glow angle and distance it cannot represent, and stays silent without them',
@@ -149,12 +171,14 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was',
     ],
     id: 'swf.script.do-abc',
+    lossFamily: 'F5 ABC blob yielding no frame scripts',
     staysSilent: ['stays silent about a frame script it does obey, so the drop entry carries information'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['names the anonymous DoABC form separately, since the two are different capabilities'],
     id: 'swf.script.do-abc-anonymous',
+    lossFamily: 'F5 ABC blob yielding no frame scripts',
     staysSilent: ['stays silent about an anonymous DoABC it does obey, so the drop entry carries information'],
   },
   {
@@ -165,36 +189,42 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload'],
     fires: ['reports a frame script declined for carrying more than playback commands'],
     id: 'swf.script.do-action',
+    lossFamily: null,
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an init action declined the same way DoAction is, which it silently did not'],
     id: 'swf.script.do-init-action',
+    lossFamily: 'F12 init action declined without a crumb',
     staysSilent: ['stays silent about an init action it does obey, so the skip entry carries information'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
     id: 'swf.shape.define-shape',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-2',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-3',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-4',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
@@ -204,6 +234,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied',
     ],
     id: 'swf.text.define-edit-text',
+    lossFamily: 'F3 edit text unparseable',
     // Both wires on this capability now have their own silence proof. The font-name one was recorded as an
     // absent proof for want of a DefineFont2 that parses; the version-routing work produced one, so the
     // hole closed as a side effect of unrelated work rather than by trying harder at it.
@@ -216,36 +247,42 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: ['reports a static text body that does not compose, which the deferred pass would otherwise swallow'],
     id: 'swf.text.define-text',
+    lossFamily: 'F2 static text uncomposable',
     staysSilent: ['stays silent about a static text body that composes, so the drop entry carries information'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports an uncomposable body for DefineText2, not only the generation the wire was written on'],
     id: 'swf.text.define-text-2',
+    lossFamily: 'F2 static text uncomposable',
     staysSilent: ['stays silent about a DefineText2 body that composes, so the drop entry carries information'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports scene names as a Skip, since labels import and the named range has no subject'],
     id: 'swf.timeline.define-scene-and-frame-label-data',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['counts the children a sprite bounds union could not include, since the box survives smaller'],
     id: 'swf.timeline.define-sprite',
+    lossFamily: 'F7 sprite bounds union short',
     staysSilent: ['stays silent when every child of a sprite contributes its bounds'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
     id: 'swf.timeline.frame-label',
+    lossFamily: null,
     staysSilent: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure'],
     id: 'swf.video.video-frame',
+    lossFamily: null,
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
 ];
@@ -303,16 +340,73 @@ export function verifySwfInstrumentation(): string[] {
   return problems;
 }
 
+// The audited subject, AS IT WAS WHEN THE AUDIT HAPPENED — the git tree object of `packages/swf/src` at
+// the commit that landed this row's proof. A tree oid is already a content hash of the whole directory,
+// so this is git's own value rather than one invented here.
+//
+// WHY NOT HASH THE CURRENT SOURCE. A hash recomputed at generation time changes whenever ANY file in the
+// package changes, and the artifact regenerates automatically — so an unrelated edit would silently
+// restamp every audit as covering a subject nobody re-audited. That is the audit-drift shape with a
+// machine doing the drifting. Pinning to the audit's own commit makes the value stable and true: it
+// stops moving precisely because the audit stopped happening.
+function resolveSwfAuditSubject(commit: string): string | null {
+  try {
+    const tree = execFileSync('git', ['rev-parse', `${commit}:packages/swf/src`], { encoding: 'utf8' }).trim();
+    return tree === '' ? null : `git-tree:${tree}`;
+  } catch {
+    return null;
+  }
+}
+
+// The commit that introduced this row's first proof IS the moment the audit reached this capability.
+// Recovered from history rather than stamped at generation time: the generator's clock would claim every
+// audit happened at once, which is false.
+function resolveSwfAuditCommit(entry: Readonly<SwfInstrumentation>): { commit: string; date: string } | null {
+  const probe = entry.fires[0] ?? entry.staysSilent[0];
+  if (probe === undefined) return null;
+  try {
+    const line = execFileSync(
+      'git',
+      ['log', '-1', '--format=%H %aI', `-S${probe}`, '--', 'scripts/swf-instrumentation.ts'],
+      { encoding: 'utf8' },
+    ).trim();
+    if (line === '') return null;
+    const [commit, date] = line.split(' ');
+    return { commit, date };
+  } catch {
+    return null;
+  }
+}
+
+// `lossPath` is emitted ONLY where a recorded loss-family audit actually covered the capability. Where
+// none did it is null, and null is the true answer: most rows predate the loss-path audit, and a
+// fabricated identity here would be indistinguishable from a real one to every consumer downstream.
+function buildSwfLossPath(entry: Readonly<SwfInstrumentation>): Record<string, unknown> | null {
+  if (entry.lossFamily === null) return null;
+  const audit = resolveSwfAuditCommit(entry);
+  if (audit === null) return null;
+  const subjectHash = resolveSwfAuditSubject(audit.commit);
+  if (subjectHash === null) return null;
+  return {
+    auditId: `swf-loss-${createHash('sha256').update(`builder2|${entry.id}|${subjectHash}`).digest('hex').slice(0, 16)}`,
+    auditedAt: audit.date,
+    auditor: 'builder2',
+    family: entry.lossFamily,
+    subjectHash,
+  };
+}
+
 export function formatSwfInstrumentationJson(): string {
   // `count` is deliberately absent: there is no single count. A fire proof licenses "silence here means
   // nothing was lost"; a silence proof licenses "a firing here means something really was lost". They
   // underwrite different outcomes, so one number would have to pick one and hide the other.
   return `${JSON.stringify(
     {
-      capabilities: INSTRUMENTATION,
+      capabilities: INSTRUMENTATION.map((entry) => ({ ...entry, lossPath: buildSwfLossPath(entry) })),
       fireProven: INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length,
       payloadAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('payload')).length,
       scopeAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('scope')).length,
+      lossPathAudited: INSTRUMENTATION.filter((entry) => entry.lossFamily !== null).length,
       silenceProven: INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length,
     },
     null,
