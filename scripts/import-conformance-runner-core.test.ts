@@ -82,7 +82,7 @@ function makeFixture(reference: string): ImportConformanceIndexedFixture {
 
 function makeResult(fixture: Readonly<ImportConformanceIndexedFixture>): ImportConformanceResult {
   return {
-    capabilityOutcomes: [{ id: 'swf.fill.solid', outcome: 'passed' }],
+    capabilityOutcomes: [{ diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' }],
     outcome: 'passed',
     reference: fixture.reference,
     sourceHash: fixture.sourceHash,

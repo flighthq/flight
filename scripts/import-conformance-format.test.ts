@@ -28,7 +28,7 @@ describe('formatImportConformanceScore', () => {
       new Set([0]),
       [
         {
-          capabilityOutcomes: [{ id: 'swf.fill.solid', outcome: 'passed' }],
+          capabilityOutcomes: [{ diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' }],
           outcome: 'passed',
           reference: 'fixture.swf',
           sourceHash: hash('fixture'),
@@ -43,15 +43,20 @@ describe('formatImportConformanceScore', () => {
           },
         ],
       ]),
-      'measured',
+      new Map([
+        ['swf.fill.solid', true],
+        ['swf.text.define-text', false],
+      ]),
       hash('importer'),
       PROVENANCE,
     );
 
     expect(formatImportConformanceScore(score)).toContain(
       'exercised-of-total: 1/2\n' +
-        'instrumented-of-exercised: 1/1\n' +
-        'pass-of-instrumented: 1/1\n' +
+        'fire-proven-of-exercised: 1/1\n' +
+        'pass-of-fire-proven: 1/1\n' +
+        'silence-proven-of-exercised: 1/1\n' +
+        'pass-of-silence-proven: 1/1\n' +
         'witness-depth: 1 single-witness/1 exercised\n',
     );
   });
@@ -67,6 +72,8 @@ describe('formatImportConformanceScore', () => {
   it('does not reintroduce pass over exercised as an alias', () => {
     const source = readFileSync(join(import.meta.dirname, 'import-conformance-format.ts'), 'utf8');
     expect(source).not.toContain('pass-of-exercised');
+    expect(source).not.toContain('pass-of-instrumented');
+    expect(source).not.toContain('instrumented-of-exercised');
   });
 });
 
