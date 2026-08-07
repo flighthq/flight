@@ -608,12 +608,15 @@ of, and the question that was actually asked.
   all; a relational-loss detector cannot run without material** ⇒ **so a format whose losses are
   relational needs its corpus EARLIER in the arc, and that is a plan input rather than a discovery.**
 
-- **filed — A loss TAXONOMY transfers no better than an instrument, and importing one imports its
-  conflations.** Where an importer is deliberately **not** a runtime, **lost content and lost
-  uninterpreted data come apart** — two kinds that a runtime-shaped format had merged into one. ⇒
-  **Carrying the earlier categories across would have imported a conflation the new format does not
-  have**, and the resulting counts would have been unarguable and meaningless. **Further evidence for
-  unit-first: the categories are part of the unit question, not a consequence of it.**
+- **filed — PURPOSE → { UNITS, LOSS KINDS }: the categories are the unit question's SIBLING, not its
+  child.** Where an importer is deliberately **not** a runtime, **lost content and lost uninterpreted
+  data come apart** — but that split follows from **what the importer is FOR**, and **no unit choice
+  produces it.** ⇒ **Both descend from purpose and neither derives from the other, so ask "what is
+  this for" before "what is the unit", and read the loss kinds off the first.**
+  ★★ **And it explains the earlier format in hindsight, which is what makes it more than an ordering:
+  a tag stream's purpose is to be REPLAYED, so content-loss and data-loss genuinely ARE one kind
+  there.** ⇒ **That conflation was CORRECT in its own frame and wrong only when carried** — **so
+  examining the categories could never have caught it; only asking purpose separates them.**
 
 - **filed — UNIT, THEN TRANSFER, THEN NUMBERS — and the ordering exists to protect a transfer from
   its own SUCCESS.** ⇒ **An instrument that transfers mechanically can still produce a number over
