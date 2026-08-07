@@ -44,13 +44,22 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B | as-reported |
 | 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
-| 7 | `untested-instrument` | — | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree |
+| 7 | `untested-instrument` | `d77b5c2fa` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree |
 
 **Row 7 carries no magnitudes, deliberately.** It first read *415 lines, 19 functions, 7 dependents*;
-a reader at the integrated tree reported *240, 13-of-which-3-exported, 5* as a correction; and the
-author then measured every commit that touched the file and found **both sets exactly right — the
-second at their first commit, the first at their HEAD three commits later.** Neither had mis-measured.
-**Nobody could disagree, because the row carried no tree identity for them to disagree about.**
+a reader at the integrated tree reported *240, 13-of-which-3-exported, 5*; and the author then measured
+every commit that touched the file and found **both sets exactly right, at different commits.** Neither
+had mis-measured, and **nobody could disagree, because the row carried no tree identity for them to
+disagree about.**
+
+**But the two readings are not equally in-population, and saying "both correct at their own commits"
+was too generous.** Exactly one commit in the merged tree has ever touched that file; the author's
+three further commits are **not missing from a stale tree, they are unlanded** — legitimately, from an
+arc not yet offered. **This register describes the merged tree, so the merged-tree reading is the
+correct one here and the other is a true reading of a tree the register is not about.** If a row ever
+carries a magnitude again it must be the merged-tree one, stamped **tree and blob** — the blob pins the
+file even when a later commit has identical content, and it is what makes two readings comparable at
+all.
 
 Two things came out of that, and both outlive the row. **The magnitudes were never the entry** — the
 finding is that a helper several test files depend on is itself unchecked, so a fault in it is agreed
