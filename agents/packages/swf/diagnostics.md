@@ -102,11 +102,12 @@ Wired so far, and therefore safe to read silence for:
 | `swf.timeline.define-scene-and-frame-label-data` | `swf.scene-names` |
 | `swf.script.do-action` | `swf.frame-script-declined` |
 | `swf.font.define-font`, `-2`, `-3` | `swf.font-glyph-outline` (a glyph whose outline does not decode) |
+| `swf.placement.filter-list` | `swf.filter-field-unrepresentable` (a gradient glow's angle, distance, or placement) |
 
 `swf.placement.clip-depth` has a second path: `swf.nested-mask-collapsed`, for the outer of two masks
 covering one instance, which is not applied at all.
 
-**14 of 80 declared capabilities have trustworthy silence.** Every other one is **not yet wired**, so
+**15 of 80 declared capabilities have trustworthy silence.** Every other one is **not yet wired**, so
 silence about it is uninformative today. This table grows as drop sites are wired; it is the list a
 consumer should read rather than assuming coverage, and the count is deliberately stated so a reader
 cannot mistake the table's existence for coverage.

@@ -1326,7 +1326,12 @@ function transformSwfRectangle(bounds: Readonly<SwfRectangle>, matrix: Readonly<
   return { height: maxY - y, width: maxX - x, x, y };
 }
 
-function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>, hasExtendedFlags: boolean): void {
+function readPlaceObject(
+  body: SwfReader,
+  placements: Map<number, SwfPlacement>,
+  hasExtendedFlags: boolean,
+  diagnostics: ImportDiagnostic[] | undefined,
+): void {
   const flags = body.readUint8();
   const extendedFlags = hasExtendedFlags ? body.readUint8() : 0;
   const depth = body.readUint16();
@@ -1352,7 +1357,7 @@ function readPlaceObject(body: SwfReader, placements: Map<number, SwfPlacement>,
   const hasFilterList = (extendedFlags & 0x01) !== 0;
   const readEffects: RenderEffect[] = [];
   const readFilterAdjustments: Adjustment[] = [];
-  const filterListComplete = !hasFilterList || readSwfFilterList(body, readEffects, readFilterAdjustments);
+  const filterListComplete = !hasFilterList || readSwfFilterList(body, readEffects, readFilterAdjustments, diagnostics);
   const hasBlendMode = (extendedFlags & 0x02) !== 0 && filterListComplete;
   const blendModeValue = hasBlendMode ? body.readUint8() : 0;
 
@@ -1723,7 +1728,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     } else if (code === TAG_PLACE_OBJECT) {
       readLegacyPlaceObject(body, placements);
     } else if (code === TAG_PLACE_OBJECT_2) {
-      readPlaceObject(body, placements, false);
+      readPlaceObject(body, placements, false, state.diagnostics);
     } else if (code === TAG_REMOVE_OBJECT) {
       readLegacyRemoveObject(body, placements);
     } else if (code === TAG_REMOVE_OBJECT_2) {
@@ -1764,7 +1769,7 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       }
       state.sprites.set(spriteId, spriteTimeline);
     } else if (code === TAG_PLACE_OBJECT_3 || code === TAG_PLACE_OBJECT_4) {
-      readPlaceObject(body, placements, true);
+      readPlaceObject(body, placements, true, state.diagnostics);
     } else if (code === TAG_START_SOUND) {
       readSwfStartSound(body, state, cues, frames.length + 1);
     } else if (code === TAG_START_SOUND_2) {
