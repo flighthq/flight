@@ -39,9 +39,8 @@ Its sharpest case is the self-report. **A self-report is evidence about the self
 what it carried** — so to get evidence about the payload, you need something that looked at the
 payload. Every instance in this section derives from that in one step.
 
-**Elevated instance — the repo you can reach is not the repo the claim is about.** Say it in those
-words; the sophisticated version saved nobody. **Five readers stated true, exact numbers about trees
-that were not the one under discussion.** One question, not a technique: *which tree is this about?*
+**Elevated instance — the repo you can reach is not the repo the claim is about.** One question, not
+a technique: *which tree is this about?* Worked in the companion, with six more.
 
 **The same law applied to EXPLANATIONS: a mechanism constructed to fit an observation always fits
 it.** This is the self-diffing generator one level up — **an explanation built from the observation
