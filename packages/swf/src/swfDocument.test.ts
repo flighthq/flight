@@ -2577,6 +2577,24 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics).toEqual([]);
   });
 
+  it('reports an unreadable shape body as a Recover, since the placeholder still places and sizes', () => {
+    // A body the decoder cannot read costs that character's drawing and nothing else, so the honest
+    // outcome is Recover: the document still imports and the character still has its authored bounds.
+    const file = createSwf([
+      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(1), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const recovered = diagnostics.filter((entry) => entry.kind === 'swf.shape-body-unreadable');
+    expect(recovered).toHaveLength(1);
+    expect(recovered[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(recovered[0].detail).toEqual({ characterId: 1, version: 1 });
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {

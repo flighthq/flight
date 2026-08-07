@@ -653,7 +653,7 @@ function populateSwfTimelineNode(
 
   for (const frame of timeline.frames) {
     const ordered = [...frame.values()].sort(compareSwfPlacementDepth);
-    frames.push(buildSwfFrameEntries(ordered, parsed, clips));
+    frames.push(buildSwfFrameEntries(ordered, parsed, clips, state.diagnostics));
     for (const placement of ordered) {
       const key = createSwfInstanceKey(placement);
       if (nodes.has(key)) continue;
@@ -871,12 +871,29 @@ function buildSwfFrameEntries(
   ordered: readonly Readonly<SwfPlacement>[],
   parsed: Readonly<SwfTagResult>,
   clips: Map<Readonly<SwfPlacement>, Map<Readonly<SwfPlacement>, ClipRegion | null>>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): SwfFrameEntry[] {
   const entries: SwfFrameEntry[] = [];
   for (const placement of ordered) {
     if (placement.clipDepth > 0) continue;
     const mask = resolveSwfPlacementMask(ordered, placement);
-    entries.push({ clip: mask === null ? null : resolveSwfMaskClip(mask, placement, parsed, clips), placement });
+    const clip = mask === null ? null : resolveSwfMaskClip(mask, placement, parsed, clips);
+    // A mask that resolves to no region leaves its covered instance UNCLIPPED, which is a visible
+    // difference and not a no-op: the mask character had no decoded geometry, so imposing nothing was
+    // the honest choice over imposing a wrong clip. Recover rather than Drop — the instance still draws.
+    if (mask !== null && clip === null) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'swf.mask-without-geometry',
+        'buildSwfFrameEntries',
+        {
+          depth: placement.depth,
+          maskCharacterId: mask.characterId,
+        },
+      );
+    }
+    entries.push({ clip, placement });
   }
   return entries;
 }
@@ -1802,6 +1819,20 @@ function readSwfButtonDefinition(body: Readonly<SwfReader>, state: SwfParseState
     const matrix = readSwfMatrix(reader);
     const colorTransform = version === 2 ? readSwfColorTransform(reader) : null;
     if (!reader.valid) return;
+    if ((flags & BUTTON_STATE_UP) === 0 && characterId !== 0) {
+      // A document is a still scene, so only the up state is held. The other states are a real capability
+      // gap rather than data this decoder could not read, which is why they Skip rather than Drop.
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'swf.button-interaction-state',
+        'readSwfButtonDefinition',
+        {
+          characterId,
+          flags,
+        },
+      );
+    }
     if ((flags & BUTTON_STATE_UP) !== 0 && characterId !== 0) {
       placements.set(depth, {
         advancedBlendMode: null,
@@ -2015,7 +2046,22 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
   const shape = createSwfShape(reader, version, (fillCharacterId, repeat, smoothed) =>
     acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
   );
-  if (shape !== null) state.shapes.set(characterId, shape);
+  if (shape === null) {
+    // Recover rather than Drop: the character survives as the bounded placeholder it was before any
+    // geometry existed, so the document still places and sizes it — only the drawing is missing.
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'swf.shape-body-unreadable',
+      'readSwfShapeDefinition',
+      {
+        characterId,
+        version,
+      },
+    );
+    return;
+  }
+  state.shapes.set(characterId, shape);
 }
 
 // Decodes a morph definition's geometry and paint on a reader of its own, so a body this decoder cannot
