@@ -2697,6 +2697,56 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(collapsed[0].severity).toBe(ImportDiagnosticSeverity.Skip);
     expect(collapsed[0].detail?.capability).toBe('swf.placement.clip-depth');
     expect(collapsed[0].detail?.covering).toBe(2);
+
+    // The masks name characters with no decoded geometry, so the same fixture exercises clip-depth's
+    // other loss path. Both paths must be proven for the capability to count as instrumented.
+    const unmasked = diagnostics.filter((entry) => entry.kind === 'swf.mask-without-geometry');
+    expect(unmasked.length).toBeGreaterThan(0);
+    expect(unmasked[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(unmasked[0].detail?.capability).toBe('swf.placement.clip-depth');
+  });
+
+  it('reports a button interaction state other than up, which a still scene does not hold', () => {
+    const file = createSwf([
+      createTag(
+        TAG_DEFINE_BUTTON_2,
+        joinBytes(
+          uint16(12),
+          new Uint8Array([0, 0, 0]),
+          new Uint8Array([0x02]),
+          uint16(7),
+          uint16(1),
+          createRectangle(0, 0, 0, 0),
+          new Uint8Array([0, 0]),
+        ),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const skipped = diagnostics.filter((entry) => entry.kind === 'swf.button-interaction-state');
+    expect(skipped.length).toBeGreaterThan(0);
+    expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+  });
+
+  it('reports a legacy split JPEG whose halves will not splice into a readable image', () => {
+    const file = createSwf([
+      createTag(TAG_JPEG_TABLES, new Uint8Array([0xff, 0xd8, 0xff, 0xd9])),
+      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), new Uint8Array([0x01, 0x02, 0x03, 0x04]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-tables-unsplittable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.bitmap.define-bits-jpeg-tables', characterId: 9 });
   });
 
   it('reports a font whose glyph table does not decode, which costs the whole font not one glyph', () => {
@@ -2715,6 +2765,58 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped).toHaveLength(1);
     expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(dropped[0].detail).toEqual({ capability: 'swf.font.define-font-2', characterId: 4 });
+  });
+
+  it('reports a non-MP3 sound stream, whose blocks do not concatenate', () => {
+    // Stream format 1 (ADPCM) in the high nibble of the stream flags, with a non-zero samples-per-frame
+    // so the header actually starts a stream. Only MP3 blocks concatenate, so the rest are a real loss.
+    const file = createSwf([
+      createTag(18, joinBytes(new Uint8Array([0, 1 << 4]), uint16(1152))),
+      createTag(19, new Uint8Array([1, 2, 3, 4])),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const skipped = diagnostics.filter((entry) => entry.kind === 'swf.stream-sound-format');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(skipped[0].detail).toEqual({ capability: 'swf.axis.sound-format-non-mp3', format: 1 });
+  });
+
+  it('reports one glyph whose outline does not decode, which costs that glyph and not the font', () => {
+    // Two glyphs: the first is a real square, the second is a body the shape reader cannot read. The
+    // font still imports — that is the point of the Drop rather than a whole-font failure.
+    const glyph = new ShapeWriter();
+    glyph.writeStyleBits(1, 0);
+    glyph.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    glyph.writeStraightEdge(256, 0);
+    glyph.writeStraightEdge(0, 256);
+    glyph.writeStraightEdge(-256, 0);
+    glyph.writeStraightEdge(0, -256);
+    glyph.writeEndShape();
+    const good = glyph.toBytes();
+    const bad = new Uint8Array([0xff]);
+    const offsets = joinBytes(uint16(6), uint16(6 + good.length), uint16(6 + good.length + bad.length));
+    const file = createSwf([
+      createTag(
+        TAG_DEFINE_FONT_2,
+        joinBytes(uint16(4), new Uint8Array([0, 0, 0]), uint16(2), offsets, good, bad, new Uint8Array([0x41, 0x42])),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-glyph-outline');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail?.capability).toBe('swf.font.define-font-2');
+    expect(dropped[0].detail?.lostGlyphs).toBe(1);
   });
 
   it('names the symbol a caller asked for that the file does not export', () => {

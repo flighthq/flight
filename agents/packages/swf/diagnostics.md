@@ -126,18 +126,22 @@ other two.
 | Level | Count | Meaning |
 | --- | --- | --- |
 | Wired | **16 of 80** | every loss path for the capability reports |
-| — and fire-proven | **10 of 80** | every one of those paths has a test proving it fires |
+| — and fire-proven | **16 of 80** | every one of those paths has a test proving it fires |
 | — and silence-proven | **1 of 80** | `swf.placement.filter-list` also has a test proving it stays quiet when nothing is lost |
 
-**Only the fire-proven set may be counted as instrumented.** Six capabilities are wired but carry an
-untested loss path — `swf.placement.clip-depth`, `swf.axis.sound-format-non-mp3`,
-`swf.bitmap.define-bits-jpeg-tables`, and the three `swf.font.define-font*` ids — and a wire nobody has
-seen fire is a gate nobody has seen fail. They are listed above because the wiring is real; they are
-excluded from the countable set because the proof is not.
+**Only the fire-proven set may be counted as instrumented**, and it now equals the wired set: all
+fourteen loss paths behind those sixteen capabilities have a test that fires them. A wire nobody has seen
+fire is a gate nobody has seen fail.
 
-This gap was found by measuring the tests against the wires rather than by trusting an earlier claim of
-mine that every wire was fire-tested. That claim was true of the batch it was made about and false across
-the whole set. Every other one is **not yet wired**, so
+The two numbers were 16 and 10 an hour before this, and the gap was found by measuring the tests against
+the wires rather than by trusting an earlier claim of mine that every wire was fire-tested — a claim that
+was true of the batch it was made about and false across the whole set. Re-measure rather than trusting
+this paragraph too.
+
+**The silence column is the remaining honest weakness.** Fifteen of the sixteen have no test proving they
+stay quiet when nothing is lost, so a wire that fired on every import would still pass every proof above.
+That is the same defect one level down, and it is why the silence half belongs in the requirement rather
+than in an author's judgement. Every other one is **not yet wired**, so
 silence about it is uninformative today. This table grows as drop sites are wired; it is the list a
 consumer should read rather than assuming coverage, and the count is deliberately stated so a reader
 cannot mistake the table's existence for coverage.
