@@ -53,9 +53,13 @@
     "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
+  "peerDependencies": {
+    "@webgpu/types": "^0.1.70"
+  },
   "devDependencies": {
     "@flighthq/mesh": "*",
     "@flighthq/particleemitter": "*",
+    "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGPU 3D scene renderer",

@@ -44,7 +44,11 @@
     "@flighthq/render-wgpu": "*",
     "@flighthq/types": "*"
   },
+  "peerDependencies": {
+    "@webgpu/types": "^0.1.70"
+  },
   "devDependencies": {
+    "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGPU shader recipes for render effects (substrate-agnostic post-process pipeline)",
