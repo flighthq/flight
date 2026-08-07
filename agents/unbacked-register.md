@@ -126,6 +126,7 @@ what this entry exists to prevent.**
 | 5 | A merge-strategy warning about one agent's instrument, copied to two more | **One line each: `NOT MINE`** | the readers, once each, cheaply |
 | 6 | A parcel addressed to one builder in the second person, copied upward | **A full read** before the reader established it was not theirs | the reader, at full cost |
 | 7 | A parcel addressed to one builder in the second person, copied upward | **A full read again**, by the same reader | the reader, at full cost |
+| 8 | A parcel addressed to one builder in the second person, copied upward | **A full read**, third consecutive | the reader, at full cost |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
