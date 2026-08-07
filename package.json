@@ -70,6 +70,7 @@
     "type-home:check": "tsx ./scripts/type-home-progress.ts --gate",
     "exports:check:json": "tsx ./scripts/completeness.ts --json",
     "fix": "tsx ./scripts/fix.ts",
+    "fixtures": "tsx ./scripts/fixtures.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "functional": "npm run dev:functional",
