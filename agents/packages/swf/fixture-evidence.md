@@ -473,6 +473,13 @@ changes, and compare as for roots. To confirm the check can fail, re-run it with
 
 ## What the corpus actually exercises
 
+> **49 of 75 documented capabilities are exercised by this corpus. The other 26 are unmeasured —
+> not passing, not failing. And 13 of the 49 rest on a single file.**
+
+Those are the two numbers that belong together. A pass rate quoted over the 49 without the `49/75` in
+front of it would be true in every digit and would still say the opposite of what is the case, because the
+26 would have quietly left the denominator.
+
 A coverage table cannot tell an implemented-and-proven capability from an implemented-and-never-seen one:
 both read as carried. This census separates them. It is characterisation, not conformance — it asks only
 whether the corpus contains the construct, never whether the importer got it right.
@@ -482,7 +489,7 @@ sample is a deterministic every-sixteenth slice of one test suite, skewed toward
 was never chosen to cover visual features. A checkout does not carry it.
 
 **Unexercised is not unimplemented.** Nothing below is a missing capability, and no coverage claim is
-withdrawn on the strength of it. The column being reported is *evidence*, not *support*.
+withdrawn on the strength of it. What is being reported is *evidence*, not *support*.
 
 Measured at Flight commit `6aff889db` over the 301 readable files.
 
@@ -490,12 +497,32 @@ Measured at Flight commit `6aff889db` over the 301 readable files.
 | --- | --- |
 | Capabilities enumerated | 75 |
 | **Exercised** — the corpus contains it | **49** |
+| — of those, exercised by exactly **one** file | **13** |
 | **Unexercised** — implemented, zero corpus instances | **26** |
 | Undetermined | 0 of the 75; four axes measured separately below |
 
-The enumeration is an explicit list in the probe rather than whatever the walk happened to emit, so
-"unexercised" is a measurement instead of an absence of evidence. The probe self-checks by reporting any
-capability it emitted that the list forgot.
+Each capability's file count is measured on its own — a set of filenames per capability — not apportioned
+from a corpus-wide total. A total that reconciles against the corpus size would look like confirmation and
+would not be any. The enumeration is likewise an explicit list in the probe rather than whatever the walk
+happened to emit, so "unexercised" is a measurement instead of an absence of evidence, and the probe
+self-checks by reporting any capability it emitted that the list forgot.
+
+### Evidence depth, not just presence
+
+One file and forty files are both "exercised" and are not the same evidence. Thirteen capabilities rest on
+a single corpus file, which is a single-file dependency wearing a passing mark:
+
+`DefineBits` + `JPEGTables` · `DefineBitsJPEG3` · bitmap fill clamp/smoothed · gradient spread mode ·
+radial gradient · placement blend mode · cache-as-bitmap · **clip depth (masking)** · placement visible
+flag · anonymous `DoABC` · `DefineText2` · `DefineVideoStream` · `VideoFrame`
+
+Masking is the one worth naming: the whole clip-depth capability — depth-range masks resolved into each
+covered instance's local space — is carried by exactly one file in this sample.
+
+The depth distribution of the other 36 runs from `SetBackgroundColor` at 250 files down to
+`SoundStreamHead` at 2, with the bulk of the visual constructs in single digits: solid fills 34,
+`DefineShape` 25, stroke line styles 20, `DefineShape4` 15, morph shapes 4 and 3, colour transforms 3,
+linear gradients 3.
 
 ### The 26 unexercised, and whether anything else covers them
 
@@ -551,6 +578,24 @@ over occurrences rather than files.
 a stream's blocks concatenate into one payload with a cue on the frame it starts — has a head with no
 blocks behind it in this corpus. True of the code, unexercised by real files, and it reads as covered in
 any per-tag table because the tag row is present.
+
+### What invalidates these numbers
+
+This census is a dated measurement, not a fixture. Nothing downstream should treat a figure here as a
+constant that stays true.
+
+- **Every count moves if the corpus selection changes** — a different revision, a different size cut, or a
+  different stride gives a different sample and therefore different evidence. The counts are pinned to the
+  selection recorded above, not to SWF.
+- **The exercised/unexercised split moves if the enumeration changes.** It is a list a person wrote; adding
+  a capability to it adds to the denominator, and the `49/75` moves without anything about the importer or
+  the corpus having changed.
+- **The "covered by a colocated test?" column goes stale on any test change**, in the direction that
+  matters least visibly: a deleted test silently converts a covered row into an uncovered one.
+- **The two untested rows are the volatile ones.** Focal gradients and stroke caps/joints/miter limit are
+  the finding here precisely because nothing observes them, so nothing will report it when they change.
+
+Re-derive rather than cite, and if a number here is quoted elsewhere, quote the commit with it.
 
 ## Mutation sweep
 
