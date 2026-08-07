@@ -230,3 +230,49 @@ Tags carrying no scene content — `FileAttributes`, `Metadata`, `ProductInfo`, 
 hinting/naming tables — are read past and report **nothing**, on purpose. A document is not worse off for
 skipping them, and reporting them would bury the entries that mean something under noise a consumer has to
 filter. A colocated test asserts the silence, because the silence is the load-bearing half.
+
+## A caller must read **two** populations, and only one is complete when import returns
+
+There are two seams in this SDK by which a caller learns something was lost, and they are complementary
+rather than substitutable. Confirmed by reading the source, not from a report.
+
+**Seam 1 — the diagnostics array (this document).** Losses *decided during the parse*. Complete the
+moment `createScene2DFromSwf` returns, because nothing about it is deferred.
+
+**Seam 2 — a resource reference's `failure` slot.** Losses *deferred to resolve time*. The exemplar is
+the oversized-raster limit in `swfBitmap.ts`: parsing never decodes: it emits an
+`EmbeddedImageResourceReference` carrying the SWF-native payload and a container MIME type; the
+registered async decoder throws when the raster exceeds the cap; and
+`imageResourceReference.ts` catches the cause, writes `failure = createImageResourceFailure(cause)` and
+`state = Failed`. `explainImageResourceReferenceResolution` then returns detached plain data. **Geometry
+imports, and the failure is externally enumerable — this is what a reported loss looks like, and it
+already works.**
+
+### Why the exemplar does not generalise to the parse-time losses
+
+It works because of three preconditions, and the parse-time losses satisfy none of them:
+
+1. **The importer emits a carrier rather than the content** — a durable, addressable reference in the
+   output. A declined tag emits *nothing at all*, so there is no object to hang a failure on.
+2. **The loss happens after import, in a resolver that owns that carrier** — so a live object is there
+   to mutate. A dropped filter field or glyph outline is already gone before import returns.
+3. **The carrier type has a failure slot and an `explain*` query.** Giving every surviving
+   node and descriptor one would be a seam per carrier type — the opposite of the single seam the shape
+   was reached for.
+
+### The asymmetry that matters most for a score
+
+**Seam 2's enumerability is conditional; seam 1's is not.** `failure` is null and `state` is `Unresolved`
+until a resolver runs, so a caller that imports and never resolves sees exactly what a caller with a
+perfectly good image sees. That silence means *not yet*, and it is indistinguishable at a glance from
+*fine* — the precise ambiguity this whole effort exists to remove. The diagnostics array carries no such
+window.
+
+So a consumer asking **what did this import lose** must read both populations and must not treat either
+as the whole answer. Two consequences for a score: a run that never resolves resources cannot report on
+seam 2 at all, and the two populations are keyed differently — diagnostics by `kind` with an optional
+`detail.capability`, resources by reference identity — so joining them is work, not a lookup.
+
+**And `MAX_PIXELS` is not an import-time loss at all.** The import fully succeeds and retains the
+payload; the failure is at resolve. It is a member of a different population from the unreported
+parse-time families, which is why it could be built the way it was.
