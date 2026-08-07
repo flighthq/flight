@@ -72,6 +72,14 @@ Order competing actions by how much they destroy. Destructive last. **Audit befo
 count; report the weakness before you fix it; and dispatching is destructive, so verify a diagnosis
 before it becomes a priority.** Instances in the companion.
 
+**And the same axis governs statements: THE INTERVAL BETWEEN A STATEMENT AND THE THING IT BEARS ON IS
+ITS EPISTEMIC CONTENT.** A **prediction** before the fix is a test and after it a repair report; a
+**check** before the action is a gate and beside it a report; a **caveat** before the work is a
+permission and after it an excuse. ⇒ **Same words, different force, and the difference is only
+whether the statement was made while it could still have changed the outcome.** **This reaches past
+falsifiability** — permission and gating are not about being wrong at all — **so ask of any statement
+not whether it is true but whether it was said in time.**
+
 ## Structure over convention — *how to enforce*
 
 Make the false claim unrepresentable rather than discouraged. A rule you hold is a rule you can drift
@@ -81,22 +89,12 @@ off; three agents in one day each drifted off a rule they had written down.
 **can never outrun their audit.** ⇒ **This is the structural form of the denominators law below:
 the fix for an aggregate that discards members is to carry the members.** Worked in the companion.
 
-**The two-rung floor — the minimum for landing any gate.** A gate that cannot fail is
-indistinguishable from a gate that passes, and green is what both look like. Two mutations, in order,
-and neither substitutes for the other:
-
-1. **Did the mutation land at all?** Break the thing deliberately and confirm the world changed —
-   without this rung a typo in the mutation reads as a robust gate.
-2. **Did it move the quantity the instrument reads?** A mutation can land and still leave the gate's
-   number untouched, which is the case that produces a confident green over a blind spot.
-
-Both rungs are one command each and neither is inferable from the other. **The companion negative
-control matters as much: mutate something the gate should *not* fire on and confirm it stays
-green** — a gate that fires on everything is as useless as one that fires on nothing, and only the
-negative control tells them apart. **This rule was quoted across an entire arc while living in no
-file**, which is its own instance of this section: an unlanded rule is a convention no matter how
-often it is repeated, and it was found by asking where each structure *lives* rather than whether it
-exists.
+**The two-rung floor — the minimum for landing any gate**, because a gate that cannot fail and a gate
+that passes both look green. **(1) Did the mutation land at all?** **(2) Did it move the quantity the
+instrument reads?** — a mutation can land and leave the number untouched, **and neither rung is
+inferable from the other.** **Plus the negative control: mutate something it should NOT fire on and
+confirm it stays green**, since a gate that fires on everything is as useless as one that fires on
+nothing. Worked in the companion.
 
 **Three axes decide whether a structure actually protects anything: lifetime, reach, and when it is
 encountered** — and only a gate fires at the moment of the action, which is why the third usually
