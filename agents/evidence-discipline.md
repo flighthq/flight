@@ -76,7 +76,7 @@ off; three agents in one day each drifted off a rule they had written down.
 
 ## Honest limit — *what to do when you cannot*
 
-*Arc-local, 4 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Name the hole. When nothing can close it, naming it is the whole of what can be done, and it is what
 stops an artifact claiming more than it has.
@@ -89,6 +89,13 @@ stops an artifact claiming more than it has.
 - **Say what would change the claim.** "Three data points, two producers" is a live caution because it
   names its own upgrade: a fourth from a third producer would move it, a fourth from the same producer
   would not.
+- **Expensive-to-verify and unverified are strongly correlated, and that correlation is the finding.**
+  When one boundary re-ran every cheap gate and none of the costly ones, the unbacked set was not a
+  random subset — it was *selected for by cost*, so it never shrinks on its own and it fills with
+  exactly the claims that most need checking: recaptured baselines, "I confirmed this test can fail",
+  network acceptance runs, timings, and anything about the sender's own environment. **Name which side
+  of that line a claim sits on when you make it**, so a downstream green result cannot silently absorb
+  an unbacked one — that absorption is how an unaudited number becomes an audited-looking one.
 - **A clean result is a result, not an absence of one.** A file with no unreported loss path settles a
   chunk of the denominator; recording it as a positive finding is the only way it counts.
 
