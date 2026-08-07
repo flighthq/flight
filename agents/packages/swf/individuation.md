@@ -125,8 +125,12 @@ one site and cannot see that two writers converge; the silent-drop sweep sees a 
 value is later consumed. This one names the convergence and still cannot see the consumer, so it reports
 where a distinction was *available to lose*, not where losing it cost anything.
 
-**Measured: 191 candidates, of which 23 of 30 multi-cause sentinels report nothing at any of their
-returns.** The remaining seven are already resolved or partly resolved by diagnostic wiring.
+**Measured: 191 candidates, of which 22 of 30 multi-cause sentinels report nothing at any of their
+returns.** The remaining eight are already resolved or partly resolved by diagnostic wiring.
+
+**That number moved under this doc without the doc noticing, which is why the check exists.** It read 23
+until `readSwfFile` was wired, and the sweep's own headline had been stale for hours. `npm run
+capabilities:numbers` now recomputes every quoted figure here and fails when the prose drifts from it.
 
 **The precision signal is the remedy already in the tree.** A diagnostic report at a sentinel return is
 exactly what re-separates two causes the return value merges — so a function with as many reports as
