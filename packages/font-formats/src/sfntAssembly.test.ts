@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assembleSfntFont, packSfntTag } from './sfntAssembly';
+import { assembleSfntFont, computeSfntTableChecksum, packSfntTag } from './sfntAssembly';
 
 describe('assembleSfntFont', () => {
   it('writes the directory in tag order whatever order it was given', () => {
@@ -40,9 +40,43 @@ describe('assembleSfntFont', () => {
     expect([...font.subarray(offset, offset + length)]).toEqual([...payload]);
   });
 
+  it('writes each table a real checksum rather than a zero', () => {
+    const payload = Uint8Array.from([0, 0, 0, 7]);
+    const font = assembleSfntFont(0x00010000, [{ data: payload, tag: packSfntTag('cmap') }]);
+    const view = new DataView(font.buffer);
+    expect(view.getUint32(12 + 4)).toBe(7);
+    expect(view.getUint32(12 + 4)).toBe(computeSfntTableChecksum(payload));
+  });
+
   it('carries the flavor it was given rather than inferring one', () => {
     const font = assembleSfntFont(0x4f54544f, [{ data: Uint8Array.from([0]), tag: packSfntTag('CFF ') }]);
     expect(new DataView(font.buffer).getUint32(0)).toBe(0x4f54544f);
+  });
+});
+
+describe('computeSfntTableChecksum', () => {
+  it('sums big-endian words', () => {
+    expect(computeSfntTableChecksum(Uint8Array.from([0, 0, 0, 1, 0, 0, 0, 2]))).toBe(3);
+  });
+
+  it('pads a partial final word with zeros rather than dropping it', () => {
+    // [0,0,1] is one short of a word. Dropping the tail would give 0; padding gives 0x100.
+    expect(computeSfntTableChecksum(Uint8Array.from([0, 0, 1]))).toBe(0x100);
+  });
+
+  it('treats head checkSumAdjustment as zero, which is what stops every real font mismatching', () => {
+    // Byte 8 begins checkSumAdjustment. The same bytes must sum differently for head than for any
+    // other table, so the two calls below are what separates the exception from a no-op.
+    const head = new Uint8Array(16);
+    head[8] = 0xff;
+    head[9] = 0xff;
+    expect(computeSfntTableChecksum(head, false)).toBe(0xffff0000);
+    expect(computeSfntTableChecksum(head, true)).toBe(0);
+  });
+
+  it('wraps modulo 2^32 rather than growing past a uint32', () => {
+    const big = Uint8Array.from([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 2]);
+    expect(computeSfntTableChecksum(big)).toBe(1);
   });
 });
 

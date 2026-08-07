@@ -6,6 +6,7 @@ export * from './Scene3DPickOptions';
 export * from './SfntTableDirectory';
 export * from './TextShaperCache';
 export * from './WebcamStreamRuntime';
+export * from './WoffChecksumMismatch';
 export * from './Woff2GlyfStreams';
 export * from './Woff2TableDirectory';
 export * from './XmlElement';

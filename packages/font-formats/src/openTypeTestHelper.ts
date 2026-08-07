@@ -233,6 +233,11 @@ export function encodeSyntheticWoff(sfnt: Readonly<Uint8Array>, reverseTableOrde
     // Equal compressed and original lengths is how the format says "stored, not deflated".
     outView.setUint32(record + 8, entry.data.byteLength);
     outView.setUint32(record + 12, entry.data.byteLength);
+    // A truthful checksum, so a fixture does not claim zero for tables that sum to something else.
+    // Restated here rather than imported from the reader on purpose: an encoder that shared the
+    // reader's arithmetic could not disagree with it, and agreement between two copies of one
+    // mistake is what a fixture must not be able to manufacture.
+    outView.setUint32(record + 16, syntheticTableChecksum(entry.data, entry.tag === 0x68656164));
     out.set(entry.data, dataAt);
     dataAt += (entry.data.byteLength + 3) & ~3;
   });
@@ -542,3 +547,17 @@ const WOFF2_KNOWN_TAGS: readonly string[] = [
   'Feat',
   'Sill',
 ];
+
+// The sfnt table checksum: big-endian uint32 words summed modulo 2^32, zero-padded at the tail. For
+// `head`, checkSumAdjustment at byte 8 counts as zero — otherwise the field would contain a function
+// of itself and every real font would appear to mismatch.
+function syntheticTableChecksum(data: Readonly<Uint8Array>, isHead: boolean): number {
+  let sum = 0;
+  for (let at = 0; at < data.byteLength; at += 4) {
+    let word = 0;
+    for (let byte = 0; byte < 4; byte += 1) word = word * 256 + (data[at + byte] ?? 0);
+    if (isHead && at === 8) word = 0;
+    sum = (sum + word) % 0x100000000;
+  }
+  return sum >>> 0;
+}
