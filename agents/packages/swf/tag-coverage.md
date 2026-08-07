@@ -19,7 +19,7 @@ been reporting the dominant tag's count as the row's.
 
 **A count of zero here says nothing about whether the capability works.** This table records what the
 corpus contains, and a tag being carried is a claim about the importer, not about the sample. Which
-carried capabilities the corpus actually reaches — 49 of 75, with the 26 it misses and what else covers
+carried capabilities the corpus actually reaches — HISTORICAL: 49 of 75 at that census, with the 26 it misses and what else covers
 them — is enumerated in
 [fixture-evidence.md](fixture-evidence.md#what-the-corpus-actually-exercises).
 
@@ -117,9 +117,9 @@ re-run:
 | `DefineSound` characters | 959, of which 956 MP3, 2 ADPCM, 1 Nellymoser |
 | Sounds no `StartSound` ever triggers | 264 — and all 264 are `ExportAssets`-named, which is why a reference carries `name` |
 | `StartSound` triggers | 2051, of which 132 are stops, 231 carry envelopes, 181 carry in/out points |
-| Envelope points setting the channels apart | 211 of 583, which is why an envelope point is stereo |
-| `SoundStreamHead2` tags declaring no samples | 53,740 of 53,755 — an authoring tool writes an empty one into nearly every sprite |
-| `DefineScalingGrid` target sprites that are single-shape wrappers | 634 of 634 |
+| Envelope points setting the channels apart | HISTORICAL: 211 of 583, which is why an envelope point is stereo |
+| `SoundStreamHead2` tags declaring no samples | HISTORICAL: 53,740 of 53,755 — an authoring tool writes an empty one into nearly every sprite |
+| `DefineScalingGrid` target sprites that are single-shape wrappers | HISTORICAL: 634 of 634 |
 | `DefineButtonSound`, `StartSound2` | 0 — neither appears, so neither is corpus-verified |
 
 ## Edit text markup
