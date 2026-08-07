@@ -63,10 +63,8 @@ for git the ref, for a listing the line it printed. **Compare that to the questi
 **Limit: for human recall there is no inspectable query**, which is why those instances needed someone
 else's tree while every tool instance was settled by reading the pattern. **The check is strongest
 exactly where a tool is involved.**
-**What this does not license:** rejecting an answer for being confident or precise. **The instances
-were all correct work** — the defect is in the addressing, so **the remedy is a restatement, not a
-suspicion.** The companion carries the rest, sharpest among them **a compiler hint and a CI gate, the
-two artifacts a reader is least likely to interrogate.**
+**It does not license rejecting an answer for being confident or precise** — the remedy is a
+restatement, not a suspicion. Companion carries the instances.
 
 ## Preservation ordering — *when*
 
