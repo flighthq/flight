@@ -43,28 +43,30 @@ payload. Every instance in this section derives from that in one step.
 a technique: *which tree is this about?* Worked in the companion, with six more.
 
 **The same law applied to EXPLANATIONS: a mechanism constructed to fit an observation always fits
-it.** This is the self-diffing generator one level up — **an explanation built from the observation
-has no independent reader, so re-examining the reasoning can never catch it**, and two people did
-exactly that in one day, each supplying a mechanism for a true observation that did not exist. **In
-both cases the remedy was reading the source, because the source is the one artifact the observation
-did not produce.**
-⇒ **An observation may be reported without a mechanism. An unexplained fact is a complete report.**
-The pressure runs the other way — **an unexplained fact reads as unfinished, and the only material
-available to close it is the observation itself** — and that feeling is the whole defect.
+it** — the self-diffing generator one level up, **so re-examining the reasoning can never catch it,
+and the remedy is reading the source.** ⇒ **An observation may be reported without a mechanism. An
+unexplained fact is a complete report.** Worked in the companion.
 
 **The adversarial twin: the wrong answer is a TRUE answer to the question you did not ask.** Not
 false — **misaddressed.** Checking whether it is true never finds it, because **it verifies as true
 every time: it is true of the question it actually answers.** ⇒ **Evidence is about whatever QUESTION
 produced it, and a question is easier to substitute than a producer, because nobody writes the
 question down.**
-**The only check that works: before accepting an answer, restate the question it actually answers,
-and compare that restatement to the question you asked.** If they differ the answer is adjacent, and
-**no amount of re-verifying will surface it.**
-**What this does not license:** rejecting an answer for being confident or for being precise. **The
-instances behind it were all correct work** — the defect is in the addressing, so **the remedy is a
-restatement, not a suspicion.** The companion carries seven, of which the sharpest pair is **a
-compiler hint and a CI gate — the two artifacts a reader is least likely to interrogate**, both
-answering adjacent questions with total confidence.
+**Its home is RETRIEVAL, not reasoning.** Every instance was a retrieval — a grep, a compiler lookup,
+a git ref, a field access, a listing — and **a retrieval always answers the query as posed against
+the store as structured, never the question as intended.** ⇒ **The gap is not a mistake in retrieval;
+it is what retrieval IS**, so it needs no bad reasoning, only a store shaped differently from the
+query.
+★ **Which makes the check executable: RESTATE THE QUERY AS THE STORE RECEIVED IT.** You can **inspect
+a query**; you cannot inspect an intent — for a grep the pattern, for the compiler the type graph,
+for git the ref, for a listing the line it printed. **Compare that to the question you meant.**
+**Limit: for human recall there is no inspectable query**, which is why those instances needed someone
+else's tree while every tool instance was settled by reading the pattern. **The check is strongest
+exactly where a tool is involved.**
+**What this does not license:** rejecting an answer for being confident or precise. **The instances
+were all correct work** — the defect is in the addressing, so **the remedy is a restatement, not a
+suspicion.** The companion carries the rest, sharpest among them **a compiler hint and a CI gate, the
+two artifacts a reader is least likely to interrogate.**
 
 ## Preservation ordering — *when*
 
