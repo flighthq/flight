@@ -430,7 +430,7 @@ function formatScoreNumbers(
     ...formatUnknownObservationCounts(current),
   ];
   if (baseline === null) {
-    return `exercised ${currentNumbers[0]}; fire-proven ${currentNumbers[1]}; fire results ${currentNumbers[2]}; silence-proven ${currentNumbers[3]}; silence results ${currentNumbers[4]}; single-witness ${currentNumbers[5]}; unknown observations instrument ${currentNumbers[6]}, no-fire ${currentNumbers[7]}, no-silence ${currentNumbers[8]}`;
+    return `exercised ${currentNumbers[0]}; fire-proven ${currentNumbers[1]}; fire results ${currentNumbers[2]}; silence-proven ${currentNumbers[3]}; silence results ${currentNumbers[4]}; single-witness ${currentNumbers[5]}; unknown observations known-unwired ${currentNumbers[6]}, loss-path-unidentified ${currentNumbers[7]}, no-fire ${currentNumbers[8]}, no-silence ${currentNumbers[9]}`;
   }
   const baselineSummary = baseline.summary;
   const baselineUnknowns = formatUnknownObservationCounts(baseline);
@@ -441,7 +441,7 @@ function formatScoreNumbers(
     `silence-proven ${baselineSummary.exercised.silenceProven.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[3]}`,
     `silence results ${formatLaneResults(baselineSummary.exercised.silenceProven)} → ${currentNumbers[4]}`,
     `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} → ${currentNumbers[5]}`,
-    `unknown observations instrument ${baselineUnknowns[0]} → ${currentNumbers[6]}, no-fire ${baselineUnknowns[1]} → ${currentNumbers[7]}, no-silence ${baselineUnknowns[2]} → ${currentNumbers[8]}`,
+    `unknown observations known-unwired ${baselineUnknowns[0]} → ${currentNumbers[6]}, loss-path-unidentified ${baselineUnknowns[1]} → ${currentNumbers[7]}, no-fire ${baselineUnknowns[2]} → ${currentNumbers[8]}, no-silence ${baselineUnknowns[3]} → ${currentNumbers[9]}`,
   ].join('; ');
 }
 
@@ -451,12 +451,15 @@ function formatLaneResults(
   return `pass ${summary.results.passedCapabilities}/${summary.capabilities}, fail ${summary.results.failedCapabilities}/${summary.capabilities}, unknown ${summary.results.unknownCapabilities}/${summary.capabilities}`;
 }
 
-function formatUnknownObservationCounts(pack: Readonly<ImportConformanceMeasuredPack>): [number, number, number] {
+function formatUnknownObservationCounts(
+  pack: Readonly<ImportConformanceMeasuredPack>,
+): [number, number, number, number] {
   const reasons = pack.capabilities
     .filter((capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised')
     .flatMap((capability) => capability.unknownObservations.map((observation) => observation.reason));
   return [
-    reasons.filter((reason) => reason === 'diagnostic-instrumentation-missing').length,
+    reasons.filter((reason) => reason === 'loss-path-known-not-wired').length,
+    reasons.filter((reason) => reason === 'loss-path-not-identified').length,
     reasons.filter((reason) => reason === 'fire-proof-missing-for-no-crumb').length,
     reasons.filter((reason) => reason === 'silence-proof-missing-for-crumb').length,
   ];
