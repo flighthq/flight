@@ -124,14 +124,33 @@ for (const label of ['wired', 'fire-proven', 'silence-proven']) {
 // the point is not that a reader is warned, it is that THE SET IS COUNTABLE. An exemption you cannot
 // enumerate is indistinguishable from a gap.
 const HISTORICAL_TOKEN = 'HISTORICAL:';
-const SCANNED_DOCS = ['individuation.md', 'loss-path-audit.md', 'diagnostics.md'];
+// COVERAGE IS CHOSEN BY WHAT A CONSUMER READS, NEVER BY WHAT THE AUTHOR IS CURRENTLY TOUCHING. The first
+// version of this list held the three docs being edited at the time, and the two stale-number findings
+// that followed were both in docs that had been FINISHED — the consumer contract and the corpus evidence.
+// Finishing an artifact removes the reason to look at it, which is exactly when it stops being guarded.
+const SCANNED_DOCS = [
+  'diagnostics.md',
+  'fixture-evidence.md',
+  'individuation.md',
+  'loss-path-audit.md',
+  'tag-coverage.md',
+];
 // Count-shaped: a bolded figure, an `N of M` ratio, or a number followed by a counting noun. Anything
 // else in these files — dates, tag codes, byte values, line references — is OUT OF SCOPE, and the ceiling
 // printed below says how much that is rather than leaving it implied.
+// Comma-grouped digits are one number, not two. Without this the pattern read `53,740 of 53,755` as
+// `740 of 53` — a false positive the gate raised against a doc that was correct, which is the failure
+// direction that erodes trust in a gate fastest.
 const COUNT_SHAPE =
-  /\*\*[0-9]+(?: of [0-9]+)?\*\*|\b[0-9]+ of [0-9]+\b|\b[0-9]+ (?:candidates|rows|sites|families|proofs|loss paths|kinds|forms|matches|capabilities|gates|tests)\b/g;
+  /\*\*[0-9][0-9,]* (?:of [0-9][0-9,]*)?\*\*|\*\*[0-9][0-9,]*\*\*|\b[0-9][0-9,]* of [0-9][0-9,]*\b|\b[0-9][0-9,]* (?:candidates|rows|sites|families|proofs|loss paths|kinds|forms|matches|capabilities|gates|tests)\b/g;
 
-const classified = { historical: 0, recomputable: 0 };
+// A document-level exemption for a doc that is WHOLLY a record of one past run. It is blunter than a
+// per-line token and the cost is real and stated rather than discovered: a NEW live-tense number added to
+// such a doc is silently exempt. It is used only where every figure has the same provenance, and the
+// count it covers is printed so the exemption stays enumerable rather than becoming a blind spot.
+const HISTORICAL_DOCUMENT_TOKEN = 'HISTORICAL-DOCUMENT:';
+
+const classified = { historical: 0, historicalDocument: 0, recomputable: 0 };
 const unclassified: string[] = [];
 // Every numeric token in the scanned docs, so the ceiling below is measured rather than asserted: the
 // gate reaches only the count-shaped ones, and the rest are dates, tag codes, byte values and line
@@ -141,6 +160,7 @@ let numericTokens = 0;
 for (const doc of SCANNED_DOCS) {
   const body = readFileSync(join(CELL, doc), 'utf8');
   numericTokens += (body.match(/\b[0-9]+\b/g) ?? []).length;
+  const wholeDocumentIsHistorical = body.includes(HISTORICAL_DOCUMENT_TOKEN);
   const lines = body.split('\n');
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index];
@@ -149,6 +169,8 @@ for (const doc of SCANNED_DOCS) {
         classified.recomputable++;
       } else if (line.includes(HISTORICAL_TOKEN)) {
         classified.historical++;
+      } else if (wholeDocumentIsHistorical) {
+        classified.historicalDocument++;
       } else {
         unclassified.push(`${doc}:${index + 1} — "${match[0]}" is live-tense and nothing recomputes it`);
       }
@@ -171,10 +193,15 @@ if (problems.length > 0) {
   process.exitCode = 1;
 } else {
   process.stdout.write(`OK ${expectations.length} quoted numbers match recomputation\n`);
-  const reached = classified.recomputable + classified.historical;
+  const reached = classified.recomputable + classified.historical + classified.historicalDocument;
   process.stdout.write(
-    `  count-shaped numbers classified across ${SCANNED_DOCS.length} docs: ${classified.recomputable} recomputable, ${classified.historical} historical\n`,
+    `  count-shaped numbers classified across ${SCANNED_DOCS.length} docs: ${classified.recomputable} recomputable, ${classified.historical} historical, ${classified.historicalDocument} under a whole-document historical marker\n`,
   );
+  if (classified.historicalDocument > 0) {
+    process.stdout.write(
+      '  NOTE: a whole-document marker exempts every figure in that file, including any added later. It is the blunt instrument here and is used only where every figure shares one provenance.\n',
+    );
+  }
   process.stdout.write(
     `  CEILING: ${reached} of ${numericTokens} numeric tokens in those docs are count-shaped and reached. The other ${numericTokens - reached} are dates, tag codes, byte values and line references, and this gate makes NO claim about them.\n`,
   );
