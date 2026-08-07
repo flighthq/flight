@@ -141,6 +141,17 @@ Wired so far, and therefore safe to read silence for:
 `swf.placement.clip-depth` has a second path: `swf.nested-mask-collapsed`, for the outer of two masks
 covering one instance, which is not applied at all.
 
+**An instrument has four independent properties, and a `fires`/`staysSilent` pair certifies only two:**
+
+1. **Trigger correctness** — it fires when it should. Certified by the `fires` proof.
+2. **Trigger specificity** — it does not fire when it should not. Certified by the `staysSilent` proof.
+3. **Trigger scope** — the condition it tests is the whole of what can go wrong. **Not mechanised.**
+4. **Payload validity** — what it records is true. **Not mechanised.**
+
+They are independent, and this cell has produced a specimen of a (3) failure and a (4) failure. Property
+(3) is found only by reading the claim against the code; property (4) by firing the instrument on a case
+whose correct answer is already known and checking the record against it.
+
 **A capability enters this table only when *every* one of its loss paths reports — and that is a claim
 worth auditing rather than assuming.** There is a third leg the proof mechanism cannot see: a fire proof
 shows the wire fires **on the case you tested**, and a silence proof shows it stays quiet **on the case you
@@ -155,6 +166,13 @@ otherwise legitimately proven on both legs:
   now `swf.label-past-last-frame`, under the `swf.timeline.frame-label` capability it actually belongs to.
 - `swf.placement.filter-list` covered a gradient glow's placement fields, while `BlurEffect` silently
   discarded an authored pass count. Now reported under the same kind, distinguished by `detail.field`.
+
+A property-(4) audit of the **proof mapping itself** then found six capabilities whose `fires` proof named
+a test that never built the tag they name — the shape wire proven on `DefineShape` alone while claiming
+all four generations, the font wire on `DefineFont2` alone while claiming three, and JPEG4 claimed by
+JPEG3's test. The shared code path almost certainly worked; what was untested was the **routing**, and a
+proof that does not exercise the thing it names does not prove it. Each now has a proof that builds its
+own tag and asserts its own capability id.
  Auditing it once already found a gap: the font rows claimed
 trustworthy silence while covering only the per-glyph failure, so a font whose glyph table did not decode
 at all vanished with no crumb, indistinguishable from a font that imported cleanly. `swf.font-glyph-table`
