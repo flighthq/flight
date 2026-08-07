@@ -20,6 +20,8 @@ It is one of several interchangeable backends. Where `scene2d-canvas` rasterizes
 
 It ends where the node graph and the render core begin: it owns DOM element creation, placement, styling, and reconciliation, but not the display-list walk's transform/alpha/visibility propagation (that is `@flighthq/render`'s update pass) nor the node data itself (that is the display-object packages). Its neighbor `scene2d-canvas` is reused internally for the canvas-backed escape hatch (shape/bitmap rasterization into a `<canvas>` element).
 
+Implementation evidence: the [CSS-filter public-lane audit](./public-lane-audit.md) records the public-export repair, the exhaustive `enableDom*` sweep, and the remaining descriptor and SVG-filter gaps.
+
 ## North star
 
 _Proposed, not blessed — edit or reject in review._
