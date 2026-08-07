@@ -62,7 +62,8 @@ Parked: cross-package coordination, larger scope, or waiting on an Open directio
   fires on a pointer-state transition, while a button imports as a one-frame timeline of its up state.
   Parked on that shared subject.
 - **`ZWS`/LZMA.** Not local implementation work. At `f0c56ba7d`, registering the settled deflate decoder
-  moves the fixed corpus from 59 to 301 of 306; the remaining 5 are all LZMA. The shared
+  moves most of the remaining corpus into the fixed set, leaving only the LZMA cases; see
+  [fixture-evidence.md](fixture-evidence.md) for the measured figures and the route to recompute them. The shared
   `Compression.Lzma` registry key already exists and the natural registrant is out-of-repository. It must
   not be re-scoped as a hand-written TypeScript decoder here.
 - **Broader AVM2.** The bounded frame-command recognition already composes through `@flighthq/abc`. Wider

@@ -2,7 +2,7 @@
 package: '@flighthq/swf'
 updated: 2026-08-07
 fixturePolicy: provenance-and-derived-manifest-only
-historicalDocument: 'HISTORICAL-DOCUMENT: every figure here is the result of one corpus run at the commit named below and none is recomputable without refetching that corpus'
+historicalDocument: 'HISTORICAL-DOCUMENT: every figure here is the result of one corpus run. RECOMPUTE ROUTE: refetch ruffle-rs/ruffle at the pinned revision recorded below and re-run the procedure beside each figure. A record with no route back to a current value is where the no-number rule bites, because a stale figure is only safe when the reader can replace it.'
 ---
 
 # SWF canonical fixture evidence
@@ -26,7 +26,7 @@ reproducibility.
 | Mutation sweep | ran clean on its **property**; its "still imported" figure was **not reproducible as written** and is now stated as a range with the reason |
 | [Incidental SHA-token inventory](sha-pin-incidental-audit.md) | ran clean — 207 occurrences across 43 files reproduce exactly, and 207 of its 208 cited line references are still exact; the single exception is the repair that document itself records |
 | Functional scenes `swf-import` / `swf-alpha-transform` | ran clean — the functional smoke gate captured both on DOM, Canvas, WebGL, and WebGPU with each hash equal to its baseline |
-| `npm run check swf` / `npm run test swf` | HISTORICAL: ran clean at the time — all gates, 171 tests |
+| `npm run check swf` / `npm run test swf` | ran clean; re-run for the current gate and test counts |
 | Stated *reasons*, not just commands | one was false — the mutation sweep's "seeded generator so any failure is reproducible", which recorded no seed. The load-bearing justifications in [`status.md`](status.md) hold: `setMovieClipSource` does end in `gotoAndStopTimeline`, `updateMovieClip` does advance only the timeline it is handed, and `playMode` does default to `loop` |
 
 Two steps were **not** re-run and are marked so rather than implied: the `curl` fetches, which need

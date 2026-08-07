@@ -141,7 +141,7 @@ types outside it), exported names carry the full unabbreviated type they operate
 return sentinels rather than throwing, the manifest declares `sideEffects: false` and exactly the two
 blessed lanes, registration is an explicit `registerSwfScene2DDocumentImporter` call with no module-load
 side effect, and the guard seam is contract-only while the guard module is public. `npm run check swf`
-passes every gate and `npm run test swf` is 171 tests green.
+passes every gate; run `npm run test swf` for the current count.
 
 Candidate revisions to the contract and admin docs themselves:
 

@@ -27,7 +27,8 @@ rigour.
 
 **These are derived from the table below and never typed** — `npm run capabilities:numbers` recomputes
 them and fails when this sentence drifts. **The first run of that derivation corrected them.** The figure
-quoted all session was HISTORICAL: *12 candidates · 11 wired*, which was neither a row count nor a family count: it
+quoted all session was a different pair entirely — deliberately not repeated, since a stamped figure is
+still a figure someone can reach for. It was neither a row count nor a family count: it
 took the family numbering as the unit and then subtracted 6c as though it were a family of its own, when
 6c shares family 6 with 6a/6b. **A count with two units in it, which is the individuation defect in
 miniature, in the doc that records that defect.**

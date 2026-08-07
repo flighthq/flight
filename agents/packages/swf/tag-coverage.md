@@ -5,6 +5,15 @@ updated: 2026-08-07
 
 # swf — tag coverage
 
+**This document both asserts and records, which the assert-versus-record split does not cleanly cover.**
+What each tag becomes is a live assertion about the importer and is checked by the suite. The corpus
+frequency figures below are a *record* of one measurement run, and they keep their numbers rather than
+being deleted — a register that registers nothing is the over-compliance direction. Each is marked
+`HISTORICAL:` per figure rather than by a whole-document marker, because the rest of the file asserts.
+**RECOMPUTE ROUTE for every figure so marked:** refetch `ruffle-rs/ruffle` at the revision pinned in
+[fixture-evidence.md](fixture-evidence.md) and re-run the tag census. A stale figure is safe only when
+the reader has a route to a current one.
+
 What every core SWF tag becomes in a `Scene2DDocument`, and for the ones that become nothing, why. The
 frequency column counts how many of the **301 readable** files in the 306-file Ruffle corpus described in
 [`fixture-evidence.md`](fixture-evidence.md) carry the tag; a dash means the tag does not appear there,
