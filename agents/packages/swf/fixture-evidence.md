@@ -6,6 +6,31 @@ fixturePolicy: provenance-and-derived-manifest-only
 
 # SWF canonical fixture evidence
 
+## Every procedure here was executed, not read
+
+Each recipe below was run against the working tree at Flight commit `6aff889db` on 2026-08-07, rather
+than reviewed for plausibility. That distinction earned its place: the canonical manifest recipe had
+stopped running at some earlier field rename and nobody had noticed, in a document whose entire purpose is
+reproducibility.
+
+| Procedure | Result |
+| --- | --- |
+| Canonical fixture hash + derived manifest | ran clean **after repair** — read `document.references` for a field named `document.slots`, and emitted a `kind` that `Scene2DSlotReference` no longer has; both the recipe and the committed manifest carried the stale names |
+| Animated fixture hash + frame manifest | ran clean — every row of its table reproduces exactly |
+| Commit-pin ancestry rule | ran clean — every Flight commit pinned in this cell is an ancestor of the development ref |
+| Corpus tag-frequency table | ran clean — all eleven rows and the 301-readable count reproduce exactly |
+| Placement appearance measurement | ran clean — 784 placements, 41 colour transforms, 1 blend mode, all exact |
+| Animated sweep + root cross-check | ran clean — every aggregate reproduces; see the resweep section for what the surviving divergence means |
+| Nested cross-check | new here, and falsified before being believed |
+| Mutation sweep | ran clean on its **property**; its "still imported" figure was **not reproducible as written** and is now stated as a range with the reason |
+| [Incidental SHA-token inventory](sha-pin-incidental-audit.md) | ran clean — 207 occurrences across 43 files reproduce exactly, and 207 of its 208 cited line references are still exact; the single exception is the repair that document itself records |
+| Functional scenes `swf-import` / `swf-alpha-transform` | ran clean — the functional smoke gate captured both on DOM, Canvas, WebGL, and WebGPU with each hash equal to its baseline |
+| `npm run check swf` / `npm run test swf` | ran clean — all gates, 171 tests |
+
+Two steps were **not** re-run and are marked so rather than implied: the `curl` fetches, which need
+network access, and the corpus selection against the upstream tree API, which is the pinned fetcher's job.
+The selected corpus was verified locally instead — 306 files totalling 1,166,258 bytes.
+
 ## Source
 
 The canonical real-file check uses Ruffle's uncompressed named-shape test:
@@ -452,15 +477,37 @@ input throws**. Every corpus file was mutated twelve ways — scattered byte fli
 in the structural head, and truncation to an arbitrary prefix — with a seeded generator so any failure is
 reproducible.
 
-| Measure | Value |
-| --- | --- |
-| Mutants run | 3,672 |
-| Threw | **0** |
-| Still imported | 500 |
+| Measure | Value | Reproducible? |
+| --- | --- | --- |
+| Mutants run | 3,672 | yes — 306 files × 12 variants |
+| Threw | **0** | yes — the property, and it is seed-independent |
+| Still imported | 649–658 | **no as a single number** — see below |
 
-The last row is what makes the first meaningful: if every mutant had been rejected at the header, the
-property would pass without any parsing having happened. 500 of them reached real parsing and still
-returned a document.
+The second row is the claim. The third is what makes it meaningful: if every mutant had been rejected at
+the header, the property would pass without any parsing having happened, so a large "still imported" count
+is what proves the mutants reached real parsing.
+
+**The "still imported" count is seed-dependent and this record does not pin the seed.** An earlier revision
+stated a bare `500`, which cannot be reproduced from what is written here: the generator's seed and the
+exact mutation mix (how many flips, how wide the "structural head" is, where truncation lands) are
+parameters, not constants, and none of them was recorded. Re-derived independently from the prose above at
+Flight commit `6aff889db`, two seeds give 658 and 649 — same order, different number. The range is stated
+instead of a false constant. Anyone re-running this should expect their own number in that neighbourhood
+and should treat a *large* count, not an exact one, as the supporting observation.
+
+`Threw: 0` is the durable claim and it reproduced at both seeds. It was also falsified before being
+believed: running the same counting shape over an importer that throws unconditionally reports every
+mutant as a throw, so the zero is an observation rather than a dead branch.
 
 The same property runs hermetically in the suite over a synthetic file, and `@flighthq/abc` carries its
 own version — 4,000 random byte sequences plus mutations of a well-formed container, none of which threw.
+
+### Reproduce the mutation sweep
+
+Fetch the corpus as above, then for each file emit twelve mutants from a small seeded generator so a
+failure is reproducible from (seed, file, variant): five with scattered byte flips across the whole file,
+three with bytes overwritten inside the first 64 bytes where the header and opening tags live, and four
+truncated to an arbitrary prefix. Import each mutant with `createScene2DFromSwf` inside a `try`/`catch`,
+counting throws and non-null returns. Record the seed alongside any number you quote. To confirm the throw
+counter is wired, re-run the same loop over a function that throws unconditionally: every mutant must be
+counted as a throw.
