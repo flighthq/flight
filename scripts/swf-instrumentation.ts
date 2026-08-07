@@ -102,6 +102,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['reports a declared blend mode left unread behind a filter list that did not finish'],
+    id: 'swf.placement.blend-mode',
+    staysSilent: ['stays silent when a declared blend mode is reachable, so the drop entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
     id: 'swf.placement.clip-depth',
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],

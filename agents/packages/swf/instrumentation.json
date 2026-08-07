@@ -122,6 +122,19 @@
         "scope"
       ],
       "fires": [
+        "reports a declared blend mode left unread behind a filter list that did not finish"
+      ],
+      "id": "swf.placement.blend-mode",
+      "staysSilent": [
+        "stays silent when a declared blend mode is reachable, so the drop entry carries information"
+      ]
+    },
+    {
+      "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
         "reports nested masks collapsing, since the outer one is not applied at all"
       ],
       "id": "swf.placement.clip-depth",
@@ -300,8 +313,8 @@
       ]
     }
   ],
-  "fireProven": 22,
-  "payloadAudited": 23,
-  "scopeAudited": 21,
-  "silenceProven": 22
+  "fireProven": 23,
+  "payloadAudited": 24,
+  "scopeAudited": 22,
+  "silenceProven": 23
 }
