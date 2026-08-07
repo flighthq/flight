@@ -99,6 +99,27 @@ other work.*
   skipping files every run is backed for what it ran and silent about what it did not — and the
   boundary that re-ran every gate could not run suites needing a browser, a GPU, or the network. **The
   subsumption is near-total, and the exceptions are predictably the expensive ones.**
+- **filed, and a LAW-CANDIDATE — an attestation names a command, so if the command is
+  nondeterministic the attestation is a SAMPLE, not a result.** A whole-repo selector was attested
+  `pass` repeatedly across one session; post-rebase it showed **three failures in eight runs**, from a
+  worker-pool test timing out at the default 5,000 ms while spawning real processes. **Every green
+  reported through that selector was therefore roughly a two-in-three result reported as a
+  certainty** — and each individual run was honestly observed, which is what makes it dangerous:
+  **no one lied, and the artifact still overstates.** ⇒ **Re-run before attesting anything whose cost
+  allows it, and when a command is known intermittent, say so in the attestation instead of reporting
+  the run that happened to be green.** The author here re-attested `fail` **against their own earlier
+  passes**, which is the preservation-ordering rule paying out: **reporting the instrument's weakness
+  before fixing it is what makes the earlier claims correctable at all.**
+  **Promotion note:** law-level and owed a place in the parent; it sits here only for headroom.
+
+- **filed — Verify a rebase by content, never by SHA — and beware the conflict where your own work is
+  already upstream.** An add-add conflict with nine blocks looked like *mine versus theirs*; diffing
+  upstream against the author's own last commit showed it **byte identical**, because their work had
+  already merged. ⇒ **Taking "their" side would have replayed an older copy over their own later work,
+  under a commit message announcing that it added it** — a revert wearing a feature's name, which no
+  downstream check would flag. **A changed hash is not evidence of loss and an unchanged file list is
+  not evidence of safety**, so diff the files themselves.
+
 - **filed — A clean result is a result, not an absence of one.** A file with no unreported loss path
   settles a chunk of the denominator; recording it as a positive finding is the only way it counts.
 - **filed — Permitted-and-unbuilt is a third state beside permitted-and-built and forbidden.** A
