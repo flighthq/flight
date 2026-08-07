@@ -101,6 +101,13 @@ exists.
 encountered** — and only a gate fires at the moment of the action, which is why the third usually
 resolves to *make it a gate*. The companion works each axis with its instance.
 
+**Before building a gate, ask whether landing the change alters what the gate should say.** ⇒ **A
+property check is idempotent under landing; a historical check is not.** *Is this ledger well-formed*
+answers the same after the commit lands as before it; *did someone mutate a guarded line* does not,
+**and implementing it against a moving baseline means landing the mutation makes the gate go quiet
+about it forever.** A historical question needs a fixed baseline or it becomes a property check that
+has silently changed its subject.
+
 ## Honest limit — *what to do when you cannot*
 
 Name the hole. When nothing can close it, naming it is the whole of what can be done, and it is what
