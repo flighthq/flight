@@ -86,8 +86,13 @@ nothing anywhere says so.
 **This makes `swf.script.do-action`'s trustworthy-silence claim false.** Its wire covers a block *declined*
 for carrying non-playback commands; it does not cover a block *truncated* at our cap. That capability's
 `scope` audit marker has been withdrawn in
-[instrumentation.json](instrumentation.json) rather than the wire being quietly repaired — **a scope audit
-that missed something is evidence about the audit, and repairing the wire first would have destroyed it.**
+[instrumentation.json](instrumentation.json) rather than the wire being quietly repaired.
+
+**This is not a failure of the scope audit, and saying so would misplace the remedy.** Property (3) asks
+whether a *claim* covers what can be lost — and a silent truncation makes no claim, so there is nothing
+for a scope audit to check. **A scope audit can only audit existing claims; it cannot find losses that
+make none.** That is precisely why this loss-path audit is not redundant with it: **it is the only
+instrument that reaches a loss which never announces itself.**
 
 ## Capabilities audited and found to have no loss path
 
