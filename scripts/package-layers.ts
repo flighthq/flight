@@ -46,6 +46,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/filesystem',
     '@flighthq/flow',
     '@flighthq/font',
+    '@flighthq/font-formats',
     '@flighthq/geolocation',
     '@flighthq/glyphatlas',
     '@flighthq/haptics',

@@ -85,6 +85,7 @@
     { "path": "./packages/assets" },
     { "path": "./packages/audio" },
     { "path": "./packages/font" },
+    { "path": "./packages/font-formats" },
     { "path": "./packages/glyphatlas" },
     { "path": "./packages/image" },
     { "path": "./packages/image-codec" },

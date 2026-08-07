@@ -40,6 +40,7 @@ export * from '@flighthq/entity';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/flow';
 export * from '@flighthq/font';
+export * from '@flighthq/font-formats';
 export * from '@flighthq/geolocation';
 export * from '@flighthq/geometry';
 export * from '@flighthq/glyphatlas';
