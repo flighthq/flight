@@ -140,6 +140,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: [
       'names the anonymous DoABC form separately, since the two are different capabilities',
+      'reports a declined frame script through the full import path, not only the reader in isolation',
       'reports a frame script whose body is not a command this importer obeys',
       'reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was',
     ],

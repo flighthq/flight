@@ -72,6 +72,7 @@ import {
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
 } from './swfDocument';
+import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
 import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
 
@@ -3047,6 +3048,23 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped).toHaveLength(1);
     expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(dropped[0].detail).toEqual({ capability: 'swf.text.define-edit-text', fontId: 7 });
+  });
+
+  it('reports a declined frame script through the full import path, not only the reader in isolation', () => {
+    // A fire proof at the reader shows the wire fires; it does not show production reaches the branch.
+    // Family 8 was reachable only by a route other than the one predicted, so this asks the same question
+    // of the frame-script wire by carrying a real DoABC payload through createScene2DFromSwf.
+    const abc = buildFrameScriptAbc(1);
+    const payload = joinBytes(uint32(0), swfString('frame'), abc);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC, payload), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-script-declined');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({ frame: 1, reason: 'commands-declined' });
   });
 
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
