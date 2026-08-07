@@ -109,7 +109,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
-      new Set(['swf.fill.solid']),
+      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -126,6 +126,7 @@ describe('createImportConformanceScore', () => {
     expect(score.packs[0]!.capabilities).toEqual([
       {
         id: 'swf.fill.solid',
+        instrumentationProof: 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss',
         outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 1 },
         result: 'pass',
         state: 'measured',
@@ -146,7 +147,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], outcome), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Set(['swf.fill.solid']),
+      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -165,7 +166,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed')],
-      new Set(['swf.fill.solid']),
+      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -194,7 +195,7 @@ describe('createImportConformanceScore', () => {
         plan,
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed')],
-        new Set(['swf.fill.solid']),
+        new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
         'measured',
         hash('importer'),
         PROVENANCE,
@@ -213,7 +214,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Set(),
+      new Map(),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -249,7 +250,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Set(),
+      new Map(),
       'not-run',
       hash('importer'),
       PROVENANCE,
@@ -261,6 +262,26 @@ describe('createImportConformanceScore', () => {
       summary: null,
     });
     expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
+  });
+
+  it('refuses to count an instrument without a non-empty firing-test proof', () => {
+    const index = makeIndex();
+    const plan = createImportConformanceShardPlan(
+      index.fixtures.map((fixture) => fixture.reference),
+      1,
+    );
+    expect(() =>
+      createImportConformanceScore(
+        index,
+        plan,
+        new Set([0]),
+        [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
+        new Map([['swf.fill.solid', '']]),
+        'measured',
+        hash('importer'),
+        PROVENANCE,
+      ),
+    ).toThrow(/must be non-empty/);
   });
 });
 
