@@ -1300,15 +1300,35 @@ function resolveSwfCharacterBounds(
   // A symbol's authored extent covers everything it can show, so this unions every frame's placements
   // rather than only the first frame's: the node's local bounds do not change as its playhead moves.
   let bounds: SwfRectangle | null = null;
+  let missingChildren = 0;
   for (const frame of sprite.frames) {
     for (const placement of frame.values()) {
       const childBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, depth + 1);
-      if (childBounds === null) continue;
+      if (childBounds === null) {
+        // Two different things reach here and only one is a loss. A sprite that resolved to an empty
+        // union has no extent to contribute and is correct; a character with neither authored bounds nor
+        // a sprite body was never imported at all, and the union it should have widened is short.
+        if (!parsed.characterBounds.has(placement.characterId) && !parsed.sprites.has(placement.characterId)) {
+          missingChildren++;
+        }
+        continue;
+      }
       const transformed = transformSwfRectangle(childBounds, placement.matrix);
       bounds = bounds === null ? transformed : mergeSwfRectangles(bounds, transformed);
     }
   }
   state.resolvingBounds.delete(characterId);
+  if (missingChildren > 0) {
+    // A count rather than a flag: the box survives and is simply smaller than the sprite's contents, and
+    // a count is the only thing that separates a full union from a short one.
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.sprite-bounds-short',
+      'resolveSwfCharacterBounds',
+      { capability: 'swf.timeline.define-sprite', characterId, missingChildren },
+    );
+  }
   state.resolvedBounds.set(characterId, bounds);
   return bounds;
 }

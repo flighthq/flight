@@ -2850,6 +2850,73 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.blend-mode-behind-unread-filters')).toEqual([]);
   });
 
+  it('counts the children a sprite bounds union could not include, since the box survives smaller', () => {
+    // Character 7 is defined and character 9 is not. The union covers 7 alone, so the sprite's authored
+    // box is real and short — the diminished case a count catches and an existence check cannot.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([
+            createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
+            createTag(
+              TAG_DEFINE_SPRITE,
+              joinBytes(
+                uint16(20),
+                uint16(1),
+                createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+                createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(9))),
+                createTag(TAG_SHOW_FRAME),
+                createTag(TAG_END),
+              ),
+            ),
+            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.sprite-bounds-short');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({
+      capability: 'swf.timeline.define-sprite',
+      characterId: 20,
+      missingChildren: 1,
+    });
+  });
+
+  it('stays silent when every child of a sprite contributes its bounds', () => {
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
+          createTag(
+            TAG_DEFINE_SPRITE,
+            joinBytes(
+              uint16(20),
+              uint16(1),
+              createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+              createTag(TAG_SHOW_FRAME),
+              createTag(TAG_END),
+            ),
+          ),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // Non-vacuous: the sprite exists and its union was actually computed.
+    expect(getNodeChildren(document!.root)).toHaveLength(1);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.sprite-bounds-short')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
