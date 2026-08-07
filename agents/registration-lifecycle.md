@@ -386,6 +386,49 @@ the state it was derived from, and there is no tombstone to express "omit this o
 recorded as an internal correctness problem; it is really the question of whether the headline use case
 above works at all.
 
+## The examples are the prior art, and they currently teach the shotgun
+
+**Ruled by the user 2026-08-07: example wiring is generated, except for a named set that deliberately
+demonstrates something else.**
+
+An agent looking for how to wire something does not read this document. It greps the examples. There are
+**132 `render.*.ts` files carrying roughly 700 registration calls**, and that corpus is the most
+available prior art in the repository. Measured 2026-08-07:
+
+| calls | symbol | teaches |
+|---|---|---|
+| 203 | `registerRenderer` | the generic door, kind and renderer by hand |
+| 139 | `registerCanvasShapeCommands` | a caller-named array — the sanctioned bag |
+| 39 | `registerStandardGlTextureResolvers` | **a bundle** |
+| 14 | `registerStandardWgpuTextureResolvers` | **a bundle** |
+
+**53 call sites demonstrate the shotgun.** A better diagnostic competes against 39 worked examples saying
+otherwise, and loses. This is why [why an agent reaches for it](#why-an-agent-reaches-for-it-instead-of-a-bundle)
+cannot be solved at the error message alone: the corpus is the teacher.
+
+Generating example wiring from the catalog changes three things at once:
+
+- **The default lesson inverts.** Copying an example copies the minimal path.
+- **The capture suite becomes the catalog's correctness oracle.** This is what closes the gap left open
+  in [the declared half](#declared--node-renderers-because-source-never-states-them): a check cannot
+  confirm `ShapeKind → defaultCanvasShapeRenderer` is the *right* pairing, but an example generated from
+  that row and rendered into `test:functional:regression` can. The committed baseline is evidence
+  external to the catalog, so this is verification and not circularity.
+- **`npm run size` becomes a minimality gate on codegen.** Examples are what the size baseline measures,
+  so over-registration shows up as bundle growth against the tool's central promise.
+
+**The named hand-wired set is not an exemption, it is a second curriculum.** Some examples exist to
+demonstrate door 2, custom vendor-prefixed kinds, overriding a built-in realization, or deliberately
+tree-shaken imports — all sanctioned, none of them the golden path. Marking them makes the corpus
+self-describing about which door each example teaches, which it is not today.
+
+**The gap this leaves, which must be measured rather than assumed.** Examples exercise only the SKUs they
+use. A catalog aiming at every SKU will name many no example reaches, and that tail carries no rendering
+evidence. `scripts/swf-capabilities.ts` states the same hazard for its own list — *"a list derived from
+what a walk emitted could only ever contain what was already found, which would make the unexercised
+bucket an absence of evidence rather than a measurement."* The answer is a generated SKU-coverage report,
+declared against exercised, shaped like `agents/packages/swf/fixture-evidence.md`.
+
 ## The laundering test — data is not the deliverable
 
 **The lifecycle is done when a call executes. Everything before that is bookkeeping about a problem
