@@ -583,6 +583,23 @@ of, and the question that was actually asked.
 
 ## Serving: denominators
 
+- **filed — ASK WHETHER THE OUTPUT TRANSFERS, NOT ONLY THE INSTRUMENTS.** One format yielded a
+  scoreboard **because its units were countable — a property of that format, not of the method.** ⇒
+  **A second format may correctly produce NO scoreboard, and that is a RESULT rather than a failure.**
+  ★★ **State it BEFORE the work reports, because otherwise it arrives as pressure: if an arc is judged
+  against an output it cannot honestly produce, someone will pick a unit in order to have something to
+  show.** ⇒ **That is electing a reading, reached through SCHEDULE PRESSURE rather than analysis — and
+  it is harder to refuse than the analytical version, because refusing looks like having nothing to
+  deliver.** **The pre-commitment costs one sentence and has to be made while it is still cheap.**
+
+- **filed — If the UNIT does not exist, COUNTS do not save you either.** *Counts, never ratios*
+  assumes **the members are identifiable and only their GROUPING is contested.** ⇒ **Where several
+  incompatible things are each a defensible member — object types, properties, state constructs, draw
+  operations — a COUNT is already ambiguous, not merely a ratio.** ★ **The deeper denominator-free
+  form: not "N objects drop something" but "THIS type, in THIS situation, drops THIS" — per-item facts
+  each carrying its condition, with no aggregate at all.** **One step past replacing a ratio with
+  per-member presence: this replaces the member SET with conditioned facts.**
+
 - **filed — UNIT, THEN TRANSFER, THEN NUMBERS — and the ordering exists to protect a transfer from
   its own SUCCESS.** ⇒ **An instrument that transfers mechanically can still produce a number over
   the wrong population** — a true count of a denominator nobody chose, which reads as coverage.
