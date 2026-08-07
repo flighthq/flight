@@ -162,6 +162,14 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — A constraint on how a human operates a tool is encountered nowhere near the decision it
+  governs.** A hazard was first framed as a choice — *this merge strategy invalidates the record, that
+  one does not.* ⇒ **But choosing the safe one today does not bind the next merge; it installs a
+  permanent remember-this**, which is the third axis exactly: durable, reachable, and met at the wrong
+  moment. ⇒ **So the question is not which option to choose, but whether to keep depending on the
+  choice at all** — and reframing it that way turned a standing warning into a removable dependency.
+  **The near-term fact survived the reframing; only the framing was withdrawn.**
+
 - **filed — A historical check pinned to CONTENT survives history rewriting; pinned to a COMMIT it
   does not.** An audit identity stored `auditedAt` and a `subjectHash`, both derived by searching git
   history — **and history is precisely the baseline that landing rewrites.** It survived two rebases
