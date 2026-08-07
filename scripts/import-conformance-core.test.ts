@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import {
+  assertImportConformanceFrozenCapabilityPartition,
   buildImportConformanceCapabilityIndex,
   createImportConformanceCacheKey,
   createImportConformanceNotRunScore,
@@ -155,6 +156,26 @@ describe('createImportConformanceNotRunScore', () => {
         runUrl: 'https://ci.invalid/run',
       }),
     ).toThrow(/full-index runId and runUrl/);
+  });
+
+  it('refuses both merges and splits of the frozen producer capability partition', () => {
+    const merged = createImportConformanceNotRunScore(PACK, DEFINITIONS, hash('importer'), PROVENANCE);
+    merged.packs[0]!.capabilities.splice(1, 1);
+    expect(() => assertImportConformanceFrozenCapabilityPartition(merged, DEFINITIONS)).toThrow(
+      /must exactly equal the frozen capability partition/,
+    );
+
+    const split = createImportConformanceNotRunScore(PACK, DEFINITIONS, hash('importer'), PROVENANCE);
+    split.packs[0]!.capabilities.push({
+      completedWitnesses: 0,
+      expectedWitnesses: 0,
+      id: 'swf.fill.solid.split',
+      reason: 'pack-unavailable',
+      state: 'not-run',
+    });
+    expect(() => assertImportConformanceFrozenCapabilityPartition(split, DEFINITIONS)).toThrow(
+      /must exactly equal the frozen capability partition/,
+    );
   });
 });
 

@@ -199,6 +199,22 @@ export function createImportConformanceCacheKey(sourceHash: string, importerSour
   return hashText(`import-conformance-result-v3\0${sourceHash}\0${importerSourceHash}`);
 }
 
+export function assertImportConformanceFrozenCapabilityPartition(
+  score: Readonly<ImportConformanceScore>,
+  definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
+): void {
+  assertCapabilityDefinitions(definitions);
+  const expected = definitions.map((definition) => definition.id);
+  for (const pack of score.packs) {
+    const actual = pack.capabilities.map((capability) => capability.id);
+    if (actual.length !== expected.length || actual.some((id, index) => id !== expected[index])) {
+      throw new Error(
+        `Generated score capability ids must exactly equal the frozen capability partition; expected [${expected.join(', ')}], received [${actual.join(', ')}]`,
+      );
+    }
+  }
+}
+
 export function createImportConformanceNotRunScore(
   pack: Readonly<ImportConformancePackIdentity>,
   definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],

@@ -10,6 +10,7 @@ import {
 } from './fixtures';
 import { classifyImportConformanceObservation } from './import-conformance-classifier';
 import {
+  assertImportConformanceFrozenCapabilityPartition,
   createImportConformanceNotRunScore,
   createImportConformanceScore,
   createImportConformanceShardPlan,
@@ -71,6 +72,7 @@ export async function runImportConformanceProcess(
       importerSourceHash,
       { mode: 'exhaustive', runId: args.runId, runUrl: args.runUrl },
     );
+    assertImportConformanceFrozenCapabilityPartition(score, definitions);
     writeImportConformanceScoreAtomically(args.scoreFile, score);
     process.stdout.write(formatImportConformanceScore(score));
     return IMPORT_CONFORMANCE_NOT_RUN_EXIT_CODE;
@@ -110,6 +112,7 @@ export async function runImportConformanceProcess(
       individuationMargin: SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
     },
   );
+  assertImportConformanceFrozenCapabilityPartition(score, definitions);
   writeImportConformanceScoreAtomically(args.scoreFile, score);
   process.stdout.write(formatImportConformanceScore(score));
   return score.packs.some((pack) => pack.state === 'not-run')

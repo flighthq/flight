@@ -17,7 +17,7 @@ describe('import-conformance CLI', () => {
     expect(result.stdout).toContain('NOT RUN: pack-unavailable');
     const artifact = JSON.parse(readFileSync(score, 'utf8'));
     expect(artifact.packs[0]).toMatchObject({ state: 'not-run', summary: null });
-    expect(artifact.packs[0].capabilities).toHaveLength(80);
+    expect(artifact.packs[0].capabilities).toHaveLength(82);
   });
 
   it('removes an explicitly named stale target on invalid CLI input', () => {
