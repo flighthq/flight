@@ -10,12 +10,14 @@ import {
 } from './check-import-conformance-ratchet';
 import { parseImportConformanceScore } from './import-conformance-score';
 import type {
+  ImportConformanceAuditedLossPath,
   ImportConformanceCapability,
   ImportConformanceExercisedCapability,
   ImportConformanceMeasuredPack,
   ImportConformanceNotRunPack,
   ImportConformanceOutcomeCounts,
   ImportConformanceScore,
+  ImportConformanceUnmeasuredCapability,
 } from './import-conformance-score';
 
 describe('compareImportConformanceScores', () => {
@@ -82,8 +84,8 @@ describe('compareImportConformanceScores', () => {
 
     const report = compareImportConformanceScores(baseline, current);
 
-    expect(report.packs[0].baseline?.summary.exercised.fireProven.results.passedCapabilities).toBe(
-      report.packs[0].current?.summary.exercised.fireProven.results.passedCapabilities,
+    expect(report.packs[0].baseline?.summary.exercised.fireReferenced.results.passedCapabilities).toBe(
+      report.packs[0].current?.summary.exercised.fireReferenced.results.passedCapabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
@@ -128,14 +130,14 @@ describe('compareImportConformanceScores', () => {
 
     const report = compareImportConformanceScores(baseline, current, { unknownBaseline: 'allow' });
 
-    expect(report.packs[0].baseline?.summary.exercised.fireProven.capabilities).toBe(
-      report.packs[0].current?.summary.exercised.fireProven.capabilities,
+    expect(report.packs[0].baseline?.summary.exercised.fireReferenced.capabilities).toBe(
+      report.packs[0].current?.summary.exercised.fireReferenced.capabilities,
     );
     expect(report.state).toBe('regression');
     expect(report.packs[0].findings).toContainEqual({
       capabilityId: 'alpha',
-      code: 'instrumentation-firing-proof-lost',
-      detail: 'firing-test instrumentation was proven and is now UNPROVEN',
+      code: 'instrumentation-firing-reference-lost',
+      detail: 'firing-test proof references were present and are now UNREFERENCED',
     });
   });
 
@@ -161,18 +163,18 @@ describe('compareImportConformanceScores', () => {
     const baselineCapability = measuredCapability('alpha');
     baselineCapability.instrumentation.fires = {
       proofs: ['fire-test:alpha-primary', 'fire-test:alpha-secondary'],
-      state: 'proven',
+      state: 'referenced',
     };
     const removedCapability = measuredCapability('alpha');
-    removedCapability.instrumentation.fires = { proofs: ['fire-test:alpha-primary'], state: 'proven' };
+    removedCapability.instrumentation.fires = { proofs: ['fire-test:alpha-primary'], state: 'referenced' };
     const replacedCapability = measuredCapability('alpha');
     replacedCapability.instrumentation.fires = {
       proofs: ['fire-test:alpha-primary', 'fire-test:alpha-secondary'],
-      state: 'proven',
+      state: 'referenced',
     };
     replacedCapability.instrumentation.staysSilent = {
       proofs: ['silence-test:alpha-replacement'],
-      state: 'proven',
+      state: 'referenced',
     };
 
     const removed = compareImportConformanceScores(
@@ -185,9 +187,126 @@ describe('compareImportConformanceScores', () => {
     );
 
     expect(removed.state).toBe('regression');
-    expect(removed.packs[0].findings[0].code).toBe('instrumentation-firing-proof-changed');
+    expect(removed.packs[0].findings[0].code).toBe('instrumentation-firing-references-changed');
     expect(replaced.state).toBe('regression');
-    expect(replaced.packs[0].findings[0].code).toBe('instrumentation-silence-proof-changed');
+    expect(replaced.packs[0].findings[0].code).toBe('instrumentation-silence-references-changed');
+  });
+
+  it('ratchets synthetic proof references independently of corpus exercise', () => {
+    const baselineCapability = syntheticallyReferencedCapability('beta');
+    const currentCapability = unmeasuredCapability('beta');
+    const baseline = measuredPack([measuredCapability('alpha'), baselineCapability]);
+    const current = measuredPack([measuredCapability('alpha'), currentCapability]);
+
+    const report = compareImportConformanceScores(score(baseline, '100'), score(current, '101'));
+
+    expect(baseline.summary.proofReferenced).toEqual({ fireCapabilities: 2, silenceCapabilities: 2 });
+    expect(baseline.summary.exercised.fireReferenced.capabilities).toBe(1);
+    expect(report.state).toBe('regression');
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: 'beta',
+      code: 'instrumentation-firing-reference-lost',
+      detail: 'firing-test proof references were present and are now UNREFERENCED',
+    });
+  });
+
+  it('ratchets loss of the structured diagnostic channel even when a human log guard remains', () => {
+    const warningOnly = unknownCapability('alpha', 2, 'loss-path-known-not-wired');
+    warningOnly.instrumentation.channel = 'human-log-only';
+    const report = compareImportConformanceScores(
+      score(measuredPack([measuredCapability('alpha', 2)]), '100'),
+      score(measuredPack([warningOnly]), '101'),
+    );
+
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'structured-diagnostic-channel-lost',
+      detail: 'structured diagnostic crumb changed to human-log-only',
+    });
+  });
+
+  it('ratchets loss-path audit coverage, classification, time, and subject binding on the member key', () => {
+    const baseline = auditedUnmeasuredCapability('alpha', 'identified');
+    const auditLost = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([unmeasuredCapability('alpha')]), '101'),
+    );
+    const classificationChanged = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([auditedUnmeasuredCapability('alpha', 'audited-none')]), '101'),
+    );
+    const older = auditedUnmeasuredCapability('alpha', 'identified');
+    older.lossPath.audit.auditedAt = '2026-08-06T00:00:00.000Z';
+    const timeRegressed = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([older]), '101'),
+    );
+    const changedSubject = auditedUnmeasuredCapability('alpha', 'identified');
+    changedSubject.lossPath.audit.subjectHash = 'sha256:changed-subject';
+    const subjectLaundered = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([changedSubject]), '101'),
+    );
+
+    expect(auditLost.packs[0].findings[0].code).toBe('loss-path-audit-lost');
+    expect(classificationChanged.packs[0].findings[0].code).toBe('loss-path-classification-changed');
+    expect(timeRegressed.packs[0].findings[0].code).toBe('loss-path-audit-time-regressed');
+    expect(subjectLaundered.packs[0].findings[0].code).toBe('loss-path-audit-subject-changed-without-reaudit');
+  });
+
+  it('ratchets member audit declarations and refuses a new declaration wearing an old audit record', () => {
+    const baselineCapability = measuredCapability('alpha');
+    const missingScope = auditIncompleteCapability('alpha');
+    const lost = compareImportConformanceScores(
+      score(measuredPack([baselineCapability]), '100'),
+      score(measuredPack([missingScope]), '101'),
+    );
+    const gained = compareImportConformanceScores(
+      score(measuredPack([missingScope]), '100'),
+      score(measuredPack([baselineCapability]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+
+    expect(lost.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'instrumentation-scope-audit-lost',
+      detail: 'scope audit declaration was present and is now absent',
+    });
+    expect(gained.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'instrument-audit-added-without-new-audit',
+      detail: 'scope audit declaration was added while member audit identity and time stayed fixed',
+    });
+  });
+
+  it('ratchets removal and reporting regression of a configuration-limit declaration on the capability key', () => {
+    const baseline = measuredCapability('alpha');
+    baseline.configurationLimits = {
+      limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'structured' }],
+      state: 'declared',
+    };
+    const removed = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([measuredCapability('alpha')]), '101'),
+    );
+    const unobservable = loopBoundedCapability('alpha');
+    const reportingRegressed = compareImportConformanceScores(
+      score(measuredPack([baseline]), '100'),
+      score(measuredPack([unobservable]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+
+    expect(removed.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'configuration-limit-declaration-lost',
+      detail:
+        'configuration-limit declarations were present and are now NOT APPLICABLE without a capability identity change',
+    });
+    expect(reportingRegressed.packs[0].findings).toContainEqual({
+      capabilityId: 'alpha',
+      code: 'configuration-limit-reporting-regressed',
+      detail: 'MAX_FRAME_ACTIONS changed from structured reporting to unobservable',
+    });
   });
 
   it('ratchets licensed pass to per-observation UNKNOWN independently in each proof lane', () => {
@@ -331,13 +450,53 @@ describe('formatImportConformanceRatchetReport', () => {
     const output = formatImportConformanceRatchetReport(report);
 
     expect(output).toContain(
-      'exercised 1/2 → 1/2; fire-proven 1 → 1; fire results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1; silence-proven 1 → 1; silence results pass 1/1, fail 0/1, unknown 0/1 → pass 1/1, fail 0/1, unknown 0/1',
+      'exercised 1/2 [exercised: alpha; total: alpha, beta] → 1/2 [exercised: alpha; total: alpha, beta]',
     );
-    expect(output).not.toContain('fire-proven 1/1');
-    expect(output).not.toContain('silence-proven 1/1');
+    expect(output).toContain(
+      'loss-path audit partial; audited 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose 1; audited-none 0; unaudited 1 [beta]',
+    );
+    expect(output).toContain(
+      'configuration limits [alpha: not-applicable] → [alpha: not-applicable]; diagnostic channels [alpha: structured-crumb; beta: none] → [alpha: structured-crumb; beta: none]; loss-path audit',
+    );
+    expect(output).toContain(
+      'instrument payload-audited 1 [alpha] → 1 [alpha]; instrument scope-audited 1 [alpha] → 1 [alpha]',
+    );
+    expect(output).toContain(
+      'fire proof-referenced all 1 [alpha [fire-test:alpha]] → 1 [alpha [fire-test:alpha]]; fire proof-referenced and exercised 1 [alpha [fire-test:alpha]] → 1 [alpha [fire-test:alpha]]; fire results pass 1/1 [alpha], fail 0/1 [], unknown 0/1 [] → pass 1/1 [alpha], fail 0/1 [], unknown 0/1 []',
+    );
+    expect(output).toContain(
+      'silence proof-referenced all 1 [alpha [silence-test:alpha]] → 1 [alpha [silence-test:alpha]]; silence proof-referenced and exercised 1 [alpha [silence-test:alpha]] → 1 [alpha [silence-test:alpha]]; silence results pass 1/1 [alpha], fail 0/1 [], unknown 0/1 [] → pass 1/1 [alpha], fail 0/1 [], unknown 0/1 []',
+    );
+    expect(output).not.toContain('proof-referenced all 1/2');
+    expect(output).not.toContain('proof-referenced and exercised 1/1');
     expect(output).toContain(
       'instrument assurance observed: trigger correctness proof-reference-presence; trigger specificity proof-reference-presence; trigger scope external-audit-required; payload validity external-audit-required',
     );
+  });
+
+  it('prints structurally accepted nonexistent proof names as references, never as proof verdicts', () => {
+    const capability = measuredCapability('alpha');
+    capability.instrumentation = {
+      audits: ['payload', 'scope'],
+      channel: 'structured-crumb',
+      fires: { proofs: ['test-that-does-not-exist:fire'], state: 'referenced' },
+      staysSilent: { proofs: ['test-that-does-not-exist:silence'], state: 'referenced' },
+    };
+    const baseline = parseImportConformanceScore(score(measuredPack([capability]), '100'));
+    const current = parseImportConformanceScore(score(measuredPack([capability]), '101'));
+    const report = compareImportConformanceScores(baseline, current);
+    const output = formatImportConformanceRatchetReport(report);
+
+    expect(report.state).toBe('pass');
+    expect(current.packs[0].capabilities[0]).toMatchObject({
+      instrumentation: {
+        fires: { proofs: ['test-that-does-not-exist:fire'], state: 'referenced' },
+        staysSilent: { proofs: ['test-that-does-not-exist:silence'], state: 'referenced' },
+      },
+    });
+    expect(output).toContain('alpha [test-that-does-not-exist:fire]');
+    expect(output).toContain('alpha [test-that-does-not-exist:silence]');
+    expect(output.toLowerCase()).not.toContain('proven');
   });
 });
 
@@ -390,14 +549,141 @@ describe('parseImportConformanceScore', () => {
 
   it('refuses aggregates that do not exactly follow the stable capability rows', () => {
     const pack = measuredPack();
-    pack.summary.exercised.fireProven.results.passedCapabilities = 0;
+    pack.summary.exercised.fireReferenced.results.passedCapabilities = 0;
 
     expect(() => parseImportConformanceScore(score(pack, '100'))).toThrow(
-      'exercised.fireProven.results.passedCapabilities: must equal the capability rows (1)',
+      'exercised.fireReferenced.results.passedCapabilities: must equal the capability rows (1)',
+    );
+
+    const proofCount = measuredPack();
+    proofCount.summary.proofReferenced.fireCapabilities = 2;
+    expect(() => parseImportConformanceScore(score(proofCount, '100'))).toThrow(
+      'proofReferenced.fireCapabilities: must equal the capability rows (1)',
+    );
+
+    const auditCount = measuredPack();
+    auditCount.summary.lossPathPopulation.auditedCapabilities = 2;
+    expect(() => parseImportConformanceScore(score(auditCount, '100'))).toThrow(
+      'lossPathPopulation.auditedCapabilities: must equal the capability rows (1)',
+    );
+
+    const instrumentAuditCount = measuredPack();
+    instrumentAuditCount.summary.instrumentAudited.scopeCapabilities = 2;
+    expect(() => parseImportConformanceScore(score(instrumentAuditCount, '100'))).toThrow(
+      'instrumentAudited.scopeCapabilities: must equal the capability rows (1)',
     );
   });
 
-  it('accepts UNKNOWN observations as exercised but outside both proven populations', () => {
+  it('derives the audit population by member and licenses audited-none without proof references', () => {
+    const pack = measuredPack([
+      measuredCapability('alpha'),
+      auditedNoneCapability('background'),
+      unmeasuredCapability('beta'),
+    ]);
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+
+    expect(parsed.packs[0]).toMatchObject({
+      summary: {
+        lossPathPopulation: {
+          auditedCapabilities: 2,
+          auditedNoLossPathCapabilities: 1,
+          auditState: 'partial',
+          canSilentlyLoseCapabilities: 1,
+          unauditedCapabilities: 1,
+        },
+      },
+    });
+    expect(parsed.packs[0].capabilities[1]).toMatchObject({
+      id: 'background',
+      instrumentation: { fires: { state: 'unreferenced' }, staysSilent: { state: 'unreferenced' } },
+      lossPath: { state: 'audited-none' },
+      results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
+    });
+    const report = compareImportConformanceScores(
+      score(measuredPack([auditedNoneCapability('background')]), '100'),
+      score(measuredPack([auditedNoneCapability('background')]), '101'),
+    );
+    expect(report.state).toBe('pass');
+  });
+
+  it('requires audit identity, time, and subject binding on each audited member', () => {
+    const missingAudit = measuredCapability('alpha') as unknown as { lossPath: unknown };
+    missingAudit.lossPath = { state: 'identified' };
+    const inheritedAudit = measuredCapability('alpha') as unknown as { lossPath: unknown };
+    inheritedAudit.lossPath = { audit: identifiedLossPath('alpha').audit, state: 'unaudited' };
+    const invalidTime = measuredCapability('alpha');
+    if (invalidTime.lossPath.state === 'unaudited') throw new Error('test fixture must be audited');
+    invalidTime.lossPath.audit.auditedAt = '2026-08-07';
+    const mislabeledNone = measuredCapability('alpha');
+    if (mislabeledNone.lossPath.state === 'unaudited') throw new Error('test fixture must be audited');
+    mislabeledNone.lossPath.state = 'audited-none';
+
+    expect(() => parseImportConformanceScore(score(measuredPack([missingAudit as never]), '100'))).toThrow(
+      'lossPath: must contain exactly: audit, state',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([inheritedAudit as never]), '100'))).toThrow(
+      'lossPath: must contain exactly: state',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([invalidTime]), '100'))).toThrow(
+      'lossPath.audit.auditedAt: must be a canonical UTC instant with millisecond precision',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([mislabeledNone]), '100'))).toThrow(
+      'instrumentation: proof references and instrument audits require a positively identified loss path',
+    );
+  });
+
+  it('makes missing member audits explicit UNKNOWN and validates the declaration vocabulary', () => {
+    const silentlyPassing = measuredCapability('alpha');
+    silentlyPassing.instrumentation.audits = ['payload'];
+    const explicitUnknown = auditIncompleteCapability('alpha');
+    const unknownAudit = measuredCapability('alpha') as unknown as {
+      instrumentation: { audits: string[] };
+    };
+    unknownAudit.instrumentation.audits = ['shape'];
+    const duplicateAudit = measuredCapability('alpha');
+    duplicateAudit.instrumentation.audits = ['payload', 'payload'];
+
+    expect(() => parseImportConformanceScore(score(measuredPack([silentlyPassing]), '100'))).toThrow(
+      'outcomes: otherwise-clean and unsupported observations require both member audit declarations or keyed instrument-audit-incomplete observations',
+    );
+    expect(parseImportConformanceScore(score(measuredPack([explicitUnknown]), '100')).packs[0]).toMatchObject({
+      summary: {
+        instrumentAudited: { payloadCapabilities: 1, scopeCapabilities: 0 },
+      },
+    });
+    expect(() => parseImportConformanceScore(score(measuredPack([unknownAudit as never]), '100'))).toThrow(
+      "instrumentation.audits[0]: must be 'payload' or 'scope'",
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([duplicateAudit]), '100'))).toThrow(
+      'instrumentation.audits: instrument audits must be unique and sorted in ascending order',
+    );
+  });
+
+  it('never treats a human log guard as a structured diagnostic crumb', () => {
+    const warningOnly = unknownCapability('alpha', 2, 'loss-path-known-not-wired');
+    warningOnly.instrumentation.channel = 'human-log-only';
+    const parsed = parseImportConformanceScore(score(measuredPack([warningOnly]), '100'));
+    const falselyReferenced = structuredClone(warningOnly);
+    falselyReferenced.instrumentation.fires = { proofs: ['fire-test:alpha'], state: 'referenced' };
+
+    expect(parsed.packs[0]).toMatchObject({
+      capabilities: [
+        {
+          instrumentation: { audits: [], channel: 'human-log-only' },
+          results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+        },
+      ],
+      summary: {
+        instrumentAudited: { payloadCapabilities: 0, scopeCapabilities: 0 },
+        proofReferenced: { fireCapabilities: 0, silenceCapabilities: 0 },
+      },
+    });
+    expect(() => parseImportConformanceScore(score(measuredPack([falselyReferenced]), '100'))).toThrow(
+      'instrumentation: proof references and instrument audits require a structured diagnostic crumb',
+    );
+  });
+
+  it('accepts UNKNOWN observations as exercised but outside both referenced populations', () => {
     const pack = measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 1)]);
     const parsed = parseImportConformanceScore(score(pack, '100'));
 
@@ -406,11 +692,11 @@ describe('parseImportConformanceScore', () => {
       summary: {
         exercised: {
           capabilities: 2,
-          fireProven: {
+          fireReferenced: {
             capabilities: 1,
             results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
           },
-          silenceProven: {
+          silenceReferenced: {
             capabilities: 1,
             results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 0 },
           },
@@ -433,7 +719,7 @@ describe('parseImportConformanceScore', () => {
     const noWitness = measuredPack([unknownCapability('alpha', 0)]);
 
     expect(() => parseImportConformanceScore(score(flat as never, '100'))).toThrow(
-      'summary: must contain exactly: exercised, totalCapabilities',
+      'summary: must contain exactly: exercised, instrumentAudited, lossPathPopulation, proofReferenced, totalCapabilities',
     );
     expect(() => parseImportConformanceScore(score(noWitness, '100'))).toThrow(
       'witnesses: must be an integer greater than or equal to 1',
@@ -482,7 +768,7 @@ describe('parseImportConformanceScore', () => {
     );
   });
 
-  it('keeps the fire-proven and silence-proven populations and verdicts independent', () => {
+  it('keeps the fire-referenced and silence-referenced populations and verdicts independent', () => {
     const pack = measuredPack([
       fireOnlyPass('alpha'),
       fireOnlyUnknownCrumb('beta'),
@@ -496,11 +782,11 @@ describe('parseImportConformanceScore', () => {
       summary: {
         exercised: {
           capabilities: 5,
-          fireProven: {
+          fireReferenced: {
             capabilities: 3,
             results: { failedCapabilities: 1, passedCapabilities: 1, unknownCapabilities: 1 },
           },
-          silenceProven: {
+          silenceReferenced: {
             capabilities: 2,
             results: { failedCapabilities: 0, passedCapabilities: 1, unknownCapabilities: 1 },
           },
@@ -524,10 +810,10 @@ describe('parseImportConformanceScore', () => {
     noSilence.outcomes.unsupportedClean = 1;
 
     expect(() => parseImportConformanceScore(score(measuredPack([noFire]), '100'))).toThrow(
-      'no-crumb pass or silently-wrong outcomes require proven firing instrumentation',
+      'no-crumb pass or silently-wrong outcomes require referenced firing instrumentation',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([noSilence]), '100'))).toThrow(
-      'outcomes.unsupportedClean: requires proven silence instrumentation',
+      'outcomes.unsupportedClean: requires referenced silence instrumentation',
     );
   });
 
@@ -540,6 +826,7 @@ describe('parseImportConformanceScore', () => {
     });
     const wrongReason = fireOnlyUnknownCrumb('alpha');
     wrongReason.unknownObservations[0].reason = 'loss-path-known-not-wired';
+    (wrongReason.unknownObservations[0] as unknown as Record<string, unknown>).granularity = 'whole-object';
     const collapsedReason = unknownCapability('alpha', 1) as unknown as {
       unknownObservations: Array<{ reason: string; reference: string }>;
     };
@@ -549,11 +836,122 @@ describe('parseImportConformanceScore', () => {
       'observation references must be unique and sorted in ascending order',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([wrongReason]), '100'))).toThrow(
-      'requires both instrumentation directions to be unproven',
+      'requires both instrumentation directions to be unreferenced',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([collapsedReason as never]), '100'))).toThrow(
-      "must be 'fire-proof-missing-for-no-crumb', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
+      "must be 'diagnostic-cause-unknown', 'fire-proof-missing-for-no-crumb', 'instrument-audit-incomplete', 'loop-bounded-configuration-limit', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
     );
+  });
+
+  it('keeps a crumb with an inseparable file-versus-importer cause UNKNOWN instead of scoring it as fact', () => {
+    const capability = measuredCapability('alpha', 1);
+    capability.results = { fire: { state: 'unknown' }, silence: { state: 'unknown' } };
+    capability.unknownObservations = [
+      {
+        reason: 'diagnostic-cause-unknown',
+        reference: 'fixture:alpha:shape-body-unreadable',
+      },
+    ];
+    const parsed = parseImportConformanceScore(score(measuredPack([capability]), '100'));
+    const doubleCounted = structuredClone(capability);
+    doubleCounted.outcomes.unsupportedClean = 1;
+
+    expect(parsed.packs[0].capabilities[0]).toMatchObject({
+      outcomes: { unsupportedClean: 0 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [
+        {
+          reason: 'diagnostic-cause-unknown',
+          reference: 'fixture:alpha:shape-body-unreadable',
+        },
+      ],
+    });
+    expect(() => parseImportConformanceScore(score(measuredPack([doubleCounted]), '100'))).toThrow(
+      'witnesses: cannot be smaller than the 2 classified observations',
+    );
+  });
+
+  it('requires exact capability-scoped UNKNOWN evidence for every unobservable loop-bounded configuration limit', () => {
+    const loopBounded = loopBoundedCapability('alpha');
+    const parsed = parseImportConformanceScore(score(measuredPack([loopBounded]), '100'));
+    const missingUnknown = structuredClone(loopBounded);
+    missingUnknown.unknownObservations = [];
+    missingUnknown.results = { fire: { state: 'pass' }, silence: { state: 'pass' } };
+    const falsePass = structuredClone(loopBounded);
+    falsePass.results = { fire: { state: 'pass' }, silence: { state: 'pass' } };
+    const structured = measuredCapability('alpha');
+    structured.configurationLimits = {
+      limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'structured' }],
+      state: 'declared',
+    };
+
+    expect(parsed.packs[0].capabilities[0]).toMatchObject({
+      configurationLimits: {
+        limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'unobservable' }],
+        state: 'declared',
+      },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [
+        {
+          reason: 'loop-bounded-configuration-limit',
+          reference: 'MAX_FRAME_ACTIONS',
+        },
+      ],
+    });
+    expect(() => parseImportConformanceScore(score(measuredPack([missingUnknown]), '100'))).toThrow(
+      'configurationLimits: unobservable limit ids must exactly match the capability-scoped loop-bounded-configuration-limit UNKNOWN references',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([falsePass]), '100'))).toThrow(
+      "results.fire.state: must equal the licensed observations ('unknown')",
+    );
+    expect(parseImportConformanceScore(score(measuredPack([structured]), '100')).packs[0]).toMatchObject({
+      capabilities: [
+        {
+          configurationLimits: {
+            limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'structured' }],
+            state: 'declared',
+          },
+          results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
+        },
+      ],
+    });
+    const report = compareImportConformanceScores(
+      score(measuredPack([loopBounded]), '100'),
+      score(measuredPack([loopBounded]), '101'),
+      { unknownBaseline: 'allow' },
+    );
+    expect(formatImportConformanceRatchetReport(report)).toContain(
+      'configuration limits [alpha: declared [MAX_FRAME_ACTIONS unobservable]] → [alpha: declared [MAX_FRAME_ACTIONS unobservable]]',
+    );
+    expect(formatImportConformanceRatchetReport(report)).toContain(
+      'unknown observations loop-bounded-limit capability-scoped 1 [alpha@MAX_FRAME_ACTIONS]',
+    );
+  });
+
+  it('allows one configuration limit to contaminate multiple capability rows without collapsing their keys', () => {
+    const parsed = parseImportConformanceScore(
+      score(
+        measuredPack([
+          loopBoundedCapability('swf.button.define-button', 'MAX_BUTTON_RECORDS'),
+          loopBoundedCapability('swf.button.define-button-2', 'MAX_BUTTON_RECORDS'),
+        ]),
+        '100',
+      ),
+    );
+
+    expect(parsed.packs[0]).toMatchObject({
+      capabilities: [
+        {
+          id: 'swf.button.define-button',
+          unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_BUTTON_RECORDS' }],
+        },
+        {
+          id: 'swf.button.define-button-2',
+          unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_BUTTON_RECORDS' }],
+        },
+      ],
+      summary: { exercised: { capabilities: 2 }, totalCapabilities: 2 },
+    });
   });
 
   it('keeps known-but-unwired and unidentified loss paths as separate remedy populations', () => {
@@ -566,7 +964,41 @@ describe('parseImportConformanceScore', () => {
     });
 
     expect(formatImportConformanceRatchetReport(report)).toContain(
-      'unknown observations known-unwired 1 → 1, loss-path-unidentified 1 → 1, no-fire 0 → 0, no-silence 0 → 0',
+      'known-unwired capability-scoped 1 [alpha@fixture:alpha:loss-family/whole-object], loss-path-unidentified capability-scoped 1 [beta@fixture:beta:loss-path-audit]',
+    );
+  });
+
+  it('requires loss granularity only for characterized unwired families and permits both axes on one capability', () => {
+    const both = unknownCapability('morph', 2, 'loss-path-known-not-wired');
+    both.unknownObservations = [
+      {
+        granularity: 'partial-object',
+        reason: 'loss-path-known-not-wired',
+        reference: 'swfMorphShape:single-path-pair',
+      },
+      {
+        granularity: 'whole-object',
+        reason: 'loss-path-known-not-wired',
+        reference: 'swfMorphShape:whole-morph',
+      },
+    ];
+    const missingGranularity = structuredClone(both) as unknown as {
+      unknownObservations: Array<Record<string, unknown>>;
+    };
+    delete missingGranularity.unknownObservations[0].granularity;
+    const fabricatedGranularity = fireOnlyUnknownCrumb('alpha') as unknown as {
+      unknownObservations: Array<Record<string, unknown>>;
+    };
+    fabricatedGranularity.unknownObservations[0].granularity = 'partial-object';
+
+    expect(parseImportConformanceScore(score(measuredPack([both]), '100')).packs[0]).toMatchObject({
+      capabilities: [{ unknownObservations: both.unknownObservations }],
+    });
+    expect(() => parseImportConformanceScore(score(measuredPack([missingGranularity as never]), '100'))).toThrow(
+      'must contain exactly: granularity, reason, reference',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([fabricatedGranularity as never]), '100'))).toThrow(
+      'must contain exactly: reason, reference',
     );
   });
 
@@ -578,26 +1010,30 @@ describe('parseImportConformanceScore', () => {
     );
   });
 
-  it('cannot represent proven instrumentation without stable proof ids', () => {
+  it('cannot represent referenced instrumentation without stable proof ids', () => {
     const absent = measuredPack();
     delete (absent.capabilities[0] as unknown as Record<string, unknown>).instrumentation;
     const empty = {
       ...measuredCapability('alpha'),
       instrumentation: {
-        fires: { proofs: [], state: 'proven' },
-        staysSilent: { proofs: ['silence-test:alpha'], state: 'proven' },
+        audits: ['payload', 'scope'],
+        channel: 'structured-crumb',
+        fires: { proofs: [], state: 'referenced' },
+        staysSilent: { proofs: ['silence-test:alpha'], state: 'referenced' },
       },
     };
     const duplicate = {
       ...measuredCapability('alpha'),
       instrumentation: {
-        fires: { proofs: ['proof-a', 'proof-a'], state: 'proven' },
-        staysSilent: { proofs: ['silence-test:alpha'], state: 'proven' },
+        audits: ['payload', 'scope'],
+        channel: 'structured-crumb',
+        fires: { proofs: ['proof-a', 'proof-a'], state: 'referenced' },
+        staysSilent: { proofs: ['silence-test:alpha'], state: 'referenced' },
       },
     };
 
     expect(() => parseImportConformanceScore(score(absent, '100'))).toThrow(
-      'must contain exactly: id, instrumentation, outcomes, results, state, unknownObservations, witnesses',
+      'must contain exactly: configurationLimits, id, instrumentation, lossPath, outcomes, results, state, unknownObservations, witnesses',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([empty as never]), '100'))).toThrow(
       'instrumentation.fires.proofs: must be a non-empty array',
@@ -677,16 +1113,63 @@ function measuredCapability(
   outcomeCounts = outcomes(),
 ): ImportConformanceExercisedCapability {
   return {
+    configurationLimits: { state: 'not-applicable' },
     id,
     instrumentation: {
-      fires: { proofs: [`fire-test:${id}`], state: 'proven' },
-      staysSilent: { proofs: [`silence-test:${id}`], state: 'proven' },
+      audits: ['payload', 'scope'],
+      channel: 'structured-crumb',
+      fires: { proofs: [`fire-test:${id}`], state: 'referenced' },
+      staysSilent: { proofs: [`silence-test:${id}`], state: 'referenced' },
     },
+    lossPath: identifiedLossPath(id),
     outcomes: outcomeCounts,
     results: { fire: { state: result }, silence: { state: result } },
     state: 'exercised',
     unknownObservations: [],
     witnesses,
+  };
+}
+
+function auditIncompleteCapability(id: string): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id);
+  capability.instrumentation.audits = ['payload'];
+  capability.results = { fire: { state: 'unknown' }, silence: { state: 'unknown' } };
+  capability.unknownObservations = [
+    {
+      reason: 'instrument-audit-incomplete',
+      reference: `fixture:${id}:instrument-audit`,
+    },
+  ];
+  return capability;
+}
+
+function loopBoundedCapability(id: string, limitId = 'MAX_FRAME_ACTIONS'): ImportConformanceExercisedCapability {
+  const capability = measuredCapability(id, 2);
+  capability.configurationLimits = {
+    limits: [{ id: limitId, reporting: 'unobservable' }],
+    state: 'declared',
+  };
+  capability.results = { fire: { state: 'unknown' }, silence: { state: 'unknown' } };
+  capability.unknownObservations = [{ reason: 'loop-bounded-configuration-limit', reference: limitId }];
+  return capability;
+}
+
+function auditedNoneCapability(id: string): ImportConformanceExercisedCapability {
+  return {
+    configurationLimits: { state: 'not-applicable' },
+    id,
+    instrumentation: {
+      audits: [],
+      channel: 'none',
+      fires: { state: 'unreferenced' },
+      staysSilent: { state: 'unreferenced' },
+    },
+    lossPath: { ...identifiedLossPath(id), state: 'audited-none' },
+    outcomes: outcomes(),
+    results: { fire: { state: 'pass' }, silence: { state: 'pass' } },
+    state: 'exercised',
+    unknownObservations: [],
+    witnesses: 1,
   };
 }
 
@@ -697,8 +1180,17 @@ function measuredPack(
   const measured = capabilities.filter(
     (capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised',
   );
-  const fireProven = measured.filter((capability) => capability.instrumentation.fires.state === 'proven');
-  const silenceProven = measured.filter((capability) => capability.instrumentation.staysSilent.state === 'proven');
+  const auditable = capabilities.filter(
+    (capability): capability is ImportConformanceExercisedCapability | ImportConformanceUnmeasuredCapability =>
+      capability.state !== 'not-run',
+  );
+  const fireReferenced = measured.filter((capability) => capability.instrumentation.fires.state === 'referenced');
+  const silenceReferenced = measured.filter(
+    (capability) => capability.instrumentation.staysSilent.state === 'referenced',
+  );
+  const canSilentlyLose = auditable.filter((capability) => capability.lossPath.state === 'identified');
+  const auditedNone = auditable.filter((capability) => capability.lossPath.state === 'audited-none');
+  const unaudited = auditable.filter((capability) => capability.lossPath.state === 'unaudited');
   return {
     capabilities,
     id: 'swf-ruffle-fixtures',
@@ -716,9 +1208,28 @@ function measuredPack(
     summary: {
       exercised: {
         capabilities: measured.length,
-        fireProven: provenSummary(fireProven, 'fire'),
-        silenceProven: provenSummary(silenceProven, 'silence'),
+        fireReferenced: referencedSummary(fireReferenced, 'fire'),
+        silenceReferenced: referencedSummary(silenceReferenced, 'silence'),
         singleWitnessCapabilities: measured.filter((capability) => capability.witnesses === 1).length,
+      },
+      instrumentAudited: {
+        payloadCapabilities: auditable.filter((capability) => capability.instrumentation.audits.includes('payload'))
+          .length,
+        scopeCapabilities: auditable.filter((capability) => capability.instrumentation.audits.includes('scope')).length,
+      },
+      lossPathPopulation: {
+        auditedCapabilities: canSilentlyLose.length + auditedNone.length,
+        auditedNoLossPathCapabilities: auditedNone.length,
+        auditState: unaudited.length === 0 ? 'complete' : 'partial',
+        canSilentlyLoseCapabilities: canSilentlyLose.length,
+        unauditedCapabilities: unaudited.length,
+      },
+      proofReferenced: {
+        fireCapabilities: auditable.filter((capability) => capability.instrumentation.fires.state === 'referenced')
+          .length,
+        silenceCapabilities: auditable.filter(
+          (capability) => capability.instrumentation.staysSilent.state === 'referenced',
+        ).length,
       },
       totalCapabilities: capabilities.length,
     },
@@ -745,8 +1256,57 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
   };
 }
 
-function unmeasuredCapability(id: string): ImportConformanceCapability {
-  return { id, state: 'unmeasured' };
+function unmeasuredCapability(id: string): ImportConformanceUnmeasuredCapability {
+  return {
+    id,
+    instrumentation: {
+      audits: [],
+      channel: 'none',
+      fires: { state: 'unreferenced' },
+      staysSilent: { state: 'unreferenced' },
+    },
+    lossPath: { state: 'unaudited' },
+    state: 'unmeasured',
+  };
+}
+
+function syntheticallyReferencedCapability(id: string): ImportConformanceUnmeasuredCapability {
+  return {
+    id,
+    instrumentation: {
+      audits: ['payload', 'scope'],
+      channel: 'structured-crumb',
+      fires: { proofs: [`fire-test:${id}`], state: 'referenced' },
+      staysSilent: { proofs: [`silence-test:${id}`], state: 'referenced' },
+    },
+    lossPath: identifiedLossPath(id),
+    state: 'unmeasured',
+  };
+}
+
+function auditedUnmeasuredCapability(
+  id: string,
+  state: ImportConformanceAuditedLossPath['state'],
+): ImportConformanceUnmeasuredCapability & { lossPath: ImportConformanceAuditedLossPath } {
+  return {
+    id,
+    instrumentation: {
+      audits: [],
+      channel: 'none',
+      fires: { state: 'unreferenced' },
+      staysSilent: { state: 'unreferenced' },
+    },
+    lossPath: {
+      audit: {
+        auditId: 'audit:loss-path-v1',
+        auditedAt: '2026-08-07T00:00:00.000Z',
+        auditor: 'audit-team',
+        subjectHash: `sha256:subject:${id}`,
+      },
+      state,
+    },
+    state: 'unmeasured',
+  };
 }
 
 function unknownCapability(
@@ -755,22 +1315,35 @@ function unknownCapability(
   reason: 'loss-path-known-not-wired' | 'loss-path-not-identified' = 'loss-path-not-identified',
 ): ImportConformanceExercisedCapability {
   return {
+    configurationLimits: { state: 'not-applicable' },
     id,
-    instrumentation: { fires: { state: 'unproven' }, staysSilent: { state: 'unproven' } },
+    instrumentation: {
+      audits: [],
+      channel: 'none',
+      fires: { state: 'unreferenced' },
+      staysSilent: { state: 'unreferenced' },
+    },
+    lossPath: reason === 'loss-path-not-identified' ? { state: 'unaudited' } : identifiedLossPath(id),
     outcomes: outcomes(),
     results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
     state: 'exercised',
-    unknownObservations: Array.from({ length: witnesses }, (_, index) => ({
-      reason,
-      reference: `fixture:${id}:${index.toString().padStart(6, '0')}`,
-    })),
+    unknownObservations:
+      reason === 'loss-path-known-not-wired'
+        ? [
+            {
+              granularity: 'whole-object',
+              reason,
+              reference: `fixture:${id}:loss-family`,
+            },
+          ]
+        : [{ reason, reference: `fixture:${id}:loss-path-audit` }],
     witnesses,
   };
 }
 
 function fireOnlyPass(id: string): ImportConformanceExercisedCapability {
   const capability = measuredCapability(id, 1);
-  capability.instrumentation.staysSilent = { state: 'unproven' };
+  capability.instrumentation.staysSilent = { state: 'unreferenced' };
   capability.results.silence = { state: 'unknown' };
   return capability;
 }
@@ -784,14 +1357,14 @@ function fireOnlyUnknownCrumb(id: string): ImportConformanceExercisedCapability 
 
 function silenceOnlyPass(id: string): ImportConformanceExercisedCapability {
   const capability = measuredCapability(id, 1, 'pass', outcomes({ unsupportedClean: 1 }));
-  capability.instrumentation.fires = { state: 'unproven' };
+  capability.instrumentation.fires = { state: 'unreferenced' };
   capability.results.fire = { state: 'unknown' };
   return capability;
 }
 
 function silenceOnlyUnknownNoCrumb(id: string): ImportConformanceExercisedCapability {
   const capability = measuredCapability(id, 1);
-  capability.instrumentation.fires = { state: 'unproven' };
+  capability.instrumentation.fires = { state: 'unreferenced' };
   capability.results = { fire: { state: 'unknown' }, silence: { state: 'unknown' } };
   capability.unknownObservations = [{ reason: 'fire-proof-missing-for-no-crumb', reference: `fixture:${id}:no-crumb` }];
   return capability;
@@ -799,15 +1372,15 @@ function silenceOnlyUnknownNoCrumb(id: string): ImportConformanceExercisedCapabi
 
 function mixedDirectFailAndUnknown(id: string): ImportConformanceExercisedCapability {
   const capability = measuredCapability(id, 2, 'fail', outcomes({ importedWrong: 1 }));
-  capability.instrumentation.staysSilent = { state: 'unproven' };
+  capability.instrumentation.staysSilent = { state: 'unreferenced' };
   capability.unknownObservations = [{ reason: 'silence-proof-missing-for-crumb', reference: `fixture:${id}:crumb` }];
   return capability;
 }
 
-function provenSummary(
+function referencedSummary(
   capabilities: ImportConformanceExercisedCapability[],
   lane: 'fire' | 'silence',
-): ImportConformanceMeasuredPack['summary']['exercised']['fireProven'] {
+): ImportConformanceMeasuredPack['summary']['exercised']['fireReferenced'] {
   return {
     capabilities: capabilities.length,
     results: {
@@ -815,6 +1388,18 @@ function provenSummary(
       passedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'pass').length,
       unknownCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'unknown').length,
     },
+  };
+}
+
+function identifiedLossPath(id: string): ImportConformanceAuditedLossPath {
+  return {
+    audit: {
+      auditId: 'audit:loss-path-v1',
+      auditedAt: '2026-08-07T00:00:00.000Z',
+      auditor: 'audit-team',
+      subjectHash: `sha256:subject:${id}`,
+    },
+    state: 'identified',
   };
 }
 
