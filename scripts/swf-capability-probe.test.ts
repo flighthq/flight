@@ -115,12 +115,12 @@ function colorTransformWithAlphaAdd(): Uint8Array {
   return writer.bytes();
 }
 
-function createSwf(tags: readonly Uint8Array[]): Uint8Array {
+function createSwf(tags: readonly Uint8Array<ArrayBufferLike>[]): Uint8Array {
   const body = join(rectangle(), uint16(24 * 256), uint16(1), ...tags);
   return join(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(body.length + 8), body);
 }
 
-function join(...parts: readonly Uint8Array[]): Uint8Array {
+function join(...parts: readonly Uint8Array<ArrayBufferLike>[]): Uint8Array {
   const result = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
   let offset = 0;
   for (const part of parts) {
@@ -140,7 +140,7 @@ function rectangle(): Uint8Array {
   return writer.bytes();
 }
 
-function tag(code: number, body = new Uint8Array()): Uint8Array {
+function tag(code: number, body: Uint8Array<ArrayBufferLike> = new Uint8Array()): Uint8Array {
   const shortLength = body.length < 0x3f ? body.length : 0x3f;
   return shortLength === 0x3f
     ? join(uint16((code << 6) | 0x3f), uint32(body.length), body)

@@ -5,7 +5,7 @@ export interface SwfCapabilityProbe {
   readable: boolean;
 }
 
-export function probeSwfCapabilities(source: Readonly<Uint8Array>): SwfCapabilityProbe {
+export function probeSwfCapabilities(source: Readonly<Uint8Array<ArrayBufferLike>>): SwfCapabilityProbe {
   const bytes = uncompressSwf(source);
   if (bytes === null) return { capabilities: [], readable: false };
   const reader = new ProbeReader(bytes, 8, bytes.length);
@@ -432,7 +432,7 @@ function skipRectangle(body: ProbeReader): void {
   body.align();
 }
 
-function uncompressSwf(source: Readonly<Uint8Array>): Uint8Array | null {
+function uncompressSwf(source: Readonly<Uint8Array<ArrayBufferLike>>): Uint8Array | null {
   if (source.length < 12 || source[1] !== 0x57 || source[2] !== 0x53) return null;
   const declaredLength = readUint32(source, 4);
   if (declaredLength < 12) return null;
@@ -447,7 +447,7 @@ function uncompressSwf(source: Readonly<Uint8Array>): Uint8Array | null {
   return bytes;
 }
 
-function readUint32(source: Readonly<Uint8Array>, offset: number): number {
+function readUint32(source: Readonly<Uint8Array<ArrayBufferLike>>, offset: number): number {
   return (
     source[offset]! + source[offset + 1]! * 0x100 + source[offset + 2]! * 0x10000 + source[offset + 3]! * 0x1000000
   );
@@ -459,7 +459,7 @@ class ProbeReader {
   valid = true;
 
   constructor(
-    readonly source: Readonly<Uint8Array>,
+    readonly source: Readonly<Uint8Array<ArrayBufferLike>>,
     start: number,
     readonly end: number,
   ) {

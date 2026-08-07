@@ -22,7 +22,7 @@ export interface ImportConformanceIndexedCapability extends ImportConformanceCap
 }
 
 export interface ImportConformanceIndexedFixture {
-  capabilities: string[];
+  capabilities: readonly string[];
   probeState: 'readable' | 'unreadable';
   reference: string;
   sourceHash: string;
@@ -85,8 +85,8 @@ export interface ImportConformanceScoreCapabilityMeasured {
 }
 
 export interface ImportConformanceInstrumentationProofs {
-  fires: string[];
-  staysSilent: string[];
+  fires: readonly string[];
+  staysSilent: readonly string[];
 }
 
 export interface ImportConformanceScoreCapabilityNotRun {
