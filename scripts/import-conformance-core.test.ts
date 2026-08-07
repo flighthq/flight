@@ -127,6 +127,7 @@ describe('createImportConformanceNotRunScore', () => {
       firstCaptureDefects: 'undetectable',
       formatDerivedProperties: 'required-not-implemented',
       ratchet: 'recorded-run-regression-only',
+      unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     });
     expect(score.packs[0]).toMatchObject({
       capabilityConventionRevision: 'unresolved-individuation-v1',
