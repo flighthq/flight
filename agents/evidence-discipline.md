@@ -138,7 +138,7 @@ stops an artifact claiming more than it has.
 
 ## Search instructions — where to look next
 
-*Arc-local, 4 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 5 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Each of these directed a search that found something the same day it was written. None of them is a
 verdict; see the note at the top.
@@ -155,6 +155,13 @@ verdict; see the note at the top.
   comparison. That makes the axis an oracle specification: it says what you must build to see the
   failure, and nothing about how much the failure costs a user. Demand that property of the next
   axis rather than treating it as a happy accident of this one.
+- **A search finds syntax, not the thing you were looking for.** A sweep for `if (x !== null) push(x)`
+  produced eleven candidate loss paths; one of them could not be made to fire at all, because the two
+  streams it guards are built in lockstep and cannot diverge in the ways the guard rejects. **It was a
+  defensive guard, and it survived three readings — the audit, the write-up, and the relay — because at
+  no point did anyone try to make it happen.** Every match was counted without asking whether it could
+  fire. ⇒ **Building the report for a suspected defect is the strongest test of whether it is one, and
+  deferring that is not caution: an unexercised finding is a claim nothing has contradicted yet.**
 - **A rationale more vivid than its conclusion needs is worth reading first.** A CFF reader's stated
   reason for refusing CID-keyed fonts was that they would fail *silently, for every glyph*; measured,
   they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
