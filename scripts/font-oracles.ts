@@ -18,27 +18,34 @@
 // check on VALUE correctness that no table this package parses can supply, because `head` is written
 // by the font's producer from the true outlines.
 //
-// EXCEEDS is the only definite defect: a decoded point outside the declared box cannot be right.
-// CONTAINED is a WEAK pass and is reported separately rather than folded into agreement — it cannot
-// distinguish a loose declared box from a glyph the reader failed to draw.
-export function compareDecodedBoundsToHead(
+// ★ THIS RETURNS THE MEASUREMENT, NOT A VERDICT. Each delta is how far the decoded edge lies OUTSIDE
+// the declared one, so positive means outside and negative means inside by that much. A function that
+// returned only "exceeds" would put a semantic decision inside a measurement: the caller could still
+// group verdicts afterwards, but the magnitudes would be gone and nothing could recover them.
+// `classifyHeadBoundsDeltas` is the classification, kept separate so a caller chooses to apply it.
+export function measureDecodedBoundsAgainstHead(
   declared: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
   decoded: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
+): { xMax: number; xMin: number; yMax: number; yMin: number } {
+  return {
+    xMax: decoded.xMax - declared.xMax,
+    xMin: declared.xMin - decoded.xMin,
+    yMax: decoded.yMax - declared.yMax,
+    yMin: declared.yMin - decoded.yMin,
+  };
+}
+
+// The classification, over deltas somebody else measured.
+//
+// EXCEEDS is the only definite defect: a decoded point outside the declared box cannot be right.
+// CONTAINED is a WEAK pass and is named separately rather than folded into agreement — it cannot
+// distinguish a loose declared box from a glyph the reader failed to draw.
+export function classifyHeadBoundsDeltas(
+  deltas: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
 ): 'contained' | 'exact' | 'exceeds' {
-  if (
-    decoded.xMin < declared.xMin ||
-    decoded.yMin < declared.yMin ||
-    decoded.xMax > declared.xMax ||
-    decoded.yMax > declared.yMax
-  ) {
-    return 'exceeds';
-  }
-  const exact =
-    decoded.xMin === declared.xMin &&
-    decoded.yMin === declared.yMin &&
-    decoded.xMax === declared.xMax &&
-    decoded.yMax === declared.yMax;
-  return exact ? 'exact' : 'contained';
+  const edges = [deltas.xMax, deltas.xMin, deltas.yMax, deltas.yMin];
+  if (edges.some((delta) => delta > 0)) return 'exceeds';
+  return edges.every((delta) => delta === 0) ? 'exact' : 'contained';
 }
 
 // A `glyf` glyph declares `numberOfContours` in a field the point decoding never touches, so emitted
