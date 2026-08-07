@@ -85,6 +85,24 @@ of, and the question that was actually asked.
   signals MEAN, not only what it can see** — a distinct axis from reach, and the author refused to
   report the number as a finding rather than hand a peer an alarming figure that meant nothing.
 
+- **filed — a ninth, and the author applied the law to their OWN figure within the hour.** A reach
+  ratio read *158 of 393 nullish constructs, 40%* against *38 of 77, 49%*, concluding the detector's
+  reach transferred. **Restated: the question asked was what fraction of potential silent-drop sites
+  the sweep reaches; the question the ratio answered was matches over nullish tokens.** ⇒ **The
+  numerator drew from outside the denominator** — two of nine forms match constructs containing no
+  nullish token at all, a swallowed `catch` among them. **Every digit was true, and it verified as
+  true every time it was looked at.**
+  ★ **And the obvious repair was also wrong, which is the part worth keeping:** adding every logical-or
+  to the denominator gives 29% and 15% and **inverts the conclusion**, but most logical-ors are
+  boolean conditions rather than defaults, so that denominator errs the other way. ⇒ **There was no
+  well-defined denominator for "potential silent-drop site", and saying so was the honest end of the
+  measurement rather than picking whichever fraction read better.**
+  ★★ **THE REPLACEMENT WAS DENOMINATOR-FREE: per form, does it fire on the new corpus at all — seven
+  of nine do, and the two that do not fire on NEITHER corpus, so those constructs are absent from both
+  rather than the detector being blind on one.** ⇒ **When you cannot define a denominator, replace the
+  ratio with a measure that does not need one — not with a better-looking fraction.** **The conclusion
+  survived and its reason did not**, which is the outcome to prefer over a rescued number.
+
 - **filed — Two instruments by one author can disagree on the same heuristic, invisibly.** A
   swallowed-catch form reported seven candidates; four were `catch` blocks that **record via
   assignment** — `catch { threw = true }` — which is the outcome being captured. **One of the
