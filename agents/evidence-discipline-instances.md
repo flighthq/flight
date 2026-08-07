@@ -65,6 +65,20 @@ other work.*
   making. **Measured after applying it: sixteen runs, three failures, every one read, all three
   timeouts.**
 
+- **filed — Independence beats volume: two trees agreeing is worth more than twice the runs in one.**
+  A second agent re-sampled in **a different clone at a different commit** rather than adding runs to
+  the first, **because a tree-local cause would have to be present in both to survive.** ⇒ **More
+  samples under one condition reduce noise; samples under a second condition remove a class of
+  explanation** — and only the second kind changes what the evidence can rule out. Combined across the
+  two trees: **24 runs, 5 failures, every failure message read, all 5 timeouts, 0 assertion failures.**
+  **Two reds from an earlier unread batch are excluded rather than counted, because "gone" is not
+  "unread" and neither is it a data point.**
+
+- **filed — State a prediction BEFORE the fix lands, or it is unfalsifiable in practice.** When the
+  repair and the explanation arrive together, **nobody can tell which produced the green.** Putting
+  *expected failures = 0 in N runs* on the record first **converts someone's repair into a test of
+  your hypothesis**, and makes any survivor immediately interesting instead of merely confusing.
+
 ## Serving: structure over convention
 
 - **filed — Choose a channel without the hazard instead of remembering to avoid it.** Prose through
