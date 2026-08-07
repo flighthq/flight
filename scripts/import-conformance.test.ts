@@ -73,6 +73,8 @@ function writeFixtureTree(root: string): void {
       packs: [
         {
           file: 'unused.tar.gz',
+          // The tree below holds exactly one corpus file and no pack metadata, so these are
+          // read off the fixture rather than chosen: `files: 1` meant this and still does.
           metadataFiles: 0,
           pack: 'swf-ruffle-fixtures',
           sha256: 'a'.repeat(64),
