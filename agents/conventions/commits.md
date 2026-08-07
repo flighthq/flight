@@ -117,6 +117,22 @@ sum — **the choice is the tell that a meaning is in play and the change is not
 the broken build, before they know which figure any consumer used, and it is cheaper than the caution
 that otherwise has to substitute for it: **stop and route it to whoever owns the meaning.**
 
+### A migration that updates test doubles is never mechanical
+
+**When a type gains a required field, every construction site becomes a semantic decision — including
+every test double.** The compiler forces a value at each one, and **being forced to supply a value is
+not the same as the value being determined.** ⇒ **"It typechecks" is not evidence the number is
+right.**
+
+This is the previous rule seen from the other side: there, the tool offered a choice; here, the tool
+*demands* one. **Both feel mechanical because the compiler is driving, and in both the author is
+deciding.** A double carrying a plausible-looking value can move behaviour that no type error will
+ever flag — a shard plan, a threshold, an exit status.
+
+**So a migration commit that touches fixtures owes a line on what each new value means**, and when
+such a migration breaks a behavioural assertion, **read the doubles before escalating to whoever owns
+the real numbers**: the fixture branch is far more likely and needs no ruling from them.
+
 ## Picking type vs scope
 
 Two questions, in order:
