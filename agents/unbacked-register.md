@@ -127,6 +127,7 @@ what this entry exists to prevent.**
 | 6 | A parcel addressed to one builder in the second person, copied upward | **A full read** before the reader established it was not theirs | the reader, at full cost |
 | 7 | A parcel addressed to one builder in the second person, copied upward | **A full read again**, by the same reader | the reader, at full cost |
 | 8 | A parcel addressed to one builder in the second person, copied upward | **A full read**, third consecutive | the reader, at full cost |
+| 9 | A builder-addressed body reused as an upward escalation — **first instance with a `TO:` line on it** | **Three lines**, then stopped | the reader, cheaply |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
@@ -166,7 +167,21 @@ where it fails — and that is most of them.** ⇒ **This is worse than "reading
 care looks like", because relevance is a real signal rather than an anxiety**, so the pull cannot be
 dismissed as over-caution.
 
-**The lapse rate has not dropped across eight instances.** Detection is cheaper than prevention was
+★★ **Instance 9 is the first measurement of the `TO:`-line mechanism, and it is a DATA POINT, not a
+trend: cost fell from a full read to THREE LINES.** ⇒ **The difference is not care — it is that a
+stopping point now EXISTS**, where before, the first sign and the whole parcel arrived in the same
+output.
+★ **And the distinction that matters for who is improving: the mechanism reduced the COST of the
+lapse; it did not reduce the LAPSE.** The sender reused a body addressed to someone else, exactly as
+in instances 5 through 8. **A reader-side remedy cannot fix a sender-side habit, and reporting a
+falling cost as progress would credit the wrong party.**
+**STANDING WATCH, with its falsifier named:** the `TO:` line makes stopping *possible* and does
+nothing about **relevance-over-addressing**. ⇒ **If a later instance whose `TO:` line names someone
+else — but whose subject looks relevant to the reader — costs more than a few lines, that is the
+substitution returning WITH the mechanism in place**, and it will be worth more than this
+measurement.
+
+**The lapse rate has not dropped across nine instances.** Detection is cheaper than prevention was
 and **is not free**, and no third remedy is offered here: **this is the measurement, recorded because
 the prediction that it might decay was made before it did.**
 
