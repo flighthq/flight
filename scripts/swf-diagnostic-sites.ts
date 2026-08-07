@@ -89,5 +89,23 @@ stated per family in that document and derived by checking each family, never by
 ${rows.join('\n')}
 `;
 
-writeFileSync(OUTPUT_PATH, document);
-process.stdout.write(`wrote ${sites.length} diagnostic sites across ${byFile.size} files to ${OUTPUT_PATH}\n`);
+// A derived list with no staleness gate re-acquires exactly the drift that makes a MAINTAINED list
+// forbidden: the file keeps naming sites that moved or vanished, and looks authoritative while doing it.
+// Derivation alone does not buy the property — derivation PLUS a gate does.
+if (process.argv.includes('--check')) {
+  let current: string | null = null;
+  try {
+    current = readFileSync(OUTPUT_PATH, 'utf8');
+  } catch {
+    current = null;
+  }
+  if (current !== document) {
+    process.stderr.write(`✗ stale, run \`npm run capabilities:sites\`: ${OUTPUT_PATH}\n`);
+    process.exitCode = 1;
+  } else {
+    process.stdout.write(`OK ${sites.length} diagnostic sites across ${byFile.size} files, list current\n`);
+  }
+} else {
+  writeFileSync(OUTPUT_PATH, document);
+  process.stdout.write(`wrote ${sites.length} diagnostic sites across ${byFile.size} files to ${OUTPUT_PATH}\n`);
+}
