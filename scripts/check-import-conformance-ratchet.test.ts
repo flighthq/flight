@@ -160,11 +160,12 @@ describe('compareImportConformanceScores', () => {
 
   it('ratchets firing-test proof removal and replacement on the stable capability key', () => {
     const baselineCapability = measuredCapability('alpha');
-    baselineCapability.instrumentationProofs = ['fire-test:alpha-primary', 'fire-test:alpha-secondary'];
+    baselineCapability.instrumentationProofs.fires = ['fire-test:alpha-primary', 'fire-test:alpha-secondary'];
     const removedCapability = measuredCapability('alpha');
-    removedCapability.instrumentationProofs = ['fire-test:alpha-primary'];
+    removedCapability.instrumentationProofs.fires = ['fire-test:alpha-primary'];
     const replacedCapability = measuredCapability('alpha');
-    replacedCapability.instrumentationProofs = ['fire-test:alpha-replacement', 'fire-test:alpha-secondary'];
+    replacedCapability.instrumentationProofs.fires = ['fire-test:alpha-primary', 'fire-test:alpha-secondary'];
+    replacedCapability.instrumentationProofs.staysSilent = ['silence-test:alpha-replacement'];
 
     const removed = compareImportConformanceScores(
       score(measuredPack([baselineCapability]), '100'),
@@ -176,9 +177,9 @@ describe('compareImportConformanceScores', () => {
     );
 
     expect(removed.state).toBe('regression');
-    expect(removed.packs[0].findings[0].code).toBe('instrumentation-proof-changed');
+    expect(removed.packs[0].findings[0].code).toBe('instrumentation-firing-proof-changed');
     expect(replaced.state).toBe('regression');
-    expect(replaced.packs[0].findings[0].code).toBe('instrumentation-proof-changed');
+    expect(replaced.packs[0].findings[0].code).toBe('instrumentation-silence-proof-changed');
   });
 
   // Defeating condition 3: scores over different fixture material may both be internally correct, but
@@ -418,17 +419,23 @@ describe('parseImportConformanceScore', () => {
   it('cannot represent an instrumented capability without stable firing-test proof', () => {
     const absent = measuredCapability('alpha') as unknown as Record<string, unknown>;
     delete absent.instrumentationProofs;
-    const empty = { ...measuredCapability('alpha'), instrumentationProofs: [] };
-    const duplicate = { ...measuredCapability('alpha'), instrumentationProofs: ['proof-a', 'proof-a'] };
+    const empty = {
+      ...measuredCapability('alpha'),
+      instrumentationProofs: { fires: [], staysSilent: ['silence-test:alpha'] },
+    };
+    const duplicate = {
+      ...measuredCapability('alpha'),
+      instrumentationProofs: { fires: ['proof-a', 'proof-a'], staysSilent: ['silence-test:alpha'] },
+    };
 
     expect(() => parseImportConformanceScore(score(measuredPack([absent as never]), '100'))).toThrow(
       'must contain exactly: id, instrumentationProofs, outcomes, result, state, witnesses',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([empty as never]), '100'))).toThrow(
-      'instrumentationProofs: must be a non-empty array',
+      'instrumentationProofs.fires: must be a non-empty array',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([duplicate as never]), '100'))).toThrow(
-      'instrumentationProofs: instrumentation proof ids must be unique and sorted in ascending order',
+      'instrumentationProofs.fires: instrumentation proof ids must be unique and sorted in ascending order',
     );
   });
 });
@@ -503,7 +510,7 @@ function measuredCapability(
 ): ImportConformanceMeasuredCapability {
   return {
     id,
-    instrumentationProofs: [`fire-test:${id}`],
+    instrumentationProofs: { fires: [`fire-test:${id}`], staysSilent: [`silence-test:${id}`] },
     outcomes: outcomeCounts,
     result,
     state: 'measured',

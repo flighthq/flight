@@ -8,10 +8,13 @@ export interface ImportConformanceOutcomeCounts {
 export interface ImportConformanceMeasuredCapability {
   id: string;
   /**
-   * Stable ids from the committed capability-to-fire-test mapping. The producer must emit UNKNOWN unless
-   * every proof required by that mapping exists and its firing test is part of the verified test suite.
+   * Stable ids from the committed capability-to-instrumentation-test mapping. The producer must emit
+   * UNKNOWN unless every firing and non-target silence proof exists and is part of the verified test suite.
    */
-  instrumentationProofs: [string, ...string[]];
+  instrumentationProofs: {
+    fires: [string, ...string[]];
+    staysSilent: [string, ...string[]];
+  };
   outcomes: ImportConformanceOutcomeCounts;
   result: 'fail' | 'pass';
   state: 'measured';
@@ -283,7 +286,19 @@ function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCo
   };
 }
 
-function parseInstrumentationProofs(value: unknown, path: string): [string, ...string[]] {
+function parseInstrumentationProofs(
+  value: unknown,
+  path: string,
+): ImportConformanceMeasuredCapability['instrumentationProofs'] {
+  const proofs = expectRecord(value, path);
+  expectKeys(proofs, ['fires', 'staysSilent'], path);
+  return {
+    fires: parseInstrumentationProofIds(proofs.fires, `${path}.fires`),
+    staysSilent: parseInstrumentationProofIds(proofs.staysSilent, `${path}.staysSilent`),
+  };
+}
+
+function parseInstrumentationProofIds(value: unknown, path: string): [string, ...string[]] {
   if (!Array.isArray(value) || value.length === 0) fail(path, 'must be a non-empty array');
   const proofs = value.map((proof, index) => expectNonemptyString(proof, `${path}[${index}]`));
   expectSortedUnique(proofs, path, 'instrumentation proof id');

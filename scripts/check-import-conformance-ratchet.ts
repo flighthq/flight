@@ -325,11 +325,25 @@ function compareCapabilities(
       );
       continue;
     }
-    if (!sameKeys(baselineCapability.instrumentationProofs, currentCapability.instrumentationProofs)) {
+    if (!sameKeys(baselineCapability.instrumentationProofs.fires, currentCapability.instrumentationProofs.fires)) {
       findings.push(
         finding(
-          'instrumentation-proof-changed',
-          `firing-test proofs changed from [${baselineCapability.instrumentationProofs.join(', ')}] to [${currentCapability.instrumentationProofs.join(', ')}]`,
+          'instrumentation-firing-proof-changed',
+          `firing-test proofs changed from [${baselineCapability.instrumentationProofs.fires.join(', ')}] to [${currentCapability.instrumentationProofs.fires.join(', ')}]`,
+          baselineCapability.id,
+        ),
+      );
+    }
+    if (
+      !sameKeys(
+        baselineCapability.instrumentationProofs.staysSilent,
+        currentCapability.instrumentationProofs.staysSilent,
+      )
+    ) {
+      findings.push(
+        finding(
+          'instrumentation-silence-proof-changed',
+          `silence-test proofs changed from [${baselineCapability.instrumentationProofs.staysSilent.join(', ')}] to [${currentCapability.instrumentationProofs.staysSilent.join(', ')}]`,
           baselineCapability.id,
         ),
       );
