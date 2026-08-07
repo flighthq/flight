@@ -2196,7 +2196,19 @@ function readSwfMorphShapeBody(
     createSwfMorphShape(new SwfReader(source, start, end), version, (fillCharacterId, repeat, smoothed) =>
       acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
     );
-  if (decode() !== null) state.morphShapes.set(characterId, decode);
+  if (decode() === null) {
+    // The character is simply absent from the document afterwards, so without this the loss has no
+    // signal at all: a placement of it resolves to nothing and the import still reports success.
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.morph-shape-undecodable',
+      'readSwfMorphShapeBody',
+      { capability: version === 2 ? 'swf.morph.define-morph-shape-2' : 'swf.morph.define-morph-shape', characterId },
+    );
+    return;
+  }
+  state.morphShapes.set(characterId, decode);
 }
 
 function resolveSwfMorphShapeVersion(code: number): number {

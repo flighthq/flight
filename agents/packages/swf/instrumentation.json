@@ -99,6 +99,19 @@
         "scope"
       ],
       "fires": [
+        "reports a morph definition that does not decode, which otherwise leaves no trace at all"
+      ],
+      "id": "swf.morph.define-morph-shape",
+      "staysSilent": [
+        "stays silent about a morph definition that decodes, so the drop entry carries information"
+      ]
+    },
+    {
+      "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
         "reports nested masks collapsing, since the outer one is not applied at all"
       ],
       "id": "swf.placement.clip-depth",
@@ -225,8 +238,8 @@
       ]
     }
   ],
-  "fireProven": 17,
-  "payloadAudited": 17,
-  "scopeAudited": 16,
-  "silenceProven": 17
+  "fireProven": 18,
+  "payloadAudited": 18,
+  "scopeAudited": 17,
+  "silenceProven": 18
 }

@@ -2596,6 +2596,53 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(recovered[0].detail).toEqual({ capability: 'swf.shape.define-shape', characterId: 1, version: 1 });
   });
 
+  it('reports a morph definition that does not decode, which otherwise leaves no trace at all', () => {
+    // Header reads cleanly — id and both bounds — so the definition is accepted and only the morph body
+    // fails. That is the case with no signal: the character is absent and the import still succeeds.
+    const body = joinBytes(
+      uint16(7),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      uint32(0xffff),
+      new Uint8Array([0]),
+    );
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.morph-shape-undecodable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.morph.define-morph-shape', characterId: 7 });
+  });
+
+  it('stays silent about a morph definition that decodes, so the drop entry carries information', () => {
+    const startEdges = morphBox(200);
+    const endEdges = morphBox(400);
+    const styles = joinBytes(
+      new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
+      new Uint8Array([0]),
+    );
+    const body = joinBytes(
+      uint16(7),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      uint32(styles.length + startEdges.length),
+      styles,
+      startEdges,
+      endEdges,
+    );
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.morph-shape-undecodable')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
