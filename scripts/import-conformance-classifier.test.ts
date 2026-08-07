@@ -67,6 +67,19 @@ describe('classifyImportConformanceObservation', () => {
     ).toThrow(/capability absent from its index/);
   });
 
+  it('keeps an unreadable probe diagnostic at fixture level without inventing a capability witness', () => {
+    const fixture = { ...FIXTURE, capabilities: [], probeState: 'unreadable' as const };
+    expect(
+      classifyImportConformanceObservation(fixture, {
+        diagnostics: [diagnostic(ImportDiagnosticSeverity.Drop, 'swf.scene-names')],
+        imported: true,
+        reference: fixture.reference,
+        sourceHash: fixture.sourceHash,
+        threw: false,
+      }),
+    ).toMatchObject({ capabilityOutcomes: [], outcome: 'importedWrong' });
+  });
+
   it('marks a configuration-or-input crumb as cause-unknown instead of attributing it to the file', () => {
     expect(
       classify([diagnostic(ImportDiagnosticSeverity.Drop, 'swf.shape-body-unreadable')]).capabilityOutcomes[0],
