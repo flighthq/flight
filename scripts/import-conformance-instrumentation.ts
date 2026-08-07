@@ -115,13 +115,15 @@ function parseLossPaths(
 function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | null {
   if (
     !isRecord(value) ||
-    Object.keys(value).sort().join('\0') !== ['auditId', 'auditedAt', 'subjectHash'].sort().join('\0')
+    Object.keys(value).sort().join('\0') !== ['auditId', 'auditedAt', 'auditor', 'subjectHash'].sort().join('\0')
   ) {
     return null;
   }
   if (
     typeof value.auditId !== 'string' ||
     value.auditId.trim() === '' ||
+    typeof value.auditor !== 'string' ||
+    value.auditor.trim() === '' ||
     typeof value.auditedAt !== 'string' ||
     typeof value.subjectHash !== 'string' ||
     value.subjectHash.trim() === ''
@@ -136,7 +138,12 @@ function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | nu
   ) {
     return null;
   }
-  return { auditId: value.auditId, auditedAt: value.auditedAt, subjectHash: value.subjectHash };
+  return {
+    auditId: value.auditId,
+    auditedAt: value.auditedAt,
+    auditor: value.auditor,
+    subjectHash: value.subjectHash,
+  };
 }
 
 function parseProofs(value: unknown): string[] | null {

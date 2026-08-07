@@ -191,6 +191,7 @@ function lossPaths(fillIdentified: boolean, textIdentified: boolean) {
 function audit(id: string) {
   return {
     auditId: 'audit:loss-path-v1',
+    auditor: 'builder2',
     auditedAt: '2026-08-07T00:00:00.000Z',
     subjectHash: `sha256:subject:${id}`,
   };

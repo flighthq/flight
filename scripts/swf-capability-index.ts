@@ -17,7 +17,18 @@ import {
   parseImportConformanceCapabilityDefinitions,
 } from './import-conformance-core';
 import type { ImportConformanceCapabilityIndex } from './import-conformance-core';
+import type { ImportConformanceImporterDeclaredCensus } from './import-conformance-core';
 import { probeSwfCapabilities } from './swf-capability-probe';
+
+export const SWF_CAPABILITY_CONVENTION_REVISION = 'unresolved-individuation-v1';
+export const SWF_IMPORTER_DECLARED_CENSUS = {
+  basis: 'single-artifact-cross-check',
+  candidateHits: 5,
+  falsePositiveHits: 3,
+  provenance: 'single-author',
+  reference: 'capabilities.json-vs-tag-coverage.md',
+  state: 'provisional',
+} as const satisfies ImportConformanceImporterDeclaredCensus;
 
 export interface ImportConformanceCorpusInventory {
   corpusFiles: number;
@@ -50,7 +61,12 @@ export async function buildSwfCapabilityIndex(
     },
   );
   return buildImportConformanceCapabilityIndex(
-    { id: PACK_ID, release: FIXTURE_RELEASE_TAG, variant: PACK_VARIANT },
+    {
+      capabilityConventionRevision: SWF_CAPABILITY_CONVENTION_REVISION,
+      id: PACK_ID,
+      release: FIXTURE_RELEASE_TAG,
+      variant: PACK_VARIANT,
+    },
     definitions,
     evidence,
     inventory.corpusFiles,
@@ -99,7 +115,8 @@ async function main(): Promise<void> {
   const singles = exercised.filter((capability) => capability.witnesses.length === 1);
   process.stdout.write(
     `Indexed ${index.inventory.indexedSwfFiles} SWFs from ${index.inventory.corpusFiles} corpus files; ${index.inventory.unreadableSwfFiles} unreadable.\n` +
-      `Evidence ${exercised.length}/${index.capabilities.length}; ${singles.length} single-witness capabilities.\n` +
+      `Exercised importer-declared capability rows ${exercised.length}; declared capability row tally ${index.capabilities.length}; ${singles.length} single-witness capabilities.\n` +
+      `Capability convention revision ${index.pack.capabilityConventionRevision}; importer-declared capability denominator UNRESOLVED.\n` +
       `Wrote ${output}\n`,
   );
 }

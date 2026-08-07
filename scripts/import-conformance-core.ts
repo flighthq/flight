@@ -36,6 +36,7 @@ export interface ImportConformanceOutcomeCounts {
 }
 
 export interface ImportConformancePackIdentity {
+  capabilityConventionRevision: string;
   id: string;
   release: string;
   variant: string;
@@ -59,6 +60,22 @@ export interface ImportConformanceResult {
   sourceHash: string;
 }
 
+export interface ImportConformanceConfigurationLimit {
+  id: string;
+  reporting: 'structured' | 'unobservable';
+}
+
+export type ImportConformanceConfigurationLimits =
+  | {
+      limits: readonly [ImportConformanceConfigurationLimit, ...ImportConformanceConfigurationLimit[]];
+      state: 'declared';
+    }
+  | { state: 'not-applicable' };
+
+export type ImportConformanceDiagnosticChannel = 'human-log-only' | 'none' | 'structured-crumb';
+
+export type ImportConformanceInstrumentAudit = 'payload' | 'scope';
+
 export interface ImportConformanceShardPlan {
   algorithm: 'fixture-count-v1';
   assignments: ImportConformanceShardAssignment[];
@@ -73,6 +90,7 @@ export interface ImportConformanceShardAssignment {
 
 export interface ImportConformanceScore {
   instrumentAssurance: ImportConformanceInstrumentAssurance;
+  oracleAssurance: ImportConformanceOracleAssurance;
   packs: ImportConformanceScorePack[];
   provenance: ImportConformanceProvenance;
   schemaVersion: 1;
@@ -85,9 +103,18 @@ export interface ImportConformanceInstrumentAssurance {
   triggerSpecificity: 'proof-reference-presence';
 }
 
+export interface ImportConformanceOracleAssurance {
+  firstCaptureDefects: 'undetectable';
+  formatDerivedProperties: 'required-not-implemented';
+  ratchet: 'recorded-run-regression-only';
+}
+
 export interface ImportConformanceScoreCapabilityExercised {
+  configurationLimits: ImportConformanceConfigurationLimits;
   id: string;
   instrumentation: {
+    audits: ImportConformanceInstrumentAudit[];
+    channel: ImportConformanceDiagnosticChannel;
     fires: ImportConformanceScoreInstrumentationRole;
     staysSilent: ImportConformanceScoreInstrumentationRole;
   };
@@ -111,6 +138,8 @@ export interface ImportConformanceScoreLaneResult {
 }
 
 export interface ImportConformanceInstrumentationProofs {
+  audits?: readonly ImportConformanceInstrumentAudit[];
+  channel?: ImportConformanceDiagnosticChannel;
   fires: readonly string[];
   staysSilent: readonly string[];
 }
@@ -119,6 +148,7 @@ export type ImportConformanceLossPathState = 'audited-none' | 'identified' | 'un
 
 export interface ImportConformanceLossPathAudit {
   auditId: string;
+  auditor: string;
   auditedAt: string;
   subjectHash: string;
 }
@@ -138,6 +168,8 @@ export interface ImportConformanceScoreCapabilityNotRun {
 export interface ImportConformanceScoreCapabilityUnmeasured {
   id: string;
   instrumentation: {
+    audits: ImportConformanceInstrumentAudit[];
+    channel: ImportConformanceDiagnosticChannel;
     fires: ImportConformanceScoreInstrumentationRole;
     staysSilent: ImportConformanceScoreInstrumentationRole;
   };
@@ -145,14 +177,43 @@ export interface ImportConformanceScoreCapabilityUnmeasured {
   state: 'unmeasured';
 }
 
-export interface ImportConformanceUnknownObservation {
-  reason:
-    | 'diagnostic-cause-unknown'
-    | 'fire-proof-missing-for-no-crumb'
-    | 'loss-path-known-not-wired'
-    | 'loss-path-not-identified'
-    | 'silence-proof-missing-for-crumb';
+export type ImportConformanceUnknownObservationReason =
+  | 'diagnostic-cause-unknown'
+  | 'fire-proof-missing-for-no-crumb'
+  | 'instrument-audit-incomplete'
+  | 'loop-bounded-configuration-limit'
+  | 'loss-path-known-not-wired'
+  | 'loss-path-not-identified'
+  | 'silence-proof-missing-for-crumb';
+
+export interface ImportConformanceOtherUnknownObservation {
+  reason: Exclude<ImportConformanceUnknownObservationReason, 'loss-path-known-not-wired'>;
   reference: string;
+}
+
+export interface ImportConformanceUnwiredLossObservation {
+  contentFidelity: 'diminished' | 'missing' | 'substituted';
+  reason: 'loss-path-known-not-wired';
+  reference: string;
+}
+
+export type ImportConformanceUnknownObservation =
+  | ImportConformanceOtherUnknownObservation
+  | ImportConformanceUnwiredLossObservation;
+
+export interface ImportConformanceScoreDeclarations {
+  configurationLimitsByCapability: ReadonlyMap<string, Readonly<ImportConformanceConfigurationLimits>>;
+  importerDeclaredCensus: ImportConformanceImporterDeclaredCensus;
+  unwiredLossesByCapability: ReadonlyMap<string, readonly Readonly<ImportConformanceUnwiredLossObservation>[]>;
+}
+
+export interface ImportConformanceImporterDeclaredCensus {
+  basis: 'single-artifact-cross-check';
+  candidateHits: number;
+  falsePositiveHits: number;
+  provenance: 'single-author';
+  reference: string;
+  state: 'provisional';
 }
 
 export type ImportConformanceScoreCapability =
@@ -161,6 +222,7 @@ export type ImportConformanceScoreCapability =
   | ImportConformanceScoreCapabilityUnmeasured;
 
 interface ImportConformanceScorePackBase {
+  capabilityConventionRevision: string;
   capabilities: ImportConformanceScoreCapability[];
   id: string;
   importerSourceHash: string;
@@ -188,12 +250,24 @@ export interface ImportConformanceScorePackNotRun extends ImportConformanceScore
 export type ImportConformanceScorePack = ImportConformanceScorePackMeasured | ImportConformanceScorePackNotRun;
 
 export interface ImportConformanceScoreSummary {
-  totalCapabilities: number;
+  denominators: {
+    importerDeclared: {
+      census: ImportConformanceImporterDeclaredCensus;
+      declaredRows: number;
+      limitation: 'individuation-rule-not-operational';
+      state: 'unresolved';
+    };
+    swfFormat: { state: 'unmeasured' };
+  };
   exercised: {
     capabilities: number;
     fireReferenced: ImportConformanceScoreReferencedSummary;
     silenceReferenced: ImportConformanceScoreReferencedSummary;
     singleWitnessCapabilities: number;
+  };
+  instrumentAudited: {
+    payloadCapabilities: number;
+    scopeCapabilities: number;
   };
   lossPathPopulation: {
     auditedCapabilities: number;
@@ -297,6 +371,7 @@ export function createImportConformanceNotRunScore(
   assertExhaustiveProvenance(provenance);
   return {
     instrumentAssurance: createImportConformanceInstrumentAssurance(),
+    oracleAssurance: createImportConformanceOracleAssurance(),
     packs: [
       {
         capabilities: definitions.map((definition) => ({
@@ -329,6 +404,7 @@ export function createImportConformanceScore(
   lossPathByCapability: ReadonlyMap<string, Readonly<ImportConformanceLossPath>>,
   importerSourceHash: string,
   provenance: Readonly<ImportConformanceProvenance>,
+  declarations: Readonly<ImportConformanceScoreDeclarations>,
 ): ImportConformanceScore {
   assertSha256(importerSourceHash, 'importer source hash');
   assertExhaustiveProvenance(provenance);
@@ -368,6 +444,7 @@ export function createImportConformanceScore(
     );
     return {
       instrumentAssurance: createImportConformanceInstrumentAssurance(),
+      oracleAssurance: createImportConformanceOracleAssurance(),
       packs: [
         {
           capabilities,
@@ -387,6 +464,7 @@ export function createImportConformanceScore(
 
   assertInstrumentationProofs(instrumentationProofs, index);
   assertLossPaths(lossPathByCapability, index);
+  assertScoreDeclarations(declarations, instrumentationProofs, lossPathByCapability, index);
   for (const id of instrumentationProofs.keys()) {
     if (lossPathByCapability.get(id)?.state !== 'identified') {
       throw new Error(`Instrumentation proof for ${id} requires an identified loss path`);
@@ -395,10 +473,20 @@ export function createImportConformanceScore(
   const capabilities: ImportConformanceScoreCapability[] = [];
   for (const capability of index.capabilities) {
     const capabilityInstrumentationProofs = instrumentationProofs.get(capability.id) ?? {
+      audits: [],
+      channel: 'none',
       fires: [],
       staysSilent: [],
     };
+    const audits = [...(capabilityInstrumentationProofs.audits ?? [])];
+    const channel =
+      capabilityInstrumentationProofs.channel ??
+      (capabilityInstrumentationProofs.fires.length > 0 || capabilityInstrumentationProofs.staysSilent.length > 0
+        ? 'structured-crumb'
+        : 'none');
     const instrumentation = {
+      audits,
+      channel,
       fires: createScoreInstrumentationRole(capabilityInstrumentationProofs.fires),
       staysSilent: createScoreInstrumentationRole(capabilityInstrumentationProofs.staysSilent),
     };
@@ -407,14 +495,26 @@ export function createImportConformanceScore(
       capabilities.push({ id: capability.id, instrumentation, lossPath, state: 'unmeasured' });
       continue;
     }
+    const configurationLimits = cloneConfigurationLimits(
+      declarations.configurationLimitsByCapability.get(capability.id) ?? { state: 'not-applicable' },
+    );
     const outcomes = emptyOutcomeCounts();
-    const unknownObservations: ImportConformanceUnknownObservation[] = [];
+    const unknownObservations = createCapabilityScopedUnknownObservations(
+      capability.id,
+      configurationLimits,
+      instrumentation,
+      lossPath,
+      declarations.unwiredLossesByCapability.get(capability.id) ?? [],
+    );
+    const hasCapabilityScopedUnknown = unknownObservations.length > 0;
     for (const reference of capability.witnesses) {
       const result = resultByReference.get(reference);
       if (result === undefined) throw new Error(`Completed shard has no result for ${reference}`);
       const capabilityOutcome = result.capabilityOutcomes.find((candidate) => candidate.id === capability.id)!;
       if (capabilityOutcome.diagnosticCause === 'unknown') {
-        unknownObservations.push({ reason: 'diagnostic-cause-unknown', reference });
+        if (!hasCapabilityScopedUnknown) {
+          unknownObservations.push({ reason: 'diagnostic-cause-unknown', reference });
+        }
         continue;
       }
       const { outcome } = capabilityOutcome;
@@ -422,6 +522,7 @@ export function createImportConformanceScore(
         outcomes[outcome]++;
         continue;
       }
+      if (hasCapabilityScopedUnknown && (outcome === 'passed' || outcome === 'unsupportedClean')) continue;
       if (lossPath.state === 'audited-none') {
         if (outcome !== 'passed') outcomes[outcome]++;
         continue;
@@ -431,28 +532,32 @@ export function createImportConformanceScore(
           ? capabilityInstrumentationProofs.staysSilent
           : capabilityInstrumentationProofs.fires;
       if (proofRole.length === 0) {
-        unknownObservations.push({
-          reason: getMissingProofReason(outcome, capabilityInstrumentationProofs, lossPath.state),
-          reference,
-        });
+        if (!hasCapabilityScopedUnknown) {
+          unknownObservations.push({
+            reason:
+              outcome === 'unsupportedClean' ? 'silence-proof-missing-for-crumb' : 'fire-proof-missing-for-no-crumb',
+            reference,
+          });
+        }
         continue;
       }
       if (outcome !== 'passed') outcomes[outcome]++;
     }
     const failed = outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong > 0;
     const fire = createLaneResult(
-      failed,
+      failed && !hasCapabilityScopedUnknown,
       unknownObservations.length > 0,
       capabilityInstrumentationProofs.fires,
       lossPath.state !== 'audited-none',
     );
     const silence = createLaneResult(
-      failed,
+      failed && !hasCapabilityScopedUnknown,
       unknownObservations.length > 0,
       capabilityInstrumentationProofs.staysSilent,
       lossPath.state !== 'audited-none',
     );
     capabilities.push({
+      configurationLimits,
       id: capability.id,
       instrumentation,
       lossPath,
@@ -465,6 +570,7 @@ export function createImportConformanceScore(
   }
 
   const packBase = {
+    capabilityConventionRevision: index.pack.capabilityConventionRevision,
     capabilities,
     id: index.pack.id,
     importerSourceHash,
@@ -486,12 +592,28 @@ export function createImportConformanceScore(
       capability.state !== 'not-run',
   );
   const summary: ImportConformanceScoreSummary = {
-    totalCapabilities: capabilities.length,
+    denominators: {
+      importerDeclared: {
+        census: { ...declarations.importerDeclaredCensus },
+        declaredRows: capabilities.length,
+        limitation: 'individuation-rule-not-operational',
+        state: 'unresolved',
+      },
+      swfFormat: { state: 'unmeasured' },
+    },
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferencedCapabilities(fireReferenced, 'fire'),
       silenceReferenced: summarizeReferencedCapabilities(silenceReferenced, 'silence'),
       singleWitnessCapabilities: exercised.filter((capability) => capability.witnesses === 1).length,
+    },
+    instrumentAudited: {
+      payloadCapabilities: measuredCapabilities.filter((capability) =>
+        capability.instrumentation.audits.includes('payload'),
+      ).length,
+      scopeCapabilities: measuredCapabilities.filter((capability) =>
+        capability.instrumentation.audits.includes('scope'),
+      ).length,
     },
     lossPathPopulation: summarizeLossPathPopulation(measuredCapabilities),
     proofReferenced: {
@@ -506,6 +628,7 @@ export function createImportConformanceScore(
   assertSummaryMatchesCapabilities(summary, capabilities);
   return {
     instrumentAssurance: createImportConformanceInstrumentAssurance(),
+    oracleAssurance: createImportConformanceOracleAssurance(),
     packs: [
       {
         ...packBase,
@@ -583,8 +706,8 @@ function assertExhaustiveProvenance(provenance: Readonly<ImportConformanceProven
 }
 
 function assertPackIdentity(pack: Readonly<ImportConformancePackIdentity>): void {
-  if (pack.id === '' || pack.release === '' || pack.variant === '') {
-    throw new Error('Pack id, release, and variant must be non-empty');
+  if (pack.capabilityConventionRevision === '' || pack.id === '' || pack.release === '' || pack.variant === '') {
+    throw new Error('Pack capability convention revision, id, release, and variant must be non-empty');
   }
 }
 
@@ -597,8 +720,19 @@ function assertInstrumentationProofs(
     if (!declared.has(id)) throw new Error(`Instrumentation proof names undeclared capability ${id}`);
     assertInstrumentationProofList(capabilityProofs.fires, `firing proofs for ${id}`);
     assertInstrumentationProofList(capabilityProofs.staysSilent, `silence proofs for ${id}`);
-    if (capabilityProofs.fires.length === 0 && capabilityProofs.staysSilent.length === 0) {
-      throw new Error(`Instrumentation proofs for ${id} must represent at least one proof role`);
+    const audits = capabilityProofs.audits ?? [];
+    assertSortedUnique(audits, `instrument audits for ${id}`);
+    if (audits.some((audit) => audit !== 'payload' && audit !== 'scope')) {
+      throw new Error(`Instrumentation audits for ${id} must name payload or scope`);
+    }
+    const channel =
+      capabilityProofs.channel ??
+      (capabilityProofs.fires.length > 0 || capabilityProofs.staysSilent.length > 0 ? 'structured-crumb' : 'none');
+    if (
+      channel !== 'structured-crumb' &&
+      (audits.length > 0 || capabilityProofs.fires.length > 0 || capabilityProofs.staysSilent.length > 0)
+    ) {
+      throw new Error(`Instrumentation evidence for ${id} requires a structured diagnostic crumb`);
     }
   }
 }
@@ -626,8 +760,8 @@ function assertLossPaths(
 }
 
 function assertLossPathAudit(audit: Readonly<ImportConformanceLossPathAudit>, id: string): void {
-  if (audit.auditId.trim() === '' || audit.subjectHash.trim() === '') {
-    throw new Error(`Loss-path audit for ${id} requires non-empty auditId and subjectHash`);
+  if (audit.auditId.trim() === '' || audit.auditor.trim() === '' || audit.subjectHash.trim() === '') {
+    throw new Error(`Loss-path audit for ${id} requires non-empty auditId, auditor, and subjectHash`);
   }
   const timestamp = Date.parse(audit.auditedAt);
   if (
@@ -636,6 +770,102 @@ function assertLossPathAudit(audit: Readonly<ImportConformanceLossPathAudit>, id
     new Date(timestamp).toISOString() !== audit.auditedAt
   ) {
     throw new Error(`Loss-path audit for ${id} requires a canonical UTC auditedAt`);
+  }
+}
+
+function assertScoreDeclarations(
+  declarations: Readonly<ImportConformanceScoreDeclarations>,
+  instrumentationProofs: ReadonlyMap<string, Readonly<ImportConformanceInstrumentationProofs>>,
+  lossPaths: ReadonlyMap<string, Readonly<ImportConformanceLossPath>>,
+  index: Readonly<ImportConformanceCapabilityIndex>,
+): void {
+  assertImporterDeclaredCensus(declarations.importerDeclaredCensus);
+  const declared = new Set(index.capabilities.map((capability) => capability.id));
+  for (const [id, configurationLimits] of declarations.configurationLimitsByCapability) {
+    if (!declared.has(id)) throw new Error(`Configuration limits name undeclared capability ${id}`);
+    assertConfigurationLimits(configurationLimits, id);
+  }
+  for (const [id, unwiredLosses] of declarations.unwiredLossesByCapability) {
+    if (!declared.has(id)) throw new Error(`Unwired loss declaration names undeclared capability ${id}`);
+    assertUnwiredLosses(unwiredLosses, id);
+  }
+
+  for (const id of declared) {
+    const proofs = instrumentationProofs.get(id);
+    const channel =
+      proofs?.channel ??
+      (proofs !== undefined && (proofs.fires.length > 0 || proofs.staysSilent.length > 0)
+        ? 'structured-crumb'
+        : 'none');
+    const lossPath = lossPaths.get(id)!;
+    const unwiredLosses = declarations.unwiredLossesByCapability.get(id) ?? [];
+    if (unwiredLosses.length > 0 && (lossPath.state !== 'identified' || channel === 'structured-crumb')) {
+      throw new Error(`Unwired loss declarations for ${id} require an identified loss path without a structured crumb`);
+    }
+    if (lossPath.state === 'identified' && channel !== 'structured-crumb' && unwiredLosses.length === 0) {
+      throw new Error(`Identified loss path for ${id} without a structured crumb requires its raw unwired family`);
+    }
+  }
+}
+
+function assertImporterDeclaredCensus(census: Readonly<ImportConformanceImporterDeclaredCensus>): void {
+  if (
+    census.basis !== 'single-artifact-cross-check' ||
+    census.provenance !== 'single-author' ||
+    census.state !== 'provisional' ||
+    census.reference.trim() === '' ||
+    !Number.isSafeInteger(census.candidateHits) ||
+    census.candidateHits < 0 ||
+    !Number.isSafeInteger(census.falsePositiveHits) ||
+    census.falsePositiveHits < 0 ||
+    census.falsePositiveHits > census.candidateHits
+  ) {
+    throw new Error('Importer-declared census must be a valid provisional single-artifact cross-check');
+  }
+}
+
+function assertConfigurationLimits(
+  configurationLimits: Readonly<ImportConformanceConfigurationLimits>,
+  id: string,
+): void {
+  if (configurationLimits.state === 'not-applicable') return;
+  if (configurationLimits.limits.length === 0) {
+    throw new Error(`Declared configuration limits for ${id} must not be empty`);
+  }
+  assertSortedUnique(
+    configurationLimits.limits.map((limit) => limit.id),
+    `configuration limit ids for ${id}`,
+  );
+  for (const limit of configurationLimits.limits) {
+    if (!/^[A-Z][A-Z0-9_]+$/.test(limit.id)) {
+      throw new Error(`Configuration limit for ${id} requires a stable uppercase id`);
+    }
+    if (limit.reporting !== 'structured' && limit.reporting !== 'unobservable') {
+      throw new Error(`Configuration limit ${limit.id} for ${id} has an invalid reporting state`);
+    }
+  }
+}
+
+function assertUnwiredLosses(
+  unwiredLosses: readonly Readonly<ImportConformanceUnwiredLossObservation>[],
+  id: string,
+): void {
+  if (unwiredLosses.length === 0) throw new Error(`Unwired loss declarations for ${id} must not be empty`);
+  assertSortedUnique(
+    unwiredLosses.map((observation) => observation.reference),
+    `unwired loss family references for ${id}`,
+  );
+  for (const observation of unwiredLosses) {
+    if (observation.reason !== 'loss-path-known-not-wired' || observation.reference.trim() === '') {
+      throw new Error(`Unwired loss declaration for ${id} requires a non-empty raw family reference`);
+    }
+    if (
+      observation.contentFidelity !== 'diminished' &&
+      observation.contentFidelity !== 'missing' &&
+      observation.contentFidelity !== 'substituted'
+    ) {
+      throw new Error(`Unwired loss declaration ${observation.reference} for ${id} has invalid content fidelity`);
+    }
   }
 }
 
@@ -695,6 +925,14 @@ function createImportConformanceInstrumentAssurance(): ImportConformanceInstrume
   };
 }
 
+function createImportConformanceOracleAssurance(): ImportConformanceOracleAssurance {
+  return {
+    firstCaptureDefects: 'undetectable',
+    formatDerivedProperties: 'required-not-implemented',
+    ratchet: 'recorded-run-regression-only',
+  };
+}
+
 function createLaneResult(
   failed: boolean,
   hasUnknownObservations: boolean,
@@ -722,15 +960,51 @@ function cloneLossPath(lossPath: Readonly<ImportConformanceLossPath>): ImportCon
     : { audit: { ...lossPath.audit }, state: lossPath.state };
 }
 
-function getMissingProofReason(
-  outcome: ImportConformanceResult['capabilityOutcomes'][number]['outcome'],
-  proofs: Readonly<ImportConformanceInstrumentationProofs>,
-  lossPathState: ImportConformanceLossPathState,
-): ImportConformanceUnknownObservation['reason'] {
-  if (proofs.fires.length === 0 && proofs.staysSilent.length === 0) {
-    return lossPathState === 'identified' ? 'loss-path-known-not-wired' : 'loss-path-not-identified';
+function cloneConfigurationLimits(
+  configurationLimits: Readonly<ImportConformanceConfigurationLimits>,
+): ImportConformanceConfigurationLimits {
+  return configurationLimits.state === 'not-applicable'
+    ? { state: 'not-applicable' }
+    : {
+        limits: configurationLimits.limits.map((limit) => ({ ...limit })) as [
+          ImportConformanceConfigurationLimit,
+          ...ImportConformanceConfigurationLimit[],
+        ],
+        state: 'declared',
+      };
+}
+
+function createCapabilityScopedUnknownObservations(
+  capabilityId: string,
+  configurationLimits: Readonly<ImportConformanceConfigurationLimits>,
+  instrumentation: Readonly<ImportConformanceScoreCapabilityExercised['instrumentation']>,
+  lossPath: Readonly<ImportConformanceLossPath>,
+  unwiredLosses: readonly Readonly<ImportConformanceUnwiredLossObservation>[],
+): ImportConformanceUnknownObservation[] {
+  const observations: ImportConformanceUnknownObservation[] = [];
+  if (configurationLimits.state === 'declared') {
+    observations.push(
+      ...configurationLimits.limits
+        .filter((limit) => limit.reporting === 'unobservable')
+        .map((limit) => ({ reason: 'loop-bounded-configuration-limit' as const, reference: limit.id })),
+    );
   }
-  return outcome === 'unsupportedClean' ? 'silence-proof-missing-for-crumb' : 'fire-proof-missing-for-no-crumb';
+  if (lossPath.state === 'unaudited') {
+    observations.push({ reason: 'loss-path-not-identified', reference: capabilityId });
+  } else if (lossPath.state === 'identified' && instrumentation.channel !== 'structured-crumb') {
+    observations.push(...unwiredLosses.map((observation) => ({ ...observation })));
+  } else if (
+    lossPath.state === 'identified' &&
+    (!instrumentation.audits.includes('payload') || !instrumentation.audits.includes('scope'))
+  ) {
+    observations.push({ reason: 'instrument-audit-incomplete', reference: capabilityId });
+  }
+  observations.sort((a, b) => (a.reference < b.reference ? -1 : a.reference > b.reference ? 1 : 0));
+  assertSortedUnique(
+    observations.map((observation) => observation.reference),
+    `capability-scoped UNKNOWN references for ${capabilityId}`,
+  );
+  return observations;
 }
 
 function hashText(value: string): string {
@@ -787,7 +1061,11 @@ function assertSummaryMatchesCapabilities(
     (capability) => capability.instrumentation.staysSilent.state === 'referenced',
   );
   const checks: readonly [number, number, string][] = [
-    [summary.totalCapabilities, capabilities.length, 'totalCapabilities'],
+    [
+      summary.denominators.importerDeclared.declaredRows,
+      capabilities.length,
+      'denominators.importerDeclared.declaredRows',
+    ],
     [summary.exercised.capabilities, exercised.length, 'exercised.capabilities'],
     [summary.exercised.fireReferenced.capabilities, fireReferenced.length, 'exercised.fireReferenced.capabilities'],
     [
@@ -799,6 +1077,16 @@ function assertSummaryMatchesCapabilities(
       summary.exercised.singleWitnessCapabilities,
       exercised.filter((capability) => capability.witnesses === 1).length,
       'exercised.singleWitnessCapabilities',
+    ],
+    [
+      summary.instrumentAudited.payloadCapabilities,
+      measured.filter((capability) => capability.instrumentation.audits.includes('payload')).length,
+      'instrumentAudited.payloadCapabilities',
+    ],
+    [
+      summary.instrumentAudited.scopeCapabilities,
+      measured.filter((capability) => capability.instrumentation.audits.includes('scope')).length,
+      'instrumentAudited.scopeCapabilities',
     ],
     [
       summary.proofReferenced.fireCapabilities,
