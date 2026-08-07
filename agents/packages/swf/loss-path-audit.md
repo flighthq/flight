@@ -145,20 +145,27 @@ genuinely malformed are not the same finding.
 ## Two axes, not one ladder
 
 The severity ladder — *report missing*, *report wrong*, *no failure at all* — is about **signal**. It is
-not the only axis. **Granularity is orthogonal to it:**
+not the only axis. **Content fidelity is orthogonal to it, and its three values order themselves by which
+check they defeat:**
 
-|  | whole character lost | **partial loss in a surviving object** |
+| Fidelity | What survives | Caught by |
 | --- | --- | --- |
-| some signal | the six families below | — |
-| **no signal at all** | the truncating caps | **the worst cell** |
+| **Missing** | nothing | an existence check |
+| **Diminished** | the object, carrying less | existence passes — **a count catches it** |
+| **Substituted** | the object, at full size, wrong | existence passes, count passes — **only a content comparison** |
 
-**The worst cell is a partial loss with no signal**, because the object is present and therefore every
-existence check passes. `swfMorphShape.ts:180` and `swfDocument.ts:1303` both sit there.
+**That ordering is the useful part: each value defeats one more class of check, so the axis says what the
+oracle needs rather than only what went wrong.** Crossed with signal, the worst cell is *substituted with
+no signal* — nothing about the output distinguishes it from a clean import.
 
-**A search shaped by one severity cannot find another.** Both partial losses survived several passes of
-this audit for one reason, recorded here because it generalises: *I was looking for characters that
-vanish, and these survive.* When auditing for loss, search for **surviving-but-diminished**, not only for
-missing — they are different queries and finding one says nothing about the other.
+Members found so far: `swfMorphShape.ts:180` and `swfDocument.ts:1303` are **diminished**;
+`swfDocument.ts:1967` is **substituted**; the rest are **missing**.
+
+**A search shaped by one fidelity value cannot find another**, and this audit has needed three distinct
+queries to reach three values — *things that vanish*, *things that shrink*, *stores with no duplicate
+guard*. **Each new query shape has returned something, which is a reason to doubt that the list is
+complete rather than evidence that it is.** A search's coverage is bounded by the searcher's vocabulary of
+failures, and that vocabulary grew three times while this audit was being written.
 
 ## The class: crumbs whose cause could be our own configuration
 
