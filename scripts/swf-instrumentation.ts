@@ -378,20 +378,35 @@ function resolveSwfAuditCommit(entry: Readonly<SwfInstrumentation>): { commit: s
   }
 }
 
-// `lossPath` is emitted ONLY where a recorded loss-family audit actually covered the capability. Where
-// none did it is null, and null is the true answer: most rows predate the loss-path audit, and a
-// fabricated identity here would be indistinguishable from a real one to every consumer downstream.
-function buildSwfLossPath(entry: Readonly<SwfInstrumentation>): Record<string, unknown> | null {
-  if (entry.lossFamily === null) return null;
+// `lossPath` ALWAYS carries an explicit `state`, and never `null`.
+//
+// WHY NOT NULL. Three different writer situations can reach this function: no loss-family audit covered
+// the capability, an audit covered it and its identity was recovered, and an audit covered it but the
+// identity could NOT be recovered (a shallow clone, a renamed generator, a squashed history). The first
+// and third are opposite meanings — *nobody audited this* versus *someone did and we cannot say who or
+// when* — and returning `null` for both stores them as the same bytes AT WRITE TIME. No amount of care
+// at read time can recover a distinction the representation already discarded, and the safe default is
+// the one a reader assumes.
+//
+// Today no row is in the third state, which is exactly why it is worth encoding now: the value is
+// currently correct BY LUCK rather than by construction, and the first shallow clone would silently
+// convert an identified audit into an unaudited one.
+function buildSwfLossPath(entry: Readonly<SwfInstrumentation>): Record<string, unknown> {
+  if (entry.lossFamily === null) return { state: 'unaudited' };
   const audit = resolveSwfAuditCommit(entry);
-  if (audit === null) return null;
+  if (audit === null) {
+    return { family: entry.lossFamily, reason: 'audit commit not recoverable from history', state: 'unidentified' };
+  }
   const subjectHash = resolveSwfAuditSubject(audit.commit);
-  if (subjectHash === null) return null;
+  if (subjectHash === null) {
+    return { family: entry.lossFamily, reason: 'audited subject tree not recoverable', state: 'unidentified' };
+  }
   return {
     auditId: `swf-loss-${createHash('sha256').update(`builder2|${entry.id}|${subjectHash}`).digest('hex').slice(0, 16)}`,
     auditedAt: audit.date,
     auditor: 'builder2',
     family: entry.lossFamily,
+    state: 'identified',
     subjectHash,
   };
 }
@@ -406,7 +421,7 @@ export function formatSwfInstrumentationJson(): string {
       fireProven: INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length,
       payloadAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('payload')).length,
       scopeAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('scope')).length,
-      lossPathAudited: INSTRUMENTATION.filter((entry) => entry.lossFamily !== null).length,
+      lossPathIdentified: INSTRUMENTATION.filter((entry) => entry.lossFamily !== null).length,
       silenceProven: INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length,
     },
     null,

@@ -13,7 +13,9 @@
       "staysSilent": [
         "stays silent about an MP3 stream, whose blocks do concatenate"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -28,7 +30,9 @@
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -43,7 +47,9 @@
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -59,7 +65,9 @@
       "staysSilent": [
         "stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -81,6 +89,7 @@
         "auditedAt": "2026-08-07T11:36:15-07:00",
         "auditor": "builder2",
         "family": "F10 font character id reused",
+        "state": "identified",
         "subjectHash": "git-tree:ce025e140304a629778340e1a85c9317f22c44fe"
       }
     },
@@ -104,6 +113,7 @@
         "auditedAt": "2026-08-07T09:27:31-07:00",
         "auditor": "builder2",
         "family": "F10 font character id reused",
+        "state": "identified",
         "subjectHash": "git-tree:2ebe7cf3e9d426dc4ad7f73773be6b07cc3fd959"
       }
     },
@@ -125,6 +135,7 @@
         "auditedAt": "2026-08-07T09:27:31-07:00",
         "auditor": "builder2",
         "family": "F10 font character id reused",
+        "state": "identified",
         "subjectHash": "git-tree:2ebe7cf3e9d426dc4ad7f73773be6b07cc3fd959"
       }
     },
@@ -146,6 +157,7 @@
         "auditedAt": "2026-08-07T11:02:58-07:00",
         "auditor": "builder2",
         "family": "F1 morph definition undecodable",
+        "state": "identified",
         "subjectHash": "git-tree:4c8d7b6b39594b44bec8793f148d38175625ec6c"
       }
     },
@@ -166,6 +178,7 @@
         "auditedAt": "2026-08-07T12:04:56-07:00",
         "auditor": "builder2",
         "family": "F1 morph definition undecodable",
+        "state": "identified",
         "subjectHash": "git-tree:8d82b4efe024ef622a60ce024ad7e11de2c5e498"
       }
     },
@@ -189,6 +202,7 @@
         "auditedAt": "2026-08-07T11:26:20-07:00",
         "auditor": "builder2",
         "family": "F4 blend mode behind an unfinished filter list",
+        "state": "identified",
         "subjectHash": "git-tree:1ddbca5efbfb144d94ac1c13a990dfab298ea5c4"
       }
     },
@@ -205,7 +219,9 @@
       "staysSilent": [
         "stays silent about a frame script and a mask that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -227,6 +243,7 @@
         "auditedAt": "2026-08-07T09:13:20-07:00",
         "auditor": "builder2",
         "family": "F8 appearance channel with no node",
+        "state": "identified",
         "subjectHash": "git-tree:d05593ea3d8d998fd8ec73ec8b956b7139eaa98c"
       }
     },
@@ -251,6 +268,7 @@
         "auditedAt": "2026-08-07T11:12:36-07:00",
         "auditor": "builder2",
         "family": "F5 ABC blob yielding no frame scripts",
+        "state": "identified",
         "subjectHash": "git-tree:8ba2ca6fb6278edbd5e2d951d12122752fb1d1ac"
       }
     },
@@ -272,6 +290,7 @@
         "auditedAt": "2026-08-07T11:12:36-07:00",
         "auditor": "builder2",
         "family": "F5 ABC blob yielding no frame scripts",
+        "state": "identified",
         "subjectHash": "git-tree:8ba2ca6fb6278edbd5e2d951d12122752fb1d1ac"
       }
     },
@@ -287,7 +306,9 @@
       "staysSilent": [
         "stays silent about a frame script and a mask that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -307,6 +328,7 @@
         "auditedAt": "2026-08-07T11:57:55-07:00",
         "auditor": "builder2",
         "family": "F12 init action declined without a crumb",
+        "state": "identified",
         "subjectHash": "git-tree:720c756de8359e7f2a16e2f67eca82003be43c05"
       }
     },
@@ -323,7 +345,9 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -338,7 +362,9 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -353,7 +379,9 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -368,7 +396,9 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -390,6 +420,7 @@
         "auditedAt": "2026-08-07T11:08:46-07:00",
         "auditor": "builder2",
         "family": "F3 edit text unparseable",
+        "state": "identified",
         "subjectHash": "git-tree:fa5f87cc6055e58f1936d1bbc646b9f2e1752180"
       }
     },
@@ -411,6 +442,7 @@
         "auditedAt": "2026-08-07T11:05:55-07:00",
         "auditor": "builder2",
         "family": "F2 static text uncomposable",
+        "state": "identified",
         "subjectHash": "git-tree:01e7ac7c2f43e9848d2be18e412adfb4b8f98426"
       }
     },
@@ -432,6 +464,7 @@
         "auditedAt": "2026-08-07T12:04:56-07:00",
         "auditor": "builder2",
         "family": "F2 static text uncomposable",
+        "state": "identified",
         "subjectHash": "git-tree:8d82b4efe024ef622a60ce024ad7e11de2c5e498"
       }
     },
@@ -448,7 +481,9 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -468,6 +503,7 @@
         "auditedAt": "2026-08-07T11:29:21-07:00",
         "auditor": "builder2",
         "family": "F7 sprite bounds union short",
+        "state": "identified",
         "subjectHash": "git-tree:8f03e49e6d09f2eb02ddb64f4f0da64bd573e9cb"
       }
     },
@@ -484,7 +520,9 @@
       "staysSilent": [
         "reports a label naming a frame the timeline never reaches, and stays silent when it does"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     },
     {
       "audits": [
@@ -499,12 +537,14 @@
       "staysSilent": [
         "stays silent about a shape, a video stream and a scene table that lose nothing"
       ],
-      "lossPath": null
+      "lossPath": {
+        "state": "unaudited"
+      }
     }
   ],
   "fireProven": 27,
   "payloadAudited": 27,
   "scopeAudited": 25,
-  "lossPathAudited": 14,
+  "lossPathIdentified": 14,
   "silenceProven": 27
 }
