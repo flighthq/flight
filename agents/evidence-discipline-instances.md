@@ -38,6 +38,11 @@ reader can tell strength apart without trusting the author's formatting:
 
 **A relay is not weaker for being unchecked; it is weaker for not saying so.**
 
+**How these invert if read as verdicts.** The vividness tell **would discredit whoever describes a
+genuinely severe finding accurately**; the fidelity axis **would rank losses by harm instead of
+naming the check each one defeats.** ⇒ **A document of search instructions read as a document of
+tests is the parent's stated failure mode.**
+
 ## Serving: evidence is about whatever produced it
 
 - **filed — RESTATE THE CORRECT VERSION RATHER THAN CORRECTING, when you cannot establish whether a
