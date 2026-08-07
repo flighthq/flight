@@ -11,6 +11,7 @@ import {
   findMarkdownLinkTargets,
   findOrphanDocs,
   findReachableDocs,
+  findUnacknowledgedCellDocs,
   findUncoveredPackages,
   getDocBudgetStatus,
   hasGatePath,
@@ -317,6 +318,41 @@ describe('findReachableDocs', () => {
       { path: 'agents/conventions/index.md', text: 'See [commands](../commands.md).' },
     ]);
     expect(reached.has('agents/commands.md')).toBe(true);
+  });
+});
+
+describe('findUnacknowledgedCellDocs', () => {
+  const CELL = 'agents/packages/fixture';
+  const DOC = `${CELL}/evidence.md`;
+  const EMPTY_CHARTER = ['---', 'package: fixture', '---', '', '# Fixture'].join('\n');
+
+  it('FAILS a supplementary doc linked only from the global index, not from its own charter', () => {
+    const globallyReached = findReachableDocs([
+      { path: 'agents/index.md', text: '[fixture evidence](packages/fixture/evidence.md)' },
+    ]);
+
+    expect(globallyReached.has(DOC)).toBe(true);
+    expect(findUnacknowledgedCellDocs(CELL, ['charter.md', 'evidence.md'], EMPTY_CHARTER)).toEqual([DOC]);
+  });
+
+  it('PASSES the same doc once its own charter links it', () => {
+    const charter = `${EMPTY_CHARTER}\n\n[Evidence](./evidence.md)`;
+    expect(findUnacknowledgedCellDocs(CELL, ['charter.md', 'evidence.md'], charter)).toEqual([]);
+  });
+
+  it('accepts a charter front-matter pointer too', () => {
+    const charter = ['---', 'package: fixture', 'evidence: ./evidence.md', '---', '', '# Fixture'].join('\n');
+    expect(findUnacknowledgedCellDocs(CELL, ['charter.md', 'evidence.md'], charter)).toEqual([]);
+  });
+
+  it('exempts the four contract files and ignores non-Markdown entries', () => {
+    expect(
+      findUnacknowledgedCellDocs(
+        CELL,
+        ['assessment.md', 'charter.md', 'notes.txt', 'review.md', 'status.md'],
+        EMPTY_CHARTER,
+      ),
+    ).toEqual([]);
   });
 });
 
