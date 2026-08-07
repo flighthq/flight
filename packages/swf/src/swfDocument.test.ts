@@ -2539,6 +2539,44 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(collectImportDiagnostics(() => {})).toEqual([]);
   });
 
+  it('reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure', () => {
+    // VideoFrame payloads are codec packets this importer does not carry. The document still imports;
+    // what the crumb adds is that a caller can now tell "declined on purpose" from "silently lost".
+    const file = createSwf([
+      createTag(
+        TAG_DEFINE_VIDEO_STREAM,
+        joinBytes(uint16(4), uint16(1), uint16(16), uint16(16), new Uint8Array([0x01, 2])),
+      ),
+      createTag(61, joinBytes(uint16(4), uint16(0), new Uint8Array([0, 0, 0, 0]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const declined = diagnostics.filter((entry) => entry.kind === 'swf.video-frame-payload');
+    expect(declined).toHaveLength(1);
+    expect(declined[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(declined[0].detail).toEqual({ tag: 61 });
+  });
+
+  it('stays silent on metadata tags, whose absence costs a document nothing', () => {
+    // The line this asserts is the one that keeps the report usable: a caller filtering crumbs should not
+    // have to skip past authoring metadata to find the entries that mean something.
+    const file = createSwf([
+      createTag(69, new Uint8Array([0, 0, 0, 0])),
+      createTag(77, swfString('<rdf/>')),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    expect(diagnostics).toEqual([]);
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
