@@ -77,6 +77,41 @@ edit text a single capability, which no consumer of a conformance score would ac
 source makes a rule checkable; it does not make it a rule about behaviour. A stated rule shows someone
 decided; it does not show the rule decides.
 
+## The tag-dispatch cross-check, and its measured ceiling
+
+`npm run capabilities:tag-dispatch` cross-checks the declared list against the tags the importer actually
+dispatches on. **It reports and does not enforce, and it is deliberately absent from `npm run check`.**
+
+**The ceiling is 42 of 82.** Only capabilities whose identity is a tag can be checked this way;
+everything individuated by a fill kind, a stroke property, a placement flag bit or a backend axis is
+invisible to it. The script measures and prints that number on every run rather than carrying it in
+prose, so it cannot go stale while looking authoritative.
+
+**I estimated this ceiling at "about 50 of 82, roughly 60%" before building it. The measured value is 42
+of 82, 51%.** The estimate was wrong by eight rows and in the flattering direction. It is recorded here
+because an estimate quoted later as a measurement is the failure this whole effort exists to remove, and
+mine would have been.
+
+### What it catches, and the hole found by trying to make it fail
+
+Two defect classes, **both verified by mutation rather than asserted**: a capability row naming a tag the
+importer never dispatches on, and a tag constant declared but never dispatched on. Each was made to fire
+by a deliberate edit, and the edit reverted.
+
+The first attempt at that verification **failed, and the failure was the useful part.** A planted row
+naming a nonexistent tag did *not* trigger the defect — it landed in "out of scope", the bucket meaning
+*not identified by a tag, nothing to see*. A claim with no code behind it and a legitimately non-tag
+capability were **collapsing into one bucket, and the bucket read as fine.** That is the same
+two-populations-read-as-one shape the capability work keeps finding, reproduced inside the instrument
+built to check it.
+
+It cannot be fixed mechanically: from an id alone, `swf.bitmap.define-bits-jpeg-9` and `swf.fill.solid`
+cannot be told apart as "names a tag that does not exist" versus "is not a tag capability". So rows whose
+id *reads* like a tag claim but match no declared tag are now reported as **check by hand**, with the
+ambiguity stated. On the current list two legitimate rows land there — `swf.axis.sound-format-non-mp3`
+and `swf.bitmap.define-bits-jpeg-tables`, the latter a composite of two tags. **A visible bucket that
+needs a human beats an invisible one that does not ask.**
+
 ## Where the importer's routing and the rows' grain disagree
 
 The join between rows and tags is by name, and the disagreements are reported by the script rather than
