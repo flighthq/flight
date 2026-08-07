@@ -297,6 +297,25 @@ export function findReachableDocs(sources: readonly Readonly<{ path: string; tex
   return reached;
 }
 
+// Cell membership is stricter than general reachability. An index can make an evidence document
+// reachable to a reader without the cell ever claiming it; that exact shape passed the orphan check
+// for `scene2d-dom/public-lane-audit.md`. The comparison stays mechanical: exact cell path, exact four
+// contract paths, and pointer targets resolved from that cell's charter alone. It deliberately does
+// not change `isAuthorityBearingDoc` or rank one document against another.
+export function findUnacknowledgedCellDocs(
+  cellDir: string,
+  entries: readonly string[],
+  charterText: string,
+): readonly string[] {
+  const charterPath = join(cellDir, 'charter.md');
+  const acknowledged = findReachableDocs([{ path: charterPath, text: charterText }]);
+
+  return entries
+    .filter((entry) => entry.endsWith('.md') && !(CELL_FILES as readonly string[]).includes(entry))
+    .map((entry) => join(cellDir, entry))
+    .filter((doc) => !acknowledged.has(doc));
+}
+
 export function getDocBudgetStatus(length: number, limit: number): DocBudgetStatus {
   if (length > limit) return 'over';
   return length >= limit - limit * DOC_BUDGET_WARN_FRACTION ? 'near' : 'ok';
@@ -394,6 +413,12 @@ function checkCells(files: ReadonlySet<string>): void {
     if (charterText === null) {
       fail(`agents/packages/${cell}/: charter.md is required and missing`);
       continue;
+    }
+
+    for (const doc of findUnacknowledgedCellDocs(dir, findGateEntries(files, dir), charterText)) {
+      fail(
+        `${doc}: supplementary cell document is not acknowledged by ${dir}/charter.md — add a resolvable Markdown link or front-matter ./…md pointer there`,
+      );
     }
 
     for (const entry of findGateEntries(files, dir)) {
@@ -631,7 +656,7 @@ function main(): void {
   }
 
   process.stdout.write(
-    `${pc.green('✓')} Agent docs valid (cell envelopes conform, links resolve, every doc reachable)\n`,
+    `${pc.green('✓')} Agent docs valid (cell envelopes conform, supplementary docs are charter-acknowledged, links resolve, every doc reachable)\n`,
   );
 }
 
