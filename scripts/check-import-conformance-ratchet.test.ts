@@ -8,7 +8,10 @@ import {
   getImportConformanceRatchetExitCode,
   runImportConformanceRatchet,
 } from './check-import-conformance-ratchet';
-import { parseImportConformanceScore } from './import-conformance-score';
+import {
+  deriveImportConformanceCapabilityScopedUnknownEvidence,
+  parseImportConformanceScore,
+} from './import-conformance-score';
 import type {
   ImportConformanceAuditedLossPath,
   ImportConformanceCapability,
@@ -456,6 +459,200 @@ describe('compareImportConformanceScores', () => {
 
     expect(report.state).toBe('incomparable');
     expect(report.packs[0].findings[0].code).toBe('reused-run');
+  });
+});
+
+describe('deriveImportConformanceCapabilityScopedUnknownEvidence', () => {
+  it('derives every affected row from one canonical limit or loss-family mapping', () => {
+    const evidence = deriveImportConformanceCapabilityScopedUnknownEvidence(
+      [
+        'swf.button.define-button',
+        'swf.button.define-button-2',
+        'swf.timeline.define-sprite',
+        'swf.timeline.frame-label',
+      ],
+      {
+        configurationLimits: [
+          {
+            capabilityIds: ['swf.button.define-button', 'swf.button.define-button-2'],
+            id: 'MAX_BUTTON_RECORDS',
+            reporting: 'unobservable',
+          },
+          {
+            capabilityIds: ['swf.timeline.define-sprite', 'swf.timeline.frame-label'],
+            id: 'MAX_FRAME_ACTIONS',
+            reporting: 'structured',
+          },
+        ],
+        unwiredLossFamilies: [
+          {
+            capabilityIds: ['swf.button.define-button-2'],
+            contentFidelity: 'missing',
+            reference: 'swf.loss.button-action',
+          },
+          {
+            capabilityIds: ['swf.timeline.define-sprite'],
+            contentFidelity: 'diminished',
+            reference: 'swf.loss.sprite-authored-bounds',
+          },
+        ],
+      },
+    );
+
+    expect(evidence).toEqual([
+      {
+        capabilityId: 'swf.button.define-button',
+        configurationLimits: {
+          limits: [{ id: 'MAX_BUTTON_RECORDS', reporting: 'unobservable' }],
+          state: 'declared',
+        },
+        forcedResults: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+        unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_BUTTON_RECORDS' }],
+      },
+      {
+        capabilityId: 'swf.button.define-button-2',
+        configurationLimits: {
+          limits: [{ id: 'MAX_BUTTON_RECORDS', reporting: 'unobservable' }],
+          state: 'declared',
+        },
+        forcedResults: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+        unknownObservations: [
+          { reason: 'loop-bounded-configuration-limit', reference: 'MAX_BUTTON_RECORDS' },
+          {
+            contentFidelity: 'missing',
+            reason: 'loss-path-known-not-wired',
+            reference: 'swf.loss.button-action',
+          },
+        ],
+      },
+      {
+        capabilityId: 'swf.timeline.define-sprite',
+        configurationLimits: {
+          limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'structured' }],
+          state: 'declared',
+        },
+        forcedResults: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+        unknownObservations: [
+          {
+            contentFidelity: 'diminished',
+            reason: 'loss-path-known-not-wired',
+            reference: 'swf.loss.sprite-authored-bounds',
+          },
+        ],
+      },
+      {
+        capabilityId: 'swf.timeline.frame-label',
+        configurationLimits: {
+          limits: [{ id: 'MAX_FRAME_ACTIONS', reporting: 'structured' }],
+          state: 'declared',
+        },
+        forcedResults: null,
+        unknownObservations: [],
+      },
+    ]);
+  });
+
+  it('forces both lanes UNKNOWN without discarding directly observed defects', () => {
+    const [evidence] = deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha'], {
+      configurationLimits: [
+        {
+          capabilityIds: ['alpha'],
+          id: 'MAX_FRAME_ACTIONS',
+          reporting: 'unobservable',
+        },
+      ],
+      unwiredLossFamilies: [],
+    });
+    const capability = measuredCapability('alpha', 2, 'fail', outcomes({ importedWrong: 1, threw: 1 }));
+    capability.configurationLimits = evidence.configurationLimits;
+    capability.results = evidence.forcedResults!;
+    capability.unknownObservations = evidence.unknownObservations;
+
+    const parsed = parseImportConformanceScore(score(measuredPack([capability]), '100'));
+
+    expect(parsed.packs[0].capabilities[0]).toMatchObject({
+      outcomes: { importedWrong: 1, threw: 1 },
+      results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_FRAME_ACTIONS' }],
+      witnesses: 2,
+    });
+  });
+
+  it('does not charge capability-scoped map members to file witness arithmetic', () => {
+    const [evidence] = deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha'], {
+      configurationLimits: [
+        {
+          capabilityIds: ['alpha'],
+          id: 'MAX_FRAME_ACTIONS',
+          reporting: 'unobservable',
+        },
+      ],
+      unwiredLossFamilies: [
+        {
+          capabilityIds: ['alpha'],
+          contentFidelity: 'missing',
+          reference: 'swf.loss.frame-action',
+        },
+      ],
+    });
+    const capability = unknownCapability('alpha', 1, 'loss-path-known-not-wired');
+    capability.configurationLimits = evidence.configurationLimits;
+    capability.results = evidence.forcedResults!;
+    capability.unknownObservations = evidence.unknownObservations;
+
+    const parsed = parseImportConformanceScore(score(measuredPack([capability]), '100'));
+
+    expect(parsed.packs[0].capabilities[0]).toMatchObject({
+      unknownObservations: [
+        { reason: 'loop-bounded-configuration-limit', reference: 'MAX_FRAME_ACTIONS' },
+        {
+          contentFidelity: 'missing',
+          reason: 'loss-path-known-not-wired',
+          reference: 'swf.loss.frame-action',
+        },
+      ],
+      witnesses: 1,
+    });
+  });
+
+  it('rejects mapping drift instead of inferring UNKNOWN from unrelated producer state', () => {
+    const empty = deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha'], {
+      configurationLimits: [],
+      unwiredLossFamilies: [],
+    });
+
+    expect(empty).toEqual([
+      {
+        capabilityId: 'alpha',
+        configurationLimits: { state: 'not-applicable' },
+        forcedResults: null,
+        unknownObservations: [],
+      },
+    ]);
+    expect(() =>
+      deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha'], {
+        configurationLimits: [{ capabilityIds: ['beta'], id: 'MAX_FRAME_ACTIONS', reporting: 'unobservable' }],
+        unwiredLossFamilies: [],
+      }),
+    ).toThrow("references undeclared capability id 'beta'");
+    expect(() =>
+      deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha', 'beta'], {
+        configurationLimits: [{ capabilityIds: ['beta', 'alpha'], id: 'MAX_FRAME_ACTIONS', reporting: 'unobservable' }],
+        unwiredLossFamilies: [],
+      }),
+    ).toThrow('capability ids must be unique and sorted in ascending order');
+    expect(() =>
+      deriveImportConformanceCapabilityScopedUnknownEvidence(['alpha'], {
+        configurationLimits: [{ capabilityIds: ['alpha'], id: 'same-reference', reporting: 'unobservable' }],
+        unwiredLossFamilies: [
+          {
+            capabilityIds: ['alpha'],
+            contentFidelity: 'missing',
+            reference: 'same-reference',
+          },
+        ],
+      }),
+    ).toThrow('observation references must be unique and sorted in ascending order');
   });
 });
 

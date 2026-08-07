@@ -66,12 +66,44 @@ export interface ImportConformanceConfigurationLimit {
   reporting: 'structured' | 'unobservable';
 }
 
+export interface ImportConformanceConfigurationLimitCapabilityMapping {
+  /** Provisional capability ids affected by this one canonical producer limit. */
+  readonly capabilityIds: readonly [string, ...string[]];
+  readonly id: string;
+  readonly reporting: ImportConformanceConfigurationLimit['reporting'];
+}
+
 export type ImportConformanceConfigurationLimits =
   | {
       limits: [ImportConformanceConfigurationLimit, ...ImportConformanceConfigurationLimit[]];
       state: 'declared';
     }
   | { state: 'not-applicable' };
+
+export interface ImportConformanceUnwiredLossFamilyCapabilityMapping {
+  /** Provisional capability ids affected by this one audited, unwired loss family. */
+  readonly capabilityIds: readonly [string, ...string[]];
+  readonly contentFidelity: ImportConformanceContentFidelity;
+  /** Stable loss-family reference from the producer's capability-keyed audit artifact. */
+  readonly reference: string;
+}
+
+export interface ImportConformanceCapabilityScopedUnknownMappings {
+  /**
+   * The producer's sole capability-scope input. Populate it from declared configuration and the
+   * capability-keyed loss audit, never from diagnostic crumbs or source-read exclusion notes.
+   */
+  readonly configurationLimits: readonly ImportConformanceConfigurationLimitCapabilityMapping[];
+  readonly unwiredLossFamilies: readonly ImportConformanceUnwiredLossFamilyCapabilityMapping[];
+}
+
+export interface ImportConformanceDerivedCapabilityScopedUnknownEvidence {
+  capabilityId: string;
+  configurationLimits: ImportConformanceConfigurationLimits;
+  /** Non-null means this evidence forces both scored lanes to UNKNOWN. */
+  forcedResults: ImportConformanceExercisedCapability['results'] | null;
+  unknownObservations: ImportConformanceUnknownObservation[];
+}
 
 export interface ImportConformanceLossPathAudit {
   /** Stable audit record; the parser validates structure and time syntax, not the audit's substantive judgment. */
@@ -281,6 +313,94 @@ export interface ImportConformanceScore {
   packs: ImportConformancePack[];
   provenance: ImportConformanceProvenance;
   schemaVersion: 1;
+}
+
+export function deriveImportConformanceCapabilityScopedUnknownEvidence(
+  capabilityIds: readonly string[],
+  mappings: Readonly<ImportConformanceCapabilityScopedUnknownMappings>,
+): ImportConformanceDerivedCapabilityScopedUnknownEvidence[] {
+  const declaredCapabilityIds = capabilityIds.map((id, index) =>
+    expectNonemptyString(id, `capabilityScopedUnknown.capabilityIds[${index}]`),
+  );
+  expectSortedUnique(declaredCapabilityIds, 'capabilityScopedUnknown.capabilityIds', 'capability id');
+  const declaredCapabilityIdSet = new Set(declaredCapabilityIds);
+  const configurationLimits = mappings.configurationLimits.map((mapping, index) => {
+    const path = `capabilityScopedUnknown.configurationLimits[${index}]`;
+    const id = expectNonemptyString(mapping.id, `${path}.id`);
+    if (mapping.reporting !== 'structured' && mapping.reporting !== 'unobservable') {
+      fail(`${path}.reporting`, "must be 'structured' or 'unobservable'");
+    }
+    return {
+      capabilityIds: parseMappedCapabilityIds(mapping.capabilityIds, declaredCapabilityIdSet, `${path}.capabilityIds`),
+      id,
+      reporting: mapping.reporting,
+    };
+  });
+  expectSortedUnique(
+    configurationLimits.map((limit) => limit.id),
+    'capabilityScopedUnknown.configurationLimits',
+    'configuration limit id',
+  );
+  const unwiredLossFamilies = mappings.unwiredLossFamilies.map((mapping, index) => {
+    const path = `capabilityScopedUnknown.unwiredLossFamilies[${index}]`;
+    if (
+      mapping.contentFidelity !== 'diminished' &&
+      mapping.contentFidelity !== 'missing' &&
+      mapping.contentFidelity !== 'substituted'
+    ) {
+      fail(`${path}.contentFidelity`, "must be 'diminished', 'missing', or 'substituted'");
+    }
+    return {
+      capabilityIds: parseMappedCapabilityIds(mapping.capabilityIds, declaredCapabilityIdSet, `${path}.capabilityIds`),
+      contentFidelity: mapping.contentFidelity,
+      reference: expectNonemptyString(mapping.reference, `${path}.reference`),
+    };
+  });
+  expectSortedUnique(
+    unwiredLossFamilies.map((family) => family.reference),
+    'capabilityScopedUnknown.unwiredLossFamilies',
+    'unwired loss-family reference',
+  );
+
+  return declaredCapabilityIds.map((capabilityId) => {
+    const limits = configurationLimits
+      .filter((limit) => limit.capabilityIds.includes(capabilityId))
+      .map(({ id, reporting }) => ({ id, reporting }));
+    const unknownObservations: ImportConformanceUnknownObservation[] = [
+      ...limits.flatMap((limit): ImportConformanceUnknownObservation[] =>
+        limit.reporting === 'unobservable' ? [{ reason: 'loop-bounded-configuration-limit', reference: limit.id }] : [],
+      ),
+      ...unwiredLossFamilies.flatMap((family): ImportConformanceUnknownObservation[] =>
+        family.capabilityIds.includes(capabilityId)
+          ? [
+              {
+                contentFidelity: family.contentFidelity,
+                reason: 'loss-path-known-not-wired',
+                reference: family.reference,
+              },
+            ]
+          : [],
+      ),
+    ].sort((left, right) => (left.reference < right.reference ? -1 : left.reference > right.reference ? 1 : 0));
+    expectSortedUnique(
+      unknownObservations.map((observation) => observation.reference),
+      `capabilityScopedUnknown.${capabilityId}.unknownObservations`,
+      'observation reference',
+    );
+    return {
+      capabilityId,
+      configurationLimits:
+        limits.length === 0
+          ? { state: 'not-applicable' }
+          : {
+              limits: limits as [ImportConformanceConfigurationLimit, ...ImportConformanceConfigurationLimit[]],
+              state: 'declared',
+            },
+      forcedResults:
+        unknownObservations.length === 0 ? null : { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
+      unknownObservations,
+    };
+  });
 }
 
 export function parseImportConformanceScore(value: unknown, source = 'score'): ImportConformanceScore {
@@ -1337,6 +1457,18 @@ function parseNotRunCapabilityReason(value: unknown, path: string): ImportConfor
     fail(path, "must be 'missing-shard' or 'pack-unavailable'");
   }
   return value;
+}
+
+function parseMappedCapabilityIds(value: unknown, declaredCapabilityIds: ReadonlySet<string>, path: string): string[] {
+  if (!Array.isArray(value) || value.length === 0) fail(path, 'must be a non-empty array');
+  const capabilityIds = value.map((id, index) => expectNonemptyString(id, `${path}[${index}]`));
+  expectSortedUnique(capabilityIds, path, 'capability id');
+  for (const capabilityId of capabilityIds) {
+    if (!declaredCapabilityIds.has(capabilityId)) {
+      fail(path, `references undeclared capability id '${capabilityId}'`);
+    }
+  }
+  return capabilityIds;
 }
 
 function expectInteger(value: unknown, path: string, minimum: number): number {
