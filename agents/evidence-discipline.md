@@ -22,12 +22,18 @@ rather than reading something, it is being misused.
 
 ## The law: evidence is about whatever produced it
 
-*Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 6 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Its sharpest case is the self-report. **A self-report is evidence about the self-reporter, not about
 what it carried** — so to get evidence about the payload, you need something that looked at the
 payload. Everything below in this section derives from that in one step.
 
+- **Announcing a change is not shipping it, and the announcement travels faster.** A note saying "I am
+  landing this in the doc" went out in a parcel whose commits did not contain it; the wording was
+  present-tense, the work was real, and it landed two commits later — so every reader of that parcel
+  held a true-sounding claim about a file none of them had. **It surfaced only because a reader opened
+  the file and grepped for the words.** The author was the person who wrote this rule, and it happened
+  anyway.
 - **An importer that returns a document reports success by being non-null.** `createScene2DFromSwf`
   returned a document while having silently dropped content. This is why `importdiagnostics` exists:
   it is the independent reader for the importer, not a feature beside it.
@@ -101,7 +107,10 @@ stops an artifact claiming more than it has.
   fixed greppable token rather than prose** — a sentence saying you considered backing lets nobody
   enumerate anything, and the point is not that a reader is warned but that the set becomes countable.
   Keep a register of merged-but-unbacked claims with class and commit: when a constraint lifts, that
-  register is the work order, and without it nobody can say which merged claims to revisit.
+  register is the work order, and without it nobody can say which merged claims to revisit. **Even the
+  backed side has this shape at its edge:** the boundary that re-ran every gate could not run suites
+  needing a browser, a GPU, or the network, and skipped two contract files on every run — so the
+  subsumption is near-total, and the exceptions are, predictably, the expensive ones.
 - **A clean result is a result, not an absence of one.** A file with no unreported loss path settles a
   chunk of the denominator; recording it as a positive finding is the only way it counts.
 
