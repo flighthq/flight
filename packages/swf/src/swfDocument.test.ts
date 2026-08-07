@@ -2973,6 +2973,44 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.appearance-without-node')).toEqual([]);
   });
 
+  it('reports a reused font character id, the one case where the document imports and is simply wrong', () => {
+    // Two DefineFont tags claim id 4. The second replaces the first; the document imports, the font
+    // exists, and it is the wrong font — the substituted case no existence check and no count can see.
+    const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
+    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_FONT, font), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-character-id-reused');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.font.define-font', characterId: 4 });
+  });
+
+  it('stays silent about a font whose character id is used once, so the entry carries information', () => {
+    const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([
+            createTag(TAG_DEFINE_FONT, joinBytes(uint16(4), uint16(2), glyphBytes)),
+            createTag(TAG_DEFINE_FONT, joinBytes(uint16(5), uint16(2), glyphBytes)),
+            createTag(TAG_END),
+          ]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.font-character-id-reused')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
