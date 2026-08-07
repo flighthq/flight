@@ -123,13 +123,28 @@ verdict; see the note at the top.
   yes while leaving *is this reported* untouched — so it suppresses the search while looking like
   diligence. A third form is neither: three of four definition kinds rejecting a duplicate id is a
   convention that **displays a rule without providing one**, and a reader who infers it from the
-  three has read intent and concluded about code. **Expect a fourth: grepping `explain*` functions,
-  TODOs, or tests, on the same intuition.**
+  three has read intent and concluded about code. A fourth is a rule itself: **a stated rule shows
+  someone decided; it does not show the rule decides**, so a written convention that cannot be
+  mechanically evaluated is the same artifact wearing a better hat. **Expect a fifth: grepping
+  `explain*` functions, TODOs, or tests, on the same intuition.**
 
 ## Denominators
 
-*Arc-local, 4 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
+- **Before ratifying a count, ratify the rule that decides when two things are one entry or two.** A
+  count with no stated individuation rule is not a measurement, it is a tally — and unlike a missing
+  member, it cannot be closed by finding more. The tell costs one question, asked of the artifact
+  rather than of its contents: *what would make these one entry instead of two?* **If nobody can
+  answer, there is no denominator yet.** One capability list split some format versions into separate
+  entries and collapsed others by no stated rule; the margin was three entries wide in either
+  direction, and a whole day of auditing its *members* never reached it because the question is about
+  the set, not the rows. Any `N of M capabilities` figure has this hole until the rule is written.
+  Beware the second-order version: an under-defined rule for fixing an undeclared convention
+  relocates the arbitrariness from the rows to the rule, **where it is harder to see because a written
+  rule looks settled**. Require a definition something mechanical can evaluate, then run it and report
+  the count it yields rather than the count you expect — the rule applies to the entries that already
+  look right, so the direction of the move is not knowable in advance.
 - **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
   bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
   implemented, so a ratio over it measures the corpus against our own model and reads as coverage of
