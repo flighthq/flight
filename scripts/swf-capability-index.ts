@@ -140,7 +140,7 @@ async function main(): Promise<void> {
   const definitions = parseImportConformanceCapabilityDefinitions(
     JSON.parse(readFileSync(join(REPOSITORY_ROOT, 'agents', 'packages', 'swf', 'capabilities.json'), 'utf8')),
   );
-  const index = await buildSwfCapabilityIndex(treeDirectory, definitions, pack.files);
+  const index = await buildSwfCapabilityIndex(treeDirectory, definitions, pack.verifiedFixtureFiles);
   const output = join(REPOSITORY_ROOT, '.artifacts', 'import-conformance', 'index.json');
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, `${JSON.stringify(index, null, 2)}\n`);
