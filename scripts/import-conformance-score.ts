@@ -1018,7 +1018,11 @@ function assertLossPathMatchesInstrumentation(
     if (reason === 'loss-path-not-identified' && lossPath.state !== 'unaudited') {
       fail(`${path}.unknownObservations[${index}].reason`, "requires lossPath state 'unaudited'");
     }
-    if (reason !== 'loss-path-not-identified' && lossPath.state !== 'identified') {
+    if (
+      reason !== 'loss-path-not-identified' &&
+      reason !== 'loop-bounded-configuration-limit' &&
+      lossPath.state !== 'identified'
+    ) {
       fail(`${path}.unknownObservations[${index}].reason`, "requires lossPath state 'identified'");
     }
   }

@@ -512,6 +512,41 @@ describe('createImportConformanceScore', () => {
     });
   });
 
+  it('retains configuration-limit evidence when the capability loss path is unaudited', () => {
+    const index = makeIndex();
+    const score = createImportConformanceScore(
+      index,
+      createImportConformanceShardPlan(
+        index.fixtures.map((fixture) => fixture.reference),
+        1,
+      ),
+      new Set([0]),
+      [result('one.swf', ['swf.fill.solid'], 'importedWrong'), result('two.swf', ['swf.fill.solid'], 'passed')],
+      new Map(),
+      lossPathStates(false),
+      hash('importer'),
+      PROVENANCE,
+      declarations(
+        {},
+        {
+          'swf.fill.solid': {
+            limits: [{ id: 'MAX_FILL_RECORDS', reporting: 'unobservable' }],
+            state: 'declared',
+          },
+        },
+      ),
+    );
+
+    expect(score.packs[0]!.capabilities[0]).toMatchObject({
+      lossPath: { state: 'unaudited' },
+      unknownObservations: [
+        { reason: 'loop-bounded-configuration-limit', reference: 'MAX_FILL_RECORDS' },
+        { reason: 'loss-path-not-identified', reference: 'swf.fill.solid' },
+      ],
+    });
+    expect(parseImportConformanceScore(score, 'producer score')).toEqual(score);
+  });
+
   it('does not force UNKNOWN for a configuration limit with structured reporting', () => {
     const index = makeIndex();
     const score = createImportConformanceScore(
