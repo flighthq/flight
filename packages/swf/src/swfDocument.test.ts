@@ -2791,6 +2791,65 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped[0].detail).toEqual({ capability: 'swf.script.do-abc-anonymous' });
   });
 
+  it('reports a declared blend mode left unread behind a filter list that did not finish', () => {
+    // Filter id 0xff has no known payload width, so the list cannot be walked to its end and the blend
+    // byte behind it is unreachable. The placement keeps everything else, which is why this is silent.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([
+            createTag(
+              TAG_PLACE_OBJECT_3,
+              joinBytes(
+                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE]),
+                uint16(3),
+                uint16(7),
+                swfString('filtered'),
+                new Uint8Array([1, 0xff]),
+                new Uint8Array([SWF_BLEND_MULTIPLY]),
+              ),
+            ),
+            createTag(TAG_SHOW_FRAME),
+            createTag(TAG_END),
+          ]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.blend-mode-behind-unread-filters');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.placement.blend-mode' });
+  });
+
+  it('stays silent when a declared blend mode is reachable, so the drop entry carries information', () => {
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(
+            TAG_PLACE_OBJECT_3,
+            joinBytes(
+              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+              uint16(3),
+              uint16(7),
+              swfString('multiplied'),
+              new Uint8Array([SWF_BLEND_MULTIPLY]),
+            ),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // Non-vacuous: the blend mode was actually read and applied.
+    expect(document!.slots[0].target.blendMode).toBe(BlendMode.Multiply);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.blend-mode-behind-unread-filters')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([

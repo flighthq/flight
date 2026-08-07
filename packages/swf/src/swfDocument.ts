@@ -1361,7 +1361,20 @@ function readPlaceObject(
   const readEffects: RenderEffect[] = [];
   const readFilterAdjustments: Adjustment[] = [];
   const filterListComplete = !hasFilterList || readSwfFilterList(body, readEffects, readFilterAdjustments, diagnostics);
-  const hasBlendMode = (extendedFlags & 0x02) !== 0 && filterListComplete;
+  const declaresBlendMode = (extendedFlags & 0x02) !== 0;
+  const hasBlendMode = declaresBlendMode && filterListComplete;
+  if (declaresBlendMode && !filterListComplete) {
+    // The record declared a blend mode and the byte carrying it is unreachable behind a list that did
+    // not finish. The placement keeps the filters read so far, so nothing about the result says a
+    // declared channel went unread.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.blend-mode-behind-unread-filters',
+      'readPlaceObject',
+      { capability: 'swf.placement.blend-mode' },
+    );
+  }
   const blendModeValue = hasBlendMode ? body.readUint8() : 0;
 
   if (!body.valid || (isMove && existing === undefined) || (characterId === 0 && directLinkage === null)) return;
