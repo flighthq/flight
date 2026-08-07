@@ -115,13 +115,26 @@ of evidence rather than a measurement.
 The consumer half, and the symbol table of the analogy above.
 
 ```ts
-interface CatalogEntry {
-  readonly facet: RequirementFacet;  // 'render-effect'
-  readonly key: Kind;                // 'BlurEffect'
+// One call the emitter must write. `argument` is null for the common `register*(state)` form.
+interface CatalogRegistration {
+  readonly argument: string | null;
   readonly module: string;           // '@flighthq/effects-gl'
   readonly registrar: string;        // 'registerGlBlurEffect'
 }
+
+// A key needs EVERY registration listed, in order — see below: one kind is not one call.
+interface CatalogEntry {
+  readonly facet: RequirementFacet;  // 'render-effect'
+  readonly key: Kind;                // 'BlurEffect'
+  readonly registrations: readonly CatalogRegistration[];
+}
 ```
+
+**A key does not map to one registrar, and assuming it did was a defect.** `tools/harness/canvas.ts`
+already shows the counter-example in working code: satisfying `ShapeKind` on canvas takes *two* calls —
+the renderer and the shape-command set — and `Scale9ShapeKind` takes its own renderer plus the same
+commands. A single `registrar` field cannot express that, so the emitter would have produced a scene that
+draws nothing while reporting full coverage. Ordering is part of the entry, not an emitter convention.
 
 **It is an open, caller-owned registry, not a static table.** This is not a preference — it is forced by
 the rule in [AGENTS.md](../AGENTS.md): *"Prefer an open registry over a closed `switch (kind)` … so users
@@ -210,8 +223,43 @@ member of an expected series. They also concentrate 39 entries into four files i
 **What the check can and cannot verify here.** It confirms every declared entry names a symbol that
 exists and is exported on the named module's lane — which catches renames and deletions, the rot that
 actually happens. It cannot confirm the pairing is semantically right; `ShapeKind` bound to the tilemap
-renderer would pass. That failure is caught by the first thing that renders, and is far rarer than a
-rename. The catalog must record which half each entry came from, so a reader knows which guarantee applies.
+renderer would pass. That failure is caught by the first thing that renders — which the
+[generated examples](#the-examples-are-the-prior-art-and-they-currently-teach-the-shotgun) turn from a
+hope into a mechanism. The catalog must record which half each entry came from, so a reader knows which
+guarantee applies.
+
+##### This half already exists, hand-written, four times
+
+**`tools/harness/{canvas,dom,webgl,webgpu}.ts` are the declared node-renderer catalog.** Not an analogue
+of it — the thing itself, in production, exercised by every functional test:
+
+```ts
+for (const kind of options.kinds ?? []) {
+  if (kind === ShapeKind) {
+    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+  } else if (kind === RichTextKind) {
+    registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
+  } else if (kind === QuadBatchKind) {
+    registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+  } // …
+}
+```
+
+The loop over declared kinds is the resolution step; the chain is the table. Three things follow:
+
+- **The bindings are already written down and already verified by rendering.** Extracting them into
+  `@flighthq/registry-catalog` is a move, not an invention, and the risk is correspondingly low.
+- **It is a closed `switch (kind)` chain, duplicated four times**, which is the shape
+  [AGENTS.md](../AGENTS.md) explicitly warns against: adding a kind means four hand edits, and a consumer
+  cannot extend it at all. That is the drift this proposal exists to end, sitting in the tool that
+  validates everything else.
+- **The harness demonstrates the shotgun too.** Three `registerCanvas*TextureResolver` calls run above
+  the loop, unconditionally, regardless of what the target declared.
+
+This makes the [first prototype](#build-the-generator-first) concrete and cheap: replace the four chains
+with catalog lookups. The code exists, every functional baseline covers it, and a catalog that cannot
+reproduce it fails as red baselines rather than as an argument.
 
 #### How the generated half is written
 
@@ -275,6 +323,41 @@ anti-shotgun argument rests on the correct path being **shorter than the bundled
 plus an intermediate file is a worse bet against one line of `registerEverything` than one command is. An
 app has many assets and one registries module, so the merge across assets happens in memory. The
 requirement set stays a type; `--emit-requirements` covers inspection.
+
+### Two producers: an asset is scanned, a programmatic scene is declared
+
+**Not every scene comes from a file, and the first revision assumed one did.** An openfl-samples or
+awayjs port loads a SWF or a glTF and there is an asset to read. An example that constructs
+`createShape()` and a `QuadBatch` in code has no asset, no importer, and therefore no sink to fire.
+
+The two families differ **only in who produces the requirement set**. Everything downstream — catalog,
+resolution, emission — is identical.
+
+| scene | requirements come from |
+|---|---|
+| format port (SWF, glTF, SVG, Lottie) | the [importer sink](#where-requirements-come-from-the-importer-sink), derived while parsing |
+| constructed in code | the author's declaration |
+
+**A programmatic scene declares, and it already does.** `createFunctionalTarget({ kinds: [ShapeKind] })`
+in `tools/harness/target.ts` is a requirement set written by hand, in use across every functional scene.
+The pattern needs generalizing, not inventing.
+
+**Rejected: deriving requirements by static analysis of example source.** Reading `new QuadBatch()` out
+of a `.ts` file to infer `QuadBatchKind` is the same unsound move as
+[name-derivation](#declared--node-renderers-because-source-never-states-them): a scene built in a loop,
+from data, or behind a condition is invisible to it, and a wrong answer emits a wrong call. For a
+constructed scene the requirements are a fact about *intent*, and a declaration states intent honestly
+where a source scan guesses at it.
+
+**But a declaration can be checked, and should be.** `getScene2DKindUsage(usage, scene)` walks a *built*
+scene and needs no render state, so a harness can build, walk, and fail when the walk finds a kind the
+declaration omitted. That is the same declare-then-verify pairing that makes the derived half
+trustworthy, applied to the half source cannot state.
+
+Its limit is honest and belongs in the record: **a walk is a snapshot.** A kind that first appears on
+frame 300, or only when a branch is taken, escapes it. That tail is what the runtime guard and its
+[remedy](#4-the-remedy-on-a-miss) exist to catch — the two halves are complementary, and neither alone
+is sufficient.
 
 ### Where requirements come from — the importer sink
 
@@ -521,7 +604,16 @@ been shown to get wrong. So it is not the last stage of this lifecycle — it is
 whole registry arc, it retires Blocker 3, and it is independently useful even if the storage design
 changes underneath it.
 
-Nothing else here should start before it reports real numbers.
+**The first milestone is replacing the four harness chains, not counting registrars.** A count proves
+nothing about whether codegen works. `tools/harness/{canvas,dom,webgl,webgpu}.ts`
+[already hold the declared half](#this-half-already-exists-hand-written-four-times) as `if/else` chains,
+every functional baseline exercises them, and swapping them for catalog lookups is mechanical. It
+exercises both halves, the multi-registration case (`ShapeKind` needs renderer *and* commands), and
+resolution — and a catalog that gets any of it wrong fails as red baselines rather than as an argument.
+
+Two claims in earlier revisions of this document failed on contact with source: the `wireframe` counts,
+and the assumption that every family was derivable. Both were caught by review rather than by the author.
+That is the case for building the smallest falsifiable thing before any package exists.
 
 ## Names — settled, and one root word
 
