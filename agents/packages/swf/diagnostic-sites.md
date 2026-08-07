@@ -10,7 +10,7 @@ generated: true
 Every place `packages/swf` reports an import diagnostic, as of the commit this file was committed in.
 Regenerate rather than trust the line column: **kind and severity survive edits, line numbers do not.**
 
-**37 sites across 5 files.** By severity: Drop 18 · Recover 2 · Reject 8 · Skip 9. By file: `swfDocument.ts` 32 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
+**41 sites across 5 files.** By severity: Drop 18 · Recover 2 · Reject 12 · Skip 9. By file: `swfDocument.ts` 36 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
 
 **A site count is not a coverage number, and the two must never be divided.** These sites and the loss
 families in `loss-path-audit.md` are different populations that only partly intersect: most of these
@@ -21,36 +21,40 @@ stated per family in that document and derived by checking each family, never by
 | --- | --- | --- | --- |
 | `swfDocument.ts` | 135 | Reject | `swf.timeline-instantiation-failed` |
 | `swfDocument.ts` | 184 | Reject | `swf.unknown-linkage-name` |
-| `swfDocument.ts` | 512 | Reject | `swf.invalid-signature` |
-| `swfDocument.ts` | 529 | Reject | `swf.unknown-container` |
-| `swfDocument.ts` | 545 | Reject | `swf.no-decompressor-registered` |
-| `swfDocument.ts` | 559 | Reject | `swf.declared-length-too-small` |
-| `swfDocument.ts` | 576 | Reject | `swf.truncated-container` |
-| `swfDocument.ts` | 590 | Reject | `swf.decompression-failed` |
-| `swfDocument.ts` | 764 | Drop | `swf.appearance-without-node` |
-| `swfDocument.ts` | 905 | Recover | `swf.mask-without-geometry` |
-| `swfDocument.ts` | 941 | Skip | `swf.nested-mask-collapsed` |
-| `swfDocument.ts` | 1178 | Drop | `swf.edit-text-font-name-unresolved` |
-| `swfDocument.ts` | 1360 | Drop | `swf.sprite-bounds-short` |
-| `swfDocument.ts` | 1426 | Drop | `swf.blend-mode-behind-unread-filters` |
-| `swfDocument.ts` | 1721 | Drop | `swf.abc-frame-scripts-unreadable` |
-| `swfDocument.ts` | 1751 | Drop | `swf.text-shape-uncomposable` |
-| `swfDocument.ts` | 1803 | Skip | `swf.frame-script-declined` |
-| `swfDocument.ts` | 1821 | Skip | `swf.frame-script-declined` |
-| `swfDocument.ts` | 1902 | Skip | `swf.stream-sound-format` |
-| `swfDocument.ts` | 1930 | Drop | `swf.label-past-last-frame` |
-| `swfDocument.ts` | 1943 | Drop | `swf.cue-past-last-frame` |
-| `swfDocument.ts` | 1972 | Skip | `via SWF_DECLINED_TAG_KINDS` |
-| `swfDocument.ts` | 2012 | Skip | `swf.button-interaction-state` |
-| `swfDocument.ts` | 2064 | Drop | `swf.font-glyph-table` |
-| `swfDocument.ts` | 2081 | Drop | `swf.font-character-id-reused` |
-| `swfDocument.ts` | 2189 | Skip | `swf.scene-names` |
-| `swfDocument.ts` | 2254 | Drop | `swf.edit-text-unparseable` |
-| `swfDocument.ts` | 2299 | Recover | `swf.shape-body-unreadable` |
-| `swfDocument.ts` | 2343 | Drop | `swf.morph-shape-undecodable` |
-| `swfDocument.ts` | 2379 | Drop | `swf.jpeg-tables-missing` |
-| `swfDocument.ts` | 2404 | Drop | `swf.jpeg-tables-unsplittable` |
-| `swfDocument.ts` | 2438 | Drop | `swf.jpeg-alpha-stream` |
+| `swfDocument.ts` | 493 | Reject | `swf.uncompressed-signature-invalid` |
+| `swfDocument.ts` | 505 | Reject | `swf.header-fields-invalid` |
+| `swfDocument.ts` | 516 | Reject | `swf.stage-bounds-unreadable` |
+| `swfDocument.ts` | 524 | Reject | `swf.header-truncated` |
+| `swfDocument.ts` | 540 | Reject | `swf.invalid-signature` |
+| `swfDocument.ts` | 557 | Reject | `swf.unknown-container` |
+| `swfDocument.ts` | 573 | Reject | `swf.no-decompressor-registered` |
+| `swfDocument.ts` | 587 | Reject | `swf.declared-length-too-small` |
+| `swfDocument.ts` | 604 | Reject | `swf.truncated-container` |
+| `swfDocument.ts` | 618 | Reject | `swf.decompression-failed` |
+| `swfDocument.ts` | 792 | Drop | `swf.appearance-without-node` |
+| `swfDocument.ts` | 933 | Recover | `swf.mask-without-geometry` |
+| `swfDocument.ts` | 969 | Skip | `swf.nested-mask-collapsed` |
+| `swfDocument.ts` | 1206 | Drop | `swf.edit-text-font-name-unresolved` |
+| `swfDocument.ts` | 1388 | Drop | `swf.sprite-bounds-short` |
+| `swfDocument.ts` | 1454 | Drop | `swf.blend-mode-behind-unread-filters` |
+| `swfDocument.ts` | 1749 | Drop | `swf.abc-frame-scripts-unreadable` |
+| `swfDocument.ts` | 1779 | Drop | `swf.text-shape-uncomposable` |
+| `swfDocument.ts` | 1831 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 1849 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 1930 | Skip | `swf.stream-sound-format` |
+| `swfDocument.ts` | 1958 | Drop | `swf.label-past-last-frame` |
+| `swfDocument.ts` | 1971 | Drop | `swf.cue-past-last-frame` |
+| `swfDocument.ts` | 2000 | Skip | `via SWF_DECLINED_TAG_KINDS` |
+| `swfDocument.ts` | 2040 | Skip | `swf.button-interaction-state` |
+| `swfDocument.ts` | 2092 | Drop | `swf.font-glyph-table` |
+| `swfDocument.ts` | 2109 | Drop | `swf.font-character-id-reused` |
+| `swfDocument.ts` | 2217 | Skip | `swf.scene-names` |
+| `swfDocument.ts` | 2282 | Drop | `swf.edit-text-unparseable` |
+| `swfDocument.ts` | 2327 | Recover | `swf.shape-body-unreadable` |
+| `swfDocument.ts` | 2371 | Drop | `swf.morph-shape-undecodable` |
+| `swfDocument.ts` | 2407 | Drop | `swf.jpeg-tables-missing` |
+| `swfDocument.ts` | 2432 | Drop | `swf.jpeg-tables-unsplittable` |
+| `swfDocument.ts` | 2466 | Drop | `swf.jpeg-alpha-stream` |
 | `swfFilter.ts` | 82 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFilter.ts` | 169 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFrameAction.ts` | 180 | Drop | `swf.abc-frame-script-declined` |

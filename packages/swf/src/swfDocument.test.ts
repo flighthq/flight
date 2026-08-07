@@ -3233,6 +3233,29 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable')).toEqual([]);
   });
 
+  it('reports each whole-document header rejection with its own cause, not one shared null', () => {
+    // Every case below loses the entire document. Before these wires the caller got one null and could
+    // not tell a truncated header from an unregistered decompressor, which IS reported upstream.
+    const kindFor = (file: Uint8Array): readonly string[] =>
+      collectImportDiagnostics((sink) => {
+        expect(createScene2DFromSwf(file, sink)).toBeNull();
+      }).map((entry) => entry.kind);
+
+    // Version 0 is invalid however well-formed the rest is.
+    const zeroVersion = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 0]), uint32(64), createRectangle(0, 10, 0, 10));
+    expect(kindFor(zeroVersion)).toContain('swf.header-fields-invalid');
+
+    // A declared length that passes the minimum, and a stage RECT claiming 31 bits per field with far
+    // too few bytes behind it inside that length.
+    const noStage = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(12), new Uint8Array([0xf8, 0, 0, 0]));
+    expect(kindFor(noStage)).toContain('swf.stage-bounds-unreadable');
+
+    // A stage RECT that reads, then no frame rate or frame count behind it.
+    const stage = createRectangle(0, 2000, 0, 1000);
+    const noFrameRate = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(8 + stage.length), stage);
+    expect(kindFor(noFrameRate)).toContain('swf.header-truncated');
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
