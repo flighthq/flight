@@ -226,7 +226,11 @@ the same intuition.
 - **Stamp every claim about a mutable artifact, including the ones you attach.** Attaching removes the
   need to describe; it does not remove the need to say *when*. **An unstamped attachment is worse than
   an unstamped description, because it carries the artifact's authority without its currency** — and a
-  relayed attachment is stale from the moment its owner commits again, which only the owner knows. **Any number computed over a mutable artifact carries that artifact's
+  relayed attachment is stale from the moment its owner commits again, which only the owner knows.
+  **And a stamp pins *when*, not *what*: a correctly stamped file can still be described as containing
+  fields it never had.** So put the description in a form the artifact can cheaply contradict — list
+  the actual keys, not a summary of them — and let the recipient check the shape without applying
+  anything. **Any number computed over a mutable artifact carries that artifact's
   identity or it is not a measurement** — one arc needed that four times before stating it once, and
   *"2,611 of 2,611 lines"* is its sharpest form, since 100% is the most convincing number available
   and says nothing without which 2,611. **But most of the day's version of this was not a stamping
