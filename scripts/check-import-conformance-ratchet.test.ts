@@ -10,12 +10,15 @@ import {
 } from './check-import-conformance-ratchet';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
+  IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
   parseImportConformanceScore,
 } from './import-conformance-score';
 import type {
   ImportConformanceAuditedLossPath,
   ImportConformanceCapability,
   ImportConformanceExercisedCapability,
+  ImportConformanceFixtureOutcomes,
+  ImportConformanceLossPath,
   ImportConformanceMeasuredPack,
   ImportConformanceNotRunPack,
   ImportConformanceOutcomeCounts,
@@ -445,6 +448,7 @@ describe('compareImportConformanceScores', () => {
           state: 'not-run',
         },
       ],
+      fixtureOutcomes: null,
       outcomes: null,
       reason: 'missing-shard',
       sharding: {
@@ -1047,6 +1051,128 @@ describe('parseImportConformanceScore', () => {
     );
   });
 
+  it('retains recomputable fixture-outcome membership and only ruled diagnostic detail fields', () => {
+    const fixtureOutcomes: ImportConformanceFixtureOutcomes = {
+      capabilityProbeUnreadable: {
+        diagnosticExplanationPopulations: {
+          absent: 3,
+          documentFailureNamed: 1,
+          presentWithoutDocumentFailure: 1,
+        },
+        fixtures: [
+          {
+            capabilityOutcomeCount: 0,
+            diagnostics: [
+              {
+                detail: { capability: 'alpha', length: 31 },
+                kind: 'swf.invalid-length',
+                origin: 'readSwfFile',
+                severity: 'Recover',
+              },
+            ],
+            imported: false,
+            outcome: 'importedWrong',
+            reference: 'a-imported-wrong.swf',
+            threw: false,
+          },
+          {
+            capabilityOutcomeCount: 0,
+            diagnostics: [],
+            imported: true,
+            outcome: 'passed',
+            reference: 'b-passed.swf',
+            threw: false,
+          },
+          {
+            capabilityOutcomeCount: 0,
+            diagnostics: [],
+            imported: false,
+            outcome: 'silentlyWrong',
+            reference: 'c-silently-wrong.swf',
+            threw: false,
+          },
+          {
+            capabilityOutcomeCount: 0,
+            diagnostics: [],
+            imported: false,
+            outcome: 'threw',
+            reference: 'd-threw.swf',
+            threw: true,
+          },
+          {
+            capabilityOutcomeCount: 0,
+            diagnostics: [
+              {
+                detail: { compression: 'lzma' },
+                kind: 'swf.no-decompressor-registered',
+                origin: 'uncompressSwfSource',
+                severity: 'Reject',
+              },
+            ],
+            imported: false,
+            outcome: 'unsupportedClean',
+            reference: 'e-unsupported-clean.swf',
+            threw: false,
+          },
+        ],
+        outcomePopulations: { importedWrong: 1, passed: 1, silentlyWrong: 1, threw: 1, unsupportedClean: 1 },
+      },
+      definitions: IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
+      populations: { importedWrong: 1, passed: 1, silentlyWrong: 1, threw: 1, unsupportedClean: 1 },
+      silentlyWrongFixtures: ['c-silently-wrong.swf'],
+    };
+    const pack = measuredPack(undefined, { fixtureOutcomes });
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+    const wrongOutcome = structuredClone(pack);
+    wrongOutcome.fixtureOutcomes.capabilityProbeUnreadable.fixtures[0].outcome = 'passed';
+    const unruledDetail = structuredClone(pack) as unknown as {
+      fixtureOutcomes: {
+        capabilityProbeUnreadable: { fixtures: [{ diagnostics: [{ detail: Record<string, unknown> }] }] };
+      };
+    };
+    unruledDetail.fixtureOutcomes.capabilityProbeUnreadable.fixtures[0].diagnostics[0].detail.name = 'fixture-name';
+    const undeclaredCapability = structuredClone(pack);
+    const firstDetail =
+      undeclaredCapability.fixtureOutcomes.capabilityProbeUnreadable.fixtures[0].diagnostics[0].detail;
+    if (firstDetail === undefined) throw new Error('test fixture must retain diagnostic detail');
+    firstDetail.capability = 'not-declared';
+
+    expect(parsed.packs[0]).toMatchObject({ fixtureOutcomes });
+    expect(() => parseImportConformanceScore(score(wrongOutcome, '100'))).toThrow(
+      "fixtureOutcomes.capabilityProbeUnreadable.fixtures[0].outcome: must equal retained evidence ('importedWrong')",
+    );
+    expect(() => parseImportConformanceScore(score(unruledDetail as never, '100'))).toThrow(
+      'contains fields not yet ruled committable: name',
+    );
+    expect(() => parseImportConformanceScore(score(undeclaredCapability, '100'))).toThrow(
+      "detail.capability: must name a declared capability id ('not-declared')",
+    );
+  });
+
+  it('keeps configuration-limit UNKNOWN evidence orthogonal to every loss-path audit state', () => {
+    const states: ImportConformanceLossPath[] = [
+      identifiedLossPath('alpha'),
+      { ...identifiedLossPath('alpha'), state: 'audited-none' },
+      { state: 'unaudited' },
+      { state: 'unidentified' },
+    ];
+
+    for (const lossPath of states) {
+      const capability = loopBoundedCapability('alpha');
+      capability.lossPath = lossPath;
+      if (lossPath.state !== 'identified') {
+        capability.instrumentation = {
+          audits: [],
+          channel: 'none',
+          fires: { state: 'unreferenced' },
+          staysSilent: { state: 'unreferenced' },
+        };
+      }
+
+      expect(parseImportConformanceScore(score(measuredPack([capability]), '100')).packs[0].state).toBe('measured');
+    }
+  });
+
   it('requires audit identity, time, and subject binding on each audited member', () => {
     const missingAudit = measuredCapability('alpha') as unknown as { lossPath: unknown };
     missingAudit.lossPath = { state: 'identified' };
@@ -1178,6 +1304,7 @@ describe('parseImportConformanceScore', () => {
     const measured = measuredPack([measuredCapability('alpha', 2, 'pass'), unknownCapability('beta', 2)]);
     const notRun: ImportConformanceNotRunPack = {
       ...measured,
+      fixtureOutcomes: null,
       outcomes: null,
       reason: 'instrumentation-incomplete',
       state: 'not-run',
@@ -1469,7 +1596,7 @@ describe('parseImportConformanceScore', () => {
     const pack = { ...measuredPack(), outcomes: outcomes() };
 
     expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
-      'must contain exactly: capabilities, capabilityConventionRevision, id, importerSourceHash, release, sharding, state, summary, variant',
+      'must contain exactly: capabilities, capabilityConventionRevision, fixtureOutcomes, id, importerSourceHash, release, sharding, state, summary, variant',
     );
   });
 
@@ -1658,6 +1785,7 @@ function measuredPack(
   return {
     capabilityConventionRevision: 'unresolved-individuation-v1',
     capabilities,
+    fixtureOutcomes: defaultFixtureOutcomes(),
     id: 'swf-ruffle-fixtures',
     importerSourceHash: 'sha256:importer',
     release: 'ruffle-fixtures-2026-08-07',
@@ -1729,6 +1857,19 @@ function measuredPack(
 
 function outcomes(overrides: Partial<ImportConformanceOutcomeCounts> = {}): ImportConformanceOutcomeCounts {
   return { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0, ...overrides };
+}
+
+function defaultFixtureOutcomes(): ImportConformanceFixtureOutcomes {
+  return {
+    capabilityProbeUnreadable: {
+      diagnosticExplanationPopulations: { absent: 0, documentFailureNamed: 0, presentWithoutDocumentFailure: 0 },
+      fixtures: [],
+      outcomePopulations: { importedWrong: 0, passed: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+    },
+    definitions: IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
+    populations: { importedWrong: 0, passed: 1, silentlyWrong: 0, threw: 0, unsupportedClean: 0 },
+    silentlyWrongFixtures: [],
+  };
 }
 
 function score(pack: ImportConformanceScore['packs'][number] | null, runId: string): ImportConformanceScore {

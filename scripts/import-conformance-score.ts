@@ -5,6 +5,75 @@ export interface ImportConformanceOutcomeCounts {
   unsupportedClean: number;
 }
 
+export const IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL = 'threw during import (convention violation)';
+
+export const IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS = {
+  threw:
+    'The import worker reported an exception; this first branch takes precedence over every diagnostic and imported-sentinel state.',
+  unsupportedClean:
+    'After no exception, either any swf.no-decompressor-registered diagnostic matched before defect diagnostics or, with no defect diagnostic, at least one Skip diagnostic matched, regardless of whether a document was returned.',
+  importedWrong:
+    'After no exception or no-decompressor diagnostic matched, at least one Drop, Recover, or Reject other than swf.no-decompressor-registered classified the fixture importedWrong, regardless of whether a document was returned.',
+  passed:
+    'The importer returned a document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.',
+  silentlyWrong:
+    'The importer returned no document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.',
+} as const;
+
+export type ImportConformanceFixtureOutcome = keyof typeof IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS;
+export type ImportConformanceFixtureOutcomeDefinitions = typeof IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS;
+
+export interface ImportConformanceFixtureOutcomePopulations {
+  importedWrong: number;
+  passed: number;
+  silentlyWrong: number;
+  threw: number;
+  unsupportedClean: number;
+}
+
+/** The only diagnostic detail fields currently ruled committable; every new field is rejected until ruled. */
+export interface ImportConformanceFixtureDiagnosticDetail {
+  capability?: string;
+  characterId?: number;
+  compression?: string;
+  frame?: number;
+  length?: number;
+  sceneCount?: number;
+}
+
+export interface ImportConformanceFixtureDiagnosticEvidence {
+  detail?: ImportConformanceFixtureDiagnosticDetail;
+  kind: string;
+  origin: string;
+  severity: 'Drop' | 'Recover' | 'Reject' | 'Skip';
+}
+
+export interface ImportConformanceProbeUnreadableFixtureEvidence {
+  capabilityOutcomeCount: number;
+  diagnostics: ImportConformanceFixtureDiagnosticEvidence[];
+  imported: boolean;
+  outcome: ImportConformanceFixtureOutcome;
+  reference: string;
+  threw: boolean;
+}
+
+export interface ImportConformanceProbeUnreadableEvidence {
+  diagnosticExplanationPopulations: {
+    absent: number;
+    documentFailureNamed: number;
+    presentWithoutDocumentFailure: number;
+  };
+  fixtures: ImportConformanceProbeUnreadableFixtureEvidence[];
+  outcomePopulations: ImportConformanceFixtureOutcomePopulations;
+}
+
+export interface ImportConformanceFixtureOutcomes {
+  capabilityProbeUnreadable: ImportConformanceProbeUnreadableEvidence;
+  definitions: ImportConformanceFixtureOutcomeDefinitions;
+  populations: ImportConformanceFixtureOutcomePopulations;
+  silentlyWrongFixtures: string[];
+}
+
 export type ImportConformanceUnknownObservationReason =
   | 'diagnostic-cause-unknown'
   | 'fire-proof-missing-for-no-crumb'
@@ -292,12 +361,14 @@ interface ImportConformancePackIdentity {
 }
 
 export interface ImportConformanceMeasuredPack extends ImportConformancePackIdentity {
+  fixtureOutcomes: ImportConformanceFixtureOutcomes;
   sharding: ImportConformanceSharding;
   state: 'measured';
   summary: ImportConformanceSummary;
 }
 
 export interface ImportConformanceNotRunPack extends ImportConformancePackIdentity {
+  fixtureOutcomes: null;
   outcomes: null;
   reason: ImportConformanceNotRunReason;
   sharding: ImportConformanceSharding | null;
@@ -511,6 +582,7 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
   const commonKeys = [
     'capabilities',
     'capabilityConventionRevision',
+    'fixtureOutcomes',
     'id',
     'importerSourceHash',
     'release',
@@ -549,22 +621,31 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
     if (sharding.shards.some((shard) => shard.state === 'not-run')) {
       fail(`${path}.sharding.shards`, "a measured pack cannot contain a 'not-run' shard");
     }
+    const fixtureOutcomes = parseFixtureOutcomes(
+      pack.fixtureOutcomes,
+      capabilities.map((capability) => capability.id),
+      `${path}.fixtureOutcomes`,
+    );
     const summary = parseSummary(pack.summary, `${path}.summary`);
     assertSummaryMatches(summary, capabilities, `${path}.summary`);
     return {
       ...identity,
+      fixtureOutcomes,
       sharding,
       state,
       summary,
     };
   }
 
+  if (pack.fixtureOutcomes !== null) {
+    fail(`${path}.fixtureOutcomes`, "must be null when the pack is 'not-run'");
+  }
   if (pack.outcomes !== null) fail(`${path}.outcomes`, "must be null when the pack is 'not-run'");
   if (pack.summary !== null) fail(`${path}.summary`, "must be null when the pack is 'not-run'");
   const reason = parseNotRunReason(pack.reason, `${path}.reason`);
   const sharding = pack.sharding === null ? null : parseSharding(pack.sharding, `${path}.sharding`);
   assertNotRunPack(reason, capabilities, sharding, path);
-  return { ...identity, outcomes: null, reason, sharding, state, summary: null };
+  return { ...identity, fixtureOutcomes: null, outcomes: null, reason, sharding, state, summary: null };
 }
 
 function parseCapabilities(value: unknown, path: string): ImportConformanceCapability[] {
@@ -693,6 +774,260 @@ function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCo
     threw: expectInteger(outcomes.threw, `${path}.threw`, 0),
     unsupportedClean: expectInteger(outcomes.unsupportedClean, `${path}.unsupportedClean`, 0),
   };
+}
+
+function parseFixtureOutcomes(
+  value: unknown,
+  capabilityIds: readonly string[],
+  path: string,
+): ImportConformanceFixtureOutcomes {
+  const fixtureOutcomes = expectRecord(value, path);
+  expectKeys(
+    fixtureOutcomes,
+    ['capabilityProbeUnreadable', 'definitions', 'populations', 'silentlyWrongFixtures'],
+    path,
+  );
+  const definitions = parseFixtureOutcomeDefinitions(fixtureOutcomes.definitions, `${path}.definitions`);
+  const populations = parseFixtureOutcomePopulations(fixtureOutcomes.populations, `${path}.populations`);
+  const capabilityProbeUnreadable = parseProbeUnreadableEvidence(
+    fixtureOutcomes.capabilityProbeUnreadable,
+    `${path}.capabilityProbeUnreadable`,
+  );
+  if (!Array.isArray(fixtureOutcomes.silentlyWrongFixtures)) {
+    fail(`${path}.silentlyWrongFixtures`, 'must be an array');
+  }
+  const silentlyWrongFixtures = fixtureOutcomes.silentlyWrongFixtures.map((reference, index) =>
+    expectNonemptyString(reference, `${path}.silentlyWrongFixtures[${index}]`),
+  );
+  expectSortedUnique(silentlyWrongFixtures, `${path}.silentlyWrongFixtures`, 'fixture reference');
+  if (silentlyWrongFixtures.length !== populations.silentlyWrong) {
+    fail(`${path}.silentlyWrongFixtures`, `must name every silentlyWrong fixture (${populations.silentlyWrong})`);
+  }
+  const capabilityIdSet = new Set(capabilityIds);
+  for (let fixtureIndex = 0; fixtureIndex < capabilityProbeUnreadable.fixtures.length; fixtureIndex++) {
+    const fixture = capabilityProbeUnreadable.fixtures[fixtureIndex];
+    if (fixture.outcome === 'silentlyWrong' && !silentlyWrongFixtures.includes(fixture.reference)) {
+      fail(
+        `${path}.silentlyWrongFixtures`,
+        `must include probe-unreadable silentlyWrong fixture '${fixture.reference}'`,
+      );
+    }
+    for (let diagnosticIndex = 0; diagnosticIndex < fixture.diagnostics.length; diagnosticIndex++) {
+      const capability = fixture.diagnostics[diagnosticIndex].detail?.capability;
+      if (capability !== undefined && !capabilityIdSet.has(capability)) {
+        fail(
+          `${path}.capabilityProbeUnreadable.fixtures[${fixtureIndex}].diagnostics[${diagnosticIndex}].detail.capability`,
+          `must name a declared capability id ('${capability}')`,
+        );
+      }
+    }
+  }
+  for (const outcome of fixtureOutcomeKeys()) {
+    if (capabilityProbeUnreadable.outcomePopulations[outcome] > populations[outcome]) {
+      fail(
+        `${path}.capabilityProbeUnreadable.outcomePopulations.${outcome}`,
+        `cannot exceed the complete fixture population (${populations[outcome]})`,
+      );
+    }
+  }
+  return { capabilityProbeUnreadable, definitions, populations, silentlyWrongFixtures };
+}
+
+function parseFixtureOutcomeDefinitions(value: unknown, path: string): ImportConformanceFixtureOutcomeDefinitions {
+  const definitions = expectRecord(value, path);
+  expectKeys(definitions, fixtureOutcomeKeys(), path);
+  for (const outcome of fixtureOutcomeKeys()) {
+    const expected = IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS[outcome];
+    if (definitions[outcome] !== expected) fail(`${path}.${outcome}`, `must be exactly '${expected}'`);
+  }
+  return IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS;
+}
+
+function parseFixtureOutcomePopulations(value: unknown, path: string): ImportConformanceFixtureOutcomePopulations {
+  const populations = expectRecord(value, path);
+  expectKeys(populations, fixtureOutcomeKeys(), path);
+  return {
+    importedWrong: expectInteger(populations.importedWrong, `${path}.importedWrong`, 0),
+    passed: expectInteger(populations.passed, `${path}.passed`, 0),
+    silentlyWrong: expectInteger(populations.silentlyWrong, `${path}.silentlyWrong`, 0),
+    threw: expectInteger(populations.threw, `${path}.threw`, 0),
+    unsupportedClean: expectInteger(populations.unsupportedClean, `${path}.unsupportedClean`, 0),
+  };
+}
+
+function parseProbeUnreadableEvidence(value: unknown, path: string): ImportConformanceProbeUnreadableEvidence {
+  const evidence = expectRecord(value, path);
+  expectKeys(evidence, ['diagnosticExplanationPopulations', 'fixtures', 'outcomePopulations'], path);
+  const outcomePopulations = parseFixtureOutcomePopulations(evidence.outcomePopulations, `${path}.outcomePopulations`);
+  const diagnosticPopulations = expectRecord(
+    evidence.diagnosticExplanationPopulations,
+    `${path}.diagnosticExplanationPopulations`,
+  );
+  expectKeys(
+    diagnosticPopulations,
+    ['absent', 'documentFailureNamed', 'presentWithoutDocumentFailure'],
+    `${path}.diagnosticExplanationPopulations`,
+  );
+  const diagnosticExplanationPopulations = {
+    absent: expectInteger(diagnosticPopulations.absent, `${path}.diagnosticExplanationPopulations.absent`, 0),
+    documentFailureNamed: expectInteger(
+      diagnosticPopulations.documentFailureNamed,
+      `${path}.diagnosticExplanationPopulations.documentFailureNamed`,
+      0,
+    ),
+    presentWithoutDocumentFailure: expectInteger(
+      diagnosticPopulations.presentWithoutDocumentFailure,
+      `${path}.diagnosticExplanationPopulations.presentWithoutDocumentFailure`,
+      0,
+    ),
+  };
+  if (!Array.isArray(evidence.fixtures)) fail(`${path}.fixtures`, 'must be an array');
+  const fixtures = evidence.fixtures.map((fixture, index) =>
+    parseProbeUnreadableFixtureEvidence(fixture, `${path}.fixtures[${index}]`),
+  );
+  expectSortedUnique(
+    fixtures.map((fixture) => fixture.reference),
+    `${path}.fixtures`,
+    'fixture reference',
+  );
+
+  const expectedOutcomes = emptyFixtureOutcomePopulations();
+  const expectedDiagnostics = { absent: 0, documentFailureNamed: 0, presentWithoutDocumentFailure: 0 };
+  for (let index = 0; index < fixtures.length; index++) {
+    const fixture = fixtures[index];
+    const expectedOutcome = classifyRetainedFixtureOutcome(fixture);
+    if (fixture.outcome !== expectedOutcome) {
+      fail(`${path}.fixtures[${index}].outcome`, `must equal retained evidence ('${expectedOutcome}')`);
+    }
+    expectedOutcomes[fixture.outcome]++;
+    if (fixture.diagnostics.length === 0) expectedDiagnostics.absent++;
+    else if (fixture.diagnostics.some((diagnostic) => diagnostic.severity === 'Reject')) {
+      expectedDiagnostics.documentFailureNamed++;
+    } else expectedDiagnostics.presentWithoutDocumentFailure++;
+  }
+  for (const outcome of fixtureOutcomeKeys()) {
+    assertEvidencePopulation(
+      outcomePopulations[outcome],
+      expectedOutcomes[outcome],
+      `${path}.outcomePopulations.${outcome}`,
+    );
+  }
+  assertEvidencePopulation(
+    diagnosticExplanationPopulations.absent,
+    expectedDiagnostics.absent,
+    `${path}.diagnosticExplanationPopulations.absent`,
+  );
+  assertEvidencePopulation(
+    diagnosticExplanationPopulations.documentFailureNamed,
+    expectedDiagnostics.documentFailureNamed,
+    `${path}.diagnosticExplanationPopulations.documentFailureNamed`,
+  );
+  assertEvidencePopulation(
+    diagnosticExplanationPopulations.presentWithoutDocumentFailure,
+    expectedDiagnostics.presentWithoutDocumentFailure,
+    `${path}.diagnosticExplanationPopulations.presentWithoutDocumentFailure`,
+  );
+  return { diagnosticExplanationPopulations, fixtures, outcomePopulations };
+}
+
+function parseProbeUnreadableFixtureEvidence(
+  value: unknown,
+  path: string,
+): ImportConformanceProbeUnreadableFixtureEvidence {
+  const fixture = expectRecord(value, path);
+  expectKeys(fixture, ['capabilityOutcomeCount', 'diagnostics', 'imported', 'outcome', 'reference', 'threw'], path);
+  if (!Array.isArray(fixture.diagnostics)) fail(`${path}.diagnostics`, 'must be an array');
+  return {
+    capabilityOutcomeCount: expectInteger(fixture.capabilityOutcomeCount, `${path}.capabilityOutcomeCount`, 0),
+    diagnostics: fixture.diagnostics.map((diagnostic, index) =>
+      parseFixtureDiagnosticEvidence(diagnostic, `${path}.diagnostics[${index}]`),
+    ),
+    imported: expectBoolean(fixture.imported, `${path}.imported`),
+    outcome: parseFixtureOutcome(fixture.outcome, `${path}.outcome`),
+    reference: expectNonemptyString(fixture.reference, `${path}.reference`),
+    threw: expectBoolean(fixture.threw, `${path}.threw`),
+  };
+}
+
+function parseFixtureDiagnosticEvidence(value: unknown, path: string): ImportConformanceFixtureDiagnosticEvidence {
+  const diagnostic = expectRecord(value, path);
+  expectKeys(
+    diagnostic,
+    'detail' in diagnostic ? ['detail', 'kind', 'origin', 'severity'] : ['kind', 'origin', 'severity'],
+    path,
+  );
+  const severity = expectString(diagnostic.severity, `${path}.severity`);
+  if (severity !== 'Drop' && severity !== 'Recover' && severity !== 'Reject' && severity !== 'Skip') {
+    fail(`${path}.severity`, "must be 'Drop', 'Recover', 'Reject', or 'Skip'");
+  }
+  const parsedSeverity = severity as ImportConformanceFixtureDiagnosticEvidence['severity'];
+  const base = {
+    kind: expectNonemptyString(diagnostic.kind, `${path}.kind`),
+    origin: expectNonemptyString(diagnostic.origin, `${path}.origin`),
+    severity: parsedSeverity,
+  };
+  return 'detail' in diagnostic
+    ? { ...base, detail: parseFixtureDiagnosticDetail(diagnostic.detail, `${path}.detail`) }
+    : base;
+}
+
+function parseFixtureDiagnosticDetail(value: unknown, path: string): ImportConformanceFixtureDiagnosticDetail {
+  const detail = expectRecord(value, path);
+  expectAllowedKeys(detail, ['capability', 'characterId', 'compression', 'frame', 'length', 'sceneCount'], path);
+  if (Object.keys(detail).length === 0) fail(path, 'must retain at least one ruled field or be omitted');
+  const parsed: ImportConformanceFixtureDiagnosticDetail = {};
+  if ('capability' in detail) parsed.capability = expectNonemptyString(detail.capability, `${path}.capability`);
+  if ('characterId' in detail) {
+    parsed.characterId = expectSafeInteger(detail.characterId, `${path}.characterId`, 0);
+  }
+  if ('compression' in detail) {
+    if (detail.compression !== 'deflate' && detail.compression !== 'lzma') {
+      fail(`${path}.compression`, "must be the ruled Flight-owned tag 'deflate' or 'lzma'");
+    }
+    parsed.compression = detail.compression;
+  }
+  if ('frame' in detail) parsed.frame = expectSafeInteger(detail.frame, `${path}.frame`, 0);
+  if ('length' in detail) parsed.length = expectSafeInteger(detail.length, `${path}.length`, 0);
+  if ('sceneCount' in detail) parsed.sceneCount = expectSafeInteger(detail.sceneCount, `${path}.sceneCount`, 0);
+  return parsed;
+}
+
+function parseFixtureOutcome(value: unknown, path: string): ImportConformanceFixtureOutcome {
+  if (!fixtureOutcomeKeys().some((outcome) => outcome === value)) {
+    fail(path, "must be 'importedWrong', 'passed', 'silentlyWrong', 'threw', or 'unsupportedClean'");
+  }
+  return value as ImportConformanceFixtureOutcome;
+}
+
+function classifyRetainedFixtureOutcome(
+  fixture: Readonly<ImportConformanceProbeUnreadableFixtureEvidence>,
+): ImportConformanceFixtureOutcome {
+  if (fixture.threw) return 'threw';
+  if (fixture.diagnostics.some((diagnostic) => diagnostic.kind === 'swf.no-decompressor-registered')) {
+    return 'unsupportedClean';
+  }
+  if (
+    fixture.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.severity === 'Drop' || diagnostic.severity === 'Recover' || diagnostic.severity === 'Reject',
+    )
+  ) {
+    return 'importedWrong';
+  }
+  if (fixture.diagnostics.some((diagnostic) => diagnostic.severity === 'Skip')) return 'unsupportedClean';
+  return fixture.imported ? 'passed' : 'silentlyWrong';
+}
+
+function fixtureOutcomeKeys(): ImportConformanceFixtureOutcome[] {
+  return ['threw', 'unsupportedClean', 'importedWrong', 'passed', 'silentlyWrong'];
+}
+
+function emptyFixtureOutcomePopulations(): ImportConformanceFixtureOutcomePopulations {
+  return { importedWrong: 0, passed: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 };
+}
+
+function assertEvidencePopulation(actual: number, expected: number, path: string): void {
+  if (actual !== expected) fail(path, `must equal the retained fixture rows (${expected})`);
 }
 
 function parseInstrumentation(
@@ -1037,6 +1372,7 @@ function assertLossPathMatchesInstrumentation(
     if (
       reason !== 'loss-path-not-identified' &&
       reason !== 'loss-path-audit-unidentified' &&
+      // A configuration limit is orthogonal to loss-path audit identity and may coexist with any lossPath state.
       reason !== 'loop-bounded-configuration-limit' &&
       lossPath.state !== 'identified'
     ) {
@@ -1580,6 +1916,23 @@ function expectInteger(value: unknown, path: string, minimum: number): number {
     fail(path, `must be an integer greater than or equal to ${minimum}`);
   }
   return value as number;
+}
+
+function expectSafeInteger(value: unknown, path: string, minimum: number): number {
+  if (!Number.isSafeInteger(value) || (value as number) < minimum) {
+    fail(path, `must be a safe integer greater than or equal to ${minimum}`);
+  }
+  return value as number;
+}
+
+function expectBoolean(value: unknown, path: string): boolean {
+  if (typeof value !== 'boolean') fail(path, 'must be a boolean');
+  return value;
+}
+
+function expectAllowedKeys(record: Readonly<Record<string, unknown>>, allowed: readonly string[], path: string): void {
+  const unexpected = Object.keys(record).filter((key) => !allowed.includes(key));
+  if (unexpected.length > 0) fail(path, `contains fields not yet ruled committable: ${unexpected.sort().join(', ')}`);
 }
 
 function expectKeys(record: Readonly<Record<string, unknown>>, expected: readonly string[], path: string): void {
