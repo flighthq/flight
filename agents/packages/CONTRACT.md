@@ -104,6 +104,19 @@ can be re-derived from source at any time; losing a note costs a re-derivation, 
 why the reworked `Recommended` section is an acceptable home while the authorization ledger remains
 immutable.
 
+### Historical ratchet boundary
+
+- ~~Seven historical guarded-line edits had no durable explanation.~~ — **RECORDED 2026-08-07:** a
+  deliberately wide `FLIGHT_LEDGER_BASE=1b4fb2bdf npm run check:append-only-ledgers` comparison finds
+  two lines in `physics2d/charter.md`, two in `skeleton2d-formats/charter.md`, and three continuation
+  lines in `swf/charter.md`. The Physics2D progress decision was maintained as a counter through four
+  in-place edits—five to six kinds in `79f2ddc0a`, six to seven in `226af002d`, seven to eight in
+  `10483d987`, and eight to all nine in `1c7794799`; `5364889d9` rewrote its debug-geometry decision,
+  and `0e1ec6820` rewrote the two Skeleton2D-formats lines and three SWF lines. The current text is a
+  chosen historical state: restoring an old line would substitute a reconstruction for the approver's
+  words, while appending a supersession would misstate an edit as a reversal. The check is a ratchet,
+  not a retroactive audit. The seven are not only violations; they are the case for the rule.
+
 ## Provenance stamp (`Approved` entries)
 
 Every `assessment.md › Approved` line begins with a stamp:
