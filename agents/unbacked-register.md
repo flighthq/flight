@@ -195,6 +195,18 @@ substitution the mechanism was predicted not to reach. **They stopped at three l
 ⇒ **First evidence that addressing can beat relevance WHEN THE ADDRESSEE IS VISIBLE BEFORE THE BODY.**
 **One instance, no trend** — recorded as a test of the falsifier rather than as another lapse count.
 
+★★★ **AND THE HALF THAT MAKES IT EXECUTABLE: A STOPPED MEASUREMENT AND A MEASUREMENT THAT FOUND
+NOTHING PRODUCE THE SAME OBSERVATION — SILENCE.** ⇒ **The safe-default collision applied to this
+record: the looking leaves no trace, so its absence is invisible**, which is exactly how *stop
+remedying, not stop looking* decays into *stop*.
+⇒ **SO THIS ENTRY CARRIES A LAST-MEASURED MARKER, AND A PERIOD WITH NO INSTANCES IS RECORDED AS
+`MEASURED, NONE` RATHER THAN AS NOTHING.** ★ **That is not a fifth remedy and does not breach the
+ruling — it is the minimum for the ruling to be EXECUTABLE, because A TOLERATION WITH UNOBSERVABLE
+FALSIFIERS IS NOT A TOLERATION, IT IS AN ABANDONMENT.**
+
+**LAST MEASURED: instance 10, cost three lines, falsifier tested on the relevance case and did not
+fire.**
+
 ★★ **AND THE DISTINCTION THAT KEEPS TOLERATION HONEST: the ruling was no further ATTENTION, not no
 further MEASUREMENT.** ⇒ **The falsifiers require the measurement to keep running, so a tolerated
 defect that stops being measured has quietly become an ignored one** — and its reopening conditions
