@@ -27,6 +27,18 @@ modeled on. Its MovieClip symbols (nested timelines), named instances, and `Symb
 the slot + linkage model. Importing SWF delivers the large archive of existing Flash content and
 **validates #3 against the format it descends from**.
 
+## North star
+
+Read the archive completely, and hand it over as Flight data that plays itself through Flight's own
+engines. Complete `.swf` structural coverage — shapes, bitmaps, fonts, static and editable text,
+MovieClip symbols and their timelines, named instances with transforms, per-frame appearance, masks,
+morphs, sounds — landing on existing Flight subjects and nothing new, so an imported document is
+indistinguishable in kind from one built by hand. The importer keeps no runtime: it produces the data
+`movieclip`/`timeline` plays. Formats SWF merely carries — compression and ABC bytecode — are resolved
+through registered seams rather than vendored, and executing bytecode is never in scope. Where a tag has
+no honest Flight subject yet, it is reported or declined rather than approximated, and the gap is
+recorded; a document that silently misrepresents what the file said is worse than one that says less.
+
 ## Peer, not a child (the dependency shape)
 
 `swf` is a **peer** of `scene2d-formats`, not a codec inside it and not `scene2d-formats-swf`. It

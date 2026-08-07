@@ -299,6 +299,12 @@ Fetch that list into `.test-assets/swf/corpus/` (flattening `/` to `__`), then i
 `createScene2DFromSwf` and count throws, nulls, and container signatures. `.test-assets` is gitignored, and
 `npm run test` neither reads the corpus nor touches the network.
 
+**A checkout does not have the corpus, and no measurement here implies otherwise.** Every figure in this
+record was derived from a locally fetched selection that is never committed, so reproducing one starts by
+obtaining the files. Prefer the repository's pinned, hash-verified fixture fetcher over re-deriving the
+selection by hand: a second ad-hoc download path is how two workspaces end up measuring two different
+corpora and reporting both as "the corpus".
+
 ## Tag-frequency sweep
 
 Run over the same corpus with deflate registered, counting how many of the 301 readable files carry each
