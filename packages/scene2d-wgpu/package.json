@@ -56,6 +56,9 @@
     "@flighthq/types": "*",
     "@flighthq/velocity": "*"
   },
+  "peerDependencies": {
+    "@webgpu/types": "^0.1.70"
+  },
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
     "@flighthq/particleemitter": "*",
