@@ -83,6 +83,9 @@ which is why they are not in the map.
 - [sdk blocking issues](sdk-blocking-issues.md) — what blocks AwayJS example parity.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
+- [unbacked register](unbacked-register.md) — claims that reached the merged tree with nothing looking
+  at them. Entries owned by integration; the file carries its own limit, because it can only hold what
+  someone noticed.
 - [evidence discipline](evidence-discipline.md) — one law and three action rules for verification
   claims, with the instances behind each. Consolidated from a single arc and untested elsewhere; the
   header carries that limit and the falsification condition.
