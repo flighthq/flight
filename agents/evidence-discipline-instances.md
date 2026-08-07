@@ -107,9 +107,20 @@ other work.*
   certainty** — and each individual run was honestly observed, which is what makes it dangerous:
   **no one lied, and the artifact still overstates.** ⇒ **Re-run before attesting anything whose cost
   allows it, and when a command is known intermittent, say so in the attestation instead of reporting
-  the run that happened to be green.** The author here re-attested `fail` **against their own earlier
-  passes**, which is the preservation-ordering rule paying out: **reporting the instrument's weakness
-  before fixing it is what makes the earlier claims correctable at all.**
+  the run that happened to be green.**
+
+  ★ **CORRECTED, AND THE CORRECTION IS THE MORE USEFUL HALF: ASK WHICH DIRECTION THE
+  NONDETERMINISM CAN MOVE THE RESULT BEFORE TREATING A GREEN AS SUSPECT.** Measured on this case —
+  six runs, **two failures, both `Test timed out in 5000ms`, zero assertion failures**. ⇒ **A timeout
+  can manufacture a spurious FAILURE and cannot manufacture a spurious PASS.** So the greens were
+  sound observations of a correct tree, the reds were artifacts, **and the `fail` re-attestation made
+  in good faith was correcting a true claim with a false one.** The generalisation: **a noise source
+  has a reachable set of outcomes, and what it cannot produce is as informative as what it can** —
+  the same invariance reasoning that says an aggregate is blind to what it discards. **A flake that
+  only fails one way does not weaken the other way.**
+  **Honest limit on this measurement:** two failures in six runs, one tree, one commit — **six runs is
+  weak evidence about a rare assertion failure**, so this rules out nothing at a low rate; it
+  establishes only that every failure observed was a timeout.
   **Promotion note:** law-level and owed a place in the parent; it sits here only for headroom.
 
 - **filed — Verify a rebase by content, never by SHA — and beware the conflict where your own work is
