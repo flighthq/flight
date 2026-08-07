@@ -121,25 +121,6 @@ unbacked claim with a fixed greppable token rather than prose**, so the set beco
 than merely flagged. The [unbacked register](unbacked-register.md) carries the practice, the worked
 instance, and its own limit.
 
-## Search instructions — where to look next
-
-Each of these directed a search that found something the same day it was written. None is a verdict.
-
-### A surface property that correlates with care gets read as the care itself
-
-One law, and the forms in the companion are it applied to different surfaces. **Each property is a
-reason to look, never a reason to believe** — and a reader holding four tells finds no match when the
-fifth form arrives, where a reader holding the law derives it.
-
-**Elevated instance — precision.** A correction reading *13 functions of which 3 exported* displaced
-an original *19* and was accepted instantly by two readers; **both proved exactly right, at different
-commits, the sharper one from the older tree.** Nothing about a number's form tells you when it was
-taken. Elevated because it is the one form that fires on a *correction*, which is where scrutiny is
-lowest.
-
-Two further search laws — the signal/fidelity axes and *build the report to test the defect* — are in
-the companion under this heading.
-
 ## Denominators
 
 **A contested denominator is often a sign the aggregate is the wrong instrument.** A ratio
@@ -165,8 +146,24 @@ produced it, and that is usually not the population you meant** — the companio
 costumes one arc found it in. **Each measures consistency and reads as truth.** **A coverage
 measurement's population is defined by the consumer, not by the corpus.**
 
-## The test before quoting a number
+## Form asserts what content does not
 
-Not a fourth rule — the checks you run when a number is about to do work in an argument. **Quote the
-source line rather than restating it; where nothing recomputes, no number; derive an instrument's
-scope rather than choosing it.** The companion carries these with their instances.
+**Emphasis** claims equal strength; **parallel grammar** claims equal warrant; **adjacency** claims
+comparability; **ordering in a transcript** claims dependency; **precision** claims currency. **Five
+surfaces, one mechanism** — each caught by someone noticing directly, never by a check. **The same
+mechanism reads a surface property as the care it correlates with:** vividness, deliberation,
+mechanicalness. **Every one is a reason to look, never a reason to believe.**
+
+**Why no check reached them: the law above asks you to restate the question an answer answers, and a
+FORM MAKES NO STATEMENT.** ⇒ **There is nothing to restate, so the instrument returns not a pass but
+an INAPPLICABILITY** — which reads like silence.
+
+★ **So this class needs a TRANSLATION, not a restatement: write the form out as the sentence it would
+be, then check that sentence.** *These are in parallel grammar* becomes *I am claiming they are
+equally warranted* — **and once translated it is an ordinary claim the existing check handles.**
+**The translation is what makes this a rule rather than a list: a list of five cannot catch the
+sixth.**
+
+**Before a number does work in an argument:** quote the source line rather than restating it; **where
+nothing recomputes, no number**; and derive an instrument's scope rather than choosing it. Instances
+in the companion.
