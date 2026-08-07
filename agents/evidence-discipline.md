@@ -93,9 +93,15 @@ stops an artifact claiming more than it has.
   When one boundary re-ran every cheap gate and none of the costly ones, the unbacked set was not a
   random subset — it was *selected for by cost*, so it never shrinks on its own and it fills with
   exactly the claims that most need checking: recaptured baselines, "I confirmed this test can fail",
-  network acceptance runs, timings, and anything about the sender's own environment. **Name which side
-  of that line a claim sits on when you make it**, so a downstream green result cannot silently absorb
-  an unbacked one — that absorption is how an unaudited number becomes an audited-looking one.
+  network acceptance runs, timings, and anything about the sender's own environment. **But the set is
+  selected by cost without every member being expensive** — "I confirmed the test can fail" costs
+  seconds to check and is unverified only because nobody asks; it rode in on the same list as a 1.6 GB
+  fetch and inherited its excuse. **A true general law is an excellent place for a cheap fix to hide**,
+  so split the list by *why* before accepting any of it as unfixable. **Mark each unbacked claim with a
+  fixed greppable token rather than prose** — a sentence saying you considered backing lets nobody
+  enumerate anything, and the point is not that a reader is warned but that the set becomes countable.
+  Keep a register of merged-but-unbacked claims with class and commit: when a constraint lifts, that
+  register is the work order, and without it nobody can say which merged claims to revisit.
 - **A clean result is a result, not an absence of one.** A file with no unreported loss path settles a
   chunk of the denominator; recording it as a positive finding is the only way it counts.
 
