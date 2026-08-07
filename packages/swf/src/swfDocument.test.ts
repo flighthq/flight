@@ -2979,6 +2979,41 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.map((entry) => entry.kind)).not.toContain('swf.stream-sound-format');
   });
 
+  it('reports a label naming a frame the timeline never reaches, and stays silent when it does', () => {
+    // The second way DefineSceneAndFrameLabelData loses data, found by auditing the CLAIM rather than
+    // the wire: swf.scene-names covered the scene table only, while an out-of-range label was filtered
+    // out silently and the capability still claimed trustworthy silence.
+    const past = createSwf([
+      createTag(
+        TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
+        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(40), swfString('never')),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const dropped = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(past, sink)).not.toBeNull();
+    }).filter((entry) => entry.kind === 'swf.label-past-last-frame');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.timeline.frame-label', dropped: 1, frames: 1 });
+
+    // A label the timeline does reach loses nothing, so no crumb — and it really did import.
+    const reached = createSwf([
+      createTag(
+        TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
+        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const quiet = collectImportDiagnostics((sink) => {
+      const document = createScene2DFromSwf(reached, sink);
+      expect(getMovieClipCurrentLabel(document?.root as MovieClip)?.name).toBe('start');
+    });
+    expect(quiet.map((entry) => entry.kind)).not.toContain('swf.label-past-last-frame');
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {

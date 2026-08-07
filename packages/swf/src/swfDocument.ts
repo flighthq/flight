@@ -1810,13 +1810,42 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
   // A timeline that never shows a frame still has the one display list its tags built.
   if (frames.length === 0) frames.push(placements);
   appendSwfStreamSoundCue(state, cues, streamChunks, streamStartFrame);
+  // A label or cue authored after the last ShowFrame names a frame the timeline never reaches, so it is
+  // dropped rather than bound to a frame that does not exist. Found by auditing the claim rather than the
+  // wire: `swf.scene-names` covered only the scene table, while THIS is the other way that tag's data is
+  // lost, and silence about it was being reported as trustworthy.
+  const reachableCues = cues.filter((cue) => cue.frame <= frames.length);
+  const reachableLabels = labels.filter((label) => label.frame <= frames.length);
+  if (reachableLabels.length !== labels.length) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.label-past-last-frame',
+      'readSwfTimeline',
+      {
+        capability: 'swf.timeline.frame-label',
+        dropped: labels.length - reachableLabels.length,
+        frames: frames.length,
+      },
+    );
+  }
+  if (reachableCues.length !== cues.length) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.cue-past-last-frame',
+      'readSwfTimeline',
+      {
+        dropped: cues.length - reachableCues.length,
+        frames: frames.length,
+      },
+    );
+  }
   return {
     actions,
-    // A cue authored after the last ShowFrame names a frame the timeline never reaches.
-    cues: cues.filter((cue) => cue.frame <= frames.length),
+    cues: reachableCues,
     frames,
-    // A label declared after the last ShowFrame names a frame the timeline never reaches.
-    labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
+    labels: reachableLabels.sort(compareSwfTimelineLabelFrame),
   };
 }
 

@@ -135,9 +135,25 @@ describe('readSwfFilterList', () => {
     });
     expect(withPlacement.map((entry) => entry.kind)).toEqual(['swf.filter-field-unrepresentable']);
     expect(withPlacement[0].severity).toBe(ImportDiagnosticSeverity.Skip);
-    expect(withPlacement[0].detail).toEqual({ capability: 'swf.placement.filter-list', filterId: 4 });
+    expect(withPlacement[0].detail).toEqual({
+      capability: 'swf.placement.filter-list',
+      field: 'placement',
+      filterId: 4,
+    });
 
     expect(collectImportDiagnostics((sink) => readGlow(fixed(0), fixed(0), sink))).toEqual([]);
+  });
+
+  it('reports a blur pass count it cannot represent, and stays silent at one pass', () => {
+    // Found by auditing the CLAIM against the code: the filter-list wire covered gradient glow only,
+    // while BlurEffect silently discards an authored pass count. Same kind, distinguished by `field`.
+    const multi = collectImportDiagnostics((sink) => {
+      readBlur(3, sink);
+    });
+    expect(multi.map((entry) => entry.kind)).toEqual(['swf.filter-field-unrepresentable']);
+    expect(multi[0].detail).toEqual({ capability: 'swf.placement.filter-list', field: 'passes', filterId: 1 });
+
+    expect(collectImportDiagnostics((sink) => readBlur(1, sink))).toEqual([]);
   });
 
   it('reads a convolution kernel with its flags', () => {
@@ -240,6 +256,11 @@ describe('setSwfFilterListGuard', () => {
     }
   });
 });
+
+function readBlur(passes: number, diagnostics: ImportDiagnostic[]): void {
+  const bytes = joinBytes(new Uint8Array([1, 1]), fixed(4), fixed(4), new Uint8Array([passes]));
+  readSwfFilterList(new SwfReader(bytes, 0, bytes.length), [], [], diagnostics);
+}
 
 function readGlow(angle: Uint8Array, distance: Uint8Array, diagnostics: ImportDiagnostic[]): void {
   const bytes = joinBytes(

@@ -79,9 +79,15 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
   },
   {
-    fires: ['reports a gradient glow angle and distance it cannot represent, and stays silent without them'],
+    fires: [
+      'reports a blur pass count it cannot represent, and stays silent at one pass',
+      'reports a gradient glow angle and distance it cannot represent, and stays silent without them',
+    ],
     id: 'swf.placement.filter-list',
-    staysSilent: ['reports a gradient glow angle and distance it cannot represent, and stays silent without them'],
+    staysSilent: [
+      'reports a blur pass count it cannot represent, and stays silent at one pass',
+      'reports a gradient glow angle and distance it cannot represent, and stays silent without them',
+    ],
   },
   {
     fires: ['reports a frame script declined for carrying more than playback commands'],
@@ -112,6 +118,11 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     fires: ['reports scene names as a Skip, since labels import and the named range has no subject'],
     id: 'swf.timeline.define-scene-and-frame-label-data',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
+  },
+  {
+    fires: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
+    id: 'swf.timeline.frame-label',
+    staysSilent: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
   },
   {
     fires: ['reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure'],
