@@ -102,7 +102,18 @@ after the morph path pair. Affects `swf.timeline.define-sprite`.
 report is the *only* carrier for those two channels, so the placement's blend and filters are lost with no
 crumb. Affects `swf.placement.blend-mode` and `swf.placement.filter-list`.
 
-### 9. The whole-document reject path is almost entirely unreported
+### 9. An edit text silently loses its font family
+
+`swfDocument.ts:1148` resolves a font name with `parsed.fontNames.get(fontId) ?? ''`, and `swfEditText`
+then applies `if (fontName !== '') format.font = fontName`. **The `RichText` survives with its size, box
+and colour and simply has no font family.** The source documents the decline — a font declared by class
+name rather than character id is not resolved — but documenting it is not reporting it, and a caller
+enumerating losses sees nothing.
+
+**Found by searching for the partial-loss shape on purpose**, after that shape was named as a blind spot.
+It is the third member of the worst cell: a surviving object carrying less, with no signal.
+
+### 10. The whole-document reject path is almost entirely unreported
 
 The tag loop has roughly eight distinct `return null` causes — snapshot-budget exhaustion, a duplicate
 sprite id, a sprite body that does not end where it should, malformed lossless/video/bounded definitions,
@@ -114,6 +125,24 @@ This is the same collapse already fixed for no-decompressor-versus-corrupt, with
 two. It matters more than the count suggests, because several of those causes are **verdicts about us
 rather than about the file**: a document refused by our own snapshot budget and a document that is
 genuinely malformed are not the same finding.
+
+## Two axes, not one ladder
+
+The severity ladder — *report missing*, *report wrong*, *no failure at all* — is about **signal**. It is
+not the only axis. **Granularity is orthogonal to it:**
+
+|  | whole character lost | **partial loss in a surviving object** |
+| --- | --- | --- |
+| some signal | the six families below | — |
+| **no signal at all** | the truncating caps | **the worst cell** |
+
+**The worst cell is a partial loss with no signal**, because the object is present and therefore every
+existence check passes. `swfMorphShape.ts:180` and `swfDocument.ts:1303` both sit there.
+
+**A search shaped by one severity cannot find another.** Both partial losses survived several passes of
+this audit for one reason, recorded here because it generalises: *I was looking for characters that
+vanish, and these survive.* When auditing for loss, search for **surviving-but-diminished**, not only for
+missing — they are different queries and finding one says nothing about the other.
 
 ## The class: crumbs whose cause could be our own configuration
 
