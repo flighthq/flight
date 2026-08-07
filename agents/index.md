@@ -83,6 +83,9 @@ which is why they are not in the map.
 - [sdk blocking issues](sdk-blocking-issues.md) — what blocks AwayJS example parity.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
+- [evidence discipline](evidence-discipline.md) — one law and three action rules for verification
+  claims, with the instances behind each. Consolidated from a single arc and untested elsewhere; the
+  header carries that limit and the falsification condition.
 - [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
 - [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
