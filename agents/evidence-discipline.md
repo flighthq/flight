@@ -119,12 +119,11 @@ commits, the sharper one from the older tree.** Nothing about a number's form te
 taken. Elevated because it is the one form that fires on a *correction*, which is where scrutiny is
 lowest.
 
-**Also durable, and each defeats a different check.** Separate the signal axis (reported,
-misreported, absent) from the fidelity axis (missing, diminished, substituted): **the fidelity values
-order by which check they defeat — existence, then count, then content comparison — which makes the
-axis an oracle specification rather than a severity scale.** And **building the report for a
-suspected defect is the strongest test of whether it is one**; deferring that is not caution, because
-an unexercised finding is a claim nothing has contradicted yet.
+**Also durable.** Separate the signal axis (reported, misreported, absent) from the fidelity axis
+(missing, diminished, substituted): **the fidelity values order by which check they defeat —
+existence, then count, then content comparison — which makes the axis an oracle specification rather
+than a severity scale.** And **building the report for a suspected defect is the strongest test of
+whether it is one**; an unexercised finding is a claim nothing has contradicted yet.
 
 ## Denominators
 
@@ -133,9 +132,9 @@ entry or two.** A count with no stated individuation rule is not a measurement, 
 unlike a missing member, **it cannot be closed by finding more.** The tell costs one question, asked
 of the artifact rather than of its contents: *what would make these one entry instead of two?* If
 nobody can answer, there is no denominator yet. One capability list split some format versions into
-separate entries and collapsed others by no stated rule; **the margin was three entries wide in
-either direction, and a whole day of auditing its members never reached it, because the question is
-about the set and not the rows.** Demand three properties — mechanically evaluable, invariant under
+separate entries and collapsed others by no stated rule, and **a whole day of auditing its members
+never reached it, because the question is about the set and not the rows.** Demand three properties
+— mechanically evaluable, invariant under
 behaviour-preserving refactor, and of a grain the consumer would accept. **Mechanical evaluability is
 necessary and not sufficient:** one candidate rule ran cleanly and still moved the total from 80 to
 77 when an `if`-chain became an equivalent `Map`, and **a rule whose count moves when only the source
