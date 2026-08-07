@@ -49,6 +49,22 @@ reader can tell strength apart without trusting the author's formatting:
   to one's own tooling. **Found only by chasing a diffstat that read `1 insertion` where a paragraph
   was expected.**
 
+- **filed — A mechanism constructed to fit an observation always fits it.** **Two people in one day
+  each supplied a mechanism for a true observation, and neither mechanism existed** — one invented a
+  stale-ref cache, one a forced-value choice. ⇒ **An explanation built from the observation has no
+  independent reader, so re-examining the reasoning can never catch it**, and in both cases **the
+  remedy was reading the source, because the source is the one artifact the observation did not
+  produce.** ★ **The pressure runs one way: an unexplained fact reads as unfinished, and the only
+  material available to close it is the observation itself** — and that feeling is the whole defect.
+
+- **filed — A REBASE REPLAY CAN RESURRECT A SUPERSEDED APPEND-ONLY LINE.** An earlier commit still
+  carried pre-supersession ledger text, so **every replay reintroduced it and the gate correctly
+  flagged the resurrection as an edit** — the gate was right each time and the fix was local each
+  time, three times over. ⇒ **An append-only ledger and a rebase disagree about what history means:
+  the ledger judges the WORKING TREE while the replay reconstructs COMMITS.** ★ **So a fix that edits
+  the line keeps coming back until the branch carries NO diff on it** — made durable by carrying a
+  zero diff against the base rather than by re-editing.
+
 - **filed — ALARM SUPPRESSES ITS OWN CONTROL, and that is exactly backwards.** Two instances: a probe
   reporting **108,515 disagreements**, and a probe reporting **six of six items missing.** Both were
   false, **both were catchable by a control the author already knew about, and in both the control ran
