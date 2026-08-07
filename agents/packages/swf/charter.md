@@ -7,6 +7,7 @@ review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
 capabilities: ./capabilities.md
+diagnostics: ./diagnostics.md
 tagCoverage: ./tag-coverage.md
 fixtureEvidence: ./fixture-evidence.md
 shaPinIncidentalAudit: ./sha-pin-incidental-audit.md

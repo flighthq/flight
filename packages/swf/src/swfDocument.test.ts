@@ -2558,7 +2558,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const declined = diagnostics.filter((entry) => entry.kind === 'swf.video-frame-payload');
     expect(declined).toHaveLength(1);
     expect(declined[0].severity).toBe(ImportDiagnosticSeverity.Skip);
-    expect(declined[0].detail).toEqual({ tag: 61 });
+    expect(declined[0].detail).toEqual({ capability: 'swf.video.video-frame', tag: 61 });
   });
 
   it('stays silent on metadata tags, whose absence costs a document nothing', () => {
@@ -2592,7 +2592,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const recovered = diagnostics.filter((entry) => entry.kind === 'swf.shape-body-unreadable');
     expect(recovered).toHaveLength(1);
     expect(recovered[0].severity).toBe(ImportDiagnosticSeverity.Recover);
-    expect(recovered[0].detail).toEqual({ characterId: 1, version: 1 });
+    expect(recovered[0].detail).toEqual({ capability: 'swf.shape.define-shape', characterId: 1, version: 1 });
   });
 
   it('names the symbol a caller asked for that the file does not export', () => {
