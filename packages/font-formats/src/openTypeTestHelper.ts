@@ -401,6 +401,58 @@ function encodeSyntheticMaxp(glyphCount: number): Uint8Array {
   return bytes;
 }
 
+// Wraps a plain sfnt as a WOFF2, storing the table stream UNCOMPRESSED so a test can pass an identity
+// decompressor and exercise the container without depending on a Brotli implementation. That is the same
+// reason `encodeSyntheticWoff` stores its tables uncompressed: the reader treats the decompressor as an
+// opaque function, so the container logic is fully reachable without a codec.
+//
+// `transformTags` names tables to mark as transformed — their stored bytes are left as-is, which is what
+// lets a test drive the transform seam without a real transform existing.
+export function encodeSyntheticWoff2(sfnt: Readonly<Uint8Array>, transformTags: readonly string[] = []): Uint8Array {
+  const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+  const count = view.getUint16(4);
+  const tables: { data: Uint8Array; tag: string }[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const record = 12 + index * 16;
+    const tag = String.fromCharCode(
+      view.getUint8(record),
+      view.getUint8(record + 1),
+      view.getUint8(record + 2),
+      view.getUint8(record + 3),
+    );
+    const offset = view.getUint32(record + 8);
+    const length = view.getUint32(record + 12);
+    tables.push({ data: sfnt.slice(offset, offset + length), tag });
+  }
+
+  const directory: number[] = [];
+  for (const table of tables) {
+    const known = WOFF2_KNOWN_TAGS.indexOf(table.tag);
+    const transformed = transformTags.includes(table.tag);
+    const isGlyphPair = table.tag === 'glyf' || table.tag === 'loca';
+    // The version's meaning is inverted for the glyph pair, so the encoder must invert it too or the
+    // fixture would declare the opposite of what it means.
+    const version = isGlyphPair ? (transformed ? 0 : 3) : transformed ? 1 : 0;
+    directory.push(((version & 3) << 6) | (known < 0 ? 0x3f : known));
+    if (known < 0) for (let i = 0; i < 4; i += 1) directory.push(table.tag.padEnd(4, ' ').charCodeAt(i));
+    directory.push(...base128(table.data.byteLength));
+    if (transformed) directory.push(...base128(table.data.byteLength));
+  }
+
+  const stream = concatenateBytes(tables.map((t) => t.data));
+  const out = new Uint8Array(48 + directory.length + stream.byteLength);
+  const outView = new DataView(out.buffer);
+  outView.setUint32(0, 0x774f4632);
+  outView.setUint32(4, view.getUint32(0));
+  outView.setUint32(8, out.byteLength);
+  outView.setUint16(12, tables.length);
+  outView.setUint32(16, sfnt.byteLength);
+  outView.setUint32(20, stream.byteLength);
+  out.set(directory, 48);
+  out.set(stream, 48 + directory.length);
+  return out;
+}
+
 // A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.
 export function squareSyntheticGlyph(size: number): SyntheticGlyph {
   return {
@@ -413,3 +465,80 @@ export function squareSyntheticGlyph(size: number): SyntheticGlyph {
     ],
   };
 }
+
+// UIntBase128, most significant group first, high bit set on every byte but the last.
+function base128(value: number): number[] {
+  const groups: number[] = [];
+  let remaining = value;
+  do {
+    groups.unshift(remaining & 0x7f);
+    remaining = Math.floor(remaining / 128);
+  } while (remaining > 0);
+  return groups.map((group, index) => (index === groups.length - 1 ? group : group | 0x80));
+}
+
+const WOFF2_KNOWN_TAGS: readonly string[] = [
+  'cmap',
+  'head',
+  'hhea',
+  'hmtx',
+  'maxp',
+  'name',
+  'OS/2',
+  'post',
+  'cvt ',
+  'fpgm',
+  'glyf',
+  'loca',
+  'prep',
+  'CFF ',
+  'VORG',
+  'EBDT',
+  'EBLC',
+  'gasp',
+  'hdmx',
+  'kern',
+  'LTSH',
+  'PCLT',
+  'VDMX',
+  'vhea',
+  'vmtx',
+  'BASE',
+  'GDEF',
+  'GPOS',
+  'GSUB',
+  'EBSC',
+  'JSTF',
+  'MATH',
+  'CBDT',
+  'CBLC',
+  'COLR',
+  'CPAL',
+  'SVG ',
+  'sbix',
+  'acnt',
+  'avar',
+  'bdat',
+  'bloc',
+  'bsln',
+  'cvar',
+  'fdsc',
+  'feat',
+  'fmtx',
+  'fvar',
+  'gvar',
+  'hsty',
+  'just',
+  'lcar',
+  'mort',
+  'morx',
+  'opbd',
+  'prop',
+  'trak',
+  'Zapf',
+  'Silf',
+  'Glat',
+  'Gloc',
+  'Feat',
+  'Sill',
+];

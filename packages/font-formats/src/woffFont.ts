@@ -1,5 +1,7 @@
 import { Compression } from '@flighthq/types/contract';
 
+import { assembleSfntFont } from './sfntAssembly';
+
 // WOFF is a wrapper, not a font format: the same sfnt tables, each optionally deflated, behind a header
 // that says where they went. So the whole job is to REBUILD THE SFNT and hand it to the reader that
 // already exists — no new outline code, no new seam, and `glyf`, `CFF ` and CID all work through it
@@ -16,8 +18,6 @@ import { Compression } from '@flighthq/types/contract';
 
 const WOFF_HEADER_BYTES = 44;
 const WOFF_DIRECTORY_ENTRY_BYTES = 20;
-const SFNT_HEADER_BYTES = 12;
-const SFNT_DIRECTORY_ENTRY_BYTES = 16;
 
 // Rebuilds the plain sfnt a WOFF wraps. Returns the null sentinel for a malformed container, and for a
 // deflated table when no decompressor is registered — the caller distinguishes those through
@@ -68,43 +68,7 @@ export function readWoffFont(
     tables.push({ data: inflated, tag });
   }
 
-  return assembleSfntFromWoffTables(flavor, tables);
-}
-
-// Writes a plain sfnt: header, a directory sorted by tag, then the table data with each table starting on
-// a four-byte boundary. Sorting is required rather than cosmetic — the sfnt directory is defined as being
-// in tag order, and a reader entitled to binary-search it would find the wrong table otherwise.
-function assembleSfntFromWoffTables(
-  flavor: number,
-  tables: readonly Readonly<{ data: Uint8Array; tag: number }>[],
-): Uint8Array {
-  const sorted = [...tables].sort((a, b) => a.tag - b.tag);
-  const headerBytes = SFNT_HEADER_BYTES + sorted.length * SFNT_DIRECTORY_ENTRY_BYTES;
-
-  let total = headerBytes;
-  for (const table of sorted) total += (table.data.byteLength + 3) & ~3;
-
-  const out = new Uint8Array(total);
-  const view = new DataView(out.buffer);
-  view.setUint32(0, flavor);
-  view.setUint16(4, sorted.length);
-  // searchRange, entrySelector and rangeShift are derived values a reader can recompute; the reader in
-  // this package walks the directory linearly and never consults them, so they are left zero rather than
-  // written with values nothing checks.
-
-  let dataAt = headerBytes;
-  sorted.forEach((table, index) => {
-    const record = SFNT_HEADER_BYTES + index * SFNT_DIRECTORY_ENTRY_BYTES;
-    view.setUint32(record, table.tag);
-    // The checksum field is left zero for the same reason: nothing in this package verifies it, and
-    // writing a recomputed value would assert a check that was never performed.
-    view.setUint32(record + 8, dataAt);
-    view.setUint32(record + 12, table.data.byteLength);
-    out.set(table.data, dataAt);
-    dataAt += (table.data.byteLength + 3) & ~3;
-  });
-
-  return out;
+  return assembleSfntFont(flavor, tables);
 }
 
 // The compression this container uses. Named through the shared vocabulary rather than a local constant so

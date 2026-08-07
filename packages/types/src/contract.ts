@@ -6,6 +6,7 @@ export * from './Scene3DPickOptions';
 export * from './SfntTableDirectory';
 export * from './TextShaperCache';
 export * from './WebcamStreamRuntime';
+export * from './Woff2TableDirectory';
 export * from './XmlElement';
 export * from './AnisotropyPbrExtension';
 export * from './ClearcoatPbrExtension';
