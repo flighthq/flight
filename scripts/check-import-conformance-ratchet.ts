@@ -6,6 +6,7 @@ import pc from 'picocolors';
 
 import { parseImportConformanceScore } from './import-conformance-score';
 import type {
+  ImportConformanceAuditedLossPath,
   ImportConformanceCapability,
   ImportConformanceCapabilityWithInstrumentation,
   ImportConformanceExercisedCapability,
@@ -435,8 +436,8 @@ function compareInstrumentAudits(
   const gained = current.instrumentation.audits.filter((audit) => !baseline.instrumentation.audits.includes(audit));
   if (
     gained.length > 0 &&
-    baseline.lossPath.state !== 'unaudited' &&
-    current.lossPath.state !== 'unaudited' &&
+    hasLossPathAudit(baseline.lossPath) &&
+    hasLossPathAudit(current.lossPath) &&
     baseline.lossPath.audit.auditId === current.lossPath.audit.auditId &&
     baseline.lossPath.audit.auditedAt === current.lossPath.audit.auditedAt
   ) {
@@ -488,11 +489,33 @@ function compareLossPath(
   findings: ImportConformanceRatchetFinding[],
 ): void {
   if (baseline.lossPath.state === 'unaudited') return;
+  if (baseline.lossPath.state === 'unidentified') {
+    if (current.lossPath.state === 'unaudited') {
+      findings.push(
+        finding(
+          'loss-path-audit-existence-lost',
+          'loss-path audit changed from UNIDENTIFIED to UNAUDITED',
+          baseline.id,
+        ),
+      );
+    }
+    return;
+  }
   if (current.lossPath.state === 'unaudited') {
     findings.push(
       finding(
         'loss-path-audit-lost',
         `loss-path audit changed from ${baseline.lossPath.state.toUpperCase()} to UNAUDITED`,
+        baseline.id,
+      ),
+    );
+    return;
+  }
+  if (current.lossPath.state === 'unidentified') {
+    findings.push(
+      finding(
+        'loss-path-audit-identity-lost',
+        `loss-path audit changed from ${baseline.lossPath.state.toUpperCase()} to UNIDENTIFIED`,
         baseline.id,
       ),
     );
@@ -531,6 +554,12 @@ function compareLossPath(
       ),
     );
   }
+}
+
+function hasLossPathAudit(
+  lossPath: Readonly<ImportConformanceCapabilityWithInstrumentation['lossPath']>,
+): lossPath is Readonly<ImportConformanceAuditedLossPath> {
+  return lossPath.state === 'audited-none' || lossPath.state === 'identified';
 }
 
 function compareLaneResult(
@@ -707,11 +736,22 @@ function formatSingleWitnessMembers(pack: Readonly<ImportConformanceMeasuredPack
 
 function formatLossPathPopulation(pack: Readonly<ImportConformanceMeasuredPack>): string {
   const auditedMembers = pack.capabilities.flatMap((capability) => {
-    if (capability.state === 'not-run' || capability.lossPath.state === 'unaudited') return [];
+    if (
+      capability.state === 'not-run' ||
+      capability.lossPath.state === 'unaudited' ||
+      capability.lossPath.state === 'unidentified'
+    )
+      return [];
     return [
       `${capability.id}@${capability.lossPath.audit.auditId} by ${capability.lossPath.audit.auditor} at ${capability.lossPath.audit.auditedAt} subject ${capability.lossPath.audit.subjectHash}: ${capability.lossPath.state}`,
     ];
   });
+  const unidentifiedAuditMembers = pack.capabilities
+    .filter(
+      (capability): capability is Extract<ImportConformanceCapability, { state: 'exercised' | 'unmeasured' }> =>
+        capability.state !== 'not-run' && capability.lossPath.state === 'unidentified',
+    )
+    .map((capability) => capability.id);
   const unauditedMembers = pack.capabilities
     .filter(
       (capability): capability is Extract<ImportConformanceCapability, { state: 'exercised' | 'unmeasured' }> =>
@@ -719,7 +759,7 @@ function formatLossPathPopulation(pack: Readonly<ImportConformanceMeasuredPack>)
     )
     .map((capability) => capability.id);
   const summary = pack.summary.lossPathPopulation;
-  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
+  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; audit-identity-unavailable capability-row tally ${summary.unidentifiedAuditCapabilities} [${unidentifiedAuditMembers.join(', ')}]; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
 }
 
 function formatProofReferences(
@@ -763,13 +803,14 @@ function formatUnknownObservations(pack: Readonly<ImportConformanceMeasuredPack>
     const scope = isCapabilityScopedUnknownReason(reason) ? 'capability-scoped' : 'file-scoped';
     return `${scope} keyed-observation count ${members.length} [${members.join(', ')}]`;
   };
-  return `loop-bounded-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
+  return `loop-bounded-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, loss-path-audit-unidentified ${lane('loss-path-audit-unidentified')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
 }
 
 function isCapabilityScopedUnknownReason(reason: ImportConformanceUnknownObservation['reason']): boolean {
   return (
     reason === 'instrument-audit-incomplete' ||
     reason === 'loop-bounded-configuration-limit' ||
+    reason === 'loss-path-audit-unidentified' ||
     reason === 'loss-path-known-not-wired' ||
     reason === 'loss-path-not-identified'
   );
