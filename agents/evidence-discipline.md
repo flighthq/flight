@@ -22,12 +22,16 @@ rather than reading something, it is being misused.
 
 ## The law: evidence is about whatever produced it
 
-*Arc-local, 6 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 7 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Its sharpest case is the self-report. **A self-report is evidence about the self-reporter, not about
 what it carried** — so to get evidence about the payload, you need something that looked at the
 payload. Everything below in this section derives from that in one step.
 
+- **The repo you can reach is not the repo the claim is about.** Say it in those words; the
+  sophisticated version did not save anyone. Three readers stated true, exact, checkable numbers about
+  a tree that was not the one under discussion — all three on the same day, all three while actively
+  hunting that exact failure.
 - **Announcing a change is not shipping it, and the announcement travels faster.** A note saying "I am
   landing this in the doc" went out in a parcel whose commits did not contain it; the wording was
   present-tense, the work was real, and it landed two commits later — so every reader of that parcel
@@ -66,7 +70,7 @@ Order competing actions by how much they destroy. Destructive last.
 
 ## Structure over convention — *how to enforce*
 
-*Arc-local, 3 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 4 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Make the false claim unrepresentable rather than discouraged. A rule you hold is a rule you can drift
 off; three agents in one day each drifted off a rule they had written down.
@@ -77,6 +81,11 @@ off; three agents in one day each drifted off a rule they had written down.
 - **Choose a channel without the hazard instead of remembering to avoid it.** Prose through `-m`,
   anything carrying an identifier through `--file`: shell substitution then cannot occur, rather than
   being something each author must remember not to trigger.
+- **Name the tree in the assignment, not in the report.** An order that will produce a coverage claim
+  should already say which version it covers, so the reader never has to choose — and before assigning
+  an exhaustive read, ask who else is editing that file. **An exhaustive read of a file under active
+  edit is stale before it lands, which is a property of the schedule and not of the reader.** Three
+  readers lost a day's claims to this in one day; the countermeasure cannot be more care.
 - **Put a coverage caveat in a table, not a sentence.** A sentence can be skimmed past; a table of
   which files were read in full, partially, and not at all cannot.
 
@@ -116,7 +125,7 @@ stops an artifact claiming more than it has.
 
 ## Search instructions — where to look next
 
-*Arc-local, 3 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 4 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Each of these directed a search that found something the same day it was written. None of them is a
 verdict; see the note at the top.
@@ -138,6 +147,13 @@ verdict; see the note at the top.
   they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
   argument for the same refusal. The extra vividness was doing rhetorical work, which is the same
   smell as a tally standing in for a mechanism. **This licenses one action: read the reason.**
+- **A hedge written for a negative result silently expires when the result comes back positive.** One
+  reader ended a search command with a note to themselves — *empty above means not wired in my clone,
+  which may be behind* — then the search returned data, the finding felt confirmed, and the caveat they
+  had written thirty seconds earlier evaporated with no decision and no moment of choosing to drop it.
+  **A positive result removes the trigger to re-read your own qualifier.** This is the vividness tell's
+  opposite and equally cheap: that one says check a reason that sounds too good, this one says the
+  hedge you wrote for the negative case still applies to the positive one.
 - **An artifact that shows deliberation is not an artifact that provides reporting.** A guard shows
   someone anticipated a failure; a comment shows someone considered it; neither gives a caller
   anything to enumerate. Auditing by grepping for guards marked a capability covered whose loss no
@@ -152,7 +168,7 @@ verdict; see the note at the top.
 
 ## Denominators
 
-*Arc-local, 6 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 7 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 - **Before ratifying a count, ratify the rule that decides when two things are one entry or two.** A
   count with no stated individuation rule is not a measurement, it is a tally — and unlike a missing
@@ -174,6 +190,12 @@ verdict; see the note at the top.
   behaviour-preserving refactor, and of a grain the consumer would accept — and expect the
   hand-maintained part you removed to reappear at the joint between the rule and the rows, where
   nobody looks because the rule is now "mechanical".
+- **Any number computed over a mutable artifact carries that artifact's identity, or it is not a
+  measurement.** One arc required this four times before anyone stated it once — a fixture release, a
+  variant, a convention revision, and a file version were each discovered separately and argued from
+  scratch. **"2,611 of 2,611 lines" is the sharpest form: 100% is the most convincing number available
+  and says nothing at all without which 2,611.** Two readers grepping the same file for the same thing
+  got different true answers all evening because nobody named the tree.
 - **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
   bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
   implemented, so a ratio over it measures the corpus against our own model and reads as coverage of
