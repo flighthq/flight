@@ -29,7 +29,11 @@ role that observes what does and does not run at the boundary. This file exists 
 because it must outlive any one sandbox.
 
 **Each row carries its own provenance.** `verified-at-tree` means someone read the artifact at the
-integrated tree; `as-reported` means the row is the sender's self-report and nothing has looked at it.
+integrated tree; `as-reported` means the row is the sender's self-report and nothing has looked at it;
+**`unbacked-by-sender / backed-by-integration`** means the sender could not run the check in their own
+clone but the boundary ran it on the combined tree — **which names who verified and who could not, and
+is strictly more informative than either half.** Expect that shape whenever a sender is authoring
+against supplied content rather than a tree they hold.
 **The register's own contents are claims too, and they inherit every weakness the register documents** —
 without the marker the table flattens checked and unchecked into one confident-looking grid, which is
 the same flat-aggregate defect the scoreboard was designed to avoid.
