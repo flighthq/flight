@@ -162,6 +162,24 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — A historical check pinned to CONTENT survives history rewriting; pinned to a COMMIT it
+  does not.** An audit identity stored `auditedAt` and a `subjectHash`, both derived by searching git
+  history — **and history is precisely the baseline that landing rewrites.** It survived two rebases
+  across 161 peer commits **byte-identical**, because the hash is a git **tree OID**: content-addressed,
+  so rewriting commits does not move it. **Pinning a commit SHA would have restamped every audit on
+  every rebase.** ⇒ The author chose the tree OID to stop unrelated source edits restamping things and
+  **says plainly that its surviving history rewriting is luck rather than foresight** — which is worth
+  more than a claim the design anticipated it.
+  ★ **The untested case, stated as a prediction before the fact: a SQUASH MERGE.** The history search
+  would resolve to the squashed commit, whose tree is the **final** state rather than the state at the
+  audit, **so every identity would silently take post-merge values and collapse to one timestamp and
+  one tree OID.** Untestable from inside the clone, so it is **predicted, not diagnosed.**
+  ★★ **And the tell was recorded in the GENERATOR rather than in a message** — *a reader who finds
+  every identity sharing one timestamp and one tree OID is looking at this failure, not at fourteen
+  audits that happened at once.* ⇒ **A caution in a parcel dies with the parcel; the generator is what
+  a successor opens.** Not registered as a landed defect: **nothing is wrong yet, and the condition
+  that would break it has not occurred** — it is a stated limit on an instrument, not a defect.
+
 - **filed — Attach the audit to the member, not to the count.** With each capability carrying which
   audits reached it, **the totals are derived and can never outrun their audit** — a bare `17/17/17`
   stops being discouraged and becomes **unrepresentable.** ⇒ **The general move: find the
