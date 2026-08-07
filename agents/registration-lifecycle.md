@@ -134,6 +134,21 @@ shape: `create*`, `register*`, caller-held, no module global.
 Flight's own built-ins are entries in that registry like any other — they are simply
 [generated](#built-in-entries-are-generated) rather than typed by hand.
 
+**Form: TypeScript is canonical; JSON is available on demand and never committed.** The catalog is plain
+data, so any of JSON, TOML, or YAML would carry it. Two consumers decide it:
+
+- **The port.** TypeScript is lowered to Haxe and Rust with the rest of the source, so a `.ts` catalog
+  arrives in each target as a native const with no parser in the build. A data file needs a reader
+  written once per target.
+- **The guard layer.** The [remedy on a miss](#4-the-remedy-on-a-miss) is a *runtime* read — naming
+  `registerGlBlurEffect` in a warning requires reaching the catalog at warn time. Diagnostics are opt-in
+  and separately importable, so it must shake out of a build that never enables guards; a const shakes,
+  a JSON import is a bundler-configuration question that does not.
+
+`tool-registry catalog --json` dumps the same data for external tooling. Nothing is committed in that
+form, so there is no second artifact to drift — but the dump path is exported surface and carries its own
+test.
+
 #### Built-in entries are generated
 
 **It is derived from source, and the derivation already exists.** `scripts/reachability-core.ts:151`
@@ -247,9 +262,21 @@ own, but the decision should be re-confirmed against this written form before an
 ### Resolution — requirement set × catalog × backend to source
 
 Mechanical: resolve each requirement through the catalog for the target backend, collect the distinct
-`(module, registrar)` pairs, emit imports and calls. A requirement with no catalog entry is a hard error
-naming the facet and key, not a silent omission — the same rule as an uncatalogued registrar, applied at
-the other end.
+`(module, registrar)` pairs, emit imports and calls.
+
+**An unresolved requirement is two different conditions and they must not share a response.** Both look
+like a lookup returning nothing:
+
+- **No backend serves the key.** The catalog is stale, or a consumer forgot to register their own kind.
+  A **hard error** naming the facet and key — the same rule as an uncatalogued registrar, applied at the
+  other end.
+- **This backend does not serve a key another one does.** Canvas has no `SsaoEffect`; that is
+  [registration model §3](registration-model.md)'s reliable negative, and the content genuinely cannot
+  draw here. **Reported, never fatal.**
+
+The catalog distinguishes them without carrying explicit negative knowledge: if any backend serves the
+key, absence on this one is a real negative. Collapsing the two makes every Canvas app whose content
+mentions SSAO fail to generate.
 
 ### check — regenerate in memory, diff, fail
 
@@ -280,6 +307,43 @@ correct path has to be *shorter, measured from the symptom*. Three things, and a
 instructions, and see whether it produces minimal wiring. If it still reaches for a bundle, the design
 failed regardless of how clean the types are. No amount of type-level correctness substitutes for
 running this.
+
+## The laundering test — data is not the deliverable
+
+**The lifecycle is done when a call executes. Everything before that is bookkeeping about a problem
+nobody has solved yet.** An asset says it needs a blur; a requirement set says a blur is needed; a
+catalog says blurs are served by `registerGlBlurEffect`. Not one of those has registered anything. A
+design that stops at any of them has moved the problem into a nicer file, not fixed it — and each of
+those intermediate artifacts is individually reasonable enough to be mistaken for progress.
+
+So every stage answers to one question: **does this end in a call?**
+
+```ts
+// src/registries.gen.ts — the terminal artifact, generated and committed
+import { registerGlBlurEffect } from '@flighthq/effects-gl';
+import { registerRenderer } from '@flighthq/render';
+import { defaultGlShapeRenderer } from '@flighthq/scene2d-gl';
+
+export function createGlRenderRegistries(state: GlRenderState): void {
+  registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+  registerGlBlurEffect(state);
+}
+```
+
+Three consequences, and they are constraints on anything built here:
+
+- **`--emit-requirements` is never the golden path.** It is a debugging affordance. A workflow whose
+  normal output is a manifest has laundered the problem, which is why the CLI collapsed to
+  [one command](#one-command-and-where-requirements-come-from).
+- **The generated module still has to be called**, and that is the one place this can quietly fail: you
+  run the generator, commit the file, forget the `createGlRenderRegistries(state)` line, and you are back
+  at a blank screen holding a file that describes the fix. One explicit call is the design and not a gap
+  — Flight prefers spelling registration out — but *nothing currently notices its absence*. A generated
+  module that is never imported must be a check failure, not a silent no-op.
+- **A miss must name a call, not a condition.** `{coverage: 'Missing', kind: 'BlurEffect'}` is a fact
+  about the world. `registerGlBlurEffect` from `@flighthq/effects-gl` is a thing to do. Only the second
+  is worth the diagnostics machinery, which is why [the remedy](#4-the-remedy-on-a-miss) is a field and
+  not a doc paragraph.
 
 ## No bundler plugin, deliberately
 
@@ -346,6 +410,7 @@ in the design** — not as an aggregate, not as a package, not as a generated fi
 | Slot | Name |
 |---|---|
 | packages | `@flighthq/requirements`, `@flighthq/registry`, `@flighthq/registry-catalog`, `@flighthq/registry-codegen` |
+| catalog form | generated `.ts` (canonical); `tool-registry catalog --json` on demand, never committed |
 | aggregate | `GlRenderRegistries` / `CanvasRenderRegistries` / `WgpuRenderRegistries` |
 | members | `KeyedTable` / `SlotTable` / `OrdinalTable` |
 | CLI package | `@flighthq/tool-registry`, bin `tool-registry` |
