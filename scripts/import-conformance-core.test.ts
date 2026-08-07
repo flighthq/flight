@@ -326,7 +326,7 @@ describe('createImportConformanceScore', () => {
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
         new Map(),
-        new Map([['swf.fill.solid', false]]),
+        new Map([['swf.fill.solid', 'not-identified' as const]]),
         hash('importer'),
         PROVENANCE,
       ),
@@ -531,8 +531,8 @@ function instrumentationProofs(id: string) {
 
 function lossPathStates(fillIdentified = true, textIdentified = false) {
   return new Map([
-    ['swf.fill.solid', fillIdentified],
-    ['swf.text.define-text', textIdentified],
+    ['swf.fill.solid', fillIdentified ? ('identified' as const) : ('not-identified' as const)],
+    ['swf.text.define-text', textIdentified ? ('identified' as const) : ('not-identified' as const)],
   ]);
 }
 

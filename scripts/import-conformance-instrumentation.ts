@@ -1,10 +1,11 @@
 import type {
   ImportConformanceCapabilityDefinition,
   ImportConformanceInstrumentationProofs,
+  ImportConformanceLossPathState,
 } from './import-conformance-core';
 
 export interface ImportConformanceInstrumentationMapping {
-  lossPathIdentifiedByCapability: Map<string, boolean>;
+  lossPathStateByCapability: Map<string, ImportConformanceLossPathState>;
   problems: string[];
   proofs: Map<string, ImportConformanceInstrumentationProofs>;
 }
@@ -15,14 +16,14 @@ export function parseImportConformanceInstrumentationMapping(
 ): ImportConformanceInstrumentationMapping {
   if (!isRecord(value) || !Array.isArray(value.capabilities)) {
     return {
-      lossPathIdentifiedByCapability: new Map(),
+      lossPathStateByCapability: new Map(),
       problems: ['Instrumentation mapping root is invalid'],
       proofs: new Map(),
     };
   }
   const declared = new Set(definitions.map((definition) => definition.id));
   const problems: string[] = [];
-  const lossPathIdentifiedByCapability = parseLossPathStates(value.lossPaths, definitions, problems);
+  const lossPathStateByCapability = parseLossPathStates(value.lossPaths, definitions, problems);
   const proofs = new Map<string, ImportConformanceInstrumentationProofs>();
   const duplicates = new Set<string>();
   let previousId = '';
@@ -56,24 +57,24 @@ export function parseImportConformanceInstrumentationMapping(
   invalidateMismatchedProofPopulation(value.fireProven, 'fire', proofs, problems);
   invalidateMismatchedProofPopulation(value.silenceProven, 'silence', proofs, problems);
   for (const id of proofs.keys()) {
-    if (lossPathIdentifiedByCapability.get(id) === true) continue;
+    if (lossPathStateByCapability.get(id) === 'identified') continue;
     problems.push(`Instrumentation proof for ${id} lacks an identified loss path`);
-    lossPathIdentifiedByCapability.delete(id);
+    lossPathStateByCapability.delete(id);
   }
-  return { lossPathIdentifiedByCapability, problems, proofs };
+  return { lossPathStateByCapability, problems, proofs };
 }
 
 function parseLossPathStates(
   value: unknown,
   definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
   problems: string[],
-): Map<string, boolean> {
+): Map<string, ImportConformanceLossPathState> {
   if (!Array.isArray(value)) {
     problems.push('Instrumentation mapping lacks exhaustive loss-path declarations');
     return new Map();
   }
   const declared = new Set(definitions.map((definition) => definition.id));
-  const states = new Map<string, boolean>();
+  const states = new Map<string, ImportConformanceLossPathState>();
   let invalid = false;
   let previousId = '';
   for (const candidate of value) {
@@ -87,7 +88,7 @@ function parseLossPathStates(
     }
     if (candidate.id <= previousId || !declared.has(candidate.id)) invalid = true;
     previousId = candidate.id;
-    states.set(candidate.id, candidate.state === 'identified');
+    states.set(candidate.id, candidate.state);
   }
   if (invalid || states.size !== definitions.length || definitions.some((definition) => !states.has(definition.id))) {
     problems.push('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');

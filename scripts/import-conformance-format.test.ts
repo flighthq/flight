@@ -44,8 +44,8 @@ describe('formatImportConformanceScore', () => {
         ],
       ]),
       new Map([
-        ['swf.fill.solid', true],
-        ['swf.text.define-text', false],
+        ['swf.fill.solid', 'identified' as const],
+        ['swf.text.define-text', 'not-identified' as const],
       ]),
       hash('importer'),
       PROVENANCE,
