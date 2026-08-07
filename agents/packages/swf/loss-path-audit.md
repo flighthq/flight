@@ -155,7 +155,17 @@ check they defeat:**
 | **Substituted** | the object, at full size, wrong | existence passes, count passes — **only a content comparison** |
 
 **That ordering is the useful part: each value defeats one more class of check, so the axis says what the
-oracle needs rather than only what went wrong.** Crossed with signal, the worst cell is *substituted with
+oracle needs rather than only what went wrong.**
+
+**It orders by *check defeated*, not by *harm*.** A missing font may hurt a user more than a substituted
+one. The axis is an oracle specification — it says what you must build to see a thing, and nothing about
+how bad the thing is. Read as a severity scale it will justify the wrong priorities.
+
+**And one consequence for the oracle it specifies: a hash comparison detects *change*, not *wrongness*.**
+It compares an output against a previously recorded run of this importer, so a substitution present at
+first capture hashes identically forever and reports green. Catching *that* needs an expectation derived
+from the format's own structure — *distinct glyph tables equals the count of `DefineFont*` tags* — which
+fails on the duplicate store the first time it runs, with no prior capture to compare against. Crossed with signal, the worst cell is *substituted with
 no signal* — nothing about the output distinguishes it from a clean import.
 
 Members found so far: `swfMorphShape.ts:180` and `swfDocument.ts:1303` are **diminished**;
