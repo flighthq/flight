@@ -174,12 +174,94 @@ function parseCachedResult(
   if (capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== fixture.capabilities.join('\0')) {
     throw new Error('stale capability result');
   }
+  const probeUnreadableEvidence = parseProbeUnreadableEvidence(value.probeUnreadableEvidence, fixture);
   return {
     capabilityOutcomes,
     outcome: value.outcome,
+    ...(probeUnreadableEvidence === undefined ? {} : { probeUnreadableEvidence }),
     reference: fixture.reference,
     sourceHash: fixture.sourceHash,
   };
+}
+
+function parseProbeUnreadableEvidence(
+  value: unknown,
+  fixture: Readonly<ImportConformanceIndexedFixture>,
+): ImportConformanceResult['probeUnreadableEvidence'] {
+  if (fixture.probeState === 'readable') {
+    if (value !== undefined) throw new Error('probe-readable fixture carries unreadable evidence');
+    return undefined;
+  }
+  if (!isRecord(value) || !Array.isArray(value.diagnostics)) {
+    throw new Error('probe-unreadable fixture result lacks retained evidence');
+  }
+  if (typeof value.imported !== 'boolean' || typeof value.threw !== 'boolean') {
+    throw new Error('invalid probe-unreadable fixture sentinel evidence');
+  }
+  return {
+    diagnostics: value.diagnostics.map(parseRetainedDiagnostic),
+    imported: value.imported,
+    threw: value.threw,
+  };
+}
+
+function parseRetainedDiagnostic(
+  value: unknown,
+): NonNullable<ImportConformanceResult['probeUnreadableEvidence']>['diagnostics'][number] {
+  if (!isRecord(value) || typeof value.kind !== 'string' || value.kind === '') {
+    throw new Error('invalid retained diagnostic kind');
+  }
+  if (typeof value.origin !== 'string' || value.origin === '') {
+    throw new Error('invalid retained diagnostic origin');
+  }
+  if (
+    value.severity !== 'Drop' &&
+    value.severity !== 'Recover' &&
+    value.severity !== 'Reject' &&
+    value.severity !== 'Skip'
+  ) {
+    throw new Error('invalid retained diagnostic severity');
+  }
+  const detail = value.detail === undefined ? undefined : parseRetainedDiagnosticDetail(value.detail);
+  return {
+    ...(detail === undefined ? {} : { detail }),
+    kind: value.kind,
+    origin: value.origin,
+    severity: value.severity,
+  };
+}
+
+function parseRetainedDiagnosticDetail(
+  value: unknown,
+): NonNullable<NonNullable<ImportConformanceResult['probeUnreadableEvidence']>['diagnostics'][number]['detail']> {
+  if (!isRecord(value)) throw new Error('invalid retained diagnostic detail');
+  const allowed = new Set(['capability', 'characterId', 'compression', 'frame', 'length', 'sceneCount']);
+  const keys = Object.keys(value);
+  if (keys.length === 0 || keys.some((key) => !allowed.has(key))) {
+    throw new Error('retained diagnostic detail contains unruled fields');
+  }
+  const detail: Record<string, number | string> = {};
+  if ('capability' in value) {
+    if (typeof value.capability !== 'string' || value.capability === '') {
+      throw new Error('invalid retained diagnostic capability');
+    }
+    detail.capability = value.capability;
+  }
+  if ('compression' in value) {
+    if (value.compression !== 'deflate' && value.compression !== 'lzma') {
+      throw new Error('invalid retained diagnostic compression');
+    }
+    detail.compression = value.compression;
+  }
+  for (const key of ['characterId', 'frame', 'length', 'sceneCount'] as const) {
+    if (!(key in value)) continue;
+    const number = value[key];
+    if (!Number.isSafeInteger(number) || (number as number) < 0) {
+      throw new Error(`invalid retained diagnostic ${key}`);
+    }
+    detail[key] = number as number;
+  }
+  return detail;
 }
 
 function writeJsonAtomically(path: string, value: unknown): void {
