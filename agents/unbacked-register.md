@@ -181,6 +181,19 @@ else — but whose subject looks relevant to the reader — costs more than a fe
 substitution returning WITH the mechanism in place**, and it will be worth more than this
 measurement.
 
+★★★ **RULED: TOLERATED AT A MEASURED COST. NOBODY WRITES A FIFTH REMEDY.** Three prevention rules,
+one detection protocol, one mechanical completion, nine instances — **and the cost per instance is now
+three lines, which is BELOW the cost of continuing to work on it.**
+⇒ **The register needs a third state: FIXED / UNFIXED / TOLERATED-AT-A-MEASURED-COST.** ★★ **The
+middle state is the one that invites another remedy, so naming the third is what stops it** — an open
+entry reads as a standing task no matter how many remedies have failed against it.
+**TOLERATION WITH FALSIFIERS, NOT FATIGUE. Two conditions reopen it:**
+1. **the cost per instance rises** — specifically the **relevance-over-addressing** case the `TO:`
+   line cannot reach;
+2. **the rate rises** against the nine-instance flat baseline.
+⇒ **Neither fires, neither of us touches it.** **This is the no-third-remedy restraint extended from
+"no new rule" to "no further attention", on a measured basis rather than an exhausted one.**
+
 **The lapse rate has not dropped across nine instances.** Detection is cheaper than prevention was
 and **is not free**, and no third remedy is offered here: **this is the measurement, recorded because
 the prediction that it might decay was made before it did.**
