@@ -17,6 +17,10 @@ instrument, so "how much can we see" is a fraction of the capabilities that *can
 Stated per file, because an audit certifies a population at a moment and its own report is not evidence of
 its own coverage.
 
+Every row below is **a self-report by the agent who did the reading**. Nothing has checked it; the
+something-else-looking is whoever opens the file and disagrees. Treat a row as a claim about what was
+read, not as evidence that it was read well.
+
 | File | Read? | Result |
 | --- | --- | --- |
 | `swfShape.ts` | yes, in full | **no unreported loss path** — every early exit nulls the whole shape, which *is* reported |
@@ -33,6 +37,10 @@ its own coverage.
 full.
 
 ## Confirmed unreported loss paths
+
+*Each family below was found by reading the source named in it. If you quote one, quote this line with it:
+**found by inspection, not by a test — no instrument currently detects any of these.*** That is the point
+of the list, and it is also its limit.
 
 ### 1. A morph definition that does not decode is dropped silently
 
