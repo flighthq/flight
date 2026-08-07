@@ -19,6 +19,10 @@ other work.*
 
 ## Serving: evidence is about whatever produced it
 
+- **filed — The repo you can reach is not the repo the claim is about.** Say it in those words; **the
+  sophisticated version saved nobody.** Five readers stated true, exact, checkable numbers about trees
+  that were not the one under discussion, **several while actively hunting that exact failure.**
+
 - **filed — Evidence that X exists is not evidence that only X exists.** A parcel format was assumed
   squash-only because a `squashed.diff` was visible; it also carried ten per-commit patches with full
   SHAs, and a whole remedy was nearly abandoned on the strength of the thing that *was* seen. **Seeing
