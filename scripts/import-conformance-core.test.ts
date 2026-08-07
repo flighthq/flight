@@ -109,7 +109,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'unsupportedClean')],
-      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
+      instrumentationProofs('swf.fill.solid'),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -126,7 +126,10 @@ describe('createImportConformanceScore', () => {
     expect(score.packs[0]!.capabilities).toEqual([
       {
         id: 'swf.fill.solid',
-        instrumentationProof: 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss',
+        instrumentationProofs: {
+          fires: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
+          staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
+        },
         outcomes: { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 1 },
         result: 'pass',
         state: 'measured',
@@ -147,7 +150,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], outcome), result('two.swf', ['swf.fill.solid'], 'passed')],
-      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
+      instrumentationProofs('swf.fill.solid'),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -166,7 +169,7 @@ describe('createImportConformanceScore', () => {
       plan,
       new Set([0]),
       [result('one.swf', ['swf.fill.solid'], 'passed')],
-      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
+      instrumentationProofs('swf.fill.solid'),
       'measured',
       hash('importer'),
       PROVENANCE,
@@ -195,7 +198,7 @@ describe('createImportConformanceScore', () => {
         plan,
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed')],
-        new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
+        instrumentationProofs('swf.fill.solid'),
         'measured',
         hash('importer'),
         PROVENANCE,
@@ -264,7 +267,10 @@ describe('createImportConformanceScore', () => {
     expect(score.packs[0]!.sharding?.shards).toEqual([{ id: 0, state: 'measured' }]);
   });
 
-  it('refuses to count an instrument without a non-empty firing-test proof', () => {
+  it.each([
+    [{ fires: [], staysSilent: ['test#is silent'] }, /firing proofs.*must be non-empty/],
+    [{ fires: ['test#fires'], staysSilent: [] }, /silence proofs.*must be non-empty/],
+  ] as const)('refuses to count an instrument without both proof roles', (proofs, message) => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
       index.fixtures.map((fixture) => fixture.reference),
@@ -276,12 +282,12 @@ describe('createImportConformanceScore', () => {
         plan,
         new Set([0]),
         [result('one.swf', ['swf.fill.solid'], 'passed'), result('two.swf', ['swf.fill.solid'], 'passed')],
-        new Map([['swf.fill.solid', '']]),
+        new Map([['swf.fill.solid', proofs]]),
         'measured',
         hash('importer'),
         PROVENANCE,
       ),
-    ).toThrow(/must be non-empty/);
+    ).toThrow(message);
   });
 });
 
@@ -322,6 +328,18 @@ describe('parseImportConformanceCapabilityDefinitions', () => {
 
 function hash(value: string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+function instrumentationProofs(id: string) {
+  return new Map([
+    [
+      id,
+      {
+        fires: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
+        staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
+      },
+    ],
+  ]);
 }
 
 function makeIndex() {

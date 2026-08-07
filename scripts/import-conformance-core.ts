@@ -77,11 +77,16 @@ export interface ImportConformanceScore {
 
 export interface ImportConformanceScoreCapabilityMeasured {
   id: string;
-  instrumentationProof: string;
+  instrumentationProofs: ImportConformanceInstrumentationProofs;
   outcomes: ImportConformanceOutcomeCounts;
   result: 'fail' | 'pass';
   state: 'measured';
   witnesses: number;
+}
+
+export interface ImportConformanceInstrumentationProofs {
+  fires: string[];
+  staysSilent: string[];
 }
 
 export interface ImportConformanceScoreCapabilityNotRun {
@@ -240,7 +245,7 @@ export function createImportConformanceScore(
   plan: Readonly<ImportConformanceShardPlan>,
   completedShardIds: ReadonlySet<number>,
   results: readonly Readonly<ImportConformanceResult>[],
-  instrumentationProofs: ReadonlyMap<string, string>,
+  instrumentationProofs: ReadonlyMap<string, Readonly<ImportConformanceInstrumentationProofs>>,
   unknownPolicy: 'measured' | 'not-run',
   importerSourceHash: string,
   provenance: Readonly<ImportConformanceProvenance>,
@@ -288,8 +293,8 @@ export function createImportConformanceScore(
       });
       continue;
     }
-    const instrumentationProof = instrumentationProofs.get(capability.id);
-    if (instrumentationProof === undefined) {
+    const capabilityInstrumentationProofs = instrumentationProofs.get(capability.id);
+    if (capabilityInstrumentationProofs === undefined) {
       capabilities.push({
         id: capability.id,
         reason: 'diagnostic-instrumentation-missing',
@@ -308,7 +313,10 @@ export function createImportConformanceScore(
     }
     capabilities.push({
       id: capability.id,
-      instrumentationProof,
+      instrumentationProofs: {
+        fires: [...capabilityInstrumentationProofs.fires],
+        staysSilent: [...capabilityInstrumentationProofs.staysSilent],
+      },
       outcomes,
       result: outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong === 0 ? 'pass' : 'fail',
       state: 'measured',
@@ -462,14 +470,22 @@ function assertPackIdentity(pack: Readonly<ImportConformancePackIdentity>): void
 }
 
 function assertInstrumentationProofs(
-  proofs: ReadonlyMap<string, string>,
+  proofs: ReadonlyMap<string, Readonly<ImportConformanceInstrumentationProofs>>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
   const declared = new Set(index.capabilities.map((capability) => capability.id));
-  for (const [id, proof] of proofs) {
+  for (const [id, capabilityProofs] of proofs) {
     if (!declared.has(id)) throw new Error(`Instrumentation proof names undeclared capability ${id}`);
-    if (proof.trim() === '') throw new Error(`Instrumentation proof for ${id} must be non-empty`);
+    assertInstrumentationProofList(capabilityProofs.fires, `firing proofs for ${id}`);
+    assertInstrumentationProofList(capabilityProofs.staysSilent, `silence proofs for ${id}`);
   }
+}
+
+function assertInstrumentationProofList(proofs: readonly string[], label: string): void {
+  if (proofs.length === 0 || proofs.some((proof) => proof.trim() === '')) {
+    throw new Error(`${label} must be non-empty`);
+  }
+  assertSortedUnique(proofs, label);
 }
 
 function assertPlanMatchesIndex(

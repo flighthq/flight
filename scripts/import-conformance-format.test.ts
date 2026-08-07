@@ -34,7 +34,15 @@ describe('formatImportConformanceScore', () => {
           sourceHash: hash('fixture'),
         },
       ],
-      new Map([['swf.fill.solid', 'packages/swf/src/swfDocument.test.ts#reports solid-fill loss']]),
+      new Map([
+        [
+          'swf.fill.solid',
+          {
+            fires: ['packages/swf/src/swfDocument.test.ts#reports solid-fill loss'],
+            staysSilent: ['packages/swf/src/swfDocument.test.ts#keeps supported solid fill silent'],
+          },
+        ],
+      ]),
       'measured',
       hash('importer'),
       PROVENANCE,
