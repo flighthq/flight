@@ -37,7 +37,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
-    fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
+    fires: ['reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3'],
     id: 'swf.bitmap.define-bits-jpeg-4',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
@@ -50,10 +50,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
-    fires: [
-      'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
-      'reports one glyph whose outline does not decode, which costs that glyph and not the font',
-    ],
+    fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
     id: 'swf.font.define-font',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
@@ -66,10 +63,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
-    fires: [
-      'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
-      'reports one glyph whose outline does not decode, which costs that glyph and not the font',
-    ],
+    fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
     id: 'swf.font.define-font-3',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
@@ -100,17 +94,17 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
-    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-2',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
-    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-3',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
-    fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
+    fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-4',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },

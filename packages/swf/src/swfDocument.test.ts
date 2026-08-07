@@ -3018,6 +3018,72 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(quiet.map((entry) => entry.kind)).not.toContain('swf.label-past-last-frame');
   });
 
+  it('reports an unreadable body for every shape generation, not just the one the wire was written on', () => {
+    // PROPERTY 4 APPLIED TO THE PROOF MAPPING: the shape wire was proven on DefineShape alone while the
+    // mapping claimed all four generations. The code path is shared and parameterised by version, so what
+    // was untested was the ROUTING — that each tag reaches it and reports its own capability id.
+    const file = createSwf([
+      createTag(TAG_DEFINE_SHAPE_2, joinBytes(uint16(2), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
+      createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(3), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
+      createTag(
+        TAG_DEFINE_SHAPE_4,
+        joinBytes(uint16(4), createRectangle(0, 20, 0, 20), createRectangle(0, 20, 0, 20), new Uint8Array([0, 0xff])),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const capabilities = diagnostics
+      .filter((entry) => entry.kind === 'swf.shape-body-unreadable')
+      .map((entry) => entry.detail?.capability);
+    expect(capabilities).toEqual(['swf.shape.define-shape-2', 'swf.shape.define-shape-3', 'swf.shape.define-shape-4']);
+  });
+
+  it('reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2', () => {
+    const file = createSwf([
+      createTag(TAG_DEFINE_FONT, joinBytes(uint16(6), new Uint8Array([0xff, 0xff]))),
+      createTag(TAG_DEFINE_FONT_3, joinBytes(uint16(7), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const capabilities = diagnostics
+      .filter((entry) => entry.kind === 'swf.font-glyph-table')
+      .map((entry) => entry.detail?.capability);
+    expect(capabilities).toEqual(['swf.font.define-font', 'swf.font.define-font-3']);
+  });
+
+  it('reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3', () => {
+    const jpeg4 = createJpegHeader(31, 19);
+    const file = createSwf([
+      // JPEG4 carries a deblocking uint16 between the offset and the payload, so its routing is a
+      // genuinely different path from JPEG3's and needs its own proof.
+      createTag(
+        TAG_DEFINE_BITS_JPEG_4,
+        joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(0), jpeg4, new Uint8Array([4, 5, 6])),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-alpha-stream');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({
+      capability: 'swf.bitmap.define-bits-jpeg-4',
+      characterId: 17,
+      discardedBytes: 3,
+    });
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
@@ -3691,9 +3757,12 @@ const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_EDIT_TEXT = 37;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_2 = 48;
+const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_FONT_INFO = 13;
 const TAG_DEFINE_SHAPE = 2;
+const TAG_DEFINE_SHAPE_2 = 22;
 const TAG_DEFINE_SHAPE_3 = 32;
+const TAG_DEFINE_SHAPE_4 = 83;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_VIDEO_STREAM = 60;
