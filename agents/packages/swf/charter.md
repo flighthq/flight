@@ -8,6 +8,7 @@ assessment: ./assessment.md
 status: ./status.md
 capabilities: ./capabilities.md
 diagnostics: ./diagnostics.md
+diagnosticSites: ./diagnostic-sites.md
 individuation: ./individuation.md
 lossPathAudit: ./loss-path-audit.md
 tagCoverage: ./tag-coverage.md
