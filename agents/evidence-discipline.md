@@ -138,7 +138,7 @@ stops an artifact claiming more than it has.
 
 ## Search instructions — where to look next
 
-*Arc-local, 5 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 6 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Each of these directed a search that found something the same day it was written. None of them is a
 verdict; see the note at the top.
@@ -173,6 +173,10 @@ verdict; see the note at the top.
   they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
   argument for the same refusal. The extra vividness was doing rhetorical work, which is the same
   smell as a tally standing in for a mechanism. **This licenses one action: read the reason.**
+- **Precision persuades independently of currency.** A correction that read *13 functions of which 3
+  exported* displaced an original *19* and was accepted immediately — then both proved exactly right,
+  at different commits, the more precise one from the older tree. **A sharper number reads as better
+  work, and nothing about its form tells you when it was taken.** Check the tree before the arithmetic.
 - **A hedge written for a negative result silently expires when the result comes back positive.** One
   reader ended a search command with a note to themselves — *empty above means not wired in my clone,
   which may be behind* — then the search returned data, the finding felt confirmed, and the caveat they

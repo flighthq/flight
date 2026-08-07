@@ -44,12 +44,24 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B | as-reported |
 | 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
-| 7 | `untested-instrument` | — | builder: `packages/font-formats/src/openTypeTestHelper.ts` — 240 lines, 13 functions of which 3 exported, feeding 5 test files, itself untested | B | verified-at-tree |
+| 7 | `untested-instrument` | — | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree |
 
-**Row 7 arrived as a self-report claiming 415 lines, 19 functions and 7 dependents; read at the
-integrated tree it is 240, 13-of-which-3-exported, and 5.** The class was right and every magnitude was
-inflated. **An entry in the unbacked register whose own numbers were unbacked, on the register's first
-day** — which is the three-step shape this file exists to make visible, occurring inside it.
+**Row 7 carries no magnitudes, deliberately.** It first read *415 lines, 19 functions, 7 dependents*;
+a reader at the integrated tree reported *240, 13-of-which-3-exported, 5* as a correction; and the
+author then measured every commit that touched the file and found **both sets exactly right — the
+second at their first commit, the first at their HEAD three commits later.** Neither had mis-measured.
+**Nobody could disagree, because the row carried no tree identity for them to disagree about.**
+
+Two things came out of that, and both outlive the row. **The magnitudes were never the entry** — the
+finding is that a helper several test files depend on is itself unchecked, so a fault in it is agreed
+with rather than caught, and that stays true at every commit while the counts go stale on the next
+touch. **And the correction arrived looking like an improvement because it was more precise** —
+*13 of which 3 exported* reads as better work than a flat *19* — **from an older tree. Precision
+persuades independently of currency.** If a row ever needs a magnitude, stamp it with the commit
+subject it was read at.
+
+**What the second reading did add, and it is worth more than either count: it reached the file from an
+applied tree**, which is independent confirmation the author's clone-local claim could not supply.
 
 ## Process lapses — a separate population, deliberately not in the count above
 
