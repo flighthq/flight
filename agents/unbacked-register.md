@@ -28,22 +28,38 @@ role that observes what does and does not run at the boundary. This file exists 
 **a record about the merged tree that cannot be found from the repo is not much of a record**, and
 because it must outlive any one sandbox.
 
-**The table below was transcribed by foreman from integration's report, not copied from their file.**
-That is a second-hand rendering of a first-hand record and may differ from it; integration's copy is
-authoritative and any disagreement resolves in their favour.
+**Each row carries its own provenance.** `verified-at-tree` means someone read the artifact at the
+integrated tree; `as-reported` means the row is the sender's self-report and nothing has looked at it.
+**The register's own contents are claims too, and they inherit every weakness the register documents** —
+without the marker the table flattens checked and unchecked into one confident-looking grid, which is
+the same flat-aggregate defect the scoreboard was designed to avoid.
 
 ## Entries
 
-| # | Class | Commit (integration's post-apply hash) | Claim | Cause |
-|---|---|---|---|---|
-| 1 | `capture-baseline` | — | builder4: swf-import baseline recapture landed on capture evidence alone (DOM/canvas/WebGL/WebGPU 0 changed, 0 failed; regression 0.00) | A |
-| 2 | `mutation-test` | `56a794304` | builder4: removing DOM Bitmap registration changed the Sprite | B |
-| 3 | `live-acceptance` | `14f9e73de` | builder: byte-exact and hash-exact against the pinned 0.1.0 release | A |
-| 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B |
-| 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A |
-| 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A |
-| 7 | `untested-instrument` | — | builder: `packages/font-formats/src/openTypeTestHelper.ts`, 415 lines and 19 functions feeding seven test files, itself untested | B |
-| 8 | `unread-parcel` | — | foreman: marked a builder2 parcel processed without reading it; contents no longer retrievable | B |
+| # | Class | Commit (integration's post-apply hash) | Claim | Cause | Provenance |
+|---|---|---|---|---|---|
+| 1 | `capture-baseline` | `28b7d7f03` | builder4: swf-import baseline recapture landed on capture evidence alone (DOM/canvas/WebGL/WebGPU 0 changed, 0 failed; regression 0.00) | A | as-reported |
+| 2 | `mutation-test` | `56a794304` | builder4: removing DOM Bitmap registration changed the Sprite | B | as-reported |
+| 3 | `live-acceptance` | `14f9e73de` | builder: byte-exact and hash-exact against the pinned 0.1.0 release | A | as-reported |
+| 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B | as-reported |
+| 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
+| 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
+| 7 | `untested-instrument` | — | builder: `packages/font-formats/src/openTypeTestHelper.ts` — 240 lines, 13 functions of which 3 exported, feeding 5 test files, itself untested | B | verified-at-tree |
+
+**Row 7 arrived as a self-report claiming 415 lines, 19 functions and 7 dependents; read at the
+integrated tree it is 240, 13-of-which-3-exported, and 5.** The class was right and every magnitude was
+inflated. **An entry in the unbacked register whose own numbers were unbacked, on the register's first
+day** — which is the three-step shape this file exists to make visible, occurring inside it.
+
+## Process lapses — a separate population, deliberately not in the count above
+
+These are not unverified claims about merged content: nothing in the tree is unbacked because of them
+and the remedy is not to run something. **They are kept apart so "how many merged claims are unbacked"
+keeps having an answer.**
+
+| # | Class | Who | Lapse |
+|---|---|---|---|
+| P1 | `unread-parcel` | foreman | Marked a builder2 parcel processed without reading it; contents no longer retrievable |
 
 **Entry 1 stays registered rather than reverted.** A marked unbacked claim is a known state; an
 unmarked one is what this file exists to prevent.

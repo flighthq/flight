@@ -161,7 +161,13 @@ verdict; see the note at the top.
   defensive guard, and it survived three readings — the audit, the write-up, and the relay — because at
   no point did anyone try to make it happen.** Every match was counted without asking whether it could
   fire. ⇒ **Building the report for a suspected defect is the strongest test of whether it is one, and
-  deferring that is not caution: an unexercised finding is a claim nothing has contradicted yet.**
+  deferring that is not caution: an unexercised finding is a claim nothing has contradicted yet.** The
+  cut runs both ways — the same sweep that over-counted one guard as a loss would also miss a loss
+  whose syntax it does not match.
+- **Do not renumber a denominator because investigation shrank it.** When effort both grows the
+  numerator and shrinks the denominator, the ratio improves from effort alone regardless of what the
+  effort found — **and it arrives dressed as rigour.** Report the counts instead: candidates,
+  demonstrated-not, still unfalsified, and done. The question dissolves rather than being answered.
 - **A rationale more vivid than its conclusion needs is worth reading first.** A CFF reader's stated
   reason for refusing CID-keyed fonts was that they would fail *silently, for every glyph*; measured,
   they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
