@@ -77,6 +77,27 @@ of, and the question that was actually asked.
   state in the delivered base right now: removed rather than superseded, **and the gate will never
   report it again.**
 
+- **filed — an eighth, found after the law was written, which is the first evidence it generalises.**
+  A detector's resolution signal was "does `reportImportDiagnostic` appear", carried to a codebase
+  that **consumes** diagnostics rather than emitting them and whose idiom is `problems.push`. It
+  printed **5 of 5 sentinels report nothing.** **True answer to:** does the emitting call appear here?
+  **Wrong answer to:** are these resolved? ⇒ **Carrying a detector to new material changes what its
+  signals MEAN, not only what it can see** — a distinct axis from reach, and the author refused to
+  report the number as a finding rather than hand a peer an alarming figure that meant nothing.
+
+- **filed — Two instruments by one author can disagree on the same heuristic, invisibly.** A
+  swallowed-catch form reported seven candidates; four were `catch` blocks that **record via
+  assignment** — `catch { threw = true }` — which is the outcome being captured. **One of the
+  author's sweeps already treated assignment as recording and the other did not.** Fixed the detector
+  rather than reporting the raw count: **seven became three, a 57% false-positive rate on that form.**
+  ⇒ **A suite of instruments has cross-instrument consistency as a property nobody checks**, and it
+  surfaces only when one of them is carried somewhere new.
+
+- **filed — Do not move a sweep's default scope to point it somewhere new.** An override plus a copy
+  outside the repo kept every previously reported figure reproducible; **a sweep whose default scope
+  moves silently makes every number it has ever reported unverifiable**, and the old numbers do not
+  announce that they have become unreproducible.
+
 ## Serving: preservation ordering
 
 - **filed — Inspect before `drop_caches`; capture before restore.** The mechanical form of the rule,
