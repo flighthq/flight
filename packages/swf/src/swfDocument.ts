@@ -2141,7 +2141,17 @@ function readSwfBoundedDefinition(body: SwfReader, state: SwfParseState, code: n
     const reader = new SwfReader(body.source, body.pos, body.end);
     const bounds = state.characterBounds.get(characterId);
     const factory = readSwfEditTextFactory(reader, bounds?.width ?? 0, bounds?.height ?? 0);
-    if (factory !== null) state.editTexts.set(characterId, factory);
+    if (factory === null) {
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.edit-text-unparseable',
+        'readSwfBoundedDefinition',
+        { capability: 'swf.text.define-edit-text', characterId },
+      );
+    } else {
+      state.editTexts.set(characterId, factory);
+    }
   }
   if (code === TAG_DEFINE_TEXT || code === TAG_DEFINE_TEXT_2) {
     const reader = new SwfReader(body.source, body.pos, body.end);
