@@ -5,6 +5,7 @@ import {
 } from '@flighthq/compression/contract';
 import { createGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
+import { clearImageDecoders } from '@flighthq/image-codec/contract';
 import {
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
@@ -26,6 +27,7 @@ import {
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
+  loadScene2DImageResources,
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -67,10 +69,17 @@ import {
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
 } from './swfDocument';
+import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
 
-beforeEach(() => unregisterDecompressor(Compression.Deflate));
-afterEach(() => unregisterDecompressor(Compression.Deflate));
+beforeEach(() => {
+  clearImageDecoders();
+  unregisterDecompressor(Compression.Deflate);
+});
+afterEach(() => {
+  clearImageDecoders();
+  unregisterDecompressor(Compression.Deflate);
+});
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {
@@ -1193,8 +1202,7 @@ describe('createScene2DFromSwf', () => {
     expect(drawn.data.commands.filter((token) => token === 'lineTo')).toHaveLength(2);
   });
 
-  it('resolves a lossless bitmap fill to pixels at import, with no image resource left to load', () => {
-    registerDeflateDecompressor();
+  it('emits a lossless bitmap reference synchronously and resolves it only in the async resource pass', async () => {
     const art = new ShapeWriter();
     art.writeFillStyleCount(1);
     art.writeBitmapFillStyle(0x41, 9, 20);
@@ -1216,18 +1224,27 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_END),
       ]),
     );
-    unregisterDecompressor(Compression.Deflate);
-
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
-    // A lossless payload is not an image file, so it resolves here rather than through @flighthq/image —
-    // which is why it leaves nothing on the document's image-resource contract.
     const texture = drawn.data.commands[2] as Texture2D;
+    const reference = document!.imageResources[0];
+    expect(document!.imageResources).toHaveLength(1);
+    expect(reference.mimeType).toBe('image/x-swf-lossless');
+    expect(reference.kind === ImageResourceReferenceKind.Embedded && reference.alphaType).toBe('opaque');
+    expect(reference.textures).toEqual([texture]);
+    expect(getTextureSource(texture)).toBeNull();
+
+    // Registration is caller-owned and happens after parsing; neither parsing nor reference creation
+    // secretly installs a decoder or starts async work.
+    registerDeflateDecompressor();
+    registerSwfImageDecoders();
+    const resources = await loadScene2DImageResources(document!);
+
+    expect(resources.resolved).toEqual([reference]);
     expectLosslessTexturePixel(texture);
-    expect(document!.imageResources).toEqual([]);
   });
 
-  it('leaves a lossless bitmap sourceless when no decompressor is registered', () => {
+  it('parses lossless bitmap reference data without requiring a registered decompressor', () => {
     const art = new ShapeWriter();
     art.writeFillStyleCount(1);
     art.writeBitmapFillStyle(0x41, 9, 20);
@@ -1253,6 +1270,44 @@ describe('createScene2DFromSwf', () => {
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
     expect(getTextureSource(drawn.data.commands[2] as Texture2D)).toBeNull();
+    expect(document!.imageResources).toHaveLength(1);
+    expect(document!.imageResources[0].state).toBe(ResourceResolutionState.Unresolved);
+  });
+
+  it('carries premultiplied lossless-alpha bytes through the reference into the resolved Bitmap', async () => {
+    const art = new ShapeWriter();
+    art.writeFillStyleCount(1);
+    art.writeBitmapFillStyle(0x41, 9, 20);
+    art.writeLineStyleCount(0);
+    art.writeStyleBits(1, 0);
+    art.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    art.writeStraightEdge(800, 0);
+    art.writeStraightEdge(0, 800);
+    art.writeEndShape();
+    const pixels = losslessPayload(5, 1, 1, storedDeflate([0x80, 0x40, 0x20, 0x10]));
+    const document = createScene2DFromSwf(
+      createSwf([
+        createTag(TAG_DEFINE_BITS_LOSSLESS_2, joinBytes(uint16(9), pixels)),
+        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    )!;
+    const reference = document.imageResources[0];
+    expect(reference.kind === ImageResourceReferenceKind.Embedded && reference.alphaType).toBe('premultiplied');
+
+    registerDeflateDecompressor();
+    registerSwfImageDecoders();
+    await loadScene2DImageResources(document);
+
+    const drawn = getNodeChildren(document.root)[0] as Shape;
+    const source = getTextureSource(drawn.data.commands[2] as Texture2D);
+    expect(source?.kind).toBe(BitmapTextureSourceKind);
+    if (source?.kind !== BitmapTextureSourceKind) throw new Error('expected a lossless bitmap source');
+    const bitmap = source as Bitmap;
+    expect(bitmap.alphaType).toBe('premultiplied');
+    expect([...bitmap.data]).toEqual([0x40, 0x20, 0x10, 0x80]);
   });
 
   it('samples one bitmap character through a texture per sampling variant', () => {
@@ -2719,8 +2774,7 @@ describe('createScene2DSymbolFromSwf', () => {
     expect(symbol.slots[0].target).toBe(getNodeChildren(symbol.root)[0]);
   });
 
-  it('resolves the pixels of a bitmap the symbol draws, the way a placed one does', () => {
-    registerDeflateDecompressor();
+  it('carries a lossless bitmap reference the symbol resource pass can resolve', async () => {
     const art = new ShapeWriter();
     art.writeFillStyleCount(1);
     art.writeBitmapFillStyle(0x41, 9, 20);
@@ -2744,11 +2798,17 @@ describe('createScene2DSymbolFromSwf', () => {
       ]),
       'Art',
     );
-    unregisterDecompressor(Compression.Deflate);
-
     const drawn = symbol!.root as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
-    expectLosslessTexturePixel(drawn.data.commands[2] as Texture2D);
+    const texture = drawn.data.commands[2] as Texture2D;
+    expect(getTextureSource(texture)).toBeNull();
+    expect(symbol!.imageResources).toHaveLength(1);
+
+    registerDeflateDecompressor();
+    registerSwfImageDecoders();
+    await loadScene2DImageResources(symbol!);
+
+    expectLosslessTexturePixel(texture);
   });
 
   it('hands an encoded bitmap out on the image-resource contract, naming the waiting texture', () => {

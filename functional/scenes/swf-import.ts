@@ -14,18 +14,26 @@ import {
   getBitmapPixelRgb,
   getMovieClipTotalFrames,
   getNodeChildren,
+  getTextureSource,
   gotoAndStopMovieClip,
+  loadScene2DImageResources,
   MovieClipKind,
   registerGlColorAdjustmentMaterialFeature,
   registerDeflateDecompressor,
+  registerSwfImageDecoders,
   registerWgpuColorAdjustmentMaterialFeature,
   ShapeKind,
+  SpriteKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
 const BACKGROUND = 0x0c1024ff;
+
+const ALPHA_BITMAP_SIZE = 80;
+const ALPHA_BITMAP_X = 40;
+const ALPHA_BITMAP_Y = 400;
 
 const SOLID_FRAME_1_X = 40;
 const SOLID_FRAME_2_X = 680;
@@ -47,6 +55,8 @@ const BITMAP_Y = 170;
 const BITMAP_WIDTH = 180;
 const BITMAP_HEIGHT = 120;
 const BITMAP_CELL = 8;
+const DIRECT_BITMAP_X = 40;
+const DIRECT_BITMAP_Y = 520;
 
 const LEGACY_TEXT_X = 140;
 const MODERN_TEXT_X = 360;
@@ -69,8 +79,29 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   assertGradient(at);
   assertStroke(at);
   assertBitmapFill(at);
+  assertDirectBitmap(at);
+  assertPremultipliedBitmap(at);
   assertEquivalentFontGrids(at);
   assertNestedColorTransform(at);
+}
+
+function assertDirectBitmap(at: PixelReader): void {
+  const pixel = at(DIRECT_BITMAP_X + BITMAP_CELL / 2, DIRECT_BITMAP_Y + BITMAP_CELL / 2);
+  if (!isOrange(pixel)) {
+    throw new Error(`[swf-import] directly placed lossless bitmap Sprite did not draw — got #${hex(pixel)}`);
+  }
+}
+
+function assertPremultipliedBitmap(at: PixelReader): void {
+  const pixel = at(ALPHA_BITMAP_X + ALPHA_BITMAP_SIZE / 2, ALPHA_BITMAP_Y + ALPHA_BITMAP_SIZE / 2);
+  const red = channel(pixel, 16);
+  const green = channel(pixel, 8);
+  const blue = channel(pixel, 0);
+  // The source is half-transparent #ff8000 stored by SWF as premultiplied #804000. Correct upload over
+  // the navy background lands near #864812; multiplying those rgb bytes again lands near #462812.
+  if (red < 120 || red > 150 || green < 60 || green > 90 || blue > 35) {
+    throw new Error(`[swf-import] premultiplied lossless-alpha bitmap was multiplied again — got #${hex(pixel)}`);
+  }
 }
 
 function assertBitmapFill(at: PixelReader): void {
@@ -180,14 +211,28 @@ function createBitmapShape(): Uint8Array {
   return defineShape(BITMAP_SHAPE_ID, BITMAP_WIDTH, BITMAP_HEIGHT, writer.toBytes());
 }
 
+function createAlphaBitmapShape(): Uint8Array {
+  const writer = new ShapeWriter();
+  writer.writeFillStyleCount(1);
+  writer.writeBitmapFillStyle(0x42, ALPHA_BITMAP_CHARACTER_ID, TWIPS_PER_PIXEL);
+  writer.writeLineStyleCount(0);
+  writer.writeStyleBits(1, 0);
+  writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+  writer.writeRectangle(ALPHA_BITMAP_SIZE * TWIPS_PER_PIXEL, ALPHA_BITMAP_SIZE * TWIPS_PER_PIXEL);
+  writer.writeEndShape();
+  return defineShape(ALPHA_BITMAP_SHAPE_ID, ALPHA_BITMAP_SIZE, ALPHA_BITMAP_SIZE, writer.toBytes());
+}
+
 function createFunctionalSwf(): Uint8Array {
   const tags = [
     createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x0c, 0x10, 0x24])),
     createLosslessBitmap(),
+    createAlphaLosslessBitmap(),
     createSolidShape(),
     createGradientShape(),
     createStrokeShape(),
     createBitmapShape(),
+    createAlphaBitmapShape(),
     createLegacyFont(),
     createModernFont(),
     createStaticText(LEGACY_TEXT_ID, LEGACY_FONT_ID, 0xf72585),
@@ -202,6 +247,8 @@ function createFunctionalSwf(): Uint8Array {
     place(LEGACY_TEXT_ID, 5, LEGACY_TEXT_X, TEXT_Y),
     place(MODERN_TEXT_ID, 6, MODERN_TEXT_X, TEXT_Y),
     placeWithColorTransform(TINTED_SPRITE_ID, 7, TINTED_SPRITE_X, TINTED_SPRITE_Y),
+    place(ALPHA_BITMAP_SHAPE_ID, 8, ALPHA_BITMAP_X, ALPHA_BITMAP_Y),
+    place(BITMAP_CHARACTER_ID, 9, DIRECT_BITMAP_X, DIRECT_BITMAP_Y),
     createTag(TAG_SHOW_FRAME),
     move(1, SOLID_FRAME_2_X, SOLID_Y),
     createTag(TAG_SHOW_FRAME),
@@ -214,6 +261,12 @@ function createFunctionalSwf(): Uint8Array {
     ...tags,
   );
   return joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(SWF_PREFIX_LENGTH + body.length), body);
+}
+
+function createAlphaLosslessBitmap(): Uint8Array {
+  // SWF lossless-alpha stores A,R,G,B with rgb already multiplied by alpha: half-transparent #ff8000.
+  const payload = new Uint8Array([5, 1, 0, 1, 0, ...storedDeflate([0x80, 0x80, 0x40, 0])]);
+  return createTag(TAG_DEFINE_BITS_LOSSLESS_2, joinBytes(uint16(ALPHA_BITMAP_CHARACTER_ID), payload));
 }
 
 function createGradientShape(): Uint8Array {
@@ -720,6 +773,8 @@ interface PixelBounds {
   minY: number;
 }
 
+const ALPHA_BITMAP_CHARACTER_ID = 17;
+const ALPHA_BITMAP_SHAPE_ID = 18;
 const BITMAP_CHARACTER_ID = 9;
 const BITMAP_SHAPE_ID = 4;
 const BITMAP_SOURCE_SIZE = BITMAP_CELL * 2;
@@ -740,6 +795,7 @@ const SOLID_SHAPE_ID = 1;
 const STROKE_SHAPE_ID = 3;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
+const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_SHAPE = 2;
@@ -755,10 +811,24 @@ const TINTED_CHILD_SHAPE_ID = 15;
 const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
-registerDeflateDecompressor();
 const document = createScene2DFromSwf(createFunctionalSwf());
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-import] synthetic SWF did not import as a MovieClip document');
+}
+
+registerDeflateDecompressor();
+registerSwfImageDecoders();
+const imageResources = await loadScene2DImageResources(document);
+if (imageResources.unresolved.length !== 0) {
+  throw new Error(`[swf-import] ${imageResources.unresolved.length} embedded bitmap resource(s) did not resolve`);
+}
+const premultipliedReference = document.imageResources.find(
+  (reference) => reference.kind === 'Embedded' && reference.alphaType === 'premultiplied',
+);
+const premultipliedTexture = premultipliedReference?.textures?.[0];
+const premultipliedSource = premultipliedTexture === undefined ? null : getTextureSource(premultipliedTexture);
+if (premultipliedSource?.alphaType !== 'premultiplied') {
+  throw new Error('[swf-import] lossless-alpha metadata did not reach the renderer-facing TextureSource');
 }
 
 const root = document.root as MovieClip;
@@ -771,7 +841,7 @@ const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: document.backgroundColor ?? BACKGROUND,
-  kinds: [ShapeKind],
+  kinds: [ShapeKind, SpriteKind],
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
