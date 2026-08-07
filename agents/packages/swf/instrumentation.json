@@ -204,6 +204,19 @@
         "scope"
       ],
       "fires": [
+        "reports a static text body that does not compose, which the deferred pass would otherwise swallow"
+      ],
+      "id": "swf.text.define-text",
+      "staysSilent": [
+        "stays silent about a static text body that composes, so the drop entry carries information"
+      ]
+    },
+    {
+      "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
         "reports scene names as a Skip, since labels import and the named range has no subject"
       ],
       "id": "swf.timeline.define-scene-and-frame-label-data",
@@ -238,8 +251,8 @@
       ]
     }
   ],
-  "fireProven": 18,
-  "payloadAudited": 18,
-  "scopeAudited": 17,
-  "silenceProven": 18
+  "fireProven": 19,
+  "payloadAudited": 19,
+  "scopeAudited": 18,
+  "silenceProven": 19
 }

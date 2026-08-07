@@ -1663,7 +1663,23 @@ function appendSwfPendingTextShapes(reader: SwfReader, state: SwfParseState): vo
       pending.version,
       state.fontOutlineSources,
     );
-    if (shape !== null) state.shapes.set(pending.characterId, shape);
+    if (shape === null) {
+      // Composition is deferred because the records address glyphs by index into a font that may not
+      // have been read yet, so the failure lands here rather than at the tag. Without a report the
+      // character is simply absent and every placement of it resolves to nothing.
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.text-shape-uncomposable',
+        'appendSwfPendingTextShapes',
+        {
+          capability: pending.version === 2 ? 'swf.text.define-text-2' : 'swf.text.define-text',
+          characterId: pending.characterId,
+        },
+      );
+      continue;
+    }
+    state.shapes.set(pending.characterId, shape);
   }
 }
 
