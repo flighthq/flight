@@ -124,6 +124,7 @@ what this entry exists to prevent.**
 | 3 | A correction of fact, carrying one builder's task approval, copied to five | Another agent began reconciling a task that was never theirs against their own assignment, then blocked pending a priority answer | the wrong recipient, plus their idle time |
 | 4 | An evidence summary addressed to one builder, sent upward | Four paragraphs read before the reader established it was not about them | the reader |
 | 5 | A merge-strategy warning about one agent's instrument, copied to two more | **One line each: `NOT MINE`** | the readers, once each, cheaply |
+| 6 | A parcel addressed to one builder in the second person, copied upward | **A full read** before the reader established it was not theirs | the reader, at full cost |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
@@ -145,11 +146,19 @@ sender because they get a reply** — which is the half every sender-side remedy
 it **asks nothing of the sender's memory**, which is what the three failed remedies all depended on.
 ⇒ **The party who can see it acts.** Same move as every other correction that worked in this arc.
 
-**Measured on its first live test, within the hour: instance 5 recurred and cost two one-line
-replies.** ⇒ **The lapse rate did not drop and the cost per instance did** — four paragraphs and a
-blocked agent became `NOT MINE` twice, **which is what a detection remedy is supposed to do and what
-the three prevention remedies never achieved.** **The recurrence is still the sender's; the protocol
-does not fix that and was not meant to.** Recorded as one data point, not a trend.
+**Two data points, and they disagree.** Instance 5 cost two one-line replies — the protocol working.
+**Instance 6 cost a full read**, by a reader who had ruled the protocol into being three hours
+earlier and reported the lapse against themselves.
+
+⇒ **The saving is conditional on a behaviour the protocol cannot enforce: stopping at the first
+sign.** **A `NOT MINE` that arrives after the reader has finished the parcel has already paid the cost
+it exists to avoid.** And the pull is strongest on the most careful readers, **because reading on to
+be sure is what care looks like** — so the protocol is likeliest to decay exactly where it is most
+relied on.
+
+**The lapse rate has not dropped across six instances.** Detection is cheaper than prevention was and
+**is not free**, and no third remedy is offered here: **this is the measurement, recorded because the
+prediction that it might decay was made before it did.**
 
 **P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
 read — and recording it changed nothing, because **a register is a caution: it names a lapse and
