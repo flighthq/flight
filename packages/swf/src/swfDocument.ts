@@ -4,6 +4,7 @@ import { createClipRegionFromContours, createClipRegionFromPath } from '@flighth
 import { getDecompressor } from '@flighthq/compression/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addMovieClipFrameScript, createMovieClip, setMovieClipSource } from '@flighthq/movieclip/contract';
 import {
   addNodeChild,
@@ -41,6 +42,7 @@ import type {
   FrameScript,
   GlyphOutlineSource,
   ImageResourceReference,
+  ImportDiagnostic,
   MorphShape,
   MovieClip,
   MovieClipData,
@@ -73,6 +75,7 @@ import {
   AdvancedBlendMode,
   BlendMode,
   Compression,
+  ImportDiagnosticSeverity,
   MorphShapeKind,
   TimelineAudioCueKind,
   TimelineStreamAudioCueKind,
@@ -90,16 +93,19 @@ import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
 // is the SWF character id used by DefineText and DefineEditText. This is a separate parse entry from
 // Scene2D construction so callers that only need embedded fonts do not have to retain a document.
-export function createGlyphOutlineSourcesFromSwf(source: Uint8Array): ReadonlyMap<number, GlyphOutlineSource> | null {
-  const file = readSwfFile(source);
+export function createGlyphOutlineSourcesFromSwf(
+  source: Uint8Array,
+  diagnostics?: ImportDiagnostic[],
+): ReadonlyMap<number, GlyphOutlineSource> | null {
+  const file = readSwfFile(source, diagnostics);
   return file === null ? null : new Map(file.parsed.fontOutlineSources);
 }
 
 // The document alone, for a caller that wants the graph and nothing else — the importer registry among
 // them. A file whose placements carry an advanced blend or a filter list still imports fully here; what
 // it loses is the report of them, which is what createScene2DImportFromSwf returns.
-export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null {
-  return createScene2DImportFromSwf(source)?.document ?? null;
+export function createScene2DFromSwf(source: Uint8Array, diagnostics?: ImportDiagnostic[]): Scene2DDocument | null {
+  return createScene2DImportFromSwf(source, diagnostics)?.document ?? null;
 }
 
 // The full import: the document, plus the placement appearance no node can carry. SWF puts a blend mode
@@ -107,8 +113,11 @@ export function createScene2DFromSwf(source: Uint8Array): Scene2DDocument | null
 // advanced blend needs a BlendEffect and an effect is a descriptor a caller runs explicitly, since
 // `displayObject.filters` is an anti-goal. Both therefore travel beside the document instead of being
 // dropped at the seam or silently flattened onto a node.
-export function createScene2DImportFromSwf(source: Uint8Array): SwfDocumentImport | null {
-  const file = readSwfFile(source);
+export function createScene2DImportFromSwf(
+  source: Uint8Array,
+  diagnostics?: ImportDiagnostic[],
+): SwfDocumentImport | null {
+  const file = readSwfFile(source, diagnostics);
   if (file === null) return null;
   const { frameRate, parsed, stageBounds } = file;
 
@@ -116,12 +125,21 @@ export function createScene2DImportFromSwf(source: Uint8Array): SwfDocumentImpor
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
     appearances: [],
+    diagnostics,
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
   };
   const root = createSwfTimelineNode(parsed.timeline, stageBounds, parsed, slots, instantiation, 0);
-  if (root === null) return null;
+  if (root === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.timeline-instantiation-failed',
+      'createScene2DImportFromSwf',
+    );
+    return null;
+  }
 
   return {
     appearances: instantiation.appearances,
@@ -147,8 +165,12 @@ export function createScene2DImportFromSwf(source: Uint8Array): SwfDocumentImpor
 // Anything less would hand back artwork whose bitmaps could never be paired with their pixels, since
 // each call parses afresh and its Textures are its own. `backgroundColor` stays null: the stage colour
 // belongs to the stage, and a symbol instantiated into someone else's scene is not it.
-export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: string): Scene2DDocument | null {
-  const file = readSwfFile(source);
+export function createScene2DSymbolFromSwf(
+  source: Uint8Array,
+  linkageName: string,
+  diagnostics?: ImportDiagnostic[],
+): Scene2DDocument | null {
+  const file = readSwfFile(source, diagnostics);
   if (file === null) return null;
   const { frameRate, parsed } = file;
 
@@ -156,12 +178,26 @@ export function createScene2DSymbolFromSwf(source: Uint8Array, linkageName: stri
   for (const [id, name] of parsed.linkages) {
     if (name === linkageName) characterId = id;
   }
-  if (characterId < 0) return null;
+  // A linkage name nothing exports is the caller naming a symbol this file does not have — worth telling
+  // them apart from a file that failed to parse, since both come back null.
+  if (characterId < 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.unknown-linkage-name',
+      'createScene2DSymbolFromSwf',
+      {
+        linkageName,
+      },
+    );
+    return null;
+  }
 
   const slots: Scene2DSlotReference[] = [];
   const instantiation: SwfInstantiationState = {
     activeSymbols: new Set<number>(),
     appearances: [],
+    diagnostics,
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfRectangle | null>(),
@@ -362,6 +398,10 @@ interface SwfParseState {
   backgroundColor: number | null;
   characterBounds: Map<number, SwfRectangle>;
   definedCharacters: Set<number>;
+  // The caller's diagnostic sink, or undefined when nobody engaged a collector. Threading it on the
+  // parse state rather than through every reader's signature keeps the no-collector path free: the
+  // reporting seam is one undefined check and builds nothing.
+  diagnostics: ImportDiagnostic[] | undefined;
   fontCodePoints: Map<number, number[]>;
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
@@ -412,6 +452,8 @@ interface SwfInstantiationState {
   // Every placement appearance no node can carry, filled as the timelines instantiate. It rides here
   // rather than through each call because it is per-import state exactly as the rest of this is.
   appearances: SwfNodeAppearance[];
+  // The same sink the parse carried, so instantiation-time losses report through one channel.
+  diagnostics: ImportDiagnostic[] | undefined;
   frameRate: number | null;
   resolvedBounds: Map<number, SwfRectangle | null>;
   resolvingBounds: Set<number>;
@@ -429,8 +471,8 @@ interface SwfFile {
   stageBounds: SwfRectangle;
 }
 
-function readSwfFile(source: Uint8Array): SwfFile | null {
-  const uncompressed = uncompressSwfSource(source);
+function readSwfFile(source: Uint8Array, diagnostics?: ImportDiagnostic[]): SwfFile | null {
+  const uncompressed = uncompressSwfSource(source, diagnostics);
   if (uncompressed === null) return null;
 
   const header = new SwfReader(uncompressed, 0, uncompressed.length);
@@ -452,7 +494,7 @@ function readSwfFile(source: Uint8Array): SwfFile | null {
   body.readUint16();
   if (!body.valid) return null;
 
-  const parsed = readSwfTags(body);
+  const parsed = readSwfTags(body, diagnostics);
   return parsed === null ? null : { frameRate, parsed, stageBounds };
 }
 
@@ -462,29 +504,99 @@ function readSwfFile(source: Uint8Array): SwfFile | null {
 // to `FWS` — the declared length already counts uncompressed bytes, so it carries over untouched.
 // Compression the caller has not registered a decompressor for is reported as the document's null
 // sentinel, exactly like a malformed file: the bytes are unreadable either way.
-function uncompressSwfSource(source: Uint8Array): Uint8Array | null {
-  if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) return null;
+function uncompressSwfSource(source: Uint8Array, diagnostics: ImportDiagnostic[] | undefined): Uint8Array | null {
+  if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.invalid-signature',
+      'uncompressSwfSource',
+      {
+        length: source.length,
+      },
+    );
+    return null;
+  }
   const signature = source[0];
   if (signature === FWS_SIGNATURE) return source;
 
   const compression =
     signature === CWS_SIGNATURE ? Compression.Deflate : signature === ZWS_SIGNATURE ? Compression.Lzma : null;
-  if (compression === null) return null;
+  if (compression === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.unknown-container',
+      'uncompressSwfSource',
+      {
+        signature,
+      },
+    );
+    return null;
+  }
   const decompress = getDecompressor(compression);
-  if (decompress === null) return null;
+  // Distinct from a malformed body on purpose. Both return the same null sentinel, but a caller that
+  // never registered a decompressor has a file it could read after one registration, while a corrupt
+  // stream is unreadable however the caller is configured — and only the crumb can tell them apart.
+  if (decompress === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.no-decompressor-registered',
+      'uncompressSwfSource',
+      { compression },
+    );
+    return null;
+  }
 
   const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
   header.readUint32();
   const fileLength = header.readUint32();
-  if (fileLength < MIN_SWF_LENGTH) return null;
+  if (fileLength < MIN_SWF_LENGTH) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.declared-length-too-small',
+      'uncompressSwfSource',
+      {
+        fileLength,
+      },
+    );
+    return null;
+  }
 
   // LZMA puts a compressed length and the 5 property bytes between the header and its stream; zlib starts
   // its stream immediately. Either way the decompressor receives the stream itself.
   const bodyLength = fileLength - SWF_PREFIX_LENGTH;
   const streamStart = compression === Compression.Lzma ? SWF_LZMA_PREFIX_LENGTH : SWF_PREFIX_LENGTH;
-  if (streamStart > source.length) return null;
+  if (streamStart > source.length) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.truncated-container',
+      'uncompressSwfSource',
+      {
+        length: source.length,
+        streamStart,
+      },
+    );
+    return null;
+  }
   const body = decompress(source.subarray(streamStart), bodyLength);
-  if (body === null || body.length < bodyLength) return null;
+  if (body === null || body.length < bodyLength) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.decompression-failed',
+      'uncompressSwfSource',
+      {
+        compression,
+        expected: bodyLength,
+        received: body === null ? -1 : body.length,
+      },
+    );
+    return null;
+  }
 
   const uncompressed = new Uint8Array(SWF_PREFIX_LENGTH + bodyLength);
   uncompressed.set(source.subarray(0, SWF_PREFIX_LENGTH));
@@ -1400,10 +1512,11 @@ function readSwfRectangle(reader: SwfReader): SwfRectangle | null {
   };
 }
 
-function readSwfTags(reader: SwfReader): SwfTagResult | null {
+function readSwfTags(reader: SwfReader, diagnostics: ImportDiagnostic[] | undefined): SwfTagResult | null {
   const state: SwfParseState = {
     abcBlobs: [],
     backgroundColor: null,
+    diagnostics,
     pendingInitActions: [],
     editTexts: new Map<number, (resolveFontName: (fontId: number) => string) => RichText>(),
     fontNames: new Map<number, string>(),

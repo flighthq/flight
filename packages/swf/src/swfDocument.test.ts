@@ -6,6 +6,7 @@ import {
 import { createGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import { clearImageDecoders } from '@flighthq/image-codec/contract';
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
@@ -52,6 +53,7 @@ import {
   Compression,
   DisplayObjectKind,
   ImageResourceReferenceKind,
+  ImportDiagnosticSeverity,
   MorphShapeKind,
   MovieClipKind,
   ResourceResolutionState,
@@ -2491,6 +2493,60 @@ describe('createScene2DFromSwf', () => {
     tags.push(createTag(TAG_END));
 
     expect(createScene2DFromSwf(createSwf(tags))).toBeNull();
+  });
+});
+
+describe('createScene2DFromSwf import diagnostics', () => {
+  it('reports an unreadable container as a Reject naming which check refused it', () => {
+    const notSwf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(notSwf, sink)).toBeNull();
+    });
+
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.invalid-signature']);
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(diagnostics[0].origin).toBe('uncompressSwfSource');
+  });
+
+  it('separates an unregistered decompressor from a corrupt body, which share one null sentinel', () => {
+    const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
+    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
+    compressed[0] = 0x43;
+
+    // Nothing registered: the file is readable after one registration, which is not the same failure as
+    // a corrupt stream even though both come back null.
+    const unregistered = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(compressed, sink)).toBeNull();
+    });
+    expect(unregistered.map((entry) => entry.kind)).toEqual(['swf.no-decompressor-registered']);
+
+    registerDecompressor(Compression.Deflate, () => null);
+    try {
+      const failed = collectImportDiagnostics((sink) => {
+        expect(createScene2DFromSwf(compressed, sink)).toBeNull();
+      });
+      expect(failed.map((entry) => entry.kind)).toEqual(['swf.decompression-failed']);
+    } finally {
+      unregisterDecompressor(Compression.Deflate);
+    }
+  });
+
+  it('records nothing at all when the caller engages no collector', () => {
+    const notSwf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+    // The whole seam is opt-in: the ordinary call must not build a crumb, so this asserts the shape of
+    // the default path rather than any particular diagnostic.
+    expect(createScene2DFromSwf(notSwf)).toBeNull();
+    expect(collectImportDiagnostics(() => {})).toEqual([]);
+  });
+
+  it('names the symbol a caller asked for that the file does not export', () => {
+    const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DSymbolFromSwf(file, 'absent', sink)).toBeNull();
+    });
+
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.unknown-linkage-name']);
+    expect(diagnostics[0].detail).toEqual({ linkageName: 'absent' });
   });
 });
 
