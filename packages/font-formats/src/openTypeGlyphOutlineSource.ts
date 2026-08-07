@@ -1,5 +1,6 @@
 import { detectFontFormat } from '@flighthq/font/contract';
 import type {
+  CffTable,
   GlyphOutlineMetrics,
   GlyphOutlineSource,
   OpenTypeFontExplanation,
@@ -7,6 +8,8 @@ import type {
   SfntTableDirectory,
 } from '@flighthq/types/contract';
 
+import { runCffCharstring } from './cffCharstring';
+import { readCffTable } from './cffTable';
 import { readOpenTypeCodepointMap } from './openTypeCmap';
 import { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf';
 import {
@@ -43,14 +46,19 @@ export function createGlyphOutlineSourceFromOpenTypeFont(bytes: Readonly<Uint8Ar
   const parsed = readOpenTypeFontTables(bytes);
   if (parsed === null) return null;
 
-  const { advances, codepoints, directory, glyphCount, metrics, ranges } = parsed;
+  const { advances, cff, codepoints, directory, glyphCount, metrics, ranges } = parsed;
 
   // A bound method object rather than a plain record, because the source owns tables the methods close
   // over. The scratch-free contract is the caller's: `getGlyphOutline` writes into their `out`.
   return {
     getGlyphOutline(out: Path, glyphIndex: number): boolean {
       if (glyphIndex < 0 || glyphIndex >= glyphCount) return false;
-      return readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
+      if (cff !== null) {
+        const charstring = cff.charstrings[glyphIndex];
+        if (charstring === undefined) return false;
+        return runCffCharstring(out, bytes, charstring, cff.localSubrs, cff.globalSubrs);
+      }
+      return ranges === null ? false : readOpenTypeGlyphOutline(out, bytes, directory, ranges, glyphIndex);
     },
     getGlyphOutlineAdvance(glyphIndex: number): number {
       return glyphIndex < 0 || glyphIndex >= glyphCount ? 0 : advances[glyphIndex]!;
@@ -96,15 +104,17 @@ export function explainOpenTypeFont(bytes: Readonly<Uint8Array>): OpenTypeFontEx
       return { ...counted, accepted: false, reason: 'missing-required-table', table: tag };
   }
 
-  // Checked BEFORE `glyf` is reported missing: a CFF font is not a damaged TrueType font, and saying so
-  // is the difference between "find a different producer" and "re-download this file".
+  // `glyf` and `CFF ` are the two outline flavors, and both are read now. `CFF2` is not: it is a
+  // different charstring dialect with variation support, so it keeps the stated-absence treatment that
+  // `CFF ` had until this landed — a caller holding one needs a different producer, not a repaired file.
   if (!directory.tables.has('glyf')) {
-    for (const tag of ['CFF ', 'CFF2']) {
-      if (directory.tables.has(tag)) return { ...counted, accepted: false, reason: 'unsupported-outlines', table: tag };
+    if (directory.tables.has('CFF2') && !directory.tables.has('CFF ')) {
+      return { ...counted, accepted: false, reason: 'unsupported-outlines', table: 'CFF2' };
     }
-    return { ...counted, accepted: false, reason: 'missing-required-table', table: 'glyf' };
-  }
-  if (!directory.tables.has('loca')) {
+    if (!directory.tables.has('CFF ')) {
+      return { ...counted, accepted: false, reason: 'missing-required-table', table: 'glyf' };
+    }
+  } else if (!directory.tables.has('loca')) {
     return { ...counted, accepted: false, reason: 'missing-required-table', table: 'loca' };
   }
 
@@ -116,11 +126,15 @@ export function explainOpenTypeFont(bytes: Readonly<Uint8Array>): OpenTypeFontEx
 
 interface OpenTypeFontTables {
   advances: Int32Array;
+  // Exactly one of `cff` and `ranges` is populated: they are the two outline flavors an sfnt can carry,
+  // and a font declares which by the table it ships. Keeping them as separate fields rather than one
+  // union means `getGlyphOutline` dispatches on which is present rather than re-sniffing the container.
+  cff: CffTable | null;
   codepoints: ReadonlyMap<number, number>;
   directory: SfntTableDirectory;
   glyphCount: number;
   metrics: Readonly<GlyphOutlineMetrics>;
-  ranges: Uint32Array;
+  ranges: Uint32Array | null;
 }
 
 // The single parse both entry points run, so the producer and the explanation can never disagree about
@@ -131,19 +145,27 @@ function readOpenTypeFontTables(bytes: Readonly<Uint8Array>): OpenTypeFontTables
   if (format !== 'truetype' && format !== 'opentype') return null;
 
   const directory = readSfntTableDirectory(bytes);
-  if (directory === null || !directory.tables.has('glyf')) return null;
+  if (directory === null) return null;
 
   const glyphCount = readOpenTypeGlyphCount(bytes, directory);
   if (glyphCount <= 0) return null;
 
-  const locaFormat = readOpenTypeLocaFormat(bytes, directory);
-  if (locaFormat === -1) return null;
-
   const metrics = readOpenTypeMetrics(bytes, directory);
   const advances = readOpenTypeAdvances(bytes, directory, glyphCount);
   const codepoints = readOpenTypeCodepointMap(bytes, directory);
-  const ranges = readOpenTypeGlyphRanges(bytes, directory, glyphCount, locaFormat);
-  if (metrics === null || advances === null || codepoints === null || ranges === null) return null;
+  if (metrics === null || advances === null || codepoints === null) return null;
 
-  return { advances, codepoints, directory, glyphCount, metrics, ranges };
+  // The flavor-independent tables are read first because they are needed either way; only the outline
+  // source differs. `glyf` is preferred when both are somehow present, since a font shipping both is
+  // malformed and the quadratic path is the one with the longer history here.
+  const shared = { advances, codepoints, directory, glyphCount, metrics };
+  if (directory.tables.has('glyf')) {
+    const locaFormat = readOpenTypeLocaFormat(bytes, directory);
+    if (locaFormat === -1) return null;
+    const ranges = readOpenTypeGlyphRanges(bytes, directory, glyphCount, locaFormat);
+    return ranges === null ? null : { ...shared, cff: null, ranges };
+  }
+
+  const cff = readCffTable(bytes, directory);
+  return cff === null ? null : { ...shared, cff, ranges: null };
 }

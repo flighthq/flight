@@ -214,7 +214,7 @@ describe('verifyFixtureExtraction', () => {
       'NOTICE.md': 'n',
       'README.md': 'r',
       'manifest.json': '{}',
-      'LICENSES/MIT-ish.txt': 'x',
+      'LICENSES/terms-a.txt': 'x',
       'avm1/a.swf': 'a',
       'avm1/b.swf': 'b',
     });
