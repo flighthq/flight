@@ -138,63 +138,58 @@ stops an artifact claiming more than it has.
 
 ## Search instructions — where to look next
 
-*Arc-local, 6 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
-Each of these directed a search that found something the same day it was written. None of them is a
-verdict; see the note at the top.
+Each of these directed a search that found something the same day it was written. None is a verdict;
+see the note at the top.
+
+### A surface property that correlates with care gets read as the care itself
+
+One law, and the four forms below are it applied to different surfaces. **Each property is a reason to
+look, never a reason to believe** — and a reader holding four tells finds no match when the fifth form
+arrives, where a reader holding the law derives it.
+
+- **Vividness.** A CFF reader's stated reason for refusing CID-keyed fonts was that they fail
+  *silently, for every glyph*; measured, they fail loudly. The true reason — the outcome is
+  unpredictable per font — was the stronger argument for the same refusal. **A rationale more vivid
+  than its conclusion needs is doing rhetorical work.**
+- **Precision.** A correction reading *13 functions of which 3 exported* displaced an original *19* and
+  was accepted instantly by two readers; both proved exactly right, at different commits, **the sharper
+  one from the older tree.** Nothing about a number's form tells you when it was taken.
+- **Deliberation.** A guard shows someone anticipated a failure, a comment that they considered it, a
+  three-of-four convention that a rule exists — **and none of them gives a caller anything to
+  enumerate.** A comment above a silent decline answers *was this considered* while leaving *is this
+  reported* untouched, so it suppresses the search while looking like diligence.
+- **Mechanicalness.** A rule a script can evaluate looks settled: **a stated rule shows someone
+  decided, not that the rule decides.** One such rule ran cleanly and still moved a count from 80 to 77
+  when an `if`-chain became an equivalent `Map`.
+
+**Expect a fifth surface** — grepping `explain*` functions, TODOs, or tests would be the next one, on
+the same intuition.
+
+### The rest
 
 - **Separate the signal axis from the fidelity axis.** Signal — is the failure reported, misreported,
-  or absent? Fidelity — is the content missing, diminished, or substituted? They are orthogonal, and
-  **the worst cells are the ones no cheap check reaches**. Searching them on purpose found four
-  members: a morph that silently loses one path pair, a sprite whose bounds omit an unresolvable
-  child, rich text that keeps its size and box while losing its font family, and a duplicate font id
-  that overwrites the first glyph table so the font exists and is the wrong font. A ranking would
-  have said *this is worse*; the axis said *where to look*.
-  **The fidelity values order by which check they defeat, not by harm** — missing fails an existence
-  check, diminished passes existence and fails a count, substituted passes both and needs a content
-  comparison. That makes the axis an oracle specification: it says what you must build to see the
-  failure, and nothing about how much the failure costs a user. Demand that property of the next
-  axis rather than treating it as a happy accident of this one.
+  or absent? Fidelity — is the content missing, diminished, or substituted? Orthogonal, and **the worst
+  cells are the ones no cheap check reaches**; searching them on purpose found a morph losing one path
+  pair, a sprite whose bounds omit an unresolvable child, rich text keeping its size and box while
+  losing its font family, and a duplicate font id leaving the wrong font in place. **The fidelity
+  values order by which check they defeat, not by harm** — existence, then count, then content
+  comparison — which makes the axis an oracle specification rather than a severity scale. Demand that
+  property of the next axis rather than treating it as a happy accident of this one.
 - **A search finds syntax, not the thing you were looking for.** A sweep for `if (x !== null) push(x)`
-  produced eleven candidate loss paths; one of them could not be made to fire at all, because the two
-  streams it guards are built in lockstep and cannot diverge in the ways the guard rejects. **It was a
-  defensive guard, and it survived three readings — the audit, the write-up, and the relay — because at
-  no point did anyone try to make it happen.** Every match was counted without asking whether it could
-  fire. ⇒ **Building the report for a suspected defect is the strongest test of whether it is one, and
-  deferring that is not caution: an unexercised finding is a claim nothing has contradicted yet.** The
-  cut runs both ways — the same sweep that over-counted one guard as a loss would also miss a loss
-  whose syntax it does not match.
+  produced eleven candidates; one could not be made to fire at all, because the streams it guards are
+  built in lockstep. **It survived three readings because at no point did anyone try to make it
+  happen.** ⇒ **Building the report for a suspected defect is the strongest test of whether it is one,
+  and deferring that is not caution: an unexercised finding is a claim nothing has contradicted yet.**
+  The cut runs both ways — the same sweep would miss a loss whose syntax it does not match.
+- **A hedge written for a negative result silently expires when the result comes back positive.** A
+  search command carried a note — *empty above means not wired in my clone, which may be behind* — the
+  search returned data, and the caveat evaporated with no decision. **A positive result removes the
+  trigger to re-read your own qualifier.**
 - **Do not renumber a denominator because investigation shrank it.** When effort both grows the
   numerator and shrinks the denominator, the ratio improves from effort alone regardless of what the
-  effort found — **and it arrives dressed as rigour.** Report the counts instead: candidates,
-  demonstrated-not, still unfalsified, and done. The question dissolves rather than being answered.
-- **A rationale more vivid than its conclusion needs is worth reading first.** A CFF reader's stated
-  reason for refusing CID-keyed fonts was that they would fail *silently, for every glyph*; measured,
-  they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
-  argument for the same refusal. The extra vividness was doing rhetorical work, which is the same
-  smell as a tally standing in for a mechanism. **This licenses one action: read the reason.**
-- **Precision persuades independently of currency.** A correction that read *13 functions of which 3
-  exported* displaced an original *19* and was accepted immediately — then both proved exactly right,
-  at different commits, the more precise one from the older tree. **A sharper number reads as better
-  work, and nothing about its form tells you when it was taken.** Check the tree before the arithmetic.
-- **A hedge written for a negative result silently expires when the result comes back positive.** One
-  reader ended a search command with a note to themselves — *empty above means not wired in my clone,
-  which may be behind* — then the search returned data, the finding felt confirmed, and the caveat they
-  had written thirty seconds earlier evaporated with no decision and no moment of choosing to drop it.
-  **A positive result removes the trigger to re-read your own qualifier.** This is the vividness tell's
-  opposite and equally cheap: that one says check a reason that sounds too good, this one says the
-  hedge you wrote for the negative case still applies to the positive one.
-- **An artifact that shows deliberation is not an artifact that provides reporting.** A guard shows
-  someone anticipated a failure; a comment shows someone considered it; neither gives a caller
-  anything to enumerate. Auditing by grepping for guards marked a capability covered whose loss no
-  caller can see, and a comment two lines above a silent decline answers *was this considered* with a
-  yes while leaving *is this reported* untouched — so it suppresses the search while looking like
-  diligence. A third form is neither: three of four definition kinds rejecting a duplicate id is a
-  convention that **displays a rule without providing one**, and a reader who infers it from the
-  three has read intent and concluded about code. A fourth is a rule itself: **a stated rule shows
-  someone decided; it does not show the rule decides**, so a written convention that cannot be
-  mechanically evaluated is the same artifact wearing a better hat. **Expect a fifth: grepping
-  `explain*` functions, TODOs, or tests, on the same intuition.**
+  effort found — **and it arrives dressed as rigour.** Report counts instead and the question dissolves.
 
 ## Denominators
 
