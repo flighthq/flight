@@ -128,6 +128,7 @@ what this entry exists to prevent.**
 | 7 | A parcel addressed to one builder in the second person, copied upward | **A full read again**, by the same reader | the reader, at full cost |
 | 8 | A parcel addressed to one builder in the second person, copied upward | **A full read**, third consecutive | the reader, at full cost |
 | 9 | A builder-addressed body reused as an upward escalation — **first instance with a `TO:` line on it** | **Three lines**, then stopped | the reader, cheaply |
+| 10 | Same shape, **and the relevance case: the subject was the reader's OWN finding relayed back** | **Three lines**, then stopped | the reader, cheaply |
 
 **The one property every row shares: the sender pays nothing.** The cost lands on a reader, in
 attention or in wasted work, and **it is invisible from the sending side in every instance** — which
@@ -187,6 +188,19 @@ three lines, which is BELOW the cost of continuing to work on it.**
 ⇒ **The register needs a third state: FIXED / UNFIXED / TOLERATED-AT-A-MEASURED-COST.** ★★ **The
 middle state is the one that invites another remedy, so naming the third is what stops it** — an open
 entry reads as a standing task no matter how many remedies have failed against it.
+★★★ **FALSIFIER TESTED ONCE, DID NOT FIRE — and it was tested on the hardest case available.**
+Instance 10's `TO:` line named someone else **while its subject was the reader's own finding being
+relayed back to them**: maximally relevant, which is precisely the relevance-over-addressing
+substitution the mechanism was predicted not to reach. **They stopped at three lines anyway.**
+⇒ **First evidence that addressing can beat relevance WHEN THE ADDRESSEE IS VISIBLE BEFORE THE BODY.**
+**One instance, no trend** — recorded as a test of the falsifier rather than as another lapse count.
+
+★★ **AND THE DISTINCTION THAT KEEPS TOLERATION HONEST: the ruling was no further ATTENTION, not no
+further MEASUREMENT.** ⇒ **The falsifiers require the measurement to keep running, so a tolerated
+defect that stops being measured has quietly become an ignored one** — and its reopening conditions
+become unobservable at exactly the moment they matter. **Tolerated means stop remedying, not stop
+looking.**
+
 **TOLERATION WITH FALSIFIERS, NOT FATIGUE. Two conditions reopen it:**
 1. **the cost per instance rises** — specifically the **relevance-over-addressing** case the `TO:`
    line cannot reach;
