@@ -3067,6 +3067,112 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped[0].detail).toEqual({ frame: 1, reason: 'commands-declined' });
   });
 
+  it('reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on', () => {
+    // A wire carrying a version ternary is only proven for the branch a test exercises. This is the same
+    // check already applied to the shape generations, applied to the morph wire.
+    const body = joinBytes(
+      uint16(7),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      createRectangle(0, 200, 0, 200),
+      createRectangle(0, 400, 0, 400),
+      new Uint8Array([0]),
+      uint32(0xffff),
+      new Uint8Array([0]),
+    );
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE_2, body), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.morph-shape-undecodable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.morph.define-morph-shape-2', characterId: 7 });
+  });
+
+  it('reports an uncomposable body for DefineText2, not only the generation the wire was written on', () => {
+    const record = new BitWriter();
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 3);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 1);
+    record.writeUnsigned(0, 1);
+    const text = joinBytes(
+      uint16(6),
+      createRectangle(0, 1024, 0, 1024),
+      createMatrix(1, 0, 0, 1, 0, 0),
+      new Uint8Array([4, 8]),
+      record.toBytes(),
+    );
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_TEXT_2, text), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.text.define-text-2', characterId: 6 });
+  });
+
+  it('reports a reused character id for DefineFont2, not only the generation the wire was written on', () => {
+    // A glyph-less DefineFont2 still parses and still claims the id, which is all the duplicate needs.
+    const font2 = joinBytes(uint16(4), new Uint8Array([0, 0, 0]), uint16(0), uint16(0));
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_END)]),
+          sink,
+        ),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-character-id-reused');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.font.define-font-2', characterId: 4 });
+  });
+
+  it('stays silent when an edit text font id does resolve, so the unresolved entry carries information', () => {
+    // Recorded earlier as an absent silence proof: it needs a DefineFont2 that parses, and none existed.
+    // The version-routing work produced one — a glyph-less DefineFont2 parses and carries a name — so the
+    // hole closes. Worth noting the fixture came from unrelated work rather than from trying harder.
+    const font2 = joinBytes(uint16(7), new Uint8Array([0, 0, 5]), swfBytes('Arial'), uint16(0), uint16(0));
+    const field = joinBytes(
+      uint16(12),
+      createRectangle(0, 4000, 0, 800),
+      new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
+      uint16(7),
+      uint16(240),
+      new Uint8Array([0x11, 0x22, 0x33, 0xff]),
+      new Uint8Array([2]),
+      uint16(20),
+      uint16(40),
+      uint16(60),
+      uint16(80),
+      swfString('varName'),
+      swfString('Hello'),
+    );
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_FONT_2, font2),
+          createTag(TAG_DEFINE_EDIT_TEXT, field),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // Non-vacuous: the field exists, so the resolver really ran against a font id that resolved.
+    expect(getNodeChildren(document!.root)).toHaveLength(1);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.edit-text-font-name-unresolved')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
@@ -4204,6 +4310,10 @@ function signedBitCount(values: ReadonlyArray<number>): number {
   return 32;
 }
 
+function swfBytes(value: string): Uint8Array {
+  return new TextEncoder().encode(value);
+}
+
 function swfString(value: string): Uint8Array {
   return joinBytes(_encoder.encode(value), new Uint8Array([0]));
 }
@@ -4258,6 +4368,8 @@ const TAG_DEFINE_BITS = 6;
 const TAG_DEFINE_BUTTON_2 = 34;
 const TAG_DEFINE_EDIT_TEXT = 37;
 const TAG_DEFINE_FONT = 10;
+const TAG_DEFINE_MORPH_SHAPE_2 = 84;
+const TAG_DEFINE_TEXT_2 = 33;
 const TAG_DEFINE_FONT_2 = 48;
 const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_FONT_INFO = 13;

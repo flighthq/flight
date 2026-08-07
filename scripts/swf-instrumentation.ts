@@ -79,6 +79,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     audits: ['payload', 'scope'],
     fires: [
       'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
+      'reports a reused character id for DefineFont2, not only the generation the wire was written on',
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
     ],
     id: 'swf.font.define-font-2',
@@ -97,12 +98,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a morph definition that decodes, so the drop entry carries information'],
   },
   {
-    // No `fires` proof, and the reason is structural rather than pending: `readSwfMorphShapePaths` builds
-    // both halves of a pair in lockstep, so the mismatches `createPathMorph` declines on cannot arise from
-    // SWF bytes. The wire guards the branch; nobody has seen it fire and this records that rather than
-    // manufacturing a fixture that does not reach it.
-    audits: ['payload'],
-    fires: [],
+    // The `swf.morph-path-pair-declined` wire on this capability still has NO fire proof, and the reason is
+    // structural rather than pending: `readSwfMorphShapePaths` builds both halves of a pair in lockstep, so
+    // the mismatches `createPathMorph` declines on cannot arise from SWF bytes. The `fires` entry below
+    // proves the undecodable-morph wire routes to this generation; it does not cover the path-pair wire.
+    audits: ['payload', 'scope'],
+    fires: ['reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on'],
     id: 'swf.morph.define-morph-shape-2',
     staysSilent: ['stays silent when every path pair morphs, so the declined count carries information'],
   },
@@ -200,17 +201,25 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
       'reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied',
     ],
     id: 'swf.text.define-edit-text',
-    // The silence proof for the font-name wire is absent, not pending on effort: it needs an edit text
-    // whose font id DOES resolve, which needs a DefineFont2 that parses, and no builder for one exists in
-    // this test file. The body-parse wire's silence proof below does not cover the font-name wire, and
-    // recording that beats letting one row's proof stand in for two.
-    staysSilent: ['stays silent about an edit text body that parses, so the drop entry carries information'],
+    // Both wires on this capability now have their own silence proof. The font-name one was recorded as an
+    // absent proof for want of a DefineFont2 that parses; the version-routing work produced one, so the
+    // hole closed as a side effect of unrelated work rather than by trying harder at it.
+    staysSilent: [
+      'stays silent about an edit text body that parses, so the drop entry carries information',
+      'stays silent when an edit text font id does resolve, so the unresolved entry carries information',
+    ],
   },
   {
     audits: ['payload', 'scope'],
     fires: ['reports a static text body that does not compose, which the deferred pass would otherwise swallow'],
     id: 'swf.text.define-text',
     staysSilent: ['stays silent about a static text body that composes, so the drop entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
+    fires: ['reports an uncomposable body for DefineText2, not only the generation the wire was written on'],
+    id: 'swf.text.define-text-2',
+    staysSilent: [],
   },
   {
     audits: ['payload', 'scope'],

@@ -75,6 +75,7 @@
       ],
       "fires": [
         "reports a font whose glyph table does not decode, which costs the whole font not one glyph",
+        "reports a reused character id for DefineFont2, not only the generation the wire was written on",
         "reports one glyph whose outline does not decode, which costs that glyph and not the font"
       ],
       "id": "swf.font.define-font-2",
@@ -110,9 +111,12 @@
     },
     {
       "audits": [
-        "payload"
+        "payload",
+        "scope"
       ],
-      "fires": [],
+      "fires": [
+        "reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on"
+      ],
       "id": "swf.morph.define-morph-shape-2",
       "staysSilent": [
         "stays silent when every path pair morphs, so the declined count carries information"
@@ -276,7 +280,8 @@
       ],
       "id": "swf.text.define-edit-text",
       "staysSilent": [
-        "stays silent about an edit text body that parses, so the drop entry carries information"
+        "stays silent about an edit text body that parses, so the drop entry carries information",
+        "stays silent when an edit text font id does resolve, so the unresolved entry carries information"
       ]
     },
     {
@@ -291,6 +296,17 @@
       "staysSilent": [
         "stays silent about a static text body that composes, so the drop entry carries information"
       ]
+    },
+    {
+      "audits": [
+        "payload",
+        "scope"
+      ],
+      "fires": [
+        "reports an uncomposable body for DefineText2, not only the generation the wire was written on"
+      ],
+      "id": "swf.text.define-text-2",
+      "staysSilent": []
     },
     {
       "audits": [
@@ -345,8 +361,8 @@
       ]
     }
   ],
-  "fireProven": 25,
-  "payloadAudited": 26,
-  "scopeAudited": 24,
+  "fireProven": 27,
+  "payloadAudited": 27,
+  "scopeAudited": 26,
   "silenceProven": 25
 }
