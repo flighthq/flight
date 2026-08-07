@@ -22,12 +22,17 @@ rather than reading something, it is being misused.
 
 ## The law: evidence is about whatever produced it
 
-*Arc-local, 7 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 8 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 Its sharpest case is the self-report. **A self-report is evidence about the self-reporter, not about
 what it carried** — so to get evidence about the payload, you need something that looked at the
 payload. Everything below in this section derives from that in one step.
 
+- **Evidence that X exists is not evidence that only X exists.** A parcel format was assumed to be
+  squash-only because a `squashed.diff` was visible; it also carried ten per-commit patches with full
+  SHAs, and a whole remedy was nearly abandoned on the strength of the thing that *was* seen. **Seeing
+  one member of a set tells you nothing about the set's other members** — look for what else is there
+  before concluding from what is.
 - **The repo you can reach is not the repo the claim is about.** Say it in those words; the
   sophisticated version did not save anyone. Three readers stated true, exact, checkable numbers about
   a tree that was not the one under discussion — all three on the same day, all three while actively
@@ -116,7 +121,9 @@ stops an artifact claiming more than it has.
   fixed greppable token rather than prose** — a sentence saying you considered backing lets nobody
   enumerate anything, and the point is not that a reader is warned but that the set becomes countable.
   Keep a register of merged-but-unbacked claims with class and commit: when a constraint lifts, that
-  register is the work order, and without it nobody can say which merged claims to revisit. **Even the
+  register is the work order, and without it nobody can say which merged claims to revisit. **The
+  register must also cover skips inside the backed set** — a gate that runs green while skipping files
+  every run is backed for what it ran and silent about what it did not. **Even the
   backed side has this shape at its edge:** the boundary that re-ran every gate could not run suites
   needing a browser, a GPU, or the network, and skipped two contract files on every run — so the
   subsumption is near-total, and the exceptions are, predictably, the expensive ones.
