@@ -13,6 +13,13 @@ what upgrades or retires it. Until then, read them as findings with good instanc
 The instances are the valuable part. A rule without an instance is a slogan; these are holdable only
 because each one has concrete cases behind it.
 
+**Everything below is a search instruction, not a test.** Each entry tells you where to look or what
+to read next; none of them tells you a claim is wrong. Used as verdicts they invert — the vividness
+tell would discredit whoever describes a genuinely severe finding accurately, and the granularity
+axis would rank losses instead of directing a search. **A document of search instructions read as a
+document of tests is this file's failure mode.** If an entry ever licenses rejecting someone's work
+rather than reading something, it is being misused.
+
 ## The law: evidence is about whatever produced it
 
 *Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
@@ -84,6 +91,45 @@ stops an artifact claiming more than it has.
   would not.
 - **A clean result is a result, not an absence of one.** A file with no unreported loss path settles a
   chunk of the denominator; recording it as a positive finding is the only way it counts.
+
+## Search instructions — where to look next
+
+*Arc-local, 3 instruments, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+
+Each of these directed a search that found something the same day it was written. None of them is a
+verdict; see the note at the top.
+
+- **Separate the signal axis from the granularity axis.** Signal — is the failure reported, misreported,
+  or absent? Granularity — is a whole object lost, or part of one inside a survivor? They are
+  orthogonal, and **the worst cell is partial loss with no signal**, where the object is present so
+  every existence check passes. Searching that cell on purpose found three members: a morph that
+  silently loses one path pair, a sprite whose bounds omit an unresolvable child, and rich text that
+  keeps its size and box while losing its font family. A ranking would have said *this is worse*; the
+  axis said *where to look*.
+- **A rationale more vivid than its conclusion needs is worth reading first.** A CFF reader's stated
+  reason for refusing CID-keyed fonts was that they would fail *silently, for every glyph*; measured,
+  they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
+  argument for the same refusal. The extra vividness was doing rhetorical work, which is the same
+  smell as a tally standing in for a mechanism. **This licenses one action: read the reason.**
+- **An artifact that shows deliberation is not an artifact that provides reporting.** A guard shows
+  someone anticipated a failure; a comment shows someone considered it; neither gives a caller
+  anything to enumerate. Auditing by grepping for guards marked a capability covered whose loss no
+  caller can see, and a comment two lines above a silent decline answers *was this considered* with a
+  yes while leaving *is this reported* untouched — so it suppresses the search while looking like
+  diligence. **Expect a third form: grepping `explain*` functions, TODOs, or tests, on the same
+  intuition.**
+
+## Denominators
+
+*Arc-local, 2 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+
+- **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
+  bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
+  implemented, so a ratio over it measures the corpus against our own model and reads as coverage of
+  the format.
+- **When two populations have been quoted as one number, say which is unmeasured.** What our importer
+  handles and what the format has are different totals; the second answers "how complete is this
+  import" and nobody had produced it. The missing measurement is reported beside the one we have.
 
 ## The test before quoting a number
 
