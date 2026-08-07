@@ -311,6 +311,21 @@ of, and the question that was actually asked.
 
 ## Serving: search instructions
 
+- **filed — A detector's vocabulary is CLOSED only when it is derived from a grammar. For a semantic
+  question it is OPEN, and what it excludes is found by asking, not by running.** A survey of
+  history-dependent artifacts used the vocabulary *calls git*. ⇒ **An entire population gets history
+  WITHOUT calling git**: a CI workflow consuming `GITHUB_SHA` / `GITHUB_REF_NAME` / `GITHUB_REF_TYPE`,
+  history facts supplied by the environment — **a squash changes the SHA and a tag-gated release
+  depends on the tag existing.** The author found it **only by deliberately asking what their pattern
+  excluded**, and declined to claim the vocabulary was closed. ⇒ **A grammar-derived sweep can report
+  a ceiling; a semantics-derived one can only report what it thought to look for.**
+
+- **filed — A path that reaches a committed artifact THROUGH A HUMAN STEP is invisible to every
+  pattern.** A script derives commit counts and subjects from history and **prints them for an agent
+  to compress by hand into a committed status file.** ⇒ **The value lands in the repository, and no
+  scan of any vocabulary can see the link, because the link is a person.** Found by reading the file,
+  not by matching it.
+
 - **filed — separate the signal axis from the fidelity axis.** Signal: is the failure reported,
   misreported, or absent? Fidelity: is the content missing, diminished, or substituted? Orthogonal,
   and **the worst cells are the ones no cheap check reaches** — searching them on purpose found a
