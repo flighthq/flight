@@ -3144,6 +3144,37 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(skipped[0].detail).toEqual({ capability: 'swf.script.do-action', frame: 1 });
   });
 
+  it('reports an init action declined the same way DoAction is, which it silently did not', () => {
+    // The identical decline four lines above the DoAction case reported nothing. Found by the silent-drop
+    // shape sweep, not by reading — three passes over this file read both branches and saw no asymmetry.
+    const file = createSwf([
+      createTag(TAG_DO_INIT_ACTION, joinBytes(uint16(20), new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const skipped = diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(skipped[0].detail).toEqual({ capability: 'swf.script.do-init-action', characterId: 20 });
+  });
+
+  it('stays silent about an init action it does obey, so the skip entry carries information', () => {
+    const file = createSwf([
+      createTag(TAG_DO_INIT_ACTION, joinBytes(uint16(20), new Uint8Array([0x07, 0x00]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined')).toEqual([]);
+  });
+
   it('reports nested masks collapsing, since the outer one is not applied at all', () => {
     // Two clip depths covering one instance: Flight carries one clip per node, so the outer mask is
     // simply not applied and the instance shows more than the file said. The crumb is the only signal.
@@ -4241,6 +4272,7 @@ const TAG_VIDEO_FRAME = 61;
 const TAG_DO_ABC = 82;
 const TAG_DO_ABC_ANONYMOUS = 72;
 const TAG_DO_ACTION = 12;
+const TAG_DO_INIT_ACTION = 59;
 const TAG_EXPORT_ASSETS = 56;
 const TAG_FILE_ATTRIBUTES = 69;
 const TAG_JPEG_TABLES = 8;
