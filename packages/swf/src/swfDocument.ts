@@ -1918,7 +1918,23 @@ function readSwfFontDefinition(body: Readonly<SwfReader>, state: SwfParseState, 
   const reader = new SwfReader(body.source, body.pos, body.end);
   const fontId = reader.source[body.pos] + reader.source[body.pos + 1] * 0x100;
   const source = readSwfFontGlyphOutlineSource(reader, version, state.diagnostics, fontId);
-  if (source === null || fontId === 0) return;
+  // A glyph table this decoder cannot read at all costs the WHOLE font, not one glyph, so it is a
+  // separate loss from `swf.font-glyph-outline` and must report separately: without this, a font that
+  // vanished entirely and a font that imported cleanly both produce no crumb.
+  if (source === null) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.font-glyph-table',
+      'readSwfFontDefinition',
+      {
+        capability: version === 1 ? 'swf.font.define-font' : `swf.font.define-font-${version}`,
+        characterId: fontId,
+      },
+    );
+    return;
+  }
+  if (fontId === 0) return;
   state.fontOutlineSources.set(fontId, source);
   const fontName = readSwfFontName(body, version);
   if (fontName !== '') state.fontNames.set(fontId, fontName);

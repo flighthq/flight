@@ -101,11 +101,24 @@ Wired so far, and therefore safe to read silence for:
 | `swf.bitmap.define-bits-jpeg-tables` | `swf.jpeg-tables-missing`, `swf.jpeg-tables-unsplittable` |
 | `swf.timeline.define-scene-and-frame-label-data` | `swf.scene-names` |
 | `swf.script.do-action` | `swf.frame-script-declined` |
-| `swf.font.define-font`, `-2`, `-3` | `swf.font-glyph-outline` (a glyph whose outline does not decode) |
+| `swf.font.define-font`, `-2`, `-3` | `swf.font-glyph-outline` (one glyph), `swf.font-glyph-table` (the whole font) |
 | `swf.placement.filter-list` | `swf.filter-field-unrepresentable` (a gradient glow's angle, distance, or placement) |
 
 `swf.placement.clip-depth` has a second path: `swf.nested-mask-collapsed`, for the outer of two masks
 covering one instance, which is not applied at all.
+
+**A capability enters this table only when *every* one of its loss paths reports — and that is a claim
+worth auditing rather than assuming.** Auditing it once already found a gap: the font rows claimed
+trustworthy silence while covering only the per-glyph failure, so a font whose glyph table did not decode
+at all vanished with no crumb, indistinguishable from a font that imported cleanly. `swf.font-glyph-table`
+closes it. **A capability with two loss paths and one wire is worse than an unwired one**, because it
+reads as covered.
+
+**Silence is trustworthy at the granularity of the capability named, not of the tag that carried it.** A
+`DefineShape4` whose geometry decodes but whose bitmap fill never resolves produces no
+`swf.shape.define-shape-4` crumb, and correctly so — the shape capability worked. The loss belongs to
+`swf.fill.bitmap`, which is **not** in this table. Do not read a shape row as "everything in that tag
+survived".
 
 **15 of 80 declared capabilities have trustworthy silence.** Every other one is **not yet wired**, so
 silence about it is uninformative today. This table grows as drop sites are wired; it is the list a

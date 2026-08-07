@@ -2699,6 +2699,24 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(collapsed[0].detail?.covering).toBe(2);
   });
 
+  it('reports a font whose glyph table does not decode, which costs the whole font not one glyph', () => {
+    // Found by auditing my own trustworthy-silence claim rather than by a failing test: a font that
+    // vanishes entirely and a font that imports cleanly both produced no crumb before this.
+    const file = createSwf([
+      createTag(TAG_DEFINE_FONT_2, joinBytes(uint16(4), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-glyph-table');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.font.define-font-2', characterId: 4 });
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
