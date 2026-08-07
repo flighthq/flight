@@ -473,8 +473,20 @@ changes, and compare as for roots. To confirm the check can fail, re-run it with
 
 ## What the corpus actually exercises
 
-> **49 of 75 documented capabilities are exercised by this corpus. The other 26 are unmeasured —
-> not passing, not failing. And 13 of the 49 rest on a single file.**
+> **50 of 80 documented capabilities are exercised by this corpus. The other 30 are unmeasured —
+> not passing, not failing. And 13 of the 50 rest on a single file.**
+
+> These numbers were **49 of 75** when first published, and both corrections moved them the unwelcome
+> way. The enumeration is now the declared list in [capabilities.md](capabilities.md), which is where the
+> ids the conformance work keys on live.
+>
+> - **+1 exercised**: the census probe's own self-check had flagged a capability it emitted that the
+>   vocabulary forgot (`DefineSound`). Writing the declared list is what forced that to be reconciled
+>   rather than noted — 75 should always have been 76.
+> - **+4 unmeasured**: the four sub-axes below are now first-class capabilities rather than a footnote,
+>   because a parent witness routinely never reaches the branch they name. All four are unexercised.
+>
+> The fraction fell from 65% to 62%. That is the correction working, not a regression.
 
 Those are the two numbers that belong together. A pass rate quoted over the 49 without the `49/75` in
 front of it would be true in every digit and would still say the opposite of what is the case, because the
@@ -495,17 +507,18 @@ Measured at Flight commit `6aff889db` over the 301 readable files.
 
 | Bucket | Count |
 | --- | --- |
-| Capabilities enumerated | 75 |
-| **Exercised** — the corpus contains it | **49** |
+| Capabilities declared | 80 |
+| **Exercised** — the corpus contains it | **50** |
 | — of those, exercised by exactly **one** file | **13** |
-| **Unexercised** — implemented, zero corpus instances | **26** |
-| Undetermined | 0 of the 75; four axes measured separately below |
+| **Unexercised** — implemented, zero corpus instances | **30** |
+| Undetermined | 0 |
 
 Each capability's file count is measured on its own — a set of filenames per capability — not apportioned
 from a corpus-wide total. A total that reconciles against the corpus size would look like confirmation and
-would not be any. The enumeration is likewise an explicit list in the probe rather than whatever the walk
+would not be any. The enumeration is likewise an explicit declared list rather than whatever the walk
 happened to emit, so "unexercised" is a measurement instead of an absence of evidence, and the probe
-self-checks by reporting any capability it emitted that the list forgot.
+self-checks by reporting any capability it emitted that the list forgot — which is what found the
+miscount above.
 
 ### Evidence depth, not just presence
 
@@ -555,10 +568,11 @@ the format; and both callsites' argument order matches `appendShapeBeginGradient
 `appendShapeLineStyle` exactly — the failure a path with no observer is most likely to hide. **No source
 defect. This is an evidence gap.**
 
-### Four axes measured separately
+### The four sub-axes
 
 These are sub-features of a carried construct rather than constructs of their own, so they are counted
-over occurrences rather than files.
+over occurrences rather than files. All four are now declared capabilities in their own right — folding
+them into their parent would let a fixture score as covering a branch it never reaches.
 
 - **Colour transform channels.** Of 41 placements carrying a transform: RGB multiply 39, RGB add 39, alpha
   multiply 2, **alpha add 0**. The alpha-add normalization across the adjustment and node-alpha tiers is
