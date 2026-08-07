@@ -57,6 +57,15 @@ reader can tell strength apart without trusting the author's formatting:
   produce.** ★ **The pressure runs one way: an unexplained fact reads as unfinished, and the only
   material available to close it is the observation itself** — and that feeling is the whole defect.
 
+- **filed — A CHECK AND THE ACTION IT GUARDS MUST BE SEPARATED BY A POINT AT WHICH THE ACTION COULD
+  NOT HAPPEN.** A budget gate was run in the same compound command as the commit it was meant to
+  guard: **the gate reported red and the commit landed anyway.** ⇒ **The mechanical tell: if the
+  check's failure cannot stop the action, the sequencing is decoration.** ★★ **Same shape as a
+  prediction stated after the fact — both collapse the interval in which the claim could have been
+  wrong**, and a claim with no such interval is unfalsifiable regardless of how it is worded.
+  **Ordering the two in a transcript is not sequencing them; only a point where the action is
+  genuinely conditional is.**
+
 - **filed — A REBASE REPLAY CAN RESURRECT A SUPERSEDED APPEND-ONLY LINE.** An earlier commit still
   carried pre-supersession ledger text, so **every replay reintroduced it and the gate correctly
   flagged the resurrection as an edit** — the gate was right each time and the fix was local each
