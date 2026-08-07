@@ -33,6 +33,7 @@
     "build:functional": "npm run build --workspace=tools/functional",
     "capabilities": "tsx ./scripts/swf-capabilities.ts",
     "capabilities:check": "tsx ./scripts/swf-capabilities.ts --check",
+    "capabilities:individuation": "tsx ./scripts/swf-individuation.ts",
     "capture:baseline": "npm run capture:examples:baseline && npm run capture:functional:baseline",
     "capture:check": "npm run capture:examples:check && npm run capture:functional:check",
     "capture:examples": "tsx ./packages/tool-capture/src/bin.ts capture --tool=examples",
