@@ -257,6 +257,27 @@ describe('compareImportConformanceScores', () => {
     expect(subjectLaundered.packs[0].findings[0].code).toBe('loss-path-audit-subject-changed-without-reaudit');
   });
 
+  it('separates an unrecoverable audit identity from no audit declaration', () => {
+    const unidentified = unmeasuredCapability('alpha');
+    unidentified.lossPath = { state: 'unidentified' };
+    const identityLost = compareImportConformanceScores(
+      score(measuredPack([auditedUnmeasuredCapability('alpha', 'identified')]), '100'),
+      score(measuredPack([unidentified]), '101'),
+    );
+    const existenceLost = compareImportConformanceScores(
+      score(measuredPack([unidentified]), '100'),
+      score(measuredPack([unmeasuredCapability('alpha')]), '101'),
+    );
+    const identityRecovered = compareImportConformanceScores(
+      score(measuredPack([unidentified]), '100'),
+      score(measuredPack([auditedUnmeasuredCapability('alpha', 'identified')]), '101'),
+    );
+
+    expect(identityLost.packs[0].findings[0]).toMatchObject({ code: 'loss-path-audit-identity-lost' });
+    expect(existenceLost.packs[0].findings[0]).toMatchObject({ code: 'loss-path-audit-existence-lost' });
+    expect(identityRecovered.state).toBe('pass');
+  });
+
   it('ratchets member audit declarations and refuses a new declaration wearing an old audit record', () => {
     const baselineCapability = measuredCapability('alpha');
     const missingScope = auditIncompleteCapability('alpha');
@@ -712,7 +733,7 @@ describe('formatImportConformanceRatchetReport', () => {
     );
     expect(output).not.toContain('total:');
     expect(output).toContain(
-      'loss-path audit partial; audited capability-row tally 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose capability-row tally 1; audited-none capability-row tally 0; unaudited capability-row tally 1 [beta]',
+      'loss-path audit partial; audited capability-row tally 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose capability-row tally 1; audited-none capability-row tally 0; audit-identity-unavailable capability-row tally 0 []; unaudited capability-row tally 1 [beta]',
     );
     expect(output).toContain(
       'configuration limits [alpha: not-applicable] → [alpha: not-applicable]; diagnostic channels [alpha: structured-crumb; beta: none] → [alpha: structured-crumb; beta: none]; loss-path audit',
@@ -991,16 +1012,51 @@ describe('parseImportConformanceScore', () => {
     expect(report.state).toBe('pass');
   });
 
+  it('encodes an audit with unrecoverable identity instead of interpreting it as unaudited', () => {
+    const unidentified = unmeasuredCapability('beta');
+    unidentified.lossPath = { state: 'unidentified' };
+    const exercised = unknownCapability('gamma', 1, 'loss-path-not-identified');
+    exercised.lossPath = { state: 'unidentified' };
+    exercised.unknownObservations = [{ reason: 'loss-path-audit-unidentified', reference: 'audit-identity:gamma' }];
+    const pack = measuredPack([measuredCapability('alpha'), unidentified, exercised]);
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+    const output = formatImportConformanceRatchetReport(
+      compareImportConformanceScores(parsed, parseImportConformanceScore(score(pack, '101'))),
+    );
+    const collapsed = structuredClone(pack) as unknown as {
+      capabilities: [{ id: string }, { lossPath: unknown }, { id: string }];
+    };
+    collapsed.capabilities[1].lossPath = null;
+
+    expect(parsed.packs[0]).toMatchObject({
+      summary: {
+        lossPathPopulation: {
+          auditedCapabilities: 1,
+          auditState: 'partial',
+          unidentifiedAuditCapabilities: 2,
+          unauditedCapabilities: 0,
+        },
+      },
+    });
+    expect(output).toContain('audit-identity-unavailable capability-row tally 2 [beta, gamma]');
+    expect(output).toContain(
+      'loss-path-audit-unidentified capability-scoped keyed-observation count 1 [gamma@audit-identity:gamma]',
+    );
+    expect(() => parseImportConformanceScore(score(collapsed as never, '100'))).toThrow(
+      'capabilities[1].lossPath: must be an object',
+    );
+  });
+
   it('requires audit identity, time, and subject binding on each audited member', () => {
     const missingAudit = measuredCapability('alpha') as unknown as { lossPath: unknown };
     missingAudit.lossPath = { state: 'identified' };
     const inheritedAudit = measuredCapability('alpha') as unknown as { lossPath: unknown };
     inheritedAudit.lossPath = { audit: identifiedLossPath('alpha').audit, state: 'unaudited' };
     const invalidTime = measuredCapability('alpha');
-    if (invalidTime.lossPath.state === 'unaudited') throw new Error('test fixture must be audited');
+    if (invalidTime.lossPath.state !== 'identified') throw new Error('test fixture must have an identified audit');
     invalidTime.lossPath.audit.auditedAt = '2026-08-07';
     const mislabeledNone = measuredCapability('alpha');
-    if (mislabeledNone.lossPath.state === 'unaudited') throw new Error('test fixture must be audited');
+    if (mislabeledNone.lossPath.state !== 'identified') throw new Error('test fixture must have an identified audit');
     mislabeledNone.lossPath.state = 'audited-none';
 
     expect(() => parseImportConformanceScore(score(measuredPack([missingAudit as never]), '100'))).toThrow(
@@ -1231,7 +1287,7 @@ describe('parseImportConformanceScore', () => {
       'requires both instrumentation directions to be unreferenced',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([collapsedReason as never]), '100'))).toThrow(
-      "must be 'diagnostic-cause-unknown', 'fire-proof-missing-for-no-crumb', 'instrument-audit-incomplete', 'loop-bounded-configuration-limit', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
+      "must be 'diagnostic-cause-unknown', 'fire-proof-missing-for-no-crumb', 'instrument-audit-incomplete', 'loop-bounded-configuration-limit', 'loss-path-audit-unidentified', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
     );
   });
 
@@ -1597,6 +1653,7 @@ function measuredPack(
   );
   const canSilentlyLose = auditable.filter((capability) => capability.lossPath.state === 'identified');
   const auditedNone = auditable.filter((capability) => capability.lossPath.state === 'audited-none');
+  const unidentifiedAudit = auditable.filter((capability) => capability.lossPath.state === 'unidentified');
   const unaudited = auditable.filter((capability) => capability.lossPath.state === 'unaudited');
   return {
     capabilityConventionRevision: 'unresolved-individuation-v1',
@@ -1652,8 +1709,9 @@ function measuredPack(
       lossPathPopulation: {
         auditedCapabilities: canSilentlyLose.length + auditedNone.length,
         auditedNoLossPathCapabilities: auditedNone.length,
-        auditState: unaudited.length === 0 ? 'complete' : 'partial',
+        auditState: unaudited.length === 0 && unidentifiedAudit.length === 0 ? 'complete' : 'partial',
         canSilentlyLoseCapabilities: canSilentlyLose.length,
+        unidentifiedAuditCapabilities: unidentifiedAudit.length,
         unauditedCapabilities: unaudited.length,
       },
       proofReferenced: {

@@ -10,6 +10,7 @@ export type ImportConformanceUnknownObservationReason =
   | 'fire-proof-missing-for-no-crumb'
   | 'instrument-audit-incomplete'
   | 'loop-bounded-configuration-limit'
+  | 'loss-path-audit-unidentified'
   | 'loss-path-known-not-wired'
   | 'loss-path-not-identified'
   | 'silence-proof-missing-for-crumb';
@@ -122,10 +123,19 @@ export interface ImportConformanceAuditedLossPath {
 }
 
 export interface ImportConformanceUnauditedLossPath {
+  /** No loss-path audit declaration covers this capability. */
   state: 'unaudited';
 }
 
-export type ImportConformanceLossPath = ImportConformanceAuditedLossPath | ImportConformanceUnauditedLossPath;
+export interface ImportConformanceUnidentifiedLossPathAudit {
+  /** An audit covered this capability, but its identity, time, auditor, or subject binding could not be recovered. */
+  state: 'unidentified';
+}
+
+export type ImportConformanceLossPath =
+  | ImportConformanceAuditedLossPath
+  | ImportConformanceUnauditedLossPath
+  | ImportConformanceUnidentifiedLossPathAudit;
 
 export interface ImportConformanceCapabilityWithInstrumentation {
   id: string;
@@ -234,6 +244,7 @@ export interface ImportConformanceLossPathPopulationSummary {
   auditedNoLossPathCapabilities: number;
   auditState: 'complete' | 'partial';
   canSilentlyLoseCapabilities: number;
+  unidentifiedAuditCapabilities: number;
   unauditedCapabilities: number;
 }
 
@@ -720,12 +731,12 @@ function parseInstrumentAudits(value: unknown, path: string): ImportConformanceI
 function parseLossPath(value: unknown, path: string): ImportConformanceLossPath {
   const lossPath = expectRecord(value, path);
   const state = expectString(lossPath.state, `${path}.state`);
-  if (state === 'unaudited') {
+  if (state === 'unaudited' || state === 'unidentified') {
     expectKeys(lossPath, ['state'], path);
     return { state };
   }
   if (state !== 'audited-none' && state !== 'identified') {
-    return fail(`${path}.state`, "must be 'audited-none', 'identified', or 'unaudited'");
+    return fail(`${path}.state`, "must be 'audited-none', 'identified', 'unaudited', or 'unidentified'");
   }
   expectKeys(lossPath, ['audit', 'state'], path);
   return { audit: parseLossPathAudit(lossPath.audit, `${path}.audit`), state };
@@ -825,13 +836,14 @@ function parseUnknownObservationReason(value: unknown, path: string): ImportConf
     value !== 'fire-proof-missing-for-no-crumb' &&
     value !== 'instrument-audit-incomplete' &&
     value !== 'loop-bounded-configuration-limit' &&
+    value !== 'loss-path-audit-unidentified' &&
     value !== 'loss-path-known-not-wired' &&
     value !== 'loss-path-not-identified' &&
     value !== 'silence-proof-missing-for-crumb'
   ) {
     fail(
       path,
-      "must be 'diagnostic-cause-unknown', 'fire-proof-missing-for-no-crumb', 'instrument-audit-incomplete', 'loop-bounded-configuration-limit', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
+      "must be 'diagnostic-cause-unknown', 'fire-proof-missing-for-no-crumb', 'instrument-audit-incomplete', 'loop-bounded-configuration-limit', 'loss-path-audit-unidentified', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
     );
   }
   return value;
@@ -992,6 +1004,7 @@ function isCapabilityScopedUnknownReason(reason: ImportConformanceUnknownObserva
   return (
     reason === 'instrument-audit-incomplete' ||
     reason === 'loop-bounded-configuration-limit' ||
+    reason === 'loss-path-audit-unidentified' ||
     reason === 'loss-path-known-not-wired' ||
     reason === 'loss-path-not-identified'
   );
@@ -1018,8 +1031,12 @@ function assertLossPathMatchesInstrumentation(
     if (reason === 'loss-path-not-identified' && lossPath.state !== 'unaudited') {
       fail(`${path}.unknownObservations[${index}].reason`, "requires lossPath state 'unaudited'");
     }
+    if (reason === 'loss-path-audit-unidentified' && lossPath.state !== 'unidentified') {
+      fail(`${path}.unknownObservations[${index}].reason`, "requires lossPath state 'unidentified'");
+    }
     if (
       reason !== 'loss-path-not-identified' &&
+      reason !== 'loss-path-audit-unidentified' &&
       reason !== 'loop-bounded-configuration-limit' &&
       lossPath.state !== 'identified'
     ) {
@@ -1090,6 +1107,7 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
       'auditedNoLossPathCapabilities',
       'auditState',
       'canSilentlyLoseCapabilities',
+      'unidentifiedAuditCapabilities',
       'unauditedCapabilities',
     ],
     `${path}.lossPathPopulation`,
@@ -1137,6 +1155,11 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
       canSilentlyLoseCapabilities: expectInteger(
         lossPathPopulation.canSilentlyLoseCapabilities,
         `${path}.lossPathPopulation.canSilentlyLoseCapabilities`,
+        0,
+      ),
+      unidentifiedAuditCapabilities: expectInteger(
+        lossPathPopulation.unidentifiedAuditCapabilities,
+        `${path}.lossPathPopulation.unidentifiedAuditCapabilities`,
         0,
       ),
       unauditedCapabilities: expectInteger(
@@ -1296,6 +1319,7 @@ function assertSummaryMatches(
   );
   const canSilentlyLose = proofReferenced.filter((capability) => capability.lossPath.state === 'identified');
   const auditedNoLossPath = proofReferenced.filter((capability) => capability.lossPath.state === 'audited-none');
+  const unidentifiedAudit = proofReferenced.filter((capability) => capability.lossPath.state === 'unidentified');
   const unaudited = proofReferenced.filter((capability) => capability.lossPath.state === 'unaudited');
   const fireReferenced = exercised.filter((capability) => capability.instrumentation.fires.state === 'referenced');
   const silenceReferenced = exercised.filter(
@@ -1324,8 +1348,9 @@ function assertSummaryMatches(
     lossPathPopulation: {
       auditedCapabilities: canSilentlyLose.length + auditedNoLossPath.length,
       auditedNoLossPathCapabilities: auditedNoLossPath.length,
-      auditState: unaudited.length === 0 ? 'complete' : 'partial',
+      auditState: unaudited.length === 0 && unidentifiedAudit.length === 0 ? 'complete' : 'partial',
       canSilentlyLoseCapabilities: canSilentlyLose.length,
+      unidentifiedAuditCapabilities: unidentifiedAudit.length,
       unauditedCapabilities: unaudited.length,
     },
     proofReferenced: {
@@ -1391,6 +1416,11 @@ function assertSummaryMatches(
     summary.lossPathPopulation.canSilentlyLoseCapabilities,
     expected.lossPathPopulation.canSilentlyLoseCapabilities,
     `${path}.lossPathPopulation.canSilentlyLoseCapabilities`,
+  );
+  assertSummaryNumber(
+    summary.lossPathPopulation.unidentifiedAuditCapabilities,
+    expected.lossPathPopulation.unidentifiedAuditCapabilities,
+    `${path}.lossPathPopulation.unidentifiedAuditCapabilities`,
   );
   assertSummaryNumber(
     summary.lossPathPopulation.unauditedCapabilities,
