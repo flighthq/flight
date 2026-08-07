@@ -257,7 +257,8 @@
         "scope"
       ],
       "fires": [
-        "reports an edit text body that does not parse, which otherwise loses the field with no signal"
+        "reports an edit text body that does not parse, which otherwise loses the field with no signal",
+        "reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied"
       ],
       "id": "swf.text.define-edit-text",
       "staysSilent": [

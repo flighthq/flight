@@ -3011,6 +3011,44 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.font-character-id-reused')).toEqual([]);
   });
 
+  it('reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied', () => {
+    // The field keeps its box, colour and size and simply has no font family. Asserting the box survives
+    // is what makes this the diminished case rather than a missing field.
+    const field = joinBytes(
+      uint16(12),
+      createRectangle(0, 4000, 0, 800),
+      new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
+      uint16(7),
+      uint16(240),
+      new Uint8Array([0x11, 0x22, 0x33, 0xff]),
+      new Uint8Array([2]),
+      uint16(20),
+      uint16(40),
+      uint16(60),
+      uint16(80),
+      swfString('varName'),
+      swfString('Hello'),
+    );
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_EDIT_TEXT, field),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    expect(getNodeChildren(document!.root)).toHaveLength(1);
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.edit-text-font-name-unresolved');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.text.define-edit-text', fontId: 7 });
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
