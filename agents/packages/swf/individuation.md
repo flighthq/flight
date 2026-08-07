@@ -112,6 +112,45 @@ ambiguity stated. On the current list two legitimate rows land there — `swf.ax
 and `swf.bitmap.define-bits-jpeg-tables`, the latter a composite of two tags. **A visible bucket that
 needs a human beats an invisible one that does not ask.**
 
+## The third sweep: where a safe default and a measured negative are the same value
+
+`npm run capabilities:default-collisions`. **Reports, does not enforce, absent from `npm run check`.**
+
+`null` because nothing was looked up and `null` because something was looked up and found nothing are the
+same bytes. **The representation stores the distinction away at write time**, so no care at read time
+recovers it — by the time a reader is being careful, the two states are already one value.
+
+**Its arity is neither per-site nor cross-site: it relates a WRITE to a READ.** A line-by-line read sees
+one site and cannot see that two writers converge; the silent-drop sweep sees a shape and not where its
+value is later consumed. This one names the convergence and still cannot see the consumer, so it reports
+where a distinction was *available to lose*, not where losing it cost anything.
+
+**Measured: 191 candidates, of which 23 of 30 multi-cause sentinels report nothing at any of their
+returns.** The remaining seven are already resolved or partly resolved by diagnostic wiring.
+
+**The precision signal is the remedy already in the tree.** A diagnostic report at a sentinel return is
+exactly what re-separates two causes the return value merges — so a function with as many reports as
+sentinel returns has resolved its collision, and one with none has not. `uncompressSwfSource` returns a
+sentinel from six places and reports eight distinct kinds; `readSwfFile` returns one from five places and
+reports nothing. **The fix is countable, which is why that form is ranked rather than listed flat.**
+
+**The ceiling is real rather than formulaic: a safe default no measurement can produce is fine**, and the
+sweep cannot tell that from a genuine collision without reading the site — it does not know which values
+the surrounding logic can compute. The 149 `field initialised to an empty value` matches are mostly that
+case. Every match is a candidate.
+
+### The first instance was in this cell's own artifact, written the same hour
+
+`instrumentation.json` shipped with `lossPath: null`, and three different writer situations reached it:
+no loss-family audit covered the capability, an audit covered it and its identity was recovered, and an
+audit covered it but the identity could **not** be recovered. The first and third are opposite meanings —
+*nobody audited this* versus *someone did and we cannot say who or when* — stored as identical bytes.
+
+No row was in the third state, so the value was **correct by luck rather than by construction**, and the
+consumer had already been told to read `null` as *unaudited*. It is now encoded as three explicit states
+(`identified` / `unaudited` / `unidentified` with a reason). Verified by forcing the lookup to fail: 14
+rows become `unidentified` where they would previously have read as `unaudited`.
+
 ## Where the importer's routing and the rows' grain disagree
 
 The join between rows and tags is by name, and the disagreements are reported by the script rather than
