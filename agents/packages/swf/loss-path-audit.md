@@ -44,14 +44,23 @@ sweep and equally the limit of the reading.
 | 6c | morph path pair declined | wired as a guard · **demonstrated not reachable from SWF bytes**, silence proof only |
 | 7 | sprite bounds union short | wired · fire + silence, reports a **count** |
 | 8 | appearance channel with no node | wired · fire + silence |
-| 9 | edit text font id unresolved | wired · fire only — **silence proof absent and recorded as absent** |
+| 9 | edit text font id unresolved | wired · fire + silence — **the recorded hole closed**, see below |
 | 10 | font character id reused | wired · fire + silence |
 | 11 | whole-document reject path | wired · eight container `Reject` kinds |
 | 12 | init action declined without a crumb | wired · fire + silence — **found by the shape sweep, not by reading** |
 
-Two rows carry an honest hole rather than a manufactured proof: **6c** has no fire proof because the
-branch could not be reached, and **9** has no silence proof because it needs a `DefineFont2` that parses
-and no builder for one exists. Both are recorded in `instrumentation.json` with the reason.
+**One row still carries an honest hole: 6c has no fire proof, because the branch could not be reached.**
+
+**Row 9's hole closed, and how it closed is the point.** It was recorded as an absent silence proof for
+want of a `DefineFont2` that parses. Nobody went back to try harder. It closed because a separate check —
+proving each version-ternary wire routes to *both* generations, not only the one it was written on —
+needed a parsing `DefineFont2` for its own reasons, and a glyph-less one turned out to be enough.
+**A recorded hole is cheap to close later; an unrecorded one is never closed at all**, because nothing
+says it is there.
+
+That version-routing check found three of my own wires proven on one branch only — the morph, text and
+font wires each carry a `version === n ?` ternary. **This is the same audit-drift shape, applied to me:
+I had already run that check on the shape generations and did not carry it to the wires I wrote next.**
 
 ## What this audit has actually read
 
