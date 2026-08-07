@@ -5,7 +5,7 @@ import type { Texture } from './Texture';
 // A lightweight, plain-data reference to a texture image source that a document parser emits
 // synchronously instead of decoding inline. A document owns these references as sidecar data; each
 // reference names its consuming `textures`, whose `source` remains null until a separate caller-driven
-// pass resolves the ref and binds the live Image. This is the seam that lets parse stay synchronous and
+// pass resolves the ref and binds the live TextureSource. This is the seam that lets parse stay synchronous and
 // format-symmetric across every scene-format while the heavy async decode/fetch happens later, under a
 // visibility/priority policy.
 //
@@ -52,7 +52,7 @@ interface ImageResourceReferenceBase {
   // external URI's extension or the fetch response), which the resolver does.
   mimeType: string | null;
   // Advanced by the resolver: Unresolved → Loading → Resolved | Failed. Read it to drive a loading
-  // HUD or a fade-in; the Texture's `storage.image` is non-null only once `state` reaches Resolved.
+  // HUD or a fade-in; the waiting Textures' `source` is non-null only once `state` reaches Resolved.
   state: ResourceResolutionState;
   // Textures consuming this reference. The scene owns references as sidecar data; Texture stays
   // format/resource agnostic.
@@ -77,7 +77,11 @@ export interface ExternalImageResourceReference extends ImageResourceReferenceBa
 export type ImageResourceReference = EmbeddedImageResourceReference | ExternalImageResourceReference;
 
 // The swappable fetch seam an External reference resolves through. The web backend fetches a URL; a
-// native host substitutes its own. Returns null for an expected miss rather than throwing.
+// native host substitutes its own. This boundary deliberately remains Image-only: External means fetching
+// a URI into a host-drawable handle, while Embedded has bytes in hand and may decode to any TextureSource.
+// Widen this only when an external compressed/pre-decoded source has a real consumer; doing so before then
+// would advertise an injection path no standard fetch implementation can produce. Returns null for an
+// expected miss rather than throwing.
 export type ImageResourceFetch = (
   ref: Readonly<ExternalImageResourceReference>,
   signal: AbortSignal,

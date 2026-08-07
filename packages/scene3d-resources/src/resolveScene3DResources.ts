@@ -2,35 +2,34 @@ import { createImageResourceFailure, loadImageResourceFromBytes } from '@flighth
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  Image,
-  Scene3D,
   ImageResourceReference,
   ResolveScene3DResourcesOptions,
+  Scene3D,
   Scene3DResources,
   Scene3DResourceResolver,
   Scene3DResourceWorkingSet,
   Texture,
+  TextureSource,
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
 import {
   ImageResourceFailureKind,
-  ImageTextureSourceKind,
-  ResourceResolutionState,
   ImageResourceReferenceKind,
+  ResourceResolutionState,
 } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
 
-// Resolves one texture's ref to an Image (or null for an expected failure): Embedded bytes
+// Resolves one texture's ref to a TextureSource (or null for an expected failure): Embedded bytes
 // decode through @flighthq/image; External URIs go through the resolver's fetch seam. Cancellation is
 // carried by `signal` (both paths reject on abort). Exported for direct testing of the two ref kinds.
 export function resolveOneScene3DResourceTexture(
   resolver: Readonly<Scene3DResourceResolver>,
   ref: Readonly<ImageResourceReference>,
   signal: AbortSignal,
-): Promise<Image | null> {
+): Promise<TextureSource | null> {
   if (ref.kind === ImageResourceReferenceKind.Embedded) {
     return loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal);
   }
@@ -38,7 +37,7 @@ export function resolveOneScene3DResourceTexture(
 }
 
 // Reconciles the selected working set entirely synchronously. It groups shared references, recognizes
-// content already present on a texture, and binds resolver-cached images to every selected subscriber.
+// content already present on a texture, and binds resolver-cached sources to every selected subscriber.
 // Acquisition, cancellation, Promise scheduling, and priority policy belong to the explicit update/load
 // operations.
 export function resolveScene3DResources(
@@ -55,9 +54,9 @@ export function resolveScene3DResources(
     const texture = textures[i];
     const ref = getScene3DTextureResourceReference(scene, texture);
     if (ref == null) continue;
-    const image = texture.dimension === '2d' ? texture.source : null;
-    if (image?.kind === ImageTextureSourceKind) {
-      runtime.resolved.set(ref, image as Image);
+    const source = texture.dimension === '2d' ? texture.source : null;
+    if (source !== null) {
+      runtime.resolved.set(ref, source);
       ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }
@@ -73,8 +72,8 @@ export function resolveScene3DResources(
   const resolved: Scene3DResources['resolved'] = [];
   const unresolved: Scene3DResourceWorkingSet[] = [];
   for (const [ref, subscribers] of working) {
-    const image = runtime.resolved.get(ref);
-    if (image === undefined) {
+    const source = runtime.resolved.get(ref);
+    if (source === undefined) {
       if (ref.state === ResourceResolutionState.Resolved) ref.state = ResourceResolutionState.Unresolved;
       unresolved.push({ ref, textures: subscribers });
       continue;
@@ -82,9 +81,9 @@ export function resolveScene3DResources(
     ref.failure = null;
     ref.state = ResourceResolutionState.Resolved;
     for (let i = 0; i < subscribers.length; i++) {
-      bindResolvedScene3DResource(resolver, subscribers[i], ref, image);
+      bindResolvedScene3DResource(resolver, subscribers[i], ref, source);
     }
-    resolved.push({ image, ref, textures: subscribers });
+    resolved.push({ ref, source, textures: subscribers });
   }
   return { resolved, scene, unresolved };
 }
@@ -139,26 +138,26 @@ function finishScene3DResourceResolution(
   resolver: Scene3DResourceResolver,
   ref: ImageResourceReference,
   entry: Scene3DResourceInFlight,
-  image: Image | null,
+  source: TextureSource | null,
 ): void {
   const runtime = (resolver as Scene3DResourceResolverWithRuntime)[Scene3DResourceResolverRuntimeKey];
   // Ignore a late settle whose entry was already cancelled or replaced by a newer request.
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
-  if (image === null) {
+  if (source === null) {
     ref.failure = {
       kind: ImageResourceFailureKind.Unavailable,
-      message: 'Image resource resolution returned no image',
+      message: 'Image resource resolution returned no source',
       name: null,
     };
     ref.state = ResourceResolutionState.Failed;
     for (const texture of entry.subscribers) emitScene3DResourceEvent(resolver, texture, ref, false);
     return;
   }
-  runtime.resolved.set(ref, image);
+  runtime.resolved.set(ref, source);
   ref.failure = null;
   ref.state = ResourceResolutionState.Resolved;
-  for (const texture of entry.subscribers) bindResolvedScene3DResource(resolver, texture, ref, image);
+  for (const texture of entry.subscribers) bindResolvedScene3DResource(resolver, texture, ref, source);
 }
 
 function failScene3DResourceResolution(
@@ -181,11 +180,11 @@ function bindResolvedScene3DResource(
   resolver: Readonly<Scene3DResourceResolver>,
   texture: Texture,
   ref: ImageResourceReference,
-  image: Image,
+  source: TextureSource,
 ): void {
   if (texture.dimension !== '2d') return;
-  if (texture.source === image) return;
-  texture.source = image;
+  if (texture.source === source) return;
+  texture.source = source;
   texture.version = (texture.version + 1) >>> 0;
   emitScene3DResourceEvent(resolver, texture, ref, true);
 }
@@ -231,7 +230,7 @@ function requestWorkingResolutions(
         priority = Math.max(priority, options.priority(subscribers[i], ref));
       }
     }
-    const handle = queueResourceLoad<Image | null>(runtime.loader, {
+    const handle = queueResourceLoad<TextureSource | null>(runtime.loader, {
       load: (loaderSignal) => {
         // Wire the loader's own cancellation (dispose/cancel) into our per-texture controller.
         if (loaderSignal.aborted) controller.abort(loaderSignal.reason);
@@ -246,7 +245,7 @@ function requestWorkingResolutions(
       subscribers: new Set(subscribers),
     };
     entry.promise = handle.promise.then(
-      (image) => finishScene3DResourceResolution(resolver, ref, entry, image),
+      (source) => finishScene3DResourceResolution(resolver, ref, entry, source),
       (cause) => failScene3DResourceResolution(resolver, ref, entry, cause),
     );
     runtime.inFlight.set(ref, entry);
