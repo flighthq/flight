@@ -19,11 +19,10 @@ The checker splits its findings by who can act on them. **Failures** are unambig
   it through a resolvable Markdown link or front-matter `./…md` pointer. The charter carries the cell's
   blessed direction, so a review or assessment reference is a finding and a status reference is a
   transient mention—not durable membership. The orphan gate mechanically enforces reachability from an
-  authority-bearing document; it does not machine-check that the authority is the cell charter. Charter
-  acknowledgement is therefore a stricter, currently unenforced cell-membership requirement. This ruling
-  adds no gate machinery. The four contract files remain required and retain the only uniform envelope;
-  supplementary evidence is not a fifth contract-file kind. A `docs:check` “not a contract file” label is
-  classification, not prohibition.
+  authority-bearing document. `npm run docs:check` separately enforces cell membership by requiring each
+  supplementary document directly inside a cell to be pointed to from its own `charter.md`. The four
+  contract files remain required and retain the only uniform envelope; supplementary evidence is not a
+  fifth contract-file kind. A `docs:check` “not a contract file” label is classification, not prohibition.
 
   The existing evidence set demonstrates why the distinction is load-bearing:
   [`geometry/out-parameter-sweep.md`](geometry/out-parameter-sweep.md),
