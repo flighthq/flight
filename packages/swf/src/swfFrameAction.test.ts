@@ -1,3 +1,4 @@
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
   createMovieClip,
   getMovieClipCurrentFrame,
@@ -6,6 +7,7 @@ import {
   setMovieClipSource,
 } from '@flighthq/movieclip/contract';
 import type { MovieClip, Node2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
 import { SwfReader } from './swfReader';
@@ -23,6 +25,29 @@ describe('readSwfAbcFrameScripts', () => {
     playMovieClip(clip);
     frames!.get(1)!(clip as Node2D, 1);
     expect(isMovieClipPlaying(clip)).toBe(false);
+  });
+
+  it('reports a frame script whose body is not a command this importer obeys', () => {
+    // The handler calls a name that is not one of the recognized playback commands, so the body parses
+    // and is then declined. The file bound a script to frame 1 and the document has none.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(readSwfAbcFrameScripts(buildFrameScriptAbc(1), sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-script-declined');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ frame: 1, reason: 'commands-declined' });
+  });
+
+  it('stays silent about a frame script it does obey, so the drop entry carries information', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const scripts = readSwfAbcFrameScripts(buildFrameScriptAbc(), sink);
+      // Non-vacuous: a run that bound no frame script would be silent for the wrong reason.
+      expect([...scripts!.get('Main')!.keys()]).toEqual([1]);
+    });
+
+    expect(diagnostics).toEqual([]);
   });
 
   it('reports nothing for bytecode that is not a readable container', () => {
@@ -86,7 +111,7 @@ describe('readSwfFrameActions', () => {
 
 // An ABC file shaped the way a compiler writes one: a class whose constructor calls
 // `addFrameScript(0, this.frame1)`, and a `frame1` method whose whole body is `stop()`.
-function buildFrameScriptAbc(): Uint8Array {
+function buildFrameScriptAbc(handlerNameIndex = 3): Uint8Array {
   const bytes: number[] = [];
   const u8 = (v: number): void => void bytes.push(v & 0xff);
   const u16 = (v: number): void => {
@@ -169,7 +194,7 @@ function buildFrameScriptAbc(): Uint8Array {
   u30(0);
   u30(0);
   // frame1: stop()
-  const handlerCode = [0xd0, 0x30, 0x5d, 0x03, 0x4f, 0x03, 0x00, 0x47];
+  const handlerCode = [0xd0, 0x30, 0x5d, handlerNameIndex, 0x4f, handlerNameIndex, 0x00, 0x47];
   u30(1);
   u30(2);
   u30(1);
