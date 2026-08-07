@@ -26,6 +26,7 @@ reproducibility.
 | [Incidental SHA-token inventory](sha-pin-incidental-audit.md) | ran clean — 207 occurrences across 43 files reproduce exactly, and 207 of its 208 cited line references are still exact; the single exception is the repair that document itself records |
 | Functional scenes `swf-import` / `swf-alpha-transform` | ran clean — the functional smoke gate captured both on DOM, Canvas, WebGL, and WebGPU with each hash equal to its baseline |
 | `npm run check swf` / `npm run test swf` | ran clean — all gates, 171 tests |
+| Stated *reasons*, not just commands | one was false — the mutation sweep's "seeded generator so any failure is reproducible", which recorded no seed. The load-bearing justifications in [`status.md`](status.md) hold: `setMovieClipSource` does end in `gotoAndStopTimeline`, `updateMovieClip` does advance only the timeline it is handed, and `playMode` does default to `loop` |
 
 Two steps were **not** re-run and are marked so rather than implied: the `curl` fetches, which need
 network access, and the corpus selection against the upstream tree API, which is the pinned fetcher's job.
