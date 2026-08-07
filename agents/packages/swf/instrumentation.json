@@ -5,7 +5,9 @@
         "reports a non-MP3 sound stream, whose blocks do not concatenate"
       ],
       "id": "swf.axis.sound-format-non-mp3",
-      "staysSilent": []
+      "staysSilent": [
+        "stays silent about an MP3 stream, whose blocks do concatenate"
+      ]
     },
     {
       "fires": [
@@ -148,5 +150,5 @@
     }
   ],
   "fireProven": 16,
-  "silenceProven": 15
+  "silenceProven": 16
 }

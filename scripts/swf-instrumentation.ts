@@ -29,7 +29,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   {
     fires: ['reports a non-MP3 sound stream, whose blocks do not concatenate'],
     id: 'swf.axis.sound-format-non-mp3',
-    staysSilent: [],
+    staysSilent: ['stays silent about an MP3 stream, whose blocks do concatenate'],
   },
   {
     fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],

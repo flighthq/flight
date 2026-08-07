@@ -5,7 +5,7 @@
 | --- | --- | --- |
 | Wired | **16 of 80** | every loss path for the capability reports |
 | **Fire-proven** | **16 of 80** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
-| **Silence-proven** | **15 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
+| **Silence-proven** | **16 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
 
 **Say the smaller number plainly.** A reader entitled to know that sixteen of eighty can **detect** a
 loss is equally entitled to know how many have been shown not to **invent** one.
@@ -14,9 +14,9 @@ Silence proofs were prioritised by **which capabilities actually emit a crumb on
 fire-proof-only capability yields a verdict when it stays quiet and UNKNOWN the moment it speaks — so
 silence proofs pay off exactly where crumbs appear. **That subset is corpus-relative: it is a fact about
 the sample it was measured on, not about SWF, and a fixture-release bump invalidates the prioritisation.**
-Re-derive it rather than assuming it stable. Every capability observed emitting a crumb on the local
-306-file sample now carries a silence proof; the remaining unproven one, `swf.axis.sound-format-non-mp3`,
-never fired there.
+Re-derive it rather than assuming it stable. Every wired capability now carries both proofs, so the
+ordering has nothing left to sequence — but it is the reason the two that fire on a thousand files were
+proven before the six that fire on none.
 
 A silence proof matters sooner than "crumb quality" suggests: **a capability with a fire proof and no
 silence proof returns UNKNOWN the moment it actually reports something**, because a crumb is

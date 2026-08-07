@@ -2960,6 +2960,25 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(kinds).not.toContain('swf.jpeg-alpha-stream');
   });
 
+  it('stays silent about an MP3 stream, whose blocks do concatenate', () => {
+    // The last capability without a silence proof, and the only one that never fires on the sampled
+    // corpus — so it is last by the ordering rather than unimportant. Format 2 is MP3 in the high nibble.
+    const file = createSwf([
+      createTag(18, joinBytes(new Uint8Array([0, 2 << 4]), uint16(1152))),
+      createTag(19, joinBytes(uint16(1), uint16(0), new Uint8Array([0xff, 0xfb, 0x90, 0x00]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const document = createScene2DFromSwf(file, sink);
+      // The stream really was carried: an MP3 head plus a block produces an audio resource.
+      expect(document?.audioResources.length).toBe(1);
+    });
+
+    expect(diagnostics.map((entry) => entry.kind)).not.toContain('swf.stream-sound-format');
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
