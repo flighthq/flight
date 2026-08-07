@@ -785,6 +785,24 @@ of, and the question that was actually asked.
   all; a relational-loss detector cannot run without material** ⇒ **so a format whose losses are
   relational needs its corpus EARLIER in the arc, and that is a plan input rather than a discovery.**
 
+- **filed — PURPOSE → CONSEQUENCES → { UNITS, LOSS KINDS }, and the MIDDLE is what makes them
+  converge rather than merely co-descend.** *The importer is deliberately not a runtime* is what makes
+  content-loss and descriptor-loss different **consequences** at all; **both the units and the loss
+  kinds are then read off consequences.** ⇒ **Sibling-with-a-shared-parent was too weak: two things
+  can share an origin and still have nothing to say to each other. A shared MIDDLE is what lets them
+  check each other.**
+  ★★★ **AND THE MIDDLE BUYS A CROSS-CHECK NEITHER QUESTION HAD ALONE: a loss kind corresponding to NO
+  unit distinction means the unit set is too coarse OR the loss kind is not a kind; a unit that NO
+  loss kind can distinguish means they are ONE unit.** **Free once both derive from consequences —
+  and it needs no corpus, which makes it the first check runnable before any material arrives.**
+  ★★ **Limit: it checks COHERENCE, not CORRECTNESS.** **Two sets can agree perfectly and both be wrong
+  about the format**, so it cannot catch a shared frame error — the same blind spot the transfer test
+  exists for.
+  ★★ **And the refactor precedent runs BOTH WAYS, stated BEFORE adoption rather than after: a
+  consequence-derived unit is CLAIMED stable under behaviour-preserving refactor by construction, so a
+  refactor that MOVED it would REFUTE the candidate.** ⇒ **One experiment, both directions — the test
+  that disqualified the syntactic candidates is also the one that can kill their replacement.**
+
 - **filed — PURPOSE → { UNITS, LOSS KINDS }: the categories are the unit question's SIBLING, not its
   child.** Where an importer is deliberately **not** a runtime, **lost content and lost uninterpreted
   data come apart** — but that split follows from **what the importer is FOR**, and **no unit choice
