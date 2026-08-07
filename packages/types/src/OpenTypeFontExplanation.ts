@@ -37,6 +37,18 @@ export interface OpenTypeFontExplanation {
 //   `registerDeflateDecompressor()` from `@flighthq/compression` — rather than a different producer. The
 //   codec is not bundled here so that reading a plain `.ttf` never carries it.
 // `malformed-table` — a required table is present but inconsistent with its own declared extent.
+//   ★ THIS REASON CURRENTLY ABSORBS MORE THAN ITS NAME CLAIMS, AND THE SPLIT HAS NOT BEEN MADE. It is
+//   the single answer reached by eight distinct causes — container unwrap, table directory, glyph
+//   count, metrics, advances, codepoint map, `loca` width, and outline table — and it carries an empty
+//   `table`, so it cannot name which one. The sentence above is FALSE for at least two of them: a
+//   well-formed `cmap` in a sub-table format this package has not implemented is not an inconsistency
+//   of extent, and neither is a WOFF whose registered decompressor declined. Those two want our code
+//   changed and one line of registration respectively, while the sentence above sends a caller looking
+//   for a repaired asset.
+//   Recorded here rather than fixed because choosing WHICH distinctions earn their own reason is a
+//   design decision about this vocabulary, and a reason named badly outlives the session that coined
+//   it. Eight causes do not need eight reasons. Until that is decided, a caller should read this as
+//   "this package could not build a source from these tables" and not as a claim about extents.
 export type OpenTypeFontExplanationReason =
   | 'malformed-table'
   | 'missing-decompressor'
