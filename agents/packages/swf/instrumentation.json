@@ -1,6 +1,10 @@
 {
   "capabilities": [
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a non-MP3 sound stream, whose blocks do not concatenate"
       ],
@@ -10,6 +14,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread"
       ],
@@ -19,6 +27,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3"
       ],
@@ -28,6 +40,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a legacy split JPEG whose halves will not splice into a readable image",
         "reports a legacy split JPEG with no tables in the file as a Drop"
@@ -38,6 +54,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2"
       ],
@@ -47,6 +67,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a font whose glyph table does not decode, which costs the whole font not one glyph",
         "reports one glyph whose outline does not decode, which costs that glyph and not the font"
@@ -57,6 +81,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2"
       ],
@@ -66,6 +94,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports nested masks collapsing, since the outer one is not applied at all"
       ],
@@ -75,6 +107,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a blur pass count it cannot represent, and stays silent at one pass",
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
@@ -86,6 +122,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a frame script declined for carrying more than playback commands"
       ],
@@ -95,6 +135,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable shape body as a Recover, since the placeholder still places and sizes"
       ],
@@ -104,6 +148,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
@@ -113,6 +161,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
@@ -122,6 +174,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports an unreadable body for every shape generation, not just the one the wire was written on"
       ],
@@ -131,6 +187,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports scene names as a Skip, since labels import and the named range has no subject"
       ],
@@ -140,6 +200,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a label naming a frame the timeline never reaches, and stays silent when it does"
       ],
@@ -149,6 +213,10 @@
       ]
     },
     {
+      "audits": [
+        "payload",
+        "scope"
+      ],
       "fires": [
         "reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure"
       ],
@@ -159,5 +227,7 @@
     }
   ],
   "fireProven": 17,
+  "payloadAudited": 17,
+  "scopeAudited": 17,
   "silenceProven": 17
 }
