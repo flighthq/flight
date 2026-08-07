@@ -119,16 +119,14 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     ],
   },
   {
-    // `staysSilent` is empty on purpose: proving silence needs a DoABC payload that actually yields frame
-    // scripts, and the only builder for one lives in swfFrameAction.test.ts. Recording the gap keeps the
-    // silence count honest rather than duplicating a fixture to make a row look complete.
     audits: ['payload', 'scope'],
     fires: [
       'names the anonymous DoABC form separately, since the two are different capabilities',
+      'reports a frame script whose body is not a command this importer obeys',
       'reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was',
     ],
     id: 'swf.script.do-abc',
-    staysSilent: [],
+    staysSilent: ['stays silent about a frame script it does obey, so the drop entry carries information'],
   },
   {
     audits: ['payload', 'scope'],

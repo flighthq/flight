@@ -1,4 +1,5 @@
 import { readAbcFile, readAbcInstructions } from '@flighthq/abc/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   gotoAndPlayMovieClip,
   nextFrameMovieClip,
@@ -6,8 +7,15 @@ import {
   prevFrameMovieClip,
   stopMovieClip,
 } from '@flighthq/movieclip/contract';
-import type { AbcFile, AbcInstruction, FrameScript, MovieClip, Node2D } from '@flighthq/types/contract';
-import { AbcOpcode, AbcTraitKind } from '@flighthq/types/contract';
+import type {
+  AbcFile,
+  AbcInstruction,
+  FrameScript,
+  ImportDiagnostic,
+  MovieClip,
+  Node2D,
+} from '@flighthq/types/contract';
+import { AbcOpcode, AbcTraitKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -20,7 +28,10 @@ import type { SwfReader } from './swfReader';
 // The same all-or-nothing rule as AVM1 applies to each frame's body: it is recognized only when the whole
 // body is one playback call and the scaffolding around it, so a body doing real work is declined rather
 // than partially obeyed.
-export function readSwfAbcFrameScripts(source: Uint8Array): Map<string, Map<number, FrameScript>> | null {
+export function readSwfAbcFrameScripts(
+  source: Uint8Array,
+  diagnostics?: ImportDiagnostic[],
+): Map<string, Map<number, FrameScript>> | null {
   const file = readAbcFile(source);
   if (file === null) return null;
 
@@ -40,7 +51,7 @@ export function readSwfAbcFrameScripts(source: Uint8Array): Map<string, Map<numb
     for (const trait of instance.traits) {
       if (trait.kind === AbcTraitKind.Method) methodsByName.set(resolveAbcName(file, trait.name), trait.methodIndex);
     }
-    const frames = readSwfAbcFrameScriptCalls(file, constructor, bodies, methodsByName);
+    const frames = readSwfAbcFrameScriptCalls(file, constructor, bodies, methodsByName, diagnostics);
     if (frames.size > 0) byClass.set(resolveAbcQualifiedName(file, instance.name), frames);
   }
   return byClass;
@@ -145,6 +156,7 @@ function readSwfAbcFrameScriptCalls(
   constructor: readonly Readonly<AbcInstruction>[],
   bodies: ReadonlyMap<number, AbcInstruction[]>,
   methodsByName: ReadonlyMap<string, number>,
+  diagnostics?: ImportDiagnostic[],
 ): Map<number, FrameScript> {
   const frames = new Map<number, FrameScript>();
   const stack: SwfAbcValue[] = [];
@@ -161,7 +173,20 @@ function readSwfAbcFrameScriptCalls(
         const body = bodies.get(handler.value);
         const commands = body === undefined ? null : readSwfAbcCommands(file, body);
         // The frame index the call carries is zero-based; every frame number elsewhere is one-based.
-        if (commands !== null) frames.set(frame.value + 1, createSwfFrameScript(commands));
+        if (commands === null) {
+          // One report for both causes, because the caller loses the same thing either way: a frame the
+          // file bound a script to has none. `reason` separates a method body that did not parse from a
+          // body that parsed into work this importer declines to obey.
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Drop,
+            'swf.abc-frame-script-declined',
+            'readSwfAbcFrameScriptCalls',
+            { frame: frame.value + 1, reason: body === undefined ? 'method-body-unreadable' : 'commands-declined' },
+          );
+          continue;
+        }
+        frames.set(frame.value + 1, createSwfFrameScript(commands));
       }
       continue;
     }

@@ -1647,7 +1647,7 @@ function appendSwfAbcFrameScripts(state: SwfParseState, timeline: SwfTimeline): 
   for (const [characterId, className] of state.linkages) charactersByClass.set(className, characterId);
 
   for (const blob of state.abcBlobs) {
-    const byClass = readSwfAbcFrameScripts(blob.bytes);
+    const byClass = readSwfAbcFrameScripts(blob.bytes, state.diagnostics);
     if (byClass === null) {
       reportImportDiagnostic(
         state.diagnostics,
