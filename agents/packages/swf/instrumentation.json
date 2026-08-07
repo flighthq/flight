@@ -123,8 +123,7 @@
     },
     {
       "audits": [
-        "payload",
-        "scope"
+        "payload"
       ],
       "fires": [
         "reports a frame script declined for carrying more than playback commands"
@@ -228,6 +227,6 @@
   ],
   "fireProven": 17,
   "payloadAudited": 17,
-  "scopeAudited": 17,
+  "scopeAudited": 16,
   "silenceProven": 17
 }

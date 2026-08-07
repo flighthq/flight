@@ -53,12 +53,41 @@ two. It matters more than the count suggests, because several of those causes ar
 rather than about the file**: a document refused by our own snapshot budget and a document that is
 genuinely malformed are not the same finding.
 
-## Conflated causes — not losses, but not distinguishable either
+## The class: crumbs whose cause could be our own configuration
 
-`MAX_SHAPE_RECORDS` exhaustion nulls the shape and reports `swf.shape-body-unreadable`, the same kind a
-malformed body produces. Nothing is lost silently, so this is not a loss path — but the crumb says the
-file was unreadable when the truth is that **our cap refused it**. Same class as the snapshot budget
-above.
+**Any diagnostic whose cause could be our own configuration must say which. Where it cannot distinguish,
+it must say cause-unknown rather than pick one.** A wrong attribution is worse than no crumb: silence is a
+known unknown someone might investigate, while a confident wrong attribution is a **false known** nobody
+will. The third state is always available and always better than a confident wrong one.
+
+This importer has **thirteen configuration limits** across five files. Eleven of them can refuse or
+truncate real content, and **not one is currently distinguishable from a defect in the file** — every one
+is a verdict about *us* that a conformance run would score against the corpus.
+
+They fall into three severities, worst last:
+
+| Severity | What a consumer sees | Members |
+| --- | --- | --- |
+| **Report missing** — a known unknown | the document is rejected, no crumb | `MAX_BUTTON_RECORDS`, `MAX_SPRITE_NESTING`, `MAX_TIMELINE_FRAME_ENTRIES` |
+| **Report wrong** — a false known | a crumb blames the file | `MAX_SHAPE_RECORDS`, `MAX_GRADIENT_RECORDS`, `MAX_SHAPE_STYLES` → `swf.shape-body-unreadable`; `MAX_FONT_GLYPHS` → `swf.font-glyph-table` |
+| **No failure at all** — scored as a clean pass | silence, and less content than the file authored | `MAX_FRAME_ACTIONS`, `MAX_TEXT_RECORDS`, `MAX_GRADIENT_STOPS`, `MAX_MORPH_STYLES` |
+
+Two limits are correctly outside the class: `MAX_PIXELS` surfaces as a **throw** in the resolve lane,
+which is loud and not an import-time loss; `MAX_GOTO_DEPTH` bounds playback rather than import, and the
+diagnostic sink is closed by then.
+
+### The worst member, because it produces no failure signal at all
+
+`readSwfFrameActions` loops `for (let actions = 0; actions < MAX_FRAME_ACTIONS; actions++)`. On reaching
+the cap the loop **exits and the function returns a script built from the first 10,000 actions** — not
+null, not declined. The import succeeds, the frame script runs fewer commands than the file authored, and
+nothing anywhere says so.
+
+**This makes `swf.script.do-action`'s trustworthy-silence claim false.** Its wire covers a block *declined*
+for carrying non-playback commands; it does not cover a block *truncated* at our cap. That capability's
+`scope` audit marker has been withdrawn in
+[instrumentation.json](instrumentation.json) rather than the wire being quietly repaired — **a scope audit
+that missed something is evidence about the audit, and repairing the wire first would have destroyed it.**
 
 ## Capabilities audited and found to have no loss path
 

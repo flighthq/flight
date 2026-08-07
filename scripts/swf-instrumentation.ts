@@ -103,7 +103,9 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     ],
   },
   {
-    audits: ['payload', 'scope'],
+    // `scope` withdrawn: the wire covers a DECLINED block and not one TRUNCATED at MAX_FRAME_ACTIONS,
+    // which the scope audit missed. Recorded rather than repaired, so the audit's own miss stays visible.
+    audits: ['payload'],
     fires: ['reports a frame script declined for carrying more than playback commands'],
     id: 'swf.script.do-action',
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
