@@ -40,6 +40,16 @@ reader can tell strength apart without trusting the author's formatting:
 
 ## Serving: evidence is about whatever produced it
 
+- **filed — A cast ASSERTS a shape; only a check ESTABLISHES one — and the value came from a file.** A
+  stamp reader validated a tag, a variant, and that a field was an array, **and never the array's
+  contents.** ⇒ **A stamp written by an older build parses cleanly and returns typed, with a required
+  field UNDEFINED at runtime while the declared type promises a number.** ★ **The population is every
+  previously-extracted tree on every developer and CI machine — unbounded, and unreachable by any grep
+  of this repository.** Found by asking *what would not match and still count*, after a grep of data
+  files and fixtures came back clean. **The remedy reused the sentinel the function already had: a
+  stamp the reader cannot vouch for is treated as NO stamp, so a caller re-fetches rather than
+  planning on a silent gap.**
+
 - **filed — The repo you can reach is not the repo the claim is about.** Say it in those words; **the
   sophisticated version saved nobody.** Five readers stated true, exact, checkable numbers about trees
   that were not the one under discussion, **several while actively hunting that exact failure.**
