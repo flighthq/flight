@@ -83,6 +83,9 @@ keeps having an answer.**
 | P1 | `unread-parcel` | foreman | Marked a builder2 parcel processed without reading it; contents no longer retrievable |
 | P2 | `unread-parcel` | builder | Ran `inbox done` on four parcels without reading them; destroyed nothing **only because they had never arrived**, which is luck rather than care |
 | P3 | `relayed-description` | foreman | Described a relayed attachment as containing schema fields the artifact never had; a stamp would not have caught it, since a stamp pins *when* and not *what* |
+| P4 | `inert-signal` | manager | 117 parcels listed, 117 on disk, `inbox done` never executed — the unprocessed flag distinguishes nothing in that workspace, so it cannot report what was missed |
+| P5 | `broadcast-second-person` | foreman | Sent one second-person text to five recipients, so a claim about one read as a claim about each; a reader audited their own workspace for another's lapse |
+| P6 | `summary-for-artifact` | foreman | Answered a resend request with a summary of the parcel instead of the parcel, an hour after landing the rule against exactly that |
 
 **Entry 1 stays registered rather than reverted.** A marked unbacked claim is a known state; an
 unmarked one is what this file exists to prevent.
