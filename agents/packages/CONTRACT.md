@@ -106,6 +106,10 @@ immutable.
 
 ### Historical ratchet boundary
 
+The completion rule is a ratchet, not a retroactive audit: once a governed line exists, later state
+is recorded with a new dated line instead of editing history. The seven violations below are the case
+for that rule, with the four-edit Physics2D progress counter as the exhibit.
+
 - ~~Seven historical guarded-line edits had no durable explanation.~~ — **RECORDED 2026-08-07:** a
   deliberately wide `FLIGHT_LEDGER_BASE=1b4fb2bdf npm run check:append-only-ledgers` comparison finds
   two lines in `physics2d/charter.md`, two in `skeleton2d-formats/charter.md`, and three continuation
@@ -114,8 +118,9 @@ immutable.
   `10483d987`, and eight to all nine in `1c7794799`; `5364889d9` rewrote its debug-geometry decision,
   and `0e1ec6820` rewrote the two Skeleton2D-formats lines and three SWF lines. The current text is a
   chosen historical state: restoring an old line would substitute a reconstruction for the approver's
-  words, while appending a supersession would misstate an edit as a reversal. The check is a ratchet,
-  not a retroactive audit. The seven are not only violations; they are the case for the rule.
+  words, while appending a supersession would misstate an edit as a reversal. Those four ancestral
+  edits to one guarded `Decisions` line supersede the earlier three-edit account; they do not describe
+  separate lines.
 
 ## Provenance stamp (`Approved` entries)
 
