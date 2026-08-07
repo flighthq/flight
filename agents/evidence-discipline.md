@@ -119,11 +119,8 @@ commits, the sharper one from the older tree.** Nothing about a number's form te
 taken. Elevated because it is the one form that fires on a *correction*, which is where scrutiny is
 lowest.
 
-**Also durable.** Separate the signal axis (reported, misreported, absent) from the fidelity axis
-(missing, diminished, substituted): **the fidelity values order by which check they defeat —
-existence, then count, then content comparison — which makes the axis an oracle specification rather
-than a severity scale.** And **building the report for a suspected defect is the strongest test of
-whether it is one**; an unexercised finding is a claim nothing has contradicted yet.
+Two further search laws — the signal/fidelity axes and *build the report to test the defect* — are in
+the companion under this heading.
 
 ## Denominators
 
