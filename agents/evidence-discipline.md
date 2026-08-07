@@ -123,7 +123,10 @@ stops an artifact claiming more than it has.
   Keep a register of merged-but-unbacked claims with class and commit: when a constraint lifts, that
   register is the work order, and without it nobody can say which merged claims to revisit. **The
   register must also cover skips inside the backed set** — a gate that runs green while skipping files
-  every run is backed for what it ran and silent about what it did not. **Even the
+  every run is backed for what it ran and silent about what it did not. **And the register carries its
+  own limit at the top or it becomes the best false-assurance instrument in the building: it can only
+  hold what someone noticed nobody looked at, so a short register is evidence about what we thought to
+  register, not about how much is unchecked.** **Even the
   backed side has this shape at its edge:** the boundary that re-ran every gate could not run suites
   needing a browser, a GPU, or the network, and skipped two contract files on every run — so the
   subsumption is near-total, and the exceptions are, predictably, the expensive ones.
