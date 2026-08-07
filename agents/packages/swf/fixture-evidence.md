@@ -471,6 +471,87 @@ declared frame count, skipping any instance whose candidate characters disagree 
 changes, and compare as for roots. To confirm the check can fail, re-run it with the frame argument to
 `gotoAndStopMovieClip` pinned to 1: every agreement must turn into a divergence.
 
+## What the corpus actually exercises
+
+A coverage table cannot tell an implemented-and-proven capability from an implemented-and-never-seen one:
+both read as carried. This census separates them. It is characterisation, not conformance — it asks only
+whether the corpus contains the construct, never whether the importer got it right.
+
+**Unexercised here means unexercised by this 306-file Ruffle sample, not rare or absent in the wild.** The
+sample is a deterministic every-sixteenth slice of one test suite, skewed toward AVM behaviour tests; it
+was never chosen to cover visual features. A checkout does not carry it.
+
+**Unexercised is not unimplemented.** Nothing below is a missing capability, and no coverage claim is
+withdrawn on the strength of it. The column being reported is *evidence*, not *support*.
+
+Measured at Flight commit `6aff889db` over the 301 readable files.
+
+| Bucket | Count |
+| --- | --- |
+| Capabilities enumerated | 75 |
+| **Exercised** — the corpus contains it | **49** |
+| **Unexercised** — implemented, zero corpus instances | **26** |
+| Undetermined | 0 of the 75; four axes measured separately below |
+
+The enumeration is an explicit list in the probe rather than whatever the walk happened to emit, so
+"unexercised" is a measurement instead of an absence of evidence. The probe self-checks by reporting any
+capability it emitted that the list forgot.
+
+### The 26 unexercised, and whether anything else covers them
+
+Most are covered by the hermetic suite, which is the point of having one — a synthetic test reaches
+constructs a sampled corpus never will.
+
+| Unexercised capability | Covered by a colocated test? |
+| --- | --- |
+| `DefineFont` (v1) and `DefineFontInfo`/`2` | yes — both offset forms and their overrun rejections |
+| Legacy `PlaceObject`, `PlaceObject4`, `RemoveObject` (v1) | yes — all four placement generations and both removals |
+| Placement class name, background colour | yes — linkage and the bounded extended prefix |
+| Lossless colormapped and 15-bit formats | yes |
+| `DefineBitsJPEG2`, `DefineBitsJPEG4` | yes |
+| `StartSound`, `StartSound2`, in/out points, loop count, envelope | yes |
+| `SoundStreamBlock` | yes — though see the stream note below |
+| `DefineScalingGrid` | yes |
+| Bitmap fill repeat/smoothed and repeat/nearest | yes — the sampler axes are tested as a pair |
+| **Focal gradients** | **no** |
+| **Stroke caps, joints, and miter limit** | **no** |
+
+The last two rows are the finding: **unexercised by the corpus *and* unreached by any test**, while
+`status.md` lists both among what shape decoding carries. Source references exist (nine for the focal
+path, twelve for `miterLimit`), so they are implemented; nothing observes them.
+
+Per the rule that an unexercised capability which is also *wrong* is a source defect rather than an
+evidence gap, both were inspected: the focal point is read as a signed 8.8 fixed value and a focal
+gradient is emitted as a radial one carrying that ratio, which is what a focal gradient is; the cap and
+join constants map `1 → none`, `2 → square`, `1 → bevel`, `2 → miter` with round as the default, matching
+the format; and both callsites' argument order matches `appendShapeBeginGradientFill` and
+`appendShapeLineStyle` exactly — the failure a path with no observer is most likely to hide. **No source
+defect. This is an evidence gap.**
+
+### Four axes measured separately
+
+These are sub-features of a carried construct rather than constructs of their own, so they are counted
+over occurrences rather than files.
+
+- **Colour transform channels.** Of 41 placements carrying a transform: RGB multiply 39, RGB add 39, alpha
+  multiply 2, **alpha add 0**. The alpha-add normalization across the adjustment and node-alpha tiers is
+  therefore unexercised.
+- **Blend modes.** One file, one mode: `Multiply`. Every **advanced** (destination-reading and
+  non-separable) mode is unexercised — which is the entire reason the advanced/fixed-function split and
+  the `appearances` report exist.
+- **Filter kinds.** Present: drop shadow, blur, glow, bevel, gradient glow, gradient bevel. Absent:
+  **convolution** and **colour matrix**. The colour-matrix path is the one that folds a filter into the
+  node adjustment stack rather than reporting it as an effect, so the corpus never takes that branch.
+- **Sound formats.** Only MP3. ADPCM, Nellymoser, and raw PCM — the formats whose vendor media type
+  carries the rate and channel parameters their bitstreams omit — are unexercised.
+
+### The stream-audio caveat
+
+`SoundStreamHead2` appears in two files and `SoundStreamBlock` in **none**. So the documented behaviour —
+a stream's blocks concatenate into one payload with a cue on the frame it starts — has a head with no
+blocks behind it in this corpus. True of the code, unexercised by real files, and it reads as covered in
+any per-tag table because the tag row is present.
+
 ## Mutation sweep
 
 The package's whole error contract is a null sentinel, so the property that matters most is that **no

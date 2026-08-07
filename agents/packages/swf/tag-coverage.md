@@ -17,6 +17,12 @@ false — `DefineFontInfo` and `StartSound` carried counts belonging to neighbou
 `RemoveObject2` was marked absent while appearing in twelve files — and split the grouped rows, which had
 been reporting the dominant tag's count as the row's.
 
+**A count of zero here says nothing about whether the capability works.** This table records what the
+corpus contains, and a tag being carried is a claim about the importer, not about the sample. Which
+carried capabilities the corpus actually reaches — 49 of 75, with the 26 it misses and what else covers
+them — is enumerated in
+[fixture-evidence.md](fixture-evidence.md#what-the-corpus-actually-exercises).
+
 ## Carried into the document
 
 | Tag | Becomes | Files |
