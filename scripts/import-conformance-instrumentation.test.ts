@@ -28,9 +28,9 @@ describe('parseImportConformanceInstrumentationMapping', () => {
       DEFINITIONS,
     );
     expect(mapping.problems).toEqual([]);
-    expect([...mapping.lossPathIdentifiedByCapability]).toEqual([
-      ['swf.fill.solid', true],
-      ['swf.text.define-text', true],
+    expect([...mapping.lossPathStateByCapability]).toEqual([
+      ['swf.fill.solid', 'identified'],
+      ['swf.text.define-text', 'identified'],
     ]);
     expect([...mapping.proofs]).toEqual([
       ['swf.fill.solid', { fires: ['packages/swf/src/swfDocument.test.ts#reports loss'], staysSilent: [] }],
@@ -115,7 +115,7 @@ describe('parseImportConformanceInstrumentationMapping', () => {
       },
       DEFINITIONS,
     );
-    expect(mapping.lossPathIdentifiedByCapability.size).toBe(0);
+    expect(mapping.lossPathStateByCapability.size).toBe(0);
     expect(mapping.problems).toContain('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
   });
 
@@ -129,7 +129,7 @@ describe('parseImportConformanceInstrumentationMapping', () => {
       },
       DEFINITIONS,
     );
-    expect(mapping.lossPathIdentifiedByCapability.has('swf.fill.solid')).toBe(false);
+    expect(mapping.lossPathStateByCapability.has('swf.fill.solid')).toBe(false);
     expect(mapping.problems).toContain('Instrumentation proof for swf.fill.solid lacks an identified loss path');
   });
 });

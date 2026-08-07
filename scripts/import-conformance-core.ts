@@ -113,6 +113,8 @@ export interface ImportConformanceInstrumentationProofs {
   staysSilent: readonly string[];
 }
 
+export type ImportConformanceLossPathState = 'identified' | 'not-identified';
+
 export interface ImportConformanceScoreCapabilityNotRun {
   completedWitnesses: number;
   expectedWitnesses: number;
@@ -291,7 +293,7 @@ export function createImportConformanceScore(
   completedShardIds: ReadonlySet<number>,
   results: readonly Readonly<ImportConformanceResult>[],
   instrumentationProofs: ReadonlyMap<string, Readonly<ImportConformanceInstrumentationProofs>>,
-  lossPathIdentifiedByCapability: ReadonlyMap<string, boolean>,
+  lossPathStateByCapability: ReadonlyMap<string, ImportConformanceLossPathState>,
   importerSourceHash: string,
   provenance: Readonly<ImportConformanceProvenance>,
 ): ImportConformanceScore {
@@ -352,9 +354,9 @@ export function createImportConformanceScore(
   }
 
   assertInstrumentationProofs(instrumentationProofs, index);
-  assertLossPathStates(lossPathIdentifiedByCapability, index);
+  assertLossPathStates(lossPathStateByCapability, index);
   for (const id of instrumentationProofs.keys()) {
-    if (lossPathIdentifiedByCapability.get(id) !== true) {
+    if (lossPathStateByCapability.get(id) !== 'identified') {
       throw new Error(`Instrumentation proof for ${id} requires an identified loss path`);
     }
   }
@@ -387,7 +389,7 @@ export function createImportConformanceScore(
           reason: getMissingProofReason(
             outcome,
             capabilityInstrumentationProofs,
-            lossPathIdentifiedByCapability.get(capability.id)!,
+            lossPathStateByCapability.get(capability.id)!,
           ),
           reference,
         });
@@ -542,13 +544,13 @@ function assertInstrumentationProofList(proofs: readonly string[], label: string
 }
 
 function assertLossPathStates(
-  states: ReadonlyMap<string, boolean>,
+  states: ReadonlyMap<string, ImportConformanceLossPathState>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
   const declared = new Set(index.capabilities.map((capability) => capability.id));
   if (states.size !== declared.size) throw new Error('Every declared capability requires an explicit loss-path state');
-  for (const [id, identified] of states) {
-    if (!declared.has(id) || typeof identified !== 'boolean') {
+  for (const [id, state] of states) {
+    if (!declared.has(id) || (state !== 'identified' && state !== 'not-identified')) {
       throw new Error(`Invalid loss-path state for ${id}`);
     }
   }
@@ -627,10 +629,10 @@ function createScoreInstrumentationRole(proofs: readonly string[]): ImportConfor
 function getMissingProofReason(
   outcome: ImportConformanceResult['capabilityOutcomes'][number]['outcome'],
   proofs: Readonly<ImportConformanceInstrumentationProofs>,
-  lossPathIdentified: boolean,
+  lossPathState: ImportConformanceLossPathState,
 ): ImportConformanceUnknownObservation['reason'] {
   if (proofs.fires.length === 0 && proofs.staysSilent.length === 0) {
-    return lossPathIdentified ? 'loss-path-known-not-wired' : 'loss-path-not-identified';
+    return lossPathState === 'identified' ? 'loss-path-known-not-wired' : 'loss-path-not-identified';
   }
   return outcome === 'unsupportedClean' ? 'silence-proof-missing-for-crumb' : 'fire-proof-missing-for-no-crumb';
 }
