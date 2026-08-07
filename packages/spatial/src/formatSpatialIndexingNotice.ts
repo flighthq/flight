@@ -6,10 +6,13 @@ import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
 // holds one. Import it to turn the structured record a SpatialIndexingGuard receives into something a
 // developer reads; leave it unimported and neither the text nor its cost reaches a bundle.
 //
-// The text lives here rather than inside an `enableSpatialGuards` that logs for you because
-// `@flighthq/spatial` is a core-layer package and may not depend on `@flighthq/log` — the same shape
-// `@flighthq/importdiagnostics` uses, where core carries the record and a separate module carries the
-// words. Wiring the two together is three lines at the application layer, which can reach both:
+// This package deliberately stops at the structured guard seam plus this optional formatter rather
+// than adding an `enableSpatialGuards` that chooses reporting policy. A caller can send the record to
+// tests, telemetry, a host sink, or `@flighthq/log`, choosing its own channel and deduplication. An
+// application that installs no guard pays only the runtime's null checks and can leave this formatter
+// unimported. Core guard modules may import the logger through the ratified narrow exception; spatial's
+// caller-composed shape is a package choice, not a workaround for the layer rule. Wiring the two halves
+// to the standard logger remains one line:
 //
 //   setSpatialIndexingGuard((notice) => logWarn({ message: formatSpatialIndexingNotice(notice) }, 'spatial'));
 export function formatSpatialIndexingNotice(notice: Readonly<SpatialIndexingNotice>): string {
