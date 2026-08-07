@@ -144,6 +144,12 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
+    fires: ['reports a static text body that does not compose, which the deferred pass would otherwise swallow'],
+    id: 'swf.text.define-text',
+    staysSilent: ['stays silent about a static text body that composes, so the drop entry carries information'],
+  },
+  {
+    audits: ['payload', 'scope'],
     fires: ['reports scene names as a Skip, since labels import and the named range has no subject'],
     id: 'swf.timeline.define-scene-and-frame-label-data',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],

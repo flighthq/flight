@@ -2643,6 +2643,78 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics.filter((entry) => entry.kind === 'swf.morph-shape-undecodable')).toEqual([]);
   });
 
+  it('reports a static text body that does not compose, which the deferred pass would otherwise swallow', () => {
+    // A record header declaring a font and a colour, then nothing to read them from. Composition is
+    // deferred to after every font is parsed, so this failure surfaces far from the tag that carried it.
+    const record = new BitWriter();
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 3);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 1);
+    record.writeUnsigned(0, 1);
+    const text = joinBytes(
+      uint16(6),
+      createRectangle(0, 1024, 0, 1024),
+      createMatrix(1, 0, 0, 1, 0, 0),
+      new Uint8Array([4, 8]),
+      record.toBytes(),
+    );
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_TEXT, text), createTag(TAG_END)]), sink),
+      ).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.text.define-text', characterId: 6 });
+  });
+
+  it('stays silent about a static text body that composes, so the drop entry carries information', () => {
+    const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
+    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+    const record = new BitWriter();
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 3);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(1, 1);
+    record.writeUnsigned(0, 1);
+    record.writeUnsigned(0, 1);
+    const text = joinBytes(
+      uint16(6),
+      createRectangle(0, 1024, 0, 1024),
+      createMatrix(1, 0, 0, 1, 0, 0),
+      new Uint8Array([4, 8]),
+      record.toBytes(),
+      uint16(4),
+      new Uint8Array([0xff, 0x00, 0x00]),
+      uint16(1024),
+      new Uint8Array([1]),
+      packGlyphEntry(0, 600),
+      new Uint8Array([0]),
+    );
+    let document: ReturnType<typeof createScene2DFromSwf> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      document = createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_DEFINE_FONT, font),
+          createTag(TAG_DEFINE_TEXT, text),
+          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    // The silence is only informative if the composition it is silent about actually happened: a run
+    // that composed nothing would be silent for the wrong reason and prove nothing.
+    expect((getNodeChildren(document!.root)[0] as Shape).kind).toBe(ShapeKind);
+    expect(diagnostics.filter((entry) => entry.kind === 'swf.text-shape-uncomposable')).toEqual([]);
+  });
+
   it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
