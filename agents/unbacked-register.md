@@ -97,6 +97,20 @@ that route: hashes do not survive `git am`, so subject lines are the only durabl
 red result shows *that* a test failed, never *why* — if it fails because the fix's scaffolding does
 not exist yet, that is a compile failure wearing a test failure's clothes and the route does not apply.
 
+## Permitted and unbuilt
+
+A third state beside *permitted-and-built* and *forbidden*: a capability the rules allow, that nobody
+has built, **and that nobody declined to build** — it was never considered. **The middle invites nobody
+unless it has a name**, which is why it gets a table rather than a mention.
+
+**Trigger for finding these:** enumerating what every rule permits is unaffordable, so audit the rules
+that have stopped being checked and started being assumed. **The tell is that you cannot remember
+deciding.**
+
+| # | Capability | Why it went unbuilt |
+|---|---|---|
+| U1 | A durable real-font verification harness for `font-formats`, using the existing sha256-verified on-demand fetcher | *No vendored fixtures* had collapsed into *real-font verification is inherently throwaway*, so every corpus this session was scratchpad-only. **The author had built the permitted mechanism earlier in the same arc and then did not use it**, which removes every cheaper explanation. Wiring font packs into the conformance fixture system is phase-2 scope. |
+
 ## Skips inside the backed set
 
 The whole-repo test run that backs most claims **skips two browser-contract files on every run**, and
