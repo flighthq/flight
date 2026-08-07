@@ -29,7 +29,10 @@ import { join } from 'node:path';
 
 import ts from 'typescript';
 
-const SOURCE_DIRECTORY = join('packages', 'swf', 'src');
+// Overridable so the detector can be pointed at another corpus WITHOUT changing what this cell's own
+// figures measure. A sweep whose default scope moves silently would make every previously reported
+// number unreproducible.
+const SOURCE_DIRECTORY = process.env.SWEEP_DIR ?? join('packages', 'swf', 'src');
 const STORING_METHODS = new Set(['add', 'push', 'set']);
 const EXITING_KINDS = new Set([
   ts.SyntaxKind.ReturnStatement,
@@ -172,8 +175,11 @@ for (const name of files) {
       }
     }
     if (ts.isCatchClause(node)) {
+      // A catch that ASSIGNS is recording the failure, not swallowing it — `catch { threw = true }` is the
+      // outcome being captured. Without this the detector cried wolf against correct code, which is the
+      // failure direction that costs an instrument its readers fastest.
       const body = node.block.getText(parsed);
-      if (!/throw|reportImportDiagnostic\(/.test(body)) record(node, FORM_SWALLOWED_CATCH);
+      if (!/throw|reportImportDiagnostic\(|=/.test(body)) record(node, FORM_SWALLOWED_CATCH);
     }
     ts.forEachChild(node, visit);
   };
