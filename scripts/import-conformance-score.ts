@@ -39,6 +39,8 @@ export interface ImportConformanceExercisedCapability {
    * Proof directions stay independent: diagnostic silence is interpretable only with `fires`, while a
    * diagnostic crumb is interpretable only with `staysSilent`. Each unlicensed observation remains keyed
    * in `unknownObservations`; it must never be inferred as passing or collapsed into an aggregate count.
+   * A proof names the case it tested. Proof presence does not claim that the case exhausts every way the
+   * capability can silently lose information; that claim-scope question remains an audit concern.
    */
   instrumentation: {
     fires: ImportConformanceInstrumentation;
@@ -108,6 +110,7 @@ export interface ImportConformanceProvenSummary {
 
 export interface ImportConformanceExercisedSummary {
   capabilities: number;
+  /** Independent proven populations, not progress numerators over all exercised or declared capabilities. */
   fireProven: ImportConformanceProvenSummary;
   silenceProven: ImportConformanceProvenSummary;
   singleWitnessCapabilities: number;
