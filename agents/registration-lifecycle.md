@@ -149,9 +149,14 @@ data, so any of JSON, TOML, or YAML would carry it. Two consumers decide it:
 form, so there is no second artifact to drift — but the dump path is exported surface and carries its own
 test.
 
-#### Built-in entries are generated
+#### Built-in entries: derived where source states the binding, declared where it does not
 
-**It is derived from source, and the derivation already exists.** `scripts/reachability-core.ts:151`
+**Not every family is derivable, and assuming otherwise was the first revision's largest error.** The two
+halves are split by one test — *does any statement in source pair this kind with this implementation?*
+
+##### Derived — the 219 delegating registrars
+
+**The derivation already exists.** `scripts/reachability-core.ts:151`
 `registrationMaps()` walks a registrar body for a `CallExpression`, reads `arguments[1]` as the kind
 string literal and `arguments[2]` as the implementation identifier, and compares both against a
 name-derived expectation. Inverting it — recording the pair instead of verifying it — yields the catalog
@@ -165,17 +170,64 @@ Coverage is high by construction: the census in [registry table model](registry-
 property that keeps the catalog honest as the codebase grows, and it applies steady pressure toward the
 single-delegating-statement shape rather than letting an unreadable registrar disappear from the map.
 
+##### Declared — node renderers, because source never states them
+
+**There is no per-kind node-renderer registrar, no built-in table, and therefore nothing to read.** The
+only door is the generic `registerRenderer(state, kind, renderer)`, and the pairing
+`ShapeKind → defaultCanvasShapeRenderer` exists **only at application call sites**. `renderer.ts:46`
+states the refusal as a design position:
+
+> The registry stays open and tree-shakable: only the renderers the caller references are pulled in —
+> there is no "register all built-ins" set, which would force every renderer into the bundle.
+
+That rule is right and is not up for revision. Its consequence is that the knowledge of what a kind's
+default renderer *is* lives in examples and in people's heads, nowhere a tool can read.
+
+**Name derivation cannot rescue it.** Pairing `default{Backend}{X}Renderer` with `{X}Kind` breaks on the
+canvas list's own entries: `defaultCanvasRenderCacheRenderer` is registered through
+`registerRenderCacheRenderer(state, renderer)`, a different door taking no kind at all, and
+`defaultCanvasMorphShapeRenderer` is an alias of `defaultCanvasShapeRenderer`. Unlike the derived half,
+there is no body to confirm a guess against — so a name scan is a guess wearing a check's clothing, and a
+wrong entry generates a wrong call, which is worse than no entry.
+
+**Rejected: adding per-kind wrappers so source would state it.** `registerCanvasShapeRenderer(state)`
+wrapping the generic door would make the whole catalog derivable and close the door-1 asymmetry node
+renderers have (effects have both public doors; node renderers only ever had door 2). It was rejected on
+two grounds, and the cost comparison does not favour it either — there are 39 renderer constants across
+the four 2D backends, against 39 declared rows:
+
+- **It is a second string-derivation rule, and it needs exceptions immediately.** `RenderCache` uses a
+  different door and `MorphShape` is an alias, so 1 of canvas's 9 breaks the rule outright.
+  `backend-prefix:check` already carries an `ALLOW` list for exactly this class of fragility.
+- **A uniform-looking family sets an expectation the project deliberately breaks.** `registration-model.md`
+  §6 establishes that DOM's batch exclusions are declared positions, not roadmap — the canvas and DOM
+  leaf sets differ by identity, not by one being behind. A blanket convention makes a missing
+  `registerDomTilemapRenderer` read as an oversight rather than a decision.
+
+Declared rows avoid both: no naming rule, and a backend's gap is an absent row rather than an absent
+member of an expected series. They also concentrate 39 entries into four files instead of 39 sites.
+
+**What the check can and cannot verify here.** It confirms every declared entry names a symbol that
+exists and is exported on the named module's lane — which catches renames and deletions, the rot that
+actually happens. It cannot confirm the pairing is semantically right; `ShapeKind` bound to the tilemap
+renderer would pass. That failure is caught by the first thing that renders, and is far rarer than a
+rename. The catalog must record which half each entry came from, so a reader knows which guarantee applies.
+
+#### How the generated half is written
+
 **The generator writes package source**, and `catalog:check` regenerates in memory and fails on drift —
 the `support.ts` and `swf-capabilities.ts` mechanism, pointed at `packages/registry-catalog/src/`
 instead of at `agents/`. This is the repository's **first generated `.ts` inside a package**, and the
 novelty is deliberate rather than overlooked:
 
-- The alternative — a hand-declared list the script only *verifies* — matches existing convention but
-  fails on the criterion this document is built around. Keeping 295 entries current by hand is friction
-  on the person adding a registrar; they skip it, the catalog goes stale, codegen errors on a kind that
-  genuinely works, and the fastest repair is the bundle. **A declared list regenerates the exact failure
-  mode the design exists to remove**, one level up: not an agent reaching for the shotgun while using
-  the system, but a maintainer making the shotgun necessary while extending it.
+- Declaring what source already states — a hand-written list the script only *verifies* — matches
+  existing convention but fails on the criterion this document is built around. Keeping 219 entries
+  current by hand is friction on the person adding a registrar; they skip it, the catalog goes stale,
+  codegen errors on a kind that genuinely works, and the fastest repair is the bundle. **A declared list
+  regenerates the exact failure mode the design exists to remove**, one level up: not an agent reaching
+  for the shotgun while using the system, but a maintainer making the shotgun necessary while extending
+  it. That argument is why the derivable half is derived — and why the declared half is kept to the 39
+  rows where source states nothing, rather than allowed to grow.
 - The convention it breaks has no reason behind it here. Package source is hand-authored because nothing
   has needed generating, not because generating is forbidden.
 - And nobody hand-maintains a symbol table. See [the frame](#the-frame-this-is-linking).
@@ -308,6 +360,32 @@ instructions, and see whether it produces minimal wiring. If it still reaches fo
 failed regardless of how clean the types are. No amount of type-level correctness substitutes for
 running this.
 
+## Shadowing — generated is not final
+
+**Requirement, raised by the user 2026-08-07: wire from asset A, then override the realization for one
+kind.** Generation that cannot be overridden is worse than no generation, because the escape hatch
+becomes editing a file the next run overwrites.
+
+Three tiers, and only the last one works today:
+
+1. **Catalog** — "in this app, `ShapeKind` resolves to `acmeShapeRenderer`," so codegen *emits* the
+   override. Works by construction: the catalog is an open registry and registration is last-write-wins.
+2. **Module** — the generated file stays pure and is never hand-edited; overrides are ordinary calls
+   after it. This makes call order contractual, which nothing currently states.
+3. **Runtime** — `registerRenderer` is already last-write-wins, so a later call shadows an earlier one.
+
+```ts
+createGlRenderRegistries(state);                       // generated — regenerable, never hand-edited
+registerRenderer(state, ShapeKind, myShapeRenderer);   // hand-written — survives regeneration
+```
+
+**Tier 3 is blocked on [Blocker 1 of the registry table model](registry-table-model.md#blockers), and
+this raises that blocker's priority.** Last-write-wins isolates only while each state owns its tables.
+The storage proposal *shares* tables by reference — at which point overriding on a derived state mutates
+the state it was derived from, and there is no tombstone to express "omit this one here." Blocker 1 was
+recorded as an internal correctness problem; it is really the question of whether the headline use case
+above works at all.
+
 ## The laundering test — data is not the deliverable
 
 **The lifecycle is done when a call executes. Everything before that is bookkeeping about a problem
@@ -366,7 +444,7 @@ the SDK cell; the tool is a shell over it. A catalog is a format.
 |---|---|---|---|
 | `@flighthq/requirements` | new SDK package | the sink, `collectScene2DRequirements`, `RequirementSet` merge/diff, the declared facet vocabulary | `@flighthq/importdiagnostics` — same sink shape, same collector, `deps: types only` |
 | `@flighthq/registry` | new SDK package | `KeyedTable` / `SlotTable` / `OrdinalTable`, `GlRenderRegistries` (the [registry table model](registry-table-model.md) proposal) | — |
-| `@flighthq/registry-catalog` | new SDK package | `CatalogEntry`, the open catalog registry, and the generated built-in entries | `Scene2DDocumentImporterRegistry` for shape; `-subpackage` naming per `spritesheet-formats` |
+| `@flighthq/registry-catalog` | new SDK package | `CatalogEntry`, the open catalog registry, the generated built-in entries, and the ~39 declared node-renderer rows | `Scene2DDocumentImporterRegistry` for shape; `-subpackage` naming per `spritesheet-formats` |
 | `@flighthq/registry-codegen` | new SDK package | `emitRegistriesModule(catalog, requirements, backend): string` — pure, no fs, no argv | — |
 | `@flighthq/tool-registry` | new `tool-*` package | argv, glob, file writes, exit codes. Outside the SDK barrel, non-tree-shakable, `bin` entry | `@flighthq/tool-capture` over `@flighthq/capture` |
 | `scripts/catalog.ts` | script | generates the built-in entries into `registry-catalog`; `catalog:check` | `support.ts`, `swf-capabilities.ts` |
