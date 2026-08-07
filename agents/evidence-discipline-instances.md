@@ -216,6 +216,25 @@ of, and the question that was actually asked.
 
 ## Serving: structure over convention
 
+- **filed — Keep the semantic decision out of the measurement; let the consumer group.** A scratch
+  tool reported a curated eleven tag codes; the promoted version prints **every** code. ⇒ **Choosing
+  which members to report puts a judgement inside an instrument, where it is invisible to everyone
+  reading its output** — and the grouping the curator had in mind is a view the reader can build
+  afterwards, while the members they dropped are gone.
+
+- **filed — Promote the MEASUREMENT half, never the checker with its expectations baked in.** The
+  scratch file nearest the documentation **held the doc's own figures as a typed comparison table.**
+  ⇒ **Committing it would have installed the exact stale-number defect the cell had spent the night
+  removing: a checker whose expectations are constants nothing recomputes.** **A scratch instrument is
+  usually a measurement fused to an assertion, and only the measurement half should survive
+  promotion.**
+
+- **filed — A repair can create the obligation it appears to discharge.** Replacing a route that named
+  an uncommitted tool with an inline procedure closed the false claim — **and the new text ended by
+  naming a command that did not yet exist.** ⇒ **Fixing a false claim by writing a second one is a net
+  loss**, so the tool had to land before the document could be called true. **The small-fix-first
+  ordering still paid: the original claim was dead even if everything after it had failed.**
+
 - **filed — A self-criticism that stays a confession is the transient-corrected/durable-stale shape
   again.** Two sweeps were reported as having weaker epistemic status than a third — **said in a
   message, while the scripts kept printing confident ceilings.** ⇒ **Acting on a self-criticism means
