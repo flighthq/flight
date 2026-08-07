@@ -478,24 +478,52 @@ function readSwfFile(source: Uint8Array, diagnostics?: ImportDiagnostic[]): SwfF
   const uncompressed = uncompressSwfSource(source, diagnostics);
   if (uncompressed === null) return null;
 
+  // Every rejection below loses the WHOLE document, and each has a distinct cause. Without a report per
+  // cause the caller receives one null from `createScene2DFromSwf` and cannot tell an unregistered
+  // decompressor — which IS reported, upstream — from a truncated header, which was not.
   const header = new SwfReader(uncompressed, 0, uncompressed.length);
   const signature = header.readUint8();
   if (signature !== FWS_SIGNATURE || header.readUint8() !== W_SIGNATURE || header.readUint8() !== S_SIGNATURE) {
+    // Distinct from the container's `swf.invalid-signature`: that one reads the ORIGINAL bytes, this one
+    // reads the decompressed body, whose header the decompressor rewrote. NOTHING CAN REACH THIS TODAY —
+    // an FWS container is returned unchanged and every compressed path writes `FWS_SIGNATURE` into byte 0,
+    // while bytes 1 and 2 were validated before either. The report stays because unreachable-by-
+    // construction is a property of today's two container paths, not of the format: a third path, or a
+    // decompressor that stops rewriting the header, makes it reachable, and silence would return with it.
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'swf.uncompressed-signature-invalid',
+      'readSwfFile',
+    );
     return null;
   }
 
   const version = header.readUint8();
   const fileLength = header.readUint32();
-  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > uncompressed.length) return null;
+  if (!header.valid || version === 0 || fileLength < MIN_SWF_LENGTH || fileLength > uncompressed.length) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'swf.header-fields-invalid', 'readSwfFile', {
+      declaredLength: fileLength,
+      available: uncompressed.length,
+      version,
+    });
+    return null;
+  }
 
   const body = new SwfReader(uncompressed, SWF_PREFIX_LENGTH, fileLength);
   const stageBounds = readSwfRectangle(body);
-  if (stageBounds === null) return null;
+  if (stageBounds === null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'swf.stage-bounds-unreadable', 'readSwfFile');
+    return null;
+  }
   // Header FrameRate is 8.8 fixed and governs every timeline in the file; the authored FrameCount that
   // follows it is advisory, so the real root frame count comes from the ShowFrame tags themselves.
   const frameRate = body.readUint16() / FIXED_8_8_ONE;
   body.readUint16();
-  if (!body.valid) return null;
+  if (!body.valid) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'swf.header-truncated', 'readSwfFile');
+    return null;
+  }
 
   const parsed = readSwfTags(body, diagnostics);
   return parsed === null ? null : { frameRate, parsed, stageBounds };

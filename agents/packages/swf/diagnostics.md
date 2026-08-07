@@ -223,6 +223,21 @@ silence about it is uninformative today. This table grows as drop sites are wire
 consumer should read rather than assuming coverage, and the count is deliberately stated so a reader
 cannot mistake the table's existence for coverage.
 
+## One kind has never been observed, and that is recorded rather than left to be discovered
+
+`swf.uncompressed-signature-invalid` is wired and **unreachable by construction today.** An FWS container
+is returned unchanged, every compressed path writes the FWS byte into the decompressed header, and bytes
+1 and 2 are validated before either runs. So no input reaches it.
+
+It is kept rather than deleted because unreachability here is a property of the **two container paths
+that exist now**, not of the format. A third container form, or a decompressor that stops rewriting the
+header, makes it reachable — and deleting the wire would mean silence arriving with that change.
+
+**For a consumer this means one thing: never treat this kind's absence as information.** Every other kind
+in this document is absent because nothing was lost; this one is absent because nothing can produce it.
+That is the same absent-versus-measured-negative collision the rest of the cell has been removing, and
+naming it here is the only place it can be encoded — a diagnostic kind has no representation of its own.
+
 ## Metadata silence is deliberate
 
 Tags carrying no scene content — `FileAttributes`, `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`,
