@@ -37,6 +37,7 @@
     "capabilities:individuation": "tsx ./scripts/swf-individuation.ts",
     "capabilities:numbers": "tsx ./scripts/swf-doc-numbers.ts",
     "capabilities:sites": "tsx ./scripts/swf-diagnostic-sites.ts",
+    "capabilities:tag-census": "tsx ./scripts/swf-tag-census.ts",
     "capabilities:sites:check": "tsx ./scripts/swf-diagnostic-sites.ts --check",
     "capabilities:silent-drops": "tsx ./scripts/swf-silent-drop-shape.ts",
     "capabilities:tag-dispatch": "tsx ./scripts/swf-tag-dispatch.ts",
