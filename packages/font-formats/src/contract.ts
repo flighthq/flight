@@ -21,3 +21,4 @@ export {
   readOpenTypeMetrics,
 } from './openTypeMetrics';
 export { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory';
+export { readWoffFont, WOFF_COMPRESSION } from './woffFont';

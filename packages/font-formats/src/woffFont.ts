@@ -1,0 +1,112 @@
+import { Compression } from '@flighthq/types/contract';
+
+// WOFF is a wrapper, not a font format: the same sfnt tables, each optionally deflated, behind a header
+// that says where they went. So the whole job is to REBUILD THE SFNT and hand it to the reader that
+// already exists — no new outline code, no new seam, and `glyf`, `CFF ` and CID all work through it
+// unchanged because they never learn the bytes arrived wrapped.
+//
+// The container layout is an interface fact about the format. The reconstruction is Flight's own.
+//
+// ★ THE DECOMPRESSOR IS NOT BUNDLED HERE, DELIBERATELY. It is fetched from `@flighthq/compression`'s
+// registry, which a caller opts into with `registerDeflateDecompressor()`. Importing the codec directly
+// would drag DEFLATE into every bundle that reads a `.ttf`, which is the bundle invariant this repository
+// enforces — an assembly never inflates the bundle cost of a primitive. The cost of that choice is that
+// an unregistered decompressor is a real outcome, so it gets its own reported reason rather than being
+// folded into "unsupported container".
+
+const WOFF_HEADER_BYTES = 44;
+const WOFF_DIRECTORY_ENTRY_BYTES = 20;
+const SFNT_HEADER_BYTES = 12;
+const SFNT_DIRECTORY_ENTRY_BYTES = 16;
+
+// Rebuilds the plain sfnt a WOFF wraps. Returns the null sentinel for a malformed container, and for a
+// deflated table when no decompressor is registered — the caller distinguishes those through
+// `explainOpenTypeFont`, since one wants a repaired file and the other wants one line of registration.
+export function readWoffFont(
+  bytes: Readonly<Uint8Array>,
+  decompress: ((compressed: Readonly<Uint8Array>, uncompressedLength: number) => Uint8Array | null) | null,
+): Uint8Array | null {
+  if (bytes.byteLength < WOFF_HEADER_BYTES) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+  const tableCount = view.getUint16(12);
+  if (tableCount === 0) return null;
+  const directoryEnd = WOFF_HEADER_BYTES + tableCount * WOFF_DIRECTORY_ENTRY_BYTES;
+  if (directoryEnd > bytes.byteLength) return null;
+
+  // The wrapper carries the sfnt version the tables belonged to, so the rebuilt font declares the flavor
+  // it actually is rather than one inferred from which tables happen to be present.
+  const flavor = view.getUint32(4);
+
+  interface WoffTable {
+    data: Uint8Array;
+    tag: number;
+  }
+  const tables: WoffTable[] = [];
+
+  for (let index = 0; index < tableCount; index += 1) {
+    const record = WOFF_HEADER_BYTES + index * WOFF_DIRECTORY_ENTRY_BYTES;
+    const tag = view.getUint32(record);
+    const offset = view.getUint32(record + 4);
+    const compressedLength = view.getUint32(record + 8);
+    const originalLength = view.getUint32(record + 12);
+    if (offset + compressedLength > bytes.byteLength) return null;
+
+    const stored = bytes.subarray(offset, offset + compressedLength);
+    // A table is stored uncompressed when the two lengths match — the format's own way of saying
+    // "compressing this one did not pay", so it is a normal case rather than an edge one.
+    if (compressedLength === originalLength) {
+      tables.push({ data: stored as Uint8Array, tag });
+      continue;
+    }
+
+    if (decompress === null) return null;
+    const inflated = decompress(stored, originalLength);
+    // A decompressor that returns the wrong length has produced something that is not this table, and
+    // reassembling it would yield a font whose directory lengths lie about its own contents.
+    if (inflated === null || inflated.byteLength !== originalLength) return null;
+    tables.push({ data: inflated, tag });
+  }
+
+  return assembleSfntFromWoffTables(flavor, tables);
+}
+
+// Writes a plain sfnt: header, a directory sorted by tag, then the table data with each table starting on
+// a four-byte boundary. Sorting is required rather than cosmetic — the sfnt directory is defined as being
+// in tag order, and a reader entitled to binary-search it would find the wrong table otherwise.
+function assembleSfntFromWoffTables(
+  flavor: number,
+  tables: readonly Readonly<{ data: Uint8Array; tag: number }>[],
+): Uint8Array {
+  const sorted = [...tables].sort((a, b) => a.tag - b.tag);
+  const headerBytes = SFNT_HEADER_BYTES + sorted.length * SFNT_DIRECTORY_ENTRY_BYTES;
+
+  let total = headerBytes;
+  for (const table of sorted) total += (table.data.byteLength + 3) & ~3;
+
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, flavor);
+  view.setUint16(4, sorted.length);
+  // searchRange, entrySelector and rangeShift are derived values a reader can recompute; the reader in
+  // this package walks the directory linearly and never consults them, so they are left zero rather than
+  // written with values nothing checks.
+
+  let dataAt = headerBytes;
+  sorted.forEach((table, index) => {
+    const record = SFNT_HEADER_BYTES + index * SFNT_DIRECTORY_ENTRY_BYTES;
+    view.setUint32(record, table.tag);
+    // The checksum field is left zero for the same reason: nothing in this package verifies it, and
+    // writing a recomputed value would assert a check that was never performed.
+    view.setUint32(record + 8, dataAt);
+    view.setUint32(record + 12, table.data.byteLength);
+    out.set(table.data, dataAt);
+    dataAt += (table.data.byteLength + 3) & ~3;
+  });
+
+  return out;
+}
+
+// The compression this container uses. Named through the shared vocabulary rather than a local constant so
+// a caller registering a codec and this module asking for one cannot drift apart.
+export const WOFF_COMPRESSION: Compression = Compression.Deflate;

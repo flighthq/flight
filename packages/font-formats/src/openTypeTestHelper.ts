@@ -194,17 +194,49 @@ function encodeCffIndex(entries: readonly Uint8Array[]): Uint8Array {
   return bytes;
 }
 
-// A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.
-export function squareSyntheticGlyph(size: number): SyntheticGlyph {
-  return {
-    endPoints: [3],
-    points: [
-      [0, 0, true],
-      [size, 0, true],
-      [size, size, true],
-      [0, size, true],
-    ],
-  };
+// Wraps a plain sfnt as a WOFF, storing every table UNCOMPRESSED (the format's own equal-lengths case).
+// Building the fixture uncompressed keeps the container test independent of any codec: it proves the
+// unwrap-and-reassemble path on its own, and the compressed path is proved separately with a registered
+// decompressor.
+// `reverseTableOrder` emits the WOFF directory in DESCENDING tag order. Without it the fixture is already
+// sorted, so a test asserting the rebuild sorts would pass even if the rebuild did nothing — which is
+// exactly what mutation testing caught.
+export function encodeSyntheticWoff(sfnt: Readonly<Uint8Array>, reverseTableOrder = false): Uint8Array {
+  const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+  const tableCount = view.getUint16(4);
+  const header = 44 + tableCount * 20;
+
+  let total = header;
+  const entries: { data: Uint8Array; tag: number }[] = [];
+  for (let index = 0; index < tableCount; index += 1) {
+    const record = 12 + index * 16;
+    const tag = view.getUint32(record);
+    const offset = view.getUint32(record + 8);
+    const length = view.getUint32(record + 12);
+    entries.push({ data: sfnt.subarray(offset, offset + length) as Uint8Array, tag });
+    total += (length + 3) & ~3;
+  }
+
+  if (reverseTableOrder) entries.reverse();
+
+  const out = new Uint8Array(total);
+  const outView = new DataView(out.buffer);
+  outView.setUint32(0, 0x774f4646);
+  outView.setUint32(4, view.getUint32(0));
+  outView.setUint32(8, total);
+  outView.setUint16(12, tableCount);
+  let dataAt = header;
+  entries.forEach((entry, index) => {
+    const record = 44 + index * 20;
+    outView.setUint32(record, entry.tag);
+    outView.setUint32(record + 4, dataAt);
+    // Equal compressed and original lengths is how the format says "stored, not deflated".
+    outView.setUint32(record + 8, entry.data.byteLength);
+    outView.setUint32(record + 12, entry.data.byteLength);
+    out.set(entry.data, dataAt);
+    dataAt += (entry.data.byteLength + 3) & ~3;
+  });
+  return out;
 }
 
 function assembleSfnt(sfntVersion: number, tables: ReadonlyMap<string, Uint8Array>): Uint8Array {
@@ -367,4 +399,17 @@ function encodeSyntheticMaxp(glyphCount: number): Uint8Array {
   view.setUint32(0, 0x00010000);
   view.setUint16(4, glyphCount);
   return bytes;
+}
+
+// A square, all points on-curve — the simplest shape whose corners a reader cannot fudge.
+export function squareSyntheticGlyph(size: number): SyntheticGlyph {
+  return {
+    endPoints: [3],
+    points: [
+      [0, 0, true],
+      [size, 0, true],
+      [size, size, true],
+      [0, size, true],
+    ],
+  };
 }

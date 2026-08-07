@@ -32,9 +32,14 @@ export interface OpenTypeFontExplanation {
 //   Today that means CFF/CFF2 PostScript charstrings, where `table` is `CFF ` or `CFF2`. This is a
 //   stated boundary rather than a defect: the first cut reads quadratic `glyf` outlines only, and a
 //   caller holding such a font needs a different producer rather than a repaired file.
+// `missing-decompressor` — the container is a WOFF, whose tables are DEFLATE-compressed, and no
+//   decompressor is registered. Distinct from `unsupported-container` because the remedy is one line —
+//   `registerDeflateDecompressor()` from `@flighthq/compression` — rather than a different producer. The
+//   codec is not bundled here so that reading a plain `.ttf` never carries it.
 // `malformed-table` — a required table is present but inconsistent with its own declared extent.
 export type OpenTypeFontExplanationReason =
   | 'malformed-table'
+  | 'missing-decompressor'
   | 'missing-required-table'
   | 'ok'
   | 'too-short'
