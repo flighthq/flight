@@ -516,13 +516,34 @@ describe('parseImportConformanceScore', () => {
       reference: 'fixture:alpha:crumb',
     });
     const wrongReason = fireOnlyUnknownCrumb('alpha');
-    wrongReason.unknownObservations[0].reason = 'diagnostic-instrumentation-missing';
+    wrongReason.unknownObservations[0].reason = 'loss-path-known-not-wired';
+    const collapsedReason = unknownCapability('alpha', 1) as unknown as {
+      unknownObservations: Array<{ reason: string; reference: string }>;
+    };
+    collapsedReason.unknownObservations[0].reason = 'diagnostic-instrumentation-missing';
 
     expect(() => parseImportConformanceScore(score(measuredPack([duplicate]), '100'))).toThrow(
       'observation references must be unique and sorted in ascending order',
     );
     expect(() => parseImportConformanceScore(score(measuredPack([wrongReason]), '100'))).toThrow(
       'requires both instrumentation directions to be unproven',
+    );
+    expect(() => parseImportConformanceScore(score(measuredPack([collapsedReason as never]), '100'))).toThrow(
+      "must be 'fire-proof-missing-for-no-crumb', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
+    );
+  });
+
+  it('keeps known-but-unwired and unidentified loss paths as separate remedy populations', () => {
+    const baseline = measuredPack([
+      unknownCapability('alpha', 1, 'loss-path-known-not-wired'),
+      unknownCapability('beta', 1, 'loss-path-not-identified'),
+    ]);
+    const report = compareImportConformanceScores(score(baseline, '100'), score(baseline, '101'), {
+      unknownBaseline: 'allow',
+    });
+
+    expect(formatImportConformanceRatchetReport(report)).toContain(
+      'unknown observations known-unwired 1 → 1, loss-path-unidentified 1 → 1, no-fire 0 → 0, no-silence 0 → 0',
     );
   });
 
@@ -699,7 +720,11 @@ function unmeasuredCapability(id: string): ImportConformanceCapability {
   return { id, state: 'unmeasured' };
 }
 
-function unknownCapability(id: string, witnesses: number): ImportConformanceExercisedCapability {
+function unknownCapability(
+  id: string,
+  witnesses: number,
+  reason: 'loss-path-known-not-wired' | 'loss-path-not-identified' = 'loss-path-not-identified',
+): ImportConformanceExercisedCapability {
   return {
     id,
     instrumentation: { fires: { state: 'unproven' }, staysSilent: { state: 'unproven' } },
@@ -707,7 +732,7 @@ function unknownCapability(id: string, witnesses: number): ImportConformanceExer
     results: { fire: { state: 'unknown' }, silence: { state: 'unknown' } },
     state: 'exercised',
     unknownObservations: Array.from({ length: witnesses }, (_, index) => ({
-      reason: 'diagnostic-instrumentation-missing',
+      reason,
       reference: `fixture:${id}:${index.toString().padStart(6, '0')}`,
     })),
     witnesses,

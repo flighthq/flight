@@ -6,8 +6,9 @@ export interface ImportConformanceOutcomeCounts {
 }
 
 export type ImportConformanceUnknownObservationReason =
-  | 'diagnostic-instrumentation-missing'
   | 'fire-proof-missing-for-no-crumb'
+  | 'loss-path-known-not-wired'
+  | 'loss-path-not-identified'
   | 'silence-proof-missing-for-crumb';
 
 export interface ImportConformanceUnknownObservation {
@@ -358,13 +359,14 @@ function parseUnknownObservations(value: unknown, path: string): ImportConforman
 
 function parseUnknownObservationReason(value: unknown, path: string): ImportConformanceUnknownObservationReason {
   if (
-    value !== 'diagnostic-instrumentation-missing' &&
     value !== 'fire-proof-missing-for-no-crumb' &&
+    value !== 'loss-path-known-not-wired' &&
+    value !== 'loss-path-not-identified' &&
     value !== 'silence-proof-missing-for-crumb'
   ) {
     fail(
       path,
-      "must be 'diagnostic-instrumentation-missing', 'fire-proof-missing-for-no-crumb', or 'silence-proof-missing-for-crumb'",
+      "must be 'fire-proof-missing-for-no-crumb', 'loss-path-known-not-wired', 'loss-path-not-identified', or 'silence-proof-missing-for-crumb'",
     );
   }
   return value;
@@ -397,7 +399,7 @@ function assertObservationsAreLicensed(
   for (let index = 0; index < unknownObservations.length; index++) {
     const observation = unknownObservations[index];
     if (
-      observation.reason === 'diagnostic-instrumentation-missing' &&
+      (observation.reason === 'loss-path-known-not-wired' || observation.reason === 'loss-path-not-identified') &&
       (instrumentation.fires.state === 'proven' || instrumentation.staysSilent.state === 'proven')
     ) {
       fail(`${path}.unknownObservations[${index}].reason`, 'requires both instrumentation directions to be unproven');
