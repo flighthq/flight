@@ -17,8 +17,9 @@ export function probeSwfCapabilities(source: Readonly<Uint8Array<ArrayBufferLike
   const capabilities = new Set<string>();
   const state = { hasDefineBits: false, hasJpegTables: false };
   probeTagStream(reader, capabilities, state);
+  if (!reader.valid) return { capabilities: [], readable: false };
   if (state.hasDefineBits && state.hasJpegTables) capabilities.add('swf.bitmap.define-bits-jpeg-tables');
-  return { capabilities: [...capabilities].sort(), readable: reader.valid };
+  return { capabilities: [...capabilities].sort(), readable: true };
 }
 
 function probeTagStream(reader: ProbeReader, capabilities: Set<string>, state: ProbeState): void {

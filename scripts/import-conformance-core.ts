@@ -49,6 +49,7 @@ export interface ImportConformanceProvenance {
 
 export interface ImportConformanceResult {
   capabilityOutcomes: {
+    diagnosticCause: 'separable' | 'unknown';
     diagnosticReported: boolean;
     id: string;
     outcome: keyof ImportConformanceOutcomeCounts | 'passed';
@@ -90,6 +91,7 @@ export interface ImportConformanceScoreCapabilityExercised {
     fires: ImportConformanceScoreInstrumentationRole;
     staysSilent: ImportConformanceScoreInstrumentationRole;
   };
+  lossPath: ImportConformanceLossPath;
   outcomes: ImportConformanceOutcomeCounts;
   results: {
     fire: ImportConformanceScoreLaneResult;
@@ -101,8 +103,8 @@ export interface ImportConformanceScoreCapabilityExercised {
 }
 
 export type ImportConformanceScoreInstrumentationRole =
-  | { proofs: readonly string[]; state: 'proven' }
-  | { state: 'unproven' };
+  | { proofs: readonly [string, ...string[]]; state: 'referenced' }
+  | { state: 'unreferenced' };
 
 export interface ImportConformanceScoreLaneResult {
   state: 'fail' | 'pass' | 'unknown';
@@ -113,7 +115,17 @@ export interface ImportConformanceInstrumentationProofs {
   staysSilent: readonly string[];
 }
 
-export type ImportConformanceLossPathState = 'identified' | 'not-identified';
+export type ImportConformanceLossPathState = 'audited-none' | 'identified' | 'unaudited';
+
+export interface ImportConformanceLossPathAudit {
+  auditId: string;
+  auditedAt: string;
+  subjectHash: string;
+}
+
+export type ImportConformanceLossPath =
+  | { audit: ImportConformanceLossPathAudit; state: 'audited-none' | 'identified' }
+  | { state: 'unaudited' };
 
 export interface ImportConformanceScoreCapabilityNotRun {
   completedWitnesses: number;
@@ -125,11 +137,17 @@ export interface ImportConformanceScoreCapabilityNotRun {
 
 export interface ImportConformanceScoreCapabilityUnmeasured {
   id: string;
+  instrumentation: {
+    fires: ImportConformanceScoreInstrumentationRole;
+    staysSilent: ImportConformanceScoreInstrumentationRole;
+  };
+  lossPath: ImportConformanceLossPath;
   state: 'unmeasured';
 }
 
 export interface ImportConformanceUnknownObservation {
   reason:
+    | 'diagnostic-cause-unknown'
     | 'fire-proof-missing-for-no-crumb'
     | 'loss-path-known-not-wired'
     | 'loss-path-not-identified'
@@ -173,13 +191,24 @@ export interface ImportConformanceScoreSummary {
   totalCapabilities: number;
   exercised: {
     capabilities: number;
-    fireProven: ImportConformanceScoreProvenSummary;
-    silenceProven: ImportConformanceScoreProvenSummary;
+    fireReferenced: ImportConformanceScoreReferencedSummary;
+    silenceReferenced: ImportConformanceScoreReferencedSummary;
     singleWitnessCapabilities: number;
+  };
+  lossPathPopulation: {
+    auditedCapabilities: number;
+    auditedNoLossPathCapabilities: number;
+    auditState: 'complete' | 'partial';
+    canSilentlyLoseCapabilities: number;
+    unauditedCapabilities: number;
+  };
+  proofReferenced: {
+    fireCapabilities: number;
+    silenceCapabilities: number;
   };
 }
 
-export interface ImportConformanceScoreProvenSummary {
+export interface ImportConformanceScoreReferencedSummary {
   capabilities: number;
   results: {
     failedCapabilities: number;
@@ -209,12 +238,16 @@ export function buildImportConformanceCapabilityIndex(
       if (fixture.reference === '') throw new Error('A fixture reference must be non-empty');
       assertSha256(fixture.sourceHash, `fixture ${fixture.reference} source hash`);
       const capabilities = [...new Set(fixture.capabilities)].sort();
+      const probeState = fixture.probeState ?? 'readable';
+      if (probeState === 'unreadable' && capabilities.length > 0) {
+        throw new Error(`Unreadable fixture ${fixture.reference} must not contribute capability evidence`);
+      }
       for (const id of capabilities) {
         if (!known.has(id)) throw new Error(`Fixture ${fixture.reference} emitted undeclared capability ${id}`);
       }
       return {
         capabilities,
-        probeState: fixture.probeState ?? 'readable',
+        probeState,
         reference: fixture.reference,
         sourceHash: fixture.sourceHash,
       };
@@ -249,7 +282,7 @@ export function buildImportConformanceCapabilityIndex(
 export function createImportConformanceCacheKey(sourceHash: string, importerSourceHash: string): string {
   assertSha256(sourceHash, 'fixture source hash');
   assertSha256(importerSourceHash, 'importer source hash');
-  return hashText(`import-conformance-result-v2\0${sourceHash}\0${importerSourceHash}`);
+  return hashText(`import-conformance-result-v3\0${sourceHash}\0${importerSourceHash}`);
 }
 
 export function createImportConformanceNotRunScore(
@@ -293,7 +326,7 @@ export function createImportConformanceScore(
   completedShardIds: ReadonlySet<number>,
   results: readonly Readonly<ImportConformanceResult>[],
   instrumentationProofs: ReadonlyMap<string, Readonly<ImportConformanceInstrumentationProofs>>,
-  lossPathStateByCapability: ReadonlyMap<string, ImportConformanceLossPathState>,
+  lossPathByCapability: ReadonlyMap<string, Readonly<ImportConformanceLossPath>>,
   importerSourceHash: string,
   provenance: Readonly<ImportConformanceProvenance>,
 ): ImportConformanceScore {
@@ -322,9 +355,8 @@ export function createImportConformanceScore(
   }
   const sharding = { algorithm: plan.algorithm, planHash: plan.planHash, shards } as const;
   if (hasMissingShard) {
-    const capabilities = index.capabilities.map((capability): ImportConformanceScoreCapability => {
-      if (capability.witnesses.length === 0) return { id: capability.id, state: 'unmeasured' };
-      return {
+    const capabilities = index.capabilities.map(
+      (capability): ImportConformanceScoreCapabilityNotRun => ({
         completedWitnesses: capability.witnesses.filter((reference) =>
           completedShardIds.has(shardByReference.get(reference)!),
         ).length,
@@ -332,8 +364,8 @@ export function createImportConformanceScore(
         id: capability.id,
         reason: 'missing-shard',
         state: 'not-run',
-      };
-    });
+      }),
+    );
     return {
       instrumentAssurance: createImportConformanceInstrumentAssurance(),
       packs: [
@@ -354,30 +386,44 @@ export function createImportConformanceScore(
   }
 
   assertInstrumentationProofs(instrumentationProofs, index);
-  assertLossPathStates(lossPathStateByCapability, index);
+  assertLossPaths(lossPathByCapability, index);
   for (const id of instrumentationProofs.keys()) {
-    if (lossPathStateByCapability.get(id) !== 'identified') {
+    if (lossPathByCapability.get(id)?.state !== 'identified') {
       throw new Error(`Instrumentation proof for ${id} requires an identified loss path`);
     }
   }
   const capabilities: ImportConformanceScoreCapability[] = [];
   for (const capability of index.capabilities) {
-    if (capability.witnesses.length === 0) {
-      capabilities.push({ id: capability.id, state: 'unmeasured' });
-      continue;
-    }
     const capabilityInstrumentationProofs = instrumentationProofs.get(capability.id) ?? {
       fires: [],
       staysSilent: [],
     };
+    const instrumentation = {
+      fires: createScoreInstrumentationRole(capabilityInstrumentationProofs.fires),
+      staysSilent: createScoreInstrumentationRole(capabilityInstrumentationProofs.staysSilent),
+    };
+    const lossPath = cloneLossPath(lossPathByCapability.get(capability.id)!);
+    if (capability.witnesses.length === 0) {
+      capabilities.push({ id: capability.id, instrumentation, lossPath, state: 'unmeasured' });
+      continue;
+    }
     const outcomes = emptyOutcomeCounts();
     const unknownObservations: ImportConformanceUnknownObservation[] = [];
     for (const reference of capability.witnesses) {
       const result = resultByReference.get(reference);
       if (result === undefined) throw new Error(`Completed shard has no result for ${reference}`);
-      const outcome = result.capabilityOutcomes.find((candidate) => candidate.id === capability.id)!.outcome;
+      const capabilityOutcome = result.capabilityOutcomes.find((candidate) => candidate.id === capability.id)!;
+      if (capabilityOutcome.diagnosticCause === 'unknown') {
+        unknownObservations.push({ reason: 'diagnostic-cause-unknown', reference });
+        continue;
+      }
+      const { outcome } = capabilityOutcome;
       if (outcome === 'threw' || outcome === 'importedWrong') {
         outcomes[outcome]++;
+        continue;
+      }
+      if (lossPath.state === 'audited-none') {
+        if (outcome !== 'passed') outcomes[outcome]++;
         continue;
       }
       const proofRole =
@@ -386,11 +432,7 @@ export function createImportConformanceScore(
           : capabilityInstrumentationProofs.fires;
       if (proofRole.length === 0) {
         unknownObservations.push({
-          reason: getMissingProofReason(
-            outcome,
-            capabilityInstrumentationProofs,
-            lossPathStateByCapability.get(capability.id)!,
-          ),
+          reason: getMissingProofReason(outcome, capabilityInstrumentationProofs, lossPath.state),
           reference,
         });
         continue;
@@ -398,18 +440,22 @@ export function createImportConformanceScore(
       if (outcome !== 'passed') outcomes[outcome]++;
     }
     const failed = outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong > 0;
-    const fire = createLaneResult(failed, unknownObservations.length > 0, capabilityInstrumentationProofs.fires);
+    const fire = createLaneResult(
+      failed,
+      unknownObservations.length > 0,
+      capabilityInstrumentationProofs.fires,
+      lossPath.state !== 'audited-none',
+    );
     const silence = createLaneResult(
       failed,
       unknownObservations.length > 0,
       capabilityInstrumentationProofs.staysSilent,
+      lossPath.state !== 'audited-none',
     );
     capabilities.push({
       id: capability.id,
-      instrumentation: {
-        fires: createScoreInstrumentationRole(capabilityInstrumentationProofs.fires),
-        staysSilent: createScoreInstrumentationRole(capabilityInstrumentationProofs.staysSilent),
-      },
+      instrumentation,
+      lossPath,
       outcomes,
       results: { fire, silence },
       state: 'exercised',
@@ -429,23 +475,42 @@ export function createImportConformanceScore(
   const exercised = capabilities.filter(
     (capability): capability is ImportConformanceScoreCapabilityExercised => capability.state === 'exercised',
   );
-  const fireProven = exercised.filter((capability) => capability.instrumentation.fires.state === 'proven');
-  const silenceProven = exercised.filter((capability) => capability.instrumentation.staysSilent.state === 'proven');
+  const fireReferenced = exercised.filter((capability) => capability.instrumentation.fires.state === 'referenced');
+  const silenceReferenced = exercised.filter(
+    (capability) => capability.instrumentation.staysSilent.state === 'referenced',
+  );
+  const measuredCapabilities = capabilities.filter(
+    (
+      capability,
+    ): capability is ImportConformanceScoreCapabilityExercised | ImportConformanceScoreCapabilityUnmeasured =>
+      capability.state !== 'not-run',
+  );
+  const summary: ImportConformanceScoreSummary = {
+    totalCapabilities: capabilities.length,
+    exercised: {
+      capabilities: exercised.length,
+      fireReferenced: summarizeReferencedCapabilities(fireReferenced, 'fire'),
+      silenceReferenced: summarizeReferencedCapabilities(silenceReferenced, 'silence'),
+      singleWitnessCapabilities: exercised.filter((capability) => capability.witnesses === 1).length,
+    },
+    lossPathPopulation: summarizeLossPathPopulation(measuredCapabilities),
+    proofReferenced: {
+      fireCapabilities: measuredCapabilities.filter(
+        (capability) => capability.instrumentation.fires.state === 'referenced',
+      ).length,
+      silenceCapabilities: measuredCapabilities.filter(
+        (capability) => capability.instrumentation.staysSilent.state === 'referenced',
+      ).length,
+    },
+  };
+  assertSummaryMatchesCapabilities(summary, capabilities);
   return {
     instrumentAssurance: createImportConformanceInstrumentAssurance(),
     packs: [
       {
         ...packBase,
         state: 'measured',
-        summary: {
-          totalCapabilities: capabilities.length,
-          exercised: {
-            capabilities: exercised.length,
-            fireProven: summarizeProvenCapabilities(fireProven, 'fire'),
-            silenceProven: summarizeProvenCapabilities(silenceProven, 'silence'),
-            singleWitnessCapabilities: exercised.filter((capability) => capability.witnesses === 1).length,
-          },
-        },
+        summary,
       },
     ],
     provenance: { ...provenance },
@@ -543,16 +608,34 @@ function assertInstrumentationProofList(proofs: readonly string[], label: string
   assertSortedUnique(proofs, label);
 }
 
-function assertLossPathStates(
-  states: ReadonlyMap<string, ImportConformanceLossPathState>,
+function assertLossPaths(
+  lossPaths: ReadonlyMap<string, Readonly<ImportConformanceLossPath>>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
   const declared = new Set(index.capabilities.map((capability) => capability.id));
-  if (states.size !== declared.size) throw new Error('Every declared capability requires an explicit loss-path state');
-  for (const [id, state] of states) {
-    if (!declared.has(id) || (state !== 'identified' && state !== 'not-identified')) {
+  if (lossPaths.size !== declared.size) {
+    throw new Error('Every declared capability requires an explicit loss-path declaration');
+  }
+  for (const [id, lossPath] of lossPaths) {
+    if (!declared.has(id)) {
       throw new Error(`Invalid loss-path state for ${id}`);
     }
+    if (lossPath.state === 'unaudited') continue;
+    assertLossPathAudit(lossPath.audit, id);
+  }
+}
+
+function assertLossPathAudit(audit: Readonly<ImportConformanceLossPathAudit>, id: string): void {
+  if (audit.auditId.trim() === '' || audit.subjectHash.trim() === '') {
+    throw new Error(`Loss-path audit for ${id} requires non-empty auditId and subjectHash`);
+  }
+  const timestamp = Date.parse(audit.auditedAt);
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(audit.auditedAt) ||
+    Number.isNaN(timestamp) ||
+    new Date(timestamp).toISOString() !== audit.auditedAt
+  ) {
+    throw new Error(`Loss-path audit for ${id} requires a canonical UTC auditedAt`);
   }
 }
 
@@ -616,14 +699,27 @@ function createLaneResult(
   failed: boolean,
   hasUnknownObservations: boolean,
   proofs: readonly string[],
+  unreferencedIsUnknown: boolean,
 ): ImportConformanceScoreLaneResult {
   return {
-    state: failed ? 'fail' : hasUnknownObservations || proofs.length === 0 ? 'unknown' : 'pass',
+    state: failed
+      ? 'fail'
+      : hasUnknownObservations || (unreferencedIsUnknown && proofs.length === 0)
+        ? 'unknown'
+        : 'pass',
   };
 }
 
 function createScoreInstrumentationRole(proofs: readonly string[]): ImportConformanceScoreInstrumentationRole {
-  return proofs.length === 0 ? { state: 'unproven' } : { proofs: [...proofs], state: 'proven' };
+  return proofs.length === 0
+    ? { state: 'unreferenced' }
+    : { proofs: [...proofs] as [string, ...string[]], state: 'referenced' };
+}
+
+function cloneLossPath(lossPath: Readonly<ImportConformanceLossPath>): ImportConformanceLossPath {
+  return lossPath.state === 'unaudited'
+    ? { state: 'unaudited' }
+    : { audit: { ...lossPath.audit }, state: lossPath.state };
 }
 
 function getMissingProofReason(
@@ -641,10 +737,10 @@ function hashText(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function summarizeProvenCapabilities(
+function summarizeReferencedCapabilities(
   capabilities: readonly Readonly<ImportConformanceScoreCapabilityExercised>[],
   lane: keyof ImportConformanceScoreCapabilityExercised['results'],
-): ImportConformanceScoreProvenSummary {
+): ImportConformanceScoreReferencedSummary {
   return {
     capabilities: capabilities.length,
     results: {
@@ -653,6 +749,92 @@ function summarizeProvenCapabilities(
       unknownCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'unknown').length,
     },
   };
+}
+
+function summarizeLossPathPopulation(
+  capabilities: readonly Readonly<
+    ImportConformanceScoreCapabilityExercised | ImportConformanceScoreCapabilityUnmeasured
+  >[],
+): ImportConformanceScoreSummary['lossPathPopulation'] {
+  const unauditedCapabilities = capabilities.filter((capability) => capability.lossPath.state === 'unaudited').length;
+  const auditedNoLossPathCapabilities = capabilities.filter(
+    (capability) => capability.lossPath.state === 'audited-none',
+  ).length;
+  return {
+    auditedCapabilities: capabilities.length - unauditedCapabilities,
+    auditedNoLossPathCapabilities,
+    auditState: unauditedCapabilities === 0 ? 'complete' : 'partial',
+    canSilentlyLoseCapabilities: capabilities.filter((capability) => capability.lossPath.state === 'identified').length,
+    unauditedCapabilities,
+  };
+}
+
+function assertSummaryMatchesCapabilities(
+  summary: Readonly<ImportConformanceScoreSummary>,
+  capabilities: readonly Readonly<ImportConformanceScoreCapability>[],
+): void {
+  const measured = capabilities.filter(
+    (
+      capability,
+    ): capability is ImportConformanceScoreCapabilityExercised | ImportConformanceScoreCapabilityUnmeasured =>
+      capability.state !== 'not-run',
+  );
+  const exercised = measured.filter(
+    (capability): capability is ImportConformanceScoreCapabilityExercised => capability.state === 'exercised',
+  );
+  const fireReferenced = exercised.filter((capability) => capability.instrumentation.fires.state === 'referenced');
+  const silenceReferenced = exercised.filter(
+    (capability) => capability.instrumentation.staysSilent.state === 'referenced',
+  );
+  const checks: readonly [number, number, string][] = [
+    [summary.totalCapabilities, capabilities.length, 'totalCapabilities'],
+    [summary.exercised.capabilities, exercised.length, 'exercised.capabilities'],
+    [summary.exercised.fireReferenced.capabilities, fireReferenced.length, 'exercised.fireReferenced.capabilities'],
+    [
+      summary.exercised.silenceReferenced.capabilities,
+      silenceReferenced.length,
+      'exercised.silenceReferenced.capabilities',
+    ],
+    [
+      summary.exercised.singleWitnessCapabilities,
+      exercised.filter((capability) => capability.witnesses === 1).length,
+      'exercised.singleWitnessCapabilities',
+    ],
+    [
+      summary.proofReferenced.fireCapabilities,
+      measured.filter((capability) => capability.instrumentation.fires.state === 'referenced').length,
+      'proofReferenced.fireCapabilities',
+    ],
+    [
+      summary.proofReferenced.silenceCapabilities,
+      measured.filter((capability) => capability.instrumentation.staysSilent.state === 'referenced').length,
+      'proofReferenced.silenceCapabilities',
+    ],
+  ];
+  for (const [actual, expected, path] of checks) {
+    if (actual !== expected) throw new Error(`Score summary ${path} must equal the capability rows (${expected})`);
+  }
+  assertReferencedResultsMatch(summary.exercised.fireReferenced, fireReferenced, 'fire');
+  assertReferencedResultsMatch(summary.exercised.silenceReferenced, silenceReferenced, 'silence');
+  const expectedLossPath = summarizeLossPathPopulation(measured);
+  if (JSON.stringify(summary.lossPathPopulation) !== JSON.stringify(expectedLossPath)) {
+    throw new Error('Score summary lossPathPopulation must equal the capability rows');
+  }
+}
+
+function assertReferencedResultsMatch(
+  summary: Readonly<ImportConformanceScoreReferencedSummary>,
+  capabilities: readonly Readonly<ImportConformanceScoreCapabilityExercised>[],
+  lane: 'fire' | 'silence',
+): void {
+  const expected = {
+    failedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'fail').length,
+    passedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'pass').length,
+    unknownCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'unknown').length,
+  };
+  if (JSON.stringify(summary.results) !== JSON.stringify(expected)) {
+    throw new Error(`Score summary exercised.${lane}Referenced.results must equal the capability rows`);
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

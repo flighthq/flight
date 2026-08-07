@@ -1,11 +1,12 @@
 import type {
   ImportConformanceCapabilityDefinition,
   ImportConformanceInstrumentationProofs,
-  ImportConformanceLossPathState,
+  ImportConformanceLossPath,
+  ImportConformanceLossPathAudit,
 } from './import-conformance-core';
 
 export interface ImportConformanceInstrumentationMapping {
-  lossPathStateByCapability: Map<string, ImportConformanceLossPathState>;
+  lossPathByCapability: Map<string, ImportConformanceLossPath>;
   problems: string[];
   proofs: Map<string, ImportConformanceInstrumentationProofs>;
 }
@@ -16,14 +17,14 @@ export function parseImportConformanceInstrumentationMapping(
 ): ImportConformanceInstrumentationMapping {
   if (!isRecord(value) || !Array.isArray(value.capabilities)) {
     return {
-      lossPathStateByCapability: new Map(),
+      lossPathByCapability: new Map(),
       problems: ['Instrumentation mapping root is invalid'],
       proofs: new Map(),
     };
   }
   const declared = new Set(definitions.map((definition) => definition.id));
   const problems: string[] = [];
-  const lossPathStateByCapability = parseLossPathStates(value.lossPaths, definitions, problems);
+  const lossPathByCapability = parseLossPaths(value.lossPaths, definitions, problems);
   const proofs = new Map<string, ImportConformanceInstrumentationProofs>();
   const duplicates = new Set<string>();
   let previousId = '';
@@ -54,47 +55,88 @@ export function parseImportConformanceInstrumentationMapping(
     }
     proofs.set(id, { fires, staysSilent });
   }
-  invalidateMismatchedProofPopulation(value.fireProven, 'fire', proofs, problems);
-  invalidateMismatchedProofPopulation(value.silenceProven, 'silence', proofs, problems);
+  invalidateMismatchedProofPopulation(value.fireReferenced, 'fire', proofs, problems);
+  invalidateMismatchedProofPopulation(value.silenceReferenced, 'silence', proofs, problems);
   for (const id of proofs.keys()) {
-    if (lossPathStateByCapability.get(id) === 'identified') continue;
+    if (lossPathByCapability.get(id)?.state === 'identified') continue;
     problems.push(`Instrumentation proof for ${id} lacks an identified loss path`);
-    lossPathStateByCapability.delete(id);
+    lossPathByCapability.delete(id);
   }
-  return { lossPathStateByCapability, problems, proofs };
+  return { lossPathByCapability, problems, proofs };
 }
 
-function parseLossPathStates(
+function parseLossPaths(
   value: unknown,
   definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
   problems: string[],
-): Map<string, ImportConformanceLossPathState> {
+): Map<string, ImportConformanceLossPath> {
   if (!Array.isArray(value)) {
     problems.push('Instrumentation mapping lacks exhaustive loss-path declarations');
     return new Map();
   }
   const declared = new Set(definitions.map((definition) => definition.id));
-  const states = new Map<string, ImportConformanceLossPathState>();
+  const lossPaths = new Map<string, ImportConformanceLossPath>();
   let invalid = false;
   let previousId = '';
   for (const candidate of value) {
     if (
       !isRecord(candidate) ||
       typeof candidate.id !== 'string' ||
-      (candidate.state !== 'identified' && candidate.state !== 'not-identified')
+      (candidate.state !== 'audited-none' && candidate.state !== 'identified' && candidate.state !== 'unaudited')
     ) {
       invalid = true;
       continue;
     }
     if (candidate.id <= previousId || !declared.has(candidate.id)) invalid = true;
     previousId = candidate.id;
-    states.set(candidate.id, candidate.state);
+    if (candidate.state === 'unaudited') {
+      if (Object.keys(candidate).sort().join('\0') !== ['id', 'state'].join('\0')) invalid = true;
+      lossPaths.set(candidate.id, { state: 'unaudited' });
+      continue;
+    }
+    const audit = parseLossPathAudit(candidate.audit);
+    if (Object.keys(candidate).sort().join('\0') !== ['audit', 'id', 'state'].join('\0') || audit === null) {
+      invalid = true;
+      continue;
+    }
+    lossPaths.set(candidate.id, { audit, state: candidate.state });
   }
-  if (invalid || states.size !== definitions.length || definitions.some((definition) => !states.has(definition.id))) {
+  if (
+    invalid ||
+    lossPaths.size !== definitions.length ||
+    definitions.some((definition) => !lossPaths.has(definition.id))
+  ) {
     problems.push('Instrumentation loss-path declarations are not sorted, unique, and exhaustive');
     return new Map();
   }
-  return states;
+  return lossPaths;
+}
+
+function parseLossPathAudit(value: unknown): ImportConformanceLossPathAudit | null {
+  if (
+    !isRecord(value) ||
+    Object.keys(value).sort().join('\0') !== ['auditId', 'auditedAt', 'subjectHash'].sort().join('\0')
+  ) {
+    return null;
+  }
+  if (
+    typeof value.auditId !== 'string' ||
+    value.auditId.trim() === '' ||
+    typeof value.auditedAt !== 'string' ||
+    typeof value.subjectHash !== 'string' ||
+    value.subjectHash.trim() === ''
+  ) {
+    return null;
+  }
+  const timestamp = Date.parse(value.auditedAt);
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.auditedAt) ||
+    Number.isNaN(timestamp) ||
+    new Date(timestamp).toISOString() !== value.auditedAt
+  ) {
+    return null;
+  }
+  return { auditId: value.auditId, auditedAt: value.auditedAt, subjectHash: value.subjectHash };
 }
 
 function parseProofs(value: unknown): string[] | null {
@@ -116,7 +158,7 @@ function invalidateMismatchedProofPopulation(
   const key = role === 'fire' ? 'fires' : 'staysSilent';
   const actualCount = [...proofs.values()].filter((candidate) => candidate[key].length > 0).length;
   if (Number.isSafeInteger(declaredCount) && declaredCount === actualCount) return;
-  problems.push(`Instrumentation mapping ${role}-proven count is stale`);
+  problems.push(`Instrumentation mapping ${role}-referenced count is stale`);
   for (const [id, candidate] of proofs) {
     if (candidate[key].length === 0) continue;
     const retained =
