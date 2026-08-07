@@ -67,6 +67,12 @@ describe('createImportConformanceCacheKey', () => {
 describe('createImportConformanceNotRunScore', () => {
   it('retains the complete capability identity when the pack is unavailable', () => {
     const score = createImportConformanceNotRunScore(PACK, DEFINITIONS, hash('importer'), PROVENANCE);
+    expect(score.instrumentAssurance).toEqual({
+      payloadValidity: 'external-audit-required',
+      triggerCorrectness: 'proof-reference-presence',
+      triggerScope: 'external-audit-required',
+      triggerSpecificity: 'proof-reference-presence',
+    });
     expect(score.packs[0]).toMatchObject({
       outcomes: null,
       reason: 'pack-unavailable',

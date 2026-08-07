@@ -71,9 +71,17 @@ export interface ImportConformanceShardAssignment {
 }
 
 export interface ImportConformanceScore {
+  instrumentAssurance: ImportConformanceInstrumentAssurance;
   packs: ImportConformanceScorePack[];
   provenance: ImportConformanceProvenance;
   schemaVersion: 1;
+}
+
+export interface ImportConformanceInstrumentAssurance {
+  payloadValidity: 'external-audit-required';
+  triggerCorrectness: 'proof-reference-presence';
+  triggerScope: 'external-audit-required';
+  triggerSpecificity: 'proof-reference-presence';
 }
 
 export interface ImportConformanceScoreCapabilityExercised {
@@ -253,6 +261,7 @@ export function createImportConformanceNotRunScore(
   assertSha256(importerSourceHash, 'importer source hash');
   assertExhaustiveProvenance(provenance);
   return {
+    instrumentAssurance: createImportConformanceInstrumentAssurance(),
     packs: [
       {
         capabilities: definitions.map((definition) => ({
@@ -324,6 +333,7 @@ export function createImportConformanceScore(
       };
     });
     return {
+      instrumentAssurance: createImportConformanceInstrumentAssurance(),
       packs: [
         {
           capabilities,
@@ -420,6 +430,7 @@ export function createImportConformanceScore(
   const fireProven = exercised.filter((capability) => capability.instrumentation.fires.state === 'proven');
   const silenceProven = exercised.filter((capability) => capability.instrumentation.staysSilent.state === 'proven');
   return {
+    instrumentAssurance: createImportConformanceInstrumentAssurance(),
     packs: [
       {
         ...packBase,
@@ -588,6 +599,15 @@ function compareFixtureReference(
 
 function emptyOutcomeCounts(): ImportConformanceOutcomeCounts {
   return { importedWrong: 0, silentlyWrong: 0, threw: 0, unsupportedClean: 0 };
+}
+
+function createImportConformanceInstrumentAssurance(): ImportConformanceInstrumentAssurance {
+  return {
+    payloadValidity: 'external-audit-required',
+    triggerCorrectness: 'proof-reference-presence',
+    triggerScope: 'external-audit-required',
+    triggerSpecificity: 'proof-reference-presence',
+  };
 }
 
 function createLaneResult(
