@@ -41,6 +41,16 @@ actively hunting that exact failure.** It is elevated because it recurred more t
 instance, it defeats the checks people actually run, and its remedy is one question rather than a
 technique: *which tree is this number about?*
 
+**The same law applied to EXPLANATIONS: a mechanism constructed to fit an observation always fits
+it.** This is the self-diffing generator one level up — **an explanation built from the observation
+has no independent reader, so re-examining the reasoning can never catch it**, and two people did
+exactly that in one day, each supplying a mechanism for a true observation that did not exist. **In
+both cases the remedy was reading the source, because the source is the one artifact the observation
+did not produce.**
+⇒ **An observation may be reported without a mechanism. An unexplained fact is a complete report.**
+The pressure runs the other way — **an unexplained fact reads as unfinished, and the only material
+available to close it is the observation itself** — and that feeling is the whole defect.
+
 ## Preservation ordering — *when*
 
 Order competing actions by how much they destroy. Destructive last.
@@ -80,12 +90,8 @@ often it is repeated, and it was found by asking where each structure *lives* ra
 exists.
 
 **Three axes decide whether a structure actually protects anything: lifetime, reach, and when it is
-encountered.** A structure must outlive the hazard it guards — a note in a workspace that dies with
-the session is a caution with extra steps. It must be reachable by the agent it was written for — a
-doc linked only from an index is met at the moment of curiosity, not at the moment of the decision.
-**And it must be encountered before the mistake rather than after: a budget living in the file it
-governs is read by everyone already writing into it and by nobody deciding whether to.** Only a gate
-fires at the moment of the action, which is why the third axis usually resolves to *make it a gate*.
+encountered** — and only a gate fires at the moment of the action, which is why the third usually
+resolves to *make it a gate*. The companion works each axis with its instance.
 
 ## Honest limit — *what to do when you cannot*
 
@@ -93,15 +99,13 @@ Name the hole. When nothing can close it, naming it is the whole of what can be 
 stops an artifact claiming more than it has.
 
 **Elevated instance — expensive-to-verify and unverified are strongly correlated, and that
-correlation is the finding.** When one boundary re-ran every cheap gate and none of the costly ones,
-the unbacked set was not a random subset — **it was selected for by cost**, so it never shrinks on
-its own and it fills with exactly the claims that most need checking. **But the set is selected by
-cost without every member being expensive:** "I confirmed this test can fail" costs seconds and is
-unverified only because nobody asks; it rode in on the same list as a 1.6 GB fetch and inherited its
-excuse. **A true general law is an excellent place for a cheap fix to hide**, so split the list by
-*why* before accepting any of it as unfixable. **Mark each unbacked claim with a fixed greppable
-token rather than prose**, because the point is not that a reader is warned but that the set becomes
-countable; the [unbacked register](unbacked-register.md) carries the practice and its own limit.
+correlation is the finding.** An unbacked set is **selected for by cost**, so it never shrinks on its
+own and fills with exactly the claims that most need checking — **but selected by cost is not the
+same as every member being expensive**, and **a true general law is an excellent place for a cheap
+fix to hide.** Split the list by *why* before accepting any of it as unfixable, and **mark each
+unbacked claim with a fixed greppable token rather than prose**, so the set becomes countable rather
+than merely flagged. The [unbacked register](unbacked-register.md) carries the practice, the worked
+instance, and its own limit.
 
 ## Search instructions — where to look next
 
@@ -139,10 +143,8 @@ style moves is measuring the source, not the thing.**
 
 **And name the population in the output, in words.** "N of 82 importer-declared capabilities", never
 a bare "N of 82" and never *total* unqualified. **A count you produced is a denominator over whatever
-produced it, and that is usually not the population you meant** — capabilities counted over our own
-importer rather than over the format, loss families counted over the searcher's vocabulary rather
-than over the losses that exist, a hash oracle comparing output against our own earlier output, which
-detects change and never wrongness. **Each measures consistency and reads as truth.** **A coverage
+produced it, and that is usually not the population you meant** — the companion lists the three
+costumes one arc found it in. **Each measures consistency and reads as truth.** **A coverage
 measurement's population is defined by the consumer, not by the corpus.**
 
 ## The test before quoting a number
