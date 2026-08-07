@@ -40,6 +40,7 @@ import type {
   TimelineAudioCue,
   MorphShape,
   MovieClip,
+  Node2D,
   RichText,
   Scale9Shape,
   Shape,
@@ -2817,6 +2818,91 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(dropped[0].detail?.capability).toBe('swf.font.define-font-2');
     expect(dropped[0].detail?.lostGlyphs).toBe(1);
+  });
+
+  it('stays silent about a shape, a video stream and a scene table that lose nothing', () => {
+    // A SILENCE PROOF IS VACUOUS UNLESS THE CAPABILITY WAS ACTUALLY EXERCISED — silence because the
+    // feature was absent proves nothing about the wire. So each assertion below is paired with a positive
+    // check that the construct really was imported.
+    const writer = new ShapeWriter();
+    writer.writeSolidFillStyles([0x3366cc]);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(400, 0);
+    writer.writeStraightEdge(0, 400);
+    writer.writeStraightEdge(-400, 0);
+    writer.writeStraightEdge(0, -400);
+    writer.writeEndShape();
+
+    const file = createSwf([
+      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
+      createTag(
+        TAG_DEFINE_VIDEO_STREAM,
+        joinBytes(uint16(4), uint16(1), uint16(16), uint16(16), new Uint8Array([0x01, 2])),
+      ),
+      // A scene table with zero scenes still carries its label, so the tag is exercised and loses nothing.
+      createTag(
+        TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
+        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
+      ),
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(4))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const document = createScene2DFromSwf(file, sink);
+      // The capabilities really were exercised: the shape drew, the video character materialized, and
+      // the label survived.
+      const children = getNodeChildren(document?.root as Node2D);
+      expect(children.length).toBe(2);
+      expect(getMovieClipCurrentLabel(document?.root as MovieClip)?.name).toBe('start');
+    });
+
+    const kinds = diagnostics.map((entry) => entry.kind);
+    expect(kinds).not.toContain('swf.shape-body-unreadable');
+    expect(kinds).not.toContain('swf.video-frame-payload');
+    expect(kinds).not.toContain('swf.scene-names');
+  });
+
+  it('stays silent about a frame script and a mask that lose nothing', () => {
+    const mask = new ShapeWriter();
+    mask.writeSolidFillStyles([0xffffff]);
+    mask.writeLineStyleCount(0);
+    mask.writeStyleBits(1, 0);
+    mask.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    mask.writeStraightEdge(200, 0);
+    mask.writeStraightEdge(0, 200);
+    mask.writeStraightEdge(-200, 0);
+    mask.writeStraightEdge(0, -200);
+    mask.writeEndShape();
+
+    const file = createSwf([
+      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(5), createRectangle(0, 200, 0, 200), mask.toBytes())),
+      // One mask with real geometry over one instance: clip-depth is exercised and neither of its two
+      // loss paths applies.
+      createTag(
+        TAG_PLACE_OBJECT_2,
+        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(1), uint16(5), uint16(3)),
+      ),
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(5))),
+      // A block that is ONLY playback commands is recognized whole, so nothing is declined.
+      createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const document = createScene2DFromSwf(file, sink);
+      expect(getMovieClipFrameScript(document?.root as MovieClip, 1)).not.toBeNull();
+    });
+
+    const kinds = diagnostics.map((entry) => entry.kind);
+    expect(kinds).not.toContain('swf.frame-script-declined');
+    expect(kinds).not.toContain('swf.mask-without-geometry');
+    expect(kinds).not.toContain('swf.nested-mask-collapsed');
   });
 
   it('names the symbol a caller asked for that the file does not export', () => {
