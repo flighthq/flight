@@ -36,3 +36,49 @@ describe('readCffTable', () => {
     expect(readCffTable(font, { ...directory, tables: shortened })).toBeNull();
   });
 });
+
+describe('readCffTable — CID-keyed', () => {
+  // Two FDs with DIFFERENT subroutine pools. The point of the whole slab is that glyph 0 and glyph 1
+  // resolve the SAME subroutine index to DIFFERENT bytes.
+  function cidFont() {
+    return createSyntheticFont({
+      charstrings: [new Uint8Array([139, 139, 21, 32, 10, 14]), new Uint8Array([139, 139, 21, 32, 10, 14])],
+      cid: {
+        fdSelect: [0, 1],
+        pools: [[new Uint8Array([149, 139, 5, 11])], [new Uint8Array([139, 149, 5, 11])]],
+      },
+      flavor: 'opentype',
+    });
+  }
+
+  it('reads a CID font instead of refusing it', () => {
+    const font = cidFont();
+    const table = readCffTable(font, readSfntTableDirectory(font)!)!;
+    expect(table).not.toBeNull();
+    expect(table.charstrings).toHaveLength(2);
+  });
+
+  it('binds each glyph to its own pool, which is the entire reason this path exists', () => {
+    const font = cidFont();
+    const table = readCffTable(font, readSfntTableDirectory(font)!)!;
+    expect(table.localSubrsByGlyph).not.toBeNull();
+    expect(table.localSubrsByGlyph).toHaveLength(2);
+    // Different FDs, so different pools — not merely two references to one.
+    expect(table.localSubrsByGlyph![0]).not.toBe(table.localSubrsByGlyph![1]);
+  });
+
+  it('leaves the single table-wide pool empty, so a reader ignoring CID fails visibly', () => {
+    const font = cidFont();
+    expect(readCffTable(font, readSfntTableDirectory(font)!)!.localSubrs).toEqual([]);
+  });
+
+  it('refuses rather than falling back when FDSelect names an FD the FDArray does not have', () => {
+    const font = createSyntheticFont({
+      charstrings: [new Uint8Array([14])],
+      cid: { fdSelect: [5], pools: [[]] },
+      flavor: 'opentype',
+    });
+    // A fallback to pool 0 would be the wrong-pool outcome wearing a reasonable-looking default.
+    expect(readCffTable(font, readSfntTableDirectory(font)!)).toBeNull();
+  });
+});

@@ -21,5 +21,14 @@ export interface CffIndexEntry {
 export interface CffTable {
   charstrings: readonly CffIndexEntry[];
   globalSubrs: readonly CffIndexEntry[];
+  // The single table-wide pool a non-CID font carries. Empty when `localSubrsByGlyph` is populated, so a
+  // reader that ignored the CID case would run every glyph against an empty pool and fail visibly rather
+  // than silently using a pool that is real but belongs to a different font DICT.
   localSubrs: readonly CffIndexEntry[];
+  // One pool per glyph, present only for a CID-keyed font. A CID font is several fonts in one table: each
+  // font DICT in its FDArray owns a private DICT and therefore its own subroutines, and FDSelect says
+  // which glyph uses which. Binding every glyph to one pool would not fail — subroutine indices are
+  // biased by pool size, so an index valid in one pool selects a different REAL entry in another, and a
+  // real entry draws something. That is why this is per-glyph rather than a single fallback.
+  localSubrsByGlyph: readonly (readonly CffIndexEntry[])[] | null;
 }
