@@ -3,9 +3,9 @@
 
 | Population | Count | What it licenses |
 | --- | --- | --- |
-| Wired | **16 of 80** | every loss path for the capability reports |
-| **Fire-proven** | **16 of 80** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
-| **Silence-proven** | **16 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
+| Wired | **17 of 80** | every loss path for the capability reports |
+| **Fire-proven** | **17 of 80** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
+| **Silence-proven** | **17 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
 
 **Say the smaller number plainly.** A reader entitled to know that sixteen of eighty can **detect** a
 loss is equally entitled to know how many have been shown not to **invent** one.
@@ -142,7 +142,20 @@ Wired so far, and therefore safe to read silence for:
 covering one instance, which is not applied at all.
 
 **A capability enters this table only when *every* one of its loss paths reports — and that is a claim
-worth auditing rather than assuming.** Auditing it once already found a gap: the font rows claimed
+worth auditing rather than assuming.** There is a third leg the proof mechanism cannot see: a fire proof
+shows the wire fires **on the case you tested**, and a silence proof shows it stays quiet **on the case you
+tested**. Neither shows that the tested case is **the whole of what the capability can lose**. Only reading
+the claim against the code does that.
+
+A scope re-audit of all sixteen existing claims found **two** false ones, both in capabilities that were
+otherwise legitimately proven on both legs:
+
+- `swf.timeline.define-scene-and-frame-label-data` claimed trustworthy silence while its wire covered the
+  scene table only. A label naming a frame the timeline never reaches was filtered out with no crumb —
+  now `swf.label-past-last-frame`, under the `swf.timeline.frame-label` capability it actually belongs to.
+- `swf.placement.filter-list` covered a gradient glow's placement fields, while `BlurEffect` silently
+  discarded an authored pass count. Now reported under the same kind, distinguished by `detail.field`.
+ Auditing it once already found a gap: the font rows claimed
 trustworthy silence while covering only the per-glyph failure, so a font whose glyph table did not decode
 at all vanished with no crumb, indistinguishable from a font that imported cleanly. `swf.font-glyph-table`
 closes it. **A capability with two loss paths and one wire is worse than an unwired one**, because it

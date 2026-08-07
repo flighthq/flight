@@ -78,10 +78,12 @@
     },
     {
       "fires": [
+        "reports a blur pass count it cannot represent, and stays silent at one pass",
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
       ],
       "id": "swf.placement.filter-list",
       "staysSilent": [
+        "reports a blur pass count it cannot represent, and stays silent at one pass",
         "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
       ]
     },
@@ -141,6 +143,15 @@
     },
     {
       "fires": [
+        "reports a label naming a frame the timeline never reaches, and stays silent when it does"
+      ],
+      "id": "swf.timeline.frame-label",
+      "staysSilent": [
+        "reports a label naming a frame the timeline never reaches, and stays silent when it does"
+      ]
+    },
+    {
+      "fires": [
         "reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure"
       ],
       "id": "swf.video.video-frame",
@@ -149,6 +160,6 @@
       ]
     }
   ],
-  "fireProven": 16,
-  "silenceProven": 16
+  "fireProven": 17,
+  "silenceProven": 17
 }

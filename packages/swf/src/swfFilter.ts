@@ -74,8 +74,23 @@ export function readSwfFilterList(
     if (id === FILTER_BLUR) {
       const blurX = readSwfFilterFixed(reader);
       const blurY = readSwfFilterFixed(reader);
-      reader.readUint8();
+      const blurFlags = reader.readUint8();
       if (!reader.valid) return false;
+      // BlurEffect has no pass-count member, so an authored pass count is read and discarded. One pass
+      // is the default and loses nothing; anything else is a real difference the target cannot state.
+      if ((blurFlags & FILTER_PASSES) > 1) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'swf.filter-field-unrepresentable',
+          'readSwfFilterList',
+          {
+            capability: 'swf.placement.filter-list',
+            field: 'passes',
+            filterId: id,
+          },
+        );
+      }
       outEffects.push(createBlurEffect({ blurX, blurY }));
       continue;
     }
@@ -158,6 +173,7 @@ export function readSwfFilterList(
           'readSwfFilterList',
           {
             capability: 'swf.placement.filter-list',
+            field: 'placement',
             filterId: id,
           },
         );
