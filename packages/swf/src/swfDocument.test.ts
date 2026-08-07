@@ -2731,6 +2731,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.button-interaction-state');
     expect(skipped.length).toBeGreaterThan(0);
     expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    // The PAYLOAD, not just the trigger: a crumb that fires correctly while recording something false
+    // is a clean positive that is not one. The fixture's non-up record names character 7 with state
+    // flags 0x02, and the crumb must say so rather than merely existing.
+    expect(skipped[0].detail).toEqual({ characterId: 7, flags: 0x02 });
   });
 
   it('reports a legacy split JPEG whose halves will not splice into a readable image', () => {
