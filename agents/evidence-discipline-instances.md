@@ -86,6 +86,18 @@ reader can tell strength apart without trusting the author's formatting:
   required it.** ⇒ **This is enumerate-what-your-vocabulary-excludes applied to a CANDIDATE SET rather
   than to a search pattern** — the same blind-spot question, one level up.
 
+- **filed — CLOSE A CEILING BY COUNTING, NOT BY ABSENCE — and say WHICH limit closed.** An author who
+  had reported *the true set may be larger* traced the unresolved sites and **retracted their own
+  uncertainty rather than leaving it in circulation.** ⇒ **They verified by enumeration, not by a
+  null grep — 47 production call sites, 46 resolving to a named constant, the 47th being the
+  function's own export declaration** — **because absence of a grep hit is exactly the evidence they
+  distrust.**
+  ★★ **And the part that prevents a false closure: TWO LIMITS STATED TOGETHER CAN BE READ AS ONE.**
+  The completeness ceiling closed; **the individuation limit did not, and is untouched — the count
+  still counts CONSTANTS, one may be tested at several sites for different purposes and two may
+  jointly define one capability.** ⇒ **Closing one limit while another stands must name which, or the
+  closure reads as covering both.**
+
 - **filed — A RETURNING INDIVIDUATION QUESTION IS THE EXPECTED SHAPE, NOT A SETBACK OR A REGRESS.**
   **Individuation is a property of a SET**, so a newly-grounded set gets a **new** question rather than
   inheriting the previous answer. ⇒ **Not circular and not infinite: each iteration is asked of a set

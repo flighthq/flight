@@ -204,8 +204,14 @@ remedying, not stop looking* decays into *stop*.
 ruling — it is the minimum for the ruling to be EXECUTABLE, because A TOLERATION WITH UNOBSERVABLE
 FALSIFIERS IS NOT A TOLERATION, IT IS AN ABANDONMENT.**
 
-**LAST MEASURED: instance 10, cost three lines, falsifier tested on the relevance case and did not
-fire.**
+**LAST MEASURED: instance 11, cost three lines. Falsifier tested at instance 10 on the relevance case
+and did not fire.**
+
+★★ **AND THE MEASUREMENT REGIME HAS ITS OWN COST, WHICH CAN EXCEED THE DEFECT'S.** A parcel per
+instance cost both parties more than the three lines it recorded. ⇒ **So the reporting drops to one
+line in status per instance, and a count travels only when it CHANGES something.** ★ **This is the
+same creep the toleration exists to prevent, arriving in the RESPONSE rather than in the REMEDY** —
+**bound the measurement as well as the fix, or the observation apparatus becomes the cost.**
 
 ★★ **AND THE DISTINCTION THAT KEEPS TOLERATION HONEST: the ruling was no further ATTENTION, not no
 further MEASUREMENT.** ⇒ **The falsifiers require the measurement to keep running, so a tolerated
