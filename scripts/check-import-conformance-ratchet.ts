@@ -590,16 +590,37 @@ function formatScoreNumbers(
     diagnosticChannels: formatDiagnosticChannels(current),
     exercised: formatExercisedDenominator(current, oracleAssurance),
     configurationLimits: formatConfigurationLimits(current),
-    fireProofReferenced: `${currentSummary.proofReferenced.fireCapabilities} ${formatProofReferences(current, 'fires')}`,
-    fireProofReferencedAndExercised: `${currentSummary.exercised.fireReferenced.capabilities} ${formatProofReferences(current, 'fires', true)}`,
+    fireProofReferenced: formatCapabilityRowTally(
+      currentSummary.proofReferenced.fireCapabilities,
+      formatProofReferences(current, 'fires'),
+    ),
+    fireProofReferencedAndExercised: formatCapabilityRowTally(
+      currentSummary.exercised.fireReferenced.capabilities,
+      formatProofReferences(current, 'fires', true),
+    ),
     fireResults: formatLaneResults(current, 'fire'),
-    instrumentPayloadAudited: `${currentSummary.instrumentAudited.payloadCapabilities} ${formatInstrumentAuditMembers(current, 'payload')}`,
-    instrumentScopeAudited: `${currentSummary.instrumentAudited.scopeCapabilities} ${formatInstrumentAuditMembers(current, 'scope')}`,
+    instrumentPayloadAudited: formatCapabilityRowTally(
+      currentSummary.instrumentAudited.payloadCapabilities,
+      formatInstrumentAuditMembers(current, 'payload'),
+    ),
+    instrumentScopeAudited: formatCapabilityRowTally(
+      currentSummary.instrumentAudited.scopeCapabilities,
+      formatInstrumentAuditMembers(current, 'scope'),
+    ),
     lossPathAudit: formatLossPathPopulation(current),
-    silenceProofReferenced: `${currentSummary.proofReferenced.silenceCapabilities} ${formatProofReferences(current, 'staysSilent')}`,
-    silenceProofReferencedAndExercised: `${currentSummary.exercised.silenceReferenced.capabilities} ${formatProofReferences(current, 'staysSilent', true)}`,
+    silenceProofReferenced: formatCapabilityRowTally(
+      currentSummary.proofReferenced.silenceCapabilities,
+      formatProofReferences(current, 'staysSilent'),
+    ),
+    silenceProofReferencedAndExercised: formatCapabilityRowTally(
+      currentSummary.exercised.silenceReferenced.capabilities,
+      formatProofReferences(current, 'staysSilent', true),
+    ),
     silenceResults: formatLaneResults(current, 'silence'),
-    singleWitness: `${currentSummary.exercised.singleWitnessCapabilities} ${formatSingleWitnessMembers(current)}`,
+    singleWitness: formatCapabilityRowTally(
+      currentSummary.exercised.singleWitnessCapabilities,
+      formatSingleWitnessMembers(current),
+    ),
     unknownObservations: formatUnknownObservations(current),
   };
   if (baseline === null) {
@@ -611,17 +632,21 @@ function formatScoreNumbers(
     `configuration limits ${formatConfigurationLimits(baseline)} → ${currentNumbers.configurationLimits}`,
     `diagnostic channels ${formatDiagnosticChannels(baseline)} → ${currentNumbers.diagnosticChannels}`,
     `loss-path audit ${formatLossPathPopulation(baseline)} → ${currentNumbers.lossPathAudit}`,
-    `instrument payload-audited ${baselineSummary.instrumentAudited.payloadCapabilities} ${formatInstrumentAuditMembers(baseline, 'payload')} → ${currentNumbers.instrumentPayloadAudited}`,
-    `instrument scope-audited ${baselineSummary.instrumentAudited.scopeCapabilities} ${formatInstrumentAuditMembers(baseline, 'scope')} → ${currentNumbers.instrumentScopeAudited}`,
-    `fire proof-referenced all ${baselineSummary.proofReferenced.fireCapabilities} ${formatProofReferences(baseline, 'fires')} → ${currentNumbers.fireProofReferenced}`,
-    `fire proof-referenced and exercised ${baselineSummary.exercised.fireReferenced.capabilities} ${formatProofReferences(baseline, 'fires', true)} → ${currentNumbers.fireProofReferencedAndExercised}`,
+    `instrument payload-audited ${formatCapabilityRowTally(baselineSummary.instrumentAudited.payloadCapabilities, formatInstrumentAuditMembers(baseline, 'payload'))} → ${currentNumbers.instrumentPayloadAudited}`,
+    `instrument scope-audited ${formatCapabilityRowTally(baselineSummary.instrumentAudited.scopeCapabilities, formatInstrumentAuditMembers(baseline, 'scope'))} → ${currentNumbers.instrumentScopeAudited}`,
+    `fire proof-referenced all ${formatCapabilityRowTally(baselineSummary.proofReferenced.fireCapabilities, formatProofReferences(baseline, 'fires'))} → ${currentNumbers.fireProofReferenced}`,
+    `fire proof-referenced and exercised ${formatCapabilityRowTally(baselineSummary.exercised.fireReferenced.capabilities, formatProofReferences(baseline, 'fires', true))} → ${currentNumbers.fireProofReferencedAndExercised}`,
     `fire results ${formatLaneResults(baseline, 'fire')} → ${currentNumbers.fireResults}`,
-    `silence proof-referenced all ${baselineSummary.proofReferenced.silenceCapabilities} ${formatProofReferences(baseline, 'staysSilent')} → ${currentNumbers.silenceProofReferenced}`,
-    `silence proof-referenced and exercised ${baselineSummary.exercised.silenceReferenced.capabilities} ${formatProofReferences(baseline, 'staysSilent', true)} → ${currentNumbers.silenceProofReferencedAndExercised}`,
+    `silence proof-referenced all ${formatCapabilityRowTally(baselineSummary.proofReferenced.silenceCapabilities, formatProofReferences(baseline, 'staysSilent'))} → ${currentNumbers.silenceProofReferenced}`,
+    `silence proof-referenced and exercised ${formatCapabilityRowTally(baselineSummary.exercised.silenceReferenced.capabilities, formatProofReferences(baseline, 'staysSilent', true))} → ${currentNumbers.silenceProofReferencedAndExercised}`,
     `silence results ${formatLaneResults(baseline, 'silence')} → ${currentNumbers.silenceResults}`,
-    `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} ${formatSingleWitnessMembers(baseline)} → ${currentNumbers.singleWitness}`,
+    `single-witness ${formatCapabilityRowTally(baselineSummary.exercised.singleWitnessCapabilities, formatSingleWitnessMembers(baseline))} → ${currentNumbers.singleWitness}`,
     `unknown observations ${formatUnknownObservations(baseline)} → ${currentNumbers.unknownObservations}`,
   ].join('; ');
+}
+
+function formatCapabilityRowTally(count: number, members: string): string {
+  return `capability-row tally ${count} ${members}`;
 }
 
 function formatLaneResults(pack: Readonly<ImportConformanceMeasuredPack>, lane: 'fire' | 'silence'): string {
@@ -636,7 +661,7 @@ function formatLaneResults(pack: Readonly<ImportConformanceMeasuredPack>, lane: 
       .filter((capability) => capability.results[lane].state === state)
       .map((capability) => capability.id)
       .join(', ')}]`;
-  return `pass ${summary.results.passedCapabilities}/${summary.capabilities} ${ids('pass')}, fail ${summary.results.failedCapabilities}/${summary.capabilities} ${ids('fail')}, unknown ${summary.results.unknownCapabilities}/${summary.capabilities} ${ids('unknown')}`;
+  return `referenced capability-row population tally ${summary.capabilities}; pass capability-row tally ${summary.results.passedCapabilities} ${ids('pass')}, fail capability-row tally ${summary.results.failedCapabilities} ${ids('fail')}, unknown capability-row tally ${summary.results.unknownCapabilities} ${ids('unknown')}`;
 }
 
 function formatExercisedMembers(pack: Readonly<ImportConformanceMeasuredPack>): string {
@@ -652,7 +677,8 @@ function formatExercisedDenominator(
 ): string {
   const denominator = pack.summary.denominators.importerDeclared;
   const census = denominator.census;
-  return `importer-declared capability rows ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; declared capability row tally ${denominator.declaredRows}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} (${census.falsePositiveHits} false positives in ${census.candidateHits} candidate hits; single author); SWF-format capability denominator UNMEASURED; ratchet honest limit ${oracleAssurance.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracleAssurance.formatDerivedProperties}`;
+  const margin = denominator.individuationMargin;
+  return `importer-declared capability-row tally ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; declared capability-row tally ${denominator.declaredRows}; individuation margin counts [same-dispatch-arm row count ${margin.sameDispatchArmRows}; behavior-preserving-refactor row count ${margin.behaviorPreservingRefactorRows}; discriminated-source row count ${margin.discriminatedSourceRows}; frozen-declared row count ${margin.frozenDeclaredRows}; ${margin.state}]; rejected circular individuation candidate ${margin.rejectedCircularCandidate}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} [false-positive-hit tally ${census.falsePositiveHits}; candidate-hit tally ${census.candidateHits}; single author]; SWF-format capability denominator UNMEASURED; ratchet honest limit ${oracleAssurance.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracleAssurance.formatDerivedProperties}`;
 }
 
 function formatConfigurationLimits(pack: Readonly<ImportConformanceMeasuredPack>): string {
@@ -693,7 +719,7 @@ function formatLossPathPopulation(pack: Readonly<ImportConformanceMeasuredPack>)
     )
     .map((capability) => capability.id);
   const summary = pack.summary.lossPathPopulation;
-  return `${summary.auditState}; audited ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose ${summary.canSilentlyLoseCapabilities}; audited-none ${summary.auditedNoLossPathCapabilities}; unaudited ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
+  return `${summary.auditState}; audited capability-row tally ${summary.auditedCapabilities} [${auditedMembers.join(', ')}]; can-silently-lose capability-row tally ${summary.canSilentlyLoseCapabilities}; audited-none capability-row tally ${summary.auditedNoLossPathCapabilities}; unaudited capability-row tally ${summary.unauditedCapabilities} [${unauditedMembers.join(', ')}]`;
 }
 
 function formatProofReferences(
@@ -735,7 +761,7 @@ function formatUnknownObservations(pack: Readonly<ImportConformanceMeasuredPack>
           : `${observation.capabilityId}@${observation.reference}`,
       );
     const scope = isCapabilityScopedUnknownReason(reason) ? 'capability-scoped' : 'file-scoped';
-    return `${scope} ${members.length} [${members.join(', ')}]`;
+    return `${scope} keyed-observation count ${members.length} [${members.join(', ')}]`;
   };
   return `loop-bounded-limit ${lane('loop-bounded-configuration-limit')}, cause-unknown ${lane('diagnostic-cause-unknown')}, instrument-audit-incomplete ${lane('instrument-audit-incomplete')}, known-unwired ${lane('loss-path-known-not-wired')}, loss-path-unidentified ${lane('loss-path-not-identified')}, no-fire ${lane('fire-proof-missing-for-no-crumb')}, no-silence ${lane('silence-proof-missing-for-crumb')}`;
 }
