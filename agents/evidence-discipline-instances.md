@@ -48,11 +48,20 @@ reader can tell strength apart without trusting the author's formatting:
   ★ **And the asymmetry sets the default where the audit cannot: redundancy costs a re-read, a gap
   costs an undetectable wrong belief.**
 
-- **filed — An enumeration can have the right CARDINALITY and the wrong MEMBERS, and the matching
-  count is what makes it feel verified.** A recalled list of 28 packs omitted two that exist; **the
-  real list is also 28.** ⇒ **Checking the count would have confirmed it** — the one check a reader
-  would reach for is the one that cannot fail here. **Verify membership against the store, never the
-  size against memory.**
+- **filed — VERIFYING A RECOLLECTION BY A PROPERTY INVARIANT UNDER THE LIKELY ERROR IS WORSE THAN NOT
+  VERIFYING AT ALL, because it manufactures confidence.** A recalled list of 28 packs omitted two that
+  exist — **and the real list is also 28.** ⇒ **A COUNT IS INVARIANT UNDER SUBSTITUTION**, which is
+  precisely the error the list contained, **so the obvious check would have PASSED and the members
+  would then have been quoted with a check behind them.** ★★ **The invariance rule applied to the
+  choice of check: an aggregate is blind to exactly what it discards, so verifying with one blind to
+  your likely error converts an unchecked claim into a checked wrong one.** **Verify membership
+  against the store, never size against memory.**
+
+- **filed — A FILE COUNT is a property of the PACKAGING, not of the coverage.** A corpus of 388 files
+  **might exercise twenty types or three hundred** — nothing in the count says which. ⇒ **So "415
+  files against 368 types" is not a comparison; it is two unrelated numbers adjacent on a page**, and
+  adjacency is doing the work a relation would have to earn. ★ **Say it before the numbers travel:
+  the corpus axis is WHAT THESE FILES EXERCISE, and it is currently unmeasured.**
 
 - **filed — A FRAME-RELATIVE correctness cannot be audited in place; it can only be tested by
   TRANSFER.** Where a conflation is correct *in its own frame*, **the question and the answer match**,
