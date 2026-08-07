@@ -18,30 +18,44 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 interface SwfInstrumentation {
+  // Which audits have actually reached this capability. An audit certifies a population AT A MOMENT, and
+  // anything added afterwards — including the fix the audit produced — is outside it. Recording coverage
+  // per member rather than per artifact is what stops a newly added row wearing the older rows' results.
+  audits: readonly SwfAudit[];
   fires: readonly string[];
   id: string;
   staysSilent: readonly string[];
 }
 
+// `scope` — the wire's tested case is the whole of what this capability can lose (property 3).
+// `payload` — each proof names a test that actually exercises THIS capability (property 4).
+type SwfAudit = 'payload' | 'scope';
+
+const KNOWN_AUDITS: readonly SwfAudit[] = ['payload', 'scope'];
+
 // Proof identifiers are test names, verbatim. A renamed or deleted test breaks the check rather than
 // silently degrading the mapping, which is the property that makes the artifact trustworthy.
 const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a non-MP3 sound stream, whose blocks do not concatenate'],
     id: 'swf.axis.sound-format-non-mp3',
     staysSilent: ['stays silent about an MP3 stream, whose blocks do concatenate'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
     id: 'swf.bitmap.define-bits-jpeg-3',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3'],
     id: 'swf.bitmap.define-bits-jpeg-4',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: [
       'reports a legacy split JPEG whose halves will not splice into a readable image',
       'reports a legacy split JPEG with no tables in the file as a Drop',
@@ -50,11 +64,13 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
     id: 'swf.font.define-font',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: [
       'reports a font whose glyph table does not decode, which costs the whole font not one glyph',
       'reports one glyph whose outline does not decode, which costs that glyph and not the font',
@@ -63,16 +79,19 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2'],
     id: 'swf.font.define-font-3',
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports nested masks collapsing, since the outer one is not applied at all'],
     id: 'swf.placement.clip-depth',
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: [
       'reports a blur pass count it cannot represent, and stays silent at one pass',
       'reports a gradient glow angle and distance it cannot represent, and stays silent without them',
@@ -84,41 +103,49 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
     ],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a frame script declined for carrying more than playback commands'],
     id: 'swf.script.do-action',
     staysSilent: ['stays silent about a frame script and a mask that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable shape body as a Recover, since the placeholder still places and sizes'],
     id: 'swf.shape.define-shape',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-2',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-3',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports an unreadable body for every shape generation, not just the one the wire was written on'],
     id: 'swf.shape.define-shape-4',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports scene names as a Skip, since labels import and the named range has no subject'],
     id: 'swf.timeline.define-scene-and-frame-label-data',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
     id: 'swf.timeline.frame-label',
     staysSilent: ['reports a label naming a frame the timeline never reaches, and stays silent when it does'],
   },
   {
+    audits: ['payload', 'scope'],
     fires: ['reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure'],
     id: 'swf.video.video-frame',
     staysSilent: ['stays silent about a shape, a video stream and a scene table that lose nothing'],
@@ -158,6 +185,13 @@ export function verifySwfInstrumentation(): string[] {
     // A row must carry at least one proven role; the two roles are counted as SEPARATE populations
     // rather than collapsed, because a fire proof and a silence proof license different guarantees.
     if (entry.fires.length === 0 && entry.staysSilent.length === 0) problems.push(`no proof at all: ${entry.id}`);
+    for (const audit of entry.audits) {
+      if (!KNOWN_AUDITS.includes(audit)) problems.push(`unknown audit: ${entry.id} — ${audit}`);
+    }
+    const sortedAudits = [...entry.audits].sort();
+    if (entry.audits.some((audit, index) => audit !== sortedAudits[index])) {
+      problems.push(`audits unsorted: ${entry.id}`);
+    }
     for (const role of [entry.fires, entry.staysSilent]) {
       for (const proof of role) if (!tests.has(proof)) problems.push(`proof names no test: ${entry.id} — ${proof}`);
       const sorted = [...role].sort();
@@ -179,6 +213,8 @@ export function formatSwfInstrumentationJson(): string {
     {
       capabilities: INSTRUMENTATION,
       fireProven: INSTRUMENTATION.filter((entry) => entry.fires.length > 0).length,
+      payloadAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('payload')).length,
+      scopeAudited: INSTRUMENTATION.filter((entry) => entry.audits.includes('scope')).length,
       silenceProven: INSTRUMENTATION.filter((entry) => entry.staysSilent.length > 0).length,
     },
     null,

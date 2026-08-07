@@ -152,6 +152,18 @@ They are independent, and this cell has produced a specimen of a (3) failure and
 (3) is found only by reading the claim against the code; property (4) by firing the instrument on a case
 whose correct answer is already known and checking the record against it.
 
+**An audit certifies a population at a moment, so coverage is recorded per capability rather than per
+artifact.** Each row of [instrumentation.json](instrumentation.json) carries an `audits` list naming which
+of properties (3) and (4) have actually reached it, and the root reports `scopeAudited` and
+`payloadAudited` beside the two proof populations.
+
+The reason is a near-miss: the scope audit covered sixteen claims, and `swf.timeline.frame-label` was
+**created by that audit as its fix** and became the seventeenth — so it was never itself scope-audited,
+and **the seventeenth arrived wearing the other sixteen's results**. It has since been audited separately
+and holds. A count and its audit drift apart by default, and the drift is invisible because both numbers
+stay true of *something*, just not of each other — staleness wearing a verification badge, which is the
+most dangerous form because it looks like the thing that protects you.
+
 **A capability enters this table only when *every* one of its loss paths reports — and that is a claim
 worth auditing rather than assuming.** There is a third leg the proof mechanism cannot see: a fire proof
 shows the wire fires **on the case you tested**, and a silence proof shows it stays quiet **on the case you
