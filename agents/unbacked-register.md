@@ -91,6 +91,18 @@ keeps having an answer.**
 | P5 | `broadcast-second-person` | foreman | Sent one second-person text to five recipients, so a claim about one read as a claim about each; a reader audited their own workspace for another's lapse |
 | P6 | `summary-for-artifact` | foreman | Answered a resend request with a summary of the parcel instead of the parcel, an hour after landing the rule against exactly that |
 
+| P7 | `broadcast-second-person` | foreman | Repeat of P5, ~1h after registering it: a task addressed to one builder in the second person was copied to five recipients, so every non-assignee received an instruction false about them in four checkable ways |
+
+**P7 is the register's own indictment, and it is the more useful entry.** P5 was recorded, dated, and
+read — and recording it changed nothing, because **a register is a caution: it names a lapse and
+prevents none.** The remedy is structural and one rule: **a message with more than one recipient may
+not contain second-person instruction.** Either it addresses one agent, or it is rewritten in the
+third person for an audience — which makes the misroute unrepresentable rather than discouraged.
+**It was caught by the recipient, not the sender**, and only because the routing rule had already
+made "this instruction is false about me" a sayable thing: the recipient falsified four preconditions
+in one line each. **A rule that lets the wrong recipient reject an order recovers exactly the errors
+that the sender, by construction, cannot see.**
+
 **Entry 1 stays registered rather than reverted.** A marked unbacked claim is a known state; an
 unmarked one is what this file exists to prevent.
 
