@@ -6,6 +6,7 @@ lastDirection: 2026-07-30
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+capabilities: ./capabilities.md
 tagCoverage: ./tag-coverage.md
 fixtureEvidence: ./fixture-evidence.md
 shaPinIncidentalAudit: ./sha-pin-incidental-audit.md
