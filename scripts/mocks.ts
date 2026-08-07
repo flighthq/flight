@@ -23,6 +23,7 @@ import { join, relative } from 'node:path';
 import pc from 'picocolors';
 
 import { ISOLATED_MOCK_TEST_FILES } from './mockTiers';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
 type Rule = 'hoisted-mock' | 'orphan-unmock' | 'stale-tier' | 'untiered-mock';
 
@@ -34,21 +35,9 @@ const RULE_MESSAGE: Record<Rule, string> = {
   'orphan-unmock': 'vi.doUnmock() names a specifier this file never mocked — it unmocks nothing',
 };
 
-const IGNORED_DIRS = new Set([
-  'node_modules',
-  'dist',
-  'build',
-  'coverage',
-  'target',
-  '.cache',
-  '.git',
-  '.idea',
-  '.vscode',
-  '.claude',
-  '.quimby',
-  'worktrees',
-  'incoming',
-]);
+// The shared generated-output set, plus the three this scan skips for its own reasons: agent and editor
+// state, and sibling checkouts whose test files are not this tree's to judge.
+const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming']);
 
 // Genuinely-intentional escapes, named with a reason, never silently.
 const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [];
