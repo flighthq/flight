@@ -1,5 +1,11 @@
-import type { Image } from '@flighthq/types/contract';
-import { ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
+import type { Image, ImageDecoder } from '@flighthq/types/contract';
+import {
+  BitmapTextureSourceKind,
+  EntityRuntimeKey,
+  ImageResourceFailureKind,
+  ResourceResolutionState,
+} from '@flighthq/types/contract';
 
 import {
   createEmbeddedImageResourceReference,
@@ -10,14 +16,19 @@ import {
   resolveImageResourceReference,
 } from './imageResourceReference';
 
-// Stub img.decode() so the embedded decode path resolves in jsdom.
+let decoder: ReturnType<typeof vi.fn<ImageDecoder>>;
+
 beforeEach(() => {
-  HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
+  decoder = vi.fn<ImageDecoder>().mockResolvedValue({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+    height: 1,
+    width: 1,
+  });
+  registerImageDecoder('image/png', decoder);
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+  clearImageDecoders();
 });
 
 const unusedFetch = () => Promise.resolve(null);
@@ -28,6 +39,7 @@ describe('createEmbeddedImageResourceReference', () => {
     const ref = createEmbeddedImageResourceReference(bytes, 'image/png');
     expect(ref.bytes).toBe(bytes);
     expect(ref.mimeType).toBe('image/png');
+    expect(ref.alphaType).toBe('straight');
   });
 
   it('starts unresolved with no failure and no subscribers', () => {
@@ -106,10 +118,27 @@ describe('resetFailedImageResourceReference', () => {
 describe('resolveImageResourceReference', () => {
   it('decodes embedded bytes and marks the reference resolved', async () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), 'image/png');
-    const image = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
-    expect(image).not.toBeNull();
+    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    expect(source).toMatchObject({
+      alphaType: 'straight',
+      data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+      height: 1,
+      kind: BitmapTextureSourceKind,
+      width: 1,
+    });
+    expect(EntityRuntimeKey in source!).toBe(true);
+    expect(decoder).toHaveBeenCalledWith(ref.bytes);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     expect(ref.failure).toBeNull();
+  });
+
+  it('requests and declares premultiplied output when the plain reference says its source retains it', async () => {
+    const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png', 'premultiplied');
+
+    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+
+    expect(decoder).toHaveBeenCalledWith(ref.bytes, { premultiplyAlpha: true });
+    expect(source?.alphaType).toBe('premultiplied');
   });
 
   it('routes an external reference through the fetch seam', async () => {

@@ -11,6 +11,7 @@ import {
 } from './sceneResourceSignals';
 
 const ref: ImageResourceReference = {
+  alphaType: 'straight',
   bytes: new Uint8Array(),
   failure: null,
   kind: ImageResourceReferenceKind.Embedded,

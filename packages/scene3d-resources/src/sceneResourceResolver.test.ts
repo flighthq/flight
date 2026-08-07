@@ -61,6 +61,7 @@ describe('disposeScene3DResourceResolver', () => {
     const resolver = createScene3DResourceResolver();
     const controller = new AbortController();
     const ref = {
+      alphaType: 'straight',
       bytes: new Uint8Array(0),
       failure: null,
       kind: ImageResourceReferenceKind.Embedded,

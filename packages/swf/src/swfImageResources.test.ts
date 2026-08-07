@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
+import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Image, Shape, Texture2D, TextureSource } from '@flighthq/types/contract';
+import type { Bitmap, Shape, Texture2D, TextureSource } from '@flighthq/types/contract';
 import {
+  BitmapTextureSourceKind,
   ImageResourceReferenceKind,
-  ImageTextureSourceKind,
   ResourceResolutionState,
   ShapeKind,
 } from '@flighthq/types/contract';
@@ -14,18 +15,15 @@ import { createScene2DFromSwf } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
 
 beforeEach(() => {
-  // jsdom has the browser image surface but does not decode image bytes. Keep the production Blob ->
-  // HTMLImageElement path intact and model the dimensions a real decode of this 1x1 PNG supplies.
-  HTMLImageElement.prototype.decode = vi.fn(function (this: HTMLImageElement) {
-    this.width = 1;
-    this.height = 1;
-    return Promise.resolve();
-  });
+  registerImageDecoder('image/png', async () => ({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    height: 1,
+    width: 1,
+  }));
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+  clearImageDecoders();
 });
 
 describe('SWF image resources', () => {
@@ -53,18 +51,17 @@ describe('SWF image resources', () => {
     expect(resources.resolved).toEqual([reference]);
     expect(resources.unresolved).toEqual([]);
     expect(reference.state).toBe(ResourceResolutionState.Resolved);
-    expect(image?.kind).toBe(ImageTextureSourceKind);
-    if (!isImageTextureSource(image)) throw new Error('Expected decoded image source');
+    expect(image?.kind).toBe(BitmapTextureSourceKind);
+    if (!isBitmapTextureSource(image)) throw new Error('Expected decoded bitmap source');
     expect(image.width).toBe(1);
     expect(image.height).toBe(1);
-    expect(image.source).toBeInstanceOf(HTMLImageElement);
-    expect(HTMLImageElement.prototype.decode).toHaveBeenCalledOnce();
+    expect([...image.data]).toEqual([0x11, 0x22, 0x33, 0xff]);
     expect(getTextureSource(reference.textures![0])).toBe(image);
   });
 });
 
-function isImageTextureSource(source: Readonly<TextureSource> | null): source is Image {
-  return source?.kind === ImageTextureSourceKind;
+function isBitmapTextureSource(source: Readonly<TextureSource> | null): source is Bitmap {
+  return source?.kind === BitmapTextureSourceKind;
 }
 
 function createBitmapFillSwf(imageBytes: Uint8Array): Uint8Array {

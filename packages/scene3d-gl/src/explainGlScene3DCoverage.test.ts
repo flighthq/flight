@@ -24,6 +24,7 @@ import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function shamblerLikeScene(withModifier = false) {
   const ref: ImageResourceReference = {
+    alphaType: 'straight',
     bytes: new Uint8Array([1, 2, 3]),
     failure: null,
     kind: ImageResourceReferenceKind.Embedded,

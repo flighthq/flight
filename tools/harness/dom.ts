@@ -21,6 +21,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
+  registerDomBitmapTextureResolver,
   registerDomImageTextureResolver,
   registerDomShapeRasterizer,
   registerRenderer,
@@ -53,6 +54,7 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   });
 
   enableFlightDiagnostics(state);
+  registerDomBitmapTextureResolver(state);
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {

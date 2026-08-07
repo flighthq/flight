@@ -1,3 +1,4 @@
+import type { AlphaType } from './AlphaType';
 import type { Image } from './Image';
 import type { ResourceResolutionState } from './ResourceResolutionState';
 import type { Texture } from './Texture';
@@ -62,6 +63,11 @@ interface ImageResourceReferenceBase {
 // The encoded image bytes are already available; resolution decodes them through @flighthq/image-codec.
 export interface EmbeddedImageResourceReference extends ImageResourceReferenceBase {
   kind: 'Embedded';
+  // The alpha representation requested from the decoder and declared on the resulting Bitmap. Most
+  // encoded images decode to straight RGBA. A container-native raster may retain premultiplied bytes
+  // deliberately; keeping that choice in plain reference data lets the async resource layer request
+  // the matching decoder output without teaching it about a container-specific MIME type.
+  alphaType: AlphaType;
   bytes: Uint8Array;
 }
 

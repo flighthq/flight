@@ -1,10 +1,11 @@
+import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 // @vitest-environment jsdom
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type { Image, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources';
 import { createScene2DDocument } from './scene2DDocument';
@@ -15,14 +16,16 @@ function externalResource(uri: string): ImageResourceReference {
   return createExternalImageResourceReference(uri);
 }
 
-// The embedded path decodes through an HTMLImageElement, which is why this file runs under jsdom.
 beforeEach(() => {
-  HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
+  registerImageDecoder('image/png', async () => ({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    height: 1,
+    width: 1,
+  }));
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+  clearImageDecoders();
 });
 
 describe('loadScene2DImageResources', () => {
@@ -112,6 +115,6 @@ describe('loadScene2DImageResources', () => {
       createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]),
     );
     expect(resources.resolved).toEqual([reference]);
-    expect(getTextureSource(texture)).not.toBeNull();
+    expect(getTextureSource(texture)?.kind).toBe(BitmapTextureSourceKind);
   });
 });

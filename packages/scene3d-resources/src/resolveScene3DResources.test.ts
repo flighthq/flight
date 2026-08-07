@@ -21,12 +21,12 @@ import type * as Scene3DResourceResolverModule from './sceneResourceResolver';
 import type * as Scene3DResourceSignalsModule from './sceneResourceSignals';
 
 const fakeImage = { height: 2, kind: ImageTextureSourceKind, width: 2 } as unknown as Image;
-type LoadImageResourceFromBytes = typeof ImageModule.loadImageResourceFromBytes;
+type ResolveImageResourceReference = typeof ImageModule.resolveImageResourceReference;
 
 let createBuiltInScene3DResourceResolver: typeof Scene3DResourceResolverModule.createBuiltInScene3DResourceResolver;
 let disposeScene3DResourceResolver: typeof Scene3DResourceResolverModule.disposeScene3DResourceResolver;
 let enableScene3DResourceSignals: typeof Scene3DResourceSignalsModule.enableScene3DResourceSignals;
-let loadFromBytes: Mock<LoadImageResourceFromBytes>;
+let resolveReference: Mock<ResolveImageResourceReference>;
 let resolveOneScene3DResourceTexture: typeof ResolveScene3DResourcesModule.resolveOneScene3DResourceTexture;
 let resolveScene3DResources: typeof ResolveScene3DResourcesModule.resolveScene3DResources;
 let updateScene3DResourceStreaming: typeof ResolveScene3DResourcesModule.updateScene3DResourceStreaming;
@@ -37,6 +37,7 @@ let sceneResources: ImageResourceReference[] = [];
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   const ref: ImageResourceReference = {
     bytes: new Uint8Array([9, 9]),
+    alphaType: 'straight',
     failure: null,
     kind: ImageResourceReferenceKind.Embedded,
     mimeType,
@@ -86,13 +87,12 @@ async function settle(resolver: Scene3DResourceResolver): Promise<void> {
 
 beforeAll(async () => {
   vi.resetModules();
-  loadFromBytes = vi.fn<LoadImageResourceFromBytes>();
-  // Override only the two loaders; the rest of the module stays real, so growing @flighthq/image cannot
+  resolveReference = vi.fn<ResolveImageResourceReference>();
+  // Override only the resource atom; the rest of the module stays real, so growing @flighthq/image cannot
   // silently blank out a code path under test.
   vi.doMock('@flighthq/image/contract', async (importOriginal) => ({
     ...(await importOriginal<typeof ImageModule>()),
-    loadImageResourceFromBytes: loadFromBytes,
-    loadImageResourceFromUrl: vi.fn(),
+    resolveImageResourceReference: resolveReference,
   }));
   ({ resolveOneScene3DResourceTexture, resolveScene3DResources, updateScene3DResourceStreaming } =
     await import('./resolveScene3DResources'));
@@ -107,31 +107,36 @@ afterAll(() => {
 });
 
 afterEach(() => {
-  loadFromBytes.mockReset();
+  resolveReference.mockReset();
 });
 
 describe('resolveOneScene3DResourceTexture', () => {
   it('decodes embedded bytes through @flighthq/image', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const resolver = createBuiltInScene3DResourceResolver();
     const ref = embeddedRef('image/jpeg');
     const signal = new AbortController().signal;
     const result = await resolveOneScene3DResourceTexture(resolver, ref, signal);
-    expect(loadFromBytes).toHaveBeenCalledWith((ref as { bytes: Uint8Array }).bytes, 'image/jpeg', signal);
+    expect(resolveReference).toHaveBeenCalledWith(ref, resolver.fetch, signal);
     expect(result).toBe(fakeImage);
     disposeScene3DResourceResolver(resolver);
   });
 
-  it('passes undefined for a null embedded mimeType', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+  it('passes the complete plain embedded reference to the shared resource atom', async () => {
+    resolveReference.mockResolvedValue(fakeImage);
     const resolver = createBuiltInScene3DResourceResolver();
-    await resolveOneScene3DResourceTexture(resolver, embeddedRef(null), new AbortController().signal);
-    expect(loadFromBytes).toHaveBeenCalledWith(expect.anything(), undefined, expect.anything());
+    const ref = embeddedRef(null);
+    const signal = new AbortController().signal;
+    await resolveOneScene3DResourceTexture(resolver, ref, signal);
+    expect(resolveReference).toHaveBeenCalledWith(ref, resolver.fetch, signal);
     disposeScene3DResourceResolver(resolver);
   });
 
   it('routes external refs through the resolver fetch seam', async () => {
     const fetch = vi.fn(async () => fakeImage);
+    resolveReference.mockImplementation((ref, resolveFetch, signal) =>
+      ref.kind === ImageResourceReferenceKind.External ? resolveFetch(ref, signal) : Promise.resolve(null),
+    );
     const resolver = createBuiltInScene3DResourceResolver({ fetch });
     const ref = externalRef();
     const signal = new AbortController().signal;
@@ -145,8 +150,8 @@ describe('resolveOneScene3DResourceTexture', () => {
 describe('resolveScene3DResources', () => {
   it('does not cancel acquisition owned by a streaming update', async () => {
     let loadSignal: AbortSignal | undefined;
-    loadFromBytes.mockImplementation(
-      (_bytes, _mime, signal) =>
+    resolveReference.mockImplementation(
+      (_ref, _fetch, signal) =>
         new Promise<Image>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
@@ -168,7 +173,7 @@ describe('resolveScene3DResources', () => {
   });
 
   it('returns the selected unresolved working set without starting acquisition', () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const ref = embeddedRef();
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
@@ -181,7 +186,7 @@ describe('resolveScene3DResources', () => {
     expect(resources.resolved).toEqual([]);
     expect(resources.unresolved).toEqual([{ ref, textures: [a, b] }]);
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
-    expect(loadFromBytes).not.toHaveBeenCalled();
+    expect(resolveReference).not.toHaveBeenCalled();
     disposeScene3DResourceResolver(resolver);
   });
 
@@ -206,7 +211,7 @@ describe('resolveScene3DResources', () => {
 
 describe('updateScene3DResourceStreaming', () => {
   it('resolves every pending texture, binding the image and advancing state', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const a = pendingTexture();
     const b = pendingTexture();
     const scene = meshScene3D(a, b);
@@ -224,7 +229,7 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('fetches and decodes one shared resource once, then binds every subscribed texture', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const ref = embeddedRef();
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
@@ -234,7 +239,7 @@ describe('updateScene3DResourceStreaming', () => {
     updateScene3DResourceStreaming(scene, resolver);
     await settle(resolver);
 
-    expect(loadFromBytes).toHaveBeenCalledTimes(1);
+    expect(resolveReference).toHaveBeenCalledTimes(1);
     expect(getTextureSource(a)).toBe(fakeImage);
     expect(getTextureSource(b)).toBe(fakeImage);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
@@ -243,8 +248,8 @@ describe('updateScene3DResourceStreaming', () => {
 
   it('keeps a shared load alive until its final subscriber leaves the working set', async () => {
     let loadSignal: AbortSignal | undefined;
-    loadFromBytes.mockImplementation(
-      (_bytes, _mime, signal) =>
+    resolveReference.mockImplementation(
+      (_ref, _fetch, signal) =>
         new Promise<Image>((_resolve, reject) => {
           loadSignal = signal;
           signal?.addEventListener('abort', () => reject(signal.reason));
@@ -269,7 +274,7 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('binds a later subscriber from the resolved resource cache without decoding again', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const ref = embeddedRef();
     const a = createTexture({ resource: ref });
     const b = createTexture({ resource: ref });
@@ -283,12 +288,12 @@ describe('updateScene3DResourceStreaming', () => {
 
     updateScene3DResourceStreaming(scene, resolver, { select: (texture) => texture === b });
     expect(getTextureSource(b)).toBe(fakeImage);
-    expect(loadFromBytes).toHaveBeenCalledTimes(1);
+    expect(resolveReference).toHaveBeenCalledTimes(1);
     disposeScene3DResourceResolver(resolver);
   });
 
   it('limits the working set to textures the select predicate accepts', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const wanted = pendingTexture();
     const skipped = pendingTexture();
     const scene = meshScene3D(wanted, skipped);
@@ -304,6 +309,19 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('fails a texture whose external fetch returns null', async () => {
+    resolveReference.mockImplementation(async (ref, fetch, signal) => {
+      if (ref.kind !== ImageResourceReferenceKind.External) return null;
+      const source = await fetch(ref, signal);
+      if (source === null) {
+        ref.failure = {
+          kind: ImageResourceFailureKind.Unavailable,
+          message: 'Image resource unavailable',
+          name: null,
+        };
+        ref.state = ResourceResolutionState.Failed;
+      }
+      return source;
+    });
     const texture = createTexture({ resource: externalRef() });
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver({ fetch: async () => null });
@@ -315,14 +333,14 @@ describe('updateScene3DResourceStreaming', () => {
     expect(resourceOf(texture)?.state).toBe(ResourceResolutionState.Failed);
     expect(resourceOf(texture)?.failure).toEqual({
       kind: ImageResourceFailureKind.Unavailable,
-      message: 'Image resource resolution returned no source',
+      message: 'Image resource unavailable',
       name: null,
     });
     disposeScene3DResourceResolver(resolver);
   });
 
   it('fails a texture whose decode throws', async () => {
-    loadFromBytes.mockRejectedValue(new Error('bad image'));
+    resolveReference.mockRejectedValue(new Error('bad image'));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();
@@ -342,8 +360,8 @@ describe('updateScene3DResourceStreaming', () => {
   it('cancels and reverts a load dropped from the working set, then re-requests on re-entry', async () => {
     const loadSignals: AbortSignal[] = [];
     // A load that hangs until its signal aborts, so we can drop it mid-flight.
-    loadFromBytes.mockImplementation(
-      (_bytes, _mime, signal) =>
+    resolveReference.mockImplementation(
+      (_ref, _fetch, signal) =>
         new Promise<Image>((_resolve, reject) => {
           if (signal !== undefined) loadSignals.push(signal);
           signal?.addEventListener('abort', () => reject(signal.reason));
@@ -372,21 +390,21 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('does not re-request a texture already in flight', async () => {
-    loadFromBytes.mockImplementation(() => new Promise<Image>(() => {}));
+    resolveReference.mockImplementation(() => new Promise<Image>(() => {}));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();
 
     updateScene3DResourceStreaming(scene, resolver);
-    await vi.waitFor(() => expect(loadFromBytes).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(resolveReference).toHaveBeenCalledTimes(1));
     updateScene3DResourceStreaming(scene, resolver);
-    expect(loadFromBytes).toHaveBeenCalledTimes(1);
+    expect(resolveReference).toHaveBeenCalledTimes(1);
 
     disposeScene3DResourceResolver(resolver);
   });
 
   it('emits onResourceResolved when signals are enabled', async () => {
-    loadFromBytes.mockResolvedValue(fakeImage);
+    resolveReference.mockResolvedValue(fakeImage);
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();
@@ -405,7 +423,7 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('emits onResourceFailed when a decode throws', async () => {
-    loadFromBytes.mockRejectedValue(new Error('bad image'));
+    resolveReference.mockRejectedValue(new Error('bad image'));
     const texture = pendingTexture();
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver();
