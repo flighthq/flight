@@ -7,6 +7,8 @@ import pc from 'picocolors';
 import { parseImportConformanceScore } from './import-conformance-score';
 import type {
   ImportConformanceCapability,
+  ImportConformanceExercisedCapability,
+  ImportConformanceLaneResult,
   ImportConformanceMeasuredPack,
   ImportConformanceScore,
 } from './import-conformance-score';
@@ -62,10 +64,7 @@ export function compareImportConformanceScores(
       });
       continue;
     }
-    if (
-      policy.unknownBaseline === 'reject' &&
-      baselinePack.capabilities.some((capability) => capability.state === 'unknown')
-    ) {
+    if (policy.unknownBaseline === 'reject' && baselinePack.capabilities.some(hasUnknownEvidence)) {
       comparisons.push({
         baseline: baselinePack,
         current: currentPack?.state === 'measured' ? currentPack : null,
@@ -314,45 +313,95 @@ function compareCapabilities(
         ),
       );
     }
-    if (baselineCapability.state === 'unknown') continue;
-    if (currentCapability.state === 'unknown') {
-      findings.push(
-        finding(
-          'capability-instrumentation-regressed',
-          'was measured and is now UNKNOWN because diagnostic instrumentation is missing',
-          baselineCapability.id,
-        ),
-      );
-      continue;
-    }
-    if (!sameKeys(baselineCapability.instrumentationProofs.fires, currentCapability.instrumentationProofs.fires)) {
-      findings.push(
-        finding(
-          'instrumentation-firing-proof-changed',
-          `firing-test proofs changed from [${baselineCapability.instrumentationProofs.fires.join(', ')}] to [${currentCapability.instrumentationProofs.fires.join(', ')}]`,
-          baselineCapability.id,
-        ),
-      );
-    }
-    if (
-      !sameKeys(
-        baselineCapability.instrumentationProofs.staysSilent,
-        currentCapability.instrumentationProofs.staysSilent,
-      )
-    ) {
-      findings.push(
-        finding(
-          'instrumentation-silence-proof-changed',
-          `silence-test proofs changed from [${baselineCapability.instrumentationProofs.staysSilent.join(', ')}] to [${currentCapability.instrumentationProofs.staysSilent.join(', ')}]`,
-          baselineCapability.id,
-        ),
-      );
-    }
-    if (baselineCapability.result === 'pass' && currentCapability.result === 'fail') {
-      findings.push(finding('capability-regressed', 'changed from passing to failing', baselineCapability.id));
-    }
+    compareInstrumentation(baselineCapability, currentCapability, 'fires', 'firing', baselineCapability.id, findings);
+    compareInstrumentation(
+      baselineCapability,
+      currentCapability,
+      'staysSilent',
+      'silence',
+      baselineCapability.id,
+      findings,
+    );
+    compareLaneResult(
+      baselineCapability.results.fire,
+      currentCapability.results.fire,
+      'fire',
+      baselineCapability.id,
+      findings,
+    );
+    compareLaneResult(
+      baselineCapability.results.silence,
+      currentCapability.results.silence,
+      'silence',
+      baselineCapability.id,
+      findings,
+    );
   }
   return findings;
+}
+
+function compareInstrumentation(
+  baseline: Readonly<ImportConformanceExercisedCapability>,
+  current: Readonly<ImportConformanceExercisedCapability>,
+  key: keyof ImportConformanceExercisedCapability['instrumentation'],
+  label: string,
+  capabilityId: string,
+  findings: ImportConformanceRatchetFinding[],
+): void {
+  const baselineInstrumentation = baseline.instrumentation[key];
+  const currentInstrumentation = current.instrumentation[key];
+  if (baselineInstrumentation.state === 'unproven') return;
+  if (currentInstrumentation.state === 'unproven') {
+    findings.push(
+      finding(
+        `instrumentation-${label}-proof-lost`,
+        `${label}-test instrumentation was proven and is now UNPROVEN`,
+        capabilityId,
+      ),
+    );
+    return;
+  }
+  if (!sameKeys(baselineInstrumentation.proofs, currentInstrumentation.proofs)) {
+    findings.push(
+      finding(
+        `instrumentation-${label}-proof-changed`,
+        `${label}-test proofs changed from [${baselineInstrumentation.proofs.join(', ')}] to [${currentInstrumentation.proofs.join(', ')}]`,
+        capabilityId,
+      ),
+    );
+  }
+}
+
+function compareLaneResult(
+  baseline: Readonly<ImportConformanceLaneResult>,
+  current: Readonly<ImportConformanceLaneResult>,
+  lane: string,
+  capabilityId: string,
+  findings: ImportConformanceRatchetFinding[],
+): void {
+  if (baseline.state === 'unknown') return;
+  if (current.state === 'unknown') {
+    findings.push(
+      finding(
+        `${lane}-result-became-unknown`,
+        `${lane} lane changed from ${baseline.state.toUpperCase()} to UNKNOWN because an observation is unlicensed`,
+        capabilityId,
+      ),
+    );
+  } else if (baseline.state === 'pass' && current.state === 'fail') {
+    findings.push(finding(`${lane}-result-regressed`, `${lane} lane changed from passing to failing`, capabilityId));
+  }
+}
+
+function hasUnknownEvidence(capability: Readonly<ImportConformanceCapability>): boolean {
+  return (
+    capability.state === 'exercised' &&
+    (capability.instrumentation.fires.state === 'unproven' ||
+      capability.instrumentation.staysSilent.state === 'unproven' ||
+      capability.results.fire.state === 'unknown' ||
+      capability.results.silence.state === 'unknown' ||
+      capability.unknownObservations.length > 0)
+  );
 }
 
 function combineStates(states: readonly ImportConformanceRatchetState[]): ImportConformanceRatchetState {
@@ -373,20 +422,44 @@ function formatScoreNumbers(
   const currentSummary = current.summary;
   const currentNumbers = [
     `${currentSummary.exercised.capabilities}/${currentSummary.totalCapabilities}`,
-    `${currentSummary.exercised.instrumented.capabilities}/${currentSummary.exercised.capabilities}`,
-    `${currentSummary.exercised.instrumented.passedCapabilities}/${currentSummary.exercised.instrumented.capabilities}`,
+    `${currentSummary.exercised.fireProven.capabilities}/${currentSummary.exercised.capabilities}`,
+    formatLaneResults(currentSummary.exercised.fireProven),
+    `${currentSummary.exercised.silenceProven.capabilities}/${currentSummary.exercised.capabilities}`,
+    formatLaneResults(currentSummary.exercised.silenceProven),
     `${currentSummary.exercised.singleWitnessCapabilities}`,
+    ...formatUnknownObservationCounts(current),
   ];
   if (baseline === null) {
-    return `exercised ${currentNumbers[0]}; instrumented ${currentNumbers[1]}; pass ${currentNumbers[2]}; single-witness ${currentNumbers[3]}`;
+    return `exercised ${currentNumbers[0]}; fire-proven ${currentNumbers[1]}; fire results ${currentNumbers[2]}; silence-proven ${currentNumbers[3]}; silence results ${currentNumbers[4]}; single-witness ${currentNumbers[5]}; unknown observations instrument ${currentNumbers[6]}, no-fire ${currentNumbers[7]}, no-silence ${currentNumbers[8]}`;
   }
   const baselineSummary = baseline.summary;
+  const baselineUnknowns = formatUnknownObservationCounts(baseline);
   return [
     `exercised ${baselineSummary.exercised.capabilities}/${baselineSummary.totalCapabilities} → ${currentNumbers[0]}`,
-    `instrumented ${baselineSummary.exercised.instrumented.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[1]}`,
-    `pass ${baselineSummary.exercised.instrumented.passedCapabilities}/${baselineSummary.exercised.instrumented.capabilities} → ${currentNumbers[2]}`,
-    `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} → ${currentNumbers[3]}`,
+    `fire-proven ${baselineSummary.exercised.fireProven.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[1]}`,
+    `fire results ${formatLaneResults(baselineSummary.exercised.fireProven)} → ${currentNumbers[2]}`,
+    `silence-proven ${baselineSummary.exercised.silenceProven.capabilities}/${baselineSummary.exercised.capabilities} → ${currentNumbers[3]}`,
+    `silence results ${formatLaneResults(baselineSummary.exercised.silenceProven)} → ${currentNumbers[4]}`,
+    `single-witness ${baselineSummary.exercised.singleWitnessCapabilities} → ${currentNumbers[5]}`,
+    `unknown observations instrument ${baselineUnknowns[0]} → ${currentNumbers[6]}, no-fire ${baselineUnknowns[1]} → ${currentNumbers[7]}, no-silence ${baselineUnknowns[2]} → ${currentNumbers[8]}`,
   ].join('; ');
+}
+
+function formatLaneResults(
+  summary: Readonly<ImportConformanceMeasuredPack['summary']['exercised']['fireProven']>,
+): string {
+  return `pass ${summary.results.passedCapabilities}/${summary.capabilities}, fail ${summary.results.failedCapabilities}/${summary.capabilities}, unknown ${summary.results.unknownCapabilities}/${summary.capabilities}`;
+}
+
+function formatUnknownObservationCounts(pack: Readonly<ImportConformanceMeasuredPack>): [number, number, number] {
+  const reasons = pack.capabilities
+    .filter((capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised')
+    .flatMap((capability) => capability.unknownObservations.map((observation) => observation.reason));
+  return [
+    reasons.filter((reason) => reason === 'diagnostic-instrumentation-missing').length,
+    reasons.filter((reason) => reason === 'fire-proof-missing-for-no-crumb').length,
+    reasons.filter((reason) => reason === 'silence-proof-missing-for-crumb').length,
+  ];
 }
 
 function parseArguments(

@@ -5,32 +5,57 @@ export interface ImportConformanceOutcomeCounts {
   unsupportedClean: number;
 }
 
-export interface ImportConformanceMeasuredCapability {
+export type ImportConformanceUnknownObservationReason =
+  | 'diagnostic-instrumentation-missing'
+  | 'fire-proof-missing-for-no-crumb'
+  | 'silence-proof-missing-for-crumb';
+
+export interface ImportConformanceUnknownObservation {
+  reason: ImportConformanceUnknownObservationReason;
+  reference: string;
+}
+
+export interface ImportConformanceProvenInstrumentation {
+  proofs: [string, ...string[]];
+  state: 'proven';
+}
+
+export interface ImportConformanceUnprovenInstrumentation {
+  state: 'unproven';
+}
+
+export type ImportConformanceInstrumentation =
+  | ImportConformanceProvenInstrumentation
+  | ImportConformanceUnprovenInstrumentation;
+
+export interface ImportConformanceLaneResult {
+  state: 'fail' | 'pass' | 'unknown';
+}
+
+export interface ImportConformanceExercisedCapability {
   id: string;
   /**
-   * Stable ids from the committed capability-to-instrumentation-test mapping. The producer must emit
-   * UNKNOWN unless every firing and non-target silence proof exists and is part of the verified test suite.
+   * Proof directions stay independent: diagnostic silence is interpretable only with `fires`, while a
+   * diagnostic crumb is interpretable only with `staysSilent`. Each unlicensed observation remains keyed
+   * in `unknownObservations`; it must never be inferred as passing or collapsed into an aggregate count.
    */
-  instrumentationProofs: {
-    fires: [string, ...string[]];
-    staysSilent: [string, ...string[]];
+  instrumentation: {
+    fires: ImportConformanceInstrumentation;
+    staysSilent: ImportConformanceInstrumentation;
   };
   outcomes: ImportConformanceOutcomeCounts;
-  result: 'fail' | 'pass';
-  state: 'measured';
+  results: {
+    fire: ImportConformanceLaneResult;
+    silence: ImportConformanceLaneResult;
+  };
+  state: 'exercised';
+  unknownObservations: ImportConformanceUnknownObservation[];
   witnesses: number;
 }
 
 export interface ImportConformanceUnmeasuredCapability {
   id: string;
   state: 'unmeasured';
-}
-
-export interface ImportConformanceUnknownCapability {
-  id: string;
-  reason: 'diagnostic-instrumentation-missing';
-  state: 'unknown';
-  witnesses: number;
 }
 
 export type ImportConformanceNotRunCapabilityReason = 'missing-shard' | 'pack-unavailable';
@@ -46,10 +71,9 @@ export interface ImportConformanceNotRunCapability {
 }
 
 export type ImportConformanceCapability =
-  | ImportConformanceMeasuredCapability
+  | ImportConformanceExercisedCapability
   | ImportConformanceNotRunCapability
-  | ImportConformanceUnmeasuredCapability
-  | ImportConformanceUnknownCapability;
+  | ImportConformanceUnmeasuredCapability;
 
 export interface ImportConformanceMeasuredShard {
   id: number;
@@ -70,14 +94,21 @@ export interface ImportConformanceSharding {
   shards: ImportConformanceShard[];
 }
 
-export interface ImportConformanceInstrumentedSummary {
-  capabilities: number;
+export interface ImportConformanceLaneResultSummary {
+  failedCapabilities: number;
   passedCapabilities: number;
+  unknownCapabilities: number;
+}
+
+export interface ImportConformanceProvenSummary {
+  capabilities: number;
+  results: ImportConformanceLaneResultSummary;
 }
 
 export interface ImportConformanceExercisedSummary {
   capabilities: number;
-  instrumented: ImportConformanceInstrumentedSummary;
+  fireProven: ImportConformanceProvenSummary;
+  silenceProven: ImportConformanceProvenSummary;
   singleWitnessCapabilities: number;
 }
 
@@ -95,7 +126,6 @@ interface ImportConformancePackIdentity {
 }
 
 export interface ImportConformanceMeasuredPack extends ImportConformancePackIdentity {
-  outcomes: ImportConformanceOutcomeCounts;
   sharding: ImportConformanceSharding;
   state: 'measured';
   summary: ImportConformanceSummary;
@@ -152,21 +182,11 @@ function parseProvenance(value: unknown, path: string): ImportConformanceProvena
 function parsePack(value: unknown, path: string): ImportConformancePack {
   const pack = expectRecord(value, path);
   const state = expectString(pack.state, `${path}.state`);
-  const commonKeys = [
-    'capabilities',
-    'id',
-    'importerSourceHash',
-    'outcomes',
-    'release',
-    'sharding',
-    'state',
-    'summary',
-    'variant',
-  ];
+  const commonKeys = ['capabilities', 'id', 'importerSourceHash', 'release', 'sharding', 'state', 'summary', 'variant'];
   if (state === 'measured') {
     expectKeys(pack, commonKeys, path);
   } else if (state === 'not-run') {
-    expectKeys(pack, [...commonKeys, 'reason'], path);
+    expectKeys(pack, [...commonKeys, 'outcomes', 'reason'], path);
   } else {
     fail(`${path}.state`, "must be 'measured' or 'not-run'");
   }
@@ -193,7 +213,6 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
     assertSummaryMatches(summary, capabilities, `${path}.summary`);
     return {
       ...identity,
-      outcomes: parseOutcomes(pack.outcomes, `${path}.outcomes`),
       sharding,
       state,
       summary,
@@ -227,35 +246,19 @@ function parseCapability(value: unknown, path: string): ImportConformanceCapabil
     expectKeys(capability, ['id', 'state'], path);
     return { id, state };
   }
-  if (state === 'unknown') {
-    expectKeys(capability, ['id', 'reason', 'state', 'witnesses'], path);
-    if (capability.reason !== 'diagnostic-instrumentation-missing') {
-      fail(`${path}.reason`, "must be exactly 'diagnostic-instrumentation-missing'");
-    }
-    return {
-      id,
-      reason: 'diagnostic-instrumentation-missing',
-      state,
-      witnesses: expectInteger(capability.witnesses, `${path}.witnesses`, 1),
-    };
-  }
-  if (state === 'measured') {
-    expectKeys(capability, ['id', 'instrumentationProofs', 'outcomes', 'result', 'state', 'witnesses'], path);
-    const witnesses = expectInteger(capability.witnesses, `${path}.witnesses`, 1);
-    const instrumentationProofs = parseInstrumentationProofs(
-      capability.instrumentationProofs,
-      `${path}.instrumentationProofs`,
+  if (state === 'exercised') {
+    expectKeys(
+      capability,
+      ['id', 'instrumentation', 'outcomes', 'results', 'state', 'unknownObservations', 'witnesses'],
+      path,
     );
-    const result = parseCapabilityResult(capability.result, `${path}.result`);
+    const witnesses = expectInteger(capability.witnesses, `${path}.witnesses`, 1);
+    const instrumentation = parseInstrumentation(capability.instrumentation, `${path}.instrumentation`);
     const outcomes = parseOutcomes(capability.outcomes, `${path}.outcomes`);
-    const defects = outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong;
-    if (result === 'pass' && defects > 0) {
-      fail(`${path}.result`, "cannot be 'pass' when a defect outcome is present");
-    }
-    if (result === 'fail' && defects === 0) {
-      fail(`${path}.result`, "cannot be 'fail' without a defect outcome");
-    }
-    return { id, instrumentationProofs, outcomes, result, state, witnesses };
+    const unknownObservations = parseUnknownObservations(capability.unknownObservations, `${path}.unknownObservations`);
+    const results = parseLaneResults(capability.results, `${path}.results`);
+    assertObservationsAreLicensed(instrumentation, outcomes, results, unknownObservations, witnesses, path);
+    return { id, instrumentation, outcomes, results, state, unknownObservations, witnesses };
   }
   if (state === 'not-run') {
     expectKeys(capability, ['completedWitnesses', 'expectedWitnesses', 'id', 'reason', 'state'], path);
@@ -272,7 +275,7 @@ function parseCapability(value: unknown, path: string): ImportConformanceCapabil
       state,
     };
   }
-  return fail(`${path}.state`, "must be 'measured', 'unknown', 'unmeasured', or 'not-run'");
+  return fail(`${path}.state`, "must be 'exercised', 'unmeasured', or 'not-run'");
 }
 
 function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCounts {
@@ -286,16 +289,27 @@ function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCo
   };
 }
 
-function parseInstrumentationProofs(
-  value: unknown,
-  path: string,
-): ImportConformanceMeasuredCapability['instrumentationProofs'] {
-  const proofs = expectRecord(value, path);
-  expectKeys(proofs, ['fires', 'staysSilent'], path);
+function parseInstrumentation(value: unknown, path: string): ImportConformanceExercisedCapability['instrumentation'] {
+  const instrumentation = expectRecord(value, path);
+  expectKeys(instrumentation, ['fires', 'staysSilent'], path);
   return {
-    fires: parseInstrumentationProofIds(proofs.fires, `${path}.fires`),
-    staysSilent: parseInstrumentationProofIds(proofs.staysSilent, `${path}.staysSilent`),
+    fires: parseInstrumentationState(instrumentation.fires, `${path}.fires`),
+    staysSilent: parseInstrumentationState(instrumentation.staysSilent, `${path}.staysSilent`),
   };
+}
+
+function parseInstrumentationState(value: unknown, path: string): ImportConformanceInstrumentation {
+  const instrumentation = expectRecord(value, path);
+  const state = expectString(instrumentation.state, `${path}.state`);
+  if (state === 'unproven') {
+    expectKeys(instrumentation, ['state'], path);
+    return { state };
+  }
+  if (state === 'proven') {
+    expectKeys(instrumentation, ['proofs', 'state'], path);
+    return { proofs: parseInstrumentationProofIds(instrumentation.proofs, `${path}.proofs`), state };
+  }
+  return fail(`${path}.state`, "must be 'proven' or 'unproven'");
 }
 
 function parseInstrumentationProofIds(value: unknown, path: string): [string, ...string[]] {
@@ -303,6 +317,117 @@ function parseInstrumentationProofIds(value: unknown, path: string): [string, ..
   const proofs = value.map((proof, index) => expectNonemptyString(proof, `${path}[${index}]`));
   expectSortedUnique(proofs, path, 'instrumentation proof id');
   return proofs as [string, ...string[]];
+}
+
+function parseLaneResults(value: unknown, path: string): ImportConformanceExercisedCapability['results'] {
+  const results = expectRecord(value, path);
+  expectKeys(results, ['fire', 'silence'], path);
+  return {
+    fire: parseLaneResult(results.fire, `${path}.fire`),
+    silence: parseLaneResult(results.silence, `${path}.silence`),
+  };
+}
+
+function parseLaneResult(value: unknown, path: string): ImportConformanceLaneResult {
+  const result = expectRecord(value, path);
+  expectKeys(result, ['state'], path);
+  const state = expectString(result.state, `${path}.state`);
+  if (state !== 'fail' && state !== 'pass' && state !== 'unknown') {
+    fail(`${path}.state`, "must be 'fail', 'pass', or 'unknown'");
+  }
+  return { state };
+}
+
+function parseUnknownObservations(value: unknown, path: string): ImportConformanceUnknownObservation[] {
+  if (!Array.isArray(value)) fail(path, 'must be an array');
+  const observations = value.map((entry, index) => {
+    const observation = expectRecord(entry, `${path}[${index}]`);
+    expectKeys(observation, ['reason', 'reference'], `${path}[${index}]`);
+    return {
+      reason: parseUnknownObservationReason(observation.reason, `${path}[${index}].reason`),
+      reference: expectNonemptyString(observation.reference, `${path}[${index}].reference`),
+    };
+  });
+  expectSortedUnique(
+    observations.map((observation) => observation.reference),
+    path,
+    'observation reference',
+  );
+  return observations;
+}
+
+function parseUnknownObservationReason(value: unknown, path: string): ImportConformanceUnknownObservationReason {
+  if (
+    value !== 'diagnostic-instrumentation-missing' &&
+    value !== 'fire-proof-missing-for-no-crumb' &&
+    value !== 'silence-proof-missing-for-crumb'
+  ) {
+    fail(
+      path,
+      "must be 'diagnostic-instrumentation-missing', 'fire-proof-missing-for-no-crumb', or 'silence-proof-missing-for-crumb'",
+    );
+  }
+  return value;
+}
+
+function assertObservationsAreLicensed(
+  instrumentation: Readonly<ImportConformanceExercisedCapability['instrumentation']>,
+  outcomes: Readonly<ImportConformanceOutcomeCounts>,
+  results: Readonly<ImportConformanceExercisedCapability['results']>,
+  unknownObservations: readonly Readonly<ImportConformanceUnknownObservation>[],
+  witnesses: number,
+  path: string,
+): void {
+  const classified =
+    outcomes.importedWrong +
+    outcomes.silentlyWrong +
+    outcomes.threw +
+    outcomes.unsupportedClean +
+    unknownObservations.length;
+  if (classified > witnesses) {
+    fail(`${path}.witnesses`, `cannot be smaller than the ${classified} classified observations`);
+  }
+  const passed = witnesses - classified;
+  if (instrumentation.fires.state === 'unproven' && (passed > 0 || outcomes.silentlyWrong > 0)) {
+    fail(`${path}.outcomes`, 'no-crumb pass or silently-wrong outcomes require proven firing instrumentation');
+  }
+  if (instrumentation.staysSilent.state === 'unproven' && outcomes.unsupportedClean > 0) {
+    fail(`${path}.outcomes.unsupportedClean`, 'requires proven silence instrumentation');
+  }
+  for (let index = 0; index < unknownObservations.length; index++) {
+    const observation = unknownObservations[index];
+    if (
+      observation.reason === 'diagnostic-instrumentation-missing' &&
+      (instrumentation.fires.state === 'proven' || instrumentation.staysSilent.state === 'proven')
+    ) {
+      fail(`${path}.unknownObservations[${index}].reason`, 'requires both instrumentation directions to be unproven');
+    }
+    if (observation.reason === 'fire-proof-missing-for-no-crumb' && instrumentation.fires.state === 'proven') {
+      fail(`${path}.unknownObservations[${index}].reason`, 'cannot be used with proven firing instrumentation');
+    }
+    if (observation.reason === 'silence-proof-missing-for-crumb' && instrumentation.staysSilent.state === 'proven') {
+      fail(`${path}.unknownObservations[${index}].reason`, 'cannot be used with proven silence instrumentation');
+    }
+  }
+
+  const hasDefect = outcomes.threw + outcomes.importedWrong + outcomes.silentlyWrong > 0;
+  const hasUnknown = unknownObservations.length > 0;
+  const expectedFire = hasDefect
+    ? 'fail'
+    : hasUnknown || instrumentation.fires.state === 'unproven'
+      ? 'unknown'
+      : 'pass';
+  const expectedSilence = hasDefect
+    ? 'fail'
+    : hasUnknown || instrumentation.staysSilent.state === 'unproven'
+      ? 'unknown'
+      : 'pass';
+  if (results.fire.state !== expectedFire) {
+    fail(`${path}.results.fire.state`, `must equal the licensed observations ('${expectedFire}')`);
+  }
+  if (results.silence.state !== expectedSilence) {
+    fail(`${path}.results.silence.state`, `must equal the licensed observations ('${expectedSilence}')`);
+  }
 }
 
 function parseSharding(value: unknown, path: string): ImportConformanceSharding {
@@ -345,20 +470,16 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
   const summary = expectRecord(value, path);
   expectKeys(summary, ['exercised', 'totalCapabilities'], path);
   const exercised = expectRecord(summary.exercised, `${path}.exercised`);
-  expectKeys(exercised, ['capabilities', 'instrumented', 'singleWitnessCapabilities'], `${path}.exercised`);
-  const instrumented = expectRecord(exercised.instrumented, `${path}.exercised.instrumented`);
-  expectKeys(instrumented, ['capabilities', 'passedCapabilities'], `${path}.exercised.instrumented`);
+  expectKeys(
+    exercised,
+    ['capabilities', 'fireProven', 'silenceProven', 'singleWitnessCapabilities'],
+    `${path}.exercised`,
+  );
   return {
     exercised: {
       capabilities: expectInteger(exercised.capabilities, `${path}.exercised.capabilities`, 0),
-      instrumented: {
-        capabilities: expectInteger(instrumented.capabilities, `${path}.exercised.instrumented.capabilities`, 0),
-        passedCapabilities: expectInteger(
-          instrumented.passedCapabilities,
-          `${path}.exercised.instrumented.passedCapabilities`,
-          0,
-        ),
-      },
+      fireProven: parseProvenSummary(exercised.fireProven, `${path}.exercised.fireProven`),
+      silenceProven: parseProvenSummary(exercised.silenceProven, `${path}.exercised.silenceProven`),
       singleWitnessCapabilities: expectInteger(
         exercised.singleWitnessCapabilities,
         `${path}.exercised.singleWitnessCapabilities`,
@@ -369,25 +490,37 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
   };
 }
 
+function parseProvenSummary(value: unknown, path: string): ImportConformanceProvenSummary {
+  const summary = expectRecord(value, path);
+  expectKeys(summary, ['capabilities', 'results'], path);
+  const results = expectRecord(summary.results, `${path}.results`);
+  expectKeys(results, ['failedCapabilities', 'passedCapabilities', 'unknownCapabilities'], `${path}.results`);
+  return {
+    capabilities: expectInteger(summary.capabilities, `${path}.capabilities`, 0),
+    results: {
+      failedCapabilities: expectInteger(results.failedCapabilities, `${path}.results.failedCapabilities`, 0),
+      passedCapabilities: expectInteger(results.passedCapabilities, `${path}.results.passedCapabilities`, 0),
+      unknownCapabilities: expectInteger(results.unknownCapabilities, `${path}.results.unknownCapabilities`, 0),
+    },
+  };
+}
+
 function assertSummaryMatches(
   summary: Readonly<ImportConformanceSummary>,
   capabilities: readonly Readonly<ImportConformanceCapability>[],
   path: string,
 ): void {
-  const measured = capabilities.filter(
-    (capability): capability is ImportConformanceMeasuredCapability => capability.state === 'measured',
+  const exercised = capabilities.filter(
+    (capability): capability is ImportConformanceExercisedCapability => capability.state === 'exercised',
   );
-  const unknown = capabilities.filter((capability) => capability.state === 'unknown');
+  const fireProven = exercised.filter((capability) => capability.instrumentation.fires.state === 'proven');
+  const silenceProven = exercised.filter((capability) => capability.instrumentation.staysSilent.state === 'proven');
   const expected: ImportConformanceSummary = {
     exercised: {
-      capabilities: measured.length + unknown.length,
-      instrumented: {
-        capabilities: measured.length,
-        passedCapabilities: measured.filter((capability) => capability.result === 'pass').length,
-      },
-      singleWitnessCapabilities:
-        measured.filter((capability) => capability.witnesses === 1).length +
-        unknown.filter((capability) => capability.witnesses === 1).length,
+      capabilities: exercised.length,
+      fireProven: summarizeProven(fireProven, 'fire'),
+      silenceProven: summarizeProven(silenceProven, 'silence'),
+      singleWitnessCapabilities: exercised.filter((capability) => capability.witnesses === 1).length,
     },
     totalCapabilities: capabilities.length,
   };
@@ -397,20 +530,53 @@ function assertSummaryMatches(
     expected.exercised.capabilities,
     `${path}.exercised.capabilities`,
   );
-  assertSummaryNumber(
-    summary.exercised.instrumented.capabilities,
-    expected.exercised.instrumented.capabilities,
-    `${path}.exercised.instrumented.capabilities`,
-  );
-  assertSummaryNumber(
-    summary.exercised.instrumented.passedCapabilities,
-    expected.exercised.instrumented.passedCapabilities,
-    `${path}.exercised.instrumented.passedCapabilities`,
+  assertProvenSummary(summary.exercised.fireProven, expected.exercised.fireProven, `${path}.exercised.fireProven`);
+  assertProvenSummary(
+    summary.exercised.silenceProven,
+    expected.exercised.silenceProven,
+    `${path}.exercised.silenceProven`,
   );
   assertSummaryNumber(
     summary.exercised.singleWitnessCapabilities,
     expected.exercised.singleWitnessCapabilities,
     `${path}.exercised.singleWitnessCapabilities`,
+  );
+}
+
+function summarizeProven(
+  capabilities: readonly Readonly<ImportConformanceExercisedCapability>[],
+  lane: keyof ImportConformanceExercisedCapability['results'],
+): ImportConformanceProvenSummary {
+  return {
+    capabilities: capabilities.length,
+    results: {
+      failedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'fail').length,
+      passedCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'pass').length,
+      unknownCapabilities: capabilities.filter((capability) => capability.results[lane].state === 'unknown').length,
+    },
+  };
+}
+
+function assertProvenSummary(
+  actual: Readonly<ImportConformanceProvenSummary>,
+  expected: Readonly<ImportConformanceProvenSummary>,
+  path: string,
+): void {
+  assertSummaryNumber(actual.capabilities, expected.capabilities, `${path}.capabilities`);
+  assertSummaryNumber(
+    actual.results.failedCapabilities,
+    expected.results.failedCapabilities,
+    `${path}.results.failedCapabilities`,
+  );
+  assertSummaryNumber(
+    actual.results.passedCapabilities,
+    expected.results.passedCapabilities,
+    `${path}.results.passedCapabilities`,
+  );
+  assertSummaryNumber(
+    actual.results.unknownCapabilities,
+    expected.results.unknownCapabilities,
+    `${path}.results.unknownCapabilities`,
   );
 }
 
@@ -447,8 +613,16 @@ function assertNotRunPack(
     if (capabilities.some((capability) => capability.state === 'not-run')) {
       fail(`${path}.capabilities`, 'an instrumentation-incomplete pack cannot contain a not-run capability');
     }
-    if (capabilities.every((capability) => capability.state !== 'unknown')) {
-      fail(`${path}.capabilities`, 'an instrumentation-incomplete pack must contain at least one unknown capability');
+    if (
+      capabilities.every(
+        (capability) =>
+          capability.state !== 'exercised' ||
+          (capability.instrumentation.fires.state === 'proven' &&
+            capability.instrumentation.staysSilent.state === 'proven' &&
+            capability.unknownObservations.length === 0),
+      )
+    ) {
+      fail(`${path}.capabilities`, 'an instrumentation-incomplete pack must contain unlicensed observations');
     }
     return;
   }
@@ -487,11 +661,6 @@ function parseNotRunCapabilityReason(value: unknown, path: string): ImportConfor
   if (value !== 'missing-shard' && value !== 'pack-unavailable') {
     fail(path, "must be 'missing-shard' or 'pack-unavailable'");
   }
-  return value;
-}
-
-function parseCapabilityResult(value: unknown, path: string): ImportConformanceMeasuredCapability['result'] {
-  if (value !== 'fail' && value !== 'pass') fail(path, "must be 'fail' or 'pass'");
   return value;
 }
 
