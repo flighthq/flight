@@ -76,6 +76,20 @@ Commit messages are the subject line and nothing else — no body, no multi-para
 
 These rules are enforced, not just documented. `commitlint.config.js` at the repo root encodes the type set and scope rules above; a husky `commit-msg` hook (`.husky/commit-msg`) runs `commitlint` on every commit. The hook is registered by the `prepare` script on `npm install` — if hooks ever stop firing, run `npx husky` once to re-register. To check a message by hand: `echo "feat(surface): …" | npx commitlint`.
 
+## A change to what a number counts is never a rename
+
+**It is its own commit, with a subject that says the meaning moved.** A rename that also changes which
+things a field counts is two changes wearing one subject, and the mechanical half is the one the
+subject advertises.
+
+This matters because **commit subjects are the identity mechanism** here — hashes do not survive
+`git am`, so agents cite work by subject line. **A commit whose subject names a mechanical change and
+whose content changes a meaning is precisely that mechanism's blind spot:** every reader who looks it
+up is told a rename happened, and the denominator that moved underneath is invisible at exactly the
+moment someone is checking. **The remedy is not "write better subjects"** — a subject cannot carry a
+change the author has not separated out. Split the commit, and the reader who greps for the rename
+still finds the meaning change beside it.
+
 ## Picking type vs scope
 
 Two questions, in order:
