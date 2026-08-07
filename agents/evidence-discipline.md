@@ -130,7 +130,7 @@ verdict; see the note at the top.
 
 ## Denominators
 
-*Arc-local, 5 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 6 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 - **Before ratifying a count, ratify the rule that decides when two things are one entry or two.** A
   count with no stated individuation rule is not a measurement, it is a tally — and unlike a missing
@@ -144,7 +144,14 @@ verdict; see the note at the top.
   relocates the arbitrariness from the rows to the rule, **where it is harder to see because a written
   rule looks settled**. Require a definition something mechanical can evaluate, then run it and report
   the count it yields rather than the count you expect — the rule applies to the entries that already
-  look right, so the direction of the move is not knowable in advance.
+  look right, so the direction of the move is not knowable in advance. **Mechanical evaluability is
+  necessary and not sufficient:** one candidate rule was extractable, ran cleanly, and still moved the
+  total from 80 to 77 when an `if`-chain was rewritten as an equivalent `Map` lookup with identical
+  behaviour on every input. **A rule whose count moves when only the source style moves is measuring
+  the source, not the thing.** Demand three properties — mechanically evaluable, invariant under
+  behaviour-preserving refactor, and of a grain the consumer would accept — and expect the
+  hand-maintained part you removed to reappear at the joint between the rule and the rows, where
+  nobody looks because the rule is now "mechanical".
 - **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
   bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
   implemented, so a ratio over it measures the corpus against our own model and reads as coverage of
@@ -152,6 +159,11 @@ verdict; see the note at the top.
 - **When two populations have been quoted as one number, say which is unmeasured.** What our importer
   handles and what the format has are different totals; the second answers "how complete is this
   import" and nobody had produced it. The missing measurement is reported beside the one we have.
+- **A ceiling on a count is also a release from waiting for it.** If a population can never be known
+  complete — because every new way of looking has found more — then it cannot be a precondition for
+  anything downstream, and work gated on it waits forever **while the wait looks like diligence the
+  whole time.** Read half of that ruling alone and you get an indefinite hold justified by rigour,
+  which is more expensive than the imprecision it was avoiding. State both directions together.
 - **A count you produced is a denominator over whatever produced it, and that is usually not the
   population you meant.** One arc found the same defect in three costumes in a day: capabilities
   counted over our own importer rather than over the format; loss families counted over the
