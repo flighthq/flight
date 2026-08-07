@@ -57,6 +57,28 @@ reader can tell strength apart without trusting the author's formatting:
   your likely error converts an unchecked claim into a checked wrong one.** **Verify membership
   against the store, never size against memory.**
 
+- **filed — TWO DISQUALIFICATIONS THAT SHARE A CAUSE ARE A CRITERION; TWO SEPARATE CAUSES WOULD ONLY
+  HAVE BEEN A LIST.** Two candidate units failed differently on the surface — one enumeration counted
+  entries that inherit eight levels deep, the other counted retired alternates still present in the
+  set. ⇒ **Both contain entries that are not INDEPENDENT LIVE members: one fails by derivation, one by
+  retirement.** ★★ **So the negatives name two NECESSARY properties of any candidate, and the question
+  stops being "does a principle exist" and becomes "is there a set that is both."**
+  **Limit stated with it: necessary, NOT sufficient — something satisfying both may still be the wrong
+  unit, so this narrows a search without promising a result, and "no set satisfies both" stays a
+  complete answer.**
+
+- **filed — Populations over DIFFERENT KINDS OF THING admit no arithmetic at all.** Definitions,
+  fields and files are three kinds; **there is no function from one to another**, so no ratio,
+  difference or comparison between any pair means anything. ⇒ **Stronger than saying one number is not
+  a denominator: the objection is not that the arithmetic is unsound but that there is none to do.**
+
+- **filed — Knowing the rule was not sufficient, and the record should say so.** A caveat — *this file
+  count must not be read as a denominator* — sat **three paragraphs above a violation of itself, in
+  the same section.** ⇒ **The author left a line recording that they broke their own stated rule,
+  because a reader who sees only the corrected text learns that the rule exists and not that holding
+  it does not protect you.** ★ **A correction that removes its own occasion teaches less than one that
+  keeps it.**
+
 - **filed — A FILE COUNT is a property of the PACKAGING, not of the coverage.** A corpus of 388 files
   **might exercise twenty types or three hundred** — nothing in the count says which. ⇒ **So "415
   files against 368 types" is not a comparison; it is two unrelated numbers adjacent on a page**, and
