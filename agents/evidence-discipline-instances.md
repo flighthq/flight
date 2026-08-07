@@ -75,6 +75,22 @@ reader can tell strength apart without trusting the author's formatting:
   is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
   without one is pending** — and only the mechanism tells you which you have.
 
+- **filed — A CROSS-CHECK BETWEEN TWO SETS REQUIRES BOTH TO BE COMPLETE; WITH ONE PARTIAL IT MEASURES
+  THE PARTIALITY INSTEAD.** A coherence check was run between 15 diagnostic kinds and 42 dispatch
+  constants. ⇒ **The diagnostic set is demonstrably mid-instrumentation — it had been 12 — so the
+  check was not measuring units at all: it was measuring THE COVERAGE OF THE WEAKER SET.**
+  ★★★ **Read as a unit verdict it would have collapsed 25 genuinely distinct capabilities into one**,
+  because 25 of the 42 constants sit in modules emitting no diagnostic yet. **Applied literally it
+  said three different shapes were one unit, which they obviously are not.** ⇒ **The same shape as
+  every other transfer failure: an instrument moved to material where a PRECONDITION silently fails,
+  still producing numbers.**
+  ★★ **And the two directions are NOT equally affected, which is the subtle part: a kind with no
+  corresponding unit is informative EVEN WHEN THE KIND SET IS PARTIAL — so direction A yields a real
+  finding today, and direction B yields none and no number was reported from it.** **Partial inputs
+  degrade a two-way check ASYMMETRICALLY; check each direction against the incompleteness separately.**
+  ★ **Net: the check is SOUND and NOT YET RUNNABLE FOR ITS STATED PURPOSE — it needs the diagnostic
+  set complete, which is the very work it was meant to precede.**
+
 - **filed — WHEN EVERY CANDIDATE SHARES A PROPERTY THE ANSWER NEED NOT HAVE, THE SEARCH SPACE IS THE
   PROBLEM AND NOT THE CHOICE.** Four candidate units — leaves, interiors, roots, property keys — were
   each **a level of one graph, and therefore homogeneous by construction.** The answer was
@@ -255,14 +271,17 @@ reader can tell strength apart without trusting the author's formatting:
   the line keeps coming back until the branch carries NO diff on it** — made durable by carrying a
   zero diff against the base rather than by re-editing.
 
-- **filed — ALARM SUPPRESSES ITS OWN CONTROL, and that is exactly backwards.** Two instances: a probe
-  reporting **108,515 disagreements**, and a probe reporting **six of six items missing.** Both were
-  false, **both were catchable by a control the author already knew about, and in both the control ran
-  only after the result was alarming enough to doubt.** ⇒ **The more alarming a result, the less
-  likely its own validation is to run — because alarm creates urgency, and urgency spends the minute
-  the control would have cost.** ★★ **Alarm is precisely the signal that should TRIGGER the control**,
-  so the natural response and the correct one point opposite ways. **Treat a startling number as a
-  reason to validate the instrument before reporting the finding.**
+- **filed — ONE ASYMMETRY WITH THREE LIMBS: ALARM BUYS SUBJECT-SCRUTINY, COSTS INSTRUMENT-SCRUTINY,
+  AND REASSURANCE BUYS NEITHER YET TRAVELS ANYWAY.** ⇒ **Alarm REDIRECTS scrutiny from the instrument
+  to the subject: you interrogate what the finding SAYS, not whether the finding is REAL.** Two probes
+  — one reporting **108,515 disagreements**, one **six of six items missing** — were both false, both
+  catchable by a control their author already knew about, **and in both the control ran only once the
+  result was alarming enough to doubt.** ★★ **So the signal that should TRIGGER validation is the one
+  that spends the minute validation would have cost.**
+  ★★ **And the third limb is the quiet one: a REASSURING result attracts scrutiny of neither the
+  subject nor the instrument — and gets VOLUNTEERED.** ⇒ **A favourable streak is not news, and
+  reporting one is measurement-creep in a flattering direction.** **The bound is symmetric; the
+  temptation is not.**
 
 - **filed — Seeing an artifact's OUTPUT is not the same as knowing what the artifact DOES.** Two
   instances in one session: an agent had **written** a fixture command and did not connect it when the
