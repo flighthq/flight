@@ -50,6 +50,13 @@ other work.*
 
 ## Serving: the wrong answer is a true answer to the question you did not ask
 
+- **filed — Equal confidence across unequal epistemic status is ITSELF a misaddressed answer.** Three
+  sweeps were reported in one voice: one vocabulary was **grammar-derived** and could state a ceiling;
+  two were **semantic**, their author having chosen which shapes counted. ⇒ **A uniform confidence
+  answers "did each sweep run cleanly" while being read as "is each result equally strong"** — and the
+  reader has nothing in the report to tell them apart. **Reporting style is a claim**, and a flat one
+  over an uneven set is a true answer to the narrower question.
+
 Seven, all from one day, all real, **all correct work.** Each names the question the answer was true
 of, and the question that was actually asked.
 
@@ -161,6 +168,17 @@ of, and the question that was actually asked.
   your hypothesis**, and makes any survivor immediately interesting instead of merely confusing.
 
 ## Serving: structure over convention
+
+- **filed — A set you cannot enumerate can still be BOUNDED, if each member declares itself.** Four
+  history-dependent sites needed four different remedies, so no per-artifact fix generalised and no
+  list could ever be complete — **yet a declaration of *what this site does when history changes* came
+  out differing in content and IDENTICAL IN FORM at all four.** ⇒ **You cannot list the dependants,
+  and you do not need to: the question becomes "which declarations does this strategy violate",
+  answerable from data rather than from recall.** ★ **That is the third rung** — met at the moment of
+  the decision instead of relying on someone remembering a constraint.
+  **Residue, named rather than smoothed:** one site's unstable step is **a human reading stdout**, and
+  **a human cannot declare in code.** ⇒ **This bounds the code-visible dependants and leaves the human
+  ones open — an improvement, not a closure.**
 
 - **filed — A constraint on how a human operates a tool is encountered nowhere near the decision it
   governs.** A hazard was first framed as a choice — *this merge strategy invalidates the record, that
