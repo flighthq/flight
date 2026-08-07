@@ -167,14 +167,24 @@ not exist yet, that is a compile failure wearing a test failure's clothes and th
 ## Landed defects — a third state beside unbacked and unbuilt
 
 **An unbacked claim is unverified; a landed defect is verified and wrong, and already in the merged
-tree.** It gets its own section because the remedies differ completely: an unbacked claim needs
-someone to look, **a landed defect needs someone to act, and neither the register's cause split nor
-the unbuilt table has a slot for it.**
+tree.** An unbacked claim needs someone to **look**; a landed defect needs someone to **act** — but
+that is not one bucket, **because some landed defects must not be touched by us at all.** Three
+sub-states, or an entry lands in a someone-should-act bucket where nobody may:
 
-| # | Defect | Verified how | State |
+- **FIXABLE** — a repair exists or can be written, and the only question is delivery.
+- **MUST-NOT-BE-FIXED** — repairing it would destroy the thing it violates. **A ledger repair
+  substitutes our reconstruction for the approver's text, which is the invariant itself.**
+- **AWAITING A DECISION** — it is neither ours to fix nor ours to close: **someone outside the fleet
+  has to rule on whether it stands.**
+
+| # | Defect | Verified how | Sub-state |
 |---|---|---|---|
-| L1 | The delivered base fails `npm run check` on its own — two typecheck errors where the fixture-stamp consumers were not carried with their rename | integration ran it against the base with nothing of theirs applied | Migration patch exists and is verified appliable; **delivery, not authoring** |
-| L2 | A guarded `Decisions` line in a package charter was **removed rather than superseded**, and the mutation is in the delivered base | Baselined against the commit that introduced the guarded line: one violation | **Report, do not repair** — the ledger ruling stands |
+| L1 | The delivered base fails `npm run check` on its own — two typecheck errors where the fixture-stamp consumers were not carried with their rename | integration ran it against the base with nothing of theirs applied | **FIXABLE** — patch exists and is verified appliable; delivery, not authoring |
+| L2 | A guarded `Decisions` line in a package charter was **removed rather than superseded**, and the mutation is in the delivered base | Baselined against the commit that introduced the guarded line: one violation | **MUST-NOT-BE-FIXED, AWAITING A DECISION** — report only; whether it stands is the user's call |
+
+**L2 is presented as a chosen state rather than an oversight.** It is the one entry here that **the
+user rather than the fleet has to close**, and leaving it in a generic act-on-it category would have
+invited exactly the repair the ruling forbids.
 
 ★ **L2 carries a second defect worse than itself: the append-only gate compares against
 `origin/develop`, so once a mutation lands the baseline absorbs it and the gate goes permanently
