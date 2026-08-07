@@ -662,32 +662,37 @@ describe('formatImportConformanceRatchetReport', () => {
     const output = formatImportConformanceRatchetReport(report);
 
     expect(output).toContain(
-      'exercised importer-declared capability rows 1 [exercised: alpha; importer-declared: alpha, beta]; declared capability row tally 2',
+      'exercised importer-declared capability-row tally 1 [exercised: alpha; importer-declared: alpha, beta]; declared capability-row tally 2',
     );
     expect(output).toContain(
-      'importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check capabilities.json-vs-tag-coverage.md (2 false positives in 4 candidate hits; single author)',
+      'individuation margin counts [same-dispatch-arm row count 0; behavior-preserving-refactor row count 0; discriminated-source row count 1; frozen-declared row count 2; frozen-no-election]; rejected circular individuation candidate corpus-differential-behavior',
+    );
+    expect(output).toContain(
+      'importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check capabilities.json-vs-tag-coverage.md [false-positive-hit tally 2; candidate-hit tally 4; single author]',
     );
     expect(output).not.toContain('1 of 2');
     expect(output).not.toContain('exercised exercised');
+    expect(output).not.toContain('%');
+    expect(output).not.toMatch(/\b\d+\s*\/\s*\d+\b/);
     expect(output).toContain('SWF-format capability denominator UNMEASURED');
     expect(output).toContain(
       'ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles required-not-implemented',
     );
     expect(output).not.toContain('total:');
     expect(output).toContain(
-      'loss-path audit partial; audited 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose 1; audited-none 0; unaudited 1 [beta]',
+      'loss-path audit partial; audited capability-row tally 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose capability-row tally 1; audited-none capability-row tally 0; unaudited capability-row tally 1 [beta]',
     );
     expect(output).toContain(
       'configuration limits [alpha: not-applicable] → [alpha: not-applicable]; diagnostic channels [alpha: structured-crumb; beta: none] → [alpha: structured-crumb; beta: none]; loss-path audit',
     );
     expect(output).toContain(
-      'instrument payload-audited 1 [alpha] → 1 [alpha]; instrument scope-audited 1 [alpha] → 1 [alpha]',
+      'instrument payload-audited capability-row tally 1 [alpha] → capability-row tally 1 [alpha]; instrument scope-audited capability-row tally 1 [alpha] → capability-row tally 1 [alpha]',
     );
     expect(output).toContain(
-      'fire proof-referenced all 1 [alpha [fire-test:alpha]] → 1 [alpha [fire-test:alpha]]; fire proof-referenced and exercised 1 [alpha [fire-test:alpha]] → 1 [alpha [fire-test:alpha]]; fire results pass 1/1 [alpha], fail 0/1 [], unknown 0/1 [] → pass 1/1 [alpha], fail 0/1 [], unknown 0/1 []',
+      'fire proof-referenced all capability-row tally 1 [alpha [fire-test:alpha]] → capability-row tally 1 [alpha [fire-test:alpha]]; fire proof-referenced and exercised capability-row tally 1 [alpha [fire-test:alpha]] → capability-row tally 1 [alpha [fire-test:alpha]]; fire results referenced capability-row population tally 1; pass capability-row tally 1 [alpha], fail capability-row tally 0 [], unknown capability-row tally 0 [] → referenced capability-row population tally 1; pass capability-row tally 1 [alpha], fail capability-row tally 0 [], unknown capability-row tally 0 []',
     );
     expect(output).toContain(
-      'silence proof-referenced all 1 [alpha [silence-test:alpha]] → 1 [alpha [silence-test:alpha]]; silence proof-referenced and exercised 1 [alpha [silence-test:alpha]] → 1 [alpha [silence-test:alpha]]; silence results pass 1/1 [alpha], fail 0/1 [], unknown 0/1 [] → pass 1/1 [alpha], fail 0/1 [], unknown 0/1 []',
+      'silence proof-referenced all capability-row tally 1 [alpha [silence-test:alpha]] → capability-row tally 1 [alpha [silence-test:alpha]]; silence proof-referenced and exercised capability-row tally 1 [alpha [silence-test:alpha]] → capability-row tally 1 [alpha [silence-test:alpha]]; silence results referenced capability-row population tally 1; pass capability-row tally 1 [alpha], fail capability-row tally 0 [], unknown capability-row tally 0 [] → referenced capability-row population tally 1; pass capability-row tally 1 [alpha], fail capability-row tally 0 [], unknown capability-row tally 0 []',
     );
     expect(output).not.toContain('proof-referenced all 1/2');
     expect(output).not.toContain('proof-referenced and exercised 1/1');
@@ -814,8 +819,15 @@ describe('parseImportConformanceScore', () => {
 
     const declaredRows = measuredPack();
     declaredRows.summary.denominators.importerDeclared.declaredRows = 82;
+    declaredRows.summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows = 82;
     expect(() => parseImportConformanceScore(score(declaredRows, '100'))).toThrow(
       'denominators.importerDeclared.declaredRows: must equal the capability rows (2)',
+    );
+
+    const margin = measuredPack();
+    margin.summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows = 82;
+    expect(() => parseImportConformanceScore(score(margin, '100'))).toThrow(
+      'individuationMargin.frozenDeclaredRows: must equal declaredRows (2)',
     );
   });
 
@@ -839,6 +851,64 @@ describe('parseImportConformanceScore', () => {
     );
     expect(() => parseImportConformanceScore(score(formatDefined as never, '100'))).toThrow(
       "denominators.swfFormat.state: must be exactly 'unmeasured'",
+    );
+  });
+
+  it('carries the frozen four-reading margin without electing a denominator or admitting the circular candidate', () => {
+    const capabilities = Array.from({ length: 82 }, (_, index) =>
+      unmeasuredCapability(`swf.test.capability-${index.toString().padStart(3, '0')}`),
+    );
+    const pack = measuredPack(capabilities);
+    pack.summary.denominators.importerDeclared.individuationMargin = {
+      behaviorPreservingRefactorRows: 77,
+      discriminatedSourceRows: 80,
+      frozenDeclaredRows: 82,
+      rejectedCircularCandidate: 'corpus-differential-behavior',
+      sameDispatchArmRows: 66,
+      state: 'frozen-no-election',
+    };
+
+    const parsed = parseImportConformanceScore(score(pack, '100'));
+    const elected = structuredClone(pack) as unknown as {
+      summary: { denominators: { importerDeclared: { individuationMargin: { state: string } } } };
+    };
+    elected.summary.denominators.importerDeclared.individuationMargin.state = 'elected';
+    const circular = structuredClone(pack) as unknown as {
+      summary: {
+        denominators: { importerDeclared: { individuationMargin: { rejectedCircularCandidate: string } } };
+      };
+    };
+    circular.summary.denominators.importerDeclared.individuationMargin.rejectedCircularCandidate = 'corpus-observed';
+    const current = parseImportConformanceScore(score(pack, '101'));
+    const output = formatImportConformanceRatchetReport(
+      compareImportConformanceScores(parsed, current, { unknownBaseline: 'allow' }),
+    );
+
+    expect(parsed.packs[0]).toMatchObject({
+      summary: {
+        denominators: {
+          importerDeclared: {
+            declaredRows: 82,
+            individuationMargin: {
+              behaviorPreservingRefactorRows: 77,
+              discriminatedSourceRows: 80,
+              frozenDeclaredRows: 82,
+              rejectedCircularCandidate: 'corpus-differential-behavior',
+              sameDispatchArmRows: 66,
+              state: 'frozen-no-election',
+            },
+          },
+        },
+      },
+    });
+    expect(() => parseImportConformanceScore(score(elected as never, '100'))).toThrow(
+      "individuationMargin.state: must be exactly 'frozen-no-election'",
+    );
+    expect(() => parseImportConformanceScore(score(circular as never, '100'))).toThrow(
+      "individuationMargin.rejectedCircularCandidate: must be exactly 'corpus-differential-behavior'",
+    );
+    expect(output).toContain(
+      'individuation margin counts [same-dispatch-arm row count 66; behavior-preserving-refactor row count 77; discriminated-source row count 80; frozen-declared row count 82; frozen-no-election]',
     );
   });
 
@@ -1199,7 +1269,7 @@ describe('parseImportConformanceScore', () => {
       'configuration limits [alpha: declared [MAX_FRAME_ACTIONS unobservable]] → [alpha: declared [MAX_FRAME_ACTIONS unobservable]]',
     );
     expect(formatImportConformanceRatchetReport(report)).toContain(
-      'unknown observations loop-bounded-limit capability-scoped 1 [alpha@MAX_FRAME_ACTIONS]',
+      'unknown observations loop-bounded-limit capability-scoped keyed-observation count 1 [alpha@MAX_FRAME_ACTIONS]',
     );
   });
 
@@ -1249,7 +1319,7 @@ describe('parseImportConformanceScore', () => {
     });
 
     expect(formatImportConformanceRatchetReport(report)).toContain(
-      'known-unwired capability-scoped 1 [alpha@fixture:alpha:loss-family/missing], loss-path-unidentified capability-scoped 1 [beta@fixture:beta:loss-path-audit]',
+      'known-unwired capability-scoped keyed-observation count 1 [alpha@fixture:alpha:loss-family/missing], loss-path-unidentified capability-scoped keyed-observation count 1 [beta@fixture:beta:loss-path-audit]',
     );
   });
 
@@ -1508,6 +1578,14 @@ function measuredPack(
             state: 'provisional',
           },
           declaredRows: capabilities.length,
+          individuationMargin: {
+            behaviorPreservingRefactorRows: Math.max(0, capabilities.length - 2),
+            discriminatedSourceRows: Math.max(0, capabilities.length - 1),
+            frozenDeclaredRows: capabilities.length,
+            rejectedCircularCandidate: 'corpus-differential-behavior',
+            sameDispatchArmRows: Math.max(0, capabilities.length - 3),
+            state: 'frozen-no-election',
+          },
           limitation: 'individuation-rule-not-operational',
           state: 'unresolved',
         },

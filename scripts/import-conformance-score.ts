@@ -248,6 +248,14 @@ export interface ImportConformanceDenominators {
       state: 'provisional';
     };
     declaredRows: number;
+    individuationMargin: {
+      behaviorPreservingRefactorRows: number;
+      discriminatedSourceRows: number;
+      frozenDeclaredRows: number;
+      rejectedCircularCandidate: 'corpus-differential-behavior';
+      sameDispatchArmRows: number;
+      state: 'frozen-no-election';
+    };
     limitation: 'individuation-rule-not-operational';
     state: 'unresolved';
   };
@@ -1139,7 +1147,11 @@ function parseDenominators(value: unknown, path: string): ImportConformanceDenom
   const denominators = expectRecord(value, path);
   expectKeys(denominators, ['importerDeclared', 'swfFormat'], path);
   const importerDeclared = expectRecord(denominators.importerDeclared, `${path}.importerDeclared`);
-  expectKeys(importerDeclared, ['census', 'declaredRows', 'limitation', 'state'], `${path}.importerDeclared`);
+  expectKeys(
+    importerDeclared,
+    ['census', 'declaredRows', 'individuationMargin', 'limitation', 'state'],
+    `${path}.importerDeclared`,
+  );
   if (importerDeclared.limitation !== 'individuation-rule-not-operational') {
     fail(`${path}.importerDeclared.limitation`, "must be exactly 'individuation-rule-not-operational'");
   }
@@ -1170,6 +1182,17 @@ function parseDenominators(value: unknown, path: string): ImportConformanceDenom
   if (falsePositiveHits > candidateHits) {
     fail(`${path}.importerDeclared.census.falsePositiveHits`, 'cannot exceed candidateHits');
   }
+  const declaredRows = expectInteger(importerDeclared.declaredRows, `${path}.importerDeclared.declaredRows`, 0);
+  const individuationMargin = parseIndividuationMargin(
+    importerDeclared.individuationMargin,
+    `${path}.importerDeclared.individuationMargin`,
+  );
+  if (individuationMargin.frozenDeclaredRows !== declaredRows) {
+    fail(
+      `${path}.importerDeclared.individuationMargin.frozenDeclaredRows`,
+      `must equal declaredRows (${declaredRows})`,
+    );
+  }
   const swfFormat = expectRecord(denominators.swfFormat, `${path}.swfFormat`);
   expectKeys(swfFormat, ['state'], `${path}.swfFormat`);
   if (swfFormat.state !== 'unmeasured') {
@@ -1185,11 +1208,49 @@ function parseDenominators(value: unknown, path: string): ImportConformanceDenom
         reference: expectNonemptyString(census.reference, `${path}.importerDeclared.census.reference`),
         state: census.state,
       },
-      declaredRows: expectInteger(importerDeclared.declaredRows, `${path}.importerDeclared.declaredRows`, 0),
+      declaredRows,
+      individuationMargin,
       limitation: importerDeclared.limitation,
       state: importerDeclared.state,
     },
     swfFormat: { state: swfFormat.state },
+  };
+}
+
+function parseIndividuationMargin(
+  value: unknown,
+  path: string,
+): ImportConformanceDenominators['importerDeclared']['individuationMargin'] {
+  const margin = expectRecord(value, path);
+  expectKeys(
+    margin,
+    [
+      'behaviorPreservingRefactorRows',
+      'discriminatedSourceRows',
+      'frozenDeclaredRows',
+      'rejectedCircularCandidate',
+      'sameDispatchArmRows',
+      'state',
+    ],
+    path,
+  );
+  if (margin.rejectedCircularCandidate !== 'corpus-differential-behavior') {
+    fail(`${path}.rejectedCircularCandidate`, "must be exactly 'corpus-differential-behavior'");
+  }
+  if (margin.state !== 'frozen-no-election') {
+    fail(`${path}.state`, "must be exactly 'frozen-no-election'");
+  }
+  return {
+    behaviorPreservingRefactorRows: expectInteger(
+      margin.behaviorPreservingRefactorRows,
+      `${path}.behaviorPreservingRefactorRows`,
+      0,
+    ),
+    discriminatedSourceRows: expectInteger(margin.discriminatedSourceRows, `${path}.discriminatedSourceRows`, 0),
+    frozenDeclaredRows: expectInteger(margin.frozenDeclaredRows, `${path}.frozenDeclaredRows`, 0),
+    rejectedCircularCandidate: margin.rejectedCircularCandidate,
+    sameDispatchArmRows: expectInteger(margin.sameDispatchArmRows, `${path}.sameDispatchArmRows`, 0),
+    state: margin.state,
   };
 }
 
