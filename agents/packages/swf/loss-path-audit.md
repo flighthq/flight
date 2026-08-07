@@ -113,7 +113,23 @@ enumerating losses sees nothing.
 **Found by searching for the partial-loss shape on purpose**, after that shape was named as a blind spot.
 It is the third member of the worst cell: a surviving object carrying less, with no signal.
 
-### 10. The whole-document reject path is almost entirely unreported
+### 10. A duplicate font character id silently overwrites the first font
+
+`swfDocument.ts:1967` — `state.fontOutlineSources.set(fontId, source)` with **no duplicate guard**. Every
+other definition kind checks `definedCharacters` and rejects the document on a repeat: sprites at 1763,
+buttons at 1886, bounded definitions at 2107. **Fonts do not.** A second `DefineFont2` carrying the same
+character id discards the first font's glyph table and nothing says so.
+
+Two things make it worth listing separately from the other families. It is **inconsistent with the
+package's own handling of the same malformation**, so the rule a reader infers from the other three is
+wrong here. And it is a **surviving-but-wrong** case rather than a surviving-but-diminished one: the
+document imports, the font exists, and it is the wrong font — **no existence check and no count can see
+it.** (`fontId === 0` also returns silently at 1966.)
+
+**Found by searching for a shape nobody had searched: a store with no duplicate guard.** The audit's
+earlier passes looked for things that vanish and then for things that shrink; this one looks intact.
+
+### 11. The whole-document reject path is almost entirely unreported
 
 The tag loop has roughly eight distinct `return null` causes — snapshot-budget exhaustion, a duplicate
 sprite id, a sprite body that does not end where it should, malformed lossless/video/bounded definitions,
