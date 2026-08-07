@@ -204,8 +204,15 @@ remedying, not stop looking* decays into *stop*.
 ruling — it is the minimum for the ruling to be EXECUTABLE, because A TOLERATION WITH UNOBSERVABLE
 FALSIFIERS IS NOT A TOLERATION, IT IS AN ABANDONMENT.**
 
-**LAST MEASURED: instance 11, cost three lines. Falsifier tested at instance 10 on the relevance case
-and did not fire.**
+**LAST MEASURED: instance 12, cost three lines. Falsifier tested three times on the relevance case;
+not fired.**
+
+★★ **A FAVOURABLE STREAK IS NOT NEWS, AND REPORTING ONE IS THE CREEP RETURNING IN A FLATTERING
+DIRECTION.** The bound is *travel only when it changes something* — **and three clean tests change
+nothing: the toleration stands either way.** ⇒ **The rule is symmetric, and the asymmetry is in the
+temptation: an alarming result gets scrutinised, a reassuring one gets VOLUNTEERED.** ★ **What stays
+is the `NOT MINE` itself, because that IS the detection remedy and dropping it would silently undo the
+protocol; what drops is the commentary around it, because that was the creep.**
 
 ★★ **AND THE MEASUREMENT REGIME HAS ITS OWN COST, WHICH CAN EXCEED THE DEFECT'S.** A parcel per
 instance cost both parties more than the three lines it recorded. ⇒ **So the reporting drops to one
