@@ -2595,6 +2595,83 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(recovered[0].detail).toEqual({ capability: 'swf.shape.define-shape', characterId: 1, version: 1 });
   });
 
+  it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
+    const jpeg3 = createJpegHeader(23, 17);
+    const file = createSwf([
+      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-alpha-stream');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({
+      capability: 'swf.bitmap.define-bits-jpeg-3',
+      characterId: 16,
+      discardedBytes: 3,
+    });
+  });
+
+  it('reports a legacy split JPEG with no tables in the file as a Drop', () => {
+    const file = createSwf([
+      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-tables-missing');
+    expect(dropped).toHaveLength(1);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].detail).toEqual({ capability: 'swf.bitmap.define-bits-jpeg-tables', characterId: 9 });
+  });
+
+  it('reports scene names as a Skip, since labels import and the named range has no subject', () => {
+    const file = createSwf([
+      createTag(
+        TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
+        joinBytes(encodedUint32(1), encodedUint32(0), swfString('Scene 1'), encodedUint32(0)),
+      ),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const skipped = diagnostics.filter((entry) => entry.kind === 'swf.scene-names');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(skipped[0].detail).toEqual({
+      capability: 'swf.timeline.define-scene-and-frame-label-data',
+      sceneCount: 1,
+    });
+  });
+
+  it('reports a frame script declined for carrying more than playback commands', () => {
+    // 0x96 push, then a non-playback action: the block is declined WHOLE, because honouring the legible
+    // half would misrepresent the frame. The crumb is what tells a caller the frame had a script at all.
+    const file = createSwf([
+      createTag(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00])),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+    });
+
+    const skipped = diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
+    expect(skipped[0].detail).toEqual({ capability: 'swf.script.do-action', frame: 1 });
+  });
+
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
