@@ -40,6 +40,20 @@ reader can tell strength apart without trusting the author's formatting:
 
 ## Serving: evidence is about whatever produced it
 
+- **filed — RESTATE THE CORRECT VERSION RATHER THAN CORRECTING, when you cannot establish whether a
+  correction is needed.** An outgoing channel has **no store**, so asking whether a claim went out
+  returns **recollection, not a measurement** — and a *no* about an *absence* is the weakest form
+  available there. ⇒ **A restatement is safe under both hypotheses; a correction is wrong under one**,
+  since it asserts an error that may not have occurred on a channel that may never have carried it.
+  ★ **And the asymmetry sets the default where the audit cannot: redundancy costs a re-read, a gap
+  costs an undetectable wrong belief.**
+
+- **filed — An enumeration can have the right CARDINALITY and the wrong MEMBERS, and the matching
+  count is what makes it feel verified.** A recalled list of 28 packs omitted two that exist; **the
+  real list is also 28.** ⇒ **Checking the count would have confirmed it** — the one check a reader
+  would reach for is the one that cannot fail here. **Verify membership against the store, never the
+  size against memory.**
+
 - **filed — A FRAME-RELATIVE correctness cannot be audited in place; it can only be tested by
   TRANSFER.** Where a conflation is correct *in its own frame*, **the question and the answer match**,
   so **no restatement, no control and no independent reader exposes it** — every check confirms it,
