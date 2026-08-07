@@ -133,6 +133,21 @@ ever flag — a shard plan, a threshold, an exit status.
 such a migration breaks a behavioural assertion, **read the doubles before escalating to whoever owns
 the real numbers**: the fixture branch is far more likely and needs no ruling from them.
 
+**And one notch worse than either: a construction site the compiler never sees at all.** When a type
+crosses a JSON boundary — written with `JSON.stringify`, read back and cast — **the serialized site is
+a construction site with no type checking on it.** A rename there produces **zero errors**, the field
+silently reads back `undefined`, and **nothing in the toolchain can flag it.**
+
+⇒ **These are exactly the sites that reach delivery green.** A migration is not complete when the
+compiler stops complaining; **it is complete when every construction site is accounted for, including
+the ones on disk.** Grep for the old field name across data files and fixtures, not only across
+source.
+
+**Where a value must be supplied, determine it rather than choose it**: read what the old value meant
+at that site and preserve it. A fixture writing exactly one corpus file and no metadata maps `files:
+1` onto `verifiedFixtureFiles: 1, metadataFiles: 0` — **read off the fixture, not picked** — and
+**confirm it is load-bearing by supplying a wrong value and watching the same assertion fail.**
+
 ## Picking type vs scope
 
 Two questions, in order:

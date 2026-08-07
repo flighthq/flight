@@ -311,6 +311,18 @@ of, and the question that was actually asked.
 
 ## Serving: search instructions
 
+- **filed — For a SEMANTIC sweep the productive question is never "what else matches", it is "WHAT
+  WOULD NOT MATCH AND STILL COUNT".** The first question extends a vocabulary from inside itself and
+  can only find more of what it already knows; **the second is the only one that reaches the
+  population the vocabulary excludes**, and it is answered by thinking rather than by running.
+
+- **filed — Some dependants are not enumerable, and that is the argument for removing the dependence
+  rather than fixing them one by one.** A survey of history-dependent sites answered **one by scan, at
+  least three by reading, and UNBOUNDED through human links** — because a status file, a parcel, a
+  register and every report to a user all reach a committed artifact through a person. ⇒ **You cannot
+  enumerate the dependants, so you cannot fix them individually.** ★ **A per-artifact campaign against
+  an unbounded set is the indefinite hold in its most defensible costume.**
+
 - **filed — A detector's vocabulary is CLOSED only when it is derived from a grammar. For a semantic
   question it is OPEN, and what it excludes is found by asking, not by running.** A survey of
   history-dependent artifacts used the vocabulary *calls git*. ⇒ **An entire population gets history
