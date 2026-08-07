@@ -99,13 +99,18 @@ stops an artifact claiming more than it has.
 Each of these directed a search that found something the same day it was written. None of them is a
 verdict; see the note at the top.
 
-- **Separate the signal axis from the granularity axis.** Signal — is the failure reported, misreported,
-  or absent? Granularity — is a whole object lost, or part of one inside a survivor? They are
-  orthogonal, and **the worst cell is partial loss with no signal**, where the object is present so
-  every existence check passes. Searching that cell on purpose found three members: a morph that
-  silently loses one path pair, a sprite whose bounds omit an unresolvable child, and rich text that
-  keeps its size and box while losing its font family. A ranking would have said *this is worse*; the
-  axis said *where to look*.
+- **Separate the signal axis from the fidelity axis.** Signal — is the failure reported, misreported,
+  or absent? Fidelity — is the content missing, diminished, or substituted? They are orthogonal, and
+  **the worst cells are the ones no cheap check reaches**. Searching them on purpose found four
+  members: a morph that silently loses one path pair, a sprite whose bounds omit an unresolvable
+  child, rich text that keeps its size and box while losing its font family, and a duplicate font id
+  that overwrites the first glyph table so the font exists and is the wrong font. A ranking would
+  have said *this is worse*; the axis said *where to look*.
+  **The fidelity values order by which check they defeat, not by harm** — missing fails an existence
+  check, diminished passes existence and fails a count, substituted passes both and needs a content
+  comparison. That makes the axis an oracle specification: it says what you must build to see the
+  failure, and nothing about how much the failure costs a user. Demand that property of the next
+  axis rather than treating it as a happy accident of this one.
 - **A rationale more vivid than its conclusion needs is worth reading first.** A CFF reader's stated
   reason for refusing CID-keyed fonts was that they would fail *silently, for every glyph*; measured,
   they fail loudly. The true reason — that the outcome is unpredictable per font — was the stronger
@@ -116,12 +121,14 @@ verdict; see the note at the top.
   anything to enumerate. Auditing by grepping for guards marked a capability covered whose loss no
   caller can see, and a comment two lines above a silent decline answers *was this considered* with a
   yes while leaving *is this reported* untouched — so it suppresses the search while looking like
-  diligence. **Expect a third form: grepping `explain*` functions, TODOs, or tests, on the same
-  intuition.**
+  diligence. A third form is neither: three of four definition kinds rejecting a duplicate id is a
+  convention that **displays a rule without providing one**, and a reader who infers it from the
+  three has read intent and concluded about code. **Expect a fourth: grepping `explain*` functions,
+  TODOs, or tests, on the same intuition.**
 
 ## Denominators
 
-*Arc-local, 2 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
+*Arc-local, 4 instances, all from the SWF-import/conformance arc of 2026-08-07. Untested on any other work — if you quote this rule, quote this line with it.*
 
 - **Name the denominator in the output, in words.** "N of 82 importer-declared capabilities" — never a
   bare "N of 82", and never *total* unqualified. A self-derived denominator cannot show what was never
@@ -130,6 +137,18 @@ verdict; see the note at the top.
 - **When two populations have been quoted as one number, say which is unmeasured.** What our importer
   handles and what the format has are different totals; the second answers "how complete is this
   import" and nobody had produced it. The missing measurement is reported beside the one we have.
+- **A count you produced is a denominator over whatever produced it, and that is usually not the
+  population you meant.** One arc found the same defect in three costumes in a day: capabilities
+  counted over our own importer rather than over the format; loss families counted over the
+  searcher's vocabulary of failures rather than over the losses that exist; and a hash oracle
+  comparing output against our own earlier output, which detects change and never wrongness — so a
+  defect present at first capture stays green forever. **Each measures consistency and reads as
+  truth.** Say which population, in the output, in words.
+- **A denominator can be arbitrary rather than wrong, and that is worse.** Splitting some format
+  versions into separate capabilities and collapsing others — by no stated rule — left a count whose
+  margin was three entries wide in either direction. A missing member is an error you can close; **an
+  undeclared convention is a denominator that moves whenever someone else applies it**, and nothing
+  flags the shift.
 
 ## The test before quoting a number
 
