@@ -18,7 +18,7 @@ export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image {
 }
 
 // ImageData is straight-alpha by contract. Preserve a Bitmap's declared representation at its own seam,
-// then normalize only the temporary browser copy used to materialize a CanvasImageSource for Canvas/DOM.
+// then normalize only the scratch browser copy used to materialize a CanvasImageSource for Canvas/DOM.
 function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
   const data = new Uint8ClampedArray(source);
   for (let i = 0; i < data.length; i += 4) {
