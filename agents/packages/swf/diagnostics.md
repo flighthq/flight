@@ -97,9 +97,15 @@ Wired so far, and therefore safe to read silence for:
 | `swf.placement.clip-depth` | `swf.mask-without-geometry` (a mask that resolves to no region) |
 | `swf.axis.sound-format-non-mp3` | `swf.stream-sound-format` |
 | `swf.shape.define-shape`, `-2`, `-3`, `-4` | `swf.shape-body-unreadable` |
+| `swf.bitmap.define-bits-jpeg-3`, `-4` | `swf.jpeg-alpha-stream` (the discarded alpha block) |
+| `swf.bitmap.define-bits-jpeg-tables` | `swf.jpeg-tables-missing`, `swf.jpeg-tables-unsplittable` |
+| `swf.timeline.define-scene-and-frame-label-data` | `swf.scene-names` |
+| `swf.script.do-action` | `swf.frame-script-declined` |
 
-Every other declared capability is **not yet wired**, so silence about it is uninformative today. This
-table grows as drop sites are wired; it is the list a consumer should read rather than assuming coverage.
+**11 of 80 declared capabilities have trustworthy silence.** Every other one is **not yet wired**, so
+silence about it is uninformative today. This table grows as drop sites are wired; it is the list a
+consumer should read rather than assuming coverage, and the count is deliberately stated so a reader
+cannot mistake the table's existence for coverage.
 
 ## Metadata silence is deliberate
 

@@ -1680,10 +1680,25 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
       // A DoAction belongs to the frame being assembled — the one the next ShowFrame closes.
       const script = readSwfFrameActions(new SwfReader(body.source, body.pos, body.end));
       if (script !== null) actions.set(frames.length + 1, script);
+      // A block is recognized only when EVERY action in it is a playback command, because honouring the
+      // legible half would misrepresent what the frame does. Skip rather than Drop: the bytecode is
+      // outside this importer's scope by charter, not data it failed to read.
+      else {
+        reportImportDiagnostic(
+          state.diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'swf.frame-script-declined',
+          'readSwfTimeline',
+          {
+            capability: 'swf.script.do-action',
+            frame: frames.length + 1,
+          },
+        );
+      }
     } else if (code === TAG_FRAME_LABEL) {
       addSwfTimelineLabel(labels, frames.length + 1, body.readString());
     } else if (code === TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA) {
-      readSwfSceneAndFrameLabelData(body, labels);
+      readSwfSceneAndFrameLabelData(body, labels, state.diagnostics);
     } else if (code === TAG_DEFINE_SCALING_GRID) {
       readSwfScalingGrid(body, state);
     } else if (code === TAG_PLACE_OBJECT) {
@@ -1963,11 +1978,30 @@ function readSwfScalingGrid(body: SwfReader, state: SwfParseState): void {
   state.scalingGrids.set(characterId, splitter);
 }
 
-function readSwfSceneAndFrameLabelData(body: SwfReader, labels: TimelineLabel[]): void {
+function readSwfSceneAndFrameLabelData(
+  body: SwfReader,
+  labels: TimelineLabel[],
+  diagnostics: ImportDiagnostic[] | undefined,
+): void {
   const sceneCount = body.readEncodedUint32();
   for (let i = 0; i < sceneCount && body.valid; i++) {
     body.readEncodedUint32();
     body.readString();
+  }
+  // Scene names are read past to reach the label table behind them. Skip rather than Drop: Flight has
+  // frame labels but no subject for a named frame range, so this is a capability gap rather than data
+  // this decoder failed to read.
+  if (sceneCount > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'swf.scene-names',
+      'readSwfSceneAndFrameLabelData',
+      {
+        capability: 'swf.timeline.define-scene-and-frame-label-data',
+        sceneCount,
+      },
+    );
   }
   const labelCount = body.readEncodedUint32();
   for (let i = 0; i < labelCount && body.valid; i++) {
@@ -2119,7 +2153,19 @@ function readSwfLegacyImageDefinition(body: SwfReader, state: SwfParseState): vo
   const characterId = body.readUint16();
   if (!body.valid || characterId === 0 || state.definedCharacters.has(characterId)) return;
   const tables = state.jpegTables;
-  if (tables === null) return;
+  if (tables === null) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.jpeg-tables-missing',
+      'readSwfLegacyImageDefinition',
+      {
+        capability: 'swf.bitmap.define-bits-jpeg-tables',
+        characterId,
+      },
+    );
+    return;
+  }
 
   const tablesEnd =
     tables.length >= 2 && tables[tables.length - 2] === 0xff && tables[tables.length - 1] === JPEG_END_OF_IMAGE
@@ -2132,7 +2178,19 @@ function readSwfLegacyImageDefinition(body: SwfReader, state: SwfParseState): vo
   spliced.set(body.source.subarray(imageStart, body.end), tablesEnd);
 
   const image = readSwfEmbeddedImage(spliced, 0, spliced.length);
-  if (image === null) return;
+  if (image === null) {
+    reportImportDiagnostic(
+      state.diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'swf.jpeg-tables-unsplittable',
+      'readSwfLegacyImageDefinition',
+      {
+        capability: 'swf.bitmap.define-bits-jpeg-tables',
+        characterId,
+      },
+    );
+    return;
+  }
   state.definedCharacters.add(characterId);
   state.characterBounds.set(characterId, image.bounds);
   state.images.set(characterId, { bytes: spliced, mimeType: image.mimeType });
@@ -2151,6 +2209,23 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
     if (code === TAG_DEFINE_BITS_JPEG_4) body.readUint16();
     imageStart = body.pos;
     imageEnd = alphaOffsetBase + alphaDataOffset;
+    // The colour stream ends at the alpha offset and the zlib-compressed alpha block after it is
+    // discarded, so a transparent JPEG imports fully opaque. Drop rather than Skip: this is authored
+    // data lost, not a feature declined — the bytes are present and go unread.
+    if (alphaDataOffset > 0 && imageEnd < body.end) {
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.jpeg-alpha-stream',
+        'readSwfEmbeddedImageDefinition',
+        {
+          capability:
+            code === TAG_DEFINE_BITS_JPEG_3 ? 'swf.bitmap.define-bits-jpeg-3' : 'swf.bitmap.define-bits-jpeg-4',
+          characterId,
+          discardedBytes: body.end - imageEnd,
+        },
+      );
+    }
   }
   if (
     !body.valid ||
