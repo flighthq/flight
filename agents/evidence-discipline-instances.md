@@ -49,6 +49,22 @@ other work.*
 - **filed — Inspect before `drop_caches`; capture before restore.** The mechanical form of the rule,
   kept because it is the case where the ordering is obvious and therefore the one to reason from.
 
+- **filed — A priority set on a wrong diagnosis is harder to undo than a claim, because work has
+  already started against it.** A wrong statement is retracted in a sentence; **a wrong statement that
+  became someone's task has consumed their effort before the retraction arrives**, and the retraction
+  then competes with sunk work rather than replacing an idea. One flake was called urgent on a wrong
+  failure-direction and had to be reversed after the assignment went out. ⇒ **Dispatching is the
+  destructive operation in the ordering, so verify a diagnosis before it becomes a priority, not
+  before it becomes a sentence.**
+
+- **filed — An unread red is not necessarily an UNREADABLE one, and "gone" is a different state from
+  "unread."** A rate argument was doing work that two lines of surviving output could settle
+  outright. ⇒ **Where the artifact survives or the run is cheaply reproducible, close the gap by
+  READING rather than by inferring** — a probability argument makes a conclusion plausible where a
+  message makes it certain, and reaching for the argument first is a choice nobody usually notices
+  making. **Measured after applying it: sixteen runs, three failures, every one read, all three
+  timeouts.**
+
 ## Serving: structure over convention
 
 - **filed — Choose a channel without the hazard instead of remembering to avoid it.** Prose through
