@@ -47,6 +47,10 @@ export function runCffCharstring(
 ): boolean {
   out.commands.length = 0;
   out.data.length = 0;
+  // `out` is REPLACED, so every field it owns is written — including this one. Both outline
+  // flavors fill by the nonzero rule, and a caller reusing a scratch path would otherwise keep
+  // whatever winding the previous glyph left, which turns a counter into a solid blob.
+  out.winding = 'nonZero';
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const stack: number[] = [];
