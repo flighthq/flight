@@ -1,3 +1,22 @@
+**Two populations, reported side by side and never collapsed.** A fire proof and a silence proof license
+*different* guarantees, each underwriting one of the two outcomes this work exists to distinguish:
+
+| Population | Count | What it licenses |
+| --- | --- | --- |
+| Wired | **16 of 80** | every loss path for the capability reports |
+| **Fire-proven** | **16 of 80** | *"silence here means nothing was lost"* — needed to detect **silently wrong** |
+| **Silence-proven** | **1 of 80** | *"a firing here means something really was lost"* — needed to trust **unsupported, cleanly reported** |
+
+**Say the 1 of 80 plainly.** At one of eighty, *unsupported-but-cleanly-reported* is essentially
+unverified: only one capability has been shown not to cry wolf. A reader entitled to know that sixteen of
+eighty can **detect** a loss is equally entitled to know that one has been shown not to **invent** one.
+Do not let the sixteen stand in front of the one.
+
+A single "instrumented" number would have to pick one of these and hide the other, which is the same
+defect as a denominator that does not describe the population it claims. The machine-readable form is
+[instrumentation.json](instrumentation.json), generated with a drift gate: every proof must name a test
+that exists, so a renamed or deleted test breaks the build rather than silently degrading the mapping.
+
 ---
 package: '@flighthq/swf'
 updated: 2026-08-07
