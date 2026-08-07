@@ -1,0 +1,14 @@
+{
+  "capabilities": [
+    {
+      "fires": [
+        "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
+      ],
+      "id": "swf.placement.filter-list",
+      "staysSilent": [
+        "reports a gradient glow angle and distance it cannot represent, and stays silent without them"
+      ]
+    }
+  ],
+  "count": 1
+}

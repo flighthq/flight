@@ -71,6 +71,7 @@ if (!scoped) {
   add('append-only-ledgers:check', 'tsx', ['scripts/check-append-only-ledgers.ts']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
+  add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
   add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
 }
 
