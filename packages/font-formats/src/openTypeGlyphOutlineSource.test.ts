@@ -4,9 +4,27 @@ import { describe, expect, it } from 'vitest';
 
 import { createGlyphOutlineSourceFromOpenTypeFont, explainOpenTypeFont } from './openTypeGlyphOutlineSource';
 import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper';
+import { readSfntTableDirectory } from './sfntTableDirectory';
 
 // Every font here is assembled byte by byte by the helper. Nothing third-party is read, fetched, or
 // committed, and each test states the table contents its assertion depends on.
+// A WOFF is a real font behind a compression wrapper — a different remedy from unreadable bytes, which is
+// why it gets its own reason.
+function woffBytes(): Uint8Array {
+  const bytes = new Uint8Array(20);
+  bytes.set([0x77, 0x4f, 0x46, 0x46]);
+  return bytes;
+}
+
+// Every table present, but `head` states a zero unitsPerEm — the one value that cannot be defaulted,
+// since it is the scale denominator every coordinate divides by.
+function malformedUnitsPerEmFont(): Uint8Array {
+  const font = createSyntheticFont();
+  const head = readSfntTableDirectory(font)!.tables.get('head')!;
+  new DataView(font.buffer, font.byteOffset, font.byteLength).setUint16(head.offset + 18, 0);
+  return font;
+}
+
 function createPath(): Path {
   return { commands: [], data: [], winding: 'evenOdd' };
 }
@@ -115,6 +133,33 @@ describe('explainOpenTypeFont', () => {
     const explanation = explainOpenTypeFont(font);
     expect(explanation.accepted).toBe(true);
     expect(explanation.reason).toBe('ok');
+    expect(createGlyphOutlineSourceFromOpenTypeFont(font)).not.toBeNull();
+  });
+
+  // ALL SEVEN REJECTION REASONS, EACH ASSERTING **BOTH** THE EXPLANATION AND THE PRODUCER ON THE SAME
+  // BYTES. Previously only the accept path was cross-checked, so an explanation could have named a reason
+  // the producer never failed for — or named one while the producer happily returned a source — and the
+  // suite would have stayed green. The two share one parse so they cannot disagree BY CONSTRUCTION, and
+  // probably-holds-by-construction is exactly the claim this pins instead of assuming.
+  it.each([
+    ['too-short', new Uint8Array([0, 1, 0, 0])],
+    ['unrecognized', new Uint8Array(20)],
+    ['unsupported-container', woffBytes()],
+    ['missing-required-table', createSyntheticFont({ omitTable: 'cmap' })],
+    ['unsupported-outlines', createSyntheticFont({ flavor: 'opentype' })],
+    ['malformed-table', malformedUnitsPerEmFont()],
+  ])('rejects with reason %s, and the producer returns the sentinel on the same bytes', (reason, bytes) => {
+    const explanation = explainOpenTypeFont(bytes);
+    expect(explanation.reason).toBe(reason);
+    expect(explanation.accepted).toBe(false);
+    expect(createGlyphOutlineSourceFromOpenTypeFont(bytes)).toBeNull();
+  });
+
+  // The seventh reason, `ok`, is the inverse pairing: the explanation accepts AND the producer succeeds.
+  it('accepts with reason ok, and the producer returns a source on the same bytes', () => {
+    const font = createSyntheticFont();
+    expect(explainOpenTypeFont(font).reason).toBe('ok');
+    expect(explainOpenTypeFont(font).accepted).toBe(true);
     expect(createGlyphOutlineSourceFromOpenTypeFont(font)).not.toBeNull();
   });
 
