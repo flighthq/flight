@@ -17,6 +17,11 @@ export interface ImportConformanceUnknownObservation {
 }
 
 export interface ImportConformanceProvenInstrumentation {
+  /**
+   * Declared test references. This parser proves only that the field contains nonempty, sorted, unique strings;
+   * producer-side resolution can additionally prove that each reference names a real test. Neither check can
+   * establish that the test assertions validate the recorded payload or exhaust the capability's loss paths.
+   */
   proofs: [string, ...string[]];
   state: 'proven';
 }
@@ -39,8 +44,9 @@ export interface ImportConformanceExercisedCapability {
    * Proof directions stay independent: diagnostic silence is interpretable only with `fires`, while a
    * diagnostic crumb is interpretable only with `staysSilent`. Each unlicensed observation remains keyed
    * in `unknownObservations`; it must never be inferred as passing or collapsed into an aggregate count.
-   * A proof names the case it tested. Proof presence does not claim that the case exhausts every way the
-   * capability can silently lose information; that claim-scope question remains an audit concern.
+   * A proof reference is a producer claim about a tested case, not parser verification of the test's semantics
+   * or recorded payload. Proof presence also does not claim that the case exhausts every way the capability can
+   * silently lose information. Payload truth and claim scope remain audit concerns.
    */
   instrumentation: {
     fires: ImportConformanceInstrumentation;
