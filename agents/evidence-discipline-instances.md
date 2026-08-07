@@ -583,6 +583,19 @@ of, and the question that was actually asked.
 
 ## Serving: denominators
 
+- **filed — UNIT, THEN TRANSFER, THEN NUMBERS — and the ordering exists to protect a transfer from
+  its own SUCCESS.** ⇒ **An instrument that transfers mechanically can still produce a number over
+  the wrong population** — a true count of a denominator nobody chose, which reads as coverage.
+  ★★ **So a transferred instrument's first output is a CANDIDATE, not a MEASUREMENT, until the unit
+  question is settled**, and it should be reported in those words. **The danger is not a transfer that
+  fails; it is one that succeeds and starts printing.**
+  ★ **And some stores make the unit question harder rather than merely unanswered: a tag stream has a
+  natural enumerable unit and an OBJECT GRAPH DOES NOT.** Object types, properties, state constructs
+  and draw operations are each defensible and mutually incompatible — **a census over any one is a
+  different measurement wearing the same word, and nothing in the output says which was taken.**
+  **Where several candidates exist and no principle chooses, that IS the result** — deliver it as a
+  finding rather than picking one to unblock yourself.
+
 - **filed — Two true counts for one question is a BOUNDARY difference, not a contradiction, and the
   hazard is the reconciliation.** A survey answered *derives into a committed artifact* — **one** —
   while the request had asked *derives into an artifact* — **three**, admitting a published package
