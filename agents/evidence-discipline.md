@@ -21,6 +21,12 @@ A doc that grows by accretion never has a moment where anyone decides its size; 
 taken deliberately and in advance. Enforcement joins `npm run docs:check` once the file is under, on
 the same principle as any other gate: **the number before the gate, never a check that arrives red.**
 
+**Measured, not estimated: this file is 22,202 characters against that 12,000 — 1.85× over.** The
+figure is stamped because an unenforced budget and a met budget look identical from outside, and a
+declared limit with no measurement beside it reads as compliance. **Until the `DOC_BUDGETS` entry
+lands, nothing recomputes this number and it goes stale on the next edit** — so it is a historical
+reading, not a live property, and the pass that lands the entry deletes this paragraph.
+
 **Everything below is a search instruction, not a test.** Each entry tells you where to look or what
 to read next; none of them tells you a claim is wrong. Used as verdicts they invert — the vividness
 tell would discredit whoever describes a genuinely severe finding accurately, and the fidelity axis
@@ -101,6 +107,23 @@ off; three agents in one day each drifted off a rule they had written down.
   readers lost a day's claims to this in one day; the countermeasure cannot be more care.
 - **Put a coverage caveat in a table, not a sentence.** A sentence can be skimmed past; a table of
   which files were read in full, partially, and not at all cannot.
+
+**The two-rung floor — the minimum for landing any gate.** A gate that cannot fail is
+indistinguishable from a gate that passes, and green is what both look like. Two mutations, in order,
+and neither substitutes for the other:
+
+1. **Did the mutation land at all?** Break the thing deliberately and confirm the world changed —
+   without this rung a typo in the mutation reads as a robust gate.
+2. **Did it move the quantity the instrument reads?** A mutation can land and still leave the gate's
+   number untouched, which is the case that produces a confident green over a blind spot.
+
+Both rungs are one command each and neither is inferable from the other. **The companion negative
+control matters as much: mutate something the gate should *not* fire on and confirm it stays
+green** — a gate that fires on everything is as useless as one that fires on nothing, and only the
+negative control tells them apart. **This rule was quoted across an entire arc while living in no
+file**, which is its own instance of the structure-over-convention rule: an unlanded rule is a
+convention no matter how often it is repeated, and it was found by asking where each structure
+*lives* rather than whether it exists.
 
 ## Honest limit — *what to do when you cannot*
 
