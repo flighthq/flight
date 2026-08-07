@@ -83,6 +83,8 @@
     "gallery:functional": "cross-env VITE_GALLERY_TOOL=functional npm run dev --workspace=tools/gallery",
     "get:reference": "tsx ./scripts/reference-tool.ts get",
     "import:conformance:index": "tsx ./scripts/swf-capability-index.ts",
+    "instrumentation": "tsx ./scripts/swf-instrumentation.ts",
+    "instrumentation:check": "tsx ./scripts/swf-instrumentation.ts --check",
     "lint": "oxlint --max-warnings=0",
     "lint:fix": "oxlint --fix",
     "list:reference": "tsx ./scripts/reference-tool.ts list",
