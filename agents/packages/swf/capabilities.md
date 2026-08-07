@@ -15,7 +15,7 @@ at all, and several kinds (the container rejections) name no capability.
 Listing a capability here does not claim the corpus reaches it. Which ones it does reach, and how deeply,
 is measured in [fixture-evidence.md](fixture-evidence.md#what-the-corpus-actually-exercises).
 
-80 declared.
+82 declared.
 
 | Id | Capability |
 | --- | --- |
@@ -40,6 +40,8 @@ is measured in [fixture-evidence.md](fixture-evidence.md#what-the-corpus-actuall
 | `swf.bitmap.lossless-24-32-bit` | bitmap: lossless format 24/32-bit |
 | `swf.bitmap.lossless-colormapped` | bitmap: lossless format colormapped |
 | `swf.bitmap.lossless-with-alpha` | bitmap: lossless with alpha |
+| `swf.button.define-button` | button: DefineButton up state |
+| `swf.button.define-button-2` | button: DefineButton2 up state |
 | `swf.document.set-background-colour` | document: SetBackgroundColor |
 | `swf.fill.bitmap` | fill: bitmap |
 | `swf.fill.bitmap-clamp-nearest` | fill: bitmap clamp/nearest |

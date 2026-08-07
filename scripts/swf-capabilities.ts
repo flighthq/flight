@@ -53,6 +53,8 @@ const CAPABILITIES: readonly SwfCapability[] = [
   { id: 'swf.bitmap.lossless-24-32-bit', label: 'bitmap: lossless format 24/32-bit' },
   { id: 'swf.bitmap.lossless-colormapped', label: 'bitmap: lossless format colormapped' },
   { id: 'swf.bitmap.lossless-with-alpha', label: 'bitmap: lossless with alpha' },
+  { id: 'swf.button.define-button', label: 'button: DefineButton up state' },
+  { id: 'swf.button.define-button-2', label: 'button: DefineButton2 up state' },
   { id: 'swf.document.set-background-colour', label: 'document: SetBackgroundColor' },
   { id: 'swf.fill.bitmap', label: 'fill: bitmap' },
   { id: 'swf.fill.bitmap-clamp-nearest', label: 'fill: bitmap clamp/nearest' },

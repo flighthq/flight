@@ -85,6 +85,14 @@
       "label": "bitmap: lossless with alpha"
     },
     {
+      "id": "swf.button.define-button",
+      "label": "button: DefineButton up state"
+    },
+    {
+      "id": "swf.button.define-button-2",
+      "label": "button: DefineButton2 up state"
+    },
+    {
       "id": "swf.document.set-background-colour",
       "label": "document: SetBackgroundColor"
     },
@@ -321,5 +329,5 @@
       "label": "video: VideoFrame"
     }
   ],
-  "count": 80
+  "count": 82
 }
