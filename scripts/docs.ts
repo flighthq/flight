@@ -38,6 +38,7 @@ import pc from 'picocolors';
 
 import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
 import { readSection } from './markdownSection';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
 // Every doc with a self-declared size budget. Keep the number here identical to the one the doc states
 // in its own prose — the doc is where a reader meets the rule, this table is only what enforces it.
@@ -83,6 +84,11 @@ export type DocBudgetStatus = 'near' | 'ok' | 'over';
 export interface GateFileSet {
   files: ReadonlySet<string>;
   source: 'disk' | 'git';
+  // Directories the disk walk could not read. Always empty in `git` mode, which queries no directory.
+  // Carried for the same reason `source` is: a scan that silently covered less than it claims is the
+  // failure this file keeps rediscovering, and an unreadable directory is exactly that — a hole in the
+  // file set. Reported, never thrown; see `listWorkingTreeFiles`.
+  unreadable: readonly string[];
 }
 
 // Scans only the link-led pointer entries (`- [name](path) — trigger`) under Domain Conventions, which
@@ -212,7 +218,9 @@ export function hasGatePath(files: ReadonlySet<string>, path: string): boolean {
  */
 function listGateFiles(): GateFileSet {
   const tracked = listTrackedFiles();
-  return tracked === undefined ? { files: listWorkingTreeFiles(), source: 'disk' } : { files: tracked, source: 'git' };
+  if (tracked !== undefined) return { files: tracked, source: 'git', unreadable: [] };
+  const walked = listWorkingTreeFiles();
+  return { files: walked.files, source: 'disk', unreadable: walked.unreadable };
 }
 
 // Tracked-ness is a fact rather than an opinion, so this needs no allow-list and cannot rot as the
@@ -241,10 +249,24 @@ function listTrackedFiles(): ReadonlySet<string> | undefined {
 // the same SHAPE of answer as `listTrackedFiles` so no check needs a second code path: there is one
 // file set, and only its provenance differs. The gate says which it used on every run, because a
 // silent fallback turns "this machine" into "the repository" without anyone noticing.
-function listWorkingTreeFiles(): ReadonlySet<string> {
+//
+// AN UNREADABLE DIRECTORY IS AN ANSWER, NOT A CRASH. `readdirSync` throws on a directory the runner
+// cannot open, and letting that escape replaced the gate's verdict with a raw stack trace — a gate that
+// cannot report is the same class of defect as a gate that reports the wrong thing. The directory is
+// recorded and the walk continues, so the run still reaches a verdict AND still says what it could not
+// see. Skipping quietly would be the worse half of both: a smaller file set presented as a whole one.
+function listWorkingTreeFiles(): { files: ReadonlySet<string>; unreadable: readonly string[] } {
   const found = new Set<string>();
+  const unreadable: string[] = [];
   const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      unreadable.push(relative(REPO_ROOT, dir) || '.');
+      return;
+    }
+    for (const entry of entries) {
       if (SCAN_SKIP_DIRECTORIES.has(entry.name)) continue;
       const full = join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
@@ -252,7 +274,7 @@ function listWorkingTreeFiles(): ReadonlySet<string> {
     }
   };
   walk(REPO_ROOT);
-  return found;
+  return { files: found, unreadable: unreadable.sort() };
 }
 
 // Which docs are reached along a path a reader would actually travel. Pure, and taking its sources as
@@ -593,8 +615,8 @@ function fail(message: string): void {
 }
 
 function main(): void {
-  const { files, source } = listGateFiles();
-  reportGateScope(files, source);
+  const { files, source, unreadable } = listGateFiles();
+  reportGateScope(files, source, unreadable);
   reportBudgets(files);
   checkLinks(files);
   checkOrphans(files);
@@ -663,7 +685,11 @@ function reportBudgets(files: ReadonlySet<string>): void {
 // because a scope nobody states is a scope nobody can compare. Four clones reported four different
 // missing-cell counts and spent the reconciliation arguing about the numbers; this line is what would
 // have ended that in one message.
-function reportGateScope(files: ReadonlySet<string>, source: GateFileSet['source']): void {
+function reportGateScope(
+  files: ReadonlySet<string>,
+  source: GateFileSet['source'],
+  unreadable: readonly string[],
+): void {
   process.stdout.write(
     `${pc.dim(
       source === 'git'
@@ -671,6 +697,14 @@ function reportGateScope(files: ReadonlySet<string>, source: GateFileSet['source
         : '  docs gate could NOT query git, so every scan fell back to the working tree — untracked generated output and rename residue MAY be reported, and this verdict is about this machine rather than about the repository',
     )}\n`,
   );
+
+  // Named individually rather than counted: a hole in the file set is only actionable if you know
+  // where it is, and there is never a long list of these — one unreadable directory is already unusual.
+  if (unreadable.length === 0) return;
+  process.stdout.write(
+    `${pc.yellow('!')} ${pc.bold(`${unreadable.length} director${unreadable.length === 1 ? 'y' : 'ies'} could not be read`)}, so the walked file set is incomplete and every scan below judged less than the whole tree:\n`,
+  );
+  for (const directory of unreadable) process.stdout.write(`  ! ${directory}\n`);
 }
 
 // Warnings are grouped by shape rather than listed one per line: 30-odd charters missing the same
@@ -714,7 +748,16 @@ const SKILLS_DIR = join('.claude', 'skills');
 
 // Only reached in the no-git fallback. `.git` and `node_modules` are excluded because walking them is
 // pure cost; `dist` because it is build output no scan here is about.
-const SCAN_SKIP_DIRECTORIES = new Set(['.git', 'dist', 'node_modules']);
+// This gate skips exactly the shared set and adds nothing of its own. In particular it must NOT skip
+// `.claude`: `SKILLS_DIR` lives under it, so the skills half of the orphan corpus is resolved from this
+// same walk. `order.ts` and `mocks.ts` do skip `.claude`, which is why that entry sits at their call
+// sites rather than in the shared set.
+//
+// The set previously held only `.git`, `dist` and `node_modules` — three of the nine — so the disk
+// fallback descended into `.cache`, where a fetched fixture corpus is 26,461 files. Nothing was ever
+// REPORTED from there, but only because `checkOrphans` scopes its corpus to `agents/` and `.claude/
+// skills/`: LUCK OF SCOPING, NOT A GUARD. Widening that scope without this line would have surfaced
+// every markdown file in a downloaded corpus as an orphaned document.
 
 // A doc can be legitimately unlinked, and the gate has to let the honest answer through — an allowance
 // with no recorded reason looks exactly like an oversight, and the next careful reader deletes it. Each
