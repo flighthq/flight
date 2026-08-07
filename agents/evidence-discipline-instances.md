@@ -57,6 +57,14 @@ reader can tell strength apart without trusting the author's formatting:
   produce.** ★ **The pressure runs one way: an unexplained fact reads as unfinished, and the only
   material available to close it is the observation itself** — and that feeling is the whole defect.
 
+- **filed — Say "COMMITTED ON GREEN", not "ran the gate then committed" — and the difference is one
+  word doing all the work.** ⇒ **The first asserts a DEPENDENCY; the second asserts a SEQUENCE, and
+  only the first is falsifiable** by asking what would have happened on red. ★★ **This is the
+  retrieval law with our own reports as the store:** *did the gate run before the commit* retrieves a
+  true answer about **position** and a wrong answer about **dependency**, **and the reader cannot tell
+  which from the report.** ⇒ **The fix is the sender's, because the sender is the only party who knows
+  whether the action was conditional** — a reader supplying the dependency is reading it in.
+
 - **filed — A CHECK AND THE ACTION IT GUARDS MUST BE SEPARATED BY A POINT AT WHICH THE ACTION COULD
   NOT HAPPEN.** A budget gate was run in the same compound command as the commit it was meant to
   guard: **the gate reported red and the commit landed anyway.** ⇒ **The mechanical tell: if the
