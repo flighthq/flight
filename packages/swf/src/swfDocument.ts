@@ -1731,7 +1731,19 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
         body.readUint16();
         body.readUint16();
         if (body.valid && body.pos < body.end) streamChunks.push(body.source.subarray(body.pos, body.end));
+      } else if (streamFormat >= 0) {
+        reportImportDiagnostic(
+          state.diagnostics,
+          ImportDiagnosticSeverity.Skip,
+          'swf.stream-sound-format',
+          'readSwfTimeline',
+          {
+            format: streamFormat,
+          },
+        );
       }
+    } else {
+      reportSwfDeclinedTag(state.diagnostics, code);
     }
     if (!body.valid) return null;
   }
@@ -1748,6 +1760,18 @@ function readSwfTimeline(reader: SwfReader, state: SwfParseState): SwfTimeline |
     // A label declared after the last ShowFrame names a frame the timeline never reaches.
     labels: labels.filter((label) => label.frame <= frames.length).sort(compareSwfTimelineLabelFrame),
   };
+}
+
+// Reports the tags this importer deliberately reads past that cost a real capability, and stays silent on
+// the ones that cost nothing. The line matters: a document is not worse off for having skipped
+// `FileAttributes` or a font's hinting table, so reporting those would bury the entries that do mean
+// something under noise a caller has to filter. Every code below is a decision recorded in
+// `agents/packages/swf/tag-coverage.md`, not an unrecognized tag.
+function reportSwfDeclinedTag(diagnostics: ImportDiagnostic[] | undefined, code: number): void {
+  if (diagnostics === undefined) return;
+  const kind = SWF_DECLINED_TAG_KINDS.get(code);
+  if (kind === undefined) return;
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'readSwfTimeline', { tag: code });
 }
 
 // The stage colour, as an RGB record. SWF gives it no alpha, and a stage is opaque, so it packs to fully
@@ -2552,6 +2576,19 @@ const TAG_START_SOUND_2 = 89;
 const TAG_SOUND_STREAM_BLOCK = 19;
 const TAG_SOUND_STREAM_HEAD = 18;
 const TAG_SOUND_STREAM_HEAD_2 = 45;
+// Only tags whose absence loses something a caller could want. Metadata tags — `FileAttributes`,
+// `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry`, `Protect`,
+// `SetTabIndex`, `DefineButtonCxform`, and the font hinting/naming tables — are deliberately absent: they
+// carry no scene content, so skipping one is not a loss to report.
+const SWF_DECLINED_TAG_KINDS = new Map<number, string>([
+  [17, 'swf.define-button-sound'],
+  [57, 'swf.import-assets'],
+  [61, 'swf.video-frame-payload'],
+  [71, 'swf.import-assets'],
+  [87, 'swf.define-binary-data'],
+  [91, 'swf.define-font-4'],
+]);
+
 const TAG_DEFINE_SCALING_GRID = 78;
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DEFINE_BITS_JPEG_2 = 21;
