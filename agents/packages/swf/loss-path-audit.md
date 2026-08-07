@@ -23,9 +23,14 @@ its own coverage.
 | `swfMorphShape.ts` | yes, in full | one unreported family |
 | `swfBitmap.ts` | yes, in full | **none at import** — its failure surfaces as a throw in the resolve lane |
 | `swfText.ts` | yes, in full | one unreported family |
-| `swfDocument.ts` | **partially** — the reject set and the definition-storing patterns; ~2,850 lines not read line by line | two unreported families found so far |
+| `swfEditText.ts` | yes, in full | one unreported family |
+| `swfFilter.ts` | yes, in full | one unreported family |
+| `swfFrameAction.ts` | yes, in full | one unreported family, plus the truncation below |
+| `swfReader.ts` | yes, in full | **no independent loss path** — every overrun sets the `valid` flag its callers check |
+| `swfDocument.ts` | **partially** — the reject set and the definition-storing patterns; ~2,850 lines not read line by line | three unreported families found so far |
 
-`swfFilter.ts`, `swfFrameAction.ts`, `swfReader.ts` and `swfEditText.ts` are **not yet read**.
+**Only `swfDocument.ts` remains partially read.** Everything else in the package has now been read in
+full.
 
 ## Confirmed unreported loss paths
 
@@ -40,7 +45,23 @@ says why. Affects `swf.morph.define-morph-shape` and `-2`.
 `if (shape !== null) state.shapes.set(pending.characterId, shape)` in `appendSwfPendingTextShapes`. Same
 shape as the morph case: the character vanishes. Affects `swf.text.define-text` and `-2`.
 
-### 3. The whole-document reject path is almost entirely unreported
+### 3. An edit-text body that does not parse is dropped silently
+
+`if (factory !== null) state.editTexts.set(characterId, factory)`. The third instance of one pattern —
+morph, static text, and now edit text all vanish the same way. Affects `swf.text.define-edit-text`.
+
+### 4. An unparseable filter list silently drops the placement's blend mode
+
+`hasBlendMode` is gated on `filterListComplete`, so a filter list that does not fully parse causes the
+blend-mode byte to go unread. The placement keeps the filters decoded so far and **loses its blend mode
+with no crumb**. There is a `@flighthq/log` guard for the unknown filter id, but that is the warning layer,
+not the structured one — a caller enumerating losses sees nothing. Affects `swf.placement.blend-mode`.
+
+### 5. An ABC blob that yields no frame scripts is skipped silently
+
+`if (byClass === null) continue`. Affects `swf.script.do-abc` and `swf.script.do-abc-anonymous`.
+
+### 6. The whole-document reject path is almost entirely unreported
 
 The tag loop has roughly eight distinct `return null` causes — snapshot-budget exhaustion, a duplicate
 sprite id, a sprite body that does not end where it should, malformed lossless/video/bounded definitions,
