@@ -103,6 +103,18 @@ other work.*
   parent only because the parent has no headroom, and it is recorded as owed a place in the next pass
   rather than left to be rediscovered. **The parent is where it belongs.**
 
+- **filed — The three axes worked, each with its instance. LIFETIME:** a structure must outlive the
+  hazard it guards — a transport role and a one-writer tripwire lived in a workspace file that dies
+  with the session, and **a probe script in a scratchpad is a caution with extra steps.**
+  **REACH:** it must be reachable by the agent it was written for — **a doc linked only from an index
+  is met at the moment of curiosity, not at the moment of the decision.**
+  **ENCOUNTER:** it must be met *before* the mistake — **a budget living in the file it governs is
+  read by everyone already writing into it and by nobody deciding whether to**, which is why that
+  budget sat 1.85× over while declared, durable and read. ⇒ **Only a gate fires at the moment of the
+  action.** A fourth observation, from the gate that resulted: **the author of a rule is not exempt
+  from its encounter problem** — the same budget gate fired on its own author three times, who
+  responded by trimming words each time although the message named the structural remedy.
+
 - **filed — A register is a caution, not a structure.** A process lapse was recorded, dated, and read,
   and **recurred about an hour later** — because recording a lapse prevents none. The remedy was a
   rule that made the shape unrepresentable: a message with more than one recipient may not contain
@@ -225,6 +237,30 @@ other work.*
   Only recomputation removes the hazard, which is why the third state in a numbers gate is
   *recomputable / stamped-historical / neither* and **stamped-historical is a concession, not a
   safe state.**
+- **filed — The three costumes of "a count you produced is a denominator over whatever produced it",
+  all found in one day.** Capabilities counted over our own importer rather than over the format;
+  loss families counted over the searcher's vocabulary of failures rather than over the losses that
+  exist; and a hash oracle comparing output against our own earlier output, **which detects change and
+  never wrongness — so a defect present at first capture stays green forever.** ⇒ **Each measures
+  consistency and reads as truth.**
+
+- **filed — A true measurement can support a false inference, and only naming which half failed keeps
+  the measurement usable.** Seven real CID fonts all resolving to one subroutine pool was correct and
+  reproducible; the conclusion — *so we must source real multi-pool material* — was wrong, because the
+  property was an authoring choice and already constructed in-repo. **The author separated the two
+  explicitly rather than withdrawing both**, which is what let the measurement keep its value.
+
+- **filed — Two independent implementations beat a derivation.** A deflated-WOFF fixture was proved by
+  compressing with node's `deflateSync` and inflating with Flight's own registered decompressor. ⇒
+  **The compressor and the decompressor share nothing, so a mistake in ours cannot be mirrored by
+  theirs** — which satisfies *the constructor must not derive from the reader* more strongly than
+  building from the specification would, since a spec-derived encoder is still one author's reading.
+
+- **filed — Proving two things are different is not proving the difference reaches the output.** A CID
+  test asserted that two subroutine pools were distinct **objects**, and none asserted they produced
+  different **outlines** — so the test would pass on an implementation that selected the pool and then
+  ignored it.
+
 - **filed — When two populations have been quoted as one number, say which is unmeasured.** What our
   importer handles and what the format has are different totals.
 - **filed — A ceiling on a count is also a release from waiting for it.** If a population can never be
