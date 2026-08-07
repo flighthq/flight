@@ -14,10 +14,11 @@ export type ImportConformanceUnknownObservationReason =
   | 'loss-path-not-identified'
   | 'silence-proof-missing-for-crumb';
 
-export type ImportConformanceLossGranularity = 'partial-object' | 'whole-object';
+/** Ordered by the check defeated (existence, count, content), never by severity or user harm. */
+export type ImportConformanceContentFidelity = 'diminished' | 'missing' | 'substituted';
 
 export interface ImportConformanceUnwiredLossObservation {
-  granularity: ImportConformanceLossGranularity;
+  contentFidelity: ImportConformanceContentFidelity;
   reason: 'loss-path-known-not-wired';
   reference: string;
 }
@@ -204,15 +205,34 @@ export interface ImportConformanceLossPathPopulationSummary {
   unauditedCapabilities: number;
 }
 
+export interface ImportConformanceDenominators {
+  importerDeclared: {
+    census: {
+      basis: 'single-artifact-cross-check';
+      candidateHits: number;
+      falsePositiveHits: number;
+      provenance: 'single-author';
+      reference: string;
+      state: 'provisional';
+    };
+    declaredRows: number;
+    limitation: 'individuation-rule-not-operational';
+    state: 'unresolved';
+  };
+  swfFormat: { state: 'unmeasured' };
+}
+
 export interface ImportConformanceSummary {
+  denominators: ImportConformanceDenominators;
   exercised: ImportConformanceExercisedSummary;
   instrumentAudited: ImportConformanceInstrumentAuditedSummary;
   lossPathPopulation: ImportConformanceLossPathPopulationSummary;
   proofReferenced: ImportConformanceProofReferencedSummary;
-  totalCapabilities: number;
 }
 
 interface ImportConformancePackIdentity {
+  /** Opaque producer-owned stamp; the current unresolved convention uses `unresolved-individuation-v1`. */
+  capabilityConventionRevision: string;
   capabilities: ImportConformanceCapability[];
   id: string;
   importerSourceHash: string;
@@ -249,8 +269,15 @@ export interface ImportConformanceInstrumentAssurance {
   triggerSpecificity: 'proof-reference-presence';
 }
 
+export interface ImportConformanceOracleAssurance {
+  firstCaptureDefects: 'undetectable';
+  formatDerivedProperties: 'required-not-implemented';
+  ratchet: 'recorded-run-regression-only';
+}
+
 export interface ImportConformanceScore {
   instrumentAssurance: ImportConformanceInstrumentAssurance;
+  oracleAssurance: ImportConformanceOracleAssurance;
   packs: ImportConformancePack[];
   provenance: ImportConformanceProvenance;
   schemaVersion: 1;
@@ -258,7 +285,7 @@ export interface ImportConformanceScore {
 
 export function parseImportConformanceScore(value: unknown, source = 'score'): ImportConformanceScore {
   const root = expectRecord(value, source);
-  expectKeys(root, ['instrumentAssurance', 'packs', 'provenance', 'schemaVersion'], source);
+  expectKeys(root, ['instrumentAssurance', 'oracleAssurance', 'packs', 'provenance', 'schemaVersion'], source);
   if (root.schemaVersion !== 1) fail(`${source}.schemaVersion`, 'must be exactly 1');
   if (!Array.isArray(root.packs)) fail(`${source}.packs`, 'must be an array');
 
@@ -270,9 +297,29 @@ export function parseImportConformanceScore(value: unknown, source = 'score'): I
   );
   return {
     instrumentAssurance: parseInstrumentAssurance(root.instrumentAssurance, `${source}.instrumentAssurance`),
+    oracleAssurance: parseOracleAssurance(root.oracleAssurance, `${source}.oracleAssurance`),
     packs,
     provenance: parseProvenance(root.provenance, `${source}.provenance`),
     schemaVersion: 1,
+  };
+}
+
+function parseOracleAssurance(value: unknown, path: string): ImportConformanceOracleAssurance {
+  const assurance = expectRecord(value, path);
+  expectKeys(assurance, ['firstCaptureDefects', 'formatDerivedProperties', 'ratchet'], path);
+  if (assurance.firstCaptureDefects !== 'undetectable') {
+    fail(`${path}.firstCaptureDefects`, "must be exactly 'undetectable'");
+  }
+  if (assurance.formatDerivedProperties !== 'required-not-implemented') {
+    fail(`${path}.formatDerivedProperties`, "must be exactly 'required-not-implemented'");
+  }
+  if (assurance.ratchet !== 'recorded-run-regression-only') {
+    fail(`${path}.ratchet`, "must be exactly 'recorded-run-regression-only'");
+  }
+  return {
+    firstCaptureDefects: assurance.firstCaptureDefects,
+    formatDerivedProperties: assurance.formatDerivedProperties,
+    ratchet: assurance.ratchet,
   };
 }
 
@@ -313,7 +360,17 @@ function parseProvenance(value: unknown, path: string): ImportConformanceProvena
 function parsePack(value: unknown, path: string): ImportConformancePack {
   const pack = expectRecord(value, path);
   const state = expectString(pack.state, `${path}.state`);
-  const commonKeys = ['capabilities', 'id', 'importerSourceHash', 'release', 'sharding', 'state', 'summary', 'variant'];
+  const commonKeys = [
+    'capabilities',
+    'capabilityConventionRevision',
+    'id',
+    'importerSourceHash',
+    'release',
+    'sharding',
+    'state',
+    'summary',
+    'variant',
+  ];
   if (state === 'measured') {
     expectKeys(pack, commonKeys, path);
   } else if (state === 'not-run') {
@@ -325,6 +382,10 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
   const capabilities = parseCapabilities(pack.capabilities, `${path}.capabilities`);
   if (capabilities.length === 0) fail(`${path}.capabilities`, 'must retain at least one stable capability id');
   const identity = {
+    capabilityConventionRevision: expectNonemptyString(
+      pack.capabilityConventionRevision,
+      `${path}.capabilityConventionRevision`,
+    ),
     capabilities,
     id: expectNonemptyString(pack.id, `${path}.id`),
     importerSourceHash: expectNonemptyString(pack.importerSourceHash, `${path}.importerSourceHash`),
@@ -600,12 +661,12 @@ function parseUnknownObservations(value: unknown, path: string): ImportConforman
     const reason = parseUnknownObservationReason(observation.reason, `${path}[${index}].reason`);
     const reference = expectNonemptyString(observation.reference, `${path}[${index}].reference`);
     if (reason === 'loss-path-known-not-wired') {
-      expectKeys(observation, ['granularity', 'reason', 'reference'], `${path}[${index}]`);
-      const granularity = expectString(observation.granularity, `${path}[${index}].granularity`);
-      if (granularity !== 'partial-object' && granularity !== 'whole-object') {
-        fail(`${path}[${index}].granularity`, "must be 'partial-object' or 'whole-object'");
+      expectKeys(observation, ['contentFidelity', 'reason', 'reference'], `${path}[${index}]`);
+      const contentFidelity = expectString(observation.contentFidelity, `${path}[${index}].contentFidelity`);
+      if (contentFidelity !== 'diminished' && contentFidelity !== 'missing' && contentFidelity !== 'substituted') {
+        fail(`${path}[${index}].contentFidelity`, "must be 'diminished', 'missing', or 'substituted'");
       }
-      return { granularity, reason, reference };
+      return { contentFidelity, reason, reference };
     }
     expectKeys(observation, ['reason', 'reference'], `${path}[${index}]`);
     return {
@@ -866,9 +927,10 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
   const summary = expectRecord(value, path);
   expectKeys(
     summary,
-    ['exercised', 'instrumentAudited', 'lossPathPopulation', 'proofReferenced', 'totalCapabilities'],
+    ['denominators', 'exercised', 'instrumentAudited', 'lossPathPopulation', 'proofReferenced'],
     path,
   );
+  const denominators = parseDenominators(summary.denominators, `${path}.denominators`);
   const exercised = expectRecord(summary.exercised, `${path}.exercised`);
   expectKeys(
     exercised,
@@ -896,6 +958,7 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
     fail(`${path}.lossPathPopulation.auditState`, "must be 'complete' or 'partial'");
   }
   return {
+    denominators,
     exercised: {
       capabilities: expectInteger(exercised.capabilities, `${path}.exercised.capabilities`, 0),
       fireReferenced: parseReferencedSummary(exercised.fireReferenced, `${path}.exercised.fireReferenced`),
@@ -949,7 +1012,64 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
         0,
       ),
     },
-    totalCapabilities: expectInteger(summary.totalCapabilities, `${path}.totalCapabilities`, 0),
+  };
+}
+
+function parseDenominators(value: unknown, path: string): ImportConformanceDenominators {
+  const denominators = expectRecord(value, path);
+  expectKeys(denominators, ['importerDeclared', 'swfFormat'], path);
+  const importerDeclared = expectRecord(denominators.importerDeclared, `${path}.importerDeclared`);
+  expectKeys(importerDeclared, ['census', 'declaredRows', 'limitation', 'state'], `${path}.importerDeclared`);
+  if (importerDeclared.limitation !== 'individuation-rule-not-operational') {
+    fail(`${path}.importerDeclared.limitation`, "must be exactly 'individuation-rule-not-operational'");
+  }
+  if (importerDeclared.state !== 'unresolved') {
+    fail(`${path}.importerDeclared.state`, "must be exactly 'unresolved'");
+  }
+  const census = expectRecord(importerDeclared.census, `${path}.importerDeclared.census`);
+  expectKeys(
+    census,
+    ['basis', 'candidateHits', 'falsePositiveHits', 'provenance', 'reference', 'state'],
+    `${path}.importerDeclared.census`,
+  );
+  if (census.basis !== 'single-artifact-cross-check') {
+    fail(`${path}.importerDeclared.census.basis`, "must be exactly 'single-artifact-cross-check'");
+  }
+  if (census.provenance !== 'single-author') {
+    fail(`${path}.importerDeclared.census.provenance`, "must be exactly 'single-author'");
+  }
+  if (census.state !== 'provisional') {
+    fail(`${path}.importerDeclared.census.state`, "must be exactly 'provisional'");
+  }
+  const candidateHits = expectInteger(census.candidateHits, `${path}.importerDeclared.census.candidateHits`, 0);
+  const falsePositiveHits = expectInteger(
+    census.falsePositiveHits,
+    `${path}.importerDeclared.census.falsePositiveHits`,
+    0,
+  );
+  if (falsePositiveHits > candidateHits) {
+    fail(`${path}.importerDeclared.census.falsePositiveHits`, 'cannot exceed candidateHits');
+  }
+  const swfFormat = expectRecord(denominators.swfFormat, `${path}.swfFormat`);
+  expectKeys(swfFormat, ['state'], `${path}.swfFormat`);
+  if (swfFormat.state !== 'unmeasured') {
+    fail(`${path}.swfFormat.state`, "must be exactly 'unmeasured'");
+  }
+  return {
+    importerDeclared: {
+      census: {
+        basis: census.basis,
+        candidateHits,
+        falsePositiveHits,
+        provenance: census.provenance,
+        reference: expectNonemptyString(census.reference, `${path}.importerDeclared.census.reference`),
+        state: census.state,
+      },
+      declaredRows: expectInteger(importerDeclared.declaredRows, `${path}.importerDeclared.declaredRows`, 0),
+      limitation: importerDeclared.limitation,
+      state: importerDeclared.state,
+    },
+    swfFormat: { state: swfFormat.state },
   };
 }
 
@@ -988,6 +1108,13 @@ function assertSummaryMatches(
     (capability) => capability.instrumentation.staysSilent.state === 'referenced',
   );
   const expected: ImportConformanceSummary = {
+    denominators: {
+      ...summary.denominators,
+      importerDeclared: {
+        ...summary.denominators.importerDeclared,
+        declaredRows: capabilities.length,
+      },
+    },
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferenced(fireReferenced, 'fire'),
@@ -1014,9 +1141,12 @@ function assertSummaryMatches(
         (capability) => capability.instrumentation.staysSilent.state === 'referenced',
       ).length,
     },
-    totalCapabilities: capabilities.length,
   };
-  assertSummaryNumber(summary.totalCapabilities, expected.totalCapabilities, `${path}.totalCapabilities`);
+  assertSummaryNumber(
+    summary.denominators.importerDeclared.declaredRows,
+    expected.denominators.importerDeclared.declaredRows,
+    `${path}.denominators.importerDeclared.declaredRows`,
+  );
   assertSummaryNumber(
     summary.exercised.capabilities,
     expected.exercised.capabilities,

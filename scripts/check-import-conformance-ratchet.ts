@@ -11,6 +11,7 @@ import type {
   ImportConformanceExercisedCapability,
   ImportConformanceLaneResult,
   ImportConformanceMeasuredPack,
+  ImportConformanceOracleAssurance,
   ImportConformanceScore,
   ImportConformanceUnknownObservation,
 } from './import-conformance-score';
@@ -187,9 +188,9 @@ export function formatImportConformanceRatchetReport(report: Readonly<ImportConf
   for (const pack of report.packs) {
     lines.push('', `  ${stateMark(pack.state)} ${pc.bold(pack.id)} ${stateLabel(pack.state)}`);
     if (pack.baseline !== null && pack.current !== null) {
-      lines.push(`    ${formatScoreNumbers(pack.baseline, pack.current)}`);
+      lines.push(`    ${formatScoreNumbers(pack.baseline, pack.current, report.current.oracleAssurance)}`);
     } else if (pack.current !== null) {
-      lines.push(`    ${formatScoreNumbers(null, pack.current)}`);
+      lines.push(`    ${formatScoreNumbers(null, pack.current, report.current.oracleAssurance)}`);
     }
     for (const entry of pack.findings) {
       const capability = entry.capabilityId === null ? '' : ` [${entry.capabilityId}]`;
@@ -239,6 +240,14 @@ function comparePackIdentity(
   if (baseline.variant !== current.variant) {
     findings.push(
       finding('fixture-variant-changed', `fixture variant changed from '${baseline.variant}' to '${current.variant}'`),
+    );
+  }
+  if (baseline.capabilityConventionRevision !== current.capabilityConventionRevision) {
+    findings.push(
+      finding(
+        'capability-convention-changed',
+        `capability convention revision changed from '${baseline.capabilityConventionRevision}' to '${current.capabilityConventionRevision}'`,
+      ),
     );
   }
   const baselineCapabilities = baseline.capabilities.map((capability) => capability.id);
@@ -574,11 +583,12 @@ function finding(code: string, detail: string, capabilityId: string | null = nul
 function formatScoreNumbers(
   baseline: Readonly<ImportConformanceMeasuredPack> | null,
   current: Readonly<ImportConformanceMeasuredPack>,
+  oracleAssurance: Readonly<ImportConformanceOracleAssurance>,
 ): string {
   const currentSummary = current.summary;
   const currentNumbers = {
     diagnosticChannels: formatDiagnosticChannels(current),
-    exercised: `${currentSummary.exercised.capabilities}/${currentSummary.totalCapabilities} ${formatExercisedMembers(current)}`,
+    exercised: formatExercisedDenominator(current, oracleAssurance),
     configurationLimits: formatConfigurationLimits(current),
     fireProofReferenced: `${currentSummary.proofReferenced.fireCapabilities} ${formatProofReferences(current, 'fires')}`,
     fireProofReferencedAndExercised: `${currentSummary.exercised.fireReferenced.capabilities} ${formatProofReferences(current, 'fires', true)}`,
@@ -597,7 +607,7 @@ function formatScoreNumbers(
   }
   const baselineSummary = baseline.summary;
   return [
-    `exercised ${baselineSummary.exercised.capabilities}/${baselineSummary.totalCapabilities} ${formatExercisedMembers(baseline)} → ${currentNumbers.exercised}`,
+    `exercised ${formatExercisedDenominator(baseline, oracleAssurance)} → ${currentNumbers.exercised}`,
     `configuration limits ${formatConfigurationLimits(baseline)} → ${currentNumbers.configurationLimits}`,
     `diagnostic channels ${formatDiagnosticChannels(baseline)} → ${currentNumbers.diagnosticChannels}`,
     `loss-path audit ${formatLossPathPopulation(baseline)} → ${currentNumbers.lossPathAudit}`,
@@ -633,7 +643,16 @@ function formatExercisedMembers(pack: Readonly<ImportConformanceMeasuredPack>): 
   const exercised = pack.capabilities
     .filter((capability) => capability.state === 'exercised')
     .map((capability) => capability.id);
-  return `[exercised: ${exercised.join(', ')}; total: ${pack.capabilities.map((capability) => capability.id).join(', ')}]`;
+  return `[exercised: ${exercised.join(', ')}; importer-declared: ${pack.capabilities.map((capability) => capability.id).join(', ')}]`;
+}
+
+function formatExercisedDenominator(
+  pack: Readonly<ImportConformanceMeasuredPack>,
+  oracleAssurance: Readonly<ImportConformanceOracleAssurance>,
+): string {
+  const denominator = pack.summary.denominators.importerDeclared;
+  const census = denominator.census;
+  return `importer-declared capability rows ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; declared capability row tally ${denominator.declaredRows}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} (${census.falsePositiveHits} false positives in ${census.candidateHits} candidate hits; single author); SWF-format capability denominator UNMEASURED; ratchet honest limit ${oracleAssurance.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracleAssurance.formatDerivedProperties}`;
 }
 
 function formatConfigurationLimits(pack: Readonly<ImportConformanceMeasuredPack>): string {
@@ -712,7 +731,7 @@ function formatUnknownObservations(pack: Readonly<ImportConformanceMeasuredPack>
       .filter((observation) => observation.reason === reason)
       .map((observation) =>
         observation.reason === 'loss-path-known-not-wired'
-          ? `${observation.capabilityId}@${observation.reference}/${observation.granularity}`
+          ? `${observation.capabilityId}@${observation.reference}/${observation.contentFidelity}`
           : `${observation.capabilityId}@${observation.reference}`,
       );
     const scope = isCapabilityScopedUnknownReason(reason) ? 'capability-scoped' : 'file-scoped';

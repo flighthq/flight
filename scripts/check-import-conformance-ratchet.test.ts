@@ -358,6 +358,21 @@ describe('compareImportConformanceScores', () => {
     expect(report.packs[0].findings[0].code).toBe('fixture-variant-changed');
   });
 
+  it('treats a capability convention revision as a third axis of incomparability', () => {
+    const report = compareImportConformanceScores(
+      score(measuredPack(), '100'),
+      score(measuredPack(undefined, { capabilityConventionRevision: 'unresolved-individuation-v2' }), '101'),
+    );
+
+    expect(report.state).toBe('incomparable');
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: null,
+      code: 'capability-convention-changed',
+      detail:
+        "capability convention revision changed from 'unresolved-individuation-v1' to 'unresolved-individuation-v2'",
+    });
+  });
+
   // Defeating condition 4: one dead shard makes the whole pack NOT RUN. The completed capability below
   // looks perfect on purpose; its partial aggregate is structurally unreachable from the formatter.
   it('reports a DEAD SHARD as whole-pack NOT RUN and never formats its partial denominator', () => {
@@ -450,8 +465,18 @@ describe('formatImportConformanceRatchetReport', () => {
     const output = formatImportConformanceRatchetReport(report);
 
     expect(output).toContain(
-      'exercised 1/2 [exercised: alpha; total: alpha, beta] → 1/2 [exercised: alpha; total: alpha, beta]',
+      'exercised importer-declared capability rows 1 [exercised: alpha; importer-declared: alpha, beta]; declared capability row tally 2',
     );
+    expect(output).toContain(
+      'importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check capabilities.json-vs-tag-coverage.md (2 false positives in 4 candidate hits; single author)',
+    );
+    expect(output).not.toContain('1 of 2');
+    expect(output).not.toContain('exercised exercised');
+    expect(output).toContain('SWF-format capability denominator UNMEASURED');
+    expect(output).toContain(
+      'ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles required-not-implemented',
+    );
+    expect(output).not.toContain('total:');
     expect(output).toContain(
       'loss-path audit partial; audited 1 [alpha@audit:loss-path-v1 by audit-team at 2026-08-07T00:00:00.000Z subject sha256:subject:alpha: identified]; can-silently-lose 1; audited-none 0; unaudited 1 [beta]',
     );
@@ -508,7 +533,7 @@ describe('parseImportConformanceScore', () => {
     delete missingProvenance.provenance;
 
     expect(() => parseImportConformanceScore(missingProvenance, 'baseline')).toThrow(
-      'must contain exactly: instrumentAssurance, packs, provenance, schemaVersion',
+      'must contain exactly: instrumentAssurance, oracleAssurance, packs, provenance, schemaVersion',
     );
   });
 
@@ -527,6 +552,23 @@ describe('parseImportConformanceScore', () => {
     });
     expect(() => parseImportConformanceScore(falsePayloadAssurance)).toThrow(
       "instrumentAssurance.payloadValidity: must be exactly 'external-audit-required'",
+    );
+  });
+
+  it('states that a recorded-run ratchet cannot detect first-capture defects and names the missing oracle class', () => {
+    const parsed = parseImportConformanceScore(score(measuredPack(), '100'));
+    const falseAssurance = score(measuredPack(), '100') as unknown as {
+      oracleAssurance: { formatDerivedProperties: string };
+    };
+    falseAssurance.oracleAssurance.formatDerivedProperties = 'hash-baseline';
+
+    expect(parsed.oracleAssurance).toEqual({
+      firstCaptureDefects: 'undetectable',
+      formatDerivedProperties: 'required-not-implemented',
+      ratchet: 'recorded-run-regression-only',
+    });
+    expect(() => parseImportConformanceScore(falseAssurance)).toThrow(
+      "oracleAssurance.formatDerivedProperties: must be exactly 'required-not-implemented'",
     );
   });
 
@@ -571,6 +613,35 @@ describe('parseImportConformanceScore', () => {
     instrumentAuditCount.summary.instrumentAudited.scopeCapabilities = 2;
     expect(() => parseImportConformanceScore(score(instrumentAuditCount, '100'))).toThrow(
       'instrumentAudited.scopeCapabilities: must equal the capability rows (1)',
+    );
+
+    const declaredRows = measuredPack();
+    declaredRows.summary.denominators.importerDeclared.declaredRows = 82;
+    expect(() => parseImportConformanceScore(score(declaredRows, '100'))).toThrow(
+      'denominators.importerDeclared.declaredRows: must equal the capability rows (2)',
+    );
+  });
+
+  it('states both absent denominators instead of turning the provisional row tally into a ratio', () => {
+    const pack = measuredPack() as unknown as {
+      summary: {
+        denominators: {
+          importerDeclared: { state: string };
+          swfFormat: { state: string };
+        };
+      };
+    };
+    pack.summary.denominators.importerDeclared.state = 'defined';
+    const formatDefined = measuredPack() as unknown as {
+      summary: { denominators: { swfFormat: { state: string } } };
+    };
+    formatDefined.summary.denominators.swfFormat.state = 'measured';
+
+    expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
+      "denominators.importerDeclared.state: must be exactly 'unresolved'",
+    );
+    expect(() => parseImportConformanceScore(score(formatDefined as never, '100'))).toThrow(
+      "denominators.swfFormat.state: must be exactly 'unmeasured'",
     );
   });
 
@@ -690,6 +761,14 @@ describe('parseImportConformanceScore', () => {
     expect(parsed.packs[0]).toMatchObject({
       state: 'measured',
       summary: {
+        denominators: {
+          importerDeclared: {
+            declaredRows: 2,
+            limitation: 'individuation-rule-not-operational',
+            state: 'unresolved',
+          },
+          swfFormat: { state: 'unmeasured' },
+        },
         exercised: {
           capabilities: 2,
           fireReferenced: {
@@ -702,7 +781,6 @@ describe('parseImportConformanceScore', () => {
           },
           singleWitnessCapabilities: 1,
         },
-        totalCapabilities: 2,
       },
     });
   });
@@ -719,7 +797,7 @@ describe('parseImportConformanceScore', () => {
     const noWitness = measuredPack([unknownCapability('alpha', 0)]);
 
     expect(() => parseImportConformanceScore(score(flat as never, '100'))).toThrow(
-      'summary: must contain exactly: exercised, instrumentAudited, lossPathPopulation, proofReferenced, totalCapabilities',
+      'summary: must contain exactly: denominators, exercised, instrumentAudited, lossPathPopulation, proofReferenced',
     );
     expect(() => parseImportConformanceScore(score(noWitness, '100'))).toThrow(
       'witnesses: must be an integer greater than or equal to 1',
@@ -826,7 +904,7 @@ describe('parseImportConformanceScore', () => {
     });
     const wrongReason = fireOnlyUnknownCrumb('alpha');
     wrongReason.unknownObservations[0].reason = 'loss-path-known-not-wired';
-    (wrongReason.unknownObservations[0] as unknown as Record<string, unknown>).granularity = 'whole-object';
+    (wrongReason.unknownObservations[0] as unknown as Record<string, unknown>).contentFidelity = 'missing';
     const collapsedReason = unknownCapability('alpha', 1) as unknown as {
       unknownObservations: Array<{ reason: string; reference: string }>;
     };
@@ -950,7 +1028,17 @@ describe('parseImportConformanceScore', () => {
           unknownObservations: [{ reason: 'loop-bounded-configuration-limit', reference: 'MAX_BUTTON_RECORDS' }],
         },
       ],
-      summary: { exercised: { capabilities: 2 }, totalCapabilities: 2 },
+      summary: {
+        denominators: {
+          importerDeclared: {
+            declaredRows: 2,
+            limitation: 'individuation-rule-not-operational',
+            state: 'unresolved',
+          },
+          swfFormat: { state: 'unmeasured' },
+        },
+        exercised: { capabilities: 2 },
+      },
     });
   });
 
@@ -964,40 +1052,45 @@ describe('parseImportConformanceScore', () => {
     });
 
     expect(formatImportConformanceRatchetReport(report)).toContain(
-      'known-unwired capability-scoped 1 [alpha@fixture:alpha:loss-family/whole-object], loss-path-unidentified capability-scoped 1 [beta@fixture:beta:loss-path-audit]',
+      'known-unwired capability-scoped 1 [alpha@fixture:alpha:loss-family/missing], loss-path-unidentified capability-scoped 1 [beta@fixture:beta:loss-path-audit]',
     );
   });
 
-  it('requires loss granularity only for characterized unwired families and permits both axes on one capability', () => {
-    const both = unknownCapability('morph', 2, 'loss-path-known-not-wired');
-    both.unknownObservations = [
+  it('requires content fidelity only for characterized unwired families and permits all cells on one capability', () => {
+    const allCells = unknownCapability('alpha', 2, 'loss-path-known-not-wired');
+    allCells.unknownObservations = [
       {
-        granularity: 'partial-object',
+        contentFidelity: 'missing',
         reason: 'loss-path-known-not-wired',
-        reference: 'swfMorphShape:single-path-pair',
+        reference: 'loss-family:a-missing',
       },
       {
-        granularity: 'whole-object',
+        contentFidelity: 'diminished',
         reason: 'loss-path-known-not-wired',
-        reference: 'swfMorphShape:whole-morph',
+        reference: 'loss-family:b-diminished',
+      },
+      {
+        contentFidelity: 'substituted',
+        reason: 'loss-path-known-not-wired',
+        reference: 'loss-family:c-substituted',
       },
     ];
-    const missingGranularity = structuredClone(both) as unknown as {
+    const missingFidelity = structuredClone(allCells) as unknown as {
       unknownObservations: Array<Record<string, unknown>>;
     };
-    delete missingGranularity.unknownObservations[0].granularity;
-    const fabricatedGranularity = fireOnlyUnknownCrumb('alpha') as unknown as {
+    delete missingFidelity.unknownObservations[0].contentFidelity;
+    const fabricatedFidelity = fireOnlyUnknownCrumb('alpha') as unknown as {
       unknownObservations: Array<Record<string, unknown>>;
     };
-    fabricatedGranularity.unknownObservations[0].granularity = 'partial-object';
+    fabricatedFidelity.unknownObservations[0].contentFidelity = 'diminished';
 
-    expect(parseImportConformanceScore(score(measuredPack([both]), '100')).packs[0]).toMatchObject({
-      capabilities: [{ unknownObservations: both.unknownObservations }],
+    expect(parseImportConformanceScore(score(measuredPack([allCells]), '100')).packs[0]).toMatchObject({
+      capabilities: [{ unknownObservations: allCells.unknownObservations }],
     });
-    expect(() => parseImportConformanceScore(score(measuredPack([missingGranularity as never]), '100'))).toThrow(
-      'must contain exactly: granularity, reason, reference',
+    expect(() => parseImportConformanceScore(score(measuredPack([missingFidelity as never]), '100'))).toThrow(
+      'must contain exactly: contentFidelity, reason, reference',
     );
-    expect(() => parseImportConformanceScore(score(measuredPack([fabricatedGranularity as never]), '100'))).toThrow(
+    expect(() => parseImportConformanceScore(score(measuredPack([fabricatedFidelity as never]), '100'))).toThrow(
       'must contain exactly: reason, reference',
     );
   });
@@ -1006,7 +1099,7 @@ describe('parseImportConformanceScore', () => {
     const pack = { ...measuredPack(), outcomes: outcomes() };
 
     expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
-      'must contain exactly: capabilities, id, importerSourceHash, release, sharding, state, summary, variant',
+      'must contain exactly: capabilities, capabilityConventionRevision, id, importerSourceHash, release, sharding, state, summary, variant',
     );
   });
 
@@ -1192,6 +1285,7 @@ function measuredPack(
   const auditedNone = auditable.filter((capability) => capability.lossPath.state === 'audited-none');
   const unaudited = auditable.filter((capability) => capability.lossPath.state === 'unaudited');
   return {
+    capabilityConventionRevision: 'unresolved-individuation-v1',
     capabilities,
     id: 'swf-ruffle-fixtures',
     importerSourceHash: 'sha256:importer',
@@ -1206,6 +1300,22 @@ function measuredPack(
     },
     state: 'measured',
     summary: {
+      denominators: {
+        importerDeclared: {
+          census: {
+            basis: 'single-artifact-cross-check',
+            candidateHits: 4,
+            falsePositiveHits: 2,
+            provenance: 'single-author',
+            reference: 'capabilities.json-vs-tag-coverage.md',
+            state: 'provisional',
+          },
+          declaredRows: capabilities.length,
+          limitation: 'individuation-rule-not-operational',
+          state: 'unresolved',
+        },
+        swfFormat: { state: 'unmeasured' },
+      },
       exercised: {
         capabilities: measured.length,
         fireReferenced: referencedSummary(fireReferenced, 'fire'),
@@ -1231,7 +1341,6 @@ function measuredPack(
           (capability) => capability.instrumentation.staysSilent.state === 'referenced',
         ).length,
       },
-      totalCapabilities: capabilities.length,
     },
     variant: 'without-licenses',
     ...overrides,
@@ -1249,6 +1358,11 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
       triggerCorrectness: 'proof-reference-presence',
       triggerScope: 'external-audit-required',
       triggerSpecificity: 'proof-reference-presence',
+    },
+    oracleAssurance: {
+      firstCaptureDefects: 'undetectable',
+      formatDerivedProperties: 'required-not-implemented',
+      ratchet: 'recorded-run-regression-only',
     },
     packs: pack === null ? [] : [pack],
     provenance: { mode: 'exhaustive', runId, runUrl: `https://ci.invalid/runs/${runId}` },
@@ -1331,7 +1445,7 @@ function unknownCapability(
       reason === 'loss-path-known-not-wired'
         ? [
             {
-              granularity: 'whole-object',
+              contentFidelity: 'missing',
               reason,
               reference: `fixture:${id}:loss-family`,
             },
