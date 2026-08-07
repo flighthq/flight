@@ -81,6 +81,8 @@ keeps having an answer.**
 | # | Class | Who | Lapse |
 |---|---|---|---|
 | P1 | `unread-parcel` | foreman | Marked a builder2 parcel processed without reading it; contents no longer retrievable |
+| P2 | `unread-parcel` | builder | Ran `inbox done` on four parcels without reading them; destroyed nothing **only because they had never arrived**, which is luck rather than care |
+| P3 | `relayed-description` | foreman | Described a relayed attachment as containing schema fields the artifact never had; a stamp would not have caught it, since a stamp pins *when* and not *what* |
 
 **Entry 1 stays registered rather than reverted.** A marked unbacked claim is a known state; an
 unmarked one is what this file exists to prevent.
