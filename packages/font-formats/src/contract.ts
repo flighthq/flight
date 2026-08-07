@@ -24,3 +24,4 @@ export { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory';
 export { readWoffFont, WOFF_COMPRESSION } from './woffFont';
 export { assembleSfntFont, packSfntTag } from './sfntAssembly';
 export { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
+export { readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
