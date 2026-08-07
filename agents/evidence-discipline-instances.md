@@ -57,6 +57,29 @@ reader can tell strength apart without trusting the author's formatting:
   your likely error converts an unchecked claim into a checked wrong one.** **Verify membership
   against the store, never size against memory.**
 
+- **filed — A METRIC THAT IMPROVES BECAUSE THE REMEDY TARGETED THE CONSEQUENCE RATHER THAN THE CAUSE
+  WILL READ AS THE CAUSE IMPROVING.** A cost-per-instance fell sharply while the instance RATE stayed
+  flat; **the remedy had made the reader's exit cheap and left the sender's habit untouched.** ⇒
+  **Nothing in the number says which half moved**, and the improving direction is the one nobody
+  interrogates. ★ **Report the rate beside the cost, or the measurement credits the wrong party.**
+
+- **filed — An ABSENCE OF A MARKER is not evidence of the property.** A search for *retired*,
+  *deprecated*, *legacy*, *alternate*, *obsolete* and *removed* found nothing in a type table, **and
+  the author reported that as an absence of a marker rather than as proof of liveness.** ⇒ **The
+  vocabulary was theirs, not the format's** — the semantic-sweep limit, applied to their own null
+  result rather than to someone else's.
+
+- **filed — "Absent BY DESIGN" is a stronger negative than "absent", and it closes rather than
+  defers.** A liveness marker was missing from a property table **because the parser only needs a
+  key's WIDTH to traverse, and a retired key has the same width as its replacement** ⇒ **so liveness
+  is information the reader never had a reason to carry.** ★ **A no with a mechanism is COMPLETE; a no
+  without one is pending** — and only the mechanism tells you which you have.
+
+- **filed — A leaf-only census counts the sharers and misses the shared thing.** Where capability
+  plausibly lives at an INTERIOR node of an inheritance graph, **enumerating leaves is independent by
+  construction and still the wrong unit** ⇒ **which is why independence was named NECESSARY AND NOT
+  SUFFICIENT before the search ran, not after it succeeded.**
+
 - **filed — TWO DISQUALIFICATIONS THAT SHARE A CAUSE ARE A CRITERION; TWO SEPARATE CAUSES WOULD ONLY
   HAVE BEEN A LIST.** Two candidate units failed differently on the surface — one enumeration counted
   entries that inherit eight levels deep, the other counted retired alternates still present in the
