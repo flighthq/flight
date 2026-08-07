@@ -12,6 +12,11 @@ export type Decompressor = (compressed: Readonly<Uint8Array>, uncompressedLength
 // read. `Deflate` covers both the raw RFC 1951 stream and the RFC 1950 zlib wrapper around it, which is
 // the pair every real container mixes.
 export const Compression = {
+  // No Brotli implementation ships with Flight, deliberately. The decoder needs a large static
+  // dictionary that is data rather than rules, so a caller registers a decompressor they already have —
+  // Node's `zlib` carries one, and a browser needs an ordinary package because no browser API exposes
+  // one (measured on one engine; other engines untested). Naming the algorithm here is what lets them.
+  Brotli: 'brotli',
   Deflate: 'deflate',
   Lzma: 'lzma',
 } as const;
