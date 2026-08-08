@@ -14,6 +14,64 @@ import type { Woff2GlyfStreams } from '@flighthq/types/contract';
 
 const WOFF2_GLYF_HEADER_BYTES = 36;
 
+// One point's coordinate delta, decoded from the flag's low seven bits and the bytes that follow it in
+// the glyph stream. `used` is how many glyph-stream bytes this point consumed.
+//
+// The 128 codes partition as 10 + 10 + 64 + 36 + 4 + 4, and each block fixes a byte count, a bit width
+// per axis, a base to add to the raw value, and a sign pair. Those are interface facts about the
+// format — what a published format exists to state — and the decoding below is Flight's own.
+//
+// ★ TWO DETAILS THAT A PLAUSIBLE-LOOKING GUESS GETS WRONG, AND NEITHER FAILS LOUDLY:
+//   1. WITHIN EVERY FOUR-CODE GROUP THE ORDER IS (-,-) (+,-) (-,+) (+,+) — so bit 0 of the group index
+//      is the X sign and bit 1 is the Y sign. Swapping them MIRRORS every diagonal delta, and a
+//      mirrored glyph is still a glyph.
+//   2. THE 12-BIT AND 16-BIT BLOCKS ADD NO BASE. The 4-bit and 8-bit blocks add 1, 17, 33, 49 and
+//      1, 257, 513 respectively; the two widest add nothing. An off-by-one there shifts only the
+//      largest deltas, so most glyphs still look right.
+export function decodeWoff2Triplet(
+  code: number,
+  glyphStream: Readonly<Uint8Array>,
+  at: number,
+): { dx: number; dy: number; used: number } | null {
+  const used = code < 84 ? 1 : code < 120 ? 2 : code < 124 ? 3 : 4;
+  if (at + used > glyphStream.byteLength) return null;
+  const b0 = glyphStream[at]!;
+  const b1 = glyphStream[at + 1] ?? 0;
+  const b2 = glyphStream[at + 2] ?? 0;
+  const b3 = glyphStream[at + 3] ?? 0;
+  const signX = (group: number): number => ((group & 1) !== 0 ? 1 : -1);
+  const signY = (group: number): number => ((group & 2) !== 0 ? 1 : -1);
+
+  if (code < 10) return { dx: 0, dy: ((code & 1) !== 0 ? 1 : -1) * ((code >> 1) * 256 + b0), used };
+  if (code < 20) {
+    const i = code - 10;
+    return { dx: ((i & 1) !== 0 ? 1 : -1) * ((i >> 1) * 256 + b0), dy: 0, used };
+  }
+  if (code < 84) {
+    // Four bits per axis packed into one byte, X in the high nibble.
+    const i = code - 20;
+    return {
+      dx: signX(i) * (1 + (i >> 4) * 16 + (b0 >> 4)),
+      dy: signY(i) * (1 + ((i >> 2) & 3) * 16 + (b0 & 15)),
+      used,
+    };
+  }
+  if (code < 120) {
+    const i = code - 84;
+    return {
+      dx: signX(i) * (1 + Math.floor(i / 12) * 256 + b0),
+      dy: signY(i) * (1 + Math.floor((i % 12) / 4) * 256 + b1),
+      used,
+    };
+  }
+  if (code < 124) {
+    const i = code - 120;
+    return { dx: signX(i) * ((b0 << 4) | (b1 >> 4)), dy: signY(i) * (((b1 & 15) << 8) | b2), used };
+  }
+  const i = code - 124;
+  return { dx: signX(i) * ((b0 << 8) | b1), dy: signY(i) * ((b2 << 8) | b3), used };
+}
+
 // Carves the seven sub-streams out of a transformed `glyf` table. Returns the null sentinel when the
 // declared sizes do not fit the table, rather than clamped streams: a stream that is short by a few bytes
 // still decodes into real-looking contour counts and coordinates, so a partial carve is the silent-
