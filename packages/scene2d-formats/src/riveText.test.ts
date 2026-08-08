@@ -1,12 +1,11 @@
 import { packColor } from '@flighthq/color/contract';
-import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
-import { RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
 import { createRiveRichText } from './riveText';
 
-// A run's styleId indexes the artboard's component numbering — the same space parentId uses. Against
-// the corpus that resolves all 150 runs, while resolving it against the styles in declaration order
-// resolves 4. Rive's TextAlign is left=0, right=1, center=2.
+// A run's styleId indexes the artboard's component numbering — the same space parentId uses — rather
+// than styles in declaration order. Rive's TextAlign is left=0, right=1, center=2.
 
 const TEXT = 134;
 const RUN = 135;
@@ -106,8 +105,8 @@ describe('createRiveRichText', () => {
     expect(label.data.textFormat?.color).toBe(packColor(0, 0, 0, 1));
   });
 
-  // 28 of 117 texts in the corpus have more than one run, and a run is the unit the file authored, so
-  // each one states its own span rather than the differing ones alone being recorded.
+  // A run is the unit the file authored, so each one states its own span rather than the differing
+  // ones alone being recorded.
   it('gives every run a format range over the span it occupies in the joined string', () => {
     const label = build([object(TEXT, {}), run('one ', -1), run('two ', -1), run('three', -1)], [-1, 0, 0, 0]);
 
@@ -164,6 +163,29 @@ describe('createRiveRichText', () => {
     );
 
     expect(label.data.textFormat?.font).toBeUndefined();
+  });
+
+  it('reports a run style that cannot be resolved', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const label = build([object(TEXT, {}), run('x', 7)], [-1, 0], [], diagnostics);
+
+    expect(label.data.textFormat?.color).toBe(packColor(0, 0, 0, 1));
+    expect(diagnostics).toEqual([
+      {
+        detail: { styleIndex: 7 },
+        kind: 'rive.text-unresolved-style',
+        origin: 'createScene2DFromRiveDocument',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
+  });
+
+  it('stays silent for resolved and absent run styles', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    build([object(TEXT, {}), run('resolved', 2), object(STYLE_PAINT, {})], [-1, 0, 0], [], diagnostics);
+    build([object(TEXT, {}), run('absent', -1)], [-1, 0], [], diagnostics);
+
+    expect(diagnostics).toEqual([]);
   });
 
   // A TextStyleAxis is a child component of the style, and Rive packs the OpenType tag into a uint
@@ -236,14 +258,19 @@ describe('createRiveRichText', () => {
   });
 });
 
-function build(objects: RiveCoreObject[], parents: number[], fontNames: readonly string[] = []) {
+function build(
+  objects: RiveCoreObject[],
+  parents: number[],
+  fontNames: readonly string[] = [],
+  diagnostics?: ImportDiagnostic[],
+) {
   const artboard: RiveArtboardGraph = {
     objects,
     parentIndices: parents,
     streamEnd: objects.length,
     streamStart: 0,
   };
-  return createRiveRichText(artboard, 0, fontNames);
+  return createRiveRichText(artboard, 0, fontNames, diagnostics);
 }
 
 function run(text: string, styleId: number): RiveCoreObject {

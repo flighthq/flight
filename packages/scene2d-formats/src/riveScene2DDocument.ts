@@ -1,4 +1,5 @@
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
@@ -13,6 +14,7 @@ import type {
   Scene2DSlotReference,
   Texture,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
@@ -59,12 +61,18 @@ function collectRiveSlots(
   }
 }
 
-function createRiveImageResources(imported: Readonly<RiveDocumentImportResult>): ImageResourceReference[] {
+function createRiveImageResources(
+  imported: Readonly<RiveDocumentImportResult>,
+  diagnostics: ImportDiagnostic[] | undefined,
+): ImageResourceReference[] {
   const references: ImageResourceReference[] = [];
   for (let index = 0; index < imported.assets.length; index++) {
     const asset = imported.assets[index];
     if (asset.kind !== RIVE_IMAGE_ASSET_KIND || asset.bytes === null) continue;
-    const reference = createEmbeddedImageResourceReference(asset.bytes, toRiveMimeType(asset.bytes));
+    const reference = createEmbeddedImageResourceReference(
+      asset.bytes,
+      toRiveMimeType(asset.bytes, index, diagnostics),
+    );
     reference.textures = collectRiveTexturesForAsset(imported, index);
     references.push(reference);
   }
@@ -107,7 +115,7 @@ export function createScene2DDocumentFromRiveDocument(
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
   return {
-    imageResources: createRiveImageResources(imported),
+    imageResources: createRiveImageResources(imported, diagnostics),
     imported,
     root,
     slots: createRiveSlots(imported.artboards),
@@ -123,10 +131,21 @@ export function markRiveNestedArtboard(node: Node2D, artboardIndex: number): voi
 }
 
 // Detected from the payload rather than trusted from a name, since Rive states no mime type.
-function toRiveMimeType(bytes: Readonly<Uint8Array>): string | null {
+function toRiveMimeType(
+  bytes: Readonly<Uint8Array>,
+  assetIndex: number,
+  diagnostics: ImportDiagnostic[] | undefined,
+): string | null {
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
   if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return 'image/webp';
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Drop,
+    'rive.image-mime-type-undetected',
+    'createScene2DDocumentFromRiveDocument',
+    { assetIndex },
+  );
   return null;
 }
 

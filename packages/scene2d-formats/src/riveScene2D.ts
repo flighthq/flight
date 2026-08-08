@@ -99,7 +99,7 @@ function createRiveArtboardImport(
       nodes.push(null);
       continue;
     }
-    const node = createRiveDisplayNode(object, artboard, index, fontNames);
+    const node = createRiveDisplayNode(object, artboard, index, fontNames, diagnostics);
     applyRiveTransform(node, object);
     applyRiveBlendMode(node, object, advancedBlends);
     nodes.push(node);
@@ -121,7 +121,7 @@ function createRiveArtboardImport(
     rebuilds.set(shapeIndex, rebuild);
     // The stored closure and the first build are the same work but not the same call: only this one
     // carries the sink. The closure runs again per animated frame, so passing it there would report
-    // the same substituted cap once per frame and inflate the counts underneath any score.
+    // the same substituted cap every time the shape rebuilds instead of once at import.
     rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, diagnostics);
   }
 
@@ -143,10 +143,11 @@ function createRiveDisplayNode(
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
   fontNames: readonly string[],
+  diagnostics: ImportDiagnostic[] | undefined,
 ): DisplayObject {
   const name = readRiveText(object, RIVE_NAME, '');
   if (object.typeKey === RIVE_TEXT_TYPE_KEY) {
-    const label = createRiveRichText(artboard, index, fontNames);
+    const label = createRiveRichText(artboard, index, fontNames, diagnostics);
     label.name = name;
     return label;
   }
@@ -177,7 +178,7 @@ function rebuildRiveShape(
   for (const pathIndex of shapePaths.get(shapeIndex)?.map((record) => record.pathIndex) ?? []) {
     // No sink here on purpose. This regenerates a shape from current property values on update, so it
     // runs again per animated frame — passing the sink would report the same unsupported path once per
-    // rebuild and inflate the counts underneath any score. The import-time call above carries it.
+    // rebuild. The import-time call above carries it.
     const record = createRivePathRecord(artboard, pathIndex, undefined);
     if (record !== null) records.push(record);
   }
@@ -192,8 +193,7 @@ function collectRivePathGeometry(
   index: number,
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
-  // A path belongs to a shape — every one of the 3,776 paths in the reference corpus is a shape's
-  // direct child — so this is a malformed file rather than a shape of the format. It still crumbs
+  // A Rive path belongs to a shape, so a path with no shape ancestor is malformed. It still crumbs
   // instead of vanishing, because the geometry would otherwise leave no trace.
   const owner = findRiveShapeOwner(artboard, index);
   if (owner < 0) {

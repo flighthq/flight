@@ -1,6 +1,6 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
-import { ResourceResolutionState, SpriteKind } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, ResourceResolutionState, SpriteKind } from '@flighthq/types/contract';
 
 import {
   createRiveImageSprite,
@@ -75,6 +75,38 @@ describe('createScene2DDocumentFromRiveDocument', () => {
     )!;
 
     expect(result.imageResources[0].mimeType).toBe('image/webp');
+  });
+
+  it('reports an embedded image whose mime type cannot be detected', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = createScene2DDocumentFromRiveDocument(
+      buildRive([
+        object(IMAGE_ASSET, []),
+        object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, [1, 2, 3, 4])]),
+        artboard('Board'),
+      ]),
+      diagnostics,
+    )!;
+
+    expect(result.imageResources[0].mimeType).toBeNull();
+    expect(diagnostics).toEqual([
+      {
+        detail: { assetIndex: 0 },
+        kind: 'rive.image-mime-type-undetected',
+        origin: 'createScene2DDocumentFromRiveDocument',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
+  });
+
+  it('stays silent for an embedded image whose mime type is detected', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DDocumentFromRiveDocument(
+      buildRive([object(IMAGE_ASSET, []), object(FILE_ASSET_CONTENTS, [bytes(ASSET_BYTES, PNG)]), artboard('Board')]),
+      diagnostics,
+    );
+
+    expect(diagnostics).toEqual([]);
   });
 
   it('lists every texture waiting on an asset, so one decode binds them all', () => {
