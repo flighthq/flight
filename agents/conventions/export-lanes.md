@@ -122,6 +122,68 @@ no _named_ SDK export leaks a contract symbol; transitive references from a publ
 `registerRenderer` call passes a pre-built renderer object; only the runner harness names the
 type.
 
+## Foreign host APIs: Flight authors the seam, not the implementation
+
+A **foreign host** is a runtime Flight targets but does not ship: Electron, Tauri, Capacitor
+today; Cairo and Lime next. Flight describes each one's API in `@flighthq/types` as a minimal
+structural interface, and takes **no dependency** on the thing described. `ElectronApi.ts`,
+`TauriApi.ts`, and `CapacitorApi.ts` are the template — the real module satisfies the interface
+structurally, so a consumer passes it straight in (`registerElectronBackends(electron)`).
+
+Three properties fall out, and they are the reason for the shape:
+
+- **`@flighthq/types` stays dependency-free.** The header layer never installs a host to
+  describe one.
+- **The seam is the coupling, written down.** `ElectronApi` states exactly which slice of
+  Electron Flight requires — the thing that is otherwise only discoverable by reading every
+  backend. Members are intentionally minimal; widen only when a backend needs more.
+- **Backends stay unit-testable with a fake**, because the seam is an ordinary interface.
+
+The implementation may live outside this repo. Flight owning the seam is what makes that
+possible: `render-cairo` is built in `flight-hx`, but `CairoRenderState` belongs here, next to
+the four backend state types that already live in `@flighthq/types`. Cells for out-of-repo
+packages carry `spunOut:` front matter and are never scaffolded locally (see
+[`agents/packages/index.md`](../packages/index.md)).
+
+### Web standards are not foreign — do not author seams for them
+
+`HTMLCanvasElement`, `CanvasRenderingContext2D`, `WebGL2RenderingContext`, `OffscreenCanvas`,
+`fetch`, `navigator`: all supplied by TypeScript's own `lib.dom.d.ts`, with no dependency and
+nothing to declare. Browser APIs are the compiler's job, not a seam.
+
+`@webgpu/types` is the **only** browser-API type package in the tree, and only because WebGPU
+has not landed in `lib.dom.d.ts` yet. It is therefore a pinned `peerDependency` on the packages
+whose published types name `GPU*`, **not** a hand-authored seam. Authoring one would be actively
+harmful: a locally-declared `GPUTextureFormat` silently *shadows* the built-in rather than
+colliding with it — TypeScript reports no duplicate-identifier error — so the day WebGPU reaches
+`lib.dom.d.ts`, every narrower local declaration starts producing confusing assignability errors
+far from their cause. When that day comes, drop the peer entry and the `tsconfig.base.json`
+`types` entry; nothing else changes.
+
+The line: **author a seam for what TypeScript will never know about; take a pinned peer
+dependency for a web standard that has merely arrived early.**
+
+### Authored from the specification, never transcribed
+
+A seam is written from the published specification with the other party's definition file
+closed. Copying a `.d.ts` and reformatting it produces a nearly identical result by a
+categorically different route, and nothing in a diff distinguishes the two — so the rule has to
+be about the method, not the output. Interface facts (field names, enum values, key numbers) are
+what a published interface is *for*; a definition file is someone's authored artifact. See
+AGENTS.md § License Provenance.
+
+### Admission, and the drift it accepts
+
+A seam earns a place in `@flighthq/types` when **a chartered cell names the package that
+implements it**. That keeps the header layer from accumulating declarations for hypothetical
+hosts, and it gives the charter cells a job beyond documentation.
+
+Accept one known cost: a Flight-owned seam is **not verified against the thing it describes**.
+Nothing in this repo imports real `electron` — the `host-electron` tests run against fakes that
+satisfy `ElectronApi`, so if Electron renames a method, nothing here fails and the break surfaces
+in the host process. That trade is already made three times over and is the price of a
+dependency-free header. Conformance belongs downstream, in the repo where the real API exists.
+
 ## Where the public subset is highlighted — resolved
 
 The open question was: with `index` not literally re-exporting `contract`, where does a
