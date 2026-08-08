@@ -27,7 +27,7 @@ export const MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID = 'md5.tangent-split-differe
 export const MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID = 'md5.tangent-code-path-cross-check';
 
 export type Md5TangentOracleState = 'failed' | 'not-run' | 'passed';
-export type Md5TangentFrameOracleSelection = 'all' | 'handedness';
+export type Md5TangentFrameOracleSelection = 'all' | 'handedness' | 'split-difference';
 type Md5TangentFrameOracleCliSelection = Md5TangentFrameOracleSelection | 'handedness-control';
 export type Md5TangentHandednessXCorrelation =
   | 'indeterminate'
@@ -116,21 +116,33 @@ export interface Md5TangentHandednessSectionOracle extends TangentXCorrelationOr
 }
 
 export interface Md5TangentSplitPairMeasurement {
-  directionPrecisionBound: number;
+  directionChanged: boolean;
   directionResidual: number;
-  handednessChanged: boolean;
   originalVertex: number;
+  originalHandedness: number;
   section: number;
   splitVertex: number;
-  state: 'indistinguishable-at-format-precision' | 'meaningfully-different';
+  splitHandedness: number;
+  state: 'direction-only' | 'handedness-different' | 'handedness-indeterminate' | 'identical-frame';
 }
 
 export interface Md5TangentSplitDifferenceOracle {
+  candidateSplitVertices: number;
+  directionOnlyPairs: number;
+  emittedVertices: number;
+  handednessDifferentPairs: number;
+  handednessIndeterminatePairs: number;
+  handednessSamePairs: number;
   id: typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID;
-  indistinguishablePairs: number;
-  meaningfulPairs: number;
-  notRunReason?: 'source-topology-unreadable' | 'split-vertices-absent' | 'split-vertices-unmappable';
+  identicalFramePairs: number;
+  mappedSplitPairs: number;
+  notRunReason?:
+    | 'source-topology-unreadable'
+    | 'split-handedness-indeterminate'
+    | 'split-vertices-absent'
+    | 'split-vertices-unmappable';
   pairs: readonly Md5TangentSplitPairMeasurement[];
+  sourceVertices: number;
   state: Md5TangentOracleState;
 }
 
@@ -221,7 +233,9 @@ export function runMd5TangentFrameOracleCorpus(
       const oracles =
         selection === 'handedness'
           ? { handedness: measureMd5TangentHandedness(scene, source) }
-          : runMd5TangentFrameOracles(scene, source);
+          : selection === 'split-difference'
+            ? { splitDifference: measureMd5SplitTangentDifference(scene, source) }
+            : runMd5TangentFrameOracles(scene, source);
       return { oracles, reference, state: 'measured' };
     } catch {
       return { notRunReason: 'mesh-source-or-import-unreadable', reference, state: 'not-run' };
@@ -299,11 +313,11 @@ export function formatMd5TangentFrameOracleCorpusReport(report: Md5TangentFrameO
     }
     if (splitDifference !== undefined) {
       lines.push(
-        `  ${splitDifference.id} state=${splitDifference.state} pairs=${splitDifference.pairs.length} meaningful=${splitDifference.meaningfulPairs} indistinguishable=${splitDifference.indistinguishablePairs}${formatNotRunReason(splitDifference)}`,
+        `  ${splitDifference.id} state=${splitDifference.state} source-vertices=${splitDifference.sourceVertices} emitted-vertices=${splitDifference.emittedVertices} candidate-splits=${splitDifference.candidateSplitVertices} mapped-splits=${splitDifference.mappedSplitPairs} handedness-different=${splitDifference.handednessDifferentPairs} handedness-same=${splitDifference.handednessSamePairs} direction-only=${splitDifference.directionOnlyPairs} identical-frame=${splitDifference.identicalFramePairs} handedness-indeterminate=${splitDifference.handednessIndeterminatePairs}${formatNotRunReason(splitDifference)}`,
       );
       for (const pair of splitDifference.pairs) {
         lines.push(
-          `    split-pair section=${pair.section} original=${pair.originalVertex} split=${pair.splitVertex} state=${pair.state} reason=${splitPairReason(pair)} direction-residual=${pair.directionResidual} direction-precision-bound=${pair.directionPrecisionBound}`,
+          `    split-pair section=${pair.section} original=${pair.originalVertex} split=${pair.splitVertex} state=${pair.state} reason=${splitPairReason(pair)} original-handedness=${pair.originalHandedness} split-handedness=${pair.splitHandedness} direction-changed=${pair.directionChanged} direction-residual=${pair.directionResidual}`,
         );
       }
     }
@@ -791,16 +805,30 @@ export function measureMd5SplitTangentDifference(
   meshSource: string,
 ): Md5TangentSplitDifferenceOracle {
   const sections = resolveGeometrySections(scene, meshSource);
-  const base = {
+  const empty = {
+    candidateSplitVertices: 0,
+    directionOnlyPairs: 0,
+    emittedVertices: 0,
+    handednessDifferentPairs: 0,
+    handednessIndeterminatePairs: 0,
+    handednessSamePairs: 0,
     id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID as typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
-    indistinguishablePairs: 0,
-    meaningfulPairs: 0,
+    identicalFramePairs: 0,
+    mappedSplitPairs: 0,
     pairs: [] as Md5TangentSplitPairMeasurement[],
+    sourceVertices: 0,
   };
-  if (sections === null) return { ...base, notRunReason: 'source-topology-unreadable', state: 'not-run' };
+  if (sections === null) return { ...empty, notRunReason: 'source-topology-unreadable', state: 'not-run' };
 
-  let indistinguishablePairs = 0;
-  let meaningfulPairs = 0;
+  const sourceVertices = sections.reduce((count, section) => count + section.source.vertexCount, 0);
+  const emittedVertices = sections.reduce((count, section) => count + vertexCountOf(section.geometry), 0);
+  const candidateSplitVertices = emittedVertices - sourceVertices;
+  const base = { ...empty, candidateSplitVertices, emittedVertices, sourceVertices };
+  let directionOnlyPairs = 0;
+  let handednessDifferentPairs = 0;
+  let handednessIndeterminatePairs = 0;
+  let handednessSamePairs = 0;
+  let identicalFramePairs = 0;
   const pairs: Md5TangentSplitPairMeasurement[] = [];
   for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
     const section = sections[sectionIndex]!;
@@ -817,37 +845,35 @@ export function measureMd5SplitTangentDifference(
       const residuals = [0, 1, 2].map((component) =>
         Math.abs(geometry.vertices[originalBase + component]! - geometry.vertices[splitBase + component]!),
       );
-      const precisionBounds = [0, 1, 2].map(
-        (component) =>
-          float32RoundingRadius(geometry.vertices[originalBase + component]!) +
-          float32RoundingRadius(geometry.vertices[splitBase + component]!),
-      );
-      if (
-        residuals.some((value) => !Number.isFinite(value)) ||
-        precisionBounds.some((value) => !Number.isFinite(value))
-      ) {
+      if (residuals.some((value) => !Number.isFinite(value))) {
         return { ...base, notRunReason: 'split-vertices-unmappable', state: 'not-run' };
       }
       const directionResidual = Math.hypot(...residuals);
-      const directionPrecisionBound = Math.hypot(...precisionBounds);
+      const directionChanged = residuals.some((residual) => residual !== 0);
       const originalHandedness = geometry.vertices[originalBase + 3]!;
       const splitHandedness = geometry.vertices[splitBase + 3]!;
-      if (Math.abs(originalHandedness) !== 1 || Math.abs(splitHandedness) !== 1) {
-        return { ...base, notRunReason: 'split-vertices-unmappable', state: 'not-run' };
+      const handednessDeterminate = Math.abs(originalHandedness) === 1 && Math.abs(splitHandedness) === 1;
+      const state: Md5TangentSplitPairMeasurement['state'] = !handednessDeterminate
+        ? 'handedness-indeterminate'
+        : originalHandedness !== splitHandedness
+          ? 'handedness-different'
+          : directionChanged
+            ? 'direction-only'
+            : 'identical-frame';
+      if (state === 'handedness-different') handednessDifferentPairs++;
+      else if (state === 'handedness-indeterminate') handednessIndeterminatePairs++;
+      else {
+        handednessSamePairs++;
+        if (state === 'direction-only') directionOnlyPairs++;
+        else identicalFramePairs++;
       }
-      const handednessChanged = originalHandedness !== splitHandedness;
-      const state =
-        handednessChanged || directionResidual > directionPrecisionBound
-          ? 'meaningfully-different'
-          : 'indistinguishable-at-format-precision';
-      if (state === 'meaningfully-different') meaningfulPairs++;
-      else indistinguishablePairs++;
       pairs.push({
-        directionPrecisionBound,
+        directionChanged,
         directionResidual,
-        handednessChanged,
+        originalHandedness,
         originalVertex,
         section: sectionIndex,
+        splitHandedness,
         splitVertex,
         state,
       });
@@ -855,13 +881,24 @@ export function measureMd5SplitTangentDifference(
   }
 
   const measurements = {
+    candidateSplitVertices,
+    directionOnlyPairs,
+    emittedVertices,
+    handednessDifferentPairs,
+    handednessIndeterminatePairs,
+    handednessSamePairs,
     id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID as typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
-    indistinguishablePairs,
-    meaningfulPairs,
+    identicalFramePairs,
+    mappedSplitPairs: pairs.length,
     pairs,
+    sourceVertices,
   };
   if (pairs.length === 0) return { ...measurements, notRunReason: 'split-vertices-absent', state: 'not-run' };
-  return { ...measurements, state: indistinguishablePairs === 0 ? 'passed' : 'failed' };
+  if (handednessSamePairs > 0) return { ...measurements, state: 'failed' };
+  if (handednessIndeterminatePairs > 0) {
+    return { ...measurements, notRunReason: 'split-handedness-indeterminate', state: 'not-run' };
+  }
+  return { ...measurements, state: 'passed' };
 }
 
 function computeCodePathCrossCheckTangentFrames(
@@ -1259,10 +1296,10 @@ function formatNotRunReason(value: { notRunReason?: string }): string {
 }
 
 function splitPairReason(pair: Md5TangentSplitPairMeasurement): string {
-  const directionChanged = pair.directionResidual > pair.directionPrecisionBound;
-  if (pair.handednessChanged && directionChanged) return 'handedness-and-direction';
-  if (pair.handednessChanged) return 'handedness';
-  return directionChanged ? 'direction-outside-format-precision' : 'direction-within-format-precision';
+  if (pair.state === 'handedness-different') return 'opposite-unit-handedness-signs';
+  if (pair.state === 'direction-only') return 'same-unit-handedness-sign-direction-differs';
+  if (pair.state === 'identical-frame') return 'same-unit-handedness-sign-and-direction';
+  return 'one-or-both-handedness-signs-non-unit';
 }
 
 function main(): void {
@@ -1297,6 +1334,7 @@ function parseOracleSelection(arguments_: readonly string[]): Md5TangentFrameOra
   if (arguments_.length === 0) return 'all';
   if (arguments_.length === 1 && arguments_[0] === '--oracle=handedness') return 'handedness';
   if (arguments_.length === 1 && arguments_[0] === '--oracle=handedness-control') return 'handedness-control';
+  if (arguments_.length === 1 && arguments_[0] === '--oracle=split-difference') return 'split-difference';
   throw new Error(`Unknown MD5 tangent oracle arguments: ${arguments_.join(' ')}`);
 }
 
