@@ -161,6 +161,16 @@ describe('MD5 tangent handedness measurement', () => {
     expect(measureMd5TangentHandedness(scene, coarseSource)).toMatchObject({
       indeterminateTriangles: 1,
       notRunReason: 'uv-winding-indeterminate',
+      sections: [
+        {
+          indeterminateUvWindingTriangles: 1,
+          negativeTangentHandednessTriangles: 1,
+          negativeUvWindingTriangles: 0,
+          positiveTangentHandednessTriangles: 0,
+          positiveUvWindingTriangles: 0,
+          xCorrelation: 'uniform-negative',
+        },
+      ],
       state: 'not-run',
     });
   });
