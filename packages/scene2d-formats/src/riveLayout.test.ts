@@ -239,6 +239,96 @@ describe('createRiveLayoutImports', () => {
     expect(nodes[1].itemStyle).toEqual({ column: 0, row: 0 });
   });
 
+  // A layout still resolves and still fills the screen when a mode is absorbed, so nothing counts as
+  // lost and no existence check fires. Only the crumb records that the file asked for something else.
+  it('reports a flex direction it does not know', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = flexRoot({ [FLEX_DIRECTION]: 9 });
+    createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { directionValue: 9, substitutedAs: 'row' },
+        kind: 'rive.flex-direction-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('stays silent for the flex direction the format states as row', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // Rive states row as 2, so it shares the terminal arm with an unknown value and must not report.
+    const scene = flexRoot({ [FLEX_DIRECTION]: 2 });
+    const imports = createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+
+    expect(diagnostics).toEqual([]);
+    expect(imports[0]!.tree.nodes[0]!.containerStyle).toMatchObject({ direction: 'row' });
+  });
+
+  it('reports a flex alignment outside the grid the format states', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = flexRoot({ [FLEX_DIRECTION]: 2, [LAYOUT_ALIGNMENT]: 40 });
+    createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { alignmentValue: 40, substitutedAs: 'start' },
+        kind: 'rive.flex-alignment-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('stays silent across every alignment the format states', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // 0-8 is the three-by-three grid and 9-11 is space-between: the whole stated domain, none reporting.
+    for (let alignment = 0; alignment <= 11; alignment++) {
+      const scene = flexRoot({ [FLEX_DIRECTION]: 2, [LAYOUT_ALIGNMENT]: alignment });
+      createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+    }
+
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('reports a grid track type it does not know', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = build(
+      [
+        object(ARTBOARD, { [STYLE_ID]: 1 }),
+        object(LAYOUT_COMPONENT_STYLE, { [LAYOUT_TYPE]: 1 }),
+        object(GRID_TRACK, { [GRID_TRACK_COLLECTION]: 0, [GRID_TRACK_TYPE]: 7, [GRID_TRACK_VALUE]: 4 }),
+        object(SHAPE, {}),
+      ],
+      [-1, 0, 0, 0],
+    );
+    createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { substitutedAs: 'auto', trackType: 7, trackValue: 4 },
+        kind: 'rive.grid-track-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('stays silent for a grid track the format states as auto', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const scene = build(
+      [
+        object(ARTBOARD, { [STYLE_ID]: 1 }),
+        object(LAYOUT_COMPONENT_STYLE, { [LAYOUT_TYPE]: 1 }),
+        object(GRID_TRACK, { [GRID_TRACK_COLLECTION]: 0, [GRID_TRACK_TYPE]: 0 }),
+        object(SHAPE, {}),
+      ],
+      [-1, 0, 0, 0],
+    );
+    const imports = createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+
+    expect(diagnostics).toEqual([]);
+    expect(imports[0]!.tree.nodes[0]!.containerStyle).toMatchObject({ columns: [{ kind: 'auto' }] });
+  });
+
   it('reports a layout component whose style id cannot be resolved', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = build([object(ARTBOARD, { [STYLE_ID]: 99 })], [-1]);
@@ -258,6 +348,13 @@ describe('createRiveLayoutImports', () => {
 interface TestScene {
   graph: RiveArtboardGraph;
   nodes: Array<DisplayObject | null>;
+}
+
+function flexRoot(style: Readonly<Record<number, number>>): TestScene {
+  return build(
+    [object(ARTBOARD, { [STYLE_ID]: 1 }), object(LAYOUT_COMPONENT_STYLE, style), object(SHAPE, {})],
+    [-1, 0, 0],
+  );
 }
 
 function build(objects: RiveCoreObject[], parentIndices: number[]): TestScene {
