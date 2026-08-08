@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   decodeWoff2Triplet,
+  getWoff2BboxBitmapByteLength,
+  hasWoff2GlyphBbox,
   isWoff2PointOnCurve,
   measureWoff2CompositeGlyph,
   readWoff2GlyfStreams,
@@ -70,6 +72,44 @@ describe('decodeWoff2Triplet', () => {
   it('returns the sentinel rather than a short read when the stream ends mid-point', () => {
     expect(decodeWoff2Triplet(127, bytes, 1)).toBeNull();
     expect(decodeWoff2Triplet(0, bytes, 4)).toBeNull();
+  });
+});
+
+describe('getWoff2BboxBitmapByteLength', () => {
+  it('pads to a 32-bit boundary, not to a byte', () => {
+    // The distinction is invisible for a count that lands on the same 4-byte cell either way, which is
+    // how a byte-rounded reading passed on half a real corpus. 1754 rounds to 220 under both rules;
+    // 1741 rounds to 218 by byte and 220 by word, and 220 is the one real fonts use.
+    expect(getWoff2BboxBitmapByteLength(1754)).toBe(220);
+    expect(getWoff2BboxBitmapByteLength(1741)).toBe(220);
+    expect(getWoff2BboxBitmapByteLength(1)).toBe(4);
+    expect(getWoff2BboxBitmapByteLength(32)).toBe(4);
+    expect(getWoff2BboxBitmapByteLength(33)).toBe(8);
+  });
+
+  it('is zero only for a font with no glyphs', () => {
+    expect(getWoff2BboxBitmapByteLength(0)).toBe(0);
+  });
+});
+
+describe('hasWoff2GlyphBbox', () => {
+  it('reads glyph zero as the HIGH bit of the first byte', () => {
+    // Least-significant-first reproduces some boxes and not others, which is worse than being plainly
+    // wrong: it is the reading that looks partly right on a real font.
+    expect(hasWoff2GlyphBbox(Uint8Array.from([0x80]), 0)).toBe(true);
+    expect(hasWoff2GlyphBbox(Uint8Array.from([0x01]), 0)).toBe(false);
+    expect(hasWoff2GlyphBbox(Uint8Array.from([0x01]), 7)).toBe(true);
+  });
+
+  it('walks into later bytes by glyph index', () => {
+    const bitmap = Uint8Array.from([0x00, 0x40, 0x00, 0x02]);
+    expect(hasWoff2GlyphBbox(bitmap, 9)).toBe(true);
+    expect(hasWoff2GlyphBbox(bitmap, 30)).toBe(true);
+    expect(hasWoff2GlyphBbox(bitmap, 8)).toBe(false);
+  });
+
+  it('reports absent rather than throwing past the end of the bitmap', () => {
+    expect(hasWoff2GlyphBbox(Uint8Array.from([0xff]), 64)).toBe(false);
   });
 });
 

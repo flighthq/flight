@@ -26,6 +26,8 @@ export { assembleSfntFont, computeSfntTableChecksum, packSfntTag } from './sfntA
 export { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
 export {
   decodeWoff2Triplet,
+  getWoff2BboxBitmapByteLength,
+  hasWoff2GlyphBbox,
   isWoff2PointOnCurve,
   measureWoff2CompositeGlyph,
   readWoff2GlyfStreams,
