@@ -39,4 +39,5 @@ export {
   measureWoff2CompositeGlyph,
   readWoff2GlyfStreams,
   readWoff2Short,
+  reverseWoff2GlyfTransform,
 } from './woff2GlyfTransform';

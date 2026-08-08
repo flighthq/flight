@@ -8,6 +8,7 @@ import {
   measureWoff2CompositeGlyph,
   readWoff2GlyfStreams,
   readWoff2Short,
+  reverseWoff2GlyfTransform,
 } from './woff2GlyfTransform';
 
 // Builds a transformed `glyf` header over seven streams of the given sizes, filled with a distinct byte
@@ -257,5 +258,24 @@ describe('readWoff2Short', () => {
     expect(readWoff2Short(Uint8Array.from([253, 0x12]), { at: 0 }, 2)).toBe(-1);
     expect(readWoff2Short(Uint8Array.from([255]), { at: 0 }, 1)).toBe(-1);
     expect(readWoff2Short(Uint8Array.from([]), { at: 0 }, 0)).toBe(-1);
+  });
+});
+
+describe('reverseWoff2GlyfTransform', () => {
+  it('returns the sentinel rather than a partial table when a stream runs short', () => {
+    // A truncated walk produces real-looking glyphs for every index before the break, so a partial
+    // result is the silent failure and a refusal is the visible one.
+    const streams = readWoff2GlyfStreams(transformedGlyf([2, 1, 1, 1, 0, 0, 0], 3))!;
+    expect(reverseWoff2GlyfTransform(streams)).toBeNull();
+  });
+
+  it('emits a zero-length record for a glyph with no contours, and a loca that says so', () => {
+    // Three blank glyphs: loca must hold four equal offsets, which is how a blank glyph is expressed.
+    const streams = readWoff2GlyfStreams(transformedGlyf([6, 0, 0, 0, 0, 0, 0], 3))!;
+    streams.nContourStream.fill(0);
+    const out = reverseWoff2GlyfTransform(streams)!;
+    expect(out.glyf.byteLength).toBe(0);
+    const view = new DataView(out.loca.buffer, out.loca.byteOffset, out.loca.byteLength);
+    expect([0, 1, 2, 3].map((index) => view.getUint16(index * 2))).toEqual([0, 0, 0, 0]);
   });
 });
