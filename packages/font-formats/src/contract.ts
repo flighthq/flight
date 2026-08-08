@@ -32,6 +32,7 @@ export {
 } from './sfntAssembly';
 export { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
 export {
+  createWoff2TransformReverser,
   decodeWoff2Triplet,
   getWoff2BboxBitmapByteLength,
   hasWoff2GlyphBbox,
