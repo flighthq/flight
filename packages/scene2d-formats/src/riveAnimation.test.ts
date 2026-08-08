@@ -198,7 +198,11 @@ function build(
 // the stream. Interpolation type 2 is what the corpus uses whenever an interpolator is named. The
 // keyed property is x (13) rather than rotation, because rotation converts radians to degrees and a
 // sampled value would then have to be read through that conversion to mean anything.
-function buildWithInterpolator(typeKey: number, properties: Readonly<Record<number, number>>) {
+function buildWithInterpolator(
+  typeKey: number,
+  properties: Readonly<Record<number, number>>,
+  diagnostics?: ImportDiagnostic[],
+) {
   const objects: RiveCoreObject[] = [
     object(typeKey, properties),
     object(LINEAR_ANIMATION, { [FPS]: 1, [DURATION]: 1 }),
@@ -214,6 +218,8 @@ function buildWithInterpolator(typeKey: number, properties: Readonly<Record<numb
       [createDisplayObject()],
       emptyArtboard(),
       new Map(),
+      null,
+      diagnostics,
     ),
   };
 }
@@ -380,6 +386,37 @@ describe('createRiveAnimationClips', () => {
     // exactly on the target. A linear fallback would instead produce 50.
     sampleAnimationTrack(_scratch, track, 0.5);
     expect(_scratch[0]).toBeCloseTo(100, 6);
+  });
+
+  // An elastic ease the reader does not know still runs for its full duration, eased from the wrong
+  // end. Nothing counts as lost and the channel is present, so only the crumb records it.
+  it('reports an elastic easing mode it does not know', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    buildWithInterpolator(ELASTIC_INTERPOLATOR, { [AMPLITUDE]: 1, [PERIOD]: 0.4, [EASING]: 6 }, diagnostics);
+
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { easingValue: 6, substitutedAs: 'easeOut' },
+        kind: 'rive.elastic-easing-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('stays silent across every elastic easing the format states', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // Ease-out is 1 and is also what the terminal arm returns, so it shares that arm with an unknown
+    // value and must not report. Sampling proves the silence is not vacuous.
+    for (const easing of [0, 1, 2]) {
+      const { clips } = buildWithInterpolator(
+        ELASTIC_INTERPOLATOR,
+        { [AMPLITUDE]: 1, [PERIOD]: 0.4, [EASING]: easing },
+        diagnostics,
+      );
+      expect(clips[0].clip.channels).toHaveLength(1);
+    }
+
+    expect(diagnostics).toEqual([]);
   });
 
   it('uses the amplitude and period the interpolator states rather than fixed constants', () => {
