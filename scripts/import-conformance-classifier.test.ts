@@ -1,13 +1,13 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
 import { classifyImportConformanceObservation } from './import-conformance-classifier';
 
 const FIXTURE = {
   capabilities: ['swf.video.video-frame'],
+  ...createImportConformanceSingleMemberCaseIdentity('video.swf', 'a'.repeat(64)),
   probeState: 'readable',
-  reference: 'video.swf',
-  sourceHash: 'a'.repeat(64),
 } as const;
 
 describe('classifyImportConformanceObservation', () => {
@@ -76,7 +76,7 @@ describe('classifyImportConformanceObservation', () => {
           diagnostics: [diagnostic(ImportDiagnosticSeverity.Drop, 'swf.scene-names')],
           imported: true,
           reference: fixture.reference,
-          sourceHash: fixture.sourceHash,
+          sourceHash: fixture.members[0]!.sourceHash,
           threw: false,
         },
         new Set(['swf.video.video-frame']),
@@ -111,7 +111,7 @@ function classify(diagnostics: ImportDiagnostic[], imported = true) {
     diagnostics,
     imported,
     reference: FIXTURE.reference,
-    sourceHash: FIXTURE.sourceHash,
+    sourceHash: FIXTURE.members[0]!.sourceHash,
     threw: false,
   });
 }

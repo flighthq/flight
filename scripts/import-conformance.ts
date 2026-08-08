@@ -56,7 +56,10 @@ export async function runImportConformanceProcess(
   shardValue: string | undefined,
 ): Promise<number> {
   const definitions = readCapabilityDefinitions();
-  const importerSourceHash = hashImportConformanceImporterSource(join(REPOSITORY_ROOT, 'packages', 'swf', 'src'));
+  const importerSourceHash = hashImportConformanceImporterSource(
+    join(REPOSITORY_ROOT, 'packages', 'swf', 'src'),
+    'swf',
+  );
   const shard = parseImportConformanceShardSelection(shardValue);
   const tree = findFixtureTree();
   if (tree === null) {
@@ -82,16 +85,13 @@ export async function runImportConformanceProcess(
   writeImportConformanceScoreAtomically(INDEX_PATH, index);
   if (args.mode === 'subset') return await runSubset(args.capability, index, tree.directory, importerSourceHash);
 
-  const plan = createImportConformanceShardPlan(
-    index.fixtures.map((fixture) => fixture.reference),
-    shard.total,
-  );
+  const plan = createImportConformanceShardPlan(index.cases, shard.total);
   const currentReferences = new Set(
     plan.assignments
       .filter((assignment) => assignment.shardId === shard.index)
       .map((assignment) => assignment.reference),
   );
-  const currentFixtures = index.fixtures.filter((fixture) => currentReferences.has(fixture.reference));
+  const currentFixtures = index.cases.filter((fixture) => currentReferences.has(fixture.reference));
   const currentResults = await runFixtures(
     currentFixtures,
     tree.directory,
@@ -99,7 +99,7 @@ export async function runImportConformanceProcess(
     new Set(index.capabilities.map((capability) => capability.id)),
   );
   writeImportConformanceShardResult(SHARD_DIRECTORY, plan, shard.index, currentResults, importerSourceHash);
-  const collected = readImportConformanceShardResults(SHARD_DIRECTORY, plan, index.fixtures, importerSourceHash);
+  const collected = readImportConformanceShardResults(SHARD_DIRECTORY, plan, index.cases, importerSourceHash);
   const instrumentation = readInstrumentationMapping(definitions);
   for (const problem of instrumentation.problems) process.stderr.write(`⚠ ${problem}.\n`);
   if (instrumentation.blockingProblems.length > 0) {
@@ -200,11 +200,15 @@ async function runFixtures(
     else results.set(fixture.reference, cached);
   }
   const observations = await runSwfImportConformanceWorkerPool(
-    cold.map((fixture) => ({
-      path: join(treeDirectory, ...fixture.reference.split('/')),
-      reference: fixture.reference,
-      sourceHash: fixture.sourceHash,
-    })),
+    cold.map((fixture) => {
+      const source = fixture.members.length === 1 && fixture.members[0]?.role === 'source' ? fixture.members[0] : null;
+      if (source === null) throw new Error(`SWF case ${fixture.reference} must contain exactly one source member`);
+      return {
+        path: join(treeDirectory, ...source.reference.split('/')),
+        reference: source.reference,
+        sourceHash: source.sourceHash,
+      };
+    }),
   );
   for (let index = 0; index < cold.length; index++) {
     const result = classifyImportConformanceObservation(cold[index]!, observations[index]!, capabilityIds);
@@ -223,7 +227,7 @@ async function runSubset(
   if (!index.capabilities.some((capability) => capability.id === capabilityId)) {
     throw new Error(`Unknown SWF capability ${capabilityId}`);
   }
-  const selected = index.fixtures.filter((fixture) => fixture.capabilities.includes(capabilityId));
+  const selected = index.cases.filter((fixture) => fixture.capabilities.includes(capabilityId));
   const results = await runFixtures(
     selected,
     treeDirectory,

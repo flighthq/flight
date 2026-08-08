@@ -101,6 +101,39 @@ describe('compareImportConformanceScores', () => {
     });
   });
 
+  it('ratchets independent oracle outcomes by stable case hash and oracle id', () => {
+    const oracleCase = {
+      caseHash: 'a'.repeat(64),
+      outcomes: [
+        { evidence: { signedEdgeDeltas: [0, 0, 0, 0, 0, 0] }, id: 'md5.animation-bounds', state: 'passed' as const },
+      ],
+      reference: 'md5:walk.md5mesh::walk.md5anim',
+    };
+    const baseline = measuredPack(undefined, {
+      oracleOutcomes: { cases: [oracleCase], populations: { failed: 0, notRun: 0, passed: 1 } },
+    });
+    const current = measuredPack(undefined, {
+      oracleOutcomes: {
+        cases: [
+          {
+            ...oracleCase,
+            outcomes: [{ ...oracleCase.outcomes[0]!, state: 'failed' }],
+          },
+        ],
+        populations: { failed: 1, notRun: 0, passed: 0 },
+      },
+    });
+
+    const report = compareImportConformanceScores(score(baseline, '100'), score(current, '101'));
+
+    expect(report.state).toBe('regression');
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: oracleCase.reference,
+      code: 'oracle-outcome-regressed',
+      detail: 'oracle md5.animation-bounds changed from passed to failed',
+    });
+  });
+
   it('fails a witness-depth decrease without weighting aggregates', () => {
     const report = compareImportConformanceScores(
       score(measuredPack([measuredCapability('alpha', 3, 'pass')]), '100'),
@@ -449,6 +482,7 @@ describe('compareImportConformanceScores', () => {
         },
       ],
       fixtureOutcomes: null,
+      oracleOutcomes: null,
       outcomes: null,
       reason: 'missing-shard',
       sharding: {
@@ -474,7 +508,7 @@ describe('compareImportConformanceScores', () => {
     const current = score(
       measuredPack(undefined, {
         sharding: {
-          algorithm: 'fixture-count-v1',
+          algorithm: 'case-count-v2',
           planHash: PLAN_HASH,
           shards: [{ id: 0, state: 'measured' }],
         },
@@ -494,7 +528,7 @@ describe('compareImportConformanceScores', () => {
       score(
         measuredPack(undefined, {
           sharding: {
-            algorithm: 'fixture-count-v1',
+            algorithm: 'case-count-v2',
             planHash: 'sha256:different-plan',
             shards: [
               { id: 0, state: 'measured' },
@@ -733,7 +767,7 @@ describe('formatImportConformanceRatchetReport', () => {
     expect(output).not.toMatch(/\b\d+\s*\/\s*\d+\b/);
     expect(output).toContain('SWF-format capability denominator UNMEASURED');
     expect(output).toContain(
-      'ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles required-not-implemented',
+      'ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles first-class-case-outcomes',
     );
     expect(output).not.toContain('total:');
     expect(output).toContain(
@@ -826,13 +860,13 @@ describe('parseImportConformanceScore', () => {
     collapsedCause.oracleAssurance.unmeasuredCapabilityCause = 'no-fixture';
 
     expect(parsed.oracleAssurance).toEqual({
-      firstCaptureDefects: 'undetectable',
-      formatDerivedProperties: 'required-not-implemented',
+      firstCaptureDefects: 'detectable-by-declared-oracles',
+      formatDerivedProperties: 'first-class-case-outcomes',
       ratchet: 'recorded-run-regression-only',
       unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     });
     expect(() => parseImportConformanceScore(falseAssurance)).toThrow(
-      "oracleAssurance.formatDerivedProperties: must be exactly 'required-not-implemented'",
+      "oracleAssurance.formatDerivedProperties: must be exactly 'first-class-case-outcomes'",
     );
     expect(() => parseImportConformanceScore(collapsedCause)).toThrow(
       "oracleAssurance.unmeasuredCapabilityCause: must be exactly 'no-fixture-vs-upstream-unreachable-not-distinguished'",
@@ -1305,6 +1339,7 @@ describe('parseImportConformanceScore', () => {
     const notRun: ImportConformanceNotRunPack = {
       ...measured,
       fixtureOutcomes: null,
+      oracleOutcomes: null,
       outcomes: null,
       reason: 'instrumentation-incomplete',
       state: 'not-run',
@@ -1596,7 +1631,7 @@ describe('parseImportConformanceScore', () => {
     const pack = { ...measuredPack(), outcomes: outcomes() };
 
     expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
-      'must contain exactly: capabilities, capabilityConventionRevision, fixtureOutcomes, id, importerSourceHash, release, sharding, state, summary, variant',
+      'must contain exactly: capabilities, capabilityConventionRevision, fixtureOutcomes, id, importerSourceHash, oracleOutcomes, release, sharding, state, summary, variant',
     );
   });
 
@@ -1788,9 +1823,10 @@ function measuredPack(
     fixtureOutcomes: defaultFixtureOutcomes(),
     id: 'swf-ruffle-fixtures',
     importerSourceHash: 'sha256:importer',
+    oracleOutcomes: { cases: [], populations: { failed: 0, notRun: 0, passed: 0 } },
     release: 'ruffle-fixtures-2026-08-07',
     sharding: {
-      algorithm: 'fixture-count-v1',
+      algorithm: 'case-count-v2',
       planHash: PLAN_HASH,
       shards: [
         { id: 0, state: 'measured' },
@@ -1881,8 +1917,8 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
       triggerSpecificity: 'proof-reference-presence',
     },
     oracleAssurance: {
-      firstCaptureDefects: 'undetectable',
-      formatDerivedProperties: 'required-not-implemented',
+      firstCaptureDefects: 'detectable-by-declared-oracles',
+      formatDerivedProperties: 'first-class-case-outcomes',
       ratchet: 'recorded-run-regression-only',
       unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     },

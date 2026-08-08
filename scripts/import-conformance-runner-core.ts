@@ -2,24 +2,29 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 
+import { parseImportConformanceOracleOutcomes } from './import-conformance-case';
 import type {
-  ImportConformanceIndexedFixture,
+  ImportConformanceIndexedCase,
   ImportConformanceResult,
   ImportConformanceShardPlan,
 } from './import-conformance-core';
-import { createImportConformanceCacheKey } from './import-conformance-core';
+import { applyImportConformanceOracleOutcomes, createImportConformanceCacheKey } from './import-conformance-core';
+import { parseImportConformanceRetainedDiagnostic } from './import-conformance-diagnostic-evidence';
 
 export interface ImportConformanceShardResults {
   completedShardIds: Set<number>;
   results: ImportConformanceResult[];
 }
 
-export function hashImportConformanceImporterSource(sourceDirectory: string): string {
+export function hashImportConformanceImporterSource(sourceDirectory: string, importerId: string): string {
+  if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(importerId)) throw new Error('Importer id must be a stable identifier');
   const paths = listFiles(sourceDirectory).filter(
     (path) => !path.endsWith('.test.ts') && !path.endsWith('TestHelper.ts'),
   );
   const hash = createHash('sha256');
-  hash.update('swf-importer-source-v1\0');
+  hash.update('import-conformance-importer-source-v2\0');
+  hash.update(importerId);
+  hash.update('\0');
   for (const path of paths) {
     const reference = relative(sourceDirectory, path).split(sep).join('/');
     hash.update(reference);
@@ -32,16 +37,16 @@ export function hashImportConformanceImporterSource(sourceDirectory: string): st
 
 export function readImportConformanceCachedResult(
   cacheDirectory: string,
-  fixture: Readonly<ImportConformanceIndexedFixture>,
+  candidate: Readonly<ImportConformanceIndexedCase>,
   importerSourceHash: string,
 ): ImportConformanceResult | null {
-  const path = getResultCachePath(cacheDirectory, fixture.sourceHash, importerSourceHash);
+  const path = getResultCachePath(cacheDirectory, candidate.caseHash, importerSourceHash);
   if (!existsSync(path)) return null;
   try {
     const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
-    if (!isRecord(value) || value.schemaVersion !== 3) return null;
-    if (value.sourceHash !== fixture.sourceHash || value.importerSourceHash !== importerSourceHash) return null;
-    return parseCachedResult(value.result, fixture);
+    if (!isRecord(value) || value.schemaVersion !== 4) return null;
+    if (value.caseHash !== candidate.caseHash || value.importerSourceHash !== importerSourceHash) return null;
+    return parseCachedResult(value.result, candidate);
   } catch {
     return null;
   }
@@ -50,10 +55,10 @@ export function readImportConformanceCachedResult(
 export function readImportConformanceShardResults(
   shardDirectory: string,
   plan: Readonly<ImportConformanceShardPlan>,
-  fixtures: readonly Readonly<ImportConformanceIndexedFixture>[],
+  cases: readonly Readonly<ImportConformanceIndexedCase>[],
   importerSourceHash: string,
 ): ImportConformanceShardResults {
-  const fixtureByReference = new Map(fixtures.map((fixture) => [fixture.reference, fixture]));
+  const caseByReference = new Map(cases.map((candidate) => [candidate.reference, candidate]));
   const expectedByShard = new Map<number, string[]>();
   for (let id = 0; id < plan.shardCount; id++) expectedByShard.set(id, []);
   for (const assignment of plan.assignments) expectedByShard.get(assignment.shardId)!.push(assignment.reference);
@@ -65,7 +70,7 @@ export function readImportConformanceShardResults(
     if (!existsSync(path)) continue;
     try {
       const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
-      if (!isRecord(value) || value.schemaVersion !== 3 || value.planHash !== plan.planHash) continue;
+      if (!isRecord(value) || value.schemaVersion !== 4 || value.planHash !== plan.planHash) continue;
       if (value.importerSourceHash !== importerSourceHash || value.shardId !== id || !Array.isArray(value.results)) {
         continue;
       }
@@ -73,7 +78,9 @@ export function readImportConformanceShardResults(
       const parsed = value.results.map((result, index) => {
         const reference = expected[index];
         if (reference === undefined) throw new Error('extra result');
-        return parseCachedResult(result, fixtureByReference.get(reference)!);
+        const candidate = caseByReference.get(reference);
+        if (candidate === undefined) throw new Error('unknown case result');
+        return parseCachedResult(result, candidate);
       });
       if (parsed.length !== expected.length) continue;
       completedShardIds.add(id);
@@ -91,12 +98,12 @@ export function writeImportConformanceCachedResult(
   result: Readonly<ImportConformanceResult>,
   importerSourceHash: string,
 ): void {
-  const path = getResultCachePath(cacheDirectory, result.sourceHash, importerSourceHash);
+  const path = getResultCachePath(cacheDirectory, result.caseHash, importerSourceHash);
   writeJsonAtomically(path, {
     importerSourceHash,
     result,
-    schemaVersion: 3,
-    sourceHash: result.sourceHash,
+    caseHash: result.caseHash,
+    schemaVersion: 4,
   });
 }
 
@@ -111,19 +118,19 @@ export function writeImportConformanceShardResult(
     .filter((assignment) => assignment.shardId === shardId)
     .map((assignment) => assignment.reference);
   if (results.map((result) => result.reference).join('\0') !== expected.join('\0')) {
-    throw new Error(`Shard ${shardId} results do not match its complete fixture assignment`);
+    throw new Error(`Shard ${shardId} results do not match its complete case assignment`);
   }
   writeJsonAtomically(getShardPath(shardDirectory, plan.planHash, shardId), {
     importerSourceHash,
     planHash: plan.planHash,
     results,
-    schemaVersion: 3,
+    schemaVersion: 4,
     shardId,
   });
 }
 
-function getResultCachePath(cacheDirectory: string, sourceHash: string, importerSourceHash: string): string {
-  return join(cacheDirectory, 'results', `${createImportConformanceCacheKey(sourceHash, importerSourceHash)}.json`);
+function getResultCachePath(cacheDirectory: string, caseHash: string, importerSourceHash: string): string {
+  return join(cacheDirectory, 'results', `${createImportConformanceCacheKey(caseHash, importerSourceHash)}.json`);
 }
 
 function getShardPath(shardDirectory: string, planHash: string, shardId: number): string {
@@ -144,14 +151,13 @@ function listFiles(root: string): string[] {
   return files.sort();
 }
 
-function parseCachedResult(
-  value: unknown,
-  fixture: Readonly<ImportConformanceIndexedFixture>,
-): ImportConformanceResult {
-  if (!isRecord(value) || value.reference !== fixture.reference || value.sourceHash !== fixture.sourceHash) {
-    throw new Error('stale fixture result');
+function parseCachedResult(value: unknown, candidate: Readonly<ImportConformanceIndexedCase>): ImportConformanceResult {
+  if (!isRecord(value) || value.reference !== candidate.reference || value.caseHash !== candidate.caseHash) {
+    throw new Error('stale case result');
   }
-  if (!isOutcome(value.outcome) || !Array.isArray(value.capabilityOutcomes)) throw new Error('invalid fixture result');
+  if (!isOutcome(value.importOutcome) || !isOutcome(value.outcome) || !Array.isArray(value.capabilityOutcomes)) {
+    throw new Error('invalid case result');
+  }
   const capabilityOutcomes: ImportConformanceResult['capabilityOutcomes'] = value.capabilityOutcomes.map(
     (candidate) => {
       if (
@@ -171,24 +177,30 @@ function parseCachedResult(
       };
     },
   );
-  if (capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== fixture.capabilities.join('\0')) {
+  if (capabilityOutcomes.map((outcome) => outcome.id).join('\0') !== candidate.capabilities.join('\0')) {
     throw new Error('stale capability result');
   }
-  const probeUnreadableEvidence = parseProbeUnreadableEvidence(value.probeUnreadableEvidence, fixture);
+  const oracleOutcomes = parseImportConformanceOracleOutcomes(value.oracleOutcomes, 'cached oracle outcomes');
+  if (value.outcome !== applyImportConformanceOracleOutcomes(value.importOutcome, oracleOutcomes)) {
+    throw new Error('case outcome does not match import and oracle evidence');
+  }
+  const probeUnreadableEvidence = parseProbeUnreadableEvidence(value.probeUnreadableEvidence, candidate);
   return {
+    caseHash: candidate.caseHash,
     capabilityOutcomes,
+    importOutcome: value.importOutcome,
+    oracleOutcomes,
     outcome: value.outcome,
     ...(probeUnreadableEvidence === undefined ? {} : { probeUnreadableEvidence }),
-    reference: fixture.reference,
-    sourceHash: fixture.sourceHash,
+    reference: candidate.reference,
   };
 }
 
 function parseProbeUnreadableEvidence(
   value: unknown,
-  fixture: Readonly<ImportConformanceIndexedFixture>,
+  candidate: Readonly<ImportConformanceIndexedCase>,
 ): ImportConformanceResult['probeUnreadableEvidence'] {
-  if (fixture.probeState === 'readable') {
+  if (candidate.probeState === 'readable') {
     if (value !== undefined) throw new Error('probe-readable fixture carries unreadable evidence');
     return undefined;
   }
@@ -199,69 +211,10 @@ function parseProbeUnreadableEvidence(
     throw new Error('invalid probe-unreadable fixture sentinel evidence');
   }
   return {
-    diagnostics: value.diagnostics.map(parseRetainedDiagnostic),
+    diagnostics: value.diagnostics.map(parseImportConformanceRetainedDiagnostic),
     imported: value.imported,
     threw: value.threw,
   };
-}
-
-function parseRetainedDiagnostic(
-  value: unknown,
-): NonNullable<ImportConformanceResult['probeUnreadableEvidence']>['diagnostics'][number] {
-  if (!isRecord(value) || typeof value.kind !== 'string' || value.kind === '') {
-    throw new Error('invalid retained diagnostic kind');
-  }
-  if (typeof value.origin !== 'string' || value.origin === '') {
-    throw new Error('invalid retained diagnostic origin');
-  }
-  if (
-    value.severity !== 'Drop' &&
-    value.severity !== 'Recover' &&
-    value.severity !== 'Reject' &&
-    value.severity !== 'Skip'
-  ) {
-    throw new Error('invalid retained diagnostic severity');
-  }
-  const detail = value.detail === undefined ? undefined : parseRetainedDiagnosticDetail(value.detail);
-  return {
-    ...(detail === undefined ? {} : { detail }),
-    kind: value.kind,
-    origin: value.origin,
-    severity: value.severity,
-  };
-}
-
-function parseRetainedDiagnosticDetail(
-  value: unknown,
-): NonNullable<NonNullable<ImportConformanceResult['probeUnreadableEvidence']>['diagnostics'][number]['detail']> {
-  if (!isRecord(value)) throw new Error('invalid retained diagnostic detail');
-  const allowed = new Set(['capability', 'characterId', 'compression', 'frame', 'length', 'sceneCount']);
-  const keys = Object.keys(value);
-  if (keys.length === 0 || keys.some((key) => !allowed.has(key))) {
-    throw new Error('retained diagnostic detail contains unruled fields');
-  }
-  const detail: Record<string, number | string> = {};
-  if ('capability' in value) {
-    if (typeof value.capability !== 'string' || value.capability === '') {
-      throw new Error('invalid retained diagnostic capability');
-    }
-    detail.capability = value.capability;
-  }
-  if ('compression' in value) {
-    if (value.compression !== 'deflate' && value.compression !== 'lzma') {
-      throw new Error('invalid retained diagnostic compression');
-    }
-    detail.compression = value.compression;
-  }
-  for (const key of ['characterId', 'frame', 'length', 'sceneCount'] as const) {
-    if (!(key in value)) continue;
-    const number = value[key];
-    if (!Number.isSafeInteger(number) || (number as number) < 0) {
-      throw new Error(`invalid retained diagnostic ${key}`);
-    }
-    detail[key] = number as number;
-  }
-  return detail;
 }
 
 function writeJsonAtomically(path: string, value: unknown): void {

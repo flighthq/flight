@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
 import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
 import { createImportConformanceShardPlan } from './import-conformance-core';
 import {
@@ -18,11 +19,12 @@ describe('hashImportConformanceImporterSource', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-importer-source-'));
     writeFileSync(join(root, 'reader.ts'), 'export const value = 1;');
     writeFileSync(join(root, 'reader.test.ts'), 'test version 1');
-    const original = hashImportConformanceImporterSource(root);
+    const original = hashImportConformanceImporterSource(root, 'swf');
     writeFileSync(join(root, 'reader.test.ts'), 'test version 2');
-    expect(hashImportConformanceImporterSource(root)).toBe(original);
+    expect(hashImportConformanceImporterSource(root, 'swf')).toBe(original);
     writeFileSync(join(root, 'reader.ts'), 'export const value = 2;');
-    expect(hashImportConformanceImporterSource(root)).not.toBe(original);
+    expect(hashImportConformanceImporterSource(root, 'swf')).not.toBe(original);
+    expect(hashImportConformanceImporterSource(root, 'md5')).not.toBe(hashImportConformanceImporterSource(root, 'swf'));
   });
 });
 
@@ -36,7 +38,14 @@ describe('import conformance result cache', () => {
     expect(readImportConformanceCachedResult(cache, fixture, importerHash)).toEqual(result);
     expect(readImportConformanceCachedResult(cache, fixture, hash('importer-b'))).toBeNull();
     expect(
-      readImportConformanceCachedResult(cache, { ...fixture, sourceHash: hash('changed') }, importerHash),
+      readImportConformanceCachedResult(
+        cache,
+        {
+          ...fixture,
+          ...createImportConformanceSingleMemberCaseIdentity(fixture.reference, hash('changed')),
+        },
+        importerHash,
+      ),
     ).toBeNull();
   });
 
@@ -65,10 +74,12 @@ describe('import conformance result cache', () => {
     writeImportConformanceCachedResult(
       cache,
       {
+        caseHash: unreadable.caseHash,
         capabilityOutcomes: [],
+        importOutcome: 'silentlyWrong',
+        oracleOutcomes: [],
         outcome: 'silentlyWrong',
         reference: unreadable.reference,
-        sourceHash: unreadable.sourceHash,
       },
       importerHash,
     );
@@ -77,7 +88,10 @@ describe('import conformance result cache', () => {
     expect(readImportConformanceCachedResult(cache, unreadable, importerHash)).toBeNull();
 
     const retained: ImportConformanceResult = {
+      caseHash: unreadable.caseHash,
       capabilityOutcomes: [],
+      importOutcome: 'unsupportedClean',
+      oracleOutcomes: [],
       outcome: 'unsupportedClean',
       probeUnreadableEvidence: {
         diagnostics: [
@@ -92,7 +106,6 @@ describe('import conformance result cache', () => {
         threw: false,
       },
       reference: unreadable.reference,
-      sourceHash: unreadable.sourceHash,
     };
     writeImportConformanceCachedResult(cache, retained, importerHash);
     expect(readImportConformanceCachedResult(cache, unreadable, importerHash)).toEqual(retained);
@@ -103,10 +116,7 @@ describe('import conformance shard results', () => {
   it('retains missing shards instead of accepting a smaller result denominator', () => {
     const directory = mkdtempSync(join(tmpdir(), 'flight-import-shards-'));
     const fixtures = [makeFixture('a.swf'), makeFixture('b.swf')];
-    const plan = createImportConformanceShardPlan(
-      fixtures.map((fixture) => fixture.reference),
-      2,
-    );
+    const plan = createImportConformanceShardPlan(fixtures, 2);
     writeImportConformanceShardResult(directory, plan, 0, [makeResult(fixtures[0]!)], hash('importer'));
 
     const loaded = readImportConformanceShardResults(directory, plan, fixtures, hash('importer'));
@@ -117,7 +127,7 @@ describe('import conformance shard results', () => {
   it('ignores stale or malformed shard artifacts', () => {
     const directory = mkdtempSync(join(tmpdir(), 'flight-import-shards-'));
     const fixtures = [makeFixture('a.swf')];
-    const plan = createImportConformanceShardPlan(['a.swf'], 1);
+    const plan = createImportConformanceShardPlan(fixtures, 1);
     const path = join(directory, plan.planHash, '0.json');
     mkdirSync(join(directory, plan.planHash));
     writeFileSync(path, '{"schemaVersion":1,"planHash":"stale"}');
@@ -132,19 +142,20 @@ function hash(value: string): string {
 function makeFixture(reference: string): ImportConformanceIndexedFixture {
   return {
     capabilities: ['swf.fill.solid'],
+    ...createImportConformanceSingleMemberCaseIdentity(reference, hash(reference)),
     probeState: 'readable',
-    reference,
-    sourceHash: hash(reference),
   };
 }
 
 function makeResult(fixture: Readonly<ImportConformanceIndexedFixture>): ImportConformanceResult {
   return {
+    caseHash: fixture.caseHash,
     capabilityOutcomes: [
       { diagnosticCause: 'separable', diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' },
     ],
+    importOutcome: 'passed',
+    oracleOutcomes: [],
     outcome: 'passed',
     reference: fixture.reference,
-    sourceHash: fixture.sourceHash,
   };
 }

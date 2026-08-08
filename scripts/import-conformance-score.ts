@@ -1,3 +1,6 @@
+import { parseImportConformanceOracleOutcomes } from './import-conformance-case';
+import type { ImportConformanceOracleEvidence } from './import-conformance-case';
+
 export interface ImportConformanceOutcomeCounts {
   importedWrong: number;
   silentlyWrong: number;
@@ -72,6 +75,30 @@ export interface ImportConformanceFixtureOutcomes {
   definitions: ImportConformanceFixtureOutcomeDefinitions;
   populations: ImportConformanceFixtureOutcomePopulations;
   silentlyWrongFixtures: string[];
+}
+
+export interface ImportConformanceOracleOutcomePopulations {
+  failed: number;
+  notRun: number;
+  passed: number;
+}
+
+export interface ImportConformanceCaseOracleOutcome {
+  evidence: ImportConformanceOracleEvidence;
+  id: string;
+  notRunReason?: string;
+  state: 'failed' | 'not-run' | 'passed';
+}
+
+export interface ImportConformanceCaseOracleEvidence {
+  caseHash: string;
+  outcomes: ImportConformanceCaseOracleOutcome[];
+  reference: string;
+}
+
+export interface ImportConformanceOracleOutcomes {
+  cases: ImportConformanceCaseOracleEvidence[];
+  populations: ImportConformanceOracleOutcomePopulations;
 }
 
 export type ImportConformanceUnknownObservationReason =
@@ -274,7 +301,7 @@ export interface ImportConformanceNotRunShard {
 export type ImportConformanceShard = ImportConformanceMeasuredShard | ImportConformanceNotRunShard;
 
 export interface ImportConformanceSharding {
-  algorithm: 'fixture-count-v1';
+  algorithm: 'case-count-v2';
   planHash: string;
   shards: ImportConformanceShard[];
 }
@@ -362,6 +389,7 @@ interface ImportConformancePackIdentity {
 
 export interface ImportConformanceMeasuredPack extends ImportConformancePackIdentity {
   fixtureOutcomes: ImportConformanceFixtureOutcomes;
+  oracleOutcomes: ImportConformanceOracleOutcomes;
   sharding: ImportConformanceSharding;
   state: 'measured';
   summary: ImportConformanceSummary;
@@ -369,6 +397,7 @@ export interface ImportConformanceMeasuredPack extends ImportConformancePackIden
 
 export interface ImportConformanceNotRunPack extends ImportConformancePackIdentity {
   fixtureOutcomes: null;
+  oracleOutcomes: null;
   outcomes: null;
   reason: ImportConformanceNotRunReason;
   sharding: ImportConformanceSharding | null;
@@ -392,8 +421,8 @@ export interface ImportConformanceInstrumentAssurance {
 }
 
 export interface ImportConformanceOracleAssurance {
-  firstCaptureDefects: 'undetectable';
-  formatDerivedProperties: 'required-not-implemented';
+  firstCaptureDefects: 'detectable-by-declared-oracles';
+  formatDerivedProperties: 'first-class-case-outcomes';
   ratchet: 'recorded-run-regression-only';
   unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished';
 }
@@ -522,11 +551,11 @@ function parseOracleAssurance(value: unknown, path: string): ImportConformanceOr
     ['firstCaptureDefects', 'formatDerivedProperties', 'ratchet', 'unmeasuredCapabilityCause'],
     path,
   );
-  if (assurance.firstCaptureDefects !== 'undetectable') {
-    fail(`${path}.firstCaptureDefects`, "must be exactly 'undetectable'");
+  if (assurance.firstCaptureDefects !== 'detectable-by-declared-oracles') {
+    fail(`${path}.firstCaptureDefects`, "must be exactly 'detectable-by-declared-oracles'");
   }
-  if (assurance.formatDerivedProperties !== 'required-not-implemented') {
-    fail(`${path}.formatDerivedProperties`, "must be exactly 'required-not-implemented'");
+  if (assurance.formatDerivedProperties !== 'first-class-case-outcomes') {
+    fail(`${path}.formatDerivedProperties`, "must be exactly 'first-class-case-outcomes'");
   }
   if (assurance.ratchet !== 'recorded-run-regression-only') {
     fail(`${path}.ratchet`, "must be exactly 'recorded-run-regression-only'");
@@ -585,6 +614,7 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
     'fixtureOutcomes',
     'id',
     'importerSourceHash',
+    'oracleOutcomes',
     'release',
     'sharding',
     'state',
@@ -626,11 +656,13 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
       capabilities.map((capability) => capability.id),
       `${path}.fixtureOutcomes`,
     );
+    const oracleOutcomes = parseOracleOutcomes(pack.oracleOutcomes, `${path}.oracleOutcomes`);
     const summary = parseSummary(pack.summary, `${path}.summary`);
     assertSummaryMatches(summary, capabilities, `${path}.summary`);
     return {
       ...identity,
       fixtureOutcomes,
+      oracleOutcomes,
       sharding,
       state,
       summary,
@@ -640,12 +672,24 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
   if (pack.fixtureOutcomes !== null) {
     fail(`${path}.fixtureOutcomes`, "must be null when the pack is 'not-run'");
   }
+  if (pack.oracleOutcomes !== null) {
+    fail(`${path}.oracleOutcomes`, "must be null when the pack is 'not-run'");
+  }
   if (pack.outcomes !== null) fail(`${path}.outcomes`, "must be null when the pack is 'not-run'");
   if (pack.summary !== null) fail(`${path}.summary`, "must be null when the pack is 'not-run'");
   const reason = parseNotRunReason(pack.reason, `${path}.reason`);
   const sharding = pack.sharding === null ? null : parseSharding(pack.sharding, `${path}.sharding`);
   assertNotRunPack(reason, capabilities, sharding, path);
-  return { ...identity, fixtureOutcomes: null, outcomes: null, reason, sharding, state, summary: null };
+  return {
+    ...identity,
+    fixtureOutcomes: null,
+    oracleOutcomes: null,
+    outcomes: null,
+    reason,
+    sharding,
+    state,
+    summary: null,
+  };
 }
 
 function parseCapabilities(value: unknown, path: string): ImportConformanceCapability[] {
@@ -774,6 +818,54 @@ function parseOutcomes(value: unknown, path: string): ImportConformanceOutcomeCo
     threw: expectInteger(outcomes.threw, `${path}.threw`, 0),
     unsupportedClean: expectInteger(outcomes.unsupportedClean, `${path}.unsupportedClean`, 0),
   };
+}
+
+function parseOracleOutcomes(value: unknown, path: string): ImportConformanceOracleOutcomes {
+  const oracleOutcomes = expectRecord(value, path);
+  expectKeys(oracleOutcomes, ['cases', 'populations'], path);
+  if (!Array.isArray(oracleOutcomes.cases)) fail(`${path}.cases`, 'must be an array');
+  const cases = oracleOutcomes.cases.map((candidate, index): ImportConformanceCaseOracleEvidence => {
+    const casePath = `${path}.cases[${index}]`;
+    const record = expectRecord(candidate, casePath);
+    expectKeys(record, ['caseHash', 'outcomes', 'reference'], casePath);
+    const caseHash = expectNonemptyString(record.caseHash, `${casePath}.caseHash`);
+    if (!/^[a-f0-9]{64}$/.test(caseHash)) fail(`${casePath}.caseHash`, 'must be a lowercase SHA-256');
+    const outcomes = parseImportConformanceOracleOutcomes(record.outcomes, `${casePath}.outcomes`);
+    if (outcomes.length === 0) fail(`${casePath}.outcomes`, 'must retain at least one declared oracle outcome');
+    return {
+      caseHash,
+      outcomes: outcomes.map((outcome) => ({ ...outcome })),
+      reference: expectNonemptyString(record.reference, `${casePath}.reference`),
+    };
+  });
+  expectSortedUnique(
+    cases.map((candidate) => candidate.reference),
+    `${path}.cases`,
+    'case reference',
+  );
+  expectSortedUnique(cases.map((candidate) => candidate.caseHash).sort(), `${path}.cases`, 'case hash');
+  const populationsRecord = expectRecord(oracleOutcomes.populations, `${path}.populations`);
+  expectKeys(populationsRecord, ['failed', 'notRun', 'passed'], `${path}.populations`);
+  const populations = {
+    failed: expectInteger(populationsRecord.failed, `${path}.populations.failed`, 0),
+    notRun: expectInteger(populationsRecord.notRun, `${path}.populations.notRun`, 0),
+    passed: expectInteger(populationsRecord.passed, `${path}.populations.passed`, 0),
+  };
+  const expected = { failed: 0, notRun: 0, passed: 0 };
+  for (const candidate of cases) {
+    for (const outcome of candidate.outcomes) {
+      if (outcome.state === 'not-run') expected.notRun++;
+      else expected[outcome.state]++;
+    }
+  }
+  if (
+    populations.failed !== expected.failed ||
+    populations.notRun !== expected.notRun ||
+    populations.passed !== expected.passed
+  ) {
+    fail(`${path}.populations`, 'must equal the retained case oracle outcomes');
+  }
+  return { cases, populations };
 }
 
 function parseFixtureOutcomes(
@@ -1384,8 +1476,8 @@ function assertLossPathMatchesInstrumentation(
 function parseSharding(value: unknown, path: string): ImportConformanceSharding {
   const sharding = expectRecord(value, path);
   expectKeys(sharding, ['algorithm', 'planHash', 'shards'], path);
-  if (sharding.algorithm !== 'fixture-count-v1') {
-    fail(`${path}.algorithm`, "must be exactly 'fixture-count-v1'");
+  if (sharding.algorithm !== 'case-count-v2') {
+    fail(`${path}.algorithm`, "must be exactly 'case-count-v2'");
   }
   if (!Array.isArray(sharding.shards)) fail(`${path}.shards`, 'must be an array');
   if (sharding.shards.length === 0) fail(`${path}.shards`, 'must retain the complete non-empty shard plan');
@@ -1396,7 +1488,7 @@ function parseSharding(value: unknown, path: string): ImportConformanceSharding 
     'shard id',
   );
   return {
-    algorithm: 'fixture-count-v1',
+    algorithm: 'case-count-v2',
     planHash: expectNonemptyString(sharding.planHash, `${path}.planHash`),
     shards,
   };

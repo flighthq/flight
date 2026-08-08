@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
 import {
   assertImportConformanceFrozenCapabilityPartition,
-  buildImportConformanceCapabilityIndex,
+  applyImportConformanceOracleOutcomes,
+  buildImportConformanceCapabilityIndex as buildImportConformanceCapabilityIndexCore,
   createImportConformanceCacheKey,
   createImportConformanceNotRunScore,
   createImportConformanceScore as createImportConformanceScoreCore,
-  createImportConformanceShardPlan,
-  isImportConformanceFixtureReference,
+  createImportConformanceShardPlan as createImportConformanceShardPlanCore,
   parseImportConformanceCapabilityDefinitions,
 } from './import-conformance-core';
 import type {
@@ -17,6 +18,7 @@ import type {
   ImportConformanceUnwiredLossObservation,
 } from './import-conformance-core';
 import { parseImportConformanceScore } from './import-conformance-score';
+import { isImportConformanceFixtureReference } from './swf-capability-index';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },
@@ -29,6 +31,35 @@ const PACK = {
   variant: 'full',
 } as const;
 const PROVENANCE = { mode: 'exhaustive', runId: 'run-17', runUrl: 'https://ci.invalid/run-17' } as const;
+
+function buildImportConformanceCapabilityIndex(
+  pack: Parameters<typeof buildImportConformanceCapabilityIndexCore>[0],
+  definitions: Parameters<typeof buildImportConformanceCapabilityIndexCore>[1],
+  evidence: readonly {
+    capabilities: readonly string[];
+    probeState?: 'readable' | 'unreadable';
+    reference: string;
+    sourceHash: string;
+  }[],
+  corpusFileCount = evidence.length,
+) {
+  return buildImportConformanceCapabilityIndexCore(
+    pack,
+    definitions,
+    evidence.map(({ sourceHash, ...candidate }) => ({
+      ...candidate,
+      members: [{ reference: candidate.reference, role: 'source', sourceHash }],
+    })),
+    corpusFileCount,
+  );
+}
+
+function createImportConformanceShardPlan(references: readonly string[], shardCount: number) {
+  return createImportConformanceShardPlanCore(
+    references.map((reference) => createImportConformanceSingleMemberCaseIdentity(reference, hash(reference))),
+    shardCount,
+  );
+}
 
 function createImportConformanceScore(
   index: Parameters<typeof createImportConformanceScoreCore>[0],
@@ -45,7 +76,16 @@ function createImportConformanceScore(
     index,
     plan,
     completedShardIds,
-    results,
+    results.map((result) => {
+      const candidate = index.cases.find((indexed) => indexed.reference === result.reference);
+      if (candidate === undefined) return result;
+      return {
+        ...result,
+        caseHash: candidate.caseHash,
+        importOutcome: result.importOutcome ?? result.outcome,
+        oracleOutcomes: result.oracleOutcomes ?? [],
+      };
+    }),
     instrumentationProofs,
     lossPathByCapability,
     importerSourceHash,
@@ -63,7 +103,7 @@ describe('buildImportConformanceCapabilityIndex', () => {
     }));
     const index = buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, evidence);
 
-    expect(index.fixtures).toHaveLength(1_001);
+    expect(index.cases).toHaveLength(1_001);
     expect(index.capabilities).toEqual([
       { ...DEFINITIONS[0], witnesses: ['fixture-1000.swf'] },
       { ...DEFINITIONS[1], witnesses: [] },
@@ -88,7 +128,7 @@ describe('buildImportConformanceCapabilityIndex', () => {
           sourceHash: hash('malformed'),
         },
       ]),
-    ).toThrow(/Unreadable fixture malformed\.swf must not contribute capability evidence/);
+    ).toThrow(/Unreadable case malformed\.swf must not contribute capability evidence/);
   });
 
   it('sorts fixture references and de-duplicates capability evidence', () => {
@@ -100,8 +140,8 @@ describe('buildImportConformanceCapabilityIndex', () => {
       },
       { capabilities: [], reference: 'a.swf', sourceHash: hash('a') },
     ]);
-    expect(index.fixtures.map((fixture) => fixture.reference)).toEqual(['a.swf', 'z.swf']);
-    expect(index.fixtures[1]!.capabilities).toEqual(['swf.fill.solid']);
+    expect(index.cases.map((fixture) => fixture.reference)).toEqual(['a.swf', 'z.swf']);
+    expect(index.cases[1]!.capabilities).toEqual(['swf.fill.solid']);
   });
 });
 
@@ -124,8 +164,8 @@ describe('createImportConformanceNotRunScore', () => {
       triggerSpecificity: 'proof-reference-presence',
     });
     expect(score.oracleAssurance).toEqual({
-      firstCaptureDefects: 'undetectable',
-      formatDerivedProperties: 'required-not-implemented',
+      firstCaptureDefects: 'detectable-by-declared-oracles',
+      formatDerivedProperties: 'first-class-case-outcomes',
       ratchet: 'recorded-run-regression-only',
       unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
     });
@@ -184,7 +224,7 @@ describe('createImportConformanceScore', () => {
   it('nests independent fire-referenced and silence-referenced pass populations', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       1,
     );
     const score = createImportConformanceScore(
@@ -270,7 +310,7 @@ describe('createImportConformanceScore', () => {
       createImportConformanceScore(
         index,
         createImportConformanceShardPlan(
-          index.fixtures.map((fixture) => fixture.reference),
+          index.cases.map((fixture) => fixture.reference),
           1,
         ),
         new Set([0]),
@@ -287,7 +327,7 @@ describe('createImportConformanceScore', () => {
   it.each(['threw', 'importedWrong', 'silentlyWrong'] as const)('treats %s as a failing outcome', (outcome) => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       1,
     );
     const score = createImportConformanceScore(
@@ -318,10 +358,57 @@ describe('createImportConformanceScore', () => {
     });
   });
 
+  it('makes an independently failed oracle first-class and overrides an otherwise successful import', () => {
+    const index = makeIndex();
+    const plan = createImportConformanceShardPlan(
+      index.cases.map((candidate) => candidate.reference),
+      1,
+    );
+    const failedOracle = {
+      evidence: {
+        frames: [{ classification: 'exceeds-representable-precision', signedEdgeDeltas: [0, 0, 0, 0, 0, 1] }],
+      },
+      id: 'md5.animation-bounds',
+      state: 'failed' as const,
+    };
+    expect(applyImportConformanceOracleOutcomes('passed', [failedOracle])).toBe('importedWrong');
+    const score = createImportConformanceScore(
+      index,
+      plan,
+      new Set([0]),
+      [
+        {
+          ...result('one.swf', ['swf.fill.solid'], 'importedWrong'),
+          importOutcome: 'passed' as const,
+          oracleOutcomes: [failedOracle],
+        },
+        result('two.swf', ['swf.fill.solid'], 'passed'),
+      ],
+      instrumentationProofs('swf.fill.solid'),
+      lossPathStates(),
+      hash('importer'),
+      PROVENANCE,
+    );
+
+    expect(score.packs[0]).toMatchObject({
+      fixtureOutcomes: { populations: { importedWrong: 1, passed: 1 } },
+      oracleOutcomes: {
+        cases: [
+          {
+            caseHash: index.cases[0]!.caseHash,
+            outcomes: [failedOracle],
+            reference: 'one.swf',
+          },
+        ],
+        populations: { failed: 1, notRun: 0, passed: 0 },
+      },
+    });
+  });
+
   it('makes the whole pack NOT RUN without shrinking the denominator when one shard is missing', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       2,
     );
     const score = createImportConformanceScore(
@@ -376,7 +463,7 @@ describe('createImportConformanceScore', () => {
   it('makes instrumentation-blind exercised capabilities explicit in the nested score', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       1,
     );
     const score = createImportConformanceScore(
@@ -438,7 +525,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -483,7 +570,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -519,7 +606,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -554,7 +641,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -589,7 +676,7 @@ describe('createImportConformanceScore', () => {
       createImportConformanceScore(
         index,
         createImportConformanceShardPlan(
-          index.fixtures.map((fixture) => fixture.reference),
+          index.cases.map((fixture) => fixture.reference),
           1,
         ),
         new Set([0]),
@@ -622,7 +709,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -656,7 +743,7 @@ describe('createImportConformanceScore', () => {
       createImportConformanceScore(
         index,
         createImportConformanceShardPlan(
-          index.fixtures.map((fixture) => fixture.reference),
+          index.cases.map((fixture) => fixture.reference),
           1,
         ),
         new Set([0]),
@@ -761,7 +848,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -818,7 +905,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -848,7 +935,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -871,7 +958,7 @@ describe('createImportConformanceScore', () => {
   it('requires silence proof only for a crumb observation', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       1,
     );
     const score = createImportConformanceScore(
@@ -918,7 +1005,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -959,7 +1046,7 @@ describe('createImportConformanceScore', () => {
   it('requires fire proof only for a no-crumb observation', () => {
     const index = makeIndex();
     const plan = createImportConformanceShardPlan(
-      index.fixtures.map((fixture) => fixture.reference),
+      index.cases.map((fixture) => fixture.reference),
       1,
     );
     const score = createImportConformanceScore(
@@ -1006,7 +1093,7 @@ describe('createImportConformanceScore', () => {
     const score = createImportConformanceScore(
       index,
       createImportConformanceShardPlan(
-        index.fixtures.map((fixture) => fixture.reference),
+        index.cases.map((fixture) => fixture.reference),
         1,
       ),
       new Set([0]),
@@ -1029,7 +1116,7 @@ describe('createImportConformanceScore', () => {
       createImportConformanceScore(
         index,
         createImportConformanceShardPlan(
-          index.fixtures.map((fixture) => fixture.reference),
+          index.cases.map((fixture) => fixture.reference),
           1,
         ),
         new Set([0]),
@@ -1051,7 +1138,7 @@ describe('createImportConformanceScore', () => {
 describe('createImportConformanceShardPlan', () => {
   it('assigns sorted references by deterministic file count and retains empty shard ids', () => {
     const plan = createImportConformanceShardPlan(['c.swf', 'a.swf', 'b.swf'], 5);
-    expect(plan.assignments).toEqual([
+    expect(plan.assignments.map(({ reference, shardId }) => ({ reference, shardId }))).toEqual([
       { reference: 'a.swf', shardId: 0 },
       { reference: 'b.swf', shardId: 1 },
       { reference: 'c.swf', shardId: 2 },

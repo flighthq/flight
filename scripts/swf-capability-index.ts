@@ -11,9 +11,9 @@ import {
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
 } from './fixtures';
+import { isImportConformancePackFileReference } from './import-conformance-case';
 import {
   buildImportConformanceCapabilityIndex,
-  isImportConformanceFixtureReference,
   parseImportConformanceCapabilityDefinitions,
 } from './import-conformance-core';
 import type { ImportConformanceCapabilityIndex } from './import-conformance-core';
@@ -87,9 +87,9 @@ export async function buildSwfCapabilityIndex(
       const probe = probeSwfCapabilities(bytes);
       return {
         capabilities: probe.capabilities,
+        members: [{ reference, role: 'source', sourceHash: createHash('sha256').update(bytes).digest('hex') }],
         probeState: probe.readable ? ('readable' as const) : ('unreadable' as const),
         reference,
-        sourceHash: createHash('sha256').update(bytes).digest('hex'),
       };
     },
   );
@@ -147,7 +147,7 @@ async function main(): Promise<void> {
   const exercised = index.capabilities.filter((capability) => capability.witnesses.length > 0);
   const singles = exercised.filter((capability) => capability.witnesses.length === 1);
   process.stdout.write(
-    `Indexed ${index.inventory.indexedSwfFiles} SWFs from ${index.inventory.corpusFiles} corpus files; ${index.inventory.unreadableSwfFiles} unreadable.\n` +
+    `Indexed ${index.inventory.indexedCases} SWFs from ${index.inventory.corpusFiles} corpus files; ${index.inventory.unreadableCases} unreadable.\n` +
       `Exercised importer-declared capability rows ${exercised.length}; declared capability row tally ${index.capabilities.length}; ${singles.length} single-witness capabilities.\n` +
       `Capability convention revision ${index.pack.capabilityConventionRevision}; importer-declared capability denominator UNRESOLVED.\n` +
       `Wrote ${output}\n`,
@@ -175,6 +175,15 @@ async function mapWithConcurrency<Input, Output>(
 const PACK_ID = 'swf-ruffle-fixtures';
 const PACK_VARIANT = 'full';
 const ROOT_METADATA_NAMES = new Set(['.flight-fixtures.json', 'NOTICE.md', 'README.md', 'manifest.json']);
+const SWF_FIXTURE_PACK_FILE_POLICY = {
+  excludedPathSegments: new Set(['LICENSES']),
+  extensions: ['.swf'],
+  rootMetadataReferences: ROOT_METADATA_NAMES,
+} as const;
+
+export function isImportConformanceFixtureReference(reference: string): boolean {
+  return isImportConformancePackFileReference(reference, SWF_FIXTURE_PACK_FILE_POLICY);
+}
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
