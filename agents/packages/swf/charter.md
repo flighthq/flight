@@ -14,6 +14,7 @@ lossPathAudit: ./loss-path-audit.md
 tagCoverage: ./tag-coverage.md
 fixtureEvidence: ./fixture-evidence.md
 shaPinIncidentalAudit: ./sha-pin-incidental-audit.md
+conformanceCoreGenerality: ./conformance-core-generality.md
 ---
 
 # swf — Charter (reserved home)

@@ -1,9 +1,15 @@
 ---
 package: '@flighthq/swf'
-updated: 2026-08-07
+updated: 2026-08-08
 ---
 
 # swf status
+
+**Before extracting anything from the conformance scoreboard into a shared core, read
+[conformance core generality](conformance-core-generality.md).** Scoping MD5 as a second format
+produced a falsifier — a core that owns raw capability extraction, or assumes one file equals one case,
+is general only over SWF-like tag streams — and that assumption is invisible while SWF is the only
+instantiation. The core itself is held, not rejected.
 
 Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated timelines landed
 2026-08-01; shape geometry 2026-08-02; morphs, editable text, audio, per-frame appearance, and resolved
