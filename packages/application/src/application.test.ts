@@ -676,11 +676,74 @@ describe('stepApplicationLoop', () => {
 
   it('updates frame metrics', () => {
     const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const fixedDeltas: number[] = [];
+    connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
+    app.interpolationAlpha = 0.25;
+
     stepApplicationLoop(app, 16);
+
     expect(app.frameCount).toBe(1);
     expect(app.deltaTime).toBe(16);
     expect(app.elapsedTime).toBeCloseTo(0.016, 5);
     expect(app.interpolationAlpha).toBe(1);
+    expect(fixedDeltas).toEqual([]);
+  });
+
+  it('runs fixed updates standalone and retains the residual accumulator across calls', () => {
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const fixedDeltas: number[] = [];
+    connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
+
+    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    expect(fixedDeltas).toEqual([]);
+    expect(app.interpolationAlpha).toBeCloseTo(0.625, 5);
+
+    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    expect(fixedDeltas).toEqual([16]);
+    expect(app.interpolationAlpha).toBeCloseTo(0.25, 5);
+  });
+
+  it('uses explicit fixed-step options instead of policy from an active backend loop', () => {
+    const backend = makeManualLoopBackend();
+    setLoopBackend(backend);
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const fixedDeltas: number[] = [];
+    connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
+
+    startApplicationLoop(app, { fixedTimeStep: 8 });
+    stepApplicationLoop(app, 12, { fixedTimeStep: 12 });
+
+    expect(fixedDeltas).toEqual([12]);
+    expect(app.interpolationAlpha).toBe(0);
+    stopApplicationLoop(app);
+  });
+
+  it('does not mix residual time across different explicit fixed-step sizes', () => {
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const fixedDeltas: number[] = [];
+    connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
+
+    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    stepApplicationLoop(app, 4, { fixedTimeStep: 8 });
+
+    expect(fixedDeltas).toEqual([]);
+    expect(app.interpolationAlpha).toBe(0.5);
+  });
+
+  it('uses an explicit max delta instead of the active backend loop clamp', () => {
+    const backend = makeManualLoopBackend();
+    setLoopBackend(backend);
+    const app = createApplication();
+
+    startApplicationLoop(app, { maxDeltaTime: 100 });
+    stepApplicationLoop(app, 9999, { maxDeltaTime: 40 });
+
+    expect(app.deltaTime).toBe(40);
+    stopApplicationLoop(app);
   });
 
   it('routes update and render errors independently through onError', () => {
