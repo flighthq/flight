@@ -175,6 +175,7 @@ function build(
   frames: ReadonlyArray<{ frame: number; interpolation?: number; value: number }>,
   nodes?: Array<DisplayObject | null>,
   objectId = 0,
+  diagnostics?: ImportDiagnostic[],
 ) {
   const objects: RiveCoreObject[] = [
     object(LINEAR_ANIMATION, { [FPS]: fps, [DURATION]: 60 }),
@@ -190,7 +191,15 @@ function build(
   ];
   const resolved = nodes ?? [createDisplayObject()];
   return {
-    clips: createRiveAnimationClips(objects, { end: objects.length, start: 0 }, resolved, emptyArtboard(), new Map()),
+    clips: createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      resolved,
+      emptyArtboard(),
+      new Map(),
+      null,
+      diagnostics,
+    ),
   };
 }
 
@@ -386,6 +395,58 @@ describe('createRiveAnimationClips', () => {
     // exactly on the target. A linear fallback would instead produce 50.
     sampleAnimationTrack(_scratch, track, 0.5);
     expect(_scratch[0]).toBeCloseTo(100, 6);
+  });
+
+  // A keyframe naming an interpolator this reader does not build loses only its CURVE: the channel is
+  // present and runs full length, so the segment silently straightens to linear.
+  it('reports a keyframe interpolator it cannot resolve', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const { clips } = build(
+      1,
+      13,
+      [
+        { frame: 0, interpolation: 2, value: 0 },
+        { frame: 1, interpolation: 2, value: 100 },
+      ],
+      undefined,
+      0,
+      diagnostics,
+    );
+
+    // The channel survives — that is what makes this a substitution rather than a drop.
+    expect(clips[0].clip.channels).toHaveLength(1);
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { interpolationType: 2, interpolatorId: -1, substitutedAs: 'linear' },
+        kind: 'rive.keyframe-easing-substituted',
+        severity: 'Recover',
+      },
+      {
+        detail: { interpolationType: 2, interpolatorId: -1, substitutedAs: 'linear' },
+        kind: 'rive.keyframe-easing-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('stays silent for hold and linear, which name no interpolator', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const { clips } = build(
+      1,
+      13,
+      [
+        { frame: 0, interpolation: 0, value: 0 },
+        { frame: 1, interpolation: 1, value: 100 },
+      ],
+      undefined,
+      0,
+      diagnostics,
+    );
+
+    // Sampling proves the silence is not vacuous: hold keeps the first value across its segment.
+    sampleAnimationTrack(_scratch, clips[0].clip.channels[0].track, 0.5);
+    expect(_scratch[0]).toBeCloseTo(0, 6);
+    expect(diagnostics).toEqual([]);
   });
 
   // An elastic ease the reader does not know still runs for its full duration, eased from the wrong
