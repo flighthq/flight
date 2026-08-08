@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { FIXTURE_RELEASE_TAG } from './fixtures';
+
 describe('import-conformance CLI', () => {
   it('writes a complete NOT RUN artifact and exits two when the pack is unavailable', () => {
     const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
@@ -81,7 +83,7 @@ function writeFixtureTree(root: string): void {
           verifiedFixtureFiles: 1,
         },
       ],
-      tag: '0.1.0',
+      tag: FIXTURE_RELEASE_TAG,
       variant: 'full',
     }),
   );
