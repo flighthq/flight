@@ -131,3 +131,87 @@ export function contoursWindOppositely(signedAreas: readonly number[]): boolean 
   const first = Math.sign(signedAreas[0]!);
   return signedAreas.slice(1).every((area) => Math.sign(area) !== first);
 }
+
+// Tallies a WOFF2 flag stream's high bit against the same glyphs read from a plain sfnt, to decide
+// which sense the bit carries. `sfntOnCurve` is ground truth from an independent build of the same
+// font; `woff2Flags` is the transformed table's per-point flag byte.
+//
+// ★ A PERFECT SCORE IS AN ARTIFACT WHEN EITHER SIDE IS CONSTANT, so the counts of both classes are
+// returned rather than only the agreement. If every point is on-curve, "high bit means off-curve"
+// scores 100% while discriminating nothing — the caller must check `sfntOnCurveCount` and
+// `sfntOffCurveCount` are both non-zero before reading the agreement as evidence.
+export function tallyWoff2OnCurveSense(
+  woff2Flags: Readonly<Uint8Array>,
+  sfntOnCurve: readonly boolean[],
+): Woff2OnCurveSenseTally {
+  let highMeansOnCurve = 0;
+  let highMeansOffCurve = 0;
+  let sfntOnCurveCount = 0;
+  let sfntOffCurveCount = 0;
+
+  for (let point = 0; point < sfntOnCurve.length; point += 1) {
+    const high = ((woff2Flags[point] ?? 0) & 0x80) !== 0;
+    const on = sfntOnCurve[point] === true;
+    if (high === on) highMeansOnCurve += 1;
+    else highMeansOffCurve += 1;
+    if (on) sfntOnCurveCount += 1;
+    else sfntOffCurveCount += 1;
+  }
+  return { highMeansOffCurve, highMeansOnCurve, sfntOffCurveCount, sfntOnCurveCount };
+}
+
+export interface Woff2OnCurveSenseTally {
+  highMeansOffCurve: number;
+  highMeansOnCurve: number;
+  sfntOffCurveCount: number;
+  sfntOnCurveCount: number;
+}
+
+// Whether a bbox-stream layout accounts for its own length exactly: the presence bitmap, then one
+// eight-byte box per set bit. Order-independent, since a popcount does not depend on bit order, so this
+// checks the SIZE of the bitmap without assuming which end its bits start from.
+//
+// ★ THIS IS THE CHECK THAT CATCHES A BITMAP ROUNDED TO A BYTE INSTEAD OF TO 32 BITS — but only on a
+// font whose glyph count distinguishes them. A count that is a multiple of 32 rounds identically under
+// both rules and can never fail this, however wrong the reader is.
+export function accountsForWoff2BboxStream(
+  bboxStreamByteLength: number,
+  bitmapByteLength: number,
+  setBitCount: number,
+): boolean {
+  return bitmapByteLength + setBitCount * 8 === bboxStreamByteLength;
+}
+
+// Whether two decoded outlines are the same shape: identical contour ends, points and on-curve flags.
+//
+// ★ THIS IS THE CORRECTNESS MEASURE FOR AN ENCODER, AND A BYTE COMPARISON IS NOT. The `glyf` point
+// encoding admits several spellings of the same outline — a zero delta may be omitted, a small delta
+// written short or long, a run of identical flags collapsed or not — so a re-encoded glyph can differ
+// byte-for-byte from the producer's while describing exactly the same shape. Byte equality measures
+// agreement with one producer's choices; this measures whether the geometry survived.
+export function outlinesAreIdentical(
+  left: Readonly<{
+    endPtsOfContours: readonly number[];
+    onCurve: readonly boolean[];
+    xs: readonly number[];
+    ys: readonly number[];
+  }>,
+  right: Readonly<{
+    endPtsOfContours: readonly number[];
+    onCurve: readonly boolean[];
+    xs: readonly number[];
+    ys: readonly number[];
+  }>,
+): boolean {
+  if (left.xs.length !== right.xs.length) return false;
+  if (left.endPtsOfContours.length !== right.endPtsOfContours.length) return false;
+  for (let index = 0; index < left.endPtsOfContours.length; index += 1) {
+    if (left.endPtsOfContours[index] !== right.endPtsOfContours[index]) return false;
+  }
+  for (let index = 0; index < left.xs.length; index += 1) {
+    if (left.xs[index] !== right.xs[index]) return false;
+    if (left.ys[index] !== right.ys[index]) return false;
+    if (left.onCurve[index] !== right.onCurve[index]) return false;
+  }
+  return true;
+}

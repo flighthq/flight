@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  accountsForWoff2BboxStream,
   classifyHeadBoundsDeltas,
   compareContourCount,
   contoursWindOppositely,
   measureDecodedBoundsAgainstHead,
+  outlinesAreIdentical,
+  tallyWoff2OnCurveSense,
   woff2StreamRange,
 } from './font-oracles';
 
@@ -110,5 +113,59 @@ describe('woff2StreamRange', () => {
 
   it('returns the sentinel for a container declaring no compressed bytes', () => {
     expect(woff2StreamRange(100, 0, 500)).toBeNull();
+  });
+});
+
+describe('accountsForWoff2BboxStream', () => {
+  it('accepts a stream whose bitmap and boxes account for it exactly', () => {
+    expect(accountsForWoff2BboxStream(220 + 589 * 8, 220, 589)).toBe(true);
+  });
+
+  it('rejects a bitmap rounded to a byte where the count needs a 32-bit round', () => {
+    // 1741 glyphs: 218 bytes by byte-rounding, 220 by word-rounding. The short reading leaves two
+    // bytes unaccounted, which is exactly the shift that puts every box one int16 out.
+    expect(accountsForWoff2BboxStream(220 + 577 * 8, 218, 577)).toBe(false);
+    expect(accountsForWoff2BboxStream(220 + 577 * 8, 220, 577)).toBe(true);
+  });
+
+  it('cannot distinguish the two roundings when the glyph count is a multiple of 32', () => {
+    // Recorded because it bounds what this check can prove: at 1760 glyphs both rules give 220, so a
+    // wrong reader passes. Any font used to test that seam needs a count that is NOT a multiple of 32.
+    expect(accountsForWoff2BboxStream(220 + 10 * 8, 220, 10)).toBe(true);
+  });
+});
+
+describe('outlinesAreIdentical', () => {
+  const outline = { endPtsOfContours: [2], onCurve: [true, false, true], xs: [0, 5, 10], ys: [0, 5, 0] };
+
+  it('accepts the same outline spelled twice', () => {
+    expect(outlinesAreIdentical(outline, { ...outline })).toBe(true);
+  });
+
+  it('rejects a moved point, a changed curve flag, and a changed contour split', () => {
+    expect(outlinesAreIdentical(outline, { ...outline, xs: [0, 6, 10] })).toBe(false);
+    expect(outlinesAreIdentical(outline, { ...outline, onCurve: [true, true, true] })).toBe(false);
+    expect(outlinesAreIdentical(outline, { ...outline, endPtsOfContours: [1] })).toBe(false);
+  });
+
+  it('rejects a different point count rather than comparing the common prefix', () => {
+    expect(outlinesAreIdentical(outline, { ...outline, xs: [0, 5], ys: [0, 5], onCurve: [true, false] })).toBe(false);
+  });
+});
+
+describe('tallyWoff2OnCurveSense', () => {
+  it('scores the two senses against ground truth', () => {
+    const flags = Uint8Array.from([0x00, 0x80, 0x00, 0x80]);
+    const tally = tallyWoff2OnCurveSense(flags, [true, false, true, false]);
+    expect(tally.highMeansOffCurve).toBe(4);
+    expect(tally.highMeansOnCurve).toBe(0);
+  });
+
+  it('reports both class counts so a vacuous perfect score can be spotted', () => {
+    // Every point on-curve and every high bit clear scores 4/4 for "high means off-curve" while
+    // discriminating nothing. The class counts are what expose it.
+    const tally = tallyWoff2OnCurveSense(Uint8Array.from([0, 0, 0, 0]), [true, true, true, true]);
+    expect(tally.highMeansOffCurve).toBe(4);
+    expect(tally.sfntOffCurveCount).toBe(0);
   });
 });
