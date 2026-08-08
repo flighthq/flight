@@ -99,7 +99,7 @@
     "mocks": "tsx ./scripts/mocks.ts",
     "mocks:check": "tsx ./scripts/mocks.ts --check",
     "mocks:json": "tsx ./scripts/mocks.ts --json",
-    "oracle:woff2-reversal": "tsx ./scripts/woff2-reversal-oracle.ts",
+    "oracle:woff2-reversal": "tsx ./conformance/font/woff2-reversal-oracle.ts",
     "order": "tsx ./scripts/order.ts",
     "order:check": "tsx ./scripts/order.ts --check",
     "order:check:json": "tsx ./scripts/order.ts --check --json",

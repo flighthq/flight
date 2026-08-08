@@ -366,7 +366,7 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
       maximumResidualToPrecisionRatio: 0,
       role: 'diagnostic',
       state: 'passed',
-      tool: 'scripts/md5-tangent-frame-oracle',
+      tool: 'conformance/md5/md5-tangent-frame-oracle',
     });
   });
 
