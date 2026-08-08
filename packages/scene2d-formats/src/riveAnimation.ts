@@ -172,7 +172,7 @@ function createRiveAnimationClip(
   const workEnd = readRiveNumber(source, RIVE_ANIMATION_WORK_END, RIVE_UNSET_FRAME);
   return {
     clip: createAnimationClip(channels, duration),
-    loop: toRiveAnimationLoop(readRiveNumber(source, RIVE_ANIMATION_LOOP, RIVE_LOOP_ONE_SHOT)),
+    loop: toRiveAnimationLoop(readRiveNumber(source, RIVE_ANIMATION_LOOP, RIVE_LOOP_ONE_SHOT), diagnostics),
     name: readRiveText(source, RIVE_ANIMATION_NAME, ''),
     speed: readRiveNumber(source, RIVE_ANIMATION_SPEED, 1),
     workAreaEnd: !hasWorkArea || workEnd < 0 ? null : workEnd / fps,
@@ -183,9 +183,23 @@ function createRiveAnimationClip(
 // An unrecognized mode falls to one-shot, which is the format's own initial value and the reading
 // that shows least: a file naming a mode this reader does not know plays once rather than repeating
 // forever.
-function toRiveAnimationLoop(value: number): RiveAnimationLoop {
+function toRiveAnimationLoop(value: number, diagnostics: ImportDiagnostic[] | undefined): RiveAnimationLoop {
   if (value === RIVE_LOOP_LOOP) return RiveAnimationLoopValue.Loop;
-  return value === RIVE_LOOP_PING_PONG ? RiveAnimationLoopValue.PingPong : RiveAnimationLoopValue.OneShot;
+  if (value === RIVE_LOOP_PING_PONG) return RiveAnimationLoopValue.PingPong;
+  // The value arrives raw from the file with no mask, so this arm absorbs any mode Rive adds later and
+  // the animation plays ONCE instead. The clip survives at full length and simply repeats wrongly, which
+  // no existence check and no count can see — so an unrecognised value reports rather than passing as a
+  // one-shot the file never asked for. A genuine one-shot is the documented default and reports nothing.
+  if (value !== RIVE_LOOP_ONE_SHOT) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.animation-loop-substituted',
+      'createScene2DFromRiveDocument',
+      { loopValue: value, substitutedAs: 'oneShot' },
+    );
+  }
+  return RiveAnimationLoopValue.OneShot;
 }
 
 /**
