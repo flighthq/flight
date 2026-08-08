@@ -17,7 +17,13 @@ Scoping MD5 as a second conformance format produced a falsifier rather than an e
 > If the core owns raw capability extraction, **or assumes one file equals one case**, it is general
 > only over SWF-like tag streams.
 
-MD5 falsifies both halves.
+MD5 falsifies both halves. A third constraint arrived later, from a pivot rather than from scoping, and
+it is the same rule again:
+
+> **The core must not encode the shape of what it carries.**
+>
+> Capability extraction is **format**-owned. Case identity is **adapter**-owned. Measurement shape is
+> **oracle**-owned.
 
 **Raw capability extraction is format-grammar work, not core work.** SWF's numeric tag IDs yield
 per-file capability witnesses directly, so extraction looks like something a core could own. MD5 has
@@ -29,6 +35,18 @@ The two probes share no mechanism.
 requires a compatible mesh skeleton — so a case is a *set* of files with a case hash over its members.
 The current core carries one reference, one `sourceHash`, and one worker input per case.
 
+**A measurement does not have a knowable shape.** The first MD5 oracle compared computed skinned bounds
+against the animation's own declared per-frame bounds — a per-frame bounding volume. When the target
+moved from geometry to shading, the oracle class moved with it: orthogonality residual, handedness
+against UV winding, per-vertex frame comparison. **Different shapes, different keys, different
+arities.** A core that stored "the measurement" as a bounding volume would have needed a schema rewrite;
+a core that stores **opaque keyed measurements with explicit not-run reasons** needed no change at all.
+⇒ **Keys the core cannot interpret are what let the oracle class change without reopening the core.**
+
+This one was caught *before* it formed rather than after, which is the only cheap time. Had the shape
+been baked in, the pivot would have surfaced as an unexplained schema rewrite several days into a firm
+estimate, with nobody able to say why the number moved.
+
 ## Why it is recorded rather than remembered
 
 **The one-file-equals-one-case assumption was invisible while SWF was the only instantiation.** It does
@@ -36,10 +54,17 @@ not appear as a decision anywhere; it appears as plumbing. A single instantiatio
 its properties were assumed, which is the entire argument for scoping a hostile second format *before*
 building the abstraction rather than after.
 
-⇒ **A sound core accepts adapter-produced cases.** The reusable algorithms begin *after* an adapter has
-produced logical cases, independent capability evidence, and observations — scoring, sharding, caching,
-and the artifact schema can be general. Extraction and grouping cannot. SWF's tag walker and MD5's
-section probe stay separate instantiations.
+⇒ **A sound core accepts adapter-produced cases and oracle-produced measurements.** The reusable
+algorithms begin *after* an adapter has produced logical cases, independent capability evidence, and
+observations — scoring, sharding, caching, and the artifact schema can be general. Extraction, grouping
+and measurement semantics cannot. SWF's tag walker and MD5's section probe stay separate instantiations,
+and an oracle's measurements stay opaque to everything that transports them.
+
+**Three constraints, one rule, arrived by three different routes** — extraction from scoping a second
+format, case identity from scoping its multi-file case, measurement shape from a mid-flight pivot in what
+was being measured. **That they keep arriving is the evidence the rule is real**: each was invisible
+while a single instantiation was the only one, and none appears as a decision anywhere in the code. They
+appear as plumbing.
 
 ## Population, and the naming prohibition it carries
 
