@@ -37,9 +37,27 @@ describe('classifyHeadBoundsDeltas', () => {
     expect(classifyHeadBoundsDeltas({ xMax: -10, xMin: -10, yMax: -10, yMin: -10 })).toBe('contained');
   });
 
+  it('separates a sub-unit excess as its own outcome rather than as exact or contained', () => {
+    // The real instance: a CFF face decoding xMin as -634.2000427 against a declared int16 -634.
+    // Folded into `exact` it disappears; folded into `contained` it is misreported.
+    expect(classifyHeadBoundsDeltas({ xMax: 0, xMin: 0.200_042_724_609_375, yMax: 0, yMin: 0 })).toBe(
+      'within-head-representable-precision',
+    );
+  });
+
+  it('bounds that outcome at one design unit, because int16 cannot explain more', () => {
+    // Just under a unit is explicable by rounding a real coordinate to an integer field; a whole unit
+    // is not, and must stay a defect. This is the line the band is not allowed to move.
+    expect(classifyHeadBoundsDeltas({ xMax: 0, xMin: 0.999, yMax: 0, yMin: 0 })).toBe(
+      'within-head-representable-precision',
+    );
+    expect(classifyHeadBoundsDeltas({ xMax: 0, xMin: 1, yMax: 0, yMin: 0 })).toBe('exceeds');
+  });
+
   it('reports exceeds on any single edge, which is the only definite defect', () => {
     for (const edge of ['xMax', 'xMin', 'yMax', 'yMin'] as const) {
-      expect(classifyHeadBoundsDeltas({ xMax: -1, xMin: -1, yMax: -1, yMin: -1, [edge]: 1 })).toBe('exceeds');
+      // A whole unit or more on any single edge, which int16 quantisation cannot account for.
+      expect(classifyHeadBoundsDeltas({ xMax: -1, xMin: -1, yMax: -1, yMin: -1, [edge]: 2 })).toBe('exceeds');
     }
   });
 });

@@ -39,16 +39,38 @@ export function measureDecodedBoundsAgainstHead(
 
 // The classification, over deltas somebody else measured.
 //
-// EXCEEDS is the only definite defect: a decoded point outside the declared box cannot be right.
-// CONTAINED is a WEAK pass and is named separately rather than folded into agreement — it cannot
-// distinguish a loose declared box from a glyph the reader failed to draw.
+// FOUR outcomes, because the line between "inside" and "outside" had TWO things behind it:
+//
+//   exact     — every edge sits on the declared bound.
+//   contained — inside it. A WEAK pass: it cannot distinguish a loose declared box from a glyph the
+//               reader failed to draw.
+//   within-head-representable-precision — outside, but by LESS THAN ONE DESIGN UNIT.
+//   exceeds   — outside by a unit or more. The only definite defect.
+//
+// ★ THE THIRD OUTCOME IS NAMED FOR ITS CAUSE, NOT ITS SIZE, AND THAT IS THE WHOLE POINT. `head`'s
+// bounds are `int16` — integers — while CFF Type 2 operands may be 16.16 FIXED-POINT, so a decoded
+// coordinate can be real-valued and the declared bound cannot represent it. A producer writing the
+// nearest integer is off by strictly less than one unit, so THE BOUND IS DERIVED FROM THE
+// REPRESENTATION rather than chosen: an excess of one unit or more CANNOT be explained by int16
+// quantisation and is a defect.
+//
+// A band named for its size would be a fudge factor that absorbs the next unexplained excess. This one
+// admits only what its cause explains. Measured instance: a CFF face decoding xMin as -634.2000427
+// against a declared -634.
 export function classifyHeadBoundsDeltas(
   deltas: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
-): 'contained' | 'exact' | 'exceeds' {
+): 'contained' | 'exact' | 'exceeds' | 'within-head-representable-precision' {
   const edges = [deltas.xMax, deltas.xMin, deltas.yMax, deltas.yMin];
-  if (edges.some((delta) => delta > 0)) return 'exceeds';
+  const worst = Math.max(...edges);
+  if (worst >= HEAD_BOUNDS_QUANTISATION_UNIT) return 'exceeds';
+  if (worst > 0) return 'within-head-representable-precision';
   return edges.every((delta) => delta === 0) ? 'exact' : 'contained';
 }
+
+// One design unit. `head` stores bounds as `int16`, so a real-valued coordinate rounded to the nearest
+// integer differs from it by strictly less than this. Not a tolerance: change the field's width and
+// this changes with it.
+const HEAD_BOUNDS_QUANTISATION_UNIT = 1;
 
 // A `glyf` glyph declares `numberOfContours` in a field the point decoding never touches, so emitted
 // contours versus declared contours is order-sensitive at exactly the boundary a stream permutation
