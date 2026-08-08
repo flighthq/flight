@@ -89,6 +89,13 @@ const HEAD_BOUNDS_QUANTISATION_UNIT = 1;
 // Composite glyphs (negative count) are NOT comparable this way: their contours come from components
 // rather than from this glyph's own points, so they are reported as skipped rather than counted as
 // agreement. Folding them in would inflate the agreement figure with glyphs nothing checked.
+//
+// ★ A CALLER THAT FILTERS BEFORE CALLING THIS CANNOT DISTINGUISH "no composites existed" FROM "no
+// composite ever reached the comparison" — both tally `skipped-composite` at zero, and the second is a
+// walk that skipped a third of the corpus while reporting a clean sweep. Measured instance: a walk that
+// dropped empty paths first counted 0 skipped over a corpus holding 33,299 composites. So call this for
+// EVERY glyph and let it classify, and state the population in the output — "of N simple glyphs, with M
+// composites not evaluated" — because a bare agreement count cannot say what it is over.
 export function compareContourCount(
   declaredContours: number,
   emittedCloseCommands: number,
