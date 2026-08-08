@@ -1,7 +1,7 @@
 import { createPath, getPathLength } from '@flighthq/path/contract';
 import { createShape } from '@flighthq/shape/contract';
-import type { RiveArtboardGraph, RiveCoreObject, RivePathRecord } from '@flighthq/types/contract';
-import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RivePathRecord } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
 import { appendRiveShapePaint } from './riveShapePaint';
 
@@ -123,6 +123,57 @@ describe('appendRiveShapePaint', () => {
 
     expect(windingOf(nonZero)).toBe('nonZero');
     expect(windingOf(evenOdd)).toBe('evenOdd');
+  });
+
+  // A cap or join outside the three the format states still draws, at full length, with the wrong
+  // end — a loss no count and no existence check can see, so the crumb is the only trace of it.
+  it('reports a stroke cap it does not know', () => {
+    const shape = createShape();
+    const diagnostics: ImportDiagnostic[] = [];
+    appendRiveShapePaint(shape, strokeWith({ 48: 7 }), 0, [line(10)], diagnostics);
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]!.kind).toBe('rive.stroke-cap-substituted');
+    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(diagnostics[0]!.detail).toEqual({ capValue: 7, substitutedAs: 'none' });
+    expect(capOf(shape)).toBe('none');
+  });
+
+  it('stays silent for a stroke cap the format states', () => {
+    const butt = createShape();
+    const square_ = createShape();
+    const diagnostics: ImportDiagnostic[] = [];
+    // 0 is Rive's butt cap and Flight's 'none' — a mapping, not a fallback, so it must not report.
+    appendRiveShapePaint(butt, strokeWith({ 48: 0 }), 0, [line(10)], diagnostics);
+    appendRiveShapePaint(square_, strokeWith({ 48: 2 }), 0, [line(10)], diagnostics);
+
+    expect(diagnostics).toEqual([]);
+    expect(capOf(butt)).toBe('none');
+    expect(capOf(square_)).toBe('square');
+  });
+
+  it('reports a stroke join it does not know', () => {
+    const shape = createShape();
+    const diagnostics: ImportDiagnostic[] = [];
+    appendRiveShapePaint(shape, strokeWith({ 49: 9 }), 0, [line(10)], diagnostics);
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]!.kind).toBe('rive.stroke-join-substituted');
+    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(diagnostics[0]!.detail).toEqual({ joinValue: 9, substitutedAs: 'miter' });
+    expect(joinOf(shape)).toBe('miter');
+  });
+
+  it('stays silent for a stroke join the format states', () => {
+    const miter = createShape();
+    const bevel = createShape();
+    const diagnostics: ImportDiagnostic[] = [];
+    appendRiveShapePaint(miter, strokeWith({ 49: 0 }), 0, [line(10)], diagnostics);
+    appendRiveShapePaint(bevel, strokeWith({ 49: 2 }), 0, [line(10)], diagnostics);
+
+    expect(diagnostics).toEqual([]);
+    expect(joinOf(miter)).toBe('miter');
+    expect(joinOf(bevel)).toBe('bevel');
   });
 
   it('builds a gradient from its stops, scaling each stop alpha by the gradient opacity', () => {
@@ -357,6 +408,20 @@ function strokedLength(shape: { data: { commands: unknown[] } }): number {
 function firstStrokedData(shape: { data: { commands: unknown[] } }): number[] {
   const at = shape.data.commands.indexOf('drawPath');
   return shape.data.commands[at + 3] as number[];
+}
+
+function strokeWith(properties: Readonly<Record<number, number>>) {
+  return graph([object(SHAPE, {}), object(STROKE, properties), object(SOLID_COLOR, {})], [-1, 0, 1]);
+}
+
+function capOf(shape: { data: { commands: unknown[] } }): unknown {
+  const tokens = shape.data.commands;
+  return tokens[tokens.indexOf('lineStyle') + 7];
+}
+
+function joinOf(shape: { data: { commands: unknown[] } }): unknown {
+  const tokens = shape.data.commands;
+  return tokens[tokens.indexOf('lineStyle') + 8];
 }
 
 function paintTokens(shape: { data: { commands: unknown[] } }): string[] {
