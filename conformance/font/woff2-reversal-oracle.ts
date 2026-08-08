@@ -16,11 +16,7 @@ import {
   reverseWoff2GlyfTransform,
 } from '@flighthq/font-formats/contract';
 
-import {
-  accountsForWoff2BboxStream,
-  outlinesAreIdentical,
-  tallyWoff2OnCurveSense,
-} from '../conformance/font/font-oracles';
+import { accountsForWoff2BboxStream, outlinesAreIdentical, tallyWoff2OnCurveSense } from './font-oracles';
 
 // Measures Flight's WOFF2 `glyf` reversal against ground truth, by comparing a transformed WOFF2 with
 // the SAME font shipped as a plain `.ttf`. Every claim this repository makes about the reversal — the
@@ -576,7 +572,7 @@ export function collectWoff2Files(directory: string): Uint8Array[] {
 if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
   const directory = process.argv[2];
   if (directory === undefined) {
-    console.log('usage: tsx scripts/woff2-reversal-oracle.ts <directory of matched .ttf/.woff2 builds>');
+    console.log('usage: tsx conformance/font/woff2-reversal-oracle.ts <directory of matched .ttf/.woff2 builds>');
   } else {
     const pairs = collectWoff2ReversalPairs(directory);
     console.log(`matched pairs found: ${pairs.length}`);
