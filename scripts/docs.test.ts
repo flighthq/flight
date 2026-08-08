@@ -10,7 +10,9 @@ import {
   findMapStatusClaims,
   findMarkdownLinkTargets,
   findOrphanDocs,
+  findOverlongStatusLogs,
   findReachableDocs,
+  findStaleStatusLogs,
   findUnacknowledgedCellDocs,
   findUncoveredPackages,
   getDocBudgetStatus,
@@ -18,6 +20,7 @@ import {
   isAuthorityBearingDoc,
   reportDocBudget,
 } from './docs';
+import type { StatusLogEntry } from './docs';
 
 function mapWith(...entries: readonly string[]): string {
   return ['# Map', '', '## Domain Conventions', '', ...entries, '', '## Next Section', ''].join('\n');
@@ -283,6 +286,55 @@ describe('findOrphanDocs', () => {
 
   it('does NOT extend that allowance to a hand-written sibling in the same directory', () => {
     expect(findOrphanDocs(['agents/packages/progress.md'], new Set())).toEqual(['agents/packages/progress.md']);
+  });
+});
+
+describe('findOverlongStatusLogs', () => {
+  const entry = (cell: string, length: number): StatusLogEntry => ({ cell, codeDate: null, length, statusDate: null });
+
+  it('reports only the logs past the cap, largest first, so a reader gets somewhere to start', () => {
+    const entries = [entry('small', 100), entry('huge', 9_000), entry('big', 7_000)];
+    expect(findOverlongStatusLogs(entries, 6_000).map((found) => found.cell)).toEqual(['huge', 'big']);
+  });
+
+  // The boundary, not the centre: the cap is a ceiling the file may reach, not one it may approach.
+  it('treats a log exactly at the cap as within it', () => {
+    expect(findOverlongStatusLogs([entry('exact', 6_000)], 6_000)).toEqual([]);
+  });
+});
+
+describe('findStaleStatusLogs', () => {
+  const entry = (cell: string, statusDate: string | null, codeDate: string | null): StatusLogEntry => ({
+    cell,
+    codeDate,
+    length: 0,
+    statusDate,
+  });
+
+  it('reports a log whose newest entry predates its package last moving, stalest first', () => {
+    const entries = [
+      entry('current', '2026-08-06', '2026-08-01'),
+      entry('behind', '2026-07-01', '2026-08-06'),
+      entry('stalest', '2026-06-24', '2026-08-06'),
+    ];
+    expect(findStaleStatusLogs(entries).map((found) => found.cell)).toEqual(['stalest', 'behind']);
+  });
+
+  // Matches `sumChurnSince`: a log written the same day as a commit is treated as having seen it. Two
+  // sibling rules disagreeing on an inclusive boundary is a divergence nothing else would surface.
+  it('treats a same-day log as current rather than behind', () => {
+    expect(findStaleStatusLogs([entry('sameDay', '2026-08-06', '2026-08-06')])).toEqual([]);
+  });
+
+  // The cell types this exists to exclude: absorbed, reserved, downstream, spun-out. "Behind code that
+  // does not exist here" is not a finding, and reporting it would put ~35 permanent entries in a list
+  // whose whole purpose is to shrink as cells are rewritten.
+  it('skips a cell with no local code rather than calling it stale', () => {
+    expect(findStaleStatusLogs([entry('downstream', '2026-01-01', null)])).toEqual([]);
+  });
+
+  it('skips a log with no dated entry, which is empty rather than stale', () => {
+    expect(findStaleStatusLogs([entry('fresh', null, '2026-08-06')])).toEqual([]);
   });
 });
 

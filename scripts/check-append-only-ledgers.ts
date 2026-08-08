@@ -101,8 +101,10 @@ export interface AppendOnlyLedgerReport {
   violations: LedgerViolation[];
 }
 
-// The two guarded sections, and only these two. `status.md` is append-only by convention as well, but
-// CONTRACT.md does not put it under the mechanical rule and this check does not invent scope.
+// The two guarded sections, and only these two. `status.md › Log` is append-only by convention as well,
+// but CONTRACT.md does not put it under the mechanical rule and this check does not invent scope. Its
+// sibling `status.md › Open` is the deliberate opposite — a statement of current state, rewritten in
+// place — so guarding that file wholesale would freeze the half that has to change to stay true.
 export const GUARDED_LEDGERS: readonly Readonly<{ file: string; heading: string }>[] = [
   { file: 'assessment.md', heading: 'Approved' },
   { file: 'charter.md', heading: 'Decisions' },
