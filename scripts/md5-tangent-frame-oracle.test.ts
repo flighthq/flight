@@ -3,11 +3,13 @@ import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import type { Mesh, Scene3D } from '@flighthq/types/contract';
 
 import {
+  formatMd5TangentFrameOracleCorpusReport,
   measureMd5SplitTangentDifference,
   measureMd5TangentCodePathCrossCheck,
   measureMd5TangentHandedness,
   measureMd5TangentOrthogonality,
   runMd5TangentFrameOracles,
+  runMd5TangentFrameOracleCorpus,
 } from './md5-tangent-frame-oracle';
 
 describe('MD5 tangent orthogonality measurement', () => {
@@ -16,15 +18,19 @@ describe('MD5 tangent orthogonality measurement', () => {
     expect(measureMd5TangentOrthogonality(scene)).toEqual({
       exactVertices: 3,
       id: 'md5.tangent-orthogonality',
+      infiniteTangentVertices: 0,
       invalidVertices: 0,
       maximumPrecisionExcess: 0,
       maximumPrecisionBound: 1.4012985478487143e-45,
       maximumResidual: 0,
       maximumResidualToPrecisionRatio: 0,
+      minimumNonzeroTangentLength: 1,
+      nanTangentVertices: 0,
       outsidePrecisionVertices: 0,
       state: 'passed',
       vertexCount: 3,
       withinPrecisionVertices: 0,
+      zeroLengthTangentVertices: 0,
     });
   });
 
@@ -45,7 +51,64 @@ describe('MD5 tangent orthogonality measurement', () => {
       invalidVertices: 1,
       notRunReason: 'tangent-frame-unreadable',
       state: 'not-run',
+      zeroLengthTangentVertices: 1,
     });
+
+    unreadableGeometry.vertices[6] = Number.NaN;
+    expect(measureMd5TangentOrthogonality(unreadable)).toMatchObject({
+      nanTangentVertices: 1,
+      state: 'not-run',
+      zeroLengthTangentVertices: 0,
+    });
+  });
+});
+
+describe('MD5 tangent frame corpus runner', () => {
+  it('reports an empty acquired population as not run', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'flight-md5-tangent-empty-'));
+    try {
+      const report = runMd5TangentFrameOracleCorpus(directory, 0);
+      expect(report).toEqual({
+        acquisition: {
+          pack: 'mesh-legacy-fixtures',
+          release: expect.any(String),
+          variant: 'full',
+          verifiedFixtureFiles: 0,
+        },
+        cases: [],
+        discoveredMeshFiles: 0,
+        importNotRunMeshFiles: 0,
+        measuredMeshFiles: 0,
+        notRunReason: 'md5-mesh-fixtures-absent',
+        state: 'not-run',
+      });
+      expect(formatMd5TangentFrameOracleCorpusReport(report)).toContain(
+        'corpus-state=not-run measured-md5mesh=0 import-not-run-md5mesh=0 reason=md5-mesh-fixtures-absent',
+      );
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('walks and imports each acquired MD5 mesh before comparing it', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'flight-md5-tangent-populated-'));
+    try {
+      mkdirSync(join(directory, 'meshes', 'synthetic'), { recursive: true });
+      writeFileSync(join(directory, 'meshes', 'synthetic', 'triangle.md5mesh'), SINGLE_TRIANGLE);
+      const report = runMd5TangentFrameOracleCorpus(directory, 1);
+      expect(report).toMatchObject({
+        cases: [{ reference: 'meshes/synthetic/triangle.md5mesh', state: 'measured' }],
+        discoveredMeshFiles: 1,
+        importNotRunMeshFiles: 0,
+        measuredMeshFiles: 1,
+        state: 'measured',
+      });
+      expect(formatMd5TangentFrameOracleCorpusReport(report)).toContain(
+        'tangent-nan=0 tangent-infinite=0 tangent-zero-length=0',
+      );
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
   });
 });
 
@@ -255,3 +318,6 @@ const MIRRORED_UV_TRIANGLES = [
   '  weight 3 0 1.0 ( -1 0 0 )',
   '}',
 ].join('\n');
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
