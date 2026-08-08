@@ -3,6 +3,8 @@ import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import type { Bitmap, Image } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
+import { getImageBackend } from './imageBackend';
+
 // Transcodes a Bitmap's raw pixels into an element-backed Image, via a detached canvas.
 // The inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
@@ -117,31 +119,7 @@ export async function loadImageResourceFromUrl(
   crossOrigin?: 'anonymous' | 'use-credentials',
   signal?: AbortSignal,
 ): Promise<Image> {
-  signal?.throwIfAborted();
-  const img = new Image();
-  if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
-  img.src = url;
-  // Wire abort to cancel the pending decode and reject with the signal's reason. Always remove the
-  // listener when the race settles so a long-lived signal does not retain the image and closure.
-  if (signal !== undefined) {
-    let rejectAbort: (reason?: unknown) => void = () => {};
-    const abortPromise = new Promise<never>((_, reject) => {
-      rejectAbort = reject;
-    });
-    const onAbort = (): void => {
-      img.src = '';
-      rejectAbort(signal.reason);
-    };
-    signal.addEventListener('abort', onAbort, { once: true });
-    try {
-      await Promise.race([img.decode(), abortPromise]);
-    } finally {
-      signal.removeEventListener('abort', onAbort);
-    }
-  } else {
-    await img.decode();
-  }
-  return createImageResourceFromImageElement(img);
+  return getImageBackend().loadImageFromUrl(url, crossOrigin, signal);
 }
 
 // The host-decode truth for every browser-backed source; see imageResource.ts.
