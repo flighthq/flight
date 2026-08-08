@@ -67,9 +67,19 @@ export function classifyHeadBoundsDeltas(
   return edges.every((delta) => delta === 0) ? 'exact' : 'contained';
 }
 
-// One design unit. `head` stores bounds as `int16`, so a real-valued coordinate rounded to the nearest
-// integer differs from it by strictly less than this. Not a tolerance: change the field's width and
+// One design unit. `head` stores bounds as `int16`, so a real-valued coordinate written to an integer
+// field differs from it by strictly less than this — a declared integer cannot sit a full unit outward
+// or a nearer integer would have been written instead. Not a tolerance: change the field's width and
 // this changes with it.
+//
+// ★ ONE, NOT A HALF, AND THE REASON IS ABOUT PRODUCERS WE HAVE NOT SEEN. A producer that rounds to
+// nearest is off by at most a half, so 0.5 would fit the corpus in hand — but a producer that
+// TRUNCATES toward zero is off by up to a whole unit, and 0.5 would start calling its valid fonts
+// defective. 1.0 holds for every rounding convention. A bound tuned to the corpus you have is a bound
+// that fails on the corpus you get.
+//
+// The same bound applies to all four edges even though their sign conventions are opposite — the
+// deltas are already normalised so that positive means OUTSIDE, whichever edge it is.
 const HEAD_BOUNDS_QUANTISATION_UNIT = 1;
 
 // A `glyf` glyph declares `numberOfContours` in a field the point decoding never touches, so emitted
