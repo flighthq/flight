@@ -3,6 +3,7 @@ import { basename, extname, join } from 'node:path';
 import { brotliDecompressSync } from 'node:zlib';
 
 import {
+  assembleSfntFont,
   decodeWoff2Triplet,
   getWoff2BboxBitmapByteLength,
   hasWoff2GlyphBbox,
@@ -10,7 +11,9 @@ import {
   readSfntTableDirectory,
   readWoff2GlyfStreams,
   readWoff2Short,
+  packSfntTag,
   readWoff2TableDirectory,
+  reverseWoff2GlyfTransform,
 } from '@flighthq/font-formats/contract';
 
 import { accountsForWoff2BboxStream, outlinesAreIdentical, tallyWoff2OnCurveSense } from './font-oracles';
@@ -363,6 +366,62 @@ export function collectWoff2ReversalPairs(directory: string): { ttf: Uint8Array;
     }));
 }
 
+// Reverses a WOFF2's transformed `glyf` and compares every reconstructed outline with the same glyph
+// read from the paired `.ttf`. This is the end-to-end claim: not that the streams parse, but that what
+// comes out the far side is the font that went in.
+//
+// ★ GEOMETRY IS COMPARED, NOT BYTES, AND THE DIFFERENCE IS NOT A CONCESSION. The `glyf` point encoding
+// admits several spellings of one outline — an omitted zero delta, a short or long delta, a collapsed
+// or expanded run of equal flags — so a correct re-encode routinely differs byte-for-byte from the
+// producer's. Byte equality would measure agreement with one font tool's habits; this measures whether
+// the shape survived.
+export function measureWoff2ReconstructedOutlines(
+  ttf: Readonly<Uint8Array>,
+  woff2: Readonly<Uint8Array>,
+): { compared: number; identical: number } | null {
+  const tables = readWoff2RawTables(woff2);
+  const transformed = tables?.get('glyf');
+  if (transformed === undefined) return null;
+  const streams = readWoff2GlyfStreams(transformed);
+  if (streams === null) return null;
+  const rebuilt = reverseWoff2GlyfTransform(streams);
+  if (rebuilt === null) return null;
+
+  // The reconstructed table is read back with the SAME independent reader used on the real font, so a
+  // defect in the writer cannot be cancelled out by a matching defect in a bespoke reader.
+  const rebuiltFont = assembleComparableFont(ttf, rebuilt.glyf, rebuilt.loca);
+  if (rebuiltFont === null) return null;
+
+  let compared = 0;
+  let identical = 0;
+  for (let index = 0; index < streams.glyphCount; index += 1) {
+    const truth = readSfntGlyphOutline(ttf, index);
+    if (truth === null) continue;
+    const mine = readSfntGlyphOutline(rebuiltFont, index);
+    compared += 1;
+    if (mine !== null && outlinesAreIdentical(truth, mine)) identical += 1;
+  }
+  return { compared, identical };
+}
+
+// Rewrites a font with a replacement `glyf` and `loca`, so the reconstructed tables can be read back
+// through the ordinary sfnt path rather than through a reader written specially for them.
+function assembleComparableFont(
+  source: Readonly<Uint8Array>,
+  glyf: Readonly<Uint8Array>,
+  loca: Readonly<Uint8Array>,
+): Uint8Array | null {
+  const directory = readSfntTableDirectory(source);
+  if (directory === null) return null;
+  const tables: { data: Readonly<Uint8Array>; tag: number }[] = [];
+  for (const [tag, entry] of directory.tables) {
+    const data =
+      tag === 'glyf' ? glyf : tag === 'loca' ? loca : source.subarray(entry.offset, entry.offset + entry.length);
+    tables.push({ data, tag: packSfntTag(tag) });
+  }
+  return assembleSfntFont(new DataView(source.buffer, source.byteOffset, source.byteLength).getUint32(0), tables);
+}
+
 // Run directly to measure a fixture tree; imported by the tests, which must not trigger it.
 if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
   const directory = process.argv[2];
@@ -372,5 +431,14 @@ if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
     const pairs = collectWoff2ReversalPairs(directory);
     console.log(`matched pairs found: ${pairs.length}`);
     console.log(formatWoff2ReversalOracleReport(runWoff2ReversalOracle(pairs)));
+    let compared = 0;
+    let identical = 0;
+    for (const pair of pairs) {
+      const outcome = measureWoff2ReconstructedOutlines(pair.ttf, pair.woff2);
+      if (outcome === null) continue;
+      compared += outcome.compared;
+      identical += outcome.identical;
+    }
+    console.log(`  RECONSTRUCTED OUTLINES identical to the paired ttf: ${identical}/${compared}`);
   }
 }

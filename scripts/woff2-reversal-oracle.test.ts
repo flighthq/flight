@@ -4,6 +4,7 @@ import {
   collectWoff2ReversalPairs,
   encoderPreservedOutline,
   formatWoff2ReversalOracleReport,
+  measureWoff2ReconstructedOutlines,
   measureWoff2ReversalPair,
   readSfntGlyphOutline,
   readWoff2RawTables,
@@ -71,5 +72,11 @@ describe('collectWoff2ReversalPairs', () => {
   it('reports no pairs for a tree holding none, rather than throwing', () => {
     // The fonts are deliberately not committed, so an empty answer is the honest one here.
     expect(collectWoff2ReversalPairs('scripts').length).toBe(0);
+  });
+});
+
+describe('measureWoff2ReconstructedOutlines', () => {
+  it('returns the skip sentinel rather than a score for bytes that are not a font', () => {
+    expect(measureWoff2ReconstructedOutlines(new Uint8Array(64), new Uint8Array(64))).toBeNull();
   });
 });
