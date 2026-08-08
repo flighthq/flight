@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { assembleSfntFont, computeSfntTableChecksum, encodeSfntSimpleGlyph, packSfntTag } from './sfntAssembly';
+import {
+  assembleSfntFont,
+  computeSfntTableChecksum,
+  encodeSfntLoca,
+  encodeSfntSimpleGlyph,
+  packSfntTag,
+} from './sfntAssembly';
 
 describe('assembleSfntFont', () => {
   it('writes the directory in tag order whatever order it was given', () => {
@@ -77,6 +83,42 @@ describe('computeSfntTableChecksum', () => {
   it('wraps modulo 2^32 rather than growing past a uint32', () => {
     const big = Uint8Array.from([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 2]);
     expect(computeSfntTableChecksum(big)).toBe(1);
+  });
+});
+
+describe('encodeSfntLoca', () => {
+  it('writes one more offset than there are glyphs', () => {
+    // The last entry is the end of the final glyph, which is how its length is expressed at all.
+    expect(encodeSfntLoca([4, 6], 1)!.byteLength).toBe(12);
+    expect(encodeSfntLoca([4, 6], 0)!.byteLength).toBe(6);
+  });
+
+  it('accumulates offsets in glyph order', () => {
+    const out = encodeSfntLoca([4, 6, 2], 1)!;
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect([0, 1, 2, 3].map((i) => view.getUint32(i * 4))).toEqual([0, 4, 10, 12]);
+  });
+
+  it('halves the offset in the short form', () => {
+    const out = encodeSfntLoca([4, 6], 0)!;
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect([0, 1, 2].map((i) => view.getUint16(i * 2))).toEqual([0, 2, 5]);
+  });
+
+  it('gives equal consecutive offsets for a blank glyph', () => {
+    const out = encodeSfntLoca([4, 0, 4], 1)!;
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect(view.getUint32(4)).toBe(view.getUint32(8));
+  });
+
+  it('refuses the short form for an odd offset rather than truncating it', () => {
+    // Truncation here would point the reader one byte before the glyph, inside its predecessor.
+    expect(encodeSfntLoca([5, 4], 0)).toBeNull();
+    expect(encodeSfntLoca([5, 4], 1)).not.toBeNull();
+  });
+
+  it('refuses the short form when the font outgrows its reach', () => {
+    expect(encodeSfntLoca([0x20000, 2], 0)).toBeNull();
   });
 });
 
