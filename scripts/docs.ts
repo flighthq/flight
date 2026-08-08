@@ -42,13 +42,12 @@ import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
 // Every doc with a self-declared size budget. Keep the number here identical to the one the doc states
 // in its own prose — the doc is where a reader meets the rule, this table is only what enforces it.
-export const DOC_BUDGETS: readonly DocBudget[] = [
-  { limit: 40_000, path: 'AGENTS.md' },
-  // The budget was fixed before the file was cut to fit it, so this entry ratifies a decision rather
-  // than the outcome of a tidying pass. Its instances live in evidence-discipline-instances.md, which
-  // is deliberately unbudgeted: instances accumulate, laws do not.
-  { limit: 12_000, path: 'agents/evidence-discipline.md' },
-];
+// A budget only binds if the budgeted doc cannot spawn an unbudgeted companion to hold its overflow.
+// `evidence-discipline.md` was gated at 12,000 characters and paired with an explicitly exempt
+// instances file — "instances accumulate, laws do not" — which reached 81,000 characters in one day.
+// The budget never constrained the writing; it relocated it. Both files were deleted 2026-08-08 and
+// their grounded findings moved to the artifacts they describe. Do not add an exempt companion here.
+export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 40_000, path: 'AGENTS.md' }];
 
 // Fraction of the limit below which the budget warns rather than passes silently. 2% of 40,000 is 800
 // characters — roughly a long paragraph, so the warning lands while one section can still absorb the

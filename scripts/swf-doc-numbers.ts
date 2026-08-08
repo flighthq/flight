@@ -123,6 +123,13 @@ for (const label of ['wired', 'fire-proven', 'silence-proven']) {
 // THE TOKEN IS FIXED — one spelling, `HISTORICAL:`, no paraphrase — for the same reason `UNBACKED:` is:
 // the point is not that a reader is warned, it is that THE SET IS COUNTABLE. An exemption you cannot
 // enumerate is indistinguishable from a gap.
+//
+// AND THE DISCRIMINATOR FOR WHAT NEEDS A TOKEN AT ALL IS *WHO MAINTAINS THIS NUMBER* — not the number's
+// shape, which is why this gate cannot decide it alone. A count of another package's internals drifts on
+// the next edit there; a count of a published format's constants is recomputed by the format, which does
+// not change. The two are IDENTICAL AS TEXT and opposite as claims. Applying a no-unmaintained-numbers
+// rule by pattern-match would delete a correct format fact — the over-compliance direction, and the
+// reason a format fact appearing in a scanned doc must NOT be marked HISTORICAL (see the run output).
 const HISTORICAL_TOKEN = 'HISTORICAL:';
 // THE POPULATION IS DERIVED FROM THE TREE, NOT CHOSEN. Three times the hand-picked list missed a doc —
 // the status file, the consumer contract, the corpus evidence — and each time the patch was to add a

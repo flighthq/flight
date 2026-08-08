@@ -88,13 +88,6 @@ which is why they are not in the map.
 - [unbacked register](unbacked-register.md) — claims that reached the merged tree with nothing looking
   at them. Entries owned by integration; the file carries its own limit, because it can only hold what
   someone noticed.
-- [evidence discipline](evidence-discipline.md) — one law and three action rules for verification
-  claims, each with the single instance that carries it. Consolidated from a single arc and untested
-  elsewhere; the header carries that limit and the falsification condition. Budgeted at 12,000
-  characters and gated by `docs:check`.
-- [evidence discipline instances](evidence-discipline-instances.md) — the worked instances behind
-  those laws, organised by the law each one serves, plus the orphans that fit no law yet. Deliberately
-  unbudgeted: instances accumulate, laws do not.
 - [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
 - [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
