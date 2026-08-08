@@ -13,13 +13,13 @@ import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { MeshGeometry, Scene3D } from '@flighthq/types/contract';
 
+import { probeMd5Sections } from '../conformance/md5/md5-section-probe';
 import {
   FIXTURE_RELEASE_TAG,
   getFixtureTreePath,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
 } from './fixtures';
-import { probeMd5Sections } from './md5-section-probe';
 
 export const MD5_TANGENT_ORTHOGONALITY_ORACLE_ID = 'md5.tangent-orthogonality';
 export const MD5_TANGENT_HANDEDNESS_ORACLE_ID = 'md5.tangent-handedness';

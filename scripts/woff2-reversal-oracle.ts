@@ -16,7 +16,11 @@ import {
   reverseWoff2GlyfTransform,
 } from '@flighthq/font-formats/contract';
 
-import { accountsForWoff2BboxStream, outlinesAreIdentical, tallyWoff2OnCurveSense } from './font-oracles';
+import {
+  accountsForWoff2BboxStream,
+  outlinesAreIdentical,
+  tallyWoff2OnCurveSense,
+} from '../conformance/font/font-oracles';
 
 // Measures Flight's WOFF2 `glyf` reversal against ground truth, by comparing a transformed WOFF2 with
 // the SAME font shipped as a plain `.ttf`. Every claim this repository makes about the reversal — the
