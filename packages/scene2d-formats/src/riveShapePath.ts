@@ -1,3 +1,4 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   appendPathClose,
   appendPathCubicCurveTo,
@@ -9,7 +10,8 @@ import {
   appendPathRoundRectangle,
   createPath,
 } from '@flighthq/path/contract';
-import type { Path, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Path, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -28,11 +30,22 @@ export function createRivePath(
   path: Readonly<RiveCoreObject>,
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
+  diagnostics?: ImportDiagnostic[],
 ): Path | null {
   if (isRiveCoreTypeDerivedFrom(path.typeKey, RIVE_POINTS_COMMON_PATH)) {
     return createRivePointsPath(path, artboard, index);
   }
-  if (isRiveCoreTypeDerivedFrom(path.typeKey, RIVE_PARAMETRIC_PATH)) return createRiveParametricPath(path);
+  if (isRiveCoreTypeDerivedFrom(path.typeKey, RIVE_PARAMETRIC_PATH)) return createRiveParametricPath(path, diagnostics);
+  // A path kind this importer does not build. Reported rather than returned bare, because the caller
+  // cannot tell this from a points path that legitimately states no vertices — both arrive as an empty
+  // result, and only one of them lost something.
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Drop,
+    'rive.path-kind-unsupported',
+    'createScene2DFromRiveDocument',
+    { typeKey: path.typeKey },
+  );
   return null;
 }
 
@@ -139,7 +152,7 @@ function applyRiveCornerRounding(vertices: RiveVertexPoint[], closed: boolean): 
   }
 }
 
-function createRiveParametricPath(source: Readonly<RiveCoreObject>): Path {
+function createRiveParametricPath(source: Readonly<RiveCoreObject>, diagnostics?: ImportDiagnostic[]): Path {
   const path = createPath();
   const width = readRiveDouble(source, RIVE_PARAMETRIC_WIDTH, 0);
   const height = readRiveDouble(source, RIVE_PARAMETRIC_HEIGHT, 0);
@@ -164,6 +177,17 @@ function createRiveParametricPath(source: Readonly<RiveCoreObject>): Path {
     appendRiveRectanglePath(path, source, left, top, width, height);
     return path;
   }
+  // Every parametric kind this importer knows is handled above, so reaching here means an unrecognised
+  // one is being drawn AS A RECTANGLE. The object survives at full size and is simply the wrong shape —
+  // no existence check and no count can see that, which is why it reports rather than falling through
+  // silently. Recover rather than Drop: geometry is substituted, not lost.
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Recover,
+    'rive.parametric-path-substituted',
+    'createScene2DFromRiveDocument',
+    { substitutedAs: 'rectangle', typeKey: source.typeKey },
+  );
   appendPathRectangle(path, left, top, width, height);
   return path;
 }

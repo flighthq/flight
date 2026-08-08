@@ -1,5 +1,6 @@
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
-import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
 import { createRivePath } from './riveShapePath';
 
@@ -18,10 +19,49 @@ const STRAIGHT_VERTEX = 5;
 const CUBIC_DETACHED_VERTEX = 6;
 const CUBIC_MIRRORED_VERTEX = 35;
 const CUBIC_ASYMMETRIC_VERTEX = 34;
+const PARAMETRIC_PATH = 15;
 
 describe('createRivePath', () => {
   it('returns null for a component that is not a path', () => {
     expect(createRivePath(object(SHAPE, {}), artboardOf([object(SHAPE, {})]), 0)).toBeNull();
+  });
+
+  it('reports a path kind it does not build, which an empty result cannot be told apart from', () => {
+    // A caller sees the same empty result whether the kind was unsupported or a points path legitimately
+    // stated no vertices. Only one of those lost something.
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createRivePath(object(SHAPE, {}), artboardOf([object(SHAPE, {})]), 0, sink)).toBeNull();
+    });
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('rive.path-kind-unsupported');
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(diagnostics[0].detail).toEqual({ typeKey: SHAPE });
+  });
+
+  it('reports an unrecognised parametric kind, which is drawn as a rectangle rather than dropped', () => {
+    // Reaching this needs a parametric type none of the four handled cases covers. `ParametricPath`
+    // itself is the only one in today's table; the case that matters in the field is a NEWER Rive shape
+    // kind this importer has not learned, which lands here identically.
+    let path: ReturnType<typeof createRivePath> = null;
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const source = object(PARAMETRIC_PATH, { 20: 10, 21: 10 });
+      path = createRivePath(source, artboardOf([source]), 0, sink);
+    });
+
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('rive.parametric-path-substituted');
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(diagnostics[0].detail).toEqual({ substitutedAs: 'rectangle', typeKey: PARAMETRIC_PATH });
+    // The substitution itself, not merely the report: the geometry really is a closed four-sided box.
+    expect(path).not.toBeNull();
+    expect(path!.commands).toEqual([
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.CLOSE,
+    ]);
   });
 
   it('builds an open polyline from straight vertices', () => {
