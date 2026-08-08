@@ -127,6 +127,11 @@ export function parseMd5Anim(
 
     if (line === 'bounds {') {
       i = skipBlock(lines, i);
+      // Intentionally detail-free: detail-bearing diagnostics pass through retainDecidedDetail,
+      // parseRetainedDiagnosticDetail, and ImportConformanceFixtureDiagnosticDetail, whose current
+      // evidence contract is SWF-shaped. Adding frame or bound values here is therefore a cross-package
+      // schema change, not a local parser enhancement; rich measurements belong to md5.animation-bounds.
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'md5anim.bounds-discarded', 'parseMd5Anim');
       continue;
     }
 

@@ -256,6 +256,19 @@ describe('parseMd5Anim', () => {
     expect(crumb!.detail).toEqual({ animationJoints: 1, suppliedJoints: 0 });
   });
 
+  it('drops and reports a consumed bounds block without attaching oracle evidence', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    expect(parseMd5Anim(SINGLE_JOINT_STATIC, makeJoints(1), diagnostics)).not.toBeNull();
+    expect(diagnostics).toEqual([
+      {
+        kind: 'md5anim.bounds-discarded',
+        origin: 'parseMd5Anim',
+        severity: ImportDiagnosticSeverity.Drop,
+      },
+    ]);
+  });
+
   it('drops and reports md5anim.malformed-hierarchy for a bad hierarchy entry', () => {
     const source = [
       'MD5Version 10',
