@@ -599,6 +599,31 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
         sectionInvalidTriangles++;
         continue;
       }
+      const tangentHandedness = outputIndices.map(
+        (index) => geometry.vertices[index * floatsPerVertex + section.tangentOffset + 3]!,
+      );
+      const observedSign = tangentHandedness.every((value) => value === 1)
+        ? 1
+        : tangentHandedness.every((value) => value === -1)
+          ? -1
+          : null;
+      if (observedSign === 1) positiveTangentHandednessTriangles++;
+      else if (observedSign === -1) negativeTangentHandednessTriangles++;
+      else mixedTangentHandednessTriangles++;
+
+      const xInterval = float32SumInterval(
+        outputIndices.map((index) => geometry.vertices[index * floatsPerVertex + section.positionOffset]!),
+      );
+      if (xInterval === null || (xInterval.min <= 0 && xInterval.max >= 0)) {
+        xSideIndeterminateTriangles++;
+      } else if (observedSign !== null) {
+        if (xInterval.min > 0) {
+          if (observedSign > 0) positiveXPositiveHandednessTriangles++;
+          else positiveXNegativeHandednessTriangles++;
+        } else if (observedSign > 0) negativeXPositiveHandednessTriangles++;
+        else negativeXNegativeHandednessTriangles++;
+      }
+
       const uv = sourceIndices.map((index) => section.source.uvs[index!]!);
       const determinant = determinantInterval(
         decimalRuntimeInterval(uv[0]!.u, geometry.vertices[outputIndices[0]! * floatsPerVertex + section.uvOffset]!),
@@ -633,17 +658,6 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
       const determinantMagnitude = Math.min(Math.abs(determinant.min), Math.abs(determinant.max));
       if (determinantMagnitude < minimumCertainDeterminantMagnitude)
         minimumCertainDeterminantMagnitude = determinantMagnitude;
-      const tangentHandedness = outputIndices.map(
-        (index) => geometry.vertices[index * floatsPerVertex + section.tangentOffset + 3]!,
-      );
-      const observedSign = tangentHandedness.every((value) => value === 1)
-        ? 1
-        : tangentHandedness.every((value) => value === -1)
-          ? -1
-          : null;
-      if (observedSign === 1) positiveTangentHandednessTriangles++;
-      else if (observedSign === -1) negativeTangentHandednessTriangles++;
-      else mixedTangentHandednessTriangles++;
 
       if (observedSign === expectedSign) {
         matchingTriangles++;
@@ -652,20 +666,6 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
         mismatchingTriangles++;
         sectionMismatchingTriangles++;
       }
-
-      const xInterval = float32SumInterval(
-        outputIndices.map((index) => geometry.vertices[index * floatsPerVertex + section.positionOffset]!),
-      );
-      if (xInterval === null || (xInterval.min <= 0 && xInterval.max >= 0)) {
-        xSideIndeterminateTriangles++;
-        continue;
-      }
-      if (observedSign === null) continue;
-      if (xInterval.min > 0) {
-        if (observedSign > 0) positiveXPositiveHandednessTriangles++;
-        else positiveXNegativeHandednessTriangles++;
-      } else if (observedSign > 0) negativeXPositiveHandednessTriangles++;
-      else negativeXNegativeHandednessTriangles++;
     }
     const sameSignAsXTriangles = negativeXNegativeHandednessTriangles + positiveXPositiveHandednessTriangles;
     const oppositeSignToXTriangles = negativeXPositiveHandednessTriangles + positiveXNegativeHandednessTriangles;
