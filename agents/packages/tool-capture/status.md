@@ -1,33 +1,60 @@
 ---
 package: '@flighthq/tool-capture'
-updated: 2026-08-05
+updated: 2026-08-08
 by: principal
 ---
 
-# tool-capture — Status Log
+# tool-capture — Status
 
-## [2026-08-05 · principal] — the blank-frame class of bug, closed at every layer
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-First entry in this log; the cell had no `status.md` until now, so the 53 commits since the
-2026-07-13 review had no continuity prose at all.
+## Open
 
-They are dominated by one theme worth naming, because the individual subjects hide it: **a capture
-that drew nothing was passing as a successful capture**, and the fix had to land at every layer
-independently. Blank frames are now hard-rejected at the baseline write path; a uniform fingerprint
-is refused as a baseline; a gated regression or parity run that compared nothing fails instead of
-passing silently; a registry miss that means nothing drew fails the capture; and a WebGL capture
-whose verifier produced no render image fails rather than passing as black. Measured pixel coverage —
-not verifier-publish — became the source of truth for "blank".
+Re-checked against `packages/tool-capture/src/` on 2026-08-08. This is the dev/CI tooling tier: it
+sits outside the `@flighthq/sdk` barrel and is not tree-shakable by design (`scripts/sdk-policy.ts`),
+and its inline exported types are a stated exemption from the types-home rule — neither is a gap.
 
-The `observe <url>` bin is the other substantial addition: zero-integration capture of any canvas
-page, grabbing frames from intercepted GL contexts, warming up app-loop pages until they actually
-draw, and emitting a screenshot plus diagnostics on a blank render. Warmup halts on measured pixels.
+- **WebGPU is exempt from the presented-frame wait.** `functionalVerify.ts:207-209` skips
+  `waitForPresentedFrame` for `webgpu` only; every other backend gets a budgeted wait that fails by
+  name on stall (`:318-334`). The reasoning is sound (the wgpu path copies into a retained capture
+  buffer in the same frame, so waiting buys nothing and adds a dependency on a canvas the browser
+  never presents), but the consequence stands: a hung WebGPU capture has no equivalent
+  named-await failure, so it surfaces as the outer runner's generic timeout.
+- **Regression baseline freshness is classified but never gates.** `classifyCaptureBaselineFreshness`
+  runs only inside the already-failing branch (`captureValidation.ts:661`), where it appends a
+  `sourceHashStatus` to the message (`:673`). A baseline stale against a changed scene therefore
+  still passes if the fingerprint happens to land inside tolerance.
+- **Regression tolerance is run-wide.** `regressionTolerance` is one resolved option
+  (`captureValidation.ts:63`, `:817`); only parity **groups** carry a per-group override
+  (`captureManifest.ts:19`). The `regressionTolerance` in `captureManifest.ts:29` is the benchmark
+  tier's performance budget, not a fingerprint tolerance. This is `capture`'s outstanding
+  2026-07-03 Approved item, now homed here.
+- **The capture clock is not pinned.** `launchBrowser`'s init script fixes the viewport and seeds
+  `Math.random` (`captureBrowser.ts:57`, `:83`) but stubs neither `performance.now` nor `Date`, so a
+  time-parameterized scene is deterministic only at frame 1 and stays out of the gated set.
+- **Screenshot baselines hash PNG bytes, not decoded pixels.** `captureEntry.ts:492`, `:1061`, and
+  `:1092` sha256 the encoded buffer, leaving PNG-encoder drift as a failure mode the fingerprint tier
+  does not have. Also `capture`'s outstanding Approved item.
+- **No sibling `tool-*` cells.** `tool-capture` is still the whole tooling tier; `tool-baseline`,
+  `tool-fixtures`, and `tool-diff` (charter Open direction 2) have no package. `baselineStore.ts`
+  remains the store, in-package.
 
-A stalled verifier now reports which await it is sitting in, and the per-wait capture budget resolves
-from a flag or the environment, with in-page verifier waits derived from it. That was the diagnostic
-gap behind the earlier bare did-not-run sentinel.
+## Log
 
-Watch for: frame waits are skipped on WebGPU and bounded elsewhere, so WebGPU stall behavior is not
-covered by the same guarantees as WebGL. Regression baseline freshness is classified, but the
-classification is advisory rather than gating.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract; both carried "watch for" items
+  re-verified against source and kept (WebGPU frame-wait exemption, advisory-only freshness). Charter
+  Open direction 0 checked out **landed** and is not listed: `baselineStore.ts` and
+  `captureValidation.ts` import `@flighthq/capture` directly for the tolerances, comparison, and
+  baseline record shape, so the self-contained duplicate is gone. `referenceCapture.ts` covers
+  direction 1's driver side (flight-reference dev server + route enumeration), though PNG baselines
+  still are not read or written from that repo.
+- **2026-08-05** — The blank-frame class of bug closed at every layer: blank frames hard-rejected at
+  the baseline write path, uniform fingerprints refused as baselines, gated runs that compared
+  nothing failing rather than passing silently, registry misses failing the capture, and a WebGL
+  capture with no render image failing rather than passing as black — with measured pixel coverage,
+  not verifier-publish, as the source of truth for "blank". The `observe <url>` bin landed alongside
+  it for zero-integration capture of any canvas page, and a stalled verifier now names the await it
+  is sitting in with a budget resolved from a flag or the environment.

@@ -1,56 +1,60 @@
+---
+package: '@flighthq/collision'
+updated: 2026-08-08
+by: principal
+---
+
 # collision — Status
 
-Continuity log for `@flighthq/collision`. Newest first.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-10 — Phase 1 built (discrete overlap + manifolds)
+## Open
 
-Package created to the blessed charter. Phase 1 (discrete shape-vs-shape overlap + contact
-manifolds) is implemented and green.
+Re-checked against `packages/collision/src/` and `packages/types/src/Collision.ts` on 2026-08-08.
+Every item the previous file listed as open had been closed in source; what remains is chartered
+scope that is genuinely unbuilt, plus one structural trigger that has not fired yet.
 
-**Types** (`packages/types/src/Collision.ts`): `CollisionShapeKind` (open string union), the six shape
-interfaces (`CollisionCircle`, `CollisionAabb`, `CollisionObb`, `CollisionPolygon`,
-`CollisionSegment`, `CollisionPoint`), the discriminated `CollisionShape` union, and
-`CollisionManifold {overlapping, normalX, normalY, depth}`.
+- **No capsule or rounded collider.** `CollisionShapeKind`
+  (`packages/types/src/Collision.ts:13`) is still the six phase-1 kinds — circle, aabb, obb, polygon,
+  segment, point — and nothing in `packages/` implements a capsule. Chartered as phase 3 / Open
+  direction 3, alongside a concave-as-convex-decomposition path that also does not exist.
+- **No 3D narrow phase.** The 2026-07-15 unification decision names `testCollision2D` /
+  `testCollision3D` and a GJK/EPA core; neither symbol exists anywhere in the repo, and the exported
+  dispatcher is still the unsuffixed `testCollision`. Renaming it is part of that landing, so the
+  current name is a pre-3D state, not a settled one.
+- **Contact manifolds cover area kinds only.** `collideContactManifold` reports `segment`, `point`,
+  and unknown kinds as non-overlapping (`collideContactManifold.ts:41-42`), because a reference face
+  needs area. A physics layer wanting segment contacts has no path here.
+- **Both generic dispatchers are closed `switch` ladders** — `testCollision.ts:53` and
+  `collideContactManifold.ts:60`. Correct today for a fixed six-kind family in a hot loop, but the
+  family is chartered to grow, and the union→registry trigger in the store rules fires when it does.
+- **`testSegment*Collision` still returns a bare boolean** (`segmentCollision.ts`). The richer
+  hit-fraction/point/normal path landed separately as `raycastCollisionShape`
+  (`raycastCollisionShape.ts:15`), so the two segment APIs now answer different questions under
+  similar names — worth a naming pass before either is public-lane frozen.
 
-**Package** (`packages/collision/src/`):
+## Log
 
-- `manifold.ts` — `createCollisionManifold`, `clearCollisionManifold`.
-- `shapeCollision.ts` — the ten manifold pair tests over a shared private SAT core
-  (`satConvexOverlap`) for AABB/OBB/polygon, with circle special-cased (`circleAabbOverlap`,
-  `satCircleConvexOverlap`). `testAabbAabbCollision` is a direct min-penetration test.
-- `testCollision.ts` — the generic kind-ranked dispatcher.
-- `pointContainment.ts` — `getCollisionShapeContainsPoint`.
-- `segmentCollision.ts` — the five boolean `testSegment*Collision` queries.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-**Conventions chosen (frozen for phase 1):**
-
-- Manifold `normal` pushes shape **A out of B**; on a reversed `testCollision` argument order the
-  normal is negated.
-- **Touching is exclusive** for the manifold tests: zero penetration → `overlapping:false`. The
-  containment (`getCollisionShapeContainsPoint`) and segment queries are boundary-**inclusive**.
-- SAT uses the min-of-both-directions **separation** penetration (`min(maxA-minB, maxB-minA)`), not
-  the intersection length — correct for containment (a small shape centred in a large one reports
-  the exit distance, not its own extent).
-- `geometry` is used for `normalizeVector2` (axis normalization, via a module-scratch `Vector2`);
-  projections/dots stay inline scalar to keep the hot path allocation-free (boxing every vertex into
-  a `Vector2Like` would allocate per call).
-
-**Gates:** see the attestation block from the build session.
-
-## Open items / phase-2 + hardening candidates
-
-- **Deep-containment MTV direction** for convex SAT relies on centroid orientation; when centroids
-  coincide (e.g. a circle exactly centred in a polygon) the push direction is arbitrary (any
-  min-penetration axis is a valid MTV, but it is not deterministic). Fine for detection; a physics
-  resolver wanting stable directions may want a tie-break rule.
-- **Degenerate shapes** are documented-but-untuned: zero-radius circles, zero-area (`min==max`)
-  boxes, `<3`-vertex polygons, and zero-length segments take best-effort paths. Harden with explicit
-  tests in a phase-2 pass.
-- **Segment-through-vertex / collinear-segment** edge cases use magnitude-absolute epsilons
-  (`1e-9`); a magnitude-relative epsilon (as `path-boolean` adopted) would be more robust for
-  large-coordinate scenes.
-- **No guard layer yet.** Per the diagnostics inversion rule, caller misuse (non-convex polygon,
-  degenerate shape) should surface via an `enableCollisionGuards`/`explain*` module rather than
-  silently producing an undefined manifold. Deferred — no inline warnings were added.
-- Phase 2 (swept / time-of-impact) and phase 3 (full contact-point sets, capsule/rounded shapes)
-  per the charter.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. **All five previously-open items checked
+  out false and were deleted.** (1) "No guard layer yet" — `enableCollisionGuards.ts:19` installs a
+  `logOnce` warning through the `setCollisionTestGuard` seam, with `explainCollisionTest.ts:9` as the
+  plain-data query. (2) "Degenerate shapes documented-but-untuned, best-effort paths" —
+  `collisionShapeValidation.ts` classifies them and every pair test rejects them up front
+  (`shapeCollision.ts:36`, `:597-616`). (3) "Segment edge cases use magnitude-absolute epsilons" —
+  `segmentCollision.ts:229` and `pointContainment.ts` scale by shape extent. (4) "Deep-containment
+  MTV direction is not deterministic when centroids coincide" — `canonicalizeScratchAxis`
+  (`shapeCollision.ts:554`) plus the lexicographic tie-break in `isPreferredAxis` (`:582`) fix it,
+  pinned by tests at `shapeCollision.test.ts:87`, `:203`, `:294`, `:380`. (5) "Phase 2 and phase 3
+  pending" — `sweepCollisionShape.ts`, `shapeContact.ts`, `collideContactManifold.ts`, and
+  `contactFeatureId.ts` all exist; only capsule/rounded shapes are left, kept above.
+- **2026-07-29** — Contact manifolds landed as a parallel lane (`CollisionContactManifold` +
+  `collide*ContactManifold`), with feature ids packed by positional multiplication in the private
+  `contactFeatureId.ts` and argument-order invariance holding only across kinds.
+- **2026-07-10** — Phase 1 built: the ten manifold pair tests over a shared SAT core, the kind-ranked
+  `testCollision` dispatcher, point containment, and the five boolean segment queries. Frozen
+  conventions: the normal pushes **A out of B**; touching is exclusive for manifold tests and
+  inclusive for containment/segment queries; SAT uses min-of-both-directions separation, not
+  intersection length.

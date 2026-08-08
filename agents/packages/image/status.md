@@ -1,38 +1,52 @@
 ---
 package: '@flighthq/image'
-updated: 2026-08-05
+updated: 2026-08-08
 by: principal
 ---
 
-# image — Status Log
+# image — Status
 
-## [2026-08-05 · principal] — the backing→source migration is done here
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-The 17 commits since the 2026-07-13 review complete this package's half of the texture-source
-reshape. `ImageBacking` no longer exists anywhere in the tree; `TextureSource` is the model, carrying
-`alphaType` and `gamut` lifted up onto it, with declared representation kinds and sibling sources
-defined. The fused backing shape is retired. Anyone reading the texture-source-model record should
-check it against this — the staged migration it describes is further along than the doc's status
-implies, at least on the image side.
+## Open
 
-Ownership moved deliberately: the neutral image-resource-reference atoms are homed here rather than
-in `scene3d`, and `createImageResourceFromBitmap` moved to its output package. Image readback is now
-explicit rather than implicit.
+Re-checked against `packages/image/src/` on 2026-08-08. The backing→source migration is done here —
+`ImageBacking` appears nowhere in `packages/`, and `TextureSource` carries `alphaType` and `gamut` on
+the base (`packages/types/src/TextureSource.ts:32`, `:34`). What is left is lane shape.
 
-On the render side, `bindGlImageResourceTexture` uploads source-or-data 2D textures, compressed-
-container upload is wired into the GL bitmap draw path, and data-only Surfaces draw directly on
-canvas/DOM through a version-keyed element cache. That cache keys on version, so a mutation that does
-not bump version will not repaint — the invalidation doctrine's payload rule, and the failure mode to
-suspect first if a Surface goes stale on screen.
+- **The public lane cannot invalidate an image.** `invalidateImageResource` (`imageResource.ts:48`)
+  bumps `Image.version`, and the canvas/DOM element caches key on exactly that version
+  (`packages/scene2d-canvas/src/canvasBitmapTextureResolver.ts:23`,
+  `packages/scene2d-dom/src/domBitmapTextureResolver.ts:22`). It is reachable through `contract.ts`
+  only — `index.ts` omits it — so an app importing `@flighthq/image` can construct and mutate a
+  resource but cannot make the change repaint. A stale on-screen image is this, first suspect.
+- **The backend seam is contract-only too.** `createWebImageBackend` / `getImageBackend` /
+  `setImageBackend` (`imageBackend.ts:13`, `:46`, `:54`) are absent from `index.ts`, which diverges
+  from the platform-integration shape where `get*Backend` / `set*Backend` / `createWeb*Backend` are the
+  public door. Whether that omission is deliberate is unrecorded.
+- **Compressed-container GL upload is opt-in, not automatic.** The 2D draw path reads an installed
+  handler off the render-state runtime, and nothing installs it until a caller invokes
+  `registerGlCompressedImageTextureResolver` (`packages/render-gl/src/glCompressedTexture.ts:215`).
+  A `CompressedImage` built by `createCompressedImage` (`imageResource.ts:21`) silently does not draw
+  without it.
 
-URL loading gained abort support (aborted loads cancel) and its API was clarified; fixtures were made
-node-safe and kept test-only.
+## Log
 
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## 2026-06-25 — extracted from @flighthq/resources (resources eliminated)
-
-New package holding image resources: `imageResource` (create/clone/dispose/invalidate, byte-size, source/data predicates, same-origin, MIME detect) and `imageResourceFrom` (from canvas / ImageBitmap / ImageElement, load from URL/ArrayBuffer/Base64/Blob). Types stay in `@flighthq/types`. Deps: entity, types. This is the most-consumed shard of the old `resources` (surface, textureatlas, tileset, scene2d-canvas/dom, spritesheet, surface-rs all depend on it). 49 tests pass.
-
-## 2026-06-25 — Rust crate mirror (builder Phase 5)
-
-Rust crate `flighthq-image` created as part of splitting the Rust `flighthq-resources` crate to mirror this TS refactor. Layering preserved (image ← textureatlas ← tileset). cargo build/test/fmt green; clippy `-D warnings` clean for the new crates. The broader Rust port still has a large pre-existing function-level parity gap (68.8% native-core) tracked separately — see `_QUESTIONS.md` Phase 5.
+- **2026-08-08** — Re-verified against source and converted to the Open + Log contract. The claim that
+  the texture-source migration is "further along than the doc's status implies" is **false**:
+  `agents/texture-source-model.md` is locked and records M2–M5 as landed, so the doc and the tree agree
+  and the note is deleted.
+- **2026-08-05** — The backing→source reshape completed on the image side: `ImageBacking` retired,
+  `TextureSource` became the model with declared representation kinds, the neutral image-resource-
+  reference atoms homed here (`imageResourceReference.ts`) rather than in `scene3d`, and
+  `createImageResourceFromBitmap` moved to its output package (`imageResourceFrom.ts:12`).
+- **2026-08-05** — GL uploads source-or-data 2D textures through `bindGlImageResourceTexture`; data-only
+  images draw directly on canvas/DOM through a version-keyed element cache.
+- **2026-08-05** — URL loading takes an `AbortSignal` (`imageResourceFrom.ts:117`) and routes through the
+  swappable image backend.
+- **2026-06-25** — Extracted from the eliminated `@flighthq/resources` as the most-consumed shard:
+  `imageResource` and `imageResourceFrom`, with the types staying in `@flighthq/types`.
+- **2026-06-25** — A `flighthq-image` Rust crate mirrored the split; that code no longer lives here.

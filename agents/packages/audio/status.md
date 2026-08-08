@@ -1,27 +1,51 @@
 ---
 package: '@flighthq/audio'
-updated: 2026-07-30
-by: builder
+updated: 2026-08-08
+by: principal
 ---
 
-# audio — Status Log
+# audio — Status
 
-## 2026-07-30 — abort barrier and HTTP status in the loader family (builder)
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-Swept the cell; all seven assessment Recommended items were already landed, including the stale `package.json` description. Retired them, moving the record out from under the `## Recommended` heading — striking items through is not enough, the TODO generator scrapes numbered bullets under that heading regardless of formatting. Two live defects turned up in the loader family, both probed before fixing.
+## Open
 
-**An abort arriving during the decode was silently ignored.** `loadAudioResourceFromBytes` checked the signal once, on entry, before the only slow step. `decodeAudioData` cannot be cancelled, so an abort landing mid-decode did not stop the work — and, with no check afterwards, did not stop the *result* either: the promise resolved with a fully populated resource. A caller that cancelled got a resource indistinguishable from one it asked for, and there was no way to tell the two apart. Fixed by adding the post-await check. This is the whole family's abort barrier, because every loader here funnels through this one function — but the guarantee is per entry point, so there is a regression test for each of `FromBytes`, `FromBase64`, `FromBlob`, and `FromUrl`: a barrier that only holds for direct callers still lets the wrappers resolve past an abort, and only per-entry-point tests can show it does not.
+Re-checked against `packages/audio/src/` on 2026-08-08. Both loader fixes still hold — the abort
+barrier sits after the un-cancellable decode (`audioResourceFrom.ts:54`, `:62`) and the URL loader
+rejects a non-`ok` response with its status before paying for a decode (`:78`) — so what is open is
+mostly shape and rulings.
 
-**A failed HTTP response was decoded as if it were audio.** `fetch` resolves for 404/500, so `loadAudioResourceFromUrl` handed the error page to the decoder and the caller was told `Unable to decode audio data` — the codec blamed for a transport failure, after paying for a decode that never had a chance. Now checks `response.ok` and reports the status; the test pins the status text and asserts the decoder is never called, so it cannot pass merely because something rejected.
+- **Two decode paths, one registry.** `resolveAudioResourceReference` decodes embedded bytes through
+  the registered decoder for the reference's MIME type (`audioResourceReference.ts:149`), while the
+  whole `loadAudioResourceFrom*` family goes straight to `context.decodeAudioData`
+  (`audioResourceFrom.ts:56`) and never consults `audioDecoderRegistry`. A decoder registered for a
+  format the platform cannot decode therefore serves references but not loaders.
+- **The reject-vs-sentinel fork is unruled.** `loadAudioResourceFromUrl` rejects; `loadAudioResourceFromUrls`
+  returns an empty resource (`audioResourceFrom.ts:94`). The SDK sentinel rule favors the empty
+  resource, the charter's honest-async north star favors the throw, and the same fork exists in `video`
+  and `image` — one ruling across the resource family, parked in [assessment](./assessment.md) Backlog.
+- **`index.ts` is not alphabetized.** It opens `findAudioResourceReferenceByName`,
+  `unregisterAudioDecoder`, `resolveAudioResourceReference`, against the source-style rule that exported
+  names are alphabetized within a file.
+- **The rest of the live work is parked and cross-cutting**: the streaming-source carrier (the data
+  layer cannot represent a long music track), the audio-processing tier, a WAV PCM codec, and splitting
+  the playback types out of `AudioResource.ts` in `@flighthq/types`. Each needs a ruling, not a sweep.
 
-Verified by reverting each defect separately, with the mutation confirmed applied first: mutation A failed exactly the four abort tests and nothing else, mutation B failed exactly the one HTTP test. No overlap, so neither fix is being credited for the other's coverage. Also completed the `ok` field on the pre-existing fetch doubles, which had been passing only because the check did not exist. 44 → 58 tests.
+## Log
 
-The reject-vs-sentinel question this touches is not settled here — see the amended Backlog entry in [assessment](./assessment.md). The fix is about *which* failure gets reported and is correct under either ruling.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## 2026-06-25 — extracted from @flighthq/resources (resources eliminated)
-
-New package: `audioResource`/`audioResourceFrom` (create + URL constructors) and `getAudioContext`. Deps: types. Consumed by `@flighthq/media` (audioChannel). 15 tests pass.
-
-## 2026-06-25 — Rust crate mirror (builder Phase 5)
-
-Rust crate `flighthq-audio` created as part of splitting the Rust `flighthq-resources` crate to mirror this TS refactor. Layering preserved (image ← textureatlas ← tileset). cargo build/test/fmt green; clippy `-D warnings` clean for the new crates. The broader Rust port still has a large pre-existing function-level parity gap (68.8% native-core) tracked separately — see `_QUESTIONS.md` Phase 5.
+- **2026-08-08** — Re-verified all Open items against source; the 2026-07-30 loader fixes still hold.
+  Converted to the Open + Log contract; the 2026-06-25 entry's `getAudioContext` is gone from the whole
+  repo per charter Decision #1, so it is no longer restated.
+- **2026-07-30** — Added the family's abort barrier: `loadAudioResourceFromBytes` re-checks the signal
+  after the await, because `decodeAudioData` cannot be cancelled and an aborted load was resolving with
+  a resource indistinguishable from a wanted one. Every entry point funnels here, but the guarantee is
+  per entry point, so each has its own regression test.
+- **2026-07-30** — `loadAudioResourceFromUrl` checks `response.ok` and reports the status; `fetch`
+  resolves for 404/500, so an error page was being handed to the decoder and the codec blamed for a
+  transport failure.
+- **2026-06-25** — Extracted from the eliminated `@flighthq/resources` as `audioResource` /
+  `audioResourceFrom`; consumed by `@flighthq/media`.
+- **2026-06-25** — A `flighthq-audio` Rust crate mirrored the split; that code no longer lives here.

@@ -1,121 +1,58 @@
 ---
 package: '@flighthq/scene3d'
-updated: 2026-08-01
-by: builder3
+updated: 2026-08-08
+by: principal
 ---
 
-# scene — Status Log
+# scene3d — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-08-01 — Scene3DDocument light bridge (builder3, user-directed)
+## Open
 
-`createScene3DLightsFromDocument(document)` now turns the document's standalone light table into a fresh,
-renderer-ready `Scene3DLights` draw argument without attaching lights to the assembled scene. It clones every
-representable descriptor, composes document TRS into point/spot positions and directional/spot directions,
-keeps all point/spot/hemisphere lights, and deterministically selects the first ambient and directional term
-because the draw contract carries only one of each. Unknown/unrepresentable light kinds remain outside the
-draw argument. The result is an initial-placement snapshot; live animated-node binding remains a separate
-future seam. The AWD2 loading example now consumes imported lights through the bridge instead of repeating
-the placement composition itself.
+Every item below was re-checked against `packages/scene3d/src/` on 2026-08-08. A file:line here is a
+claim about this tree, not about a session.
 
-## 2026-07-19 — morph corrective-over-skin composition follow-up (doc-honesty stage)
+- **Morph is a CPU vertex pass; skin is not.** `prepareScene3DMorph` (`prepareScene3DMorph.ts:27`)
+  calls `updateMeshMorph`, which blends base + Σ wᵢ·targetᵢ into `geometry.vertices` and bumps the
+  version so every backend re-uploads (`packages/mesh/src/updateMeshMorph.ts:11`). It is dirty-gated,
+  so a settled morph costs one weight compare. There is no GPU morph path — deltas are never resolved
+  in the vertex shader — unlike skin, which poses in-shader from the bone palette.
+- **`InstancedMesh` and `LodMesh` are headers with no implementation.**
+  `packages/types/src/InstancedMesh.ts` and `LodMesh.ts` declare the interfaces, runtimes, and kinds;
+  `InstancedMeshKind` / `LodMeshKind` have **zero** consumers outside `packages/types`. No
+  `createInstancedMesh` / `createLodMesh` exists in this package or any other. `createBillboard`
+  (`billboard.ts:31`) is the one member of that taxonomy that landed.
+- **No subtree clone.** `cloneMesh` (`mesh.ts:35`) clones one node; there is no `cloneNode3D` anywhere
+  in `packages/`, so copying a hierarchy is caller work. The undecided part is ownership semantics for
+  shared geometry/material references.
+- **`createScene3DLightsFromDocument` is an initial-placement snapshot** (`sceneDocumentLights.ts:38`).
+  A document light's optional node binding is not live, so animating that node does not move the
+  returned descriptor. Also lossy by contract: `Scene3DLights` carries one ambient and one directional
+  slot, so the first representable descriptor of each kind in document order wins.
+- **Document flow is import-only.** `sceneDocument.ts` reads (`createScene3DFromDocument`,
+  `createScene3DsFromDocument`); nothing writes a `Scene3DDocument` back out, so a scene cannot
+  round-trip.
+- **No diagnostics layer.** The package exports no `enable*Guards` and no `explain*` query — the only
+  `enable*` functions are the three signal openers (`sceneNode.ts:37`, `mesh.ts:70`,
+  `billboard.ts:45`). Both backends carry guard and explain modules; this graph carries none, against
+  the inversion rule.
 
-`updateMeshMorph` + `updateMeshSkin` both currently CPU-blend into `geometry.vertices` and re-upload;
-the documented ordering (morph first so the skin captures its bind pose from the morphed result — see
-the durable note in `updateMeshMorph.ts`) makes corrective-shapes-over-skinning *correct* but *not
-composed on the GPU*. AAA depth gap, parked here rather than inline: a true composed skin+morph GPU path
-(morph deltas + bone palette resolved together in the vertex shader, no per-frame CPU rewrite of the
-vertex buffer) is deferred — see the morph-target-animation charter's open directions. Until then a
-mesh carrying both deformers pays a full CPU vertex pass per frame.
+## Log
 
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-# Status: @flighthq/scene3d
-
-**Session date:** 2026-06-24 **Starting score:** 22/100 (stub) **Estimated new score:** 52/100 (Bronze complete, trending toward Silver)
-
-## Implemented APIs
-
-### Types added to `@flighthq/types`
-
-- **`Node3DVisitor`** (`Node3DVisitor.ts`) — visitor callback type `(node: Readonly<Node3D>, depth: number) => boolean | void`. Return `false` to prune the subtree.
-
-### New exports in `@flighthq/scene3d`
-
-#### `sceneNodeTraversal.ts` — 3D scene traversal and query
-
-- `findSceneNodeByName(root, name)` — depth-first pre-order search by name; returns first match or `null`
-- `findSceneNodesWhere(out, root, predicate)` — collect all matching nodes into `out[]` (no allocation, returns `out`)
-- `findSceneNodeWhere(root, predicate)` — first depth-first pre-order match; returns `null` on miss
-- `forEachSceneNodeChild(node, visitor)` — shallow iteration over direct children; stops early on `false`
-- `traverseSceneNode(root, visitor)` — depth-first pre-order walk with prune-on-`false`; visits `root` at depth 0
-- `traverseSceneNodePostOrder(root, visitor)` — depth-first post-order walk; suited for teardown/bottom-up
-
-#### `sceneNodeTransform.ts` — TRS ergonomics and lookAt
-
-- `getSceneNodePosition(out, node)` — reads translation from `localMatrix`; alias-safe
-- `getSceneNodeRotationQuaternion(out, node)` — decomposes rotation from `localMatrix`; alias-safe
-- `getSceneNodeScale(out, node)` — decomposes scale from `localMatrix`; alias-safe
-- `setSceneNodeLookAt(node, eye, target, up)` — model-space look-at matrix at `eye` facing `target`; marks dirty
-- `setSceneNodePosition(node, x, y, z)` — fast translation-only write (does not recompose); marks dirty
-- `setSceneNodeRotationQuaternion(node, q)` — sets rotation via decompose–recompose; preserves position/scale; marks dirty
-- `setSceneNodeScale(node, x, y, z)` — sets scale via decompose–recompose; preserves position/rotation; marks dirty
-- `setSceneNodeTransform(node, position, rotation, scale)` — full TRS recompose in one call; alias-safe; marks dirty
-
-#### `sceneNodeBounds.ts` — world-space bounds aggregation
-
-- `getSceneNodeWorldBounds(out, node)` — accumulates world-space AABB across all Mesh descendants; resets `out` to empty before accumulation; alias-safe
-
-#### `sceneNodeDispose.ts` — subtree teardown
-
-- `disposeSceneNode(node)` — detaches from parent, recursively disposes all descendants, clears signal registries; calls through to `disposeNode`; does not free GPU resources
-
-### Bug fixes / doc corrections
-
-- `scene.ts`: corrected render-pipeline doc comment from `drawScene` (non-existent) to `drawGlScene / drawWgpuScene`
-
-### Package dependency change
-
-- `@flighthq/mesh` moved from `devDependencies` to `dependencies` (required for `computeMeshGeometryBounds` in `getSceneNodeWorldBounds`)
-
-### Tests
-
-- `sceneNodeTraversal.test.ts` — 38 tests covering all 6 traversal/query functions
-- `sceneNodeTransform.test.ts` — 16 tests covering all 8 TRS functions, including alias-safety cases
-- `sceneNodeBounds.test.ts` — 7 tests covering `getSceneNodeWorldBounds` (empty, single mesh, offset, multi-mesh, recursive, alias-safe)
-- `sceneNodeDispose.test.ts` — 4 tests covering `disposeSceneNode`
-
-**Total tests: 101 (7 test files, all passing)**
-
-## Deferred items and why
-
-### Silver items (cross-package design decisions required)
-
-- **Frustum culling (`cullSceneNodeByFrustum`)** — depends on `getCameraViewProjectionMatrix4` from `@flighthq/camera`. The integration point with `@flighthq/render`'s `prepareScene3DRender` (does render consume a cull result, or does scene expose a cull pass the render walk calls?) requires a coordinated design decision before building.
-- **Raycasting (`raycastSceneNode`, `raycastSceneNodeFirst`, `raycastSceneNodeFromCamera`)** — per-triangle narrowphase against `MeshGeometry` triangles (iterating index + vertex buffer) is self-contained, but the types (`SceneRaycastHit`, `SceneRaycastOptions`) and the camera screen-pick path (`getCameraInverseViewProjectionMatrix4`) need a design pass. Added as a cross-package item.
-- **Instanced/LOD/Billboard node taxonomy** (`createGroup`, `createInstancedMesh`, `createLodMesh`, `createBillboard`) — the instanced-draw path touches `scene-gl`/`scene-wgpu` backends. Surface this as a coordinated cross-package effort.
-- **Per-node render layer / visibility mask** — adds `renderLayer` field to `Node3D` which is a types change; coordinate with render and cull.
-- **Subtree clone (`cloneSceneNode`)** — straightforward but touches `@flighthq/mesh` (geometry/material references); ownership semantics need doc + review.
-
-### Gold items (multi-session design programs)
-
-- **Skinning/animation nodes** (`createBone`, `createSkeleton`, `createSkinnedMesh`) — touches `mesh` (skin weights) and render backends (palette upload); largest cross-package effort.
-- **Spatial acceleration structures** (BVH/octree) — decide whether `scene` internal or `scene-spatial` neighbor.
-- **Scene serialization** — descriptor shape requires `@flighthq/resources` resource-key strategy.
-- **Rust-port parity (`flighthq-scene`)** — not yet started; full surface mirror after all TS tiers land.
-
-## Concerns and surprises
-
-- **`setMatrix4LookAt` is a VIEW matrix, not a model matrix.** The geometry function builds `-(dot(axis, eye))` translation (camera-space). `setSceneNodeLookAt` needed a separate implementation that writes a model matrix (translation = eye directly). This distinction must be clearly documented — camera look-at vs. scene-node look-at are different operations.
-- **`setSceneNodeScale` uses a third scratch vector `_scratchVec3b2`** to avoid aliasing between the "new scale" write and the decompose output buffers — needed because `setSceneNodeScale` writes the desired scale into `_scratchVec3b` before calling `decomposeMatrix4`, which needs to output into a different variable.
-- **`getSceneNodeWorldBounds` cannot mutate `MeshGeometry.bounds`** — the geometry is a `Readonly<MeshGeometry>` in the bounds aggregation code, so when `bounds === null`, the computation goes into a scratch AABB rather than caching into the geometry. This is correct (geometry is passed by reference and may be shared), but callers who want the cache populated should call `computeMeshGeometryBounds(geom.bounds ??= createAabb(), geom)` before the bounds walk.
-- **`disposeSceneNode` is intentionally thin** — it simply calls `disposeNode` from `@flighthq/node`. The extra layer exists so the scene package owns the named API (rather than users calling `disposeNode` directly for scene nodes), and so future scene-specific teardown (e.g., signals, render proxy cleanup) has a hook point.
-
-## Suggestions for future sessions
-
-1. **Implement `cullSceneNodeByFrustum` + `buildSceneFrustum`** — the two most impactful Silver items. All the geometry math exists; the only open question is the render-walk integration contract.
-2. **Implement `raycastSceneNode`** — triangle-level intersection against `MeshGeometry`. The broadphase (world AABB via `getSceneNodeWorldBounds`) is now in place; the narrowphase just needs index/vertex iteration.
-3. **Implement `cloneSceneNode`** — low design risk (geometry/materials share by reference), high utility for instancing patterns before `createInstancedMesh` lands.
-4. **Consider `getSceneNodeWorldBoundingSphere`** — a bounding sphere alongside the AABB for cheaper frustum rejection (sphere test is one comparison vs. 6 for AABB).
-5. **Coordinate with `@flighthq/render` on the cull/render-walk integration** before building Silver. The question: does `prepareScene3DRender` accept a pre-filtered list (from `cullSceneNodeByFrustum`), or does scene expose a cull callback the render walk uses?
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped the whole 2026-06-24 deferred
+  list as stale: frustum culling shipped as `buildScene3DFrustum` / `cullNode3DByFrustum`
+  (`sceneNodeCulling.ts:21,36`) and raycasting shipped as `pickScene3D` / `pickScene3DWithRay3D` in
+  `@flighthq/picking`, both filed there for two months as "cross-package design decision required".
+  The 2026-07-19 morph/skin note was half false and is corrected above — skin no longer CPU-blends per
+  frame; it poses on the GPU from the palette `prepareScene3DSkinning` readies. Traversal and TRS
+  helpers named in that list are not gone but **moved** to `@flighthq/node`
+  (`node/src/traversal.ts`); `disposeSceneNode` is now `disposeNode3D` (`scene.ts:14`).
+- **2026-08-01** — `createScene3DLightsFromDocument` bridges a document's standalone light table into a
+  renderer-ready `Scene3DLights` without attaching lights to the assembled scene.
+- **2026-07-19** — Recorded the morph/skin composition gap; see the correction above.
+- **2026-06-24** — Traversal, TRS, world-bounds, and dispose surfaces landed; most have since moved to
+  `@flighthq/node`.

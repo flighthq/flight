@@ -1,57 +1,49 @@
+---
+package: '@flighthq/color'
+updated: 2026-08-08
+by: principal
+---
+
 # color — Status
 
-Continuity log for `@flighthq/color`. See [charter](charter.md).
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-17 — DELIVERED & REVIEWED (builder2, parcel builder2-71118ef7)
+## Open
 
-`@flighthq/color` extracted + Phong→PBR helper. `npm run check` exit 0 (129 pkgs); bundle strictly
-smaller everywhere (−0.3%…−1.0% across 23 example/backend combos). Reviewed against the diff by `review` — approved, no changes requested. Decisions as actually made (some diverged from the charter's guesses — recorded here as the source of truth):
+Re-checked against `packages/color/src/` on 2026-08-08. The extraction itself is complete and the two
+lanes are in sync — `index.ts` re-exports every name `contract.ts` reaches — so what is left is colour
+math that still lives outside this package.
 
-- **Package:** bedrock leaf, dep `@flighthq/types` only, `sideEffects:false`, single `.` entry. `materials/color.ts` moved + concept-split into 8 files (srgbTransfer, packColor, hslColor, hsvColor, luminance, oklab, lerpColor, premultiplyColorAlpha) + colorFromKelvin. Names preserved.
-- **`LinearColor` stays in `@flighthq/types`**; color re-exports it (via packColor.ts) so consumers get the type + fns from one import.
-- **Canonical sRGB transfer = the UNCLAMPED form** (`srgbChannelToLinear`/`linearChannelToSrgb`, formerly private in materials, now public). Clamping is a caller concern.
-- **Effects de-dup — the "duplication" was DEAD CODE.** `effects/colorScienceMath.ts`'s 8 exports had zero internal callers and zero importers. So: OkLab moved to color renamed out-first + space-explicit (`computeRgbToOklab`→`linearRgbToOklab`, `computeOklabToRgb`→`oklabToLinearRgb`), Rec709/Rec2020 weights moved verbatim, the sRGB/HSL duplicates deleted. Effects gained NO color dep.
-- **Kelvin moved WHOLESALE to color** (charter guessed "split pure math from a light wrapper" — but `createColorFromKelvin` had zero callers and zero `LightUnit`/intensity coupling, i.e. no wrapper existed). Lighting drops the export.
-- **particles/surface color LEFT as-is** (justified): particles `curve.ts` HSV is raw-float-triple + allocating (a different shape from color's packed/out-param HSV — folding = rewrite, not de-dup); surface had no sRGB/pack reimplementation to fold.
-- **Consumer re-point (58 files):** render, scene-gl (~18), scene-wgpu (~18), scene2d-canvas/dom/gl/wgpu. scene2d-* had `materials` as an ORPHAN dep (only `computeRgbHexString`) → **dropped `materials` dep from those 4** (dependency-hygiene win). materials keeps color dep (pbrMaterials uses `unpackColorToLinear`). color added to the sdk barrel.
-- **Phong→PBR (`@flighthq/materials/phongToPbr.ts`)** — decomposed into directly-callable free fns: `getPbrRoughnessFromPhongShininess` = clamp(√(2/(shininess+2))); `getPbrMetallicFromPhongSpecular` = conservative dielectric-default heuristic; `getPhongToPbrLightExposure` = **log2(π) ≈ 1.651 EV**; `convertPhongToStandardPbrMaterial(phong, opts?)` composes them (baseColor=diffuse, normal passthrough, opts override). The **anti-too-dark anchor** is grounded in Flight's actual shader (PBR diffuse = kd·albedo/π at glPbrPrelude:390; classic Phong has no /π) → migrated scene is ~π× too dark unless light intensity is scaled ×π via `applyLightExposure(intensity, getPhongToPbrLightExposure())` (#7). It is a per-LIGHT scale (can't bake into one material without clamping albedo). F0/reflectance kept in materials, not color.
-- **Public API intentionally shrank:** materials lost the color family, effects lost the science math, lighting lost `createColorFromKelvin` — all now under `@flighthq/color`.
+- **`particles` carries its own HSV conversions.** `packages/particles/src/curve.ts:117` and `:186`
+  define private `hsvToRgb` / `rgbToHsv` over float channels, each returning a freshly allocated
+  `[r, g, b]` tuple; color's own `hsvToRgb` / `rgbToHsv` (`hsvColor.ts:10`, `:60`) are packed-int with
+  an `out` parameter. `particles` has no `@flighthq/color` dependency. Folding these is a rewrite
+  of the particle colour path, not a de-dup.
+- **The Kelvin approximation exists twice.** `colorFromKelvin` (`colorFromKelvin.ts:8`) and
+  `packages/effects/src/colorTemperatureMath.ts:10` carry the same piecewise coefficients. Effects
+  writes normalized linear multipliers into an `out` parameter and pins green to 1.0; color returns a
+  packed sRGB value. `effects` has no color dependency, so the shared kernel is unextracted.
+- **`bitmap` has nothing to fold.** Its premultiply is buffer-level over RGBA bytes
+  (`packages/bitmap/src/bitmapFormat.ts:41`, `:63`), a different tier from color's packed-int
+  `premultiplyColorAlpha` (`premultiplyColorAlpha.ts:5`). This answers the charter's "fold `bitmap`
+  colour math in" open direction as a no-op rather than deferred work.
+- **Hex is one-way.** `computeRgbHexString` (`packColor.ts:13`) writes a hex string; nothing in the
+  package parses one back.
 
-Commits (on builder2's branch): color pkg, color kernel move + effects de-dup, kelvin move, phongToPbr. Size baselines will need regenerating at integration (several size-affecting branches merging).
+## Log
 
-## State: DELIVERED (superseded plan below is historical)
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-Original plan (2026-07-17):
-
-Chartered in a direction session with the user, triggered by a real gap: converting sRGB samples for
-PBR materials — specifically **setting the intensity when migrating Phong materials to PBR** — had no
-discoverable home. Root cause: the color primitive already exists but is **mis-homed** inside
-`@flighthq/materials/src/color.ts` (~25 exports) and **duplicated** in
-`@flighthq/effects/src/colorScienceMath.ts` (second sRGB↔linear + HSL + OkLab + luminance weights),
-with more scatter in `lighting`/`particles`/`bitmap`.
-
-### Blessed decisions (see charter › Decisions)
-
-- Extract a bedrock leaf `@flighthq/color`: move `materials/color.ts`, fold in the `effects`
-  color-science duplication, re-point consumers (`scene-gl`, `materials`, `effects`, `lighting`,
-  `particles`, `bitmap`). `LinearColor` stays in `@flighthq/types`.
-- Dedicated package, NOT folded into `@flighthq/math` (distinct domain, 2D+3D reach).
-- **Boundary:** the Phong→PBR intensity/appearance migration is a `@flighthq/materials` helper
-  (`convertPhongToStandardPbrMaterial`, working name) built ON `color` + the `@flighthq/lighting`
-  intensity conversion (issue #7) — NOT a color primitive. Paired follow-on; color lands first.
-
-### v1 deliverables (from the charter)
-
-1. `@flighthq/color` package (leaf: deps `@flighthq/types`, maybe `@flighthq/math`).
-2. Canonical surface: pack/unpack, sRGB↔linear, HSL, HSV, OkLab, luminance/contrast, premultiply,
-   lerp, hex — migrated from `materials/color.ts` and `effects/colorScienceMath.ts`.
-3. Consumer re-point + effects de-dup; `packages:check` / `exports:check` clean.
-4. (Paired follow-on, separate task) `materials` Phong→PBR migration helper on top of `color` + #7.
-
-### Open before/at dispatch (charter › Open directions)
-
-- Kelvin/blackbody split (pure spectral→RGB math → color?).
-- Migration-helper signature + coupling to the #7 lighting-intensity helper (build together).
-- Whether to fold `particles`/`bitmap` color math in now or later.
-
-## No code exists yet. This is a scoped extraction, not greenfield — lift `materials/color.ts` intact, then de-dup and re-point.
+- **2026-08-08** — Re-verified every claim against source and converted to the Open + Log contract; the
+  "color re-exports `LinearColor`" claim is **false** (no `export type` anywhere in `src/`; `packColor.ts:1`
+  only type-imports it) and was deleted with the stale "single `.` entry" and "no code exists yet" lines.
+- **2026-07-17** — Extracted from `materials/color.ts` into nine files; effects' colour-science duplicates
+  deleted as dead code; Kelvin moved from `lighting` and renamed `colorFromKelvin`; consumers re-pointed
+  and four `scene2d-*` packages dropped an orphan `materials` dependency.
+- **2026-07-17** — Phong→PBR migration lands in `@flighthq/materials/src/phongToPbr.ts`
+  (`convertPhongToStandardPbrMaterial` plus the three free functions it composes), not in color; F0 and
+  reflectance stay in `materials`.
+- **2026-07-17** — Chartered: bedrock leaf depending on `@flighthq/types` alone, not folded into
+  `@flighthq/math`; `LinearColor` stays in `@flighthq/types`; the unclamped sRGB transfer
+  (`srgbChannelToLinear` / `linearChannelToSrgb`) is canonical and clamping is a caller concern.

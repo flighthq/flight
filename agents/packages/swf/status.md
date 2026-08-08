@@ -1,345 +1,83 @@
 ---
 package: '@flighthq/swf'
 updated: 2026-08-08
+by: principal
 ---
 
-# swf status
+# swf — Status
 
-**Before extracting anything from the conformance scoreboard into a shared core, read
-[conformance core generality](conformance-core-generality.md).** Scoping MD5 as a second format
-produced a falsifier — a core that owns raw capability extraction, or assumes one file equals one case,
-is general only over SWF-like tag streams — and that assumption is invisible while SWF is the only
-instantiation. The core itself is held, not rejected.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-Built 2026-07-30 as the first named-graph source for `Scene2DDocument`. Animated timelines landed
-2026-08-01; shape geometry 2026-08-02; morphs, editable text, audio, per-frame appearance, and resolved
-bitmap fills followed by 2026-08-04.
+## Open
 
-- `createScene2DFromSwf` safely reads `FWS` headers and bounded tag records, and reads `CWS`/`ZWS` through
-  a registered decompressor. Compression is not SWF's domain — a `CWS` body is a zlib stream and a `ZWS`
-  body an LZMA one, both general formats riding inside the container — so the package vendors neither codec and
-  resolves through the one shared registry in `@flighthq/compression` rather than owning a private one:
-  a caller registers deflate once and every container that carries the same algorithm — SWF's `CWS`, an
-  AWD2 block — can read it. The registry starts empty, is filled only by an
-  explicit call, and is last-write-wins so a host can replace a portable decoder with a native one.
-  Compression with nothing registered reports the same null sentinel as a malformed file: the bytes are
-  unreadable either way. Decompressed bytes are spliced behind a header rewritten to `FWS`, since the
-  declared length already counts uncompressed bytes.
-- `DefineShape` through `DefineShape4` decode to real drawable geometry on `Shape` nodes: solid fills
-  with per-record alpha, linear/radial/focal gradients with their ratios and converted matrices, and
-  strokes with width, caps, joins, and miter limit. SWF records edges rather than contours — each edge
-  naming the fill on its left and right — so a fill is recovered: edges are collected per style, the
-  right-hand side is reversed so every edge of a fill runs the same way around it, and runs are stitched
-  end-to-start into closed contours. That reversal is what makes the command stream's nonzero winding
-  match the fill SWF meant, holes included. Coordinates are exact whole twips, so stitching needs no
-  tolerance.
-- Every core tag's disposition — carried, or deliberately read past and why — is tabulated in
-  [`tag-coverage.md`](tag-coverage.md), with corpus frequencies beside each.
-- **An imported document does not play itself, and playing one clip plays only that clip.** Every
-  timeline arrives stopped, because `setMovieClipSource` ends in `gotoAndStopTimeline` and nothing here
-  overrides it; and `updateMovieClip` advances the one timeline it is handed, never its descendants. Flash
-  does both automatically — the root and every nested clip play, forever — so a file that loops in a
-  player renders one still frame here until a caller plays and updates each clip. Neither default is a
-  gap to fix: implicit playback and an implicit tree walk are exactly the hidden runtime behaviour this
-  SDK refuses. What it needs is to be *said*, because it is the single most likely reason an imported
-  animation "doesn't work".
-  Looping itself needs nothing: `playMode` already defaults to `'loop'`, so a played clip wraps at its
-  last frame with no frame script involved. A SWF that loops in Flash carries no `gotoAndPlay(1)` to
-  parse, so missing ABC is not what stops one looping here.
-- `DefineMorphShape`/`2` decode to a `MorphShape`: both endpoints' geometry, and both endpoints of every
-  fill and stroke style, under one progress. A morph is the only SWF definition that stores its geometry
-  twice — one style array, then a start and an end SHAPE — so the styles are read once as pairs and each
-  edge set is decoded against style *indices* alone through `readSwfShapeStylePaths`. An index carried by
-  both endpoints becomes one path morph beneath the paint morph that index named, and a shape with several
-  fills is one node with several of them rather than one node per region.
-  The two edge sets are walked **in step**, by `readSwfMorphShapePaths`, rather than decoded apart and
-  matched afterwards. Two facts force that. The end set **names no styles** — it repeats the start's record
-  structure with the style fields unset — and the two record streams **do not always line up one-for-one**,
-  since either side may change style where the other does not. A paired walk handles both with independent
-  cursors, and it pays for itself twice over: each contour carries both endpoints through stitching and
-  fill0 reversal as a unit, so a style index's two paths come out with identical structure and the morph
-  builder has no correspondence to reconstruct. An edge that is straight on one side and curved on the
-  other still pairs, the straight side contributing its midpoint as a control point.
-  The **ratio lives on the placement, not the definition**, so it is per-frame data applied beside the
-  matrix and alpha; two placements of one character routinely sit at different points along the same morph,
-  which is why a character decodes to a factory and every placement gets its own node. A morph's authored
-  bounds interpolate with it: the union of both endpoints would be right for neither, leaving a morph at
-  rest reporting room for the shape it is not yet.
-- Morph coverage measured against the corpus: **all 8 morph characters** across its 5 morph-carrying files
-  decode, including gradient fills and multi-path compound shapes. One gap remains, and it is an unknown
-  rather than a defect: no corpus file carries a **version 2 morph gradient**, so whether that form packs
-  spread and interpolation into the high nibble of its count byte the way a static gradient does is
-  untested. The decoder reads the whole byte as the count, which every version 1 morph agrees with. That
-  reading was implemented, found to fix nothing, and reverted rather than shipped unverified — the question
-  is recorded here instead of guessed at in code.
-- `DoInitAction` recognizes the same playback commands as `DoAction`, bound to frame 1 of the sprite it
-  names, since an init action runs once before that sprite's first frame.
-- A placement's colour transform contributes its alpha multiplier, applied per frame beside the matrix, so
-  an authored fade follows. RGB multiply/add terms become a `ColorScaleBiasAdjustment`, while the alpha
-  add is normalized across the adjustment and node-alpha tiers when its multiplier permits it. The
-  adjustment is inherited through nested placements and recomputed only when a frame changes the authored
-  channel.
-- AVM2 `DoABC` timeline commands are recognized too, through `@flighthq/abc`. AVM2 has no playback
-  opcodes: a compiler turns frame scripts into an `addFrameScript` call in the generated class
-  constructor, pairing a zero-based frame index with a handler that is usually a *method on the class*
-  reached by name rather than an inline function — so recognition reads the constructor's call, resolves
-  the handler through the instance's method traits, and then reads that body. `SymbolClass` ties the class
-  name back to a character, with character 0 being the root. Both levels are read, never run, and the same
-  all-or-nothing rule applies to the handler body.
-- AVM1 `DoAction` timeline commands are recognized and emitted as data. AVM1 gives playback control its
-  own single-byte opcodes — stop, play, and both goto forms are literal instructions rather than method
-  calls — so reading them is the same kind of work as reading a placement record, and nothing from the
-  file is ever executed. A recognized block becomes a `Timeline` frame script bound to Flight's own
-  MovieClip calls. A block is recognized only when *every* action in it is a playback command; anything
-  else and the block is declined whole, because honouring the legible half misrepresents the frame. A goto
-  landing on a frame that gotos back is depth-bounded rather than allowed to recurse.
-- `DefineButton` and `DefineButton2` import their up state as a one-frame timeline, so a button
-  instantiates, bounds, nests, and masks through the same path a sprite does. The other interaction
-  states are dropped rather than stacked invisibly, because a document is a still scene.
-- `DefineBits` with `JPEGTables` splices the legacy split-JPEG form back into one payload — the tables
-  lose their end marker, the image its start marker. A pair that will not splice contributes no image and
-  leaves the document alone; real files carry the halves inside sprites and in either order.
-- `DefineFont`, `DefineFont2`, and `DefineFont3` decode into the generic, index-keyed
-  `GlyphOutlineSource` seam and are publicly recoverable by SWF character id through
-  `createGlyphOutlineSourcesFromSwf`. An embedded SWF font is a table of paths in its own EM grid, so no
-  text stack is consulted: `DefineFont2/3` contribute their codepoint, advance, and vertical-metric
-  tables; a separate `DefineFontInfo/2` supplies legacy `DefineFont` codepoints. A glyph whose outline
-  fails costs that glyph rather than the font, and a version 3 font's finer grid (twenty times a version 1
-  or 2 font's) is carried so the same outline scales correctly.
-- `DefineText` and `DefineText2` compose into drawable geometry: a text record carries glyph indices and
-  advances rather than characters, so this is placement rather than layout — each glyph is emitted at the
-  pen position, scaled by the record height over the font's EM units, recoloured from the record, and the
-  pen advances by the recorded amount. It consumes the same `GlyphOutlineSource` exposed to other font
-  consumers. Composition is deferred until the whole file is walked, because a text record may address a
-  font declared after it.
-- `DefineEditText` materializes as assignable `RichText`, not flattened paths. It preserves the authored
-  string, box, colour, margins, alignment, selection, maximum length, multiline, word-wrap, and font-name
-  data. When the tag declares HTML, the importer explicitly calls `parseTextMarkup` and stores the plain
-  text plus format ranges rather than displaying the markup itself.
-- A placement earns a node when it is named, carries a timeline, or now has geometry, so unnamed shapes —
-  most of what a still frame is made of — are materialized. Each placement of a shape character gets its
-  own copy of the decoded commands.
-- A shape body that does not parse leaves the definition as the bounded placeholder it was before any
-  geometry was decoded, on a reader of its own so one unreadable body never fails the document. The
-  authored RECT keeps sizing every node, including shapes, because it carries stroke width and authoring
-  padding the command stream does not.
-- Bitmap fills inside a shape paint. Dropping the fill used to drop its contours with it, so artwork built
-  entirely from bitmap-filled shapes imported as an empty document — reported from downstream against a
-  real file. The fill's character id and matrix now resolve to the Texture that character is sampled
-  through and emit `beginTextureFill`; SWF's four bitmap fill types become the repeat/clamp and
-  linear/nearest sampler axes. The fill matrix maps image PIXEL space into shape space, so its linear part
-  divides by twips-per-pixel and an unscaled 1:1 fill authors as scale 20. Resolution belongs to the
-  caller, not to an out-parameter the decoder allocates into, because only the caller can hand back the
-  texture it already made for that character and sampling.
-- `createScene2DSymbolFromSwf` instantiates a symbol the file exported by linkage name but never placed,
-  and `readSwfExportedSymbolNames` lists them. A document built only from placements has nothing to show
-  for a library symbol, which is what a consumer hits when the authoring tool published a symbol for code
-  to create rather than putting it on a timeline. Each call builds a fresh instance, because a symbol is a
-  template rather than a shared node.
-- `SwfReader` is its own module — the bounded bit reader the document, timeline, and shape decoders all
-  share.
-- Every timeline in the file — the root and each `DefineSprite` symbol — crosses as `movieclip`
-  playback data. The document root and every placed sprite instance are `MovieClip`s bound to a
-  `TimelineSource` built from the parsed frames, so a caller plays, seeks, and reads labels through the
-  ordinary `movieclip` API and the codec retains no player of its own.
-- Frames are retained as whole display lists rather than the authored deltas, so a seek to any frame is
-  a lookup and never replays the frames before it. `FrameLabel` and `DefineSceneAndFrameLabelData`
-  become `TimelineSource.labels`; the header's 8.8-fixed frame rate becomes its `frameRate` and governs
-  every timeline in the file. Scene names are read past to reach the label table but are not imported as
-  labels.
-- Every node a timeline can ever show is allocated at import, one per depth+character instance across
-  all its frames, so `constructFrame` only attaches, detaches, reorders by depth, and re-transforms.
-  Playback allocates nothing, a slot reference target stays valid while its instance is off-frame, and a
-  loop back to frame 1 restores the same nodes instead of replacing them. An unchanged placement matrix
-  is the same object, so a surviving instance is not re-transformed each frame.
-- The slot manifest is therefore the union of named instances across every frame, not the opening frame
-  alone, while only the current frame's instances are attached.
-- `DefineSprite` timelines instantiate recursively, including unnamed intermediate containers needed to
-  preserve composed transforms; every named descendant joins the flat enumerable slot manifest, listed
-  after the container that carries it.
-- `SetBackgroundColor` becomes the document's `backgroundColor` as opaque packed RGBA — it carries no
-  alpha in the file and a stage is opaque. It is document metadata, not a node: a colour the viewport
-  clears to, which an application honours or ignores. A file that declares none reports null rather than a
-  guessed default.
-- The stage RECT becomes the document root's authored local bounds. Shape, morph-shape, static/edit
-  text definition bounds become placed-target extents, and sprite extents recursively union every
-  available child bound through its placement matrix, across every frame of the symbol rather than its
-  first — a node's local bounds do not change as its playhead moves.
-- Lossless bitmaps resolve to real pixels at import, and earn no image resource because nothing is left
-  to load. Their payload is a raw raster rather than an image file, so no generic decoder reaches it;
-  decompression comes from the shared registry and the layout — colour-mapped, 15-bit, or 24/32-bit, rows
-  padded to four bytes — is unpacked here. Only characters something actually samples are unpacked, so a
-  library full of unused bitmaps costs nothing. Without a registered deflate decompressor the geometry
-  still imports and only the paint is missing.
-- Every other embedded image leaves the importer as an `ImageResourceReference` on
-  `Scene2DDocument.imageResources`, carrying its bytes undecoded. The reference is keyed by CHARACTER, not
-  by placement: a placed `DefineBits*` character becomes a `Sprite` over the character's shared waiting
-  `Texture`, so a bitmap placed a hundred times decodes once and every placement is sized by its authored
-  RECT before any pixels exist. `bytes` is a zero-copy view of the payload and `mimeType` is sniffed from
-  its magic (`image/png`, `image/gif`, `image/jpeg`). Pixels are shared and sampling is not — each
-  (character, sampler) pair is its own Texture over the one image resource, which is how one character
-  serves a smoothed placement and a tiled non-smoothed fill at once. Decoding stays the load step's job,
-  so it can be asynchronous and a caller that never loads an image never pays for its pixels. The
-  cross-package proof builds a complete 1x1 PNG into a bitmap-filled SWF shape, then observes
-  `loadScene2DImageResources` invoke the browser decoder and bind its `Image` to that exact waiting texture.
-- The two bitmap paths are asymmetric, and unifying them remains an unchosen design fork.
-  `loadImageResourceFromBytes` returns an `Image` through `HTMLImageElement` and does not consult the
-  MIME-keyed `@flighthq/image-codec` registry, whose decoders instead return raw straight-RGBA
-  `DecodedImage` data. One route would bridge those contracts and settle how SWF's premultiplied lossless
-  alpha crosses them. The v1 `ImageResourceReference` union is closed over Embedded and External but
-  explicitly anticipates an additive third member; that route would instead widen shared types and the 2D
-  and 3D loader dispatch. No route is selected here, and eager lossless resolution remains unchanged.
-- Lossless bitmap definitions retain their declared pixel dimensions, including colormapped alpha
-  headers. Video stream definitions become `Sprite` nodes over sourceless `Texture`s at their declared
-  dimensions; the payload stays opaque and draws no pixels.
-- `DefineBitsJPEG2` through `DefineBitsJPEG4` retain dimensions from bounded JPEG SOF, PNG IHDR, and
-  GIF header scans, including the legacy layout where the encoding tables and the pixels are two
-  concatenated streams — the end-of-image marker between them no longer ends the scan, and it is removed
-  from the bytes a resolver receives. JPEG3/4 alpha payloads remain opaque behind their validated offsets.
-- RECT readers accept the zero-bit encoding used by empty authored shapes, preserving a zero-size
-  local bound instead of rejecting the document.
-- `PlaceObject` through `PlaceObject4` cover legacy and current first-frame placement records;
-  `RemoveObject` and `RemoveObject2` update that display list before its first-frame snapshot.
-- Clip depth becomes a real clip. A placement carrying a clip depth masks every depth above its own
-  through that depth, and is never drawn itself. Flight clips a node and its subtree, so one `ClipRegion`
-  is applied to each covered instance — equivalent to grouping them under a clipped container, without
-  restructuring the graph or disturbing the attach/detach/reorder path. The mask's contours come from its
-  decoded shape and cross two transforms into each covered instance's own local space, which is where a
-  `ClipRegion`'s contours live. Masking is per-frame data applied beside the matrix, so a mask that
-  appears or moves between frames follows. Where masks nest, the innermost wins: Flight carries one clip
-  per node rather than intersecting them. A mask whose character has no decoded geometry imposes no clip
-  rather than a wrong one.
-- `PlaceObject2`/`PlaceObject3` distinguish fresh placements from move/update and replacement records.
-  Only a move targeting an existing depth inherits omitted fields, and stray moves are ignored. A move
-  keeps its depth and character so it keeps its node across frames, while a replacement at the same
-  depth is a different instance and gets a node of its own.
-- Named placement forms preserve instance names and affine transforms, converting twips to pixels.
-  Legacy unnamed sprite placements still expose their recursively named descendants.
-- `SymbolClass`, `ExportAssets`, and direct `PlaceObject3`/`PlaceObject4` class names preserve linkage
-  identity.
-- `registerSwfScene2DDocumentImporter` explicitly opts the codec into a caller-owned
-  `scene2d-resources` registry; importing the module has no registration side effect.
-- A tag stream is complete when it reaches its bounded end, with or without an explicit End tag: Flash's
-  own tooling ends a sprite, and sometimes the root, on its last content tag. Duplicate definitions, cyclic
-  symbol graphs, excessive nesting, and excessive instantiated-node counts still reject safely. Retaining whole frames added an amplification path —
-  a display list placed once can be multiplied by every ShowFrame that follows it — so a per-document
-  snapshot budget rejects a file that would exceed it, rather than materializing it.
-- Scene ranges, `VideoFrame` payloads, JPEG3/4's separate alpha stream, nested-mask intersection, and
-  button-state sound transitions remain staged rather than being represented incompletely. Limited AVM1
-  and AVM2 playback frame scripts are already carried; broader ABC work belongs to the separate `abc`
-  cell behind that seam.
-- Opaque bitmap pixels are complete: JPEG/PNG/GIF payloads reach their waiting textures through
-  `loadScene2DImageResources`, and lossless payloads unpack at import. What remains is unifying the two
-  paths behind one loader, noted above.
-- `createScene2DSymbolFromSwf` returns a `Scene2DDocument` rooted at the symbol, not a bare node. A symbol
-  carries the same two resolve contracts a whole file does — slots to fill and image bytes to decode — and
-  each call parses afresh, so its Textures are its own and no resource list from another call can ever pair
-  them with pixels. It resolves the same character kinds in the same order a placement does, so an exported
-  bitmap or edit-text character imports like the identical character placed on a timeline.
+Every item was re-checked against source on 2026-08-08. A file:line is a claim about this tree.
 
-The known gaps between this and pixels a player would accept are recorded here rather than inline:
+**Standing rules on work in this cell.**
 
-- Filter descriptors preserve only fields the target effect vocabulary can state. `GradientGlowEffect`
-  has no angle, distance, or inner/on-top placement, `BlurEffect` has no pass count, and the glow/shadow/
-  bevel descriptors have no mapping for SWF's composite-source and knockout flags. `ConvolutionEffect`
-  carries the default RGB but not its authored alpha. These are declared target-capability gaps, not
-  parser omissions to conceal with guessed behavior; spatial filters remain appearance reports and are
-  never attached implicitly to imported nodes.
+- **Nothing from a SWF is executed.** AVM1 `DoAction` and AVM2 `DoABC` are *recognized* as data and
+  emitted as `Timeline` frame scripts bound to Flight's own MovieClip calls. Broader ABC parsing is the
+  `abc` cell's work behind that seam; execution stays outside Flight.
+- **License provenance.** No SWF, ABC, or corpus binary is committed in this repo (verified: zero
+  `*.swf`/`*.abc`). [`fixture-evidence.md`](fixture-evidence.md) records how to obtain and hash a file
+  and must never record whose terms it carries.
+- **Before extracting the conformance scoreboard into a shared core**, read
+  [conformance core generality](conformance-core-generality.md). That core is held, not rejected.
 
-- The functional evidence in `functional/scenes/swf-alpha-transform.ts` proves the affected node is
-  imported from a SWF placement before testing backend realization. WebGL and WebGPU explicitly register
-  their colour-adjustment material feature, retain the imported adjustment on the render proxy, and fold
-  the white solid to green. Canvas and DOM have no colour-adjustment registrar: their honest
-  capability-absent result is a null proxy adjustment and an untinted white pixel. The importer has
-  preserved the authored data in both cases; no Canvas registrar or unconditional accumulation tax is
-  introduced to make an unsupported backend pretend otherwise.
+**Unfinished / known-wrong.**
 
-- The same `functional/scenes/swf-alpha-transform.ts` evidence records the alpha behavior while the SWF
-  representation decision is held: an authored 0.5 alpha multiplier reaches `node.alpha` and blends a
-  red solid halfway over blue on DOM, Canvas, WebGL, and WebGPU; DOM additionally applies CSS opacity
-  `0.5` to the imported shape canvas. An authored zero multiplier plus a non-zero alpha add leaves only
-  the blue backdrop on all four because the render walk culls the zero-alpha node before the add can
-  contribute. This is measurement of current behavior, not approval of that representation.
+- **An imported document does not play itself, and playing one clip plays only that clip.**
+  `setMovieClipSource` ends in `gotoAndStopTimeline` (`movieclip/src/movieClip.ts:144`) and
+  `updateMovieClip` advances the one timeline it is handed (`:152`), never its descendants. Both are
+  deliberate — implicit playback and an implicit tree walk are the hidden runtime behaviour this SDK
+  refuses — but this is the likeliest reason an imported animation "doesn't work".
+- **SWF's knockout and composite-source filter flags are unread.** `swfFilter.ts` defines constants only
+  for `FILTER_INNER` (0x80), `FILTER_PASSES`, and `FILTER_BEVEL_ON_TOP`; the knockout/composite bits are
+  never sampled. This is now an *importer* gap, not a target-capability gap: `EffectSourceMode` carries
+  `'knockout'` (`types/src/EffectSourceMode.ts:5`) and `OuterGlowEffect`, `DropShadowEffect`, and
+  `BevelEffect` all take `sourceMode`.
+- **Three filter fields are genuinely unrepresentable and are declined loudly.** `GradientGlowEffect` has
+  no angle, distance, or inner/on-top member, so an authored one is skipped (`swfFilter.ts:162`);
+  `BlurEffect` has no pass count, so an authored count is read and reported (`:79`); `ConvolutionEffect`
+  takes packed RGB only, so the authored filter alpha is dropped (`:215`).
+- **`DefineBitsJPEG3`/`4` alpha is dropped.** The colour stream ends at the alpha offset and the
+  zlib-compressed block after it is discarded, so a transparent JPEG imports opaque
+  (`swfDocument.ts:2460`, `Drop` diagnostic `swf.jpeg-alpha-stream`). Rejoining is SWF-specific and needs
+  an entry-point ruling — an import option, or a post-pass over a resolved document.
+- **The bitmap-loader fork is unruled.** `loadImageResourceFromBytes`
+  (`image/src/imageResourceFrom.ts:104`) goes bytes → `Blob` → `HTMLImageElement` and never consults
+  `getImageDecoder`, so headless and native hosts get no encoded pixels; `@flighthq/image-codec` instead
+  returns raw straight-RGBA `DecodedImage`. `ImageResourceReference` is a closed union over Embedded and
+  External (`types/src/ImageResourceReference.ts:25`) anticipating an additive third member. Eager
+  lossless resolution stays until a route is picked; JPEG3/4 alpha waits on the same hand-back point.
+- **`ZWS` cannot be completed here.** `swfDocument.ts:555` maps `ZWS` to `Compression.Lzma`, but no LZMA
+  decompressor is registered anywhere in this repo. Its natural home is a Rust/wasm registrant in
+  `flight-rs`, not a hand-written TypeScript decoder.
+- **Where a video placement's ratio lives is unruled.** `swfDocument.ts:898` applies a placement ratio to
+  `MorphShapeKind` alone, and `VideoFrame` packets are not retained (`:332`). On a video placement the
+  ratio names which decoded frame to show — a different quantity in the same field. This is the corpus
+  sweep's one surviving wire/tree divergence; measurement in [`fixture-evidence.md`](fixture-evidence.md).
+- **Version 2 morph gradients are untested.** `swfMorphShape.ts:256` reads the whole stop-count byte as
+  the count, which every version 1 morph agrees with; no corpus file carries a v2 morph gradient, so
+  whether that form packs spread/interpolation into the high nibble the way a static gradient does is
+  unknown. The alternate reading was tried, fixed nothing, and reverted rather than shipped unverified.
+- **`DefineButtonSound` is blocked on a design decision.** It attaches sound to pointer-state
+  transitions, while a button imports as a one-frame timeline of its up state; a frame cue is the wrong
+  shape. `swfDocument.ts:2965` records that it names no declared capability.
+- **Nested masks do not intersect.** The innermost mask covering a depth wins (`swfDocument.ts:950`),
+  because Flight carries one clip per node. Scene ranges are likewise staged rather than misrepresented.
 
-- `DefineBitsJPEG3`/`4` alpha is **dropped**. The tag reader ends the colour stream at the alpha offset and
-  discards the zlib-compressed alpha block after it, so a transparent JPEG imports fully opaque. Rejoining
-  the two halves is SWF-specific work — the colour stream decodes through a generic decoder, the alpha
-  through the shared decompressor, and only this package knows they belong together — and it needs an
-  entry-point decision first: an option on the import, or a post-pass over a resolved document. Rare in the
-  Ruffle corpus (1 file of 301, which is AVM-test-skewed) and common in authored artwork.
-- The image path decodes through a `Blob`/`HTMLImageElement` in `loadImageResourceFromBytes`, which never
-  consults `getImageDecoder`. That path is browser-only, so headless and native hosts get no encoded
-  pixels at all — the same unification noted above, seen from the other side.
-- Lossless bitmap fills now draw on DOM, Canvas, WebGL, and WebGPU. The shared Canvas shape rasterizer
-  receives an explicit resolver set, so a GPU or DOM scratch pass can resolve a `Bitmap`-sourced texture
-  without pretending it is an `Image`. `functional/scenes/swf-import.ts` asserts the checker colours and
-  authored repetition on all four backends.
-- SWF pixel coverage now lives in `functional/scenes/swf-import.ts` and
-  `functional/scenes/swf-alpha-transform.ts`. The former renders geometry, gradients, strokes, static
-  text, bitmap fills, timeline movement, and an inherited colour transform; the latter isolates alpha
-  multiply/add and the backend-specific solid-shape adjustment paths. Both retain structure assertions
-  alongside pixel oracles so a non-blank but misrouted frame does not pass vacuously.
+Per-tag disposition — carried, or read past and why — is in [`tag-coverage.md`](tag-coverage.md).
 
-The package is wired through the SDK root and formats barrel, build graph, package layer, path aliases,
-and lockfile, and depends on `movieclip` for the playback nodes it produces and on `shape`/`geometry` for
-the geometry it decodes. Synthetic byte-level tests
-cover all four placement generations, both removal generations, fresh/move/replacement state, linkage,
-transforms, opt-in registration, compressed rejection, malformed/truncated input, recursively nested
-sprites, composed transforms, recursive-graph rejection, stage bounds, RECT-based definition bounds,
-embedded JPEG/PNG/GIF, lossless-bitmap dimensions, sourceless video placement through eleven move records,
-and recursively composed sprite extents.
-The corpus wire cross-check now covers **instantiated nested sprites** as well as root timelines: all 17
-nested multi-frame instances are paired to their `DefineSprite` character by declared frame count and
-compared against that body's own per-frame placement records, with 0 divergent and 0 unpaired. Both
-cross-checks describe a child by identity, kind, matrix, alpha, visibility, and morph progress — the
-last because a placement whose only per-frame change is its ratio moves nothing a matrix can see.
-Timeline coverage adds the all-frames slot manifest against first-frame attachment, a later-frame move
-replayed onto the instance it targets, depth ordering when a later frame places an instance between two
-others, labels from both label tags with the header frame rate, an independently seekable nested sprite
-playhead, snapshot-budget rejection, font glyph tables in both the version 1 and version 2 offset forms
-with their overrun rejections, static text placing glyphs at the right scale, colour, and advance, clip
-depth producing a clip on covered instances only with the mask
-undrawn and the region resolved into the covered instance's local space, and a compressed document
-importing through a registered decompressor while a missing, failing, or short one rejects. Geometry coverage adds the bit reader's own overrun, alignment,
-and encoding cases, and a shape suite over hand-written SHAPEWITHSTYLE bytes: a closed rectangle, twips
-conversion with a quadratic edge, right-hand fill reversal, run stitching across a move, Shape 3 alpha,
-stroke width and style, gradient passthrough, unpainted bitmap fills, and both malformed-body rejections —
-plus end-to-end placement, per-instance geometry, and the unparseable-body placeholder. A canonical
-uncompressed Ruffle named-shape fixture has also crossed `createScene2DFromSwf`, and a 306-file sweep of
-Ruffle's test corpus now backs the parser end to end — nothing throws, every uncompressed file imports, and
-the only rejections are the 79% of that corpus which is compressed. The sweep is what exposed the End-tag
-defect above. A second pinned Ruffle fixture now supplies the missing real-file animation proof: its root
-wire stream replaces character 1 with character 2 at depth 1 on frame 2, and
-`gotoAndStopMovieClip` changes node identity there before restoring the original node on frame 1. Exact
-revisions, paths, URLs, source hashes, derived manifests, and outside-repository obtain procedures are
-recorded in [`fixture-evidence.md`](fixture-evidence.md). No external binary is committed, and the hermetic
-test suite reproduces the relevant encodings without it.
+## Log
 
-## Known gaps and decision boundaries
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **Video payload support remains staged, and the corpus divergence is still open.** The animated sweep
-  found its only wire/tree divergence in one of 29 multi-frame roots. Ratified Stage A fixed the *graph
-  shape* — the character now materializes as a named sourceless `Sprite` — but the resweep at
-  `6aff889db` shows the **divergence survives**, for a different reason: the ten per-frame records at
-  that depth change only the placement **ratio**, and Flight applies a ratio to `MorphShapeKind` alone.
-  On a video placement the ratio names which decoded video frame to show — measured, not assumed: it
-  equals the `VideoFrame` packet number on every move frame — so it is a different quantity from morph
-  progress carried in the same field. `VideoFrame` bodies remain skipped, and where that ratio lives is
-  part of the Stage B/C rulings rather than a timeline defect. Full measurement in
-  [`fixture-evidence.md`](fixture-evidence.md).
-- **The bitmap-loader fork is unruled.** Encoded images use the browser `Image` load and SWF-lossless
-  rasters become `Bitmap`s eagerly. Bridging the `DecodedImage` registry or adding a third resource kind
-  changes shared contracts; eager lossless resolution remains until a route is selected. JPEG3/4 alpha
-  rejoining waits on the same resolved-image hand-back point.
-- **`ZWS` cannot be completed here.** The fixed corpus measurement at `f0c56ba7d` moves from 59 to 301 of
-  306 imports when `registerDeflateDecompressor()` is called; the remaining five files are all LZMA `ZWS`.
-  The shared `Compression.Lzma` registration seam already exists. Its natural implementation is a
-  Rust/wasm registrant in the separate `flight-rs` repository, not a hand-written TypeScript decoder in
-  this one.
-- **Broader AVM2 is not SWF-package work.** Limited playback recognition already composes through
-  `@flighthq/abc`. General ABC parsing belongs to that cell behind the seam, and execution remains outside
-  Flight.
-- **`DefineButtonSound` is blocked on a design decision.** It attaches sounds to pointer-state
-  transitions, while a button imports here as a one-frame timeline of its up state. A frame cue is the
-  wrong shape because the sound does not fire on entering a frame. See
-  [`tag-coverage.md`](tag-coverage.md). Event sounds, stream sounds, and both trigger tags are carried.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped the claim that glow/shadow/bevel
+  descriptors "have no mapping for SWF's composite-source and knockout flags": `EffectSourceMode` now
+  carries `'knockout'` and all three take `sourceMode`, so that is an unread importer flag, not a target
+  gap. Angle, distance, and quality are likewise carried now for drop shadow, glow, and bevel.
+- **2026-08-04** — Morphs, editable text, audio, per-frame appearance, and resolved bitmap fills landed.
+- **2026-08-02** — `DefineShape`–`DefineShape4` decode to real drawable geometry on `Shape` nodes.
+- **2026-08-01** — Animated timelines: whole-display-list frames, labels, header frame rate.
+- **2026-07-30** — Built as the first named-graph source for `Scene2DDocument`.
