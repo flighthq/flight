@@ -142,6 +142,7 @@
     "test:functional:baseline": "npm run test:functional:regression:baseline",
     "test:functional:parity": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=dom,canvas,webgl,webgpu --no-regression",
     "test:functional:parity:confounds": "tsx ./scripts/functional-parity-confounds.ts",
+    "test:functional:parity:orientation": "tsx ./scripts/functional-parity-orientation.ts",
     "test:functional:regression": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=canvas,webgl,webgpu --no-parity",
     "test:functional:regression:baseline": "tsx ./packages/tool-capture/src/bin.ts validate --tool=functional --renderer=canvas,webgl,webgpu --update-fingerprints",
     "test:functional:smoke": "tsx ./packages/tool-capture/src/bin.ts capture --tool=functional --frames=1 --fail-on-error",
