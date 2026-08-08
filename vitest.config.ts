@@ -81,6 +81,10 @@ export default mergeConfig(
             isolate: false,
             include: ['conformance/**/*.test.ts'],
             exclude: [...COMMON_EXCLUDE],
+            // Several conformance contracts start real Node processes or worker threads which load a
+            // complete importer graph. Their assertions are fast once loaded, but startup competes with
+            // the rest of the project on a busy host and is not a product-operation deadline.
+            testTimeout: 30_000,
             sequence: { groupOrder: 0 },
           },
         },
