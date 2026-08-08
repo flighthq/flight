@@ -102,7 +102,7 @@ Run these at the points listed; skipping them causes cascading failures slower t
 
 - **After any edit session, before committing** — `npm run fix` (runs `lint:fix`, `order:fix`, `format`).
 - **After package-level changes** (manifests, workspace references, exports, build targets, side-effect behavior) — `npm run packages:check`. Fix everything it reports before moving on.
-- **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order` (`order:fix` rewrites), and `npm run api` (signatures and naming symmetry).
+- **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order` (`order:fix` rewrites), and `npm run api:check` (signatures and naming symmetry — plain `npm run api` only prints and enforces nothing).
 - **After adding an effect runner/registrar or a backend leaf renderer** — run `npm run reachability:check`; it hard-gates the exact runner↔registrar inverse and reports non-blocking `.`/`./contract` lane drift. Review intentional drift, then accept it with `npm run reachability:baseline`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`. The backend token prefixes the type; see [file naming](agents/conventions/file-naming.md).
@@ -193,7 +193,7 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation verbs:
 - Use constructors over literals for SDK entity types; use literals only for `*Like` inputs.
 - Run `npm run test --workspace=packages/<name>` for a single package. Prefer the narrowest meaningful Vitest run while iterating.
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
-- No standing API/integration test categories — cross-package wiring is covered by the functional/example suites and `npm run packages:check` / `npm run api`.
+- No standing API/integration test categories — cross-package wiring is covered by the functional/example suites and `npm run packages:check` / `npm run api:check`.
 
 See [testing conventions](agents/conventions/testing.md) for the full rules, WebGL specifics, and when to use root-level integration tests.
 
