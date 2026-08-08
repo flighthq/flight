@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
+import { decodeWoff2Triplet, readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
 
 // Builds a transformed `glyf` header over seven streams of the given sizes, filled with a distinct byte
 // each so a mis-ordered carve shows up as the wrong contents rather than only the wrong length.
@@ -18,6 +18,54 @@ function transformedGlyf(sizes: readonly number[], glyphCount = 3, indexFormat =
   });
   return out;
 }
+
+describe('decodeWoff2Triplet', () => {
+  const bytes = Uint8Array.from([0x12, 0x34, 0x56, 0x78]);
+
+  it('moves on one axis only for the two single-axis blocks', () => {
+    // Codes 0-9 move in y alone, 10-19 in x alone; the other axis is not merely small, it is zero.
+    expect(decodeWoff2Triplet(0, bytes, 0)).toEqual({ dx: 0, dy: -0x12, used: 1 });
+    expect(decodeWoff2Triplet(10, bytes, 0)).toEqual({ dx: -0x12, dy: 0, used: 1 });
+  });
+
+  it('steps the single-axis base by 256 every two codes', () => {
+    expect(decodeWoff2Triplet(2, bytes, 0)!.dy).toBe(-(256 + 0x12));
+    expect(decodeWoff2Triplet(9, bytes, 0)!.dy).toBe(1024 + 0x12);
+  });
+
+  it('reads the X sign from bit 0 of the group and Y from bit 1, not the reverse', () => {
+    // The group order is (-,-) (+,-) (-,+) (+,+). Swapping the two bits mirrors every diagonal delta
+    // and still draws a glyph, so this is the assertion that catches it.
+    expect(decodeWoff2Triplet(20, bytes, 0)).toEqual({ dx: -(1 + 0x1), dy: -(1 + 0x2), used: 1 });
+    expect(decodeWoff2Triplet(21, bytes, 0)).toEqual({ dx: 1 + 0x1, dy: -(1 + 0x2), used: 1 });
+    expect(decodeWoff2Triplet(22, bytes, 0)).toEqual({ dx: -(1 + 0x1), dy: 1 + 0x2, used: 1 });
+    expect(decodeWoff2Triplet(23, bytes, 0)).toEqual({ dx: 1 + 0x1, dy: 1 + 0x2, used: 1 });
+  });
+
+  it('bases the four-bit block at 1, 17, 33 and 49 across its sixteen-code spans', () => {
+    expect(decodeWoff2Triplet(23, bytes, 0)!.dx).toBe(1 + 0x1);
+    expect(decodeWoff2Triplet(39, bytes, 0)!.dx).toBe(17 + 0x1);
+    expect(decodeWoff2Triplet(55, bytes, 0)!.dx).toBe(33 + 0x1);
+    expect(decodeWoff2Triplet(71, bytes, 0)!.dx).toBe(49 + 0x1);
+  });
+
+  it('takes two bytes for the eight-bit block, based at 1, 257 and 513', () => {
+    expect(decodeWoff2Triplet(87, bytes, 0)).toEqual({ dx: 1 + 0x12, dy: 1 + 0x34, used: 2 });
+    expect(decodeWoff2Triplet(99, bytes, 0)!.dx).toBe(257 + 0x12);
+    expect(decodeWoff2Triplet(111, bytes, 0)!.dx).toBe(513 + 0x12);
+  });
+
+  it('adds NO base to the twelve- and sixteen-bit blocks, unlike every narrower one', () => {
+    // An off-by-one here shifts only the largest deltas, so most glyphs would still look right.
+    expect(decodeWoff2Triplet(123, bytes, 0)).toEqual({ dx: 0x123, dy: 0x456, used: 3 });
+    expect(decodeWoff2Triplet(127, bytes, 0)).toEqual({ dx: 0x1234, dy: 0x5678, used: 4 });
+  });
+
+  it('returns the sentinel rather than a short read when the stream ends mid-point', () => {
+    expect(decodeWoff2Triplet(127, bytes, 1)).toBeNull();
+    expect(decodeWoff2Triplet(0, bytes, 4)).toBeNull();
+  });
+});
 
 describe('readWoff2GlyfStreams', () => {
   it('carves the seven streams in their declared order', () => {

@@ -24,4 +24,4 @@ export { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory';
 export { readWoffChecksumMismatches, readWoffFont, WOFF_COMPRESSION } from './woffFont';
 export { assembleSfntFont, computeSfntTableChecksum, packSfntTag } from './sfntAssembly';
 export { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
-export { readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
+export { decodeWoff2Triplet, readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
