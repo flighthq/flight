@@ -422,6 +422,47 @@ function assembleComparableFont(
   return assembleSfntFont(new DataView(source.buffer, source.byteOffset, source.byteLength).getUint32(0), tables);
 }
 
+// Counts which table transforms a corpus of WOFF2 files actually uses, keyed by tag.
+//
+// ★ THIS IS THE EVIDENCE FOR WHAT A READER MUST IMPLEMENT, AND IT IS THE DIFFERENCE BETWEEN A GAP AND
+// A FALSE GAP. The container permits a transform on tables other than `glyf` and `loca`, so a reader
+// that refuses them looks incomplete against the format. Whether that incompleteness is REACHABLE is a
+// question about what producers emit, which only a corpus can answer — and an unreachable branch cannot
+// be tested, so building one trades a real refusal for an untested code path.
+//
+// The denominator matters as much as the counts: a tag absent from a corpus that never exercised it is
+// not evidence of anything, so callers should report `filesRead` alongside.
+export function censusWoff2Transforms(files: readonly Readonly<Uint8Array>[]): {
+  filesRead: number;
+  transformedByTag: Map<string, number>;
+} {
+  const transformedByTag = new Map<string, number>();
+  let filesRead = 0;
+  for (const file of files) {
+    const directory = readWoff2TableDirectory(file);
+    if (directory === null) continue;
+    filesRead += 1;
+    for (const entry of directory.entries) {
+      if (entry.transformed) transformedByTag.set(entry.tag, (transformedByTag.get(entry.tag) ?? 0) + 1);
+    }
+  }
+  return { filesRead, transformedByTag };
+}
+
+// Reads every `.woff2` under a directory tree, for the census above.
+export function collectWoff2Files(directory: string): Uint8Array[] {
+  const files: Uint8Array[] = [];
+  const walk = (at: string): void => {
+    for (const entry of readdirSync(at)) {
+      const path = join(at, entry);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (path.endsWith('.woff2')) files.push(new Uint8Array(readFileSync(path)));
+    }
+  };
+  walk(directory);
+  return files;
+}
+
 // Run directly to measure a fixture tree; imported by the tests, which must not trigger it.
 if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
   const directory = process.argv[2];
@@ -440,5 +481,8 @@ if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
       identical += outcome.identical;
     }
     console.log(`  RECONSTRUCTED OUTLINES identical to the paired ttf: ${identical}/${compared}`);
+    const census = censusWoff2Transforms(collectWoff2Files(directory));
+    console.log(`  transform census over ${census.filesRead} woff2 files:`);
+    for (const [tag, count] of [...census.transformedByTag].sort()) console.log(`    transformed '${tag}': ${count}`);
   }
 }
