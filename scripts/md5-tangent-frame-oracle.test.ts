@@ -151,6 +151,7 @@ describe('MD5 tangent handedness measurement', () => {
 
   it('matches each tangent sign against a source-precision UV winding interval', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    invertTangentHandedness(scene);
     expect(measureMd5TangentHandedness(scene, SINGLE_TRIANGLE)).toMatchObject({
       indeterminateTriangles: 0,
       invalidTriangles: 0,
@@ -183,11 +184,11 @@ describe('MD5 tangent handedness measurement', () => {
       sections: [
         {
           indeterminateUvWindingTriangles: 1,
-          negativeTangentHandednessTriangles: 1,
+          negativeTangentHandednessTriangles: 0,
           negativeUvWindingTriangles: 0,
-          positiveTangentHandednessTriangles: 0,
+          positiveTangentHandednessTriangles: 1,
           positiveUvWindingTriangles: 0,
-          xCorrelation: 'uniform-negative',
+          xCorrelation: 'uniform-positive',
         },
       ],
       state: 'not-run',
@@ -276,6 +277,7 @@ describe('MD5 split tangent difference measurement', () => {
 describe('MD5 tangent code-path cross-check diagnostic', () => {
   it('records and executes its same-author procedure after the direct invariants', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    invertTangentHandedness(scene);
     const result = runMd5TangentFrameOracles(scene, SINGLE_TRIANGLE);
 
     expect(result.codePathCrossCheck).toEqual({
@@ -300,6 +302,7 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
   it('finds an emitted tangent that differs from the code-path-independent computation', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    invertTangentHandedness(scene);
     meshGeometry(scene).vertices[6] = 0.5;
 
     expect(measureMd5TangentCodePathCrossCheck(scene)).toMatchObject({
@@ -312,6 +315,7 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
   it('does not repeat the production assumption that an encoded normal is exactly unit length', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    invertTangentHandedness(scene);
     const geometry = meshGeometry(scene);
     const stride = geometry.layout.stride / 4;
     for (let vertex = 0; vertex < 3; vertex++) {
@@ -342,6 +346,14 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
 function meshGeometry(scene: Readonly<Scene3D>): Mesh['geometry'] {
   return (getNodeChildren(scene.root)[1] as Mesh).geometry;
+}
+
+function invertTangentHandedness(scene: Readonly<Scene3D>): void {
+  const geometry = meshGeometry(scene);
+  const stride = geometry.layout.stride / 4;
+  for (let vertex = 0; vertex < geometry.vertices.length / stride; vertex++) {
+    geometry.vertices[vertex * stride + 9] = -geometry.vertices[vertex * stride + 9];
+  }
 }
 
 function setHandednessByXSide(scene: Readonly<Scene3D>, negativeXSign: -1 | 1, positiveXSign: -1 | 1): void {
