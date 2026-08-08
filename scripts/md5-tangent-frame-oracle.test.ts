@@ -10,6 +10,7 @@ import {
   measureMd5TangentOrthogonality,
   runMd5TangentFrameOracles,
   runMd5TangentFrameOracleCorpus,
+  runProceduralMirroredUvTangentControl,
 } from './md5-tangent-frame-oracle';
 
 describe('MD5 tangent orthogonality measurement', () => {
@@ -130,6 +131,24 @@ describe('MD5 tangent frame corpus runner', () => {
 });
 
 describe('MD5 tangent handedness measurement', () => {
+  it('uses the same X-correlation measurement on a controlled procedural mirrored UV seam', () => {
+    expect(runProceduralMirroredUvTangentControl()).toEqual({
+      invalidTriangles: 0,
+      mixedTangentHandednessTriangles: 0,
+      negativeTangentHandednessTriangles: 1,
+      negativeXNegativeHandednessTriangles: 1,
+      negativeXPositiveHandednessTriangles: 0,
+      oppositeSignToXTriangles: 0,
+      positiveTangentHandednessTriangles: 1,
+      positiveXNegativeHandednessTriangles: 0,
+      positiveXPositiveHandednessTriangles: 1,
+      sameSignAsXTriangles: 2,
+      triangleCount: 2,
+      xCorrelation: 'split-same-sign-as-x',
+      xSideIndeterminateTriangles: 0,
+    });
+  });
+
   it('matches each tangent sign against a source-precision UV winding interval', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     expect(measureMd5TangentHandedness(scene, SINGLE_TRIANGLE)).toMatchObject({
