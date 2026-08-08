@@ -4,13 +4,13 @@ role: package
 crate: null
 draft: true
 lastDirection: null
-spunOut: flight-hx
+downstream: flight-hx
 ---
 
 # scene2d-cairo — Charter (DRAFT)
 
 > **Built in `flight-hx`, not this monorepo.** No `packages/scene2d-cairo/` here, and none should be
-> scaffolded. This cell records the name, the boundary, and what Flight owes it. The `spunOut`
+> scaffolded. This cell records the name, the boundary, and what Flight owes it. The `downstream`
 > marker keeps it out of the chartered-unbuilt queue and liveness checks. Unblessed.
 
 ## What it is

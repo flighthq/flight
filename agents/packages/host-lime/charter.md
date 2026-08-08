@@ -4,7 +4,7 @@ role: host
 crate: null
 draft: true
 lastDirection: null
-spunOut: flight-hx
+downstream: flight-hx
 ---
 
 # host-lime — Charter (DRAFT)
@@ -13,7 +13,7 @@ spunOut: flight-hx
 > scaffolded: unlike `host-electron` / `host-tauri` / `host-capacitor`, whose runtimes expose a
 > JavaScript API that a TS package can wrap, Lime has none — a TS package here could hold no
 > implementation. This cell records the name, the boundary, and the seams Flight owes it. The
-> `spunOut` marker keeps it out of the chartered-unbuilt queue and liveness checks. Unblessed.
+> `downstream` marker keeps it out of the chartered-unbuilt queue and liveness checks. Unblessed.
 
 ## What it is
 
