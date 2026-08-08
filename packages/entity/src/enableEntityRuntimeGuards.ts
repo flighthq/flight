@@ -11,7 +11,7 @@ export function disableEntityRuntimeGuards(): void {
 }
 
 // Opt-in development guard mode. When enabled, a direct write to an entity's runtime slot — or to an
-// EntityRuntime's binding slot — that bypasses ensureEntityRuntime / attachEntityBinding is reported,
+// EntityRuntime's binding slot — that bypasses attachEntityBinding is reported,
 // making "the write landed on the wrong entity" and raw-slot-poke bugs visible early. The write is still
 // allowed: the guard observes, it does not block.
 //
@@ -42,7 +42,7 @@ function warnOnDirectWrite(slot: EntityRuntimeWriteSlot): void {
     LogLevel.Warn,
     {
       message:
-        "An entity's runtime slot was written directly. Use ensureEntityRuntime or attachEntityBinding; the write was allowed, but bypassing them is how a runtime ends up on the wrong entity.",
+        "An entity's runtime slot was written directly. Use attachEntityBinding, which allocates the slot for you; the write was allowed, but bypassing it is how a runtime ends up on the wrong entity.",
     },
     'entity',
   );

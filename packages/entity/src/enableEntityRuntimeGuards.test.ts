@@ -46,7 +46,9 @@ describe('enableEntityRuntimeGuards', () => {
       }
     });
     expect(entries.length).toBe(1);
-    expect(messageOf(entries[0])).toContain('ensureEntityRuntime');
+    // Names a function that actually exists: the point of the warning is that the caller can act on it,
+    // and this guard spent its life directing readers to `ensureEntityRuntime`, which never existed.
+    expect(messageOf(entries[0])).toContain('attachEntityBinding');
   });
 
   it('WARNS separately for a direct binding-slot write', () => {
