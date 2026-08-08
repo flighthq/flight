@@ -1,5 +1,7 @@
 import type { Woff2GlyfStreams } from '@flighthq/types/contract';
 
+import { encodeSfntCompositeGlyph, encodeSfntLoca, encodeSfntSimpleGlyph } from './sfntAssembly';
+
 // The transformed `glyf` table: seven parallel sub-streams instead of one array of glyphs.
 //
 // WHY THE TRANSFORM EXISTS, WHICH IS ALSO WHY IT MUST BE REVERSED RATHER THAN DECOMPRESSED: a `glyf`
@@ -270,3 +272,150 @@ const WOFF2_SHORT_WORD = 253;
 const WOFF2_SHORT_ONE_MORE_BYTE_2 = 254;
 const WOFF2_SHORT_ONE_MORE_BYTE_1 = 255;
 const WOFF2_SHORT_LOWEST = 253;
+
+// Re-interleaves the seven sub-streams back into a `glyf` table and the `loca` that indexes it. This is
+// the reversal the whole transform exists to be undone by: every other export here reads one piece, and
+// this walks them in step.
+//
+// Returns the null sentinel the moment any stream runs short, rather than a partial table. A truncated
+// walk yields real-looking glyphs for every index before the break, so a partial result is the silent
+// failure and a refusal is the visible one.
+//
+// ★ EVERY RECORD IS PADDED TO AN EVEN LENGTH, AND THAT IS CORRECTNESS RATHER THAN TIDINESS. With the
+// short `loca` format each offset is stored halved, so an odd offset cannot be represented; see
+// `encodeSfntLoca`, which refuses rather than truncating.
+export function reverseWoff2GlyfTransform(
+  streams: Readonly<Woff2GlyfStreams>,
+): { glyf: Uint8Array; loca: Uint8Array } | null {
+  if (streams.nContourStream.byteLength < streams.glyphCount * 2) return null;
+  const contourView = new DataView(
+    streams.nContourStream.buffer,
+    streams.nContourStream.byteOffset,
+    streams.nContourStream.byteLength,
+  );
+
+  const points = { at: 0 };
+  const glyph = { at: 0 };
+  let compositeAt = 0;
+  let flagAt = 0;
+  let instructionAt = 0;
+  let bboxAt = getWoff2BboxBitmapByteLength(streams.glyphCount);
+
+  const records: Uint8Array[] = [];
+  for (let index = 0; index < streams.glyphCount; index += 1) {
+    const contours = contourView.getInt16(index * 2);
+
+    // A glyph carrying an explicit box consumes one from the stream whether or not it needs it, so the
+    // read happens here rather than only where a box is wanted.
+    let stored: { xMax: number; xMin: number; yMax: number; yMin: number } | null = null;
+    if (hasWoff2GlyphBbox(streams.bboxStream, index)) {
+      if (bboxAt + 8 > streams.bboxStream.byteLength) return null;
+      const box = new DataView(streams.bboxStream.buffer, streams.bboxStream.byteOffset + bboxAt, 8);
+      stored = { xMax: box.getInt16(4), xMin: box.getInt16(0), yMax: box.getInt16(6), yMin: box.getInt16(2) };
+      bboxAt += 8;
+    }
+
+    if (contours === 0) {
+      records.push(EMPTY_BYTES);
+      continue;
+    }
+
+    if (contours < 0) {
+      const measured = measureWoff2CompositeGlyph(streams.compositeStream, compositeAt);
+      // A composite cannot compute its own box, so a missing one is unrecoverable rather than a default.
+      if (measured === null || stored === null) return null;
+      const components = streams.compositeStream.subarray(compositeAt, compositeAt + measured.byteLength);
+      compositeAt += measured.byteLength;
+
+      let instructions: Readonly<Uint8Array> = EMPTY_BYTES;
+      if (measured.hasInstructions) {
+        const length = readWoff2Short(streams.glyphStream, glyph, streams.glyphStream.byteLength);
+        if (length < 0 || instructionAt + length > streams.instructionStream.byteLength) return null;
+        instructions = streams.instructionStream.subarray(instructionAt, instructionAt + length);
+        instructionAt += length;
+      }
+      records.push(padToEven(encodeSfntCompositeGlyph(components, instructions, stored, measured.hasInstructions)));
+      continue;
+    }
+
+    const endPtsOfContours: number[] = [];
+    let pointCount = 0;
+    for (let contour = 0; contour < contours; contour += 1) {
+      const count = readWoff2Short(streams.nPointsStream, points, streams.nPointsStream.byteLength);
+      if (count < 0) return null;
+      pointCount += count;
+      endPtsOfContours.push(pointCount - 1);
+    }
+    if (flagAt + pointCount > streams.flagStream.byteLength) return null;
+
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const onCurve: boolean[] = [];
+    let x = 0;
+    let y = 0;
+    for (let point = 0; point < pointCount; point += 1) {
+      const flag = streams.flagStream[flagAt + point]!;
+      const delta = decodeWoff2Triplet(flag & 0x7f, streams.glyphStream, glyph.at);
+      if (delta === null) return null;
+      glyph.at += delta.used;
+      x += delta.dx;
+      y += delta.dy;
+      xs.push(x);
+      ys.push(y);
+      onCurve.push(isWoff2PointOnCurve(flag));
+    }
+    flagAt += pointCount;
+
+    const instructionLength = readWoff2Short(streams.glyphStream, glyph, streams.glyphStream.byteLength);
+    if (instructionLength < 0 || instructionAt + instructionLength > streams.instructionStream.byteLength) return null;
+    const instructions = streams.instructionStream.subarray(instructionAt, instructionAt + instructionLength);
+    instructionAt += instructionLength;
+
+    // A simple glyph without a stored box gets one measured from its own points, which is the only
+    // place the box can come from once the transform has dropped it.
+    const bounds = stored ?? measurePointBounds(xs, ys);
+    records.push(padToEven(encodeSfntSimpleGlyph(endPtsOfContours, xs, ys, onCurve, instructions, bounds)));
+  }
+
+  const loca = encodeSfntLoca(
+    records.map((record) => record.byteLength),
+    streams.indexFormat,
+  );
+  if (loca === null) return null;
+
+  let total = 0;
+  for (const record of records) total += record.byteLength;
+  const glyf = new Uint8Array(total);
+  let at = 0;
+  for (const record of records) {
+    glyf.set(record, at);
+    at += record.byteLength;
+  }
+  return { glyf, loca };
+}
+
+const EMPTY_BYTES = new Uint8Array(0);
+
+function measurePointBounds(
+  xs: readonly number[],
+  ys: readonly number[],
+): { xMax: number; xMin: number; yMax: number; yMin: number } {
+  let xMax = xs[0] ?? 0;
+  let xMin = xs[0] ?? 0;
+  let yMax = ys[0] ?? 0;
+  let yMin = ys[0] ?? 0;
+  for (let index = 1; index < xs.length; index += 1) {
+    if (xs[index]! < xMin) xMin = xs[index]!;
+    if (xs[index]! > xMax) xMax = xs[index]!;
+    if (ys[index]! < yMin) yMin = ys[index]!;
+    if (ys[index]! > yMax) yMax = ys[index]!;
+  }
+  return { xMax, xMin, yMax, yMin };
+}
+
+function padToEven(record: Readonly<Uint8Array>): Uint8Array {
+  if (record.byteLength % 2 === 0) return record as Uint8Array;
+  const padded = new Uint8Array(record.byteLength + 1);
+  padded.set(record);
+  return padded;
+}
