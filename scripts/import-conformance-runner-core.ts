@@ -211,7 +211,7 @@ function parseProbeUnreadableEvidence(
     throw new Error('invalid probe-unreadable fixture sentinel evidence');
   }
   return {
-    diagnostics: value.diagnostics.map(parseImportConformanceRetainedDiagnostic),
+    diagnostics: value.diagnostics.map((diagnostic) => parseImportConformanceRetainedDiagnostic(diagnostic)),
     imported: value.imported,
     threw: value.threw,
   };

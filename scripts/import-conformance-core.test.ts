@@ -20,6 +20,10 @@ import type {
   ImportConformanceScoreDeclarations,
   ImportConformanceUnwiredLossObservation,
 } from './import-conformance-core';
+import {
+  NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY,
+  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+} from './import-conformance-diagnostic-evidence';
 import { parseImportConformanceScore } from './import-conformance-score';
 import { isImportConformanceFixtureReference } from './swf-capability-index';
 
@@ -243,6 +247,7 @@ describe('createImportConformanceScore', () => {
 
     expect(score.packs[0]!.summary).toEqual({
       denominators: expectedDenominators(2),
+      diagnosticEvidencePolicy: SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       exercised: {
         capabilities: 1,
         fireReferenced: {
@@ -457,6 +462,7 @@ describe('createImportConformanceScore', () => {
           format: { format: 'md5', reason: 'oracle-only-smoke-lane', state: 'not-applicable' },
           producerDeclared: { declaredRows: 0, reason: 'oracle-only-smoke-lane', state: 'not-applicable' },
         },
+        diagnosticEvidencePolicy: NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY,
       },
     );
 
@@ -1304,6 +1310,7 @@ function declarations(
       ),
     },
     denominators: expectedDenominators(2),
+    diagnosticEvidencePolicy: SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
   };
 }
 

@@ -2,7 +2,10 @@ import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
-import { retainImportConformanceDiagnostic } from './import-conformance-diagnostic-evidence';
+import {
+  retainImportConformanceDiagnostic,
+  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+} from './import-conformance-diagnostic-evidence';
 import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol';
 
 export function classifyImportConformanceObservation(
@@ -52,7 +55,7 @@ export function classifyImportConformanceObservation(
   if (fixture.probeState === 'unreadable') {
     result.probeUnreadableEvidence = {
       diagnostics: observation.diagnostics.map((diagnostic) =>
-        retainImportConformanceDiagnostic(diagnostic, capabilityIds),
+        retainImportConformanceDiagnostic(diagnostic, capabilityIds, SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY),
       ),
       imported: observation.imported,
       threw: observation.threw,

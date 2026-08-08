@@ -10,6 +10,7 @@ import {
   createImportConformanceShardPlan,
 } from './import-conformance-core';
 import type { ImportConformanceLossPath } from './import-conformance-core';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import { formatImportConformanceScore } from './import-conformance-format';
 import { createSwfImportConformanceDenominators } from './swf-capability-index';
 
@@ -96,6 +97,7 @@ describe('formatImportConformanceScore', () => {
       {
         capabilityScopedUnknownMappings: { configurationLimits: [], unwiredLossFamilies: [] },
         denominators: createSwfImportConformanceDenominators(2, TEST_CENSUS, TEST_MARGIN),
+        diagnosticEvidencePolicy: SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       },
     );
 
@@ -106,7 +108,7 @@ describe('formatImportConformanceScore', () => {
         'swf-ruffle-fixtures 0.1.0 [full; capability-convention-revision=unresolved-individuation-v1]\n' +
         'silently-wrong-fixtures: fixture-population tally 0 []\n' +
         'fixture-outcome-populations: passed fixture-population tally 1; imported wrong fixture-population tally 0; silently wrong fixture-population tally 0; unsupported clean fixture-population tally 0; threw during import (convention violation) fixture-population tally 0\n' +
-        'fixture-outcome-definitions: passed=The importer returned a document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.; importedWrong=After no exception or no-decompressor diagnostic matched, at least one Drop, Recover, or Reject other than swf.no-decompressor-registered classified the fixture importedWrong, regardless of whether a document was returned.; silentlyWrong=The importer returned no document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.; unsupportedClean=After no exception, either any swf.no-decompressor-registered diagnostic matched before defect diagnostics or, with no defect diagnostic, at least one Skip diagnostic matched, regardless of whether a document was returned.; threw=The import worker reported an exception; this first branch takes precedence over every diagnostic and imported-sentinel state.\n' +
+        'fixture-outcome-definitions: passed=The importer returned a document after no earlier exception, adapter-declared unsupported, defect-diagnostic, or Skip-diagnostic branch matched.; importedWrong=After no exception or adapter-declared unsupported diagnostic matched, at least one Drop, Recover, or Reject diagnostic outside that adapter-owned set classified the fixture importedWrong, regardless of whether a document was returned.; silentlyWrong=The importer returned no document after no earlier exception, adapter-declared unsupported, defect-diagnostic, or Skip-diagnostic branch matched.; unsupportedClean=After no exception, either any adapter-declared unsupported diagnostic matched before defect diagnostics or, with no defect diagnostic, at least one Skip diagnostic matched, regardless of whether a document was returned.; threw=The import worker reported an exception; this first branch takes precedence over every diagnostic and imported-sentinel state.\n' +
         'capability-probe-unreadable-outcomes: fixture-population tally 0; passed fixture-population tally 0; imported wrong fixture-population tally 0; silently wrong fixture-population tally 0; unsupported clean fixture-population tally 0; threw during import (convention violation) fixture-population tally 0\n' +
         'capability-probe-unreadable-diagnostic-explanations: document failure named fixture-population tally 0; diagnostic present without document failure fixture-population tally 0; diagnostics absent fixture-population tally 0\n' +
         'capability-probe-unreadable-fixtures: []\n' +
@@ -189,6 +191,7 @@ describe('formatImportConformanceScore', () => {
           ],
         },
         denominators: createSwfImportConformanceDenominators(2, TEST_CENSUS, TEST_MARGIN),
+        diagnosticEvidencePolicy: SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       },
     );
     const output = formatImportConformanceScore(score);
