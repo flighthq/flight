@@ -721,7 +721,7 @@ describe('stepApplicationLoop', () => {
     stopApplicationLoop(app);
   });
 
-  it('does not mix residual time across different explicit fixed-step sizes', () => {
+  it('carries residual wall time across different explicit fixed-step sizes', () => {
     const app = createApplication();
     enableApplicationLifecycleSignals(app);
     const fixedDeltas: number[] = [];
@@ -730,8 +730,8 @@ describe('stepApplicationLoop', () => {
     stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
     stepApplicationLoop(app, 4, { fixedTimeStep: 8 });
 
-    expect(fixedDeltas).toEqual([]);
-    expect(app.interpolationAlpha).toBe(0.5);
+    expect(fixedDeltas).toEqual([8]);
+    expect(app.interpolationAlpha).toBe(0.75);
   });
 
   it('uses an explicit max delta instead of the active backend loop clamp', () => {
