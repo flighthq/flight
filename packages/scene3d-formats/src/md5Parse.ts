@@ -347,9 +347,9 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
       // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
       // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
       computeMeshGeometryTangents(geometry, geometry);
-      // The shared generator emits Flight's tangent-frame convention. MD5 normal maps use the opposite
-      // V-axis convention, so convert only the generated handedness at this format boundary while
-      // preserving the authored UVs used for texture sampling.
+      // MD5 UVs are V-down; the tangent generator derives its bitangent assuming V-up, so the derived
+      // handedness is inverted for this format and is negated here. Preserve the authored UVs used for
+      // texture sampling.
       invertMd5TangentHandedness(geometry);
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
       // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model) whose
