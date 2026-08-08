@@ -22,6 +22,7 @@ import type {
   ImportConformanceIndexedFixture,
   ImportConformanceResult,
 } from './import-conformance-core';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import { formatImportConformanceScore } from './import-conformance-format';
 import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation';
 import {
@@ -116,6 +117,7 @@ export async function runImportConformanceProcess(
     {
       capabilityScopedUnknownMappings: SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
       denominators: createSwfImportConformanceDenominators(index.capabilities.length),
+      diagnosticEvidencePolicy: SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
     },
   );
   assertImportConformanceFrozenCapabilityPartition(score, definitions);

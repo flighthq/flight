@@ -2,6 +2,11 @@ import { parseImportConformanceOracleOutcomes } from './import-conformance-case'
 import type { ImportConformanceOracleEvidence } from './import-conformance-case';
 import { assertImportConformanceDenominators } from './import-conformance-denominator';
 import type { ImportConformanceDenominators } from './import-conformance-denominator';
+import {
+  parseImportConformanceDiagnosticEvidencePolicy,
+  parseImportConformanceRetainedDiagnostic,
+} from './import-conformance-diagnostic-evidence';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
 
 export type { ImportConformanceDenominators } from './import-conformance-denominator';
 
@@ -18,13 +23,13 @@ export const IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS = {
   threw:
     'The import worker reported an exception; this first branch takes precedence over every diagnostic and imported-sentinel state.',
   unsupportedClean:
-    'After no exception, either any swf.no-decompressor-registered diagnostic matched before defect diagnostics or, with no defect diagnostic, at least one Skip diagnostic matched, regardless of whether a document was returned.',
+    'After no exception, either any adapter-declared unsupported diagnostic matched before defect diagnostics or, with no defect diagnostic, at least one Skip diagnostic matched, regardless of whether a document was returned.',
   importedWrong:
-    'After no exception or no-decompressor diagnostic matched, at least one Drop, Recover, or Reject other than swf.no-decompressor-registered classified the fixture importedWrong, regardless of whether a document was returned.',
+    'After no exception or adapter-declared unsupported diagnostic matched, at least one Drop, Recover, or Reject diagnostic outside that adapter-owned set classified the fixture importedWrong, regardless of whether a document was returned.',
   passed:
-    'The importer returned a document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.',
+    'The importer returned a document after no earlier exception, adapter-declared unsupported, defect-diagnostic, or Skip-diagnostic branch matched.',
   silentlyWrong:
-    'The importer returned no document after no earlier exception, no-decompressor, defect-diagnostic, or unsupported-diagnostic branch matched.',
+    'The importer returned no document after no earlier exception, adapter-declared unsupported, defect-diagnostic, or Skip-diagnostic branch matched.',
 } as const;
 
 export type ImportConformanceFixtureOutcome = keyof typeof IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS;
@@ -38,15 +43,7 @@ export interface ImportConformanceFixtureOutcomePopulations {
   unsupportedClean: number;
 }
 
-/** The only diagnostic detail fields currently ruled committable; every new field is rejected until ruled. */
-export interface ImportConformanceFixtureDiagnosticDetail {
-  capability?: string;
-  characterId?: number;
-  compression?: string;
-  frame?: number;
-  length?: number;
-  sceneCount?: number;
-}
+export type ImportConformanceFixtureDiagnosticDetail = Record<string, number | string>;
 
 export interface ImportConformanceFixtureDiagnosticEvidence {
   detail?: ImportConformanceFixtureDiagnosticDetail;
@@ -350,6 +347,7 @@ export interface ImportConformanceLossPathPopulationSummary {
 
 export interface ImportConformanceSummary {
   denominators: ImportConformanceDenominators;
+  diagnosticEvidencePolicy: ImportConformanceDiagnosticEvidencePolicy;
   exercised: ImportConformanceExercisedSummary;
   instrumentAudited: ImportConformanceInstrumentAuditedSummary;
   lossPathPopulation: ImportConformanceLossPathPopulationSummary;
@@ -411,7 +409,7 @@ export interface ImportConformanceScore {
   oracleAssurance: ImportConformanceOracleAssurance;
   packs: ImportConformancePack[];
   provenance: ImportConformanceProvenance;
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export function deriveImportConformanceCapabilityScopedUnknownEvidence(
@@ -505,7 +503,7 @@ export function deriveImportConformanceCapabilityScopedUnknownEvidence(
 export function parseImportConformanceScore(value: unknown, source = 'score'): ImportConformanceScore {
   const root = expectRecord(value, source);
   expectKeys(root, ['instrumentAssurance', 'oracleAssurance', 'packs', 'provenance', 'schemaVersion'], source);
-  if (root.schemaVersion !== 1) fail(`${source}.schemaVersion`, 'must be exactly 1');
+  if (root.schemaVersion !== 2) fail(`${source}.schemaVersion`, 'must be exactly 2');
   if (!Array.isArray(root.packs)) fail(`${source}.packs`, 'must be an array');
 
   const packs = root.packs.map((pack, index) => parsePack(pack, `${source}.packs[${index}]`));
@@ -519,7 +517,7 @@ export function parseImportConformanceScore(value: unknown, source = 'score'): I
     oracleAssurance: parseOracleAssurance(root.oracleAssurance, `${source}.oracleAssurance`),
     packs,
     provenance: parseProvenance(root.provenance, `${source}.provenance`),
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -629,13 +627,14 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
     if (sharding.shards.some((shard) => shard.state === 'not-run')) {
       fail(`${path}.sharding.shards`, "a measured pack cannot contain a 'not-run' shard");
     }
+    const oracleOutcomes = parseOracleOutcomes(pack.oracleOutcomes, `${path}.oracleOutcomes`);
+    const summary = parseSummary(pack.summary, `${path}.summary`);
     const fixtureOutcomes = parseFixtureOutcomes(
       pack.fixtureOutcomes,
       capabilities.map((capability) => capability.id),
+      summary.diagnosticEvidencePolicy,
       `${path}.fixtureOutcomes`,
     );
-    const oracleOutcomes = parseOracleOutcomes(pack.oracleOutcomes, `${path}.oracleOutcomes`);
-    const summary = parseSummary(pack.summary, `${path}.summary`);
     assertSummaryMatches(summary, capabilities, `${path}.summary`);
     return {
       ...identity,
@@ -849,6 +848,7 @@ function parseOracleOutcomes(value: unknown, path: string): ImportConformanceOra
 function parseFixtureOutcomes(
   value: unknown,
   capabilityIds: readonly string[],
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
   path: string,
 ): ImportConformanceFixtureOutcomes {
   const fixtureOutcomes = expectRecord(value, path);
@@ -861,6 +861,8 @@ function parseFixtureOutcomes(
   const populations = parseFixtureOutcomePopulations(fixtureOutcomes.populations, `${path}.populations`);
   const capabilityProbeUnreadable = parseProbeUnreadableEvidence(
     fixtureOutcomes.capabilityProbeUnreadable,
+    new Set(capabilityIds),
+    diagnosticEvidencePolicy,
     `${path}.capabilityProbeUnreadable`,
   );
   if (!Array.isArray(fixtureOutcomes.silentlyWrongFixtures)) {
@@ -873,7 +875,6 @@ function parseFixtureOutcomes(
   if (silentlyWrongFixtures.length !== populations.silentlyWrong) {
     fail(`${path}.silentlyWrongFixtures`, `must name every silentlyWrong fixture (${populations.silentlyWrong})`);
   }
-  const capabilityIdSet = new Set(capabilityIds);
   for (let fixtureIndex = 0; fixtureIndex < capabilityProbeUnreadable.fixtures.length; fixtureIndex++) {
     const fixture = capabilityProbeUnreadable.fixtures[fixtureIndex];
     if (fixture.outcome === 'silentlyWrong' && !silentlyWrongFixtures.includes(fixture.reference)) {
@@ -881,15 +882,6 @@ function parseFixtureOutcomes(
         `${path}.silentlyWrongFixtures`,
         `must include probe-unreadable silentlyWrong fixture '${fixture.reference}'`,
       );
-    }
-    for (let diagnosticIndex = 0; diagnosticIndex < fixture.diagnostics.length; diagnosticIndex++) {
-      const capability = fixture.diagnostics[diagnosticIndex].detail?.capability;
-      if (capability !== undefined && !capabilityIdSet.has(capability)) {
-        fail(
-          `${path}.capabilityProbeUnreadable.fixtures[${fixtureIndex}].diagnostics[${diagnosticIndex}].detail.capability`,
-          `must name a declared capability id ('${capability}')`,
-        );
-      }
     }
   }
   for (const outcome of fixtureOutcomeKeys()) {
@@ -925,7 +917,12 @@ function parseFixtureOutcomePopulations(value: unknown, path: string): ImportCon
   };
 }
 
-function parseProbeUnreadableEvidence(value: unknown, path: string): ImportConformanceProbeUnreadableEvidence {
+function parseProbeUnreadableEvidence(
+  value: unknown,
+  capabilityIds: ReadonlySet<string>,
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
+  path: string,
+): ImportConformanceProbeUnreadableEvidence {
   const evidence = expectRecord(value, path);
   expectKeys(evidence, ['diagnosticExplanationPopulations', 'fixtures', 'outcomePopulations'], path);
   const outcomePopulations = parseFixtureOutcomePopulations(evidence.outcomePopulations, `${path}.outcomePopulations`);
@@ -953,7 +950,7 @@ function parseProbeUnreadableEvidence(value: unknown, path: string): ImportConfo
   };
   if (!Array.isArray(evidence.fixtures)) fail(`${path}.fixtures`, 'must be an array');
   const fixtures = evidence.fixtures.map((fixture, index) =>
-    parseProbeUnreadableFixtureEvidence(fixture, `${path}.fixtures[${index}]`),
+    parseProbeUnreadableFixtureEvidence(fixture, capabilityIds, diagnosticEvidencePolicy, `${path}.fixtures[${index}]`),
   );
   expectSortedUnique(
     fixtures.map((fixture) => fixture.reference),
@@ -965,7 +962,7 @@ function parseProbeUnreadableEvidence(value: unknown, path: string): ImportConfo
   const expectedDiagnostics = { absent: 0, documentFailureNamed: 0, presentWithoutDocumentFailure: 0 };
   for (let index = 0; index < fixtures.length; index++) {
     const fixture = fixtures[index];
-    const expectedOutcome = classifyRetainedFixtureOutcome(fixture);
+    const expectedOutcome = classifyRetainedFixtureOutcome(fixture, diagnosticEvidencePolicy);
     if (fixture.outcome !== expectedOutcome) {
       fail(`${path}.fixtures[${index}].outcome`, `must equal retained evidence ('${expectedOutcome}')`);
     }
@@ -1002,6 +999,8 @@ function parseProbeUnreadableEvidence(value: unknown, path: string): ImportConfo
 
 function parseProbeUnreadableFixtureEvidence(
   value: unknown,
+  capabilityIds: ReadonlySet<string>,
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
   path: string,
 ): ImportConformanceProbeUnreadableFixtureEvidence {
   const fixture = expectRecord(value, path);
@@ -1010,7 +1009,12 @@ function parseProbeUnreadableFixtureEvidence(
   return {
     capabilityOutcomeCount: expectInteger(fixture.capabilityOutcomeCount, `${path}.capabilityOutcomeCount`, 0),
     diagnostics: fixture.diagnostics.map((diagnostic, index) =>
-      parseFixtureDiagnosticEvidence(diagnostic, `${path}.diagnostics[${index}]`),
+      parseFixtureDiagnosticEvidence(
+        diagnostic,
+        capabilityIds,
+        diagnosticEvidencePolicy,
+        `${path}.diagnostics[${index}]`,
+      ),
     ),
     imported: expectBoolean(fixture.imported, `${path}.imported`),
     outcome: parseFixtureOutcome(fixture.outcome, `${path}.outcome`),
@@ -1019,47 +1023,17 @@ function parseProbeUnreadableFixtureEvidence(
   };
 }
 
-function parseFixtureDiagnosticEvidence(value: unknown, path: string): ImportConformanceFixtureDiagnosticEvidence {
-  const diagnostic = expectRecord(value, path);
-  expectKeys(
-    diagnostic,
-    'detail' in diagnostic ? ['detail', 'kind', 'origin', 'severity'] : ['kind', 'origin', 'severity'],
-    path,
-  );
-  const severity = expectString(diagnostic.severity, `${path}.severity`);
-  if (severity !== 'Drop' && severity !== 'Recover' && severity !== 'Reject' && severity !== 'Skip') {
-    fail(`${path}.severity`, "must be 'Drop', 'Recover', 'Reject', or 'Skip'");
+function parseFixtureDiagnosticEvidence(
+  value: unknown,
+  capabilityIds: ReadonlySet<string>,
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
+  path: string,
+): ImportConformanceFixtureDiagnosticEvidence {
+  try {
+    return parseImportConformanceRetainedDiagnostic(value, capabilityIds, diagnosticEvidencePolicy);
+  } catch (error) {
+    return fail(path, error instanceof Error ? error.message : String(error));
   }
-  const parsedSeverity = severity as ImportConformanceFixtureDiagnosticEvidence['severity'];
-  const base = {
-    kind: expectNonemptyString(diagnostic.kind, `${path}.kind`),
-    origin: expectNonemptyString(diagnostic.origin, `${path}.origin`),
-    severity: parsedSeverity,
-  };
-  return 'detail' in diagnostic
-    ? { ...base, detail: parseFixtureDiagnosticDetail(diagnostic.detail, `${path}.detail`) }
-    : base;
-}
-
-function parseFixtureDiagnosticDetail(value: unknown, path: string): ImportConformanceFixtureDiagnosticDetail {
-  const detail = expectRecord(value, path);
-  expectAllowedKeys(detail, ['capability', 'characterId', 'compression', 'frame', 'length', 'sceneCount'], path);
-  if (Object.keys(detail).length === 0) fail(path, 'must retain at least one ruled field or be omitted');
-  const parsed: ImportConformanceFixtureDiagnosticDetail = {};
-  if ('capability' in detail) parsed.capability = expectNonemptyString(detail.capability, `${path}.capability`);
-  if ('characterId' in detail) {
-    parsed.characterId = expectSafeInteger(detail.characterId, `${path}.characterId`, 0);
-  }
-  if ('compression' in detail) {
-    if (detail.compression !== 'deflate' && detail.compression !== 'lzma') {
-      fail(`${path}.compression`, "must be the ruled Flight-owned tag 'deflate' or 'lzma'");
-    }
-    parsed.compression = detail.compression;
-  }
-  if ('frame' in detail) parsed.frame = expectSafeInteger(detail.frame, `${path}.frame`, 0);
-  if ('length' in detail) parsed.length = expectSafeInteger(detail.length, `${path}.length`, 0);
-  if ('sceneCount' in detail) parsed.sceneCount = expectSafeInteger(detail.sceneCount, `${path}.sceneCount`, 0);
-  return parsed;
 }
 
 function parseFixtureOutcome(value: unknown, path: string): ImportConformanceFixtureOutcome {
@@ -1071,9 +1045,14 @@ function parseFixtureOutcome(value: unknown, path: string): ImportConformanceFix
 
 function classifyRetainedFixtureOutcome(
   fixture: Readonly<ImportConformanceProbeUnreadableFixtureEvidence>,
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
 ): ImportConformanceFixtureOutcome {
   if (fixture.threw) return 'threw';
-  if (fixture.diagnostics.some((diagnostic) => diagnostic.kind === 'swf.no-decompressor-registered')) {
+  if (
+    fixture.diagnostics.some((diagnostic) =>
+      diagnosticEvidencePolicy.unsupportedDiagnosticKinds.includes(diagnostic.kind),
+    )
+  ) {
     return 'unsupportedClean';
   }
   if (
@@ -1491,10 +1470,23 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
   const summary = expectRecord(value, path);
   expectKeys(
     summary,
-    ['denominators', 'exercised', 'instrumentAudited', 'lossPathPopulation', 'proofReferenced'],
+    [
+      'denominators',
+      'diagnosticEvidencePolicy',
+      'exercised',
+      'instrumentAudited',
+      'lossPathPopulation',
+      'proofReferenced',
+    ],
     path,
   );
   const denominators = parseDenominators(summary.denominators, `${path}.denominators`);
+  let diagnosticEvidencePolicy: ImportConformanceDiagnosticEvidencePolicy;
+  try {
+    diagnosticEvidencePolicy = parseImportConformanceDiagnosticEvidencePolicy(summary.diagnosticEvidencePolicy);
+  } catch (error) {
+    return fail(`${path}.diagnosticEvidencePolicy`, error instanceof Error ? error.message : String(error));
+  }
   const exercised = expectRecord(summary.exercised, `${path}.exercised`);
   expectKeys(
     exercised,
@@ -1524,6 +1516,7 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
   }
   return {
     denominators,
+    diagnosticEvidencePolicy,
     exercised: {
       capabilities: expectInteger(exercised.capabilities, `${path}.exercised.capabilities`, 0),
       fireReferenced: parseReferencedSummary(exercised.fireReferenced, `${path}.exercised.fireReferenced`),
@@ -1693,6 +1686,7 @@ function assertSummaryMatches(
   );
   const expected: ImportConformanceSummary = {
     denominators: summary.denominators,
+    diagnosticEvidencePolicy: summary.diagnosticEvidencePolicy,
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferenced(fireReferenced, 'fire'),
@@ -1942,21 +1936,9 @@ function expectInteger(value: unknown, path: string, minimum: number): number {
   return value as number;
 }
 
-function expectSafeInteger(value: unknown, path: string, minimum: number): number {
-  if (!Number.isSafeInteger(value) || (value as number) < minimum) {
-    fail(path, `must be a safe integer greater than or equal to ${minimum}`);
-  }
-  return value as number;
-}
-
 function expectBoolean(value: unknown, path: string): boolean {
   if (typeof value !== 'boolean') fail(path, 'must be a boolean');
   return value;
-}
-
-function expectAllowedKeys(record: Readonly<Record<string, unknown>>, allowed: readonly string[], path: string): void {
-  const unexpected = Object.keys(record).filter((key) => !allowed.includes(key));
-  if (unexpected.length > 0) fail(path, `contains fields not yet ruled committable: ${unexpected.sort().join(', ')}`);
 }
 
 function expectKeys(record: Readonly<Record<string, unknown>>, expected: readonly string[], path: string): void {

@@ -8,6 +8,7 @@ import {
   getImportConformanceRatchetExitCode,
   runImportConformanceRatchet,
 } from './check-import-conformance-ratchet';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
@@ -430,6 +431,23 @@ describe('compareImportConformanceScores', () => {
       code: 'capability-convention-changed',
       detail:
         "capability convention revision changed from 'unresolved-individuation-v1' to 'unresolved-individuation-v2'",
+    });
+  });
+
+  it('refuses a retained diagnostic evidence policy change as incomparable', () => {
+    const current = measuredPack();
+    current.summary.diagnosticEvidencePolicy = {
+      detail: [],
+      id: 'no-diagnostic-evidence-v1',
+      unsupportedDiagnosticKinds: [],
+    };
+    const report = compareImportConformanceScores(score(measuredPack(), '100'), score(current, '101'));
+
+    expect(report.state).toBe('incomparable');
+    expect(report.packs[0].findings).toContainEqual({
+      capabilityId: null,
+      code: 'diagnostic-evidence-policy-changed',
+      detail: "diagnostic evidence policy changed from 'swf-diagnostic-evidence-v1' to 'no-diagnostic-evidence-v1'",
     });
   });
 
@@ -1165,10 +1183,10 @@ describe('parseImportConformanceScore', () => {
       "fixtureOutcomes.capabilityProbeUnreadable.fixtures[0].outcome: must equal retained evidence ('importedWrong')",
     );
     expect(() => parseImportConformanceScore(score(unruledDetail as never, '100'))).toThrow(
-      'contains fields not yet ruled committable: name',
+      'retained diagnostic detail contains fields not declared by policy: name',
     );
     expect(() => parseImportConformanceScore(score(undeclaredCapability, '100'))).toThrow(
-      "detail.capability: must name a declared capability id ('not-declared')",
+      'retained diagnostic capability violates policy swf-diagnostic-evidence-v1',
     );
   });
 
@@ -1316,7 +1334,7 @@ describe('parseImportConformanceScore', () => {
     const noWitness = measuredPack([unknownCapability('alpha', 0)]);
 
     expect(() => parseImportConformanceScore(score(flat as never, '100'))).toThrow(
-      'summary: must contain exactly: denominators, exercised, instrumentAudited, lossPathPopulation, proofReferenced',
+      'summary: must contain exactly: denominators, diagnosticEvidencePolicy, exercised, instrumentAudited, lossPathPopulation, proofReferenced',
     );
     expect(() => parseImportConformanceScore(score(noWitness, '100'))).toThrow(
       'witnesses: must be an integer greater than or equal to 1',
@@ -1825,6 +1843,7 @@ function measuredPack(
     state: 'measured',
     summary: {
       denominators: testDenominators(capabilities.length),
+      diagnosticEvidencePolicy: structuredClone(SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY),
       exercised: {
         capabilities: measured.length,
         fireReferenced: referencedSummary(fireReferenced, 'fire'),
@@ -1912,7 +1931,7 @@ function score(pack: ImportConformanceScore['packs'][number] | null, runId: stri
     },
     packs: pack === null ? [] : [pack],
     provenance: { mode: 'exhaustive', runId, runUrl: `https://ci.invalid/runs/${runId}` },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

@@ -1,9 +1,52 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { retainImportConformanceDiagnostic } from './import-conformance-diagnostic-evidence';
+import {
+  assertImportConformanceDiagnosticEvidencePolicy,
+  cloneImportConformanceDiagnosticEvidencePolicy,
+  parseImportConformanceDiagnosticEvidencePolicy,
+  parseImportConformanceRetainedDiagnostic,
+  retainImportConformanceDiagnostic,
+  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+} from './import-conformance-diagnostic-evidence';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
 
 const CAPABILITIES = new Set(['swf.script.do-action']);
+const MD5_POLICY = {
+  detail: [
+    { field: 'section', rule: { kind: 'string-enum', values: ['animation', 'mesh'] } },
+    { field: 'tokenIndex', rule: { kind: 'nonnegative-integer' } },
+  ],
+  id: 'md5-diagnostic-evidence-v1',
+  unsupportedDiagnosticKinds: [],
+} as const satisfies ImportConformanceDiagnosticEvidencePolicy;
+
+describe('import conformance diagnostic evidence policy', () => {
+  it('round-trips a format-owned policy and keeps its clone independent', () => {
+    expect(() => assertImportConformanceDiagnosticEvidencePolicy(MD5_POLICY)).not.toThrow();
+    const clone = cloneImportConformanceDiagnosticEvidencePolicy(MD5_POLICY);
+    expect(clone).toEqual(MD5_POLICY);
+    expect(clone).not.toBe(MD5_POLICY);
+    expect(parseImportConformanceDiagnosticEvidencePolicy(JSON.parse(JSON.stringify(MD5_POLICY)))).toEqual(MD5_POLICY);
+  });
+
+  it('uses the selected adapter policy to retain and validate non-SWF detail', () => {
+    const retained = retainImportConformanceDiagnostic(
+      diagnostic({ name: 'fixture-owned', section: 'mesh', tokenIndex: 7 }),
+      new Set(),
+      MD5_POLICY,
+    );
+    expect(retained).toMatchObject({ detail: { section: 'mesh', tokenIndex: 7 } });
+    expect(parseImportConformanceRetainedDiagnostic(retained, new Set(), MD5_POLICY)).toEqual(retained);
+    expect(() =>
+      parseImportConformanceRetainedDiagnostic(
+        { ...retained, detail: { name: 'fixture-owned', section: 'mesh' } },
+        new Set(),
+        MD5_POLICY,
+      ),
+    ).toThrow('fields not declared by policy: name');
+  });
+});
 
 describe('retainImportConformanceDiagnostic', () => {
   it('retains the six audited detail fields with code-owned diagnostic identity', () => {
@@ -18,6 +61,7 @@ describe('retainImportConformanceDiagnostic', () => {
           sceneCount: 4_294_967_280,
         }),
         CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       ),
     ).toEqual({
       detail: {
@@ -44,6 +88,7 @@ describe('retainImportConformanceDiagnostic', () => {
           name: 'fixture-owned',
         }),
         CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       ),
     ).toEqual({
       kind: 'swf.frame-script-declined',
@@ -57,19 +102,26 @@ describe('retainImportConformanceDiagnostic', () => {
       retainImportConformanceDiagnostic(
         diagnostic({ capability: 'swf.fixture.supplied', compression: 'fixture-supplied' }),
         CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       ),
     ).not.toHaveProperty('detail');
   });
 
   it('retains every code-owned compression tag', () => {
-    expect(retainImportConformanceDiagnostic(diagnostic({ compression: 'deflate' }), CAPABILITIES)).toHaveProperty(
-      'detail.compression',
-      'deflate',
-    );
-    expect(retainImportConformanceDiagnostic(diagnostic({ compression: 'lzma' }), CAPABILITIES)).toHaveProperty(
-      'detail.compression',
-      'lzma',
-    );
+    expect(
+      retainImportConformanceDiagnostic(
+        diagnostic({ compression: 'deflate' }),
+        CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+      ),
+    ).toHaveProperty('detail.compression', 'deflate');
+    expect(
+      retainImportConformanceDiagnostic(
+        diagnostic({ compression: 'lzma' }),
+        CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+      ),
+    ).toHaveProperty('detail.compression', 'lzma');
   });
 
   it('does not retain invalid numeric values under permitted count and index keys', () => {
@@ -77,6 +129,7 @@ describe('retainImportConformanceDiagnostic', () => {
       retainImportConformanceDiagnostic(
         diagnostic({ characterId: -1, frame: 1.5, length: Number.POSITIVE_INFINITY, sceneCount: '4' }),
         CAPABILITIES,
+        SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
       ),
     ).not.toHaveProperty('detail');
   });

@@ -9,6 +9,12 @@ import type {
 import { assertImportConformanceDenominators } from './import-conformance-denominator';
 import type { ImportConformanceDenominators } from './import-conformance-denominator';
 import {
+  assertImportConformanceDiagnosticEvidencePolicy,
+  cloneImportConformanceDiagnosticEvidencePolicy,
+  parseImportConformanceRetainedDiagnostic,
+} from './import-conformance-diagnostic-evidence';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
 } from './import-conformance-score';
@@ -158,6 +164,7 @@ export interface ImportConformanceInstrumentationProofs {
 export interface ImportConformanceScoreDeclarations {
   capabilityScopedUnknownMappings: Readonly<ImportConformanceCapabilityScopedUnknownMappings>;
   denominators: Readonly<ImportConformanceDenominators>;
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>;
 }
 
 export interface ImportConformanceCaseEvidence {
@@ -277,7 +284,7 @@ export function createImportConformanceNotRunScore(
       },
     ],
     provenance: { ...provenance },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -346,13 +353,19 @@ export function createImportConformanceScore(
         },
       ],
       provenance: { ...provenance },
-      schemaVersion: 1,
+      schemaVersion: 2,
     };
   }
 
   assertInstrumentationProofs(instrumentationProofs, index);
   assertLossPaths(lossPathByCapability, index);
   assertScoreDeclarations(declarations, instrumentationProofs, lossPathByCapability, index);
+  const capabilityIds = new Set(index.capabilities.map((capability) => capability.id));
+  for (const result of results) {
+    for (const diagnostic of result.probeUnreadableEvidence?.diagnostics ?? []) {
+      parseImportConformanceRetainedDiagnostic(diagnostic, capabilityIds, declarations.diagnosticEvidencePolicy);
+    }
+  }
   const capabilityScopedUnknownEvidence = new Map(
     deriveImportConformanceCapabilityScopedUnknownEvidence(
       index.capabilities.map((capability) => capability.id),
@@ -485,6 +498,7 @@ export function createImportConformanceScore(
   );
   const summary: ImportConformanceScoreSummary = {
     denominators: cloneDenominators(declarations.denominators),
+    diagnosticEvidencePolicy: cloneImportConformanceDiagnosticEvidencePolicy(declarations.diagnosticEvidencePolicy),
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferencedCapabilities(fireReferenced, 'fire'),
@@ -516,14 +530,14 @@ export function createImportConformanceScore(
     packs: [
       {
         ...packBase,
-        fixtureOutcomes: createFixtureOutcomes(index, results),
+        fixtureOutcomes: createFixtureOutcomes(index, results, declarations.diagnosticEvidencePolicy),
         oracleOutcomes: createOracleOutcomes(results),
         state: 'measured',
         summary,
       },
     ],
     provenance: { ...provenance },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -667,6 +681,7 @@ function assertScoreDeclarations(
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
   assertImportConformanceDenominators(declarations.denominators, index.capabilities.length);
+  assertImportConformanceDiagnosticEvidencePolicy(declarations.diagnosticEvidencePolicy);
   const declared = new Set(index.capabilities.map((capability) => capability.id));
   const capabilityScopedUnknownEvidence = new Map(
     deriveImportConformanceCapabilityScopedUnknownEvidence(
@@ -847,6 +862,7 @@ function createOracleOutcomes(results: readonly Readonly<ImportConformanceResult
 function createFixtureOutcomes(
   index: Readonly<ImportConformanceCapabilityIndex>,
   results: readonly Readonly<ImportConformanceResult>[],
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
 ): ImportConformanceFixtureOutcomes {
   const resultByReference = new Map(results.map((result) => [result.reference, result]));
   const populations = emptyFixtureOutcomePopulations();
@@ -872,7 +888,7 @@ function createFixtureOutcomes(
       if (evidence === undefined) {
         throw new Error(`Probe-unreadable result ${candidate.reference} must retain its import observation evidence`);
       }
-      const expectedOutcome = classifyRetainedProbeEvidence(evidence);
+      const expectedOutcome = classifyRetainedProbeEvidence(evidence, diagnosticEvidencePolicy);
       if (result.outcome !== expectedOutcome) {
         throw new Error(
           `Probe-unreadable result ${candidate.reference} outcome must equal retained evidence (${expectedOutcome})`,
@@ -906,9 +922,14 @@ function createFixtureOutcomes(
 
 function classifyRetainedProbeEvidence(
   evidence: Readonly<NonNullable<ImportConformanceResult['probeUnreadableEvidence']>>,
+  diagnosticEvidencePolicy: Readonly<ImportConformanceDiagnosticEvidencePolicy>,
 ): ImportConformanceFixtureOutcome {
   if (evidence.threw) return 'threw';
-  if (evidence.diagnostics.some((diagnostic) => diagnostic.kind === 'swf.no-decompressor-registered')) {
+  if (
+    evidence.diagnostics.some((diagnostic) =>
+      diagnosticEvidencePolicy.unsupportedDiagnosticKinds.includes(diagnostic.kind),
+    )
+  ) {
     return 'unsupportedClean';
   }
   if (

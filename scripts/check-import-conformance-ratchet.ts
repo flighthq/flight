@@ -278,6 +278,17 @@ function comparePackIdentity(
     );
   }
   if (current.state === 'measured') {
+    if (
+      JSON.stringify(baseline.summary.diagnosticEvidencePolicy) !==
+      JSON.stringify(current.summary.diagnosticEvidencePolicy)
+    ) {
+      findings.push(
+        finding(
+          'diagnostic-evidence-policy-changed',
+          `diagnostic evidence policy changed from '${baseline.summary.diagnosticEvidencePolicy.id}' to '${current.summary.diagnosticEvidencePolicy.id}'`,
+        ),
+      );
+    }
     const baselineOracleCases = baseline.oracleOutcomes.cases.map(
       (candidate) =>
         `${candidate.reference}@${candidate.caseHash}[${candidate.outcomes.map((outcome) => outcome.id).join(',')}]`,
