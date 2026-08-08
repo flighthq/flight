@@ -178,8 +178,11 @@ for (const name of files) {
       // A catch that ASSIGNS is recording the failure, not swallowing it — `catch { threw = true }` is the
       // outcome being captured. Without this the detector cried wolf against correct code, which is the
       // failure direction that costs an instrument its readers fastest.
+      // The exemption must match ASSIGNMENT, not the `=` character: a bare `=` alternative also matches
+      // `==`, `===`, `!=`, `=>`, and `<=`, so any catch containing a comparison or an arrow would exempt
+      // itself and the detector would go silently blind.
       const body = node.block.getText(parsed);
-      if (!/throw|reportImportDiagnostic\(|=/.test(body)) record(node, FORM_SWALLOWED_CATCH);
+      if (!/throw|reportImportDiagnostic\(|[^=!<>]=[^=>]/.test(body)) record(node, FORM_SWALLOWED_CATCH);
     }
     ts.forEachChild(node, visit);
   };

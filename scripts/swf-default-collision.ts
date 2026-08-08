@@ -143,7 +143,9 @@ for (const name of readdirSync(SOURCE_DIRECTORY).sort()) {
     ) {
       record(node, FORM_UNGUARDED_LOOKUP, node.getText(parsed).split('\n')[0].trim().slice(0, 78));
     }
-    if (ts.isCatchClause(node) && !/throw|reportImportDiagnostic\(|=/.test(node.block.getText(parsed))) {
+    // The exemption matches ASSIGNMENT, not the `=` character — a bare `=` alternative also matches
+    // `==`, `===`, `!=`, `=>`, and `<=`, which would exempt any catch containing a comparison.
+    if (ts.isCatchClause(node) && !/throw|reportImportDiagnostic\(|[^=!<>]=[^=>]/.test(node.block.getText(parsed))) {
       record(node, FORM_SILENT_CATCH, 'catch writes nothing');
     }
     ts.forEachChild(node, visit);
