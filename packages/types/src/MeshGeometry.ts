@@ -90,17 +90,12 @@ export interface MeshGeometryWgpuData {
 // `boundsVersion !== version`. A GPU-skinned or upload-only mesh that never culls or picks therefore
 // pays nothing. -1 means never computed. `morphBlendedWeights` is the weight vector the current blend
 // result corresponds to; blendMeshGeometryMorph's caller compares against it to skip re-blending a
-// morph whose weights did not move this frame. Null until the first blend. `tangentSmoothingSources`
-// is null for authored topology; when Flight's tangent generator splits an indexed vertex into
-// several tangent-frame clusters, it maps each generated record back to the authored source vertex.
-// Normal recomputation uses that map so a tangent-only seam does not accidentally become a hard
-// geometric-normal seam.
+// morph whose weights did not move this frame. Null until the first blend.
 export interface MeshGeometryRuntime extends EntityRuntime {
   boundsVersion: number;
   morphBindPose: MeshMorphBindPose | null;
   morphBlendedWeights: Float32Array | null;
   skinBindPose: MeshSkinBindPose | null;
-  tangentSmoothingSources: Uint32Array<ArrayBuffer> | null;
   webglData: MeshGeometryGlData | null;
   webgpuData: MeshGeometryWgpuData | null;
 }

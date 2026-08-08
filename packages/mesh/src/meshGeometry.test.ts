@@ -68,17 +68,6 @@ describe('cloneMeshGeometry', () => {
     expect(clone.bounds!.min.x).toBe(-1);
     expect(clone.bounds!.max.z).toBe(1);
   });
-
-  it('copies tangent-split smoothing identity without sharing its runtime array', () => {
-    const source = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(2) });
-    (source[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources = new Uint32Array([0, 0]);
-
-    const clone = cloneMeshGeometry(source);
-
-    const clonedSources = (clone[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources;
-    expect(Array.from(clonedSources!)).toEqual([0, 0]);
-    expect(clonedSources).not.toBe((source[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources);
-  });
 });
 
 describe('createMeshGeometry', () => {
@@ -130,7 +119,6 @@ describe('createMeshGeometry', () => {
     const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime;
     expect(runtime.webglData).toBeNull();
     expect(runtime.webgpuData).toBeNull();
-    expect(runtime.tangentSmoothingSources).toBeNull();
   });
 });
 

@@ -109,11 +109,10 @@ Per-vertex compute over the interleaved vertex stream.
 - `computeMeshGeometryFlatNormals(out, geometry): void` — **new Pass 2**: assigns face normal to all three vertices of each triangle; alias-safe (out === geometry ok)
 - `computeMeshGeometryNormals(out, geometry): void`
 - `computeMeshGeometryTangents(out, geometry): void` — derives the tangent frame with Flight's
-  independently maintained, dependency-free tangent/orthogonalization implementation. Normalized
-  corner frames are geometric-angle weighted and clustered by handedness plus a 60-degree directional
-  compatibility threshold. Incompatible indexed corners split with their complete interleaved record,
-  preserving skin/color/secondary-UV data; a retained source-vertex map keeps later normal recomputation
-  smooth across tangent-only seams. Compatible meshes retain their existing vertex and index buffers.
+  independently maintained, dependency-free tangent/orthogonalization implementation; indexed vertices shared by positive and
+  negative UV orientations are split with their complete interleaved record and the index stream is
+  remapped, so mirrored seams keep coherent handedness without dropping skin/color/secondary-UV data.
+  Single-handed meshes retain their existing vertex and index buffers.
 
 ### `meshGeometryLayout.ts` — new file (Pass 2)
 

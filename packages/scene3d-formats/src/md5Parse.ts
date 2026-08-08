@@ -342,8 +342,8 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
       // MD5 carries no normals; derive them from the Y-up bind-pose positions and winding.
       computeMeshGeometryNormals(geometry, geometry);
       // MD5 carries no tangent stream either. Generate a real tangent basis from the newly derived
-      // normals and authored UVs before any skin bind pose is captured; mirrored or sharply divergent
-      // UV frames may split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
+      // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
+      // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
       computeMeshGeometryTangents(geometry, geometry);
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
       // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model) whose
