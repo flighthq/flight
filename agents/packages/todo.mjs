@@ -63,7 +63,7 @@ const cells = readdirSync(here, { withFileTypes: true })
 const chartered = [];
 const external = []; // charter kept here for reference, but the code was spun out to another repo
 const absorbed = []; // historical cell whose implementation and scope were folded into another package
-const rustIntended = []; // `rust:` — designated for a Rust impl in the named repo (built there, named/scoped here)
+const downstream = []; // `downstream:` — implemented in the named repo (built there, named/scoped here)
 const reserved = []; // charter reserves the name/concept, but it is deliberately not to be built yet
 const deepen = [];
 // Liveness: per-cell staleness signals so the review loop knows which stage each cell needs next.
@@ -90,11 +90,16 @@ for (const name of cells) {
     absorbed.push({ name, target: charterMeta.absorbed });
     continue;
   }
-  // A `rust:` cell is DESIGNATED for a Rust implementation in the named repo (e.g. flight-rs), which
-  // treats this repo as upstream: the name + intended contract are authored HERE as guidance, the
-  // code is built THERE. Never scaffold a TS package for it here; keep it out of chartered-unbuilt.
-  if (charterMeta.rust) {
-    rustIntended.push({ name, repo: charterMeta.rust, what: firstProseLine(charter, 'What it is') ?? '(rust cell)' });
+  // A `downstream:` cell is IMPLEMENTED in the named repo (flight-rs, flight-hx), which treats this
+  // repo as upstream: the name + intended contract are authored HERE as guidance, the code is built
+  // THERE. Never scaffold a TS package for it here; keep it out of chartered-unbuilt. Distinct from
+  // `spunOut:` above, which is the past-tense case — code that once lived here and departed.
+  if (charterMeta.downstream) {
+    downstream.push({
+      name,
+      repo: charterMeta.downstream,
+      what: firstProseLine(charter, 'What it is') ?? '(downstream cell)',
+    });
     continue;
   }
   // A reserved cell holds a name/concept on purpose but must NOT be built yet — keep it out of the
@@ -262,14 +267,14 @@ if (absorbed.length > 0) {
   }
   lines.push('');
 }
-if (rustIntended.length > 0) {
-  lines.push('## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)');
+if (downstream.length > 0) {
+  lines.push('## Downstream — implemented in another repo (this repo names + scopes; built there)');
   lines.push('');
   lines.push(
-    'This repo is the upstream naming/architecture authority for these cells; the Rust implementation is built in the named repo (which treats this repo as upstream). The charter here fully specifies the intended contract — do NOT scaffold a TS package for it here.',
+    'This repo is the upstream naming/architecture authority for these cells; the implementation is built in the named repo (which treats this repo as upstream). The charter here fully specifies the intended contract — do NOT scaffold a TS package for it here. The implementation language is a property of the downstream repo, not of the cell.',
   );
   lines.push('');
-  for (const { name, repo, what } of rustIntended) {
+  for (const { name, repo, what } of downstream) {
     lines.push(`- **\`${name}\`** → built in \`${repo}\` — ${what}`);
   }
   lines.push('');
@@ -389,5 +394,5 @@ lines.push('');
 
 writeFileSync(join(here, 'TODO.md'), `${lines.join('\n')}`);
 console.log(
-  `TODO.md: ${chartered.length} chartered-unbuilt, ${absorbed.length} absorbed, ${reserved.length} reserved, ${external.length} external (spun out), ${rustIntended.length} rust-intended, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
+  `TODO.md: ${chartered.length} chartered-unbuilt, ${absorbed.length} absorbed, ${reserved.length} reserved, ${external.length} external (spun out), ${downstream.length} downstream, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
 );

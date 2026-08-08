@@ -9,6 +9,7 @@ The checker splits its findings by who can act on them. **Failures** are unambig
 - One folder per package: `agents/packages/<name>/`, where `<name>` is the `packages/<name>` directory name (the unscoped package name).
 - Files: `charter.md`, `status.md`, `review.md`, `assessment.md`. No other names; no compound `<name>.charter.md` form (the folder already carries the package identity).
 - `charter.md` is **required**. The other three are created by their producing stage.
+- **A cell with no code in this repo carries `charter.md` alone.** `review.md` and `assessment.md` are surveys *of source*, and a cell marked `downstream:` or `reserved:` has none here — writing them would be ceremony asserting a survey nobody performed. So the `review` / `assessment` / `status` front-matter keys below are required only where the code is local. A `spunOut:` cell keeps whichever of the four it accumulated while its code did live here (`surface-rs` keeps all four); it does not shed them on departure.
 - **Every `packages/<name>` must have a cell**, checked from the `packages/` side and failing if absent. Adding a package therefore means scaffolding its cell in the same change (`node agents/packages/scaffold.mjs` writes the stubs). A blank charter is a valid flagpole — it marks where review content will land — but no cell at all makes the package invisible to every generator, which is how `quadbatch` kept seven consumers and no survey. The reverse is not checked: a cell with no package is a chartered-unbuilt, absorbed, external, or reserved cell, all legitimate and already classified by the generated index.
 
 ### Supplementary evidence documents
@@ -54,6 +55,9 @@ review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
 absorbed: '@flighthq/target' # optional; historical cell folded into another package
+downstream: flight-hx # optional; implemented in the named upstream-consuming repo, never scaffolded here
+spunOut: flight-rs # optional; code that once lived here and was moved out
+reserved: true # optional; name/concept held deliberately, not to be built yet
 ```
 
 The charter carries **no status or score** — that lives in `review.md`/`assessment.md`. This keeps the charter's git history meaningful: it changes only when _direction_ changes.
@@ -66,6 +70,8 @@ The charter carries **no status or score** — that lives in `review.md`/`assess
 Declare the role rather than inferring it from churn statistics. The statistics are only correlated: `types` follows 86% of the commits touching it and `sdk` 87%, but `render` follows 67% against `mesh`'s 47%, so any threshold tuned to catch the first two misfiles `render` on the way. The architecture is the signal; the percentage is a symptom.
 
 `absorbed` is optional and records a package that was deliberately folded into another package. The cell remains as architectural history, but generators must exclude it from build/deepen queues and must not propose recreating it.
+
+`absorbed`, `downstream`, `spunOut`, and `reserved` are the four **no-local-code** markers, and each answers a different question about why `packages/<name>/` is absent — folded into another package, built in a repo downstream of this one, moved out of here, or deliberately not built yet. They share one mechanical consequence: `docs.ts` treats the charter as an upstream naming record rather than a live one, so the body-section contract does not apply, and `todo.mjs` routes the cell out of the chartered-unbuilt queue into its own section. Pick by the reason, not by the effect — the effect is identical under all four, so a wrong marker is invisible to every gate and misleads only the reader. Full definitions in [register.md](register.md#states).
 
 ### `review.md`
 

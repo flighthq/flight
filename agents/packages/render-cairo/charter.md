@@ -4,7 +4,7 @@ role: package
 crate: null
 draft: true
 lastDirection: null
-spunOut: flight-hx
+downstream: flight-hx
 ---
 
 # render-cairo — Charter (DRAFT)
@@ -12,7 +12,7 @@ spunOut: flight-hx
 > **Built in `flight-hx`, not this monorepo.** There is no `packages/render-cairo/` here and one
 > must not be scaffolded — an empty TS package for a backend that can hold no TypeScript is name
 > reservation, not architecture. This cell exists so the **name, the boundary, and the seam Flight
-> owes it** are recorded in the authoritative repo. The `spunOut` marker keeps it out of the
+> owes it** are recorded in the authoritative repo. The `downstream` marker keeps it out of the
 > chartered-unbuilt build queue and the liveness checks. Unblessed: nothing here is authoritative
 > until the user rules on it.
 

@@ -2,7 +2,7 @@
 package: '@flighthq/textshaper-harfbuzz'
 role: package
 crate: flighthq-textshaper-harfbuzz
-rust: flight-rs
+downstream: flight-rs
 draft: false
 lastDirection: 2026-07-11
 review: ./review.md
@@ -12,7 +12,7 @@ status: ./status.md
 
 # textshaper-harfbuzz — Charter
 
-> **Rust-intended (2026-07-11).** This cell is **designated for a Rust/wasm implementation, built in `flight-rs`** (which treats this monorepo as upstream). The name, seam, and intended contract below are the **authoritative upstream guidance**; the shaper itself is not TS work and is **not scaffolded here** (no `packages/textshaper-harfbuzz/`). Full-glyph shaping is compute-heavy and belongs in the Rust box alongside `surface-rs` — the `rust:` front-matter keeps this out of the local chartered-unbuilt queue while preserving the design here. See the `## Rust-intended` section of the generated `TODO.md`.
+> **Rust-intended (2026-07-11).** This cell is **designated for a Rust/wasm implementation, built in `flight-rs`** (which treats this monorepo as upstream). The name, seam, and intended contract below are the **authoritative upstream guidance**; the shaper itself is not TS work and is **not scaffolded here** (no `packages/textshaper-harfbuzz/`). Full-glyph shaping is compute-heavy and belongs in the Rust box alongside `surface-rs` — the `downstream:` front-matter keeps this out of the local chartered-unbuilt queue while preserving the design here. See the `## Downstream` section of the generated `TODO.md`.
 
 ## What it is
 

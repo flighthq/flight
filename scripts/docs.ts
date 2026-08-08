@@ -435,12 +435,12 @@ function checkCells(files: ReadonlySet<string>): void {
 
     const charter = parseFrontMatter(charterText);
     const isDraft = charter.draft === 'true';
-    // An absorbed / reserved / rust-intended / spun-out cell is architectural history or an upstream
+    // An absorbed / reserved / downstream / spun-out cell is architectural history or an upstream
     // naming record, not a live charter — the body-section contract does not apply to it.
     const isHistorical =
       charter.absorbed !== undefined ||
       charter.reserved !== undefined ||
-      charter.rust !== undefined ||
+      charter.downstream !== undefined ||
       charter.spunOut !== undefined;
 
     if (charter.package === undefined) {
