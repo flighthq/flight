@@ -9,6 +9,7 @@ import { setBaselineField } from './baselineStore';
 import { setCaptureTimeoutMs } from './captureTimeout';
 import {
   explainCaptureParityUncovered,
+  formatCaptureParityRanking,
   isCaptureRegressionCoverageFailure,
   isUniformCaptureFingerprint,
   explainCaptureVerificationStall,
@@ -75,6 +76,38 @@ describe('explainCaptureVerificationStall', () => {
 
   it('flags a stateless verifier object as a protocol mismatch rather than a stall', () => {
     expect(explainCaptureVerificationStall({}, 4_000)).toContain('protocol');
+  });
+});
+
+describe('formatCaptureParityRanking', () => {
+  it('ranks measured distances widest first and states the median beside them', () => {
+    const text = formatCaptureParityRanking([
+      { distance: 0.02, entry: 'shape-fill', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+      { distance: 11.11, entry: 'effect-glitch', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+      { distance: 0.5, entry: 'effect-dither', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+    ]);
+
+    // The verdict for all three is "pass"; only the ranking distinguishes them.
+    expect(text).toContain('3 compared');
+    expect(text!.indexOf('effect-glitch')).toBeLessThan(text!.indexOf('effect-dither'));
+    expect(text!.indexOf('effect-dither')).toBeLessThan(text!.indexOf('shape-fill'));
+  });
+
+  it('returns null when nothing was compared', () => {
+    // An empty ranking would read as agreement; no ranking says the comparison did not happen.
+    expect(formatCaptureParityRanking([])).toBeNull();
+    expect(formatCaptureParityRanking([{ entry: 'shape-fill', kind: 'baseline' }])).toBeNull();
+  });
+
+  it('names how many rows it withheld', () => {
+    const many = Array.from({ length: 14 }, (_, index) => ({
+      distance: index,
+      entry: `scene-${index}`,
+      kind: 'parity',
+      renderers: ['webgl', 'webgpu'],
+    }));
+
+    expect(formatCaptureParityRanking(many)).toContain('4 more not shown');
   });
 });
 
@@ -151,6 +184,42 @@ describe('isUniformCaptureFingerprint', () => {
   });
 });
 
+function createRegressionFixture(
+  currentSource: string,
+  recordedSourceHash: string,
+): { root: string; kill: () => void } {
+  const root = mkdtempSync(join(tmpdir(), 'capture-regression-freshness-'));
+  const scenes = join(root, 'functional', 'scenes');
+  mkdirSync(scenes, { recursive: true });
+  writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '1:000000');
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'sourceHash', recordedSourceHash);
+  return { root, kill: vi.fn() };
+}
+
+function sha256(source: string): string {
+  return createHash('sha256').update(source).digest('hex');
+}
+
+async function validateRegressionFixture(root: string, kill: () => void) {
+  return runCaptureValidation({
+    subject: 'functional',
+    entries: [{ name: 'sample', renderers: ['canvas'] }],
+    server: { url: 'http://unused.invalid', kill },
+    root,
+    gateParity: false,
+    // These assert how a FAILURE is classified, so the run legitimately produces a failing summary.
+    // Printing it would put a real-looking "✗ FAILED" block in the CI log of a file whose tests all
+    // pass, which is the kind of noise that teaches a reader to scroll past a genuine one.
+    quiet: true,
+    fingerprints: { sample: { canvas: '1:ffffff' } },
+    browserSession: {
+      browser: { close: vi.fn() } as never,
+      context: { newPage: vi.fn() } as never,
+    },
+  });
+}
+
 describe('runCaptureValidation', () => {
   it('is a callable fingerprint-validation orchestrator', () => {
     expect(typeof runCaptureValidation).toBe('function');
@@ -216,39 +285,3 @@ describe('runCaptureValidation', () => {
     }
   });
 });
-
-function createRegressionFixture(
-  currentSource: string,
-  recordedSourceHash: string,
-): { root: string; kill: () => void } {
-  const root = mkdtempSync(join(tmpdir(), 'capture-regression-freshness-'));
-  const scenes = join(root, 'functional', 'scenes');
-  mkdirSync(scenes, { recursive: true });
-  writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
-  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '1:000000');
-  setBaselineField(root, 'functional', 'sample', 'canvas', 'sourceHash', recordedSourceHash);
-  return { root, kill: vi.fn() };
-}
-
-function sha256(source: string): string {
-  return createHash('sha256').update(source).digest('hex');
-}
-
-async function validateRegressionFixture(root: string, kill: () => void) {
-  return runCaptureValidation({
-    subject: 'functional',
-    entries: [{ name: 'sample', renderers: ['canvas'] }],
-    server: { url: 'http://unused.invalid', kill },
-    root,
-    gateParity: false,
-    // These assert how a FAILURE is classified, so the run legitimately produces a failing summary.
-    // Printing it would put a real-looking "✗ FAILED" block in the CI log of a file whose tests all
-    // pass, which is the kind of noise that teaches a reader to scroll past a genuine one.
-    quiet: true,
-    fingerprints: { sample: { canvas: '1:ffffff' } },
-    browserSession: {
-      browser: { close: vi.fn() } as never,
-      context: { newPage: vi.fn() } as never,
-    },
-  });
-}
