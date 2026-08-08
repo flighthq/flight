@@ -68,8 +68,11 @@ void main() {
     float d = clamp((depth - u_near) / max(u_far - u_near, 1e-4), 0.0, 1.0);
     fog = clamp(1.0 - exp(-u_density * d), 0.0, 1.0);
   } else {
-    // Sentinel path: no depth written (flat 2D scene) — screen-Y gradient as a depth proxy.
-    fog = clamp((1.0 - v_texCoord.y) * u_density, 0.0, 1.0);
+    // Sentinel path: no depth written (flat 2D scene) — screen-Y gradient as a depth proxy, densest
+    // at the top of the frame where a horizon would be. A render target is bottom-left origin, so
+    // v_texCoord.y already counts upward from the bottom and is the image-space distance from the top;
+    // subtracting it from one would put the fog on the ground instead of the horizon.
+    fog = clamp(v_texCoord.y * u_density, 0.0, 1.0);
   }
   o_color = vec4(mix(c.rgb, u_fogColor, fog), c.a);
 }`;
