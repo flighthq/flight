@@ -120,8 +120,8 @@ function createRiveArtboardImport(
     const rebuild = (): void => rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, undefined);
     rebuilds.set(shapeIndex, rebuild);
     // The stored closure and the first build are the same work but not the same call: only this one
-    // carries the sink. The closure runs again per animated frame, so passing it there would report
-    // the same substituted cap every time the shape rebuilds instead of once at import.
+    // carries the sink. The closure runs again per animated frame, so a sink passed there would report
+    // the same substitution once per frame — diagnostics describe the import, not the playback.
     rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, diagnostics);
   }
 
