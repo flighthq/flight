@@ -1,42 +1,36 @@
 ---
 package: '@flighthq/application-gl'
-updated: 2026-07-31
+updated: 2026-08-08
 by: principal
 ---
 
-# application-gl — Status Log
+# application-gl — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-31 — principal: cell created, no code touched
+## Open
 
-The package had **no cell at all** — no `charter.md`, so the generator never saw it and it produced
-no queue items. It was also missing from the `AGENTS.md` Package Map. Both closed today; the Package
-Map entry now reads `application` (main loop and windowing) with `application-gl` (the WebGL
-`ApplicationRenderView` assembly).
+- **The cell has `charter.md` and `status.md` only** — no `review.md`, no `assessment.md`, so no
+  survey has ever run and the cell emits no `Recommended` items into any queue.
+- **Built as an assembly, unbuilt as a harness.** `createGlApplicationRenderView`
+  (`packages/application-gl/src/glApplicationRenderView.ts:23`) and `destroyGlApplicationRenderView`
+  (`:51`) exist and are tested; nothing composes them with the loop. Repo-wide, the only consumer is
+  `functional/scenes/application-render-view.webgl.ts:2`. Across the 41 example packages, 39
+  hand-roll `requestAnimationFrame`, 39 hand-roll canvas creation, and exactly one
+  (`examples/packages/textinput/src/app.ts`) calls `startApplicationLoop`. The remaining work is loop
+  composition and example adoption — do not start by rewriting `glApplicationRenderView.ts`.
+- **This package's existence is under an open proposal.**
+  [`agents/render-view-model.md`](../../render-view-model.md) is **unratified** and would extract a
+  windowless `RenderView` into `@flighthq/render`, dissolving this package. Nothing in the tree acts
+  on it today; do not build toward it as settled.
 
-Authored `charter.md` as an **unblessed draft** transcribing what the code already commits to, plus
-the batteries-included harness direction the user gave today. It will surface in
-`node agents/packages/bless-queue.mjs` for ratification.
+## Log
 
-**Still needed before this cell can feed the queue:** `review.md` (no survey has ever run) and
-`assessment.md` (so it can emit `Recommended` items). Both are wave-1 work.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-**The finding that matters for planning.** The `application` Directed item reads "Build
-`ApplicationRenderView` as the explicit 95% assembly" — but the assembly is **already built and
-tested**, here and in `application`. What is unbuilt is the *harness*: nothing composes the loop with
-the view, and adoption is ~zero. Measured across the 41 example packages on 2026-07-31:
-
-| bootstrap path | files |
-| --- | --- |
-| hand-roll `requestAnimationFrame` | 39 |
-| hand-roll canvas creation | 50 |
-| use `startApplicationLoop` | 1 |
-| use `createGlApplicationRenderView` | 0 |
-
-The only consumer of `createGlApplicationRenderView` anywhere in the repo is the single functional
-scene `functional/scenes/application-render-view.webgl.ts`.
-
-Anyone picking up that Directed item should read it as **built as an assembly, unbuilt as a
-harness** — the remaining work is loop composition and example adoption, not re-implementing the
-link. Do not start by rewriting `glApplicationRenderView.ts`.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Every claim re-verified and still true
+  (adoption counts re-measured today, unchanged); nothing was false. The only closed item dropped is
+  the `AGENTS.md` Package Map gap — the entry is present.
+- **2026-07-31** — Cell created (`charter.md` as an unblessed draft) and the package added to the
+  `AGENTS.md` Package Map; no code touched.

@@ -637,7 +637,7 @@ function checkOrphans(files: ReadonlySet<string>): void {
   }
 
   process.stdout.write(
-    `${pc.dim('  orphan-check counts pointers only from the map, cell charters, indexes, the catalog and the package map — a pointer from a status log does not count, because status is the append-only continuity layer and explicitly not blessed truth')}\n`,
+    `${pc.dim('  orphan-check counts pointers only from the map, cell charters, indexes, the catalog and the package map — a pointer from a status log does not count, because a status log is working state that disclaims its own authority, and its Open section is rewritten in place rather than ratified')}\n`,
   );
 
   // Printed every run, not only when one is used: an allowance whose reason is invisible is

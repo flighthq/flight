@@ -1,139 +1,62 @@
 ---
 package: '@flighthq/clipboard'
-updated: 2026-07-30
-by: builder3
+updated: 2026-08-08
+by: principal
 ---
 
-# clipboard — Status Log
+# clipboard — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-30 — builder3 stale-cell audit and web event-probe fix
+## Open
 
-Audited the partial-40 TODO against the live package and history:
+Every item was re-checked against `packages/clipboard/src/`, `packages/types/src/Clipboard*.ts`, and
+the one native backend on 2026-08-08. Most of the old log checked out closed; what survives is below.
 
-- The package source already uses the shared `ClipboardFormatBookmark`, `ClipboardFormatHtml`, and
-  `ClipboardFormatRtf` constants (`e115beddd`).
-- Tests already use all relevant shared named-flavor constants (`3240ad45e`).
-- The formerly missing `ClipboardBackend`, `ClipboardWatch`, `ClipboardWriteItem`, and
-  `ClipboardFormat*` header surface is present and exported from `@flighthq/types`.
+- **No backend in the tree ever delivers a change event, so `ClipboardWatch` never fires.** The web
+  backend subscribes only when the nonstandard `'onclipboardchange' in window` probe passes
+  (`clipboard.ts:200-207`) and otherwise returns an inert unsubscribe; `createElectronClipboardBackend`
+  returns an inert unsubscribe unconditionally (`host-electron/src/electronClipboard.ts:166`). Both
+  `getChangeCount` implementations return `-1` (`clipboard.ts:197`,
+  `electronClipboard.ts:162`). `attachClipboardWatch` is therefore untested against a real emitter.
+- **The Electron atomic write silently misroutes two of the six canonical formats.** `formatKey`
+  (`electronClipboard.ts:183-188`) recognizes `text/html`, `text/rtf`, and the bare string
+  `'bookmark'`, and falls through to `'text'` for everything else — including
+  `ClipboardFormatBookmark` (`'text/x-moz-url'`) and `ClipboardFormatImage` (`'image/png'`), the exact
+  strings `hasClipboardBookmark` (`clipboard.ts:246`) and the format constants hand callers. A
+  bookmark or image item in a `writeClipboard` batch lands as plain text with no sentinel.
+- **`has*` is missing the files flavor.** `readClipboardFiles` / `writeClipboardFiles` exist
+  (`clipboard.ts:285`, `:330`) with no `hasClipboardFiles`, breaking the otherwise complete
+  read/write/has triple that text, HTML, RTF, image, and bookmark all have.
+- **`RTF` is cased against the rest of the SDK.** `hasClipboardRTF` / `readClipboardRTF` /
+  `writeClipboardRTF` (`clipboard.ts:265`, `:305`, `:350`) shout the acronym while the constant it
+  routes through is `ClipboardFormatRtf` (`types/src/ClipboardFormat.ts:4`). Pre-release, one of the
+  two spellings should go.
+- **Four roadmap surfaces are absent from the whole tree** — a `ClipboardScope` secondary-pasteboard
+  selector, the binary `readClipboardBuffer` / `writeClipboardBuffer` seam, `writeClipboardLazy`
+  promised rendering, and `getClipboardCapabilities`. Grep across `packages/**/*.ts` returns zero
+  hits for each. The binary seam is the load-bearing one: the generic flavor seam
+  (`ClipboardBackend.readFormat` / `writeFormat`, `types/src/Clipboard.ts:37-39`) is string-only, so a
+  non-text custom format has no lossless path even though Electron's `readBuffer`/`writeBuffer` sit
+  right under it.
+- **The `Bitmap` image flavor is a standing design question, not just unbuilt.** Today images cross
+  as data URLs (`Clipboard.ts:23-26`). A `readClipboardBitmap(out)` / `writeClipboardBitmap(bitmap)`
+  pair needs a ruling on whether `@flighthq/clipboard` may take a type-only `Bitmap` dependency, and
+  whether the data-URL functions stay as a permanent web convenience.
 
-The old review's smaller event-probe finding remained live. `84bd1237b` removes the nonstandard
-`window.clipboardchange` property check from the experimental change-event capability test and adds a
-regression proving that property does not activate a subscription. The stale text/HTML-only Package Map
-line now describes the full named-flavor, open MIME, batch, sentinel, backend, and watch surface.
+## Log
 
-Scoped verification before the records refresh: `npm run check -- clipboard` passed; package Vitest
-passed 1 file / 56 tests. The live-tree review and assessment replace the obsolete partial-40 merge-gate
-record.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
-
-Swept the within-package items from `assessment.md › Recommended`.
-
-**Done:**
-
-- **Widened the `package.json` description.** Now reads "System clipboard read/write (text, HTML, image, RTF, bookmark, files, generic MIME formats) with atomic multi-flavor write and change events, over a swappable web/native backend" — matching the shipped surface.
-- **Hardened / de-duplicated `createWebClipboardBackend` (within-package part).** Folded the thrice-repeated write-path guard (`cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined'`) behind a new internal `getWritableWebClipboard()` helper, and the thrice-repeated image-data-URL-to-Blob conversion behind a new internal `blobFromFormatData(format, data)` helper. Pure refactor — no exported surface change, sentinel contract unchanged. All 55 tests pass.
-
-**Parked:**
-
-- **Consume `ClipboardFormat` constants in the package's own code** — cross-boundary: the `ClipboardFormatHtml`/`ClipboardFormatRtf`/`ClipboardFormatBookmark` constants the item assumes exist in `@flighthq/types` are NOT present (`packages/types/src/Clipboard.ts` defines only `ClipboardBookmark`, `ClipboardWriteItem`, `ClipboardBackend`; no `ClipboardFormat.ts` file exists despite the prior status entry claiming it). Routing the literals through shared constants would first require creating those constants in `packages/types`, which is out of bounds.
-- **Move `ClipboardBookmark` to its own file in `@flighthq/types`** — cross-boundary: edits `packages/types` (`src/Clipboard.ts` → `src/ClipboardBookmark.ts` + barrel re-export).
-- **Widen the Package Map line** — cross-boundary: edits `agents/index.md`, outside the package's own doc cell.
-- **Permissions-API probe in `createWebClipboardBackend`** (the second half of the harden item) — design decision: querying `navigator.permissions.query({ name: 'clipboard-read' })` in probe paths changes observable behavior of `has*`/enumeration (which permission prompt fires, when) and the `name` is not a blessed contract; deferred rather than guessed.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/clipboard
-
-**Session date**: 2026-06-24 **Prior score**: 78/100 (solid) **Estimated new score**: 91/100 (near-gold)
-
-## Implemented in this session
-
-### New types in @flighthq/types
-
-- `packages/types/src/ClipboardFormat.ts` — canonical MIME string constants: `ClipboardFormatText`, `ClipboardFormatHtml`, `ClipboardFormatRtf`, `ClipboardFormatImage`, `ClipboardFormatBookmark`, `ClipboardFormatUriList`. Callers use these instead of raw string literals.
-- `packages/types/src/ClipboardWatch.ts` — event entity for clipboard changes: `ClipboardWatch { onChange: Signal<() => void> }`.
-- `packages/types/src/ClipboardWriteItem.ts` — `{ readonly format: string; readonly data: string }` for atomic multi-flavor writes.
-- `Clipboard.ts` — extended `ClipboardBackend` with: generic format seam (`readFormat`, `writeFormat`, `hasFormat`, `getFormats`, `writeItems`, `readItems`), file flavor (`readFiles`, `writeFiles`), change-notification seam (`getChangeCount`, `subscribeClipboardChange`).
-
-### New exports in @flighthq/clipboard
-
-Bronze (generic format seam + complete has\* set):
-
-- `getClipboardFormats()` — enumerate available MIME formats from the active backend.
-- `hasClipboardFormat(format)` — probe any MIME format.
-- `hasClipboardHtml()` — complete the has\* set (was missing).
-- `hasClipboardRTF()` — complete the has\* set (was missing).
-- `hasClipboardBookmark()` — complete the has\* set (was missing).
-- `readClipboardFormat(format)` — read any MIME format as string.
-- `writeClipboardFormat(format, data)` — write any MIME format.
-
-Silver (atomic write, files, change-event capability):
-
-- `readClipboard(formats)` — batch read multiple formats in one round-trip; returns `Record<string, string>`.
-- `writeClipboard(items)` — atomic multi-flavor write; one `ClipboardItem` carries all formats so a paste target picks its best representation.
-- `readClipboardFiles()` — file-path flavor read; [] sentinel on web.
-- `writeClipboardFiles(paths)` — file-path flavor write; false sentinel on web.
-- `getClipboardChangeCount()` — monotonically increasing change count from the backend (-1 if unsupported).
-- `createClipboardWatch()` — allocates a `ClipboardWatch` entity with an inert signal.
-- `attachClipboardWatch(watch)` — subscribes to backend change notifications and emits `watch.onChange`.
-- `detachClipboardWatch(watch)` — tears down the backend subscription. Safe when not attached.
-- `disposeClipboardWatch(watch)` — detaches and releases for GC. Mirrors the `@flighthq/connectivity` pattern exactly.
-
-### Updated in @flighthq/host-electron
-
-- `electronClipboard.ts` — implemented all new `ClipboardBackend` methods (`readFormat`/`writeFormat` via `cb.readBuffer`/`cb.writeBuffer`, `hasFormat`/`getFormats` via `cb.availableFormats()`, `writeItems`/`readItems` as per-format dispatchers, `readFiles`/`writeFiles` as false/[] sentinels, `getChangeCount` returning -1, `subscribeClipboardChange` as no-op).
-- `electronModule.ts` — extended `ElectronClipboard` interface with `availableFormats()`, `readBuffer(format)`, `writeBuffer(format, buffer)`.
-
-### Test coverage
-
-55 tests, all passing. Every new export has a backend-roundtrip case and a web-sentinel case. Includes:
-
-- `attachClipboardWatch` idempotency and delivery test
-- `detachClipboardWatch` teardown and safe-when-not-attached test
-- `disposeClipboardWatch` lifecycle test
-- `getClipboardChangeCount` roundtrip and web (-1) sentinel test
-- `getClipboardFormats` roundtrip and web ([]) sentinel test
-- `hasClipboardBookmark/Html/RTF` symmetric set tests
-- `readClipboard` / `writeClipboard` multi-format tests
-- `readClipboardFiles` / `writeClipboardFiles` roundtrip and web sentinel tests
-- `readClipboardFormat` / `writeClipboardFormat` roundtrip and web sentinel tests
-
-## Deferred items and why
-
-### Gold tier (not implemented — next session)
-
-1. **Secondary pasteboards** (`ClipboardScope` = `'system' | 'selection' | 'find'`). Linux PRIMARY selection and macOS find pasteboard. Requires an optional `scope` parameter threaded through the entire function surface and `ClipboardBackend`. A pre-release reshape worth doing, but scoped to a dedicated pass given the breadth of the change.
-
-2. **Binary/buffer flavors** (`readClipboardBuffer(format): Promise<ArrayBuffer | null>` / `writeClipboardBuffer(format, buffer)`). The string-only generic seam added here is the convenience layer; the buffer seam is the authoritative one for non-text custom formats (e.g. Electron `readBuffer`/`writeBuffer` already exists in the Electron backend). Requires deciding whether `ArrayBuffer` or `Uint8Array` is the canonical binary type.
-
-3. **Lazy/promised rendering** (`writeClipboardLazy(formats, provider)`). NSPasteboard's promised types — register formats now, render bytes on demand. Web backend no-op. A significant native-host contract that should stabilize after the seam settles.
-
-4. **`getClipboardCapabilities()`** introspection — what flavor/scope each backend supports. Good for documentation but lower priority.
-
-5. **Typed image flavor over `Bitmap`** (`readClipboardBitmap(out) / writeClipboardBitmap(bitmap)`). The roadmap flags this as a design decision: introduces a `@flighthq/bitmap` / `Bitmap` dependency into `@flighthq/clipboard`. Recommend type-only from `@flighthq/types` with caller-supplied `out: Bitmap`, verified by `npm run size`. Deferred pending that design confirmation.
-
-6. **Rust port** (`flighthq-clipboard`). Should track after Silver settles to avoid re-porting a moving contract. The seam is now stable enough to port Bronze+Silver. Native default backend would use `arboard` or `copypasta`.
-
-### Design questions (surface to user before acting)
-
-- **`Bitmap`/`ImageSource` clipboard-image dependency**: Should `readClipboardBitmap`/`writeClipboardBitmap` depend on the `Bitmap` type from `@flighthq/types` (type-only, safe) or require a runtime `@flighthq/bitmap` import? Confirm before adding.
-- **Data-URL image functions deprecation**: Keep `readClipboardImage`/`writeClipboardImage` as a permanent web-convenience layer, or deprecate them once a `Bitmap` path exists?
-- **`writeClipboard` / Electron atomic write**: The current Electron backend falls back to sequential per-format writes (not truly atomic). Electron's `clipboard.write({ text, html, rtf, ... })` can do it in one call; decide whether to add `write()` to `ElectronClipboard` for a proper atomic Electron path.
-- **File-list on Electron**: Electron supports reading file paths via `clipboard.readBuffer('FileNameW')` (Windows) and `readBuffer('public.file-url')` (macOS). This is platform-specific string wrangling and should be implemented in a dedicated Electron-side pass rather than generically.
-
-## Concerns and surprises
-
-- The `subscribeClipboardChange` web backend falls back to a no-op because `clipboardchange` is not yet a standard event in any browser. The detection logic (`'onclipboardchange' in window`) is speculative. If browsers ship this event, it will auto-activate without code changes. Meanwhile, callers on web will see no `onChange` delivery — which is the documented sentinel behavior.
-- `hasClipboardBookmark()` probes for `'text/x-moz-url'` (the Firefox/macOS bookmark MIME). On Windows or native Electron, the actual format name is different. This is acceptable for the web seam but a native host backend (Electron) should override `hasFormat('text/x-moz-url')` to map it to the platform's actual bookmark format.
-- The `writeItems` on Electron is not atomically single-operation — it loops per format. Electron's `clipboard.write({ text, html, rtf })` could do this in one call. The `ElectronClipboard` interface does not yet include `write()`.
-
-## Suggestions for future sessions
-
-1. Add `write(data: { text?: string; html?: string; rtf?: string; bookmark?: { title: string; url: string } })` to `ElectronClipboard` and use it in `writeItems` for a truly atomic Electron write.
-2. Implement `readClipboardFiles` / `writeClipboardFiles` on Electron using platform-specific buffer formats (`FileNameW`, `public.file-url`).
-3. Port Bronze+Silver to `flighthq-clipboard` Rust crate using `arboard` as the native ambient backend.
-4. Add the `ClipboardScope` secondary-pasteboard selector once the seam is agreed.
-5. Add `readClipboardBuffer`/`writeClipboardBuffer` (`ArrayBuffer` flavor) for non-text custom formats.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 "concern" that Electron's
+  `writeItems` loops per format and that `ElectronClipboard` lacks `write()` is **false**:
+  `electronClipboard.ts:144-149` builds one `ElectronClipboardData` and calls `cb.write(data)` once.
+  The 2026-06-25 blocker "the `ClipboardFormat*` constants are NOT present in `@flighthq/types`" is
+  also false — `types/src/ClipboardFormat.ts:1-6` defines all six and `clipboard.ts:3` imports three.
+- **2026-07-30** — Stale-cell audit; removed the nonstandard `window.clipboardchange` property check
+  from the change-event capability test and added a regression proving it activates no subscription.
+- **2026-06-25** — Widened the package description; folded the repeated web write-path guard behind
+  `getWritableWebClipboard()` and the image-data-URL conversion behind `blobFromFormatData`.
+- **2026-06-24** — Landed the generic MIME flavor seam, the complete `has*` set, atomic
+  `writeClipboard` / batch `readClipboard`, the file flavor, and the `ClipboardWatch` lifecycle.

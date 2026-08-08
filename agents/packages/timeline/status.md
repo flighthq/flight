@@ -1,130 +1,57 @@
 ---
 package: '@flighthq/timeline'
-updated: 2026-07-31
-by: builder3
+updated: 2026-08-08
+by: principal
 ---
 
-# timeline — Status Log
+# timeline — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-31 — builder3 Recommended sweep completion
+## Open
 
-Completed all four remaining sweep-safe items from `assessment.md` in `2ce125d53`:
+Every item was re-checked against `packages/timeline/src/` on 2026-08-08. A file:line here is a claim
+about this tree, not about a session. The package is one source file, `timeline.ts`; `movieClip.ts`
+now lives in the separate `movieclip` cell and its claims moved with it.
 
-- `updateTimeline` now returns `true` only when the call realizes a new frame (constructs the target, runs its frame script, and emits frame signals), and returns `false` for a repeated/no-change update.
-- The source comment now pins the two clock paths: timed sources advance before realization, while `frameRate: null` sources realize the current frame before advancing the playhead for the next call.
-- Added `getTimelineFrameScriptFrames` as an insertion-ordered snapshot query and `clearTimelineFrameScripts` with the existing null-empty sentinel.
-- Promoted `getTimelineLabels` to the public contract, retaining the shared read-only empty-array sentinel.
+- **The cue dispatcher does not exist.** The header has landed and the data flows: `createTimeline`
+  carries `cueRegistry` (`timeline.ts:26`) and `createTimelineSource` carries `cues` (`:52`). Nothing
+  reads either — `fireConstructFrame` (`timeline.ts:218-237`) runs `constructFrame`, then the user's
+  `frameScripts`, and stops. No `createTimelineCueRegistry`, no `registerTimelineCue`, no dispatch
+  function anywhere in `packages/`, and `TimelineFrameEntryCause` has no consumer. The SWF importer
+  already emits cues (`swf/src/swfDocument.ts:1984`), so every imported sound, `Goto`, and `Stop` is
+  inert data today. This is the cell's blocking gap; the model is ratified in
+  [timeline cue model](../../timeline-cue-model.md).
+- **Playback is forward-only at the source's rate.** No `playbackRate`, `direction`,
+  `reverseTimeline`, or ping-pong; `TimelinePlayMode` is `'loop' | 'once'`
+  (`types/src/TimelinePlayMode.ts:3`).
+- **No time-domain seek.** `seekTimeline` is module-private (`timeline.ts:254`), reachable only
+  through `gotoAndPlayTimeline` / `gotoAndStopTimeline` / `nextFrameTimeline` / `prevFrameTimeline`.
+  No `seekTimelineToTime`, no `getTimelineDuration` — editor scrubbing has no entry point.
+- **No play ranges and no scenes.** `playTimelineRange`, `TimelineScene`, and
+  `gotoAndPlayTimelineScene` exist nowhere, so a sub-animation inside a longer timeline cannot be
+  addressed as a unit.
+- **The signal set is five** (`timeline.ts:204-212`): `onComplete`, `onEnterFrame`, `onExitFrame`,
+  `onFrameConstructed`, `onLoop`. No `onPlay`, `onStop`, `onSeek`, `onFrameLabel`, `onScriptError`.
+- **Multi-frame skips visit only the landing frame** (`timeline.ts:161-166`, `:214-217`): scripts and
+  enter/exit signals for the frames jumped over do not fire. Intentional and documented; whether a
+  `maxFrameSkip` clamp or fractional-frame interpolation belongs here is an unmade policy decision.
+- **No `@flighthq/timeline-formats` neighbor.** Sources come from `createTimelineSource`,
+  `spritesheet`, or `swf`; there is no keyframe-document loader.
 
-Focused verification at implementation time: `npm run test --workspace=packages/timeline` passed 61 tests; `npm run check -- timeline` passed typecheck, lint/format/order, 100% export coverage, type-home, and portability gates.
+## Log
 
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-Executed the sweep-safe items from `assessment.md` `## Recommended` that fall strictly within `@flighthq/timeline`.
-
-**Done:**
-
-- **Simplified the `setMovieClipSource` signal re-wire branch** (`movieClip.ts`). The `if (runtime.movieClipSignals !== null) { … enableTimelineSignals(timeline); runtime.movieClipSignals = signals; }` branch was correctness-neutral dead code: `setMovieClipSource` reuses the clip's existing `clip.data.timeline`, and `enableTimelineSignals` is `??=`-idempotent, so it re-fetched the same already-armed group and reassigned it to itself. Dropped the branch and replaced it with a durable semantic comment pinning _why_ no re-wire is needed (the runtime slot and `timeline.signals` are the same group). No behavior change — all 95 tests still pass. `EntityRuntimeKey` and `enableTimelineSignals` imports remain in use elsewhere in the file.
-- **Documented the multi-frame-skip frame-accounting behavior in source** (`timeline.ts`). Added durable semantic comments on `advanceFrame` (the `floor(timeElapsed / frameTime)` landing-frame jump) and `fireConstructFrame` (constructs/fires the landing frame only; skipped frames' enter/exit signals and scripts do not run; `previousFrame` may be many frames back). States the landing-frame-only contract already covered by `timeline.test.ts`. Documentation only, no behavior change. Noted explicitly that a `maxFrameSkip` clamp and fractional-frame hook are out of scope (policy decision → Open directions).
-
-**Parked:**
-
-- **Fix the over-claiming `TimelineSignals.ts` header comment.** cross-boundary: the file is `packages/types/src/TimelineSignals.ts`, owned by `@flighthq/types`, outside the `@flighthq/timeline` edit boundary for this sweep. The reword ("the three per-frame signals carry a `TimelineFrameEvent`; `onComplete`/`onLoop` are bare") is correct and ready, but must be applied by a session permitted to edit `packages/types/`.
-
-**Tests:** `npm run test --workspace=packages/timeline` → 2 files, 95 tests, all pass.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/timeline
-
-**Session date:** 2026-06-24 **Previous score:** 48/100 **Estimated new score:** 72/100
-
-## Implemented APIs
-
-### New types in @flighthq/types (one concept per file)
-
-- `packages/types/src/FrameScript.ts` — `type FrameScript = (target: DisplayObject, frame: number) => void`
-- `packages/types/src/PlayMode.ts` — `type PlayMode = 'loop' | 'once'`
-- `packages/types/src/TimelineFrameEvent.ts` — `interface TimelineFrameEvent { frame: number; previousFrame: number }`
-- `packages/types/src/TimelineSignals.ts` — `interface TimelineSignals` with `onComplete`, `onEnterFrame`, `onExitFrame`, `onFrameConstructed`, `onLoop`
-- Updated `packages/types/src/Timeline.ts` — added `frameScripts: Map<number, FrameScript> | null`, `playMode: PlayMode`, `signals: TimelineSignals | null`
-- Updated `packages/types/src/MovieClipSignals.ts` — now a type alias for `TimelineSignals` (removes duplication, ensures MovieClip and bare Timeline share the same signal shape)
-
-### New functions in @flighthq/timeline
-
-**timeline.ts:**
-
-- `addTimelineFrameScript(timeline, frame, script)` — attaches a FrameScript to a 1-based frame; frame can be a label string
-- `enableTimelineSignals(timeline)` — allocates a `TimelineSignals` group and arms emission; idempotent
-- `getTimelineCurrentLabel(timeline)` — returns the label at/under the playhead (last label with `frame <= currentFrame`), or null
-- `getTimelineFrameScript(timeline, frame)` — returns the script at a frame, or null
-- `removeTimelineFrameScript(timeline, frame)` — removes a script; clears `frameScripts` to null when the last one is removed
-
-**movieClip.ts:**
-
-- `addMovieClipFrameScript(clip, frame, script)` — delegates to `addTimelineFrameScript`
-- `enableMovieClipSignals(clip)` — allocates signals on the runtime and arms timeline emission; creates a timeline if none exists
-- `getMovieClipCurrentLabel(clip)` — delegates to `getTimelineCurrentLabel`
-- `getMovieClipFrameScript(clip, frame)` — delegates to `getTimelineFrameScript`
-- `removeMovieClipFrameScript(clip, frame)` — delegates to `removeTimelineFrameScript`
-
-### Changed behavior
-
-- `getMovieClipSignals` previously lazily allocated signals; it now returns `null` until `enableMovieClipSignals` is called. This makes the opt-in pattern explicit and matches the codebase convention.
-- `createMovieClipSignals` removed — no longer needed; signals are created inside `enableMovieClipSignals`/`enableTimelineSignals`.
-- `updateTimeline` now emits `onExitFrame` (before frame change), `onEnterFrame` (after), and `onFrameConstructed` (after constructFrame) when `timeline.signals !== null`.
-- `updateTimeline` now respects `playMode`: in `'once'` mode, stops at `totalFrames`, emits `onComplete`; in `'loop'` mode emits `onLoop` on wrap.
-- Frame scripts fire after `constructFrame` on frame entry, before `onFrameConstructed` signal.
-- `createTimeline` defaults: `playMode: 'loop'`, `frameScripts: null`, `signals: null`.
-
-### Tests
-
-All 95 tests pass (2 test files). New test coverage for:
-
-- `addTimelineFrameScript` (3 cases), `enableTimelineSignals` (7 cases), `getTimelineCurrentLabel` (4 cases), `getTimelineFrameScript` (3 cases), `removeTimelineFrameScript` (3 cases)
-- `addMovieClipFrameScript`, `enableMovieClipSignals`, `getMovieClipCurrentLabel`, `getMovieClipFrameScript`, `removeMovieClipFrameScript` (full describe blocks each)
-- Signal emission order test (exit → enter → constructed)
-- `onLoop` and `onComplete` emission tests
-- `playMode: 'once'` stop-at-end tests
-
-## Deferred items and why
-
-### Silver
-
-- **Play ranges** (`playTimelineRange(timeline, from, to, loop?)`): straightforward to add but no immediate consumer; deferred to Silver.
-- **Playback direction and speed** (`direction: 1 | -1`, `playbackRate: number`, `reverseTimeline`, `setTimelinePlaybackRate`): requires updating `advanceFrame` and `Timeline` type; deferred to Silver.
-- **Nested-clip propagation** — `advanceMovieClipTree(clip, deltaTime)`: cross-package design decision. The depth review flags this as ambiguous (missing-by-design vs by-omission). Resolution requires deciding whether `@flighthq/timeline` imports from `@flighthq/node` to walk the hierarchy, or whether the render/update pass owns it. **Surfaced to user rather than decided autonomously.** Touches `@flighthq/render` and `@flighthq/node`.
-- **Scenes** (`TimelineScene`, `gotoAndPlayTimelineScene`, `getTimelineCurrentScene`, `getTimelineScenes`): AS3 multi-scene parity; deferred to Silver.
-- **`@flighthq/timeline-formats` neighbor package**: keyframe-document JSON loader and SWF/Animate importer seam. Confirm the `-formats` split before building; mirrors `@flighthq/spritesheet-formats`. Deferred to Silver.
-- **Frame-script bulk authoring** (`getTimelineFrameScripts`, `clearTimelineFrameScripts`, label-keyed attach): small addition; deferred with Silver-tier items.
-- **`seekTimelineToTime(timeline, ms)`** / `getTimelineDuration(timeline)`: editor scrubbing; deferred to Silver.
-
-### Gold
-
-- **Complete signal lifecycle** (`onPlay`, `onStop`, `onSeek`, `onScriptError`): deferred to Gold per roadmap.
-- **`onFrameLabel`** fired when the playhead enters a labeled frame: deferred to Gold.
-- **Deterministic frame accounting audit**: `Math.floor(timeElapsed/frameTime)` multi-frame skips — decide whether skipped frames fire their scripts/signals; add `maxFrameSkip` clamp. Deferred to Gold.
-- **Ping-pong play mode**, negative `playbackRate`, sub-1.0 rates: deferred to Gold.
-- **`flighthq-timeline` Rust crate**: should not start until TS surface is Silver-stable. Deferred to Gold.
-- **Functional test scene** (`tests/functional/timeline-playback`): requires `functional-test` skill; deferred to Gold.
-
-## Concerns and surprises
-
-- **`onComplete` in `advanceFrame` (frameRate-null path)**: when `playMode === 'once'` and the frame-rate-null path would advance past `totalFrames`, we stop and emit `onComplete` before `fireConstructFrame` is called for the final frame. This means `totalFrames` is never reached as a new frame in that path — the last constructed frame is `totalFrames - 1`, then the stop happens. This matches `advanceFrame`'s contract (return the new frame, and caller calls `fireConstructFrame`), but is subtle: in the `frameRate !== null` path we set the frame to `totalFrames` before returning, so the `frameRate: null` path should match. Verified by tests.
-
-  Actually: in `frameRate: null` path when `next > totalFrames`, if `playMode === 'once'`: we stop, emit `onComplete`, and return `totalFrames`. This is correct — `totalFrames` is returned, then `fireConstructFrame` is called with `totalFrames`. The behavior is consistent.
-
-- **Signal payload type change**: `MovieClipSignals` previously used `Signal<() => void>` for all lifecycle signals; it now uses typed payloads (`Signal<(event: TimelineFrameEvent) => void>`). This is a public API reshape but acceptable pre-release. Any existing listener that was `() => void` now needs `(event: TimelineFrameEvent) => void`. There are no known consumers outside this package.
-
-- **`enableMovieClipSignals` creates a bare `Timeline` when none exists**: if the user calls `enableMovieClipSignals` before `setMovieClipSource`, a timeline is created with `source: null`. The signals are then armed on that timeline. When `setMovieClipSource` is later called, we detect `runtime.movieClipSignals !== null` and re-wire by calling `enableTimelineSignals` on the new timeline (which returns a fresh signals group) and updating `runtime.movieClipSignals`. The old timeline's signal group is orphaned but harmless.
-
-  This is slightly awkward. A cleaner model might be to arm signals lazily at update time rather than up front. But the current behavior is correct and predictable for typical use patterns.
-
-## Suggestions for future sessions
-
-1. **Silver play ranges** are the next highest-value item: `playTimelineRange(timeline, from, to, loop?)` enables sub-animation segments (walk cycle within a full character animation timeline) and is the natural step after loop/once.
-2. **Nested-clip propagation decision**: get user input on whether `@flighthq/timeline` should import `@flighthq/node` to walk the hierarchy. If yes, `advanceMovieClipTree(clip, deltaTime)` is a Silver-tier addition. If no, document the contract in the render/update pass.
-3. **`@flighthq/timeline-formats` neighbor package**: once the engine is Silver-stable, the formats seam unlocks keyframe-document authoring and future SWF/Animate import.
-4. **Playback rate / direction** (Silver): `setTimelinePlaybackRate`, `setTimelineDirection`, `reverseTimeline` — high user value, requires updating `advanceFrame` with a `direction * playbackRate` multiplier.
-5. **Gold functional test**: once the surface is stable, a `tests/functional/timeline-playback` scene that exercises play/stop/loop/reverse/frame-script-stop visually via Canvas/DOM/WebGL would be a strong regression gate.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped the parked item "fix the
+  over-claiming `TimelineSignals.ts` header comment" — the comment already reads correctly
+  (`types/src/TimelineSignals.ts:4-5`), so the cross-boundary edit it was waiting on is moot. Every
+  `movieClip.ts` claim moved out to the `movieclip` cell, which now owns that source.
+- **2026-07-31** — `updateTimeline` returns `true` only when a call realizes a new frame;
+  `getTimelineFrameScriptFrames` and `clearTimelineFrameScripts` added; `getTimelineLabels` promoted
+  to the public lane.
+- **2026-06-25** — Correctness-neutral signal re-wire branch dropped from `setMovieClipSource`;
+  landing-frame-only frame accounting pinned with durable comments in source.
+- **2026-06-24** — Frame scripts, label lookup, `playMode` loop/once with `onComplete`/`onLoop`, and
+  the lazily-armed `TimelineSignals` group landed; `MovieClipSignals` became an alias of it.

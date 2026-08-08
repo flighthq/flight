@@ -1,210 +1,61 @@
 ---
 package: '@flighthq/textshaper'
-updated: 2026-07-30
-by: ingest:builder-67dc46d64
+updated: 2026-08-08
+by: principal
 ---
 
-## 2026-07-30 -- a double release aliased two acquires onto one buffer (builder)
-
-All six cell items were already landed, so they are retired. The cell held a live defect in the run pool, and the code was already warning about it in prose: `acquireShapedRun` says "Treat as paired brackets: every acquire must have exactly one release". Under the diagnostics rule a comment that warns the caller about misuse is a missing guard, and here the missing guard had teeth.
-
-`releaseShapedRun` pushed unconditionally. Releasing the same run twice left it in the pool twice, so the next two `acquireShapedRun` calls handed **the same object to two callers**, who then shaped into one buffer. Probed and confirmed before fixing: two acquires after a double release were identical. That failure surfaces as wrong glyphs somewhere unrelated, with nothing pointing back at the release that caused it.
-
-Fixed in core rather than only in a guard, because the corruption is the package's problem regardless of who misused it: a `WeakSet` mirrors pool membership, a release of an already-pooled run is ignored, and acquire clears the mark on the way out. O(1) rather than scanning the pool, and weak so a run dropped past the capacity limit stays collectable. The pool invariant -- an entry appears at most once -- now holds whatever the caller does.
-
-Both halves are covered because they fail differently: dropping the release guard aliases two acquires, while dropping the acquire-side clear makes a legitimate re-release look like a double release and silently stops recycling the run. A mutation for each, confirmed applied, failing disjoint tests.
-
-103 -> 106 tests. Left for later and recorded in [assessment](./assessment.md): the *diagnostic* half. Ignoring a double release is right for correctness but silent, so an unbalanced bracket still goes unnoticed; that warning belongs in an `enableTextShaperGuards` module the package does not have yet, which would also catch use-after-release -- something core cannot see at all.
-
-One thing checked and found **not** to be a defect: `textShaperSignals` calls `_signals.onBackendChanged.emit(backend)` directly rather than through `emitSignal`. `emitSignal` is a one-line forward to exactly that field, so the behaviour is identical; it is a style inconsistency with the rest of the SDK, not a bug, and was left alone.
-
-# textshaper — Status Log
-
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
-
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
-
-Ran the Recommended sweep against the live `src/`. **All three Recommended items target source that no longer exists in `packages/textshaper/src/`** — the package was pared down since `assessment.md`/`review.md` were written (both dated 2026-06-24, against the larger `builder-67dc46d64` state). The current `src/` is just `textShaper.ts` (backend register + `shapeText`), `textShaperRun.ts` (`shapeTextRun`/`shapeTextRunInto` + the introspection wrappers `getCodePointForGlyph`/`getFontMetrics`/`getGlyphExtents`/`getGlyphIndexForCodePoint`/`getGlyphName` + metric helpers), and the `_textShaperHooks.ts` helper. No `textShaperCluster.ts`, no `textShaperSignals.ts`, no `textShaperItemize.ts`/`Cache`/`Pool` in source — those survive only as **stale `dist/` artifacts** from an earlier build.
-
-Per-item disposition:
-
-- **Item 1 — dead branch in `getIndexRangeForCluster` (`textShaperCluster.ts:61`).** Parked. The file and function do not exist in `src/`; a `grep` over `src/` for `getIndexRangeForCluster` returns nothing. Nothing to fix.
-- **Item 2 — add the four font-introspection wrappers (`getFontFeatures`/`getFontScripts`/`getFontLanguages`/`getFontVariationAxes`).** Parked. The current `TextShaperBackend` in `@flighthq/types` (`packages/types/src/TextShaper.ts`) no longer declares any of these four methods — its optional method set is `getCodePointForGlyph`/`getFontMetrics`/`getGlyphExtents`/`getGlyphIndexForCodePoint`/`getGlyphName`/`shapeRun`, every one of which already has a colocated wrapper. Adding the four wrappers would require (re)adding the methods to `@flighthq/types` (cross-boundary) or inventing a backend API shape (design decision). Both are out of sweep scope.
-- **Item 3 — replace hand-rolled `enableTextShaperSignals` signal with a real `@flighthq/signals` construction.** Parked. No `textShaperSignals.ts`, no `enableTextShaperSignals`/`onBackendChanged` in `src/`. The package currently exposes no signal group at all. Nothing to fix.
-
-No source edits made. Own-tests verified green: `npm run test --workspace=packages/textshaper` → 3 files, 51 tests passing. Did not run global/fix/order/tsc/cargo commands per task constraints.
-
-Suggested follow-up for a reviewer/charter pass: regenerate `review.md`/`assessment.md` against the current trimmed `src/` (and remove the stale `dist/` artifacts via the normal clean), since the present Recommended list is entirely obsolete relative to the shipped source.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/textshaper
-
-**Session date:** 2026-06-24 **Starting score:** 18/100 (correct seam, measure-only stub) **Estimated new score:** 72/100
-
----
-
-## What was implemented
-
-### New type files in @flighthq/types (one concept per file)
-
-| File | Types / constants |
-| --- | --- |
-| `ShapedGlyph.ts` | `ShapedGlyph` interface (glyphId, cluster, xAdvance, yAdvance, xOffset, yOffset) |
-| `ShapedRun.ts` | `ShapedRun` interface (glyphs, font, direction, script, advanceWidth, glyphCount) |
-| `TextDirectionKind.ts` | `TextDirectionKind` union + 3 named string constants (LeftToRight, RightToLeft, TopToBottom) |
-| `TextShaperOptions.ts` | `TextShaperOptions` interface (direction, script, language, features, variations) |
-| `TextFeature.ts` | `TextFeature` interface + 12 named tag constants (kern, liga, smcp, ss01, etc.) |
-| `FontVariation.ts` | `FontVariation` interface + 5 axis constants (wght, wdth, slnt, opsz, ital) |
-| `FontVariationAxis.ts` | `FontVariationAxis` interface (tag, name, min, max, defaultValue) |
-| `FontMetrics.ts` | `FontMetrics` interface (ascent, descent, lineGap, xHeight, capHeight, unitsPerEm, underlinePosition, underlineThickness) |
-| `GlyphExtents.ts` | `GlyphExtents` interface (xBearing, yBearing, width, height) |
-| `TextItem.ts` | `TextItem` interface (start, end, script, direction) — itemization output |
-| `TextShaperSignals.ts` | `TextShaperSignals` interface (onBackendChanged signal) |
-
-All files exported from `packages/types/src/index.ts`.
-
-### Extended `TextShaperBackend` in @flighthq/types
-
-Added optional methods to `TextShaperBackend` (existing `measureText` still required, all new methods optional so measure-only backends remain valid):
-
-- `shapeRun?(text, format, options?) => ShapedRun | null` — full-glyph shaping
-- `getFontMetrics?(format) => FontMetrics | null`
-- `getGlyphExtents?(glyphId, format) => GlyphExtents | null`
-
-### New source modules in @flighthq/textshaper
-
-**`textShaperRun.ts`** — the core shaped-run API:
-
-- `createShapedRun(): ShapedRun` — allocate empty run
-- `clearShapedRun(out): ShapedRun` — reset in-place, retain glyphs array reference
-- `shapeTextRun(text, format, options?) => ShapedRun | null` — delegates to backend.shapeRun
-- `shapeTextRunInto(text, format, out, options?) => boolean` — out-param variant, alias-safe
-- `getFontMetrics(format) => FontMetrics | null`
-- `getFontMetricsInto(format, out) => boolean`
-- `getFontUnitScale(format) => number` — size/unitsPerEm, sentinel -1
-- `getGlyphExtents(glyphId, format) => GlyphExtents | null`
-- `getGlyphExtentsInto(glyphId, format, out) => boolean`
-
-**`textShaperItemize.ts`** — itemization and multi-run shaping:
-
-- `itemizeText(text, format, options?) => readonly TextItem[]` — built-in Unicode fallback covering Latin/RTL/major scripts (Latn, Arab, Hebr, Cyrl, Grek, Deva, Thai, Hira, Kana, Hans, Hang)
-- `shapeTextRuns(text, format, options?) => readonly ShapedRun[]` — itemize then shape each sub-run
-
-**`textShaperCluster.ts`** — editing-grade cluster navigation:
-
-- `getCaretPositionsForRun(run) => number[]` — grapheme-aware caret x-positions (glyphCount + 1 values)
-- `getClusterForIndex(run, stringIndex) => number` — find cluster covering a string offset
-- `getIndexRangeForCluster(run, cluster, stringLength?) => readonly [number, number] | null` — cluster to string range
-
-**`textShaperPool.ts`** — ShapedRun pooling:
-
-- `acquireShapedRun() => ShapedRun` — get from pool or allocate
-- `releaseShapedRun(run) => void` — return to pool (capped at 64)
-
-**`textShaperCache.ts`** — explicit caller-owned shaping cache:
-
-- `createTextShaperCache() => TextShaperCache` — allocate new cache
-- `clearTextShaperCache(cache) => void` — remove all entries, cache stays usable
-- `disposeTextShaperCache(cache) => void` — teardown, cache unusable after
-- `shapeTextRunCached(cache, text, format, options?) => ShapedRun | null` — cache-hit returns same object; null results not cached
-
-**`textShaperSignals.ts`** — opt-in backend-change signals:
-
-- `enableTextShaperSignals() => TextShaperSignals` — activate signal group, idempotent
-- `disposeTextShaperSignals() => void` — clear all listeners, deactivate
-- `getTextShaperSignals() => TextShaperSignals | null` — current entity or null
-- `setTextShaperBackendWithSignals(backend) => void` — patched setter that emits onBackendChanged
-
-### Tests
-
-7 test files, 80 tests total, all passing. New test files:
-
-- `textShaperRun.test.ts` (18 tests)
-- `textShaperItemize.test.ts` (12 tests)
-- `textShaperCluster.test.ts` (12 tests)
-- `textShaperPool.test.ts` (4 tests)
-- `textShaperCache.test.ts` (12 tests)
-- `textShaperSignals.test.ts` (9 tests)
-
----
-
-## Deferred items and why
-
-### @flighthq/textshaper-harfbuzz (Bronze)
-
-The Bronze roadmap specifies landing the HarfBuzz-wasm backend as a sibling package. This is **deferred**: it requires an asset pipeline decision (how to bundle/load the ~1MB wasm), font access strategy (ttf-parser equivalent for font-unit metrics), and a build tooling decision (wasm-pack/esbuild/rollup integration). This is medium-high effort and a separate design conversation. Note that all the seam wiring is in place: `TextShaperBackend.shapeRun?` is defined, `shapeTextRun` delegates to it, and backends inject the wasm module explicitly (same pattern as host-electron). A session focused on `@flighthq/textshaper-harfbuzz` can proceed without further seam work.
-
-### Full Unicode Bidirectional Algorithm (Silver/Gold)
-
-`itemizeText` implements a simplified bidi-class lookup covering the main RTL scripts (Arabic, Hebrew, Syriac, Thaana, N'Ko, Samaritan, Mandaic) but does not implement the full Unicode Bidirectional Algorithm (UBA). Full UBA needs a unicode-bidi equivalent or an ICU backend. The current implementation is correct for simple LTR/RTL alternation but will fail on mixed-direction paragraphs with embedded directional overrides, neutral character resolution at run boundaries, and Indic/Thai/CJK complex joining. Cross-package decision: this belongs in a future `@flighthq/textshaper-icu` or as part of the HarfBuzz backend.
-
-### Complex script correctness (Silver/Gold)
-
-Correct Arabic joining, Indic conjuncts, Thai cluster splitting, and Hebrew diacritic mark placement all require `shapeRun` with a GSUB/GPOS-capable backend (HarfBuzz). The seam supports it; the backend is deferred.
-
-### getFontFeatures / getFontScripts / getFontLanguages / getFontVariationAxes (Gold)
-
-Font introspection APIs that enumerate available features, scripts, languages, and variation axes. These require font-level metadata access (similar to what ttf-parser/HarfBuzz provide). Deferred until the full-glyph backend exists. The type `FontVariationAxis` is already defined in `@flighthq/types`.
-
-### Named glyph access: getGlyphIndexForChar / getGlyphName / getCharForGlyph (Gold)
-
-Require a font-level lookup table. Deferred with the full-glyph backend.
-
-### Incremental reshape: reshapeTextRun(prevRun, edit, out) (Gold)
-
-Incremental reshape for typing-into-a-paragraph scenarios. Requires cluster-level diffing and partial re-shaping. Deferred — high complexity, needs the HarfBuzz backend first.
-
-### Atlas batch: getGlyphExtentsBatch(glyphIds, format, out) (Gold)
-
-Batched glyph extents for atlas packing. Straightforward to add once `getGlyphExtents` is exercised by a real backend. Deferred until the backend exists.
-
-### FontFallbackBackend seam (Gold)
-
-`FontFallbackBackend` for resolving `.notdef` glyphs against a system font chain. This is a second seam (`get*`/`set*`/`createWeb*`) and a cross-package concern (device/platform may provide system-font enumeration). Surface as a design decision: where the fallback chain is configured, and whether the web backend can resolve to system fonts at all.
-
-### textlayout measure-provider migration (cross-package)
-
-The depth review notes that `@flighthq/textlayout` should evolve from `TextMeasureFunction`/`set_text_layout_measure_provider` to consuming `ShapedRun` (width = Σ xAdvance) once the full-glyph backend exists. This is a coordinated API migration across both packages and should be planned as a dedicated session. **Do not perform this migration autonomously.**
-
-### richTextQuery selection → real clusters (cross-package)
-
-`richTextQuery` currently sums per-character advances for selection/hit-testing. Once `shapeTextRun` is available from a real backend, this should use cluster-aware caret positions from `getCaretPositionsForRun` and `getIndexRangeForCluster`. Coordinate with the textinput and richTextQuery owners.
-
-### Rust crate parity (deferred to Rust session)
-
-The Rust port (`flighthq-textshaper` crate) needs `shape_text_run`, `ShapedRun`/`ShapedGlyph`, `get_font_metrics`, feature/variation options, and a `flighthq-textshaper-harfbuzz` sibling (rustybuzz). This is a Rust session task; the TS seam is now complete and the Rust port can follow it 1:1.
-
----
-
-## Concerns and surprises
-
-### setTextShaperBackendWithSignals naming
-
-The signals module exports `setTextShaperBackendWithSignals` as the patched setter. This is non-ideal: callers who want backend-change signals must remember to use the signals-aware variant, and the name is verbose. A cleaner approach would have `setTextShaperBackend` in the base module check a global signals hook (like a `_onBackendChange` function pointer that the signals module installs). This would let all callers use `setTextShaperBackend` regardless of whether signals are enabled.
-
-The current design was chosen because `textShaper.ts` cannot import from `textShaperSignals.ts` without a circular dependency (`textShaperSignals.ts` imports `setTextShaperBackend` from `textShaper.ts`). The cleanest fix would be a separate `_textShaperHooks.ts` internal module (a function pointer table), but that adds indirection for a rarely-used feature. **Surface for the next session: refactor to a hook slot so the external API is just `setTextShaperBackend`.**
-
-### itemizeText is format-independent
-
-The current `itemizeText` signature accepts a `TextFormat` argument for API symmetry with `shapeTextRun`, but the built-in implementation does not use it (it only uses Unicode code-point properties). A full implementation backed by a font shaper would use the font to detect missing glyph ranges and trigger font fallback. The parameter is there so the signature is forward-compatible; the implementation is honest that format is currently unused.
-
-### TextShaperCache.\_entries is public (internal by convention)
-
-`TextShaperCache._entries` uses the underscore convention as "internal, don't touch" but is typed as public in the interface so tests can inspect it. This is acceptable for a cache type that callers treat as opaque, but a future session could wrap it with an opaque branded type if the convention becomes burdensome.
-
----
-
-## Suggestions for future sessions
-
-1. **Land @flighthq/textshaper-harfbuzz.** This is the single highest-value remaining step: it unblocks GPU/software text rendering, correct ligature/kerning, and Arabic/Indic script correctness. Focus on the wasm loading strategy (inject the module, do not bundle it) and font file access.
-
-2. **Refactor setTextShaperBackend to use a hook slot** so the signals variant is not a separate function. This is a small internal refactor.
-
-3. **Add `getFontVariationAxes`, `getFontFeatures`, `getFontScripts`** to `TextShaperBackend` once the HarfBuzz backend exists — they require real font metadata.
-
-4. **Coordinate textlayout migration.** When the HarfBuzz backend exists, work with textlayout to migrate from per-character advance summing to ShapedRun-based layout. This is the key integration step that turns the seam into a real production pipeline.
-
-5. **Add `getGlyphExtentsBatch`.** Once `getGlyphExtents` is exercised by a real backend, a batch variant for atlas packing is a straightforward addition.
-
-6. **Add functional test.** A `tests/functional/text-shaping` scene that renders shaped text across Canvas/WebGL backends would prove that glyph ids and positions are consumed correctly end-to-end.
+# textshaper — Status
+
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
+
+## Open
+
+Every item was re-checked against `packages/textshaper/src/` (and `packages/types/src/`) on
+2026-08-08. A file:line here is a claim about this tree, not about a session.
+
+- **Nothing in the repo implements `shapeRun`, so the whole glyph tier is dead.** The optional
+  backend method is declared at `packages/types/src/TextShaper.ts:47`, and the only backend that
+  exists — `@flighthq/textshaper-canvas` — does not provide it. `shapeTextRun` (`textShaperRun.ts:107`)
+  therefore always returns `null`, and `shapeTextRuns`, `shapeTextRunCached`, the cluster helpers, and
+  the pool have **zero callers** anywhere in `packages/`, `examples/`, or `functional/`.
+- **The public lane cannot install a backend.** `getTextShaperBackend` / `setTextShaperBackend`
+  (`textShaper.ts:12`, `:27`) are in `contract.ts:2` but absent from `index.ts`, and
+  `packages/sdk/src/index.ts:122` re-exports the `.` lane — so `@flighthq/sdk` has no way to do the
+  setup step `packages/textshaper-canvas/src/canvasTextShaper.ts:14` documents. Only `measureText`
+  reaches the app boundary.
+- **`getCaretPositionsForRun` contradicts its own contract.** The comment (`textShaperCluster.ts:8-10`)
+  says it respects per-glyph `xOffset` for mark attachment and kerning corrections; the loop
+  (`:17-20`) sums `xAdvance` alone and never reads `xOffset`.
+- **Font introspection is absent on both sides of the seam.** No `getFontFeatures` / `getFontScripts` /
+  `getFontLanguages` / `getFontVariationAxes` wrapper here, and `TextShaperBackend`
+  (`packages/types/src/TextShaper.ts:29-48`) declares no matching method. The `FontVariationAxis` type
+  exists with no producer.
+- **`itemizeText` carries its own simplified bidi-class table** (`textShaperItemize.ts:103-132`) while
+  `@flighthq/textbidi` owns the real one; `package.json` does not depend on it. Whether itemization
+  should consume that cell or keep a self-contained fallback is undecided.
+- **No incremental reshape and no font-fallback seam.** There is no `reshapeTextRun` for
+  typing-into-a-paragraph, and no `FontFallbackBackend` for resolving `.notdef` against a system chain
+  — the latter needs a ruling on where the chain is configured before it can be built.
+- **`TextShaperCache._entries` is a public field named as internal**
+  (`packages/types/src/TextShaperCache.ts:4`); callers are meant to treat the cache as opaque.
+- **`index.ts` is not alphabetized**: `disposeTextShaperSignals` precedes `disableTextShaperGuards`
+  (`index.ts:7-9`).
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Three carried claims checked out
+  **false**: "no `enableTextShaperGuards` module exists" (it does, `enableTextShaperGuards.ts:21`,
+  with the pool seam at `textShaperPool.ts:39`); "`setTextShaperBackendWithSignals` is a separate
+  verbose setter needing a hook-slot refactor" (the refactor landed — `_textShaperHooks.ts` holds the
+  slot and `textShaperSignals.ts:18` installs it, the `WithSignals` name is gone); and
+  "`getGlyphExtentsBatch` is deferred until a real backend exists" (it is at `textShaperRun.ts:65`).
+  The 2026-06-25 sweep's premise — that `textShaperCluster`/`Itemize`/`Cache`/`Pool`/`Signals` exist
+  only as stale `dist/` artifacts — is also false: all five are live source with colocated tests.
+- **2026-07-30** — `releaseShapedRun` ignores a re-release via a `WeakSet` membership mirror, so a
+  double release can no longer alias two acquires onto one buffer.
+- **2026-06-25** — Recommended sweep found all three items targeting source that had moved; no edits.
+- **2026-06-24** — Shaped-run tier built out: `ShapedRun`/`ShapedGlyph` types, `textShaperRun`,
+  `textShaperItemize`, `textShaperCluster`, `textShaperPool`, `textShaperCache`, `textShaperSignals`.

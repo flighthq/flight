@@ -477,7 +477,7 @@ describe('isAuthorityBearingDoc', () => {
     }
   });
 
-  it('does NOT count status.md — the append-only continuity layer that disclaims its own authority', () => {
+  it('does NOT count status.md — working state that disclaims its own authority', () => {
     expect(isAuthorityBearingDoc('agents/packages/skeleton2d/status.md')).toBe(false);
   });
 

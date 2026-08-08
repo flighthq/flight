@@ -1,47 +1,60 @@
+---
+package: '@flighthq/adjustments'
+updated: 2026-08-08
+by: principal
+---
+
 # adjustments — Status
 
-Continuity log for `@flighthq/adjustments`. See [charter](charter.md) and the SDK-wide [effect-adjustment-architecture](../../effect-adjustment-architecture.md).
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## Built (2026-07-11, fork H migration)
+## Open
 
-- Package created (modeled on `effects`); `Adjustment` + `AdjustmentKind` header types in `@flighthq/types`.
-- **Color-matrix fuse primitives** ported from the dissolved `filters` (`colorMatrixMath.ts`): `concatColorMatrix`/`multiplyColorMatrix` (out-param, alias-safe) + `applyColorMatrixToColor` + the builder set (brightness/contrast/saturation/desaturate/tint/channel-mixer/color-balance/hue-rotate/invert/grayscale/sepia/levels/opacity/white-balance/technicolor/polaroid/vintage + identity). A stack of matrix-tier adjustments fuses to one 4×5 matrix.
-- **Color transform** realized as a `HasColorTransform` node trait folded into the sprite/quad batch (Phase 2): promote-not-split `NONE → UNIFORM → PER_INSTANCE` state machine, per-instance `a_ctMult`/`a_ctOff` (loc 7/8) or whole-batch `u_ctMult`/`u_ctOff` uniform chosen by data cardinality. `ColorTransformMaterial`/`UniformColorTransformMaterial` removed from types + materials + gl + wgpu.
-- **Phase 2b — the fold is opt-in and tree-shakable (generic color-adjustment capability).** Folding the CT stage into the *base* batch made it always-present, a bundle-size regression (webgl/webgpu 2D +0.6 KB, several examples >5% over baseline). Fixed by moving the whole fold behind a per-backend opt-in: **`registerGlColorAdjustmentMaterialFeature(state)`** / **`registerWgpuColorAdjustmentMaterialFeature(state)`** (in `scene2d-gl/src/glColorAdjustmentMaterialFeature.ts` / `scene2d-wgpu/src/wgpuColorAdjustmentMaterialFeature.ts`) install a `GlColorAdjustmentMaterialFeature` / `WgpuColorAdjustmentMaterialFeature` object on a nullable runtime slot (`runtime.{gl,wgpu}ColorAdjustmentFold`). The base batch (`glSpriteBatch`/`wgpuSpriteBatch`) reaches the fold **only** through that slot — no static import — so all CT shader source + the mode machine tree-shake out of an un-enabled bundle (verified: `ctData`/`a_ctMult`/`u_ctMult` absent from renderview/tweenexample webgl+webgpu dist). `recordGl/WgpuSpriteBatchColorTransform` is now a lean dispatcher; when the capability was not enabled it **skips the tint** (draws untinted — the sentinel), and a shakeable guard (`enableGl/WgpuColorAdjustmentGuards`, `@flighthq/log`) warns once. Named **generically** ("ColorAdjustment", not "ColorTransform") so Phase-3 brightness/hue/etc. add through the same fold+enable without renaming; ColorTransform is realized *through* the generic capability as its first consumer. Size restored: webgl back under baseline, webgpu within the 5% budget (was +8%). Consumers with tinting (e.g. a bitmap-text demo, or any node-CT scene) must call the enable; the plain-sprite size examples do not, and stay lean. `glCache`/`wgpuCache` propagate the fold+guard to the offscreen bake runtime (this also fixed a latent wgpu-cache crash where the CT arrays were never initialized on the cache runtime).
+Every item below was re-checked against `packages/adjustments/src/` on 2026-08-08. A file:line here
+is a claim about this tree, not about a session.
 
-## Built (2026-07-11, Phase 3 matrix tier — first slice)
+- **The realization seam is the one bedrock piece still missing.** The ratified architecture makes
+  realization *presence* the support matrix — a `(kind, backend)` registry, a sentinel for an
+  unregistered cell, and `explainAdjustmentRealization` returning plain data. None of those three
+  names exists anywhere in the tree. So which adjustment kinds a backend can actually fold is
+  discoverable only by reading each backend, and the tier's coverage cannot be queried or generated.
+- **Two continuous-pointwise ops are still authored as Effects.** `effects/src/whiteBalanceEffect.ts`
+  is exactly linear and its matrix builder already lives here (`colorMatrixMath.ts:356`
+  `createWhiteBalanceColorMatrix`), so it would fuse today; `effects/src/toneMapEffect.ts` is
+  continuous pointwise and LUT-bakeable. Re-sorting them finishes the migration's step 3.
+- **The matrix builders outrun the descriptor catalog.** `colorMatrixMath.ts` exports builders for
+  `colorBalance` (`:95`), `desaturate` (`:154`), `levels` (`:235`), `opacity` (`:261`), `polaroid`
+  (`:276`), `technicolor` (`:322`) and `vintage` (`:337`), and none of the seven has a
+  `create*Adjustment` descriptor or a kind in `packages/types/src/`. A caller can only reach them by
+  hand-building a `ColorMatrixAdjustment`.
+- **`ColorScaleBias` — this tier's own affine payload — lives in `@flighthq/materials`**
+  (`materials/src/colorScaleBias.ts`, 16 exports). This package depends only on `@flighthq/types`,
+  but `node` and `render` import `materials` to run the adjustment path
+  (`node/src/nodeColorAdjustment.ts:8`, `render/src/enableColorAdjustments.ts:2`). The architecture
+  has materials shrinking to shading kinds only, so the primitive is in the wrong cell.
+## Log
 
-- **Mechanism (general, backend-complete).** Descriptors carry a baked 4×5 `colorMatrix` (types: `ColorMatrixAdjustment` base + per-op interfaces). The effect pipeline in each of `effects-gl`/`effects-wgpu`/`effects-canvas` now fuses a **maximal run of consecutive matrix-tier adjustments** into ONE matrix (`fuseColorMatrices` over `multiplyColorMatrix`, order-preserving) and runs ONE generic pass — `applyColorMatrixPassTo{Gl,Wgpu,Canvas}` — instead of N per-op passes. An effect (or end of stack) breaks the run and flushes first, so a mixed `readonly (RenderEffect | Adjustment)[]` stack interleaves correctly. Detection is structural + open: `getAdjustmentColorMatrix(op)` returns the matrix for anything carrying a valid 20-length `colorMatrix` (third-party matrix adjustments fuse too), null otherwise; `isColorMatrixAdjustment` is the guard. GL divides the 0–255 offset column by 255 in-shader (WGSL likewise); Canvas applies the matrix directly in 0–255 ImageData space (same convention as `applyColorMatrixToColor`, the unit-test oracle).
-- **Ops moved (faithful, exact matrices from the old shaders):** `invert` (scale `1−2k` / offset `255k`), `grayscale` (BT.709 luma mix — matches the old `dot(rgb, 0.2126/0.7152/0.0722)` pass, **not** `createGrayscaleColorMatrix`'s BT.601), `sepia` (intensity mix of the standard sepia coeffs). Each is `create<Op>Adjustment({ intensity })` in `@flighthq/adjustments`. Their per-op passes were deleted from all three backends and their descriptors/types + registrations + `renderEffect{Defaults,Inputs}` entries removed from `effects`; the `effects` color-band registrar comments updated. Functional scenes `effect-{invert,grayscale,sepia}.{webgl,webgpu,canvas}` migrated to the adjustment + fused pipeline (drop the per-op runner registration entirely). `effects-{gl,wgpu,canvas}` gained an `@flighthq/adjustments` dep.
-- Gates green: `fix`, `packages:check` (128 pkg/17 ex), `check` (typecheck/lint/format/order/exports 100% 1027 files/api 4028 fns), full `test` (1051 files/10935 tests, 0 fail).
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## Built (2026-07-12, Phase 3 matrix tier — second slice)
-
-- **Four more ops moved** the same way (descriptor + baked 4×5 matrix in `@flighthq/adjustments`, per-op passes deleted ×3, `effects` descriptor/type/registration/`renderEffect{Defaults,Inputs}` entries removed, scenes migrated):
-  - `channelMixer` — `create<Op>Adjustment({ matrix })` keeps the prior 3×4 row-major mix+offset field; the 3×3 bakes via `createChannelMixerColorMatrix`, offsets scale ×255 into the 0–255 offset column. Scenes `effect-channel-mixer.{webgl,webgpu}`.
-  - `brightnessContrast` — baked affine of the old shader `(rgb + brightness − 0.5)·contrast + 0.5` = scale `contrast`, offset `255·(brightness·contrast + 0.5·(1−contrast))`. **Defaults fix:** the identity is `brightness 0, contrast 1` (the old `renderEffectDefaults` listed `contrast: 0`, disagreeing with the shader's `contrast ?? 1`); the adjustment defaults `contrast ?? 1`. Scenes `effect-brightness-contrast.{webgl,webgpu,canvas}`. Note: the old canvas backend used CSS `brightness()/contrast()` (multiplicative), which *diverged* from gl/wgpu additive; all three now share the additive fused matrix, so canvas parity improves (canvas fingerprint baseline will shift on next capture).
-  - `exposure` — `2^ev` diagonal multiply, moved as the **clamped SDR matrix** (correct for the default rgba8 pipeline, which clamps like the fused pass; rgba8 store already clamped the old unclamped gl pass). An unclamped/HDR exposure variant is a future add (noted in the descriptor). Scenes `effect-exposure.{webgl,webgpu}`.
-  - `colorBlindSimulation` — its **first** backend realization (was descriptor-only). Baked linear simulation 3×3 matrices for all 8 `ColorBlindType`s (HCIRN / Wickline "Colorblind Web Page Filter" set, cited in-source); selects by `type`, default `deuteranopia`. No prior scene.
-- Gates green: `fix`, `packages:check` (128 pkg/17 ex), `check` (exports 100% 1018 files, api 4010 fns), full `test` (1042 files/10922 tests, 0 fail), `size` exit 0 (no over-budget; examples unaffected — none import the effect pipeline).
-
-## Built (2026-07-12, generic off-entity color-adjustment slot)
-
-- **ColorTransform moved off the DisplayObject ENTITY onto a generic node RUNTIME slot.** `HasColorTransform` is removed from `DisplayObjectTraits` (types/DisplayObject.ts). A node now carries `NodeRuntime.colorAdjustments: readonly Adjustment[] | null` (source of truth) plus a fused cache `resolvedColorTransform` + `colorAdjustmentsChannelMixing` flag — the `nodeSignals`-style subsystem-slot pattern, init'd in `createNodeRuntime`. The `HasColorTransform` interface stays in types **only** as the plain-data carrier `ParticleObject` composes (not an entity trait); `node/hasColorTransform.ts` (`initColorTransformTrait`) deleted.
-- **`ColorTransformAdjustment` kind** (types + `createColorTransformAdjustment` in adjustments): a matrix-tier adjustment carrying the 8-field `ColorTransform` payload and baking it to a diagonal-affine 4×5 `colorMatrix`, so it fuses with the other matrix-tier ops. It is now just one member of the stack, no longer privileged.
-- **Accessors** (`@flighthq/scene2d`): `getDisplayObjectColorAdjustments` / `setDisplayObjectColorAdjustments` / `addDisplayObjectColorAdjustment` replace `setDisplayObjectColorTransform`.
-- **Fuse-on-set cache (not fuse-in-walk).** `resolveColorAdjustmentsColorTransform` (adjustments) fuses a stack to one affine `ColorTransform` (exact for a single ColorTransformAdjustment; matrix-fuse for multi). The **set-accessor** runs it once on change into `resolvedColorTransform`; the render walk (`renderColorTransform.ts`) only *reads* the cache onto `RenderProxy.colorTransform`. This deviates from the originally-scoped "walk re-fuses when dirty" **because that put the fuse math in the always-linked base render walk and regressed every 2D bundle +8–17% (size gate ✗)**. Fuse-on-set keeps the identical "fuse once, hot path reads cache" invariant with **zero** fuse-math weight on the base render path (size back to ±3.5%, no ✗). The gl/wgpu backend renderers are UNCHANGED — they still read `renderProxy.colorTransform`.
-- **4×5 channel-mixing escalation DEFERRED with a shakeable guard.** A stack whose fused matrix has off-diagonal terms (saturation/hue/sepia/channelMixer) or a non-matrix (LUT) op can't be an 8-float affine ColorTransform yet; the resolver flags `colorAdjustmentsChannelMixing`, only the affine part is applied, and the render walk routes it to `enableColorAdjustmentGuards` (render, `@flighthq/log`, diagnostics-inversion) which warns once. The affine path (ColorTransform/brightness/exposure/tint) does NOT regress.
-- **bitmaptext migrated**: `applyBitmapTextColor` now `setDisplayObjectColorAdjustments(quadBatch, [createColorTransformAdjustment(ct)])` — stays a whole-batch uniform (one adjustment → one resolved value → the fold's UNIFORM path), never per-glyph.
-- **Functional coverage** (the fold had none): `functional/scenes/color-adjustment.{webgl,webgpu,canvas}.ts` — gl/wgpu tint a WHITE sprite red via the runtime slot + enableGl/WgpuColorAdjustment (render-verifying the fold); canvas blits a red source for parity. Baseline captured; regression + parity 0.00 across all three (canvas·webgl exact). Existing `bitmap-color-transform` regression still 0.00.
-- Gates green: `fix`, `check` (packages 128/17, typecheck/lint/format/order/exports 1013 files, api 3999 fns), full `test` (1037 files/10928 tests; the 2 unhandled `getGamepads` errors are the known `input` env flake), `size` (no over-budget).
-
-## Next (blessed, not yet done)
-
-- **Phase 3 — remaining matrix-tier op.** `hueSaturation` is **not linear as shipped** — the GL/WGSL impl round-trips through HSL; a matrix version would be a different look, a redesign not a move (see `createHueRotateColorMatrix`/`createSaturationColorMatrix` for the linear replacement if the change is wanted). `colorGrade` is fully linear too (exposure/brightness/contrast/temperature/tint/luma-saturation) and a candidate, though it is grouped with the LUT-tier ops and was not in the move list.
-- **LUT tier.** A LUT baker (compose a stack of `rgb→rgb` functions into one cached 3D LUT) for the nonlinear pointwise ops; the matrix tier exists, the LUT tier does not yet.
-- **Realization seam.** The `(kind, backend)` registry + `explainAdjustmentRealization` (deferred from Phase 2 per fork B — the ColorTransform fold dispatches on the trait directly; the registry earns its keep once the multi-kind pointwise catalog lands in Phase 3).
-- **`create*Adjustment` descriptors.** None yet — the package is currently fuse-math + the trait fold. The descriptors arrive with Phase 3.
-
-## Transient state to clear
-
-- None outstanding. The Phase-1 duplication with `filters` (the barrel re-export block + `DROP_IN_PACKAGES` allowlist) was removed when `filters*` was deleted.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract; front matter added (the file had none).
+  Three of the four "Next (blessed, not yet done)" items were already done and are dropped: the LUT
+  tier exists (`colorLut.ts:25` `bakeColorLut`, `colorLutCache.ts:20` `bakeColorLutForRun`),
+  `hueSaturation` and `colorGrade` both moved as LUT-tier adjustments
+  (`hueSaturationAdjustment.ts:6`, `colorGradeAdjustment.ts:9`), and "`create*Adjustment` descriptors
+  — none yet" is false at fifteen of them. The 4×5 channel-mixing escalation is no longer deferred
+  either: `NodeRuntime.resolvedColorMatrix` feeds a real inline matrix path on both GPU backends
+  (`scene2d-gl/src/glColorAdjustmentMaterialFeature.ts:855`,
+  `scene2d-wgpu/src/wgpuColorAdjustmentMaterialFeature.ts:92`), with
+  `colorAdjustmentsUnsupported` now narrowed to what neither path can represent.
+- **2026-07-12** — ColorTransform moved off the DisplayObject entity onto the generic
+  `NodeRuntime.colorAdjustments` stack; fuse-on-set caches the result so no fuse math reaches the base
+  render walk (a walk-side re-fuse had cost every 2D bundle +8–17%).
+- **2026-07-12** — Phase 3 second slice: `channelMixer`, `brightnessContrast`, `exposure`,
+  `colorBlindSimulation` moved to baked matrices; per-op backend passes deleted; brightness/contrast
+  identity corrected to `contrast 1`.
+- **2026-07-11** — Phase 3 first slice: backends fuse a maximal run of consecutive matrix-tier
+  adjustments into one matrix and run one generic pass; `invert`, `grayscale`, `sepia` moved.
+- **2026-07-11** — Package created; `colorMatrixMath` ported from the dissolved `filters`; the
+  ColorTransform fold made opt-in and tree-shakable behind
+  `register{Gl,Wgpu}ColorAdjustmentMaterialFeature` after an always-on fold regressed bundle size.

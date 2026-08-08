@@ -1,181 +1,72 @@
 ---
 package: '@flighthq/texture'
-updated: 2026-07-22
-by: review3
+updated: 2026-08-08
+by: principal
 ---
 
-# texture — Status Log
+# texture — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-24 — WebGPU compressed upload parity
+## Open
 
-`render-wgpu` now consumes the same compressed `ImageResource` contract as GL through an opt-in
-uploader and optional RGBA decoder. Native BC/ETC2/ASTC formats are enabled during device creation;
-unavailable families fall back to decoded RGBA. The low-level atom covers 2D, cubemap, and 2D-array
-containers, while the generic image binder and decoder remain deliberately 2D. The real
-`compressed-texture` GL/WebGPU captures are pixel-identical.
+Re-checked against `packages/texture/src/` and `packages/types/src/` on 2026-08-08. Stage names are
+from [`agents/texture-source-model.md`](../../texture-source-model.md); M2–M5 have landed, so only the
+stages below are still open in this tree.
 
-## 2026-07-22 — compressed texture shape boundary
+- **M6 is unstarted.** No `Surface`, `HostSurface`, or `destroySurface` exists anywhere in `packages/`.
+  A canvas is therefore still indistinguishable from a read-only `<img>`: both arrive as an `Image`
+  through `createImageResourceFromCanvas` / `…FromImageElement`, as at
+  `packages/textureatlas/src/textureAtlasFrom.ts:17` and `:29`.
+- **M7 is unstarted.** `createVideoTexture` (`videoTexture.ts:32`) still puts a modifier in the subject
+  slot of a type that does not exist, and there is no `createTextureFromCompressedImage` — compressed
+  content is assembled into `createTexture({ source })` by the caller.
+- **M10 is unstarted.** Every content slot is nullable: `Texture2D.source` and the `'3d'` source
+  (`packages/types/src/Texture.ts:36`, `:47`) and each cube face (`:14-22`, whose own comment calls the
+  null a transitional sentinel).
+- **Four of the video exports are pass-throughs.** `cloneVideoTexture` (`:20`), `copyVideoTexture`
+  (`:25`), `getVideoTextureInverseUvMatrix` (`:49`), and `getVideoTextureUvMatrix` (`:55`) delegate
+  wholly to the Texture equivalents and are labelled "compatibility entry" in source. Video is a
+  cadence over a plain `Texture2D`, so these are a second name for one behavior.
+- **`VoxelGrid` has no constructor.** `invalidateVoxelGrid` (`voxelGrid.ts:4`) is the package's only
+  VoxelGrid export and `createVoxelGrid` exists nowhere in `packages/`, so a `'3d'` texture's source
+  can only be hand-assembled — the D5 gap, on the dimension that still has it.
+- **There is no `invalidateTexture` verb.** `version` is bumped inline by `setTextureSource`
+  (`texture.ts:306`), `setCubeTextureFace` (`cubeTexture.ts:60`), and `advanceVideoTexture`
+  (`videoTexture.ts:14`), against an invalidation doctrine that names `invalidate<Type>` as the verb.
+- **`equalsTexture` compares `version`** (`texture.ts:182`) while its own doc comment (`:164`) lists the
+  compared fields and omits it — two textures describing identical state but carrying different
+  revision counters compare unequal.
+- **`setCubeTextureFace` writes through `as unknown as`** (`cubeTexture.ts:58`) because
+  `TextureSourceCubeFaces` is a `readonly` 6-tuple that is mutable at runtime by construction.
+- **`Texture` carries no `format` or `mipPolicy`** (`packages/types/src/Texture.ts:26-32`); upload
+  format and mip policy are each backend's own decision.
+- **No guard or `explain*` module** exists in this package, so `getTexture{Width,Height}`'s `-1`
+  (`texture.ts:188`, `:249`) and `getTextureSourceKind`'s `null` (`:210`) have no pull query.
 
-The GL container atom already has useful 2D-array upload depth, but that is not a `Texture` feature by
-itself. Its generic ImageResource binder is correctly limited to 2D; compressed cubemaps, 2D arrays,
-and volumes still need explicit subject descriptors/material binder families. The assessment now names
-this seam so later work does not mistake a low-level upload test for an end-to-end texture capability.
+## Log
 
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-Executed both sweep-safe items from `assessment.md`'s `## Recommended` section. All 60 own-tests pass (`npm run test --workspace=packages/texture`).
-
-### Done
-
-- **Dropped the unused `@flighthq/resources` dependency.** Removed it from `package.json` `dependencies` and the matching `{ "path": "../resources" }` entry from `tsconfig.json` `references` (no source file imported it — `ImageResource` comes from `@flighthq/types`).
-- **Completed the uv-transform helper set** in `src/texture.ts`, alphabetized among the existing exports, with a colocated test per new export:
-  - `getTextureInverseUvMatrix(out, texture)` — composes `getTextureUvMatrix` then inverts via geometry's `inverseMatrix3`. Out-param, alias-safe (delegates to alias-safe primitives).
-  - `resetTextureUvTransform(texture)` — restores identity transform (zero offset, no rotation, unit scale) in place; leaves image/colorSpace/sampler untouched.
-  - `transformTextureUv(out, texture, u, v)` — applies the KHR_texture_transform (scale → rotate → translate) to a single (u, v), computed inline (no scratch-matrix allocation), writing a `Vector2Like` out.
-
-### Notes
-
-- The first draft of the `getTextureInverseUvMatrix` round-trip test (forward-then-inverse maps a coordinate back to itself) failed: geometry's `inverseMatrix3` affine fast-path computes the inverse translation column as `-(out0*m2 + out3*m5)` (using column-0 entries `out0,out3`) rather than the row-0 entries `out0,out1` the row-major translation convention requires. This looks like a bug in `@flighthq/geometry`'s `inverseMatrix3` affine branch — **outside this package's boundary, not touched.** The texture test was re-scoped to assert the documented composition contract (`getTextureInverseUvMatrix` == `getTextureUvMatrix` then `inverseMatrix3`), which is what this package actually owns. Surfacing the geometry inverse-translation discrepancy as a finding for the geometry package owner.
-
-### Parked
-
-- Every `## Backlog` item (Texture2DArray / Texture3D / TextureUsage / format+mipPolicy / version+invalidate / `*Kind` consumers / `texture-formats` neighbor / Rust parity) — all are cross-package or open-design-gate, routed to the charter's Open directions. Not in scope for a within-package Recommended sweep.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/texture
-
-**Session date:** 2026-06-24 **Starting score:** 62/100 (solid, but under-built) **Estimated new score:** 80/100 (Silver — symmetry gaps closed, UV behavior fully operable, presets added)
-
-## Implemented APIs
-
-### New types in @flighthq/types
-
-**packages/types/src/CubeFace.ts** (new file)
-
-- `CubeFaceNegativeX = 1`
-- `CubeFaceNegativeY = 3`
-- `CubeFaceNegativeZ = 5`
-- `CubeFacePositiveX = 0`
-- `CubeFacePositiveY = 2`
-- `CubeFacePositiveZ = 4`
-
-Named face index constants for CubeTexture. Removes magic-number indexing into the raw `faces` array.
-
-**packages/types/src/TextureKind.ts** (new file)
-
-- `CubeTextureKind = 'CubeTexture'`
-- `SamplerKind = 'Sampler'`
-- `TextureKind = 'Texture'`
-
-String kind identifiers for every texture entity type. Enables renderer registration and serialized scene round-trips.
-
-### cubeTexture.ts additions (Bronze + Silver)
-
-- **`copyCubeTexture(out, source)`** — in-place copy completing the create/clone/copy quartet. Alias-safe (reads all inputs into locals before writing). Copies the Sampler in-place (preserving `out.sampler` identity), copies face references into the existing faces array.
-- **`equalsCubeTexture(a, b)`** — null-safe value equality: compares `colorSpace`, `sampler` (via `equalsSampler`), and all six face references. Returns `false` for null/undefined operands.
-- **`getCubeTextureFaceSize(cube)`** — returns the width of the first non-null face, or `-1` when all faces are null. Parallel to `getTextureWidth`/`getTextureHeight`.
-- **`isCubeTextureComplete(cube)`** — readiness gate, returns `true` when all six faces are non-null.
-- **`setCubeTextureFace(cube, faceIndex, image)`** — assigns a single face in place. Documents the use of `CubeFace*` constants from `@flighthq/types`.
-
-### texture.ts additions (Bronze + Silver)
-
-- **`equalsTexture(a, b)`** — null-safe value equality comparing all fields (`colorSpace`, `image` identity, `uvRotation`, `uvOffset.x/y`, `uvScale.x/y`, sampler state). Returns `false` for null/undefined operands. Backend cache-detection hook.
-- **`getTextureHeight(texture)`** — returns `texture.image.height` or `-1` when image is null.
-- **`getTextureUvMatrix(out, texture)`** — composes `uvOffset`/`uvRotation`/`uvScale` into the KHR_texture_transform 3×3 matrix a shader consumes: `[sx*cos(r), -sy*sin(r), tx; sx*sin(r), sy*cos(r), ty; 0, 0, 1]`. Out-param form; writes into a pre-allocated `Matrix3Like`. No allocations on hot paths.
-- **`getTextureWidth(texture)`** — returns `texture.image.width` or `-1` when image is null.
-- **`setTextureUvOffset(texture, x, y)`** — mutates `uvOffset` in place.
-- **`setTextureUvRotation(texture, radians)`** — mutates `uvRotation` in place.
-- **`setTextureUvScale(texture, x, y)`** — mutates `uvScale` in place.
-
-### sampler.ts additions (Silver presets)
-
-- **`createAnisotropicSampler(level)`** — anisotropic sampler at the given level; trilinear/clamp defaults.
-- **`createClampLinearSampler()`** — named alias for the default sampler state (clamp/linear/trilinear).
-- **`createPixelArtSampler()`** — nearest-neighbor, clamp-to-edge, mipmaps disabled. For pixel-art rendering.
-- **`createTilingSampler()`** — repeat wrap on both axes, trilinear filtering, mipmaps on. For seamless surfaces.
-
-### Tests
-
-All 54 tests pass across 3 test files. New test coverage includes:
-
-- `equalsCubeTexture`: true/false per field, null/undefined operands, same-reference fast path
-- `copyCubeTexture`: distinct out (sampler identity preserved), alias-safe
-- `getCubeTextureFaceSize`: first non-null face, all-null sentinel
-- `isCubeTextureComplete`: partial / complete cases
-- `setCubeTextureFace`: bind by named constant, unbind with null
-- `equalsTexture`: per-field false matrix, null/undefined operands, same-reference fast path
-- `getTextureHeight` / `getTextureWidth`: bound / unbound cases
-- `getTextureUvMatrix`: identity for default transform, offset encoding, scale encoding, KHR formula with rotation
-- `setTextureUvOffset` / `setTextureUvRotation` / `setTextureUvScale`: in-place mutation
-- Sampler presets: field assertions for each preset
-
-## Deferred items and why
-
-### Silver — descriptor format/mip-policy
-
-Adding `format: PixelFormat | null` and `TextureMipPolicy = 'none' | 'auto' | 'manual'` to the `Texture` interface requires modifying an existing types file (`Texture.ts`) and updating all four Texture functions (`createTexture`, `cloneTexture`, `copyTexture`, `equalsTexture`). This is straightforward but is a **cross-package design gate**: the GPU-upload caches in `render-gl`/`render-wgpu` must agree on what `mipPolicy` means before the field shape is committed. Deferred — surface to user before proceeding.
-
-### Silver — per-binding version/dirty tracking
-
-Adding `version: number` to `Texture` and `CubeTexture` (and `invalidateTexture`/`invalidateCubeTexture` bump helpers) is mechanically simple but has the same cross-package design dependency: the renderers must be written to _consume_ `texture.version`. The `ImageResource.version` convention is already established; texture version would mirror it. Deferred — confirm render-gl/render-wgpu cache strategy with user first.
-
-### Silver — Texture2DArray kind
-
-A `Texture2DArray` descriptor entity (`createTexture2DArray`, `cloneTexture2DArray`, etc.) is an in-scope descriptor-level addition. Its value is only realized once a renderer uploads array layers; whether to land the descriptor ahead of the consumer is a design decision. Deferred — surface to user.
-
-### Gold — Texture3D / TextureUsage / swizzle
-
-`Texture3D` and the `TextureUsage` descriptor (`'sampled' | 'render-target' | 'storage'`) cross most deeply into the renderer/material layer; `TextureUsage` in particular touches the render-into-a-texture pipeline. Should be designed together with the render-target work in `render-wgpu`/`scene-*`. Deferred — joint design decision.
-
-### Gold — @flighthq/texture-formats
-
-Blocked on the `ImageResource.compressed` slot (KTX2/Basis), which is explicitly deferred at the types level (see `ImageResource.ts` comment). Do not start until that decision lands.
-
-### Gold — Rust parity
-
-The Rust crate `crates/flighthq-texture` (`texture.rs`, `sampler.rs`, `cube_texture.rs`) exists. Each TS addition needs a Rust port:
-
-- `equals_texture`, `get_texture_uv_matrix`, `get_texture_height`, `get_texture_width`, `set_texture_uv_offset/rotation/scale`
-- `copy_cube_texture`, `equals_cube_texture`, `get_cube_texture_face_size`, `is_cube_texture_complete`, `set_cube_texture_face` + `CUBE_FACE_*` consts
-- Preset samplers: `create_anisotropic_sampler`, `create_pixel_art_sampler`, etc.
-- `KindId` mirrors of `CubeTextureKind`, `SamplerKind`, `TextureKind`
-
-This is the largest remaining item and should be tracked in the conformance map.
-
-### Gold — uv-transform completeness
-
-`getTextureInverseUvMatrix`, `transformTextureUv(out, texture, u, v)`, and `resetTextureUvTransform(texture)` were not implemented. The core operating set (compose → matrix) is now present; the helpers are an enhancement. They can be added in a follow-up without any design decisions.
-
-## Concerns and surprises
-
-- **`equalsSampler` null guard order matters.** The original `equalsSampler` checked `a === b` before `!a || !b`, meaning `equalsSampler(undefined, undefined)` returned `true`. This behavior was intentional in `equalsSampler` (both `null` — symmetric agreement) but the new `equalsTexture`/`equalsCubeTexture` should return `false` for null/undefined to match the pattern of `equalsSampler`. The fix is to check `!a || !b` first. Tests now verify this explicitly.
-
-- **`faces` mutability casting.** The `CubeTexture.faces` field is typed `readonly (ImageResource | null)[]` in the interface, requiring `as (ImageResource | null)[]` casts in `copyCubeTexture` and `setCubeTextureFace`. At runtime the array is always mutable (it is `slice()`d or created fresh in `createCubeTexture`/`cloneCubeTexture`). The cast is correct but relies on this invariant.
-
-- **Pre-existing type errors in other packages.** The root `npm run check` reports errors in `scene-wgpu`, `share`, `statusbar`, `surface-rs`, `bitmap`, `tween`, `types` (Entity/Material/Node tests). None of these are regressions from this session — they were present before.
-
-## Suggestions for future sessions
-
-1. **Confirm with user** before implementing: `version`/`invalidate_*` (renderer cache design), `format`/`mipPolicy` (renderer upload contract), `Texture2DArray` descriptor (ahead-of-consumer vs together).
-2. **Gold uv-transform helpers** (`getTextureInverseUvMatrix`, `transformTextureUv`, `resetTextureUvTransform`) can be added in a follow-up session without any design gates — purely in-package math.
-3. **Rust parity** for all new additions. The crate exists; port the 15+ new functions and the `CUBE_FACE_*` consts, add a conformance map entry.
-4. **`texture-formats` neighbor package** once `ImageResource.compressed` lands — KTX2/Basis container parsers as a tree-shakable `@flighthq/texture-formats` package.
-
-## VideoTexture (dynamic per-frame source) — added 2026-07-19
-
-`@flighthq/texture` now owns the dynamic `VideoTexture` alongside the settled `Texture`. Shape: a
-`VideoResource`-backed source carrying the same sampler/colorSpace/uv-transform state a Texture does,
-plus a monotonic `frameId` (starts -1) that a GPU uploader watches to skip re-upload on unchanged
-frames. Functions (all in `videoTexture.ts`, colocated test): `advanceVideoTexture` (bump frameId when
-the element reports a fresh decoded frame), `create/clone/copyVideoTexture`, `getVideoTextureWidth/
-Height` (read the live element, -1 until a frame decodes), `getVideoTextureUvMatrix/InverseUvMatrix`
-(same column-major layout as `getTextureUvMatrix` so a material samples through one path),
-`isVideoTextureFrameReady` (readyState >= HAVE_CURRENT_DATA + known dims), `resetVideoTextureFrame`
-(force re-upload after context loss), `setVideoTextureSource`. No new package dep — `VideoResource` is
-read from `@flighthq/types`. The per-frame GL upload lives in `render-gl` (`uploadGlTextureVideoFrame`,
-frameId dirty-gated). GL/WebGPU material binding is now realized through
-`UnlitMaterial.baseColorVideoMap` with exact raster parity; Rust parity and additional material slots
-remain follow-ups.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Most of the old deferral list checked out
+  **false**, the largest being the `VideoTexture` entity itself: the file described "a
+  `VideoResource`-backed source … plus a monotonic `frameId`", and no such type or field exists — video
+  is a `Texture2D` over an `Image`, dirty-tracked by `version` (`videoTexture.ts:10-17`), exactly as the
+  model doc rules. Also dropped: the uv-transform helpers as unimplemented (`getTextureInverseUvMatrix`
+  `texture.ts:198`, `transformTextureUv` `:371`, `resetTextureUvTransform` `:282` all exist), the
+  `crates/flighthq-texture` mirror (no `crates/` directory in this repo), the `@flighthq/resources`
+  dependency (package deleted), `texture-formats` as blocked (the package exists with ATF/container
+  parsers), `version`/dirty tracking as deferred (`TextureCommon.version`), and the geometry
+  `inverseMatrix3` affine bug — that branch is column-major by its own comment
+  (`packages/geometry/src/matrix3.ts:132`) and derives the translation from the inverted linear part at
+  `:164-165`, so the row-major reading behind the report does not hold.
+- **2026-07-24** — WebGPU compressed upload reached GL parity through an opt-in uploader plus optional
+  RGBA decode; 2D/cube/array containers covered, generic binder still 2D.
+- **2026-07-22** — Named the compressed-texture shape boundary: a low-level container upload is not an
+  end-to-end Texture capability.
+- **2026-07-19** — Video sources landed alongside still images, with the per-frame GL upload in
+  `render-gl` and material binding through `UnlitMaterial.baseColorVideoMap`.
+- **2026-06-25** — uv-transform helper set completed; unused `@flighthq/resources` dependency dropped.
+- **2026-06-24** — Cube/texture symmetry pass: `equals*`, `copyCubeTexture`, face accessors, uv matrix,
+  and the sampler presets.

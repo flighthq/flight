@@ -1,123 +1,58 @@
 ---
 package: '@flighthq/ipc'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-08-08
+by: principal
 ---
 
-# ipc — Status Log
+# ipc — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
+## Open
 
-Executed the two sweep-safe Recommended items from `assessment.md`, in-package tests only (no exported-function changes, so `exports:check` surface is unchanged). `npm run test --workspace=packages/ipc` passes (43 tests).
+Every item was re-checked against `packages/ipc/src/`, `packages/types/src/Ipc.ts`, and the `host-*`
+packages on 2026-08-08. A file:line here is a claim about this tree, not about a session.
 
-Done:
+- **The duplex-port tier is a type with no implementation.** `IpcPort` (`types/src/IpcPort.ts:10`)
+  documents `openIpcPort` / `postIpcPortMessage` / `onIpcPortMessage` / `destroyIpcPort`; none of the
+  four exists anywhere in `packages/`, and `IpcBackend` (`types/src/Ipc.ts:14-26`) has no `openPort`.
+- **`IpcTransferable` / `sendIpcMessageWithTransfer` do not exist** — no type, no function, no
+  transfer-list path. Zero-copy transfer scope is undecided, so the type is unwritten, not just
+  unimplemented.
+- **`IpcError` / `IpcErrorCode` have no producer and no consumer.** The plain-data error type is
+  defined (`types/src/IpcError.ts:2`, `:9`) but nothing constructs it: `invokeIpc` surfaces whatever
+  the backend rejects with, and the only Flight-authored rejection is `IpcTimeoutError`
+  (`ipc.ts:122`).
+- **Capability flags are declared but never read.** `getCapabilities` is optional on the backend
+  (`types/src/Ipc.ts:25`) and the web default answers all-false (`ipc.ts:64-66`), yet every branch in
+  the package tests method presence instead: `onIpcInvoke` checks `typeof backend.handle`
+  (`ipc.ts:154`) and `sendIpcMessageTo` optional-chains `sendTo` (`ipc.ts:240`). Which of the two is
+  canonical is unruled, and a backend can contradict itself with no seam noticing.
+- **`reply` is structurally inert.** `onIpcMessageEvent` hardcodes `senderId: -1` (`ipc.ts:195`), and
+  `reply` early-returns on that sentinel (`ipc.ts:198`), so it never sends even against a
+  `sendTo`-capable backend. It unblocks only when a backend surfaces real sender identity, which
+  needs a richer event than `IpcMessageEvent` (`types/src/Ipc.ts:36-41`) carries.
+- **The one native backend is main-side only and mostly inert.** `createElectronIpcBackend`
+  (`host-electron/src/electronIpc.ts:6`) implements `subscribe` over `ipcMain` but no-ops `send` and
+  resolves `invoke` to `undefined`, and supplies none of `handle` / `sendTo` / `getCapabilities`.
+  Neither `host-tauri` nor `host-capacitor` has an IPC backend at all, so no Silver arm is realized
+  against a real host and the renderer-vs-main split is still undesigned.
+- **`enableIpcSignals` is a permanent module singleton.** `_ipcSignals` (`ipc.ts:43`) is never
+  cleared — there is no reset seam — so once enabled the group lives for the module's lifetime and
+  test isolation needs a fresh module import.
 
-- **Pinned the `onIpcMessageEvent` no-realizable-reply contract.** Sharpened the existing `reply` test to assert `senderId` is observed as `-1` and that `reply()` early-returns even against a `sendTo`-capable fake backend (zero outbound sends) — proving the gate is on `senderId`, not method presence, so the forward-compatible behavior is locked until a backend surfaces real sender identity. Test only; no behavior change.
-- **Pinned the lazy `IpcSignals` group / tree-shake contract.** Made the previously-hedged `getIpcSignals` "returns null before enable" test deterministic via `vi.resetModules()` + a fresh isolated `import('./ipc')`, and asserted that delivery still works with the group disabled (the emit is guarded, never required). Added a companion `enableIpcSignals` test asserting `onChannelMessage` does **not** emit at subscribe time, only on delivery — pinning that the signal is a per-delivery notification.
+## Log
 
-Parked (cross-boundary or design-gated — unchanged from assessment Backlog):
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- Doc comment on `IpcMessageEvent.reply` stating it is inert until a backend supplies `senderId` — cross-boundary: lives in `@flighthq/types` (`IpcMessageEvent`), outside this package's sweep scope.
-- Realize new Silver arms in `host-electron`; capability-flags-vs-method-presence canonicity; realize `IpcError`/`IpcErrorCode`; Gold tier (`IpcPort`, `IpcTransferable`, swappable `IpcSerializer`); the Rust `flighthq-ipc` crate; Package Map line refresh in `agents/index.md` — all cross-package, cross-worktree, shared-doc, or gated on an Open-direction decision.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/ipc
-
-**Session date**: 2026-06-24 **Previous score**: 72/100 (solid) **Estimated new score**: 90/100 (authoritative)
-
-## Implemented APIs
-
-### Bronze (contract + listener management)
-
-**`@flighthq/types/src/Ipc.ts`** — Updated `IpcBackend` with full JSDoc contract:
-
-- Documented `invoke` rejection semantics (plain `Error` on handler throw; `undefined` on web)
-- Documented serialization model (structured-clone, no functions/class instances/DOM nodes; typed arrays cloned by default)
-- Added optional `handle?(channel, handler): () => void` — in-process invoke responder
-- Added optional `sendTo?(target, channel, args): void` — targeted window/process delivery
-- Added optional `getCapabilities?(): Readonly<IpcBackendCapabilities>` — capability introspection
-
-**New type files** (all in `packages/types/src/`, one concept per file):
-
-- `IpcBackendCapabilities.ts` — `{ canSend, canInvoke, canHandle, canTarget }` capability descriptor
-- `IpcChannel.ts` — `{ name: string }` typed channel descriptor
-- `IpcError.ts` — `IpcErrorCode` union + `IpcError` plain-data structured error (code/message/channel)
-- `IpcMessageEvent.ts` — event handle for `onIpcMessageEvent`: channel, senderId (-1 sentinel), args, reply thunk
-- `IpcPort.ts` — `IpcPort` entity for duplex port (Gold-tier, typed and designed)
-- `IpcSignals.ts` — `IpcSignals` opt-in signal group (onBackendChanged, onChannelMessage)
-- `IpcTarget.ts` — `{ windowId: number }` targeted-send descriptor
-- `IpcTimeoutError.ts` — `IpcTimeoutError extends Error` with channel/timeoutMs fields
-
-**New functions** in `packages/ipc/src/ipc.ts`:
-
-Bronze:
-
-- `hasIpcBackend(): boolean` — distinguishes real native backend from lazy web default
-- `getIpcListenerCount(channel): number` — count of active in-package listeners (0 for unknown channel)
-- `onceIpcMessage(channel, listener): () => void` — auto-unsubscribes after first message
-- `removeAllIpcListeners(channel?): void` — drop all listeners for a channel or all channels
-
-Silver:
-
-- `createIpcChannel(name): IpcChannel` — typed channel descriptor factory
-- `enableIpcSignals(): IpcSignals` — opt-in signal group activation (lazy, tree-shaken when unused)
-- `getIpcSignals(): Readonly<IpcSignals> | null` — accessor for the signals group
-- `invokeIpcWithTimeout(channel, timeoutMs, ...args): Promise<unknown>` — rejects with `IpcTimeoutError`
-- `onIpcInvoke(channel, handler): () => void` — in-process invoke responder (delegates to `backend.handle`)
-- `onIpcMessageEvent(channel, listener): () => void` — event-shaped subscribe with `IpcMessageEvent`
-- `sendIpcMessageTo(target, channel, ...args): void` — targeted window/process send
-
-Also updated:
-
-- `createWebIpcBackend()` — now implements `getCapabilities()` returning all-false
-- All channel parameters now accept `string | Readonly<IpcChannel>` (string overloads preserved)
-- `packages/ipc/package.json` — added `@flighthq/signals` dependency
-- `packages/ipc/tsconfig.json` — added `../signals` reference
-
-**Tests**: 42 tests covering all new functions, including:
-
-- IpcChannel descriptor acceptance in all channel-accepting functions
-- IpcTimeoutError fields (channel, timeoutMs)
-- `onIpcInvoke` with and without backend.handle support
-- `onIpcMessageEvent` event fields and reply no-op when senderId is -1
-- `onceIpcMessage` auto-unsubscribe and manual cancel
-- `removeAllIpcListeners` per-channel and all-channels variants
-- `enableIpcSignals` singleton, onBackendChanged signal, onChannelMessage signal
-- `hasIpcBackend` before/after backend install and reset
-- `sendIpcMessageTo` and no-op when backend lacks sendTo
-- Listener count tracking (increment, decrement on unsubscribe)
-
-## Deferred Items and Why
-
-### Cross-package design decisions (do not decide autonomously)
-
-1. **Responder ownership boundary** — `onIpcInvoke` is implemented as a thin delegation to `IpcBackend.handle`, but the deeper question — whether a Flight-side invoke responder belongs in `@flighthq/ipc` vs. permanently in the host backend — is flagged as a design decision in the maturation roadmap. The current implementation is additive: if the backend has no `handle`, `onIpcInvoke` returns an inert no-op.
-
-2. **Renderer vs main Electron backend** — `sendIpcMessageTo` and `onIpcInvoke` interact with whether the Electron backend is main-side only or also has a renderer-side arm (`ipcRenderer.send`/`invoke`). This is a `host-electron` shape decision. The `@flighthq/ipc` seam is ready; the adapter needs to grow matching arms.
-
-3. **`IpcSerializer` seam** — Gold-tier. The maturation roadmap asks: confirm that a swappable serializer (for non-structured-clone wire formats needed by a C/C++ shell) is wanted before building. Deferred.
-
-4. **`ImageSource`/surface-buffer transfer semantics** — The `IpcTransferable` Gold type and `sendIpcMessageWithTransfer` function cross into `@flighthq/bitmap` expectations. Deferred pending surface-team confirmation of zero-copy transfer scope.
-
-### Gold-tier items not yet implemented
-
-- **`IpcPort` / `openIpcPort` / `postIpcPortMessage` / `onIpcPortMessage` / `destroyIpcPort`** — Duplex port requires `IpcBackend.openPort` and a stateful resource lifecycle with `destroy*`. The `IpcPort` type is defined. Implementation deferred — it is the most host-specific piece and requires backend realization in `host-electron`.
-- **`IpcTransferable` + `sendIpcMessageWithTransfer`** — transfer-list path for zero-copy ArrayBuffer/typed array crossing. Type needs designing; blocked on serialization scope decision.
-- **Exhaustive Gold tests** — timeout-race cleanup, targeted-send on incapable backend, port lifecycle, transfer round-trip. The core behaviors are tested; the edge-case battery remains.
-- **Rust `flighthq-ipc` crate** — The TS `IpcBackend` contract (through Silver) is now stable enough to mirror. Work requires the Rust worktree; deferred to a Rust-focused session.
-
-## Concerns and Surprises
-
-- The module-level `_ipcSignals` singleton cannot be reset between tests (no teardown API). The `getIpcSignals` test acknowledges this with a robustness check rather than relying on null-ness. A `resetIpcSignalsForTesting` export would help test isolation, but it is not part of the public API surface and is not needed here.
-- `IpcPort._portId` uses an opaque numeric field with a leading underscore to signal "internal use only." The design rule prefers runtime slots, but `IpcPort` has no entity/runtime pair. This is acceptable for a value-typed entity that exists only as a handle to a native resource.
-- The `reply` thunk on `IpcMessageEvent` always sets `senderId: -1` at present (no backend surfaces sender identity). This is correct behavior today but means `reply` always no-ops. The design is forward-compatible: when a backend provides sender identity, it would need to supply a richer event object. The current implementation is a safe stub.
-
-## Suggestions for Future Sessions
-
-1. Implement `@flighthq/host-electron` arms for `handle`, `sendTo`, `getCapabilities` — these are the most valuable Silver additions to realize against a real backend.
-2. Implement `IpcPort` lifecycle once `IpcBackend.openPort` is confirmed as part of the contract.
-3. Start `flighthq-ipc` Rust crate — the TS contract is now stable through Silver.
-4. Add a `removeAllIpcListeners` call to the `afterEach` teardown in any test suite that registers IPC listeners, to prevent cross-test contamination.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped as **false**: the parked
+  "doc comment on `IpcMessageEvent.reply` stating it is inert until a backend supplies `senderId`" —
+  that comment is present at `types/src/Ipc.ts:34-35`. Also dropped the Rust-crate and score
+  bookkeeping (not facts about this tree).
+- **2026-06-25** — Pinned the no-realizable-reply contract (`senderId` gates `reply`, not method
+  presence) and the lazy `IpcSignals` group/tree-shake contract; tests only, no behavior change.
+- **2026-06-24** — Silver landing: `IpcChannel` descriptors accepted everywhere a channel string is,
+  plus `enableIpcSignals` / `getIpcSignals`, `invokeIpcWithTimeout` + `IpcTimeoutError`,
+  `onIpcInvoke`, `onIpcMessageEvent`, `sendIpcMessageTo`, and the Bronze listener registry
+  (`hasIpcBackend`, `getIpcListenerCount`, `onceIpcMessage`, `removeAllIpcListeners`).

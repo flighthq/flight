@@ -1,139 +1,67 @@
 ---
 package: '@flighthq/types'
-updated: 2026-08-05
-by: auditor
+updated: 2026-08-08
+by: principal
 ---
 
-# types — Status Log
+# types — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## [2026-08-05 · auditor] — post-review continuity reconciliation
+## Open
 
-The header layer has expanded substantially with the 2D/3D naming migration, contract/public export lanes,
-texture/storage and render-target ownership, open PBR extensions, scene coverage/requirements diagnostics,
-directional-shadow controls, physics and skeleton descriptors, and format-import data models. For the four
-still-open rows in the 2026-07 assessment, the particle closed-union rationale, shared `TextDirection`, and
-`ShapedRun.glyphCount` explanation are now present. The proposed Stage-prefixed viewport enum rename is
-obsolete: Stage was replaced by Scene2D, while the types now also serve Scene2D fit context and generic
-anchor layout.
+Every item was re-checked against `packages/types/src/` on 2026-08-08 (897 files, 2,272 exported
+names). A file:line here is a claim about this tree, not about a session.
 
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
+- **425 of 2,272 exported names — 19% — have no reference in any implementation package.** Measured
+  by taking every `export interface|type|enum|const` in `types/src/` and searching every other
+  `packages/*/src`. They are not one dead corner: they span host plugin surfaces
+  (`CapacitorApi.ts:68` and its ~40 siblings), format models (`AsepriteRect`, `GltfScene3D`,
+  `LottieTransformShapeItem`), render seams (`BatchBarrier.ts:4`, `RenderEffectPaddingStatus`,
+  `GlCapabilities`), and graph aliases (`AppearanceNode` at `HasAppearance.ts:25`, `BlendModeNode`
+  at `HasBlendMode.ts:12`). The header is the design surface, so an unconsumed type is either a
+  designed-ahead header or a dropped thread, and nothing in the tree distinguishes them.
+- **`SignalConnection` and `SignalScope` describe an API that does not exist.**
+  `SignalConnection.ts:11` documents a handle "returned by `connectSignal` and `connectSignalOnce`",
+  with `paused` slots "skipped during dispatch"; `SignalScope.ts:11` documents `createSignalScope`
+  and `disconnectSignalScope`. None of those four functions exists in `packages/signals/src/`,
+  `connectSignal` returns `void` (`signals/src/slot.ts:12`), and `SignalData` has no `enabled` lane
+  (`Signal.ts:8`). Both types are exported from **both** lanes (`index.ts:554`, `:556`).
+- **`Signal<T>` is still function-typed, not payload-parameterized** —
+  `Signal.ts:3`, `SignalData.slots: T[]` at `:8`. Pinned by `Signal.test.ts`. The reshape stays a
+  cross-package decision touching every `*Signals` group and every `enable*` callsite.
+- **Header closure holds but is unenforced.** No file in `types/src/` imports from any
+  `@flighthq/*` package, and `package.json` declares no `@flighthq` dependency — but there is no
+  `headerClosure.test.ts` and `grep headerClosure scripts/` finds no rule, so nothing catches the
+  first violation.
+- **No kind vocabulary from the header.** `KindOf<T>` and `KnownKinds` appear nowhere in
+  `types/src/`; `AdjustmentKind` (`AdjustmentKind.ts:7`) is a bare `type = string` with no
+  consumer. The built-in kind set is only reachable by grepping the implementation packages.
+- **No branded primitives.** `PackedRgba` does not exist; packed colors and angle values are plain
+  `number` everywhere, so a color/alpha or degree/radian mix-up is not type-catchable.
+- **Scene versioning is absent from an otherwise complete document model.** `Scene3DDocument.ts`
+  is a full format-neutral IR, but `SceneVersion` and `SceneMigration` appear nowhere, so a
+  serialized document carries no migration contract.
 
-# Status: @flighthq/types
+## Log
 
-**Session date:** 2026-06-24 **Starting score:** 82/100 (solid) **Estimated ending score:** 90/100
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## Implemented APIs
-
-### Bronze — completed in full
-
-**1. Fixed DOM/Dom acronym-casing drift**
-
-- Renamed `DOMRenderOptions.ts` → `DomRenderOptions.ts` (the exported type `DomRenderOptions` was already correctly named inside)
-- Renamed `DOMStageRectangle.ts` → `DomStageRectangle.ts` (the exported type `DomStageRectangle` was already correctly named inside)
-- Updated intra-package import in `DomRenderState.ts` to use the new filename
-- Updated the barrel (`index.ts`) to reference the new filenames
-- All downstream packages import by type name (not by file path), so no downstream changes were needed
-
-**2. Settled ParticleForce / ParticleCollider as closed-by-design**
-
-- Replaced provisional "NOTE: ... surfaced as a follow-up" comments in `ParticleForce.ts` and `ParticleCollider.ts` with settled "Closed by design" rationale citing the types-layout spec (hot per-frame families with fixed membership are legitimately closed)
-- Contract surface now reads as intentional, not provisional
-
-**3. Added type-level assertion tests — replaced `missing.test.ts`**
-
-Deleted the `missing.test.ts` placeholder (which was a single `assert(true)`) and created eight colocated test files:
-
-- **`Entity.test.ts`** — asserts `EntityRuntimeKey` is `Symbol.for('EntityRuntime')`, `EntityWithoutRuntime<T>` strips the runtime key, round-trips structurally, `Kind` is a plain string
-- **`Material.test.ts`** — asserts `Material` is an open contract (foreign `acme.Shimmer` kind is assignable to base), narrows on `kind` discriminant, `MaterialLike` strips the runtime key and accepts plain objects, `StandardMaterialKind` is the literal string `'DefaultMaterial'`, compile-time proof that `Material extends Entity` and `MaterialLike` has no runtime key
-- **`RenderEffect.test.ts`** — asserts `RenderEffect` is an open contract (foreign `acme.Sparkle` kind accepted), narrows on `kind`, optional `enabled`/`intensity` fields are absent by default
-- **`BitmapFilter.test.ts`** — asserts `BitmapFilter` is an open contract (foreign `acme.Scanlines` kind accepted), narrows on `kind`, accepts any string kind
-- **`MethodsOf.test.ts`** — asserts only method keys are preserved (data properties excluded), empty result for data-only objects, method signatures are preserved accurately
-- **`PartialNode.test.ts`** — asserts `data` inner fields become partial, top-level non-data fields become optional, full node round-trips, null-data case handled
-- **`Node.test.ts`** — asserts `NodeKind` is `'Node'`, `NodeAny` accepts nodes from any graph family, `NodeRuntime` has required numeric id fields, compile-time checks that `Node extends Entity` and `NodeRuntime extends EntityRuntime`
-- **`ParticleForce.test.ts`** — exhaustiveness check: a `switch` with `assertNever` in the default branch verifies all 5 members (AttractorForce, DragForce, TurbulenceForce, VortexForce, WindForce) are handled; compile-time union-membership equality check; runtime tests for each member's assignability to `ParticleForce`
-
-All 40 tests pass. TypeScript (`tsc -b`) passes cleanly with no new errors.
-
-### Silver — partial completion
-
-**Entity quartet `*DataFactory` / `*RuntimeFactory` audit — completed**
-
-Audited all display object entity files. Added `*DataFactory` and `*RuntimeFactory` type aliases (following the `DisplayObject.ts` pattern) to all entity files that were missing them:
-
-- `Bitmap.ts` — added `BitmapDataFactory`, `BitmapRuntimeFactory<R>`
-- `MovieClip.ts` — added `MovieClipDataFactory`, `MovieClipRuntimeFactory<R>`
-- `NativeText.ts` — added `NativeTextDataFactory`, `NativeTextRuntimeFactory<R>`
-- `QuadBatch.ts` — added `QuadBatchDataFactory`, `QuadBatchRuntimeFactory<R>`
-- `RichText.ts` — added `RichTextDataFactory`, `RichTextRuntimeFactory<R>`
-- `Shape.ts` — added `ShapeDataFactory`, `ShapeRuntimeFactory<R>`
-- `Sprite.ts` — added `SpriteDataFactory`, `SpriteRuntimeFactory<R>`
-- `Stage.ts` — added `StageDataFactory`, `StageRuntimeFactory<R>`
-- `TextLabel.ts` — added `TextLabelDataFactory`, `TextLabelRuntimeFactory<R>`
-- `Tilemap.ts` — added `TilemapDataFactory`, `TilemapRuntimeFactory<R>`
-- `Video.ts` — added `VideoDataFactory`, `VideoRuntimeFactory<R>`
-
-`DisplayObject` was intentionally skipped: it has no distinct `*Data` type of its own (inherits `DisplayObjectData` directly) and no `*Kind`, so a factory would be structurally identical to `DisplayObjectDataFactory`.
-
-## Deferred Items and Why
-
-**`Signal<T>` payload-parameterized reshape** — DEFERRED (cross-package design decision) This is an SDK-wide signal seam change: every `*Signals` group, every `enable*` callsite, and the Rust port's `flighthq-types` crate all need to converge. The TS `Signal<T extends (...args) => void>` vs Rust `Signal<T>` (by payload) divergence is real and worth resolving, but it requires sign-off and a coordinated rollout across `@flighthq/signals` and every signal owner package. Surface for next architectural session.
-
-**`KindOf<T>` helper / `KnownKinds` union** — DEFERRED (Silver, not blocking) A `KindOf<TEntity>` mapped type resolving an entity to its `*Kind` literal, plus a `KnownKinds` union assembled from built-in constants, would make the built-in kind vocabulary navigable from the header. Feasible in isolation but a significant mechanical sweep (must touch every entity's `*Kind` export and the barrel). Recommended for a dedicated session.
-
-**Header-closure test (`headerClosure.test.ts`)** — DEFERRED (Silver) A test that asserts no type in `@flighthq/types` imports from any `@flighthq/<impl>` package. Would convert the "navigable from the header alone" prose promise into a checked invariant. Requires scanning the tsconfig project graph; better implemented as a `packages:check` rule than a Vitest test. Tagged for the tooling session.
-
-**Open `ParticleForce` / `ParticleCollider`** — DEFERRED (Gold, requires particles refactor) Correctly deferred at Bronze (closed-by-design is now settled). Reopening requires `@flighthq/particles` to move from `switch` dispatch to registry dispatch. This is a joint decision with the particles package; do not do it here.
-
-**Scene serialization / versioning contract** — DEFERRED (Gold) `Scene3DDocument`, `SceneVersion`, `SceneMigration` types are not yet defined. This is a foundational design decision about scene format and migration ownership. It requires coordination with whatever package owns scene load/save. Surface for a dedicated design session.
-
-**Branded primitives (`PackedRgba`, angle units)** — DEFERRED (Gold) High value, high blast radius (every callsite that produces/consumes packed colors or angle values). Needs deliberate go-ahead from the project owner before proceeding.
-
-**1:1 conformance lock with `flighthq-types` (Rust)** — DEFERRED (Gold) Requires a conformance manifest and Rust-side counterpart additions. Depends on the conformance checker tooling being in place. Tagged for the Rust conformance session.
-
-**Signal group payload tests** — not implemented Testing `NodeSignals`, `StageSignals`, etc. payload types at the assertion level was planned for Silver. Skipped because the `Signal<T>` generic shape is deferred — testing the payload shapes against a function-typed generic is less useful than testing them against a payload-parameterized generic. Once `Signal<T>` is reshaped, revisit these tests.
-
-## Concerns and Surprises
-
-**The `DOMRenderOptions`/`DOMStageRectangle` filenames were inconsistent with their own exported type names.** Both files already had the correct `Dom`-prefixed type names inside them — the mismatch was purely at the filename level. This suggests the rename had been partially applied at some prior point and the file rename was missed. Fixed.
-
-**`missing.test.ts` used `assert` (bare Node assert) not Vitest's `expect`.** The placeholder was written for a different test environment. The new tests use `expect` and `expectTypeOf` consistently with the rest of the codebase.
-
-**`expectTypeOf(...).toEqualTypeOf<'DefaultMaterial'>()` fails TypeScript at `tsc` level** even though it passes at runtime (Vitest). The Vitest `expectTypeOf` generic shape does not always infer const-string literals correctly when the source is a module-level `const`. Replaced with a direct compile-time assignment assertion (`const kindLiteral: 'DefaultMaterial' = StandardMaterialKind`) which is cleaner and equally expressive.
-
-**No `*TraitsKey` gaps were found.** The depth review mentioned `*TraitsKey` alongside `*Factory` as potentially missing. Only `DisplayObject.ts` needed `DisplayObjectTraitsKey`, and it already exports it. Child entities (`Sprite`, `Shape`, etc.) do not need their own `*TraitsKey` because they share the parent's traits shape.
-
-**Pre-existing type errors in other packages** — several unrelated packages (`statusbar`, `bitmap`, `velocity`, `webcam`) have pre-existing type errors that appeared in `npm run check` output. These are not introduced by this session's changes and were present before.
-
-## Suggestions for Future Sessions
-
-1. **`Signal<T>` payload-shape coordination** — schedule a dedicated cross-package session with `@flighthq/signals`, all signal-owner packages, and the Rust conformance map. The `Signal<T>` shape is load-bearing for Rust↔TS conformance and worth a focused pass.
-
-2. **`KindOf<T>` / `KnownKinds` utility** — straightforward Silver work once the factory audit is done. Adds the kind vocabulary as a navigable, machine-checkable part of the header.
-
-3. **Header-closure enforcement in `packages:check`** — add a graph walk that verifies no `@flighthq/types` source transitively imports from an impl package. This makes the "navigable without impl imports" promise CI-enforced.
-
-4. **Scene serialization contract** — requires a design session. The types-layout spec documents the intent; it just needs to be shaped into `Scene3DDocument`/`SceneVersion`/`SceneMigration` types with buy-in from the scene-owning packages.
-
-5. **Branded primitives** — `PackedRgba` as a branded `number` is a high-leverage change for catching color-convention bugs across the SDK. Worth a deliberate design go-ahead discussion.
-
-## 2026-06-25 — builder Phase 1 (header additions for pruned-core port)
-
-Added three header types required by the Phase-1 geometry/node port: `Ray3D`/`Ray3DLike` (entity quartet mirroring `Aabb`), `EulerOrder` (the six intrinsic-rotation orders, glTF convention), and `NodeDescendantVisitor<Traits>` (depth-first walk callback). Barrel updated; `npm run check` green.
-
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
-
-Executed the three sweep-safe items from `assessment.md` `## Recommended`. All within `packages/types/`; no cross-package edits.
-
-**Done:**
-
-- **`Signal.test.ts` (new).** Pins the _present_ function-typed `Signal<T extends (...args) => void>` contract: `emit` matches the parameterized slot signature, `data: SignalData<T> | null`, and `SignalData` carries the parallel `slots`/`priorities`/`repeat` arrays plus the `cancelled` flag. (Note: the assessment guessed the field names as slot/priority/enabled/connection; the actual `SignalData` fields are `slots`/`priorities`/`repeat`/`cancelled`, and the test pins the real shape.) Documents today's seam so the later payload-reshape has a before/after assertion. No signature change.
-
-- **`Bitmap.test.ts` (new) — invariant-bearing entity-quartet test.** Extends the blessed assertion pattern (Material/Node compile-check style) to the canonical entity quartet: `BitmapKind === 'Bitmap'` + literal-kind check, the bitmap-specific `BitmapData` keys, and three compile-time subtype laws (`Bitmap extends DisplayObject`, `BitmapData extends DisplayObjectData`, `BitmapRuntime extends DisplayObjectRuntime`). Note: the assessment's example named "DisplayObject / Sprite / Stage `*Like` strip" tests, but those entities are `Node<Traits>` entities with **no `*Like` type** (only entity-`*Like` types like `MaterialLike` exist; display-object entities have none), so the realized coverage is the Bitmap quartet's kind-identity + subtype-law invariants instead — same pattern, real target.
-
-- **`DeviceBackend` module doc (Device.ts).** The seam doc was attached to the sibling `DeviceInfo` interface; the `DeviceBackend` interface itself was bare. Added a one-line ownership/semantics comment (fills `out`, returns it; sentinels not throws). Pure in-source comment, no signature change. A full scan of all `*Backend` seams found every other capability seam already carries a file-level or interface-level doc — this was the only residual.
-
-**Parked:** none from the Recommended list — all three were executed. (The Backlog items remain parked by the assessment: `Signal<T>` payload reshape, `KindOf`/`KnownKinds`, header-closure enforcement, test-policy reconciliation, scene serialization, branded primitives, Rust conformance lock, opening `ParticleForce` — all cross-package or charter-level.)
-
-**Tests:** `npm run test --workspace=packages/types` → 10 files / 47 tests, all pass (was 8 files; +2 new). Did not run `npm run check`/`fix`/`order:fix` per task constraints.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract, and re-measured the header against the
+  implementation packages. Most significant false claim dropped: "**Scene serialization / versioning
+  contract** — DEFERRED. `Scene3DDocument`, `SceneVersion`, `SceneMigration` types are not yet
+  defined." `Scene3DDocument.ts` exists and is the hub of the whole import/serialization stack
+  (`parse<Format>` → document → `createScene3DFromDocument`), with `Scene3DAnimationPath` and
+  `Scene3DMetadata` beside it; only the two versioning types are still missing, which is what the
+  `Open` bullet now says. Also dropped: the `DOMRenderOptions`/`DOMStageRectangle` rename thread and
+  every `Stage*` entry (no `Stage` file or symbol survives here), the `*DataFactory` audit recap,
+  and the Rust conformance-lock item — there is no `rust/` tree in this repo.
+- **2026-08-05** — Header expanded through the 2D/3D naming migration, the `.`/`./contract` lane
+  split, texture/render-target ownership, PBR extensions, and format-import data models.
+- **2026-06-25** — `Signal.test.ts` pins the present function-typed contract; `Bitmap.test.ts` adds
+  the entity-quartet subtype laws; `DeviceBackend` gained its module doc.
+- **2026-06-25** — Added `Ray3D`/`Ray3DLike`, `EulerOrder`, and `NodeDescendantVisitor` for the
+  geometry/node port.
+- **2026-06-24** — `ParticleForce`/`ParticleCollider` settled as closed-by-design; the
+  `missing.test.ts` placeholder replaced with eight type-level assertion tests.

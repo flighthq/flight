@@ -1,64 +1,63 @@
 ---
 package: "@flighthq/animation"
-updated: 2026-08-02
-by: builder4
+updated: 2026-08-08
+by: principal
 ---
 
-# animation — Status Log
+# animation — Status
 
-> Append-only handoff log, newest entry on top. Each entry: what changed, what's in-flight, what to
-> watch next. Incoming status documents land here.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-<!-- newest entry on top -->
+## Open
 
-## 2026-08-02 — MorphShape scalar binding consumer
+Every item was re-checked against `packages/animation/src/` (and `packages/types/src/`) on 2026-08-08.
+This is the 3D animation-data primitive — clips, tracks, players, blending, layers, state machines.
+`timeline`, `movieclip`, `motionpath`, `clock`, and `spring` are separate cells.
 
-`@flighthq/shape` now consumes the existing animation substrate without changing this package. A stable
-`MorphShapeAnimationTarget` is carried as the channel's opaque `targetRef`; the shape-owned clip binder
-and sample visitor route scalar results into explicit progress sampling. The visitor shape composes with
-crossfades, blend trees, state machines, and layer stacks, preserving animation's target-free boundary.
+The package is deep and the list is short on purpose: tracks (Step/Linear/Cubic, quaternion-aware),
+clip events, players with PingPong, N-way blend trees, masked layer stacks, root-motion extraction, and
+opt-in signals are all present and reachable.
 
-## 2026-07-25 — clip-level animation events
+- **Two exports are unreachable through either blessed lane.** `advanceAnimationPlayers`
+  (`animationAdvance.ts:7`) and `advanceAnimationStateMachineWithScratch`
+  (`animationStateMachineAdvance.ts:6`) are `export function`s whose modules do not appear in
+  `contract.ts`. Their only importers are intra-package (`animationLayerStack.ts:13`, `:17`,
+  `animationStateMachine.ts:13`) plus their colocated tests. Either they earn a `contract.ts` line as
+  the scratch-owning variants a caller composing its own stack would need, or they lose the `export`
+  and stop being API-shaped. Right now they are neither.
+- **The state machine carries one transition, machine-wide.** `AnimationStateMachine` holds a single
+  `transitionFromStateIndex` / `transitionToStateIndex` pair (`types/src/AnimationStateMachine.ts:33`,
+  `:34`) against one `transitionCurve` (`:30`) and one `transitionDuration` (`:31`). So every edge in
+  the graph shares a duration and a curve, a transition cannot be interrupted or queued by another, and
+  there is no per-edge configuration. Caller-owned conditions are a deliberate design (`:20-22`) and not
+  at issue; per-edge timing is the gap.
+- **Blend trees take weights, not parameters.** `AnimationBlendTreeInput` carries a bare scalar
+  `weight` (`types/src/AnimationBlendTree.ts:12`) set through `setAnimationBlendTreeInputWeight`. There
+  is no blend *space* — no 1D threshold mapping and no 2D cartesian/freeform mapping from a gameplay
+  parameter (speed, direction) onto those weights — so every caller reimplements that arithmetic.
+- **Root motion is extraction only.** `extractAnimationRootMotion` (`animationRootMotion.ts:46`)
+  returns the additive vector or compositional quaternion delta; applying it to a transform stays
+  binding-owned. That is the correct boundary for a target-free core, but it means no consumer in this
+  repo demonstrates the round trip.
 
-Animation clips now own validated, sorted `{ time, name, payload }` event entities. Players report
-crossed markers through an opt-in `onEvent` signal without allocating in the advance loop. Forward,
-reverse, Repeat, finite-repeat exhaustion, and multi-bounce PingPong traversal use explicit half-open
-crossing rules; repeat-entry markers at time 0/duration fire once per cycle and bounce boundaries do not
-double-fire. Timeline frame scripts remain unrelated.
+## Log
 
-## 2026-07-25 — reusable root-motion extraction
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-Added `AnimationRootMotionExtractor` for one explicit clip channel. It extracts additive vector or
-compositional quaternion deltas over arbitrary unwrapped time ranges, including multiple forward or
-reverse loop crossings, using construction-owned scratch. Translation and rotation can use separate
-extractors; applying either delta remains binding/gameplay-owned.
-
-## 2026-07-25 — target-free masked animation layers
-
-Added `AnimationLayerStack`, an ordered pose stack whose sources may be blend trees or state machines.
-Each layer has a mutable weight, override/additive policy, and an optional validated subset of source
-channel indices. The stack precomputes target correspondence and distinct sources, reuses fixed sampling
-and advancement scratch, and advances shared player identity once across the whole stack. This closes
-partial-body composition without putting skeleton joint semantics into the animation core. Blend trees
-also precompute distinct players, and state machines reuse construction-owned scratch, removing hidden
-per-frame `Set` allocation from all controller update paths.
-
-## 2026-07-25 — N-way blend tree and explicit state machine
-
-Added the crossfade successor as two composed target-free layers. `AnimationBlendTree` normalizes any
-number of positive-weight override players per target, then applies ordered additive players through
-the existing accumulate/add/finish primitives; player identity is advanced once even when shared by
-multiple leaves. `AnimationStateMachine` owns named blend-tree states and one explicit timed transition,
-with precomputed target correspondence and reusable scratch so sampling stays allocation-free.
-Gameplay conditions remain caller-owned: the caller requests a transition by name rather than the core
-polling hidden predicates. The crossfade example now demonstrates idle transitioning into a 70/30
-walk/run blend tree.
-
-## 2026-07-24 — two-player crossfade controller
-
-Added an explicit `AnimationCrossfade` controller over two players: caller-driven advancement, a plain
-curve seam, target-matched channel sampling through the same visitor shape as `sampleAnimationClip`,
-quaternion-aware two-way blending, one-sided channel pass-through, and completion polling for caller
-retirement. The existing `accumulateAnimationSample` / `addAnimationSample` /
-`finishAnimationSample` primitives remain the intended N-way foundation for a future blend tree; this
-change deliberately stops at the two-player transition and does not introduce a state machine.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract; the prior file was five sessions of
+  past-tense narration with no `Open` section at all, so nothing was dropped as false — every feature
+  it claimed to have landed is present and reachable. The items above are new findings from reading the
+  source against the contract, not restatements.
+- **2026-08-02** — `@flighthq/shape` consumes the animation substrate for MorphShape scalar binding via
+  an opaque `targetRef`; no change to this package.
+- **2026-07-25** — Clip-level events: validated, sorted `{ time, name, payload }` entries with
+  half-open crossing rules across forward, reverse, Repeat, and PingPong traversal.
+- **2026-07-25** — `AnimationRootMotionExtractor` for one explicit channel over arbitrary unwrapped
+  time ranges, using construction-owned scratch.
+- **2026-07-25** — `AnimationLayerStack`: ordered pose stack over blend trees or state machines, with
+  per-layer weight, override/additive policy, and an optional channel-index mask.
+- **2026-07-25** — `AnimationBlendTree` and `AnimationStateMachine` added over the existing
+  accumulate/add/finish primitives; shared player identity advances once per stack.
+- **2026-07-24** — Two-player `AnimationCrossfade` with quaternion-aware blending and completion
+  polling.

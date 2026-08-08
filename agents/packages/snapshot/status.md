@@ -1,23 +1,50 @@
 ---
 package: '@flighthq/snapshot'
-updated: 2026-07-30
+updated: 2026-08-08
+by: principal
 ---
 
-## 2026-07-30 — guards, schema compilation, and a cycle that crashed four ways (builder)
+# snapshot — Status
 
-All three cell items landed. The sweep also found that a cyclic source — which `structuredClone` supports and the package doc admits as "structured-cloneable data" — crashes with `RangeError: Maximum call stack size exceeded` in every deep walk the package has. Probed all four:
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-- `captureSnapshot` — the freeze walk recursed forever.
-- `equalsSnapshot` — same.
-- `interpolateSnapshots` — same. (My first probe missed this by passing 3 args to a 4-arg function, so it returned early at the `out` guard and looked clean. Re-probed correctly; a probe can manufacture a false negative as easily as a false positive.)
-- `restoreSnapshot` — the one that hides. The first restore into a fresh target clones and succeeds; only the *second*, once the live target itself holds the cycle, recurses forever. That is the ordinary per-frame usage.
+## Open
 
-`captureSnapshot` is fixed and cost nothing: `Object.isFrozen` doubles as the visited mark, since `structuredClone` always yields a fresh unfrozen tree, so freezing before descending makes the walk terminate on cycles and linear on shared subtrees with no side table. Cycles and diamonds are both preserved and deep-frozen.
+Re-checked against `packages/snapshot/src/` on 2026-08-08. The package is small and its one live
+design question was ruled after the last entry, so this list is short by fact rather than by neglect.
 
-The other three are **not** fixed, deliberately. Supporting cycles there means a visited set in `equals` and `interpolate`, which run per frame in netcode — a real cost on the common acyclic path, and the "an assembly never inflates the cost of a primitive" rule argues against paying it for a rare shape. Rejecting instead means narrowing the documented contract. That is a policy call, so it is recorded in [assessment](./assessment.md) rather than guessed, and `enableSnapshotGuards` now warns at capture time that the operations downstream cannot walk what was just captured — turning a `RangeError` with no Flight frame in the stack into a message naming the three functions.
+- **The contract is acyclic, and only `captureSnapshot` actually enforces anything.**
+  `equalsSnapshot`, `interpolateSnapshots`, and `restoreSnapshot` walk without a visited set and
+  recurse forever on a cyclic source; that is the ruled design (no per-frame visited-set tax), stated
+  at `captureSnapshot.ts:16-17` and `enableSnapshotGuards.ts:22-24`. The only thing standing between
+  a caller and a bare `RangeError` is the opt-in guard, so an app that never imports
+  `enableSnapshotGuards` gets a stack overflow with no Flight frame in it.
+- **Reject-vs-warn is still an open policy fork.** `enableSnapshotGuards` warns about non-plain
+  values (`Map`, `Set`, `Date`, `RegExp`, typed arrays, `ArrayBuffer`) and about cycles; whether
+  `captureSnapshot` should instead throw is a behavior decision the user has not made.
+- **The delta pair is unbuilt and unreserved.** `diffSnapshots` / `applySnapshotDelta` are named in
+  the charter's North star, but there is no `SnapshotDelta` type in `packages/types/src/` and no
+  delta module in `contract.ts` (five entries: capture, guards, equals, interpolate, restore). The
+  blocker is a design fork — path-list versus structural mirror — not effort.
+- **No history/undo stack and no structural sharing.** Both are charter Open directions; neither has
+  any source. Structural sharing in particular is a capture-strategy redesign, since `captureSnapshot`
+  currently `structuredClone`s the whole tree (`captureSnapshot.ts:22-25`).
 
-On the items: the guard installs through a `setSnapshotCaptureGuard` seam so the messages and the `@flighthq/log` dependency live only in the separately-importable module. Schema compilation replaced a per-leaf `includes` scan with a `Set` built once per call, and stopped building the dotted path entirely when no schema is present — it was the walk's main per-leaf allocation and is never consulted in that case. `undefined` (no schema, interpolate everything) stays distinct from an empty schema (interpolate nothing); a mutation collapsing them fails a test written for exactly that.
+## Log
 
-35 → 55 tests. Three mutations, each confirmed applied and disjoint. One test was written and removed before landing: it asserted `logOnce` warns only once, which is `@flighthq/log`'s guarantee rather than this package's, and passed or failed purely on test ordering within the file.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-# snapshot — Status Log
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The one carried claim that changed:
+  the cycle question the 2026-07-30 entry left as "a policy call, recorded in assessment rather than
+  guessed" **was ruled on 2026-07-31** — the contract narrows to acyclic, no visited sets in the
+  per-frame walks, and `captureSnapshot` surviving a cycle is incidental robustness callers may not
+  rely on. Restated above as settled design, not as a pending decision.
+- **2026-07-30** — Guards, schema compilation, and the cycle sweep. `captureSnapshot`'s freeze walk
+  uses `Object.isFrozen` as its visited mark (`captureSnapshot.ts:45-46`), so it terminates on cycles
+  and stays linear on shared subtrees with no side table. `enableSnapshotGuards` installs through the
+  `setSnapshotCaptureGuard` seam (`captureSnapshot.ts:32`) so the message text and the
+  `@flighthq/log` dependency live only in the separately-importable module. `interpolateSnapshots`
+  compiles its schema to a `Set` once per call (`interpolateSnapshots.ts:41`) and skips building the
+  dotted path entirely when no schema is present; `undefined` (interpolate everything) stays distinct
+  from an empty schema (interpolate nothing).

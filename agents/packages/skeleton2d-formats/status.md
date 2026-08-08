@@ -1,218 +1,81 @@
+---
+package: '@flighthq/skeleton2d-formats'
+updated: 2026-08-08
+by: principal
+---
+
 # skeleton2d-formats — Status
 
-Continuity log for `@flighthq/skeleton2d-formats`. See [charter](./charter.md) for the AAA target and the **Option C** decision (formats now + animation binding; defer only the constraint solvers).
-
-## Current state — Spine `.json` and DragonBones `.json` both complete (2026-07-30)
-
-The package exists, is registered (tsconfig paths/build refs, sdk barrel `formats` group + deps, package.json `.`+`./contract` lanes), and passes the scoped `npm run check skeleton2d-formats`. **118 tests pass across 5 files.** All types live in `@flighthq/types` (implementation exports functions only).
-
-**DragonBones (`dragonBonesParse.ts`) — `parseDragonBonesSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, increment 1 (bones):** registered behind the seam (`detectDragonBones` on an `armature` key). Parses the FIRST armature's bone hierarchy: **topologically sorted** (DragonBones bones are not parent-before-child ordered, so parents are emitted before children; dangling/cyclic parents become roots + `dragonbones.unresolved-bone-parent` crumb). Transform maps skX/skY (or newer rotate/skew) to `Bone2D.rotation = rotation`, `shearX = 0`, `shearY = skew`, scX/scY to scale, and x/y. DragonBones defines its bone matrix as a = sX·cos(rotation), b = sX·sin(rotation), c = −sY·sin(rotation+skew), d = sY·cos(rotation+skew), which is identical to Flight's `Bone2D` local matrix under that mapping — so the mapping is exact rather than approximate. Inheritance: the 4-boolean model → `Bone2D.transformMode`. *(As landed, increment 1 mapped onto the old five-value `TransformMode2D` enum and `Skip`-crumbed the two combos it could not express plus `inheritTranslation:false`; the **model-shape finding** that raised — DragonBones' inherit factoring is richer than the Spine 5-enum — was surfaced to review and became the `TransformInherit2D` refactor [charter 2026-07-30], after which the booleans map straight through and `dragonbones.inherit-mode-unmapped` / `inherit-translation-unsupported` no longer exist.)* Slots, skins, and animation were `Skip`-crumbed at this point and are parsed by increments 2–4 below; additional armatures still are.
-
-**DragonBones increment 2 (slots + displays) — landed.** `parseDragonBonesSlots` resolves each slot's `boneIndex` (parent name → topo-sorted output index via `buildBoneIndexByName`), its shown attachment (the display at `displayIndex` in the default skin's per-slot display list), and its `color` (ColorTransform multiply channels aM/rM/gM/bM 0–100% → packed RGBA; additive offsets Skip-crumbed). The default skin's display list is **position-preserving** because `displayIndex` is POSITIONAL and dropping an entry RENUMBERS THE REST: an unmodeled display (mesh/armature/boundingbox/path) or a malformed one is held as `null` at its `displayIndex`, never dropped (read-integrity axis 12 on the display array). Image displays → `RegionAttachment2D` (transform mapped; width/height 0, resolved later from the atlas). Alternate skins Skip-crumbed.
-
-**DragonBones increment 3 (unweighted mesh displays) — landed.** `parseDragonBonesMeshDisplay` maps an UNWEIGHTED DragonBones mesh display (`vertices`/`uvs`/`triangles`, positions in the slot bone's local space) directly to `MeshAttachment2D` (skin null), like a Spine unweighted mesh. **WEIGHTED meshes were deferred and Skip-crumbed at this point** (`dragonbones.weighted-mesh-unsupported`, since removed by increment 3b below): unlike Spine — which pre-bakes each influence's per-bone offset — DragonBones stores one vertex plus cached `bonePose`/`slotPose` bind matrices and defers the skinning, so the conversion to `Skin2D`'s per-bone offsets needs bonePose/slotPose matrix math. A `share`d mesh (borrowed geometry) is likewise deferred. All held at their `displayIndex` (null).
-
-**DragonBones increment 3b (weighted mesh skinning) — landed.** `parseDragonBonesWeightedMesh` performs inverse-bind skinning: each raw vertex is transformed by `slotPose` into armature bind space, then by the inverse of each influencing bone's `bonePose` into that bone's bind-local frame — exactly `Skin2D`'s per-bone offset (Flight deform: Σ w·(boneWorld·localOffset)). Formula-parity tested (hand-computed offsets, translation + rotation bind matrices). The **axis-12 remap** (`buildDragonBonesBoneRemap`) re-points each influence's armature-file-order bone index to the topo-sorted OUTPUT index, name-mediated so it is drop-safe. Reads bound against the actual `weights` stream length (read-integrity axes 9/13; strictly-positive advance, axis 6); truncation / unresolvable bone / degenerate bind matrix → best-effort drop + a `dragonbones.weighted-mesh-recovered` crumb. `share`d and legacy (`weights` without `bonePose`) meshes Skip-crumbed. Offsets compute wholly in DragonBones space, so the y-down↔y-up question stays orthogonal (charter #4).
-
-**DragonBones increment 4 (frame timelines) — landed; the `.json` format is complete.** `parseDragonBonesAnimations` builds one `AnimationClip` per `animation` from the per-bone frame lists, as RELATIVE deltas over the same `Skeleton2DAnimationTarget` seam and two-skeleton binder Spine uses: `translateFrame` x/y (default 0) → Translation, `rotateFrame` `rotate` (default 0) → Rotation, `scaleFrame` x/y (default **1**, the multiplier identity) → Scale, `rotateFrame` `skew` → Shear as (shearX 0, shearY skew) — the same angle split the setup-pose transform uses — emitted **only when some frame actually skews**, so a no-skew rig pays for no channel.
-
-Three DragonBones-specific mechanics, none of which Spine has:
-- **Time axis.** Spine keys carry absolute seconds; DragonBones keys carry a `duration` in FRAMES (default 1, its parser's own fallback) and the armature carries the rate. A key's time is the running duration sum ÷ `frameRate` (`dragonBonesFrameTimes`); the rate is armature → document → 24, with a zero/non-finite rate falling back rather than dividing every time to Infinity. A negative duration clamps to 0 so times stay ascending as `AnimationTrack` requires; a zero duration leaves two keys at one instant, which `sampleAnimationTrack`'s `dt > 0` guard already handles (later key wins), so no collapsing is needed. Clip duration comes from the animation's declared `duration` (also frames), which may outlast the last keyframe when the animation holds.
-- **Rotation unwrap** (`addDragonBonesRotateChannels`, replicating `ObjectDataParser._parseBoneRotateFrame`). Authored angles are wrapped, so each frame after the first is re-expressed as the previous angle plus the shortest signed step (`normalizeDegrees`, DragonBones' `Transform.normalizeRadian` in the authoring layer's degrees), and a nonzero `clockwise` on the previous frame adds that many whole turns, consuming one per frame that already passes the previous angle. This is **correctness, not fidelity**: without it 170° → −170° tweens the 340° long way round through zero instead of the authored 20° step.
-- **Per-frame tween → per-track interpolation.** A Flight track carries one interpolation, so the list is Step only when every *tweening* frame declares no tween (`tweenEasing: null` — the exporter's spelling — or the sentinel 100; an ABSENT `tweenEasing` means linear). Only frames before the last open a segment (DragonBones gives the final frame `TweenType.None` itself), so a trailing frame's easing never decides the track.
-
-Read-integrity: a malformed keyframe is held in place as an empty frame (default values, default 1-frame duration) rather than dropped, since dropping it would swallow its duration and pull every later key earlier — the same discipline the display list and bone array use (`dragonbones.malformed-frame-recovered`). One frame list can feed two channels (rotate → Rotation + Shear), so the shared tail **copies** `times` per track rather than aliasing one buffer across two tracks. A timeline naming an absent bone is dropped and Recover-crumbed once per document.
-
-**Spine `.skel` binary — increment 1 (wire format) landed; increment 2 BLOCKED on verification, not on plumbing.** `spineBinaryReader.ts` decodes the byte layer: Kryo-style varints (unsigned + zigzag-signed), length-prefixed UTF-8 strings honoring Spine's `0`=absent / `1`=present-but-empty prefix, big-endian float32/int32 (Spine writes via Java `DataOutputStream`), boolean, skip. It builds on the **existing `ByteReader` type** from `@flighthq/types` rather than declaring a new one. Truncation is a sticky sentinel, never a throw: a read that cannot be satisfied consumes nothing, returns a neutral value, and parks the cursor at `byteLength + 1`, so a parser bails once per record via `isSpineBinaryReaderOverrun` instead of guarding every field (a cursor resting exactly ON `byteLength` stays the legitimate end-of-stream state).
-
-**Increment 2 (record layout: header + string table + bones + slots) — landed and VERIFIED AGAINST A REAL ASSET.** `spineBinaryParse.ts` exports `parseSpineSkeletonBinary(bytes, diagnostics?)` → `Skeleton2DImport | null`, the binary sibling of `parseSpineSkeleton` and shaped like `parseGlb` beside `parseGltf` (bytes in, same product out). `spineBinaryReader` owns the wire decoding; this file owns only which field follows which.
-
-**The oracle problem is SOLVED [2026-07-30].** The user purchased a Spine license and authorized use of real spineboy assets for verification, with two standing constraints: **do not use the Spine runtimes** (that would pollute Flight's source license — the format was implemented without reading runtime code) and **never commit the assets**. Verification used a matched `spineboy-pro.skel` + `spineboy-pro.json` pair (Spine **4.1.17**, 67 bones, 52 slots), held outside the repo and not committed. Evidence:
-- Header decodes to exactly the JSON's values — version `4.1.17`, x −188.63, y −7.94, width 418.45, height 686.2, `images: './images/'`, `audio: ''`, fps 30 — and the 81-entry string table reads as real attachment names.
-- **Full cross-parser oracle passes**: parsing the `.skel` and the `.json` yields IDENTICAL output for all 67 bones (name, parentIndex, all eight transform floats, transformMode) and all 52 slots (name, boneIndex, packed color). The `.json` rounds to 2 dp, so floats compare within 0.006; everything else is exact.
-This is genuine independent verification, not a self-consistency round-trip. The committed tests still use a **hand-authored encoder** (no asset is committed, per licensing) — but that encoder now *reproduces a confirmed wire format rather than defining one*, which is what makes it a real check.
-
-Layout notes that are load-bearing: bone 0 writes **no** parent index (reading one desynchronizes every later field); the `nonessential` flag **changes the bone record width** (a trailing editor color), so it must be carried down even though nothing it gates is modeled; `transformMode` is an **ordinal** into Spine's enum order (hence the deliberately unalphabetized `SPINE_BINARY_TRANSFORM_MODES`), with an out-of-range ordinal falling back to Normal; slot dark color is `-1` for "none" and Skip-crumbed otherwise.
-
-**Version gate.** Only the 4.x line is claimed, since that is what was verified. A file outside it is **Rejected** with its version in the crumb rather than decoded by a layout that does not describe it — a mismatched layout does not fail loudly, it silently yields plausible garbage.
-
-**Why the binary is NOT behind the `parseSkeleton2D` registry.** That registry dispatches on decoded *text*; a binary skeleton is bytes. So it gets its own entry point, exactly as `parseGlb` sits beside `parseGltf` in `scene3d-formats` rather than behind a text detector.
-
-**Increment 3 (constraints + default skin + attachments) — landed and oracle-verified.** Slots now resolve their setup attachment. Three things this increment established:
-- **Constraint records are CONSUMED, not skipped.** Flight models no IK/transform/path solvers, but the stream is positional — records carry no keys and no lengths — so these must be walked field-for-field to reach the skins. Verified against the real asset: 7 IK and 8 transform constraint names decode exactly, and the default-skin slot count then lands on 52. A single miscounted field would desynchronize everything after.
-- **The `sequence` field was the trap.** Spine 4.1 added an optional per-attachment `sequence` block to image-backed attachments (region, mesh, linked mesh). Its one-byte presence flag is ALWAYS written. Missing it desynchronized every record after the first region — the observable symptom was attachment parsing dying after ~18 entries with an invalid type ordinal. Diagnosed from the byte stream, not from runtime source.
-- **Deferred attachment resolution.** A slot names its setup attachment before the skin that defines it exists in the stream, so the name is captured during slot parsing and resolved after the skin is read.
-Attachment types are an ORDINAL into Spine's enum (so `SPINE_BINARY_ATTACHMENT_TYPES` is deliberately unalphabetized, like the transform-mode table). Region and mesh are modeled; bounding-box, path, point, clipping, and linked-mesh are consumed-then-Skip-crumbed, since dropping them still requires walking their bytes. An UNKNOWN ordinal cannot be stepped over at all — its payload width is unknowable — so the stream is abandoned by marking overrun rather than emitting garbage.
-
-**Oracle result (increment 3):** binary and JSON produce IDENTICAL output for all 67 bones, all 52 slots, and all 18 slots carrying a setup attachment (10 region, 8 mesh, 7 of them weighted) — including mesh triangle indices, UVs, and the weighted-mesh `Skin2D` influence streams. That last one is the strongest signal in the suite: Spine's binary influence stream and its JSON `[boneCount, (boneIndex, x, y, weight)×N]` stream are decoded by two entirely separate code paths and agree value-for-value.
-
-**Increment 4 (events + animation timelines) — landed; `.skel` is COMPLETE.** Bone timelines become `AnimationClip` channels over `Skeleton2DAnimationTarget`, exactly as the `.json` parser does, and every other timeline family is walked field-for-field because reaching the next animation demands it. Four layout facts, each found by byte-level diffing against the licensed rig:
-- **An animation opens with a TOTAL timeline count** across all families, before any section.
-- **Spine splits each transform group into a combined and per-axis form** (`translate` vs `translateX`/`translateY`). A per-axis timeline is widened to the path's full component count with the untouched axis holding its IDENTITY delta — 0 for translate/shear, 1 for the scale multiplier — since a two-component path cannot express "x only" any other way.
-- **Slot COLOUR timelines store one BYTE per channel**, while their bezier control points are still floats. Treating those channels as floats desynchronized the stream and silently dropped the final animation — the bug that cost `walk`.
-- **A deform/attachment timeline section sits between path constraints and draw order**, and carries its own type byte (deform vs sequence). Missing it ended each animation one byte early.
-Bezier segments reuse the same absolute-units rebase as the `.json` path, including the x-clamp and the first-meaningful-component rule.
-
-**`.skel` ORACLE (final):** the binary consumes the licensed 67 563-byte rig to **byte 67 563 exactly** — no overrun, nothing unparsed — and yields **11 animations with 344 bone channels whose `(boneIndex, path)` structure is IDENTICAL to the `.json` parse**, 0 differences. Posed output agrees to within 0.27 across every animation at four sample times; that residue is **the JSON export's own 2-decimal rounding**, not decoder error — the binary carries full float32 and is the FINER source (e.g. binary `-33.908966` vs JSON `-33.91`). Landing precisely on the final byte after 67 KB of keyless, lengthless records is the strongest structural evidence available for this format.
-
-**Note on why every section had to be decoded:** the stream is positional — records carry no keys and no lengths, so a reader cannot skip a section it does not model, only consume or stop. This landing parses through the default skin and then **stops**, Skip-crumbing the tail (`spine.binary-tail-unparsed`, with the unread byte count). Next: the events section, then animation timelines — after which `.skel` reaches parity with the `.json` parser.
-
-**Bezier curve easing — IMPLEMENTED and validated on the real rig.** Spine per-keyframe `curve` arrays now become per-interval `AnimationTrack.segmentEasings` entries via `@flighthq/easing`'s `easeCubicBezier`. Spine writes control points in **absolute time/value units** and **four numbers per component** in component order (`rotate` 4, `translate` 8), so each point is rebased onto its segment: `x = (cx − t1)/(t2 − t1)`, `y = (cy − v1)/(v2 − v1)`. Confirmed against the licensed 4.1.17 rig.
-
-Two behaviours the real rig forced, neither of which the hand-authored fixtures would have surfaced:
-- **Per-component divergence is COMMON, not rare — 214 of 1124 curved segments (19%).** Spine permits a different curve per component; a Flight track carries one easing per interval. Per the [2026-07-30] ruling the **first meaningful component wins** and divergence is Skip-crumbed (`spine.per-component-curve-easing-unsupported`, 57 timelines on spineboy). "Meaningful" excludes a component whose value is constant across the segment — its curve carries no shape and rebasing it would divide by zero. Divergence is measured on the **normalized** control points, never the raw numbers: two components sharing a shape but spanning different value ranges write different raw `cy`s, so a raw comparison would report divergence on nearly every multi-component timeline.
-- **Time overshoot must be clamped.** Spine allows a control point outside its segment in time; `easeCubicBezier` inverts x→parameter and that inversion is only defined while x is monotonic over [0,1]. The x components are clamped and the loss recorded (`spine.curve-time-overshoot-clamped`, 4 segments on spineboy). **y is deliberately left unclamped** — a y outside [0,1] is legitimate anticipation/overshoot and the solver handles it, since y is the output rather than the inverted axis.
-
-Validated end-to-end on the licensed rig: 244 channels carry easings across 1120 eased segments with **zero non-finite samples**. An uncurved timeline allocates no `segmentEasings` at all.
-
-**Remaining:** Spine `.skel` binary. Open caveat: DragonBones is Flash y-DOWN vs Spine/Flight y-UP — a possible global y-sign reconciliation only the deferred corpus oracle can confirm (charter #4).
-
-**Known gaps left by increment 4 (deliberate):** quadratic (`tweenEasing` ≠ 0) and bezier (`curve`) frame easing collapse to Linear — Skip-crumbed as `dragonbones.tween-easing-unsupported`, the DragonBones twin of the Spine bezier gap below. *(Closed, then SUPERSEDED: `spineParse` first gained a matching `spine.curve-easing-unsupported` crumb so both formats reported the same limit instead of Spine dropping it silently; that crumb no longer exists, because bezier easing is now actually implemented on the Spine side and only the narrower per-component divergence remains reportable — see `spine.per-component-curve-easing-unsupported` below. DragonBones' own `dragonbones.tween-easing-unsupported` is still a real gap, so the two formats are no longer symmetric here: Spine honors curves, DragonBones does not yet.)* `playTimes` (loop count) is not carried: `Skeleton2DImportAnimation` is `{ name, clip }` and loop policy belongs to the player, not the clip — deliberately not crumbed, since every animation declares it and the crumb would be pure noise.
-
-**Types (in `@flighthq/types`):** `Skeleton2DImport` (setup-pose `Skeleton2D` + named animations) and `Skeleton2DImportAnimation` (`{ name, clip }`), both registered in the parallel index/contract barrels.
-
-**Parser (`spineParse.ts`) — `parseSpineSkeleton(json, diagnostics?)` → `Skeleton2DImport | null`, tolerant/best-effort, `null` reserved for the unrecognized-format failure:**
-- **Bones** — parent-before-child name→index resolution (backward search), Spine defaults (x0/y0/rot0/scale1/shear0/length0), all five `transform` modes mapped (`onlyTranslation`/`noRotationOrReflection`/`noScale`/`noScaleOrReflection`/default), unknown → Normal.
-- **Slots** — draw order by array position, bone resolution, `parseSpineColor` ("rrggbbaa" → packed RGBA int, default 0xffffffff), setup attachment resolved from the default skin.
-- **Attachments** — region (`parseSpineRegionAttachment`) and mesh (`parseSpineMeshAttachment`: unweighted iff `vertices.length === vertexCount*2`, else weighted → `Skin2D` influence stream from Spine's `[boneCount,(boneIndex,x,y,weight)×N]` per-vertex format). vertexCount = `uvs.length>>1`.
-- **Skins** — the `default` skin's `slot→attachment→Attachment2D` table (4.x array form + older object form); alternate skins `Skip`-crumbed (`spine.alternate-skin-unsupported`).
-- **Animations** — per named animation, bone `rotate`/`translate`/`scale`/`shear` timelines → `@flighthq/animation` `AnimationClip` channels with `Skeleton2DAnimationTarget` refs. Clips carry the **RAW relative deltas** (Spine timelines are relative-to-setup: rotate/translate/shear are offsets, scale a multiplier); the two-skeleton binder `applyAnimationClipToSkeleton2D(clip, setup, pose, time)` composes them onto the setup pose per frame (add / multiply, keyed by `path`). Keeping deltas relative — rather than baking setup into keys — is what makes clips blendable (`pose = setup + Σ wᵢ·deltaᵢ`) [decision 2026-07-29, superseded the earlier parse-time bake]. Interpolation = Step iff every key `curve === 'stepped'`, else Linear (bezier curve control points not yet honored — see gaps).
-
-**Registry (`skeletonDetect.ts`):** `parseSkeleton2D(text, diagnostics?)` auto-detects + dispatches over a lazily-built open `Map` (no module-top-level side effect); `registerSkeleton2DFormat(kind, detect, parse)` adds/overrides (last-write-wins, vendor-prefix custom kinds). Spine detected by a `bones`/`skeleton`/`slots` JSON key.
-
-**Diagnostic inventory.** Every kind below is written out in FULL so a reader can grep the code for it — the kind is a stable machine code, and abbreviating it in prose (`alternate-skin` for `dragonbones.alternate-skin-unsupported`) breaks exactly the lookup it exists for. Kept in sync by diffing the emitted literals against this list.
-
-*Spine `.json` and `.skel` — Skip (recognized but unmodeled):* `spine.<type>-attachment-unsupported` (boundingbox / path / clipping / point / linkedmesh), `spine.per-component-curve-easing-unsupported`, `spine.slot-dark-color-unsupported`, `spine.event-unsupported`, the constraint declarations `spine.ik-constraint-unsupported` / `spine.transform-constraint-unsupported` / `spine.path-constraint-unsupported`, and the animation timeline families `spine.<kind>-timeline-unsupported` — `slot-attachment`, `slot-color`, `ik`, `transform`, `path`, `deform`, `attachment-sequence`, `draworder`, `event` The `.json` parser reports the same families under its own fixed kinds: `spine.slot-timeline-unsupported`, `spine.ik-timeline-unsupported`, `spine.transform-timeline-unsupported`, `spine.path-timeline-unsupported`, `spine.deform-timeline-unsupported`, `spine.event-timeline-unsupported`, `spine.draworder-timeline-unsupported`.
-
-*Spine — Recover (degraded but continued):* `spine.malformed-bone-recovered`, `spine.weighted-vertices-truncated`, `spine.curve-time-overshoot-clamped`, `spine.binary-truncated`.
-
-*Spine `.skel` — Reject (file refused, sentinel returned):* `spine.binary-header-unreadable`, `spine.binary-version-unsupported`. Plus the informational `spine.binary-tail-unparsed`, which reports how many bytes were left unread — currently always 0, since the format is fully consumed.
-
-*DragonBones — Skip:* `dragonbones.multi-armature-unsupported`, `dragonbones.slot-timeline-unsupported` (a timeline naming an absent slot), `dragonbones.<type>-display-unsupported` (armature / boundingbox / path), `dragonbones.shared-mesh-unsupported`, `dragonbones.legacy-weighted-mesh-unsupported`, `dragonbones.color-offset-unsupported`, `dragonbones.unresolved-bone-parent`, `dragonbones.ik-constraint-unsupported`, `dragonbones.legacy-bone-frame-unsupported`, `dragonbones.tween-easing-unsupported`, `dragonbones.blend-tree-animation-unsupported`, and the animation timeline families `dragonbones.slot-timeline-unsupported` / `dragonbones.deform-timeline-unsupported` / `dragonbones.ik-timeline-unsupported` / `dragonbones.zorder-timeline-unsupported`.
-
-*DragonBones — Recover:* `dragonbones.weighted-mesh-recovered`, `dragonbones.malformed-frame-recovered`, `dragonbones.animation-bone-unresolved`.
-
-## Named skins (the wardrobe) — landed 2026-07-30, chief ruling option (a)
-
-Alternate/named skins were Skip-crumbed in all three parsers; they are now first-class. `AttachmentSkin2D` (in `@flighthq/types`) is a named skin — a flat `SkinAttachment2D[]` of `{ slotIndex, name, attachment }` — and `Skeleton2D.skins` carries the rig's wardrobe. `@flighthq/skeleton2d` gained `getSkeleton2DSkin(skeleton, name)` and `setSkeleton2DSkin(skeleton, skin)`.
-
-**The naming decision, because the word collides.** `Skin2D` was already taken by the weighted-mesh per-vertex BONE BINDING (the 2D analogue of skeleton3d's joints/weights). A Spine/DragonBones "skin" is something else entirely — a wardrobe of slot attachments. Both senses are canonical in their own domain, so neither could simply take the name: the new type is `AttachmentSkin2D`, the field is `skins` (so the vendor word stays greppable where users look for it), and both type comments cross-reference the other to kill the confusion. The charter had sketched `Skin*Set2D`; `AttachmentSkin2D` is that idea with the ambiguity removed — "set" would have read as a collection-of-skins rather than one skin.
-
-**Applying a skin is a slot write and nothing more** — no re-binding, no world propagation, since a skin changes what is DRAWN, not where bones are. Slots a skin does not mention are deliberately LEFT ALONE, which is what lets a partial skin layer over a base: real rigs put shared art in `default` and override only the differing parts, so blanking unmentioned slots would erase the shared pieces. A caller wanting a clean swap applies the base first.
-
-**Format notes.** Spine keys skins by slot NAME, so slots are now built bare and dressed afterwards (`resolveSpineSetupAttachments`) — skins need slot indices while slots need the default skin's art, and that circularity has to break somewhere. In the binary, the default skin is written first in an abbreviated form (slot count only, no name), then named alternates each carrying a name plus four required-index lists (bones and three constraint kinds) that Flight consumes for position only. DragonBones addresses a slot's setup art by `displayIndex` POSITION while the wardrobe keys by display NAME, so both views are built in one pass.
-
-**Verified against the licensed `goblins` rig** (Spine 4.1.17, 3 skins): `.json` and `.skel` produce an IDENTICAL wardrobe — `default(4) goblin(20) goblingirl(18)` — with the binary still consuming to byte 0 remaining, which is what confirms the named-skin record layout. `goblingirl` yields 18 of its 20 entries because 2 are **linked meshes**, still an unmodeled type.
-
-**Follow-up this surfaces:** linked-mesh attachments matter far more now that skins work — borrowing geometry from another skin's mesh is their whole purpose (it is exactly how `goblingirl` reuses `goblin`'s meshes). They remain Skip-crumbed; closing that is the natural next skin-adjacent gap.
-
-## Slot colour timelines — landed 2026-07-30 (chief-approved slot-animation model, step 1–2)
-
-`Skeleton2DSlotAnimationTarget` (`{ slotIndex, path }`, path currently just `Color`) is an ADDITIVE second target type beside the bone target — not a widening of it. `applyAnimationClipToSkeleton2D` dispatches on target SHAPE (a bone target names a `boneIndex`, a slot target a `slotIndex`), which is what `targetRef: unknown` exists for and is why slot channels needed no change to any shipped bone channel.
-
-**Bone channels COMPOSE, slot colour channels WRITE.** Bone timelines are relative deltas applied onto the setup pose; Spine and DragonBones both author slot colour ABSOLUTELY, so the binder replaces the slot's colour and never reads `setup` on that path. Composing would double-apply the tint.
-
-**Colour channels are normalized 0..1, not 0..255** — even though `Slot2D.color` packs bytes. This was found against the licensed rig and is not cosmetic: Spine authors colour CURVE control points in 0..1 space, so a byte-scaled track would rebase every colour easing against the wrong range. Verified on spineboy's `muzzle-glow`, whose curve `[0.255, 1, 0.273, 1, …]` rebases exactly under absolute-time / 0..1-value (its r and a channels are constant at 1.0, g and b sit inside their ranges). The binder scales to bytes when packing and CLAMPS, since an anticipation curve may legitimately overshoot and an out-of-range channel would otherwise wrap and flip the colour.
-
-Only `rgba` is modeled. `rgb`, `alpha`, and the dark-colour variants are Skip-crumbed (`spine.slot-<kind>-timeline-unsupported`): `Slot2D` carries one packed colour and no dark colour, so a partial-channel timeline cannot be represented without inventing a setup blend. Attachment swaps are the next step (index track + lookup table).
-
-**Verified on the licensed rig:** spineboy's `shoot` yields exactly 6 slot colour channels against the 6 `rgba` timelines its JSON declares, colours genuinely diverge from setup across sampled times, and no packed value falls out of range.
-
-**Attachment-swap timelines — landed (step 3).** A swap is a step over DISCRETE identities and `AnimationTrack.values` is `ArrayLike<number>`, so the track carries INDICES into a per-channel table on the target and `-1` means "show nothing" — which is Spine's own encoding, not an invention (a nameless keyframe hides the slot). This keeps `@flighthq/animation` numeric instead of widening every track in the SDK for one 2D feature.
-
-The binder walks these tracks with its **own step lookup** rather than `sampleAnimationTrack`, deliberately: interpolating between table indices would resolve to art no keyframe ever named, so the channel is correct regardless of what its track claims its interpolation is. Tests cover a Linear-claiming track still stepping.
-
-Two parse-side rules worth keeping: the table is **deduplicated** (a flash cycling back to an earlier image stores it once), and a keyframe naming art the setup skin does not supply becomes a hide rather than being **dropped** — dropping it would shift the timing of every later swap.
-
-Known limitation, named rather than hidden: the table resolves at import time against the SETUP skin, so an attachment-swap channel and a wardrobe change do not compose. A rig that both swaps skins and animates attachments needs the table re-resolved for the worn skin.
-
-**Verified on the licensed rig:** spineboy's `shoot` yields exactly 6 swap channels against its 6 declared timelines, and the muzzle flash reproduces its authored cycle `muzzle01 → 02 → 03 → 04 → hidden` with a 5-entry table across 6 keyframes.
-
-**Spine BINARY slot timelines — landed (step 4a).** `rgba` colour and `attachment` swaps now parse from `.skel` too. Colour components are single BYTES in the binary while their bezier control points are floats already in 0..1 (Spine divides by 255 before recording a curve), so the bytes are normalized on read and the curve rebase then matches the `.json` path exactly.
-
-**Curve easing now uses the DOMINANT component, not the first moving one — a real bug found by the corpus.** The rebase divides by a component's value change, so a *near-constant* component is a near-zero denominator: ordinary float noise amplifies into control points far outside the unit square, and the resulting curve is not the authored shape at all. spineboy's `muzzle-ring2` exposed it — red moves 0.8471→0.8431 (a rise of 0.004) while alpha moves a full 1→0, and the old "first component whose value changes" rule picked *red*, normalizing its control points to y = −0.725 and 1.775. The rule is now "the component with the largest value change wins", which is both the numerically stable choice and the honest one: it is the channel actually carrying the segment's motion. Applied to both parsers; the divergence comparison is a two-pass winner-then-compare, since a single pass measures components preceding the winner against zeros.
-
-**Cross-parser result:** sampling off keyframe boundaries, `.skel` and `.json` now agree on **every** posed slot colour and attachment across all 11 spineboy animations — zero differences. Sampling *exactly* on a keyframe time leaves 2 attachment differences, and those are not a defect: the binary stores times as float32, where 0.1 becomes 0.10000000149 — fractionally greater than the double 0.1 a JSON literal parses to — so the binary has not advanced to that keyframe yet. It is a measure-zero boundary artifact of two different representations of the same authored time.
-
-**Attachment swap × skin change — DEFERRED as a named gap** [chief ruling 2026-07-30]. Current behavior: a swap channel's attachment table resolves at IMPORT time against the setup skin, so wearing a different `AttachmentSkin2D` does not re-point it. It is deferred rather than built because **no available rig exercises the combination** — spineboy animates swaps but has one skin; goblins has three skins but no swap timelines — so building it now would be verified only against hand-authored belief, the exact failure mode the corpus catches keep demonstrating. The known shape when it is built is a re-resolve pass keyed on skin name. Note for whoever picks it up: the user holds a Spine **editor** licence, so a rig with both skins and swaps can be AUTHORED rather than hand-built, which verifies against Spine's own export semantics instead of a fixture.
-
-**DragonBones slot timelines — landed (step 4b).** `displayFrame` becomes a Step attachment-swap channel and `colorFrame` a 0..1 colour channel, so all three parsers now produce the same channel vocabulary; the formats differ in spelling, not in what they animate. Two format-specific points: DragonBones addresses a display by INDEX into the slot's display list, which is already the shape the swap track wants — the lookup table IS that display list, no name resolution needed, and a negative index is its own "show nothing" matching the track's `-1`. And its colour multiply channels are 0–100 PERCENT, so they normalize by 100 rather than the 255 the Spine paths use. Older exports spelling the lists `display`/`color` (value inline rather than under `value`) are accepted too, since tolerance costs nothing in a self-describing format.
-
-**DragonBones is now CORPUS-VERIFIED** [2026-07-31], closing the last fixture-only track in this arc. Network access for three editor-authored sample rigs was authorized; acquisition details are retained with the scratchpad-only assets, which are never committed. The repository retains synthetic fixtures only.
-
-Rigs and what each proves: **effect** (v5.5, 2 armatures) is the dense slot-timeline target — 32 `colorFrame` and 26 `displayFrame` timelines, and the parser emits exactly 32 colour and 26 attachment channels. **mecha_1004d** (v5.5, 10 animations) covers a large animation set — 87 declared display timelines, 87 attachment channels. **shizuku** (v5.6, 135 bones, 489 animations) covers scale and the 5.6 format. Across all three: zero non-finite track numbers, zero out-of-order keyframe times, zero out-of-range attachment indices, and zero non-finite posed values.
-
-**What the corpus caught that fixtures could not.** shizuku's 489 "animations" are not keyframe animations at all — they are DragonBones 5.6 **blend trees** (`type: 'tree'` carrying a `timeline` array instead of bone/slot arrays). The parser was emitting 489 silently EMPTY clips: entries that look like real animations, play, and do nothing. No hand-authored fixture would ever have contained that shape, because the shape was unknown. It is now Skip-crumbed as `dragonbones.blend-tree-animation-unsupported` while still emitting the name, so the rig's animation list stays complete and honest about what exists while the emptiness is reported rather than silent.
-
-**DragonBones curve easing — landed 2026-07-31, closing the Spine/DragonBones asymmetry.** Implementing Spine's bezier easing had left the two formats inconsistent: Spine honored curves while DragonBones only crumbed them. DragonBones' `curve` is now honored too.
-
-The two formats encode curves quite differently, and DragonBones is the simpler one: it stores FOUR control values ALREADY NORMALIZED to the unit square, where Spine writes absolute time/value units and four numbers PER COMPONENT. So the DragonBones path needs no rebasing and has no dominant-component question — one curve covers the whole frame and maps straight onto `easeCubicBezier`. Corpus-confirmed: every curve across all three rigs is exactly 4 values, all within [0,1]. The x components are still clamped for solver invertibility; y is left free so overshoot keeps its shape.
-
-**What stays unimplemented, and why that is a deliberate line rather than laziness:** the QUADRATIC `tweenEasing` variants (negative = quad-in, 0..1 = quad-out, >1 = quad-in-out) are still Skip-crumbed. The corpus contains **zero** non-zero `tweenEasing` values across all three rigs, so implementing them would mean writing format semantics from memory with nothing to verify against — the exact practice that produced five separate defects earlier in this arc. The split is therefore corpus-grounded: `curve` is implemented because 15 real instances verify it; quadratic easing is reported because none do.
-
-**Verified:** `effect` yields 15 eased segments — exactly the 15 curves the corpus carries — across 75 sampled points with zero non-finite results, and its `dragonbones.tween-easing-unsupported` count drops from 10 to 0.
-
-## Next (per charter build order)
-
-1. **FORMULA-parity test (in progress).** Hand-authored micro-rigs whose expected world transforms are computed by hand from Spine's *published* bone-transform formulas, asserted against `computeSkeleton2DWorldTransforms` for each of the 5 inherit modes. Test names carry the word FORMULA. **Corpus parity (real rig vs Spine's runtime) is DEFERRED by decision** [2026-07-29]: every Spine rig and the only reference-pose oracle (`@esotericsoftware/spine-core`) are under the non-permissive Spine Runtimes License, and a rig without an oracle is not a parity test. Revisit only when a permissive rig AND a permissive oracle exist together. Do NOT fetch spineboy (non-permissive).
-2. **Bezier curve keyframes.** Spine per-key `curve: [cx1,cy1,cx2,cy2]` bezier easing is currently collapsed to Linear (only `stepped` is honored). Honor it via `@flighthq/animation` per-key easing once a real rig demands the fidelity.
-3. **DragonBones `.json`** (after Spine) — its own `armature` container + bone/slot model deltas; registered behind the same seam.
-4. **Spine `.skel` binary** — later pass, same registry.
-
-## Format-registry audit — two open forks, RECORDED NOT CHOSEN (2026-08-05)
-
-Audited every module-global registry this cell and `@flighthq/skeleton2d` write into, asking the question
-that the test-hygiene sweep raised: **does a PRODUCTION path leave global state a later caller inherits?**
-
-**Answer for the `register*` paths: tests only.** Every production write is an explicit caller opt-in —
-`registerSkeleton2DFormat`, the constraint-solver registrars, the animation-target binders, the guard
-seam. None of them fires as a side effect of doing something else. The module-level scratch buffers
-(`_scratch`, `_positions`, `_tangents`) grow monotonically but are written before being read on every
-call, and `setSkeleton2DSlotDeform` copies rather than aliasing, so no value crosses a call boundary.
-
-**But one production READ path writes:** `getRegistry()` in `skeletonDetect.ts` lazily materialises the
-registry, so the first `parseSkeleton2D` — or the first `registerSkeleton2DFormat` — inserts the built-ins.
-That is not itself a defect, but it produces two consequences that are forks rather than bugs. Both are
-**measured, not reasoned**: each was confirmed by a throwaway probe, not by reading the code.
-
-### Fork 1 — a custom format can never take precedence over a built-in
-
-`parseSkeleton2D` returns the first registered detector that matches, and lazy init always inserts the
-built-ins first, so a later `registerSkeleton2DFormat` is always appended behind them. **Probed: a custom
-format whose detector matches everything still loses to Spine on Spine-shaped input.** A vendor wanting to
-change how a Spine-looking file is parsed must unregister `'Spine'` first, which is not obvious from the
-API.
-
-- **(a) Leave it.** Insertion order is a simple, explainable rule and overriding by *kind* already works.
-- **(b) Try non-built-in kinds first.** Makes vendor formats win by default; needs a definition of
-  "built-in" the registry does not currently carry.
-- **(c) Give `registerSkeleton2DFormat` an explicit priority.** Most flexible, most surface.
-
-**What would settle it:** whether any real consumer needs to reinterpret a file a built-in already claims.
-If none does, (a) is free.
-
-### Fork 2 — unregistering a built-in is one-way
-
-The built-in **parsers** are exported (`parseSpineSkeleton`, `parseDragonBonesSkeleton`) but the built-in
-**detectors** are not (`detectSpine`, `detectDragonBones` are module-private). **Probed: after
-`unregisterSkeleton2DFormat('Spine')`, `parseSkeleton2D` returns null for Spine input and nothing in the
-public API restores it** — a caller can supply the parser back but must re-implement the detector, which
-is precisely the reimplementation that will drift.
-
-Note this asymmetry is specific to *this* registry: `@flighthq/skeleton2d`'s solver registry is reversible
-because its built-in solvers are exported functions.
-
-- **(a) Export the detectors**, so re-registration is exact. Smallest change; adds two exports.
-- **(b) Add `resetSkeleton2DFormats()`** restoring the built-in set. One export, and it also covers a
-  registry a test has scrambled.
-- **(c) Accept one-way removal** and say so in the doc comment, on the grounds that last-write-wins
-  override already lets a caller break built-in parsing.
-
-**What would settle it:** whether removal is meant to be a caller-facing capability or only the inverse of
-a caller's own registration. If the latter, (c) is honest and free.
-
-**Neither fork was acted on** — quimby is offline and both change public shape.
-
-## Deferred (charter non-goals / skeleton2d P2)
-
-Posing/deforming/drawing and per-frame apply live in `@flighthq/skeleton2d` (the `applyAnimationClipToSkeleton2D` binder landed there first). IK/transform/path **constraint solvers**, events, and clipping/path/point attachments are skeleton2d P2 — `Skip`-crumbed here, not blockers for the animated demo. The `.atlas` texture-region half stays with `@flighthq/spritesheet-formats`.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
+
+## Open
+
+Every item below was re-checked against `packages/skeleton2d-formats/src/` on 2026-08-08. Spine
+`.json`, Spine `.skel` (4.x) and DragonBones `.json` all parse end to end; what follows is what they
+still refuse.
+
+- **The runtime can play morphs no importer produces.** Deform/`ffd` timelines are Skip-crumbed by all
+  three parsers (`spineParse.ts:618`, `dragonBonesParse.ts:173`, and the binary's deform section) while
+  `@flighthq/skeleton2d` ships `Skeleton2DDeformAnimationTarget` and four deformers.
+- **Same asymmetry for constraints.** IK/transform/path timelines are consumed and crumbed
+  (`spineParse.ts:615-617`, `dragonBonesParse.ts:174`), as are the setup-pose constraint declarations
+  (`spine.ik-constraint-unsupported` and siblings), though skeleton2d ships all three solvers. Nothing
+  ever builds a `Skeleton2DConstraint`.
+- **Four attachment types are walked and dropped that skeleton2d already models** — bounding box,
+  clipping, point and path (`spineParse.ts:157,170`; `spineBinaryParse.ts:849-864`). **Linked mesh** is
+  the one with no runtime counterpart, and it is what costs the `goblingirl` skin 2 of its 20 entries;
+  borrowing another skin's geometry is the whole point of a wardrobe, so it is the natural next gap.
+- **Events are unmodeled end to end** (`spineBinaryParse.ts:160`, `spineParse.ts:619`). Blocked on
+  skeleton2d, which carries no event type.
+- **Draw order is Spine-only.** Both Spine parsers emit `Skeleton2DImportAnimation.drawOrder`
+  (`spineParse.ts:620`, `spineBinaryParse.ts:189`); DragonBones `zOrder` is still crumbed
+  (`dragonBonesParse.ts:175`). The `drawOrder` field is optional purely because of that.
+- **DragonBones quadratic `tweenEasing` collapses to Linear** (`dragonBonesParse.ts:502-510`). Held
+  deliberately: the three-rig corpus contains zero non-zero values, so implementing it would mean
+  writing format semantics from memory. `curve` bezier easing *is* honored on both formats.
+- **A custom format can never outrank a built-in.** `parseSkeleton2D` returns the first matching
+  detector (`skeletonDetect.ts:47`) and lazy init always inserts Spine and DragonBones first
+  (`:19-23`), so a later `registerSkeleton2DFormat` is appended behind them. Fork recorded, not chosen:
+  (a) leave it, (b) try non-built-in kinds first, (c) explicit priority.
+- **Unregistering a built-in is one-way.** `detectSpine` / `detectDragonBones` are module-private
+  (`skeletonDetect.ts:29,38`) while the parsers are exported, so nothing restores what
+  `unregisterSkeleton2DFormat` (`:67`) removed. Fork: (a) export the detectors, (b) add
+  `resetSkeleton2DFormats()`, (c) accept one-way removal and say so.
+- **`spineParse.ts:541-543` lies about its own file.** The doc comment says draw-order timelines are
+  Skip-crumbed and per-keyframe beziers approximate to Linear; both are implemented below it
+  (`:620`, `:415-521`).
+- **DragonBones reads only the first armature** (`:72`); shared meshes (`:697`) and legacy weighted
+  meshes without `bonePose` (`:709`) are held as `null` at their `displayIndex`.
+- **Spine partial-channel slot colour is unrepresentable.** `rgb`, `alpha` and the dark-colour variants
+  crumb out (`spineBinaryParse.ts:712`, `spineParse.ts:655-661`) because `Slot2D` carries one packed
+  colour and no dark colour.
+- **The y-axis convention is assumed, not confirmed.** DragonBones is Flash y-down, Spine/Flight y-up;
+  only a posed-output oracle against DragonBones' own runtime settles it (charter #4).
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract; front matter added (the file had none).
+  Deleted the whole "Next (per charter build order)" section as false — bezier easing, DragonBones
+  `.json` and Spine `.skel` are all landed, and its "Do NOT fetch spineboy (non-permissive)" line was
+  contradicted by the licence authorization recorded in the same file. The stray "**Remaining:** Spine
+  `.skel` binary" went with it. Also dropped "alternate skins Skip-crumbed": those two crumb kinds now
+  survive only in tests asserting their *absence*. The hand-copied diagnostic inventory is gone rather
+  than corrected — grep the source, which is what the full kinds exist for.
+- **2026-08-05** — Registry audit: every `register*` write is a caller opt-in, but `getRegistry()` on
+  the read path materializes the built-ins, which is where the two forks above come from.
+- **2026-07-31** — DragonBones corpus-verified against three editor-authored rigs (never committed);
+  caught 489 silently empty clips that were 5.6 blend trees. DragonBones `curve` easing implemented,
+  closing the Spine asymmetry.
+- **2026-07-30** — Slot colour and attachment-swap timelines landed across all three parsers; curve
+  rebasing switched to the dominant component after a near-constant channel produced control points
+  far outside the unit square.
+- **2026-07-30** — Named skins became first-class as `AttachmentSkin2D` (the word `Skin2D` was already
+  the weighted-mesh bone binding); verified identical `.json` vs `.skel` wardrobes on `goblins`.
+- **2026-07-30** — A purchased Spine licence solved the oracle problem. `.skel` increments 2-4 landed
+  and consume the 67 563-byte spineboy rig to the exact final byte, matching the `.json` parse on all
+  bones, slots, attachments and 344 bone channels. Spine runtime source was never read.
+- **2026-07-30** — DragonBones `.json` completed through increment 4 (frame timelines), with its own
+  frame-rate time axis, rotation unwrap, and per-frame-tween → per-track interpolation.

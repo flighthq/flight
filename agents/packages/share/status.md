@@ -1,124 +1,51 @@
 ---
 package: '@flighthq/share'
-updated: 2026-07-30
+updated: 2026-08-08
+by: principal
 ---
 
-# share — Status Log
+# share — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-30 — live-tree closure audit
+## Open
 
-- Verified the sole approved Recommended item against current history. Commit `1cd249505` removed the
-  never-populated `_signalSubscriptions` map and its dead `detachShareSignals` read; `_signalListeners`
-  is now the single attachment registry.
-- Confirmed the old merge-gate blockers are stale. `ShareContent`, `ShareFile`, `ShareOptions`,
-  `ShareResult`, `ShareBackend`, and `ShareSignals` are present in `@flighthq/types`, and the live
-  package compiles against the contract lane.
-- Focused `npm run check -- share` passed all structural gates, and
-  `npm run test --workspace=packages/share` passed 44 tests. The shipped Capacitor adapter's five
-  focused tests also pass.
-- Corrected the charter's stale `isShareContentValid` name to `hasShareContentFields`, added the
-  detailed-result entry point, and expanded the Package Map from its one-line stub to the shipped
-  web/Capacitor surface.
-- Closed Recommended work. Capacitor's async availability projection, portable-file support across
-  native hosts, and cross-backend dismissal semantics remain architectural Depth gaps.
+Re-checked against `packages/share/src/`, `packages/types/src/Share.ts`, and the one shipped native
+adapter on 2026-08-08. A file:line here is a claim about this tree, not about a session.
 
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
+- **A source comment advertises options that no longer exist.** `shareContent`'s comment says "pass
+  options to control presentation on native hosts (parentWindow, sourceRect on iPad)"
+  (`share.ts:134-135`), but `ShareOptions` carries only `chooserTitle` and `excludedActivityTypes`
+  (`types/src/Share.ts:20-25`). Neither field is anywhere in `packages/`.
+- **The web backend ignores `ShareOptions` entirely** — the parameter is `_options` and unread in both
+  `share` and `shareWithResult` (`share.ts:52`, `:65`). Both surviving fields are native-only, so
+  nothing in the type is honorable on the web.
+- **Only `shareContentWithResult` returns a `ShareResult`** (`share.ts:145`). `shareText`, `shareUrl`,
+  and `shareFiles` (`:163-175`) are boolean-only, so the result-carrying path is reachable only
+  through the general entry point. Whether the twins earn their surface is still an open decision.
+- **`hasShareContentFields` checks presence, not validity** (`share.ts:111-117`). A malformed `url`
+  passes the gate and surfaces later as an ordinary `false` from `navigator.share`. Deliberate under
+  the sentinel-not-throw contract; recorded so it is not rediscovered as a bug.
+- **Native coverage is Capacitor only.** `createCapacitorShareBackend`
+  (`host-capacitor/src/capacitorShare.ts`) is the sole host adapter — no Electron, no Tauri. Two
+  consequences carry into this cell's contract: Capacitor's `canShare` is async while the seam's
+  probes are synchronous, so `isAvailable` and `canShare` both report **false** until a prefetch
+  resolves (`capacitorShare.ts:5-9`, `:23-27`); and portable `ShareFile` data URLs cannot cross
+  Capacitor's file-URI `files` field, so a files-only payload reports `canShare` false there.
 
-Executed the single sweep-safe item from `assessment.md › Recommended`:
+## Log
 
-- **Fixed casing `shareFileTodomFile` → `shareFileToDomFile`.** Renamed the private helper and its lone callsite in `src/share.ts`. The old name dropped the `D` in `Dom`, violating the full-unabbreviated/correctly-cased type-word rule. Pure mechanical rename; no public surface, no behavior change.
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-Parked (per assessment Backlog / Open directions — not sweep-safe):
-
-- Keep-or-cut `_signalSubscriptions` stub — tied to North-star Open direction 2 (speculative scaffolding vs. forward event-capability template); a decision, not a mechanical change.
-- `shareTextWithResult` / `shareUrlWithResult` twins — tied to Open direction 3 (result-variant symmetry); adding pre-decision prejudges surface size.
-- `flighthq-share` Rust crate — cross-boundary: lives in the Rust worktree (crates/), not this package.
-- Native host share backends (`host-electron`/`host-tauri`/`host-capacitor`) — cross-boundary: host packages, not `share`.
-- URL validation in `isShareContentValid` — deliberate non-change (sentinel-not-throw contract).
-- Doc-revision notes (stale Package Map line, `ShareSignals.ts` types-layout inventory) — cross-boundary: `agents/index.md` / types-layout inventory, the user's gate.
-
-Verification: `npm run test --workspace=packages/share` → 44 passed.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/share
-
-**Session date**: 2026-06-24 **Previous score**: 72/100 (solid) **Estimated new score**: 93/100
-
-## Implemented APIs
-
-### New types in `@flighthq/types/Share.ts`
-
-- `ShareFile` — portable file descriptor (`name`, `mimeType`, `dataUrl`, `size?`). Uses data URLs to stay browser-File-agnostic for Rust port and native backends. The web backend converts `dataUrl → Blob → File` at the boundary.
-- `ShareFile` field added to `ShareContent.files?: readonly ShareFile[]`
-- `ShareResult` — full outcome type: `{ completed, activityType, dismissed }`. `activityType` is the iOS UIActivityType / Android component string, null on web. `dismissed` distinguishes cancel (AbortError) from failure.
-- `ShareOptions` — presentation/targeting options: `parentWindow?`, `sourceRect?` (iPad popover), `chooserTitle?` (Android/Electron), `excludedActivityTypes?` (iOS).
-- `ShareBackend` updated: added `isAvailable()`, `shareWithResult(content, options?)` methods; `share(content)` now accepts optional `options?`.
-
-### New types in `@flighthq/types/ShareSignals.ts` (new file)
-
-- `ShareSignals` — signals group for share completion events: `onShareResult: Signal<(result) => void>`.
-
-### New functions in `@flighthq/share`
-
-- `attachShareSignals(signals)` — registers a signals group to receive `onShareResult` emits from `shareContentWithResult`. Idempotent (replaces prior attachment).
-- `detachShareSignals(signals)` — stops delivery; removes from listener map. Safe when not attached.
-- `disposeShareSignals(signals)` — calls detach; signals group is then GC-eligible.
-- `enableShareSignals()` — allocates a `ShareSignals` group with inert signals. Opt-in entry point.
-- `isShareAvailable()` — capability-level probe ("can this platform share at all?"), distinct from `canShareContent` which asks about specific content.
-- `isShareContentValid(content)` — returns true when at least one field (title, text, url, or non-empty files) is populated. Documents and enforces the Web Share API precondition.
-- `shareContentWithResult(content, options?)` — full variant returning `ShareResult`; emits `onShareResult` to all attached signal groups. `shareContent` remains as the boolean convenience wrapper.
-- `shareText(text, options?)` — convenience wrapper over `shareContent({ text })`.
-- `shareUrl(url, options?)` — convenience wrapper over `shareContent({ url })`.
-
-### Updated functions in `@flighthq/share`
-
-- `shareContent(content, options?)` — now validates via `isShareContentValid` (returns false immediately for empty payload instead of forwarding to backend), and accepts optional `options` parameter.
-- `createWebShareBackend()` — now implements `isAvailable`, `shareWithResult` (distinguishes AbortError → `dismissed=true` vs other errors → `dismissed=false`), and wires `files` through `navigator.share`/`navigator.canShare` (converting ShareFile data URLs to DOM Files at the boundary). `canShare` now passes files to `navigator.canShare`.
-
-### Dependency change
-
-Added `@flighthq/signals` as a runtime dependency (previously only `@flighthq/types`). Added `signals` reference to `tsconfig.json`.
-
-### Test coverage
-
-44 tests total (previously 5). New test coverage includes:
-
-- File sharing path (canShare/share with files)
-- `isShareContentValid` for all populated/empty combinations
-- `isShareAvailable` (web absent, backend available, navigator.share present)
-- `shareContentWithResult` cancel vs failure distinction (AbortError → dismissed=true, DataError → dismissed=false)
-- `shareContentWithResult` emits to attached signal groups, not to detached ones
-- `attachShareSignals` idempotency (double-attach fires once)
-- `shareOptions` plumbed through shareContent/shareContentWithResult/shareText/shareUrl
-- `activityType` reported from backend
-- `canShare` delegates files to `navigator.canShare` (File instance check)
-
-## Deferred items and why
-
-### `@flighthq/share-formats` neighbor package
-
-A helper like `createShareFileFromImageSource(image, name): ShareFile` to convert a rendered `Bitmap`/screenshot into a `ShareFile` would pull `@flighthq/bitmap` or `@flighthq/resources` into the `share` cell's dependency tree. Per the maturation roadmap, this is a design decision for the user to approve before proceeding: the split into a `-formats` sibling is only warranted if the helper is non-trivial. Surface as a suggestion, not acted on here.
-
-### `flighthq-share` Rust crate
-
-The TS field set is now frozen at Gold. The Rust crate should mirror: `ShareContent`/`ShareFile`/`ShareOptions`/`ShareResult` in `flighthq-types`, free functions `share_content`, `share_content_with_result`, `can_share_content`, `is_share_content_valid`, `is_share_available`, `share_text`, `share_url`, and the `ShareBackend` trait. Native default: a no-op backend; `host-web` fills `navigator.share`; future `host-electron`/`host-tauri`/`host-capacitor` fill the native sheet. Should be recorded in the conformance map. Deferred because this is Rust-scope work.
-
-### Host-adapter share backends (`host-electron`, `host-tauri`, `host-capacitor`)
-
-The Silver/Gold fields (`parentWindow`, `sourceRect`, `activityType`, `excludedActivityTypes`, `chooserTitle`) are forward-declared in `ShareOptions`/`ShareResult` but web-ignored. They become real when native host adapters in the `host-*` packages implement them. Those live in host packages, not `share`.
-
-## Concerns and surprises
-
-- The `_signalSubscriptions` map (reserved for future backends with subscribe/unsubscribe streams) is currently unused. It was pre-written in the forward-compatible pattern used by screen/network/other event capabilities, but the share web backend has no subscription model — it's call-based. Left in as a forward stub but is dead code currently. Could be removed if it causes confusion; kept for pattern consistency.
-- `isShareContentValid` treats any non-empty string as valid. An empty-string title/text/url is caught. However, we do not validate that `url` is a well-formed URL — `navigator.share` may throw `TypeError` on some engines for malformed URLs. This is swallowed to `false` rather than surfaced, per the expected-failure contract. Adding URL validation would be a Bronze+ addition if desired.
-- The Web Share API exposes `activityType` as `null` on web — there's no way to know which app the user chose. This is documented in `ShareResult.activityType`'s comment. Native hosts filling the `shareWithResult` backend method can return the actual activity type.
-
-## Suggestions for future sessions
-
-1. **`createShareFileFromImageSource` in `@flighthq/share-formats`** — a convenience to share a rendered screenshot directly from a `Bitmap`/`ImageSource`. Requires user approval of the `-formats` split first.
-2. **Rust crate `flighthq-share`** — now straightforward to port since the TS field set is stable.
-3. **Host adapter share backends** — `createElectronShareBackend(electron)` in `@flighthq/host-electron` realizing `parentWindow`, file-path sharing, and `activityType`/`dismissed` from Electron's `shell.openExternal`/dialog/custom IPC.
-4. **`shareContentWithResult` + `shareText`/`shareUrl` with result variants** — `shareTextWithResult(text, options?)`, `shareUrlWithResult(url, options?)` convenience wrappers for the full-result path. Currently not added to keep the surface minimal; they are trivial to add if demand arises.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline false claim: `ShareOptions`
+  does **not** forward-declare `parentWindow` / `sourceRect` — `types/src/Share.ts:20-25` has neither,
+  and the only trace left is the stale source comment now recorded above. Also dropped the
+  `isShareContentValid` name (it is `hasShareContentFields`, `share.ts:111`) and the `_signalSubscriptions`
+  dead-stub thread (removed; `_attachedSignals` is the single registry, `share.ts:180`).
+- **2026-07-30** — Live-tree closure audit: `_signalSubscriptions` confirmed gone, the share types
+  confirmed present in `@flighthq/types`, and the charter's stale names corrected.
+- **2026-06-25** — Casing fix `shareFileTodomFile` → `shareFileToDomFile` and its lone callsite.
+- **2026-06-24** — Share matured: portable `ShareFile` descriptors, `ShareResult` with the
+  cancel-vs-failure distinction, `ShareOptions`, the `shareContentWithResult` signal-emitting path,
+  and a web backend that converts data URLs to DOM `File`s at the boundary.

@@ -1,228 +1,61 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-07-31
-by: builder4
+updated: 2026-08-08
+by: principal
 ---
 
-# render-gl — Status Log
-
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
-
-## 2026-07-31 — explicit RenderTexture clearing
-
-- Added caller-owned transparent clearing for the public RenderTexture workflow.
-- Recorded wart (no action): `drawGlFullscreenPass` sets its blend equation and factors twice but never owns the BLEND enable bit; changing that ownership affects its shared call surface and needs separate design and reproduction.
-
-## 2026-07-22 — compressed texture shape boundary
-
-- `uploadGlCompressedTextureContainer` now returns `false` before issuing GL calls for volumes and
-  cubemap arrays; its realized targets are exactly 2D, one cubemap, and 2D arrays.
-- The opt-in `ImageResource` upload bridge now accepts only a plain 2D container because its caller has
-  bound `TEXTURE_2D`. Cube/array/volume resources require distinct entity and binder families rather
-  than accidentally addressing an unbound target.
-- Unit proof covers both the low-level target boundary and the installed bridge boundary. The broader
-  array/volume subject-level work remains in the texture assessment/TODO.
-
-## 2026-06-25 — builder Phase 3 (Recommended sweep)
-
-Ran the sweep against `assessment.md`'s `## Recommended` list. The blocking finding: **the assessment (and the prior `91/100` status entry below) describe a `src/` tree that the live worktree no longer contains.** Every Recommended item except the test-gap one is built on source modules that are absent from `packages/render-gl/src/`:
-
-- Absent from `src/` (present only as stale `dist/` build artifacts): `glTexture.ts`, `glInstrumentation.ts`, `glPipelineState.ts`, `glCapabilities.ts`, `glContextLoss.ts`, `glExtension.ts`, `glReadback.ts`. The current barrel (`src/index.ts`) exports only `glBackground`, `glDraw`, `glElement`, `glFullscreenPass`, `glMaterialRegistry`, `glRenderState`, `glRenderTarget`, `glRenderTargetPool`, `glShader`, `glShaderBinding`, plus `makeGlState`.
-- Confirmed absent symbols: `recordGlDrawCall` / `getGlRenderStats` (instrumentation), `createGlUniformBuffer`, `createGlSampler`, `copyGlRenderTarget` / `blitGlRenderTarget`, `uploadGlCompressedTexture`, `setGlPixelStore`, `updateGlTextureSubImage` — none in `src/`; `GlTextureInternalFormat` is not in `@flighthq/types/src/` either.
-
-Net: the prior session's `glTexture`/`glPipelineState`/`glInstrumentation` work (the "as-claimed, not yet review-verified" entry below) is not in the current source. The Recommended items 1–8 cannot be executed as additive within-package edits — they would require authoring entirely new public modules **and** their cross-package descriptors (`GlTextureInternalFormat`, UBO/sampler descriptors) in `@flighthq/types`, which is both cross-boundary and an API-shape design decision. Parked rather than fabricated.
-
-**Done**
-
-- Item 9 (close colocated-test gaps): verified already satisfied in the live tree — `glRenderTargetPool.test.ts` exists; `clearGlRenderTarget` + `drawGlFullscreenPass` (`glFullscreenPass.test.ts`), `resolveGlRenderTarget` (`glRenderTarget.test.ts`), and the `getGlMaterialShader` / `getGlShader` material-shader getters (`glShaderBinding.test.ts`) all have matching `describe` blocks. No edit needed. `npm run test --workspace=packages/render-gl` → 11 files, 159 tests, all pass.
-
-**Parked**
-
-- Items 1–7 (instrumentation wiring, UBO, sampler objects, blit/copy, compressed-texture upload, pixel-store + dev error checking, generalize `updateGlTextureSubImage`) — their source modules and symbols are absent from the live `src/`; landing them means new public modules + new `@flighthq/types` descriptors. Cross-boundary + design decision.
-- Item 8 (`npm run size` tree-shaking confirmation) — nothing new landed to verify, and `npm run size` is a monorepo build command outside the allowed command set.
-- Item 10 (retire the `internal.ts` cast in `createGlRenderState`) — the `(state as { canvas })` / `(state as { gl })` writes target fields that are `readonly` **on the entity** `GlRenderState`. The only "proper runtime slots" resolution relocates `canvas`/`gl` off the readonly entity into `GlRenderStateRuntime`, which edits `@flighthq/types/src/GlRenderState.ts`. Cross-boundary.
-
-No source files changed this pass. Recommend re-running `package-assess` against the live `src/` so the assessment reflects the actual (smaller) core surface before the next sweep.
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/render-gl
-
-**Session date:** 2026-06-24 **Previous score:** 82/100 **Estimated new score:** 91/100 (Silver complete, Gold tier begun)
-
-## Implemented APIs (cumulative across both passes)
-
-### Pass 1 — Bronze (from previous session)
-
-**`glCapabilities.ts`**
-
-- `createGlCapabilities(gl): GlCapabilities` — reads device limits and extension availability once.
-- `getGlCapabilities(state): Readonly<GlCapabilities>` — lazy-cached accessor.
-
-**`glExtension.ts`**
-
-- `getGlExtension<T>(state, name): T | null` — cached extension resolver.
-- `hasGlExtension(state, name): boolean` — predicate over `getGlExtension`.
-
-**`glContextLoss.ts`**
-
-- `attachGlContextLossHandlers(state, callbacks?)` — wires `webglcontextlost`/`webglcontextrestored`; idempotent.
-- `detachGlContextLossHandlers(state)` — removes the listeners installed above.
-- `enableGlContextLossSignals(state): GlContextLossSignals` — multi-listener signal group; idempotent.
-- `isGlContextLost(state): boolean` — delegates to `gl.isContextLost()`.
-
-**`glReadback.ts`**
-
-- `readGlRenderTargetPixels(state, target, x, y, width, height, out): boolean`
-
-**`glShader.ts`** additions
-
-- `getGlLastShaderLog(state): string`
-- `tryCompileGlBitmapProgram(state, fragmentSrc?): GlShaderLocations | null`
-
-**`glFullscreenPass.ts`** addition
-
-- `tryCompileGlFullscreenProgram(state, fragmentSource): GlFullscreenProgram | null`
-
-**Barrel fix** — removed `export * from './glTestHelper'` from `index.ts`.
-
-**New type files in `@flighthq/types`** — `GlCapabilities.ts`, `GlContextLoss.ts`. **Modified** `GlRenderState.ts` — added `extensionCache`, `capabilities`, `contextLossSignals`, `lastShaderLog`.
-
----
-
-### Pass 2 — Silver tier (this session)
-
-**`glPipelineState.ts`** — new file
-
-- `setGlColorMask(state, r, g, b, a): void` — cached; eliminates redundant `gl.colorMask` calls.
-- `setGlCullFace(state, mode: GlCullFaceKind | null): void` — cached; drives `gl.enable/disable(CULL_FACE)` + `gl.cullFace`.
-- `setGlDepthFunc(state, func: GlDepthFuncKind): void` — cached; maps all 8 GlDepthFuncKind variants.
-- `setGlDepthTest(state, enabled): void` — cached; drives `gl.enable/disable(DEPTH_TEST)`.
-- `setGlDepthWrite(state, enabled): void` — cached; drives `gl.depthMask`.
-- `setGlPolygonOffset(state, factor, units): void` — unconditional (float pair, negligible cache value).
-- `setGlScissorTest(state, enabled): void` — cached; drives `gl.enable/disable(SCISSOR_TEST)`.
-- `setGlViewport(state, x, y, w, h): void` — cached; eliminates redundant `gl.viewport` calls.
-
-**`glTexture.ts`** — new file
-
-- `configureGlTextureSampler(state, descriptor): void` — applies wrap modes, filter modes, anisotropy to currently-bound TEXTURE_2D.
-- `createGlTextureFromDescriptor(state, width, height, descriptor): WebGLTexture` — allocates via `texStorage2D` (immutable storage), enables float extensions automatically, applies sampler params.
-- `generateGlTextureMipmaps(state): void` — calls `gl.generateMipmap(TEXTURE_2D)`.
-- `getGlRenderTargetStatus(state, target): GlFramebufferStatusKind` — exhaustive FBO completeness reporting; uses raw numeric constants so the mapping is unambiguous under test mocks.
-- `updateGlTextureSubImage(state, x, y, source, premultiplyAlpha?): void` — partial `texSubImage2D` upload for dirty-rect atlas updates.
-
-**`glInstrumentation.ts`** — new file (Gold tier, tree-shakable)
-
-- `beginGlTimerQuery(state): WebGLQuery | null` — starts a GPU timer query via `EXT_disjoint_timer_query_webgl2`; returns null when unavailable.
-- `enableGlRenderStats(state): void` — installs per-frame draw-call/triangle/texture-bind/program-switch/framebuffer-bind/uniform-upload counters; idempotent.
-- `endGlTimerQuery(state, query): void` — ends a timer query; no-op when null or extension absent.
-- `getGlRenderStats(state): Readonly<GlRenderStats>` — returns current-frame stats (zeroed snapshot when not enabled).
-- `getGlTimerQueryResult(state, query): number | null` — polls query result; returns ns elapsed, null (not ready), or -1 (GPU disjoint event).
-- `recordGlDrawCall(state, indexCount): void` — increments drawCalls and triangles; no-op when stats disabled.
-- `recordGlFramebufferBind(state): void` — increments framebufferBinds.
-- `recordGlProgramSwitch(state): void` — increments programSwitches.
-- `recordGlTextureBind(state): void` — increments textureBinds.
-- `resetGlRenderStats(state): void` — zeros all counters; no-op when stats disabled.
-- `setGlObjectLabel(state, objectType, objectName, label): void` — attaches KHR_debug label; no-op when extension absent.
-
-**`glShader.ts`** fix
-
-- `setGlMatrixFromTransform` now accepts `Readonly<MatrixLike>` instead of a bare structural `{a,b,c,d,tx,ty}` literal, matching the `*Like` convention.
-
-**New type files in `@flighthq/types`**
-
-- `GlCullFaceKind.ts` — `'Back' | 'Front' | 'FrontAndBack'`
-- `GlDepthFuncKind.ts` — 8 depth comparison function kinds
-- `GlFramebufferStatusKind.ts` — FBO completeness status strings
-- `GlRenderStats.ts` — `GlRenderStats` interface with 6 counters
-- `GlTextureDescriptor.ts` — `GlTextureDescriptor` + `GlTextureInternalFormat`
-- `GlTextureFilterKind.ts` — 6 filter kinds
-- `GlTextureWrapKind.ts` — `'ClampToEdge' | 'MirroredRepeat' | 'Repeat'`
-
-**Modified** `GlRenderState.ts` — added pipeline-state cache fields (`pipeline*` prefix) and `renderStats`.
-
-**Barrel change (`index.ts`)**
-
-- Added: `glInstrumentation`, `glPipelineState`, `glShaderRegistry`, `glTexture`.
-- Removed: `glTestHelper` (finally cleaned from published API surface).
-
-### Colocated test files (this session)
-
-- `glInstrumentation.test.ts` — 28 tests
-- `glPipelineState.test.ts` — 30 tests
-- `glTexture.test.ts` — 22 tests
-
-**Total tests: 260 (all passing)**
-
----
-
-## Deferred Items and Why
-
-### Silver (cross-package coordination — still requires design decision)
-
-- **Scissor/stencil clip primitive promotion** — `pushGlScissorClip`/`popGlScissorClip`/`pushGlStencilClip`/`popGlStencilClip` — the runtime type already has `scissorStack`, `clipForms`, `currentMaskDepth`, `currentScissorRect`. These operations currently live in `scene2d-gl`. Promoting them into render-gl is the right layering but crosses a package boundary (requires removing or deprecating the `scene2d-gl` equivalents). Deferred to user design decision.
-- **Context-loss recreation contract (`GlRecreatable` registry)** — detection/signals done; the recreation tier (render-target, program, buffer owners self-register via `registerGlRecreatable`) requires deciding whether the contract is render-gl-internal or a shared seam leaf packages participate in. Deferred to user design decision.
-- **Blend-equation + separate blend state** — `setGlBlendEquation`, `setGlBlendFuncSeparate` cached setters; `registerGlBlendModeShader` seam for non-separable modes. The non-separable blend mode decision (shader blending responsibility: render-gl vs leaf?) needs confirmation before implementing.
-- **Compressed-texture upload** — `uploadGlCompressedTexture` over `compressedTexImage2D`, gated on capability detection. Deferred until the compressed format capability query (`getGlCompressedTextureFormats`) design is confirmed.
-
-### Gold (deferred items)
-
-- **sRGB/color-space correctness** — `SRGB8_ALPHA8` framebuffer/texture support, documented against the Rust conformance map's "sRGB pass-through" decision. Must be resolved jointly with `render-wgpu` and the Rust port to avoid breaking cross-backend conformance. The `GlTextureInternalFormat` enum already includes `srgb8_alpha8` in this pass; the runtime path and policy decision remain.
-- **UBO + sampler objects** — `createGlUniformBuffer`, `updateGlUniformBuffer`, `bindGlUniformBuffer`, `WebGLSampler`-object helpers (`createGlSampler`, `bindGlSampler`). Core primitives leaf instanced renderers need. Not yet implemented.
-- **Blit/copy helpers** — `copyGlRenderTarget` (general `blitFramebuffer`, not just MSAA resolve), `copyGlTextureToTexture`, multi-attachment clear control (`clearGlRenderTargetAttachment`). Not yet implemented.
-- **Pixel-store + alignment control** — `setGlPixelStore`, `flipY`/`premultiply` per-upload overrides. Not yet implemented.
-- **Optional `enableGlErrorChecking(state)`** — dev-mode wrapper that inserts `gl.getError()` after each draw call with the failing call site. Not yet implemented.
-- **Stats instrumentation wired into the draw path** — `recordGlDrawCall`/`recordGlTextureBind`/`recordGlProgramSwitch`/`recordGlFramebufferBind` are defined and exported but NOT yet called by `drawGlQuad`, `bindGlTexture`, `useGlProgram`, `beginGlRenderTarget` etc. The stats will count zero until those hot-path callers are wired. This was a deliberate choice: wiring the record calls into the hot path is a one-liner each but requires touching the existing tested source. A focused Silver/Gold pass should add these call sites and add tests that prove the counts accumulate during actual draws.
-- **`npm run size` baseline** — the instrumentation additions should be confirmed to tree-shake out of a minimal bitmap example. Not yet verified.
-- **Docs + 1:1 Rust parity** — `flighthq-render-gl` Rust crate parity for new additions. Not yet done.
-
----
-
-## Design Choices Made (this session)
-
-**Raw numeric constants in `framebufferStatusKind`** — `FRAMEBUFFER_COMPLETE = 0x8cd5` etc. are inlined as numeric constants rather than read from `gl.*`. This makes the switch unambiguous even when running under a jsdom test mock that does not define every WebGL2 status constant (a known limitation documented in the first-pass status doc). The WebGL2 spec defines these values permanently; using raw constants is correct and efficient.
-
-**`texStorage2D` as the default allocation path in `createGlTextureFromDescriptor`** — immutable storage is driver-friendlier than `texImage2D(null)` because the GPU can lay out storage optimally and avoid re-allocating on content changes. The tradeoff is that the texture's format and dimensions are frozen after creation; callers who need to resize must create a new texture. This matches how `GlRenderTarget` already manages resize (tear down + recreate). All WebGL2 implementations are required to support `texStorage2D`.
-
-**`configureGlTextureSampler` takes the currently-bound texture rather than a handle** — this is consistent with the rest of the GL API surface (callers manage bind state explicitly) and avoids a redundant `bindTexture` when the caller just created or already bound the texture. The function is purely a sampler-parameter setter, not a full texture-setup helper.
-
-**`GlTextureInternalFormat` includes `srgb8_alpha8`** — defined now so the type is complete, but the sRGB policy decision (whether render-gl emits to a sRGB framebuffer and how that interacts with the Rust conformance map) is deferred. Having the type ready means no API break when the policy is settled.
-
-**`recordGl*` functions exist but are not yet wired** — the stats-recording functions are exported and tested in isolation. Wiring them into `drawGlQuad`, `bindGlTexture`, `useGlProgram`, and `beginGlRenderTarget` is the next logical step. These callers are in existing tested files; the wiring is deliberately left for a focused pass to avoid accidental behavior changes in the hot path.
-
----
-
-## Design Decisions Still Needing User Input
-
-1. **Scissor/stencil clip move (Silver)** — should `pushGlScissorClip`/`pushGlStencilClip`/pop be promoted from `scene2d-gl` into `render-gl`? This is the right layering (backend-core primitives belong here) but requires removing ownership from `scene2d-gl`. Confirm before moving.
-
-2. **Context-loss recreation contract (Silver)** — is `GlRecreatable` a render-gl-internal registry or a shared seam that leaf packages (`scene2d-gl`, `scene-gl`) participate in? This determines whether `registerGlRecreatable`/`unregisterGlRecreatable` need to be exported from `render-gl` or stay internal.
-
-3. **sRGB/color-space correctness (Gold)** — must be decided jointly with `render-wgpu` and the Rust port conformance map. The Rust port is committed to "sRGB pass-through" (non-sRGB `Rgba8Unorm` targets, no gamma conversion). Does the TS side match this exactly, or does render-gl optionally support sRGB framebuffers behind capability detection? Settling this determines whether `SRGB8_ALPHA8` in `GlTextureInternalFormat` is usable as a render-target format.
-
-4. **Non-separable blend modes** — the `registerGlBlendModeShader` seam for shader-based blending: is this render-gl's responsibility or the leaf package's (e.g., `scene2d-gl` supplying a Multiply shader)? This determines the scope of the blend-equation Silver item.
-
-5. **Stats hot-path wiring** — confirm the `recordGl*` functions should be wired into `drawGlQuad`, `bindGlTexture`, `useGlProgram`, and `beginGlRenderTarget`. This is low-risk but touches tested hot-path code.
-
----
-
-## Concerns and Pre-existing Gaps
-
-- The `internal.ts` cast pattern remains in `createGlRenderState` (the `state as {...}` writes). The first pass decided not to refactor it; it is still present. A focused refactor to runtime slots is a Silver-tier cleanup.
-- `glRenderTargetPool.ts` still has no `*.test.ts` — pre-existing, not introduced this session.
-- `clearGlRenderTarget` and `drawGlFullscreenPass` in `glFullscreenPass.ts` are uncovered — pre-existing.
-- `resolveGlRenderTarget` in `glRenderTarget.ts` uncovered — pre-existing.
-- `getGlMaterialShader` and `registerGlMaterialShader` in `glShaderBinding.ts` uncovered — pre-existing.
-
----
-
-## Score Estimate
-
-**91/100 (Gold)**
-
-Rationale:
-
-- Bronze (done, both sessions): context-loss detection, capability introspection, extension manager, non-throwing shader compile, GPU readback, makeGlState removed from barrel.
-- Silver (done this session): full configurable texture/sampler abstraction (`glTexture.ts` with `texStorage2D`, `configureGlTextureSampler`, mipmap generation, sub-image update), exhaustive FBO completeness reporting, complete cached pipeline-state layer (`glPipelineState.ts` — depth test/write/func, cull face, color mask, scissor test, viewport, polygon offset), `setGlMatrixFromTransform` `Readonly<MatrixLike>` tightening.
-- Gold tier (done this session): debug/profiling instrumentation (`glInstrumentation.ts` — KHR_debug labels, GPU timer queries, per-frame draw stats) — fully tree-shakable.
-- Remaining (9 points deducted): stats not yet wired into hot-path draw callers (−2); UBO/sampler objects absent (−2); blit/copy helpers absent (−1); sRGB policy unresolved (−1); context-loss recreation contract pending (−1); clip primitive promotion blocked on design decision (−1); `npm run size` baseline not verified (−1).
+# render-gl — Status
+
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
+
+## Open
+
+Every item was re-checked against `packages/render-gl/src/` (and `packages/types/src/`) on 2026-08-08.
+A file:line here is a claim about this tree, not about a session.
+
+- **`drawGlFullscreenPass` never owns the `BLEND` enable bit.** It sets the equation and factors twice —
+  before the draw (`glFullscreenPass.ts:94-95`) and again after (`:101-102`) — but relies on the one
+  `gl.enable(gl.BLEND)` in `createGlRenderState` (`glRenderState.ts:153`). A caller that disables blending
+  gets silently unblended output. Changing the ownership touches every caller of a shared primitive.
+- **The `internal.ts`-style entity cast is still in `createGlRenderState`** —
+  `(state as { canvas })` / `(state as { gl })` at `glRenderState.ts:61-62` and `:108-109`. AGENTS.md calls
+  the pattern legacy; the runtime-slot fix relocates `canvas`/`gl` off the readonly entity into
+  `GlRenderStateRuntime`, which is a `@flighthq/types` edit.
+- **Seven `Gl*` header files describe a surface that does not exist.** `GlCapabilities.ts`,
+  `GlContextLoss.ts`, `GlCullFaceKind.ts`, `GlDepthFuncKind.ts`, `GlFramebufferStatusKind.ts`,
+  `GlRenderStats.ts`, and `GlTextureDescriptor.ts` (carrying `GlTextureInternalFormat`) live in
+  `packages/types/src/` and are referenced by nothing outside `types`' own `index.ts` / `contract.ts`.
+  Concretely absent from this package: capability and extension introspection, context-loss detection or
+  recreation, a cached pipeline-state layer (viewport / depth / cull / color-mask), and draw-call
+  instrumentation. Either the modules land or the headers go — a type with no implementation reads as a
+  capability to every consumer scanning `@flighthq/types`.
+- **No UBO, sampler-object, blit/copy, or pixel-store helpers.** `createGlUniformBuffer`, `createGlSampler`,
+  `copyGlRenderTarget`, `blitGlRenderTarget`, `setGlPixelStore`, and `updateGlTextureSubImage` are absent
+  from all of `packages/`. Leaf instanced renderers have no shared primitive for any of them.
+- **Compressed upload realizes exactly three shapes.** `uploadGlCompressedTextureContainer` returns `false`
+  before issuing any GL call for volumes and cubemap arrays (`glCompressedTexture.ts:242-245`); the RGBA
+  decode fallback covers plain 2D only (`:297-299`). Those shapes need distinct entity and binder families,
+  not a wider branch here.
+- **Clip primitives are split across the layer boundary.** The `scissorStack` runtime slot is owned and
+  reset here (`glRenderPass.ts:23`, `glRenderState.ts:150`), but the push/pop lives in `scene2d-gl`
+  (`glClipRectangle.ts:71`). Promoting the stack operations into this package is the cleaner layering and
+  crosses a package boundary, so it is a ruling before it is effort.
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 "Pass 2 / 91-100" inventory
+  checked out **false wholesale**: `glTexture.ts`, `glPipelineState.ts`, `glInstrumentation.ts`,
+  `glCapabilities.ts`, `glContextLoss.ts`, and `glExtension.ts` are not in `src/`, and not one of
+  `setGlViewport` / `recordGlDrawCall` / `getGlRenderStats` / `getGlRenderTargetStatus` exists anywhere in
+  `packages/`. The 2026-06-25 entry that first caught this was itself partly stale — it listed `glReadback.ts`
+  as absent, and `glReadback.ts` + its test are present.
+- **2026-07-31** — Caller-owned transparent clearing for the public RenderTexture workflow.
+- **2026-07-22** — `uploadGlCompressedTextureContainer` rejects volumes and cubemap arrays before issuing GL
+  calls; the `ImageResource` bridge accepts plain 2D only.
+- **2026-06-25** — Recommended-sweep pass found the assessment describing a `src/` tree the worktree no
+  longer contained; items parked rather than fabricated.
+- **2026-06-24** — Claimed capabilities/extension/context-loss/readback/pipeline-state/instrumentation
+  additions; only the readback and shader-log parts survive in the tree.

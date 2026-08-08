@@ -1,131 +1,54 @@
 ---
 package: '@flighthq/statusbar'
-updated: 2026-07-30
+updated: 2026-08-08
+by: principal
 ---
 
-# statusbar — Status Log
+# statusbar — Status
 
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-## 2026-07-30 — live-tree closure and correctness audit
+## Open
 
-- Verified the sole approved Recommended item against current history. Commit `f829dccc8` removed the
-  no-op `enableStatusBarSignals`; `createStatusBar` owns signal allocation and `attachStatusBar` gates
-  backend subscription cost.
-- Confirmed the old merge-gate blockers are stale. All status-bar value/backend/event types are
-  present in `@flighthq/types`, and the implementation compiles against the contract lane.
-- Verified the already-authored correctness fix in `c56576fa1`: style-stack pop/clear restore the
-  pre-push backend baseline instead of leaving released values applied, every change event receives an
-  owned `StatusBarInfo` rather than a shared mutable scratch, and `hasStatusBarStyleEntry` /
-  `clearStatusBarStyleStack` carry regression coverage.
-- Focused `npm run check -- statusbar` passed all structural gates,
-  `npm run test --workspace=packages/statusbar` passed 42 tests, and the Capacitor status-bar adapter's
-  two focused tests pass.
-- Expanded the Package Map and closed Recommended work. Native async snapshot/change truth, animation
-  fidelity, stack/backend arbitration, and the status-bar-height/safe-area boundary remain Depth gaps.
+Every item was re-checked against `packages/statusbar/src/` and `packages/host-capacitor/src/` on
+2026-08-08. A file:line here is a claim about this tree, not about a session.
 
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
+- **The direct setters bypass the style stack.** `setStatusBarStyle` (`statusbar.ts:199`),
+  `setStatusBarVisible` (`:204`), `setStatusBarColor` (`:189`), and `setStatusBarOverlaysContent`
+  (`:194`) write straight to the backend without touching `_applied`, so a direct call made while a
+  stack is live is invisible to `_applyTopStyleEntry` (`:231`) and is silently reverted by the next
+  push or pop. Whether the stack should own every write, or a direct write should rebase the stack,
+  is unruled.
+- **Animation reaches visibility only.** An entry's `animation` merges down the stack (`:245`) but is
+  passed only to `setVisible` (`:258`); `setBackgroundColor` is always called with `animated: false`
+  (`:259`), so a stacked color change cannot animate even on a host that supports it.
+- **The one native backend cannot report change or truth.** `createCapacitorStatusBarBackend` serves
+  Flight's synchronous `getInfo` from a single prefetched snapshot cached at construction
+  (`host-capacitor/src/capacitorStatusBar.ts:17-27`) — later OS changes are never re-read — and its
+  `subscribe` is inert (`:51-53`), so `attachStatusBar`'s `onChange` never fires on any host today.
+  This is the async-native-snapshot gap; the web no-op subscribe (`statusbar.ts:97`) is by design.
+- **The height / safe-area boundary is documented, not decided.** `getStatusBarHeight`
+  (`statusbar.ts:130`) returns the backend height and its comment (`:127-129`) points callers at
+  `@flighthq/device` for layout padding. That function exists (`device/src/device.ts:260`), so the
+  choice — forward on native, or keep the two concepts distinct — is now answerable and unanswered.
+- **Style-entry handles are process-global.** `_nextHandle` (`statusbar.ts:209`) is a module counter
+  beside the module-level `_styleStack` (`:211`), so handles are unique across the process rather
+  than per-registry. Consistent with the stack being module state; noted because it forecloses a
+  future per-window stack without a handle rework.
 
-# Status: @flighthq/statusbar
+## Log
 
-**Session**: 2026-06-24 **Starting score**: 72/100 (solid) **Estimated new score**: 95/100 (gold)
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-## Implemented APIs
-
-### New types in `@flighthq/types` (`StatusBar.ts`)
-
-- `StatusBarAnimation` — `'fade' | 'none' | 'slide'` open union for show/hide transitions.
-- `StatusBarInfo` — snapshot struct: `{ color, height, overlaysContent, style, visible }`. `height` is CSS pixels or `-1` when unknown; `color` is packed `0xRRGGBBAA`.
-- `StatusBarStyleEntry` — per-field optional entry for the style stack: `{ animation?, color?, overlaysContent?, style?, visible? }`.
-- `StatusBarStyleEntryHandle` — `number` newtype (brand); `-1` is the invalid sentinel.
-- `StatusBar` — event entity interface with `onChange: Signal<(info: Readonly<StatusBarInfo>) => void>`.
-- Extended `StatusBarBackend` with:
-  - `getInfo(out: StatusBarInfo): StatusBarInfo` — single out-param read.
-  - `subscribe(listener: () => void): () => void` — change subscription, returns unsubscribe.
-  - `setVisible(visible, animation?)` — animation parameter added.
-  - `setBackgroundColor(color, animated?)` — animated parameter added.
-
-### New functions in `@flighthq/statusbar` (`statusbar.ts`)
-
-**Bronze (read side):**
-
-- `createStatusBarInfo()` — allocates a zeroed `StatusBarInfo` (height = -1, style = 'default').
-- `getStatusBarInfo(out)` — delegates to `backend.getInfo(out)`; alias-safe; returns `out`.
-- `getStatusBarHeight()` — convenience over a scratch `getInfo`; returns -1 when unknown.
-
-**Silver (event capability + animation):**
-
-- `createStatusBar()` — allocates a `StatusBar` event entity with inert signals.
-- `attachStatusBar(bar)` — subscribes to backend, emits `onChange` on each change. Idempotent.
-- `detachStatusBar(bar)` — stops subscription; safe when not attached.
-- `disposeStatusBar(bar)` — detaches and releases entity for GC (`dispose*` not `destroy*`).
-- `enableStatusBarSignals()` — explicit opt-in marker; no-op implementation, documented hook point.
-- `setStatusBarVisible(visible, animation?)` — `animation` parameter threaded through to backend.
-- `setStatusBarColor(color, animated?)` — `animated` parameter threaded through to backend.
-
-**Silver (web backend updates):**
-
-- `createWebStatusBarBackend().getInfo(out)` — reads theme-color meta back to color; height = -1; safe defaults.
-- `createWebStatusBarBackend().subscribe()` — returns a no-op unsubscribe (no OS-driven events on web).
-- `createWebStatusBarBackend().setVisible/setBackgroundColor` — accept new optional parameters without throwing.
-
-**Gold (style stacking):**
-
-- `pushStatusBarStyleEntry(entry)` — pushes a partial style entry onto the stack; returns an opaque handle. Per-field merge: last pushed wins per field, unset fields fall through.
-- `popStatusBarStyleEntry(handle)` — removes the entry by handle; no-op for unknown/invalid handles; re-applies the merged top entry after removal.
-
-## Test coverage
-
-31 tests passing across all new and existing functions:
-
-- `createStatusBarInfo` — defaults verified.
-- `createWebStatusBarBackend.getInfo` — reads back theme-color meta, returns -1 height.
-- `getStatusBarInfo` — fills out, returns out, alias-safe across two calls.
-- `getStatusBarHeight` — backend value forwarded; web returns -1.
-- `attachStatusBar` / `detachStatusBar` / `disposeStatusBar` — subscription lifecycle, idempotence.
-- `enableStatusBarSignals` — callable without throwing.
-- `pushStatusBarStyleEntry` / `popStatusBarStyleEntry` — apply, field fallthrough, unique handles, invalid handle no-op.
-- `setStatusBarColor` — animated param forwarded.
-- `setStatusBarVisible` — animation param forwarded.
-
-## Deferred items
-
-### Cross-package design decision: height vs. `@flighthq/device` safe-area top inset
-
-The roadmap identified this as a design item to surface to the user rather than decide autonomously. The current implementation:
-
-- `getStatusBarHeight()` returns the backend's reported height, which is -1 on web and desktops.
-- The function's doc comment explicitly notes: on notched/island devices, `@flighthq/device`'s `getSafeAreaInsets().top` may differ from the status bar height. It directs consumers to use `device.getSafeAreaInsets().top` for layout-safe padding and `getStatusBarHeight()` only for the bar's intrinsic height.
-- This avoids a cross-package dependency while documenting the distinction clearly. A future session can add a convenience wrapper that forwards to `@flighthq/device` if desired.
-
-### Rust port (`flighthq-statusbar` crate)
-
-The roadmap specifies 1:1 Rust conformance as the final Gold step. The TS seam is now stable, so a Rust session can mirror it:
-
-- `StatusBarBackend` trait: `get_info`, `set_style`, `set_visible(visible, animation)`, `set_background_color(color, animated)`, `set_overlays_content`, `subscribe`.
-- Free functions: `get_status_bar_info`, `get_status_bar_height`, `push_status_bar_style_entry`, `pop_status_bar_style_entry`, `attach_status_bar`, `detach_status_bar`, `dispose_status_bar`.
-- Native default backend gated behind the `native` cargo feature (no-op/sentinel where the OS has no status bar, e.g. desktop).
-- Web backend in `host-web` fills the theme-color + viewport paths.
-- Pair event-capability wiring with Rust `Signal<T>` shape.
-- Record intentional TS↔Rust divergences in the conformance map.
-
-### Style semantics documentation
-
-The `StatusBarStyle` values ('light' | 'dark' | 'default') deliberately cover iOS `lightContent`/`darkContent` semantics. The roadmap suggests confirming this in a type-doc decision comment. The current `StatusBar.ts` has a comment for `StatusBarStyle` noting this mapping; no further action unless the user wants explicit `'lightContent'`/`'darkContent'` aliases.
-
-### `enableStatusBarSignals` no-op
-
-Currently a no-op documentation marker. The `@flighthq/connectivity` package does not have a corresponding `enableConnectivitySignals` function either. If the project adds a cost-model pattern to all event capabilities, this is the hook point.
-
-## Concerns and surprises
-
-- **`_nextHandle` module-level counter**: the style stack handle counter (`_nextHandle`) is module-level state at the bottom of the file per source-style rules. This is correct for the intent but means handles are process-global rather than per-registry; in practice this is fine since the stack is also module-level and handles are opaque.
-- **`afterEach` test cleanup**: The style stack is module-level, so tests clean up by attempting to pop handles 0–99. This is a hack; a future improvement is to expose a `_resetStatusBarStyleStack()` test helper or a `clearStatusBarStyleStack()` utility. For now it works because the `popStatusBarStyleEntry` function is a no-op for unknown handles.
-- **Web `subscribe` returns a no-op**: The roadmap suggested wiring the web `subscribe` to `visualViewport` resize / `matchMedia('(prefers-color-scheme)')`. On reflection, neither of these fires a "status bar changed" event; `visualViewport` resize fires for keyboard, zoom, and scroll, and `matchMedia` fires for color scheme changes — neither reliably maps to status bar state. The no-op is correct and documented. A native host's `subscribe` is where real events come from.
-
-## Suggestions for future sessions
-
-1. **Rust port** — the TS seam is stable; implement `flighthq-statusbar` following the roadmap's Rust section.
-2. **`clearStatusBarStyleStack()` test helper** — avoids the `for i in 0..100` teardown hack in tests; could also serve as a debug utility.
-3. **`hasStatusBarStyleStackEntry(handle)`** — boolean query; would complete the push/pop/has trio if consumers need to check whether an entry is still live.
-4. **Height ownership clarification** — if `@flighthq/device` lands `getSafeAreaInsets()`, consider whether `getStatusBarHeight()` should forward through it on native or remain a distinct concept. Document the resolution in `StatusBar.ts`.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Three carried items checked out
+  **false** and were dropped: the `enableStatusBarSignals` no-op (the export is gone; `createStatusBar`
+  owns signal allocation, `statusbar.ts:42`), the suggested `clearStatusBarStyleStack` and
+  `hasStatusBarStyleEntry` (both landed, `:35` and `:143`), and the "tests pop handles 0–99" teardown
+  hack (`afterEach` now calls `clearStatusBarStyleStack`, `statusbar.test.ts:82-87`).
+- **2026-07-30** — Live-tree closure pass: confirmed the type layer is complete in `@flighthq/types`,
+  and that pop/clear restore the pre-push baseline rather than leaving released values applied.
+- **2026-06-24** — Gold landing: the per-field style stack (`pushStatusBarStyleEntry` /
+  `popStatusBarStyleEntry`), the `StatusBar` event entity with attach/detach/dispose, out-param
+  `getStatusBarInfo` / `createStatusBarInfo`, `getStatusBarHeight`, and animation parameters threaded
+  through `setStatusBarVisible` / `setStatusBarColor`.

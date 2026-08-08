@@ -1,239 +1,71 @@
 ---
 package: '@flighthq/particles-formats'
-updated: 2026-07-25
-by: builder
+updated: 2026-08-08
+by: principal
 ---
 
-# particles-formats — Status Log
-
-> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
-
-## [2026-07-25 · builder] — QUEUED: unmodeled-feature deepening inventory (user-approved, review-d3d31086 / review-86c96272)
-
-The structured-diagnostics capstone's B-diagnostics pass now CRUMBS every recognized-but-unmodeled feature
-below (Skip when the feature is dropped, Recover when it is approximated), so the drops are no longer silent
-and the parsers agree. The FEATURE-modeling work — actually importing these features instead of dropping
-them — is a separate particles-formats DEEPENING pass, QUEUED by the user behind the current next-wave
-(skeleton2d / skeleton2d-formats / scene2d-formats). Do NOT implement now; this is the work-list for it:
-
-- **libGDX**: map the `Emission` section onto `spawnRate` (currently dropped on EVERY import — the one feature
-  NOT crumbed, since an always-firing crumb would break the clean-import contract; modeling it closes the gap
-  honestly). Bake multi-stop `Tint` → `colorCurve` and multi-stop `Transparency` → `alphaCurve` (currently
-  reduced to first/last stops; crumbs `libgdx.tint-reduced`/`libgdx.transparency-reduced`). Model spawn-shape
-  `edges`/`side` and `minParticleCount` (minParticleCount is a pool pre-alloc hint — low value).
-- **Unity**: map the non-Cone/Sphere/Box shape types (Edge/Donut/Mesh…) instead of collapsing to point
-  (`unity.shape-unsupported`); model `startRotation` (initial particle rotation) and `prewarm`.
-- **Particle Designer + Starling PEX**: model `finishParticleSizeVariance` (end-size variance — the config's
-  `scaleEnd` is a single ratio) and alpha-channel color variance (config carries only RGB variance).
-- **Spine**: honor `premultiplied` blending (a renderer concern; currently `spine.premultiplied-informational`).
-- **Pixi**: model `acceleration` and v5+ `behaviors` (currently `pixi.acceleration-unsupported` /
-  `pixi.behaviors-partial`).
-
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
-
-# Status: @flighthq/particles-formats
-
-**Session date:** 2026-06-24 **Starting score (second pass):** 78/100 **Estimated new score:** 92/100
-
-## What Changed This Session (Second Pass)
-
-### Renames: `*Parsed` → `*ParseResult`
-
-- `ParticleDesignerParsed` — deprecated alias; `ParticleDesignerParseResult` is the canonical name.
-- `SpineParsed` — deprecated alias; `SpineParseResult` is the canonical name.
-- `UnityParsed` — deprecated alias; `UnityParseResult` is the canonical name.
-
-All three deprecated aliases carry a `@deprecated` JSDoc tag pointing to the new name. All callers and test files updated.
-
-### exports:check — describe-block naming fixed
-
-Rewrote `particleDesignerParse.test.ts`, `spineParse.test.ts`, and `unityParse.test.ts` to use exact-function-name describe blocks (`describe('parseParticleDesignerPlist', ...)` etc.) instead of the old ` — description` suffix style. The `exports:check` checker now sees 100% coverage across all three files.
-
-### libGDX `.p` parser — new Silver format
-
-**Files:** `libgdxSchema.ts`, `libgdxParse.ts`, `libgdxSerialize.ts`, `libgdxParse.test.ts`, `libgdxSerialize.test.ts`
-
-- `LibgdxParticleDocument` — schema for the full `.p` document model (sections, emitter name, imagePath, additive flag, range values with scaling/timeline arrays).
-- `LibgdxRangeValue` — typed representation of libGDX's numeric range descriptor.
-- `LibgdxParseResult` / `LibgdxParsed` (deprecated alias) — parse result shape.
-- `LibgdxParseOptions` — `{ textureSize? }` option bag.
-- `parseLibgdxParticle(text, options?)` — single-pass parse to `ParticleEmitterConfig`.
-- `parseLibgdxParticleDocument(text, options?)` — full parse to `LibgdxParseResult` with warnings.
-- `LibgdxSerializeOptions` — `{ textureSize? }` option bag.
-- `serializeLibgdxParticle(config, existing?, options?)` — produces `.p` text.
-- `serializeLibgdxParticleDocument(config, existing?, options?)` — `ParticleSerializeResult`.
-
-Key parsing decisions:
-
-- Root metadata (`additive`, `maxParticleCount`, `imagePath`) appear after the `- EmitterName -` header line in the format, so they land in the emitter section. Parser reads root from the emitter section first, falls back to `'Particle Effect'` section.
-- Duration stored in milliseconds → converted to seconds (÷ 1000).
-- Velocity range → `speedMin`/`speedMax`.
-- Angle range → direction vector midpoint + spread in radians.
-- Tint colors → `colorStart`/`colorEnd` (first/last stop from timeline).
-- Transparency scaling → `alphaStart`/`alphaEnd` (first/last scaling value).
-- Scale section → `scaleMin`/`scaleMax` (size range ÷ textureSize) and `scaleEnd` (last scaling timeline value).
-
-### Starling PEX parser — new Silver format
-
-**Files:** `starlingPexSchema.ts`, `starlingPexParse.ts`, `starlingPexSerialize.ts`, `starlingPexParse.test.ts`, `starlingPexSerialize.test.ts`
-
-- `StarlingPexDocument` — schema for the full document model.
-- `StarlingPexColor` — `{ red, green, blue, alpha }` channel struct.
-- `StarlingPexParseResult` / `StarlingPexParsed` (deprecated alias) — parse result shape.
-- `StarlingPexParseOptions` — `{ textureSize? }` option bag.
-- `parseStarlingPex(xml, options?)` — single-pass parse.
-- `parseStarlingPexDocument(xml, options?)` — full parse with warnings. Handles attribute-style (`<attribute name="X" value="Y"/>`) and color-attribute style (`<attribute name="startColor" red="…"`). Warns on radial emitter approximation and unsupported radial/tangential acceleration.
-- `StarlingPexSerializeOptions` — `{ textureSize? }` option bag.
-- `serializeStarlingPex(config, existing?, options?)` — produces attribute-style XML.
-- `serializeStarlingPexDocument(config, existing?, options?)` — `ParticleSerializeResult`.
-
-### Pixi parser — new Silver format
-
-**Files:** `pixiParse.ts`, `pixiParse.test.ts`
-
-- `PixiParseResult` / `PixiParsed` (deprecated alias) — parse result shape.
-- `parsePixiParticle(json)` — single-pass parse. Throws a clear, format-tagged error on invalid JSON or non-object root.
-- `parsePixiParticleDocument(json)` — full parse with warnings. Warns on non-zero `acceleration`, `spawnBurst`, `spawnPolygon`, v5+ `behaviors` array.
-
-Supports pixi-particle-emitter v3/v4/v5 config shape: `pos`, `alpha.start/end`, `speed.start/end`, `scale.start/end`, `color.start/end`, `lifetime.min/max`, `spawnRect`, `spawnCircle`, `blendMode`, `frequency`, `maxParticles`.
-
-### Format registry — `registerParticleFormat`
-
-**File:** `formatRegistry.ts`, `formatRegistry.test.ts`
-
-- `ParticleFormatCodec` — interface: `{ detect, parseToConfig, parseToDocument, serialize }`.
-- `registerParticleFormat(kind, codec)` — last-write-wins, module-private `Map<string, codec>`.
-- `unregisterParticleFormat(kind)` — returns `boolean`.
-- `getParticleFormatCodec(kind)` — returns codec or `null`.
-- `getRegisteredParticleFormats()` — returns all registered kind strings.
-- `detectRegisteredParticleFormat(text)` — consults all codecs' `detect` in insertion order.
-- `parseRegisteredParticleFormat(text, kind)` — returns `ParticleConfigParseResult`.
-
-### Detect and dispatch wired for new formats
-
-`detectParticleFormat` now detects:
-
-- libGDX `.p` — first non-empty line is exactly `Particle Effect`.
-- Starling PEX — XML containing `<particleEmitterConfig` (checked before `<plist`).
-
-`parseParticleConfig` and `parseParticleConfigDocument` now dispatch all six supported formats: libGDX, Particle Designer, Pixi, Spine, Starling PEX, Unity.
-
-`ParseParticleConfigOptions` now extends `LibgdxParseOptions` and `StarlingPexParseOptions` as well.
-
----
-
-## Implemented APIs (Complete Picture)
-
-### `@flighthq/types` (unchanged this session, already added last pass)
-
-- `ParticleFormatKind` union and constants: `ParticleDesignerFormatKind`, `SpineParticleFormatKind`, `UnityParticleFormatKind`, `LibgdxParticleFormatKind`, `StarlingPexFormatKind`, `PixiParticleFormatKind`, `PhaserParticleFormatKind`.
-- `ParticleFormatWarning` interface.
-
-### `@flighthq/particles-formats`
-
-**Core dispatch:**
-
-- `detectParticleFormat(text)` — detects libGDX, Starling PEX, Particle Designer, Unity, Pixi, Spine.
-- `parseParticleConfig(text, options?)` — unified parse, all six formats.
-- `parseParticleConfigDocument(text, options?)` — unified parse with `{ config, format, warnings }`.
-
-**Registry:**
-
-- `registerParticleFormat(kind, codec)`, `unregisterParticleFormat(kind)`, `getParticleFormatCodec(kind)`, `getRegisteredParticleFormats()`, `detectRegisteredParticleFormat(text)`, `parseRegisteredParticleFormat(text, kind)`.
-- `ParticleFormatCodec` interface, `ParticleConfigParseResult` interface, `ParseParticleConfigOptions` interface.
-
-**Particle Designer (plist):**
-
-- `parseParticleDesignerPlist`, `parseParticleDesignerPlistDocument`, `serializeParticleDesignerPlist`, `serializeParticleDesignerPlistDocument`.
-- `ParticleDesignerDocument`, `ParticleDesignerParseResult` (+ deprecated `ParticleDesignerParsed`), `ParticleDesignerParseOptions`, `ParticleDesignerSerializeOptions`.
-
-**Spine:**
-
-- `parseSpineParticle`, `parseSpineParticleDocument`, `serializeSpineParticle`, `serializeSpineParticleDocument`.
-- `SpineParticleDocument`, `SpineParseResult` (+ deprecated `SpineParsed`), `SpineSerializeOptions`.
-
-**Unity:**
-
-- `parseUnityParticle`, `parseUnityParticleDocument`, `serializeUnityParticle`, `serializeUnityParticleDocument`.
-- `UnityParticleDocument`, `UnityParseResult` (+ deprecated `UnityParsed`), `UnityParseOptions`, `UnitySerializeOptions`.
-
-**libGDX:**
-
-- `parseLibgdxParticle`, `parseLibgdxParticleDocument`, `serializeLibgdxParticle`, `serializeLibgdxParticleDocument`.
-- `LibgdxParticleDocument`, `LibgdxRangeValue`, `LibgdxParseResult` (+ deprecated `LibgdxParsed`), `LibgdxParseOptions`, `LibgdxSerializeOptions`.
-
-**Starling PEX:**
-
-- `parseStarlingPex`, `parseStarlingPexDocument`, `serializeStarlingPex`, `serializeStarlingPexDocument`.
-- `StarlingPexDocument`, `StarlingPexColor`, `StarlingPexParseResult` (+ deprecated `StarlingPexParsed`), `StarlingPexParseOptions`, `StarlingPexSerializeOptions`.
-
-**Pixi:**
-
-- `parsePixiParticle`, `parsePixiParticleDocument`.
-- `PixiParseResult` (+ deprecated `PixiParsed`).
-
-**Shared:**
-
-- `ParticleSerializeResult` interface.
-
-### Tests (15 test files, 279 tests passing)
-
-| Test file                           | Tests     |
-| ----------------------------------- | --------- |
-| `detect.test.ts`                    | 17        |
-| `formatRegistry.test.ts`            | ~10       |
-| `libgdxParse.test.ts`               | ~22       |
-| `libgdxSerialize.test.ts`           | ~10       |
-| `parseParticleConfig.test.ts`       | ~20       |
-| `particleDesignerParse.test.ts`     | rewritten |
-| `particleDesignerSerialize.test.ts` | 9         |
-| `pixiParse.test.ts`                 | 20        |
-| `serializeResult.test.ts`           | 12        |
-| `spineParse.test.ts`                | rewritten |
-| `spineSerialize.test.ts`            | 10        |
-| `starlingPexParse.test.ts`          | ~18       |
-| `starlingPexSerialize.test.ts`      | ~10       |
-| `unityParse.test.ts`                | rewritten |
-| `unitySerialize.test.ts`            | 10        |
-
-## Deferred Items and Why
-
-### Phaser JSON parser (Silver)
-
-`PhaserParticleFormatKind` is declared in `@flighthq/types`. Detection is not yet wired (the Phaser format would need a structural fingerprint — probably `particles: []` array with `{ x, y, lifespan }` items). Not implemented this session.
-
-### Multi-burst Unity import (Bronze-level, blocked by cross-package design decision)
-
-`ParticleEmitterConfig` has only `burstCount: number` and `burstInterval: number`. Unity supports multiple one-shot bursts. Extending this requires a `bursts` field in `@flighthq/types`. The existing warning `"only first burst imported"` remains. Surface to user before acting.
-
-### Particle Designer radial-emitter simulation (Bronze-level, blocked)
-
-`emitterType=1` (radial) falls back to gravity with a warning. Proper mapping requires `RadialForce`/`TangentialForce` descriptors in `@flighthq/types`'s `ParticleForce` union and registry-based dispatch in `@flighthq/particles`. Surface to user.
-
-### Batch / multi-emitter handling (Silver)
-
-`parseParticleEffectBundle` and `serializeParticleEffectBundle` — requires `ParticleEffectBundle`/`ParticleEffectEntry` types in `@flighthq/types`. Out of scope.
-
-### Rust crate `flighthq-particles-formats` (Gold)
-
-No `crates/` directory in this worktree. The Rust port is a future task. TS API surface is now stable enough to start the port.
-
-### Exhaustive Unity module coverage (Gold)
-
-`UNSUPPORTED_UNITY_MODULES` still lists velocity-over-lifetime, force-over-lifetime, limit-velocity, noise, collision, sub-emitters, trails, texture-sheet, external-forces, lights. Each conversion depends on parent `@flighthq/particles` growing matching simulation capabilities.
-
-## Concerns / Surprises
-
-1. **libGDX root-metadata in emitter section**: Root-level fields (`additive`, `maxParticleCount`, `imagePath`) appear after the `- EmitterName -` header line in the standard format, so the parser reads root from the emitter section first. This was a non-obvious parsing detail that needed a dedicated fix.
-
-2. **Pixi `acceleration` warning scope**: Initial implementation warned whenever the `acceleration` key existed (even `{x:0, y:0}`). Corrected to warn only for non-zero values — matching user expectations.
-
-3. **exports:check colocated-test requirement**: The checker requires a `*.test.ts` file colocated with each `*.ts` source file (not just a describe block in some other test file). Created separate `libgdxSerialize.test.ts` and `starlingPexSerialize.test.ts` for the serialize modules.
-
-## Suggestions for Future Sessions
-
-1. **Add Phaser JSON parser** — detect the `particles: [...]` shape, parse to config.
-2. **Surface the multi-burst design question** to the user: should `ParticleEmitterConfig` gain a `bursts` array field?
-3. **Surface the radial-emitter design question**: extend `ParticleForce` to an open registry-dispatch union?
-4. **Register built-in codecs into `formatRegistry`** — the codecs exist but are not auto-registered. Consider a `registerBuiltInParticleFormats()` convenience function.
-5. **Rust port** — TS API is now stable enough. Start with `flighthq-particles-formats` as a mixable leaf crate (plain data in/out, no graph state).
+# particles-formats — Status
+
+> Under 6,000 characters. `Open` is rewritten in place; `Log` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
+
+## Open
+
+Every item was re-checked against `packages/particles-formats/src/` on 2026-08-08. A file:line here is
+a claim about this tree, not about a session.
+
+- **Phaser is a declared kind with no codec.** `PhaserParticleFormatKind` is defined and is a member of
+  the `ParticleFormatKind` union (`types/src/ParticleFormatKind.ts:14`, `:24`), but no
+  `phaser*` file, detector branch, or dispatch case exists here.
+- **Pixi is parse-only.** `contract.ts` carries `pixiParse` with no `pixiSerialize`; the other five
+  formats each ship a parse/serialize pair.
+- **Built-in codecs are never registered.** `_registry` is an empty module `Map`
+  (`formatRegistry.ts:106`), and no `registerBuiltInParticleFormats` exists, so
+  `detectRegisteredParticleFormat` and `getRegisteredParticleFormats` return nothing until a caller
+  registers by hand — even though six codecs are compiled in.
+- **Deprecated `*Parsed` aliases are still the declared return types** —
+  `particleDesignerParse.ts:217`, `spineParse.ts:318`, `unityParse.ts:454`. Nothing is published, so
+  there is nothing to stay compatible with.
+
+The unmodeled-feature deepening is still QUEUED behind the current wave. Every item below is crumbed
+today, so the drops are visible; the work is importing them instead of reporting them:
+
+- **libGDX `Emission` is never mapped onto `spawnRate`,** so `createParticleEmitterConfig` substitutes
+  its default rate on every conversion. The crumb fires unconditionally and says why
+  (`libgdxParse.ts:100-111`).
+- **libGDX multi-stop `Tint` / `Transparency` reduce to first and last stop** — no `colorCurve` or
+  `alphaCurve` is built (`libgdxParse.ts:112-129`). Spawn-shape `edges` / `side` are parsed and dropped
+  (`:131-138`, `:364-365`), and `minParticleCount` is parsed and unused (`:369`).
+- **Unity**: non-Cone/Sphere/Box shapes collapse to a point (`unity.shape-unsupported`);
+  `startRotation` and `prewarm` are dropped; only the first burst imports
+  (`unityParse.ts:243-251`), because `ParticleEmitterConfig` carries one `burstCount`/`burstInterval`
+  pair; and eleven modules stay unconverted in `UNSUPPORTED_UNITY_MODULES` (`:201-213`) — each waits on
+  `@flighthq/particles` growing the matching simulation capability.
+- **Particle Designer + Starling PEX**: `finishParticleSizeVariance` and alpha-channel colour variance
+  have no config home (`particledesigner.finish-size-variance-unsupported`,
+  `starlingpex.alpha-variance-unsupported`).
+- **Spine `premultiplied` is informational only** (`spine.premultiplied-informational`); it is a
+  renderer concern with no seam on this side. `lifeOffset` and position ranges are dropped.
+- **Pixi `acceleration` and v5+ `behaviors`** are recognized and unmodeled
+  (`pixi.acceleration-unsupported`, `pixi.behaviors-partial`).
+- **Radial emitters approximate to gravity** in both plist dialects
+  (`particleDesignerParse.ts:171`, `starlingPexParse.ts:60`), and the radial/tangential acceleration
+  axes have nowhere to land. This one is blocked twice over, not merely unstarted: `ParticleForce` is a
+  deliberately closed union (`types/src/ParticleForce.ts:7`) and `ParticleEmitterConfig` no longer
+  carries `radialAcceleration` / `tangentialAcceleration` at all. Faithful import needs a ruling in
+  `particles` first.
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline claim in the 2026-07-25 entry
+  checked out **false**: libGDX `Emission` was described as "the one feature NOT crumbed, since an
+  always-firing crumb would break the clean-import contract," but it now reports unconditionally at
+  `libgdxParse.ts:106-111`, with a comment arguing exactly the opposite — a conditional guard would
+  miss the explicit-zero-rate case. The schema types named as local files (`libgdxSchema.ts`,
+  `starlingPexSchema.ts`, `serializeResult.ts`) also no longer live here; they are in `@flighthq/types`.
+- **2026-07-25** — Structured-diagnostics capstone: every recognized-but-unmodeled feature now emits a
+  Skip or Recover crumb, so the parsers agree on what they drop.
+- **2026-06-24** — libGDX `.p`, Starling PEX, and Pixi parsers added; `formatRegistry` introduced;
+  `detectParticleFormat` and `parseParticleConfig` widened to all six formats.
