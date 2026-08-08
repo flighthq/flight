@@ -279,14 +279,20 @@ describe('createRiveLayoutImports', () => {
     ]);
   });
 
-  it('stays silent across every alignment the format states', () => {
+  it('resolves every alignment the format states without reporting', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    // 0-8 is the three-by-three grid and 9-11 is space-between: the whole stated domain, none reporting.
+    const resolved: string[] = [];
+    // 0-8 is the three-by-three grid and 9-11 is space-between: the whole stated domain. Each one is
+    // checked to have PRODUCED an alignment, because a pooled empty-diagnostics assertion alone would
+    // read the same whether a value stayed correctly silent or never resolved a layout at all.
     for (let alignment = 0; alignment <= 11; alignment++) {
       const scene = flexRoot({ [FLEX_DIRECTION]: 2, [LAYOUT_ALIGNMENT]: alignment });
-      createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+      const imports = createRiveLayoutImports(scene.graph, scene.nodes, diagnostics);
+      const container = imports[0]?.tree.nodes[0]?.containerStyle as { align?: string } | null | undefined;
+      if (container?.align !== undefined) resolved.push(container.align);
     }
 
+    expect(resolved).toHaveLength(12);
     expect(diagnostics).toEqual([]);
   });
 
