@@ -598,6 +598,32 @@ describe('startApplicationLoop (fixed timestep)', () => {
     expect(app.interpolationAlpha).toBeLessThanOrEqual(1);
     stopApplicationLoop(app);
   });
+
+  it('routes fixed-update errors through onError and continues the frame', () => {
+    const backend = makeManualLoopBackend();
+    setLoopBackend(backend);
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const errors: unknown[] = [];
+    const fixedUpdateError = new Error('fixed update failed');
+    let updates = 0;
+    let renders = 0;
+    connectSignal(app.onError!, (error) => errors.push(error));
+    connectSignal(app.onFixedUpdate!, () => {
+      throw fixedUpdateError;
+    });
+    connectSignal(app.onUpdate, () => updates++);
+    connectSignal(app.onRender, () => renders++);
+
+    startApplicationLoop(app, { fixedTimeStep: 16 });
+    backend.tick(0);
+    backend.tick(32);
+
+    expect(errors).toEqual([fixedUpdateError, fixedUpdateError]);
+    expect(updates).toBe(2);
+    expect(renders).toBe(2);
+    stopApplicationLoop(app);
+  });
 });
 
 describe('startApplicationLoop (tick-error routing)', () => {
@@ -654,6 +680,26 @@ describe('stepApplicationLoop', () => {
     expect(app.frameCount).toBe(1);
     expect(app.deltaTime).toBe(16);
     expect(app.elapsedTime).toBeCloseTo(0.016, 5);
+    expect(app.interpolationAlpha).toBe(1);
+  });
+
+  it('routes update and render errors independently through onError', () => {
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const errors: unknown[] = [];
+    const updateError = new Error('update failed');
+    const renderError = new Error('render failed');
+    connectSignal(app.onError!, (error) => errors.push(error));
+    connectSignal(app.onUpdate, () => {
+      throw updateError;
+    });
+    connectSignal(app.onRender, () => {
+      throw renderError;
+    });
+
+    stepApplicationLoop(app, 16);
+
+    expect(errors).toEqual([updateError, renderError]);
   });
 
   it('uses the default 250ms max clamp when called without a prior loop', () => {
