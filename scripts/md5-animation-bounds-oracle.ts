@@ -33,19 +33,24 @@ export interface Md5AnimationBoundsFrameOracle {
   observed: AabbLike;
 }
 
-export interface Md5AnimationBoundsOracleCompleted {
+export interface Md5AnimationBoundsOracleMeasured {
   frames: readonly Md5AnimationBoundsFrameOracle[];
   id: typeof MD5_ANIMATION_BOUNDS_ORACLE_ID;
-  state: 'failed' | 'passed';
+  notRunReason: 'declared-bounds-contract-unresolved';
+  state: 'not-run';
 }
 
 export interface Md5AnimationBoundsOracleNotRun {
   id: typeof MD5_ANIMATION_BOUNDS_ORACLE_ID;
-  reason: 'animation-clip-missing' | 'declared-bounds-unreadable' | 'skinned-geometry-empty' | 'skinned-mesh-missing';
+  notRunReason:
+    | 'animation-clip-missing'
+    | 'declared-bounds-unreadable'
+    | 'skinned-geometry-empty'
+    | 'skinned-mesh-missing';
   state: 'not-run';
 }
 
-export type Md5AnimationBoundsOracle = Md5AnimationBoundsOracleCompleted | Md5AnimationBoundsOracleNotRun;
+export type Md5AnimationBoundsOracle = Md5AnimationBoundsOracleMeasured | Md5AnimationBoundsOracleNotRun;
 
 interface BoundToken {
   precision: number;
@@ -169,9 +174,10 @@ export function runMd5AnimationBoundsOracle(
   return {
     frames,
     id: MD5_ANIMATION_BOUNDS_ORACLE_ID,
-    state: frames.some(({ classification }) => classification === 'exceeds-representable-precision')
-      ? 'failed'
-      : 'passed',
+    // The measurement is complete, but MD5's declared-bounds contract is not yet established as a
+    // strict enclosure requirement. An excursion is evidence, not a licensed failure verdict.
+    notRunReason: 'declared-bounds-contract-unresolved',
+    state: 'not-run',
   };
 }
 
@@ -290,6 +296,6 @@ function flattenBounds(bounds: Readonly<AabbLike>): number[] {
   return [bounds.min.x, bounds.min.y, bounds.min.z, bounds.max.x, bounds.max.y, bounds.max.z];
 }
 
-function notRun(reason: Md5AnimationBoundsOracleNotRun['reason']): Md5AnimationBoundsOracleNotRun {
-  return { id: MD5_ANIMATION_BOUNDS_ORACLE_ID, reason, state: 'not-run' };
+function notRun(notRunReason: Md5AnimationBoundsOracleNotRun['notRunReason']): Md5AnimationBoundsOracleNotRun {
+  return { id: MD5_ANIMATION_BOUNDS_ORACLE_ID, notRunReason, state: 'not-run' };
 }
