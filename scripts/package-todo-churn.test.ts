@@ -6,12 +6,42 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { PackageChurn } from '../agents/packages/todo-churn.mjs';
-import { isOwnedCommit, readPackageChurn, sumChurnSince } from '../agents/packages/todo-churn.mjs';
+import { isOwnedCommit, readLastCommitDates, readPackageChurn, sumChurnSince } from '../agents/packages/todo-churn.mjs';
 
 const temporaryDirectories: string[] = [];
 
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { force: true, recursive: true });
+});
+
+describe('readLastCommitDates', () => {
+  // `git log` is newest-first, so the first date seen for a package wins and every later one is
+  // discarded. Getting this backwards would report each package's FIRST commit as its last, which is
+  // silently wrong in the safe-looking direction: every cell would look current.
+  it('takes the newest date per package, not the oldest', () => {
+    const log = [
+      'C2026-08-06',
+      'packages/mesh/src/mesh.ts',
+      '',
+      'C2026-06-01',
+      'packages/mesh/src/other.ts',
+      'packages/text/src/text.ts',
+      '',
+    ].join('\n');
+    expect([...readLastCommitDates(log)]).toEqual([
+      ['mesh', '2026-08-06'],
+      ['text', '2026-06-01'],
+    ]);
+  });
+
+  it('ignores paths outside packages/, which carry no cell to be stale', () => {
+    const log = ['C2026-08-06', 'agents/packages/mesh/status.md', 'scripts/docs.ts', ''].join('\n');
+    expect([...readLastCommitDates(log)]).toEqual([]);
+  });
+
+  it('returns nothing for an empty log rather than throwing', () => {
+    expect([...readLastCommitDates('')]).toEqual([]);
+  });
 });
 
 describe('readPackageChurn', () => {

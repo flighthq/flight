@@ -36,6 +36,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import pc from 'picocolors';
 
+import { readPackageLastCommitDates } from '../agents/packages/todo-churn.mjs';
 import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
 import { readSection } from './markdownSection';
 import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
@@ -53,6 +54,24 @@ export const DOC_BUDGETS: readonly DocBudget[] = [{ limit: 40_000, path: 'AGENTS
 // characters — roughly a long paragraph, so the warning lands while one section can still absorb the
 // cut, instead of when every section would have to.
 export const DOC_BUDGET_WARN_FRACTION = 0.02;
+
+// The size a `status.md` should hold: an `Open` section plus a log of dated one-liners. It is not in
+// DOC_BUDGETS and does not gate, because the two failures it names are the ones a gate handles worst.
+//
+// A status log goes over by ACCRETING SESSION NARRATION — a commit message restated as prose, which
+// git already carries with the diff attached — and it goes stale because that narration is prepended
+// while the `Open` section underneath is never revisited. Both are judgement calls about prose, so the
+// remedy is a person rewriting the file, and a red gate cannot make that happen any faster.
+//
+// So this REPORTS, in aggregate, and the aggregate is the point: at the time the rule was written 90 of
+// 147 logs were over the cap and 112 of 144 were behind their own package's last commit. Ninety
+// individual warnings is a wall nobody reads — the same noise-blindness that let the drift accumulate —
+// so the report is a count plus the worst few, and the list shortens as cells are rewritten.
+export const STATUS_LOG_CAP = 6_000;
+
+// How many of the worst offenders to name per axis. Enough to give a reader somewhere to start,
+// short enough that the summary line stays the thing being read.
+export const STATUS_LOG_REPORT_LIMIT = 3;
 
 // Words that report how far along a piece of work is. AGENTS.md is read in full by every agent on
 // every task, so a pointer entry carrying progress becomes a second source of truth beside the linked
@@ -94,6 +113,16 @@ export interface GateFileSet {
   // failure this file keeps rediscovering, and an unreadable directory is exactly that — a hole in the
   // file set. Reported, never thrown; see `listWorkingTreeFiles`.
   unreadable: readonly string[];
+}
+
+// One cell's status log, measured against the two things that make it untrue: its own size, and the
+// package it describes. `codeDate` is null for a cell with no `packages/<name>/` — absorbed, reserved,
+// downstream, spun out — and `statusDate` is null for a log with no dated entry yet.
+export interface StatusLogEntry {
+  cell: string;
+  codeDate: string | null;
+  length: number;
+  statusDate: string | null;
 }
 
 // Scans only the link-led pointer entries (`- [name](path) — trigger`) under Domain Conventions, which
@@ -180,6 +209,12 @@ export function findGateMarkdown(files: ReadonlySet<string>, dir: string): reado
 // is what let the sibling check twelve lines away keep scanning the disk.
 export function findOrphanDocs(docs: readonly string[], linked: ReadonlySet<string>): readonly string[] {
   return docs.filter((doc) => !linked.has(doc) && !ORPHAN_ALLOW.some((entry) => entry.match(doc)));
+}
+
+// Status logs past the working-note cap, largest first. Pure over plain records so the rule is pinned
+// by a table in a test rather than by a checkout with the right sizes in it.
+export function findOverlongStatusLogs(entries: readonly StatusLogEntry[], limit: number): readonly StatusLogEntry[] {
+  return entries.filter((entry) => entry.length > limit).sort((a, b) => b.length - a.length);
 }
 
 // Whether a path names something the repository has — a file, or a directory with any file under it.
@@ -300,6 +335,18 @@ export function findReachableDocs(sources: readonly Readonly<{ path: string; tex
     }
   }
   return reached;
+}
+
+// Status logs whose newest entry predates their own package's last commit, widest gap first. A cell
+// with no local code is skipped rather than reported: `codeDate` is null there, and "the status log is
+// behind code that does not exist here" is not a finding.
+//
+// Dates are YYYY-MM-DD, so lexical comparison is date comparison. Equal dates are current — a log
+// written the same day as a commit is treated as having seen it, matching `sumChurnSince`.
+export function findStaleStatusLogs(entries: readonly StatusLogEntry[]): readonly StatusLogEntry[] {
+  return entries
+    .filter((entry) => entry.codeDate !== null && entry.statusDate !== null && entry.statusDate < entry.codeDate)
+    .sort((a, b) => (a.statusDate ?? '').localeCompare(b.statusDate ?? ''));
 }
 
 // Cell membership is stricter than general reachability. An index can make an evidence document
@@ -652,6 +699,7 @@ function main(): void {
   checkOrphans(files);
   checkMapStatus(files);
   checkCells(files);
+  reportStatusLogs(files);
   reportWarnings();
 
   if (failures.length > 0) {
@@ -742,6 +790,60 @@ function reportBudgets(files: ReadonlySet<string>): void {
     }
     process.stdout.write(`${pc.green('✓')} ${report.path} ${measured}\n`);
   }
+}
+
+// The two status-log drifts, as one aggregate line each. See STATUS_LOG_CAP for why this reports in
+// aggregate instead of warning per cell.
+//
+// The cell list comes from the gate file set like every other check, but `codeDate` comes from git,
+// which is the whole point: the status log is what somebody remembered to write, and the commit date
+// is what actually happened. Comparing the log against itself — the existing `checkStatus` drift —
+// only ever catches a stale front-matter field. Comparing it against git catches a stale FILE.
+function reportStatusLogs(files: ReadonlySet<string>): void {
+  const codeDates = readPackageLastCommitDates(REPO_ROOT);
+  const entries: StatusLogEntry[] = [];
+
+  for (const cell of findGateDirectories(files, CELLS_DIR)) {
+    const text = readGateFile(files, join(CELLS_DIR, cell, 'status.md'));
+    if (text === null) continue;
+    entries.push({
+      cell,
+      codeDate: codeDates.get(cell) ?? null,
+      length: text.length,
+      // The derived date, not the declared field: `checkStatus` already reports when the two disagree,
+      // and taking the field here would make a cell with a stale header look stale twice for one cause.
+      statusDate: getNewestStatusEntryDate(text),
+    });
+  }
+  if (entries.length === 0) return;
+
+  // No git, no comparison. Saying so beats printing "0 behind", which reads as a clean result.
+  if (codeDates.size === 0) {
+    process.stdout.write(`${pc.dim('  status logs: package commit dates unavailable — staleness not measured')}\n`);
+  }
+
+  const overlong = findOverlongStatusLogs(entries, STATUS_LOG_CAP);
+  const stale = findStaleStatusLogs(entries);
+  if (overlong.length === 0 && stale.length === 0) return;
+
+  const name = (entry: StatusLogEntry): string => entry.cell;
+  if (overlong.length > 0) {
+    const worst = overlong.slice(0, STATUS_LOG_REPORT_LIMIT);
+    const sizes = worst.map((entry) => `${name(entry)} ${entry.length.toLocaleString('en-US')}`).join(' · ');
+    process.stdout.write(
+      `${pc.yellow('!')} ${overlong.length} of ${entries.length} status logs over the ${STATUS_LOG_CAP.toLocaleString('en-US')}-character working-note cap — largest: ${sizes}\n`,
+    );
+  }
+  if (stale.length > 0) {
+    const worst = stale.slice(0, STATUS_LOG_REPORT_LIMIT);
+    const gaps = worst.map((entry) => `${name(entry)} (log ${entry.statusDate}, code ${entry.codeDate})`).join(' · ');
+    process.stdout.write(
+      `${pc.yellow('!')} ${stale.length} status logs behind their package's last commit — stalest: ${gaps}\n`,
+    );
+  }
+  process.stdout.write(
+    `${pc.dim('  a status log is an Open section plus dated one-liners; session narration belongs in git. See agents/packages/CONTRACT.md.')}\n`,
+  );
 }
 
 // Printed once, at the top, because it is a property of the GATE rather than of any one check — and

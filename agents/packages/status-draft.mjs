@@ -7,10 +7,14 @@
 // directional PCF cost. Having an agent reconstruct that by reading diffs pays to rewrite something
 // that already exists.
 //
-// So this prints a DRAFT to stdout and never writes status.md. status.md is continuity prose — what
-// is half-done, the gotcha hit, the dangling thread — and a verbatim commit dump would turn it into
-// a second copy of the changelog, which is the duplication the derived-date lesson warns about. The
-// agent visiting the cell compresses this into prose and keeps only what survives the summary.
+// So this prints RAW MATERIAL to stdout and never writes status.md. A verbatim commit dump would turn
+// the file into a second copy of the changelog, which is the duplication the derived-date lesson warns
+// about — and is precisely how status logs reached a 10,000-character median while 101 of them fell
+// behind their own package's last commit.
+//
+// What the visiting agent does with this list is therefore NOT "summarize it". `status.md › Open` is
+// present-tense state, so a commit that closed a thread means DELETING that thread; the list is read to
+// find out what is no longer true. Only then does one dated line go in `## Log`. See CONTRACT.md.
 //
 // Usage: node agents/packages/status-draft.mjs <cell> [<cell>...] [--since=YYYY-MM-DD]
 
@@ -112,9 +116,12 @@ for (const cell of cells) {
     console.log('\n_No commits since the review; the existing survey still stands._');
     continue;
   }
-  console.log(`\n## <date> — <headline the agent writes>\n`);
-  console.log(`Derived from ${subjects.length} commits landed since the ${since} review. Compress into prose;`);
-  console.log(`keep what a future agent needs (half-done threads, gotchas, why), drop the rest.\n`);
+  console.log(`\nRaw material from ${subjects.length} commits landed since the ${since} review.\n`);
+  console.log(`This is NOT a status entry. Two things come out of it, and neither is a summary of the list:`);
+  console.log(`  ## Open — rewrite it. What of this is still unfinished, half-done, or known-wrong? A commit`);
+  console.log(`           that closed a thread means DELETING that thread, not adding a line about it.`);
+  console.log(`  ## Log  — one dated line, naming what changed and where to look. Not a per-commit recap:`);
+  console.log(`           the diffs are in git already, which is where this list came from.\n`);
   for (const [type, texts] of groupByType(subjects)) {
     console.log(`**${type}**`);
     for (const text of texts) console.log(`- ${text}`);

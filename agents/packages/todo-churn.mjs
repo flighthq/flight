@@ -82,6 +82,45 @@ export function readPackageChurn(repoRoot, since) {
   return churn;
 }
 
+// The date each package last received a commit, as YYYY-MM-DD. The cheap sibling of `readPackageChurn`:
+// name-only rather than numstat, and no `--since`, because "when did this package last move" has no
+// useful window — a package untouched for a year still has a real answer.
+//
+// `git log` is newest-first, so the FIRST date seen for a package is its last commit date and every
+// later line for it is discarded. Returns an empty map when git is unavailable or this is not a
+// checkout, so a caller degrades to reporting nothing rather than failing.
+export function readPackageLastCommitDates(repoRoot) {
+  let out;
+  try {
+    out = execFileSync('git', ['log', '--no-renames', '--name-only', '--format=C%cs', '--', 'packages'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      maxBuffer: 256 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return new Map();
+  }
+  return readLastCommitDates(out);
+}
+
+// Split from the git call so the parse can be pinned by a minimal pair in a test rather than by
+// constructing history. Takes `git log --name-only --format=C%cs` output verbatim, newest-first.
+export function readLastCommitDates(log) {
+  const dates = new Map();
+  let date = null;
+  for (const line of log.split('\n')) {
+    if (line.startsWith('C')) {
+      date = line.slice(1).trim() || null;
+      continue;
+    }
+    if (date === null || line === '') continue;
+    const name = line.match(/^packages\/([^/]+)\//)?.[1];
+    if (name !== undefined && !dates.has(name)) dates.set(name, date);
+  }
+  return dates;
+}
+
 // Commits and lines landed in one package strictly after `since`. Dates are YYYY-MM-DD, so lexical
 // comparison is date comparison. A review dated the same day as a commit is treated as having seen it.
 export function sumChurnSince(byDate, since) {

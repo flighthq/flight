@@ -98,11 +98,21 @@ basedOn: ./review.md # the review revision this assessment reasoned over
 
 ### `status.md`
 
-The **continuity log**: transient unfinished-work tidbits (half-done threads, gotchas, what to watch), appended by the developer or review pass. It is the home for the transient notes that would otherwise rot as inline `TODO` comments; durable semantic comments stay in the code. Append-only, newest entry on top.
+Two sections, answering different questions on different timescales.
+
+**`## Open` — present tense, rewritten in place, at the top of the file.** What is unfinished, half-done, or known-wrong in this package _right now_: the dangling threads, the gotchas, the things a reader would otherwise rediscover. This is the home for the transient notes that would rot as inline `TODO` comments; durable semantic comments stay in the code.
+
+This section is why the file exists, because **it is the one thing git cannot produce**. A log records what changed, and an absence never appears in a diff — so "there is still no `enableRenderGuards`" is underivable from any history, however carefully written. It is **overwritten, never appended to**: a statement of current state has to be rewritten to stay true, and a thread that has been closed is deleted rather than struck.
+
+**`## Log` — dated one-line entries, newest on top, append-only by convention.** One line per session naming what changed and where to look. The diff is in git and is not restated here; an entry is a bookmark, not a report.
+
+**Do not write session narration.** "Landed X. **Done (committed + tests green)** … Verification: 13 files, 143 tests, all pass" is a commit message inflated into prose, and git already carries it with the diff attached. Narration is also what makes the file untrue: it accretes on top, so the `Open` section underneath is never revisited. When the rule was written, 90 of 147 logs were over the cap below and 101 were behind their own package's last commit — the drift is structural, not neglect, because an append-only file is forbidden from correcting itself.
+
+Keep it under **6,000 characters**. `npm run docs:check` reports both the overrun and the git-measured staleness in aggregate; neither gates, because the remedy is a person rewriting prose and a red gate cannot make that happen sooner. `node agents/packages/status-draft.mjs <cell>` prints the commit subjects since the last review as raw material to compress.
 
 ```yaml
 package: '@flighthq/<name>'
-updated: YYYY-MM-DD # date of the newest entry; null when empty
+updated: YYYY-MM-DD # date of the newest Log entry; null when empty
 by: null # the pass that merged the newest entry (e.g. ingest:builder-<sha>)
 ```
 

@@ -94,6 +94,8 @@ _Gestured-at but undecided; where an agent asks rather than assumes. None record
 `;
 }
 
+// Both sections are stubbed with their contract stated inline, because the shape is the whole point and
+// a bare heading invites back the session narration it replaces. See ../CONTRACT.md.
 function statusStub(name) {
   return `---
 package: "@flighthq/${name}"
@@ -101,12 +103,20 @@ updated: null
 by: null
 ---
 
-# ${name} — Status Log
+# ${name} — Status
 
-> Append-only handoff log, newest entry on top. Each entry: what changed, what's in-flight, what to
-> watch next. Incoming status documents land here.
+> Under 6,000 characters. \`Open\` is rewritten in place; \`Log\` is dated one-liners, newest on top.
+> Session narration belongs in git, which already carries it with the diff attached.
 
-<!-- newest entry on top -->
+## Open
+
+_What is unfinished, half-done, or known-wrong in \`@flighthq/${name}\` right now — the dangling threads
+and gotchas a reader would otherwise rediscover. Present tense. Rewrite this section rather than
+appending to it: a closed thread is deleted, not struck._
+
+## Log
+
+<!-- newest entry on top; one dated line each, naming what changed and where to look -->
 `;
 }
 
