@@ -4,11 +4,13 @@
 // nothing here carries font bytes, tables derived from anyone's material, or a filename that only
 // makes sense as a manifest of someone's archive. A path is supplied by the caller.
 //
-// ★★ EVERY CORPUS-WALKING EXPORT BELOW IS `untested-until-the-pack-arrives`: it has NEVER EXECUTED IN
-// CI, because the pack it reads does not exist yet. A committed oracle that has never run reads as
-// coverage to a later reader, so the marker is here in the file rather than in a note. The PURE
-// comparison logic each one delegates to IS tested, colocated, today — that split is deliberate, and
-// it is the same one `fixtures-core` uses: decisions are testable without I/O, walks are not.
+// ★★ NOTHING IN THIS FILE WALKS A CORPUS. Every export here is PURE — bounds objects, counts, deltas
+// — and all are covered by the colocated test today. The corpus-walking halves were deliberately NOT
+// committed: an instrument that cannot run reads as coverage to a later reader, so it is absent rather
+// than present-and-marked. That is the same split `fixtures-core` uses: decisions are testable without
+// I/O, walks are not. If a walk is ever added here it carries `untested-until-run`, retired per export
+// on execution and naming which ones ran — a fetch alone can never retire it, because a fetch does not
+// make a pure function execute any differently.
 //
 // WHY THESE AND NOT A GENERAL PIXEL DIFF: each answers a question the package's own tests structurally
 // cannot. A bounding box is min/max over a point SET and a contour count is a COUNT, so both are
