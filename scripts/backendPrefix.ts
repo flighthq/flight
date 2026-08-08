@@ -30,6 +30,16 @@ import pc from 'picocolors';
 
 import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
+// The render-backend token vocabulary. Closed on purpose: this scan validates a token against types
+// exported by @flighthq/types, so a token whose types are not here would govern nothing — an inert
+// entry reads like coverage while checking no name. A backend gains its token when its seam types
+// land in @flighthq/types, not when the backend is planned. Non-web backends built in sibling repos
+// (`render-cairo`, `scene2d-cairo` in flight-hx) are chartered under agents/packages/ with `spunOut`
+// front matter and enter here at that point; see agents/conventions/export-lanes.md.
+//
+// Distinct from the harness backend lists (`FUNCTIONAL_BACKENDS`, `SANDBOX_VERIFIABLE`,
+// `CapturePageTargetOptions.renderer`), which enumerate what the browser-driven capture harness can
+// actually drive. Those are correctly web-only and must not gain a token a baseline cannot support.
 const BACKENDS = ['Canvas', 'Dom', 'Gl', 'Wgpu'] as const;
 
 // The shared generated-output set, plus the four this scan skips for its own reasons: agent and editor
