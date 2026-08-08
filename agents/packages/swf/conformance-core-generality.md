@@ -53,8 +53,9 @@ of the scoping decision, which is why it is here rather than in the decision rec
 
 ## "The core" names two deliverables — price the boundary, not the phrase
 
-Two independent estimates of a format-agnostic core came back at **7–12 days** and **3–5 days**, and
-**neither was wrong.** They priced different deliverables:
+Two independent estimates of a format-agnostic core came back at **7–12 days** and **3–5 days**. The gap
+has **two** causes, and only one of them is nobody's fault. First, the deliverable was ambiguous — the
+two numbers priced different things:
 
 | Boundary | Contents | Estimate |
 | --- | --- | --- |
@@ -64,6 +65,14 @@ Two independent estimates of a format-agnostic core came back at **7–12 days**
 ⇒ **An error gets corrected once; an ambiguous name keeps producing a wrong number every time anyone
 prices it.** Whoever quotes this work states which boundary the number buys, in the same sentence as the
 number. The larger reading is a legitimate reading — pricing it is not carelessness.
+
+**Second, and separately: there were genuine mis-classifications, in both directions, which happened to
+net downward.** Already-isolated adapters were counted as code to be generalised — the 623-line probe,
+and the worker protocol and pool — while real coupling in the retained-evidence and denominator layers
+was missed. Those are line items classified wrongly, not deliverable ambiguity, and **ambiguity alone
+would have needed no independent read to fix.** ⇒ **Audit a price in BOTH directions or the net is
+wrong**: a check that only hunts for missed coupling finds some, adds it, and reports the price rising —
+directionally wrong, from a real finding.
 
 ## Verified inventory — what is genuinely coupled to SWF
 
