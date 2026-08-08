@@ -1,5 +1,4 @@
-import type { MeshGeometryRuntime, VertexAttributeLayout } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
 import {
@@ -90,16 +89,6 @@ describe('convertMeshGeometryLayout', () => {
     expect(converted.vertices[0]).toBeCloseTo(1);
     expect(converted.vertices[1]).toBeCloseTo(2);
     expect(converted.vertices[2]).toBeCloseTo(3);
-  });
-  it('preserves tangent-split smoothing identity across a layout conversion', () => {
-    const source = createMeshGeometry({ layout: CANONICAL_MESH_GEOMETRY_LAYOUT, vertices: new Float32Array(24) });
-    (source[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources = new Uint32Array([0, 0]);
-
-    const converted = convertMeshGeometryLayout(source, POSITION_ONLY_LAYOUT);
-
-    const convertedSources = (converted[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources;
-    expect(Array.from(convertedSources!)).toEqual([0, 0]);
-    expect(convertedSources).not.toBe((source[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources);
   });
   it('strips to position + uv0 layout', () => {
     const source = makeCanonicalGeometry();

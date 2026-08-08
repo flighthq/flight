@@ -1,5 +1,4 @@
-import type { MeshGeometry, MeshGeometryRuntime, VertexAttributeLayout } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
 
@@ -72,19 +71,13 @@ export function convertMeshGeometryLayout(
     }
   }
 
-  const converted = createMeshGeometry({
+  return createMeshGeometry({
     indices: source.indices ?? undefined,
     layout: targetLayout,
     subsets: source.subsets,
     topology: source.topology,
     vertices: dstVertices,
   });
-  const sourceRuntime = source[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
-  const smoothingSources = sourceRuntime?.tangentSmoothingSources;
-  if (smoothingSources !== null && smoothingSources !== undefined) {
-    (converted[EntityRuntimeKey] as MeshGeometryRuntime).tangentSmoothingSources = smoothingSources.slice();
-  }
-  return converted;
 }
 
 interface AttributeMapping {

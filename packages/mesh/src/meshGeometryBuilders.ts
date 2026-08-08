@@ -1,16 +1,15 @@
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
-import { refreshMeshGeometryBounds } from './meshGeometryCompute';
+import { computeMeshGeometryTangents, refreshMeshGeometryBounds } from './meshGeometryCompute';
 
 // Primitive builders for the canonical interleaved PBR vertex record:
 //   position(3) + normal(3) + tangent(4, w = handedness) + uv0(2) = 12 f32 / 48 bytes.
 // Coordinate and winding convention is pinned across the 3D suite: RIGHT-HANDED coordinates,
 // COUNTER-CLOCKWISE (CCW) front faces, and the tangent `w` component is the bitangent sign per
 // glTF — bitangent = cross(normal, tangent.xyz) * tangent.w. Every builder writes outward-facing
-// normals, generates UVs, computes per-vertex tangents, and fills the cached local-space bounds.
-// Builder topology already duplicates every UV discontinuity, so its compact tangent finalizer does
-// not need the general authoring API's topology reconciliation.
+// normals, generates UVs, computes per-vertex tangents (via computeMeshGeometryTangents, which
+// sets the correct w-sign from the UV gradient), and fills the cached local-space bounds.
 
 // Builds an axis-aligned box of the given dimensions centered at the origin, one quad per face
 // with per-face outward normals and per-face 0..1 UVs (so each face textures independently).
@@ -794,94 +793,11 @@ function buildCanonicalMeshGeometry(
     vertices: vertices,
   });
 
-  computeCanonicalMeshTangents(vertices, indexArray);
+  computeMeshGeometryTangents(geometry, geometry);
 
   refreshMeshGeometryBounds(geometry);
 
   return geometry;
-}
-
-// Primitive builders own their topology and already emit separate records at normal and UV seams.
-// Keeping this trusted-topology path local avoids pulling the general, topology-repairing tangent
-// authoring routine into applications that only create Flight primitives.
-function computeCanonicalMeshTangents(vertices: Float32Array, indices: Uint32Array): void {
-  const vertexCount = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
-  const tangents = new Float32Array(vertexCount * 3);
-  const bitangents = new Float32Array(vertexCount * 3);
-  for (let element = 0; element + 2 < indices.length; element += 3) {
-    const i0 = indices[element];
-    const i1 = indices[element + 1];
-    const i2 = indices[element + 2];
-    const p0 = i0 * CANONICAL_FLOATS_PER_VERTEX;
-    const p1 = i1 * CANONICAL_FLOATS_PER_VERTEX;
-    const p2 = i2 * CANONICAL_FLOATS_PER_VERTEX;
-    const x1 = vertices[p1] - vertices[p0];
-    const y1 = vertices[p1 + 1] - vertices[p0 + 1];
-    const z1 = vertices[p1 + 2] - vertices[p0 + 2];
-    const x2 = vertices[p2] - vertices[p0];
-    const y2 = vertices[p2 + 1] - vertices[p0 + 1];
-    const z2 = vertices[p2 + 2] - vertices[p0 + 2];
-    const du1 = vertices[p1 + 10] - vertices[p0 + 10];
-    const dv1 = vertices[p1 + 11] - vertices[p0 + 11];
-    const du2 = vertices[p2 + 10] - vertices[p0 + 10];
-    const dv2 = vertices[p2 + 11] - vertices[p0 + 11];
-    const determinant = du1 * dv2 - du2 * dv1;
-    const reciprocal = determinant === 0 ? 0 : 1 / determinant;
-    const tx = (dv2 * x1 - dv1 * x2) * reciprocal;
-    const ty = (dv2 * y1 - dv1 * y2) * reciprocal;
-    const tz = (dv2 * z1 - dv1 * z2) * reciprocal;
-    const bx = (du1 * x2 - du2 * x1) * reciprocal;
-    const by = (du1 * y2 - du2 * y1) * reciprocal;
-    const bz = (du1 * z2 - du2 * z1) * reciprocal;
-    for (let corner = 0; corner < 3; corner++) {
-      const vertex = corner === 0 ? i0 : corner === 1 ? i1 : i2;
-      const tangent = vertex * 3;
-      tangents[tangent] += tx;
-      tangents[tangent + 1] += ty;
-      tangents[tangent + 2] += tz;
-      bitangents[tangent] += bx;
-      bitangents[tangent + 1] += by;
-      bitangents[tangent + 2] += bz;
-    }
-  }
-
-  for (let vertex = 0; vertex < vertexCount; vertex++) {
-    const base = vertex * CANONICAL_FLOATS_PER_VERTEX;
-    const tangent = vertex * 3;
-    const nx = vertices[base + 3];
-    const ny = vertices[base + 4];
-    const nz = vertices[base + 5];
-    const normalDot = nx * tangents[tangent] + ny * tangents[tangent + 1] + nz * tangents[tangent + 2];
-    let tx = tangents[tangent] - nx * normalDot;
-    let ty = tangents[tangent + 1] - ny * normalDot;
-    let tz = tangents[tangent + 2] - nz * normalDot;
-    let length = Math.hypot(tx, ty, tz);
-    if (length === 0) {
-      if (Math.abs(nx) < Math.abs(nz)) {
-        tx = 0;
-        ty = nz;
-        tz = -ny;
-      } else {
-        tx = ny;
-        ty = -nx;
-        tz = 0;
-      }
-      length = Math.hypot(tx, ty, tz) || 1;
-    }
-    tx /= length;
-    ty /= length;
-    tz /= length;
-    vertices[base + 6] = tx;
-    vertices[base + 7] = ty;
-    vertices[base + 8] = tz;
-    vertices[base + 9] =
-      (ny * tz - nz * ty) * bitangents[tangent] +
-        (nz * tx - nx * tz) * bitangents[tangent + 1] +
-        (nx * ty - ny * tx) * bitangents[tangent + 2] <
-      0
-        ? -1
-        : 1;
-  }
 }
 
 const CANONICAL_FLOATS_PER_VERTEX = 12;
