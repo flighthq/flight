@@ -30,9 +30,18 @@ function transformedGlyf(sizes: readonly number[], glyphCount = 3, indexFormat =
 }
 
 describe('createWoff2TransformReverser', () => {
-  it('refuses a transformed table it does not implement', () => {
+  it('refuses the hmtx transform DELIBERATELY, which is a decision and not an unfinished job', () => {
     // Passing the transformed bytes through under the table's own tag would assemble a font whose
     // directory says `hmtx` over something that is not one — readable, wrong and silent.
+    //
+    // ★ THIS ASSERTION IS THE DECISION, NOT JUST A CHECK OF IT. The container defines an `hmtx`
+    // transform that producers do not emit, so implementing one adds a branch no font reaches and no
+    // font can test. That reasoning lives in a comment beside the refusal, and a comment is a fragile
+    // home for it: deleting the rationale breaks nothing, and leaves an apparent gap that a later
+    // reader will helpfully fill in with the very untested branch it argued against. A test cannot be
+    // dropped as quietly — anyone implementing the transform has to come here and delete a case whose
+    // name says the refusal was chosen. `censusWoff2Transforms` in the reversal oracle is the check to
+    // re-run before deciding producers have started emitting it.
     const reverse = createWoff2TransformReverser();
     expect(reverse('hmtx', new Uint8Array(4), new Map())).toBeNull();
   });
