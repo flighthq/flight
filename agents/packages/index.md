@@ -17,7 +17,7 @@ Each package folder holds up to four files. They differ by **writer**, **lifecyc
 | `assessment.md` | recommendations + approval | an assessment agent over the review | semi-durable; consumed as work lands | medium — `Approved` is blessed, the rest is candidate |
 | `status.md` | continuity log | the developer / review pass | append-only, newest on top | informational/transient — unfinished-work tidbits, not blessed truth |
 
-Only `charter.md` is authored from _your_ direction; the other three are produced by agents. Only `charter.md` and the `Approved`/`Decisions` ledgers are append-only and human-gated — everything else regenerates freely.
+Only `charter.md` is authored from _your_ direction; the other three are produced by agents. Only the `charter.md` **body** and the `Approved`/`Decisions` ledgers are append-only and human-gated — everything else regenerates freely. (Its front-matter pointer list is the exception, and `lastDirection` the exception to the exception; both are spelled out under **Promote** below.)
 
 `status.md` is the **continuity** layer, not "current state" (an agent reads the code for that). It holds the transient unfinished-work tidbits — what's half-done, the gotcha hit, the dangling thread — and is the designated home for the **transient** notes that would otherwise rot as inline `TODO` comments. (Durable semantic comments — ownership, aliasing, allocation, coordinate-space, portability — stay in the code.) An orienting agent defaults to charter + its own code-read and _consults_ status only for dangling threads; storing it does not force anchoring.
 
@@ -49,7 +49,11 @@ Only `charter.md` is authored from _your_ direction; the other three are produce
 2. **Assess** — an assessment agent turns the review into `assessment.md`, sorting work into **`Recommended`** (the actionable, sweep-safe shortlist), **`Backlog`** (parked candidates), and, when needed, **`Depth gaps`** (surveyed domain-maturity gaps that should remain visible in the aggregate queue). Explicit user direction that spans packages or requires staged delivery is recorded under **`Directed`**, keeping it distinct from blanket-sweep work. Anything that still needs a real decision — cross-package work, an API-shape fork — does **not** go in `Recommended`; it is surfaced into the charter's **Open directions** for an explicit conversation.
 3. **Approve** — you approve verbally, often coarsely ("do all recommended"). The agent **freezes** the named set into `assessment.md › Approved`, stamped and attributed (see the approval gate).
 4. **Execute** — a developer does the approved work and appends a `status.md` entry.
-5. **Promote** — a completed item that encodes a permanent ruling is appended to `charter.md › Decisions` on its way out. The charter is the only file an agent never writes to without your blessing.
+5. **Promote** — a completed item that encodes a permanent ruling is appended to `charter.md › Decisions` on its way out. The charter's **body** — vision, rubric, `Decisions`, `Open directions` — is the only content an agent never writes without your blessing.
+
+**One part of `charter.md` is not gated, and the distinction is load-bearing.** The front-matter **pointer list** (`review:`, `individuation:`, `tagCoverage:`, …) is *mechanical registration*, and `docs:check` **requires** an agent to maintain it: adding a supplementary cell document fails the gate until the charter acknowledges it, and the gate's own remediation text says to add the pointer there. A gate whose remediation instructs an edit cannot also forbid it — **the remediation defines the permitted edit**, which settles this without appealing to what has been tolerated before.
+
+⚠ **`lastDirection` is gated, and it is the field where a mistake is not a style violation but a FALSE RECORD.** It is the record of when *you* last gave direction. An agent writing it forges a direction that did not happen — so it is never touched by an agent, including when the same edit updates a pointer beside it.
 
 ## The approval gate
 
