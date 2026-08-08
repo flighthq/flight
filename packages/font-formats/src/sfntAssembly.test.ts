@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assembleSfntFont,
   computeSfntTableChecksum,
+  encodeSfntCompositeGlyph,
   encodeSfntLoca,
   encodeSfntSimpleGlyph,
   packSfntTag,
@@ -83,6 +84,44 @@ describe('computeSfntTableChecksum', () => {
   it('wraps modulo 2^32 rather than growing past a uint32', () => {
     const big = Uint8Array.from([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 2]);
     expect(computeSfntTableChecksum(big)).toBe(1);
+  });
+});
+
+describe('encodeSfntCompositeGlyph', () => {
+  const box = { xMax: 9, xMin: 1, yMax: 8, yMin: 2 };
+  const comps = Uint8Array.from([0x00, 0x20, 0x00, 0x03, 0x01, 0x02]);
+  const none = new Uint8Array(0);
+
+  it('marks the glyph composite with a negative contour count', () => {
+    // Readers switch on the sign alone. A positive count here makes every reader parse the component
+    // records as an endPtsOfContours array.
+    const out = encodeSfntCompositeGlyph(comps, none, box, false);
+    expect(new DataView(out.buffer, out.byteOffset, out.byteLength).getInt16(0)).toBeLessThan(0);
+  });
+
+  it('copies the component records unchanged', () => {
+    const out = encodeSfntCompositeGlyph(comps, none, box, false);
+    expect([...out.subarray(10, 16)]).toEqual([...comps]);
+  });
+
+  it('omits the instruction length entirely when no component asked for instructions', () => {
+    // A zero length written unconditionally adds two bytes no reader expects, shifting every glyph
+    // that follows.
+    expect(encodeSfntCompositeGlyph(comps, none, box, false).byteLength).toBe(16);
+  });
+
+  it('writes the instruction length and bytes when a component did ask', () => {
+    const out = encodeSfntCompositeGlyph(comps, Uint8Array.from([0xb0]), box, true);
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect(out.byteLength).toBe(19);
+    expect(view.getUint16(16)).toBe(1);
+    expect(out[18]).toBe(0xb0);
+  });
+
+  it('carries the bounds it was given, since a composite cannot compute its own', () => {
+    const out = encodeSfntCompositeGlyph(comps, none, box, false);
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect([view.getInt16(2), view.getInt16(4), view.getInt16(6), view.getInt16(8)]).toEqual([1, 2, 9, 8]);
   });
 });
 
