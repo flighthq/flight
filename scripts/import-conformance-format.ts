@@ -5,6 +5,7 @@ import type {
   ImportConformanceScorePackMeasured,
   ImportConformanceUnknownObservation,
 } from './import-conformance-core';
+import { formatImportConformanceDenominators } from './import-conformance-denominator';
 import { IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL } from './import-conformance-score';
 
 export function formatImportConformanceScore(score: Readonly<ImportConformanceScore>): string {
@@ -67,10 +68,7 @@ function formatExercisedDenominator(
   pack: Readonly<ImportConformanceScorePackMeasured>,
   oracle: Readonly<ImportConformanceScore['oracleAssurance']>,
 ): string {
-  const denominator = pack.summary.denominators.importerDeclared;
-  const census = denominator.census;
-  const margin = denominator.individuationMargin;
-  return `exercised importer-declared ${formatCapabilityRowTally(pack.summary.exercised.capabilities, formatExercisedMembers(pack))}; declared capability-row tally ${denominator.declaredRows}; individuation margin counts [same-dispatch-arm row count ${margin.sameDispatchArmRows}; behavior-preserving-refactor row count ${margin.behaviorPreservingRefactorRows}; discriminated-source row count ${margin.discriminatedSourceRows}; frozen-declared row count ${margin.frozenDeclaredRows}; ${margin.state}]; rejected circular individuation candidate ${margin.rejectedCircularCandidate}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} [false-positive-hit tally ${census.falsePositiveHits}; candidate-hit tally ${census.candidateHits}; single author]; SWF-format capability denominator UNMEASURED; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; ${oracle.unmeasuredCapabilityCause}); ratchet honest limit ${oracle.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracle.formatDerivedProperties}`;
+  return `exercised importer-declared ${formatCapabilityRowTally(pack.summary.exercised.capabilities, formatExercisedMembers(pack))}; ${formatImportConformanceDenominators(pack.summary.denominators)}; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; ${oracle.unmeasuredCapabilityCause}); ratchet honest limit ${oracle.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracle.formatDerivedProperties}`;
 }
 
 function formatCapabilityRowTally(count: number, members: string): string {

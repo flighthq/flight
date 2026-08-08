@@ -11,6 +11,7 @@ import {
 } from './import-conformance-core';
 import type { ImportConformanceLossPath } from './import-conformance-core';
 import { formatImportConformanceScore } from './import-conformance-format';
+import { createSwfImportConformanceDenominators } from './swf-capability-index';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },
@@ -94,8 +95,7 @@ describe('formatImportConformanceScore', () => {
       PROVENANCE,
       {
         capabilityScopedUnknownMappings: { configurationLimits: [], unwiredLossFamilies: [] },
-        importerDeclaredCensus: TEST_CENSUS,
-        individuationMargin: TEST_MARGIN,
+        denominators: createSwfImportConformanceDenominators(2, TEST_CENSUS, TEST_MARGIN),
       },
     );
 
@@ -112,7 +112,7 @@ describe('formatImportConformanceScore', () => {
         'capability-probe-unreadable-fixtures: []\n' +
         'oracle-outcome-populations: passed oracle-outcome tally 0; failed oracle-outcome tally 0; not-run oracle-outcome tally 0\n' +
         'oracle-cases: case tally 0 []\n' +
-        'importer-capability-evidence: exercised importer-declared capability-row tally 1 [exercised: swf.fill.solid; importer-declared: swf.fill.solid, swf.text.define-text]; declared capability-row tally 2; individuation margin counts [same-dispatch-arm row count 1; behavior-preserving-refactor row count 1; discriminated-source row count 2; frozen-declared row count 2; frozen-no-election]; rejected circular individuation candidate corpus-differential-behavior; importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check synthetic-capabilities-vs-tag-coverage.md [false-positive-hit tally 2; candidate-hit tally 4; single author]; SWF-format capability denominator UNMEASURED; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; no-fixture-vs-upstream-unreachable-not-distinguished); ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles first-class-case-outcomes\n' +
+        'importer-capability-evidence: exercised importer-declared capability-row tally 1 [exercised: swf.fill.solid; importer-declared: swf.fill.solid, swf.text.define-text]; declared capability-row tally 2; producer-declared methodology unresolved-individuation-v1; producer-declared readings [behavior-preserving-refactor-rows=1; candidate-hits=4 @synthetic-capabilities-vs-tag-coverage.md; census-basis="single-artifact-cross-check" @synthetic-capabilities-vs-tag-coverage.md; census-provenance="single-author" @synthetic-capabilities-vs-tag-coverage.md; census-state="provisional" @synthetic-capabilities-vs-tag-coverage.md; discriminated-source-rows=2; false-positive-hits=2 @synthetic-capabilities-vs-tag-coverage.md; frozen-declared-rows=2; individuation-state="frozen-no-election"; rejected-circular-candidate="corpus-differential-behavior"; same-dispatch-arm-rows=1]; producer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); swf-format capability denominator UNMEASURED (format-capability-enumeration-not-declared); unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; no-fixture-vs-upstream-unreachable-not-distinguished); ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles first-class-case-outcomes\n' +
         'configuration-limits: keyed-limit count 0 []\n' +
         'loss-path-audit: partial; audited capability-row tally 1 [swf.fill.solid@audit:loss-path-v1 by builder2 at 2026-08-07T00:00:00.000Z subject sha256:subject:swf.fill.solid: identified]; can-silently-lose capability-row tally 1; audited-none capability-row tally 0; audit-identity-unavailable capability-row tally 0 []; unaudited capability-row tally 1 [swf.text.define-text]\n' +
         'diagnostic-channels: structured-crumb capability-row tally 1 [swf.fill.solid]; human-log-only capability-row tally 0 []; none capability-row tally 1 [swf.text.define-text]\n' +
@@ -188,8 +188,7 @@ describe('formatImportConformanceScore', () => {
             },
           ],
         },
-        importerDeclaredCensus: TEST_CENSUS,
-        individuationMargin: TEST_MARGIN,
+        denominators: createSwfImportConformanceDenominators(2, TEST_CENSUS, TEST_MARGIN),
       },
     );
     const output = formatImportConformanceScore(score);

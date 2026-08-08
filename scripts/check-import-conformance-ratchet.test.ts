@@ -756,16 +756,16 @@ describe('formatImportConformanceRatchetReport', () => {
       'exercised importer-declared capability-row tally 1 [exercised: alpha; importer-declared: alpha, beta]; declared capability-row tally 2',
     );
     expect(output).toContain(
-      'individuation margin counts [same-dispatch-arm row count 0; behavior-preserving-refactor row count 0; discriminated-source row count 1; frozen-declared row count 2; frozen-no-election]; rejected circular individuation candidate corpus-differential-behavior',
+      'producer-declared readings [candidate-hits=4; false-positive-hits=2; frozen-declared-rows=2; same-dispatch-arm-rows=0]',
     );
     expect(output).toContain(
-      'importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check capabilities.json-vs-tag-coverage.md [false-positive-hit tally 2; candidate-hit tally 4; single author]',
+      'producer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); swf-format capability denominator UNMEASURED (format-capability-enumeration-not-declared)',
     );
     expect(output).not.toContain('1 of 2');
     expect(output).not.toContain('exercised exercised');
     expect(output).not.toContain('%');
     expect(output).not.toMatch(/\b\d+\s*\/\s*\d+\b/);
-    expect(output).toContain('SWF-format capability denominator UNMEASURED');
+    expect(output).toContain('swf-format capability denominator UNMEASURED');
     expect(output).toContain(
       'ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles first-class-case-outcomes',
     );
@@ -924,16 +924,20 @@ describe('parseImportConformanceScore', () => {
     );
 
     const declaredRows = measuredPack();
-    declaredRows.summary.denominators.importerDeclared.declaredRows = 82;
-    declaredRows.summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows = 82;
+    if (declaredRows.summary.denominators.producerDeclared.state !== 'unresolved') throw new Error('test setup');
+    declaredRows.summary.denominators.producerDeclared.declaredRows = 82;
     expect(() => parseImportConformanceScore(score(declaredRows, '100'))).toThrow(
-      'denominators.importerDeclared.declaredRows: must equal the capability rows (2)',
+      'denominators.producerDeclared.declaredRows: must equal the capability rows (2)',
     );
 
-    const margin = measuredPack();
-    margin.summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows = 82;
-    expect(() => parseImportConformanceScore(score(margin, '100'))).toThrow(
-      'individuationMargin.frozenDeclaredRows: must equal declaredRows (2)',
+    const readings = measuredPack();
+    if (readings.summary.denominators.producerDeclared.state !== 'unresolved') throw new Error('test setup');
+    readings.summary.denominators.producerDeclared.readings = [
+      { id: 'frozen-declared-rows', value: 2 },
+      { id: 'candidate-hits', value: 4 },
+    ];
+    expect(() => parseImportConformanceScore(score(readings, '100'))).toThrow(
+      'Denominator readings must be sorted and unique',
     );
   });
 
@@ -941,50 +945,44 @@ describe('parseImportConformanceScore', () => {
     const pack = measuredPack() as unknown as {
       summary: {
         denominators: {
-          importerDeclared: { state: string };
-          swfFormat: { state: string };
+          format: { state: string };
+          producerDeclared: { state: string };
         };
       };
     };
-    pack.summary.denominators.importerDeclared.state = 'defined';
+    pack.summary.denominators.producerDeclared.state = 'defined';
     const formatDefined = measuredPack() as unknown as {
-      summary: { denominators: { swfFormat: { state: string } } };
+      summary: { denominators: { format: { state: string } } };
     };
-    formatDefined.summary.denominators.swfFormat.state = 'measured';
+    formatDefined.summary.denominators.format.state = 'measured';
 
     expect(() => parseImportConformanceScore(score(pack as never, '100'))).toThrow(
-      "denominators.importerDeclared.state: must be exactly 'unresolved'",
+      "denominators.producerDeclared.state: must be 'not-applicable' or 'unresolved'",
     );
     expect(() => parseImportConformanceScore(score(formatDefined as never, '100'))).toThrow(
-      "denominators.swfFormat.state: must be exactly 'unmeasured'",
+      "denominators.format.state: must be 'not-applicable' or 'unmeasured'",
     );
   });
 
-  it('carries the frozen four-reading margin without electing a denominator or admitting the circular candidate', () => {
+  it('carries producer-owned denominator readings without interpreting their measurement shape', () => {
     const capabilities = Array.from({ length: 82 }, (_, index) =>
       unmeasuredCapability(`swf.test.capability-${index.toString().padStart(3, '0')}`),
     );
     const pack = measuredPack(capabilities);
-    pack.summary.denominators.importerDeclared.individuationMargin = {
-      behaviorPreservingRefactorRows: 77,
-      discriminatedSourceRows: 80,
-      frozenDeclaredRows: 82,
-      rejectedCircularCandidate: 'corpus-differential-behavior',
-      sameDispatchArmRows: 66,
-      state: 'frozen-no-election',
-    };
+    if (pack.summary.denominators.producerDeclared.state !== 'unresolved') throw new Error('test setup');
+    pack.summary.denominators.producerDeclared.readings = [
+      { id: 'behavior-preserving-refactor-rows', value: 77 },
+      { id: 'discriminated-source-rows', value: 80 },
+      { id: 'frozen-declared-rows', value: 82 },
+      { id: 'rejected-circular-candidate', value: 'corpus-differential-behavior' },
+      { id: 'same-dispatch-arm-rows', value: 66 },
+    ];
 
     const parsed = parseImportConformanceScore(score(pack, '100'));
-    const elected = structuredClone(pack) as unknown as {
-      summary: { denominators: { importerDeclared: { individuationMargin: { state: string } } } };
+    const invalidMethodology = structuredClone(pack) as unknown as {
+      summary: { denominators: { producerDeclared: { methodology: string } } };
     };
-    elected.summary.denominators.importerDeclared.individuationMargin.state = 'elected';
-    const circular = structuredClone(pack) as unknown as {
-      summary: {
-        denominators: { importerDeclared: { individuationMargin: { rejectedCircularCandidate: string } } };
-      };
-    };
-    circular.summary.denominators.importerDeclared.individuationMargin.rejectedCircularCandidate = 'corpus-observed';
+    invalidMethodology.summary.denominators.producerDeclared.methodology = 'not a stable id';
     const current = parseImportConformanceScore(score(pack, '101'));
     const output = formatImportConformanceRatchetReport(
       compareImportConformanceScores(parsed, current, { unknownBaseline: 'allow' }),
@@ -993,28 +991,19 @@ describe('parseImportConformanceScore', () => {
     expect(parsed.packs[0]).toMatchObject({
       summary: {
         denominators: {
-          importerDeclared: {
+          producerDeclared: {
             declaredRows: 82,
-            individuationMargin: {
-              behaviorPreservingRefactorRows: 77,
-              discriminatedSourceRows: 80,
-              frozenDeclaredRows: 82,
-              rejectedCircularCandidate: 'corpus-differential-behavior',
-              sameDispatchArmRows: 66,
-              state: 'frozen-no-election',
-            },
+            methodology: 'unresolved-individuation-v1',
+            readings: pack.summary.denominators.producerDeclared.readings,
           },
         },
       },
     });
-    expect(() => parseImportConformanceScore(score(elected as never, '100'))).toThrow(
-      "individuationMargin.state: must be exactly 'frozen-no-election'",
-    );
-    expect(() => parseImportConformanceScore(score(circular as never, '100'))).toThrow(
-      "individuationMargin.rejectedCircularCandidate: must be exactly 'corpus-differential-behavior'",
+    expect(() => parseImportConformanceScore(score(invalidMethodology as never, '100'))).toThrow(
+      'Producer denominator methodology must be a stable identifier',
     );
     expect(output).toContain(
-      'individuation margin counts [same-dispatch-arm row count 66; behavior-preserving-refactor row count 77; discriminated-source row count 80; frozen-declared row count 82; frozen-no-election]',
+      'producer-declared readings [behavior-preserving-refactor-rows=77; discriminated-source-rows=80; frozen-declared-rows=82; rejected-circular-candidate="corpus-differential-behavior"; same-dispatch-arm-rows=66]',
     );
   });
 
@@ -1292,12 +1281,12 @@ describe('parseImportConformanceScore', () => {
       state: 'measured',
       summary: {
         denominators: {
-          importerDeclared: {
+          producerDeclared: {
             declaredRows: 2,
             limitation: 'individuation-rule-not-operational',
             state: 'unresolved',
           },
-          swfFormat: { state: 'unmeasured' },
+          format: { format: 'swf', state: 'unmeasured' },
         },
         exercised: {
           capabilities: 2,
@@ -1562,12 +1551,12 @@ describe('parseImportConformanceScore', () => {
       ],
       summary: {
         denominators: {
-          importerDeclared: {
+          producerDeclared: {
             declaredRows: 2,
             limitation: 'individuation-rule-not-operational',
             state: 'unresolved',
           },
-          swfFormat: { state: 'unmeasured' },
+          format: { format: 'swf', state: 'unmeasured' },
         },
         exercised: { capabilities: 2 },
       },
@@ -1835,30 +1824,7 @@ function measuredPack(
     },
     state: 'measured',
     summary: {
-      denominators: {
-        importerDeclared: {
-          census: {
-            basis: 'single-artifact-cross-check',
-            candidateHits: 4,
-            falsePositiveHits: 2,
-            provenance: 'single-author',
-            reference: 'capabilities.json-vs-tag-coverage.md',
-            state: 'provisional',
-          },
-          declaredRows: capabilities.length,
-          individuationMargin: {
-            behaviorPreservingRefactorRows: Math.max(0, capabilities.length - 2),
-            discriminatedSourceRows: Math.max(0, capabilities.length - 1),
-            frozenDeclaredRows: capabilities.length,
-            rejectedCircularCandidate: 'corpus-differential-behavior',
-            sameDispatchArmRows: Math.max(0, capabilities.length - 3),
-            state: 'frozen-no-election',
-          },
-          limitation: 'individuation-rule-not-operational',
-          state: 'unresolved',
-        },
-        swfFormat: { state: 'unmeasured' },
-      },
+      denominators: testDenominators(capabilities.length),
       exercised: {
         capabilities: measured.length,
         fireReferenced: referencedSummary(fireReferenced, 'fire'),
@@ -1888,6 +1854,28 @@ function measuredPack(
     },
     variant: 'without-licenses',
     ...overrides,
+  };
+}
+
+function testDenominators(declaredRows: number) {
+  return {
+    format: {
+      format: 'swf',
+      reason: 'format-capability-enumeration-not-declared',
+      state: 'unmeasured' as const,
+    },
+    producerDeclared: {
+      declaredRows,
+      limitation: 'individuation-rule-not-operational',
+      methodology: 'unresolved-individuation-v1',
+      readings: [
+        { id: 'candidate-hits', value: 4 },
+        { id: 'false-positive-hits', value: 2 },
+        { id: 'frozen-declared-rows', value: declaredRows },
+        { id: 'same-dispatch-arm-rows', value: Math.max(0, declaredRows - 3) },
+      ],
+      state: 'unresolved' as const,
+    },
   };
 }
 

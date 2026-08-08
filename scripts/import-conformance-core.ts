@@ -6,6 +6,8 @@ import type {
   ImportConformanceCaseMember,
   ImportConformanceOracleOutcome,
 } from './import-conformance-case';
+import { assertImportConformanceDenominators } from './import-conformance-denominator';
+import type { ImportConformanceDenominators } from './import-conformance-denominator';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
@@ -155,14 +157,8 @@ export interface ImportConformanceInstrumentationProofs {
 
 export interface ImportConformanceScoreDeclarations {
   capabilityScopedUnknownMappings: Readonly<ImportConformanceCapabilityScopedUnknownMappings>;
-  importerDeclaredCensus: ImportConformanceImporterDeclaredCensus;
-  individuationMargin: ImportConformanceIndividuationMargin;
+  denominators: Readonly<ImportConformanceDenominators>;
 }
-
-export type ImportConformanceImporterDeclaredCensus =
-  ImportConformanceSummary['denominators']['importerDeclared']['census'];
-export type ImportConformanceIndividuationMargin =
-  ImportConformanceSummary['denominators']['importerDeclared']['individuationMargin'];
 
 export interface ImportConformanceCaseEvidence {
   capabilities: readonly string[];
@@ -488,16 +484,7 @@ export function createImportConformanceScore(
       capability.state !== 'not-run',
   );
   const summary: ImportConformanceScoreSummary = {
-    denominators: {
-      importerDeclared: {
-        census: { ...declarations.importerDeclaredCensus },
-        declaredRows: capabilities.length,
-        individuationMargin: { ...declarations.individuationMargin },
-        limitation: 'individuation-rule-not-operational',
-        state: 'unresolved',
-      },
-      swfFormat: { state: 'unmeasured' },
-    },
+    denominators: cloneDenominators(declarations.denominators),
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferencedCapabilities(fireReferenced, 'fire'),
@@ -581,7 +568,6 @@ export function parseImportConformanceCapabilityDefinitions(
 }
 
 function assertCapabilityDefinitions(definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[]): void {
-  if (definitions.length === 0) throw new Error('Capability enumeration must not be empty');
   for (const definition of definitions) {
     if (!/^[a-z0-9]+(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/.test(definition.id) || definition.label === '') {
       throw new Error(`Invalid capability definition ${definition.id}`);
@@ -680,8 +666,7 @@ function assertScoreDeclarations(
   lossPaths: ReadonlyMap<string, Readonly<ImportConformanceLossPath>>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
-  assertImporterDeclaredCensus(declarations.importerDeclaredCensus);
-  assertIndividuationMargin(declarations.individuationMargin, index.capabilities.length);
+  assertImportConformanceDenominators(declarations.denominators, index.capabilities.length);
   const declared = new Set(index.capabilities.map((capability) => capability.id));
   const capabilityScopedUnknownEvidence = new Map(
     deriveImportConformanceCapabilityScopedUnknownEvidence(
@@ -710,39 +695,6 @@ function assertScoreDeclarations(
     if (lossPath.state === 'identified' && channel !== 'structured-crumb' && unwiredLosses.length === 0) {
       throw new Error(`Identified loss path for ${id} without a structured crumb requires its raw unwired family`);
     }
-  }
-}
-
-function assertIndividuationMargin(margin: Readonly<ImportConformanceIndividuationMargin>, declaredRows: number): void {
-  if (
-    margin.state !== 'frozen-no-election' ||
-    margin.rejectedCircularCandidate !== 'corpus-differential-behavior' ||
-    !Number.isSafeInteger(margin.sameDispatchArmRows) ||
-    margin.sameDispatchArmRows < 0 ||
-    !Number.isSafeInteger(margin.behaviorPreservingRefactorRows) ||
-    margin.behaviorPreservingRefactorRows < 0 ||
-    !Number.isSafeInteger(margin.discriminatedSourceRows) ||
-    margin.discriminatedSourceRows < 0 ||
-    !Number.isSafeInteger(margin.frozenDeclaredRows) ||
-    margin.frozenDeclaredRows !== declaredRows
-  ) {
-    throw new Error('Individuation margin must be valid frozen producer counts matching the declared rows');
-  }
-}
-
-function assertImporterDeclaredCensus(census: Readonly<ImportConformanceImporterDeclaredCensus>): void {
-  if (
-    census.basis !== 'single-artifact-cross-check' ||
-    census.provenance !== 'single-author' ||
-    census.state !== 'provisional' ||
-    census.reference.trim() === '' ||
-    !Number.isSafeInteger(census.candidateHits) ||
-    census.candidateHits < 0 ||
-    !Number.isSafeInteger(census.falsePositiveHits) ||
-    census.falsePositiveHits < 0 ||
-    census.falsePositiveHits > census.candidateHits
-  ) {
-    throw new Error('Importer-declared census must be a valid provisional single-artifact cross-check');
   }
 }
 
@@ -840,6 +792,17 @@ function createScoreInstrumentationRole(proofs: readonly string[]): ImportConfor
   return proofs.length === 0
     ? { state: 'unreferenced' }
     : { proofs: [...proofs] as [string, ...string[]], state: 'referenced' };
+}
+
+function cloneDenominators(denominators: Readonly<ImportConformanceDenominators>): ImportConformanceDenominators {
+  const producer = denominators.producerDeclared;
+  return {
+    format: { ...denominators.format },
+    producerDeclared:
+      producer.state === 'not-applicable'
+        ? { ...producer }
+        : { ...producer, readings: producer.readings.map((reading) => ({ ...reading })) },
+  };
 }
 
 function cloneLossPath(lossPath: Readonly<ImportConformanceLossPath>): ImportConformanceLossPath {
@@ -1051,14 +1014,9 @@ function assertSummaryMatchesCapabilities(
   );
   const checks: readonly [number, number, string][] = [
     [
-      summary.denominators.importerDeclared.declaredRows,
+      summary.denominators.producerDeclared.declaredRows,
       capabilities.length,
-      'denominators.importerDeclared.declaredRows',
-    ],
-    [
-      summary.denominators.importerDeclared.individuationMargin.frozenDeclaredRows,
-      capabilities.length,
-      'denominators.importerDeclared.individuationMargin.frozenDeclaredRows',
+      'denominators.producerDeclared.declaredRows',
     ],
     [summary.exercised.capabilities, exercised.length, 'exercised.capabilities'],
     [summary.exercised.fireReferenced.capabilities, fireReferenced.length, 'exercised.fireReferenced.capabilities'],
