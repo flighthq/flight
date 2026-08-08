@@ -181,7 +181,7 @@ export function runMd5TangentFrameOracleCorpus(
   });
   const measuredMeshFiles = cases.filter((item) => item.state === 'measured').length;
   const importNotRunMeshFiles = cases.length - measuredMeshFiles;
-  const acquisition = {
+  const acquisition: Md5TangentFrameOracleCorpusReport['acquisition'] = {
     pack: MD5_TANGENT_FIXTURE_PACK,
     release: FIXTURE_RELEASE_TAG,
     variant: MD5_TANGENT_FIXTURE_VARIANT,
@@ -255,7 +255,7 @@ export function measureMd5TangentCodePathCrossCheck(scene: Readonly<Scene3D>): M
     coordinateBasis: 'flight-right-handed-y-up-after-import' as const,
     differingComponents: 0,
     differingVertices: 0,
-    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
+    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID as typeof MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
     independence: 'same-author-code-path-only' as const,
     inputPreparation: 'imported-float32-position-normal-uv-and-index-streams' as const,
     maximumPrecisionExcess: 0,
@@ -339,7 +339,7 @@ export function measureMd5TangentCodePathCrossCheck(scene: Readonly<Scene3D>): M
     coordinateBasis: 'flight-right-handed-y-up-after-import',
     differingComponents,
     differingVertices,
-    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
+    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID as typeof MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
     independence: 'same-author-code-path-only',
     inputPreparation: 'imported-float32-position-normal-uv-and-index-streams',
     maximumPrecisionExcess,
@@ -356,7 +356,7 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
   const geometries = collectMeshGeometries(scene);
   const base = {
     exactVertices: 0,
-    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID as typeof MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
     infiniteTangentVertices: 0,
     invalidVertices: 0,
     maximumPrecisionExcess: 0,
@@ -435,7 +435,7 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
 
   const measurements = {
     exactVertices,
-    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID as typeof MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
     infiniteTangentVertices,
     invalidVertices,
     maximumPrecisionExcess,
@@ -457,7 +457,7 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
 export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource: string): Md5TangentHandednessOracle {
   const sections = resolveGeometrySections(scene, meshSource);
   const base = {
-    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID,
+    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID as typeof MD5_TANGENT_HANDEDNESS_ORACLE_ID,
     indeterminateTriangles: 0,
     invalidTriangles: 0,
     matchingTriangles: 0,
@@ -532,7 +532,7 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
   }
 
   const measurements = {
-    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID,
+    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID as typeof MD5_TANGENT_HANDEDNESS_ORACLE_ID,
     indeterminateTriangles,
     invalidTriangles,
     matchingTriangles,
@@ -555,7 +555,7 @@ export function measureMd5SplitTangentDifference(
 ): Md5TangentSplitDifferenceOracle {
   const sections = resolveGeometrySections(scene, meshSource);
   const base = {
-    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
+    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID as typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
     indistinguishablePairs: 0,
     meaningfulPairs: 0,
     pairs: [] as Md5TangentSplitPairMeasurement[],
@@ -618,7 +618,7 @@ export function measureMd5SplitTangentDifference(
   }
 
   const measurements = {
-    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
+    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID as typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
     indistinguishablePairs,
     meaningfulPairs,
     pairs,
