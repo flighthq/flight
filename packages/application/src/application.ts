@@ -6,6 +6,11 @@ const DEFAULT_FIXED_TIMESTEP = 0; // 0 = disabled; pure variable mode
 const DEFAULT_MAX_DELTA_TIME = 250; // ms — clamps huge gaps after tab restore
 const DEFAULT_MAX_UPDATES_PER_FRAME = 5; // spiral-of-death guard for fixed-timestep mode
 
+const VARIABLE_STEP_POLICY: Readonly<ApplicationStepPolicy> = {
+  fixedTimeStep: DEFAULT_FIXED_TIMESTEP,
+  maxUpdatesPerFrame: DEFAULT_MAX_UPDATES_PER_FRAME,
+};
+
 const kExit = Symbol();
 const kLoop = Symbol();
 const kPaused = Symbol();
@@ -204,6 +209,7 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;
   const fixedTimeStep = options.fixedTimeStep ?? DEFAULT_FIXED_TIMESTEP;
   const maxUpdatesPerFrame = options.maxUpdatesPerFrame ?? DEFAULT_MAX_UPDATES_PER_FRAME;
+  const stepPolicy: Readonly<ApplicationStepPolicy> = { fixedTimeStep, maxUpdatesPerFrame };
   const frameInterval = targetFrameRate > 0 ? 1000 / targetFrameRate : 0;
   const bgInterval = backgroundFrameRate > 0 ? 1000 / backgroundFrameRate : 0;
 
@@ -250,54 +256,7 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
     const delta = activeInterval > 0 && !isFirstTick ? loopState.frameRateAccumulated : raw;
     loopState.frameRateAccumulated = 0;
 
-    const clamped = Math.min(delta, maxDeltaTime);
-    app.deltaTime = clamped;
-    app.elapsedTime += clamped / 1000;
-    app.frameCount += 1;
-
-    // Rolling FPS sample.
-    recordFpsSample(loopState, clamped);
-
-    // Fixed-timestep accumulator.
-    if (fixedTimeStep > 0 && app.onFixedUpdate !== null) {
-      loopState.fixedAccumulator += clamped;
-      let iters = 0;
-      while (loopState.fixedAccumulator >= fixedTimeStep && iters < maxUpdatesPerFrame) {
-        loopState.fixedAccumulator -= fixedTimeStep;
-        iters++;
-        if (app.onError !== null) {
-          try {
-            emitSignal(app.onFixedUpdate, fixedTimeStep);
-          } catch (err: unknown) {
-            emitSignal(app.onError, err);
-          }
-        } else {
-          emitSignal(app.onFixedUpdate, fixedTimeStep);
-        }
-      }
-      // If we hit the maxUpdatesPerFrame cap, drain the leftover to avoid spiral-of-death.
-      if (iters >= maxUpdatesPerFrame) loopState.fixedAccumulator = 0;
-      // interpolationAlpha: position within the current step at render time.
-      app.interpolationAlpha = fixedTimeStep > 0 ? loopState.fixedAccumulator / fixedTimeStep : 1;
-    } else {
-      app.interpolationAlpha = 1;
-    }
-
-    if (app.onError !== null) {
-      try {
-        emitSignal(app.onUpdate, clamped);
-      } catch (err: unknown) {
-        emitSignal(app.onError, err);
-      }
-      try {
-        emitSignal(app.onRender);
-      } catch (err: unknown) {
-        emitSignal(app.onError, err);
-      }
-    } else {
-      emitSignal(app.onUpdate, clamped);
-      emitSignal(app.onRender);
-    }
+    applyApplicationStep(app, delta, loopState, stepPolicy);
 
     loopState.frameHandle = backend.requestFrame(tick);
     observers.set(kLoop, () => backend.cancelFrame(loopState.frameHandle));
@@ -307,32 +266,11 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
   observers.set(kLoop, () => backend.cancelFrame(loopState.frameHandle));
 }
 
-// Drives one update+render tick with an explicit delta (ms). Useful for headless testing,
-// fixed-step simulation, and non-rAF hosts. Safe to call while the rAF loop is stopped.
+// Drives one variable update+render tick with an explicit delta (ms). Useful for deterministic
+// headless testing and non-rAF hosts. Safe to call while the rAF loop is stopped.
 export function stepApplicationLoop(app: Application, deltaTime: number): void {
   const loopState = _applicationLoopState.get(app);
-  const maxDelta = loopState?.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
-  const clamped = Math.min(deltaTime, maxDelta);
-  app.deltaTime = clamped;
-  app.elapsedTime += clamped / 1000;
-  app.frameCount += 1;
-  app.interpolationAlpha = 1;
-  if (loopState !== undefined) recordFpsSample(loopState, clamped);
-  if (app.onError !== null) {
-    try {
-      emitSignal(app.onUpdate, clamped);
-    } catch (err: unknown) {
-      emitSignal(app.onError, err);
-    }
-    try {
-      emitSignal(app.onRender);
-    } catch (err: unknown) {
-      emitSignal(app.onError, err);
-    }
-  } else {
-    emitSignal(app.onUpdate, clamped);
-    emitSignal(app.onRender);
-  }
+  applyApplicationStep(app, deltaTime, loopState, VARIABLE_STEP_POLICY);
 }
 
 export function stopApplicationLoop(app: Application): void {
@@ -376,6 +314,58 @@ interface LoopState {
   frameRateAccumulated: number;
   lastTime: number;
   maxDeltaTime: number;
+}
+
+interface ApplicationStepPolicy {
+  fixedTimeStep: number;
+  maxUpdatesPerFrame: number;
+}
+
+function applyApplicationStep(
+  app: Application,
+  deltaTime: number,
+  loopState: LoopState | undefined,
+  policy: Readonly<ApplicationStepPolicy>,
+): void {
+  const clamped = Math.min(deltaTime, loopState?.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME);
+  app.deltaTime = clamped;
+  app.elapsedTime += clamped / 1000;
+  app.frameCount += 1;
+
+  if (loopState !== undefined) recordFpsSample(loopState, clamped);
+
+  const fixedUpdate = app.onFixedUpdate;
+  if (loopState !== undefined && policy.fixedTimeStep > 0 && fixedUpdate !== null) {
+    loopState.fixedAccumulator += clamped;
+    let iterations = 0;
+    while (loopState.fixedAccumulator >= policy.fixedTimeStep && iterations < policy.maxUpdatesPerFrame) {
+      loopState.fixedAccumulator -= policy.fixedTimeStep;
+      iterations++;
+      invokeWithApplicationErrorHandling(app, () => emitSignal(fixedUpdate, policy.fixedTimeStep));
+    }
+    // If we hit the maxUpdatesPerFrame cap, drain the leftover to avoid spiral-of-death.
+    if (iterations >= policy.maxUpdatesPerFrame) loopState.fixedAccumulator = 0;
+    // interpolationAlpha: position within the current step at render time.
+    app.interpolationAlpha = loopState.fixedAccumulator / policy.fixedTimeStep;
+  } else {
+    app.interpolationAlpha = 1;
+  }
+
+  invokeWithApplicationErrorHandling(app, () => emitSignal(app.onUpdate, clamped));
+  invokeWithApplicationErrorHandling(app, () => emitSignal(app.onRender));
+}
+
+function invokeWithApplicationErrorHandling(app: Readonly<Application>, callback: () => void): void {
+  const onError = app.onError;
+  if (onError === null) {
+    callback();
+    return;
+  }
+  try {
+    callback();
+  } catch (error: unknown) {
+    emitSignal(onError, error);
+  }
 }
 
 function getApplicationObservers(app: Application): Map<symbol, () => void> {
