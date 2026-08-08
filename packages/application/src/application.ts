@@ -1,15 +1,16 @@
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Application, ApplicationLoopOptions, ApplicationWindow, LoopBackend } from '@flighthq/types/contract';
+import type {
+  Application,
+  ApplicationLoopOptions,
+  ApplicationStepOptions,
+  ApplicationWindow,
+  LoopBackend,
+} from '@flighthq/types/contract';
 
 const DEFAULT_BACKGROUND_FRAME_RATE = 0; // 0 = disabled; use same rate when in background
 const DEFAULT_FIXED_TIMESTEP = 0; // 0 = disabled; pure variable mode
 const DEFAULT_MAX_DELTA_TIME = 250; // ms — clamps huge gaps after tab restore
 const DEFAULT_MAX_UPDATES_PER_FRAME = 5; // spiral-of-death guard for fixed-timestep mode
-
-const VARIABLE_STEP_POLICY: Readonly<ApplicationStepPolicy> = {
-  fixedTimeStep: DEFAULT_FIXED_TIMESTEP,
-  maxUpdatesPerFrame: DEFAULT_MAX_UPDATES_PER_FRAME,
-};
 
 const kExit = Symbol();
 const kLoop = Symbol();
@@ -209,20 +210,12 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;
   const fixedTimeStep = options.fixedTimeStep ?? DEFAULT_FIXED_TIMESTEP;
   const maxUpdatesPerFrame = options.maxUpdatesPerFrame ?? DEFAULT_MAX_UPDATES_PER_FRAME;
-  const stepPolicy: Readonly<ApplicationStepPolicy> = { fixedTimeStep, maxUpdatesPerFrame };
   const frameInterval = targetFrameRate > 0 ? 1000 / targetFrameRate : 0;
   const bgInterval = backgroundFrameRate > 0 ? 1000 / backgroundFrameRate : 0;
 
   // Persist loop state so pauseApplicationLoop/resumeApplicationLoop can mutate lastTime.
-  const loopState: LoopState = {
-    fixedAccumulator: 0,
-    fpsBuffer: [],
-    fpsHead: 0,
-    frameHandle: null as unknown,
-    frameRateAccumulated: 0,
-    lastTime: -1,
-    maxDeltaTime,
-  };
+  const loopState = createLoopState(fixedTimeStep, maxDeltaTime, maxUpdatesPerFrame);
+  const stepPolicy: Readonly<ApplicationStepPolicy> = { fixedStepState: loopState, maxDeltaTime };
   _applicationLoopState.set(app, loopState);
 
   app.isRunning = true;
@@ -266,11 +259,28 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
   observers.set(kLoop, () => backend.cancelFrame(loopState.frameHandle));
 }
 
-// Drives one variable update+render tick with an explicit delta (ms). Useful for deterministic
-// headless testing and non-rAF hosts. Safe to call while the rAF loop is stopped.
-export function stepApplicationLoop(app: Application, deltaTime: number): void {
-  const loopState = _applicationLoopState.get(app);
-  applyApplicationStep(app, deltaTime, loopState, VARIABLE_STEP_POLICY);
+// Drives one update+render tick with an explicit delta (ms). Fixed-step options are self-contained,
+// so deterministic headless callers do not need to start a backend loop first.
+export function stepApplicationLoop(
+  app: Application,
+  deltaTime: number,
+  options: Readonly<ApplicationStepOptions> = {},
+): void {
+  const existingLoopState = _applicationLoopState.get(app);
+  const fixedTimeStep = options.fixedTimeStep ?? DEFAULT_FIXED_TIMESTEP;
+  const maxDeltaTime = options.maxDeltaTime ?? existingLoopState?.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
+  const maxUpdatesPerFrame = options.maxUpdatesPerFrame ?? DEFAULT_MAX_UPDATES_PER_FRAME;
+  const loopState =
+    fixedTimeStep > 0 ? getOrCreateLoopState(app, fixedTimeStep, maxDeltaTime, maxUpdatesPerFrame) : existingLoopState;
+  if (fixedTimeStep > 0 && loopState !== undefined) {
+    configureFixedStep(loopState, fixedTimeStep, maxUpdatesPerFrame);
+    if (options.maxDeltaTime !== undefined) loopState.maxDeltaTime = maxDeltaTime;
+  }
+  const stepPolicy: Readonly<ApplicationStepPolicy> = {
+    fixedStepState: fixedTimeStep > 0 ? loopState : undefined,
+    maxDeltaTime,
+  };
+  applyApplicationStep(app, deltaTime, loopState, stepPolicy);
 }
 
 export function stopApplicationLoop(app: Application): void {
@@ -308,17 +318,19 @@ let _loopBackend: LoopBackend | null = null;
 
 interface LoopState {
   fixedAccumulator: number;
+  fixedTimeStep: number;
   fpsBuffer: number[];
   fpsHead: number;
   frameHandle: unknown;
   frameRateAccumulated: number;
   lastTime: number;
   maxDeltaTime: number;
+  maxUpdatesPerFrame: number;
 }
 
 interface ApplicationStepPolicy {
-  fixedTimeStep: number;
-  maxUpdatesPerFrame: number;
+  fixedStepState: LoopState | undefined;
+  maxDeltaTime: number;
 }
 
 function applyApplicationStep(
@@ -327,7 +339,7 @@ function applyApplicationStep(
   loopState: LoopState | undefined,
   policy: Readonly<ApplicationStepPolicy>,
 ): void {
-  const clamped = Math.min(deltaTime, loopState?.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME);
+  const clamped = Math.min(deltaTime, policy.maxDeltaTime);
   app.deltaTime = clamped;
   app.elapsedTime += clamped / 1000;
   app.frameCount += 1;
@@ -335,24 +347,62 @@ function applyApplicationStep(
   if (loopState !== undefined) recordFpsSample(loopState, clamped);
 
   const fixedUpdate = app.onFixedUpdate;
-  if (loopState !== undefined && policy.fixedTimeStep > 0 && fixedUpdate !== null) {
-    loopState.fixedAccumulator += clamped;
+  const fixedStepState = policy.fixedStepState;
+  if (fixedStepState !== undefined && fixedStepState.fixedTimeStep > 0 && fixedUpdate !== null) {
+    fixedStepState.fixedAccumulator += clamped;
     let iterations = 0;
-    while (loopState.fixedAccumulator >= policy.fixedTimeStep && iterations < policy.maxUpdatesPerFrame) {
-      loopState.fixedAccumulator -= policy.fixedTimeStep;
+    while (
+      fixedStepState.fixedAccumulator >= fixedStepState.fixedTimeStep &&
+      iterations < fixedStepState.maxUpdatesPerFrame
+    ) {
+      fixedStepState.fixedAccumulator -= fixedStepState.fixedTimeStep;
       iterations++;
-      invokeWithApplicationErrorHandling(app, () => emitSignal(fixedUpdate, policy.fixedTimeStep));
+      invokeWithApplicationErrorHandling(app, () => emitSignal(fixedUpdate, fixedStepState.fixedTimeStep));
     }
     // If we hit the maxUpdatesPerFrame cap, drain the leftover to avoid spiral-of-death.
-    if (iterations >= policy.maxUpdatesPerFrame) loopState.fixedAccumulator = 0;
+    if (iterations >= fixedStepState.maxUpdatesPerFrame) fixedStepState.fixedAccumulator = 0;
     // interpolationAlpha: position within the current step at render time.
-    app.interpolationAlpha = loopState.fixedAccumulator / policy.fixedTimeStep;
+    app.interpolationAlpha = fixedStepState.fixedAccumulator / fixedStepState.fixedTimeStep;
   } else {
     app.interpolationAlpha = 1;
   }
 
   invokeWithApplicationErrorHandling(app, () => emitSignal(app.onUpdate, clamped));
   invokeWithApplicationErrorHandling(app, () => emitSignal(app.onRender));
+}
+
+function configureFixedStep(loopState: LoopState, fixedTimeStep: number, maxUpdatesPerFrame: number): void {
+  if (loopState.fixedTimeStep !== fixedTimeStep) loopState.fixedAccumulator = 0;
+  loopState.fixedTimeStep = fixedTimeStep;
+  loopState.maxUpdatesPerFrame = maxUpdatesPerFrame;
+}
+
+function createLoopState(fixedTimeStep: number, maxDeltaTime: number, maxUpdatesPerFrame: number): LoopState {
+  return {
+    fixedAccumulator: 0,
+    fixedTimeStep,
+    fpsBuffer: [],
+    fpsHead: 0,
+    frameHandle: null as unknown,
+    frameRateAccumulated: 0,
+    lastTime: -1,
+    maxDeltaTime,
+    maxUpdatesPerFrame,
+  };
+}
+
+function getOrCreateLoopState(
+  app: Application,
+  fixedTimeStep: number,
+  maxDeltaTime: number,
+  maxUpdatesPerFrame: number,
+): LoopState {
+  let loopState = _applicationLoopState.get(app);
+  if (loopState === undefined) {
+    loopState = createLoopState(fixedTimeStep, maxDeltaTime, maxUpdatesPerFrame);
+    _applicationLoopState.set(app, loopState);
+  }
+  return loopState;
 }
 
 function invokeWithApplicationErrorHandling(app: Readonly<Application>, callback: () => void): void {

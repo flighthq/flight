@@ -11,3 +11,9 @@ export interface ApplicationLoopOptions {
   // Maximum fixed-update iterations per frame; a spiral-of-death guard for fixed-timestep mode.
   maxUpdatesPerFrame?: number;
 }
+
+// The scheduling fields on ApplicationLoopOptions do not apply when the caller drives each step.
+export type ApplicationStepOptions = Pick<
+  ApplicationLoopOptions,
+  'fixedTimeStep' | 'maxDeltaTime' | 'maxUpdatesPerFrame'
+>;
