@@ -45,3 +45,4 @@ Sweep-safe, within-package, no design fork:
 ## Approved
 
 - [2026-07-02 · picked] Sweep items 1–3: rebuild missing types, remove dead accumulated, Package Map description
+- [2026-08-08 · picked] Backlog item "Fixed-update support in `stepApplicationLoop`", together with Recommended item 1 (fold the triplicated `onError` emit guard) — same code, done together. Route: extract the step policy `tick` and `step` duplicate into one internal function both drivers call, rather than copying the fixed-step block into `step`. Whether `step` honors an active fixed-mode loop state or takes explicit options is a user decision and is not settled by this approval.

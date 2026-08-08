@@ -51,3 +51,4 @@ Parked — each with the reason it is not sweep-safe.
 ## Approved
 
 - [2026-07-02 · picked] Sweep items 1–2: loadImageResourceFromArrayBuffer → Uint8Array/rename, Package Map description update
+- [2026-08-08 · picked] Backlog item "Backend seam for the load layer" — `ImageBackend` in `@flighthq/types`, then `createWebImageBackend` / `getImageBackend` / `setImageBackend` here, modelled on `@flighthq/net`. Lazy default, no top-level registration. The seam only: the codec-registry routing, fetch-based load, decode-error opacity, and abort-race items stay parked.
