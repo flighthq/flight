@@ -73,6 +73,43 @@ export function computeSfntTableChecksum(data: Readonly<Uint8Array>, isHeadTable
 
 // Packs a four-character tag into the uint32 an sfnt directory stores it as. Tags shorter than four
 // characters are padded with spaces, which is how the format spells `cvt ` and `CFF ` — a caller
+// Encodes one composite glyph: the header and bounds, then the component records verbatim, then the
+// hinting instructions if any component asked for them. `components` is the slice of the WOFF2
+// composite stream that `measureWoff2CompositeGlyph` sized, and it is copied unchanged — the transform
+// reorders whole glyphs, it does not re-encode a component record.
+//
+// ★ THE CONTOUR COUNT IS A MARKER HERE, NOT A COUNT. Any negative value means "composite", and the
+// reader switches on the sign alone before reading anything else; -1 is the conventional spelling. A
+// caller that passed the number of components instead would write a positive count and every reader
+// would parse the component records as an endPtsOfContours array.
+//
+// ★ A COMPOSITE CANNOT COMPUTE ITS OWN BOUNDS FROM WHAT IT HOLDS, which is why `bounds` is required
+// rather than optional: it names other glyphs and places them, so its box depends on glyphs it does
+// not carry. This is also why the WOFF2 transform always stores an explicit box for one.
+export function encodeSfntCompositeGlyph(
+  components: Readonly<Uint8Array>,
+  instructions: Readonly<Uint8Array>,
+  bounds: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
+  hasInstructions: boolean,
+): Uint8Array {
+  // The instruction length field exists only when a component set the flag. Writing a zero length
+  // unconditionally would add two bytes no reader expects and shift every following glyph.
+  const tail = hasInstructions ? 2 + instructions.byteLength : 0;
+  const out = new Uint8Array(10 + components.byteLength + tail);
+  const view = new DataView(out.buffer);
+  view.setInt16(0, -1);
+  view.setInt16(2, bounds.xMin);
+  view.setInt16(4, bounds.yMin);
+  view.setInt16(6, bounds.xMax);
+  view.setInt16(8, bounds.yMax);
+  out.set(components, 10);
+  if (hasInstructions) {
+    view.setUint16(10 + components.byteLength, instructions.byteLength);
+    out.set(instructions, 12 + components.byteLength);
+  }
+  return out;
+}
+
 // Builds the `loca` table from each glyph record's length, in glyph order. `loca` holds glyphCount + 1
 // offsets, because a glyph's length is the gap to the NEXT entry — which is also how a zero-length
 // (blank) glyph is expressed, as two equal consecutive offsets.

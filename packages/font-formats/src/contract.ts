@@ -25,6 +25,7 @@ export { readWoffChecksumMismatches, readWoffFont, WOFF_COMPRESSION } from './wo
 export {
   assembleSfntFont,
   computeSfntTableChecksum,
+  encodeSfntCompositeGlyph,
   encodeSfntLoca,
   encodeSfntSimpleGlyph,
   packSfntTag,
