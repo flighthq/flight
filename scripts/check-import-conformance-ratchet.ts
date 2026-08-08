@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
+import { formatImportConformanceDenominators } from './import-conformance-denominator';
 import { parseImportConformanceScore } from './import-conformance-score';
 import type {
   ImportConformanceAuditedLossPath,
@@ -778,10 +779,7 @@ function formatExercisedDenominator(
   pack: Readonly<ImportConformanceMeasuredPack>,
   oracleAssurance: Readonly<ImportConformanceOracleAssurance>,
 ): string {
-  const denominator = pack.summary.denominators.importerDeclared;
-  const census = denominator.census;
-  const margin = denominator.individuationMargin;
-  return `importer-declared capability-row tally ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; declared capability-row tally ${denominator.declaredRows}; individuation margin counts [same-dispatch-arm row count ${margin.sameDispatchArmRows}; behavior-preserving-refactor row count ${margin.behaviorPreservingRefactorRows}; discriminated-source row count ${margin.discriminatedSourceRows}; frozen-declared row count ${margin.frozenDeclaredRows}; ${margin.state}]; rejected circular individuation candidate ${margin.rejectedCircularCandidate}; importer-declared capability denominator UNRESOLVED (${denominator.limitation}); provisional census from one artifact cross-check ${census.reference} [false-positive-hit tally ${census.falsePositiveHits}; candidate-hit tally ${census.candidateHits}; single author]; SWF-format capability denominator UNMEASURED; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; ${oracleAssurance.unmeasuredCapabilityCause}); ratchet honest limit ${oracleAssurance.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracleAssurance.formatDerivedProperties}`;
+  return `importer-declared capability-row tally ${pack.summary.exercised.capabilities} ${formatExercisedMembers(pack)}; ${formatImportConformanceDenominators(pack.summary.denominators)}; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; ${oracleAssurance.unmeasuredCapabilityCause}); ratchet honest limit ${oracleAssurance.ratchet}: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles ${oracleAssurance.formatDerivedProperties}`;
 }
 
 function formatConfigurationLimits(pack: Readonly<ImportConformanceMeasuredPack>): string {

@@ -17,11 +17,8 @@ import {
   parseImportConformanceCapabilityDefinitions,
 } from './import-conformance-core';
 import type { ImportConformanceCapabilityIndex } from './import-conformance-core';
-import type {
-  ImportConformanceImporterDeclaredCensus,
-  ImportConformanceIndividuationMargin,
-  ImportConformanceScoreDeclarations,
-} from './import-conformance-core';
+import type { ImportConformanceScoreDeclarations } from './import-conformance-core';
+import type { ImportConformanceDenominators } from './import-conformance-denominator';
 import { probeSwfCapabilities } from './swf-capability-probe';
 
 export const SWF_CAPABILITY_CONVENTION_REVISION = 'unresolved-individuation-v1';
@@ -32,7 +29,7 @@ export const SWF_IMPORTER_DECLARED_CENSUS = {
   provenance: 'single-author',
   reference: 'capabilities.json-vs-tag-coverage.md',
   state: 'provisional',
-} as const satisfies ImportConformanceImporterDeclaredCensus;
+} as const;
 export const SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN = {
   behaviorPreservingRefactorRows: 77,
   discriminatedSourceRows: 80,
@@ -40,7 +37,7 @@ export const SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN = {
   rejectedCircularCandidate: 'corpus-differential-behavior',
   sameDispatchArmRows: 66,
   state: 'frozen-no-election',
-} as const satisfies ImportConformanceIndividuationMargin;
+} as const;
 export const SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS = {
   configurationLimits: [
     {
@@ -66,6 +63,24 @@ export const SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS = {
 export interface ImportConformanceCorpusInventory {
   corpusFiles: number;
   swfReferences: string[];
+}
+
+interface SwfImporterDeclaredCensus {
+  basis: 'single-artifact-cross-check';
+  candidateHits: number;
+  falsePositiveHits: number;
+  provenance: 'single-author';
+  reference: string;
+  state: 'provisional';
+}
+
+interface SwfImporterDeclaredIndividuationMargin {
+  behaviorPreservingRefactorRows: number;
+  discriminatedSourceRows: number;
+  frozenDeclaredRows: number;
+  rejectedCircularCandidate: 'corpus-differential-behavior';
+  sameDispatchArmRows: number;
+  state: 'frozen-no-election';
 }
 
 export async function buildSwfCapabilityIndex(
@@ -104,6 +119,68 @@ export async function buildSwfCapabilityIndex(
     evidence,
     inventory.corpusFiles,
   );
+}
+
+export function createSwfImportConformanceDenominators(
+  declaredRows: number,
+  census: Readonly<SwfImporterDeclaredCensus> = SWF_IMPORTER_DECLARED_CENSUS,
+  margin: Readonly<SwfImporterDeclaredIndividuationMargin> = SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
+): ImportConformanceDenominators {
+  if (
+    census.basis !== 'single-artifact-cross-check' ||
+    census.provenance !== 'single-author' ||
+    census.state !== 'provisional' ||
+    census.reference.trim() === '' ||
+    !Number.isSafeInteger(census.candidateHits) ||
+    census.candidateHits < 0 ||
+    !Number.isSafeInteger(census.falsePositiveHits) ||
+    census.falsePositiveHits < 0 ||
+    census.falsePositiveHits > census.candidateHits
+  ) {
+    throw new Error('Invalid SWF importer-declared census');
+  }
+  if (
+    margin.state !== 'frozen-no-election' ||
+    margin.rejectedCircularCandidate !== 'corpus-differential-behavior' ||
+    margin.frozenDeclaredRows !== declaredRows ||
+    !Number.isSafeInteger(declaredRows) ||
+    declaredRows < 1 ||
+    !Number.isSafeInteger(margin.behaviorPreservingRefactorRows) ||
+    margin.behaviorPreservingRefactorRows < 0 ||
+    !Number.isSafeInteger(margin.discriminatedSourceRows) ||
+    margin.discriminatedSourceRows < 0 ||
+    !Number.isSafeInteger(margin.sameDispatchArmRows) ||
+    margin.sameDispatchArmRows < 0
+  ) {
+    throw new Error('Invalid SWF importer-declared individuation margin');
+  }
+  const censusReference = census.reference;
+  return {
+    format: {
+      format: 'swf',
+      reason: 'format-capability-enumeration-not-declared',
+      state: 'unmeasured',
+    },
+    producerDeclared: {
+      declaredRows,
+      limitation: 'individuation-rule-not-operational',
+      methodology: SWF_CAPABILITY_CONVENTION_REVISION,
+      readings: [
+        { id: 'behavior-preserving-refactor-rows', value: margin.behaviorPreservingRefactorRows },
+        { id: 'candidate-hits', reference: censusReference, value: census.candidateHits },
+        { id: 'census-basis', reference: censusReference, value: census.basis },
+        { id: 'census-provenance', reference: censusReference, value: census.provenance },
+        { id: 'census-state', reference: censusReference, value: census.state },
+        { id: 'discriminated-source-rows', value: margin.discriminatedSourceRows },
+        { id: 'false-positive-hits', reference: censusReference, value: census.falsePositiveHits },
+        { id: 'frozen-declared-rows', value: margin.frozenDeclaredRows },
+        { id: 'individuation-state', value: margin.state },
+        { id: 'rejected-circular-candidate', value: margin.rejectedCircularCandidate },
+        { id: 'same-dispatch-arm-rows', value: margin.sameDispatchArmRows },
+      ],
+      state: 'unresolved',
+    },
+  };
 }
 
 export function inventoryImportConformanceCorpus(treeDirectory: string): ImportConformanceCorpusInventory {

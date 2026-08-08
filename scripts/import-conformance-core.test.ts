@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
+import {
+  createImportConformanceCaseIdentity,
+  createImportConformanceSingleMemberCaseIdentity,
+} from './import-conformance-case';
 import {
   assertImportConformanceFrozenCapabilityPartition,
   applyImportConformanceOracleOutcomes,
@@ -305,7 +308,8 @@ describe('createImportConformanceScore', () => {
   it('refuses a frozen individuation reading that drifts from the declared capability rows', () => {
     const index = makeIndex();
     const scoreDeclarations = declarations();
-    scoreDeclarations.individuationMargin.frozenDeclaredRows = 3;
+    if (scoreDeclarations.denominators.producerDeclared.state !== 'unresolved') throw new Error('test setup');
+    scoreDeclarations.denominators.producerDeclared.declaredRows = 3;
     expect(() =>
       createImportConformanceScore(
         index,
@@ -321,7 +325,7 @@ describe('createImportConformanceScore', () => {
         PROVENANCE,
         scoreDeclarations,
       ),
-    ).toThrow(/Individuation margin .* matching the declared rows/);
+    ).toThrow(/Producer denominator declared rows must match the capability partition/);
   });
 
   it.each(['threw', 'importedWrong', 'silentlyWrong'] as const)('treats %s as a failing outcome', (outcome) => {
@@ -403,6 +407,71 @@ describe('createImportConformanceScore', () => {
         populations: { failed: 1, notRun: 0, passed: 0 },
       },
     });
+  });
+
+  it('scores and parses an oracle-only multi-member case with no capability rows', () => {
+    const caseIdentity = createImportConformanceCaseIdentity('md5:walk.md5mesh::walk.md5anim', [
+      { reference: 'walk.md5anim', role: 'animation', sourceHash: hash('animation') },
+      { reference: 'walk.md5mesh', role: 'mesh', sourceHash: hash('mesh') },
+    ]);
+    const index = buildImportConformanceCapabilityIndexCore(
+      {
+        capabilityConventionRevision: 'md5-oracle-only-v1',
+        id: 'md5-smoke',
+        release: 'fixture-family-1',
+        variant: 'mesh-animation',
+      },
+      [],
+      [{ capabilities: [], ...caseIdentity }],
+      2,
+    );
+    const plan = createImportConformanceShardPlanCore(index.cases, 1);
+    const score = createImportConformanceScoreCore(
+      index,
+      plan,
+      new Set([0]),
+      [
+        {
+          caseHash: caseIdentity.caseHash,
+          capabilityOutcomes: [],
+          importOutcome: 'passed',
+          oracleOutcomes: [
+            {
+              evidence: { frames: [{ bounds: { maximum: [1, 2, 3], minimum: [-1, -2, -3] } }] },
+              id: 'md5.animation-bounds',
+              notRunReason: 'declared-bounds-contract-unresolved',
+              state: 'not-run',
+            },
+          ],
+          outcome: 'passed',
+          reference: caseIdentity.reference,
+        },
+      ],
+      new Map(),
+      new Map(),
+      hash('md5-importer'),
+      PROVENANCE,
+      {
+        capabilityScopedUnknownMappings: { configurationLimits: [], unwiredLossFamilies: [] },
+        denominators: {
+          format: { format: 'md5', reason: 'oracle-only-smoke-lane', state: 'not-applicable' },
+          producerDeclared: { declaredRows: 0, reason: 'oracle-only-smoke-lane', state: 'not-applicable' },
+        },
+      },
+    );
+
+    expect(score.packs[0]).toMatchObject({
+      capabilities: [],
+      oracleOutcomes: { populations: { failed: 0, notRun: 1, passed: 0 } },
+      state: 'measured',
+      summary: {
+        denominators: {
+          format: { format: 'md5', state: 'not-applicable' },
+          producerDeclared: { declaredRows: 0, state: 'not-applicable' },
+        },
+      },
+    });
+    expect(parseImportConformanceScore(score, 'oracle-only score')).toEqual(score);
   });
 
   it('makes the whole pack NOT RUN without shrinking the denominator when one shard is missing', () => {
@@ -1234,49 +1303,24 @@ function declarations(
         })),
       ),
     },
-    importerDeclaredCensus: {
-      basis: 'single-artifact-cross-check',
-      candidateHits: 4,
-      falsePositiveHits: 2,
-      provenance: 'single-author',
-      reference: 'synthetic-capabilities-vs-tag-coverage.md',
-      state: 'provisional',
-    },
-    individuationMargin: {
-      behaviorPreservingRefactorRows: 1,
-      discriminatedSourceRows: 2,
-      frozenDeclaredRows: 2,
-      rejectedCircularCandidate: 'corpus-differential-behavior',
-      sameDispatchArmRows: 1,
-      state: 'frozen-no-election',
-    },
+    denominators: expectedDenominators(2),
   };
 }
 
 function expectedDenominators(declaredRows: number) {
   return {
-    importerDeclared: {
-      census: {
-        basis: 'single-artifact-cross-check',
-        candidateHits: 4,
-        falsePositiveHits: 2,
-        provenance: 'single-author',
-        reference: 'synthetic-capabilities-vs-tag-coverage.md',
-        state: 'provisional',
-      },
-      declaredRows,
-      individuationMargin: {
-        behaviorPreservingRefactorRows: 1,
-        discriminatedSourceRows: 2,
-        frozenDeclaredRows: 2,
-        rejectedCircularCandidate: 'corpus-differential-behavior',
-        sameDispatchArmRows: 1,
-        state: 'frozen-no-election',
-      },
-      limitation: 'individuation-rule-not-operational',
-      state: 'unresolved',
+    format: {
+      format: 'swf',
+      reason: 'format-capability-enumeration-not-declared',
+      state: 'unmeasured' as const,
     },
-    swfFormat: { state: 'unmeasured' },
+    producerDeclared: {
+      declaredRows,
+      limitation: 'individuation-rule-not-operational',
+      methodology: 'synthetic-method-v1',
+      readings: [{ id: 'frozen-declared-rows', value: declaredRows }],
+      state: 'unresolved' as const,
+    },
   };
 }
 
@@ -1294,12 +1338,15 @@ function result(
   diagnosticCause: 'separable' | 'unknown' = 'separable',
 ) {
   return {
+    caseHash: createImportConformanceSingleMemberCaseIdentity(reference, hash(reference)).caseHash,
     capabilityOutcomes: capabilities.map((id) => ({
       diagnosticCause,
       diagnosticReported: outcome === 'importedWrong' || outcome === 'unsupportedClean',
       id,
       outcome,
     })),
+    importOutcome: outcome,
+    oracleOutcomes: [],
     outcome,
     reference,
     sourceHash: hash(reference),

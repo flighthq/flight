@@ -1,5 +1,9 @@
 import { parseImportConformanceOracleOutcomes } from './import-conformance-case';
 import type { ImportConformanceOracleEvidence } from './import-conformance-case';
+import { assertImportConformanceDenominators } from './import-conformance-denominator';
+import type { ImportConformanceDenominators } from './import-conformance-denominator';
+
+export type { ImportConformanceDenominators } from './import-conformance-denominator';
 
 export interface ImportConformanceOutcomeCounts {
   importedWrong: number;
@@ -344,31 +348,6 @@ export interface ImportConformanceLossPathPopulationSummary {
   unauditedCapabilities: number;
 }
 
-export interface ImportConformanceDenominators {
-  importerDeclared: {
-    census: {
-      basis: 'single-artifact-cross-check';
-      candidateHits: number;
-      falsePositiveHits: number;
-      provenance: 'single-author';
-      reference: string;
-      state: 'provisional';
-    };
-    declaredRows: number;
-    individuationMargin: {
-      behaviorPreservingRefactorRows: number;
-      discriminatedSourceRows: number;
-      frozenDeclaredRows: number;
-      rejectedCircularCandidate: 'corpus-differential-behavior';
-      sameDispatchArmRows: number;
-      state: 'frozen-no-election';
-    };
-    limitation: 'individuation-rule-not-operational';
-    state: 'unresolved';
-  };
-  swfFormat: { state: 'unmeasured' };
-}
-
 export interface ImportConformanceSummary {
   denominators: ImportConformanceDenominators;
   exercised: ImportConformanceExercisedSummary;
@@ -630,7 +609,6 @@ function parsePack(value: unknown, path: string): ImportConformancePack {
   }
 
   const capabilities = parseCapabilities(pack.capabilities, `${path}.capabilities`);
-  if (capabilities.length === 0) fail(`${path}.capabilities`, 'must retain at least one stable capability id');
   const identity = {
     capabilityConventionRevision: expectNonemptyString(
       pack.capabilityConventionRevision,
@@ -1609,113 +1587,73 @@ function parseSummary(value: unknown, path: string): ImportConformanceSummary {
 
 function parseDenominators(value: unknown, path: string): ImportConformanceDenominators {
   const denominators = expectRecord(value, path);
-  expectKeys(denominators, ['importerDeclared', 'swfFormat'], path);
-  const importerDeclared = expectRecord(denominators.importerDeclared, `${path}.importerDeclared`);
-  expectKeys(
-    importerDeclared,
-    ['census', 'declaredRows', 'individuationMargin', 'limitation', 'state'],
-    `${path}.importerDeclared`,
-  );
-  if (importerDeclared.limitation !== 'individuation-rule-not-operational') {
-    fail(`${path}.importerDeclared.limitation`, "must be exactly 'individuation-rule-not-operational'");
+  expectKeys(denominators, ['format', 'producerDeclared'], path);
+  const format = expectRecord(denominators.format, `${path}.format`);
+  const formatState = expectString(format.state, `${path}.format.state`);
+  if (formatState !== 'not-applicable' && formatState !== 'unmeasured') {
+    fail(`${path}.format.state`, "must be 'not-applicable' or 'unmeasured'");
   }
-  if (importerDeclared.state !== 'unresolved') {
-    fail(`${path}.importerDeclared.state`, "must be exactly 'unresolved'");
-  }
-  const census = expectRecord(importerDeclared.census, `${path}.importerDeclared.census`);
-  expectKeys(
-    census,
-    ['basis', 'candidateHits', 'falsePositiveHits', 'provenance', 'reference', 'state'],
-    `${path}.importerDeclared.census`,
-  );
-  if (census.basis !== 'single-artifact-cross-check') {
-    fail(`${path}.importerDeclared.census.basis`, "must be exactly 'single-artifact-cross-check'");
-  }
-  if (census.provenance !== 'single-author') {
-    fail(`${path}.importerDeclared.census.provenance`, "must be exactly 'single-author'");
-  }
-  if (census.state !== 'provisional') {
-    fail(`${path}.importerDeclared.census.state`, "must be exactly 'provisional'");
-  }
-  const candidateHits = expectInteger(census.candidateHits, `${path}.importerDeclared.census.candidateHits`, 0);
-  const falsePositiveHits = expectInteger(
-    census.falsePositiveHits,
-    `${path}.importerDeclared.census.falsePositiveHits`,
-    0,
-  );
-  if (falsePositiveHits > candidateHits) {
-    fail(`${path}.importerDeclared.census.falsePositiveHits`, 'cannot exceed candidateHits');
-  }
-  const declaredRows = expectInteger(importerDeclared.declaredRows, `${path}.importerDeclared.declaredRows`, 0);
-  const individuationMargin = parseIndividuationMargin(
-    importerDeclared.individuationMargin,
-    `${path}.importerDeclared.individuationMargin`,
-  );
-  if (individuationMargin.frozenDeclaredRows !== declaredRows) {
-    fail(
-      `${path}.importerDeclared.individuationMargin.frozenDeclaredRows`,
-      `must equal declaredRows (${declaredRows})`,
+  expectKeys(format, ['format', 'reason', 'state'], `${path}.format`);
+  const producer = expectRecord(denominators.producerDeclared, `${path}.producerDeclared`);
+  const producerState = expectString(producer.state, `${path}.producerDeclared.state`);
+  let producerDeclared: ImportConformanceDenominators['producerDeclared'];
+  if (producerState === 'not-applicable') {
+    expectKeys(producer, ['declaredRows', 'reason', 'state'], `${path}.producerDeclared`);
+    producerDeclared = {
+      declaredRows: expectInteger(producer.declaredRows, `${path}.producerDeclared.declaredRows`, 0) as 0,
+      reason: expectNonemptyString(producer.reason, `${path}.producerDeclared.reason`),
+      state: producerState,
+    };
+  } else if (producerState === 'unresolved') {
+    expectKeys(
+      producer,
+      ['declaredRows', 'limitation', 'methodology', 'readings', 'state'],
+      `${path}.producerDeclared`,
     );
+    if (!Array.isArray(producer.readings)) fail(`${path}.producerDeclared.readings`, 'must be an array');
+    producerDeclared = {
+      declaredRows: expectInteger(producer.declaredRows, `${path}.producerDeclared.declaredRows`, 0),
+      limitation: expectNonemptyString(producer.limitation, `${path}.producerDeclared.limitation`),
+      methodology: expectNonemptyString(producer.methodology, `${path}.producerDeclared.methodology`),
+      readings: producer.readings.map((candidate, index) => {
+        const readingPath = `${path}.producerDeclared.readings[${index}]`;
+        const reading = expectRecord(candidate, readingPath);
+        expectKeys(reading, 'reference' in reading ? ['id', 'reference', 'value'] : ['id', 'value'], readingPath);
+        const readingValue = reading.value;
+        if (
+          typeof readingValue !== 'boolean' &&
+          typeof readingValue !== 'string' &&
+          !(typeof readingValue === 'number' && Number.isSafeInteger(readingValue))
+        ) {
+          fail(`${readingPath}.value`, 'must be a boolean, safe integer, or string');
+        }
+        return {
+          id: expectNonemptyString(reading.id, `${readingPath}.id`),
+          ...('reference' in reading
+            ? { reference: expectNonemptyString(reading.reference, `${readingPath}.reference`) }
+            : {}),
+          value: readingValue,
+        };
+      }),
+      state: producerState,
+    };
+  } else {
+    return fail(`${path}.producerDeclared.state`, "must be 'not-applicable' or 'unresolved'");
   }
-  const swfFormat = expectRecord(denominators.swfFormat, `${path}.swfFormat`);
-  expectKeys(swfFormat, ['state'], `${path}.swfFormat`);
-  if (swfFormat.state !== 'unmeasured') {
-    fail(`${path}.swfFormat.state`, "must be exactly 'unmeasured'");
-  }
-  return {
-    importerDeclared: {
-      census: {
-        basis: census.basis,
-        candidateHits,
-        falsePositiveHits,
-        provenance: census.provenance,
-        reference: expectNonemptyString(census.reference, `${path}.importerDeclared.census.reference`),
-        state: census.state,
-      },
-      declaredRows,
-      individuationMargin,
-      limitation: importerDeclared.limitation,
-      state: importerDeclared.state,
+  const parsed = {
+    format: {
+      format: expectNonemptyString(format.format, `${path}.format.format`),
+      reason: expectNonemptyString(format.reason, `${path}.format.reason`),
+      state: formatState,
     },
-    swfFormat: { state: swfFormat.state },
-  };
-}
-
-function parseIndividuationMargin(
-  value: unknown,
-  path: string,
-): ImportConformanceDenominators['importerDeclared']['individuationMargin'] {
-  const margin = expectRecord(value, path);
-  expectKeys(
-    margin,
-    [
-      'behaviorPreservingRefactorRows',
-      'discriminatedSourceRows',
-      'frozenDeclaredRows',
-      'rejectedCircularCandidate',
-      'sameDispatchArmRows',
-      'state',
-    ],
-    path,
-  );
-  if (margin.rejectedCircularCandidate !== 'corpus-differential-behavior') {
-    fail(`${path}.rejectedCircularCandidate`, "must be exactly 'corpus-differential-behavior'");
+    producerDeclared,
+  } satisfies ImportConformanceDenominators;
+  try {
+    assertImportConformanceDenominators(parsed, producerDeclared.declaredRows);
+  } catch (error) {
+    fail(path, error instanceof Error ? error.message : String(error));
   }
-  if (margin.state !== 'frozen-no-election') {
-    fail(`${path}.state`, "must be exactly 'frozen-no-election'");
-  }
-  return {
-    behaviorPreservingRefactorRows: expectInteger(
-      margin.behaviorPreservingRefactorRows,
-      `${path}.behaviorPreservingRefactorRows`,
-      0,
-    ),
-    discriminatedSourceRows: expectInteger(margin.discriminatedSourceRows, `${path}.discriminatedSourceRows`, 0),
-    frozenDeclaredRows: expectInteger(margin.frozenDeclaredRows, `${path}.frozenDeclaredRows`, 0),
-    rejectedCircularCandidate: margin.rejectedCircularCandidate,
-    sameDispatchArmRows: expectInteger(margin.sameDispatchArmRows, `${path}.sameDispatchArmRows`, 0),
-    state: margin.state,
-  };
+  return parsed;
 }
 
 function parseReferencedSummary(value: unknown, path: string): ImportConformanceReferencedSummary {
@@ -1754,13 +1692,7 @@ function assertSummaryMatches(
     (capability) => capability.instrumentation.staysSilent.state === 'referenced',
   );
   const expected: ImportConformanceSummary = {
-    denominators: {
-      ...summary.denominators,
-      importerDeclared: {
-        ...summary.denominators.importerDeclared,
-        declaredRows: capabilities.length,
-      },
-    },
+    denominators: summary.denominators,
     exercised: {
       capabilities: exercised.length,
       fireReferenced: summarizeReferenced(fireReferenced, 'fire'),
@@ -1790,9 +1722,9 @@ function assertSummaryMatches(
     },
   };
   assertSummaryNumber(
-    summary.denominators.importerDeclared.declaredRows,
-    expected.denominators.importerDeclared.declaredRows,
-    `${path}.denominators.importerDeclared.declaredRows`,
+    summary.denominators.producerDeclared.declaredRows,
+    capabilities.length,
+    `${path}.denominators.producerDeclared.declaredRows`,
   );
   assertSummaryNumber(
     summary.exercised.capabilities,
