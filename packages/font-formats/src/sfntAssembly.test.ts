@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assembleSfntFont, computeSfntTableChecksum, packSfntTag } from './sfntAssembly';
+import { assembleSfntFont, computeSfntTableChecksum, encodeSfntSimpleGlyph, packSfntTag } from './sfntAssembly';
 
 describe('assembleSfntFont', () => {
   it('writes the directory in tag order whatever order it was given', () => {
@@ -77,6 +77,61 @@ describe('computeSfntTableChecksum', () => {
   it('wraps modulo 2^32 rather than growing past a uint32', () => {
     const big = Uint8Array.from([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 2]);
     expect(computeSfntTableChecksum(big)).toBe(1);
+  });
+});
+
+describe('encodeSfntSimpleGlyph', () => {
+  const box = { xMax: 10, xMin: 0, yMax: 10, yMin: 0 };
+  const none = new Uint8Array(0);
+
+  it('writes the contour count and bounds as signed values', () => {
+    const out = encodeSfntSimpleGlyph([0], [5], [5], [true], none, { xMax: 5, xMin: -5, yMax: 5, yMin: -5 });
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect(view.getInt16(0)).toBe(1);
+    // Negative bounds are ordinary: a glyph descending below the baseline has a negative yMin, and
+    // reading these unsigned turns it into a huge positive box.
+    expect(view.getInt16(2)).toBe(-5);
+    expect(view.getInt16(4)).toBe(-5);
+  });
+
+  it('returns nothing at all for a glyph with no contours', () => {
+    // Zero length is how the format spells a blank glyph. A ten-byte record with a zero contour count
+    // would give every space character a bounding box.
+    expect(encodeSfntSimpleGlyph([], [], [], [], none, box).byteLength).toBe(0);
+  });
+
+  it('spends no coordinate bytes on a point that does not move', () => {
+    const moved = encodeSfntSimpleGlyph([1], [0, 7], [0, 0], [true, true], none, box);
+    const still = encodeSfntSimpleGlyph([1], [0, 0], [0, 0], [true, true], none, box);
+    expect(moved.byteLength - still.byteLength).toBe(1);
+  });
+
+  it('collapses a run of identical flags into one repeat group', () => {
+    // Ten identical points cost one flag plus a count, not ten flags.
+    const xs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const packed = encodeSfntSimpleGlyph(
+      [9],
+      xs,
+      xs,
+      xs.map(() => true),
+      none,
+      box,
+    );
+    // 10 header + 2 endPts + 2 instructionLength + 2 flag bytes, and no coordinate bytes at all.
+    expect(packed.byteLength).toBe(16);
+  });
+
+  it('carries the instructions and their length', () => {
+    const out = encodeSfntSimpleGlyph([0], [0], [0], [true], Uint8Array.from([0xb0, 0x01]), box);
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+    expect(view.getUint16(12)).toBe(2);
+    expect([...out.subarray(14, 16)]).toEqual([0xb0, 0x01]);
+  });
+
+  it('writes a delta beyond a byte as two bytes rather than truncating it', () => {
+    const short = encodeSfntSimpleGlyph([0], [255], [0], [true], none, box);
+    const long = encodeSfntSimpleGlyph([0], [256], [0], [true], none, box);
+    expect(long.byteLength - short.byteLength).toBe(1);
   });
 });
 
