@@ -406,6 +406,32 @@ export function explainCaptureVerificationStall(
   return `verifier registered but stalled${where} in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
 }
 
+/**
+ * Ranks measured parity distances, widest disagreement first.
+ *
+ * Returns null when nothing was compared, so a run that measured nothing prints no ranking rather
+ * than an empty one that would read as agreement.
+ */
+export function formatCaptureParityRanking(
+  checks: readonly Readonly<{ distance?: number; entry: string; kind: string; renderers?: readonly string[] }>[],
+  limit = 10,
+): string | null {
+  const measured = checks
+    .filter((check) => check.kind === 'parity' && typeof check.distance === 'number')
+    .map((check) => ({ distance: check.distance!, entry: check.entry, renderers: check.renderers ?? [] }))
+    .sort((a, b) => b.distance - a.distance || a.entry.localeCompare(b.entry));
+  if (measured.length === 0) return null;
+  const shown = measured.slice(0, limit);
+  const median = measured[measured.length >> 1]!.distance;
+  const lines = shown.map((row) => `  ${row.distance.toFixed(2)}  ${row.entry}  ${row.renderers.join('·')}`);
+  const omitted = measured.length - shown.length;
+  return [
+    `  widest parity distances (${measured.length} compared, median ${median.toFixed(2)}):`,
+    ...lines,
+    ...(omitted > 0 ? [`  … ${omitted} more not shown`] : []),
+  ].join('\n');
+}
+
 export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCoverage>): boolean {
   if (!run.gateParity || run.interrupted) return false;
   if (run.rendererFilterCount === 1) return false;
@@ -423,26 +449,6 @@ export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCovera
 export function isCaptureRegressionCoverageFailure(run: Readonly<CaptureRegressionCoverage>): boolean {
   if (!run.gateRegression || run.interrupted) return false;
   return run.regressionComparisons === 0 && run.regressionUncovered > 0;
-}
-
-// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
-// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
-// True when every cell of a coarse fingerprint carries the same value — a blank or flat-filled frame.
-//
-// This is a WRITE-SIDE gate, not a render check: a uniform frame may be a legitimate render (a solid
-// background scene), but it is never worth BLESSING as a regression baseline, because it cannot
-// distinguish a working scene from a broken one. Refusing it costs a real flat scene its regression
-// coverage and costs a broken one nothing — the asymmetry is the point.
-//
-// Format: "<cellSize>:<hex cells>", so the payload after the colon is split into fixed-width cells.
-export function isUniformCaptureFingerprint(fingerprint: string): boolean {
-  const payload = fingerprint.slice(fingerprint.indexOf(':') + 1);
-  if (payload.length <= CAPTURE_FINGERPRINT_CELL_CHARS) return true;
-  const first = payload.slice(0, CAPTURE_FINGERPRINT_CELL_CHARS);
-  for (let i = CAPTURE_FINGERPRINT_CELL_CHARS; i < payload.length; i += CAPTURE_FINGERPRINT_CELL_CHARS) {
-    if (payload.slice(i, i + CAPTURE_FINGERPRINT_CELL_CHARS) !== first) return false;
-  }
-  return true;
 }
 
 interface EntryResult {
@@ -795,6 +801,57 @@ async function processEntry(
   return result;
 }
 
+// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
+// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
+// True when every cell of a coarse fingerprint carries the same value — a blank or flat-filled frame.
+//
+// This is a WRITE-SIDE gate, not a render check: a uniform frame may be a legitimate render (a solid
+// background scene), but it is never worth BLESSING as a regression baseline, because it cannot
+// distinguish a working scene from a broken one. Refusing it costs a real flat scene its regression
+// coverage and costs a broken one nothing — the asymmetry is the point.
+//
+// Format: "<cellSize>:<hex cells>", so the payload after the colon is split into fixed-width cells.
+export function isUniformCaptureFingerprint(fingerprint: string): boolean {
+  const payload = fingerprint.slice(fingerprint.indexOf(':') + 1);
+  if (payload.length <= CAPTURE_FINGERPRINT_CELL_CHARS) return true;
+  const first = payload.slice(0, CAPTURE_FINGERPRINT_CELL_CHARS);
+  for (let i = CAPTURE_FINGERPRINT_CELL_CHARS; i < payload.length; i += CAPTURE_FINGERPRINT_CELL_CHARS) {
+    if (payload.slice(i, i + CAPTURE_FINGERPRINT_CELL_CHARS) !== first) return false;
+  }
+  return true;
+}
+
+function classifyCaptureBaselineFreshness(
+  recordedSourceHash: string | null,
+  currentSourceHash: string | null,
+): { message: string; status: 'changed' | 'unchanged' | 'unavailable' } {
+  if (recordedSourceHash === null) {
+    return {
+      message: 'scene-source freshness unavailable (baseline has no recorded source hash)',
+      status: 'unavailable',
+    };
+  }
+  if (currentSourceHash === null) {
+    return {
+      message: 'scene-source freshness unavailable (current scene source could not be read)',
+      status: 'unavailable',
+    };
+  }
+  if (recordedSourceHash !== currentSourceHash) {
+    return {
+      message: 'scene source changed since baseline — recapture owed by the scene owner',
+      status: 'changed',
+    };
+  }
+  return {
+    message: 'scene source unchanged since baseline — environment drift; never rebaseline',
+    status: 'unchanged',
+  };
+}
+
+// Hex characters per fingerprint cell (one RGB triplet).
+const CAPTURE_FINGERPRINT_CELL_CHARS = 6;
+
 export async function runCaptureValidation(
   input: Readonly<CaptureValidationOptions>,
 ): Promise<CaptureValidationResult> {
@@ -991,6 +1048,12 @@ export async function runCaptureValidation(
         ]) +
         note,
     );
+  // A parity PASS spans zero to the tolerance, so the verdict alone cannot distinguish a scene that
+  // matched exactly from one that came within a hair of failing. Rank the measured distances so the
+  // reader sees what the comparison actually found rather than only that nothing crossed the line.
+  const ranking = formatCaptureParityRanking(checks);
+  if (ranking !== null && !options.quiet) console.log(ranking);
+
   // Name the entries behind an "N uncovered" count: a bare number tells a reader something is missing but
   // not what to go look at, and the entries differ in why.
   for (const [label, uncovered, failedTier] of [
@@ -1060,34 +1123,3 @@ export async function runCaptureValidation(
     return result;
   }
 }
-
-function classifyCaptureBaselineFreshness(
-  recordedSourceHash: string | null,
-  currentSourceHash: string | null,
-): { message: string; status: 'changed' | 'unchanged' | 'unavailable' } {
-  if (recordedSourceHash === null) {
-    return {
-      message: 'scene-source freshness unavailable (baseline has no recorded source hash)',
-      status: 'unavailable',
-    };
-  }
-  if (currentSourceHash === null) {
-    return {
-      message: 'scene-source freshness unavailable (current scene source could not be read)',
-      status: 'unavailable',
-    };
-  }
-  if (recordedSourceHash !== currentSourceHash) {
-    return {
-      message: 'scene source changed since baseline — recapture owed by the scene owner',
-      status: 'changed',
-    };
-  }
-  return {
-    message: 'scene source unchanged since baseline — environment drift; never rebaseline',
-    status: 'unchanged',
-  };
-}
-
-// Hex characters per fingerprint cell (one RGB triplet).
-const CAPTURE_FINGERPRINT_CELL_CHARS = 6;
