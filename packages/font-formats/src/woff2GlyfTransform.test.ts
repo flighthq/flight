@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeWoff2Triplet, readWoff2GlyfStreams, readWoff2Short } from './woff2GlyfTransform';
+import {
+  decodeWoff2Triplet,
+  measureWoff2CompositeGlyph,
+  readWoff2GlyfStreams,
+  readWoff2Short,
+} from './woff2GlyfTransform';
 
 // Builds a transformed `glyf` header over seven streams of the given sizes, filled with a distinct byte
 // each so a mis-ordered carve shows up as the wrong contents rather than only the wrong length.
@@ -66,6 +71,67 @@ describe('decodeWoff2Triplet', () => {
     expect(decodeWoff2Triplet(0, bytes, 4)).toBeNull();
   });
 });
+
+describe('measureWoff2CompositeGlyph', () => {
+  it('sizes a single component from its argument width', () => {
+    // Flags and glyph index are four bytes, then the placement arguments: two bytes as signed bytes, or
+    // four when ARG_1_AND_2_ARE_WORDS is set.
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0 }]), 0)).toEqual({
+      byteLength: 6,
+      hasInstructions: false,
+    });
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0001 }]), 0)!.byteLength).toBe(8);
+  });
+
+  it('sizes each of the three transform forms', () => {
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0008 }]), 0)!.byteLength).toBe(8);
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0040 }]), 0)!.byteLength).toBe(10);
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0080 }]), 0)!.byteLength).toBe(14);
+  });
+
+  it('treats the transform forms as exclusive rather than cumulative', () => {
+    // A record cannot carry two transforms. Adding the widths instead of choosing the widest set bit
+    // would read 2 + 4 + 8 here and overshoot every transformed component in the font.
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0008 | 0x0040 | 0x0080 }]), 0)!.byteLength).toBe(8);
+  });
+
+  it('walks every component while MORE_COMPONENTS is set', () => {
+    const stream = composite([{ flags: 0x0020 }, { flags: 0 }]);
+    expect(measureWoff2CompositeGlyph(stream, 0)!.byteLength).toBe(12);
+  });
+
+  it('reports instructions requested by a component other than the first', () => {
+    // The bit is per-component, and a caller that inspected only the first record would miss this one —
+    // which is the shape that desynchronises the glyph stream for every simple glyph that follows.
+    const stream = composite([{ flags: 0x0020 }, { flags: 0x0100 }]);
+    expect(measureWoff2CompositeGlyph(stream, 0)).toEqual({ byteLength: 12, hasInstructions: true });
+  });
+
+  it('measures from the offset it is given rather than the start of the stream', () => {
+    const stream = composite([{ flags: 0x0080 }, { flags: 0 }]);
+    expect(measureWoff2CompositeGlyph(stream, 14)).toEqual({ byteLength: 6, hasInstructions: false });
+  });
+
+  it('returns the sentinel when the records run past the end of the stream', () => {
+    // MORE_COMPONENTS set with nothing following it: a clamped read here would report a plausible size
+    // for a record that is not there.
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0x0020 }]), 0)).toBeNull();
+    expect(measureWoff2CompositeGlyph(composite([{ flags: 0 }]).subarray(0, 5), 0)).toBeNull();
+  });
+});
+
+// Component records as the `glyf` format writes them: uint16 flags, uint16 glyph index, then the
+// argument and transform bytes the flags call for. The bodies are left zero — only the sizes are read.
+function composite(components: readonly { flags: number }[]): Uint8Array {
+  const parts: number[] = [];
+  for (const { flags } of components) {
+    parts.push(flags >> 8, flags & 0xff, 0, 0);
+    for (let index = 0; index < ((flags & 0x0001) !== 0 ? 4 : 2); index += 1) parts.push(0);
+    const transform = (flags & 0x0008) !== 0 ? 2 : (flags & 0x0040) !== 0 ? 4 : (flags & 0x0080) !== 0 ? 8 : 0;
+    for (let index = 0; index < transform; index += 1) parts.push(0);
+  }
+  return new Uint8Array(parts);
+}
 
 describe('readWoff2GlyfStreams', () => {
   it('carves the seven streams in their declared order', () => {

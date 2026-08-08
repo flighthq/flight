@@ -72,6 +72,52 @@ export function decodeWoff2Triplet(
   return { dx: signX(i) * ((b0 << 8) | b1), dy: signY(i) * ((b2 << 8) | b3), used };
 }
 
+// How many `compositeStream` bytes one composite glyph's component records occupy, and whether any
+// component asks for hinting instructions. Returns the null sentinel when the records run past the end
+// of the stream.
+//
+// A composite glyph names other glyphs and places them, so it carries no points of its own — which is
+// why a reversal walking the streams is tempted to skip it entirely.
+//
+// ★ SKIPPING IT DESYNCHRONISES THE GLYPH STREAM, AND NOT THROUGH THE STREAM YOU WOULD EXPECT. A
+// composite consumes no points, so the flag and point streams are genuinely untouched. But when any
+// component sets `WE_HAVE_INSTRUCTIONS`, the glyph's instruction length is stored in the GLYPH stream,
+// exactly as a simple glyph's is. Miss that read and every SIMPLE glyph after this one decodes from a
+// position one length-field too early — so the failure surfaces far from its cause, in glyphs that are
+// themselves fine. Measured, not reasoned: this is the whole distance between 18 fonts whose decoded
+// bounds exceeded their own `head` box and none.
+//
+// `hasInstructions` is therefore the field a caller must not ignore; `byteLength` alone looks like the
+// complete answer and is not.
+export function measureWoff2CompositeGlyph(
+  compositeStream: Readonly<Uint8Array>,
+  at: number,
+): { byteLength: number; hasInstructions: boolean } | null {
+  const start = at;
+  let cursor = at;
+  let hasInstructions = false;
+  let more = true;
+
+  while (more) {
+    // Flags and glyph index, then the placement arguments and the optional transform.
+    if (cursor + 4 > compositeStream.byteLength) return null;
+    const flags = (compositeStream[cursor]! << 8) | compositeStream[cursor + 1]!;
+    cursor += 4;
+    cursor += (flags & WOFF2_COMPONENT_ARGS_ARE_WORDS) !== 0 ? 4 : 2;
+
+    // The three transform forms are mutually exclusive, widest first: a single scale, one per axis, or
+    // a full 2x2. Adding them instead of choosing would overcount every transformed component.
+    if ((flags & WOFF2_COMPONENT_HAS_SCALE) !== 0) cursor += 2;
+    else if ((flags & WOFF2_COMPONENT_HAS_XY_SCALE) !== 0) cursor += 4;
+    else if ((flags & WOFF2_COMPONENT_HAS_TWO_BY_TWO) !== 0) cursor += 8;
+
+    if ((flags & WOFF2_COMPONENT_HAS_INSTRUCTIONS) !== 0) hasInstructions = true;
+    more = (flags & WOFF2_COMPONENT_MORE_COMPONENTS) !== 0;
+  }
+  if (cursor > compositeStream.byteLength) return null;
+  return { byteLength: cursor - start, hasInstructions };
+}
+
 // Carves the seven sub-streams out of a transformed `glyf` table. Returns the null sentinel when the
 // declared sizes do not fit the table, rather than clamped streams: a stream that is short by a few bytes
 // still decodes into real-looking contour counts and coordinates, so a partial carve is the silent-
@@ -159,6 +205,16 @@ export function readWoff2Short(bytes: Readonly<Uint8Array>, cursor: { at: number
   }
   return code;
 }
+
+// Composite component flags. These are interface facts about the `glyf` format, which a composite
+// glyph's records are written in unchanged — the transform reorders whole glyphs, it does not re-encode
+// a component record.
+const WOFF2_COMPONENT_ARGS_ARE_WORDS = 0x0001;
+const WOFF2_COMPONENT_HAS_INSTRUCTIONS = 0x0100;
+const WOFF2_COMPONENT_HAS_SCALE = 0x0008;
+const WOFF2_COMPONENT_HAS_TWO_BY_TWO = 0x0080;
+const WOFF2_COMPONENT_HAS_XY_SCALE = 0x0040;
+const WOFF2_COMPONENT_MORE_COMPONENTS = 0x0020;
 
 const WOFF2_SHORT_WORD = 253;
 const WOFF2_SHORT_ONE_MORE_BYTE_2 = 254;
