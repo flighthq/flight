@@ -89,7 +89,7 @@ import {
 
 // The one place the release is pinned. NEVER `latest`: a fixture set that moves under the tests makes
 // every future conformance number irreproducible, and the failure is silent — the score just changes.
-export const FIXTURE_RELEASE_TAG = '0.1.0';
+export const FIXTURE_RELEASE_TAG = '0.1.1';
 
 export const FIXTURE_RELEASE_BASE_URL = 'https://github.com/flighthq/flight-oracles/releases/download';
 
