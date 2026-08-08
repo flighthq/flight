@@ -10,7 +10,12 @@ export function classifyImportConformanceObservation(
   observation: Readonly<SwfImportConformanceObservation>,
   capabilityIds: ReadonlySet<string> = new Set(fixture.capabilities),
 ): ImportConformanceResult {
-  if (fixture.reference !== observation.reference || fixture.sourceHash !== observation.sourceHash) {
+  const source = fixture.members.length === 1 && fixture.members[0]?.role === 'source' ? fixture.members[0] : undefined;
+  if (
+    source === undefined ||
+    source.reference !== observation.reference ||
+    source.sourceHash !== observation.sourceHash
+  ) {
     throw new Error(`Worker observation does not match indexed fixture ${fixture.reference}`);
   }
   const known = new Set(fixture.capabilities);
@@ -32,15 +37,17 @@ export function classifyImportConformanceObservation(
   }
 
   const result: ImportConformanceResult = {
+    caseHash: fixture.caseHash,
     capabilityOutcomes: fixture.capabilities.map((id) => ({
       diagnosticCause: keyed.get(id)?.some(isCauseUnknownDiagnostic) === true ? 'unknown' : 'separable',
       diagnosticReported: keyed.has(id),
       id,
       outcome: classifyCapabilityOutcome(observation, keyed.get(id) ?? []),
     })),
+    importOutcome: classifyFixtureOutcome(observation),
+    oracleOutcomes: [],
     outcome: classifyFixtureOutcome(observation),
     reference: fixture.reference,
-    sourceHash: fixture.sourceHash,
   };
   if (fixture.probeState === 'unreadable') {
     result.probeUnreadableEvidence = {

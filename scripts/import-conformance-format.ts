@@ -25,6 +25,7 @@ export function formatImportConformanceScore(score: Readonly<ImportConformanceSc
     const { exercised, instrumentAudited, proofReferenced } = pack.summary;
     lines.push(
       ...formatFixtureOutcomes(pack),
+      ...formatOracleOutcomes(pack),
       `importer-capability-evidence: ${formatExercisedDenominator(pack, oracle)}`,
       `configuration-limits: ${formatConfigurationLimits(pack)}`,
       `loss-path-audit: ${formatLossPathPopulation(pack)}`,
@@ -42,6 +43,24 @@ export function formatImportConformanceScore(score: Readonly<ImportConformanceSc
     );
   }
   return `${lines.join('\n')}\n`;
+}
+
+function formatOracleOutcomes(pack: Readonly<ImportConformanceScorePackMeasured>): string[] {
+  const { cases, populations } = pack.oracleOutcomes;
+  const members = cases.map(
+    (candidate) =>
+      `${candidate.reference}@${candidate.caseHash} [${candidate.outcomes
+        .map((outcome) =>
+          outcome.state === 'not-run'
+            ? `${outcome.id}=not-run:${outcome.notRunReason}`
+            : `${outcome.id}=${outcome.state}`,
+        )
+        .join(', ')}]`,
+  );
+  return [
+    `oracle-outcome-populations: passed oracle-outcome tally ${populations.passed}; failed oracle-outcome tally ${populations.failed}; not-run oracle-outcome tally ${populations.notRun}`,
+    `oracle-cases: case tally ${cases.length} [${members.join(', ')}]`,
+  ];
 }
 
 function formatExercisedDenominator(

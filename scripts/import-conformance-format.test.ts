@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
 import {
   buildImportConformanceCapabilityIndex,
   createImportConformanceNotRunScore,
@@ -42,20 +43,25 @@ const TEST_MARGIN = {
 describe('formatImportConformanceScore', () => {
   it('emits the raw evidence populations with their honest limits', () => {
     const index = buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, [
-      { capabilities: ['swf.fill.solid'], reference: 'fixture.swf', sourceHash: hash('fixture') },
+      {
+        capabilities: ['swf.fill.solid'],
+        ...createImportConformanceSingleMemberCaseIdentity('fixture.swf', hash('fixture')),
+      },
     ]);
     const score = createImportConformanceScore(
       index,
-      createImportConformanceShardPlan(['fixture.swf'], 1),
+      createImportConformanceShardPlan(index.cases, 1),
       new Set([0]),
       [
         {
+          caseHash: index.cases[0]!.caseHash,
           capabilityOutcomes: [
             { diagnosticCause: 'separable', diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' },
           ],
+          importOutcome: 'passed',
+          oracleOutcomes: [],
           outcome: 'passed',
           reference: 'fixture.swf',
-          sourceHash: hash('fixture'),
         },
       ],
       new Map([
@@ -96,7 +102,7 @@ describe('formatImportConformanceScore', () => {
     const output = formatImportConformanceScore(score);
     expect(output).toContain(
       'instrument-assurance: payload-validity=external-audit-required trigger-correctness=proof-reference-presence trigger-scope=external-audit-required trigger-specificity=proof-reference-presence\n' +
-        'oracle-assurance: ratchet=recorded-run-regression-only first-capture-defects=undetectable format-derived-properties=required-not-implemented\n' +
+        'oracle-assurance: ratchet=recorded-run-regression-only first-capture-defects=detectable-by-declared-oracles format-derived-properties=first-class-case-outcomes\n' +
         'swf-ruffle-fixtures 0.1.0 [full; capability-convention-revision=unresolved-individuation-v1]\n' +
         'silently-wrong-fixtures: fixture-population tally 0 []\n' +
         'fixture-outcome-populations: passed fixture-population tally 1; imported wrong fixture-population tally 0; silently wrong fixture-population tally 0; unsupported clean fixture-population tally 0; threw during import (convention violation) fixture-population tally 0\n' +
@@ -104,7 +110,9 @@ describe('formatImportConformanceScore', () => {
         'capability-probe-unreadable-outcomes: fixture-population tally 0; passed fixture-population tally 0; imported wrong fixture-population tally 0; silently wrong fixture-population tally 0; unsupported clean fixture-population tally 0; threw during import (convention violation) fixture-population tally 0\n' +
         'capability-probe-unreadable-diagnostic-explanations: document failure named fixture-population tally 0; diagnostic present without document failure fixture-population tally 0; diagnostics absent fixture-population tally 0\n' +
         'capability-probe-unreadable-fixtures: []\n' +
-        'importer-capability-evidence: exercised importer-declared capability-row tally 1 [exercised: swf.fill.solid; importer-declared: swf.fill.solid, swf.text.define-text]; declared capability-row tally 2; individuation margin counts [same-dispatch-arm row count 1; behavior-preserving-refactor row count 1; discriminated-source row count 2; frozen-declared row count 2; frozen-no-election]; rejected circular individuation candidate corpus-differential-behavior; importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check synthetic-capabilities-vs-tag-coverage.md [false-positive-hit tally 2; candidate-hit tally 4; single author]; SWF-format capability denominator UNMEASURED; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; no-fixture-vs-upstream-unreachable-not-distinguished); ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles required-not-implemented\n' +
+        'oracle-outcome-populations: passed oracle-outcome tally 0; failed oracle-outcome tally 0; not-run oracle-outcome tally 0\n' +
+        'oracle-cases: case tally 0 []\n' +
+        'importer-capability-evidence: exercised importer-declared capability-row tally 1 [exercised: swf.fill.solid; importer-declared: swf.fill.solid, swf.text.define-text]; declared capability-row tally 2; individuation margin counts [same-dispatch-arm row count 1; behavior-preserving-refactor row count 1; discriminated-source row count 2; frozen-declared row count 2; frozen-no-election]; rejected circular individuation candidate corpus-differential-behavior; importer-declared capability denominator UNRESOLVED (individuation-rule-not-operational); provisional census from one artifact cross-check synthetic-capabilities-vs-tag-coverage.md [false-positive-hit tally 2; candidate-hit tally 4; single author]; SWF-format capability denominator UNMEASURED; unmeasured capability cause NOT DISTINGUISHED (no fixture versus upstream unreachable; no-fixture-vs-upstream-unreachable-not-distinguished); ratchet honest limit recorded-run-regression-only: detects regression from a recorded run and cannot see a defect present at first capture; format-derived property oracles first-class-case-outcomes\n' +
         'configuration-limits: keyed-limit count 0 []\n' +
         'loss-path-audit: partial; audited capability-row tally 1 [swf.fill.solid@audit:loss-path-v1 by builder2 at 2026-08-07T00:00:00.000Z subject sha256:subject:swf.fill.solid: identified]; can-silently-lose capability-row tally 1; audited-none capability-row tally 0; audit-identity-unavailable capability-row tally 0 []; unaudited capability-row tally 1 [swf.text.define-text]\n' +
         'diagnostic-channels: structured-crumb capability-row tally 1 [swf.fill.solid]; human-log-only capability-row tally 0 []; none capability-row tally 1 [swf.text.define-text]\n' +
@@ -124,20 +132,25 @@ describe('formatImportConformanceScore', () => {
 
   it('prints capability scope and content fidelity from raw UNKNOWN members', () => {
     const index = buildImportConformanceCapabilityIndex(PACK, DEFINITIONS, [
-      { capabilities: ['swf.fill.solid'], reference: 'fixture.swf', sourceHash: hash('fixture') },
+      {
+        capabilities: ['swf.fill.solid'],
+        ...createImportConformanceSingleMemberCaseIdentity('fixture.swf', hash('fixture')),
+      },
     ]);
     const score = createImportConformanceScore(
       index,
-      createImportConformanceShardPlan(['fixture.swf'], 1),
+      createImportConformanceShardPlan(index.cases, 1),
       new Set([0]),
       [
         {
+          caseHash: index.cases[0]!.caseHash,
           capabilityOutcomes: [
             { diagnosticCause: 'separable', diagnosticReported: false, id: 'swf.fill.solid', outcome: 'passed' },
           ],
+          importOutcome: 'passed',
+          oracleOutcomes: [],
           outcome: 'passed',
           reference: 'fixture.swf',
-          sourceHash: hash('fixture'),
         },
       ],
       new Map(),

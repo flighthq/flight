@@ -88,6 +88,8 @@ describe('getFixtureArchivePath', () => {
 
 describe('getFixturePackUrl', () => {
   it('resolves against the pinned tag rather than a moving release', () => {
+    // The archive filename is deliberately independent of the release pin: this test proves the URL keeps the
+    // manifest-owned filename verbatim while taking only its directory segment from FIXTURE_RELEASE_TAG.
     const url = getFixturePackUrl({
       file: 'atf-fixtures-full-0.1.0.tar.gz',
       files: 14,
@@ -138,6 +140,7 @@ describe('readFixtureTreeStamp', () => {
   it('returns the sentinel for a stamp missing the variant it exists to record', () => {
     const treeDirectory = join(workspace, 'tree');
     mkdirSync(treeDirectory, { recursive: true });
+    // The tag is deliberately pin-independent: absence of variant must reject even an otherwise arbitrary stamp.
     writeFileSync(join(treeDirectory, FIXTURE_STAMP_FILE), JSON.stringify({ packs: [], tag: '0.1.0' }), 'utf8');
     expect(readFixtureTreeStamp(treeDirectory)).toBeNull();
   });
@@ -271,6 +274,8 @@ describe('verifyFixtureExtraction', () => {
 describe('writeFixtureTreeStamp', () => {
   it('round-trips the tag, the variant, and the packs already in the tree', () => {
     const treeDirectory = join(workspace, 'tree');
+    // These literals are deliberately pin-independent serialization data. Binding them would stop proving that
+    // stamp reads and writes preserve a caller-supplied historical tag and its manifest-owned archive filename.
     writeFixtureTreeStamp(treeDirectory, {
       packs: [
         {
@@ -301,6 +306,7 @@ describe('writeFixtureTreeStamp', () => {
 
   it('records the packs in a stable order so two runs write the same stamp', () => {
     const treeDirectory = join(workspace, 'tree');
+    // Filenames and tag are deliberately pin-independent: ordering must not depend on current release identity.
     const packs = [
       {
         file: 'z-full-0.1.0.tar.gz',

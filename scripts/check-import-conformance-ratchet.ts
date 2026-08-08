@@ -83,6 +83,18 @@ export function compareImportConformanceScores(
       });
       continue;
     }
+    if (baselinePack.oracleOutcomes.populations.notRun > 0) {
+      comparisons.push({
+        baseline: baselinePack,
+        current: currentPack?.state === 'measured' ? currentPack : null,
+        findings: [
+          finding('baseline-oracle-not-run', 'a baseline with a not-run oracle outcome cannot seed a ratchet'),
+        ],
+        id: baselinePack.id,
+        state: 'incomparable',
+      });
+      continue;
+    }
     if (currentPack === undefined) {
       comparisons.push({
         baseline: baselinePack,
@@ -124,7 +136,10 @@ export function compareImportConformanceScores(
       continue;
     }
 
-    const findings = compareCapabilities(baselinePack.capabilities, currentPack.capabilities);
+    const findings = [
+      ...compareCapabilities(baselinePack.capabilities, currentPack.capabilities),
+      ...compareOracleOutcomes(baselinePack, currentPack),
+    ];
     comparisons.push({
       baseline: baselinePack,
       current: currentPack,
@@ -261,6 +276,24 @@ function comparePackIdentity(
       ),
     );
   }
+  if (current.state === 'measured') {
+    const baselineOracleCases = baseline.oracleOutcomes.cases.map(
+      (candidate) =>
+        `${candidate.reference}@${candidate.caseHash}[${candidate.outcomes.map((outcome) => outcome.id).join(',')}]`,
+    );
+    const currentOracleCases = current.oracleOutcomes.cases.map(
+      (candidate) =>
+        `${candidate.reference}@${candidate.caseHash}[${candidate.outcomes.map((outcome) => outcome.id).join(',')}]`,
+    );
+    if (!sameKeys(baselineOracleCases, currentOracleCases)) {
+      findings.push(
+        finding(
+          'oracle-case-set-changed',
+          `oracle case identities changed from [${baselineOracleCases.join(', ')}] to [${currentOracleCases.join(', ')}]`,
+        ),
+      );
+    }
+  }
   if (current.sharding === null) return findings;
   if (baseline.sharding.algorithm !== current.sharding.algorithm) {
     findings.push(
@@ -287,6 +320,47 @@ function comparePackIdentity(
         `planned shard ids changed from [${baselineShards.join(', ')}] to [${currentShards.join(', ')}]`,
       ),
     );
+  }
+  return findings;
+}
+
+function compareOracleOutcomes(
+  baseline: Readonly<ImportConformanceMeasuredPack>,
+  current: Readonly<ImportConformanceMeasuredPack>,
+): ImportConformanceRatchetFinding[] {
+  const findings: ImportConformanceRatchetFinding[] = [];
+  const currentByCase = new Map(current.oracleOutcomes.cases.map((candidate) => [candidate.caseHash, candidate]));
+  for (const baselineCase of baseline.oracleOutcomes.cases) {
+    const currentCase = currentByCase.get(baselineCase.caseHash)!;
+    const currentById = new Map(currentCase.outcomes.map((outcome) => [outcome.id, outcome]));
+    for (const baselineOutcome of baselineCase.outcomes) {
+      const currentOutcome = currentById.get(baselineOutcome.id)!;
+      if (currentOutcome.state === 'not-run') {
+        findings.push(
+          finding(
+            'oracle-outcome-not-run',
+            `oracle ${baselineOutcome.id} changed from ${baselineOutcome.state} to not-run (${currentOutcome.notRunReason})`,
+            baselineCase.reference,
+          ),
+        );
+      } else if (baselineOutcome.state === 'passed' && currentOutcome.state === 'failed') {
+        findings.push(
+          finding(
+            'oracle-outcome-regressed',
+            `oracle ${baselineOutcome.id} changed from passed to failed`,
+            baselineCase.reference,
+          ),
+        );
+      } else if (JSON.stringify(baselineOutcome.evidence) !== JSON.stringify(currentOutcome.evidence)) {
+        findings.push(
+          finding(
+            'oracle-evidence-changed',
+            `oracle ${baselineOutcome.id} produced different evidence for the same case hash`,
+            baselineCase.reference,
+          ),
+        );
+      }
+    }
   }
   return findings;
 }

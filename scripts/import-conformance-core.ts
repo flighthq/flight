@@ -1,5 +1,11 @@
 import { createHash } from 'node:crypto';
 
+import { assertImportConformanceOracleOutcomes, createImportConformanceCaseIdentity } from './import-conformance-case';
+import type {
+  ImportConformanceCaseIdentity,
+  ImportConformanceCaseMember,
+  ImportConformanceOracleOutcome,
+} from './import-conformance-case';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
@@ -24,6 +30,7 @@ import type {
   ImportConformanceNotRunCapability,
   ImportConformanceNotRunPack,
   ImportConformanceOracleAssurance,
+  ImportConformanceOracleOutcomes,
   ImportConformanceOutcomeCounts,
   ImportConformanceProvenance,
   ImportConformanceReferencedSummary,
@@ -68,26 +75,27 @@ export interface ImportConformanceCapabilityDefinition {
 
 export interface ImportConformanceCapabilityIndex {
   capabilities: ImportConformanceIndexedCapability[];
-  fixtures: ImportConformanceIndexedFixture[];
+  cases: ImportConformanceIndexedCase[];
   inventory: {
     corpusFiles: number;
-    indexedSwfFiles: number;
-    unreadableSwfFiles: number;
+    indexedCases: number;
+    unreadableCases: number;
   };
   pack: ImportConformancePackIdentity;
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export interface ImportConformanceIndexedCapability extends ImportConformanceCapabilityDefinition {
   witnesses: string[];
 }
 
-export interface ImportConformanceIndexedFixture {
+export interface ImportConformanceIndexedCase extends ImportConformanceCaseIdentity {
   capabilities: readonly string[];
   probeState: 'readable' | 'unreadable';
-  reference: string;
-  sourceHash: string;
 }
+
+/** SWF's one-file index remains an adapter over the case contract. */
+export type ImportConformanceIndexedFixture = ImportConformanceIndexedCase;
 
 export interface ImportConformancePackIdentity {
   capabilityConventionRevision: string;
@@ -97,12 +105,15 @@ export interface ImportConformancePackIdentity {
 }
 
 export interface ImportConformanceResult {
+  caseHash: string;
   capabilityOutcomes: {
     diagnosticCause: 'separable' | 'unknown';
     diagnosticReported: boolean;
     id: string;
     outcome: keyof ImportConformanceOutcomeCounts | 'passed';
   }[];
+  importOutcome: keyof ImportConformanceOutcomeCounts | 'passed';
+  oracleOutcomes: ImportConformanceOracleOutcome[];
   outcome: keyof ImportConformanceOutcomeCounts | 'passed';
   probeUnreadableEvidence?: {
     diagnostics: ImportConformanceFixtureDiagnosticEvidence[];
@@ -110,17 +121,27 @@ export interface ImportConformanceResult {
     threw: boolean;
   };
   reference: string;
-  sourceHash: string;
+}
+
+export function applyImportConformanceOracleOutcomes(
+  importOutcome: ImportConformanceResult['importOutcome'],
+  oracleOutcomes: readonly Readonly<ImportConformanceOracleOutcome>[],
+): ImportConformanceResult['outcome'] {
+  assertImportConformanceOracleOutcomes(oracleOutcomes);
+  return importOutcome === 'passed' && oracleOutcomes.some((oracle) => oracle.state === 'failed')
+    ? 'importedWrong'
+    : importOutcome;
 }
 
 export interface ImportConformanceShardPlan {
-  algorithm: 'fixture-count-v1';
+  algorithm: 'case-count-v2';
   assignments: ImportConformanceShardAssignment[];
   planHash: string;
   shardCount: number;
 }
 
 export interface ImportConformanceShardAssignment {
+  caseHash: string;
   reference: string;
   shardId: number;
 }
@@ -143,50 +164,49 @@ export type ImportConformanceImporterDeclaredCensus =
 export type ImportConformanceIndividuationMargin =
   ImportConformanceSummary['denominators']['importerDeclared']['individuationMargin'];
 
-interface ImportConformanceFixtureEvidence {
+export interface ImportConformanceCaseEvidence {
   capabilities: readonly string[];
+  members: readonly Readonly<ImportConformanceCaseMember>[];
   probeState?: 'readable' | 'unreadable';
   reference: string;
-  sourceHash: string;
 }
 
 export function buildImportConformanceCapabilityIndex(
   pack: Readonly<ImportConformancePackIdentity>,
   definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[],
-  evidence: readonly Readonly<ImportConformanceFixtureEvidence>[],
+  evidence: readonly Readonly<ImportConformanceCaseEvidence>[],
   corpusFileCount = evidence.length,
 ): ImportConformanceCapabilityIndex {
   assertPackIdentity(pack);
   assertCapabilityDefinitions(definitions);
   const known = new Set(definitions.map((definition) => definition.id));
-  const fixtures = evidence
-    .map((fixture) => {
-      if (fixture.reference === '') throw new Error('A fixture reference must be non-empty');
-      assertSha256(fixture.sourceHash, `fixture ${fixture.reference} source hash`);
-      const capabilities = [...new Set(fixture.capabilities)].sort();
-      const probeState = fixture.probeState ?? 'readable';
+  const cases = evidence
+    .map((candidate) => {
+      const identity = createImportConformanceCaseIdentity(candidate.reference, candidate.members);
+      const capabilities = [...new Set(candidate.capabilities)].sort();
+      const probeState = candidate.probeState ?? 'readable';
       if (probeState === 'unreadable' && capabilities.length > 0) {
-        throw new Error(`Unreadable fixture ${fixture.reference} must not contribute capability evidence`);
+        throw new Error(`Unreadable case ${candidate.reference} must not contribute capability evidence`);
       }
       for (const id of capabilities) {
-        if (!known.has(id)) throw new Error(`Fixture ${fixture.reference} emitted undeclared capability ${id}`);
+        if (!known.has(id)) throw new Error(`Case ${candidate.reference} emitted undeclared capability ${id}`);
       }
       return {
         capabilities,
+        ...identity,
         probeState,
-        reference: fixture.reference,
-        sourceHash: fixture.sourceHash,
       };
     })
-    .sort(compareFixtureReference);
+    .sort(compareCaseReference);
   assertSortedUnique(
-    fixtures.map((fixture) => fixture.reference),
-    'fixture references',
+    cases.map((candidate) => candidate.reference),
+    'case references',
   );
+  assertSortedUnique(cases.map((candidate) => candidate.caseHash).sort(), 'case hashes');
 
   const witnesses = new Map(definitions.map((definition) => [definition.id, [] as string[]]));
-  for (const fixture of fixtures) {
-    for (const id of fixture.capabilities) witnesses.get(id)!.push(fixture.reference);
+  for (const candidate of cases) {
+    for (const id of candidate.capabilities) witnesses.get(id)!.push(candidate.reference);
   }
   return {
     capabilities: definitions.map((definition) => ({
@@ -194,21 +214,21 @@ export function buildImportConformanceCapabilityIndex(
       label: definition.label,
       witnesses: witnesses.get(definition.id)!,
     })),
-    fixtures,
+    cases,
     inventory: {
-      corpusFiles: assertCorpusFileCount(corpusFileCount, fixtures.length),
-      indexedSwfFiles: fixtures.length,
-      unreadableSwfFiles: fixtures.filter((fixture) => fixture.probeState === 'unreadable').length,
+      corpusFiles: assertCorpusFileCount(corpusFileCount, cases.flatMap((candidate) => candidate.members).length),
+      indexedCases: cases.length,
+      unreadableCases: cases.filter((candidate) => candidate.probeState === 'unreadable').length,
     },
     pack: { ...pack },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
-export function createImportConformanceCacheKey(sourceHash: string, importerSourceHash: string): string {
-  assertSha256(sourceHash, 'fixture source hash');
+export function createImportConformanceCacheKey(caseHash: string, importerSourceHash: string): string {
+  assertSha256(caseHash, 'case hash');
   assertSha256(importerSourceHash, 'importer source hash');
-  return hashText(`import-conformance-result-v3\0${sourceHash}\0${importerSourceHash}`);
+  return hashText(`import-conformance-result-v4\0${caseHash}\0${importerSourceHash}`);
 }
 
 export function assertImportConformanceFrozenCapabilityPartition(
@@ -252,6 +272,7 @@ export function createImportConformanceNotRunScore(
         ...pack,
         fixtureOutcomes: null,
         importerSourceHash,
+        oracleOutcomes: null,
         outcomes: null,
         reason: 'pack-unavailable',
         sharding: null,
@@ -320,6 +341,7 @@ export function createImportConformanceScore(
           ...index.pack,
           fixtureOutcomes: null,
           importerSourceHash,
+          oracleOutcomes: null,
           outcomes: null,
           reason: 'missing-shard',
           sharding,
@@ -508,6 +530,7 @@ export function createImportConformanceScore(
       {
         ...packBase,
         fixtureOutcomes: createFixtureOutcomes(index, results),
+        oracleOutcomes: createOracleOutcomes(results),
         state: 'measured',
         summary,
       },
@@ -518,36 +541,38 @@ export function createImportConformanceScore(
 }
 
 export function createImportConformanceShardPlan(
-  fixtureReferences: readonly string[],
+  cases: readonly Readonly<ImportConformanceCaseIdentity>[],
   shardCount: number,
 ): ImportConformanceShardPlan {
   if (!Number.isSafeInteger(shardCount) || shardCount < 1) throw new Error('Shard count must be a positive integer');
-  const references = [...fixtureReferences].sort();
-  assertSortedUnique(references, 'fixture references');
-  const assignments = references.map((reference, index) => ({ reference, shardId: index % shardCount }));
-  const canonical = assignments.map((assignment) => `${assignment.reference}\0${assignment.shardId}`).join('\n');
+  const identities = cases.map(({ caseHash, reference }) => ({ caseHash, reference })).sort(compareCaseReference);
+  assertSortedUnique(
+    identities.map((candidate) => candidate.reference),
+    'case references',
+  );
+  assertSortedUnique(identities.map((candidate) => candidate.caseHash).sort(), 'case hashes');
+  for (const identity of identities) assertSha256(identity.caseHash, `case ${identity.reference} hash`);
+  const assignments = identities.map((identity, index) => ({ ...identity, shardId: index % shardCount }));
+  const canonical = assignments
+    .map((assignment) => `${assignment.reference}\0${assignment.caseHash}\0${assignment.shardId}`)
+    .join('\n');
   return {
-    algorithm: 'fixture-count-v1',
+    algorithm: 'case-count-v2',
     assignments,
-    planHash: hashText(`fixture-count-v1\0${shardCount}\n${canonical}`),
+    planHash: hashText(`case-count-v2\0${shardCount}\n${canonical}`),
     shardCount,
   };
-}
-
-export function isImportConformanceFixtureReference(reference: string): boolean {
-  const segments = reference.split(/[\\/]/);
-  return !segments.includes('LICENSES') && reference.toLowerCase().endsWith('.swf');
 }
 
 export function parseImportConformanceCapabilityDefinitions(
   value: unknown,
 ): readonly ImportConformanceCapabilityDefinition[] {
   if (!isRecord(value) || !Array.isArray(value.capabilities) || value.count !== value.capabilities.length) {
-    throw new Error('Invalid SWF capability artifact root');
+    throw new Error('Invalid import capability artifact root');
   }
   const definitions = value.capabilities.map((candidate, index) => {
     if (!isRecord(candidate) || typeof candidate.id !== 'string' || typeof candidate.label !== 'string') {
-      throw new Error(`Invalid SWF capability artifact row ${index}`);
+      throw new Error(`Invalid import capability artifact row ${index}`);
     }
     return { id: candidate.id, label: candidate.label };
   });
@@ -558,7 +583,7 @@ export function parseImportConformanceCapabilityDefinitions(
 function assertCapabilityDefinitions(definitions: readonly Readonly<ImportConformanceCapabilityDefinition>[]): void {
   if (definitions.length === 0) throw new Error('Capability enumeration must not be empty');
   for (const definition of definitions) {
-    if (!/^swf(\.[a-z0-9]+(-[a-z0-9]+)*)+$/.test(definition.id) || definition.label === '') {
+    if (!/^[a-z0-9]+(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/.test(definition.id) || definition.label === '') {
       throw new Error(`Invalid capability definition ${definition.id}`);
     }
   }
@@ -568,9 +593,9 @@ function assertCapabilityDefinitions(definitions: readonly Readonly<ImportConfor
   );
 }
 
-function assertCorpusFileCount(corpusFileCount: number, indexedSwfFiles: number): number {
-  if (!Number.isSafeInteger(corpusFileCount) || corpusFileCount < indexedSwfFiles) {
-    throw new Error('Corpus file count must be an integer no smaller than the indexed SWF count');
+function assertCorpusFileCount(corpusFileCount: number, indexedMemberFiles: number): number {
+  if (!Number.isSafeInteger(corpusFileCount) || corpusFileCount < indexedMemberFiles) {
+    throw new Error('Corpus file count must be an integer no smaller than the indexed member-file count');
   }
   return corpusFileCount;
 }
@@ -725,10 +750,7 @@ function assertPlanMatchesIndex(
   plan: Readonly<ImportConformanceShardPlan>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
-  const expected = createImportConformanceShardPlan(
-    index.fixtures.map((fixture) => fixture.reference),
-    plan.shardCount,
-  );
+  const expected = createImportConformanceShardPlan(index.cases, plan.shardCount);
   if (plan.algorithm !== expected.algorithm || plan.planHash !== expected.planHash) {
     throw new Error('Shard plan does not match the exhaustive capability index');
   }
@@ -738,16 +760,23 @@ function assertResultMatchesIndex(
   result: Readonly<ImportConformanceResult>,
   index: Readonly<ImportConformanceCapabilityIndex>,
 ): void {
-  const fixture = index.fixtures.find((candidate) => candidate.reference === result.reference);
-  if (fixture === undefined) throw new Error(`Result names unknown fixture ${result.reference}`);
-  if (fixture.sourceHash !== result.sourceHash) throw new Error(`Result source hash is stale for ${result.reference}`);
-  if (fixture.probeState === 'unreadable' && result.probeUnreadableEvidence === undefined) {
+  const candidate = index.cases.find((indexed) => indexed.reference === result.reference);
+  if (candidate === undefined) throw new Error(`Result names unknown case ${result.reference}`);
+  if (candidate.caseHash !== result.caseHash) throw new Error(`Result case hash is stale for ${result.reference}`);
+  assertImportConformanceOracleOutcomes(result.oracleOutcomes, `result ${result.reference} oracle outcomes`);
+  const expectedOutcome = applyImportConformanceOracleOutcomes(result.importOutcome, result.oracleOutcomes);
+  if (result.outcome !== expectedOutcome) {
+    throw new Error(
+      `Result ${result.reference} outcome must equal its import and oracle evidence (${expectedOutcome})`,
+    );
+  }
+  if (candidate.probeState === 'unreadable' && result.probeUnreadableEvidence === undefined) {
     throw new Error(`Probe-unreadable result ${result.reference} must retain its import observation evidence`);
   }
-  if (fixture.probeState === 'readable' && result.probeUnreadableEvidence !== undefined) {
+  if (candidate.probeState === 'readable' && result.probeUnreadableEvidence !== undefined) {
     throw new Error(`Probe-readable result ${result.reference} must not carry probe-unreadable evidence`);
   }
-  const expected = fixture.capabilities.join('\0');
+  const expected = candidate.capabilities.join('\0');
   if (result.capabilityOutcomes.map((candidate) => candidate.id).join('\0') !== expected) {
     throw new Error(`Result capability evidence is stale for ${result.reference}`);
   }
@@ -763,9 +792,9 @@ function assertSortedUnique(values: readonly (number | string)[], label: string)
   }
 }
 
-function compareFixtureReference(
-  a: Readonly<ImportConformanceIndexedFixture>,
-  b: Readonly<ImportConformanceIndexedFixture>,
+function compareCaseReference(
+  a: Readonly<Pick<ImportConformanceCaseIdentity, 'reference'>>,
+  b: Readonly<Pick<ImportConformanceCaseIdentity, 'reference'>>,
 ): number {
   return a.reference < b.reference ? -1 : a.reference > b.reference ? 1 : 0;
 }
@@ -785,8 +814,8 @@ function createImportConformanceInstrumentAssurance(): ImportConformanceInstrume
 
 function createImportConformanceOracleAssurance(): ImportConformanceOracleAssurance {
   return {
-    firstCaptureDefects: 'undetectable',
-    formatDerivedProperties: 'required-not-implemented',
+    firstCaptureDefects: 'detectable-by-declared-oracles',
+    formatDerivedProperties: 'first-class-case-outcomes',
     ratchet: 'recorded-run-regression-only',
     unmeasuredCapabilityCause: 'no-fixture-vs-upstream-unreachable-not-distinguished',
   };
@@ -833,6 +862,25 @@ function cloneConfigurationLimits(
       };
 }
 
+function createOracleOutcomes(results: readonly Readonly<ImportConformanceResult>[]): ImportConformanceOracleOutcomes {
+  const populations = { failed: 0, notRun: 0, passed: 0 };
+  const cases = results
+    .filter((result) => result.oracleOutcomes.length > 0)
+    .map((result) => {
+      for (const outcome of result.oracleOutcomes) {
+        if (outcome.state === 'not-run') populations.notRun++;
+        else populations[outcome.state]++;
+      }
+      return {
+        caseHash: result.caseHash,
+        outcomes: result.oracleOutcomes.map((outcome) => ({ ...outcome })),
+        reference: result.reference,
+      };
+    })
+    .sort(compareCaseReference);
+  return { cases, populations };
+}
+
 function createFixtureOutcomes(
   index: Readonly<ImportConformanceCapabilityIndex>,
   results: readonly Readonly<ImportConformanceResult>[],
@@ -852,19 +900,19 @@ function createFixtureOutcomes(
     documentFailureNamed: 0,
     presentWithoutDocumentFailure: 0,
   };
-  const fixtures = index.fixtures
-    .filter((fixture) => fixture.probeState === 'unreadable')
-    .map((fixture) => {
-      const result = resultByReference.get(fixture.reference);
-      if (result === undefined) throw new Error(`Measured run has no result for ${fixture.reference}`);
+  const fixtures = index.cases
+    .filter((candidate) => candidate.probeState === 'unreadable')
+    .map((candidate) => {
+      const result = resultByReference.get(candidate.reference);
+      if (result === undefined) throw new Error(`Measured run has no result for ${candidate.reference}`);
       const evidence = result.probeUnreadableEvidence;
       if (evidence === undefined) {
-        throw new Error(`Probe-unreadable result ${fixture.reference} must retain its import observation evidence`);
+        throw new Error(`Probe-unreadable result ${candidate.reference} must retain its import observation evidence`);
       }
       const expectedOutcome = classifyRetainedProbeEvidence(evidence);
       if (result.outcome !== expectedOutcome) {
         throw new Error(
-          `Probe-unreadable result ${fixture.reference} outcome must equal retained evidence (${expectedOutcome})`,
+          `Probe-unreadable result ${candidate.reference} outcome must equal retained evidence (${expectedOutcome})`,
         );
       }
       outcomePopulations[result.outcome]++;
