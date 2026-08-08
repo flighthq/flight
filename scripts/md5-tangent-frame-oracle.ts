@@ -1,8 +1,19 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { getVertexAttributeFloatOffset } from '@flighthq/mesh/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
+import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { MeshGeometry, Scene3D } from '@flighthq/types/contract';
 
+import {
+  FIXTURE_RELEASE_TAG,
+  getFixtureTreePath,
+  readFixtureTreeStamp,
+  resolveFixtureCacheDirectory,
+} from './fixtures';
 import { probeMd5Sections } from './md5-section-probe';
 
 export const MD5_TANGENT_ORTHOGONALITY_ORACLE_ID = 'md5.tangent-orthogonality';
@@ -35,16 +46,20 @@ export interface Md5TangentCodePathCrossCheckOracle {
 export interface Md5TangentOrthogonalityOracle {
   exactVertices: number;
   id: typeof MD5_TANGENT_ORTHOGONALITY_ORACLE_ID;
+  infiniteTangentVertices: number;
   invalidVertices: number;
   maximumPrecisionExcess: number;
   maximumPrecisionBound: number;
   maximumResidual: number;
   maximumResidualToPrecisionRatio: number;
+  minimumNonzeroTangentLength: number | null;
+  nanTangentVertices: number;
   notRunReason?: 'mesh-geometry-missing' | 'tangent-frame-unreadable';
   outsidePrecisionVertices: number;
   state: Md5TangentOracleState;
   vertexCount: number;
   withinPrecisionVertices: number;
+  zeroLengthTangentVertices: number;
 }
 
 export interface Md5TangentHandednessOracle {
@@ -85,6 +100,37 @@ export interface Md5TangentFrameOracles {
   codePathCrossCheck: Md5TangentCodePathCrossCheckOracle;
 }
 
+export interface Md5TangentFrameOracleCorpusCaseMeasured {
+  oracles: Md5TangentFrameOracles;
+  reference: string;
+  state: 'measured';
+}
+
+export interface Md5TangentFrameOracleCorpusCaseNotRun {
+  notRunReason: 'mesh-source-or-import-unreadable';
+  reference: string;
+  state: 'not-run';
+}
+
+export type Md5TangentFrameOracleCorpusCase =
+  | Md5TangentFrameOracleCorpusCaseMeasured
+  | Md5TangentFrameOracleCorpusCaseNotRun;
+
+export interface Md5TangentFrameOracleCorpusReport {
+  acquisition: {
+    pack: typeof MD5_TANGENT_FIXTURE_PACK;
+    release: string;
+    variant: typeof MD5_TANGENT_FIXTURE_VARIANT;
+    verifiedFixtureFiles: number;
+  };
+  cases: readonly Md5TangentFrameOracleCorpusCase[];
+  discoveredMeshFiles: number;
+  importNotRunMeshFiles: number;
+  measuredMeshFiles: number;
+  notRunReason?: 'md5-mesh-fixtures-absent' | 'md5-mesh-imports-failed';
+  state: 'measured' | 'not-run';
+}
+
 interface DecimalToken {
   precision: number;
   value: number;
@@ -117,6 +163,87 @@ export function runMd5TangentFrameOracles(scene: Readonly<Scene3D>, meshSource: 
     splitDifference: measureMd5SplitTangentDifference(scene, meshSource),
     codePathCrossCheck: measureMd5TangentCodePathCrossCheck(scene),
   };
+}
+
+export function runMd5TangentFrameOracleCorpus(
+  treeDirectory: string,
+  verifiedFixtureFiles: number,
+): Md5TangentFrameOracleCorpusReport {
+  const references = collectMd5MeshReferences(treeDirectory);
+  const cases: Md5TangentFrameOracleCorpusCase[] = references.map((reference) => {
+    try {
+      const source = readFileSync(join(treeDirectory, reference), 'utf8');
+      const scene = createScene3DFromMd5Mesh(source);
+      return { oracles: runMd5TangentFrameOracles(scene, source), reference, state: 'measured' };
+    } catch {
+      return { notRunReason: 'mesh-source-or-import-unreadable', reference, state: 'not-run' };
+    }
+  });
+  const measuredMeshFiles = cases.filter((item) => item.state === 'measured').length;
+  const importNotRunMeshFiles = cases.length - measuredMeshFiles;
+  const acquisition = {
+    pack: MD5_TANGENT_FIXTURE_PACK,
+    release: FIXTURE_RELEASE_TAG,
+    variant: MD5_TANGENT_FIXTURE_VARIANT,
+    verifiedFixtureFiles,
+  };
+  if (references.length === 0) {
+    return {
+      acquisition,
+      cases,
+      discoveredMeshFiles: 0,
+      importNotRunMeshFiles,
+      measuredMeshFiles,
+      notRunReason: 'md5-mesh-fixtures-absent',
+      state: 'not-run',
+    };
+  }
+  if (measuredMeshFiles === 0) {
+    return {
+      acquisition,
+      cases,
+      discoveredMeshFiles: references.length,
+      importNotRunMeshFiles,
+      measuredMeshFiles,
+      notRunReason: 'md5-mesh-imports-failed',
+      state: 'not-run',
+    };
+  }
+  return {
+    acquisition,
+    cases,
+    discoveredMeshFiles: references.length,
+    importNotRunMeshFiles,
+    measuredMeshFiles,
+    state: 'measured',
+  };
+}
+
+export function formatMd5TangentFrameOracleCorpusReport(report: Md5TangentFrameOracleCorpusReport): string {
+  const lines = [
+    `acquisition pack=${report.acquisition.pack} variant=${report.acquisition.variant} release=${report.acquisition.release} verified-fixtures=${report.acquisition.verifiedFixtureFiles} discovered-md5mesh=${report.discoveredMeshFiles}`,
+    `comparison corpus-state=${report.state} measured-md5mesh=${report.measuredMeshFiles} import-not-run-md5mesh=${report.importNotRunMeshFiles}${formatNotRunReason(report)}`,
+  ];
+  for (const item of report.cases) {
+    if (item.state === 'not-run') {
+      lines.push(`case ${item.reference} state=not-run reason=${item.notRunReason}`);
+      continue;
+    }
+    lines.push(`case ${item.reference} state=measured`);
+    const { codePathCrossCheck, handedness, orthogonality, splitDifference } = item.oracles;
+    lines.push(
+      `  ${orthogonality.id} state=${orthogonality.state} vertices=${orthogonality.vertexCount} exact=${orthogonality.exactVertices} within-precision=${orthogonality.withinPrecisionVertices} outside-precision=${orthogonality.outsidePrecisionVertices} invalid=${orthogonality.invalidVertices} tangent-nan=${orthogonality.nanTangentVertices} tangent-infinite=${orthogonality.infiniteTangentVertices} tangent-zero-length=${orthogonality.zeroLengthTangentVertices} tangent-minimum-nonzero-length=${orthogonality.minimumNonzeroTangentLength ?? 'none'}${formatNotRunReason(orthogonality)}`,
+      `  ${handedness.id} state=${handedness.state} triangles=${handedness.triangleCount} matching=${handedness.matchingTriangles} mismatching=${handedness.mismatchingTriangles} indeterminate=${handedness.indeterminateTriangles} invalid=${handedness.invalidTriangles}${formatNotRunReason(handedness)}`,
+      `  ${splitDifference.id} state=${splitDifference.state} pairs=${splitDifference.pairs.length} meaningful=${splitDifference.meaningfulPairs} indistinguishable=${splitDifference.indistinguishablePairs}${formatNotRunReason(splitDifference)}`,
+      `  ${codePathCrossCheck.id} role=${codePathCrossCheck.role} independence=${codePathCrossCheck.independence} state=${codePathCrossCheck.state} compared-components=${codePathCrossCheck.comparedComponents} differing-components=${codePathCrossCheck.differingComponents} differing-vertices=${codePathCrossCheck.differingVertices}${formatNotRunReason(codePathCrossCheck)}`,
+    );
+    for (const pair of splitDifference.pairs) {
+      lines.push(
+        `    split-pair section=${pair.section} original=${pair.originalVertex} split=${pair.splitVertex} state=${pair.state} reason=${splitPairReason(pair)} direction-residual=${pair.directionResidual} direction-precision-bound=${pair.directionPrecisionBound}`,
+      );
+    }
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 export function measureMd5TangentCodePathCrossCheck(scene: Readonly<Scene3D>): Md5TangentCodePathCrossCheckOracle {
@@ -230,26 +357,34 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
   const base = {
     exactVertices: 0,
     id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    infiniteTangentVertices: 0,
     invalidVertices: 0,
     maximumPrecisionExcess: 0,
     maximumPrecisionBound: 0,
     maximumResidual: 0,
     maximumResidualToPrecisionRatio: 0,
+    minimumNonzeroTangentLength: null,
+    nanTangentVertices: 0,
     outsidePrecisionVertices: 0,
     vertexCount: 0,
     withinPrecisionVertices: 0,
+    zeroLengthTangentVertices: 0,
   };
   if (geometries.length === 0) return { ...base, notRunReason: 'mesh-geometry-missing', state: 'not-run' };
 
   let exactVertices = 0;
+  let infiniteTangentVertices = 0;
   let invalidVertices = 0;
   let maximumPrecisionExcess = 0;
   let maximumPrecisionBound = 0;
   let maximumResidual = 0;
   let maximumResidualToPrecisionRatio = 0;
+  let minimumNonzeroTangentLength = Number.POSITIVE_INFINITY;
+  let nanTangentVertices = 0;
   let outsidePrecisionVertices = 0;
   let vertexCount = 0;
   let withinPrecisionVertices = 0;
+  let zeroLengthTangentVertices = 0;
   for (const geometry of geometries) {
     const normalOffset = getVertexAttributeFloatOffset(geometry.layout, 'normal');
     const tangentOffset = tangentFloatOffset(geometry);
@@ -269,14 +404,19 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
       const tx = geometry.vertices[baseOffset + tangentOffset]!;
       const ty = geometry.vertices[baseOffset + tangentOffset + 1]!;
       const tz = geometry.vertices[baseOffset + tangentOffset + 2]!;
-      if (
-        !numbersFinite(nx, ny, nz, tx, ty, tz) ||
-        (nx === 0 && ny === 0 && nz === 0) ||
-        (tx === 0 && ty === 0 && tz === 0)
-      ) {
+      const tangentHasNan = Number.isNaN(tx) || Number.isNaN(ty) || Number.isNaN(tz);
+      const tangentHasInfinity = [tx, ty, tz].some((value) => Math.abs(value) === Number.POSITIVE_INFINITY);
+      const tangentIsZero = tx === 0 && ty === 0 && tz === 0;
+      if (tangentHasNan) nanTangentVertices++;
+      if (tangentHasInfinity) infiniteTangentVertices++;
+      if (tangentIsZero) zeroLengthTangentVertices++;
+      if (!numbersFinite(nx, ny, nz, tx, ty, tz) || (nx === 0 && ny === 0 && nz === 0) || tangentIsZero) {
         invalidVertices++;
         continue;
       }
+
+      const tangentLength = Math.hypot(tx, ty, tz);
+      if (tangentLength < minimumNonzeroTangentLength) minimumNonzeroTangentLength = tangentLength;
 
       const residual = Math.abs(nx * tx + ny * ty + nz * tz);
       const precisionBound = productRoundingBound(nx, tx) + productRoundingBound(ny, ty) + productRoundingBound(nz, tz);
@@ -296,14 +436,18 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
   const measurements = {
     exactVertices,
     id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    infiniteTangentVertices,
     invalidVertices,
     maximumPrecisionExcess,
     maximumPrecisionBound,
     maximumResidual,
     maximumResidualToPrecisionRatio,
+    minimumNonzeroTangentLength: Number.isFinite(minimumNonzeroTangentLength) ? minimumNonzeroTangentLength : null,
+    nanTangentVertices,
     outsidePrecisionVertices,
     vertexCount,
     withinPrecisionVertices,
+    zeroLengthTangentVertices,
   };
   if (outsidePrecisionVertices > 0) return { ...measurements, state: 'failed' };
   if (invalidVertices > 0) return { ...measurements, notRunReason: 'tangent-frame-unreadable', state: 'not-run' };
@@ -688,6 +832,22 @@ function collectMeshGeometries(scene: Readonly<Scene3D>): Readonly<MeshGeometry>
   return geometries;
 }
 
+function collectMd5MeshReferences(treeDirectory: string): string[] {
+  const references: string[] = [];
+  const pending = [treeDirectory];
+  while (pending.length > 0) {
+    const directory = pending.pop()!;
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) pending.push(path);
+      else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md5mesh')) {
+        references.push(relative(treeDirectory, path).split(sep).join('/'));
+      }
+    }
+  }
+  return references.sort();
+}
+
 function determinantInterval(
   u0: NumericInterval | null,
   v0: NumericInterval | null,
@@ -803,8 +963,51 @@ function stripLineComment(line: string): string {
   return line;
 }
 
+function formatNotRunReason(value: { notRunReason?: string }): string {
+  return value.notRunReason === undefined ? '' : ` reason=${value.notRunReason}`;
+}
+
+function splitPairReason(pair: Md5TangentSplitPairMeasurement): string {
+  const directionChanged = pair.directionResidual > pair.directionPrecisionBound;
+  if (pair.handednessChanged && directionChanged) return 'handedness-and-direction';
+  if (pair.handednessChanged) return 'handedness';
+  return directionChanged ? 'direction-outside-format-precision' : 'direction-within-format-precision';
+}
+
+function main(): void {
+  const cacheDirectory = resolveFixtureCacheDirectory();
+  const treeDirectory = getFixtureTreePath(cacheDirectory, MD5_TANGENT_FIXTURE_VARIANT, MD5_TANGENT_FIXTURE_PACK);
+  const stamp = readFixtureTreeStamp(treeDirectory);
+  const pack = stamp?.packs.find((candidate) => candidate.pack === MD5_TANGENT_FIXTURE_PACK);
+  if (
+    stamp === null ||
+    pack === undefined ||
+    stamp.tag !== FIXTURE_RELEASE_TAG ||
+    stamp.variant !== MD5_TANGENT_FIXTURE_VARIANT
+  ) {
+    throw new Error(
+      `Verified ${MD5_TANGENT_FIXTURE_PACK} ${MD5_TANGENT_FIXTURE_VARIANT} tree is unavailable; run npm run fixtures -- ${MD5_TANGENT_FIXTURE_PACK} --variant ${MD5_TANGENT_FIXTURE_VARIANT}`,
+    );
+  }
+  const report = runMd5TangentFrameOracleCorpus(treeDirectory, pack.verifiedFixtureFiles);
+  process.stdout.write(formatMd5TangentFrameOracleCorpusReport(report));
+  if (report.state === 'not-run') process.exitCode = 1;
+}
+
 const FLOAT32_STORAGE = new ArrayBuffer(4);
 const FLOAT32_VIEW = new Float32Array(FLOAT32_STORAGE);
 const UINT32_VIEW = new Uint32Array(FLOAT32_STORAGE);
 const FLOAT32_MIN = 2 ** -149;
 const FLOAT32_MAX = (2 - 2 ** -23) * 2 ** 127;
+const MD5_TANGENT_FIXTURE_PACK = 'mesh-legacy-fixtures';
+const MD5_TANGENT_FIXTURE_VARIANT = 'full';
+const SCRIPT_PATH = fileURLToPath(import.meta.url);
+
+if (resolve(process.argv[1] ?? '') === resolve(SCRIPT_PATH)) {
+  try {
+    main();
+  } catch (error: unknown) {
+    process.stderr.write(`✗ ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  }
+}
