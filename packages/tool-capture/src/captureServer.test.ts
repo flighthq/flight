@@ -11,7 +11,30 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer';
+import {
+  explainCaptureDistStaleness,
+  resolveCaptureDirectoryServer,
+  resolveServer,
+  resolveStaticServer,
+} from './captureServer';
+
+describe('explainCaptureDistStaleness', () => {
+  it('warns when the build predates the source it was built from', () => {
+    expect(explainCaptureDistStaleness(1_000, 2_000)).toContain('measures the PREVIOUS code');
+  });
+
+  it('stays silent when the build is at least as new as the source', () => {
+    expect(explainCaptureDistStaleness(2_000, 1_000)).toBeNull();
+    expect(explainCaptureDistStaleness(1_000, 1_000)).toBeNull();
+  });
+
+  it('stays silent when a timestamp could not be read', () => {
+    // A comparison that could not be made must not print a reassurance OR a warning: the caller
+    // learns nothing either way, and a warning nobody can act on trains people to ignore it.
+    expect(explainCaptureDistStaleness(null, 2_000)).toBeNull();
+    expect(explainCaptureDistStaleness(1_000, null)).toBeNull();
+  });
+});
 
 describe('resolveCaptureDirectoryServer', () => {
   it('serves an already-built directory and shuts down', async () => {

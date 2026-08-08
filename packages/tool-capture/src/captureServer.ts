@@ -3,7 +3,7 @@
 // URL. Each resolves to a { url, kill } handle the capture loop drives pages against.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { basename, extname, join, relative } from 'node:path';
@@ -13,6 +13,21 @@ import type { Tool } from './captureEntries.js';
 export interface Server {
   url: string;
   kill(): void;
+}
+
+/**
+ * Warns when a served build predates the newest source it was built from.
+ *
+ * Returns null when the build is at least as new as the source, so a fresh build stays silent.
+ * Timestamps are millisecond epochs; a missing one (null) yields no warning, since a comparison that
+ * could not be made must not read as a reassurance.
+ */
+export function explainCaptureDistStaleness(builtAt: number | null, sourceChangedAt: number | null): string | null {
+  if (builtAt === null || sourceChangedAt === null || builtAt >= sourceChangedAt) return null;
+  return (
+    '⚠ Serving a build older than the current source. This capture measures the PREVIOUS code, so a ' +
+    'change under test will look like it had no effect. Re-run with --build (or --dev).'
+  );
 }
 
 /** Serves an already-built directory on an ephemeral localhost port for a capture suite. */
@@ -82,32 +97,6 @@ export function resolveServer(opts: { tool?: Tool; root: string; externalUrl?: s
     proc.stderr?.on('data', scan);
     proc.on('error', reject);
   });
-}
-
-// Serve a pre-built tool dist from a lightweight Node.js HTTP server, bypassing the Vite dev
-// server and its on-demand transform overhead. Auto-builds when dist is absent; pass forceBuild to
-// always rebuild (e.g. for baseline captures that must be authoritative).
-export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild?: boolean }): Promise<Server> {
-  const { tool, root, forceBuild = false } = opts;
-
-  const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
-  const distDir = join(toolDir, 'dist');
-
-  if (!existsSync(distDir) || forceBuild) {
-    console.log(`Building tools/${tool}…`);
-    const workspace = tool === 'examples' ? '@flighthq/examples' : `tools/${tool}`;
-    const args = ['run', 'build', `--workspace=${workspace}`];
-    const result = runNpm(args, root);
-    if (result.status !== 0) {
-      return Promise.reject(new Error(`Build failed. Run "npm run build:${tool}" to debug.`));
-    }
-  }
-
-  if (!existsSync(distDir)) {
-    return Promise.reject(new Error(`No build found at ${distDir} after build. Run "npm run build:${tool}" to debug.`));
-  }
-
-  return serveDirectory(distDir);
 }
 
 function runNpm(args: readonly string[], cwd: string) {
@@ -181,3 +170,68 @@ const DEV_SCRIPT: Record<Tool, string> = {
   functional: 'dev:functional',
   reference: 'dev:reference',
 };
+
+// Serve a pre-built tool dist from a lightweight Node.js HTTP server, bypassing the Vite dev
+// server and its on-demand transform overhead. Auto-builds when dist is absent; pass forceBuild to
+// always rebuild (e.g. for baseline captures that must be authoritative).
+export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild?: boolean }): Promise<Server> {
+  const { tool, root, forceBuild = false } = opts;
+
+  const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
+  const distDir = join(toolDir, 'dist');
+
+  if (!existsSync(distDir) || forceBuild) {
+    console.log(`Building tools/${tool}…`);
+    const workspace = tool === 'examples' ? '@flighthq/examples' : `tools/${tool}`;
+    const args = ['run', 'build', `--workspace=${workspace}`];
+    const result = runNpm(args, root);
+    if (result.status !== 0) {
+      return Promise.reject(new Error(`Build failed. Run "npm run build:${tool}" to debug.`));
+    }
+  }
+
+  if (!existsSync(distDir)) {
+    return Promise.reject(new Error(`No build found at ${distDir} after build. Run "npm run build:${tool}" to debug.`));
+  }
+
+  // A capture served from a stale dist measures the code as it was BEFORE the edit under test, and
+  // answers with the pre-change result — which reads as "the change had no effect" rather than as a
+  // failure to observe it. That is the most persuasive wrong answer available, so say it out loud.
+  const staleness = explainCaptureDistStaleness(
+    newestModifiedTime(distDir),
+    newestModifiedTime(join(root, 'packages')),
+  );
+  if (staleness !== null) console.log(staleness);
+
+  return serveDirectory(distDir);
+}
+
+/** Newest modification time under a directory tree, or null when it cannot be read. */
+function newestModifiedTime(directory: string): number | null {
+  let newest: number | null = null;
+  const walk = (current: string, depth: number): void => {
+    if (depth > 6) return;
+    let entries;
+    try {
+      entries = readdirSync(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(path, depth + 1);
+        continue;
+      }
+      try {
+        const time = statSync(path).mtimeMs;
+        if (newest === null || time > newest) newest = time;
+      } catch {
+        // A file that vanished mid-walk simply does not contribute a timestamp.
+      }
+    }
+  };
+  walk(directory, 0);
+  return newest;
+}
