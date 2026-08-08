@@ -145,6 +145,9 @@ for (const name of readdirSync(SOURCE_DIRECTORY).sort()) {
     }
     // The exemption matches ASSIGNMENT, not the `=` character — a bare `=` alternative also matches
     // `==`, `===`, `!=`, `=>`, and `<=`, which would exempt any catch containing a comparison.
+    // KEEP THIS PATTERN IN STEP WITH `swf-silent-drop-shape.ts`, which carries the same form. The two
+    // once disagreed on it — one treated assignment as recording and the other did not — and nothing
+    // checks a suite for cross-instrument consistency, so the divergence surfaced only on comparison.
     if (ts.isCatchClause(node) && !/throw|reportImportDiagnostic\(|[^=!<>]=[^=>]/.test(node.block.getText(parsed))) {
       record(node, FORM_SILENT_CATCH, 'catch writes nothing');
     }

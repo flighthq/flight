@@ -188,6 +188,14 @@ conclusion.
 - A behaviour holds → run it and print the value. Two minutes of instrumentation beats an hour of
   reasoning about what the code must be doing, and it is right more often.
 
+**Run a positive control before believing an absence.** A probe fails in more ways than the thing it
+verifies, so *the content is gone* and *my probe is broken* produce the identical empty result. One
+search for a string you know is present costs a line and separates them. The instance: a probe looking
+for text in a document missed it three ways — case, line wrapping, and emphasis markers — all one
+cause, since case, wrapping, and `**` are the text's own **formatting**, and the probe searched for
+content in a form the content is never stored in. An absence is only evidence once the probe has been
+shown to find a presence.
+
 **Why it earns its own section.** Each instance is cheap to catch and expensive to carry. A checklist whose
 columns came from a remembered description of the fixes; a probe designed against a description of the
 defect rather than its mechanism, which passed against the broken code; a severity ranking built on a

@@ -20,6 +20,13 @@
 // anywhere: the reused font character id was an unguarded overwrite, and no derivation over this predicate
 // reaches it. Complete vocabulary for the predicate is not complete coverage of the harm.
 //
+// **CARRYING THIS SWEEP ELSEWHERE CHANGES WHAT ITS SIGNALS MEAN, NOT ONLY WHAT IT CAN SEE** — a distinct
+// axis from reach, and the one that misleads quietly. `reportsNearby` reads `reportImportDiagnostic(`,
+// which is THIS codebase's idiom for emitting a diagnostic. Pointed via SWEEP_DIR at a package that
+// CONSUMES diagnostics rather than emitting them — one whose idiom is `problems.push` — every site comes
+// back "reports nothing", which is a true statement about the token and a false one about the code.
+// Re-derive the resolution signal from the target's own idiom before believing a run from another tree.
+//
 // So: A MATCH IS A CANDIDATE, NOT A DEFECT, and A CLEAN RUN IS NOT EVIDENCE THAT NO SILENT DROP REMAINS.
 // It reports and does not enforce, and is deliberately absent from `npm run check`.
 //
@@ -181,6 +188,11 @@ for (const name of files) {
       // The exemption must match ASSIGNMENT, not the `=` character: a bare `=` alternative also matches
       // `==`, `===`, `!=`, `=>`, and `<=`, so any catch containing a comparison or an arrow would exempt
       // itself and the detector would go silently blind.
+      // KEEP THIS PATTERN IN STEP WITH `swf-default-collision.ts` — a suite of instruments has
+      // CROSS-INSTRUMENT CONSISTENCY as a property nobody checks. These two once disagreed on exactly
+      // this form: one treated assignment as recording and the other did not, and the divergence showed
+      // up only when a run was compared against its sibling — seven candidates became three, a 57%
+      // false-positive rate on this form. Editing one of these without the other silently reopens it.
       const body = node.block.getText(parsed);
       if (!/throw|reportImportDiagnostic\(|[^=!<>]=[^=>]/.test(body)) record(node, FORM_SWALLOWED_CATCH);
     }
