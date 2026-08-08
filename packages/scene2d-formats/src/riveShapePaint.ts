@@ -1,4 +1,5 @@
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, dashPath, flattenPath, getPathLength } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
@@ -10,6 +11,7 @@ import {
 } from '@flighthq/shape/contract';
 import type {
   CapsStyle,
+  ImportDiagnostic,
   JointStyle,
   Path,
   PathWinding,
@@ -18,7 +20,7 @@ import type {
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -34,9 +36,10 @@ export function appendRiveShapePaint(
   artboard: Readonly<RiveArtboardGraph>,
   shapeIndex: number,
   paths: readonly RivePathRecord[],
+  diagnostics?: ImportDiagnostic[] | undefined,
 ): void {
   if (paths.length === 0) return;
-  const paints = collectRivePaints(artboard, shapeIndex);
+  const paints = collectRivePaints(artboard, shapeIndex, diagnostics);
   if (paints.length === 0) {
     appendRivePaths(shape, paths, null);
     return;
@@ -395,13 +398,17 @@ function readRiveStrokeEffects(artboard: Readonly<RiveArtboardGraph>, paintIndex
   return effects;
 }
 
-function collectRivePaints(artboard: Readonly<RiveArtboardGraph>, shapeIndex: number): RivePaint[] {
+function collectRivePaints(
+  artboard: Readonly<RiveArtboardGraph>,
+  shapeIndex: number,
+  diagnostics: ImportDiagnostic[] | undefined,
+): RivePaint[] {
   const paints: RivePaint[] = [];
   for (let index = shapeIndex + 1; index < artboard.objects.length; index++) {
     if (artboard.parentIndices[index] !== shapeIndex) continue;
     const object = artboard.objects[index];
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_PAINT)) continue;
-    paints.push(createRivePaint(object, artboard, index));
+    paints.push(createRivePaint(object, artboard, index, diagnostics));
   }
   return paints;
 }
@@ -410,11 +417,12 @@ function createRivePaint(
   source: Readonly<RiveCoreObject>,
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): RivePaint {
   const stroke = isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_STROKE)
     ? {
-        caps: toRiveCaps(readRiveNumber(source, RIVE_STROKE_CAP, 0)),
-        joints: toRiveJoints(readRiveNumber(source, RIVE_STROKE_JOIN, 0)),
+        caps: toRiveCaps(readRiveNumber(source, RIVE_STROKE_CAP, 0), diagnostics),
+        joints: toRiveJoints(readRiveNumber(source, RIVE_STROKE_JOIN, 0), diagnostics),
         thickness: readRiveNumber(source, RIVE_STROKE_THICKNESS, 1),
       }
     : null;
@@ -487,15 +495,37 @@ function createRiveGradientMatrix(gradient: Readonly<RiveGradientPaint>) {
   return createGradientTransformMatrix(span, span, Math.atan2(dy, dx), gradient.startX, gradient.startY);
 }
 
-function toRiveCaps(value: number): CapsStyle {
-  if (value === 1) return 'round';
-  if (value === 2) return 'square';
+// Rive's butt cap and Flight's 'none' are the same cap, so a stated 0 is a mapping rather than a
+// fallback — and an absent property reads as 0, which is Rive's own default. Only a value outside the
+// stated three reaches the terminal arm, and that is a substitution: the stroke still draws, at full
+// length, with a cap it was not authored with. No count and no existence check can see it.
+function toRiveCaps(value: number, diagnostics: ImportDiagnostic[] | undefined): CapsStyle {
+  if (value === RIVE_CAP_ROUND) return 'round';
+  if (value === RIVE_CAP_SQUARE) return 'square';
+  if (value !== RIVE_CAP_BUTT) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.stroke-cap-substituted',
+      'createScene2DFromRiveDocument',
+      { capValue: value, substitutedAs: 'none' },
+    );
+  }
   return 'none';
 }
 
-function toRiveJoints(value: number): JointStyle {
-  if (value === 1) return 'round';
-  if (value === 2) return 'bevel';
+function toRiveJoints(value: number, diagnostics: ImportDiagnostic[] | undefined): JointStyle {
+  if (value === RIVE_JOIN_ROUND) return 'round';
+  if (value === RIVE_JOIN_BEVEL) return 'bevel';
+  if (value !== RIVE_JOIN_MITER) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.stroke-join-substituted',
+      'createScene2DFromRiveDocument',
+      { joinValue: value, substitutedAs: 'miter' },
+    );
+  }
   return 'miter';
 }
 
@@ -541,6 +571,12 @@ const RIVE_TRIM_END = 115;
 const RIVE_TRIM_OFFSET = 116;
 const RIVE_TRIM_MODE = 117;
 const RIVE_TRIM_SEQUENTIAL = 1;
+const RIVE_CAP_BUTT = 0;
+const RIVE_CAP_ROUND = 1;
+const RIVE_CAP_SQUARE = 2;
+const RIVE_JOIN_MITER = 0;
+const RIVE_JOIN_ROUND = 1;
+const RIVE_JOIN_BEVEL = 2;
 const RIVE_DASH_OFFSET = 690;
 const RIVE_DASH_OFFSET_IS_PERCENTAGE = 691;
 const RIVE_DASH_LENGTH = 692;

@@ -117,9 +117,12 @@ function createRiveArtboardImport(
   for (const shapeIndex of shapePaths.keys()) {
     const shape = nodes[shapeIndex];
     if (shape === null || shape === undefined) continue;
-    const rebuild = (): void => rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths);
+    const rebuild = (): void => rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, undefined);
     rebuilds.set(shapeIndex, rebuild);
-    rebuild();
+    // The stored closure and the first build are the same work but not the same call: only this one
+    // carries the sink. The closure runs again per animated frame, so passing it there would report
+    // the same substituted cap once per frame and inflate the counts underneath any score.
+    rebuildRiveShape(shape as Shape, artboard, shapeIndex, shapePaths, diagnostics);
   }
 
   const span = { end: artboard.streamEnd, start: artboard.streamStart };
@@ -168,6 +171,7 @@ function rebuildRiveShape(
   artboard: Readonly<RiveArtboardGraph>,
   shapeIndex: number,
   shapePaths: Map<number, RivePathRecord[]>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const records: RivePathRecord[] = [];
   for (const pathIndex of shapePaths.get(shapeIndex)?.map((record) => record.pathIndex) ?? []) {
@@ -179,7 +183,7 @@ function rebuildRiveShape(
   }
   shapePaths.set(shapeIndex, records);
   clearShapeCommands(shape);
-  appendRiveShapePaint(shape, artboard, shapeIndex, records);
+  appendRiveShapePaint(shape, artboard, shapeIndex, records, diagnostics);
 }
 
 function collectRivePathGeometry(
