@@ -73,6 +73,101 @@ export function computeSfntTableChecksum(data: Readonly<Uint8Array>, isHeadTable
 
 // Packs a four-character tag into the uint32 an sfnt directory stores it as. Tags shorter than four
 // characters are padded with spaces, which is how the format spells `cvt ` and `CFF ` — a caller
+// Encodes one simple glyph as the `glyf` table stores it: the contour ends, the hinting instructions,
+// then per-point flags and the x and y deltas the flags describe. `xs` and `ys` are ABSOLUTE coordinates
+// in font units; the deltas are computed here, because the encoding is defined over deltas and a caller
+// holding absolute points should not have to know that.
+//
+// Returns an empty array for a glyph with no contours. A `glyf` entry of length zero is how the format
+// spells "this glyph draws nothing" — a blank record with a zero contour count is NOT the same thing,
+// and writing one gives every space character a bounding box.
+//
+// ★ THE ENCODING IS A COMPRESSION, AND EVERY POINT HAS SEVERAL VALID SPELLINGS. A delta of zero can be
+// written as "same as previous" with no bytes at all; a delta within a byte can be written short with a
+// sign bit, or long as an int16. Choosing the smallest is what a font producer does, but a font that
+// chose differently is still correct — so a byte-for-byte comparison against a real font measures
+// agreement with THAT producer's choices, not correctness. Compare geometry to judge correctness.
+export function encodeSfntSimpleGlyph(
+  endPtsOfContours: readonly number[],
+  xs: readonly number[],
+  ys: readonly number[],
+  onCurve: readonly boolean[],
+  instructions: Readonly<Uint8Array>,
+  bounds: Readonly<{ xMax: number; xMin: number; yMax: number; yMin: number }>,
+): Uint8Array {
+  if (endPtsOfContours.length === 0) return new Uint8Array(0);
+
+  const pointCount = xs.length;
+  const flags: number[] = [];
+  const xBytes: number[] = [];
+  const yBytes: number[] = [];
+  let previousX = 0;
+  let previousY = 0;
+
+  for (let point = 0; point < pointCount; point += 1) {
+    const dx = xs[point]! - previousX;
+    const dy = ys[point]! - previousY;
+    previousX = xs[point]!;
+    previousY = ys[point]!;
+    let flag = onCurve[point] === true ? SFNT_GLYF_ON_CURVE : 0;
+
+    // A zero delta needs no bytes: the "same or positive" bit alone means unchanged when the matching
+    // short bit is clear, which is why these two bits cannot be read independently.
+    if (dx === 0) flag |= SFNT_GLYF_X_SAME_OR_POSITIVE;
+    else if (dx >= -255 && dx <= 255) {
+      flag |= SFNT_GLYF_X_SHORT;
+      if (dx > 0) flag |= SFNT_GLYF_X_SAME_OR_POSITIVE;
+      xBytes.push(Math.abs(dx));
+    } else xBytes.push((dx >> 8) & 0xff, dx & 0xff);
+
+    if (dy === 0) flag |= SFNT_GLYF_Y_SAME_OR_POSITIVE;
+    else if (dy >= -255 && dy <= 255) {
+      flag |= SFNT_GLYF_Y_SHORT;
+      if (dy > 0) flag |= SFNT_GLYF_Y_SAME_OR_POSITIVE;
+      yBytes.push(Math.abs(dy));
+    } else yBytes.push((dy >> 8) & 0xff, dy & 0xff);
+
+    flags.push(flag);
+  }
+
+  // Runs of identical flags collapse into one flag plus a repeat count. The count is a single byte, so
+  // a run longer than 256 becomes several repeat groups rather than one overflowing count.
+  const packedFlags: number[] = [];
+  for (let index = 0; index < flags.length; ) {
+    const flag = flags[index]!;
+    let run = 1;
+    while (index + run < flags.length && flags[index + run] === flag && run < 256) run += 1;
+    if (run > 1) packedFlags.push(flag | SFNT_GLYF_REPEAT, run - 1);
+    else packedFlags.push(flag);
+    index += run;
+  }
+
+  const size =
+    10 + endPtsOfContours.length * 2 + 2 + instructions.byteLength + packedFlags.length + xBytes.length + yBytes.length;
+  const out = new Uint8Array(size);
+  const view = new DataView(out.buffer);
+  view.setInt16(0, endPtsOfContours.length);
+  view.setInt16(2, bounds.xMin);
+  view.setInt16(4, bounds.yMin);
+  view.setInt16(6, bounds.xMax);
+  view.setInt16(8, bounds.yMax);
+  let at = 10;
+  for (const end of endPtsOfContours) {
+    view.setUint16(at, end);
+    at += 2;
+  }
+  view.setUint16(at, instructions.byteLength);
+  at += 2;
+  out.set(instructions, at);
+  at += instructions.byteLength;
+  out.set(packedFlags, at);
+  at += packedFlags.length;
+  out.set(xBytes, at);
+  at += xBytes.length;
+  out.set(yBytes, at);
+  return out;
+}
+
 // passing the unpadded name gets the same value the font carries rather than a silent mismatch.
 export function packSfntTag(tag: string): number {
   const padded = tag.padEnd(4, ' ');
@@ -87,3 +182,12 @@ export function packSfntTag(tag: string): number {
 
 const HEAD_TAG = 0x68656164;
 const HEAD_CHECKSUM_ADJUSTMENT_OFFSET = 8;
+
+// Point flag bits, as the `glyf` format defines them. The two SAME_OR_POSITIVE bits do double duty:
+// with the matching SHORT bit set they carry the sign, and with it clear they mean the delta is zero.
+const SFNT_GLYF_ON_CURVE = 0x01;
+const SFNT_GLYF_REPEAT = 0x08;
+const SFNT_GLYF_X_SAME_OR_POSITIVE = 0x10;
+const SFNT_GLYF_X_SHORT = 0x02;
+const SFNT_GLYF_Y_SAME_OR_POSITIVE = 0x20;
+const SFNT_GLYF_Y_SHORT = 0x04;
