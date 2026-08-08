@@ -30,8 +30,9 @@ capability belongs to every Cairo target rather than to one node kind, it belong
 ## What Flight owes it
 
 Nothing beyond what `render-cairo` needs. The registration contract it consumes —
-`registerRenderer(state, Kind, renderer)`, the `Renderer` interface (`createData` / `submit` /
-`drawMask`), and `prepareScene2DRender` — is already host-neutral and unchanged. The per-kind
+`registerRenderer(state, Kind, renderer)`, the `Renderer` interface (`createData` / `submit`, with
+`format` / `destroyData` / `isDirty` optional), and `prepareScene2DRender` — is already host-neutral
+and unchanged. Masking resolves through `clip`/`path`, not a renderer member. The per-kind
 `*Kind` identifiers are plain strings owned by the packages that define them, so they carry across
 without a seam.
 

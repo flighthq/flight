@@ -177,7 +177,7 @@ Use the graph-feature aliases — `HierarchyNode`, `GraphAppearanceNode`, `Trans
 
 ### Renderer Registration
 
-Rendering is opt-in and kind-based: concrete renderers are registered against a `*Kind` with `registerRenderer(state, FooKind, renderer)`. A renderer provides `createData(state, source)` (per-node renderer data, `null` if none is needed), `draw(state, renderNode)`, and `drawMask(state, renderNode)` (display objects only).
+Rendering is opt-in and kind-based: concrete renderers are registered against a `*Kind` with `registerRenderer(state, FooKind, renderer)`. A renderer provides `createData(state, source)` (per-node renderer data, `null` if none is needed) and `submit(state, renderProxy)`, plus the optional `format`, `destroyData`, and `isDirty`. Masking is not a renderer member — it resolves through `clip`/`path`.
 
 Before drawing, an update pass must propagate transforms, alpha, visibility, and blend mode from the scene graph into render nodes: call `prepareScene2DRender(state, source)` or `prepareScene3DRender(state, source)` before any draw call. Tests that skip this step see default or stale render node values.
 

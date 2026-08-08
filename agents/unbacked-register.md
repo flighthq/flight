@@ -43,12 +43,12 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | # | Class | Commit (integration's post-apply hash) | Claim | Cause | Provenance |
 |---|---|---|---|---|---|
 | 1 | `capture-baseline` | `28b7d7f03` | builder4: swf-import baseline recapture landed on capture evidence alone (DOM/canvas/WebGL/WebGPU 0 changed, 0 failed; regression 0.00) | A | as-reported |
-| 2 | `mutation-test` | `56a794304` | builder4: removing DOM Bitmap registration changed the Sprite | B | as-reported |
+| 2 | `mutation-test` | **unresolved** | builder4: removing DOM Bitmap registration changed the Sprite | B | as-reported, **commit unresolved** |
 | 3 | `live-acceptance` | `14f9e73de` | builder: byte-exact and hash-exact against the pinned 0.1.0 release | A | as-reported |
 | 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B | as-reported |
 | 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
-| 7 | `untested-instrument` | `d77b5c2fa` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree |
+| 7 | `untested-instrument` | **unresolved** | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree, **commit unresolved** |
 
 **Where nothing recomputes, no number — and this file is the one place that rule inverts.** A claim
 column records *what a sender asserted*, so its figures are the evidence and must be kept verbatim
@@ -57,30 +57,25 @@ with their provenance mark; stripping them would leave a register that cannot sa
 guard count that nothing recomputed, and that figure is now a command. **Applying the rule to the
 quoted claims instead would be the over-compliance direction: an absence that looks like discipline.**
 
-**Row 7 carries no magnitudes, deliberately, and anticipated that rule without generalising it.** It first read *415 lines, 19 functions, 7 dependents*;
-a reader at the integrated tree reported *240, 13-of-which-3-exported, 5*; and the author then measured
-every commit that touched the file and found **both sets exactly right, at different commits.** Neither
-had mis-measured, and **nobody could disagree, because the row carried no tree identity for them to
-disagree about.**
+**Two commit hashes in the table above did not survive re-reading, and both are marked unresolved
+rather than repaired.** Row 2's `56a794304` resolves to `fix(resources): decode embedded images as
+bitmaps`, which touches `packages/image` and `packages/scene3d-resources` and no DOM file; no commit
+in the merged tree matches the claim. Row 7's `d77b5c2fa` is not a valid object in this tree at all.
+**The claims may still be true — the references are not**, and inventing a plausible substitute is
+the one repair this file exists to prevent.
 
-**But the two readings are not equally in-population, and saying "both correct at their own commits"
-was too generous.** Exactly one commit in the merged tree has ever touched that file; the author's
-three further commits are **not missing from a stale tree, they are unlanded** — legitimately, from an
-arc not yet offered. **This register describes the merged tree, so the merged-tree reading is the
-correct one here and the other is a true reading of a tree the register is not about.** If a row ever
-carries a magnitude again it must be the merged-tree one, stamped **tree and blob** — the blob pins the
-file even when a later commit has identical content, and it is what makes two readings comparable at
-all.
+**Row 7 previously carried a long argument about which of two magnitude readings was in-population.
+It rested on "exactly one commit in the merged tree has ever touched that file", which is false —
+seven have — and both readings (*415 lines, 19 functions, 7 dependents* and *240, 13-of-which-3-
+exported, 5*) are now superseded.** Measured at `328d5fdc7`, blob `6a9e0f5c3`: **590 lines, 8
+exported functions, 9 dependents.** Recompute rather than quote:
+`wc -l packages/font-formats/src/openTypeTestHelper.ts`.
 
-Two things came out of that, and both outlive the row. **The magnitudes were never the entry** — the
-finding is that a helper several test files depend on is itself unchecked, so a fault in it is agreed
-with rather than caught, and that stays true at every commit while the counts go stale on the next
-touch. **And the correction arrived looking like an improvement because it was more precise** —
-*13 of which 3 exported* reads as better work than a flat *19* — **from an older tree. Precision
-persuades independently of currency.** If a row ever needs a magnitude, stamp it with the commit
-subject it was read at.
-
-**What the second reading did add, and it is worth more than either count: it reached the file from an
+**The magnitudes were never the entry.** The finding is that a helper several test files depend on is
+itself unchecked, so a fault in it is agreed with rather than caught — true at every commit, while
+the counts go stale on the next touch. Two things survive the correction: **a more precise reading
+persuades independently of its currency** (*13 of which 3 exported* reads as better work than a flat
+*19*, from an older tree), and **the second reading's real contribution was reaching the file from an
 applied tree**, which is independent confirmation the author's clone-local claim could not supply.
 
 **Entry 1 stays registered rather than reverted.** A marked unbacked claim is a known state; an
