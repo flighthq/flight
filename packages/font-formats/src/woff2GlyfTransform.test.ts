@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createWoff2TransformReverser,
   decodeWoff2Triplet,
   getWoff2BboxBitmapByteLength,
   hasWoff2GlyphBbox,
@@ -27,6 +28,30 @@ function transformedGlyf(sizes: readonly number[], glyphCount = 3, indexFormat =
   });
   return out;
 }
+
+describe('createWoff2TransformReverser', () => {
+  it('refuses a transformed table it does not implement', () => {
+    // Passing the transformed bytes through under the table's own tag would assemble a font whose
+    // directory says `hmtx` over something that is not one — readable, wrong and silent.
+    const reverse = createWoff2TransformReverser();
+    expect(reverse('hmtx', new Uint8Array(4), new Map())).toBeNull();
+  });
+
+  it('answers loca even when it is asked for before glyf', () => {
+    // Reversal order is the container's choice, not ours, so neither tag may depend on arriving first.
+    const transformed = transformedGlyf([6, 0, 0, 0, 0, 0, 0], 3);
+    new DataView(transformed.buffer).setUint16(6, 1);
+    // The helper fills each stream with a marker byte; zeroed contour counts make these blank glyphs,
+    // which is the smallest font that exercises the ordering rather than the decoding.
+    transformed.fill(0, 36, 42);
+    const tables = new Map([['glyf', transformed]]);
+    expect(createWoff2TransformReverser()('loca', new Uint8Array(0), tables)).not.toBeNull();
+  });
+
+  it('returns the sentinel for loca when no glyf accompanies it', () => {
+    expect(createWoff2TransformReverser()('loca', new Uint8Array(0), new Map())).toBeNull();
+  });
+});
 
 describe('decodeWoff2Triplet', () => {
   const bytes = Uint8Array.from([0x12, 0x34, 0x56, 0x78]);
@@ -132,6 +157,19 @@ describe('isWoff2PointOnCurve', () => {
   });
 });
 
+// Component records as the `glyf` format writes them: uint16 flags, uint16 glyph index, then the
+// argument and transform bytes the flags call for. The bodies are left zero — only the sizes are read.
+function composite(components: readonly { flags: number }[]): Uint8Array {
+  const parts: number[] = [];
+  for (const { flags } of components) {
+    parts.push(flags >> 8, flags & 0xff, 0, 0);
+    for (let index = 0; index < ((flags & 0x0001) !== 0 ? 4 : 2); index += 1) parts.push(0);
+    const transform = (flags & 0x0008) !== 0 ? 2 : (flags & 0x0040) !== 0 ? 4 : (flags & 0x0080) !== 0 ? 8 : 0;
+    for (let index = 0; index < transform; index += 1) parts.push(0);
+  }
+  return new Uint8Array(parts);
+}
+
 describe('measureWoff2CompositeGlyph', () => {
   it('sizes a single component from its argument width', () => {
     // Flags and glyph index are four bytes, then the placement arguments: two bytes as signed bytes, or
@@ -179,19 +217,6 @@ describe('measureWoff2CompositeGlyph', () => {
     expect(measureWoff2CompositeGlyph(composite([{ flags: 0 }]).subarray(0, 5), 0)).toBeNull();
   });
 });
-
-// Component records as the `glyf` format writes them: uint16 flags, uint16 glyph index, then the
-// argument and transform bytes the flags call for. The bodies are left zero — only the sizes are read.
-function composite(components: readonly { flags: number }[]): Uint8Array {
-  const parts: number[] = [];
-  for (const { flags } of components) {
-    parts.push(flags >> 8, flags & 0xff, 0, 0);
-    for (let index = 0; index < ((flags & 0x0001) !== 0 ? 4 : 2); index += 1) parts.push(0);
-    const transform = (flags & 0x0008) !== 0 ? 2 : (flags & 0x0040) !== 0 ? 4 : (flags & 0x0080) !== 0 ? 8 : 0;
-    for (let index = 0; index < transform; index += 1) parts.push(0);
-  }
-  return new Uint8Array(parts);
-}
 
 describe('readWoff2GlyfStreams', () => {
   it('carves the seven streams in their declared order', () => {

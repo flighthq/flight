@@ -16,6 +16,43 @@ import { encodeSfntCompositeGlyph, encodeSfntLoca, encodeSfntSimpleGlyph } from 
 
 const WOFF2_GLYF_HEADER_BYTES = 36;
 
+// Builds the `reverseTransform` callback `readWoff2Font` takes. Create one per font: it holds the
+// reversal's second output between the two calls that need it, so it is not reusable across fonts.
+//
+// ★ ONE REVERSAL PRODUCES TWO TABLES, BUT THE SEAM ASKS FOR ONE TABLE AT A TIME. Reversing the `glyf`
+// transform necessarily rebuilds `loca` as well — the offsets are only knowable once every record has
+// been laid out — yet the callback is invoked once per tag. A stateless implementation would therefore
+// walk all seven streams TWICE per font, once to answer `glyf` and again to answer `loca`, which is the
+// most expensive part of opening the file. Holding the pair is what avoids that.
+//
+// A WOFF2 whose `glyf` is transformed always marks `loca` transformed too, with a transformed length of
+// zero, because its contents are entirely derived. Asking for `loca` first is handled: the reversal runs
+// from the `glyf` bytes in `tables` whichever tag arrives first.
+export function createWoff2TransformReverser(): (
+  tag: string,
+  transformed: Readonly<Uint8Array>,
+  tables: ReadonlyMap<string, Uint8Array>,
+) => Uint8Array | null {
+  let reversed: { glyf: Uint8Array; loca: Uint8Array } | null = null;
+
+  const reverse = (glyfBytes: Readonly<Uint8Array> | undefined): boolean => {
+    if (reversed !== null) return true;
+    if (glyfBytes === undefined) return false;
+    const streams = readWoff2GlyfStreams(glyfBytes);
+    if (streams === null) return false;
+    reversed = reverseWoff2GlyfTransform(streams);
+    return reversed !== null;
+  };
+
+  return (tag, transformed, tables) => {
+    if (tag === 'glyf') return reverse(transformed) ? reversed!.glyf : null;
+    if (tag === 'loca') return reverse(tables.get('glyf')) ? reversed!.loca : null;
+    // Any other transformed table is a transform this package does not implement, and refusing is what
+    // stops a font being assembled with transformed bytes under an untransformed tag.
+    return null;
+  };
+}
+
 // One point's coordinate delta, decoded from the flag's low seven bits and the bytes that follow it in
 // the glyph stream. `used` is how many glyph-stream bytes this point consumed.
 //
@@ -222,6 +259,25 @@ export function readWoff2GlyfStreams(transformed: Readonly<Uint8Array>): Woff2Gl
   };
 }
 
+// The high bit of a `flagStream` byte. Named rather than inlined because the value is unremarkable
+// and the SENSE is not: set means off-curve, which is the opposite of the `glyf` convention.
+const WOFF2_POINT_OFF_CURVE = 0x80;
+
+// Composite component flags. These are interface facts about the `glyf` format, which a composite
+// glyph's records are written in unchanged — the transform reorders whole glyphs, it does not re-encode
+// a component record.
+const WOFF2_COMPONENT_ARGS_ARE_WORDS = 0x0001;
+const WOFF2_COMPONENT_HAS_INSTRUCTIONS = 0x0100;
+const WOFF2_COMPONENT_HAS_SCALE = 0x0008;
+const WOFF2_COMPONENT_HAS_TWO_BY_TWO = 0x0080;
+const WOFF2_COMPONENT_HAS_XY_SCALE = 0x0040;
+const WOFF2_COMPONENT_MORE_COMPONENTS = 0x0020;
+
+const WOFF2_SHORT_WORD = 253;
+const WOFF2_SHORT_ONE_MORE_BYTE_2 = 254;
+const WOFF2_SHORT_ONE_MORE_BYTE_1 = 255;
+const WOFF2_SHORT_LOWEST = 253;
+
 // 255UInt16: a variable-length count used for point-per-contour and instruction lengths. Three escape
 // codes extend a single byte's range, and reading one with the wrong escape yields a plausible small
 // number rather than an error — which is why the codes are named rather than inlined.
@@ -254,24 +310,31 @@ export function readWoff2Short(bytes: Readonly<Uint8Array>, cursor: { at: number
   return code;
 }
 
-// The high bit of a `flagStream` byte. Named rather than inlined because the value is unremarkable
-// and the SENSE is not: set means off-curve, which is the opposite of the `glyf` convention.
-const WOFF2_POINT_OFF_CURVE = 0x80;
+const EMPTY_BYTES = new Uint8Array(0);
 
-// Composite component flags. These are interface facts about the `glyf` format, which a composite
-// glyph's records are written in unchanged — the transform reorders whole glyphs, it does not re-encode
-// a component record.
-const WOFF2_COMPONENT_ARGS_ARE_WORDS = 0x0001;
-const WOFF2_COMPONENT_HAS_INSTRUCTIONS = 0x0100;
-const WOFF2_COMPONENT_HAS_SCALE = 0x0008;
-const WOFF2_COMPONENT_HAS_TWO_BY_TWO = 0x0080;
-const WOFF2_COMPONENT_HAS_XY_SCALE = 0x0040;
-const WOFF2_COMPONENT_MORE_COMPONENTS = 0x0020;
+function measurePointBounds(
+  xs: readonly number[],
+  ys: readonly number[],
+): { xMax: number; xMin: number; yMax: number; yMin: number } {
+  let xMax = xs[0] ?? 0;
+  let xMin = xs[0] ?? 0;
+  let yMax = ys[0] ?? 0;
+  let yMin = ys[0] ?? 0;
+  for (let index = 1; index < xs.length; index += 1) {
+    if (xs[index]! < xMin) xMin = xs[index]!;
+    if (xs[index]! > xMax) xMax = xs[index]!;
+    if (ys[index]! < yMin) yMin = ys[index]!;
+    if (ys[index]! > yMax) yMax = ys[index]!;
+  }
+  return { xMax, xMin, yMax, yMin };
+}
 
-const WOFF2_SHORT_WORD = 253;
-const WOFF2_SHORT_ONE_MORE_BYTE_2 = 254;
-const WOFF2_SHORT_ONE_MORE_BYTE_1 = 255;
-const WOFF2_SHORT_LOWEST = 253;
+function padToEven(record: Readonly<Uint8Array>): Uint8Array {
+  if (record.byteLength % 2 === 0) return record as Uint8Array;
+  const padded = new Uint8Array(record.byteLength + 1);
+  padded.set(record);
+  return padded;
+}
 
 // Re-interleaves the seven sub-streams back into a `glyf` table and the `loca` that indexes it. This is
 // the reversal the whole transform exists to be undone by: every other export here reads one piece, and
@@ -392,30 +455,4 @@ export function reverseWoff2GlyfTransform(
     at += record.byteLength;
   }
   return { glyf, loca };
-}
-
-const EMPTY_BYTES = new Uint8Array(0);
-
-function measurePointBounds(
-  xs: readonly number[],
-  ys: readonly number[],
-): { xMax: number; xMin: number; yMax: number; yMin: number } {
-  let xMax = xs[0] ?? 0;
-  let xMin = xs[0] ?? 0;
-  let yMax = ys[0] ?? 0;
-  let yMin = ys[0] ?? 0;
-  for (let index = 1; index < xs.length; index += 1) {
-    if (xs[index]! < xMin) xMin = xs[index]!;
-    if (xs[index]! > xMax) xMax = xs[index]!;
-    if (ys[index]! < yMin) yMin = ys[index]!;
-    if (ys[index]! > yMax) yMax = ys[index]!;
-  }
-  return { xMax, xMin, yMax, yMin };
-}
-
-function padToEven(record: Readonly<Uint8Array>): Uint8Array {
-  if (record.byteLength % 2 === 0) return record as Uint8Array;
-  const padded = new Uint8Array(record.byteLength + 1);
-  padded.set(record);
-  return padded;
 }
