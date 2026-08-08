@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 
+import { isImportConformanceFixtureReference } from '../swf/swf-capability-index';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
 import {
   createImportConformanceCaseIdentity,
   createImportConformanceSingleMemberCaseIdentity,
@@ -22,8 +24,6 @@ import type {
 } from './import-conformance-core';
 import { NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY } from './import-conformance-diagnostic-evidence';
 import { parseImportConformanceScore } from './import-conformance-score';
-import { isImportConformanceFixtureReference } from './swf-capability-index';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

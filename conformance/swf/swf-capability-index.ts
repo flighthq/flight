@@ -10,15 +10,15 @@ import {
   getFixtureTreePath,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
-} from './fixtures';
-import { isImportConformancePackFileReference } from './import-conformance-case';
+} from '../../scripts/fixtures';
+import { isImportConformancePackFileReference } from '../core/import-conformance-case';
 import {
   buildImportConformanceCapabilityIndex,
   parseImportConformanceCapabilityDefinitions,
-} from './import-conformance-core';
-import type { ImportConformanceCapabilityIndex } from './import-conformance-core';
-import type { ImportConformanceScoreDeclarations } from './import-conformance-core';
-import type { ImportConformanceDenominators } from './import-conformance-denominator';
+} from '../core/import-conformance-core';
+import type { ImportConformanceCapabilityIndex } from '../core/import-conformance-core';
+import type { ImportConformanceScoreDeclarations } from '../core/import-conformance-core';
+import type { ImportConformanceDenominators } from '../core/import-conformance-denominator';
 import { probeSwfCapabilities } from './swf-capability-probe';
 
 export const SWF_CAPABILITY_CONVENTION_REVISION = 'unresolved-individuation-v1';
@@ -261,7 +261,7 @@ const SWF_FIXTURE_PACK_FILE_POLICY = {
 export function isImportConformanceFixtureReference(reference: string): boolean {
   return isImportConformancePackFileReference(reference, SWF_FIXTURE_PACK_FILE_POLICY);
 }
-const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
 if (resolve(process.argv[1] ?? '') === resolve(SCRIPT_PATH)) {

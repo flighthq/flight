@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
 import {
   compareImportConformanceScores,
   formatImportConformanceRatchetReport,
@@ -25,7 +26,6 @@ import type {
   ImportConformanceScore,
   ImportConformanceUnmeasuredCapability,
 } from './import-conformance-score';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 describe('compareImportConformanceScores', () => {
   it('passes stable keyed evidence and allows an unmeasured capability to gain its first witness', () => {

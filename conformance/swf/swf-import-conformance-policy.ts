@@ -1,4 +1,4 @@
-import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+import type { ImportConformanceDiagnosticEvidencePolicy } from '../core/import-conformance-diagnostic-evidence';
 
 export const SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY: ImportConformanceDiagnosticEvidencePolicy = {
   detail: [

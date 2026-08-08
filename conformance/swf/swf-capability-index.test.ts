@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from './fixtures';
-import { deriveImportConformanceCapabilityScopedUnknownEvidence } from './import-conformance-score';
+import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures';
+import { deriveImportConformanceCapabilityScopedUnknownEvidence } from '../core/import-conformance-score';
 import {
   createSwfImportConformanceDenominators,
   SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
@@ -113,7 +113,7 @@ describe('swf-capability-index CLI', () => {
 
 function runCli(root: string) {
   return spawnSync(process.execPath, ['--import', 'tsx', join(import.meta.dirname, 'swf-capability-index.ts')], {
-    cwd: join(import.meta.dirname, '..'),
+    cwd: join(import.meta.dirname, '../..'),
     encoding: 'utf8',
     env: { ...process.env, FLIGHT_FIXTURES_DIR: root },
   });

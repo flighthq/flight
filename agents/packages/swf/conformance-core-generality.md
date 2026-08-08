@@ -5,10 +5,9 @@ updated: 2026-08-08
 
 # Conformance core generality — what a format-agnostic core may not assume
 
-**Read this before extracting anything from the SWF conformance scoreboard into a shared core.** No
-such core exists. This document records a constraint on one that does not, derived by attempting to
-scope a second format against it, and it is here because a constraint discovered at a boundary is
-re-derived expensively once the boundary is out of view.
+**Read this before changing the shared code in `conformance/core/`.** This document records the boundary
+constraints derived by attempting to scope a second format against it, and it is here because a
+constraint discovered at a boundary is re-derived expensively once the boundary is out of view.
 
 ## The finding
 
@@ -116,37 +115,37 @@ Independently checked against the tree. Cited by file and symbol so each line ca
 **Genuine coupling, must be generalised.**
 
 1. **CLI and orchestration** are fixed to `swf-ruffle-fixtures`/full —
-   `import-conformance-process.ts::{ImportConformanceExhaustiveArguments, ImportConformanceSubsetArguments, parseImportConformanceArguments, PACK_ID}`;
-   `import-conformance.ts::{runImportConformanceProcess, findFixtureTree, readCapabilityDefinitions, readInstrumentationMapping, PACK_ID, PACK_VARIANT, CAPABILITY_PATH, INSTRUMENTATION_PATH}`.
-2. **Corpus discovery and probing** — `swf-capability-index.ts::{buildSwfCapabilityIndex, inventoryImportConformanceCorpus}`;
-   `import-conformance-core.ts::isImportConformanceFixtureReference`;
-   `swf-capability-probe.ts::{probeSwfCapabilities, probeTagStream, uncompressSwf, ProbeReader, DIRECT_TAG_CAPABILITIES}`.
-3. **Execution leaf** — `swf-import-conformance-worker.ts` registers Deflate and calls `createScene2DFromSwf`.
-4. **Classifier policy**, two hooks — `import-conformance-classifier.ts::{SwfImportConformanceObservation, isCauseUnknownDiagnostic, isNoDecompressorDiagnostic}`.
+   `conformance/core/import-conformance-process.ts::{ImportConformanceExhaustiveArguments, ImportConformanceSubsetArguments, parseImportConformanceArguments, PACK_ID}`;
+   `conformance/core/import-conformance.ts::{runImportConformanceProcess, findFixtureTree, readCapabilityDefinitions, readInstrumentationMapping, PACK_ID, PACK_VARIANT, CAPABILITY_PATH, INSTRUMENTATION_PATH}`.
+2. **Corpus discovery and probing** — `conformance/swf/swf-capability-index.ts::{buildSwfCapabilityIndex, inventoryImportConformanceCorpus}`;
+   `conformance/core/import-conformance-core.ts::isImportConformanceFixtureReference`;
+   `conformance/swf/swf-capability-probe.ts::{probeSwfCapabilities, probeTagStream, uncompressSwf, ProbeReader, DIRECT_TAG_CAPABILITIES}`.
+3. **Execution leaf** — `conformance/swf/swf-import-conformance-worker.ts` registers Deflate and calls `createScene2DFromSwf`.
+4. **Classifier policy**, two hooks — `conformance/core/import-conformance-classifier.ts::{SwfImportConformanceObservation, isCauseUnknownDiagnostic, isNoDecompressorDiagnostic}`.
 5. **Reusable-looking core leaks SWF names and policy** —
-   `import-conformance-core.ts::{ImportConformanceCapabilityIndex, buildImportConformanceCapabilityIndex, parseImportConformanceCapabilityDefinitions, createImportConformanceScore, classifyRetainedProbeEvidence}`;
-   `import-conformance-score.ts::{IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS, ImportConformanceDenominators, parseDenominators, classifyRetainedFixtureOutcome}`;
-   `import-conformance-format.ts::formatExercisedDenominator`; `check-import-conformance-ratchet.ts::formatExercisedDenominator`.
-6. **Source hashing** fixes only the namespace salt — `import-conformance-runner-core.ts::hashImportConformanceImporterSource`; the source directory is already an argument, only `swf-importer-source-v1` is fixed.
+   `conformance/core/import-conformance-core.ts::{ImportConformanceCapabilityIndex, buildImportConformanceCapabilityIndex, parseImportConformanceCapabilityDefinitions, createImportConformanceScore, classifyRetainedProbeEvidence}`;
+   `conformance/core/import-conformance-score.ts::{IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS, ImportConformanceDenominators, parseDenominators, classifyRetainedFixtureOutcome}`;
+   `conformance/core/import-conformance-format.ts::formatExercisedDenominator`; `conformance/core/check-import-conformance-ratchet.ts::formatExercisedDenominator`.
+6. **Source hashing** fixes only the namespace salt — `conformance/core/import-conformance-runner-core.ts::hashImportConformanceImporterSource`; the source directory is already an argument, only `swf-importer-source-v1` is fixed.
 
 **Under-specified, and easy to under-price.**
 
 - **Retained diagnostic evidence** is shaped around current SWF diagnostics across three layers
-  (`import-conformance-diagnostic-evidence.ts::retainDecidedDetail` fixes `characterId`/`frame`/`sceneCount`/deflate/lzma;
-  `import-conformance-runner-core.ts::parseRetainedDiagnosticDetail`;
-  `import-conformance-score.ts::{ImportConformanceFixtureDiagnosticDetail, parseFixtureDiagnosticDetail}`). A generic core needs a per-format evidence policy or a genuinely common detail schema.
-- **Fixture-pack policy is more than a suffix** — `swf-capability-index.ts::inventoryImportConformanceCorpus` excludes `LICENSES` and `ROOT_METADATA_NAMES` and binds completeness to `verifiedFixtureFiles`. Pack-adapter behaviour, not core behaviour.
+  (`conformance/core/import-conformance-diagnostic-evidence.ts::retainDecidedDetail` fixes `characterId`/`frame`/`sceneCount`/deflate/lzma;
+  `conformance/core/import-conformance-runner-core.ts::parseRetainedDiagnosticDetail`;
+  `conformance/core/import-conformance-score.ts::{ImportConformanceFixtureDiagnosticDetail, parseFixtureDiagnosticDetail}`). A generic core needs a per-format evidence policy or a genuinely common detail schema.
+- **Fixture-pack policy is more than a suffix** — `conformance/swf/swf-capability-index.ts::inventoryImportConformanceCorpus` excludes `LICENSES` and `ROOT_METADATA_NAMES` and binds completeness to `verifiedFixtureFiles`. Pack-adapter behaviour, not core behaviour.
 - ⚠ **The largest genuine core design seam: denominator validation hard-codes the present measurement
-  method** — `import-conformance-score.ts::{ImportConformanceDenominators, parseDenominators, parseIndividuationMargin}`;
-  `import-conformance-core.ts::{ImportConformanceScoreDeclarations, assertImporterDeclaredCensus, assertIndividuationMargin}`.
+  method** — `conformance/core/import-conformance-score.ts::{ImportConformanceDenominators, parseDenominators, parseIndividuationMargin}`;
+  `conformance/core/import-conformance-core.ts::{ImportConformanceScoreDeclarations, assertImporterDeclaredCensus, assertIndividuationMargin}`.
 - **Test migration was absent from the original inventory.** Real edits concentrate in assertions for the fixed pack, prefix, `swfFormat`, no-decompressor ordering, and retained-detail policy. Most of the ~4,285 nominally generic test lines use SWF ids as *example data* and need no rewrite.
 
 **Already an adapter — a core does not touch these, and counting them inflates the price.**
 
-- `swf-capability-probe.ts` is 623 lines of real SWF logic and **already is the desired adapter**. A second format supplies another probe; nothing here is rewritten or parameterised.
-- `swf-capability-index.ts` already calls the generic `buildImportConformanceCapabilityIndex` and passes declarations through `ImportConformanceScoreDeclarations`; its constants stay adapter-owned, and `deriveImportConformanceCapabilityScopedUnknownEvidence` is already format-neutral.
-- `swf-import-conformance-worker-protocol.ts` and `swf-import-conformance-worker-pool.ts` are structurally generic transport/scheduling but for `Swf` names and a fixed worker URL. **Only** `swf-import-conformance-worker.ts` imports the SWF package.
-- `import-conformance-classifier.ts` is mostly shared `ImportDiagnosticSeverity` ordering; its SWF surface is the observation type name and two diagnostic predicates.
+- `conformance/swf/swf-capability-probe.ts` is 623 lines of real SWF logic and **already is the desired adapter**. A second format supplies another probe; nothing here is rewritten or parameterised.
+- `conformance/swf/swf-capability-index.ts` already calls the generic `buildImportConformanceCapabilityIndex` and passes declarations through `ImportConformanceScoreDeclarations`; its constants stay adapter-owned, and `deriveImportConformanceCapabilityScopedUnknownEvidence` is already format-neutral.
+- `conformance/swf/swf-import-conformance-worker-protocol.ts` and `conformance/swf/swf-import-conformance-worker-pool.ts` are structurally generic transport/scheduling but for `Swf` names and a fixed worker URL. **Only** `conformance/swf/swf-import-conformance-worker.ts` imports the SWF package.
+- `conformance/core/import-conformance-classifier.ts` is mostly shared `ImportDiagnosticSeverity` ordering; its SWF surface is the observation type name and two diagnostic predicates.
 
 **Limit on this inventory.** The *too-high* side was checked independently. The *omission* side was not:
 the auditor had already read the estimate being checked before sweeping the code, so active enumeration

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { FIXTURE_RELEASE_TAG } from './fixtures';
+import { FIXTURE_RELEASE_TAG } from '../../scripts/fixtures';
 
 describe('import-conformance CLI', () => {
   it(
@@ -75,7 +75,7 @@ describe('import-conformance CLI', () => {
 
 function runCli(fixtureDirectory: string, args: readonly string[], shard?: string) {
   return spawnSync(process.execPath, ['--import', 'tsx', join(import.meta.dirname, 'import-conformance.ts'), ...args], {
-    cwd: join(import.meta.dirname, '..'),
+    cwd: join(import.meta.dirname, '../..'),
     encoding: 'utf8',
     env: { ...process.env, FLIGHT_CONFORMANCE_SHARD: shard, FLIGHT_FIXTURES_DIR: fixtureDirectory },
   });
