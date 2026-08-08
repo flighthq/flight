@@ -22,6 +22,13 @@ export const MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID = 'md5.tangent-split-differe
 export const MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID = 'md5.tangent-code-path-cross-check';
 
 export type Md5TangentOracleState = 'failed' | 'not-run' | 'passed';
+export type Md5TangentFrameOracleSelection = 'all' | 'handedness';
+export type Md5TangentHandednessXCorrelation =
+  | 'indeterminate'
+  | 'split-opposite-sign-to-x'
+  | 'split-same-sign-as-x'
+  | 'uniform-negative'
+  | 'uniform-positive';
 
 export interface Md5TangentCodePathCrossCheckOracle {
   calculation: 'per-triangle-uv-jacobian-solve-and-generalized-gram-schmidt';
@@ -70,8 +77,33 @@ export interface Md5TangentHandednessOracle {
   minimumCertainDeterminantMagnitude: number | null;
   mismatchingTriangles: number;
   notRunReason?: 'mesh-geometry-missing' | 'source-topology-unreadable' | 'uv-winding-indeterminate';
+  sections: readonly Md5TangentHandednessSectionOracle[];
   state: Md5TangentOracleState;
   triangleCount: number;
+  xCorrelationRule: 'majority-direction-with-tie-indeterminate';
+  xSideComparison: 'triangle-centroid-sign-vs-observed-float32-rounding-cell';
+}
+
+export interface Md5TangentHandednessSectionOracle {
+  indeterminateUvWindingTriangles: number;
+  invalidTriangles: number;
+  matchingTriangles: number;
+  mismatchingTriangles: number;
+  mixedTangentHandednessTriangles: number;
+  negativeTangentHandednessTriangles: number;
+  negativeUvWindingTriangles: number;
+  negativeXNegativeHandednessTriangles: number;
+  negativeXPositiveHandednessTriangles: number;
+  oppositeSignToXTriangles: number;
+  positiveTangentHandednessTriangles: number;
+  positiveUvWindingTriangles: number;
+  positiveXNegativeHandednessTriangles: number;
+  positiveXPositiveHandednessTriangles: number;
+  sameSignAsXTriangles: number;
+  section: number;
+  triangleCount: number;
+  xCorrelation: Md5TangentHandednessXCorrelation;
+  xSideIndeterminateTriangles: number;
 }
 
 export interface Md5TangentSplitPairMeasurement {
@@ -101,7 +133,7 @@ export interface Md5TangentFrameOracles {
 }
 
 export interface Md5TangentFrameOracleCorpusCaseMeasured {
-  oracles: Md5TangentFrameOracles;
+  oracles: Partial<Md5TangentFrameOracles>;
   reference: string;
   state: 'measured';
 }
@@ -128,6 +160,7 @@ export interface Md5TangentFrameOracleCorpusReport {
   importNotRunMeshFiles: number;
   measuredMeshFiles: number;
   notRunReason?: 'md5-mesh-fixtures-absent' | 'md5-mesh-imports-failed';
+  selection: Md5TangentFrameOracleSelection;
   state: 'measured' | 'not-run';
 }
 
@@ -140,6 +173,7 @@ interface GeometrySection {
   geometry: Readonly<MeshGeometry>;
   normalOffset: number;
   outputToSource: readonly number[];
+  positionOffset: number;
   source: SourceSection;
   tangentOffset: number;
   uvOffset: number;
@@ -168,13 +202,18 @@ export function runMd5TangentFrameOracles(scene: Readonly<Scene3D>, meshSource: 
 export function runMd5TangentFrameOracleCorpus(
   treeDirectory: string,
   verifiedFixtureFiles: number,
+  selection: Md5TangentFrameOracleSelection = 'all',
 ): Md5TangentFrameOracleCorpusReport {
   const references = collectMd5MeshReferences(treeDirectory);
   const cases: Md5TangentFrameOracleCorpusCase[] = references.map((reference) => {
     try {
       const source = readFileSync(join(treeDirectory, reference), 'utf8');
       const scene = createScene3DFromMd5Mesh(source);
-      return { oracles: runMd5TangentFrameOracles(scene, source), reference, state: 'measured' };
+      const oracles =
+        selection === 'handedness'
+          ? { handedness: measureMd5TangentHandedness(scene, source) }
+          : runMd5TangentFrameOracles(scene, source);
+      return { oracles, reference, state: 'measured' };
     } catch {
       return { notRunReason: 'mesh-source-or-import-unreadable', reference, state: 'not-run' };
     }
@@ -195,6 +234,7 @@ export function runMd5TangentFrameOracleCorpus(
       importNotRunMeshFiles,
       measuredMeshFiles,
       notRunReason: 'md5-mesh-fixtures-absent',
+      selection,
       state: 'not-run',
     };
   }
@@ -206,6 +246,7 @@ export function runMd5TangentFrameOracleCorpus(
       importNotRunMeshFiles,
       measuredMeshFiles,
       notRunReason: 'md5-mesh-imports-failed',
+      selection,
       state: 'not-run',
     };
   }
@@ -215,6 +256,7 @@ export function runMd5TangentFrameOracleCorpus(
     discoveredMeshFiles: references.length,
     importNotRunMeshFiles,
     measuredMeshFiles,
+    selection,
     state: 'measured',
   };
 }
@@ -222,7 +264,7 @@ export function runMd5TangentFrameOracleCorpus(
 export function formatMd5TangentFrameOracleCorpusReport(report: Md5TangentFrameOracleCorpusReport): string {
   const lines = [
     `acquisition pack=${report.acquisition.pack} variant=${report.acquisition.variant} release=${report.acquisition.release} verified-fixtures=${report.acquisition.verifiedFixtureFiles} discovered-md5mesh=${report.discoveredMeshFiles}`,
-    `comparison corpus-state=${report.state} measured-md5mesh=${report.measuredMeshFiles} import-not-run-md5mesh=${report.importNotRunMeshFiles}${formatNotRunReason(report)}`,
+    `comparison selection=${report.selection} corpus-state=${report.state} measured-md5mesh=${report.measuredMeshFiles} import-not-run-md5mesh=${report.importNotRunMeshFiles}${formatNotRunReason(report)}`,
   ];
   for (const item of report.cases) {
     if (item.state === 'not-run') {
@@ -231,15 +273,34 @@ export function formatMd5TangentFrameOracleCorpusReport(report: Md5TangentFrameO
     }
     lines.push(`case ${item.reference} state=measured`);
     const { codePathCrossCheck, handedness, orthogonality, splitDifference } = item.oracles;
-    lines.push(
-      `  ${orthogonality.id} state=${orthogonality.state} vertices=${orthogonality.vertexCount} exact=${orthogonality.exactVertices} within-precision=${orthogonality.withinPrecisionVertices} outside-precision=${orthogonality.outsidePrecisionVertices} invalid=${orthogonality.invalidVertices} tangent-nan=${orthogonality.nanTangentVertices} tangent-infinite=${orthogonality.infiniteTangentVertices} tangent-zero-length=${orthogonality.zeroLengthTangentVertices} tangent-minimum-nonzero-length=${orthogonality.minimumNonzeroTangentLength ?? 'none'}${formatNotRunReason(orthogonality)}`,
-      `  ${handedness.id} state=${handedness.state} triangles=${handedness.triangleCount} matching=${handedness.matchingTriangles} mismatching=${handedness.mismatchingTriangles} indeterminate=${handedness.indeterminateTriangles} invalid=${handedness.invalidTriangles}${formatNotRunReason(handedness)}`,
-      `  ${splitDifference.id} state=${splitDifference.state} pairs=${splitDifference.pairs.length} meaningful=${splitDifference.meaningfulPairs} indistinguishable=${splitDifference.indistinguishablePairs}${formatNotRunReason(splitDifference)}`,
-      `  ${codePathCrossCheck.id} role=${codePathCrossCheck.role} independence=${codePathCrossCheck.independence} state=${codePathCrossCheck.state} compared-components=${codePathCrossCheck.comparedComponents} differing-components=${codePathCrossCheck.differingComponents} differing-vertices=${codePathCrossCheck.differingVertices}${formatNotRunReason(codePathCrossCheck)}`,
-    );
-    for (const pair of splitDifference.pairs) {
+    if (orthogonality !== undefined) {
       lines.push(
-        `    split-pair section=${pair.section} original=${pair.originalVertex} split=${pair.splitVertex} state=${pair.state} reason=${splitPairReason(pair)} direction-residual=${pair.directionResidual} direction-precision-bound=${pair.directionPrecisionBound}`,
+        `  ${orthogonality.id} state=${orthogonality.state} vertices=${orthogonality.vertexCount} exact=${orthogonality.exactVertices} within-precision=${orthogonality.withinPrecisionVertices} outside-precision=${orthogonality.outsidePrecisionVertices} invalid=${orthogonality.invalidVertices} tangent-nan=${orthogonality.nanTangentVertices} tangent-infinite=${orthogonality.infiniteTangentVertices} tangent-zero-length=${orthogonality.zeroLengthTangentVertices} tangent-minimum-nonzero-length=${orthogonality.minimumNonzeroTangentLength ?? 'none'}${formatNotRunReason(orthogonality)}`,
+      );
+    }
+    if (handedness !== undefined) {
+      lines.push(
+        `  ${handedness.id} state=${handedness.state} triangles=${handedness.triangleCount} matching=${handedness.matchingTriangles} mismatching=${handedness.mismatchingTriangles} indeterminate=${handedness.indeterminateTriangles} invalid=${handedness.invalidTriangles}${formatNotRunReason(handedness)}`,
+      );
+      for (const section of handedness.sections) {
+        lines.push(
+          `    handedness-section section=${section.section} triangles=${section.triangleCount} uv-positive=${section.positiveUvWindingTriangles} uv-negative=${section.negativeUvWindingTriangles} tangent-positive=${section.positiveTangentHandednessTriangles} tangent-negative=${section.negativeTangentHandednessTriangles} tangent-mixed=${section.mixedTangentHandednessTriangles} x-correlation=${section.xCorrelation} same-sign-as-x=${section.sameSignAsXTriangles} opposite-sign-to-x=${section.oppositeSignToXTriangles} negative-x-negative=${section.negativeXNegativeHandednessTriangles} negative-x-positive=${section.negativeXPositiveHandednessTriangles} positive-x-negative=${section.positiveXNegativeHandednessTriangles} positive-x-positive=${section.positiveXPositiveHandednessTriangles} x-side-indeterminate=${section.xSideIndeterminateTriangles}`,
+        );
+      }
+    }
+    if (splitDifference !== undefined) {
+      lines.push(
+        `  ${splitDifference.id} state=${splitDifference.state} pairs=${splitDifference.pairs.length} meaningful=${splitDifference.meaningfulPairs} indistinguishable=${splitDifference.indistinguishablePairs}${formatNotRunReason(splitDifference)}`,
+      );
+      for (const pair of splitDifference.pairs) {
+        lines.push(
+          `    split-pair section=${pair.section} original=${pair.originalVertex} split=${pair.splitVertex} state=${pair.state} reason=${splitPairReason(pair)} direction-residual=${pair.directionResidual} direction-precision-bound=${pair.directionPrecisionBound}`,
+        );
+      }
+    }
+    if (codePathCrossCheck !== undefined) {
+      lines.push(
+        `  ${codePathCrossCheck.id} role=${codePathCrossCheck.role} independence=${codePathCrossCheck.independence} state=${codePathCrossCheck.state} compared-components=${codePathCrossCheck.comparedComponents} differing-components=${codePathCrossCheck.differingComponents} differing-vertices=${codePathCrossCheck.differingVertices}${formatNotRunReason(codePathCrossCheck)}`,
       );
     }
   }
@@ -463,7 +524,10 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
     matchingTriangles: 0,
     minimumCertainDeterminantMagnitude: null,
     mismatchingTriangles: 0,
+    sections: [] as Md5TangentHandednessSectionOracle[],
     triangleCount: 0,
+    xCorrelationRule: 'majority-direction-with-tie-indeterminate' as const,
+    xSideComparison: 'triangle-centroid-sign-vs-observed-float32-rounding-cell' as const,
   };
   if (collectMeshGeometries(scene).length === 0) {
     return { ...base, notRunReason: 'mesh-geometry-missing', state: 'not-run' };
@@ -476,20 +540,63 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
   let minimumCertainDeterminantMagnitude = Number.POSITIVE_INFINITY;
   let mismatchingTriangles = 0;
   let triangleCount = 0;
-  for (const section of sections) {
+  const sectionMeasurements: Md5TangentHandednessSectionOracle[] = [];
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+    const section = sections[sectionIndex]!;
     const { geometry } = section;
     const floatsPerVertex = geometry.layout.stride / 4;
     const indices = geometry.indices;
+    let sectionIndeterminateUvWindingTriangles = 0;
+    let sectionInvalidTriangles = 0;
+    let sectionMatchingTriangles = 0;
+    let sectionMismatchingTriangles = 0;
+    let mixedTangentHandednessTriangles = 0;
+    let negativeTangentHandednessTriangles = 0;
+    let negativeUvWindingTriangles = 0;
+    let negativeXNegativeHandednessTriangles = 0;
+    let negativeXPositiveHandednessTriangles = 0;
+    let positiveTangentHandednessTriangles = 0;
+    let positiveUvWindingTriangles = 0;
+    let positiveXNegativeHandednessTriangles = 0;
+    let positiveXPositiveHandednessTriangles = 0;
+    let sectionTriangleCount = 0;
+    let xSideIndeterminateTriangles = 0;
     if (indices === null || geometry.topology !== 'triangle-list') {
-      invalidTriangles += Math.floor((indices?.length ?? vertexCountOf(geometry)) / 3);
+      sectionInvalidTriangles = Math.floor((indices?.length ?? vertexCountOf(geometry)) / 3);
+      invalidTriangles += sectionInvalidTriangles;
+      sectionTriangleCount = sectionInvalidTriangles;
+      triangleCount += sectionTriangleCount;
+      sectionMeasurements.push({
+        indeterminateUvWindingTriangles: 0,
+        invalidTriangles: sectionInvalidTriangles,
+        matchingTriangles: 0,
+        mismatchingTriangles: 0,
+        mixedTangentHandednessTriangles: 0,
+        negativeTangentHandednessTriangles: 0,
+        negativeUvWindingTriangles: 0,
+        negativeXNegativeHandednessTriangles: 0,
+        negativeXPositiveHandednessTriangles: 0,
+        oppositeSignToXTriangles: 0,
+        positiveTangentHandednessTriangles: 0,
+        positiveUvWindingTriangles: 0,
+        positiveXNegativeHandednessTriangles: 0,
+        positiveXPositiveHandednessTriangles: 0,
+        sameSignAsXTriangles: 0,
+        section: sectionIndex,
+        triangleCount: sectionTriangleCount,
+        xCorrelation: 'indeterminate',
+        xSideIndeterminateTriangles: 0,
+      });
       continue;
     }
     for (let element = 0; element + 2 < indices.length; element += 3) {
       triangleCount++;
+      sectionTriangleCount++;
       const outputIndices = [indices[element]!, indices[element + 1]!, indices[element + 2]!];
       const sourceIndices = outputIndices.map((index) => section.outputToSource[index]);
       if (sourceIndices.some((index) => index === undefined)) {
         invalidTriangles++;
+        sectionInvalidTriangles++;
         continue;
       }
       const uv = sourceIndices.map((index) => section.source.uvs[index!]!);
@@ -512,23 +619,83 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
       );
       if (determinant === null) {
         invalidTriangles++;
+        sectionInvalidTriangles++;
         continue;
       }
       if (determinant.min <= 0 && determinant.max >= 0) {
         indeterminateTriangles++;
+        sectionIndeterminateUvWindingTriangles++;
         continue;
       }
       const expectedSign = determinant.min > 0 ? 1 : -1;
+      if (expectedSign > 0) positiveUvWindingTriangles++;
+      else negativeUvWindingTriangles++;
       const determinantMagnitude = Math.min(Math.abs(determinant.min), Math.abs(determinant.max));
       if (determinantMagnitude < minimumCertainDeterminantMagnitude)
         minimumCertainDeterminantMagnitude = determinantMagnitude;
-      let matches = true;
-      for (const index of outputIndices) {
-        if (geometry.vertices[index * floatsPerVertex + section.tangentOffset + 3] !== expectedSign) matches = false;
+      const tangentHandedness = outputIndices.map(
+        (index) => geometry.vertices[index * floatsPerVertex + section.tangentOffset + 3]!,
+      );
+      const observedSign = tangentHandedness.every((value) => value === 1)
+        ? 1
+        : tangentHandedness.every((value) => value === -1)
+          ? -1
+          : null;
+      if (observedSign === 1) positiveTangentHandednessTriangles++;
+      else if (observedSign === -1) negativeTangentHandednessTriangles++;
+      else mixedTangentHandednessTriangles++;
+
+      if (observedSign === expectedSign) {
+        matchingTriangles++;
+        sectionMatchingTriangles++;
+      } else {
+        mismatchingTriangles++;
+        sectionMismatchingTriangles++;
       }
-      if (matches) matchingTriangles++;
-      else mismatchingTriangles++;
+
+      const xInterval = float32SumInterval(
+        outputIndices.map((index) => geometry.vertices[index * floatsPerVertex + section.positionOffset]!),
+      );
+      if (xInterval === null || (xInterval.min <= 0 && xInterval.max >= 0)) {
+        xSideIndeterminateTriangles++;
+        continue;
+      }
+      if (observedSign === null) continue;
+      if (xInterval.min > 0) {
+        if (observedSign > 0) positiveXPositiveHandednessTriangles++;
+        else positiveXNegativeHandednessTriangles++;
+      } else if (observedSign > 0) negativeXPositiveHandednessTriangles++;
+      else negativeXNegativeHandednessTriangles++;
     }
+    const sameSignAsXTriangles = negativeXNegativeHandednessTriangles + positiveXPositiveHandednessTriangles;
+    const oppositeSignToXTriangles = negativeXPositiveHandednessTriangles + positiveXNegativeHandednessTriangles;
+    sectionMeasurements.push({
+      indeterminateUvWindingTriangles: sectionIndeterminateUvWindingTriangles,
+      invalidTriangles: sectionInvalidTriangles,
+      matchingTriangles: sectionMatchingTriangles,
+      mismatchingTriangles: sectionMismatchingTriangles,
+      mixedTangentHandednessTriangles,
+      negativeTangentHandednessTriangles,
+      negativeUvWindingTriangles,
+      negativeXNegativeHandednessTriangles,
+      negativeXPositiveHandednessTriangles,
+      oppositeSignToXTriangles,
+      positiveTangentHandednessTriangles,
+      positiveUvWindingTriangles,
+      positiveXNegativeHandednessTriangles,
+      positiveXPositiveHandednessTriangles,
+      sameSignAsXTriangles,
+      section: sectionIndex,
+      triangleCount: sectionTriangleCount,
+      xCorrelation: classifyXCorrelation(
+        positiveTangentHandednessTriangles,
+        negativeTangentHandednessTriangles,
+        mixedTangentHandednessTriangles,
+        sameSignAsXTriangles,
+        oppositeSignToXTriangles,
+      ),
+      xSideIndeterminateTriangles,
+    });
   }
 
   const measurements = {
@@ -540,7 +707,10 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
       ? minimumCertainDeterminantMagnitude
       : null,
     mismatchingTriangles,
+    sections: sectionMeasurements,
     triangleCount,
+    xCorrelationRule: 'majority-direction-with-tie-indeterminate' as const,
+    xSideComparison: 'triangle-centroid-sign-vs-observed-float32-rounding-cell' as const,
   };
   if (mismatchingTriangles > 0) return { ...measurements, state: 'failed' };
   if (indeterminateTriangles > 0 || invalidTriangles > 0) {
@@ -723,12 +893,14 @@ function resolveGeometrySections(scene: Readonly<Scene3D>, source: string): Geom
     const geometry = geometries[sectionIndex]!;
     const sourceSection = nonemptySections[sectionIndex]!;
     const normalOffset = getVertexAttributeFloatOffset(geometry.layout, 'normal');
+    const positionOffset = getVertexAttributeFloatOffset(geometry.layout, 'position');
     const tangentOffset = tangentFloatOffset(geometry);
     const uvOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
     const floatsPerVertex = geometry.layout.stride / 4;
     const outputCount = vertexCountOf(geometry);
     if (
       normalOffset < 0 ||
+      positionOffset < 0 ||
       tangentOffset < 0 ||
       uvOffset < 0 ||
       outputCount < sourceSection.vertexCount ||
@@ -758,7 +930,15 @@ function resolveGeometrySections(scene: Readonly<Scene3D>, source: string): Geom
         return null;
       }
     }
-    sections.push({ geometry, normalOffset, outputToSource, source: sourceSection, tangentOffset, uvOffset });
+    sections.push({
+      geometry,
+      normalOffset,
+      outputToSource,
+      positionOffset,
+      source: sourceSection,
+      tangentOffset,
+      uvOffset,
+    });
   }
   return sections;
 }
@@ -862,6 +1042,34 @@ function determinantInterval(
   const du2 = subtractIntervals(u2, u0);
   const dv2 = subtractIntervals(v2, v0);
   return subtractIntervals(multiplyIntervals(du1, dv2), multiplyIntervals(du2, dv1));
+}
+
+function classifyXCorrelation(
+  positiveTangentHandednessTriangles: number,
+  negativeTangentHandednessTriangles: number,
+  mixedTangentHandednessTriangles: number,
+  sameSignAsXTriangles: number,
+  oppositeSignToXTriangles: number,
+): Md5TangentHandednessXCorrelation {
+  if (mixedTangentHandednessTriangles > 0) return 'indeterminate';
+  if (positiveTangentHandednessTriangles > 0 && negativeTangentHandednessTriangles === 0) return 'uniform-positive';
+  if (negativeTangentHandednessTriangles > 0 && positiveTangentHandednessTriangles === 0) return 'uniform-negative';
+  if (positiveTangentHandednessTriangles === 0 || negativeTangentHandednessTriangles === 0) return 'indeterminate';
+  if (sameSignAsXTriangles > oppositeSignToXTriangles) return 'split-same-sign-as-x';
+  if (oppositeSignToXTriangles > sameSignAsXTriangles) return 'split-opposite-sign-to-x';
+  return 'indeterminate';
+}
+
+function float32SumInterval(values: readonly number[]): NumericInterval | null {
+  let max = 0;
+  let min = 0;
+  for (const value of values) {
+    if (!Number.isFinite(value)) return null;
+    const radius = float32RoundingRadius(value);
+    max += value + radius;
+    min += value - radius;
+  }
+  return { max, min };
 }
 
 function decimalRuntimeInterval(token: DecimalToken, runtimeValue: number): NumericInterval | null {
@@ -975,6 +1183,7 @@ function splitPairReason(pair: Md5TangentSplitPairMeasurement): string {
 }
 
 function main(): void {
+  const selection = parseOracleSelection(process.argv.slice(2));
   const cacheDirectory = resolveFixtureCacheDirectory();
   const treeDirectory = getFixtureTreePath(cacheDirectory, MD5_TANGENT_FIXTURE_VARIANT, MD5_TANGENT_FIXTURE_PACK);
   const stamp = readFixtureTreeStamp(treeDirectory);
@@ -989,9 +1198,15 @@ function main(): void {
       `Verified ${MD5_TANGENT_FIXTURE_PACK} ${MD5_TANGENT_FIXTURE_VARIANT} tree is unavailable; run npm run fixtures -- ${MD5_TANGENT_FIXTURE_PACK} --variant ${MD5_TANGENT_FIXTURE_VARIANT}`,
     );
   }
-  const report = runMd5TangentFrameOracleCorpus(treeDirectory, pack.verifiedFixtureFiles);
+  const report = runMd5TangentFrameOracleCorpus(treeDirectory, pack.verifiedFixtureFiles, selection);
   process.stdout.write(formatMd5TangentFrameOracleCorpusReport(report));
   if (report.state === 'not-run') process.exitCode = 1;
+}
+
+function parseOracleSelection(arguments_: readonly string[]): Md5TangentFrameOracleSelection {
+  if (arguments_.length === 0) return 'all';
+  if (arguments_.length === 1 && arguments_[0] === '--oracle=handedness') return 'handedness';
+  throw new Error(`Unknown MD5 tangent oracle arguments: ${arguments_.join(' ')}`);
 }
 
 const FLOAT32_STORAGE = new ArrayBuffer(4);
