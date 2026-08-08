@@ -1,7 +1,7 @@
 ---
 package: "@flighthq/scene3d-formats"
-updated: "2026-08-02"
-by: builder
+updated: "2026-08-08"
+by: foreman
 ---
 
 # scene-formats — Status Log
@@ -10,6 +10,38 @@ by: builder
 > watch next. Incoming status documents land here.
 
 <!-- newest entry on top -->
+
+## 2026-08-08 — MD5 corpus measured; conformance work held; a naming prohibition that outlives it (foreman, user-directed)
+
+The `mesh-legacy-fixtures` pack carries **real MD5 material**, confirmed by content rather than by
+extension: 13 canonical `MD5Version 10` headers — one mesh (`numJoints`/`numMeshes`/`joints`/`mesh`) and
+twelve animations (`numFrames`/`numJoints`/`hierarchy`/`baseframe`/`frame`). The real parsers accept all
+13. The mesh yields 4 document meshes, 110 joints and 1 skin, plus the existing
+`md5mesh.vertex-over-influenced` recovery diagnostic; all twelve animations carry 110 joints, 15–120
+frames and 220 channels, parse without diagnostics, and bind to that mesh through `importMd5Mesh`, with
+paired imports inheriting the mesh recovery diagnostic.
+
+⚠ **THIS IS ONE ASSET FAMILY. THE COUNT IS 13 AND THE POPULATION IS 1.** ⇒ **No breadth claim can be
+made from it, and a name that implies breadth manufactures the claim the corpus cannot support — so an
+MD5 smoke lane built on this material is a smoke lane and is never called a conformance scoreboard.**
+This holds whoever builds it and whenever, independently of the scoping decision below. The 17 MD5
+diagnostic sites (11 anim + 6 mesh) are an **inventory**, never a coverage numerator or denominator.
+
+**Held, not rejected.** An MD5 smoke lane (~1–2 days) and a format-agnostic conformance core (~7–12
+days) were both declined on price against a cheaper path: reproducing downstream's *actual* failing
+input (~0.5–1 day), which may answer the question outright. ⚠ **A clean run over this corpus would not
+mean downstream was wrong — it would mean this corpus does not contain their case, and it must not
+close that bug report.**
+
+**Two things block anything scored, whenever it resumes.** MD5 diagnostics do not carry
+`detail.capability` and the classifier expects it; and the 17 sites neither define nor exhaust a
+capability set, so a capability convention needs its own review. An independent MD5 section probe —
+required under every sizing — must reconcile declarations against `joints`/`mesh` or
+`hierarchy`/`baseframe`/`frame` **without using the importer as its own oracle**, since a probe that
+consults the parser measures the parser's agreement with itself.
+
+The design constraint this scoping produced applies to the *conformance core*, not to MD5, and lives
+where that core would be built: [conformance core generality](../swf/conformance-core-generality.md).
 
 ## 2026-08-02 — A Draco seam, with no Google code used or shipped (builder, user-directed)
 
