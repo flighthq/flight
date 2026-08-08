@@ -23,19 +23,6 @@ export interface ImportConformanceDiagnosticEvidencePolicy {
   unsupportedDiagnosticKinds: readonly string[];
 }
 
-export const SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY: ImportConformanceDiagnosticEvidencePolicy = {
-  detail: [
-    { field: 'capability', rule: { kind: 'capability-id' } },
-    { field: 'characterId', rule: { kind: 'nonnegative-integer' } },
-    { field: 'compression', rule: { kind: 'string-enum', values: ['deflate', 'lzma'] } },
-    { field: 'frame', rule: { kind: 'nonnegative-integer' } },
-    { field: 'length', rule: { kind: 'nonnegative-integer' } },
-    { field: 'sceneCount', rule: { kind: 'nonnegative-integer' } },
-  ],
-  id: 'swf-diagnostic-evidence-v1',
-  unsupportedDiagnosticKinds: ['swf.no-decompressor-registered'],
-};
-
 export const NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY: ImportConformanceDiagnosticEvidencePolicy = {
   detail: [],
   id: 'no-diagnostic-evidence-v1',
@@ -43,9 +30,8 @@ export const NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY: ImportConformanceDi
 };
 
 /**
- * Retain only fields whose licence treatment has been decided. Diagnostic kind, origin, and severity are
- * Flight-owned vocabulary. Capability and compression are Flight-owned tags; the four numeric fields are
- * counts or indices. Fixture-derived names/text and every future detail field stay absent until explicitly ruled in.
+ * Retain kind, origin, and severity plus only detail fields declared by the adapter policy.
+ * Every undeclared field stays absent from portable evidence.
  */
 export function retainImportConformanceDiagnostic(
   diagnostic: Readonly<ImportDiagnostic>,

@@ -10,9 +10,9 @@ import {
   createImportConformanceShardPlan,
 } from './import-conformance-core';
 import type { ImportConformanceLossPath } from './import-conformance-core';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import { formatImportConformanceScore } from './import-conformance-format';
 import { createSwfImportConformanceDenominators } from './swf-capability-index';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

@@ -22,7 +22,6 @@ import type {
   ImportConformanceIndexedFixture,
   ImportConformanceResult,
 } from './import-conformance-core';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import { formatImportConformanceScore } from './import-conformance-format';
 import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation';
 import {
@@ -49,6 +48,7 @@ import {
   SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
   SWF_CAPABILITY_CONVENTION_REVISION,
 } from './swf-capability-index';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 import { runSwfImportConformanceWorkerPool } from './swf-import-conformance-worker-pool';
 
 export async function runImportConformanceProcess(

@@ -7,9 +7,9 @@ import {
   parseImportConformanceDiagnosticEvidencePolicy,
   parseImportConformanceRetainedDiagnostic,
   retainImportConformanceDiagnostic,
-  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
 } from './import-conformance-diagnostic-evidence';
 import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const CAPABILITIES = new Set(['swf.script.do-action']);
 const MD5_POLICY = {
