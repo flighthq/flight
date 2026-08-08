@@ -1,11 +1,10 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { classifyImportConformanceDiagnosticObservation } from './import-conformance-classification';
 import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
-import {
-  retainImportConformanceDiagnostic,
-  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
-} from './import-conformance-diagnostic-evidence';
+import { retainImportConformanceDiagnostic } from './import-conformance-diagnostic-evidence';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol';
 
 export function classifyImportConformanceObservation(
@@ -39,6 +38,10 @@ export function classifyImportConformanceObservation(
     else existing.push(diagnostic);
   }
 
+  const importOutcome = classifyImportConformanceDiagnosticObservation(
+    observation,
+    SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
+  );
   const result: ImportConformanceResult = {
     caseHash: fixture.caseHash,
     capabilityOutcomes: fixture.capabilities.map((id) => ({
@@ -47,9 +50,9 @@ export function classifyImportConformanceObservation(
       id,
       outcome: classifyCapabilityOutcome(observation, keyed.get(id) ?? []),
     })),
-    importOutcome: classifyFixtureOutcome(observation),
+    importOutcome,
     oracleOutcomes: [],
-    outcome: classifyFixtureOutcome(observation),
+    outcome: importOutcome,
     reference: fixture.reference,
   };
   if (fixture.probeState === 'unreadable') {
@@ -77,16 +80,6 @@ function classifyCapabilityOutcome(
     return 'silentlyWrong';
   }
   return 'passed';
-}
-
-function classifyFixtureOutcome(
-  observation: Readonly<SwfImportConformanceObservation>,
-): ImportConformanceResult['outcome'] {
-  if (observation.threw) return 'threw';
-  if (observation.diagnostics.some(isNoDecompressorDiagnostic)) return 'unsupportedClean';
-  if (observation.diagnostics.some(isDefectDiagnostic)) return 'importedWrong';
-  if (observation.diagnostics.some(isUnsupportedDiagnostic)) return 'unsupportedClean';
-  return observation.imported ? 'passed' : 'silentlyWrong';
 }
 
 function isDefectDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {

@@ -8,7 +8,6 @@ import {
   getImportConformanceRatchetExitCode,
   runImportConformanceRatchet,
 } from './check-import-conformance-ratchet';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './import-conformance-diagnostic-evidence';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
@@ -26,6 +25,7 @@ import type {
   ImportConformanceScore,
   ImportConformanceUnmeasuredCapability,
 } from './import-conformance-score';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 describe('compareImportConformanceScores', () => {
   it('passes stable keyed evidence and allows an unmeasured capability to gain its first witness', () => {

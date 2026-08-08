@@ -20,12 +20,10 @@ import type {
   ImportConformanceScoreDeclarations,
   ImportConformanceUnwiredLossObservation,
 } from './import-conformance-core';
-import {
-  NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY,
-  SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY,
-} from './import-conformance-diagnostic-evidence';
+import { NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY } from './import-conformance-diagnostic-evidence';
 import { parseImportConformanceScore } from './import-conformance-score';
 import { isImportConformanceFixtureReference } from './swf-capability-index';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

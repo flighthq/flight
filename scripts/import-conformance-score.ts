@@ -355,7 +355,7 @@ export interface ImportConformanceSummary {
 }
 
 interface ImportConformancePackIdentity {
-  /** Opaque producer-owned stamp; the current unresolved convention uses `unresolved-individuation-v1`. */
+  /** Opaque adapter-owned stamp that changes when the pack's capability convention changes. */
   capabilityConventionRevision: string;
   capabilities: ImportConformanceCapability[];
   id: string;
