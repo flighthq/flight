@@ -81,11 +81,10 @@ export function decodeWoff2Triplet(
 // bounding box, so being short by two shifts every box by one int16 — each glyph then reads three of
 // its own values plus one belonging to its neighbour, which still looks like a plausible box.
 //
-// Measured, and the measurement is the point: across 18 fonts available as both a transformed WOFF2
-// and a plain `.ttf`, the byte-rounded form reproduced every stored box exactly in 9 of them and NONE
-// of the box values in the other 9. The 9 that passed were passing by coincidence — their glyph counts
-// round identically under both rules. With the 32-bit rounding below, all 18 reproduce every stored
-// box: 10,494 boxes, exact.
+// The coincidence is what makes it dangerous: a font whose glyph count rounds the same way under both
+// rules cannot distinguish them, so byte-rounding reads such a font perfectly and the neighbouring
+// weight of the same family not at all. Any check of this seam needs a glyph count that is NOT a
+// multiple of 32.
 export function getWoff2BboxBitmapByteLength(glyphCount: number): number {
   return 4 * Math.ceil(glyphCount / 32);
 }
@@ -93,10 +92,10 @@ export function getWoff2BboxBitmapByteLength(glyphCount: number): number {
 // Whether a glyph carries an explicit bounding box in `bboxStream`, rather than one to be computed
 // from its points. Composite glyphs always do, since they hold no points of their own.
 //
-// Bit order is most-significant-first: glyph 0 is the HIGH bit of byte 0. Measured the same way as the
-// padding above — most-significant-first reproduced all 10,494 stored boxes across 18 fonts, and
-// least-significant-first reproduced 4,570 of them, which is the far more dangerous result of the two
-// because it is neither right nor obviously wrong.
+// Bit order is most-significant-first: glyph 0 is the HIGH bit of byte 0. Reading it the other way
+// round is the more dangerous of the two mistakes, because it is neither right nor obviously wrong —
+// the two orders agree on any byte that is symmetric, so a least-significant-first reader recovers a
+// scattered subset of the boxes and mis-assigns the rest to the wrong glyphs.
 export function hasWoff2GlyphBbox(bboxStream: Readonly<Uint8Array>, glyphIndex: number): boolean {
   const byte = bboxStream[glyphIndex >> 3];
   if (byte === undefined) return false;
@@ -112,11 +111,9 @@ export function hasWoff2GlyphBbox(bboxStream: Readonly<Uint8Array>, glyphIndex: 
 // every point in the font — and an inverted outline still draws a glyph, with corners where curves
 // belong, so nothing fails loudly. Same silent class as the sign order and the missing base above.
 //
-// Measured rather than assumed, because a plausible guess here is unfalsifiable by eye: 508,297 points
-// across 18 fonts available in both a transformed WOFF2 and a plain `.ttf` build of the same font, all
-// 508,297 agreeing with the sense below and none with the inverse. Checked non-degenerate too — both
-// classes are heavily populated in every font, so the agreement is a real discrimination rather than
-// one value happening to be constant.
+// The mistake is unfalsifiable by eye, which is why the sense is pinned by a named function rather
+// than an inline mask: an outline with every on/off decision inverted is still a closed, plausible
+// outline, so it renders as a glyph rather than as damage.
 export function isWoff2PointOnCurve(flag: number): boolean {
   return (flag & WOFF2_POINT_OFF_CURVE) === 0;
 }
@@ -133,8 +130,8 @@ export function isWoff2PointOnCurve(flag: number): boolean {
 // component sets `WE_HAVE_INSTRUCTIONS`, the glyph's instruction length is stored in the GLYPH stream,
 // exactly as a simple glyph's is. Miss that read and every SIMPLE glyph after this one decodes from a
 // position one length-field too early — so the failure surfaces far from its cause, in glyphs that are
-// themselves fine. Measured, not reasoned: this is the whole distance between 18 fonts whose decoded
-// bounds exceeded their own `head` box and none.
+// themselves fine, and the first symptom is usually a decoded outline that overruns the font's own
+// declared bounding box.
 //
 // `hasInstructions` is therefore the field a caller must not ignore; `byteLength` alone looks like the
 // complete answer and is not.
