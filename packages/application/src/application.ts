@@ -372,7 +372,6 @@ function applyApplicationStep(
 }
 
 function configureFixedStep(loopState: LoopState, fixedTimeStep: number, maxUpdatesPerFrame: number): void {
-  if (loopState.fixedTimeStep !== fixedTimeStep) loopState.fixedAccumulator = 0;
   loopState.fixedTimeStep = fixedTimeStep;
   loopState.maxUpdatesPerFrame = maxUpdatesPerFrame;
 }
