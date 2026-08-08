@@ -121,6 +121,7 @@ export function createRiveLayoutImports(
       null,
       layoutNodes,
       targets,
+      diagnostics,
     );
     if (layoutNodes.length > 0) imports.push({ targets, tree: { nodes: layoutNodes } });
   }
@@ -199,6 +200,7 @@ function appendRiveLayoutProvider(
   parentContext: Readonly<RiveLayoutContext> | null,
   nodes: LayoutNode[],
   targets: DisplayObject[],
+  diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const target = displayNodes[provider.targetIndex];
   if (target === null || target === undefined) return;
@@ -219,8 +221,8 @@ function appendRiveLayoutProvider(
     context === null
       ? null
       : context.layoutType === RIVE_LAYOUT_TYPE_FLEX
-        ? createRiveFlexContainerStyle(style, context)
-        : createRiveGridContainerStyle(artboard, provider.sourceIndex, style, context);
+        ? createRiveFlexContainerStyle(style, context, diagnostics)
+        : createRiveGridContainerStyle(artboard, provider.sourceIndex, style, context, diagnostics);
   const nodeIndex = nodes.length;
   nodes.push({ containerStyle, itemStyle, kind, parentIndex });
   targets.push(target);
@@ -238,6 +240,7 @@ function appendRiveLayoutProvider(
       context,
       nodes,
       targets,
+      diagnostics,
     );
   }
 }
@@ -264,10 +267,16 @@ function createRiveLayoutContext(
 function createRiveFlexContainerStyle(
   style: Readonly<RiveCoreObject>,
   context: Readonly<RiveLayoutContext>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): FlexLayoutContainerStyle {
   const rawDirection = readRiveNumber(style, RIVE_FLEX_DIRECTION, RIVE_FLEX_DIRECTION_ROW);
-  const direction = mapRiveFlexDirection(rawDirection, context.rtl);
-  const alignment = mapRiveFlexAlignment(readRiveNumber(style, RIVE_LAYOUT_ALIGNMENT, 0), context.row, context.rtl);
+  const direction = mapRiveFlexDirection(rawDirection, context.rtl, diagnostics);
+  const alignment = mapRiveFlexAlignment(
+    readRiveNumber(style, RIVE_LAYOUT_ALIGNMENT, 0),
+    context.row,
+    context.rtl,
+    diagnostics,
+  );
   const wrap = readRiveNumber(style, RIVE_FLEX_WRAP, 0);
   const result: FlexLayoutContainerStyle = {
     align: alignment.align,
@@ -288,6 +297,7 @@ function createRiveGridContainerStyle(
   sourceIndex: number,
   style: Readonly<RiveCoreObject>,
   context: Readonly<RiveLayoutContext>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): GridLayoutContainerStyle {
   if (context.layoutType === RIVE_LAYOUT_TYPE_STACK) {
     const stack: GridLayoutContainerStyle = {
@@ -306,7 +316,7 @@ function createRiveGridContainerStyle(
     if (!isRiveCoreTypeDerivedFrom(track.typeKey, RIVE_GRID_TRACK_TYPE_KEY)) continue;
     const collection = readRiveNumber(track, RIVE_GRID_TRACK_COLLECTION, 0);
     if (collection !== RIVE_GRID_TEMPLATE_COLUMNS && collection !== RIVE_GRID_TEMPLATE_ROWS) continue;
-    const mapped = mapRiveGridTrack(track);
+    const mapped = mapRiveGridTrack(track, diagnostics);
     (collection === RIVE_GRID_TEMPLATE_COLUMNS ? columns : rows).push(mapped);
   }
   if (columns.length === 0) columns.push({ kind: 'auto' });
@@ -333,7 +343,9 @@ function createRiveItemStyle(
   if (parent.layoutType === RIVE_LAYOUT_TYPE_STACK) return { column: 0, row: 0 };
   if (parent.layoutType === RIVE_LAYOUT_TYPE_GRID) {
     if (placement === undefined) return null;
-    const parentContainer = createRiveGridContainerStyle(artboard, parent.sourceIndex, parent.style, parent);
+    // No sink: this rebuilds the PARENT container purely to read its tracks, once per child item, so
+    // passing it would report the same substituted track once per child. The container pass carries it.
+    const parentContainer = createRiveGridContainerStyle(artboard, parent.sourceIndex, parent.style, parent, undefined);
     return createRiveGridItemStyle(placement, parentContainer.columns.length, parentContainer.rows.length);
   }
   return createRiveFlexItemStyle(provider, source, style, parent.row);
@@ -440,18 +452,49 @@ function mapRiveGridCell(value: number, count: number): number | undefined {
   return undefined;
 }
 
-function mapRiveGridTrack(source: Readonly<RiveCoreObject>): GridLayoutTrack {
+// The track type the file states survives, or the track silently becomes auto and the row sizes itself
+// from content — the same width a stated track would rarely produce, and nothing counts a track as lost.
+function mapRiveGridTrack(
+  source: Readonly<RiveCoreObject>,
+  diagnostics: ImportDiagnostic[] | undefined,
+): GridLayoutTrack {
   const type = readRiveNumber(source, RIVE_GRID_TRACK_TYPE, RIVE_GRID_TRACK_AUTO);
   const value = finiteNonNegative(readRiveNumber(source, RIVE_GRID_TRACK_VALUE, 0));
   if (type === RIVE_GRID_TRACK_POINTS) return { kind: 'fixed', size: value };
   if (type === RIVE_GRID_TRACK_FRACTION && value > 0) return { fraction: value, kind: 'fraction' };
+  // A stated fraction of zero is degenerate rather than unknown, so it is reported as the same
+  // substitution: the file asked for a fraction track and got an auto one either way.
+  if (type !== RIVE_GRID_TRACK_AUTO) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.grid-track-substituted',
+      'createScene2DFromRiveDocument',
+      { substitutedAs: 'auto', trackType: type, trackValue: value },
+    );
+  }
   return { kind: 'auto' };
 }
 
-function mapRiveFlexDirection(value: number, rtl: boolean): FlexLayoutDirection {
+// Rive states row as 2, so the terminal arm is a mapping for that value and a substitution for any
+// other — the row still lays out, along an axis it was not authored with.
+function mapRiveFlexDirection(
+  value: number,
+  rtl: boolean,
+  diagnostics: ImportDiagnostic[] | undefined,
+): FlexLayoutDirection {
   if (value === RIVE_FLEX_DIRECTION_COLUMN) return 'column';
   if (value === RIVE_FLEX_DIRECTION_COLUMN_REVERSE) return 'column-reverse';
   if (value === RIVE_FLEX_DIRECTION_ROW_REVERSE) return rtl ? 'row' : 'row-reverse';
+  if (value !== RIVE_FLEX_DIRECTION_ROW) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.flex-direction-substituted',
+      'createScene2DFromRiveDocument',
+      { directionValue: value, substitutedAs: 'row' },
+    );
+  }
   return rtl ? 'row-reverse' : 'row';
 }
 
@@ -459,10 +502,22 @@ function mapRiveFlexAlignment(
   value: number,
   row: boolean,
   rtl: boolean,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): { align: FlexLayoutAlign; justify: FlexLayoutJustify } {
   if (value >= 9 && value <= 11) {
     const cross: RiveAxisAlignment = value === 9 ? 'start' : value === 10 ? 'center' : 'end';
     return { align: row || !rtl ? cross : reverseFlexAlign(cross), justify: 'space-between' };
+  }
+  // 0-8 is the three-by-three alignment grid and 9-11 is space-between, so anything else is a mode
+  // this reader does not have. It collapses to top-left, which lays out cleanly and looks authored.
+  if (value < 0 || value > 8) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.flex-alignment-substituted',
+      'createScene2DFromRiveDocument',
+      { alignmentValue: value, substitutedAs: 'start' },
+    );
   }
   const normalized = value >= 0 && value <= 8 ? value : 0;
   const horizontal = mapRiveAlignmentAxis(normalized % 3);
