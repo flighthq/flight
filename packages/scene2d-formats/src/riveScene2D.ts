@@ -171,7 +171,10 @@ function rebuildRiveShape(
 ): void {
   const records: RivePathRecord[] = [];
   for (const pathIndex of shapePaths.get(shapeIndex)?.map((record) => record.pathIndex) ?? []) {
-    const record = createRivePathRecord(artboard, pathIndex);
+    // No sink here on purpose. This regenerates a shape from current property values on update, so it
+    // runs again per animated frame — passing the sink would report the same unsupported path once per
+    // rebuild and inflate the counts underneath any score. The import-time call above carries it.
+    const record = createRivePathRecord(artboard, pathIndex, undefined);
     if (record !== null) records.push(record);
   }
   shapePaths.set(shapeIndex, records);
@@ -199,7 +202,7 @@ function collectRivePathGeometry(
     );
     return;
   }
-  const record = createRivePathRecord(artboard, index);
+  const record = createRivePathRecord(artboard, index, diagnostics);
   if (record === null) return;
   const records = shapePaths.get(owner) ?? [];
   records.push(record);
@@ -208,9 +211,13 @@ function collectRivePathGeometry(
 
 // One path's geometry in its owning shape's space. Read fresh each time so an animated vertex,
 // radius or size shows up without any cached state to invalidate.
-function createRivePathRecord(artboard: Readonly<RiveArtboardGraph>, index: number): RivePathRecord | null {
+function createRivePathRecord(
+  artboard: Readonly<RiveArtboardGraph>,
+  index: number,
+  diagnostics: ImportDiagnostic[] | undefined,
+): RivePathRecord | null {
   const source = artboard.objects[index];
-  const path = createRivePath(source, artboard, index);
+  const path = createRivePath(source, artboard, index, diagnostics);
   // An empty result is the file's own doing: a points path may legitimately state no vertices.
   if (path === null || path.commands.length === 0) return null;
 
