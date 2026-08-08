@@ -89,8 +89,11 @@ describe('runMd5AnimationBoundsOracle', () => {
     const animation = animationSource('( 1.000 0.000 0.000 ) ( 2.000 1.000 0.000 )');
     const oracle = runMd5AnimationBoundsOracle(importMd5Mesh(MESH_SOURCE, animation), animation);
 
-    expect(oracle.state).toBe('passed');
-    if (oracle.state === 'not-run') throw new Error('expected completed oracle');
+    expect(oracle).toMatchObject({
+      notRunReason: 'declared-bounds-contract-unresolved',
+      state: 'not-run',
+    });
+    if (!('frames' in oracle)) throw new Error('expected measured oracle evidence');
     expect(oracle.frames).toHaveLength(1);
     expect(oracle.frames[0]).toMatchObject({
       classification: 'exact',
@@ -104,8 +107,11 @@ describe('runMd5AnimationBoundsOracle', () => {
     const animation = animationSource('( 1.000 0.000 0.000 ) ( 1.900 1.000 0.000 )');
     const oracle = runMd5AnimationBoundsOracle(importMd5Mesh(MESH_SOURCE, animation), animation);
 
-    expect(oracle.state).toBe('failed');
-    if (oracle.state === 'not-run') throw new Error('expected completed oracle');
+    expect(oracle).toMatchObject({
+      notRunReason: 'declared-bounds-contract-unresolved',
+      state: 'not-run',
+    });
+    if (!('frames' in oracle)) throw new Error('expected measured oracle evidence');
     expect(oracle.frames[0]).toMatchObject({
       classification: 'exceeds-representable-precision',
       deltas: { max: { x: 0.10000000000000009 } },
@@ -116,12 +122,12 @@ describe('runMd5AnimationBoundsOracle', () => {
     const scene = importMd5Mesh(MESH_SOURCE);
     expect(runMd5AnimationBoundsOracle(scene, 'not md5')).toEqual({
       id: 'md5.animation-bounds',
-      reason: 'declared-bounds-unreadable',
+      notRunReason: 'declared-bounds-unreadable',
       state: 'not-run',
     });
     expect(runMd5AnimationBoundsOracle(scene, animationSource('( 0 0 0 ) ( 1 1 1 )'))).toEqual({
       id: 'md5.animation-bounds',
-      reason: 'animation-clip-missing',
+      notRunReason: 'animation-clip-missing',
       state: 'not-run',
     });
   });
