@@ -461,11 +461,37 @@ export function measureWoff2ReconstructedComposites(
     if (view.getInt16(0) >= 0) continue;
     compared += 1;
     // Skip the two contour-count bytes; compare the box, the components and the instructions.
-    const left = truth.subarray(2);
-    const right = mine.subarray(2, 2 + left.byteLength);
+    //
+    // ★ TRAILING PADDING IS EXCLUDED, AND IGNORING THIS MEASURES THE WRONG THING. A `glyf` record is
+    // padded out to an alignment boundary by whoever laid the table out, and `loca` reports the padded
+    // extent — so two byte-identical glyphs routinely have different lengths simply because one writer
+    // aligned to four bytes and another to two. Comparing the padded extents scores that layout choice
+    // as a content difference.
+    const left = stripTrailingZeros(truth.subarray(2));
+    const right = stripTrailingZeros(mine.subarray(2));
     if (left.byteLength === right.byteLength && left.every((byte, at) => byte === right[at])) identical += 1;
+    // ★ SET `ORACLE_DEBUG` TO PRINT THE FIRST DIFFERING BYTE RATHER THAN ONLY THE SCORE. A ratio says
+    // how much disagrees and never why, and the difference between a defect and a layout choice is
+    // invisible in it — this comparison first read 85% because it was scoring alignment padding as a
+    // content difference, and the byte dump is what showed the mismatch was trailing zeros.
+    else if (process.env['ORACLE_DEBUG'] !== undefined && compared < 400) {
+      let k = 0;
+      while (k < Math.min(left.byteLength, right.byteLength) && left[k] === right[k]) k += 1;
+      console.log(
+        `      glyph ${index} truthLen=${truth.byteLength} mineLen=${mine.byteLength} firstDiff@${k} truth=0x${(left[k] ?? 0).toString(16)} mine=0x${(right[k] ?? 0).toString(16)}`,
+      );
+    }
   }
   return { compared, identical };
+}
+
+// Drops trailing zero bytes, which in a `glyf` record are alignment padding rather than content.
+// Safe for this comparison because both sides are stripped the same way: a record whose real final
+// bytes are zero loses them on both sides and still compares equal.
+function stripTrailingZeros(bytes: Readonly<Uint8Array>): Uint8Array {
+  let end = bytes.byteLength;
+  while (end > 0 && bytes[end - 1] === 0) end -= 1;
+  return bytes.subarray(0, end) as Uint8Array;
 }
 
 // Slices a `glyf` table into per-glyph records using its `loca`.
