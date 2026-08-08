@@ -33,6 +33,16 @@ input (~0.5–1 day), which may answer the question outright. ⚠ **A clean run 
 mean downstream was wrong — it would mean this corpus does not contain their case, and it must not
 close that bug report.**
 
+⚠ **AND THE INVERSE, WHICH IS THE HALF THAT WILL BE TEMPTING: A REPRODUCTION TELLS YOU ABOUT THAT
+FILE.** One reproduced defect is population 1 exactly as the thirteen-file family is, so **fixing it is
+not evidence the importer is otherwise sound, and a regression must not land with an implied all-clear
+attached.** A clean run obviously proves little; a green fix *feels* conclusive, which is why this
+direction is stated rather than left as the obvious corollary.
+
+**A single `.md5anim` is not a testable case.** An animation's meaningful path requires a compatible
+mesh skeleton — one case is a *set* of files. Confirm the set arrived before starting, or the round
+trip is the cost.
+
 **Two things block anything scored, whenever it resumes.** MD5 diagnostics do not carry
 `detail.capability` and the classifier expects it; and the 17 sites neither define nor exhaust a
 capability set, so a capability convention needs its own review. An independent MD5 section probe —
