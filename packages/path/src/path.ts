@@ -363,4 +363,4 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
 
 // Optimal cubic Bezier arc approximation constant: 4*(sqrt(2)-1)/3.
 // Maximum radial error is < 0.03% of the radius.
-const KAPPA = 0.5522847498308936;
+const KAPPA = 0.5522847498307936;
