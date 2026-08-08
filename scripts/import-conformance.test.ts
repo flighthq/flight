@@ -6,55 +6,71 @@ import { join } from 'node:path';
 import { FIXTURE_RELEASE_TAG } from './fixtures';
 
 describe('import-conformance CLI', () => {
-  it('writes a complete NOT RUN artifact and exits two when the pack is unavailable', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
-    const score = join(directory, 'score.json');
-    const result = runCli(directory, [
-      '--pack=swf-ruffle-fixtures',
-      `--score-file=${score}`,
-      '--run-id=run-1',
-      '--run-url=https://ci.invalid/run-1',
-    ]);
-    expect(result.status).toBe(2);
-    expect(result.stdout).toContain('NOT RUN: pack-unavailable');
-    const artifact = JSON.parse(readFileSync(score, 'utf8'));
-    expect(artifact.packs[0]).toMatchObject({ state: 'not-run', summary: null });
-    expect(artifact.packs[0].capabilities).toHaveLength(82);
-  });
+  it(
+    'writes a complete NOT RUN artifact and exits two when the pack is unavailable',
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
+      const score = join(directory, 'score.json');
+      const result = runCli(directory, [
+        '--pack=swf-ruffle-fixtures',
+        `--score-file=${score}`,
+        '--run-id=run-1',
+        '--run-url=https://ci.invalid/run-1',
+      ]);
+      expect(result.status).toBe(2);
+      expect(result.stdout).toContain('NOT RUN: pack-unavailable');
+      const artifact = JSON.parse(readFileSync(score, 'utf8'));
+      expect(artifact.packs[0]).toMatchObject({ state: 'not-run', summary: null });
+      expect(artifact.packs[0].capabilities).toHaveLength(82);
+    },
+    CLI_PROCESS_TEST_TIMEOUT_MS,
+  );
 
-  it('removes an explicitly named stale target on invalid CLI input', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
-    const score = join(directory, 'score.json');
-    writeFileSync(score, 'stale');
-    const result = runCli(directory, ['--pack=swf-ruffle-fixtures', `--score-file=${score}`, '--since=HEAD']);
-    expect(result.status).toBe(1);
-    expect(existsSync(score)).toBe(false);
-  });
+  it(
+    'removes an explicitly named stale target on invalid CLI input',
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
+      const score = join(directory, 'score.json');
+      writeFileSync(score, 'stale');
+      const result = runCli(directory, ['--pack=swf-ruffle-fixtures', `--score-file=${score}`, '--since=HEAD']);
+      expect(result.status).toBe(1);
+      expect(existsSync(score)).toBe(false);
+    },
+    CLI_PROCESS_TEST_TIMEOUT_MS,
+  );
 
-  it('keeps capability subset failure structurally scoreless', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
-    const result = runCli(directory, ['--pack=swf-ruffle-fixtures', '--capability=swf.fill.solid']);
-    expect(result.status).toBe(1);
-    expect(existsSync(join(directory, 'score.json'))).toBe(false);
-  });
+  it(
+    'keeps capability subset failure structurally scoreless',
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
+      const result = runCli(directory, ['--pack=swf-ruffle-fixtures', '--capability=swf.fill.solid']);
+      expect(result.status).toBe(1);
+      expect(existsSync(join(directory, 'score.json'))).toBe(false);
+    },
+    CLI_PROCESS_TEST_TIMEOUT_MS,
+  );
 
-  it('writes NOT RUN with the complete plan when another shard is missing', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
-    writeFixtureTree(directory);
-    const score = join(directory, 'score.json');
-    const result = runCli(
-      directory,
-      ['--pack=swf-ruffle-fixtures', `--score-file=${score}`, '--run-id=run-1', '--run-url=https://ci.invalid/run-1'],
-      '2/2',
-    );
-    expect(result.status).toBe(2);
-    const artifact = JSON.parse(readFileSync(score, 'utf8'));
-    expect(artifact.packs[0]).toMatchObject({ reason: 'missing-shard', state: 'not-run', summary: null });
-    expect(artifact.packs[0].sharding.shards).toEqual([
-      { id: 0, reason: 'missing-shard', state: 'not-run' },
-      { id: 1, state: 'measured' },
-    ]);
-  });
+  it(
+    'writes NOT RUN with the complete plan when another shard is missing',
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), 'flight-conformance-cli-'));
+      writeFixtureTree(directory);
+      const score = join(directory, 'score.json');
+      const result = runCli(
+        directory,
+        ['--pack=swf-ruffle-fixtures', `--score-file=${score}`, '--run-id=run-1', '--run-url=https://ci.invalid/run-1'],
+        '2/2',
+      );
+      expect(result.status).toBe(2);
+      const artifact = JSON.parse(readFileSync(score, 'utf8'));
+      expect(artifact.packs[0]).toMatchObject({ reason: 'missing-shard', state: 'not-run', summary: null });
+      expect(artifact.packs[0].sharding.shards).toEqual([
+        { id: 0, reason: 'missing-shard', state: 'not-run' },
+        { id: 1, state: 'measured' },
+      ]);
+    },
+    CLI_PROCESS_TEST_TIMEOUT_MS,
+  );
 });
 
 function runCli(fixtureDirectory: string, args: readonly string[], shard?: string) {
@@ -94,3 +110,7 @@ function createMinimalSwf(): Uint8Array {
   bytes.set([0x46, 0x57, 0x53, 9, 16, 0, 0, 0, 0x08, 0, 0, 24, 1, 0, 0, 0]);
   return bytes;
 }
+
+// Each case starts a real child process and loads the complete conformance CLI module graph. Repository-wide
+// parallelism can delay that startup without changing the CLI result the assertions are designed to verify.
+const CLI_PROCESS_TEST_TIMEOUT_MS = 15_000;
