@@ -2,7 +2,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getVertexAttributeFloatOffset } from '@flighthq/mesh/contract';
+import {
+  CANONICAL_MESH_GEOMETRY_LAYOUT,
+  computeMeshGeometryTangents,
+  createMeshGeometry,
+  getVertexAttributeFloatOffset,
+} from '@flighthq/mesh/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
@@ -23,6 +28,7 @@ export const MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID = 'md5.tangent-code-pat
 
 export type Md5TangentOracleState = 'failed' | 'not-run' | 'passed';
 export type Md5TangentFrameOracleSelection = 'all' | 'handedness';
+type Md5TangentFrameOracleCliSelection = Md5TangentFrameOracleSelection | 'handedness-control';
 export type Md5TangentHandednessXCorrelation =
   | 'indeterminate'
   | 'split-opposite-sign-to-x'
@@ -84,26 +90,29 @@ export interface Md5TangentHandednessOracle {
   xSideComparison: 'triangle-centroid-sign-vs-observed-float32-rounding-cell';
 }
 
-export interface Md5TangentHandednessSectionOracle {
-  indeterminateUvWindingTriangles: number;
+export interface TangentXCorrelationOracle {
   invalidTriangles: number;
-  matchingTriangles: number;
-  mismatchingTriangles: number;
   mixedTangentHandednessTriangles: number;
   negativeTangentHandednessTriangles: number;
-  negativeUvWindingTriangles: number;
   negativeXNegativeHandednessTriangles: number;
   negativeXPositiveHandednessTriangles: number;
   oppositeSignToXTriangles: number;
   positiveTangentHandednessTriangles: number;
-  positiveUvWindingTriangles: number;
   positiveXNegativeHandednessTriangles: number;
   positiveXPositiveHandednessTriangles: number;
   sameSignAsXTriangles: number;
-  section: number;
   triangleCount: number;
   xCorrelation: Md5TangentHandednessXCorrelation;
   xSideIndeterminateTriangles: number;
+}
+
+export interface Md5TangentHandednessSectionOracle extends TangentXCorrelationOracle {
+  indeterminateUvWindingTriangles: number;
+  matchingTriangles: number;
+  mismatchingTriangles: number;
+  negativeUvWindingTriangles: number;
+  positiveUvWindingTriangles: number;
+  section: number;
 }
 
 export interface Md5TangentSplitPairMeasurement {
@@ -515,6 +524,115 @@ export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5Tan
   return { ...measurements, state: 'passed' };
 }
 
+export function runProceduralMirroredUvTangentControl(): TangentXCorrelationOracle {
+  const vertices = new Float32Array(4 * 12);
+  setProceduralControlVertex(vertices, 0, 0, -1.2, 0, 0);
+  setProceduralControlVertex(vertices, 1, 1.2, 0, 1, 0);
+  setProceduralControlVertex(vertices, 2, 0, 1.2, 0, 1);
+  setProceduralControlVertex(vertices, 3, -1.2, 0, 1, 0);
+  const geometry = createMeshGeometry({
+    indices: new Uint16Array([0, 1, 2, 0, 2, 3]),
+    layout: CANONICAL_MESH_GEOMETRY_LAYOUT,
+    vertices,
+  });
+  computeMeshGeometryTangents(geometry, geometry);
+  return measureTangentXCorrelation(geometry);
+}
+
+export function measureTangentXCorrelation(geometry: Readonly<MeshGeometry>): TangentXCorrelationOracle {
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const positionOffset = getVertexAttributeFloatOffset(geometry.layout, 'position');
+  const tangentOffset = tangentFloatOffset(geometry);
+  const indices = geometry.indices;
+  const elementCount = indices?.length ?? vertexCountOf(geometry);
+  const triangleCount = Math.floor(elementCount / 3);
+  const base = {
+    invalidTriangles: 0,
+    mixedTangentHandednessTriangles: 0,
+    negativeTangentHandednessTriangles: 0,
+    negativeXNegativeHandednessTriangles: 0,
+    negativeXPositiveHandednessTriangles: 0,
+    oppositeSignToXTriangles: 0,
+    positiveTangentHandednessTriangles: 0,
+    positiveXNegativeHandednessTriangles: 0,
+    positiveXPositiveHandednessTriangles: 0,
+    sameSignAsXTriangles: 0,
+    triangleCount,
+    xCorrelation: 'indeterminate' as Md5TangentHandednessXCorrelation,
+    xSideIndeterminateTriangles: 0,
+  };
+  if (floatsPerVertex <= 0 || positionOffset < 0 || tangentOffset < 0 || geometry.topology !== 'triangle-list') {
+    return { ...base, invalidTriangles: triangleCount };
+  }
+
+  let invalidTriangles = 0;
+  let mixedTangentHandednessTriangles = 0;
+  let negativeTangentHandednessTriangles = 0;
+  let negativeXNegativeHandednessTriangles = 0;
+  let negativeXPositiveHandednessTriangles = 0;
+  let positiveTangentHandednessTriangles = 0;
+  let positiveXNegativeHandednessTriangles = 0;
+  let positiveXPositiveHandednessTriangles = 0;
+  let xSideIndeterminateTriangles = 0;
+  const vertexCount = vertexCountOf(geometry);
+  for (let element = 0; element + 2 < elementCount; element += 3) {
+    const triangle = indices
+      ? [indices[element]!, indices[element + 1]!, indices[element + 2]!]
+      : [element, element + 1, element + 2];
+    if (triangle.some((vertex) => vertex >= vertexCount)) {
+      invalidTriangles++;
+      continue;
+    }
+    const tangentHandedness = triangle.map(
+      (vertex) => geometry.vertices[vertex * floatsPerVertex + tangentOffset + 3]!,
+    );
+    const observedSign = tangentHandedness.every((value) => value === 1)
+      ? 1
+      : tangentHandedness.every((value) => value === -1)
+        ? -1
+        : null;
+    if (observedSign === 1) positiveTangentHandednessTriangles++;
+    else if (observedSign === -1) negativeTangentHandednessTriangles++;
+    else mixedTangentHandednessTriangles++;
+
+    const xInterval = float32SumInterval(
+      triangle.map((vertex) => geometry.vertices[vertex * floatsPerVertex + positionOffset]!),
+    );
+    if (xInterval === null || (xInterval.min <= 0 && xInterval.max >= 0)) {
+      xSideIndeterminateTriangles++;
+    } else if (observedSign !== null) {
+      if (xInterval.min > 0) {
+        if (observedSign > 0) positiveXPositiveHandednessTriangles++;
+        else positiveXNegativeHandednessTriangles++;
+      } else if (observedSign > 0) negativeXPositiveHandednessTriangles++;
+      else negativeXNegativeHandednessTriangles++;
+    }
+  }
+  const sameSignAsXTriangles = negativeXNegativeHandednessTriangles + positiveXPositiveHandednessTriangles;
+  const oppositeSignToXTriangles = negativeXPositiveHandednessTriangles + positiveXNegativeHandednessTriangles;
+  return {
+    invalidTriangles,
+    mixedTangentHandednessTriangles,
+    negativeTangentHandednessTriangles,
+    negativeXNegativeHandednessTriangles,
+    negativeXPositiveHandednessTriangles,
+    oppositeSignToXTriangles,
+    positiveTangentHandednessTriangles,
+    positiveXNegativeHandednessTriangles,
+    positiveXPositiveHandednessTriangles,
+    sameSignAsXTriangles,
+    triangleCount,
+    xCorrelation: classifyXCorrelation(
+      positiveTangentHandednessTriangles,
+      negativeTangentHandednessTriangles,
+      mixedTangentHandednessTriangles,
+      sameSignAsXTriangles,
+      oppositeSignToXTriangles,
+    ),
+    xSideIndeterminateTriangles,
+  };
+}
+
 export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource: string): Md5TangentHandednessOracle {
   const sections = resolveGeometrySections(scene, meshSource);
   const base = {
@@ -546,46 +664,29 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
     const { geometry } = section;
     const floatsPerVertex = geometry.layout.stride / 4;
     const indices = geometry.indices;
+    const xCorrelation = measureTangentXCorrelation(geometry);
     let sectionIndeterminateUvWindingTriangles = 0;
     let sectionInvalidTriangles = 0;
     let sectionMatchingTriangles = 0;
     let sectionMismatchingTriangles = 0;
-    let mixedTangentHandednessTriangles = 0;
-    let negativeTangentHandednessTriangles = 0;
     let negativeUvWindingTriangles = 0;
-    let negativeXNegativeHandednessTriangles = 0;
-    let negativeXPositiveHandednessTriangles = 0;
-    let positiveTangentHandednessTriangles = 0;
     let positiveUvWindingTriangles = 0;
-    let positiveXNegativeHandednessTriangles = 0;
-    let positiveXPositiveHandednessTriangles = 0;
     let sectionTriangleCount = 0;
-    let xSideIndeterminateTriangles = 0;
     if (indices === null || geometry.topology !== 'triangle-list') {
       sectionInvalidTriangles = Math.floor((indices?.length ?? vertexCountOf(geometry)) / 3);
       invalidTriangles += sectionInvalidTriangles;
       sectionTriangleCount = sectionInvalidTriangles;
       triangleCount += sectionTriangleCount;
       sectionMeasurements.push({
+        ...xCorrelation,
         indeterminateUvWindingTriangles: 0,
         invalidTriangles: sectionInvalidTriangles,
         matchingTriangles: 0,
         mismatchingTriangles: 0,
-        mixedTangentHandednessTriangles: 0,
-        negativeTangentHandednessTriangles: 0,
         negativeUvWindingTriangles: 0,
-        negativeXNegativeHandednessTriangles: 0,
-        negativeXPositiveHandednessTriangles: 0,
-        oppositeSignToXTriangles: 0,
-        positiveTangentHandednessTriangles: 0,
         positiveUvWindingTriangles: 0,
-        positiveXNegativeHandednessTriangles: 0,
-        positiveXPositiveHandednessTriangles: 0,
-        sameSignAsXTriangles: 0,
         section: sectionIndex,
         triangleCount: sectionTriangleCount,
-        xCorrelation: 'indeterminate',
-        xSideIndeterminateTriangles: 0,
       });
       continue;
     }
@@ -607,22 +708,6 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
         : tangentHandedness.every((value) => value === -1)
           ? -1
           : null;
-      if (observedSign === 1) positiveTangentHandednessTriangles++;
-      else if (observedSign === -1) negativeTangentHandednessTriangles++;
-      else mixedTangentHandednessTriangles++;
-
-      const xInterval = float32SumInterval(
-        outputIndices.map((index) => geometry.vertices[index * floatsPerVertex + section.positionOffset]!),
-      );
-      if (xInterval === null || (xInterval.min <= 0 && xInterval.max >= 0)) {
-        xSideIndeterminateTriangles++;
-      } else if (observedSign !== null) {
-        if (xInterval.min > 0) {
-          if (observedSign > 0) positiveXPositiveHandednessTriangles++;
-          else positiveXNegativeHandednessTriangles++;
-        } else if (observedSign > 0) negativeXPositiveHandednessTriangles++;
-        else negativeXNegativeHandednessTriangles++;
-      }
 
       const uv = sourceIndices.map((index) => section.source.uvs[index!]!);
       const determinant = determinantInterval(
@@ -667,34 +752,16 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
         sectionMismatchingTriangles++;
       }
     }
-    const sameSignAsXTriangles = negativeXNegativeHandednessTriangles + positiveXPositiveHandednessTriangles;
-    const oppositeSignToXTriangles = negativeXPositiveHandednessTriangles + positiveXNegativeHandednessTriangles;
     sectionMeasurements.push({
+      ...xCorrelation,
       indeterminateUvWindingTriangles: sectionIndeterminateUvWindingTriangles,
       invalidTriangles: sectionInvalidTriangles,
       matchingTriangles: sectionMatchingTriangles,
       mismatchingTriangles: sectionMismatchingTriangles,
-      mixedTangentHandednessTriangles,
-      negativeTangentHandednessTriangles,
       negativeUvWindingTriangles,
-      negativeXNegativeHandednessTriangles,
-      negativeXPositiveHandednessTriangles,
-      oppositeSignToXTriangles,
-      positiveTangentHandednessTriangles,
       positiveUvWindingTriangles,
-      positiveXNegativeHandednessTriangles,
-      positiveXPositiveHandednessTriangles,
-      sameSignAsXTriangles,
       section: sectionIndex,
       triangleCount: sectionTriangleCount,
-      xCorrelation: classifyXCorrelation(
-        positiveTangentHandednessTriangles,
-        negativeTangentHandednessTriangles,
-        mixedTangentHandednessTriangles,
-        sameSignAsXTriangles,
-        oppositeSignToXTriangles,
-      ),
-      xSideIndeterminateTriangles,
     });
   }
 
@@ -1152,6 +1219,22 @@ function numbersFinite(...values: readonly number[]): boolean {
   return values.every(Number.isFinite);
 }
 
+function setProceduralControlVertex(
+  vertices: Float32Array,
+  vertex: number,
+  x: number,
+  y: number,
+  u: number,
+  v: number,
+): void {
+  const base = vertex * 12;
+  vertices[base] = x;
+  vertices[base + 1] = y;
+  vertices[base + 5] = 1;
+  vertices[base + 10] = u;
+  vertices[base + 11] = v;
+}
+
 function stripLineComment(line: string): string {
   let quoted = false;
   let escaped = false;
@@ -1184,6 +1267,13 @@ function splitPairReason(pair: Md5TangentSplitPairMeasurement): string {
 
 function main(): void {
   const selection = parseOracleSelection(process.argv.slice(2));
+  if (selection === 'handedness-control') {
+    const control = runProceduralMirroredUvTangentControl();
+    process.stdout.write(
+      `procedural-mirrored-uv triangles=${control.triangleCount} tangent-positive=${control.positiveTangentHandednessTriangles} tangent-negative=${control.negativeTangentHandednessTriangles} tangent-mixed=${control.mixedTangentHandednessTriangles} x-correlation=${control.xCorrelation} same-sign-as-x=${control.sameSignAsXTriangles} opposite-sign-to-x=${control.oppositeSignToXTriangles} negative-x-negative=${control.negativeXNegativeHandednessTriangles} negative-x-positive=${control.negativeXPositiveHandednessTriangles} positive-x-negative=${control.positiveXNegativeHandednessTriangles} positive-x-positive=${control.positiveXPositiveHandednessTriangles} x-side-indeterminate=${control.xSideIndeterminateTriangles} invalid=${control.invalidTriangles}\n`,
+    );
+    return;
+  }
   const cacheDirectory = resolveFixtureCacheDirectory();
   const treeDirectory = getFixtureTreePath(cacheDirectory, MD5_TANGENT_FIXTURE_VARIANT, MD5_TANGENT_FIXTURE_PACK);
   const stamp = readFixtureTreeStamp(treeDirectory);
@@ -1203,9 +1293,10 @@ function main(): void {
   if (report.state === 'not-run') process.exitCode = 1;
 }
 
-function parseOracleSelection(arguments_: readonly string[]): Md5TangentFrameOracleSelection {
+function parseOracleSelection(arguments_: readonly string[]): Md5TangentFrameOracleCliSelection {
   if (arguments_.length === 0) return 'all';
   if (arguments_.length === 1 && arguments_[0] === '--oracle=handedness') return 'handedness';
+  if (arguments_.length === 1 && arguments_[0] === '--oracle=handedness-control') return 'handedness-control';
   throw new Error(`Unknown MD5 tangent oracle arguments: ${arguments_.join(' ')}`);
 }
 
