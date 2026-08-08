@@ -60,11 +60,21 @@ observations — scoring, sharding, caching, and the artifact schema can be gene
 and measurement semantics cannot. SWF's tag walker and MD5's section probe stay separate instantiations,
 and an oracle's measurements stay opaque to everything that transports them.
 
-**Three constraints, one rule, arrived by three different routes** — extraction from scoping a second
-format, case identity from scoping its multi-file case, measurement shape from a mid-flight pivot in what
-was being measured. **That they keep arriving is the evidence the rule is real**: each was invisible
-while a single instantiation was the only one, and none appears as a decision anywhere in the code. They
-appear as plumbing.
+**Three constraints, one rule — and the weight is in the ROUTES, not the count.** Extraction came from
+scoping a second format; case identity from scoping that format's multi-file case; measurement shape from
+a **mid-flight pivot in what was being measured**. Three instances found by one method would be one
+finding repeated. **Three independent probes hitting the same wall is the part that survives someone
+pointing out the sample is small** — which they should, because three is small.
+
+**None of them appears as a decision anywhere in the code. They appear as plumbing.** That is why a
+reader cannot re-derive these from the source however carefully they read it: **an absent assumption
+leaves no trace**, so the only place it can live is a record of what was *deliberately not encoded*.
+That is this document's reason for existing.
+
+⚠ **Falsifier, because the paragraph above is an induction from three:** if a fourth constraint arrives
+that is **not** explained by the core encoding a shape it does not own, **the rule is narrower than
+stated and this document should say so.** A rule that cannot be wrong teaches the next reader nothing
+about when it fails to apply.
 
 ## Population, and the naming prohibition it carries
 
