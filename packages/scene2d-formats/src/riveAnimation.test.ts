@@ -1,4 +1,5 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
@@ -9,7 +10,7 @@ import type {
   RiveCoreObject,
   Shape,
 } from '@flighthq/types/contract';
-import { RiveFieldType, ShapeKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation';
 import { createScene2DFromRiveDocument } from './riveScene2D';
@@ -269,16 +270,46 @@ describe('createRiveAnimationClips', () => {
     expect(modes).toEqual(['OneShot', 'Loop', 'PingPong']);
   });
 
-  it('falls back to one shot for a loop mode this reader does not know', () => {
-    const clips = createRiveAnimationClips(
-      [object(LINEAR_ANIMATION, { [FPS]: 30, [LOOP]: 99 })],
-      { end: 1, start: 0 },
-      [],
-      emptyArtboard(),
-      new Map(),
-    );
+  it('reports a loop mode it does not know, which plays once rather than being dropped', () => {
+    // The clip survives at full length and simply repeats wrongly, so neither an existence check nor a
+    // count can see it. A genuine one-shot is the documented default and must stay silent, which the
+    // test below this one holds.
+    let clips: ReturnType<typeof createRiveAnimationClips> = [];
+    const diagnostics = collectImportDiagnostics((sink) => {
+      clips = createRiveAnimationClips(
+        [object(LINEAR_ANIMATION, { [FPS]: 30, [LOOP]: 99 })],
+        { end: 1, start: 0 },
+        [],
+        emptyArtboard(),
+        new Map(),
+        undefined,
+        sink,
+      );
+    });
 
     expect(clips[0].loop).toBe('OneShot');
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].kind).toBe('rive.animation-loop-substituted');
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Recover);
+    expect(diagnostics[0].detail).toEqual({ loopValue: 99, substitutedAs: 'oneShot' });
+  });
+
+  it('stays silent for a genuine one shot, so the substitution crumb carries information', () => {
+    const diagnostics = collectImportDiagnostics((sink) => {
+      const clips = createRiveAnimationClips(
+        [object(LINEAR_ANIMATION, { [FPS]: 30, [LOOP]: 0 })],
+        { end: 1, start: 0 },
+        [],
+        emptyArtboard(),
+        new Map(),
+        undefined,
+        sink,
+      );
+      // Non-vacuous: a run that produced no clip would be silent for the wrong reason.
+      expect(clips[0].loop).toBe('OneShot');
+    });
+
+    expect(diagnostics).toEqual([]);
   });
 
   it('carries playback speed, defaulting to authored speed', () => {
