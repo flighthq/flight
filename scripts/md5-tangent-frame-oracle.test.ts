@@ -1,0 +1,257 @@
+import { getNodeChildren } from '@flighthq/node/contract';
+import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
+import type { Mesh, Scene3D } from '@flighthq/types/contract';
+
+import {
+  measureMd5SplitTangentDifference,
+  measureMd5TangentCodePathCrossCheck,
+  measureMd5TangentHandedness,
+  measureMd5TangentOrthogonality,
+  runMd5TangentFrameOracles,
+} from './md5-tangent-frame-oracle';
+
+describe('MD5 tangent orthogonality measurement', () => {
+  it('measures tangent-normal residuals against Float32 rounding cells', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(measureMd5TangentOrthogonality(scene)).toEqual({
+      exactVertices: 3,
+      id: 'md5.tangent-orthogonality',
+      invalidVertices: 0,
+      maximumPrecisionExcess: 0,
+      maximumPrecisionBound: 1.4012985478487143e-45,
+      maximumResidual: 0,
+      maximumResidualToPrecisionRatio: 0,
+      outsidePrecisionVertices: 0,
+      state: 'passed',
+      vertexCount: 3,
+      withinPrecisionVertices: 0,
+    });
+  });
+
+  it('separates a residual outside representable precision from an unreadable frame', () => {
+    const outside = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const outsideGeometry = meshGeometry(outside);
+    outsideGeometry.vertices[7] = 0.25;
+    expect(measureMd5TangentOrthogonality(outside)).toMatchObject({
+      maximumResidual: 0.25,
+      outsidePrecisionVertices: 1,
+      state: 'failed',
+    });
+
+    const unreadable = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const unreadableGeometry = meshGeometry(unreadable);
+    unreadableGeometry.vertices.fill(0, 6, 9);
+    expect(measureMd5TangentOrthogonality(unreadable)).toMatchObject({
+      invalidVertices: 1,
+      notRunReason: 'tangent-frame-unreadable',
+      state: 'not-run',
+    });
+  });
+});
+
+describe('MD5 tangent handedness measurement', () => {
+  it('matches each tangent sign against a source-precision UV winding interval', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(measureMd5TangentHandedness(scene, SINGLE_TRIANGLE)).toMatchObject({
+      indeterminateTriangles: 0,
+      invalidTriangles: 0,
+      matchingTriangles: 1,
+      mismatchingTriangles: 0,
+      state: 'passed',
+      triangleCount: 1,
+    });
+  });
+
+  it('reports a known wrong sign as failure', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = meshGeometry(scene);
+    const stride = geometry.layout.stride / 4;
+    for (let vertex = 0; vertex < 3; vertex++) geometry.vertices[vertex * stride + 9] = 1;
+
+    expect(measureMd5TangentHandedness(scene, SINGLE_TRIANGLE)).toMatchObject({
+      mismatchingTriangles: 1,
+      state: 'failed',
+    });
+  });
+
+  it('withholds a sign when the source decimal cells admit both UV windings', () => {
+    const coarseSource = SINGLE_TRIANGLE.replaceAll('0.0', '0').replaceAll('1.0', '1');
+    const scene = createScene3DFromMd5Mesh(coarseSource);
+
+    expect(measureMd5TangentHandedness(scene, coarseSource)).toMatchObject({
+      indeterminateTriangles: 1,
+      notRunReason: 'uv-winding-indeterminate',
+      state: 'not-run',
+    });
+  });
+
+  it('does not guess topology from unreadable source text', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(measureMd5TangentHandedness(scene, 'not md5')).toMatchObject({
+      notRunReason: 'source-topology-unreadable',
+      state: 'not-run',
+    });
+  });
+});
+
+describe('MD5 split tangent difference measurement', () => {
+  it('measures mirrored split records as different tangent frames', () => {
+    const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
+    const result = measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES);
+
+    expect(result).toMatchObject({
+      indistinguishablePairs: 0,
+      meaningfulPairs: 2,
+      state: 'passed',
+    });
+    expect(result.pairs).toEqual([
+      expect.objectContaining({ handednessChanged: true, originalVertex: 0, splitVertex: 4 }),
+      expect.objectContaining({ handednessChanged: true, originalVertex: 2, splitVertex: 5 }),
+    ]);
+  });
+
+  it('fails a split whose tangent frame is indistinguishable at Float32 precision', () => {
+    const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
+    const geometry = meshGeometry(scene);
+    const stride = geometry.layout.stride / 4;
+    for (const [original, split] of [
+      [0, 4],
+      [2, 5],
+    ] as const) {
+      geometry.vertices.copyWithin(split * stride + 6, original * stride + 6, original * stride + 10);
+    }
+
+    expect(measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES)).toMatchObject({
+      indistinguishablePairs: 2,
+      meaningfulPairs: 0,
+      state: 'failed',
+    });
+  });
+
+  it('keeps a mesh without tangent splits as not measured', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(measureMd5SplitTangentDifference(scene, SINGLE_TRIANGLE)).toMatchObject({
+      notRunReason: 'split-vertices-absent',
+      pairs: [],
+      state: 'not-run',
+    });
+  });
+});
+
+describe('MD5 tangent code-path cross-check diagnostic', () => {
+  it('records and executes its same-author procedure after the direct invariants', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const result = runMd5TangentFrameOracles(scene, SINGLE_TRIANGLE);
+
+    expect(result.codePathCrossCheck).toEqual({
+      calculation: 'per-triangle-uv-jacobian-solve-and-generalized-gram-schmidt',
+      comparedComponents: 12,
+      comparison: 'absolute-component-residual-vs-observed-float32-rounding-cell',
+      coordinateBasis: 'flight-right-handed-y-up-after-import',
+      differingComponents: 0,
+      differingVertices: 0,
+      id: 'md5.tangent-code-path-cross-check',
+      independence: 'same-author-code-path-only',
+      inputPreparation: 'imported-float32-position-normal-uv-and-index-streams',
+      maximumPrecisionExcess: 0,
+      maximumPrecisionBound: 5.960464477539063e-8,
+      maximumResidual: 0,
+      maximumResidualToPrecisionRatio: 0,
+      role: 'diagnostic',
+      state: 'passed',
+      tool: 'scripts/md5-tangent-frame-oracle',
+    });
+  });
+
+  it('finds an emitted tangent that differs from the code-path-independent computation', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    meshGeometry(scene).vertices[6] = 0.5;
+
+    expect(measureMd5TangentCodePathCrossCheck(scene)).toMatchObject({
+      differingComponents: 1,
+      differingVertices: 1,
+      maximumResidual: 0.5,
+      state: 'failed',
+    });
+  });
+
+  it('does not repeat the production assumption that an encoded normal is exactly unit length', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = meshGeometry(scene);
+    const stride = geometry.layout.stride / 4;
+    for (let vertex = 0; vertex < 3; vertex++) {
+      geometry.vertices[vertex * stride + 3] = 0.001;
+      geometry.vertices[vertex * stride + 4] = -0.999999;
+    }
+
+    expect(measureMd5TangentCodePathCrossCheck(scene)).toMatchObject({
+      differingComponents: 6,
+      differingVertices: 3,
+      state: 'failed',
+    });
+  });
+
+  it('withholds the diagnostic for a UV gradient that has no source direction', () => {
+    const degenerateSource = SINGLE_TRIANGLE.replace('vert 1 ( 1.0 0.0 )', 'vert 1 ( 0.0 0.0 )').replace(
+      'vert 2 ( 0.0 1.0 )',
+      'vert 2 ( 0.0 0.0 )',
+    );
+    const scene = createScene3DFromMd5Mesh(degenerateSource);
+
+    expect(measureMd5TangentCodePathCrossCheck(scene)).toMatchObject({
+      notRunReason: 'uv-gradient-indeterminate',
+      state: 'not-run',
+    });
+  });
+});
+
+function meshGeometry(scene: Readonly<Scene3D>): Mesh['geometry'] {
+  return (getNodeChildren(scene.root)[1] as Mesh).geometry;
+}
+
+const SINGLE_TRIANGLE = [
+  'MD5Version 10',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/example"',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '  numweights 3',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 1 0 )',
+  '}',
+].join('\n');
+
+const MIRRORED_UV_TRIANGLES = [
+  'MD5Version 10',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/mirrored"',
+  '  numverts 4',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  vert 3 ( 1.0 0.0 ) 3 1',
+  '  numtris 2',
+  '  tri 0 0 1 2',
+  '  tri 1 0 2 3',
+  '  numweights 4',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 1 0 )',
+  '  weight 3 0 1.0 ( -1 0 0 )',
+  '}',
+].join('\n');
