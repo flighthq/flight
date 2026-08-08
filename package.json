@@ -83,6 +83,7 @@
     "exports:check:json": "tsx ./scripts/completeness.ts --json",
     "fix": "tsx ./scripts/fix.ts",
     "fixtures": "tsx ./scripts/fixtures.ts",
+    "oracle:woff2-reversal": "tsx ./scripts/woff2-reversal-oracle.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "functional": "npm run dev:functional",
