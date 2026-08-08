@@ -1,13 +1,16 @@
 import { packColor } from '@flighthq/color/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type {
   FontVariation,
+  ImportDiagnostic,
   RichText,
   RiveArtboardGraph,
   RiveCoreObject,
   TextFormat,
   TextFormatRange,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -16,8 +19,8 @@ import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
  *
  * The words live in the drawable's **value runs**, each naming a style, and a style's colour comes
  * from a paint child of its own — the same shape a fill takes on a shape. `styleId` indexes the
- * artboard's component numbering, the same space `parentId` uses, which was confirmed against the
- * corpus where it resolves all 150 runs and resolving it against the styles in order resolves 4.
+ * artboard's component numbering, the same space `parentId` uses, rather than indexing styles in
+ * declaration order.
  *
  * Runs are joined in file order and **each run contributes one `TextFormatRange`** over the span it
  * occupies in the joined string, which is what carries a drawable whose runs differ in style. One
@@ -33,6 +36,7 @@ export function createRiveRichText(
   artboard: Readonly<RiveArtboardGraph>,
   index: number,
   fontNames: readonly string[],
+  diagnostics?: ImportDiagnostic[],
 ): RichText {
   const source = artboard.objects[index];
   const runs: number[] = [];
@@ -43,6 +47,7 @@ export function createRiveRichText(
 
   const align = readRiveNumber(source, RIVE_TEXT_ALIGN, 0);
   const formatRanges: TextFormatRange[] = [];
+  const unresolvedStyles = new Set<number>();
   let text = '';
   for (const run of runs) {
     const value = readRiveText(artboard.objects[run], RIVE_RUN_TEXT, '');
@@ -50,7 +55,7 @@ export function createRiveRichText(
     // A run's span is measured in the joined string, so it is stated before the run is appended.
     formatRanges.push({
       end: text.length + value.length,
-      format: createRiveTextFormat(artboard, style, align, fontNames),
+      format: createRiveTextFormat(artboard, style, align, fontNames, diagnostics, unresolvedStyles),
       start: text.length,
     });
     text += value;
@@ -59,7 +64,7 @@ export function createRiveRichText(
   // The first run's style doubles as the drawable's own format, so a consumer that lays out from the
   // format alone still renders the common single-style case correctly.
   const baseStyle = runs.length === 0 ? -1 : readRiveNumber(artboard.objects[runs[0]], RIVE_RUN_STYLE_ID, -1);
-  const format = createRiveTextFormat(artboard, baseStyle, align, fontNames);
+  const format = createRiveTextFormat(artboard, baseStyle, align, fontNames, diagnostics, unresolvedStyles);
 
   const node = createRichText();
   node.data.defaultTextFormat = format;
@@ -77,6 +82,8 @@ function createRiveTextFormat(
   styleIndex: number,
   align: number,
   fontNames: readonly string[],
+  diagnostics: ImportDiagnostic[] | undefined,
+  unresolvedStyles: Set<number>,
 ): TextFormat {
   const style = styleIndex >= 0 && styleIndex < artboard.objects.length ? artboard.objects[styleIndex] : null;
   const format: TextFormat = {
@@ -88,7 +95,19 @@ function createRiveTextFormat(
           : ('left' as const),
     color: readRiveStyleColor(artboard, styleIndex),
   };
-  if (style === null) return format;
+  if (style === null) {
+    if (styleIndex >= 0 && !unresolvedStyles.has(styleIndex)) {
+      unresolvedStyles.add(styleIndex);
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'rive.text-unresolved-style',
+        'createScene2DFromRiveDocument',
+        { styleIndex },
+      );
+    }
+    return format;
+  }
 
   format.leading = readRiveNumber(style, RIVE_STYLE_LINE_HEIGHT, -1);
   format.letterSpacing = readRiveNumber(style, RIVE_STYLE_LETTER_SPACING, 0);
