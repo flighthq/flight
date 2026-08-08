@@ -9,6 +9,7 @@
     "sourceMap": true // Generate source maps for JS files
   },
   "include": [
+    "conformance/**/*.ts",
     "packages/**/src/**/*.ts",
     "packages/**/src/**/*.test.ts", // Include test files here
     "packages/**/src/**/*.spec.ts",

@@ -1,11 +1,11 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
+import type { SwfImportConformanceObservation } from '../swf/swf-import-conformance-worker-protocol';
 import { classifyImportConformanceDiagnosticObservation } from './import-conformance-classification';
 import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
 import { retainImportConformanceDiagnostic } from './import-conformance-diagnostic-evidence';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
-import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol';
 
 export function classifyImportConformanceObservation(
   fixture: Readonly<ImportConformanceIndexedFixture>,

@@ -45,7 +45,7 @@ export interface ImportConformanceRatchetReport {
   state: ImportConformanceRatchetState;
 }
 
-export const IMPORT_CONFORMANCE_BASELINE_PATH = 'scripts/import-conformance-baseline.json';
+export const IMPORT_CONFORMANCE_BASELINE_PATH = 'conformance/core/import-conformance-baseline.json';
 export const IMPORT_CONFORMANCE_CURRENT_PATH = '.artifacts/import-conformance/score.json';
 
 export function compareImportConformanceScores(

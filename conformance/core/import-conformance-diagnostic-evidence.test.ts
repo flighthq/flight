@@ -1,6 +1,7 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
 import {
   assertImportConformanceDiagnosticEvidencePolicy,
   cloneImportConformanceDiagnosticEvidencePolicy,
@@ -9,7 +10,6 @@ import {
   retainImportConformanceDiagnostic,
 } from './import-conformance-diagnostic-evidence';
 import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const CAPABILITIES = new Set(['swf.script.do-action']);
 const MD5_POLICY = {

@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { createSwfImportConformanceDenominators } from '../swf/swf-capability-index';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
 import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
 import {
   buildImportConformanceCapabilityIndex,
@@ -11,8 +13,6 @@ import {
 } from './import-conformance-core';
 import type { ImportConformanceLossPath } from './import-conformance-core';
 import { formatImportConformanceScore } from './import-conformance-format';
-import { createSwfImportConformanceDenominators } from './swf-capability-index';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from './swf-import-conformance-policy';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

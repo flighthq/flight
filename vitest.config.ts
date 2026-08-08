@@ -77,6 +77,16 @@ export default mergeConfig(
         {
           extends: true,
           test: {
+            name: 'conformance',
+            isolate: false,
+            include: ['conformance/**/*.test.ts'],
+            exclude: [...COMMON_EXCLUDE],
+            sequence: { groupOrder: 0 },
+          },
+        },
+        {
+          extends: true,
+          test: {
             name: 'shared',
             isolate: false,
             include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
