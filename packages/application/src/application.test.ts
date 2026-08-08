@@ -734,6 +734,22 @@ describe('stepApplicationLoop', () => {
     expect(app.interpolationAlpha).toBe(0.75);
   });
 
+  it('carries fixed residual across an intervening variable step', () => {
+    const app = createApplication();
+    enableApplicationLifecycleSignals(app);
+    const fixedDeltas: number[] = [];
+    connectSignal(app.onFixedUpdate!, (delta) => fixedDeltas.push(delta));
+
+    stepApplicationLoop(app, 10, { fixedTimeStep: 16 });
+    stepApplicationLoop(app, 100);
+    expect(fixedDeltas).toEqual([]);
+    expect(app.interpolationAlpha).toBe(1);
+
+    stepApplicationLoop(app, 6, { fixedTimeStep: 16 });
+    expect(fixedDeltas).toEqual([16]);
+    expect(app.interpolationAlpha).toBe(0);
+  });
+
   it('uses an explicit max delta instead of the active backend loop clamp', () => {
     const backend = makeManualLoopBackend();
     setLoopBackend(backend);
