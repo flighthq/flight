@@ -73,6 +73,35 @@ export function computeSfntTableChecksum(data: Readonly<Uint8Array>, isHeadTable
 
 // Packs a four-character tag into the uint32 an sfnt directory stores it as. Tags shorter than four
 // characters are padded with spaces, which is how the format spells `cvt ` and `CFF ` — a caller
+// Builds the `loca` table from each glyph record's length, in glyph order. `loca` holds glyphCount + 1
+// offsets, because a glyph's length is the gap to the NEXT entry — which is also how a zero-length
+// (blank) glyph is expressed, as two equal consecutive offsets.
+//
+// ★ THE SHORT FORM STORES HALF THE OFFSET, WHICH MAKES EVEN PADDING A CORRECTNESS REQUIREMENT RATHER
+// THAN A TIDINESS ONE. With `indexFormat` 0 each entry is `offset / 2` in a uint16, so an odd offset is
+// not representable and would be silently truncated to the even one below it — pointing the reader at
+// the previous glyph's last byte. Callers must therefore pad every record to an even length before
+// measuring it here. Returns the null sentinel rather than truncating when an offset is odd, or when
+// the font is too large for the short form to reach.
+export function encodeSfntLoca(glyphLengths: readonly number[], indexFormat: number): Uint8Array | null {
+  const entries = glyphLengths.length + 1;
+  const out = new Uint8Array(indexFormat === 0 ? entries * 2 : entries * 4);
+  const view = new DataView(out.buffer);
+
+  let offset = 0;
+  for (let index = 0; index < entries; index += 1) {
+    if (indexFormat === 0) {
+      if (offset % 2 !== 0) return null;
+      if (offset / 2 > 0xffff) return null;
+      view.setUint16(index * 2, offset / 2);
+    } else {
+      view.setUint32(index * 4, offset);
+    }
+    offset += glyphLengths[index] ?? 0;
+  }
+  return out;
+}
+
 // Encodes one simple glyph as the `glyf` table stores it: the contour ends, the hinting instructions,
 // then per-point flags and the x and y deltas the flags describe. `xs` and `ys` are ABSOLUTE coordinates
 // in font units; the deltas are computed here, because the encoding is defined over deltas and a caller
