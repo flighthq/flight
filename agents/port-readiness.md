@@ -39,6 +39,30 @@ Decision rule, per JS-ism:
 The line that falls out: **isolated boundary seams are cheap and often net-positive; pervasive
 reshapes are expensive and belong in the converter.**
 
+### First sort the ask: contract clarity, or mechanism accommodation?
+
+The budget above is about **mechanism** — which language construct the source uses. Applied to
+**contract clarity** it gives the wrong answer, and the mistake is easy to make because a port
+team raises both in one breath.
+
+- **Contract clarity** — what a type says, which sentinel means absence, whether a capability has
+  a seam at all. This is **never** a concession to a port, and never counts against the budget.
+  Explicitness is already the house rule (AGENTS.md § Design posture: nothing magic should happen
+  that the caller did not ask for) — and a transpiler is a caller. A vague type does not remove
+  the inference burden, it *relocates* it: the same defect as hidden runtime state, moved
+  downstream onto every consumer. Fix these on Flight's own merits.
+- **Mechanism accommodation** — reshaping working TS to dodge a construct the converter finds
+  hard (the `await`-ban, combinator soup, a closure ban). This is what the budget exists for, and
+  the answer is usually the converter.
+
+The test: **would this change improve the TS SDK if no port existed?** Yes → contract clarity,
+do it. No → mechanism, push it to the converter.
+
+Worked example of the first kind: image loading has no `*Backend` seam while 39 other capabilities
+do, so no host can swap it. That is not port tax — it is an unfinished spot in an architecture the
+SDK already committed to, and "the web is one host among several" is a plain design fact rather
+than a portability concession.
+
 Friction map of the candidates:
 
 - **Net-positive / neutral — do:** diagnostics (structured crumbs *improved* the code over prose
@@ -127,6 +151,13 @@ checks (the platform suite already works this way; web backends return sentinels
 `window` / `document` / `navigator`, Canvas2D, WebGPU, clipboard/notifications, browser media
 elements, Electron/Tauri/Capacitor modules, dynamic imports. WebGL already models this correctly —
 HTML5 uses WebGL externs, native Lime gets a Lime-specific graphics route.
+
+Where their **types** come from is a separate rule, and a port toolchain needs it: browser APIs are
+supplied by TypeScript's own `lib.dom.d.ts` (no dependency, nothing declared), foreign hosts get a
+Flight-authored seam in `@flighthq/types`, and WebGPU is the lone package dependency because it has
+not reached `lib.dom.d.ts` yet. A checker that does not replicate this repo's `tsconfig` will see
+~974 unresolved `GPU*` names and no other host-API gaps — that is the expected shape, not a defect.
+Full rule in [export lanes](conventions/export-lanes.md#foreign-host-apis-flight-authors-the-seam-not-the-implementation).
 
 ## TS-side vs port-side
 
