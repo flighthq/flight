@@ -321,6 +321,17 @@ describe('createScene3DFromMd5Mesh', () => {
     expect(geometry.vertices[indices[2] * floatsPerVertex + 9]).toBe(sign);
   });
 
+  it('converts generated handedness to the MD5 V-axis convention', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const indices = geometry.indices!;
+
+    // Winding conversion makes this triangle's imported UV determinant negative. The generic tangent
+    // basis therefore emits -1; the MD5 format-boundary conversion must invert all three corners to +1.
+    for (const index of indices) expect(geometry.vertices[index * floatsPerVertex + 9]).toBe(1);
+  });
+
   it('splits complete skinned records across a mirrored MD5 UV boundary', () => {
     const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;

@@ -17,6 +17,7 @@ import {
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
   createMeshGeometry,
+  getVertexAttributeFloatOffset,
 } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/types/contract';
@@ -25,6 +26,7 @@ import type {
   Material,
   MaterialLike,
   Matrix4,
+  MeshGeometry,
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentSkin,
@@ -345,6 +347,10 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
       // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
       // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
       computeMeshGeometryTangents(geometry, geometry);
+      // The shared generator emits Flight's tangent-frame convention. MD5 normal maps use the opposite
+      // V-axis convention, so convert only the generated handedness at this format boundary while
+      // preserving the authored UVs used for texture sampling.
+      invertMd5TangentHandedness(geometry);
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
       // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model) whose
       // diffuseMap references the shader path; resolution of that path is the caller's step.
@@ -397,6 +403,15 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
   }
 
   return document;
+}
+
+function invertMd5TangentHandedness(geometry: MeshGeometry): void {
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const tangentOffset = getVertexAttributeFloatOffset(geometry.layout, 'tangent');
+  if (floatsPerVertex <= 0 || tangentOffset < 0) return;
+  for (let base = 0; base + tangentOffset + 3 < geometry.vertices.length; base += floatsPerVertex) {
+    geometry.vertices[base + tangentOffset + 3] = -geometry.vertices[base + tangentOffset + 3];
+  }
 }
 
 // Emits an MD5 joint list into a Scene3DDocument as a "skeleton" group node + one joint node per MD5 joint
