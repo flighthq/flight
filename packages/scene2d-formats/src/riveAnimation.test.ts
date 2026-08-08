@@ -16,10 +16,10 @@ import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './ri
 import { createScene2DFromRiveDocument } from './riveScene2D';
 import { createRiveSkeleton2D } from './riveSkeleton';
 
-// Time comes from the animation's OWN frame rate, and the interpolation enum was read off the corpus
-// rather than a header: type 2 carries an interpolator in 18,044 of 18,608 cases, type 1 never does,
-// type 0 almost never — hold, linear, cubic. Expectations below are computed from the frame/fps
-// relation the format states, not from what the builder produced.
+// Time comes from the animation's OWN frame rate, so expectations below are computed from the
+// frame/fps relation the format states rather than from what the builder produced. Interpolation type
+// 0 is hold and 1 is linear; every other value defers to the interpolator object the keyframe names,
+// which is why a test that wants a real curve must supply that object and not just the type.
 
 const LINEAR_ANIMATION = 31;
 const KEYED_OBJECT = 25;
@@ -55,7 +55,8 @@ const PERIOD = 407;
 
 // Geometry and paint animate by writing the value back onto the core object the file keyed and
 // rebuilding the owning shape, so the ordinary readers produce the result and there is no second
-// code path to keep in step. Before this, 145 of the corpus's 383 clips carried no channels at all.
+// code path to keep in step. Only transform properties bind through a display-object target; anything
+// else reaches the screen through that write-back, so a channel count alone understates what animates.
 describe('applyAnimationClipToRiveDocument', () => {
   it.each([
     { expected: 20, field: 'x', from: 10, propertyKey: 13, to: 30 },

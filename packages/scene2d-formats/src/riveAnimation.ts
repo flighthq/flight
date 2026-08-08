@@ -452,8 +452,8 @@ function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number
   return -1;
 }
 
-// Type 0 is hold and type 1 is linear, established from the corpus: type 2 carries an interpolator in
-// 18,044 of 18,608 cases while type 1 never does and type 0 almost never.
+// Type 0 is hold and type 1 is linear. Neither names an interpolator; every other value does, so the
+// enum's real division is "carries an interpolator object" rather than "is a named curve".
 //
 // Every other value defers to the interpolator the keyframe names, because the *object* is what
 // carries the behaviour. Rive's own runtime never switches on this enum — `InterpolatingKeyFrame`

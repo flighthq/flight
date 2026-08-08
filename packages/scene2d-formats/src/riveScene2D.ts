@@ -193,8 +193,9 @@ function collectRivePathGeometry(
   index: number,
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
-  // A Rive path belongs to a shape, so a path with no shape ancestor is malformed. It still crumbs
-  // instead of vanishing, because the geometry would otherwise leave no trace.
+  // A path is always a shape's direct child: the shape owns the paint and the fill rule, so a path
+  // with no shape ancestor has nothing to draw it. That makes this a malformed file rather than a
+  // shape of the format. It still crumbs instead of vanishing, because the geometry leaves no trace.
   const owner = findRiveShapeOwner(artboard, index);
   if (owner < 0) {
     reportImportDiagnostic(
