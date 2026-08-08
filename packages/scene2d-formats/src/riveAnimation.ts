@@ -68,7 +68,7 @@ export function createRiveAnimationClips(
   skeleton: Readonly<RiveSkeleton2DImport> | null = null,
   diagnostics?: ImportDiagnostic[],
 ): RiveAnimationClip[] {
-  const interpolators = collectRiveInterpolators(objects, range);
+  const interpolators = collectRiveInterpolators(objects, range, diagnostics);
   const clips: RiveAnimationClip[] = [];
   for (let index = range.start; index < range.end; index++) {
     if (objects[index].typeKey !== RIVE_LINEAR_ANIMATION) continue;
@@ -472,6 +472,7 @@ function toRiveSegmentEasing(
 function collectRiveInterpolators(
   objects: readonly Readonly<RiveCoreObject>[],
   range: Readonly<{ end: number; start: number }>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): Map<number, EasingFunction> {
   const interpolators = new Map<number, EasingFunction>();
   // An interpolator is addressed by its position in the artboard's own numbering, which for these
@@ -491,7 +492,7 @@ function collectRiveInterpolators(
       continue;
     }
     if (!isRiveCoreTypeDerivedFrom(source.typeKey, RIVE_ELASTIC_INTERPOLATOR)) continue;
-    interpolators.set(index, toRiveElasticEasing(source));
+    interpolators.set(index, toRiveElasticEasing(source, diagnostics));
   }
   return interpolators;
 }
@@ -499,14 +500,27 @@ function collectRiveInterpolators(
 // The elastic curve states its own amplitude and period, so it maps onto the parameterized damped
 // sine rather than the fixed-constant easeElastic, which would be a different curve wherever a file
 // states anything but the constants that one hardcodes.
-function toRiveElasticEasing(source: Readonly<RiveCoreObject>): EasingFunction {
+// Ease-out is stated as 1 and is also what the terminal arm returns, so only a value outside the three
+// is a substitution: the motion still runs for its full duration, eased from the wrong end.
+function toRiveElasticEasing(
+  source: Readonly<RiveCoreObject>,
+  diagnostics: ImportDiagnostic[] | undefined,
+): EasingFunction {
   const amplitude = readRiveNumber(source, RIVE_INTERPOLATOR_AMPLITUDE, 1);
   const period = readRiveNumber(source, RIVE_INTERPOLATOR_PERIOD, RIVE_DEFAULT_ELASTIC_PERIOD);
   const easing = readRiveNumber(source, RIVE_INTERPOLATOR_EASING, RIVE_ELASTIC_EASE_OUT);
   if (easing === RIVE_ELASTIC_EASE_IN) return easeInDampedSine(amplitude, period);
-  return easing === RIVE_ELASTIC_EASE_IN_OUT
-    ? easeInOutDampedSine(amplitude, period)
-    : easeOutDampedSine(amplitude, period);
+  if (easing === RIVE_ELASTIC_EASE_IN_OUT) return easeInOutDampedSine(amplitude, period);
+  if (easing !== RIVE_ELASTIC_EASE_OUT) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.elastic-easing-substituted',
+      'createScene2DFromRiveDocument',
+      { easingValue: easing, substitutedAs: 'easeOut' },
+    );
+  }
+  return easeOutDampedSine(amplitude, period);
 }
 
 // Only the transform properties bind through the shared display-object target. Animated geometry and
