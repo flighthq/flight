@@ -5,6 +5,7 @@ import {
   collectWoff2ReversalPairs,
   encoderPreservedOutline,
   formatWoff2ReversalOracleReport,
+  measureWoff2ReconstructedComposites,
   measureWoff2ReconstructedOutlines,
   measureWoff2ReversalPair,
   readSfntGlyphOutline,
@@ -88,5 +89,13 @@ describe('censusWoff2Transforms', () => {
     const census = censusWoff2Transforms([new Uint8Array(64)]);
     expect(census.filesRead).toBe(0);
     expect(census.transformedByTag.size).toBe(0);
+  });
+});
+
+describe('measureWoff2ReconstructedComposites', () => {
+  it('returns the skip sentinel rather than a score for bytes that are not a font', () => {
+    // A composite score of 0/0 would read as "measured and found nothing wrong"; the sentinel says
+    // nothing was measured at all, which is the honest answer for unreadable input.
+    expect(measureWoff2ReconstructedComposites(new Uint8Array(64), new Uint8Array(64))).toBeNull();
   });
 });

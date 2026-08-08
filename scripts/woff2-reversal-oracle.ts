@@ -422,6 +422,85 @@ function assembleComparableFont(
   return assembleSfntFont(new DataView(source.buffer, source.byteOffset, source.byteLength).getUint32(0), tables);
 }
 
+// Compares reconstructed COMPOSITE glyph records against the paired `.ttf`, which the outline
+// comparison cannot reach: a composite holds no points of its own, so `readSfntGlyphOutline` returns
+// the null sentinel for one and every composite is silently outside that measurement.
+//
+// ★ THE COMPARISON IS BYTES HERE AND GEOMETRY FOR SIMPLE GLYPHS, AND THE ASYMMETRY IS THE POINT. A
+// simple glyph is re-ENCODED, so it has several valid spellings and only its shape can be judged. A
+// composite's component records are copied through UNCHANGED, so they must come out identical — there
+// is no spelling freedom to allow for, and a difference is a defect rather than a style.
+//
+// The contour count is deliberately excluded from the comparison: any negative value marks a composite
+// and a producer may write one this reader does not reproduce, so including it would report a
+// difference that means nothing. Everything a caller could actually be harmed by — the bounding box,
+// the component records, the instructions — is compared.
+export function measureWoff2ReconstructedComposites(
+  ttf: Readonly<Uint8Array>,
+  woff2: Readonly<Uint8Array>,
+): { compared: number; identical: number } | null {
+  const tables = readWoff2RawTables(woff2);
+  const transformed = tables?.get('glyf');
+  if (transformed === undefined) return null;
+  const streams = readWoff2GlyfStreams(transformed);
+  if (streams === null) return null;
+  const rebuilt = reverseWoff2GlyfTransform(streams);
+  if (rebuilt === null) return null;
+
+  const truthRecords = readSfntGlyphRecords(ttf);
+  const mineRecords = readGlyfRecords(rebuilt.glyf, rebuilt.loca, streams.indexFormat);
+  if (truthRecords === null || mineRecords === null) return null;
+
+  let compared = 0;
+  let identical = 0;
+  for (let index = 0; index < Math.min(truthRecords.length, mineRecords.length); index += 1) {
+    const truth = truthRecords[index]!;
+    const mine = mineRecords[index]!;
+    if (truth.byteLength < 10) continue;
+    const view = new DataView(truth.buffer, truth.byteOffset, truth.byteLength);
+    if (view.getInt16(0) >= 0) continue;
+    compared += 1;
+    // Skip the two contour-count bytes; compare the box, the components and the instructions.
+    const left = truth.subarray(2);
+    const right = mine.subarray(2, 2 + left.byteLength);
+    if (left.byteLength === right.byteLength && left.every((byte, at) => byte === right[at])) identical += 1;
+  }
+  return { compared, identical };
+}
+
+// Slices a `glyf` table into per-glyph records using its `loca`.
+function readGlyfRecords(
+  glyf: Readonly<Uint8Array>,
+  loca: Readonly<Uint8Array>,
+  indexFormat: number,
+): Uint8Array[] | null {
+  const view = new DataView(loca.buffer, loca.byteOffset, loca.byteLength);
+  const entries = indexFormat === 0 ? loca.byteLength / 2 : loca.byteLength / 4;
+  const records: Uint8Array[] = [];
+  for (let index = 0; index + 1 < entries; index += 1) {
+    const start = indexFormat === 0 ? view.getUint16(index * 2) * 2 : view.getUint32(index * 4);
+    const end = indexFormat === 0 ? view.getUint16((index + 1) * 2) * 2 : view.getUint32((index + 1) * 4);
+    if (end < start || end > glyf.byteLength) return null;
+    records.push(glyf.subarray(start, end) as Uint8Array);
+  }
+  return records;
+}
+
+// The same slicing over a real font, read through its own tables.
+function readSfntGlyphRecords(ttf: Readonly<Uint8Array>): Uint8Array[] | null {
+  const directory = readSfntTableDirectory(ttf);
+  const head = directory?.tables.get('head');
+  const loca = directory?.tables.get('loca');
+  const glyf = directory?.tables.get('glyf');
+  if (head === undefined || loca === undefined || glyf === undefined) return null;
+  const view = new DataView(ttf.buffer, ttf.byteOffset, ttf.byteLength);
+  return readGlyfRecords(
+    ttf.subarray(glyf.offset, glyf.offset + glyf.length),
+    ttf.subarray(loca.offset, loca.offset + loca.length),
+    view.getInt16(head.offset + 50) === 0 ? 0 : 1,
+  );
+}
+
 // Counts which table transforms a corpus of WOFF2 files actually uses, keyed by tag.
 //
 // ★ THIS IS THE EVIDENCE FOR WHAT A READER MUST IMPLEMENT, AND IT IS THE DIFFERENCE BETWEEN A GAP AND
@@ -482,6 +561,17 @@ if (process.argv[1]?.endsWith('woff2-reversal-oracle.ts') === true) {
     }
     console.log(`  RECONSTRUCTED OUTLINES identical to the paired ttf: ${identical}/${compared}`);
     const census = censusWoff2Transforms(collectWoff2Files(directory));
+    let compositesCompared = 0;
+    let compositesIdentical = 0;
+    for (const pair of pairs) {
+      const outcome = measureWoff2ReconstructedComposites(pair.ttf, pair.woff2);
+      if (outcome === null) continue;
+      compositesCompared += outcome.compared;
+      compositesIdentical += outcome.identical;
+    }
+    console.log(
+      `  RECONSTRUCTED COMPOSITES byte-identical to the paired ttf: ${compositesIdentical}/${compositesCompared}`,
+    );
     console.log(`  transform census over ${census.filesRead} woff2 files:`);
     for (const [tag, count] of [...census.transformedByTag].sort()) console.log(`    transformed '${tag}': ${count}`);
   }
