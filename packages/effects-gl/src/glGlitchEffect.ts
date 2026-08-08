@@ -47,7 +47,11 @@ out vec4 o_color;
 float ghash(float n) { return fract(sin(n) * 43758.5453123); }
 void main() {
   float blockSize = max(2.0, u_blockSize);
-  float block = floor(v_texCoord.y * u_resolution.y / blockSize);
+  // Blocks are numbered down the image, so the tear and corruption of a given band land where the
+  // author placed them. A render target is bottom-left origin, so the image-space row is measured
+  // from the far edge; numbering straight from v_texCoord.y would run the bands the other way up.
+  // Only the block INDEX converts — sampling below stays in the target's own coordinates.
+  float block = floor((1.0 - v_texCoord.y) * u_resolution.y / blockSize);
   float r = ghash(block + u_seed * 7.0);
   float tear = step(1.0 - u_intensity * 0.6, r);
   float shiftPx = (ghash(block * 1.7 + u_seed) - 0.5) * 2.0 * tear * u_intensity * 40.0;
