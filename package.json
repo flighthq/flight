@@ -128,7 +128,7 @@
     "start:electron-harness": "npm run start --workspace=@flighthq/examples-electron",
     "support": "tsx ./scripts/support.ts",
     "support:check": "tsx ./scripts/support.ts --check",
-    "test": "vitest run",
+    "test": "tsx ./scripts/test.ts",
     "test:baseline": "npm run test:regression:baseline",
     "test:browser": "tsx ./packages/tool-capture/src/bin.ts batch",
     "test:coverage": "vitest run --coverage",
