@@ -80,6 +80,7 @@ describe('MD5 tangent frame corpus runner', () => {
         importNotRunMeshFiles: 0,
         measuredMeshFiles: 0,
         notRunReason: 'md5-mesh-fixtures-absent',
+        selection: 'all',
         state: 'not-run',
       });
       expect(formatMd5TangentFrameOracleCorpusReport(report)).toContain(
@@ -106,6 +107,22 @@ describe('MD5 tangent frame corpus runner', () => {
       expect(formatMd5TangentFrameOracleCorpusReport(report)).toContain(
         'tangent-nan=0 tangent-infinite=0 tangent-zero-length=0',
       );
+
+      const handednessReport = runMd5TangentFrameOracleCorpus(directory, 1, 'handedness');
+      expect(handednessReport).toMatchObject({
+        cases: [
+          {
+            oracles: {
+              handedness: { id: 'md5.tangent-handedness' },
+            },
+          },
+        ],
+        selection: 'handedness',
+      });
+      expect(
+        Object.keys(handednessReport.cases[0]!.state === 'measured' ? handednessReport.cases[0]!.oracles : {}),
+      ).toEqual(['handedness']);
+      expect(formatMd5TangentFrameOracleCorpusReport(handednessReport)).not.toContain('tangent-nan=');
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }
@@ -153,6 +170,32 @@ describe('MD5 tangent handedness measurement', () => {
     expect(measureMd5TangentHandedness(scene, 'not md5')).toMatchObject({
       notRunReason: 'source-topology-unreadable',
       state: 'not-run',
+    });
+  });
+
+  it('distinguishes uniform, same-sign, and opposite-sign X correlation', () => {
+    const uniform = createScene3DFromMd5Mesh(SIDE_SEPARATED_TRIANGLES);
+    setHandednessByXSide(uniform, 1, 1);
+    expect(measureMd5TangentHandedness(uniform, SIDE_SEPARATED_TRIANGLES).sections[0]).toMatchObject({
+      negativeTangentHandednessTriangles: 0,
+      positiveTangentHandednessTriangles: 2,
+      xCorrelation: 'uniform-positive',
+    });
+
+    const sameSign = createScene3DFromMd5Mesh(SIDE_SEPARATED_TRIANGLES);
+    setHandednessByXSide(sameSign, -1, 1);
+    expect(measureMd5TangentHandedness(sameSign, SIDE_SEPARATED_TRIANGLES).sections[0]).toMatchObject({
+      oppositeSignToXTriangles: 0,
+      sameSignAsXTriangles: 2,
+      xCorrelation: 'split-same-sign-as-x',
+    });
+
+    const oppositeSign = createScene3DFromMd5Mesh(SIDE_SEPARATED_TRIANGLES);
+    setHandednessByXSide(oppositeSign, 1, -1);
+    expect(measureMd5TangentHandedness(oppositeSign, SIDE_SEPARATED_TRIANGLES).sections[0]).toMatchObject({
+      oppositeSignToXTriangles: 2,
+      sameSignAsXTriangles: 0,
+      xCorrelation: 'split-opposite-sign-to-x',
     });
   });
 });
@@ -272,6 +315,18 @@ function meshGeometry(scene: Readonly<Scene3D>): Mesh['geometry'] {
   return (getNodeChildren(scene.root)[1] as Mesh).geometry;
 }
 
+function setHandednessByXSide(scene: Readonly<Scene3D>, negativeXSign: -1 | 1, positiveXSign: -1 | 1): void {
+  const geometry = meshGeometry(scene);
+  const indices = geometry.indices!;
+  const stride = geometry.layout.stride / 4;
+  for (let element = 0; element < indices.length; element += 3) {
+    const triangle = [indices[element]!, indices[element + 1]!, indices[element + 2]!];
+    const xSum = triangle.reduce((sum, index) => sum + geometry.vertices[index * stride]!, 0);
+    const sign = xSum < 0 ? negativeXSign : positiveXSign;
+    for (const index of triangle) geometry.vertices[index * stride + 9] = sign;
+  }
+}
+
 const SINGLE_TRIANGLE = [
   'MD5Version 10',
   'numJoints 1',
@@ -316,6 +371,35 @@ const MIRRORED_UV_TRIANGLES = [
   '  weight 1 0 1.0 ( 1 0 0 )',
   '  weight 2 0 1.0 ( 0 1 0 )',
   '  weight 3 0 1.0 ( -1 0 0 )',
+  '}',
+].join('\n');
+
+const SIDE_SEPARATED_TRIANGLES = [
+  'MD5Version 10',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/sides"',
+  '  numverts 6',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  vert 3 ( 0.0 0.0 ) 3 1',
+  '  vert 4 ( 1.0 0.0 ) 4 1',
+  '  vert 5 ( 0.0 1.0 ) 5 1',
+  '  numtris 2',
+  '  tri 0 0 1 2',
+  '  tri 1 3 4 5',
+  '  numweights 6',
+  '  weight 0 0 1.0 ( -2 0 0 )',
+  '  weight 1 0 1.0 ( -1 0 0 )',
+  '  weight 2 0 1.0 ( -2 1 0 )',
+  '  weight 3 0 1.0 ( 1 0 0 )',
+  '  weight 4 0 1.0 ( 2 0 0 )',
+  '  weight 5 0 1.0 ( 1 1 0 )',
   '}',
 ].join('\n');
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
