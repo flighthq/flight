@@ -141,10 +141,16 @@ function createRiveAnimationClip(
     }
     const path = toRiveAnimationPath(propertyKey);
     if (path !== null && keyed !== null) {
-      const channel = createRiveChannel(objects, index, limit, fps, interpolators, toRiveValueConversion(path), {
-        node: keyed,
-        path,
-      } satisfies Node2DAnimationTarget);
+      const channel = createRiveChannel(
+        objects,
+        index,
+        limit,
+        fps,
+        interpolators,
+        toRiveValueConversion(path),
+        { node: keyed, path } satisfies Node2DAnimationTarget,
+        diagnostics,
+      );
       if (channel !== null) channels.push(channel);
       continue;
     }
@@ -160,7 +166,7 @@ function createRiveAnimationClip(
       keyframeType === RIVE_KEYFRAME_COLOR ? RiveFieldType.Color : RiveFieldType.Double,
     );
     if (target === null) continue;
-    const channel = createRiveMutableChannel(objects, index, limit, fps, interpolators, target);
+    const channel = createRiveMutableChannel(objects, index, limit, fps, interpolators, target, diagnostics);
     if (channel !== null) channels.push(channel);
   }
 
@@ -259,6 +265,7 @@ function createRiveBoneChannel(
     interpolators,
     convert,
     createSkeleton2DBoneAnimationTarget(boneIndex, path),
+    diagnostics,
   );
 }
 
@@ -303,6 +310,7 @@ function createRiveChannel(
   interpolators: ReadonlyMap<number, EasingFunction>,
   convert: (value: number) => number,
   targetRef: unknown,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): AnimationChannel | null {
   return createRiveTypedChannel(
     objects,
@@ -316,6 +324,7 @@ function createRiveChannel(
         ? [convert(readRiveNumber(keyframe, RIVE_KEYFRAME_DOUBLE_VALUE, 0))]
         : null,
     targetRef,
+    diagnostics,
   );
 }
 
@@ -326,6 +335,7 @@ function createRiveMutableChannel(
   fps: number,
   interpolators: ReadonlyMap<number, EasingFunction>,
   targetRef: RiveMutableTarget,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): AnimationChannel | null {
   const first = objects[propertyIndex + 1];
   if (first?.typeKey === RIVE_KEYFRAME_COLOR) {
@@ -338,9 +348,10 @@ function createRiveMutableChannel(
       4,
       readRiveColorKeyframe,
       targetRef,
+      diagnostics,
     );
   }
-  return createRiveChannel(objects, propertyIndex, limit, fps, interpolators, (value) => value, targetRef);
+  return createRiveChannel(objects, propertyIndex, limit, fps, interpolators, (value) => value, targetRef, diagnostics);
 }
 
 function createRiveTypedChannel(
@@ -352,6 +363,7 @@ function createRiveTypedChannel(
   components: number,
   readValue: (keyframe: Readonly<RiveCoreObject>) => readonly number[] | null,
   targetRef: unknown,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): AnimationChannel | null {
   const times: number[] = [];
   const values: number[] = [];
@@ -368,7 +380,7 @@ function createRiveTypedChannel(
     times.push(time);
     values.push(...value);
     // A keyframe's interpolation governs the segment that LEAVES it, so the last one contributes none.
-    segmentEasings.push(toRiveSegmentEasing(object, interpolators));
+    segmentEasings.push(toRiveSegmentEasing(object, interpolators, diagnostics));
   }
   if (times.length === 0) return null;
   segmentEasings.pop();
@@ -447,15 +459,30 @@ function findRiveShapeOwner(artboard: Readonly<RiveArtboardGraph>, index: number
 // carries the behaviour. Rive's own runtime never switches on this enum — `InterpolatingKeyFrame`
 // resolves `interpolatorId` and uses whatever `KeyFrameInterpolator` it lands on — so treating an
 // unrecognized enum value as unsupported would reject curves that resolve perfectly well.
+// A keyframe that names an interpolator this reader does not build resolves to nothing and the segment
+// falls back to linear. The channel is present and runs for its full duration, so only the curve is
+// lost: no count and no existence check can see it, which is why the miss is reported here.
 function toRiveSegmentEasing(
   keyframe: Readonly<RiveCoreObject>,
   interpolators: ReadonlyMap<number, EasingFunction>,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): EasingFunction | null {
   const type = readRiveNumber(keyframe, RIVE_KEYFRAME_INTERPOLATION, RIVE_INTERPOLATION_HOLD);
   if (type === RIVE_INTERPOLATION_HOLD) return _holdEasing;
   if (type === RIVE_INTERPOLATION_LINEAR) return null;
   const id = readRiveNumber(keyframe, RIVE_KEYFRAME_INTERPOLATOR_ID, -1);
-  return interpolators.get(id) ?? null;
+  const easing = interpolators.get(id);
+  if (easing === undefined) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.keyframe-easing-substituted',
+      'createScene2DFromRiveDocument',
+      { interpolationType: type, interpolatorId: id, substitutedAs: 'linear' },
+    );
+    return null;
+  }
+  return easing;
 }
 
 /**
