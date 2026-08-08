@@ -124,6 +124,28 @@ describe('MD5 tangent frame corpus runner', () => {
         Object.keys(handednessReport.cases[0]!.state === 'measured' ? handednessReport.cases[0]!.oracles : {}),
       ).toEqual(['handedness']);
       expect(formatMd5TangentFrameOracleCorpusReport(handednessReport)).not.toContain('tangent-nan=');
+
+      writeFileSync(join(directory, 'meshes', 'synthetic', 'triangle.md5mesh'), MIRRORED_UV_TRIANGLES);
+      const splitReport = runMd5TangentFrameOracleCorpus(directory, 1, 'split-difference');
+      expect(splitReport).toMatchObject({
+        acquisition: { verifiedFixtureFiles: 1 },
+        cases: [
+          {
+            oracles: {
+              splitDifference: {
+                candidateSplitVertices: 2,
+                emittedVertices: 6,
+                mappedSplitPairs: 2,
+                sourceVertices: 4,
+              },
+            },
+          },
+        ],
+        selection: 'split-difference',
+      });
+      expect(formatMd5TangentFrameOracleCorpusReport(splitReport)).toContain(
+        'source-vertices=4 emitted-vertices=6 candidate-splits=2 mapped-splits=2',
+      );
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }
@@ -231,22 +253,49 @@ describe('MD5 tangent handedness measurement', () => {
 });
 
 describe('MD5 split tangent difference measurement', () => {
-  it('measures mirrored split records as different tangent frames', () => {
+  it('counts opposite unit handedness signs without a direction threshold', () => {
     const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
     const result = measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES);
 
     expect(result).toMatchObject({
-      indistinguishablePairs: 0,
-      meaningfulPairs: 2,
+      candidateSplitVertices: 2,
+      directionOnlyPairs: 0,
+      emittedVertices: 6,
+      handednessDifferentPairs: 2,
+      handednessIndeterminatePairs: 0,
+      handednessSamePairs: 0,
+      identicalFramePairs: 0,
+      mappedSplitPairs: 2,
+      sourceVertices: 4,
       state: 'passed',
     });
     expect(result.pairs).toEqual([
-      expect.objectContaining({ handednessChanged: true, originalVertex: 0, splitVertex: 4 }),
-      expect.objectContaining({ handednessChanged: true, originalVertex: 2, splitVertex: 5 }),
+      expect.objectContaining({ originalVertex: 0, splitVertex: 4, state: 'handedness-different' }),
+      expect.objectContaining({ originalVertex: 2, splitVertex: 5, state: 'handedness-different' }),
     ]);
   });
 
-  it('fails a split whose tangent frame is indistinguishable at Float32 precision', () => {
+  it('reports same-sign direction-only splits as a removal candidate without deciding it', () => {
+    const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
+    const geometry = meshGeometry(scene);
+    const stride = geometry.layout.stride / 4;
+    for (const [original, split] of [
+      [0, 4],
+      [2, 5],
+    ] as const) {
+      geometry.vertices[split * stride + 9] = geometry.vertices[original * stride + 9]!;
+    }
+
+    expect(measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES)).toMatchObject({
+      directionOnlyPairs: 2,
+      handednessDifferentPairs: 0,
+      handednessSamePairs: 2,
+      identicalFramePairs: 0,
+      state: 'failed',
+    });
+  });
+
+  it('distinguishes an identical emitted frame from a direction-only split', () => {
     const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
     const geometry = meshGeometry(scene);
     const stride = geometry.layout.stride / 4;
@@ -258,17 +307,38 @@ describe('MD5 split tangent difference measurement', () => {
     }
 
     expect(measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES)).toMatchObject({
-      indistinguishablePairs: 2,
-      meaningfulPairs: 0,
+      directionOnlyPairs: 0,
+      handednessSamePairs: 2,
+      identicalFramePairs: 2,
       state: 'failed',
+    });
+  });
+
+  it('does not count a non-unit handedness value as agreement', () => {
+    const scene = createScene3DFromMd5Mesh(MIRRORED_UV_TRIANGLES);
+    const geometry = meshGeometry(scene);
+    const stride = geometry.layout.stride / 4;
+    geometry.vertices[4 * stride + 9] = 0;
+    geometry.vertices[5 * stride + 9] = Number.NaN;
+
+    expect(measureMd5SplitTangentDifference(scene, MIRRORED_UV_TRIANGLES)).toMatchObject({
+      handednessDifferentPairs: 0,
+      handednessIndeterminatePairs: 2,
+      handednessSamePairs: 0,
+      notRunReason: 'split-handedness-indeterminate',
+      state: 'not-run',
     });
   });
 
   it('keeps a mesh without tangent splits as not measured', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     expect(measureMd5SplitTangentDifference(scene, SINGLE_TRIANGLE)).toMatchObject({
+      candidateSplitVertices: 0,
+      emittedVertices: 3,
+      mappedSplitPairs: 0,
       notRunReason: 'split-vertices-absent',
       pairs: [],
+      sourceVertices: 3,
       state: 'not-run',
     });
   });
