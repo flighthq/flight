@@ -77,9 +77,9 @@ describe('decodeWoff2Triplet', () => {
 
 describe('getWoff2BboxBitmapByteLength', () => {
   it('pads to a 32-bit boundary, not to a byte', () => {
-    // The distinction is invisible for a count that lands on the same 4-byte cell either way, which is
-    // how a byte-rounded reading passed on half a real corpus. 1754 rounds to 220 under both rules;
-    // 1741 rounds to 218 by byte and 220 by word, and 220 is the one real fonts use.
+    // The distinction is invisible for a count that lands on the same 4-byte cell either way, so a
+    // byte-rounded reading is correct for some fonts and wrong for others. 1754 rounds to 220 under
+    // both rules and can never tell them apart; 1741 rounds to 218 by byte and 220 by word.
     expect(getWoff2BboxBitmapByteLength(1754)).toBe(220);
     expect(getWoff2BboxBitmapByteLength(1741)).toBe(220);
     expect(getWoff2BboxBitmapByteLength(1)).toBe(4);
@@ -94,8 +94,8 @@ describe('getWoff2BboxBitmapByteLength', () => {
 
 describe('hasWoff2GlyphBbox', () => {
   it('reads glyph zero as the HIGH bit of the first byte', () => {
-    // Least-significant-first reproduces some boxes and not others, which is worse than being plainly
-    // wrong: it is the reading that looks partly right on a real font.
+    // Least-significant-first recovers a scattered subset of the boxes and mis-assigns the rest, which
+    // is worse than being plainly wrong: it is the reading that looks partly right.
     expect(hasWoff2GlyphBbox(Uint8Array.from([0x80]), 0)).toBe(true);
     expect(hasWoff2GlyphBbox(Uint8Array.from([0x01]), 0)).toBe(false);
     expect(hasWoff2GlyphBbox(Uint8Array.from([0x01]), 7)).toBe(true);
@@ -115,9 +115,9 @@ describe('hasWoff2GlyphBbox', () => {
 
 describe('isWoff2PointOnCurve', () => {
   it('reads the high bit as OFF-curve, the opposite of the glyf convention', () => {
-    // Measured against 18 fonts shipped as both a transformed WOFF2 and a plain .ttf: every one of
-    // 508,297 points agreed with this sense and none with the inverse. Carrying the glyf convention
-    // across inverts every point in the font, and an inverted outline still draws a glyph.
+    // Carrying the glyf convention across inverts every point in the font, and an inverted outline is
+    // still a closed outline that draws as a glyph — so this assertion is the only thing standing
+    // between the two readings.
     expect(isWoff2PointOnCurve(0x00)).toBe(true);
     expect(isWoff2PointOnCurve(0x80)).toBe(false);
   });
