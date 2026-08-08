@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  censusWoff2Transforms,
   collectWoff2ReversalPairs,
   encoderPreservedOutline,
   formatWoff2ReversalOracleReport,
@@ -78,5 +79,14 @@ describe('collectWoff2ReversalPairs', () => {
 describe('measureWoff2ReconstructedOutlines', () => {
   it('returns the skip sentinel rather than a score for bytes that are not a font', () => {
     expect(measureWoff2ReconstructedOutlines(new Uint8Array(64), new Uint8Array(64))).toBeNull();
+  });
+});
+
+describe('censusWoff2Transforms', () => {
+  it('reports the denominator, so an absent tag is not mistaken for evidence', () => {
+    // A transform missing from a corpus that read nothing says nothing at all.
+    const census = censusWoff2Transforms([new Uint8Array(64)]);
+    expect(census.filesRead).toBe(0);
+    expect(census.transformedByTag.size).toBe(0);
   });
 });

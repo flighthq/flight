@@ -49,6 +49,14 @@ export function createWoff2TransformReverser(): (
     if (tag === 'loca') return reverse(tables.get('glyf')) ? reversed!.loca : null;
     // Any other transformed table is a transform this package does not implement, and refusing is what
     // stops a font being assembled with transformed bytes under an untransformed tag.
+    //
+    // ★ THIS REFUSAL IS NOT A KNOWN GAP, AND THE DISTINCTION IS WORTH THE COMMENT. The container also
+    // defines a transform for `hmtx`, so a reader that declines it reads as incomplete against the
+    // format. In practice producers emit the `glyf`/`loca` pair and nothing else, because that pair is
+    // where the compression is; the others are permitted but unused. Implementing one would therefore
+    // add a branch no font reaches AND that no font can test — trading a loud refusal for an untested
+    // path. `censusWoff2Transforms` in the reversal oracle is what measures this, and it is the check
+    // to re-run before deciding the situation has changed.
     return null;
   };
 }
