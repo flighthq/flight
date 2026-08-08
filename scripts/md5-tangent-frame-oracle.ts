@@ -1,0 +1,810 @@
+import { getVertexAttributeFloatOffset } from '@flighthq/mesh/contract';
+import { getNodeChildren } from '@flighthq/node/contract';
+import { isMesh } from '@flighthq/scene3d/contract';
+import type { MeshGeometry, Scene3D } from '@flighthq/types/contract';
+
+import { probeMd5Sections } from './md5-section-probe';
+
+export const MD5_TANGENT_ORTHOGONALITY_ORACLE_ID = 'md5.tangent-orthogonality';
+export const MD5_TANGENT_HANDEDNESS_ORACLE_ID = 'md5.tangent-handedness';
+export const MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID = 'md5.tangent-split-difference';
+export const MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID = 'md5.tangent-code-path-cross-check';
+
+export type Md5TangentOracleState = 'failed' | 'not-run' | 'passed';
+
+export interface Md5TangentCodePathCrossCheckOracle {
+  calculation: 'per-triangle-uv-jacobian-solve-and-generalized-gram-schmidt';
+  comparedComponents: number;
+  comparison: 'absolute-component-residual-vs-observed-float32-rounding-cell';
+  coordinateBasis: 'flight-right-handed-y-up-after-import';
+  differingComponents: number;
+  differingVertices: number;
+  id: typeof MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID;
+  independence: 'same-author-code-path-only';
+  inputPreparation: 'imported-float32-position-normal-uv-and-index-streams';
+  maximumPrecisionExcess: number;
+  maximumPrecisionBound: number;
+  maximumResidual: number;
+  maximumResidualToPrecisionRatio: number;
+  notRunReason?: 'mesh-geometry-missing' | 'tangent-input-unreadable' | 'uv-gradient-indeterminate';
+  role: 'diagnostic';
+  state: Md5TangentOracleState;
+  tool: 'scripts/md5-tangent-frame-oracle';
+}
+
+export interface Md5TangentOrthogonalityOracle {
+  exactVertices: number;
+  id: typeof MD5_TANGENT_ORTHOGONALITY_ORACLE_ID;
+  invalidVertices: number;
+  maximumPrecisionExcess: number;
+  maximumPrecisionBound: number;
+  maximumResidual: number;
+  maximumResidualToPrecisionRatio: number;
+  notRunReason?: 'mesh-geometry-missing' | 'tangent-frame-unreadable';
+  outsidePrecisionVertices: number;
+  state: Md5TangentOracleState;
+  vertexCount: number;
+  withinPrecisionVertices: number;
+}
+
+export interface Md5TangentHandednessOracle {
+  id: typeof MD5_TANGENT_HANDEDNESS_ORACLE_ID;
+  indeterminateTriangles: number;
+  invalidTriangles: number;
+  matchingTriangles: number;
+  minimumCertainDeterminantMagnitude: number | null;
+  mismatchingTriangles: number;
+  notRunReason?: 'mesh-geometry-missing' | 'source-topology-unreadable' | 'uv-winding-indeterminate';
+  state: Md5TangentOracleState;
+  triangleCount: number;
+}
+
+export interface Md5TangentSplitPairMeasurement {
+  directionPrecisionBound: number;
+  directionResidual: number;
+  handednessChanged: boolean;
+  originalVertex: number;
+  section: number;
+  splitVertex: number;
+  state: 'indistinguishable-at-format-precision' | 'meaningfully-different';
+}
+
+export interface Md5TangentSplitDifferenceOracle {
+  id: typeof MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID;
+  indistinguishablePairs: number;
+  meaningfulPairs: number;
+  notRunReason?: 'source-topology-unreadable' | 'split-vertices-absent' | 'split-vertices-unmappable';
+  pairs: readonly Md5TangentSplitPairMeasurement[];
+  state: Md5TangentOracleState;
+}
+
+export interface Md5TangentFrameOracles {
+  orthogonality: Md5TangentOrthogonalityOracle;
+  handedness: Md5TangentHandednessOracle;
+  splitDifference: Md5TangentSplitDifferenceOracle;
+  codePathCrossCheck: Md5TangentCodePathCrossCheckOracle;
+}
+
+interface DecimalToken {
+  precision: number;
+  value: number;
+}
+
+interface GeometrySection {
+  geometry: Readonly<MeshGeometry>;
+  normalOffset: number;
+  outputToSource: readonly number[];
+  source: SourceSection;
+  tangentOffset: number;
+  uvOffset: number;
+}
+
+interface NumericInterval {
+  max: number;
+  min: number;
+}
+
+interface SourceSection {
+  triangleCount: number;
+  uvs: readonly { u: DecimalToken; v: DecimalToken }[];
+  vertexCount: number;
+}
+
+export function runMd5TangentFrameOracles(scene: Readonly<Scene3D>, meshSource: string): Md5TangentFrameOracles {
+  return {
+    orthogonality: measureMd5TangentOrthogonality(scene),
+    handedness: measureMd5TangentHandedness(scene, meshSource),
+    splitDifference: measureMd5SplitTangentDifference(scene, meshSource),
+    codePathCrossCheck: measureMd5TangentCodePathCrossCheck(scene),
+  };
+}
+
+export function measureMd5TangentCodePathCrossCheck(scene: Readonly<Scene3D>): Md5TangentCodePathCrossCheckOracle {
+  const geometries = collectMeshGeometries(scene);
+  const base = {
+    calculation: 'per-triangle-uv-jacobian-solve-and-generalized-gram-schmidt' as const,
+    comparedComponents: 0,
+    comparison: 'absolute-component-residual-vs-observed-float32-rounding-cell' as const,
+    coordinateBasis: 'flight-right-handed-y-up-after-import' as const,
+    differingComponents: 0,
+    differingVertices: 0,
+    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
+    independence: 'same-author-code-path-only' as const,
+    inputPreparation: 'imported-float32-position-normal-uv-and-index-streams' as const,
+    maximumPrecisionExcess: 0,
+    maximumPrecisionBound: 0,
+    maximumResidual: 0,
+    maximumResidualToPrecisionRatio: 0,
+    role: 'diagnostic' as const,
+    tool: 'scripts/md5-tangent-frame-oracle' as const,
+  };
+  if (geometries.length === 0) {
+    return { ...base, notRunReason: 'mesh-geometry-missing', state: 'not-run' };
+  }
+
+  let comparedComponents = 0;
+  let differingComponents = 0;
+  let differingVertices = 0;
+  let maximumPrecisionExcess = 0;
+  let maximumPrecisionBound = 0;
+  let maximumResidual = 0;
+  let maximumResidualToPrecisionRatio = 0;
+  for (const geometry of geometries) {
+    const positionOffset = getVertexAttributeFloatOffset(geometry.layout, 'position');
+    const normalOffset = getVertexAttributeFloatOffset(geometry.layout, 'normal');
+    const tangentOffset = tangentFloatOffset(geometry);
+    const uvOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const vertexCount = vertexCountOf(geometry);
+    if (
+      positionOffset < 0 ||
+      normalOffset < 0 ||
+      tangentOffset < 0 ||
+      uvOffset < 0 ||
+      geometry.indices === null ||
+      geometry.topology !== 'triangle-list'
+    ) {
+      return { ...base, notRunReason: 'tangent-input-unreadable', state: 'not-run' };
+    }
+
+    const expected = computeCodePathCrossCheckTangentFrames(
+      geometry,
+      positionOffset,
+      normalOffset,
+      uvOffset,
+      floatsPerVertex,
+      vertexCount,
+    );
+    if (expected === null) return { ...base, notRunReason: 'uv-gradient-indeterminate', state: 'not-run' };
+    for (let vertex = 0; vertex < vertexCount; vertex++) {
+      const observedBase = vertex * floatsPerVertex + tangentOffset;
+      const expectedBase = vertex * 4;
+      let vertexDiffers = false;
+      for (let component = 0; component < 4; component++) {
+        const observed = geometry.vertices[observedBase + component]!;
+        const expectedValue = expected[expectedBase + component]!;
+        if (!Number.isFinite(observed) || !Number.isFinite(expectedValue)) {
+          return { ...base, notRunReason: 'tangent-input-unreadable', state: 'not-run' };
+        }
+        const residual = Math.abs(observed - expectedValue);
+        const precisionBound = float32RoundingRadius(observed);
+        comparedComponents++;
+        if (residual > precisionBound) {
+          differingComponents++;
+          vertexDiffers = true;
+        }
+        const precisionExcess = residual - precisionBound;
+        const residualToPrecisionRatio = precisionBound > 0 ? residual / precisionBound : Number.POSITIVE_INFINITY;
+        if (precisionExcess > maximumPrecisionExcess) maximumPrecisionExcess = precisionExcess;
+        if (residual > maximumResidual) maximumResidual = residual;
+        if (residualToPrecisionRatio > maximumResidualToPrecisionRatio)
+          maximumResidualToPrecisionRatio = residualToPrecisionRatio;
+        if (precisionBound > maximumPrecisionBound) maximumPrecisionBound = precisionBound;
+      }
+      if (vertexDiffers) differingVertices++;
+    }
+  }
+
+  return {
+    calculation: 'per-triangle-uv-jacobian-solve-and-generalized-gram-schmidt',
+    comparedComponents,
+    comparison: 'absolute-component-residual-vs-observed-float32-rounding-cell',
+    coordinateBasis: 'flight-right-handed-y-up-after-import',
+    differingComponents,
+    differingVertices,
+    id: MD5_TANGENT_CODE_PATH_CROSS_CHECK_ORACLE_ID,
+    independence: 'same-author-code-path-only',
+    inputPreparation: 'imported-float32-position-normal-uv-and-index-streams',
+    maximumPrecisionExcess,
+    maximumPrecisionBound,
+    maximumResidual,
+    maximumResidualToPrecisionRatio,
+    role: 'diagnostic',
+    state: differingComponents === 0 ? 'passed' : 'failed',
+    tool: 'scripts/md5-tangent-frame-oracle',
+  };
+}
+
+export function measureMd5TangentOrthogonality(scene: Readonly<Scene3D>): Md5TangentOrthogonalityOracle {
+  const geometries = collectMeshGeometries(scene);
+  const base = {
+    exactVertices: 0,
+    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    invalidVertices: 0,
+    maximumPrecisionExcess: 0,
+    maximumPrecisionBound: 0,
+    maximumResidual: 0,
+    maximumResidualToPrecisionRatio: 0,
+    outsidePrecisionVertices: 0,
+    vertexCount: 0,
+    withinPrecisionVertices: 0,
+  };
+  if (geometries.length === 0) return { ...base, notRunReason: 'mesh-geometry-missing', state: 'not-run' };
+
+  let exactVertices = 0;
+  let invalidVertices = 0;
+  let maximumPrecisionExcess = 0;
+  let maximumPrecisionBound = 0;
+  let maximumResidual = 0;
+  let maximumResidualToPrecisionRatio = 0;
+  let outsidePrecisionVertices = 0;
+  let vertexCount = 0;
+  let withinPrecisionVertices = 0;
+  for (const geometry of geometries) {
+    const normalOffset = getVertexAttributeFloatOffset(geometry.layout, 'normal');
+    const tangentOffset = tangentFloatOffset(geometry);
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const count = vertexCountOf(geometry);
+    vertexCount += count;
+    if (normalOffset < 0 || tangentOffset < 0) {
+      invalidVertices += count;
+      continue;
+    }
+
+    for (let vertex = 0; vertex < count; vertex++) {
+      const baseOffset = vertex * floatsPerVertex;
+      const nx = geometry.vertices[baseOffset + normalOffset]!;
+      const ny = geometry.vertices[baseOffset + normalOffset + 1]!;
+      const nz = geometry.vertices[baseOffset + normalOffset + 2]!;
+      const tx = geometry.vertices[baseOffset + tangentOffset]!;
+      const ty = geometry.vertices[baseOffset + tangentOffset + 1]!;
+      const tz = geometry.vertices[baseOffset + tangentOffset + 2]!;
+      if (
+        !numbersFinite(nx, ny, nz, tx, ty, tz) ||
+        (nx === 0 && ny === 0 && nz === 0) ||
+        (tx === 0 && ty === 0 && tz === 0)
+      ) {
+        invalidVertices++;
+        continue;
+      }
+
+      const residual = Math.abs(nx * tx + ny * ty + nz * tz);
+      const precisionBound = productRoundingBound(nx, tx) + productRoundingBound(ny, ty) + productRoundingBound(nz, tz);
+      if (residual === 0) exactVertices++;
+      else if (residual <= precisionBound) withinPrecisionVertices++;
+      else outsidePrecisionVertices++;
+      const precisionExcess = residual - precisionBound;
+      const residualToPrecisionRatio = precisionBound > 0 ? residual / precisionBound : Number.POSITIVE_INFINITY;
+      if (precisionExcess > maximumPrecisionExcess) maximumPrecisionExcess = precisionExcess;
+      if (residual > maximumResidual) maximumResidual = residual;
+      if (residualToPrecisionRatio > maximumResidualToPrecisionRatio)
+        maximumResidualToPrecisionRatio = residualToPrecisionRatio;
+      if (precisionBound > maximumPrecisionBound) maximumPrecisionBound = precisionBound;
+    }
+  }
+
+  const measurements = {
+    exactVertices,
+    id: MD5_TANGENT_ORTHOGONALITY_ORACLE_ID,
+    invalidVertices,
+    maximumPrecisionExcess,
+    maximumPrecisionBound,
+    maximumResidual,
+    maximumResidualToPrecisionRatio,
+    outsidePrecisionVertices,
+    vertexCount,
+    withinPrecisionVertices,
+  };
+  if (outsidePrecisionVertices > 0) return { ...measurements, state: 'failed' };
+  if (invalidVertices > 0) return { ...measurements, notRunReason: 'tangent-frame-unreadable', state: 'not-run' };
+  return { ...measurements, state: 'passed' };
+}
+
+export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource: string): Md5TangentHandednessOracle {
+  const sections = resolveGeometrySections(scene, meshSource);
+  const base = {
+    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID,
+    indeterminateTriangles: 0,
+    invalidTriangles: 0,
+    matchingTriangles: 0,
+    minimumCertainDeterminantMagnitude: null,
+    mismatchingTriangles: 0,
+    triangleCount: 0,
+  };
+  if (collectMeshGeometries(scene).length === 0) {
+    return { ...base, notRunReason: 'mesh-geometry-missing', state: 'not-run' };
+  }
+  if (sections === null) return { ...base, notRunReason: 'source-topology-unreadable', state: 'not-run' };
+
+  let indeterminateTriangles = 0;
+  let invalidTriangles = 0;
+  let matchingTriangles = 0;
+  let minimumCertainDeterminantMagnitude = Number.POSITIVE_INFINITY;
+  let mismatchingTriangles = 0;
+  let triangleCount = 0;
+  for (const section of sections) {
+    const { geometry } = section;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const indices = geometry.indices;
+    if (indices === null || geometry.topology !== 'triangle-list') {
+      invalidTriangles += Math.floor((indices?.length ?? vertexCountOf(geometry)) / 3);
+      continue;
+    }
+    for (let element = 0; element + 2 < indices.length; element += 3) {
+      triangleCount++;
+      const outputIndices = [indices[element]!, indices[element + 1]!, indices[element + 2]!];
+      const sourceIndices = outputIndices.map((index) => section.outputToSource[index]);
+      if (sourceIndices.some((index) => index === undefined)) {
+        invalidTriangles++;
+        continue;
+      }
+      const uv = sourceIndices.map((index) => section.source.uvs[index!]!);
+      const determinant = determinantInterval(
+        decimalRuntimeInterval(uv[0]!.u, geometry.vertices[outputIndices[0]! * floatsPerVertex + section.uvOffset]!),
+        decimalRuntimeInterval(
+          uv[0]!.v,
+          geometry.vertices[outputIndices[0]! * floatsPerVertex + section.uvOffset + 1]!,
+        ),
+        decimalRuntimeInterval(uv[1]!.u, geometry.vertices[outputIndices[1]! * floatsPerVertex + section.uvOffset]!),
+        decimalRuntimeInterval(
+          uv[1]!.v,
+          geometry.vertices[outputIndices[1]! * floatsPerVertex + section.uvOffset + 1]!,
+        ),
+        decimalRuntimeInterval(uv[2]!.u, geometry.vertices[outputIndices[2]! * floatsPerVertex + section.uvOffset]!),
+        decimalRuntimeInterval(
+          uv[2]!.v,
+          geometry.vertices[outputIndices[2]! * floatsPerVertex + section.uvOffset + 1]!,
+        ),
+      );
+      if (determinant === null) {
+        invalidTriangles++;
+        continue;
+      }
+      if (determinant.min <= 0 && determinant.max >= 0) {
+        indeterminateTriangles++;
+        continue;
+      }
+      const expectedSign = determinant.min > 0 ? 1 : -1;
+      const determinantMagnitude = Math.min(Math.abs(determinant.min), Math.abs(determinant.max));
+      if (determinantMagnitude < minimumCertainDeterminantMagnitude)
+        minimumCertainDeterminantMagnitude = determinantMagnitude;
+      let matches = true;
+      for (const index of outputIndices) {
+        if (geometry.vertices[index * floatsPerVertex + section.tangentOffset + 3] !== expectedSign) matches = false;
+      }
+      if (matches) matchingTriangles++;
+      else mismatchingTriangles++;
+    }
+  }
+
+  const measurements = {
+    id: MD5_TANGENT_HANDEDNESS_ORACLE_ID,
+    indeterminateTriangles,
+    invalidTriangles,
+    matchingTriangles,
+    minimumCertainDeterminantMagnitude: Number.isFinite(minimumCertainDeterminantMagnitude)
+      ? minimumCertainDeterminantMagnitude
+      : null,
+    mismatchingTriangles,
+    triangleCount,
+  };
+  if (mismatchingTriangles > 0) return { ...measurements, state: 'failed' };
+  if (indeterminateTriangles > 0 || invalidTriangles > 0) {
+    return { ...measurements, notRunReason: 'uv-winding-indeterminate', state: 'not-run' };
+  }
+  return { ...measurements, state: 'passed' };
+}
+
+export function measureMd5SplitTangentDifference(
+  scene: Readonly<Scene3D>,
+  meshSource: string,
+): Md5TangentSplitDifferenceOracle {
+  const sections = resolveGeometrySections(scene, meshSource);
+  const base = {
+    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
+    indistinguishablePairs: 0,
+    meaningfulPairs: 0,
+    pairs: [] as Md5TangentSplitPairMeasurement[],
+  };
+  if (sections === null) return { ...base, notRunReason: 'source-topology-unreadable', state: 'not-run' };
+
+  let indistinguishablePairs = 0;
+  let meaningfulPairs = 0;
+  const pairs: Md5TangentSplitPairMeasurement[] = [];
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+    const section = sections[sectionIndex]!;
+    const { geometry } = section;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const outputCount = vertexCountOf(geometry);
+    for (let splitVertex = section.source.vertexCount; splitVertex < outputCount; splitVertex++) {
+      const originalVertex = section.outputToSource[splitVertex];
+      if (originalVertex === undefined || originalVertex >= section.source.vertexCount) {
+        return { ...base, notRunReason: 'split-vertices-unmappable', state: 'not-run' };
+      }
+      const originalBase = originalVertex * floatsPerVertex + section.tangentOffset;
+      const splitBase = splitVertex * floatsPerVertex + section.tangentOffset;
+      const residuals = [0, 1, 2].map((component) =>
+        Math.abs(geometry.vertices[originalBase + component]! - geometry.vertices[splitBase + component]!),
+      );
+      const precisionBounds = [0, 1, 2].map(
+        (component) =>
+          float32RoundingRadius(geometry.vertices[originalBase + component]!) +
+          float32RoundingRadius(geometry.vertices[splitBase + component]!),
+      );
+      if (
+        residuals.some((value) => !Number.isFinite(value)) ||
+        precisionBounds.some((value) => !Number.isFinite(value))
+      ) {
+        return { ...base, notRunReason: 'split-vertices-unmappable', state: 'not-run' };
+      }
+      const directionResidual = Math.hypot(...residuals);
+      const directionPrecisionBound = Math.hypot(...precisionBounds);
+      const originalHandedness = geometry.vertices[originalBase + 3]!;
+      const splitHandedness = geometry.vertices[splitBase + 3]!;
+      if (Math.abs(originalHandedness) !== 1 || Math.abs(splitHandedness) !== 1) {
+        return { ...base, notRunReason: 'split-vertices-unmappable', state: 'not-run' };
+      }
+      const handednessChanged = originalHandedness !== splitHandedness;
+      const state =
+        handednessChanged || directionResidual > directionPrecisionBound
+          ? 'meaningfully-different'
+          : 'indistinguishable-at-format-precision';
+      if (state === 'meaningfully-different') meaningfulPairs++;
+      else indistinguishablePairs++;
+      pairs.push({
+        directionPrecisionBound,
+        directionResidual,
+        handednessChanged,
+        originalVertex,
+        section: sectionIndex,
+        splitVertex,
+        state,
+      });
+    }
+  }
+
+  const measurements = {
+    id: MD5_TANGENT_SPLIT_DIFFERENCE_ORACLE_ID,
+    indistinguishablePairs,
+    meaningfulPairs,
+    pairs,
+  };
+  if (pairs.length === 0) return { ...measurements, notRunReason: 'split-vertices-absent', state: 'not-run' };
+  return { ...measurements, state: indistinguishablePairs === 0 ? 'passed' : 'failed' };
+}
+
+function computeCodePathCrossCheckTangentFrames(
+  geometry: Readonly<MeshGeometry>,
+  positionOffset: number,
+  normalOffset: number,
+  uvOffset: number,
+  floatsPerVertex: number,
+  vertexCount: number,
+): Float64Array | null {
+  const indices = geometry.indices;
+  if (indices === null) return null;
+  const tangentSums = new Float64Array(vertexCount * 3);
+  const bitangentSums = new Float64Array(vertexCount * 3);
+  for (let element = 0; element + 2 < indices.length; element += 3) {
+    const i0 = indices[element]!;
+    const i1 = indices[element + 1]!;
+    const i2 = indices[element + 2]!;
+    if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) return null;
+    const b0 = i0 * floatsPerVertex;
+    const b1 = i1 * floatsPerVertex;
+    const b2 = i2 * floatsPerVertex;
+    const e1 = [
+      geometry.vertices[b1 + positionOffset]! - geometry.vertices[b0 + positionOffset]!,
+      geometry.vertices[b1 + positionOffset + 1]! - geometry.vertices[b0 + positionOffset + 1]!,
+      geometry.vertices[b1 + positionOffset + 2]! - geometry.vertices[b0 + positionOffset + 2]!,
+    ];
+    const e2 = [
+      geometry.vertices[b2 + positionOffset]! - geometry.vertices[b0 + positionOffset]!,
+      geometry.vertices[b2 + positionOffset + 1]! - geometry.vertices[b0 + positionOffset + 1]!,
+      geometry.vertices[b2 + positionOffset + 2]! - geometry.vertices[b0 + positionOffset + 2]!,
+    ];
+    const du1 = geometry.vertices[b1 + uvOffset]! - geometry.vertices[b0 + uvOffset]!;
+    const dv1 = geometry.vertices[b1 + uvOffset + 1]! - geometry.vertices[b0 + uvOffset + 1]!;
+    const du2 = geometry.vertices[b2 + uvOffset]! - geometry.vertices[b0 + uvOffset]!;
+    const dv2 = geometry.vertices[b2 + uvOffset + 1]! - geometry.vertices[b0 + uvOffset + 1]!;
+    const determinant = du1 * dv2 - dv1 * du2;
+    if (!numbersFinite(...e1, ...e2, du1, dv1, du2, dv2, determinant) || determinant === 0) return null;
+    const inverseDeterminant = 1 / determinant;
+    const tangent = e1.map((component, axis) => (dv2 * component - dv1 * e2[axis]!) * inverseDeterminant);
+    const bitangent = e1.map((component, axis) => (-du2 * component + du1 * e2[axis]!) * inverseDeterminant);
+    for (const vertex of [i0, i1, i2]) {
+      const sumBase = vertex * 3;
+      for (let axis = 0; axis < 3; axis++) {
+        tangentSums[sumBase + axis] += tangent[axis]!;
+        bitangentSums[sumBase + axis] += bitangent[axis]!;
+      }
+    }
+  }
+
+  const expected = new Float64Array(vertexCount * 4);
+  for (let vertex = 0; vertex < vertexCount; vertex++) {
+    const vertexBase = vertex * floatsPerVertex;
+    const sumBase = vertex * 3;
+    const nx = geometry.vertices[vertexBase + normalOffset]!;
+    const ny = geometry.vertices[vertexBase + normalOffset + 1]!;
+    const nz = geometry.vertices[vertexBase + normalOffset + 2]!;
+    let tx = tangentSums[sumBase]!;
+    let ty = tangentSums[sumBase + 1]!;
+    let tz = tangentSums[sumBase + 2]!;
+    if (!numbersFinite(nx, ny, nz, tx, ty, tz)) return null;
+    const normalSquaredLength = nx * nx + ny * ny + nz * nz;
+    if (!(normalSquaredLength > 0)) return null;
+    const projection = (nx * tx + ny * ty + nz * tz) / normalSquaredLength;
+    tx -= projection * nx;
+    ty -= projection * ny;
+    tz -= projection * nz;
+    const tangentLength = Math.hypot(tx, ty, tz);
+    if (!(tangentLength > 0)) return null;
+    tx /= tangentLength;
+    ty /= tangentLength;
+    tz /= tangentLength;
+    const crossX = ny * tz - nz * ty;
+    const crossY = nz * tx - nx * tz;
+    const crossZ = nx * ty - ny * tx;
+    const orientation =
+      crossX * bitangentSums[sumBase]! + crossY * bitangentSums[sumBase + 1]! + crossZ * bitangentSums[sumBase + 2]!;
+    const expectedBase = vertex * 4;
+    expected[expectedBase] = tx;
+    expected[expectedBase + 1] = ty;
+    expected[expectedBase + 2] = tz;
+    expected[expectedBase + 3] = orientation < 0 ? -1 : 1;
+  }
+  return expected;
+}
+
+function resolveGeometrySections(scene: Readonly<Scene3D>, source: string): GeometrySection[] | null {
+  const geometries = collectMeshGeometries(scene);
+  const sourceSections = parseSourceSections(source);
+  if (sourceSections === null) return null;
+  const nonemptySections = sourceSections.filter((section) => section.triangleCount > 0);
+  if (geometries.length !== nonemptySections.length) return null;
+
+  const sections: GeometrySection[] = [];
+  for (let sectionIndex = 0; sectionIndex < geometries.length; sectionIndex++) {
+    const geometry = geometries[sectionIndex]!;
+    const sourceSection = nonemptySections[sectionIndex]!;
+    const normalOffset = getVertexAttributeFloatOffset(geometry.layout, 'normal');
+    const tangentOffset = tangentFloatOffset(geometry);
+    const uvOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const outputCount = vertexCountOf(geometry);
+    if (
+      normalOffset < 0 ||
+      tangentOffset < 0 ||
+      uvOffset < 0 ||
+      outputCount < sourceSection.vertexCount ||
+      geometry.indices === null
+    ) {
+      return null;
+    }
+    const outputToSource: number[] = [];
+    for (let vertex = 0; vertex < sourceSection.vertexCount; vertex++) outputToSource.push(vertex);
+    for (let vertex = sourceSection.vertexCount; vertex < outputCount; vertex++) {
+      const matches: number[] = [];
+      for (let sourceVertex = 0; sourceVertex < sourceSection.vertexCount; sourceVertex++) {
+        if (recordsEqualExceptTangent(geometry, sourceVertex, vertex, tangentOffset, floatsPerVertex))
+          matches.push(sourceVertex);
+      }
+      if (matches.length !== 1) return null;
+      outputToSource.push(matches[0]!);
+    }
+    for (let vertex = 0; vertex < outputCount; vertex++) {
+      const sourceVertex = outputToSource[vertex]!;
+      const uv = sourceSection.uvs[sourceVertex]!;
+      const runtimeBase = vertex * floatsPerVertex + uvOffset;
+      if (
+        geometry.vertices[runtimeBase] !== Math.fround(uv.u.value) ||
+        geometry.vertices[runtimeBase + 1] !== Math.fround(uv.v.value)
+      ) {
+        return null;
+      }
+    }
+    sections.push({ geometry, normalOffset, outputToSource, source: sourceSection, tangentOffset, uvOffset });
+  }
+  return sections;
+}
+
+function parseSourceSections(source: string): SourceSection[] | null {
+  const probe = probeMd5Sections(source);
+  if (probe.kind !== 'mesh' || !probe.declarationsReconciled) return null;
+  const lines = source
+    .split(/\r?\n/)
+    .map(stripLineComment)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const meshBlocks: string[][] = [];
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    let startsMesh = lines[lineIndex] === 'mesh {';
+    if (lines[lineIndex] === 'mesh' && lines[lineIndex + 1] === '{') {
+      startsMesh = true;
+      lineIndex++;
+    }
+    if (!startsMesh) continue;
+    const block: string[] = [];
+    let closed = false;
+    for (lineIndex++; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex]!;
+      if (line === '}') {
+        closed = true;
+        break;
+      }
+      block.push(line);
+    }
+    if (!closed) return null;
+    meshBlocks.push(block);
+  }
+  if (meshBlocks.length !== probe.sections.meshes.length) return null;
+
+  const sections: SourceSection[] = [];
+  const numberSource = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
+  const vertPattern = new RegExp(
+    String.raw`^vert\s+(\d+)\s+\(\s*(${numberSource})\s+(${numberSource})\s*\)\s+\d+\s+\d+$`,
+  );
+  for (let sectionIndex = 0; sectionIndex < meshBlocks.length; sectionIndex++) {
+    const body = probe.sections.meshes[sectionIndex]!;
+    const vertexCount = body.vertices.declaration.value;
+    const triangleCount = body.triangles.declaration.value;
+    if (vertexCount === null || triangleCount === null) return null;
+    const uvs: ({ u: DecimalToken; v: DecimalToken } | undefined)[] = new Array(vertexCount);
+    for (const line of meshBlocks[sectionIndex]!) {
+      const match = vertPattern.exec(line);
+      if (match === null) continue;
+      const index = Number(match[1]);
+      const u = parseDecimalToken(match[2]!);
+      const v = parseDecimalToken(match[3]!);
+      if (index >= vertexCount || u === null || v === null || uvs[index] !== undefined) return null;
+      uvs[index] = { u, v };
+    }
+    if (uvs.some((uv) => uv === undefined)) return null;
+    sections.push({ triangleCount, uvs: uvs as { u: DecimalToken; v: DecimalToken }[], vertexCount });
+  }
+  return sections;
+}
+
+function collectMeshGeometries(scene: Readonly<Scene3D>): Readonly<MeshGeometry>[] {
+  const geometries: Readonly<MeshGeometry>[] = [];
+  const pending = [scene.root];
+  while (pending.length > 0) {
+    const node = pending.pop()!;
+    if (isMesh(node)) geometries.push(node.geometry);
+    const children = getNodeChildren(node);
+    for (let child = children.length - 1; child >= 0; child--) pending.push(children[child]!);
+  }
+  return geometries;
+}
+
+function determinantInterval(
+  u0: NumericInterval | null,
+  v0: NumericInterval | null,
+  u1: NumericInterval | null,
+  v1: NumericInterval | null,
+  u2: NumericInterval | null,
+  v2: NumericInterval | null,
+): NumericInterval | null {
+  if (u0 === null || v0 === null || u1 === null || v1 === null || u2 === null || v2 === null) return null;
+  const du1 = subtractIntervals(u1, u0);
+  const dv1 = subtractIntervals(v1, v0);
+  const du2 = subtractIntervals(u2, u0);
+  const dv2 = subtractIntervals(v2, v0);
+  return subtractIntervals(multiplyIntervals(du1, dv2), multiplyIntervals(du2, dv1));
+}
+
+function decimalRuntimeInterval(token: DecimalToken, runtimeValue: number): NumericInterval | null {
+  if (!Number.isFinite(runtimeValue) || runtimeValue !== Math.fround(token.value)) return null;
+  const radius = token.precision + float32RoundingRadius(runtimeValue);
+  return { max: runtimeValue + radius, min: runtimeValue - radius };
+}
+
+function multiplyIntervals(a: NumericInterval, b: NumericInterval): NumericInterval {
+  const products = [a.min * b.min, a.min * b.max, a.max * b.min, a.max * b.max];
+  return { max: Math.max(...products), min: Math.min(...products) };
+}
+
+function subtractIntervals(a: NumericInterval, b: NumericInterval): NumericInterval {
+  return { max: a.max - b.min, min: a.min - b.max };
+}
+
+function parseDecimalToken(source: string): DecimalToken | null {
+  const match = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(source);
+  if (match === null || (match[2] === '' && match[3] === '')) return null;
+  const value = Number(source);
+  if (!Number.isFinite(value)) return null;
+  const fractionalDigits = match[3]?.length ?? 0;
+  const exponent = match[4] === undefined ? 0 : Number(match[4]);
+  const precision = 0.5 * 10 ** (exponent - fractionalDigits);
+  if (!Number.isFinite(precision) || precision <= 0) return null;
+  return { precision, value };
+}
+
+function recordsEqualExceptTangent(
+  geometry: Readonly<MeshGeometry>,
+  a: number,
+  b: number,
+  tangentOffset: number,
+  floatsPerVertex: number,
+): boolean {
+  const aBase = a * floatsPerVertex;
+  const bBase = b * floatsPerVertex;
+  for (let component = 0; component < floatsPerVertex; component++) {
+    if (component >= tangentOffset && component < tangentOffset + 4) continue;
+    if (geometry.vertices[aBase + component] !== geometry.vertices[bBase + component]) return false;
+  }
+  return true;
+}
+
+function productRoundingBound(a: number, b: number): number {
+  const aRadius = float32RoundingRadius(a);
+  const bRadius = float32RoundingRadius(b);
+  return Math.abs(a) * bRadius + Math.abs(b) * aRadius + aRadius * bRadius;
+}
+
+function float32RoundingRadius(value: number): number {
+  if (!Number.isFinite(value)) return Number.POSITIVE_INFINITY;
+  const previous = nextFloat32(value, -1);
+  const next = nextFloat32(value, 1);
+  return Math.max((value - previous) / 2, (next - value) / 2);
+}
+
+function nextFloat32(value: number, direction: -1 | 1): number {
+  if (Number.isNaN(value)) return value;
+  if (value === Number.POSITIVE_INFINITY) return direction > 0 ? value : FLOAT32_MAX;
+  if (value === Number.NEGATIVE_INFINITY) return direction < 0 ? value : -FLOAT32_MAX;
+  if (value === 0) return direction > 0 ? FLOAT32_MIN : -FLOAT32_MIN;
+  FLOAT32_VIEW[0] = value;
+  const increment = value > 0 === direction > 0 ? 1 : -1;
+  UINT32_VIEW[0] = UINT32_VIEW[0]! + increment;
+  return FLOAT32_VIEW[0]!;
+}
+
+function tangentFloatOffset(geometry: Readonly<MeshGeometry>): number {
+  return getVertexAttributeFloatOffset(geometry.layout, 'tangent');
+}
+
+function vertexCountOf(geometry: Readonly<MeshGeometry>): number {
+  const floatsPerVertex = geometry.layout.stride / 4;
+  return floatsPerVertex > 0 ? Math.floor(geometry.vertices.length / floatsPerVertex) : 0;
+}
+
+function numbersFinite(...values: readonly number[]): boolean {
+  return values.every(Number.isFinite);
+}
+
+function stripLineComment(line: string): string {
+  let quoted = false;
+  let escaped = false;
+  for (let index = 0; index + 1 < line.length; index++) {
+    const char = line[index]!;
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\' && quoted) {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') quoted = !quoted;
+    else if (!quoted && char === '/' && line[index + 1] === '/') return line.slice(0, index);
+  }
+  return line;
+}
+
+const FLOAT32_STORAGE = new ArrayBuffer(4);
+const FLOAT32_VIEW = new Float32Array(FLOAT32_STORAGE);
+const UINT32_VIEW = new Uint32Array(FLOAT32_STORAGE);
+const FLOAT32_MIN = 2 ** -149;
+const FLOAT32_MAX = (2 - 2 ** -23) * 2 ** 127;
