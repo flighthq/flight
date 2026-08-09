@@ -57,7 +57,7 @@ function resolveRiveParentIndices(artboard: RiveArtboardGraph, diagnostics: Impo
   }
   for (let index = 1; index < count; index++) {
     if (!hasRiveParentCycle(parents, index)) continue;
-    reportRiveGraphDrop(diagnostics, 'rive.parent-cycle', { index });
+    reportRiveGraphDrop(diagnostics, 'rive.parent-cycle', 'resolveRiveParentIndices', { index });
     parents[index] = RIVE_NO_PARENT;
   }
 }
@@ -70,12 +70,12 @@ function readRiveParentIndex(
 ): number {
   const property = object.properties.find((candidate) => candidate.key === RIVE_PARENT_ID_PROPERTY_KEY);
   if (property === undefined) {
-    reportRiveGraphDrop(diagnostics, 'rive.component-without-parent', { index });
+    reportRiveGraphDrop(diagnostics, 'rive.component-without-parent', 'readRiveParentIndex', { index });
     return RIVE_NO_PARENT;
   }
   const parent = property.value as number;
   if (parent === index || parent < 0 || parent >= count) {
-    reportRiveGraphDrop(diagnostics, 'rive.unresolved-parent', { index, parent });
+    reportRiveGraphDrop(diagnostics, 'rive.unresolved-parent', 'readRiveParentIndex', { index, parent });
     return RIVE_NO_PARENT;
   }
   return parent;
@@ -98,9 +98,10 @@ function hasRiveParentCycle(parents: readonly number[], start: number): boolean 
 function reportRiveGraphDrop(
   diagnostics: ImportDiagnostic[] | undefined,
   kind: string,
+  origin: string,
   detail: Readonly<Record<string, number>>,
 ): void {
-  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, kind, 'createRiveObjectGraph', detail);
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
 }
 
 const RIVE_ARTBOARD_TYPE_KEY = 1;

@@ -70,6 +70,7 @@
     "dev:functional": "npm run dev --workspace=tools/functional",
     "dev:gallery": "npm run dev --workspace=tools/gallery",
     "dev:reference": "tsx ./scripts/reference-tool.ts dev",
+    "diagnostics:origins": "tsx ./scripts/import-diagnostic-origins.ts",
     "docs:check": "tsx ./scripts/docs.ts --check",
     "electron-harness": "npm run dev:electron-harness",
     "electron:examples": "npm run examples:electron",
