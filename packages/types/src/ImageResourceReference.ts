@@ -1,5 +1,6 @@
 import type { AlphaType } from './AlphaType';
 import type { Image } from './Image';
+import type { ImageBitmapComposition } from './ImageBitmapComposition';
 import type { ResourceResolutionState } from './ResourceResolutionState';
 import type { Texture } from './Texture';
 
@@ -68,6 +69,10 @@ export interface EmbeddedImageResourceReference extends ImageResourceReferenceBa
   // deliberately; keeping that choice in plain reference data lets the async resource layer request
   // the matching decoder output without teaching it about a container-specific MIME type.
   alphaType: AlphaType;
+  // Present only when the decoded pixels need a format-owned join, or when the payload itself is a raw
+  // raster with no MIME decoder. The stable kind selects a registered callback; executable state never
+  // enters this plain-data reference.
+  bitmapComposition?: ImageBitmapComposition;
   bytes: Uint8Array;
 }
 
