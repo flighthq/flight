@@ -67,6 +67,18 @@ function makeUvSeamFold() {
   });
 }
 
+function reconstructBitangent(vertices: Readonly<Float32Array>, vertex: number): [number, number, number] {
+  const base = vertex * 12;
+  const nx = vertices[base + 3];
+  const ny = vertices[base + 4];
+  const nz = vertices[base + 5];
+  const tx = vertices[base + 6];
+  const ty = vertices[base + 7];
+  const tz = vertices[base + 8];
+  const sign = vertices[base + 9];
+  return [sign * (ny * tz - nz * ty), sign * (nz * tx - nx * tz), sign * (nx * ty - ny * tx)];
+}
+
 describe('computeMeshGeometryBoundingSphere', () => {
   it('writes the center and radius for a unit-side triangle', () => {
     const geometry = makeTriangle();
@@ -291,6 +303,38 @@ describe('computeMeshGeometryTangents', () => {
     expect(geometry.vertices[9]).toBe(-1);
   });
 
+  it('keeps the reconstructed bitangent continuous across a grouped mirrored-UV seam', () => {
+    const vertices = new Float32Array(6 * 12);
+    // The duplicate seam position (vertices 0/3) sees different face frames on each side. The second
+    // UV chart mirrors u: its tangent and handedness flip, while the shared bitangent must not.
+    setCanonicalVertex(vertices, 0, 0, 0, 0, 0);
+    setCanonicalVertex(vertices, 1, 1, 0, 1, 0);
+    setCanonicalVertex(vertices, 2, 0, 1, 0, 1);
+    setCanonicalVertex(vertices, 3, 0, 0, 0, 0);
+    setCanonicalVertex(vertices, 4, -1, 0, 0, 1);
+    setCanonicalVertex(vertices, 5, 0, -1, 1, 0);
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2, 3, 4, 5]),
+      layout: CANONICAL_LAYOUT,
+      vertices,
+    });
+    const groups = computeMeshGeometryPositionGroups(geometry);
+    computeMeshGeometryNormals(geometry, geometry, groups);
+
+    computeMeshGeometryTangents(geometry, geometry, groups);
+
+    expect(geometry.vertices[9]).toBe(1);
+    expect(geometry.vertices[3 * 12 + 9]).toBe(-1);
+    const firstBitangent = reconstructBitangent(geometry.vertices, 0);
+    const mirroredBitangent = reconstructBitangent(geometry.vertices, 3);
+    expect(firstBitangent[0]).toBeCloseTo(-1 / Math.sqrt(2));
+    expect(firstBitangent[1]).toBeCloseTo(1 / Math.sqrt(2));
+    expect(firstBitangent[2]).toBeCloseTo(0);
+    for (let component = 0; component < 3; component++) {
+      expect(mirroredBitangent[component]).toBeCloseTo(firstBitangent[component]);
+    }
+  });
+
   it('splits shared vertices at a mirrored-UV handedness boundary', () => {
     // Two CCW triangles share vertices 0/2. Their UV determinants have opposite signs, so a single
     // tangent.w cannot describe both triangles: the shared records must be duplicated and remapped.
@@ -304,10 +348,11 @@ describe('computeMeshGeometryTangents', () => {
       layout: CANONICAL_LAYOUT,
       vertices,
     });
-    computeMeshGeometryNormals(geometry, geometry);
+    const groups = computeMeshGeometryPositionGroups(geometry);
+    computeMeshGeometryNormals(geometry, geometry, groups);
     const previousVersion = geometry.version;
 
-    computeMeshGeometryTangents(geometry, geometry);
+    computeMeshGeometryTangents(geometry, geometry, groups);
 
     expect(geometry.vertices.length / 12).toBe(6);
     expect(geometry.version).toBe(previousVersion + 1);
@@ -325,6 +370,11 @@ describe('computeMeshGeometryTangents', () => {
     expect(indices[2]).toBe(2);
     expect(indices[3]).toBeGreaterThanOrEqual(4);
     expect(indices[4]).toBeGreaterThanOrEqual(4);
+    const firstBitangent = reconstructBitangent(geometry.vertices, indices[0]);
+    const mirroredBitangent = reconstructBitangent(geometry.vertices, indices[3]);
+    for (let component = 0; component < 3; component++) {
+      expect(mirroredBitangent[component]).toBeCloseTo(firstBitangent[component]);
+    }
   });
 
   it('copies the complete skinned record when splitting a mirrored tangent seam', () => {

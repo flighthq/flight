@@ -299,31 +299,39 @@ function hashMeshGeometryPosition(x: number, y: number, z: number): number {
 // record and remaps the opposite-handed triangle corners before accumulating. Copying the complete
 // record is load-bearing for extended layouts: joints0/weights0, colors, and secondary UVs survive a
 // split unchanged. Non-indexed streams already have one vertex per corner and need no topology edit.
+// When `positionGroups` is present, mirrored contributions share a canonical frame at each exact
+// position: negative-orientation tangents are negated while bitangents are accumulated unchanged,
+// then each source/split output reads the frame with its own orientation. As with grouped normals,
+// this is opt-in so unrelated surfaces that merely coincide are not smoothed together.
 //
 // This is an authoring operation: call it before capturing morph/skin bind-pose runtime data. Safe
 // in-place (out === geometry): all source attributes and corner contributions are read into scratch
 // storage before tangent write-back or replacement of the output arrays.
-export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonly<MeshGeometry>): void {
+export function computeMeshGeometryTangents(
+  out: MeshGeometry,
+  geometry: Readonly<MeshGeometry>,
+  positionGroups: Readonly<Uint32Array<ArrayBuffer>> | null = null,
+): void {
   const sourceVertices = geometry.vertices;
   const sourceFloatsPerVertex = geometry.layout.stride / 4;
   const sourceVertexCount = sourceFloatsPerVertex > 0 ? Math.floor(sourceVertices.length / sourceFloatsPerVertex) : 0;
   const sourceIndices = geometry.indices;
   const elementCount = sourceIndices ? sourceIndices.length : sourceVertexCount;
 
-  // Indexed geometry needs an orientation census before accumulation. Store one byte per triangle,
-  // one byte per vertex, not per corner, and skip the census entirely for non-indexed input (whose
-  // corners are already distinct). This keeps the additional import-time memory proportional but
-  // lean. A state's sign records the first orientation and magnitude 2 records that both occurred.
+  // Indexed geometry needs an orientation census before accumulation. Grouped non-indexed geometry
+  // also needs the signs so each already-distinct corner can read the canonical group frame in its
+  // own orientation. Store one byte per triangle and one per source vertex, not per corner. A state's
+  // sign records the first orientation and magnitude 2 records that both occurred.
   let triangleSigns: Int8Array | null = null;
   let orientationStates: Int8Array | null = null;
   let splitCount = 0;
-  if (sourceIndices !== null) {
+  if (sourceIndices !== null || positionGroups !== null) {
     triangleSigns = new Int8Array(Math.floor(elementCount / 3));
     orientationStates = new Int8Array(sourceVertexCount);
     for (let t = 0; t + 2 < elementCount; t += 3) {
-      const i0 = sourceIndices[t];
-      const i1 = sourceIndices[t + 1];
-      const i2 = sourceIndices[t + 2];
+      const i0 = sourceIndices ? sourceIndices[t] : t;
+      const i1 = sourceIndices ? sourceIndices[t + 1] : t + 1;
+      const i2 = sourceIndices ? sourceIndices[t + 2] : t + 2;
       const u0 = i0 * sourceFloatsPerVertex + UV0_OFFSET;
       const u1 = i1 * sourceFloatsPerVertex + UV0_OFFSET;
       const u2 = i2 * sourceFloatsPerVertex + UV0_OFFSET;
@@ -340,8 +348,10 @@ export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonl
         markTangentOrientation(orientationStates, i2, sign);
       }
     }
-    for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
-      if (Math.abs(orientationStates[vertex]) === BOTH_TANGENT_ORIENTATIONS) splitCount++;
+    if (sourceIndices !== null) {
+      for (let vertex = 0; vertex < sourceVertexCount; vertex++) {
+        if (Math.abs(orientationStates[vertex]) === BOTH_TANGENT_ORIENTATIONS) splitCount++;
+      }
     }
   }
 
@@ -415,72 +425,147 @@ export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonl
     const by = (du1 * e2y - du2 * e1y) * reciprocal;
     const bz = (du1 * e2z - du2 * e1z) * reciprocal;
 
-    accumulateTangent(tan, bitan, o0, tx, ty, tz, bx, by, bz);
-    accumulateTangent(tan, bitan, o1, tx, ty, tz, bx, by, bz);
-    accumulateTangent(tan, bitan, o2, tx, ty, tz, bx, by, bz);
+    const tangentSign = positionGroups !== null && determinant < 0 ? -1 : 1;
+    accumulateTangent(
+      tan,
+      bitan,
+      positionGroups === null ? o0 : positionGroups[i0],
+      tx * tangentSign,
+      ty * tangentSign,
+      tz * tangentSign,
+      bx,
+      by,
+      bz,
+    );
+    accumulateTangent(
+      tan,
+      bitan,
+      positionGroups === null ? o1 : positionGroups[i1],
+      tx * tangentSign,
+      ty * tangentSign,
+      tz * tangentSign,
+      bx,
+      by,
+      bz,
+    );
+    accumulateTangent(
+      tan,
+      bitan,
+      positionGroups === null ? o2 : positionGroups[i2],
+      tx * tangentSign,
+      ty * tangentSign,
+      tz * tangentSign,
+      bx,
+      by,
+      bz,
+    );
   }
 
-  for (let i = 0; i < outputVertexCount; i++) {
-    const nBase = i * targetFloatsPerVertex + NORMAL_OFFSET;
-    const nx = targetVertices[nBase],
-      ny = targetVertices[nBase + 1],
-      nz = targetVertices[nBase + 2];
-
-    let tx = tan[i * 3],
-      ty = tan[i * 3 + 1],
-      tz = tan[i * 3 + 2];
-
-    // Gram-Schmidt: t = normalize(t - n * dot(n, t)).
-    const ndt = nx * tx + ny * ty + nz * tz;
-    tx -= nx * ndt;
-    ty -= ny * ndt;
-    tz -= nz * ndt;
-    const len = Math.sqrt(tx * tx + ty * ty + tz * tz);
-    if (len > 0) {
-      tx /= len;
-      ty /= len;
-      tz /= len;
-    } else {
-      // Degenerate UVs: choose the coordinate axis least parallel to the normal, then cross it with
-      // the normal. Unlike the old fixed +X fallback this stays perpendicular even for an X normal.
-      if (Math.abs(nx) <= Math.abs(ny) && Math.abs(nx) <= Math.abs(nz)) {
-        tx = 0;
-        ty = nz;
-        tz = -ny;
-      } else if (Math.abs(ny) <= Math.abs(nz)) {
-        tx = -nz;
-        ty = 0;
-        tz = nx;
-      } else {
-        tx = ny;
-        ty = -nx;
-        tz = 0;
-      }
-      const fallbackLength = Math.sqrt(tx * tx + ty * ty + tz * tz);
-      if (fallbackLength > 0) {
-        tx /= fallbackLength;
-        ty /= fallbackLength;
-        tz /= fallbackLength;
-      } else {
-        tx = 1;
-        ty = 0;
-        tz = 0;
+  if (positionGroups === null) {
+    for (let output = 0; output < outputVertexCount; output++) {
+      writeAccumulatedTangent(targetVertices, targetFloatsPerVertex, output, tan, bitan, output, 1);
+    }
+  } else {
+    // Source outputs can read their groups directly. A split output has no positionGroups entry;
+    // write it from the source corner that produced it, keeping the source/output index spaces apart.
+    for (let source = 0; source < sourceVertexCount; source++) {
+      const sign = orientationStates !== null && orientationStates[source] < 0 ? -1 : 1;
+      writeAccumulatedTangent(targetVertices, targetFloatsPerVertex, source, tan, bitan, positionGroups[source], sign);
+    }
+    if (remappedIndices !== null && sourceIndices !== null && triangleSigns !== null) {
+      for (let element = 0; element < elementCount; element++) {
+        const output = remappedIndices[element];
+        if (output < sourceVertexCount) continue;
+        const source = sourceIndices[element];
+        const sign = triangleSigns[Math.floor(element / 3)] < 0 ? -1 : 1;
+        writeAccumulatedTangent(
+          targetVertices,
+          targetFloatsPerVertex,
+          output,
+          tan,
+          bitan,
+          positionGroups[source],
+          sign,
+        );
       }
     }
-
-    // Handedness: w = sign(dot(cross(n, t), accumulated bitangent)).
-    const cx = ny * tz - nz * ty;
-    const cy = nz * tx - nx * tz;
-    const cz = nx * ty - ny * tx;
-    const w = cx * bitan[i * 3] + cy * bitan[i * 3 + 1] + cz * bitan[i * 3 + 2] < 0 ? -1 : 1;
-
-    const base = i * targetFloatsPerVertex + TANGENT_OFFSET;
-    targetVertices[base] = tx;
-    targetVertices[base + 1] = ty;
-    targetVertices[base + 2] = tz;
-    targetVertices[base + 3] = w;
   }
   out.version++;
+}
+
+function writeAccumulatedTangent(
+  targetVertices: Float32Array,
+  targetFloatsPerVertex: number,
+  outputVertex: number,
+  tangents: Float64Array,
+  bitangents: Float64Array,
+  accumulatedVertex: number,
+  tangentSign: number,
+): void {
+  const nBase = outputVertex * targetFloatsPerVertex + NORMAL_OFFSET;
+  const nx = targetVertices[nBase],
+    ny = targetVertices[nBase + 1],
+    nz = targetVertices[nBase + 2];
+
+  let tx = tangents[accumulatedVertex * 3] * tangentSign,
+    ty = tangents[accumulatedVertex * 3 + 1] * tangentSign,
+    tz = tangents[accumulatedVertex * 3 + 2] * tangentSign;
+
+  // Gram-Schmidt: t = normalize(t - n * dot(n, t)).
+  const ndt = nx * tx + ny * ty + nz * tz;
+  tx -= nx * ndt;
+  ty -= ny * ndt;
+  tz -= nz * ndt;
+  const len = Math.sqrt(tx * tx + ty * ty + tz * tz);
+  if (len > 0) {
+    tx /= len;
+    ty /= len;
+    tz /= len;
+  } else {
+    // Degenerate UVs: choose the coordinate axis least parallel to the normal, then cross it with
+    // the normal. Unlike the old fixed +X fallback this stays perpendicular even for an X normal.
+    if (Math.abs(nx) <= Math.abs(ny) && Math.abs(nx) <= Math.abs(nz)) {
+      tx = 0;
+      ty = nz;
+      tz = -ny;
+    } else if (Math.abs(ny) <= Math.abs(nz)) {
+      tx = -nz;
+      ty = 0;
+      tz = nx;
+    } else {
+      tx = ny;
+      ty = -nx;
+      tz = 0;
+    }
+    const fallbackLength = Math.sqrt(tx * tx + ty * ty + tz * tz);
+    if (fallbackLength > 0) {
+      tx /= fallbackLength;
+      ty /= fallbackLength;
+      tz /= fallbackLength;
+    } else {
+      tx = 1;
+      ty = 0;
+      tz = 0;
+    }
+  }
+
+  // Handedness: w = sign(dot(cross(n, t), accumulated bitangent)).
+  const cx = ny * tz - nz * ty;
+  const cy = nz * tx - nx * tz;
+  const cz = nx * ty - ny * tx;
+  const w =
+    cx * bitangents[accumulatedVertex * 3] +
+      cy * bitangents[accumulatedVertex * 3 + 1] +
+      cz * bitangents[accumulatedVertex * 3 + 2] <
+    0
+      ? -1
+      : 1;
+
+  const base = outputVertex * targetFloatsPerVertex + TANGENT_OFFSET;
+  targetVertices[base] = tx;
+  targetVertices[base + 1] = ty;
+  targetVertices[base + 2] = tz;
+  targetVertices[base + 3] = w;
 }
 
 function markTangentOrientation(orientationStates: Int8Array, vertex: number, sign: number): void {
