@@ -300,6 +300,7 @@ export * from './ImageChannel';
 export * from './ImageDecodeOptions';
 export * from './ImageDecoder';
 export * from './ImageDecodeFailureExplanation';
+export * from './ImageBitmapComposition';
 export * from './ImageEncodeFailureExplanation';
 export * from './ImageEncodeOptions';
 export * from './ImageEncoder';

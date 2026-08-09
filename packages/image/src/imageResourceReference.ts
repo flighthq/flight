@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
+import { decodeImage, decodeImagePremultiplied, getImageBitmapComposer } from '@flighthq/image-codec/contract';
 import type {
   AlphaType,
   Bitmap,
@@ -47,10 +47,14 @@ async function decodeEmbeddedImageResourceReference(
   signal: AbortSignal,
 ): Promise<Bitmap | null> {
   signal.throwIfAborted();
-  const decoded = await (ref.alphaType === 'premultiplied'
-    ? decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined)
-    : decodeImage(ref.bytes, ref.mimeType ?? undefined));
+  const composition = ref.bitmapComposition;
+  const composer = composition === undefined ? null : getImageBitmapComposer(composition.kind);
+  if (composition !== undefined && composer === null) return null;
+  const decoded = await (composition !== undefined || ref.alphaType !== 'premultiplied'
+    ? decodeImage(ref.bytes, ref.mimeType ?? undefined)
+    : decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined));
   signal.throwIfAborted();
+  if (composition !== undefined) return composer!(decoded, composition.payload);
   if (decoded === null) return null;
   const bitmap: EntityWithoutRuntime<Bitmap> = {
     alphaType: ref.alphaType,
