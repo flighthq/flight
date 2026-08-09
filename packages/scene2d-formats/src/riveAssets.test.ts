@@ -1,4 +1,4 @@
-import type { RiveCoreObject } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
 import { createRiveFileAssets } from './riveAssets';
@@ -76,8 +76,28 @@ describe('createRiveFileAssets', () => {
     expect(assets[0].cdnBaseUrl).toBe('https://example.test/');
   });
 
-  it('ignores contents that precede any asset', () => {
-    expect(createRiveFileAssets([bytes(FILE_ASSET_CONTENTS, BYTES, new Uint8Array([1]))])).toEqual([]);
+  it('reports contents that precede any asset instead of discarding the payload silently', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const assets = createRiveFileAssets([bytes(FILE_ASSET_CONTENTS, BYTES, new Uint8Array([1, 2, 3]))], diagnostics);
+
+    // Refusing to attach them anywhere is right — there is no asset to own them. Losing a whole
+    // embedded image or font without a word is not, since the asset list still reads as complete.
+    expect(assets).toEqual([]);
+    expect(diagnostics).toMatchObject([
+      { detail: { bytes: 3 }, kind: 'rive.asset-contents-unowned', severity: 'Drop' },
+    ]);
+  });
+
+  it('stays silent when contents follow the asset that owns them', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const assets = createRiveFileAssets(
+      [object(IMAGE_ASSET, {}), bytes(FILE_ASSET_CONTENTS, BYTES, new Uint8Array([1, 2, 3]))],
+      diagnostics,
+    );
+
+    // The bytes landing on the asset is what makes this silence non-vacuous.
+    expect(assets[0].bytes).toEqual(new Uint8Array([1, 2, 3]));
+    expect(diagnostics).toEqual([]);
   });
 });
 

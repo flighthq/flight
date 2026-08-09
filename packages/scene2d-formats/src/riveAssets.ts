@@ -1,4 +1,6 @@
-import type { RiveCoreObject, RiveFileAsset } from '@flighthq/types/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic, RiveCoreObject, RiveFileAsset } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -12,7 +14,10 @@ import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes'
  * into an image is a resource-layer concern, so this codec acquires nothing: a caller resolves what
  * it wants through the import options, exactly as the SVG and Lottie importers do.
  */
-export function createRiveFileAssets(objects: readonly Readonly<RiveCoreObject>[]): RiveFileAsset[] {
+export function createRiveFileAssets(
+  objects: readonly Readonly<RiveCoreObject>[],
+  diagnostics?: ImportDiagnostic[],
+): RiveFileAsset[] {
   const assets: RiveFileAsset[] = [];
   for (const object of objects) {
     if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_FILE_ASSET)) {
@@ -26,8 +31,21 @@ export function createRiveFileAssets(objects: readonly Readonly<RiveCoreObject>[
       });
       continue;
     }
-    // The contents object follows the asset it belongs to, carrying the embedded payload.
-    if (object.typeKey !== RIVE_FILE_ASSET_CONTENTS || assets.length === 0) continue;
+    if (object.typeKey !== RIVE_FILE_ASSET_CONTENTS) continue;
+    // The contents object follows the asset it belongs to, carrying the embedded payload. With no
+    // asset ahead of it there is nothing to attach to, and the embedded bytes — a whole image or font
+    // the file carries inline — are discarded. The import still succeeds and the asset list still
+    // looks complete, so the payload goes missing with nothing to count it.
+    if (assets.length === 0) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'rive.asset-contents-unowned',
+        'createScene2DFromRiveDocument',
+        { bytes: readRiveBytes(object, RIVE_ASSET_BYTES)?.length ?? 0 },
+      );
+      continue;
+    }
     assets[assets.length - 1].bytes = readRiveBytes(object, RIVE_ASSET_BYTES);
   }
   return assets;

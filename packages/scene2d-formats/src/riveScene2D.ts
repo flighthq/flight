@@ -49,7 +49,7 @@ export function createScene2DFromRiveDocument(
   if (document === null) return { artboards: [], assets: [] };
 
   const graph = createRiveObjectGraph(document, diagnostics);
-  const assets = createRiveFileAssets(document.objects);
+  const assets = createRiveFileAssets(document.objects, diagnostics);
   // A text style names its typeface by a position in the asset list, the same space an image
   // drawable's assetId indexes, so the names are resolved once here rather than per drawable.
   const fontNames = assets.map((asset) => asset.name);
