@@ -1,8 +1,10 @@
 import { getMatrix4Position } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
+  getMeshGeometryVertexNormal,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexPosition,
+  getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
@@ -104,6 +106,39 @@ const MIRRORED_UV_TRIANGLES = [
   '  weight 1 0 1.0 ( 1 0 0 )',
   '  weight 2 0 1.0 ( 0 1 0 )',
   '  weight 3 0 1.0 ( -1 0 0 )',
+  '}',
+].join('\n');
+
+// Two perpendicular triangles whose shared edge is duplicated because each side carries distinct
+// UVs. Their unequal areas make the expected shared normal distinguish area-weighted accumulation
+// from averaging already-normalized face normals.
+const UV_SEAM_FOLD = [
+  'MD5Version 10',
+  'commandline ""',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/seam-fold"',
+  '  numverts 6',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  vert 3 ( 0.25 0.25 ) 3 1',
+  '  vert 4 ( 0.25 0.75 ) 4 1',
+  '  vert 5 ( 0.75 0.25 ) 5 1',
+  '  numtris 2',
+  '  tri 0 0 1 2',
+  '  tri 1 3 4 5',
+  '  numweights 6',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 2 0 0 )',
+  '  weight 2 0 1.0 ( 0 2 0 )',
+  '  weight 3 0 1.0 ( 0 0 0 )',
+  '  weight 4 0 1.0 ( 2 0 0 )',
+  '  weight 5 0 1.0 ( 0 0 1 )',
   '}',
 ].join('\n');
 
@@ -298,6 +333,40 @@ describe('createScene3DFromMd5Mesh', () => {
     expect(nx).toBeCloseTo(0);
     expect(ny).toBeCloseTo(-1);
     expect(nz).toBeCloseTo(0);
+  });
+
+  it('shares area-weighted normals across exact-position UV seam duplicates', () => {
+    const scene = createScene3DFromMd5Mesh(UV_SEAM_FOLD);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(6);
+
+    const expectedY = -2 / Math.sqrt(5);
+    const expectedZ = -1 / Math.sqrt(5);
+    for (const [first, duplicate] of [
+      [0, 3],
+      [1, 4],
+    ]) {
+      const firstNormal = { x: 0, y: 0, z: 0 };
+      const duplicateNormal = { x: 0, y: 0, z: 0 };
+      getMeshGeometryVertexNormal(firstNormal, geometry, first);
+      getMeshGeometryVertexNormal(duplicateNormal, geometry, duplicate);
+      expect(firstNormal.x).toBeCloseTo(0);
+      expect(firstNormal.y).toBeCloseTo(expectedY);
+      expect(firstNormal.z).toBeCloseTo(expectedZ);
+      expect(duplicateNormal).toEqual(firstNormal);
+    }
+
+    // The normal-only grouping neither welds the seam records nor groups their tangent frames.
+    const firstUv = { x: 0, y: 0 };
+    const duplicateUv = { x: 0, y: 0 };
+    getMeshGeometryVertexUv0(firstUv, geometry, 0);
+    getMeshGeometryVertexUv0(duplicateUv, geometry, 3);
+    expect(duplicateUv).not.toEqual(firstUv);
+    const firstTangent = { w: 0, x: 0, y: 0, z: 0 };
+    const duplicateTangent = { w: 0, x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexTangent(firstTangent, geometry, 0);
+    getMeshGeometryVertexTangent(duplicateTangent, geometry, 3);
+    expect(duplicateTangent).not.toEqual(firstTangent);
   });
 
   it('generates unit tangents and handedness for the tangent-less MD5 mesh', () => {

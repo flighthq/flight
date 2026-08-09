@@ -15,6 +15,7 @@ import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
+  computeMeshGeometryPositionGroups,
   computeMeshGeometryTangents,
   createMeshGeometry,
   getVertexAttributeFloatOffset,
@@ -341,8 +342,11 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
         layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
         vertices: new Float32Array(vertices),
       });
-      // MD5 carries no normals; derive them from the Y-up bind-pose positions and winding.
-      computeMeshGeometryNormals(geometry, geometry);
+      // MD5 carries one UV per vertex and no smoothing groups, so texture-coordinate seams duplicate
+      // otherwise identical bind positions. Share only their normal accumulation: the complete vertex
+      // records and the tangent basis remain independent across those seams.
+      const positionGroups = computeMeshGeometryPositionGroups(geometry);
+      computeMeshGeometryNormals(geometry, geometry, positionGroups);
       // MD5 carries no tangent stream either. Generate a real tangent basis from the newly derived
       // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
       // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
