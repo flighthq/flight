@@ -46,15 +46,14 @@ async function decodeEmbeddedImageResourceReference(
   ref: Readonly<EmbeddedImageResourceReference>,
   signal: AbortSignal,
 ): Promise<Bitmap | null> {
+  if (ref.bitmapComposition !== undefined && _resolveImageBitmapComposition !== null) {
+    return _resolveImageBitmapComposition(ref, signal);
+  }
   signal.throwIfAborted();
-  const composition = ref.bitmapComposition;
-  const composer = composition === undefined ? null : getImageBitmapComposer(composition.kind);
-  if (composition !== undefined && composer === null) return null;
-  const decoded = await (composition !== undefined || ref.alphaType !== 'premultiplied'
-    ? decodeImage(ref.bytes, ref.mimeType ?? undefined)
-    : decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined));
+  const decoded = await (ref.alphaType === 'premultiplied'
+    ? decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined)
+    : decodeImage(ref.bytes, ref.mimeType ?? undefined));
   signal.throwIfAborted();
-  if (composition !== undefined) return composer!(decoded, composition.payload);
   if (decoded === null) return null;
   const bitmap: EntityWithoutRuntime<Bitmap> = {
     alphaType: ref.alphaType,
@@ -91,6 +90,39 @@ export function createImageResourceFailure(cause: unknown): ImageResourceFailure
     return { kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name };
   }
   return { kind: ImageResourceFailureKind.Error, message: String(cause), name: null };
+}
+
+async function resolveImageBitmapComposition(
+  ref: Readonly<EmbeddedImageResourceReference>,
+  signal: AbortSignal,
+): Promise<Bitmap | null> {
+  signal.throwIfAborted();
+  const composition = ref.bitmapComposition!;
+  const composer = getImageBitmapComposer(composition.kind);
+  if (composer === null) return null;
+  // A composer always receives straight decoded pixels. It may also own a raw raster with no MIME
+  // decoder, in which case decoded is null and its plain payload is the complete input.
+  const decoded = await decodeImage(ref.bytes, ref.mimeType ?? undefined);
+  signal.throwIfAborted();
+  return composer(decoded, composition.payload);
+}
+
+type ResolveImageBitmapComposition = (
+  ref: Readonly<EmbeddedImageResourceReference>,
+  signal: AbortSignal,
+) => Promise<Bitmap | null>;
+
+let _resolveImageBitmapComposition: ResolveImageBitmapComposition | null = null;
+
+export function disableImageBitmapComposition(): void {
+  _resolveImageBitmapComposition = null;
+}
+
+// Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain
+// its registry lookup or straight-decode branch. A format package calls this beside its composer
+// registrations; until then the nullable hook leaves the original hot path byte-for-byte tree-shakable.
+export function enableImageBitmapComposition(): void {
+  _resolveImageBitmapComposition = resolveImageBitmapComposition;
 }
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws

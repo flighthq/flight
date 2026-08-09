@@ -9,6 +9,8 @@ export {
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
+  disableImageBitmapComposition,
+  enableImageBitmapComposition,
   explainImageResourceReferenceResolution,
   isImageResourceEmpty,
   isImageUrlSameOrigin,
