@@ -132,7 +132,7 @@ function createRiveArtboardImport(
   const skeleton = createRiveSkeleton2D(artboard);
   const animations = createRiveAnimationClips(objects, span, nodes, artboard, rebuilds, skeleton);
   const layouts = createRiveLayoutImports(artboard, nodes, diagnostics);
-  const stateMachines = createRiveStateMachines(objects, span);
+  const stateMachines = createRiveStateMachines(objects, span, diagnostics);
   return { advancedBlends, animations, height, layouts, name, root, skeleton, stateMachines, width };
 }
 

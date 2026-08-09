@@ -674,7 +674,7 @@ describe('createRiveAnimationClips', () => {
     expect(Array.from(clips[0].clip.channels[0].track.values)).toEqual([0, 100]);
   });
 
-  it('ignores a keyed object naming a node that does not exist', () => {
+  it('binds no channel for a keyed object naming a node that does not exist', () => {
     const { clips } = build(30, 13, [{ frame: 0, value: 1 }], [], 5);
 
     expect(clips[0].clip.channels).toHaveLength(0);

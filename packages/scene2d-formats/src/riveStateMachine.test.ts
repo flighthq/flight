@@ -1,4 +1,4 @@
-import type { RiveCoreObject } from '@flighthq/types/contract';
+import type { ImportDiagnostic, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
 import { createRiveStateMachines } from './riveStateMachine';
@@ -118,13 +118,29 @@ describe('createRiveStateMachines', () => {
     expect(machines[1].layers[0].states).toEqual([]);
   });
 
-  it('ignores state machine parts that precede any machine', () => {
-    expect(run([text(LAYER, 'orphan'), object(ANY_STATE, {})])).toEqual([]);
+  it('reports state machine parts that precede any machine', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    expect(run([text(LAYER, 'orphan'), object(ANY_STATE, {})], diagnostics)).toEqual([]);
+    expect(diagnostics.map((entry) => entry.kind)).toEqual([
+      'rive.state-machine-part-unowned',
+      'rive.state-machine-part-unowned',
+    ]);
+  });
+
+  it('stays silent for ordinary artboard content preceding a machine', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // Everything before the first machine is skipped, and almost all of it is ordinary content. Only a
+    // state-machine PART reaching that skip is a loss, so a shape ahead of a machine must stay quiet.
+    const machines = run([object(SHAPE, {}), object(STATE_MACHINE, {}), text(LAYER, 'main')], diagnostics);
+
+    expect(machines).toHaveLength(1);
+    expect(diagnostics).toEqual([]);
   });
 });
 
-function run(objects: RiveCoreObject[]) {
-  return createRiveStateMachines(objects, { end: objects.length, start: 0 });
+function run(objects: RiveCoreObject[], diagnostics?: ImportDiagnostic[]) {
+  return createRiveStateMachines(objects, { end: objects.length, start: 0 }, diagnostics);
 }
 
 function prop(key: number, value: string) {
