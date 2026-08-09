@@ -12,6 +12,7 @@ export {
   computeMeshGeometryBounds,
   computeMeshGeometryFlatNormals,
   computeMeshGeometryNormals,
+  computeMeshGeometryPositionGroups,
   computeMeshGeometryTangents,
   computeMeshGeometryWireframeIndices,
   convertMeshGeometryLayout,
