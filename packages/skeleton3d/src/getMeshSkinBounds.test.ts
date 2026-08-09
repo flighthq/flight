@@ -40,6 +40,8 @@ function bindPoseFor(positions: number[], jointIndices: number[]): MeshSkinBindP
     positions: new Float32Array(positions),
     skinnedNormals: new Float32Array(count * 3),
     skinnedPositions: new Float32Array(count * 3),
+    skinnedTangents: new Float32Array(0),
+    tangents: new Float32Array(0),
     weights,
   };
 }

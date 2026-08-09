@@ -15,6 +15,7 @@ export {
   prepareScene3DSkinning,
   setSkeleton3DBindPose,
   skinMeshGeometry,
+  skinTangents,
   skinVertices,
   updateMeshDeformation,
   updateMeshSkin,

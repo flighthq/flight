@@ -80,6 +80,8 @@ describe('ensureWgpuMeshUpload', () => {
       positions: new Float32Array([1, 2, 3]),
       skinnedNormals: new Float32Array(3),
       skinnedPositions: new Float32Array(3),
+      skinnedTangents: new Float32Array(0),
+      tangents: new Float32Array(0),
       weights: new Float32Array([1, 0, 0, 0]),
     });
 
@@ -135,6 +137,8 @@ describe('ensureWgpuMeshUpload', () => {
       positions: new Float32Array([1, 0, 0]),
       skinnedNormals: new Float32Array(3),
       skinnedPositions: new Float32Array(3),
+      skinnedTangents: new Float32Array(0),
+      tangents: new Float32Array(0),
       weights: new Float32Array([1, 0, 0, 0]),
     });
     const morph: MeshMorph = {
