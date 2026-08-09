@@ -46,6 +46,19 @@ export function createRiveRichText(
   }
 
   const align = readRiveNumber(source, RIVE_TEXT_ALIGN, 0);
+  // Left is stated as 0 and is also what the format builder's final arm returns, so only a value
+  // outside the three is a substitution: the text still sets, against an edge it was not authored to.
+  // Reported here rather than in that builder, which runs once per run and would repeat one drawable's
+  // single alignment for every run it carries.
+  if (align !== RIVE_ALIGN_LEFT && align !== RIVE_ALIGN_RIGHT && align !== RIVE_ALIGN_CENTER) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.text-align-substituted',
+      'createScene2DFromRiveDocument',
+      { alignValue: align, substitutedAs: 'left' },
+    );
+  }
   const formatRanges: TextFormatRange[] = [];
   const unresolvedStyles = new Set<number>();
   let text = '';
@@ -205,6 +218,7 @@ const RIVE_STYLE_LINE_HEIGHT = 370;
 const RIVE_STYLE_LETTER_SPACING = 390;
 const RIVE_SOLID_COLOR_VALUE = 37;
 
+const RIVE_ALIGN_LEFT = 0;
 const RIVE_ALIGN_RIGHT = 1;
 const RIVE_ALIGN_CENTER = 2;
 // The object model's own initial values: a style with no stated size is 12, and an unset asset

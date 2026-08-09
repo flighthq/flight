@@ -58,6 +58,52 @@ describe('createRiveRichText', () => {
     }
   });
 
+  // An alignment this reader does not know still sets the text, against an edge it was not authored
+  // to. Nothing counts as lost and the drawable is present, so only the crumb records it.
+  it('reports a text alignment it does not know', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const label = build([object(TEXT, { [ALIGN]: 7 })], [-1], [], diagnostics);
+
+    expect(label.data.textFormat?.align).toBe('left');
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { alignValue: 7, substitutedAs: 'left' },
+        kind: 'rive.text-align-substituted',
+        severity: 'Recover',
+      },
+    ]);
+  });
+
+  it('reports one unknown alignment once however many runs the drawable carries', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // Alignment belongs to the drawable, not the run. Building the format is per-run, so reporting
+    // there would repeat a single authored value once for every run beside it.
+    const label = build(
+      [object(TEXT, { [ALIGN]: 7 }), run('one', -1), run('two', -1), run('three', -1)],
+      [-1, 0, 0, 0],
+      [],
+      diagnostics,
+    );
+
+    expect(label.data.textFormatRanges).toHaveLength(3);
+    expect(diagnostics.filter((entry) => entry.kind === 'rive.text-align-substituted')).toHaveLength(1);
+  });
+
+  it('stays silent across every alignment the format numbers', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    for (const [value, expected] of [
+      [0, 'left'],
+      [1, 'right'],
+      [2, 'center'],
+    ] as const) {
+      // Left is 0 and shares the builder's final arm with an unknown value, so it must not report.
+      const label = build([object(TEXT, { [ALIGN]: value })], [-1], [], diagnostics);
+      expect(label.data.textFormat?.align).toBe(expected);
+    }
+
+    expect(diagnostics).toEqual([]);
+  });
+
   it('takes size, line height and letter spacing from the run style', () => {
     const label = build(
       [
