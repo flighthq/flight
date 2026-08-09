@@ -29,6 +29,22 @@ function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string):
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);
 }
 
+function reconstructBitangent(
+  vertices: Readonly<Float32Array>,
+  floatsPerVertex: number,
+  vertex: number,
+): [number, number, number] {
+  const base = vertex * floatsPerVertex;
+  const nx = vertices[base + 3];
+  const ny = vertices[base + 4];
+  const nz = vertices[base + 5];
+  const tx = vertices[base + 6];
+  const ty = vertices[base + 7];
+  const tz = vertices[base + 8];
+  const sign = vertices[base + 9];
+  return [sign * (ny * tz - nz * ty), sign * (nz * tx - nx * tz), sign * (nx * ty - ny * tx)];
+}
+
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
 const SINGLE_JOINT_ANIM = [
   'MD5Version 10',
@@ -106,6 +122,39 @@ const MIRRORED_UV_TRIANGLES = [
   '  weight 1 0 1.0 ( 1 0 0 )',
   '  weight 2 0 1.0 ( 0 1 0 )',
   '  weight 3 0 1.0 ( -1 0 0 )',
+  '}',
+].join('\n');
+
+// Two separately indexed charts meet at an exact duplicate position. Their face tangent directions
+// differ, and the second chart mirrors u, so only grouped, handedness-aware accumulation reconstructs
+// one continuous bitangent at vertices 0/3. Triangles are authored in MD5's clockwise convention.
+const DIVERGENT_MIRRORED_UV_SEAM = [
+  'MD5Version 10',
+  'commandline ""',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/mirrored-seam"',
+  '  numverts 6',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '  vert 3 ( 0.0 0.0 ) 3 1',
+  '  vert 4 ( 0.0 1.0 ) 4 1',
+  '  vert 5 ( 1.0 0.0 ) 5 1',
+  '  numtris 2',
+  '  tri 0 0 2 1',
+  '  tri 1 3 5 4',
+  '  numweights 6',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 0 1 )',
+  '  weight 3 0 1.0 ( 0 0 0 )',
+  '  weight 4 0 1.0 ( -1 0 0 )',
+  '  weight 5 0 1.0 ( 0 0 -1 )',
   '}',
 ].join('\n');
 
@@ -356,7 +405,7 @@ describe('createScene3DFromMd5Mesh', () => {
       expect(duplicateNormal).toEqual(firstNormal);
     }
 
-    // The normal-only grouping neither welds the seam records nor groups their tangent frames.
+    // Grouping neither welds the seam records nor forces folded per-normal tangent vectors equal.
     const firstUv = { x: 0, y: 0 };
     const duplicateUv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(firstUv, geometry, 0);
@@ -419,6 +468,22 @@ describe('createScene3DFromMd5Mesh', () => {
     // detach the mirrored side from skeletal animation.
     for (let vertex = 0; vertex < 6; vertex++) {
       expect(geometry.vertices[vertex * floatsPerVertex + 16]).toBe(1);
+    }
+  });
+
+  it('keeps reconstructed bitangents continuous across a duplicated mirrored MD5 UV seam', () => {
+    const scene = createScene3DFromMd5Mesh(DIVERGENT_MIRRORED_UV_SEAM);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+
+    expect(getMeshGeometryVertexCount(geometry)).toBe(6);
+    expect(geometry.vertices[9]).toBe(-geometry.vertices[3 * floatsPerVertex + 9]);
+    const firstBitangent = reconstructBitangent(geometry.vertices, floatsPerVertex, 0);
+    const mirroredBitangent = reconstructBitangent(geometry.vertices, floatsPerVertex, 3);
+    expect(Math.hypot(...firstBitangent)).toBeCloseTo(1);
+    expect(Math.hypot(...mirroredBitangent)).toBeCloseTo(1);
+    for (let component = 0; component < 3; component++) {
+      expect(mirroredBitangent[component]).toBeCloseTo(firstBitangent[component]);
     }
   });
 
