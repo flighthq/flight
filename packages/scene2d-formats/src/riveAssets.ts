@@ -41,7 +41,7 @@ export function createRiveFileAssets(
         diagnostics,
         ImportDiagnosticSeverity.Drop,
         'rive.asset-contents-unowned',
-        'createScene2DFromRiveDocument',
+        'createRiveFileAssets',
         { bytes: readRiveBytes(object, RIVE_ASSET_BYTES)?.length ?? 0 },
       );
       continue;

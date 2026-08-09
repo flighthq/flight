@@ -151,7 +151,7 @@ function findRiveLayoutComponents(
         diagnostics,
         ImportDiagnosticSeverity.Drop,
         'rive.layout-unresolved-style',
-        'createRiveLayoutImports',
+        'findRiveLayoutComponents',
         { index, styleId: styleIndex },
       );
       continue;
@@ -469,7 +469,7 @@ function mapRiveGridTrack(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.grid-track-substituted',
-      'createScene2DFromRiveDocument',
+      'mapRiveGridTrack',
       { substitutedAs: 'auto', trackType: type, trackValue: value },
     );
   }
@@ -491,7 +491,7 @@ function mapRiveFlexDirection(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.flex-direction-substituted',
-      'createScene2DFromRiveDocument',
+      'mapRiveFlexDirection',
       { directionValue: value, substitutedAs: 'row' },
     );
   }
@@ -515,7 +515,7 @@ function mapRiveFlexAlignment(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.flex-alignment-substituted',
-      'createScene2DFromRiveDocument',
+      'mapRiveFlexAlignment',
       { alignmentValue: value, substitutedAs: 'start' },
     );
   }
