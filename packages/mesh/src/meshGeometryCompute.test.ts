@@ -7,6 +7,7 @@ import {
   computeMeshGeometryBounds,
   computeMeshGeometryFlatNormals,
   computeMeshGeometryNormals,
+  computeMeshGeometryPositionGroups,
   computeMeshGeometryTangents,
   ensureMeshGeometryBounds,
   refreshMeshGeometryBounds,
@@ -39,6 +40,31 @@ function makeTriangle() {
   setVertex(2, 0, 1, 0, 1);
   const indices = new Uint16Array([0, 1, 2]);
   return createMeshGeometry({ indices: indices, layout: CANONICAL_LAYOUT, vertices: vertices });
+}
+
+function makeUvSeamFold() {
+  const vertices = new Float32Array(6 * 12);
+  const setVertex = (i: number, px: number, py: number, pz: number, u: number, v: number): void => {
+    const base = i * 12;
+    vertices[base] = px;
+    vertices[base + 1] = py;
+    vertices[base + 2] = pz;
+    vertices[base + 10] = u;
+    vertices[base + 11] = v;
+  };
+  // The first triangle has twice the area of the second. Vertices 0/3 and 1/4 are exact position
+  // duplicates with distinct UVs across their shared edge.
+  setVertex(0, 0, 0, 0, 0, 0);
+  setVertex(1, 2, 0, 0, 1, 0);
+  setVertex(2, 0, 2, 0, 0, 1);
+  setVertex(3, 0, 0, 0, 0.25, 0.25);
+  setVertex(4, 2, 0, 0, 0.75, 0.25);
+  setVertex(5, 0, 0, 1, 0.25, 0.75);
+  return createMeshGeometry({
+    indices: new Uint16Array([0, 1, 2, 3, 4, 5]),
+    layout: CANONICAL_LAYOUT,
+    vertices,
+  });
 }
 
 describe('computeMeshGeometryBoundingSphere', () => {
@@ -184,6 +210,47 @@ describe('computeMeshGeometryNormals', () => {
     const out = makeTriangle();
     computeMeshGeometryNormals(out, source);
     expect(out.vertices[5]).toBeCloseTo(1);
+  });
+
+  it('keeps duplicated positions independent when position groups are omitted', () => {
+    const geometry = makeUvSeamFold();
+
+    computeMeshGeometryNormals(geometry, geometry);
+
+    expect(Array.from(geometry.vertices.subarray(3, 6))).toEqual([0, 0, 1]);
+    expect(Array.from(geometry.vertices.subarray(3 * 12 + 3, 3 * 12 + 6))).toEqual([0, -1, 0]);
+  });
+
+  it('area-weights face normals inside exact position groups before normalization', () => {
+    const geometry = makeUvSeamFold();
+    const groups = computeMeshGeometryPositionGroups(geometry);
+
+    computeMeshGeometryNormals(geometry, geometry, groups);
+
+    const expectedY = -1 / Math.sqrt(5);
+    const expectedZ = 2 / Math.sqrt(5);
+    for (const vertex of [0, 1, 3, 4]) {
+      const base = vertex * 12 + 3;
+      expect(geometry.vertices[base]).toBeCloseTo(0);
+      expect(geometry.vertices[base + 1]).toBeCloseTo(expectedY);
+      expect(geometry.vertices[base + 2]).toBeCloseTo(expectedZ);
+    }
+  });
+});
+
+describe('computeMeshGeometryPositionGroups', () => {
+  it('returns the first exact-position vertex as each group representative', () => {
+    const geometry = makeUvSeamFold();
+
+    expect(Array.from(computeMeshGeometryPositionGroups(geometry))).toEqual([0, 1, 2, 0, 1, 5]);
+  });
+
+  it('does not group adjacent Float32 values', () => {
+    const geometry = makeUvSeamFold();
+    const bits = new Uint32Array(geometry.vertices.buffer);
+    bits[3 * 12] = 1;
+
+    expect(Array.from(computeMeshGeometryPositionGroups(geometry))).toEqual([0, 1, 2, 3, 1, 5]);
   });
 });
 

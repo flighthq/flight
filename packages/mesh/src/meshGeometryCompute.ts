@@ -175,9 +175,16 @@ export function computeMeshGeometryFlatNormals(out: MeshGeometry, geometry: Read
 // Recomputes per-vertex smooth normals by area-weighted accumulation of triangle face normals
 // (right-handed, CCW front-face), normalizes them, and writes them into the normal slot of
 // `out.vertices`. Operates on indexed triangle-list geometry; non-indexed streams are treated as
-// sequential triangles. `out` is normally `geometry` itself (in-place), which is safe: positions
-// are only read and normals are accumulated in a scratch buffer before any write-back.
-export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly<MeshGeometry>): void {
+// sequential triangles. When `positionGroups` is present, it must contain one canonical vertex
+// index per vertex; face normals accumulate into those groups before normalization and every member
+// reads back from its group. The opt-in map avoids smoothing unrelated surfaces that merely happen
+// to meet at the same position. `out` is normally `geometry` itself (in-place), which is safe:
+// positions are only read and normals are accumulated in a scratch buffer before any write-back.
+export function computeMeshGeometryNormals(
+  out: MeshGeometry,
+  geometry: Readonly<MeshGeometry>,
+  positionGroups: Readonly<Uint32Array<ArrayBuffer>> | null = null,
+): void {
   const vertices = geometry.vertices;
   const floatsPerVertex = geometry.layout.stride / 4;
   const vertexCount = floatsPerVertex > 0 ? Math.floor(vertices.length / floatsPerVertex) : 0;
@@ -207,22 +214,17 @@ export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly
     const ny = e1z * e2x - e1x * e2z;
     const nz = e1x * e2y - e1y * e2x;
 
-    accum[i0 * 3] += nx;
-    accum[i0 * 3 + 1] += ny;
-    accum[i0 * 3 + 2] += nz;
-    accum[i1 * 3] += nx;
-    accum[i1 * 3 + 1] += ny;
-    accum[i1 * 3 + 2] += nz;
-    accum[i2 * 3] += nx;
-    accum[i2 * 3 + 1] += ny;
-    accum[i2 * 3 + 2] += nz;
+    accumulateNormal(accum, positionGroups === null ? i0 : positionGroups[i0], nx, ny, nz);
+    accumulateNormal(accum, positionGroups === null ? i1 : positionGroups[i1], nx, ny, nz);
+    accumulateNormal(accum, positionGroups === null ? i2 : positionGroups[i2], nx, ny, nz);
   }
 
   const target = out.vertices;
   for (let i = 0; i < vertexCount; i++) {
-    let nx = accum[i * 3],
-      ny = accum[i * 3 + 1],
-      nz = accum[i * 3 + 2];
+    const accumulated = (positionGroups === null ? i : positionGroups[i]) * 3;
+    let nx = accum[accumulated],
+      ny = accum[accumulated + 1],
+      nz = accum[accumulated + 2];
     const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
     if (len > 0) {
       nx /= len;
@@ -234,6 +236,60 @@ export function computeMeshGeometryNormals(out: MeshGeometry, geometry: Readonly
     target[base + 1] = ny;
     target[base + 2] = nz;
   }
+}
+
+// Returns one canonical representative index per vertex, grouping only vertices whose three stored
+// Float32 position components are bit-identical. Other attributes do not participate, and no
+// tolerance is applied. The first vertex encountered at a position is its canonical representative.
+export function computeMeshGeometryPositionGroups(geometry: Readonly<MeshGeometry>): Uint32Array<ArrayBuffer> {
+  const vertices = geometry.vertices;
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const vertexCount = floatsPerVertex > 0 ? Math.floor(vertices.length / floatsPerVertex) : 0;
+  const groups = new Uint32Array(vertexCount);
+  const bits = new Uint32Array(vertices.buffer, vertices.byteOffset, vertices.length);
+  const buckets = new Map<number, number[]>();
+
+  for (let vertex = 0; vertex < vertexCount; vertex++) {
+    const position = vertex * floatsPerVertex + POSITION_OFFSET;
+    const hash = hashMeshGeometryPosition(bits[position], bits[position + 1], bits[position + 2]);
+    let bucket = buckets.get(hash);
+    let representative = vertex;
+    if (bucket === undefined) {
+      bucket = [];
+      buckets.set(hash, bucket);
+    } else {
+      for (const candidate of bucket) {
+        const candidatePosition = candidate * floatsPerVertex + POSITION_OFFSET;
+        if (
+          bits[position] === bits[candidatePosition] &&
+          bits[position + 1] === bits[candidatePosition + 1] &&
+          bits[position + 2] === bits[candidatePosition + 2]
+        ) {
+          representative = candidate;
+          break;
+        }
+      }
+    }
+    groups[vertex] = representative;
+    if (representative === vertex) bucket.push(vertex);
+  }
+
+  return groups;
+}
+
+function accumulateNormal(accum: Float64Array, vertex: number, nx: number, ny: number, nz: number): void {
+  const base = vertex * 3;
+  accum[base] += nx;
+  accum[base + 1] += ny;
+  accum[base + 2] += nz;
+}
+
+function hashMeshGeometryPosition(x: number, y: number, z: number): number {
+  let hash = 0x811c9dc5;
+  hash = Math.imul(hash ^ x, 0x01000193);
+  hash = Math.imul(hash ^ y, 0x01000193);
+  hash = Math.imul(hash ^ z, 0x01000193);
+  return hash >>> 0;
 }
 
 // Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then
