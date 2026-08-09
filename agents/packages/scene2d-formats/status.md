@@ -20,8 +20,6 @@ Every item was re-checked against `packages/scene2d-formats/src/` (and `packages
 - **Rive animation reads only `KeyFrameDouble` and `KeyFrameColor`** (`riveAnimation.ts:599`, `:602`).
   `Bool` / `Id` / `String` / `Uint` are registered unread; each drops its channel behind
   `rive.keyframe-kind-unsupported`.
-- **Rive `NSlicedNode` imports as a plain container**, losing nine-slice scaling; being a `Node` rather
-  than a `Drawable`, the unsupported-drawable crumb misses it.
 - **Rive constraints/IK, data binding, and feather are type-registry entries only** —
   `riveCoreTypes.ts:116-122`, `:227`, `:294`; no importer touches them. They are runtime *systems*,
   so scope is a ruling before it is effort.
