@@ -1032,8 +1032,8 @@ describe('createScene3DFromAwd2', () => {
     // Tangent xyz (float offset 6-8) is a real unit-length vector, not the zero a missing stream leaves.
     const [tx, ty, tz] = [geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]];
     expect(Math.hypot(tx, ty, tz)).toBeCloseTo(1, 3);
-    // Tangent W (float offset 9) is a unit bitangent handedness (±1), not zero.
-    expect(Math.abs(geometry.vertices[9])).toBeCloseTo(1, 3);
+    // The left-to-right-handed coordinate reflection makes Away3D's generated bitangent sign negative.
+    expect(geometry.vertices[9]).toBe(-1);
   });
 
   it('builds container and mesh instance hierarchy', () => {
