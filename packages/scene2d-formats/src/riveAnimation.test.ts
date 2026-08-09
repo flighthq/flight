@@ -716,6 +716,58 @@ describe('createRiveAnimationClips', () => {
     ]);
   });
 
+  it('reports a keyed object whose whole property run bound nothing', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // Object id 5 names nothing: no display node, no bone. Every channel under it is unreachable, and
+    // the clip imports shorter than it was authored with nothing else to say which target went missing.
+    const { clips } = build(30, 13, [{ frame: 0, value: 1 }], [], 5, diagnostics);
+
+    expect(clips[0].clip.channels).toHaveLength(0);
+    expect(diagnostics).toMatchObject([
+      { detail: { objectId: 5, properties: 1 }, kind: 'rive.keyed-object-unbound', severity: 'Drop' },
+    ]);
+  });
+
+  it('stays silent for a bone, which binds through the rig rather than a display node', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    // A bone is a TransformComponent and never becomes a display object, so a keyed-object check that
+    // asked "did this resolve to a node" would fire here on ordinary content. Asking what the run
+    // BOUND is what keeps it quiet, and the channel proves the silence is not an empty clip.
+    const { clips } = buildBoneProperty(15, 0.5, 0, {}, diagnostics);
+
+    expect(clips[0].clip.channels.length).toBeGreaterThan(0);
+    expect(diagnostics.filter((entry) => entry.kind === 'rive.keyed-object-unbound')).toEqual([]);
+  });
+
+  it('does not add a second report when the run already explained itself', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const artboard: RiveArtboardGraph = {
+      objects: [object(1, {}), object(3, {})],
+      parentIndices: [-1, 0],
+      streamEnd: 0,
+      streamStart: 0,
+    };
+    const objects = [
+      object(LINEAR_ANIMATION, { [FPS]: 30, [DURATION]: 30 }),
+      object(KEYED_OBJECT, { [OBJECT_ID]: 1 }),
+      object(KEYED_PROPERTY, { [PROPERTY_KEY]: 41 }),
+      object(KEYFRAME_BOOL, { [FRAME]: 0, [VALUE]: 1 }),
+    ];
+    createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      [null, createDisplayObject()],
+      artboard,
+      new Map([[1, () => undefined]]),
+      null,
+      diagnostics,
+    );
+
+    // The keyframe-kind crumb already names why nothing bound. A second, vaguer report over the top
+    // would double-count one loss and make the totals disagree with the number of things gone wrong.
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.keyframe-kind-unsupported']);
+  });
+
   it('stays silent for a keyed property carrying no keyframe at all', () => {
     const artboard: RiveArtboardGraph = {
       objects: [object(1, {}), object(3, {})],
