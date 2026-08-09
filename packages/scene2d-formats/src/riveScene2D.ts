@@ -167,6 +167,20 @@ function createRiveDisplayNode(
     return node;
   }
   if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)) return createShape({ name });
+  // A nine-sliced node scales a child with fixed corners; imported as a plain container it keeps the
+  // child and loses the slicing. At the authored size the two are identical, which is what hides it —
+  // the difference only appears once a layout resizes the node, and then the corners stretch. It is a
+  // Node rather than a Drawable, so the drawable check below cannot see it.
+  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NSLICED_NODE_TYPE_KEY)) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'rive.nine-slice-substituted',
+      'createRiveDisplayNode',
+      { substitutedAs: 'container', typeKey: object.typeKey },
+    );
+    return createDisplayObject({ name });
+  }
   // A plain node IS a container, so reaching here is ordinary and silent. A DRAWABLE reaching here is
   // not: the file authored something that paints, and it becomes an empty container that still holds
   // its name, transform and children. The tree keeps its shape, the artboard keeps its object count,
@@ -354,6 +368,7 @@ const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_DRAWABLE_TYPE_KEY = 13;
 const RIVE_LAYOUT_COMPONENT_TYPE_KEY = 409;
+const RIVE_NSLICED_NODE_TYPE_KEY = 508;
 const RIVE_TEXT_TYPE_KEY = 134;
 const RIVE_IMAGE_TYPE_KEY = 100;
 const RIVE_NESTED_ARTBOARD_TYPE_KEY = 92;

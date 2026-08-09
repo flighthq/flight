@@ -16,6 +16,7 @@ const TEXT_INPUT = 569;
 const DRAWABLE = 13;
 const NESTED_ARTBOARD = 92;
 const NESTED_ARTBOARD_LEAF = 451;
+const NSLICED_NODE = 508;
 const LAYOUT_COMPONENT = 409;
 const ROOT_BONE = 41;
 const SHAPE = 3;
@@ -190,6 +191,21 @@ describe('createScene2DFromRiveDocument', () => {
     expect(getNodeChildCount(result.artboards[0].root)).toBe(1);
     expect(diagnostics).toMatchObject([
       { detail: { typeKey: TEXT_INPUT }, kind: 'rive.drawable-kind-unsupported', severity: 'Drop' },
+    ]);
+  });
+
+  it('reports a nine-sliced node imported as a plain container', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = createScene2DFromRiveDocument(
+      buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(NSLICED_NODE, [uint(PARENT_ID, 0)])]),
+      diagnostics,
+    );
+
+    // The node and its children survive; only the slicing is gone, which is why nothing downstream can
+    // notice until a layout resizes it.
+    expect(getNodeChildCount(result.artboards[0].root)).toBe(1);
+    expect(diagnostics).toMatchObject([
+      { detail: { substitutedAs: 'container', typeKey: NSLICED_NODE }, kind: 'rive.nine-slice-substituted' },
     ]);
   });
 
