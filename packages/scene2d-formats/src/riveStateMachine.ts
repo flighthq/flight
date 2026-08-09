@@ -1,4 +1,6 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
+  ImportDiagnostic,
   RiveCoreObject,
   RiveStateMachineDescriptor,
   RiveStateMachineInput,
@@ -6,6 +8,7 @@ import type {
   RiveStateMachineState,
   RiveStateMachineTransition,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 
@@ -25,6 +28,7 @@ import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes'
 export function createRiveStateMachines(
   objects: readonly Readonly<RiveCoreObject>[],
   range: Readonly<{ end: number; start: number }>,
+  diagnostics?: ImportDiagnostic[],
 ): RiveStateMachineDescriptor[] {
   const machines: RiveStateMachineDescriptor[] = [];
   let layers: RiveStateMachineLayer[] | null = null;
@@ -42,7 +46,24 @@ export function createRiveStateMachines(
       machines.push({ inputs: [], layers, name: readRiveText(object, RIVE_ANIMATION_NAME, '') });
       continue;
     }
-    if (machines.length === 0) continue;
+    if (machines.length === 0) {
+      // Everything before the first machine is ordinary artboard content and is skipped in silence.
+      // A state-machine PART reaching here is different: a layer, state, transition or input with no
+      // machine to own it is dropped, and the machine list still reads as complete without it.
+      if (
+        isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_STATE_MACHINE_COMPONENT) ||
+        isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_STATE_MACHINE_LAYER_COMPONENT)
+      ) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'rive.state-machine-part-unowned',
+          'createScene2DFromRiveDocument',
+          { typeKey: object.typeKey },
+        );
+      }
+      continue;
+    }
     const machine = machines[machines.length - 1];
 
     if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_STATE_MACHINE_INPUT)) {
@@ -103,6 +124,8 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 }
 
 const RIVE_STATE_MACHINE = 53;
+const RIVE_STATE_MACHINE_COMPONENT = 54;
+const RIVE_STATE_MACHINE_LAYER_COMPONENT = 66;
 const RIVE_STATE_MACHINE_INPUT = 55;
 const RIVE_STATE_MACHINE_NUMBER = 56;
 const RIVE_STATE_MACHINE_LAYER = 57;
