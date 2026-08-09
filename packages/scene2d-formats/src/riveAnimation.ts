@@ -565,9 +565,10 @@ function toRiveElasticEasing(
   return easeOutDampedSine(amplitude, period);
 }
 
-// Only the transform properties bind through the shared display-object target. Animated geometry and
-// paint — vertex positions, colours — need a format-owned mutable-content binder and are recorded as
-// uncovered rather than mapped onto a property that does not mean the same thing.
+// Only the transform properties bind through the shared display-object target. Returning null here is
+// not a loss: animated geometry and paint — vertex positions, colours — are bound instead by writing
+// the value back onto the keyed object and rebuilding the owning shape, so they reach the screen by a
+// route that does not go through a Node2D property.
 function toRiveAnimationPath(propertyKey: number): Node2DAnimationPath | null {
   if (propertyKey === RIVE_X || propertyKey === RIVE_X_LEGACY) return 'X';
   if (propertyKey === RIVE_Y || propertyKey === RIVE_Y_LEGACY) return 'Y';
