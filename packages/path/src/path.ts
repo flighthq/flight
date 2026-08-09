@@ -1,3 +1,4 @@
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
@@ -154,13 +155,13 @@ export function appendPathCurveTo(
   path.data.push(controlX, controlY, anchorX, anchorY);
 }
 
-// Approximates an axis-aligned ellipse using four cubic bezier segments (standard kappa approximation:
-// kappa = 4*(sqrt(2)-1)/3 ≈ 0.5522847498). The error is less than 0.03% of the radius. Appends a
+// Approximates an axis-aligned ellipse using four cubic bezier segments, each tangent handle reaching
+// CIRCLE_KAPPA = 4*(sqrt(2)-1)/3 of the radius. The error is less than 0.03% of the radius. Appends a
 // MOVE_TO at the rightmost point and a CLOSE after the fourth arc segment.
 export function appendPathEllipse(path: Path, cx: number, cy: number, radiusX: number, radiusY: number): void {
   // kappa: the distance along each tangent handle for the optimal cubic arc approximation.
-  const kx = radiusX * KAPPA;
-  const ky = radiusY * KAPPA;
+  const kx = radiusX * CIRCLE_KAPPA;
+  const ky = radiusY * CIRCLE_KAPPA;
   appendPathMoveTo(path, cx + radiusX, cy);
   appendPathCubicCurveTo(path, cx + radiusX, cy - ky, cx + kx, cy - radiusY, cx, cy - radiusY);
   appendPathCubicCurveTo(path, cx - kx, cy - radiusY, cx - radiusX, cy - ky, cx - radiusX, cy);
@@ -260,7 +261,7 @@ function appendCornerArc(
 ): void {
   if (radius <= 0) return;
   // Single cubic approximation for a quarter arc using kappa.
-  const k = radius * KAPPA;
+  const k = radius * CIRCLE_KAPPA;
   const cosStart = Math.cos(startAngle);
   const sinStart = Math.sin(startAngle);
   const cosEnd = Math.cos(endAngle);
@@ -363,4 +364,3 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
 
 // Optimal cubic Bezier arc approximation constant: 4*(sqrt(2)-1)/3.
 // Maximum radial error is < 0.03% of the radius.
-const KAPPA = 0.5522847498307936;

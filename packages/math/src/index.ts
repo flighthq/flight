@@ -1,4 +1,5 @@
 export {
+  CIRCLE_KAPPA,
   DEG_TO_RAD,
   EPSILON,
   HALF_PI,

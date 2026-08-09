@@ -1,3 +1,4 @@
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
@@ -180,11 +181,9 @@ export function hasShapeFill(commands: readonly ShapeCommandToken[]): boolean {
   return false;
 }
 
-const KAPPA = 0.5522847498307936;
-
 function appendEllipseToPath(path: Path, cx: number, cy: number, rx: number, ry: number): void {
-  const kx = rx * KAPPA;
-  const ky = ry * KAPPA;
+  const kx = rx * CIRCLE_KAPPA;
+  const ky = ry * CIRCLE_KAPPA;
   pushVerb(path, PathCommand.MOVE_TO, cx + rx, cy);
   pushCubic(path, cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
   pushCubic(path, cx - kx, cy + ry, cx - rx, cy + ky, cx - rx, cy);

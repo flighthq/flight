@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import {
   appendPathClose,
   appendPathCubicCurveTo,
@@ -237,7 +238,7 @@ function appendRivePerCornerRectangle(
   const [tl, tr, bl, br] = radii.map((radius) => Math.max(0, Math.min(radius, limit)));
   const right = left + width;
   const bottom = top + height;
-  const k = CIRCLE_CUBIC_RATIO;
+  const k = CIRCLE_KAPPA;
   appendPathMoveTo(path, left + tl, top);
   appendPathLineTo(path, right - tr, top);
   if (tr > 0) appendPathCubicCurveTo(path, right - tr + tr * k, top, right, top + tr - tr * k, right, top + tr);
@@ -380,8 +381,6 @@ function readRiveFlag(source: Readonly<RiveCoreObject>, key: number, fallback: b
   const property = source.properties.find((candidate) => candidate.key === key);
   return property === undefined || typeof property.value !== 'number' ? fallback : property.value !== 0;
 }
-
-const CIRCLE_CUBIC_RATIO = 0.5522847498307936;
 
 const RIVE_PATH_VERTEX = 14;
 const RIVE_STRAIGHT_VERTEX = 5;

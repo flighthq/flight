@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../types" }],
+  "references": [{ "path": "../math" }, { "path": "../types" }],
   "include": ["src"]
 }
