@@ -10,6 +10,8 @@ import { createScene2DFromRiveDocument } from './riveScene2D';
 
 const ARTBOARD = 1;
 const NODE = 2;
+const TEXT_INPUT = 569;
+const LAYOUT_COMPONENT = 409;
 const ROOT_BONE = 41;
 const SHAPE = 3;
 const FILL = 20;
@@ -168,6 +170,39 @@ describe('createScene2DFromRiveDocument', () => {
     );
 
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.path-outside-shape']);
+  });
+
+  // A drawable this reader does not build keeps its name, transform and children and simply paints
+  // nothing. The tree keeps its shape and the object count is unchanged, so only the pixels go missing.
+  it('crumbs a drawable kind it does not build instead of yielding a silent empty container', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = createScene2DFromRiveDocument(
+      buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(TEXT_INPUT, [uint(PARENT_ID, 0)])]),
+      diagnostics,
+    );
+
+    // The node survives — that is what makes this invisible without the crumb.
+    expect(getNodeChildCount(result.artboards[0].root)).toBe(1);
+    expect(diagnostics).toMatchObject([
+      { detail: { typeKey: TEXT_INPUT }, kind: 'rive.drawable-kind-unsupported', severity: 'Drop' },
+    ]);
+  });
+
+  it('stays silent for a plain node, which is a container by definition', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        object(NODE, [uint(PARENT_ID, 0)]),
+        object(LAYOUT_COMPONENT, [uint(PARENT_ID, 0)]),
+      ]),
+      diagnostics,
+    );
+
+    // Both reach the same terminal arm as the drawable above; neither loses anything by doing so, and
+    // the child count proves the silence is not the nodes having been dropped instead.
+    expect(getNodeChildCount(result.artboards[0].root)).toBe(2);
+    expect(diagnostics).toEqual([]);
   });
 
   // Flight splits blending deliberately: BlendMode is the fixed-function set that folds into blend
