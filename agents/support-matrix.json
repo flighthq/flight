@@ -1037,6 +1037,15 @@
           }
         },
         {
+          "scene": "mesh-normal-position-groups",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
           "scene": "mesh-plane",
           "backends": {
             "canvas": false,
