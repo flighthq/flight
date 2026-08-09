@@ -163,6 +163,23 @@ function createRiveDisplayNode(
     return node;
   }
   if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SHAPE_TYPE_KEY)) return createShape({ name });
+  // A plain node IS a container, so reaching here is ordinary and silent. A DRAWABLE reaching here is
+  // not: the file authored something that paints, and it becomes an empty container that still holds
+  // its name, transform and children. The tree keeps its shape, the artboard keeps its object count,
+  // and only the pixels are missing — so nothing downstream can notice. Layout components are excluded
+  // because a layout component is a container by design and draws nothing of its own.
+  if (
+    isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_DRAWABLE_TYPE_KEY) &&
+    !isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_LAYOUT_COMPONENT_TYPE_KEY)
+  ) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'rive.drawable-kind-unsupported',
+      'createScene2DFromRiveDocument',
+      { typeKey: object.typeKey },
+    );
+  }
   return createDisplayObject({ name });
 }
 
@@ -332,6 +349,7 @@ const RIVE_NODE_TYPE_KEY = 2;
 const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_PATH_TYPE_KEY = 12;
 const RIVE_DRAWABLE_TYPE_KEY = 13;
+const RIVE_LAYOUT_COMPONENT_TYPE_KEY = 409;
 const RIVE_TEXT_TYPE_KEY = 134;
 const RIVE_IMAGE_TYPE_KEY = 100;
 const RIVE_NESTED_ARTBOARD_TYPE_KEY = 92;
