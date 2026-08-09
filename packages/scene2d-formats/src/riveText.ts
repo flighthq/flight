@@ -55,7 +55,7 @@ export function createRiveRichText(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.text-align-substituted',
-      'createScene2DFromRiveDocument',
+      'createRiveRichText',
       { alignValue: align, substitutedAs: 'left' },
     );
   }
@@ -115,7 +115,7 @@ function createRiveTextFormat(
         diagnostics,
         ImportDiagnosticSeverity.Drop,
         'rive.text-unresolved-style',
-        'createScene2DFromRiveDocument',
+        'createRiveTextFormat',
         { styleIndex },
       );
     }

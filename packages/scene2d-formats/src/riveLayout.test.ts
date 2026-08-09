@@ -344,7 +344,7 @@ describe('createRiveLayoutImports', () => {
       {
         detail: { index: 0, styleId: 99 },
         kind: 'rive.layout-unresolved-style',
-        origin: 'createRiveLayoutImports',
+        origin: 'findRiveLayoutComponents',
         severity: 'Drop',
       },
     ]);

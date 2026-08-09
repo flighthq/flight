@@ -40,13 +40,9 @@ export function createRivePath(
   // A path kind this importer does not build. Reported rather than returned bare, because the caller
   // cannot tell this from a points path that legitimately states no vertices — both arrive as an empty
   // result, and only one of them lost something.
-  reportImportDiagnostic(
-    diagnostics,
-    ImportDiagnosticSeverity.Drop,
-    'rive.path-kind-unsupported',
-    'createScene2DFromRiveDocument',
-    { typeKey: path.typeKey },
-  );
+  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'rive.path-kind-unsupported', 'createRivePath', {
+    typeKey: path.typeKey,
+  });
   return null;
 }
 
@@ -186,7 +182,7 @@ function createRiveParametricPath(source: Readonly<RiveCoreObject>, diagnostics?
     diagnostics,
     ImportDiagnosticSeverity.Recover,
     'rive.parametric-path-substituted',
-    'createScene2DFromRiveDocument',
+    'createRiveParametricPath',
     { substitutedAs: 'rectangle', typeKey: source.typeKey },
   );
   appendPathRectangle(path, left, top, width, height);

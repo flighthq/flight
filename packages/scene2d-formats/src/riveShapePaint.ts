@@ -503,13 +503,10 @@ function toRiveCaps(value: number, diagnostics: ImportDiagnostic[] | undefined):
   if (value === RIVE_CAP_ROUND) return 'round';
   if (value === RIVE_CAP_SQUARE) return 'square';
   if (value !== RIVE_CAP_BUTT) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Recover,
-      'rive.stroke-cap-substituted',
-      'createScene2DFromRiveDocument',
-      { capValue: value, substitutedAs: 'none' },
-    );
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'rive.stroke-cap-substituted', 'toRiveCaps', {
+      capValue: value,
+      substitutedAs: 'none',
+    });
   }
   return 'none';
 }
@@ -522,7 +519,7 @@ function toRiveJoints(value: number, diagnostics: ImportDiagnostic[] | undefined
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.stroke-join-substituted',
-      'createScene2DFromRiveDocument',
+      'toRiveJoints',
       { joinValue: value, substitutedAs: 'miter' },
     );
   }

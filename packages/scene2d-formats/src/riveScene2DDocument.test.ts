@@ -93,7 +93,7 @@ describe('createScene2DDocumentFromRiveDocument', () => {
       {
         detail: { assetIndex: 0 },
         kind: 'rive.image-mime-type-undetected',
-        origin: 'createScene2DDocumentFromRiveDocument',
+        origin: 'toRiveMimeType',
         severity: ImportDiagnosticSeverity.Drop,
       },
     ]);

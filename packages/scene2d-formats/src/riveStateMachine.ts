@@ -58,7 +58,7 @@ export function createRiveStateMachines(
           diagnostics,
           ImportDiagnosticSeverity.Drop,
           'rive.state-machine-part-unowned',
-          'createScene2DFromRiveDocument',
+          'createRiveStateMachines',
           { typeKey: object.typeKey },
         );
       }

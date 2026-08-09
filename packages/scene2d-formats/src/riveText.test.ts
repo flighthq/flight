@@ -220,7 +220,7 @@ describe('createRiveRichText', () => {
       {
         detail: { styleIndex: 7 },
         kind: 'rive.text-unresolved-style',
-        origin: 'createScene2DFromRiveDocument',
+        origin: 'createRiveTextFormat',
         severity: ImportDiagnosticSeverity.Drop,
       },
     ]);

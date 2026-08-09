@@ -123,7 +123,7 @@ function createRiveAnimationClip(
         diagnostics,
         ImportDiagnosticSeverity.Drop,
         'rive.keyed-object-unbound',
-        'createScene2DFromRiveDocument',
+        'createRiveAnimationClip',
         { objectId: keyedIndex, properties: runProperties },
       );
     }
@@ -195,7 +195,7 @@ function createRiveAnimationClip(
           diagnostics,
           ImportDiagnosticSeverity.Drop,
           'rive.keyframe-kind-unsupported',
-          'createScene2DFromRiveDocument',
+          'createRiveAnimationClip',
           { keyframeTypeKey: keyframeType, propertyKey },
         );
       }
@@ -245,7 +245,7 @@ function toRiveAnimationLoop(value: number, diagnostics: ImportDiagnostic[] | un
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.animation-loop-substituted',
-      'createScene2DFromRiveDocument',
+      'toRiveAnimationLoop',
       { loopValue: value, substitutedAs: 'oneShot' },
     );
   }
@@ -295,7 +295,7 @@ function createRiveBoneChannel(
       diagnostics,
       ImportDiagnosticSeverity.Drop,
       'rive.unrepresentable-bone-scale',
-      'createRiveAnimationClips',
+      'createRiveBoneChannel',
       { bone: boneIndex, property: propertyKey },
     );
     return null;
@@ -521,7 +521,7 @@ function toRiveSegmentEasing(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.keyframe-easing-substituted',
-      'createScene2DFromRiveDocument',
+      'toRiveSegmentEasing',
       { interpolationType: type, interpolatorId: id, substitutedAs: 'linear' },
     );
     return null;
@@ -587,7 +587,7 @@ function toRiveElasticEasing(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'rive.elastic-easing-substituted',
-      'createScene2DFromRiveDocument',
+      'toRiveElasticEasing',
       { easingValue: easing, substitutedAs: 'easeOut' },
     );
   }

@@ -46,7 +46,13 @@ export function applyRiveClipping(
     const source = readRiveNumber(object, RIVE_CLIP_SOURCE_ID, -1);
     const paths = shapePaths.get(source);
     if (paths === undefined || paths.length === 0) {
-      reportRiveClipDrop(diagnostics, 'rive.unresolved-clipping-source', { index, source });
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'rive.unresolved-clipping-source',
+        'applyRiveClipping',
+        { index, source },
+      );
       continue;
     }
     const next = createRiveClipPath(paths, relative[owner], relative[source], object);
@@ -121,14 +127,6 @@ function createRiveLocalMatrix(source: Readonly<RiveCoreObject>): Matrix {
     readRiveNumber(source, RIVE_X, readRiveNumber(source, RIVE_X_LEGACY, 0)),
     readRiveNumber(source, RIVE_Y, readRiveNumber(source, RIVE_Y_LEGACY, 0)),
   );
-}
-
-function reportRiveClipDrop(
-  diagnostics: ImportDiagnostic[] | undefined,
-  kind: string,
-  detail: Readonly<Record<string, number>>,
-): void {
-  reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, kind, 'createScene2DFromRiveDocument', detail);
 }
 
 function readRiveNumber(source: Readonly<RiveCoreObject>, key: number, fallback: number): number {

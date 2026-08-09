@@ -143,7 +143,7 @@ function toRiveMimeType(
     diagnostics,
     ImportDiagnosticSeverity.Drop,
     'rive.image-mime-type-undetected',
-    'createScene2DDocumentFromRiveDocument',
+    'toRiveMimeType',
     { assetIndex },
   );
   return null;

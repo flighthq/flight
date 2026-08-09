@@ -180,7 +180,7 @@ function createRiveDisplayNode(
       diagnostics,
       ImportDiagnosticSeverity.Drop,
       'rive.drawable-kind-unsupported',
-      'createScene2DFromRiveDocument',
+      'createRiveDisplayNode',
       { typeKey: object.typeKey },
     );
   }
@@ -223,7 +223,7 @@ function collectRivePathGeometry(
       diagnostics,
       ImportDiagnosticSeverity.Drop,
       'rive.path-outside-shape',
-      'createScene2DFromRiveDocument',
+      'collectRivePathGeometry',
       { index },
     );
     return;
