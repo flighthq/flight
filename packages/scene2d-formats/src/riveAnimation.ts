@@ -157,7 +157,22 @@ function createRiveAnimationClip(
     // Anything else drives geometry or paint: write the value back onto the object the file keyed and
     // let the owning shape rebuild from it, which is why no property needs its own binder.
     const keyframeType = objects[index + 1]?.typeKey;
-    if (keyframeType !== RIVE_KEYFRAME_DOUBLE && keyframeType !== RIVE_KEYFRAME_COLOR) continue;
+    if (keyframeType !== RIVE_KEYFRAME_DOUBLE && keyframeType !== RIVE_KEYFRAME_COLOR) {
+      // Refusing to read a bool, string, id or callback keyframe through the double value field is
+      // correct — the bytes mean something else. What is not correct is losing the channel in silence:
+      // the clip still imports and still plays, and the property it animates simply never moves. An
+      // absent keyframe is a different case and stays quiet, since nothing was authored to lose.
+      if (keyframeType !== undefined) {
+        reportImportDiagnostic(
+          diagnostics,
+          ImportDiagnosticSeverity.Drop,
+          'rive.keyframe-kind-unsupported',
+          'createScene2DFromRiveDocument',
+          { keyframeTypeKey: keyframeType, propertyKey },
+        );
+      }
+      continue;
+    }
     const target = createRiveMutableTarget(
       artboard,
       rebuilds,

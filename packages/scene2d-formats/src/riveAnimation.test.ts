@@ -693,15 +693,56 @@ describe('createRiveAnimationClips', () => {
       object(KEYED_PROPERTY, { [PROPERTY_KEY]: 41 }),
       object(KEYFRAME_BOOL, { [FRAME]: 0, [VALUE]: 1 }),
     ];
+    const diagnostics: ImportDiagnostic[] = [];
     const clips = createRiveAnimationClips(
       objects,
       { end: objects.length, start: 0 },
       [null, createDisplayObject()],
       artboard,
       new Map([[1, () => undefined]]),
+      null,
+      diagnostics,
     );
 
+    // Refusing to read it as a double is the point; losing the channel without a word is not. The clip
+    // still imports and still plays, so the crumb is the only trace that a property stopped moving.
     expect(clips[0].clip.channels).toHaveLength(0);
+    expect(diagnostics).toMatchObject([
+      {
+        detail: { keyframeTypeKey: KEYFRAME_BOOL, propertyKey: 41 },
+        kind: 'rive.keyframe-kind-unsupported',
+        severity: 'Drop',
+      },
+    ]);
+  });
+
+  it('stays silent for a keyed property carrying no keyframe at all', () => {
+    const artboard: RiveArtboardGraph = {
+      objects: [object(1, {}), object(3, {})],
+      parentIndices: [-1, 0],
+      streamEnd: 0,
+      streamStart: 0,
+    };
+    const objects = [
+      object(LINEAR_ANIMATION, { [FPS]: 30, [DURATION]: 30 }),
+      object(KEYED_OBJECT, { [OBJECT_ID]: 1 }),
+      object(KEYED_PROPERTY, { [PROPERTY_KEY]: 41 }),
+    ];
+    const diagnostics: ImportDiagnostic[] = [];
+    const clips = createRiveAnimationClips(
+      objects,
+      { end: objects.length, start: 0 },
+      [null, createDisplayObject()],
+      artboard,
+      new Map([[1, () => undefined]]),
+      null,
+      diagnostics,
+    );
+
+    // Nothing was authored here, so nothing was lost — an absent keyframe must not read as an
+    // unsupported one. The clip is still produced, which is what keeps this silence non-vacuous.
+    expect(clips).toHaveLength(1);
+    expect(diagnostics).toEqual([]);
   });
 });
 
