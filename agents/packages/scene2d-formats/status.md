@@ -12,14 +12,20 @@ by: principal
 ## Open
 
 Every item was re-checked against `packages/scene2d-formats/src/` (and `packages/types/src/`) on
-2026-08-08. A file:line here is a claim about this tree, not about a session.
+2026-08-08, Rive again on 2026-08-09. A file:line is a claim about this tree, not a session.
 
 - **Rive skins are read but never wired.** `createRiveSkin2D` (`riveSkin.ts:39`) is exported through
   `contract.ts:7` and has **zero callers** anywhere in `packages/`. `createRiveScene2D` builds the rig
   (`riveScene2D.ts:132`) but no imported path is deformed by it.
-- **Rive animation reads only two keyframe value kinds** — `KeyFrameDouble` and `KeyFrameColor`
-  (`riveAnimation.ts:543`, `:546`). `KeyFrameBool` / `Id` / `String` / `Uint` are in the type registry
-  (`riveCoreTypes.ts:121`, `:87`, `:174`, `:231`) with no reader.
+- **Rive animation reads only `KeyFrameDouble` and `KeyFrameColor`** (`riveAnimation.ts:599`, `:602`).
+  `Bool` / `Id` / `String` / `Uint` are registered unread; each drops its channel behind
+  `rive.keyframe-kind-unsupported`.
+- **Two Rive losses stay unwired for want of a condition.** A `KeyedObject` resolving to nothing drops
+  every channel under it (`riveAnimation.ts`); contents preceding any asset are discarded
+  (`riveAssets.ts`). A null keyed object is normal for a bone, so a report must wait until a property
+  run binds nothing. Both are pinned by tests titled `ignores`.
+- **Rive `NSlicedNode` imports as a plain container**, losing nine-slice scaling; being a `Node` rather
+  than a `Drawable`, the unsupported-drawable crumb misses it.
 - **Rive constraints/IK, data binding, and feather are type-registry entries only** —
   `riveCoreTypes.ts:116-122`, `:227`, `:294`; no importer touches them. They are runtime *systems*,
   so scope is a ruling before it is effort.
@@ -41,10 +47,6 @@ Every item was re-checked against `packages/scene2d-formats/src/` (and `packages
 - **SVG exclusions are live**: `filter`, `pattern`, `foreignObject`, `script`, and the
   `animate*`/`set` family (`svgDocument.ts:1568`); soft/luminance masks recover as a hard clip
   (`:319`); a later `tspan` with its own position flattens (`:835`).
-- **Stale source comment.** `riveAnimation.ts:512` says animated geometry and paint still need a
-  format-owned mutable-content binder. The binder exists — the `rebuilds` map built at
-  `riveScene2D.ts:120` and consumed at `riveAnimation.ts:398-405`.
-
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
