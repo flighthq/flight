@@ -110,16 +110,44 @@ function createRiveAnimationClip(
 
   let keyed: DisplayObject | null = null;
   let keyedIndex = -1;
+  // A keyed object is judged by what its whole property run produced, not by whether it resolved to a
+  // display node: a bone legitimately has no node and binds through the rig instead. So the question
+  // is asked at the END of a run — did anything bind, and if not, did anything explain why. A run that
+  // bound nothing and said nothing lost every channel beneath it without trace.
+  let runProperties = 0;
+  let runChannels = 0;
+  let runDiagnostics = diagnostics?.length ?? 0;
+  const closeKeyedRun = (): void => {
+    if (runProperties > 0 && channels.length === runChannels && (diagnostics?.length ?? 0) === runDiagnostics) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'rive.keyed-object-unbound',
+        'createScene2DFromRiveDocument',
+        { objectId: keyedIndex, properties: runProperties },
+      );
+    }
+    runProperties = 0;
+    runChannels = channels.length;
+    runDiagnostics = diagnostics?.length ?? 0;
+  };
   for (let index = start + 1; index < limit; index++) {
     const object = objects[index];
     // Another animation or a state machine ends this one's run of keyed data.
     if (object.typeKey === RIVE_LINEAR_ANIMATION) break;
     if (object.typeKey === RIVE_KEYED_OBJECT) {
+      closeKeyedRun();
       keyedIndex = readRiveNumber(object, RIVE_KEYED_OBJECT_ID, -1);
       keyed = keyedIndex >= 0 && keyedIndex < nodes.length ? nodes[keyedIndex] : null;
       continue;
     }
     if (object.typeKey !== RIVE_KEYED_PROPERTY) continue;
+    // Only a property that actually carries a keyframe counts as authored animation. A property slot
+    // with nothing under it has no channel to lose, so an empty one must not read as an unbound one.
+    const firstKeyframe = objects[index + 1];
+    if (firstKeyframe !== undefined && isRiveCoreTypeDerivedFrom(firstKeyframe.typeKey, RIVE_KEYFRAME)) {
+      runProperties++;
+    }
     const propertyKey = readRiveNumber(object, RIVE_KEYED_PROPERTY_KEY, -1);
     // A bone is a TransformComponent rather than a Node, so it never became a display object and
     // `keyed` is null for it. Its channels drive the flattened Skeleton2D instead, which is why the
@@ -184,6 +212,7 @@ function createRiveAnimationClip(
     const channel = createRiveMutableChannel(objects, index, limit, fps, interpolators, target, diagnostics);
     if (channel !== null) channels.push(channel);
   }
+  closeKeyedRun();
 
   const duration = readRiveNumber(source, RIVE_ANIMATION_DURATION, 60) / fps;
   // The work area is stated in frames and only applies when the animation enables it. Its unset
@@ -597,6 +626,7 @@ function readRiveText(source: Readonly<RiveCoreObject>, key: number, fallback: s
 
 const RIVE_KEYED_OBJECT = 25;
 const RIVE_KEYED_PROPERTY = 26;
+const RIVE_KEYFRAME = 29;
 const RIVE_KEYFRAME_DOUBLE = 30;
 const RIVE_SHAPE_TYPE_KEY = 3;
 const RIVE_LINEAR_ANIMATION = 31;

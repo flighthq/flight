@@ -20,10 +20,8 @@ Every item was re-checked against `packages/scene2d-formats/src/` (and `packages
 - **Rive animation reads only `KeyFrameDouble` and `KeyFrameColor`** (`riveAnimation.ts:599`, `:602`).
   `Bool` / `Id` / `String` / `Uint` are registered unread; each drops its channel behind
   `rive.keyframe-kind-unsupported`.
-- **Two Rive losses stay unwired for want of a condition.** A `KeyedObject` resolving to nothing drops
-  every channel under it (`riveAnimation.ts`); contents preceding any asset are discarded
-  (`riveAssets.ts`). A null keyed object is normal for a bone, so a report must wait until a property
-  run binds nothing. Both are pinned by tests titled `ignores`.
+- **Asset contents preceding any asset are discarded** (`riveAssets.ts`), pinned by a test titled
+  `ignores` — the tell for an absence assertion standing in for a loss.
 - **Rive `NSlicedNode` imports as a plain container**, losing nine-slice scaling; being a `Node` rather
   than a `Drawable`, the unsupported-drawable crumb misses it.
 - **Rive constraints/IK, data binding, and feather are type-registry entries only** —
