@@ -343,14 +343,14 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
         vertices: new Float32Array(vertices),
       });
       // MD5 carries one UV per vertex and no smoothing groups, so texture-coordinate seams duplicate
-      // otherwise identical bind positions. Share only their normal accumulation: the complete vertex
-      // records and the tangent basis remain independent across those seams.
+      // otherwise identical bind positions. Share their normal and tangent accumulation while keeping
+      // the complete vertex records and each mirrored side's handedness independent.
       const positionGroups = computeMeshGeometryPositionGroups(geometry);
       computeMeshGeometryNormals(geometry, geometry, positionGroups);
       // MD5 carries no tangent stream either. Generate a real tangent basis from the newly derived
       // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
       // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
-      computeMeshGeometryTangents(geometry, geometry);
+      computeMeshGeometryTangents(geometry, geometry, positionGroups);
       // MD5 UVs are V-down; the tangent generator derives its bitangent assuming V-up, so the derived
       // handedness is inverted for this format and is negated here. Preserve the authored UVs used for
       // texture sampling.
