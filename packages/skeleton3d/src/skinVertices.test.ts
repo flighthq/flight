@@ -1,4 +1,4 @@
-import { skinVertices } from './skinVertices';
+import { skinTangents, skinVertices } from './skinVertices';
 
 // A column-major 4x4 identity, then variants with translation/scale, laid out as the 16-float palette entry.
 function identity(): number[] {
@@ -18,6 +18,114 @@ function translation(tx: number, ty: number, tz: number): number[] {
   m[14] = tz;
   return m;
 }
+
+describe('skinTangents', () => {
+  // A 90-degree rotation about Z, column-major. A pure rotation is used deliberately: N·T = 0 survives
+  // skinning exactly only under a rigid transform, where transforming the tangent as a vector by M and
+  // the normal as a covector by M⁻ᵀ coincide. Under non-uniform scale they diverge and orthogonality is
+  // not something this code promises, so it is not asserted there.
+  // prettier-ignore
+  const rotateZ90 = [
+    0, 1, 0, 0,
+    -1, 0, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+  ];
+  const singleJoint = { joints: new Float32Array([0, 0, 0, 0]), weights: new Float32Array([1, 0, 0, 0]) };
+
+  it('rotates the tangent direction with the pose', () => {
+    const tangents = new Float32Array([1, 0, 0, 1]);
+    const out = new Float32Array(4);
+    skinTangents(out, tangents, singleJoint.joints, singleJoint.weights, new Float32Array(rotateZ90));
+    expect(out[0]).toBeCloseTo(0);
+    expect(out[1]).toBeCloseTo(1);
+    expect(out[2]).toBeCloseTo(0);
+  });
+
+  it('carries w through UNCHANGED, because it is handedness and not a coordinate', () => {
+    // Rotating or re-deriving w flips the bitangent across whole regions of the surface, which reaches
+    // the eye as inverted lighting rather than as a crash. Both signs are checked: a transform that
+    // happened to preserve +1 could still destroy -1.
+    const positive = new Float32Array(4);
+    const negative = new Float32Array(4);
+    skinTangents(
+      positive,
+      new Float32Array([1, 0, 0, 1]),
+      singleJoint.joints,
+      singleJoint.weights,
+      new Float32Array(rotateZ90),
+    );
+    skinTangents(
+      negative,
+      new Float32Array([1, 0, 0, -1]),
+      singleJoint.joints,
+      singleJoint.weights,
+      new Float32Array(rotateZ90),
+    );
+    expect(positive[3]).toBe(1);
+    expect(negative[3]).toBe(-1);
+  });
+
+  it('keeps the tangent orthogonal to the normal it was orthogonal to', () => {
+    // The defect this fixes: the normal was skinned and the tangent was not, so N·T drifted away from
+    // zero in any pose off the bind pose. Starting orthogonal, they must stay orthogonal under a rotation.
+    const palette = new Float32Array(rotateZ90);
+    const outNormals = new Float32Array(3);
+    const outTangents = new Float32Array(4);
+    skinVertices(
+      new Float32Array(3),
+      outNormals,
+      new Float32Array([0, 0, 0]),
+      new Float32Array([0, 1, 0]),
+      singleJoint.joints,
+      singleJoint.weights,
+      palette,
+    );
+    skinTangents(outTangents, new Float32Array([1, 0, 0, 1]), singleJoint.joints, singleJoint.weights, palette);
+    const dot = outNormals[0] * outTangents[0] + outNormals[1] * outTangents[1] + outNormals[2] * outTangents[2];
+    expect(dot).toBeCloseTo(0);
+  });
+
+  it('applies the SAME transform skinVertices applies to normals', () => {
+    // ★ THIS IS THE ANTI-DIVERGENCE GUARD, NOT A DUPLICATE OF THE ORTHOGONALITY TEST. Orthogonality is
+    // preserved only because both channels go through one transform; if a later change "improves" one
+    // path alone the two silently stop matching, and N·T fails for a reason unrelated to that change.
+    // Feeding the same vector through both and demanding equal xyz is what makes that divergence loud.
+    const palette = new Float32Array(rotateZ90);
+    const vector = [0.3, -0.7, 0.5];
+    const outNormals = new Float32Array(3);
+    const outTangents = new Float32Array(4);
+    skinVertices(
+      new Float32Array(3),
+      outNormals,
+      new Float32Array([0, 0, 0]),
+      new Float32Array(vector),
+      singleJoint.joints,
+      singleJoint.weights,
+      palette,
+    );
+    skinTangents(outTangents, new Float32Array([...vector, 1]), singleJoint.joints, singleJoint.weights, palette);
+    expect(outTangents[0]).toBeCloseTo(outNormals[0]);
+    expect(outTangents[1]).toBeCloseTo(outNormals[1]);
+    expect(outTangents[2]).toBeCloseTo(outNormals[2]);
+  });
+
+  it('is safe when the output aliases the input', () => {
+    const tangents = new Float32Array([1, 0, 0, -1]);
+    skinTangents(tangents, tangents, singleJoint.joints, singleJoint.weights, new Float32Array(rotateZ90));
+    expect(tangents[1]).toBeCloseTo(1);
+    expect(tangents[3]).toBe(-1);
+  });
+
+  it('iterates nothing when the geometry carries no tangent channel', () => {
+    // A zero-length capture is how "this layout has no tangents" is expressed, so it must be a no-op
+    // rather than an out-of-range read.
+    const out = new Float32Array(0);
+    expect(() =>
+      skinTangents(out, new Float32Array(0), singleJoint.joints, singleJoint.weights, new Float32Array(rotateZ90)),
+    ).not.toThrow();
+  });
+});
 
 describe('skinVertices', () => {
   it('passes vertices through unchanged when the only weighted joint is identity', () => {

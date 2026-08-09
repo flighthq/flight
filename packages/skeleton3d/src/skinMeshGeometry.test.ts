@@ -1,4 +1,4 @@
-import { setVector3 } from '@flighthq/geometry/contract';
+import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
@@ -15,6 +15,7 @@ function createOneVertexSkinnedGeometry(
   normal: readonly [number, number, number],
   joints: readonly [number, number, number, number],
   weights: readonly [number, number, number, number],
+  tangent: readonly [number, number, number, number] = [0, 0, 0, 0],
 ): MeshGeometry {
   const vertices = new Float32Array(20);
   vertices[0] = position[0];
@@ -23,6 +24,7 @@ function createOneVertexSkinnedGeometry(
   vertices[3] = normal[0];
   vertices[4] = normal[1];
   vertices[5] = normal[2];
+  vertices.set(tangent, 6);
   vertices.set(joints, 12);
   vertices.set(weights, 16);
   return createMeshGeometry({ layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, vertices });
@@ -109,6 +111,57 @@ describe('skinMeshGeometry', () => {
     // Normal (translation leaves it), and the static joints0/weights0 channels are untouched.
     expect(geometry.vertices[4]).toBeCloseTo(1);
     expect(geometry.vertices[16]).toBe(1);
+  });
+
+  it('rewrites the tangent channel in the geometry, not just the scratch', () => {
+    // ★ THIS IS THE ONE THAT CATCHES A MISSING WRITE-BACK. Every unit test of the blend itself passes
+    // while `skinMeshGeometry` never copies the result into `geometry.vertices`, because those tests
+    // call the blend directly. Only reading the interleaved buffer after a skin proves the channel was
+    // actually updated. A rotation is required to see it: under a translation a correct tangent and an
+    // un-skinned one are identical, so the assertion could not fail.
+    const geometry = createOneVertexSkinnedGeometry([1, 0, 0], [0, 1, 0], [0, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, -1]);
+    const joint = createNode3D();
+    const skeleton = createSkeleton3D([joint]);
+    const bindPose = captureMeshSkinBindPose(geometry);
+    // 90 degrees about Z.
+    setQuaternion(joint.rotation, 0, 0, Math.SQRT1_2, Math.SQRT1_2);
+    invalidateNodeLocalTransform(joint);
+
+    computeSkeleton3DJointMatrices(skeleton);
+    skinMeshGeometry(geometry, skeleton, bindPose);
+
+    // Tangent occupies floats 6..9: x rotates onto +y.
+    expect(geometry.vertices[6]).toBeCloseTo(0);
+    expect(geometry.vertices[7]).toBeCloseTo(1);
+    expect(geometry.vertices[8]).toBeCloseTo(0);
+    // w is handedness and must survive untouched, including the negative sign.
+    expect(geometry.vertices[9]).toBe(-1);
+  });
+
+  it('keeps the skinned tangent orthogonal to the skinned normal', () => {
+    // The user-visible defect: normal skinned, tangent frozen at bind pose, so N·T drifted off zero in
+    // every pose away from bind. Read back from the interleaved buffer, which is what the shader sees.
+    const geometry = createOneVertexSkinnedGeometry([1, 0, 0], [0, 1, 0], [0, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 1]);
+    const joint = createNode3D();
+    const skeleton = createSkeleton3D([joint]);
+    const bindPose = captureMeshSkinBindPose(geometry);
+    setQuaternion(joint.rotation, 0, 0, Math.SQRT1_2, Math.SQRT1_2);
+    invalidateNodeLocalTransform(joint);
+
+    computeSkeleton3DJointMatrices(skeleton);
+    skinMeshGeometry(geometry, skeleton, bindPose);
+
+    // ★ NON-DEGENERACY FIRST. A zero tangent is orthogonal to everything, so the dot product below
+    // passes trivially on an un-skinned or unwritten channel — which it did, while the write-back was
+    // in fact missing. Requiring a real length is what makes the orthogonality assertion mean anything.
+    const length = Math.hypot(geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]);
+    expect(length).toBeCloseTo(1);
+
+    const dot =
+      geometry.vertices[3] * geometry.vertices[6] +
+      geometry.vertices[4] * geometry.vertices[7] +
+      geometry.vertices[5] * geometry.vertices[8];
+    expect(dot).toBeCloseTo(0);
   });
 });
 

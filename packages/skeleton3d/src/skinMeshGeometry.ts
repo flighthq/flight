@@ -1,7 +1,7 @@
 import { getMeshGeometryVertexJoints0, getMeshGeometryVertexWeights0 } from '@flighthq/mesh/contract';
 import type { MeshGeometry, MeshSkinBindPose, Skeleton3D, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { skinVertices } from './skinVertices';
+import { skinTangents, skinVertices } from './skinVertices';
 
 // Captures the de-interleaved CPU-skinning inputs for one skinned MeshGeometry: the bind-pose
 // positions/normals and the static joints0/weights0 influences, read out of the interleaved
@@ -19,6 +19,10 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
   const normalOffset = floatOffsetForSemantic(layout, 'normal');
   const positions = new Float32Array(vertexCount * 3);
   const normals = new Float32Array(vertexCount * 3);
+  // Zero-length when the layout carries no tangent semantic, so the per-frame deform iterates nothing
+  // rather than blending meaningless zeros back into a channel the geometry does not have.
+  const tangentOffset = floatOffsetForSemantic(layout, 'tangent');
+  const tangents = new Float32Array(tangentOffset >= 0 ? vertexCount * 4 : 0);
   const joints = new Float32Array(vertexCount * 4);
   const weights = new Float32Array(vertexCount * 4);
   const joint = { w: 0, x: 0, y: 0, z: 0 };
@@ -37,6 +41,13 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
       normals[p] = vertices[base + normalOffset];
       normals[p + 1] = vertices[base + normalOffset + 1];
       normals[p + 2] = vertices[base + normalOffset + 2];
+    }
+    if (tangentOffset >= 0) {
+      // All four floats: xyz is re-blended every frame, w is the handedness sign and rides along.
+      tangents[w] = vertices[base + tangentOffset];
+      tangents[w + 1] = vertices[base + tangentOffset + 1];
+      tangents[w + 2] = vertices[base + tangentOffset + 2];
+      tangents[w + 3] = vertices[base + tangentOffset + 3];
     }
     if (getMeshGeometryVertexJoints0(joint, geometry, v)) {
       joints[w] = joint.x;
@@ -58,6 +69,8 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
     positions,
     skinnedNormals: new Float32Array(vertexCount * 3),
     skinnedPositions: new Float32Array(vertexCount * 3),
+    skinnedTangents: new Float32Array(tangents.length),
+    tangents,
     weights,
   };
 }
@@ -83,12 +96,16 @@ export function skinMeshGeometry(
     bindPose.weights,
     skeleton.jointMatrices,
   );
+  skinTangents(bindPose.skinnedTangents, bindPose.tangents, bindPose.joints, bindPose.weights, skeleton.jointMatrices);
 
   const { layout, vertices } = geometry;
   const floatsPerVertex = layout.stride / 4;
   const positionOffset = floatOffsetForSemantic(layout, 'position');
   const normalOffset = floatOffsetForSemantic(layout, 'normal');
-  const { skinnedNormals, skinnedPositions } = bindPose;
+  // Skinned from the BIND POSE every frame, never from the vertices written last frame — re-skinning an
+  // already-skinned tangent would compound the pose instead of replacing it.
+  const tangentOffset = bindPose.tangents.length > 0 ? floatOffsetForSemantic(layout, 'tangent') : -1;
+  const { skinnedNormals, skinnedPositions, skinnedTangents } = bindPose;
   const vertexCount = (skinnedPositions.length / 3) | 0;
 
   for (let v = 0; v < vertexCount; v++) {
@@ -103,6 +120,14 @@ export function skinMeshGeometry(
       vertices[base + normalOffset] = skinnedNormals[s];
       vertices[base + normalOffset + 1] = skinnedNormals[s + 1];
       vertices[base + normalOffset + 2] = skinnedNormals[s + 2];
+    }
+    if (tangentOffset >= 0) {
+      // Four floats: the blended direction, then the handedness sign exactly as it was captured.
+      const t = v * 4;
+      vertices[base + tangentOffset] = skinnedTangents[t];
+      vertices[base + tangentOffset + 1] = skinnedTangents[t + 1];
+      vertices[base + tangentOffset + 2] = skinnedTangents[t + 2];
+      vertices[base + tangentOffset + 3] = skinnedTangents[t + 3];
     }
   }
 

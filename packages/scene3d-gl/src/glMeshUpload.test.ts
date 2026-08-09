@@ -167,6 +167,8 @@ describe('ensureGlMeshUpload', () => {
       positions,
       skinnedNormals: new Float32Array(0),
       skinnedPositions: new Float32Array(0),
+      skinnedTangents: new Float32Array(0),
+      tangents: new Float32Array(0),
       weights: new Float32Array(0),
     };
     setMeshGeometrySkinBindPose(geometry, bindPose);
@@ -202,6 +204,8 @@ describe('ensureGlMeshUpload', () => {
       positions,
       skinnedNormals: new Float32Array(0),
       skinnedPositions: new Float32Array(0),
+      skinnedTangents: new Float32Array(0),
+      tangents: new Float32Array(0),
       weights: new Float32Array(0),
     });
     ensureGlMeshUpload(state, geometry, true);
@@ -227,6 +231,8 @@ describe('ensureGlMeshUpload', () => {
       positions: new Float32Array([1, 0, 0]),
       skinnedNormals: new Float32Array(0),
       skinnedPositions: new Float32Array(0),
+      skinnedTangents: new Float32Array(0),
+      tangents: new Float32Array(0),
       weights: new Float32Array(0),
     });
 
