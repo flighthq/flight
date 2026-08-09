@@ -10,10 +10,11 @@
   },
   "references": [
     { "path": "../animation" },
-    { "path": "../scene2d" },
     { "path": "../geometry" },
+    { "path": "../math" },
     { "path": "../node" },
     { "path": "../path" },
+    { "path": "../scene2d" },
     { "path": "../types" }
   ],
   "include": ["src"]

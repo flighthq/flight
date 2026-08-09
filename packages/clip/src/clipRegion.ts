@@ -9,6 +9,7 @@ import {
   matrixTransformRectangle,
   mergeRectangle,
 } from '@flighthq/geometry/contract';
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import {
   appendPathCubicCurveTo,
   appendPathLineTo,
@@ -463,7 +464,6 @@ export function unionClipRegions(out: ClipRegion, a: Readonly<ClipRegion>, b: Re
 const NORMALIZE_EPSILON = 1e-6;
 
 // Kappa constant for circle/ellipse cubic Bezier approximation.
-const KAPPA = 0.5522847498;
 
 const clipRegionPool: ClipRegion[] = [];
 
@@ -513,7 +513,7 @@ function pointInContours(
 }
 
 function appendCircleToPath(path: Path, cx: number, cy: number, r: number): void {
-  const k = r * KAPPA;
+  const k = r * CIRCLE_KAPPA;
   appendPathMoveTo(path, cx, cy - r);
   appendPathCubicCurveTo(path, cx + k, cy - r, cx + r, cy - k, cx + r, cy);
   appendPathCubicCurveTo(path, cx + r, cy + k, cx + k, cy + r, cx, cy + r);
@@ -526,8 +526,8 @@ function appendEllipseToPath(path: Path, x: number, y: number, w: number, h: num
   const cy = y + h / 2;
   const rx = w / 2;
   const ry = h / 2;
-  const kx = rx * KAPPA;
-  const ky = ry * KAPPA;
+  const kx = rx * CIRCLE_KAPPA;
+  const ky = ry * CIRCLE_KAPPA;
   appendPathMoveTo(path, cx, cy - ry);
   appendPathCubicCurveTo(path, cx + kx, cy - ry, cx + rx, cy - ky, cx + rx, cy);
   appendPathCubicCurveTo(path, cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
@@ -538,7 +538,7 @@ function appendEllipseToPath(path: Path, x: number, y: number, w: number, h: num
 function appendRoundedRectToPath(path: Path, x: number, y: number, w: number, h: number, r: number): void {
   const maxR = Math.min(w, h) / 2;
   const cr = Math.min(r, maxR);
-  const k = cr * KAPPA;
+  const k = cr * CIRCLE_KAPPA;
   const x1 = x + cr;
   const x2 = x + w - cr;
   const y1 = y + cr;

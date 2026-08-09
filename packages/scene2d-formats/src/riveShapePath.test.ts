@@ -1,4 +1,5 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
@@ -266,7 +267,7 @@ describe('createRivePath', () => {
 
     // A quarter turn's handles sit 0.5523r from each tangent point, the standard approximation, so
     // the first control is that far along the edge from (90,0) toward the corner.
-    expect(cubic![0]).toBeCloseTo(90 + radius * 0.5522847498307936, 4);
+    expect(cubic![0]).toBeCloseTo(90 + radius * CIRCLE_KAPPA, 4);
     expect(cubic![1]).toBeCloseTo(0, 6);
   });
 
@@ -299,8 +300,8 @@ describe('createRivePath', () => {
     expect(points).toContainEqual([90, 0]);
     expect(points).toContainEqual([100, 10]);
     expect(cubic![0]).toBeCloseTo(90, 6);
-    expect(cubic![1]).toBeCloseTo(radius * 0.5522847498307936, 4);
-    expect(cubic![2]).toBeCloseTo(100 - radius * 0.5522847498307936, 4);
+    expect(cubic![1]).toBeCloseTo(radius * CIRCLE_KAPPA, 4);
+    expect(cubic![2]).toBeCloseTo(100 - radius * CIRCLE_KAPPA, 4);
     expect(cubic![3]).toBeCloseTo(10, 6);
   });
 

@@ -39,10 +39,11 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
-    "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/math": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
