@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-08-08
+updated: 2026-08-09
 by: principal
 ---
 
@@ -44,10 +44,25 @@ about this tree, not about a session.
   undetectable.
 - **Two kinds are GL-only.** `defaultGlBokehDepthOfFieldEffectRunner` and `defaultGlCustomShaderEffectRunner`
   have no `effects-wgpu` counterpart, so a chain using either silently degrades to identity there.
+- **Scanlines and Displacement still read an absolute vertical coordinate, and no instrument can see it.**
+  GL render targets are bottom-left origin while image space is top-left, so an effect keyed to absolute Y
+  renders inverted relative to other backends unless it compensates; `glGlitchEffect.ts:54` and
+  `glScreenSpaceFogEffect.ts:75` were corrected for this on 2026-08-08. Two remain:
+  `glScanlinesEffect.ts:40` (`sin(v_texCoord.y * u_count * PI)`) and `glDisplacementEffect.ts:46`
+  (`sin(y*f) + sin(y*f*2.3)`). Neither is a `1.0 - y` substitution like its fixed siblings — a flip shifts
+  the scanline phase and reshapes the displacement waveform rather than reversing either, so the fix shape
+  is undiagnosed. `scripts/functional-parity-orientation.ts` cannot find them: it flags a scene whose
+  *mirrored* fingerprint scores closer than its direct one, and for both of these the mirrored number moves
+  the wrong way — scanlines aliases against the coarse fingerprint grid, and displacement's two
+  incommensurate sines do not survive a flip as a mirror. This item is the only record; no gate is behind it.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-09** — Recorded the two surviving absolute-Y effects (Scanlines, Displacement) in `Open`.
+  Their fixed siblings landed in `a9f7adccb`/`0f0e85b23`; these two are a different fix shape and
+  `functional-parity-orientation` structurally cannot flag either, so the Open item is the only record.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 pass-2 headline checked out
   **false**: "uniform-location caching applied to all 42 effect source files" is contradicted by the tree —
