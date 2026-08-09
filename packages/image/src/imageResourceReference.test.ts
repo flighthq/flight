@@ -17,6 +17,8 @@ import {
   createEmbeddedImageResourceReference,
   createExternalImageResourceReference,
   createImageResourceFailure,
+  disableImageBitmapComposition,
+  enableImageBitmapComposition,
   explainImageResourceReferenceResolution,
   resetFailedImageResourceReference,
   resolveImageResourceReference,
@@ -34,6 +36,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  disableImageBitmapComposition();
   clearImageBitmapComposers();
   clearImageDecoders();
 });
@@ -153,6 +156,7 @@ describe('resolveImageResourceReference', () => {
     const bitmap = createTestBitmap('straight');
     const composer = vi.fn().mockReturnValue(bitmap);
     registerImageBitmapComposer('acme/alpha-plane', composer);
+    enableImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png', 'premultiplied');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload };
 
@@ -170,6 +174,7 @@ describe('resolveImageResourceReference', () => {
     const bitmap = createTestBitmap('opaque');
     const composer = vi.fn().mockReturnValue(bitmap);
     registerImageBitmapComposer('acme/raw-raster', composer);
+    enableImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/raw-raster', payload: ref.bytes };
 
@@ -180,6 +185,7 @@ describe('resolveImageResourceReference', () => {
   });
 
   it('reports an unavailable resource when its declared Bitmap composer is not registered', async () => {
+    enableImageBitmapComposition();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/missing', payload: ref.bytes };
 
