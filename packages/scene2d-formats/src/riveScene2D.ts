@@ -157,7 +157,11 @@ function createRiveDisplayNode(
   if (object.typeKey === RIVE_IMAGE_TYPE_KEY) {
     return createRiveImageSprite(name, readRiveNumber(object, RIVE_IMAGE_ASSET_ID, -1));
   }
-  if (object.typeKey === RIVE_NESTED_ARTBOARD_TYPE_KEY) {
+  // Derived-from rather than equality: NestedArtboardLeaf and NestedArtboardLayout are nested
+  // artboards and carry the same slot semantics, so an equality test marks neither and they arrive at
+  // the unsupported-drawable arm instead of becoming slots. Behaviour is inherited in this object
+  // model, which is what the core type table exists to express.
+  if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NESTED_ARTBOARD_TYPE_KEY)) {
     const node = createDisplayObject({ name });
     markRiveNestedArtboard(node, readRiveNumber(object, RIVE_NESTED_ARTBOARD_ID, -1));
     return node;

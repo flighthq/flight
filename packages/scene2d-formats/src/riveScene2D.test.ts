@@ -1,6 +1,8 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
+import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
 // Rive states rotation in RADIANS, established from the corpus: 1,299 rotation values with a maximum
@@ -11,6 +13,9 @@ import { createScene2DFromRiveDocument } from './riveScene2D';
 const ARTBOARD = 1;
 const NODE = 2;
 const TEXT_INPUT = 569;
+const DRAWABLE = 13;
+const NESTED_ARTBOARD = 92;
+const NESTED_ARTBOARD_LEAF = 451;
 const LAYOUT_COMPONENT = 409;
 const ROOT_BONE = 41;
 const SHAPE = 3;
@@ -203,6 +208,53 @@ describe('createScene2DFromRiveDocument', () => {
     // the child count proves the silence is not the nodes having been dropped instead.
     expect(getNodeChildCount(result.artboards[0].root)).toBe(2);
     expect(diagnostics).toEqual([]);
+  });
+
+  it('marks a nested-artboard subclass as a slot rather than reporting it unsupported', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const result = createScene2DFromRiveDocument(
+      buildRive([
+        object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]),
+        object(NESTED_ARTBOARD_LEAF, [uint(PARENT_ID, 0)]),
+      ]),
+      diagnostics,
+    );
+
+    // A leaf IS a nested artboard, so equality-based dispatch would miss it and the unsupported-drawable
+    // arm would claim it — present as a node, but never resolved into a slot by the document layer.
+    expect(getNodeChildCount(result.artboards[0].root)).toBe(1);
+    expect(diagnostics).toEqual([]);
+  });
+
+  // Driven by the core type table rather than a list written here, so a drawable Rive adds later is
+  // covered the day the table learns about it. The catch-all report is what makes this hold; the test
+  // exists to notice if a future early return ever bypasses it and reintroduces a silent container.
+  it('either draws or reports for every drawable the core type table defines', () => {
+    const unreported: string[] = [];
+    for (let typeKey = 0; typeKey < 1200; typeKey++) {
+      const name = getRiveCoreTypeName(typeKey);
+      if (name === undefined) continue;
+      if (!isRiveCoreTypeDerivedFrom(typeKey, DRAWABLE) || isRiveCoreTypeDerivedFrom(typeKey, LAYOUT_COMPONENT)) {
+        continue;
+      }
+      // A nested artboard is a SLOT: it is marked for the document layer and has no visual of its own,
+      // so drawing nothing is correct and reporting would be a false alarm. Excluded by derivation to
+      // match the dispatch, which marks the whole subtree as slots.
+      if (isRiveCoreTypeDerivedFrom(typeKey, NESTED_ARTBOARD)) continue;
+      const diagnostics: ImportDiagnostic[] = [];
+      const result = createScene2DFromRiveDocument(
+        buildRive([object(ARTBOARD, [float(WIDTH, 10), float(HEIGHT, 10)]), object(typeKey, [uint(PARENT_ID, 0)])]),
+        diagnostics,
+      );
+      const child =
+        getNodeChildCount(result.artboards[0].root) > 0 ? getNodeChildAt(result.artboards[0].root, 0) : null;
+      const drew = child !== null && child.kind !== DisplayObjectKind;
+      const reported = diagnostics.some((entry) => entry.kind === 'rive.drawable-kind-unsupported');
+      if (!drew && !reported) unreported.push(`${name}(${typeKey})`);
+    }
+
+    // Named rather than counted: a bare number would say something is uncovered without saying what.
+    expect(unreported).toEqual([]);
   });
 
   // Flight splits blending deliberately: BlendMode is the fixed-function set that folds into blend
