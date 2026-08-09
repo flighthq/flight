@@ -239,7 +239,7 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
   else if (layer.ty !== 6 && layer.ty !== 13) {
     // Audio (6) and camera (13) layers are uncarried by design and stay silent; a type outside the
     // Bodymovin set is an asset fact the caller can act on. See agents/scene2d-format-coverage.md.
-    reportLottieSkip(context, 'lottie.unsupported-layer', { layerType: layer.ty });
+    reportLottieSkip(context, 'lottie.unsupported-layer', 'createLottieLayerNode', { layerType: layer.ty });
   }
 
   applyLottieMasks(container, layer.masksProperties ?? [], context);
@@ -676,12 +676,12 @@ function appendLottieSolid(parent: DisplayObject, layer: Readonly<LottieLayer>):
 function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const asset = layer.refId === undefined ? undefined : context.assets.get(layer.refId);
   if (asset === undefined || !isImageAsset(asset)) {
-    reportLottieDrop(context, 'lottie.unresolved-asset', { id: layer.refId ?? '' });
+    reportLottieDrop(context, 'lottie.unresolved-asset', 'appendLottieImage', { id: layer.refId ?? '' });
     return;
   }
   const image = context.options?.resolveImageResource?.(asset) ?? null;
   if (image === null) {
-    reportLottieSkip(context, 'lottie.unresolved-image', { id: asset.id });
+    reportLottieSkip(context, 'lottie.unresolved-image', 'appendLottieImage', { id: asset.id });
     return;
   }
   addNodeChild(parent, createSprite({ data: { texture: createTexture({ dimension: '2d', source: image }) } }));
@@ -691,7 +691,7 @@ function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, c
   const textData = layer.t;
   const first = textData?.d.k[0]?.s;
   if (first === undefined) {
-    reportLottieDrop(context, 'lottie.text-missing-document', { layer: layer.nm ?? '' });
+    reportLottieDrop(context, 'lottie.text-missing-document', 'appendLottieText', { layer: layer.nm ?? '' });
     return;
   }
   const label = createTextLabel({
@@ -714,11 +714,11 @@ function appendLottiePrecomposition(
   const id = layer.refId;
   const asset = id === undefined ? undefined : context.assets.get(id);
   if (id === undefined || asset === undefined || !isPrecompositionAsset(asset)) {
-    reportLottieDrop(context, 'lottie.unresolved-asset', { id: id ?? '' });
+    reportLottieDrop(context, 'lottie.unresolved-asset', 'appendLottiePrecomposition', { id: id ?? '' });
     return;
   }
   if (context.resolvingPrecompositions.has(id)) {
-    reportLottieDrop(context, 'lottie.recursive-precomposition', { id });
+    reportLottieDrop(context, 'lottie.recursive-precomposition', 'appendLottiePrecomposition', { id });
     return;
   }
   context.resolvingPrecompositions.add(id);
@@ -801,7 +801,8 @@ function appendLottieShapeItems(
         hasAnimatedDash || dashOffsetEntry === undefined
           ? 0
           : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-      if (hasAnimatedDash) reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: 'dash' });
+      if (hasAnimatedDash)
+        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: 'dash' });
       const paint = {
         caps: mapLottieLineCap(stroke.lc),
         color,
@@ -873,7 +874,8 @@ function appendLottieShapeItems(
         hasAnimatedDash || dashOffsetEntry === undefined
           ? 0
           : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-      if (hasAnimatedDash) reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: 'dash' });
+      if (hasAnimatedDash)
+        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: 'dash' });
       const paint = {
         caps: mapLottieLineCap(gradient.lc),
         count: gradient.g.p,
@@ -934,12 +936,12 @@ function appendLottieShapeItems(
     } else if (item.ty === 'tm') {
       const trim = item as Readonly<LottieTrimPathShapeItem>;
       if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) {
-        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: item.ty });
+        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: item.ty });
       }
     } else if (item.ty === 'rp' || item.ty === 'mm' || item.ty === 'rd') {
-      reportLottieSkip(context, 'lottie.unsupported-shape-modifier', { modifier: item.ty });
+      reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: item.ty });
     } else if (item.ty !== 'sh' && item.ty !== 'rc' && item.ty !== 'el' && item.ty !== 'sr' && item.ty !== 'tr') {
-      reportLottieSkip(context, 'lottie.unsupported-shape-item', { shapeType: item.ty });
+      reportLottieSkip(context, 'lottie.unsupported-shape-item', 'appendLottieShapeItems', { shapeType: item.ty });
     }
     reportLottieExpression(item, context);
   }
@@ -1166,7 +1168,7 @@ function appendLottieShapePathChannels(
       return value !== undefined && flattenLottieShapePath(value).length !== current.length;
     })
   ) {
-    reportLottieDrop(context, 'lottie.incompatible-animated-shape-path');
+    reportLottieDrop(context, 'lottie.incompatible-animated-shape-path', 'appendLottieShapePathChannels');
     return;
   }
   const componentSpecific = hasComponentSpecificEasing(keyframes, current.length);
@@ -1454,7 +1456,7 @@ function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, cont
 function reportLottieExpression(value: unknown, context: LottieImportContext): void {
   if (value === null || typeof value !== 'object') return;
   if ('x' in value && typeof value.x === 'string') {
-    reportLottieSkip(context, 'lottie.unsupported-expression');
+    reportLottieSkip(context, 'lottie.unsupported-expression', 'reportLottieExpression');
   }
   for (const child of Object.values(value)) {
     if (child !== value) reportLottieExpression(child, context);
@@ -1686,17 +1688,19 @@ function clamp(value: number, minimum: number, maximum: number): number {
 function reportLottieSkip(
   context: Readonly<LottieImportContext>,
   kind: string,
+  origin: string,
   detail?: Record<string, string | number>,
 ): void {
-  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Skip, kind, 'lottieDocument', detail);
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Skip, kind, origin, detail);
 }
 
 function reportLottieDrop(
   context: Readonly<LottieImportContext>,
   kind: string,
+  origin: string,
   detail?: Record<string, string | number>,
 ): void {
-  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, 'lottieDocument', detail);
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
 }
 
 const _sampleScratch = new Array<number>(256).fill(0);

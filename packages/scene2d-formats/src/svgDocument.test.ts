@@ -240,7 +240,7 @@ describe('createScene2DFromSvgDocument', () => {
     expect(diagnostics).toContainEqual({
       detail: { id: 'mixed' },
       kind: 'svg.mixed-clip-rule',
-      origin: 'createSvgClipPath',
+      origin: 'createSvgClipRegion',
       severity: 'Recover',
     });
   });
@@ -568,7 +568,9 @@ describe('createScene2DFromSvgDocument', () => {
     expect(diagnostics).toContainEqual({
       detail: { element: 'animate' },
       kind: 'svg.unsupported-animate',
-      origin: 'createSvgElementNode',
+      // Reported by the sweep for elements a symbol instantiation never visited, not by the node
+      // builder — which is the distinction the origin field exists to carry.
+      origin: 'reportRemainingUnsupportedSvgElements',
       severity: 'Skip',
     });
   });

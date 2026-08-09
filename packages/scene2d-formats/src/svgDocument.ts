@@ -408,7 +408,7 @@ function createSvgClipRegion(
         context.diagnostics,
         ImportDiagnosticSeverity.Recover,
         'svg.mixed-clip-rule',
-        'createSvgClipPath',
+        'createSvgClipRegion',
         { id: attribute(element, 'id') ?? '' },
       );
     }
@@ -664,7 +664,7 @@ function createSvgElementNode(
     return shape;
   }
 
-  if (isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context);
+  if (isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context, 'createSvgElementNode');
   else
     reportImportDiagnostic(
       context.diagnostics,
@@ -1456,21 +1456,19 @@ function reportRemainingUnsupportedSvgElements(
 ): void {
   const name = localName(element.name);
   const definitions = insideDefinitions || name === 'defs';
-  if (!definitions && isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context);
+  if (!definitions && isUnsupportedSvgElementName(name)) {
+    reportUnsupportedSvgElement(element, context, 'reportRemainingUnsupportedSvgElements');
+  }
   for (const child of element.children) reportRemainingUnsupportedSvgElements(child, context, definitions);
 }
 
-function reportUnsupportedSvgElement(element: Readonly<XmlElement>, context: SvgImportContext): void {
+function reportUnsupportedSvgElement(element: Readonly<XmlElement>, context: SvgImportContext, origin: string): void {
   if (context.reportedUnsupportedElements.has(element)) return;
   context.reportedUnsupportedElements.add(element);
   const name = localName(element.name);
-  reportImportDiagnostic(
-    context.diagnostics,
-    ImportDiagnosticSeverity.Skip,
-    `svg.unsupported-${name}`,
-    'createSvgElementNode',
-    { element: name },
-  );
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Skip, `svg.unsupported-${name}`, origin, {
+    element: name,
+  });
 }
 
 function resolveSvgColor(value: string, currentColor: string): SvgColor | null {
