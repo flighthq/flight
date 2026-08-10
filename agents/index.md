@@ -51,6 +51,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
+- [parity skip declaration model](parity-skip-declaration-model.md) — **unratified.** what a parity skip must record, and the reference-to-all-pairs demotion it hides.
 - [effect recipe model](effect-recipe-model.md) — **unratified.** who turns an effect intent into passes; the `strength` definition.
 - [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
 - [read integrity](read-integrity.md) — the axes a format reader must hold.
