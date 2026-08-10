@@ -24,20 +24,27 @@ describe('fingerprint source-hash completeness', () => {
     );
   });
 
-  it('accepts all seven named cases only when both exact hashes are absent', () => {
+  it('accepts EVERY named case, however many there are, only when both exact hashes are absent', () => {
+    // Counts derive from the allowance list rather than repeating its length. This test takes its
+    // INPUTS from that array, so a hardcoded total reads list-derived while pinning the list's size:
+    // removing an allowance then fails here for the wrong reason, naming a count instead of the
+    // behaviour. The title carries no number for the same reason.
+    const named = FINGERPRINT_SOURCE_HASH_ALLOWANCES.length;
     const inputs = combineAllowances(FINGERPRINT_SOURCE_HASH_ALLOWANCES);
     const report = checkFingerprintSourceHashes(inputs, FINGERPRINT_SOURCE_HASH_ALLOWANCES);
 
     expect(report).toMatchObject({
       covered: 0,
-      fingerprintColumns: 7,
-      unavailable: 7,
+      fingerprintColumns: named,
+      unavailable: named,
       violations: [],
     });
     expect(report.allowances.every((entry) => entry.state === 'unavailable')).toBe(true);
     expect(formatFingerprintSourceHashReport(report)).toContain(
-      '0/7 fingerprint columns carry sourceHash; 7 honest gaps',
+      `0/${named} fingerprint columns carry sourceHash; ${named} honest gaps`,
     );
+    // Non-vacuous: an empty list would satisfy every assertion above.
+    expect(named).toBeGreaterThan(0);
   });
 
   it('fails an ordinary fingerprint column without sourceHash', () => {
