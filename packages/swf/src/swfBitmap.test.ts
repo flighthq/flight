@@ -1,8 +1,60 @@
 import { registerDeflateDecompressor } from '@flighthq/compression/contract';
 import { unregisterDecompressor } from '@flighthq/compression/contract';
-import { Compression } from '@flighthq/types/contract';
+import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
+import type { DecodedImage, SwfJpegAlphaPayload } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, Compression } from '@flighthq/types/contract';
 
-import { createSwfLosslessBitmap } from './swfBitmap';
+import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap';
+
+describe('createSwfJpegAlphaBitmap', () => {
+  beforeEach(() => registerDeflateDecompressor());
+  afterEach(() => unregisterDecompressor(Compression.Deflate));
+
+  it('replaces the decoded alpha plane with real deflate output while preserving straight RGB', () => {
+    const decoded: DecodedImage = {
+      data: new Uint8ClampedArray([0x11, 0x12, 0x13, 0xaa, 0x21, 0x22, 0x23, 0xbb, 0x31, 0x32, 0x33, 0xcc]),
+      height: 1,
+      width: 3,
+    };
+    const alpha = [0, 0x80, 0xff];
+    const bitmap = createSwfJpegAlphaBitmap(decoded, jpegAlphaPayload(3, 1, alpha));
+    const expected = [0x11, 0x12, 0x13, 0, 0x21, 0x22, 0x23, 0x80, 0x31, 0x32, 0x33, 0xff];
+
+    expect(bitmap).toMatchObject({
+      alphaType: 'straight',
+      format: 'rgba8unorm',
+      gamut: 'srgb',
+      height: 1,
+      kind: BitmapTextureSourceKind,
+      width: 3,
+    });
+    expect([...bitmap!.data]).toEqual(expected);
+    // Mutation check: the oracle must distinguish a one-pixel shift of the authored alpha plane.
+    const shifted = new Uint8ClampedArray(bitmap!.data);
+    for (let pixel = 0; pixel < alpha.length; pixel++) shifted[pixel * 4 + 3] = alpha[(pixel + 1) % alpha.length];
+    expect([...shifted]).not.toEqual(expected);
+  });
+
+  it('rejects decoded dimensions that differ from the retained SWF dimensions', () => {
+    const payload = jpegAlphaPayload(2, 1, [0, 0xff]);
+
+    expect(createSwfJpegAlphaBitmap(decodedImage(1, 1), payload)).toBeNull();
+    expect(createSwfJpegAlphaBitmap(decodedImage(2, 2), payload)).toBeNull();
+  });
+
+  it('rejects short and long decompressed alpha planes', () => {
+    const decoded = decodedImage(2, 1);
+
+    expect(createSwfJpegAlphaBitmap(decoded, jpegAlphaPayload(2, 1, [0]))).toBeNull();
+    expect(createSwfJpegAlphaBitmap(decoded, jpegAlphaPayload(2, 1, [0, 0x80, 0xff]))).toBeNull();
+  });
+
+  it('reports nothing when no deflate decompressor is registered', () => {
+    unregisterDecompressor(Compression.Deflate);
+
+    expect(createSwfJpegAlphaBitmap(decodedImage(1, 1), jpegAlphaPayload(1, 1, [0xff]))).toBeNull();
+  });
+});
 
 describe('createSwfLosslessBitmap', () => {
   beforeEach(() => registerDeflateDecompressor());
@@ -65,6 +117,21 @@ function payloadWithTable(
   pixels: readonly number[],
 ): Uint8Array {
   return new Uint8Array([format, width & 0xff, width >> 8, height & 0xff, height >> 8, colorCount - 1, ...pixels]);
+}
+
+function decodedImage(width: number, height: number): DecodedImage {
+  return { data: new Uint8ClampedArray(width * height * 4), height, width };
+}
+
+function jpegAlphaPayload(width: number, height: number, alpha: readonly number[]): SwfJpegAlphaPayload {
+  return {
+    characterId: 1,
+    compressedAlphaBytes: new Uint8Array(stored(alpha)),
+    deblockingParameterRaw: null,
+    height,
+    reference: createEmbeddedImageResourceReference(new Uint8Array([0xff, 0xd8]), 'image/jpeg'),
+    width,
+  };
 }
 
 // A stored (uncompressed) DEFLATE block wrapped in a zlib header, so the test exercises the real
