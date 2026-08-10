@@ -20,6 +20,15 @@ export interface ReachabilityLaneEntry {
   contract: boolean;
 }
 
+export interface RegistrarOwnershipEntry {
+  packageName: string;
+  registrar: string;
+  status: 'catalogued' | 'UNCATALOGUED';
+  door: string | null;
+  kind: string | null;
+  implementation: string | null;
+}
+
 interface EffectAuditOptions {
   backend: EffectBackend;
   sourceFiles: readonly string[];
@@ -32,9 +41,21 @@ interface LaneOptions {
   symbols: ReadonlySet<string>;
 }
 
+interface RegistrarOwnershipOptions {
+  packageName: string;
+  sourceFiles: readonly string[];
+}
+
 interface NamedDeclaration {
+  exported: boolean;
   name: string;
   node: Node;
+}
+
+interface RegistrationMapping {
+  door: string;
+  kind: string;
+  implementation: string;
 }
 
 const PREFIX: Record<EffectBackend, string> = { canvas: 'Canvas', gl: 'Gl', wgpu: 'Wgpu' };
@@ -67,7 +88,10 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
     if (kind === undefined) continue;
     const runner = `default${prefix}${kind}Runner`;
     registerKinds.add(kind);
-    if (!registrationMaps(declaration.node, generic, kind, runner)) {
+    const mapped = registrationMappings(declaration.node).some(
+      (mapping) => mapping.door === generic && mapping.kind === kind && mapping.implementation === runner,
+    );
+    if (!mapped) {
       violations.push({
         packageName,
         symbol: name,
@@ -128,43 +152,105 @@ export function collectReachabilityLanes(options: LaneOptions): ReachabilityLane
   }));
 }
 
+// This is an ownership inventory, not a name-derived guess: it records only the literal kind and
+// implementation identifier a registrar body actually passes through a register* door. Every exported
+// registrar that does not contain such a readable call remains present as an explicit UNCATALOGUED row.
+export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): RegistrarOwnershipEntry[] {
+  const entries: RegistrarOwnershipEntry[] = [];
+  for (const declaration of declarationsIn(options.sourceFiles)) {
+    if (!declaration.exported || !/^register[A-Z]/.test(declaration.name)) continue;
+    const mappings = registrationMappings(declaration.node);
+    if (mappings.length === 0) {
+      entries.push({
+        packageName: options.packageName,
+        registrar: declaration.name,
+        status: 'UNCATALOGUED',
+        door: null,
+        kind: null,
+        implementation: null,
+      });
+      continue;
+    }
+    for (const mapping of mappings) {
+      entries.push({
+        packageName: options.packageName,
+        registrar: declaration.name,
+        status: 'catalogued',
+        ...mapping,
+      });
+    }
+  }
+  return entries.sort(compareRegistrarOwnership);
+}
+
 function declarationsIn(sourceFiles: readonly string[]): NamedDeclaration[] {
   const declarations: NamedDeclaration[] = [];
   for (const sourceFile of sourceFiles) {
     for (const statement of getParsedOxcSource(sourceFile).program.body) {
-      const declaration = statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+      const exported = statement.type === 'ExportNamedDeclaration';
+      const declaration = exported ? statement.declaration : statement;
       if (declaration === null) continue;
       if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
-        if (declaration.id !== null) declarations.push({ name: declaration.id.name, node: declaration });
+        if (declaration.id !== null) declarations.push({ exported, name: declaration.id.name, node: declaration });
       } else if (declaration.type === 'VariableDeclaration') {
-        for (const variable of declaration.declarations) addVariableDeclaration(declarations, variable);
+        for (const variable of declaration.declarations) addVariableDeclaration(declarations, variable, exported);
       }
     }
   }
   return declarations;
 }
 
-function addVariableDeclaration(declarations: NamedDeclaration[], variable: VariableDeclarator): void {
-  if (variable.id.type === 'Identifier') declarations.push({ name: variable.id.name, node: variable });
+function addVariableDeclaration(
+  declarations: NamedDeclaration[],
+  variable: VariableDeclarator,
+  exported: boolean,
+): void {
+  if (variable.id.type === 'Identifier') declarations.push({ exported, name: variable.id.name, node: variable });
 }
 
-function registrationMaps(declaration: Node, generic: string, kind: string, runner: string): boolean {
-  let mapped = false;
+function registrationMappings(declaration: Node): RegistrationMapping[] {
+  const mappings = new Map<string, RegistrationMapping>();
   visit(declaration, (node) => {
     if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') return;
     const kindArgument = node.arguments[1];
-    const runnerArgument = node.arguments[2];
+    const implementationArgument = node.arguments[2];
     if (
-      node.callee.name === generic &&
+      /^register[A-Z]/.test(node.callee.name) &&
       kindArgument?.type === 'Literal' &&
-      kindArgument.value === kind &&
-      runnerArgument?.type === 'Identifier' &&
-      runnerArgument.name === runner
+      typeof kindArgument.value === 'string' &&
+      implementationArgument?.type === 'Identifier'
     ) {
-      mapped = true;
+      const mapping = {
+        door: node.callee.name,
+        kind: kindArgument.value,
+        implementation: implementationArgument.name,
+      };
+      mappings.set(`${mapping.door}\0${mapping.kind}\0${mapping.implementation}`, mapping);
     }
   });
-  return mapped;
+  return [...mappings.values()].sort(compareRegistrationMapping);
+}
+
+function compareRegistrarOwnership(a: RegistrarOwnershipEntry, b: RegistrarOwnershipEntry): number {
+  return (
+    a.packageName.localeCompare(b.packageName) ||
+    a.registrar.localeCompare(b.registrar) ||
+    compareNullable(a.door, b.door) ||
+    compareNullable(a.kind, b.kind) ||
+    compareNullable(a.implementation, b.implementation)
+  );
+}
+
+function compareRegistrationMapping(a: RegistrationMapping, b: RegistrationMapping): number {
+  return (
+    a.door.localeCompare(b.door) || a.kind.localeCompare(b.kind) || a.implementation.localeCompare(b.implementation)
+  );
+}
+
+function compareNullable(a: string | null, b: string | null): number {
+  if (a === null) return b === null ? 0 : -1;
+  if (b === null) return 1;
+  return a.localeCompare(b);
 }
 
 function visit(node: Node, callback: (node: Node) => void): void {

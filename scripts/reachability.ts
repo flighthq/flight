@@ -5,11 +5,17 @@ import pc from 'picocolors';
 
 import {
   auditEffectBackend,
+  collectRegistrarOwnership,
   collectReachabilityLanes,
   defaultCompositionSymbols,
   effectReachabilitySymbols,
 } from './reachability-core';
-import type { EffectBackend, ReachabilityLaneEntry, ReachabilityViolation } from './reachability-core';
+import type {
+  EffectBackend,
+  ReachabilityLaneEntry,
+  ReachabilityViolation,
+  RegistrarOwnershipEntry,
+} from './reachability-core';
 import { getSelectors, selectPackages } from './select';
 
 interface ReachabilityBaseline {
@@ -36,11 +42,10 @@ const selected = selectPackages(selectors);
 
 const violations: ReachabilityViolation[] = [];
 const lanes: ReachabilityLaneEntry[] = [];
+const registrarOwnership: RegistrarOwnershipEntry[] = [];
 for (const name of selected) {
   const sourceDir = join(root, 'packages', name, 'src');
-  const publicEntry = join(sourceDir, 'index.ts');
-  const contractEntry = join(sourceDir, 'contract.ts');
-  if (!existsSync(publicEntry) || !existsSync(contractEntry)) continue;
+  if (!existsSync(sourceDir)) continue;
   const sourceFiles = readdirSync(sourceDir, { withFileTypes: true })
     .filter(
       (entry) =>
@@ -51,6 +56,11 @@ for (const name of selected) {
         !entry.name.endsWith('.test.ts'),
     )
     .map((entry) => join(sourceDir, entry.name));
+  registrarOwnership.push(...collectRegistrarOwnership({ packageName: name, sourceFiles }));
+
+  const publicEntry = join(sourceDir, 'index.ts');
+  const contractEntry = join(sourceDir, 'contract.ts');
+  if (!existsSync(publicEntry) || !existsSync(contractEntry)) continue;
   const backend = effectBackend(name);
   const symbols = defaultCompositionSymbols(sourceFiles);
   if (backend !== null) {
@@ -62,6 +72,7 @@ for (const name of selected) {
 
 violations.sort(compareNamed);
 lanes.sort(compareNamed);
+registrarOwnership.sort(compareRegistrarOwnership);
 
 if (updateMode) {
   const baseline: ReachabilityBaseline = { schemaVersion: 1, entries: lanes };
@@ -79,40 +90,54 @@ const laneDrift = diffLanes(
 const hardPassed = violations.length === 0;
 
 if (jsonMode) {
-  console.log(JSON.stringify({ passed: hardPassed, violations, laneDrift }, null, 2));
-  process.exit(!hardPassed && checkMode ? 1 : 0);
+  console.log(JSON.stringify({ passed: hardPassed, violations, laneDrift, registrarOwnership }, null, 2));
+  process.exitCode = !hardPassed && checkMode ? 1 : 0;
 }
 
-if (hardPassed) {
-  console.log(`${pc.green('OK')} ${pc.bold('Built-in runners and per-kind registrars are exact inverses')}`);
-} else {
-  console.log(
-    `${pc.red('✗')} ${pc.bold(`${violations.length} hard capability violation${violations.length === 1 ? '' : 's'}`)}\n`,
-  );
-  for (const violation of violations) {
+if (!jsonMode) {
+  if (hardPassed) {
+    console.log(`${pc.green('OK')} ${pc.bold('Built-in runners and per-kind registrars are exact inverses')}`);
+  } else {
     console.log(
-      `  ${pc.red('✗')} ${pc.white(violation.packageName)} ${pc.bold(violation.symbol)} ${pc.dim(`[${violation.rule}] ${violation.detail}`)}`,
+      `${pc.red('✗')} ${pc.bold(`${violations.length} hard capability violation${violations.length === 1 ? '' : 's'}`)}\n`,
+    );
+    for (const violation of violations) {
+      console.log(
+        `  ${pc.red('✗')} ${pc.white(violation.packageName)} ${pc.bold(violation.symbol)} ${pc.dim(`[${violation.rule}] ${violation.detail}`)}`,
+      );
+    }
+  }
+
+  const uncatalogued = registrarOwnership.filter((entry) => entry.status === 'UNCATALOGUED');
+  const registrarCount = new Set(registrarOwnership.map((entry) => `${entry.packageName}\0${entry.registrar}`)).size;
+  const mappingCount = registrarOwnership.length - uncatalogued.length;
+  console.log(
+    `${pc.green('OK')} ${pc.bold(`${registrarCount} exported registrars inventoried`)} ${pc.dim(`(${mappingCount} readable mappings, ${uncatalogued.length} UNCATALOGUED)`)}`,
+  );
+  for (const entry of uncatalogued) {
+    console.log(
+      `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim('[UNCATALOGUED]')}`,
     );
   }
-}
 
-if (laneDrift.length === 0) {
-  console.log(`${pc.green('OK')} ${pc.bold('Reachability lane baseline unchanged')}`);
-} else {
-  console.log(
-    `\n${pc.yellow('!')} ${pc.bold(`${laneDrift.length} reachability lane change${laneDrift.length === 1 ? '' : 's'} (non-blocking)`)}`,
-  );
-  for (const drift of laneDrift) {
+  if (laneDrift.length === 0) {
+    console.log(`${pc.green('OK')} ${pc.bold('Reachability lane baseline unchanged')}`);
+  } else {
     console.log(
-      `  ${pc.yellow(laneMarker(drift))} ${pc.white(drift.packageName)} ${pc.bold(drift.symbol)} ${pc.dim(`${formatLane(drift.before)} → ${formatLane(drift.after)}`)}`,
+      `\n${pc.yellow('!')} ${pc.bold(`${laneDrift.length} reachability lane change${laneDrift.length === 1 ? '' : 's'} (non-blocking)`)}`,
+    );
+    for (const drift of laneDrift) {
+      console.log(
+        `  ${pc.yellow(laneMarker(drift))} ${pc.white(drift.packageName)} ${pc.bold(drift.symbol)} ${pc.dim(`${formatLane(drift.before)} → ${formatLane(drift.after)}`)}`,
+      );
+    }
+    console.log(
+      pc.dim('  Review the moves, then run npm run reachability:baseline to accept the curated lane placement.'),
     );
   }
-  console.log(
-    pc.dim('  Review the moves, then run npm run reachability:baseline to accept the curated lane placement.'),
-  );
-}
 
-process.exit(!hardPassed && checkMode ? 1 : 0);
+  process.exitCode = !hardPassed && checkMode ? 1 : 0;
+}
 
 function diffLanes(before: readonly ReachabilityLaneEntry[], after: readonly ReachabilityLaneEntry[]): LaneDrift[] {
   const beforeByKey = new Map(before.map((entry) => [laneKey(entry), entry]));
@@ -156,6 +181,16 @@ function compareNamed(
   b: Pick<ReachabilityLaneEntry, 'packageName' | 'symbol'>,
 ): number {
   return a.packageName.localeCompare(b.packageName) || a.symbol.localeCompare(b.symbol);
+}
+
+function compareRegistrarOwnership(a: RegistrarOwnershipEntry, b: RegistrarOwnershipEntry): number {
+  return (
+    a.packageName.localeCompare(b.packageName) ||
+    a.registrar.localeCompare(b.registrar) ||
+    (a.door ?? '').localeCompare(b.door ?? '') ||
+    (a.kind ?? '').localeCompare(b.kind ?? '') ||
+    (a.implementation ?? '').localeCompare(b.implementation ?? '')
+  );
 }
 
 function effectBackend(packageName: string): EffectBackend | null {
