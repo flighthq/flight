@@ -177,6 +177,7 @@ function drawEntries(
     proxy.colorScaleBias = colorAdjusted ? entry.colorScaleBias : null;
     proxy.colorMatrix = colorAdjusted ? entry.colorMatrix : null;
     proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
+    proxy.normalMatrices = skinned ? entry.mesh.skin!.skeleton.normalMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
     proxy.subset = entry.subset;
@@ -257,6 +258,7 @@ const proxy: Scene3DRenderProxy = {
   colorMatrix: null,
   colorScaleBias: null,
   jointMatrices: null,
+  normalMatrices: null,
   material: { kind: StandardMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },

@@ -129,7 +129,7 @@ export function createWgpuMeshPipeline(
   const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
   const bindGroupLayouts: GPUBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
-    options.skinned && skinning !== null ? skinning.getDrawLayout(state) : layouts.drawBindGroupLayout,
+    options.skinned && skinning !== null ? skinning.getMeshDrawLayout(state) : layouts.drawBindGroupLayout,
     options.materialBindGroupLayout,
   ];
   if (options.extraBindGroupLayout !== undefined) {
@@ -208,10 +208,15 @@ export function drawWgpuMeshSubset(
   const drawBindGroup = writeWgpuDrawUniform(state, proxy);
   const activePipeline = scene.activeMeshPipeline;
   const jointMatrices = proxy.jointMatrices ?? null;
+  const normalMatrices = proxy.normalMatrices ?? null;
   const skinning = scene.skinningAdapter as WgpuSkinningAdapter | null;
+  // The mesh path binds the layout carrying BOTH palettes, so it must supply both. Requiring the normal
+  // palette here as well keeps a half-supplied bind group from ever being built — a bind group must
+  // satisfy every binding its layout declares, so one missing palette is a validation failure, not a
+  // degraded draw.
   const boundDrawGroup =
-    activePipeline.skinned && jointMatrices !== null && skinning !== null
-      ? skinning.getDrawBindGroup(state, jointMatrices)
+    activePipeline.skinned && jointMatrices !== null && normalMatrices !== null && skinning !== null
+      ? skinning.getMeshDrawBindGroup(state, jointMatrices, normalMatrices)
       : drawBindGroup;
   _dynamicOffsets[0] = scene.pendingDrawOffset;
 

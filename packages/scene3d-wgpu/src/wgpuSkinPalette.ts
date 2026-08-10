@@ -18,6 +18,12 @@ export function destroyWgpuSkinPalette(state: WgpuRenderState): void {
   runtime.skinPaletteView = null;
   runtime.skinPaletteCapacity = 0;
   runtime.skinDrawBindGroup = null;
+  // The mesh path's own texture and bind group, freed here too — a second layout means a second
+  // resource, and leaking it would outlive the render state that owns it.
+  runtime.skinNormalPaletteTexture?.destroy();
+  runtime.skinNormalPaletteTexture = null;
+  runtime.skinNormalPaletteView = null;
+  runtime.skinMeshDrawBindGroup = null;
 }
 
 export function ensureWgpuSkinDrawBindGroup(
@@ -61,8 +67,95 @@ export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLa
   return scene.skinDrawBindGroupLayout;
 }
 
+// The MESH path's bind group: pose palette at binding 1, NORMAL palette at binding 2.
+//
+// ★ SEPARATE FROM THE SHADOW PATH'S BIND GROUP ON PURPOSE, AND NOT BECAUSE OF A VALIDATION WORRY. A
+// bind group must satisfy every binding its layout declares, so a shared layout carrying binding 2
+// would force the shadow path — which skins positions only and will never skin normals — to supply a
+// normal-palette resource it has no use for, permanently. A layout states what a pipeline NEEDS; making
+// the shadow pipeline declare a need it does not have would oblige every later maintainer to keep
+// feeding it. The cost of this split is one extra layout and bind group, which is bounded and local.
+export function ensureWgpuSkinMeshDrawBindGroup(
+  state: WgpuRenderState,
+  jointMatrices: Readonly<Float32Array>,
+  normalMatrices: Readonly<Float32Array>,
+): GPUBindGroup {
+  const scene = getWgpuScene3DRuntime(state);
+  const stateRuntime = getWgpuRenderStateRuntime(state);
+  const previousPose = scene.skinPaletteView;
+  const previousNormal = scene.skinNormalPaletteView;
+  const poseView = uploadWgpuSkinPalette(state, jointMatrices);
+  const normalView = uploadWgpuSkinNormalPalette(state, normalMatrices);
+  if (scene.skinMeshDrawBindGroup === null || previousPose !== poseView || previousNormal !== normalView) {
+    scene.skinMeshDrawBindGroup = state.device.createBindGroup({
+      layout: ensureWgpuSkinMeshDrawLayout(state),
+      entries: [
+        { binding: 0, resource: { buffer: stateRuntime.uniformBuffer, size: 176 } },
+        { binding: 1, resource: poseView },
+        { binding: 2, resource: normalView },
+      ],
+    });
+  }
+  return scene.skinMeshDrawBindGroup;
+}
+
+// The MESH path's layout: the shadow path's two bindings plus the normal palette at binding 2.
+// Binding 0 keeps VERTEX|FRAGMENT visibility for the same reason it does below — the fragment tail
+// reads draw.params.y — and the two palettes are vertex-stage only.
+export function ensureWgpuSkinMeshDrawLayout(state: WgpuRenderState): GPUBindGroupLayout {
+  const scene = getWgpuScene3DRuntime(state);
+  if (scene.skinMeshDrawBindGroupLayout === null) {
+    scene.skinMeshDrawBindGroupLayout = state.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform', hasDynamicOffset: true },
+        },
+        { binding: 1, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
+        // The normal palette — three texels per joint rather than four, since a 3x3 padded to vec4
+        // columns is twelve floats.
+        { binding: 2, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
+      ],
+    });
+  }
+  return scene.skinMeshDrawBindGroupLayout;
+}
+
 export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
   getWgpuScene3DRuntime(state).skinningAdapter = WGPU_SKINNING_ADAPTER;
+}
+
+// Uploads the per-joint NORMAL palette into its own single-row RGBA32F texture. THREE texels per joint,
+// not four: each joint's 3x3 is stored as three vec4-padded columns, twelve floats.
+//
+// ★ THE JOINT COUNT IS DERIVED WITH /12, NOT /16. Reusing the pose palette's divisor here would
+// under-count every skeleton by a quarter and upload a truncated row — a quiet corruption that renders
+// as wrong lighting rather than as a failure.
+export function uploadWgpuSkinNormalPalette(
+  state: WgpuRenderState,
+  normalMatrices: Readonly<Float32Array>,
+): GPUTextureView {
+  const runtime = getWgpuScene3DRuntime(state);
+  const jointCount = (normalMatrices.length / 12) | 0;
+  const width = jointCount * 3;
+  if (runtime.skinNormalPaletteTexture === null || width > (runtime.skinNormalPaletteTexture.width | 0)) {
+    runtime.skinNormalPaletteTexture?.destroy();
+    runtime.skinNormalPaletteTexture = state.device.createTexture({
+      size: [width, 1, 1],
+      format: 'rgba32float',
+      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    runtime.skinNormalPaletteView = runtime.skinNormalPaletteTexture.createView();
+    runtime.skinMeshDrawBindGroup = null;
+  }
+  state.device.queue.writeTexture(
+    { texture: runtime.skinNormalPaletteTexture! },
+    normalMatrices as Float32Array<ArrayBuffer>,
+    { bytesPerRow: width * 16 },
+    [width, 1, 1],
+  );
+  return runtime.skinNormalPaletteView!;
 }
 
 // Uploads one flat column-major joint palette into the state-scoped single-row RGBA32F data texture.
@@ -110,7 +203,8 @@ function extendMeshPrelude(rigidPrelude: string): string {
     .replace(
       '@group(1) @binding(0) var<uniform> draw : Draw;',
       `@group(1) @binding(0) var<uniform> draw : Draw;
-${getWgpuSkinBindingWgsl(1)}`,
+${getWgpuSkinBindingWgsl(1)}
+${getWgpuSkinNormalBindingWgsl(1)}`,
     )
     .replace(
       '  @location(3) uv : vec2f,\n) -> VertexOutput {',
@@ -124,7 +218,7 @@ ${getWgpuSkinBindingWgsl(1)}`,
       `  var localTangent = tangent.xyz;
   let skin = skinMatrix(joints0, weights0);
   localPosition = skin * localPosition;
-  localNormal = (skin * vec4f(localNormal, 0.0)).xyz;
+  localNormal = skinNormalMatrix(joints0, weights0) * localNormal;
   localTangent = (skin * vec4f(localTangent, 0.0)).xyz;
   let world = draw.world * localPosition;`,
     );
@@ -149,6 +243,33 @@ ${getWgpuSkinBindingWgsl(0)}`,
       '  var clip = draw.world * vec4f(position, 1.0);',
       '  var clip = draw.world * skinMatrix(joints0, weights0) * vec4f(position, 1.0);',
     );
+}
+
+// The MESH path's extra binding: the per-joint normal palette, three texels per joint.
+//
+// ★ A NORMAL IS A COVECTOR, so under non-uniform joint scale it follows the inverse-transpose rather
+// than the matrix a position and a tangent follow. Blending the per-joint inverse-transposes is an
+// APPROXIMATION — the inverse-transpose of the blend is a different matrix — and it is the affordable
+// one, since the exact answer needs a 3x3 inverse per vertex. The CPU and GL paths blend identically,
+// which is what makes comparing the three a real check rather than three different approximations.
+function getWgpuSkinNormalBindingWgsl(group: number): string {
+  return `@group(${group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
+
+fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {
+  let x = i32(joint * 3u);
+  return mat3x3f(
+    textureLoad(jointNormalTexture, vec2i(x, 0), 0).xyz,
+    textureLoad(jointNormalTexture, vec2i(x + 1, 0), 0).xyz,
+    textureLoad(jointNormalTexture, vec2i(x + 2, 0), 0).xyz
+  );
+}
+
+fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {
+  return weights.x * fetchJointNormalMatrix(u32(joints.x))
+       + weights.y * fetchJointNormalMatrix(u32(joints.y))
+       + weights.z * fetchJointNormalMatrix(u32(joints.z))
+       + weights.w * fetchJointNormalMatrix(u32(joints.w));
+}`;
 }
 
 function getWgpuSkinBindingWgsl(group: number): string {
@@ -220,6 +341,8 @@ const WGPU_SKINNING_ADAPTER: WgpuSkinningAdapter = {
   extendShadowDepthPrelude,
   getDrawBindGroup: ensureWgpuSkinDrawBindGroup,
   getDrawLayout: ensureWgpuSkinDrawLayout,
+  getMeshDrawBindGroup: ensureWgpuSkinMeshDrawBindGroup,
+  getMeshDrawLayout: ensureWgpuSkinMeshDrawLayout,
   getUploadVertices,
   hasBindPose,
   isGpuSkinned,
