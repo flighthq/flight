@@ -309,6 +309,7 @@ describe('drawGlScene3DShadowMap', () => {
         [EntityRuntimeKey]: undefined,
         inverseBindMatrices: new Float32Array(16),
         jointMatrices: new Float32Array(16),
+        normalMatrices: new Float32Array(0),
         joints: [],
         names: null,
       },

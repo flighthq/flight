@@ -108,6 +108,9 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
       jointMatrices: new Float32Array(joints.length * 16),
       joints,
       names: names.some((name) => name.length > 0) ? names : null,
+      // Filled per-frame alongside the palette by computeSkeleton3DJointMatrices; 9 floats per joint
+      // rather than 16, since a normal needs only the 3x3.
+      normalMatrices: new Float32Array(joints.length * 9),
     });
     return { skeleton, skeletonRoot: null };
   });
