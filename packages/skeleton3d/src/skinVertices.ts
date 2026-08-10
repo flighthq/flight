@@ -127,10 +127,11 @@ export function skinVertices(
       // Normals use the joint's NORMAL matrix, not the joint matrix. A normal is a covector: under
       // non-uniform scale it transforms by the inverse-transpose, and using the position matrix tilts
       // it off the surface. The two coincide for a rigid joint, which is why this was invisible.
-      const n = joints[w + k] * 9;
-      onx += weight * (normalMatrices[n] * nx + normalMatrices[n + 3] * ny + normalMatrices[n + 6] * nz);
-      ony += weight * (normalMatrices[n + 1] * nx + normalMatrices[n + 4] * ny + normalMatrices[n + 7] * nz);
-      onz += weight * (normalMatrices[n + 2] * nx + normalMatrices[n + 5] * ny + normalMatrices[n + 8] * nz);
+      // Columns are padded to four floats each, so column c starts at n + c*4.
+      const n = joints[w + k] * 12;
+      onx += weight * (normalMatrices[n] * nx + normalMatrices[n + 4] * ny + normalMatrices[n + 8] * nz);
+      ony += weight * (normalMatrices[n + 1] * nx + normalMatrices[n + 5] * ny + normalMatrices[n + 9] * nz);
+      onz += weight * (normalMatrices[n + 2] * nx + normalMatrices[n + 6] * ny + normalMatrices[n + 10] * nz);
     }
 
     outPositions[p] = opx;

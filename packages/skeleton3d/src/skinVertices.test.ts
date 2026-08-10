@@ -7,13 +7,17 @@ import { skinTangents, skinVertices } from './skinVertices';
 // could produce.
 function normalPaletteFor(jointMatrices: readonly number[]): Float32Array {
   const count = (jointMatrices.length / 16) | 0;
-  const out = new Float32Array(count * 9);
+  const out = new Float32Array(count * 12);
   for (let j = 0; j < count; j += 1) {
     const source = createMatrix4();
     source.m.set(jointMatrices.slice(j * 16, j * 16 + 16));
     const normal = createMatrix3();
     setMatrix3NormalFromMatrix4(normal, source);
-    out.set(normal.m, j * 9);
+    for (let c = 0; c < 3; c += 1) {
+      out[j * 12 + c * 4] = normal.m[c * 3]!;
+      out[j * 12 + c * 4 + 1] = normal.m[c * 3 + 1]!;
+      out[j * 12 + c * 4 + 2] = normal.m[c * 3 + 2]!;
+    }
   }
   return out;
 }
@@ -335,7 +339,7 @@ describe('skinVertices covector normals', () => {
       singleJoint.joints,
       singleJoint.weights,
       palette,
-      new Float32Array([0, 1, 0, -1, 0, 0, 0, 0, 1]),
+      new Float32Array([0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0]),
     );
     expect(viaNormalPalette[0]).toBe(viaJointMatrix[0]);
     expect(viaNormalPalette[1]).toBe(viaJointMatrix[1]);
