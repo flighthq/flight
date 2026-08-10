@@ -398,6 +398,36 @@ Three rules govern how an instrument may support this remedy:
    a shared coverage gap and makes the omission durable. The static top-level-side-effect scan and the
    runtime empty-at-import assertion fail differently; that is genuine defence in depth.
 
+### When a vocabulary collapses two meanings — the canonical test
+
+Two of this document's states and one instrument outside it exist because a single symbol was carrying
+two meanings with different consequences. The question of whether to split a vocabulary or delete part of
+it comes up repeatedly and has been answered inconsistently, so the test is stated once, here, and
+referenced from elsewhere rather than restated:
+
+1. **Is each collapsed meaning a legitimate state of a correct system?** If one is not, **delete it rather
+   than name it** — a leftover is not a state, and naming it makes a bad state legible when it should be
+   made unrepresentable.
+2. **If both are legitimate: do their remedies differ?** Different remedies → **split**. Same remedy →
+   **one state**, because a distinction the reader cannot act on is noise that dilutes the ones they can.
+
+Worked instances, which is why this reads as three unrelated rulings without the test:
+
+- **`⊘` in the support matrix** — collapsed *declared control* with *orphaned capture*. Step 1 stops it:
+  an orphaned fingerprint is a leftover, not a state a correct tree has. So `support:check` fails on it
+  and the glyph stays single, unambiguously meaning declared-control. See
+  [capture verification tiers](capture-verification-tiers.md).
+- **`Missing` in `SceneCoverage`** — collapses *no registrar exists anywhere* with *a registrar exists and
+  this backend has none bound*. Both are legitimate states. Step 2 splits them: the first is answered by
+  "this backend does not implement it, no call unlocks it," the second by the exact
+  [remedy](#4-the-remedy-on-a-miss) — different repairs, so different states.
+- **`Fallback`** — already correctly one state under the same test. Every way to arrive at it has the same
+  remedy: register this kind's own implementation.
+
+The two steps are ordered on purpose. Asking "do the remedies differ" first invites naming a state for a
+condition that should not exist at all, which is how a leftover acquires a vocabulary entry and then a
+reader who trusts it.
+
 ## One command, and where requirements come from
 
 The CLI surface is deliberately **one verb on the golden path**:
