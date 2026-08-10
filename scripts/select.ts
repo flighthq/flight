@@ -94,3 +94,25 @@ function toPackageToken(selector: string): string {
   const afterPackages = marker >= 0 ? normalized.slice(marker + 'packages/'.length) : normalized;
   return afterPackages.replace(/^@flighthq\//, '').toLowerCase();
 }
+
+/**
+ * Whether a scoped run resolved to no subject at all.
+ *
+ * This is the fourth instance of the repo's evidence invariant — a gate must fail when its required
+ * evidence is zero — alongside the parity tier, the regression tier, and test selection. Each of those
+ * carries a test proving it FIRES on zero; this one is exported so it can carry the same proof, rather
+ * than resting on the implementation looking right.
+ */
+export function isCheckSelectionEmpty(
+  selectors: readonly string[],
+  projects: readonly string[],
+  paths: readonly string[],
+): boolean {
+  return selectors.length > 0 && projects.length === 0 && paths.length === 0;
+}
+
+/** The refusal message, naming the selectors so a typo is visible in the failure itself. */
+export function explainEmptyCheckSelection(selectors: readonly string[]): string {
+  const named = selectors.map((selector) => `"${selector}"`).join(', ');
+  return `Check selection ran NOTHING because ${named} matched no package and no path — this run is unconfigured, not clean.`;
+}
