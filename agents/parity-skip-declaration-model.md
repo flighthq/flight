@@ -31,6 +31,15 @@ this document's subject:
   artifact every agent reads in full at session start; the tolerance is the thing that actually
   holds. Either the prose states the tolerance or the gate tightens to match it, but they must not
   disagree.
+
+  The tolerance is not merely undocumented — **the documented workflow contradicts it.**
+  [`bundle-size.md`](bundle-size.md), the doc the map points at for the full rule, restates the
+  invariant absolutely, describes `npm run size:baseline` as "rewrite the size baseline after an
+  intentional, measured change", and permits growth only "unless the size tradeoff is intentional and
+  measured". A reader concludes that every byte of growth requires a deliberate, measured act and a
+  baseline rewrite. In fact anything under 5% requires none of the three. The docs describe a
+  ratchet; the gate implements a band. Following the pointer does not rescue the reader, because the
+  only artifact in the repo where the 5% is written down is the implementation.
 - **A pin is stale, not false.** `scene2d-embedded-png:canvas` at 1,864 reproduces exactly at the
   commit that introduced it and has since drifted to ~1,723. A one-line baseline diff is *not*
   evidence a measurement never ran: `size-runner.ts:263` seeds `pendingBaseline` from the existing
