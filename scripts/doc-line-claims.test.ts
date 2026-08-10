@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCommitPinnedClaim, judgeDocLineClaim, parseDocLineClaims, resolveDocLineClaimPath } from './doc-line-claims';
+import {
+  isCommitPinnedClaim,
+  judgeDocLineClaim,
+  packageNamedBeforeClaim,
+  parseDocLineClaims,
+  resolveDocLineClaimPath,
+} from './doc-line-claims';
 
 const claim = { claimedLine: 60, docLine: 1, docPath: 'agents/packages/texture/status.md', rawPath: 'cubeTexture.ts' };
 
@@ -101,5 +107,34 @@ describe('resolveDocLineClaimPath', () => {
   it('refuses a bare filename when the doc is not inside a package', () => {
     // Nothing names the package, so any resolution would be invented.
     expect(resolveDocLineClaimPath('slot.ts', 'agents/conventions/testing.md', () => [])).toBeNull();
+  });
+});
+
+describe('isCommitPinnedClaim per claim', () => {
+  const line = 'see `b2824e3d8:packages/bitmap/src/bitmapNoise.ts:200` and also `slot.ts:95` today';
+
+  it('pins only the citation the hash actually precedes', () => {
+    // ★ The silencing bug this guards: asking per LINE marks every other citation on a dense line as
+    // history too, and a skipped claim is never reported as rot. Scoping it per claim recovered a real
+    // out-of-range citation that the per-line form had swallowed.
+    expect(isCommitPinnedClaim(line, 'packages/bitmap/src/bitmapNoise.ts')).toBe(true);
+    expect(isCommitPinnedClaim(line, 'slot.ts')).toBe(false);
+  });
+
+  it('still recognizes the prose form, which applies to the whole sentence', () => {
+    expect(isCommitPinnedClaim('verified at commit bd412dd6 in `screen.ts:604`', 'screen.ts')).toBe(true);
+  });
+});
+
+describe('packageNamedBeforeClaim', () => {
+  it('takes the package the sentence names over the one the doc lives in', () => {
+    // `index.ts` exists in nearly every package, so misresolving it lands on a real file of the wrong
+    // size and reports rot that is not there.
+    expect(packageNamedBeforeClaim('`@flighthq/types` `index.ts:271-272`', 'index.ts')).toBe('types');
+  });
+
+  it('ignores a package named far away from the citation', () => {
+    const far = '@flighthq/mesh is discussed at length here, and separately the file `index.ts:5` matters';
+    expect(packageNamedBeforeClaim(far, 'index.ts')).toBeNull();
   });
 });
