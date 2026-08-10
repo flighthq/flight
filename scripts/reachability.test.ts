@@ -45,6 +45,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlBlurEffect',
         status: 'catalogued',
+        uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BlurEffect',
         implementation: 'defaultGlBlurEffectRunner',
@@ -53,6 +54,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlBundle',
         status: 'UNCATALOGUED',
+        uncataloguedBucket: 'not-kind-registration',
         door: null,
         kind: null,
         implementation: null,
@@ -61,6 +63,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlPair',
         status: 'catalogued',
+        uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BloomEffect',
         implementation: 'defaultGlBloomEffectRunner',
@@ -69,6 +72,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlPair',
         status: 'catalogued',
+        uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BlurEffect',
         implementation: 'defaultGlBlurEffectRunner',
@@ -77,6 +81,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlRenderEffect',
         status: 'UNCATALOGUED',
+        uncataloguedBucket: 'not-kind-registration',
         door: null,
         kind: null,
         implementation: null,
@@ -102,6 +107,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlComputedImplementation',
         status: 'UNCATALOGUED',
+        uncataloguedBucket: 'implementation-expression',
         door: null,
         kind: null,
         implementation: null,
@@ -110,10 +116,53 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlComputedKind',
         status: 'UNCATALOGUED',
+        uncataloguedBucket: 'kind-identifier',
         door: null,
         kind: null,
         implementation: null,
       },
+    ]);
+  });
+
+  it('partitions unreadable registrars by the ruled syntax taxonomy and precedence', () => {
+    const fixture = entries(
+      `
+      export function registerKindIdentifier(state: object): void {
+        registerDoor(state, FooKind, implementation);
+      }
+      export function registerKindMember(state: object): void {
+        registerDoor(state, Kinds.Foo, implementation);
+      }
+      export function registerInlineImplementation(state: object): void {
+        registerDoor(state, FooKind, () => {});
+      }
+      export function registerMemberCallee(): void {
+        registry.set(FooKind, implementation);
+      }
+      export function registerLoop(state: object): void {
+        for (const [kind, implementation] of entries) registerDoor(state, kind, implementation);
+      }
+      export function registerArray(state: object): void {
+        registerMany(state, [[FooKind, implementation]]);
+      }
+      export function registerBackends(backend: object): void {
+        setBackend(backend);
+      }
+    `,
+      [],
+    );
+
+    const buckets = collectRegistrarOwnership({ packageName: 'fixture', sourceFiles: fixture.sourceFiles }).map(
+      ({ registrar, uncataloguedBucket }) => ({ registrar, uncataloguedBucket }),
+    );
+    expect(buckets).toEqual([
+      { registrar: 'registerArray', uncataloguedBucket: 'loop-or-array' },
+      { registrar: 'registerBackends', uncataloguedBucket: 'not-kind-registration' },
+      { registrar: 'registerInlineImplementation', uncataloguedBucket: 'implementation-expression' },
+      { registrar: 'registerKindIdentifier', uncataloguedBucket: 'kind-identifier' },
+      { registrar: 'registerKindMember', uncataloguedBucket: 'kind-member-or-computed' },
+      { registrar: 'registerLoop', uncataloguedBucket: 'loop-or-array' },
+      { registrar: 'registerMemberCallee', uncataloguedBucket: 'callee-expression' },
     ]);
   });
 

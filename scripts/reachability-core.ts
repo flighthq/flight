@@ -24,10 +24,19 @@ export interface RegistrarOwnershipEntry {
   packageName: string;
   registrar: string;
   status: 'catalogued' | 'UNCATALOGUED';
+  uncataloguedBucket: UncataloguedRegistrarBucket | null;
   door: string | null;
   kind: string | null;
   implementation: string | null;
 }
+
+export type UncataloguedRegistrarBucket =
+  | 'kind-identifier'
+  | 'kind-member-or-computed'
+  | 'implementation-expression'
+  | 'callee-expression'
+  | 'loop-or-array'
+  | 'not-kind-registration';
 
 interface EffectAuditOptions {
   backend: EffectBackend;
@@ -165,6 +174,7 @@ export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): R
         packageName: options.packageName,
         registrar: declaration.name,
         status: 'UNCATALOGUED',
+        uncataloguedBucket: classifyUncataloguedRegistrar(declaration.node),
         door: null,
         kind: null,
         implementation: null,
@@ -176,6 +186,7 @@ export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): R
         packageName: options.packageName,
         registrar: declaration.name,
         status: 'catalogued',
+        uncataloguedBucket: null,
         ...mapping,
       });
     }
@@ -229,6 +240,114 @@ function registrationMappings(declaration: Node): RegistrationMapping[] {
     }
   });
   return [...mappings.values()].sort(compareRegistrationMapping);
+}
+
+// The classification describes why the existing literal-kind/identifier-implementation recorder did
+// not recover a row; it does not claim the registrar itself is underivable. Buckets are exclusive. A
+// loop/array is the outermost shape, then a non-bare callee mirrors the walk's first rejection. For a
+// bare register* call, implementation shape precedes kind shape because constant folding alone cannot
+// recover an inline implementation. Anything with no fixed kind-registration call stays outside the
+// miss denominator as not-kind-registration.
+function classifyUncataloguedRegistrar(declaration: Node): UncataloguedRegistrarBucket {
+  const evidence = collectUncataloguedEvidence(declaration);
+  if (evidence.loopOrArray) return 'loop-or-array';
+  if (evidence.calleeExpression) return 'callee-expression';
+  if (evidence.implementationExpression) return 'implementation-expression';
+  if (evidence.kindMemberOrComputed) return 'kind-member-or-computed';
+  if (evidence.kindIdentifier) return 'kind-identifier';
+  return 'not-kind-registration';
+}
+
+interface UncataloguedEvidence {
+  calleeExpression: boolean;
+  implementationExpression: boolean;
+  kindIdentifier: boolean;
+  kindMemberOrComputed: boolean;
+  loopOrArray: boolean;
+}
+
+function collectUncataloguedEvidence(declaration: Node): UncataloguedEvidence {
+  const evidence: UncataloguedEvidence = {
+    calleeExpression: false,
+    implementationExpression: false,
+    kindIdentifier: false,
+    kindMemberOrComputed: false,
+    loopOrArray: false,
+  };
+  visitWithAncestors(declaration, [], (node, ancestors) => {
+    if (node.type !== 'CallExpression' || !isRegistrationCall(node.callee)) return;
+    if (ancestors.some(isLoop) || node.arguments.some((argument) => argument.type === 'ArrayExpression')) {
+      evidence.loopOrArray = true;
+      return;
+    }
+    if (node.callee.type !== 'Identifier') {
+      evidence.calleeExpression = true;
+      return;
+    }
+    const pair = registrationPairArguments(node.arguments);
+    if (pair === null) return;
+    if (pair.implementation.type !== 'Identifier') evidence.implementationExpression = true;
+    if (pair.kind.type === 'Identifier') evidence.kindIdentifier = true;
+    else if (pair.kind.type === 'MemberExpression') evidence.kindMemberOrComputed = true;
+  });
+  return evidence;
+}
+
+function isRegistrationCall(callee: Node): boolean {
+  if (callee.type === 'Identifier') return /^register[A-Z]/.test(callee.name);
+  if (callee.type !== 'MemberExpression') return false;
+  if (callee.computed) return callee.property.type === 'Literal' && callee.property.value === 'register';
+  return (
+    callee.property.name === 'register' || callee.property.name === 'set' || /^register[A-Z]/.test(callee.property.name)
+  );
+}
+
+function registrationPairArguments(args: readonly Node[]): { kind: Node; implementation: Node } | null {
+  const kind = args.length >= 3 ? args[1] : args.length === 2 ? args[0] : undefined;
+  const implementation = args.length >= 3 ? args[2] : args.length === 2 ? args[1] : undefined;
+  if (kind === undefined || implementation === undefined) return null;
+  if (args.length === 2 && kind.type === 'Identifier' && !kind.name.endsWith('Kind')) {
+    if (implementation.type === 'Identifier') return null;
+  }
+  if (
+    args.length === 2 &&
+    kind.type === 'MemberExpression' &&
+    !kind.computed &&
+    /registry$/i.test(kind.property.name)
+  ) {
+    return null;
+  }
+  return { kind, implementation };
+}
+
+function isLoop(node: Node): boolean {
+  return (
+    node.type === 'DoWhileStatement' ||
+    node.type === 'ForInStatement' ||
+    node.type === 'ForOfStatement' ||
+    node.type === 'ForStatement' ||
+    node.type === 'WhileStatement'
+  );
+}
+
+function visitWithAncestors(
+  node: Node,
+  ancestors: readonly Node[],
+  callback: (node: Node, ancestors: readonly Node[]) => void,
+): void {
+  callback(node, ancestors);
+  const nextAncestors = [...ancestors, node];
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'parent' || value === null || typeof value !== 'object') continue;
+    if (Array.isArray(value)) {
+      for (const child of value) {
+        if (child !== null && typeof child === 'object' && 'type' in child)
+          visitWithAncestors(child as Node, nextAncestors, callback);
+      }
+    } else if ('type' in value) {
+      visitWithAncestors(value as Node, nextAncestors, callback);
+    }
+  }
 }
 
 function compareRegistrarOwnership(a: RegistrarOwnershipEntry, b: RegistrarOwnershipEntry): number {
