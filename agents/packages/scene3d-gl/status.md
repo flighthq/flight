@@ -14,6 +14,15 @@ by: principal
 Every item below was re-checked against `packages/scene3d-gl/src/` on 2026-08-08. A file:line here is
 a claim about this tree, not about a session.
 
+- **The model-stage tangent is transformed by the normal matrix.** `v_tangent = vec4(u_normalMatrix *
+  localTangent, …)` (`glClassicPrelude.ts:169`, and the same shape in `glShadedPrelude.ts`). A tangent
+  is a true vector and wants the model matrix's upper 3×3; `u_normalMatrix` is the inverse-transpose,
+  correct for normals only. Invisible under rigid or uniform-scale model transforms, which is why it
+  has never been caught. **Deliberately separated from the in-flight skinned-normal fix** — the
+  *skin*-stage tangent at `:160` already uses `mat3(skin)` and is correct, so that fix stands alone
+  and this one is independent rather than constitutive. Do not fold it in; it needs its own
+  non-uniform-scale scene.
+
 - **The environment source cube caches by presence, not by identity.**
   `ensureGlEnvironmentSourceCube` returns the cached texture whenever `runtime.environmentSourceCube`
   is non-null, without comparing the `Environment` it was asked about (`glEnvironmentCube.ts:21`), so
