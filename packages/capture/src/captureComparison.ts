@@ -40,6 +40,13 @@ export function evaluateCaptureParity(a: string, b: string, tolerance = CAPTURE_
  * Regression: whether a freshly captured `fingerprint` still matches its own committed
  * `baselineFingerprint` within `tolerance`. `difference` is the tolerant distance (Infinity when
  * either fingerprint is unparseable); `pass` is `difference <= tolerance`.
+ *
+ * ⚠ A PASS MEANS THE FINGERPRINT DID NOT MOVE, WHICH IS NOT THE SAME AS THE RENDER NOT MOVING. Each
+ * cell averages the pixels beneath it, so a pattern finer than a cell — scanlines, dithering, a fine
+ * periodic warp — can change completely while every cell average stays put. Three separate defects in
+ * this repository passed this check while the pixels underneath disagreed, one of them by more than
+ * fifty times the distance reported here. Where the subject is high-frequency, a passing regression
+ * is evidence about the fingerprint and not about the image.
  */
 export function evaluateCaptureRegression(
   fingerprint: string,
