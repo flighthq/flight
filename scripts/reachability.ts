@@ -5,6 +5,7 @@ import pc from 'picocolors';
 
 import {
   auditEffectBackend,
+  collectRegistrarKindConstants,
   collectRegistrarOwnership,
   collectReachabilityLanes,
   defaultCompositionSymbols,
@@ -34,13 +35,15 @@ interface LaneDrift {
 const UNCATALOGUED_BUCKETS: readonly {
   bucket: UncataloguedRegistrarBucket;
   label: string;
+  number: string;
 }[] = [
-  { bucket: 'kind-identifier', label: 'Kind is an Identifier' },
-  { bucket: 'kind-member-or-computed', label: 'Kind is a member/computed expression' },
-  { bucket: 'implementation-expression', label: 'Implementation is not a bare Identifier' },
-  { bucket: 'callee-expression', label: 'Callee is not a bare Identifier' },
-  { bucket: 'loop-or-array', label: 'Registers through a loop or array' },
-  { bucket: 'not-kind-registration', label: 'Not a kind-registration' },
+  { bucket: 'kind-identifier', label: 'Kind is an Identifier', number: '1.' },
+  { bucket: 'kind-member-or-computed', label: 'Kind is a member/computed expression', number: '2.' },
+  { bucket: 'implementation-call-result', label: 'Implementation is a call result', number: '3a.' },
+  { bucket: 'implementation-inline', label: 'Implementation is an inline arrow/object', number: '3b.' },
+  { bucket: 'callee-expression', label: 'Callee is not a bare Identifier', number: '4.' },
+  { bucket: 'hidden-loop-or-array', label: 'Registers through a hidden loop or array', number: '5.' },
+  { bucket: 'not-kind-registration', label: 'Not a kind-registration', number: '6.' },
 ];
 
 const root = process.cwd();
@@ -52,6 +55,8 @@ const selectors = getSelectors();
 if (updateMode && selectors.length > 0) throw new Error('Reachability baseline updates must be whole-repo');
 
 const selected = selectPackages(selectors);
+const sourceFilesByPackage = new Map(selectPackages([]).map((name) => [name, packageSourceFiles(name)]));
+const constants = collectRegistrarKindConstants([...sourceFilesByPackage.values()].flat());
 
 const violations: ReachabilityViolation[] = [];
 const lanes: ReachabilityLaneEntry[] = [];
@@ -59,17 +64,8 @@ const registrarOwnership: RegistrarOwnershipEntry[] = [];
 for (const name of selected) {
   const sourceDir = join(root, 'packages', name, 'src');
   if (!existsSync(sourceDir)) continue;
-  const sourceFiles = readdirSync(sourceDir, { withFileTypes: true })
-    .filter(
-      (entry) =>
-        entry.isFile() &&
-        entry.name.endsWith('.ts') &&
-        entry.name !== 'index.ts' &&
-        entry.name !== 'contract.ts' &&
-        !entry.name.endsWith('.test.ts'),
-    )
-    .map((entry) => join(sourceDir, entry.name));
-  registrarOwnership.push(...collectRegistrarOwnership({ packageName: name, sourceFiles }));
+  const sourceFiles = sourceFilesByPackage.get(name) ?? [];
+  registrarOwnership.push(...collectRegistrarOwnership({ constants, packageName: name, sourceFiles }));
 
   const publicEntry = join(sourceDir, 'index.ts');
   const contractEntry = join(sourceDir, 'contract.ts');
@@ -122,31 +118,47 @@ if (!jsonMode) {
   }
 
   const uncatalogued = registrarOwnership.filter((entry) => entry.status === 'UNCATALOGUED');
+  const mechanisms = registrarOwnership.filter((entry) => entry.status === 'mechanism');
   const excluded = uncatalogued.filter((entry) => entry.uncataloguedBucket === 'not-kind-registration');
   const registrarCount = new Set(registrarOwnership.map((entry) => `${entry.packageName}\0${entry.registrar}`)).size;
-  const mappingCount = registrarOwnership.length - uncatalogued.length;
+  const mappingCount = registrarOwnership.filter((entry) => entry.status === 'catalogued').length;
   console.log(
-    `${pc.green('OK')} ${pc.bold(`${registrarCount} exported registrars inventoried`)} ${pc.dim(`(${mappingCount} readable mappings, ${uncatalogued.length} UNCATALOGUED)`)}`,
+    `${pc.green('OK')} ${pc.bold(`${registrarCount} exported registrars inventoried`)} ${pc.dim(`(${mappingCount} readable mappings, ${mechanisms.length} mechanisms, ${uncatalogued.length} UNCATALOGUED)`)}`,
   );
+  console.log(pc.dim('  Caller-supplied kinds belong to the registrar mechanism, not the ownership denominator.'));
+  for (const shape of ['caller-supplied-kind', 'caller-supplied-batch'] as const) {
+    const entries = mechanisms.filter((entry) => entry.mechanismShape === shape);
+    const examples = entries
+      .slice(0, 2)
+      .map((entry) => `${entry.packageName}:${entry.registrar}`)
+      .join(', ');
+    console.log(
+      `  ${pc.cyan('M.')} ${pc.bold(shape)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+    );
+  }
   console.log(
     pc.dim(
       `  ${uncatalogued.length - excluded.length} recorder misses after excluding ${excluded.length} not-kind-registration rows from the miss denominator`,
     ),
   );
-  for (let i = 0; i < UNCATALOGUED_BUCKETS.length; i++) {
-    const bucket = UNCATALOGUED_BUCKETS[i]!;
+  for (const bucket of UNCATALOGUED_BUCKETS) {
     const entries = uncatalogued.filter((entry) => entry.uncataloguedBucket === bucket.bucket);
     const examples = entries
       .slice(0, 2)
       .map((entry) => `${entry.packageName}:${entry.registrar}`)
       .join(', ');
     console.log(
-      `  ${pc.yellow(`${i + 1}.`)} ${pc.bold(bucket.label)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+      `  ${pc.yellow(bucket.number)} ${pc.bold(bucket.label)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
     );
   }
   for (const entry of uncatalogued) {
     console.log(
       `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[UNCATALOGUED: ${entry.uncataloguedBucket ?? 'missing-classification'}]`)}`,
+    );
+  }
+  for (const entry of mechanisms) {
+    console.log(
+      `  ${pc.cyan('M')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[MECHANISM: ${entry.mechanismShape ?? 'missing-classification'}]`)}`,
     );
   }
 
@@ -228,4 +240,19 @@ function effectBackend(packageName: string): EffectBackend | null {
   if (packageName === 'effects-gl') return 'gl';
   if (packageName === 'effects-wgpu') return 'wgpu';
   return null;
+}
+
+function packageSourceFiles(packageName: string): string[] {
+  const sourceDir = join(root, 'packages', packageName, 'src');
+  if (!existsSync(sourceDir)) return [];
+  return readdirSync(sourceDir, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name.endsWith('.ts') &&
+        entry.name !== 'index.ts' &&
+        entry.name !== 'contract.ts' &&
+        !entry.name.endsWith('.test.ts'),
+    )
+    .map((entry) => join(sourceDir, entry.name));
 }

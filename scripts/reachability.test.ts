@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   auditEffectBackend,
+  collectRegistrarKindConstants,
   collectRegistrarOwnership,
   collectReachabilityLanes,
   defaultCompositionSymbols,
@@ -24,7 +25,9 @@ describe('source-derived capability reachability', () => {
       `
       export const defaultGlBlurEffectRunner = () => {};
       export const defaultGlBloomEffectRunner = () => {};
-      export function registerGlRenderEffect(state: object, kind: string, runner: Function): void {}
+      export function registerGlRenderEffect(state: object, kind: string, runner: Function): void {
+        registry.set(kind, runner);
+      }
       export function registerGlBlurEffect(state: object): void {
         registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
       }
@@ -45,6 +48,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlBlurEffect',
         status: 'catalogued',
+        mechanismShape: null,
         uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BlurEffect',
@@ -54,6 +58,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlBundle',
         status: 'UNCATALOGUED',
+        mechanismShape: null,
         uncataloguedBucket: 'not-kind-registration',
         door: null,
         kind: null,
@@ -63,6 +68,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlPair',
         status: 'catalogued',
+        mechanismShape: null,
         uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BloomEffect',
@@ -72,6 +78,7 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlPair',
         status: 'catalogued',
+        mechanismShape: null,
         uncataloguedBucket: null,
         door: 'registerGlRenderEffect',
         kind: 'BlurEffect',
@@ -80,8 +87,9 @@ describe('source-derived capability reachability', () => {
       {
         packageName: 'fixture',
         registrar: 'registerGlRenderEffect',
-        status: 'UNCATALOGUED',
-        uncataloguedBucket: 'not-kind-registration',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-kind',
+        uncataloguedBucket: null,
         door: null,
         kind: null,
         implementation: null,
@@ -96,7 +104,7 @@ describe('source-derived capability reachability', () => {
         registerGlRenderEffect(state, BlurEffectKind, defaultGlBlurEffectRunner);
       }
       export function registerGlComputedImplementation(state: object): void {
-        registerGlRenderEffect(state, 'BlurEffect', runners.blur);
+        registerGlRenderEffect(state, 'BlurEffect', createBlurRunner());
       }
     `,
       [],
@@ -107,7 +115,8 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlComputedImplementation',
         status: 'UNCATALOGUED',
-        uncataloguedBucket: 'implementation-expression',
+        mechanismShape: null,
+        uncataloguedBucket: 'implementation-call-result',
         door: null,
         kind: null,
         implementation: null,
@@ -116,10 +125,117 @@ describe('source-derived capability reachability', () => {
         packageName: 'fixture',
         registrar: 'registerGlComputedKind',
         status: 'UNCATALOGUED',
+        mechanismShape: null,
         uncataloguedBucket: 'kind-identifier',
         door: null,
         kind: null,
         implementation: null,
+      },
+    ]);
+  });
+
+  it('folds unique exported string constants, object members, computed members, and import aliases', () => {
+    const fixture = entries(
+      [
+        `
+        import { FixtureKinds as AliasedKinds, FooKind as AliasedFooKind } from './kinds';
+        export function registerAliasedIdentifier(state: object): void {
+          registerDoor(state, AliasedFooKind, fooImplementation);
+        }
+        export function registerAliasedMember(state: object): void {
+          registerDoor(state, AliasedKinds.Bar, barImplementation);
+        }
+        export function registerComputedMember(state: object): void {
+          registerDoor(state, AliasedKinds['Baz'], bazImplementation);
+        }
+      `,
+        `
+        export const FooKind = 'Fixture.Foo';
+        export const FixtureKinds = { Bar: 'Fixture.Bar', ['Baz']: 'Fixture.Baz' } as const;
+      `,
+      ],
+      [],
+    );
+    const constants = collectRegistrarKindConstants(fixture.sourceFiles);
+
+    expect(collectRegistrarOwnership({ constants, packageName: 'fixture', sourceFiles: fixture.sourceFiles })).toEqual([
+      {
+        packageName: 'fixture',
+        registrar: 'registerAliasedIdentifier',
+        status: 'catalogued',
+        mechanismShape: null,
+        uncataloguedBucket: null,
+        door: 'registerDoor',
+        kind: 'Fixture.Foo',
+        implementation: 'fooImplementation',
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerAliasedMember',
+        status: 'catalogued',
+        mechanismShape: null,
+        uncataloguedBucket: null,
+        door: 'registerDoor',
+        kind: 'Fixture.Bar',
+        implementation: 'barImplementation',
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerComputedMember',
+        status: 'catalogued',
+        mechanismShape: null,
+        uncataloguedBucket: null,
+        door: 'registerDoor',
+        kind: 'Fixture.Baz',
+        implementation: 'bazImplementation',
+      },
+    ]);
+  });
+
+  it('reports caller-supplied direct and batch registrars separately from hidden arrays', () => {
+    const fixture = entries(
+      `
+      export function registerDirect(kind: string, implementation: object): void {
+        registry.set(kind, implementation);
+      }
+      export function registerNormalized(name: string, implementation: object): void {
+        const normalized = name.toLowerCase();
+        registry.set(normalized, implementation);
+      }
+      export function registerBatch(entries: ReadonlyArray<readonly [string, object]>): void {
+        for (const [kind, implementation] of entries) registry.set(kind, implementation);
+      }
+      export function registerHidden(): void {
+        for (const [kind, implementation] of defaultEntries) registry.set(kind, implementation);
+      }
+    `,
+      [],
+    );
+
+    expect(collectRegistrarOwnership({ packageName: 'fixture', sourceFiles: fixture.sourceFiles })).toMatchObject([
+      {
+        registrar: 'registerBatch',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-batch',
+        uncataloguedBucket: null,
+      },
+      {
+        registrar: 'registerDirect',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-kind',
+        uncataloguedBucket: null,
+      },
+      {
+        registrar: 'registerHidden',
+        status: 'UNCATALOGUED',
+        mechanismShape: null,
+        uncataloguedBucket: 'hidden-loop-or-array',
+      },
+      {
+        registrar: 'registerNormalized',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-kind',
+        uncataloguedBucket: null,
       },
     ]);
   });
@@ -135,6 +251,12 @@ describe('source-derived capability reachability', () => {
       }
       export function registerInlineImplementation(state: object): void {
         registerDoor(state, FooKind, () => {});
+      }
+      export function registerObjectImplementation(state: object): void {
+        registerDoor(state, FooKind, { run() {} });
+      }
+      export function registerCallImplementation(state: object): void {
+        registerDoor(state, FooKind, createImplementation());
       }
       export function registerMemberCallee(): void {
         registry.set(FooKind, implementation);
@@ -156,13 +278,15 @@ describe('source-derived capability reachability', () => {
       ({ registrar, uncataloguedBucket }) => ({ registrar, uncataloguedBucket }),
     );
     expect(buckets).toEqual([
-      { registrar: 'registerArray', uncataloguedBucket: 'loop-or-array' },
+      { registrar: 'registerArray', uncataloguedBucket: 'hidden-loop-or-array' },
       { registrar: 'registerBackends', uncataloguedBucket: 'not-kind-registration' },
-      { registrar: 'registerInlineImplementation', uncataloguedBucket: 'implementation-expression' },
+      { registrar: 'registerCallImplementation', uncataloguedBucket: 'implementation-call-result' },
+      { registrar: 'registerInlineImplementation', uncataloguedBucket: 'implementation-inline' },
       { registrar: 'registerKindIdentifier', uncataloguedBucket: 'kind-identifier' },
       { registrar: 'registerKindMember', uncataloguedBucket: 'kind-member-or-computed' },
-      { registrar: 'registerLoop', uncataloguedBucket: 'loop-or-array' },
+      { registrar: 'registerLoop', uncataloguedBucket: 'hidden-loop-or-array' },
       { registrar: 'registerMemberCallee', uncataloguedBucket: 'callee-expression' },
+      { registrar: 'registerObjectImplementation', uncataloguedBucket: 'implementation-inline' },
     ]);
   });
 
@@ -243,14 +367,18 @@ describe('source-derived capability reachability', () => {
   });
 });
 
-function entries(sourceText: string, publicValues: readonly string[]) {
+function entries(sourceText: string | readonly string[], publicValues: readonly string[]) {
   const directory = mkdtempSync(join(tmpdir(), 'flight-reachability-'));
   temporaryDirectories.push(directory);
-  const source = join(directory, 'source.ts');
+  const sourceTexts = typeof sourceText === 'string' ? [sourceText] : sourceText;
+  const sourceFiles = sourceTexts.map((text, index) => {
+    const source = join(directory, index === 0 ? 'source.ts' : `source-${index}.ts`);
+    writeFileSync(source, text);
+    return source;
+  });
   const contractEntry = join(directory, 'contract.ts');
   const publicEntry = join(directory, 'index.ts');
-  writeFileSync(source, sourceText);
   writeFileSync(contractEntry, "export * from './source';");
   writeFileSync(publicEntry, `export { ${publicValues.join(', ')} } from './contract';`);
-  return { contractEntry, publicEntry, sourceFiles: [source] };
+  return { contractEntry, publicEntry, sourceFiles };
 }

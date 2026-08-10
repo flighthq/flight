@@ -23,20 +23,29 @@ export interface ReachabilityLaneEntry {
 export interface RegistrarOwnershipEntry {
   packageName: string;
   registrar: string;
-  status: 'catalogued' | 'UNCATALOGUED';
+  status: 'catalogued' | 'mechanism' | 'UNCATALOGUED';
+  mechanismShape: RegistrarMechanismShape | null;
   uncataloguedBucket: UncataloguedRegistrarBucket | null;
   door: string | null;
   kind: string | null;
   implementation: string | null;
 }
 
+export type RegistrarMechanismShape = 'caller-supplied-batch' | 'caller-supplied-kind';
+
 export type UncataloguedRegistrarBucket =
   | 'kind-identifier'
   | 'kind-member-or-computed'
-  | 'implementation-expression'
+  | 'implementation-call-result'
+  | 'implementation-inline'
   | 'callee-expression'
-  | 'loop-or-array'
+  | 'hidden-loop-or-array'
   | 'not-kind-registration';
+
+export interface RegistrarKindConstants {
+  identifiers: ReadonlyMap<string, string>;
+  members: ReadonlyMap<string, string>;
+}
 
 interface EffectAuditOptions {
   backend: EffectBackend;
@@ -51,12 +60,14 @@ interface LaneOptions {
 }
 
 interface RegistrarOwnershipOptions {
+  constants?: RegistrarKindConstants;
   packageName: string;
   sourceFiles: readonly string[];
 }
 
 interface NamedDeclaration {
   exported: boolean;
+  importAliases: ReadonlyMap<string, string>;
   name: string;
   node: Node;
 }
@@ -68,6 +79,7 @@ interface RegistrationMapping {
 }
 
 const PREFIX: Record<EffectBackend, string> = { canvas: 'Canvas', gl: 'Gl', wgpu: 'Wgpu' };
+const EMPTY_KIND_CONSTANTS: RegistrarKindConstants = { identifiers: new Map(), members: new Map() };
 
 // Capability is deliberately source-derived and exactly inverse: every shipped built-in runner has one
 // per-kind registration wrapper, and every wrapper fronts its matching runner. Lane placement is not a
@@ -161,19 +173,38 @@ export function collectReachabilityLanes(options: LaneOptions): ReachabilityLane
   }));
 }
 
-// This is an ownership inventory, not a name-derived guess: it records only the literal kind and
-// implementation identifier a registrar body actually passes through a register* door. Every exported
-// registrar that does not contain such a readable call remains present as an explicit UNCATALOGUED row.
+// This is an ownership inventory, not a name-derived guess: it records only a string-valued kind and
+// implementation identifier a registrar body actually passes through a register* door. Caller-supplied
+// registrars remain visible as mechanisms, while every other unreadable registrar remains UNCATALOGUED.
 export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): RegistrarOwnershipEntry[] {
   const entries: RegistrarOwnershipEntry[] = [];
   for (const declaration of declarationsIn(options.sourceFiles)) {
     if (!declaration.exported || !/^register[A-Z]/.test(declaration.name)) continue;
-    const mappings = registrationMappings(declaration.node);
+    const mappings = registrationMappings(
+      declaration.node,
+      options.constants ?? EMPTY_KIND_CONSTANTS,
+      declaration.importAliases,
+    );
     if (mappings.length === 0) {
+      const mechanismShape = registrarMechanismShape(declaration.node);
+      if (mechanismShape !== null) {
+        entries.push({
+          packageName: options.packageName,
+          registrar: declaration.name,
+          status: 'mechanism',
+          mechanismShape,
+          uncataloguedBucket: null,
+          door: null,
+          kind: null,
+          implementation: null,
+        });
+        continue;
+      }
       entries.push({
         packageName: options.packageName,
         registrar: declaration.name,
         status: 'UNCATALOGUED',
+        mechanismShape: null,
         uncataloguedBucket: classifyUncataloguedRegistrar(declaration.node),
         door: null,
         kind: null,
@@ -186,6 +217,7 @@ export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): R
         packageName: options.packageName,
         registrar: declaration.name,
         status: 'catalogued',
+        mechanismShape: null,
         uncataloguedBucket: null,
         ...mapping,
       });
@@ -194,17 +226,47 @@ export function collectRegistrarOwnership(options: RegistrarOwnershipOptions): R
   return entries.sort(compareRegistrarOwnership);
 }
 
+// The bounded constant pass deliberately accepts only exported string constants and exported object
+// members whose values are strings. Ambiguous names remain unresolved rather than acquiring a value from
+// package traversal order. Import aliases are applied later at each registrar's source file.
+export function collectRegistrarKindConstants(sourceFiles: readonly string[]): RegistrarKindConstants {
+  const identifierCandidates = new Map<string, Set<string>>();
+  const memberCandidates = new Map<string, Set<string>>();
+  for (const declaration of declarationsIn(sourceFiles)) {
+    if (!declaration.exported || declaration.node.type !== 'VariableDeclarator') continue;
+    const initializer = unwrapExpression(declaration.node.init);
+    const value = stringLiteralValue(initializer);
+    if (value !== null) addConstantCandidate(identifierCandidates, declaration.name, value);
+    if (initializer?.type !== 'ObjectExpression') continue;
+    for (const property of initializer.properties) {
+      if (property.type !== 'Property') continue;
+      const member = propertyName(property.key, property.computed);
+      const memberValue = stringLiteralValue(unwrapExpression(property.value));
+      if (member === null || memberValue === null) continue;
+      addConstantCandidate(memberCandidates, `${declaration.name}\0${member}`, memberValue);
+    }
+  }
+  return {
+    identifiers: uniqueConstantValues(identifierCandidates),
+    members: uniqueConstantValues(memberCandidates),
+  };
+}
+
 function declarationsIn(sourceFiles: readonly string[]): NamedDeclaration[] {
   const declarations: NamedDeclaration[] = [];
   for (const sourceFile of sourceFiles) {
-    for (const statement of getParsedOxcSource(sourceFile).program.body) {
+    const statements = getParsedOxcSource(sourceFile).program.body;
+    const importAliases = collectImportAliases(statements);
+    for (const statement of statements) {
       const exported = statement.type === 'ExportNamedDeclaration';
       const declaration = exported ? statement.declaration : statement;
       if (declaration === null) continue;
       if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
-        if (declaration.id !== null) declarations.push({ exported, name: declaration.id.name, node: declaration });
+        if (declaration.id !== null)
+          declarations.push({ exported, importAliases, name: declaration.id.name, node: declaration });
       } else if (declaration.type === 'VariableDeclaration') {
-        for (const variable of declaration.declarations) addVariableDeclaration(declarations, variable, exported);
+        for (const variable of declaration.declarations)
+          addVariableDeclaration(declarations, variable, exported, importAliases);
       }
     }
   }
@@ -215,26 +277,28 @@ function addVariableDeclaration(
   declarations: NamedDeclaration[],
   variable: VariableDeclarator,
   exported: boolean,
+  importAliases: ReadonlyMap<string, string>,
 ): void {
-  if (variable.id.type === 'Identifier') declarations.push({ exported, name: variable.id.name, node: variable });
+  if (variable.id.type === 'Identifier')
+    declarations.push({ exported, importAliases, name: variable.id.name, node: variable });
 }
 
-function registrationMappings(declaration: Node): RegistrationMapping[] {
+function registrationMappings(
+  declaration: Node,
+  constants: RegistrarKindConstants = EMPTY_KIND_CONSTANTS,
+  importAliases: ReadonlyMap<string, string> = new Map(),
+): RegistrationMapping[] {
   const mappings = new Map<string, RegistrationMapping>();
   visit(declaration, (node) => {
     if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') return;
-    const kindArgument = node.arguments[1];
-    const implementationArgument = node.arguments[2];
-    if (
-      /^register[A-Z]/.test(node.callee.name) &&
-      kindArgument?.type === 'Literal' &&
-      typeof kindArgument.value === 'string' &&
-      implementationArgument?.type === 'Identifier'
-    ) {
+    const pair = registrationPairArguments(node.arguments);
+    if (pair === null) return;
+    const kind = resolveKind(pair.kind, constants, importAliases);
+    if (/^register[A-Z]/.test(node.callee.name) && kind !== null && pair.implementation.type === 'Identifier') {
       const mapping = {
         door: node.callee.name,
-        kind: kindArgument.value,
-        implementation: implementationArgument.name,
+        kind,
+        implementation: pair.implementation.name,
       };
       mappings.set(`${mapping.door}\0${mapping.kind}\0${mapping.implementation}`, mapping);
     }
@@ -242,17 +306,18 @@ function registrationMappings(declaration: Node): RegistrationMapping[] {
   return [...mappings.values()].sort(compareRegistrationMapping);
 }
 
-// The classification describes why the existing literal-kind/identifier-implementation recorder did
-// not recover a row; it does not claim the registrar itself is underivable. Buckets are exclusive. A
+// The classification describes why the string-kind/identifier-implementation recorder did not recover
+// a row; it does not claim the registrar itself is underivable. Buckets are exclusive. A hidden
 // loop/array is the outermost shape, then a non-bare callee mirrors the walk's first rejection. For a
 // bare register* call, implementation shape precedes kind shape because constant folding alone cannot
 // recover an inline implementation. Anything with no fixed kind-registration call stays outside the
 // miss denominator as not-kind-registration.
 function classifyUncataloguedRegistrar(declaration: Node): UncataloguedRegistrarBucket {
   const evidence = collectUncataloguedEvidence(declaration);
-  if (evidence.loopOrArray) return 'loop-or-array';
+  if (evidence.loopOrArray) return 'hidden-loop-or-array';
   if (evidence.calleeExpression) return 'callee-expression';
-  if (evidence.implementationExpression) return 'implementation-expression';
+  if (evidence.implementationInline) return 'implementation-inline';
+  if (evidence.implementationCallResult) return 'implementation-call-result';
   if (evidence.kindMemberOrComputed) return 'kind-member-or-computed';
   if (evidence.kindIdentifier) return 'kind-identifier';
   return 'not-kind-registration';
@@ -260,7 +325,8 @@ function classifyUncataloguedRegistrar(declaration: Node): UncataloguedRegistrar
 
 interface UncataloguedEvidence {
   calleeExpression: boolean;
-  implementationExpression: boolean;
+  implementationCallResult: boolean;
+  implementationInline: boolean;
   kindIdentifier: boolean;
   kindMemberOrComputed: boolean;
   loopOrArray: boolean;
@@ -269,7 +335,8 @@ interface UncataloguedEvidence {
 function collectUncataloguedEvidence(declaration: Node): UncataloguedEvidence {
   const evidence: UncataloguedEvidence = {
     calleeExpression: false,
-    implementationExpression: false,
+    implementationCallResult: false,
+    implementationInline: false,
     kindIdentifier: false,
     kindMemberOrComputed: false,
     loopOrArray: false,
@@ -286,11 +353,146 @@ function collectUncataloguedEvidence(declaration: Node): UncataloguedEvidence {
     }
     const pair = registrationPairArguments(node.arguments);
     if (pair === null) return;
-    if (pair.implementation.type !== 'Identifier') evidence.implementationExpression = true;
+    if (pair.implementation.type === 'CallExpression') evidence.implementationCallResult = true;
+    else if (
+      pair.implementation.type === 'ArrowFunctionExpression' ||
+      pair.implementation.type === 'FunctionExpression' ||
+      pair.implementation.type === 'ObjectExpression'
+    ) {
+      evidence.implementationInline = true;
+    }
     if (pair.kind.type === 'Identifier') evidence.kindIdentifier = true;
     else if (pair.kind.type === 'MemberExpression') evidence.kindMemberOrComputed = true;
   });
   return evidence;
+}
+
+// A registrar whose key originates in one of its parameters owns the registration mechanism, not a
+// concrete kind. Direct forms and loops over caller-supplied collections are kept separate so a hidden
+// module array cannot disappear into the honest batch category. The data-flow is intentionally bounded:
+// function parameters, local variable initializers, and for-in/of bindings only.
+function registrarMechanismShape(declaration: Node): RegistrarMechanismShape | null {
+  const parameterNames = functionParameterNames(declaration);
+  if (parameterNames.size === 0) return null;
+  const callerValues = collectCallerDerivedNames(declaration, parameterNames);
+  let batch = false;
+  let direct = false;
+  visitWithAncestors(declaration, [], (node, ancestors) => {
+    if (node.type !== 'CallExpression' || !isRegistrationCall(node.callee)) return;
+    const parameterLoop = ancestors.find(
+      (ancestor) =>
+        (ancestor.type === 'ForOfStatement' || ancestor.type === 'ForInStatement') &&
+        expressionReferencesAny(ancestor.right, callerValues),
+    );
+    if (parameterLoop !== undefined) {
+      batch = true;
+      return;
+    }
+    if (node.callee.type !== 'MemberExpression') return;
+    const property = memberExpressionName(node.callee);
+    if (property !== 'register' && property !== 'set') return;
+    const kind = node.arguments[0];
+    if (kind !== undefined && expressionReferencesAny(kind, callerValues)) direct = true;
+  });
+  if (direct) return 'caller-supplied-kind';
+  return batch ? 'caller-supplied-batch' : null;
+}
+
+function functionParameterNames(declaration: Node): Set<string> {
+  if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
+    return bindingNames(declaration.params);
+  }
+  if (
+    declaration.type === 'VariableDeclarator' &&
+    (declaration.init?.type === 'ArrowFunctionExpression' || declaration.init?.type === 'FunctionExpression')
+  ) {
+    return bindingNames(declaration.init.params);
+  }
+  return new Set();
+}
+
+function bindingNames(bindings: readonly Node[]): Set<string> {
+  const names = new Set<string>();
+  for (const binding of bindings) collectBindingNames(binding, names);
+  return names;
+}
+
+function collectBindingNames(binding: Node, names: Set<string>): void {
+  if (binding.type === 'Identifier') {
+    names.add(binding.name);
+    return;
+  }
+  if (binding.type === 'AssignmentPattern') {
+    collectBindingNames(binding.left, names);
+    return;
+  }
+  if (binding.type === 'RestElement') {
+    collectBindingNames(binding.argument, names);
+    return;
+  }
+  if (binding.type === 'ArrayPattern') {
+    for (const element of binding.elements) if (element !== null) collectBindingNames(element, names);
+    return;
+  }
+  if (binding.type !== 'ObjectPattern') return;
+  for (const property of binding.properties) {
+    if (property.type === 'RestElement') collectBindingNames(property.argument, names);
+    else collectBindingNames(property.value, names);
+  }
+}
+
+function collectCallerDerivedNames(declaration: Node, parameters: ReadonlySet<string>): Set<string> {
+  const names = new Set(parameters);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    visit(declaration, (node) => {
+      if (node.type === 'VariableDeclarator' && node.init !== null && expressionReferencesAny(node.init, names)) {
+        const before = names.size;
+        collectBindingNames(node.id, names);
+        changed ||= names.size !== before;
+      }
+      if (
+        (node.type === 'ForOfStatement' || node.type === 'ForInStatement') &&
+        expressionReferencesAny(node.right, names)
+      ) {
+        const before = names.size;
+        const left = node.left;
+        if (left.type === 'VariableDeclaration') {
+          for (const variable of left.declarations) collectBindingNames(variable.id, names);
+        } else {
+          collectBindingNames(left, names);
+        }
+        changed ||= names.size !== before;
+      }
+    });
+  }
+  return names;
+}
+
+function expressionReferencesAny(node: Node, names: ReadonlySet<string>): boolean {
+  if (node.type === 'Identifier') return names.has(node.name);
+  for (const [key, value] of Object.entries(node)) {
+    if (
+      key === 'parent' ||
+      value === null ||
+      typeof value !== 'object' ||
+      (node.type === 'MemberExpression' && key === 'property' && !node.computed) ||
+      (node.type === 'Property' && key === 'key' && !node.computed)
+    ) {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      for (const child of value) {
+        if (child !== null && typeof child === 'object' && 'type' in child) {
+          if (expressionReferencesAny(child as Node, names)) return true;
+        }
+      }
+    } else if ('type' in value && expressionReferencesAny(value as Node, names)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isRegistrationCall(callee: Node): boolean {
@@ -318,6 +520,84 @@ function registrationPairArguments(args: readonly Node[]): { kind: Node; impleme
     return null;
   }
   return { kind, implementation };
+}
+
+function resolveKind(
+  node: Node,
+  constants: RegistrarKindConstants,
+  importAliases: ReadonlyMap<string, string>,
+): string | null {
+  const expression = unwrapExpression(node);
+  const literal = stringLiteralValue(expression);
+  if (literal !== null) return literal;
+  if (expression?.type === 'Identifier') {
+    return constants.identifiers.get(importAliases.get(expression.name) ?? expression.name) ?? null;
+  }
+  if (expression?.type !== 'MemberExpression') return null;
+  const object = unwrapExpression(expression.object);
+  const member = memberExpressionName(expression);
+  if (object?.type !== 'Identifier' || member === null) return null;
+  const objectName = importAliases.get(object.name) ?? object.name;
+  return constants.members.get(`${objectName}\0${member}`) ?? null;
+}
+
+function collectImportAliases(statements: readonly Node[]): ReadonlyMap<string, string> {
+  const aliases = new Map<string, string>();
+  for (const statement of statements) {
+    if (statement.type !== 'ImportDeclaration' || statement.importKind === 'type') continue;
+    for (const specifier of statement.specifiers) {
+      if (specifier.type !== 'ImportSpecifier' || specifier.importKind === 'type') continue;
+      const imported = specifier.imported;
+      const importedName = imported.type === 'Identifier' ? imported.name : String(imported.value);
+      aliases.set(specifier.local.name, importedName);
+    }
+  }
+  return aliases;
+}
+
+function unwrapExpression(node: Node | null): Node | null {
+  let expression = node;
+  while (
+    expression !== null &&
+    (expression.type === 'ChainExpression' ||
+      expression.type === 'ParenthesizedExpression' ||
+      expression.type === 'TSAsExpression' ||
+      expression.type === 'TSNonNullExpression' ||
+      expression.type === 'TSSatisfiesExpression' ||
+      expression.type === 'TSTypeAssertion')
+  ) {
+    expression = expression.expression;
+  }
+  return expression;
+}
+
+function stringLiteralValue(node: Node | null): string | null {
+  return node?.type === 'Literal' && typeof node.value === 'string' ? node.value : null;
+}
+
+function propertyName(key: Node, computed: boolean): string | null {
+  if (!computed && key.type === 'Identifier') return key.name;
+  return key.type === 'Literal' && typeof key.value === 'string' ? key.value : null;
+}
+
+function memberExpressionName(member: Extract<Node, { type: 'MemberExpression' }>): string | null {
+  return propertyName(member.property, member.computed);
+}
+
+function addConstantCandidate(candidates: Map<string, Set<string>>, name: string, value: string): void {
+  const values = candidates.get(name) ?? new Set<string>();
+  values.add(value);
+  candidates.set(name, values);
+}
+
+function uniqueConstantValues(candidates: ReadonlyMap<string, ReadonlySet<string>>): ReadonlyMap<string, string> {
+  const constants = new Map<string, string>();
+  for (const [name, values] of candidates) {
+    if (values.size !== 1) continue;
+    const value = values.values().next().value;
+    if (value !== undefined) constants.set(name, value);
+  }
+  return constants;
 }
 
 function isLoop(node: Node): boolean {
