@@ -1,5 +1,7 @@
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createTilemapData } from '@flighthq/tilemap/contract';
-import type { TiledMap, TiledTilesetResolver, TilemapData } from '@flighthq/types/contract';
+import type { ImportDiagnostic, TiledMap, TiledTilesetResolver, TilemapData } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
 
@@ -22,6 +24,7 @@ export function buildTilemapLayersFromTiled(
   map: Readonly<TiledMap>,
   layerIndex: number,
   resolveTileset: TiledTilesetResolver,
+  diagnostics?: ImportDiagnostic[],
 ): TilemapData[] | null {
   const layer = map.layers[layerIndex];
   if (layer === undefined || layer.type !== 'tilelayer') return null;
@@ -33,12 +36,21 @@ export function buildTilemapLayersFromTiled(
   const groups: TilesetGroup[] = [];
   const byFirstGid = new Map<number, TilesetGroup | null>();
   let anyResolved = false;
+  // Counted per cell and reported ONCE after the loop. The seam's perf contract forbids a per-element
+  // call in a hot loop, and a layer is width x height cells — a map with a broken tileset would
+  // otherwise emit one crumb per tile and drown the very report it was meant to make.
+  let cellsWithoutTileset = 0;
+  let cellsLeftEmpty = 0;
+  const unresolvedTilesets = new Set<number>();
 
   for (let i = 0; i < cellCount; i++) {
     const { tileId } = decodeTiledGid(data[i]);
     if (tileId <= 0) continue;
     const ref = getTiledTilesetRefForGid(map, tileId);
-    if (ref === null) continue;
+    if (ref === null) {
+      cellsWithoutTileset++;
+      continue;
+    }
 
     let group = byFirstGid.get(ref.firstGid);
     if (group === undefined) {
@@ -54,8 +66,34 @@ export function buildTilemapLayersFromTiled(
         groups.push(group);
       }
     }
-    if (group === null) continue;
+    if (group === null) {
+      cellsLeftEmpty++;
+      unresolvedTilesets.add(ref.firstGid);
+      continue;
+    }
     group.tiles[i] = tileId - group.firstGid;
+  }
+
+  // Reported before the wholesale-failure return, so a map that loses SOME tiles and a map that loses
+  // all of them are distinguishable: the first returns layers with holes in them, and without this the
+  // caller sees a successful projection whose grid is quietly short of the tiles the file authored.
+  if (cellsWithoutTileset > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'tiled.tile-outside-every-tileset',
+      'buildTilemapLayersFromTiled',
+      { cells: cellsWithoutTileset, layerIndex },
+    );
+  }
+  if (cellsLeftEmpty > 0) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Drop,
+      'tiled.tileset-unresolved',
+      'buildTilemapLayersFromTiled',
+      { cells: cellsLeftEmpty, layerIndex, tilesets: unresolvedTilesets.size },
+    );
   }
 
   if (!anyResolved) return null;
