@@ -37,6 +37,8 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   'effect-lens-distortion': ['canvas'],
   'effect-lens-flare': ['canvas'],
   'effect-posterize': ['canvas'],
+  // Canvas ramps its multiply gradient to the frame corner; the GPU smoothstep reaches full darkening
+  // at the configured radius. Keep the canvas reference out until those vignette recipes agree.
   'effect-vignette': ['canvas'],
   'effect-displacement': 'all',
   'effect-god-rays': 'all',
