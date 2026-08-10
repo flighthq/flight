@@ -7,10 +7,10 @@
  * would otherwise lack — the digits are long enough that a wrong one reads as correct and still
  * draws a circle that looks round.
  *
- * The literal is the form a bundler can fold into its use sites. `Math.SQRT2` is a property of a
- * mutable global, so no correct minifier may evaluate the expression form at build time: it would
- * survive into every bundle as a runtime computation. Keeping the derivation in this comment and
- * the enforcement in the test costs nothing on either axis.
+ * A literal rather than the expression because `Math.SQRT2` is a property of a mutable global: no
+ * correct minifier may evaluate `4 * (Math.SQRT2 - 1) / 3` at build time, so that form reaches the
+ * bundle as a runtime computation of a compile-time-known number. Neither form is inlined at its
+ * use sites and both measure the same gzipped size, so this buys evaluation, not bytes.
  */
 export const CIRCLE_KAPPA = 0.5522847498307936;
 
