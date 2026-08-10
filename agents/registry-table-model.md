@@ -130,21 +130,25 @@ observable write, retaining `survived`, `lost`, and `not-comparable` plus a reas
 
 The measured run classifies all 300 registrars as 55 generic doors and 245 assemblies. Of those
 assemblies, 193 are `PROBED`, 14 are `PROBED-EMPTY`, and 38 are `UNPROBED`. The independent probes emit
-263 exact pairs. The safe headline while the extension is incomplete is: **0 lost among 212 assessed
-pairs (201 compared + 11 correctly not-comparable); 51 not assessed — probe limitation, not a property
-of the subject.** All 201 compared pairs survive. The other 62 split by remedy: **11 are structurally not comparable** because a
-module-global registry has no source/derived state relationship, while **51 are limited by this
-instrument** — 47 fixed Map pairs belong to state types for which the probe has no derived-state
-adapter, and 4 fixed pairs live in ordered arrays the Map-only comparator does not assess. The 55
-caller-keyed generic doors are also structurally without fixed pairs, but they were excluded before the
-263-pair set and contribute zero to its 62. The current derivation discharge therefore covers
-`201 + 11 = 212` exact pairs and leaves 51 as a census gap. `summary.comparablePairs`,
-`summary.structurallyNotComparable`, `summary.instrumentLimited`, `summary.assessedPairs`,
-and each pair's `comparability` and `derivationReason` keep that scope attached to the zero.
+263 exact pairs. The completed headline is: **0 lost among 263 assessed pairs (252 compared + 11
+correctly not-comparable); 0 not assessed.** All 252 compared pairs survive. The 11 structurally
+not-comparable pairs are the module-global image-codec tables, which have no source/derived state
+relationship. The 55 caller-keyed generic doors are also structurally without fixed pairs, but they are
+excluded before the 263-pair set and contribute zero to those 11.
 
-Until those 51 pairs are assessed, the six collision results are a **floor, not a total**; the collision
-pass must run again after the extension. They are six door+kind keys, not six two-registrar pairs: their claimant
-cardinalities are 2, 2, 2, 14, 14, and 3. Under the mechanical writer test, all six classify as
+The probe owns explicit same-type snapshot adapters for the 248 state-held Map pairs and an exact
+kind+implementation comparator for the 4 ordered importer pairs. Neither result relies on an instrument
+that can report only success: each Map pair was also compared against a fresh same-type target with its
+registration deliberately omitted and all 248 controls reported `lost`; the ordered comparator reported
+`lost` for all 4 empty-target controls and its focused test also rejects a same-kind entry carrying a
+different function. `summary.negativeControls` records both populations and `canFail: true` for each.
+`summary.comparablePairs`, `summary.structurallyNotComparable`, `summary.instrumentLimited`,
+`summary.assessedPairs`, and each pair's `comparability`, `derivationReason`, `negativeControl`, and
+`tableShape` keep the denominator and controls attached to the zero.
+
+The collision pass was rerun after closing the 51-pair instrument gap, so the six collision results are
+the complete result rather than a floor. They are six door+kind keys, not six two-registrar pairs: their
+claimant cardinalities are 2, 2, 2, 14, 14, and 3. Under the mechanical writer test, all six classify as
 **INSTRUMENT ARTIFACT**; none is BUILT-IN vs BUILT-IN or BUILT-IN vs DELIBERATE OVERRIDE. Every claimant
 for a key reaches the same leaf registrar and supplies the same built-in function reference, so these
 are multiple outer assembly names for one writer, not independent SDK writers. The repeated `Map.set`

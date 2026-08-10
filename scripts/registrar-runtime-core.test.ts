@@ -64,14 +64,24 @@ describe('runtime registrar provenance', () => {
     expect(explainPairDerivationScope(pair!, source, { registry: new Map() })).toBeNull();
   });
 
-  it('identifies ordered tables as exact but not derivation-comparable', async () => {
-    const entries: unknown[] = [];
+  it('compares ordered tables and proves the comparator can report a missing pair', async () => {
+    const earlier = { kind: 'Earlier.Document', matches: () => false };
+    const entries: unknown[] = [earlier];
     const [pair] = await captureRegistrarPairs(new Set(['registerOrderedDoor']), () => {
       registerOrderedDoor(entries, 'Fixture.Document', () => true);
     });
 
-    expect(classifyPairDerivation(pair!, { entries }, { entries: [...entries] })).toBe('not-comparable');
-    expect(explainPairDerivationScope(pair!, { entries }, { entries: [...entries] })).toBe('ordered-table');
+    expect(classifyPairDerivation(pair!, { entries }, { entries: [...entries] })).toBe('survived');
+    expect(classifyPairDerivation(pair!, { entries }, { entries: [] })).toBe('lost');
+    expect(
+      classifyPairDerivation(
+        pair!,
+        { entries },
+        { entries: [earlier, { kind: 'Fixture.Document', matches: () => true }] },
+      ),
+    ).toBe('lost');
+    expect(classifyPairDerivation(pair!, { entries }, { entries: [entries[1], earlier] })).toBe('lost');
+    expect(explainPairDerivationScope(pair!, { entries }, { entries: [...entries] })).toBeNull();
   });
 
   it('describes runtime identities without serializing implementation bodies', () => {
