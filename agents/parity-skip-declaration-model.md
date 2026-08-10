@@ -367,6 +367,28 @@ The check is also what makes the residual failure benign. Prose describing a che
 from it — that is exactly `CONTRACT.md:3` — but with the check wired, the tree stays correct and only
 the description misleads. Without it, the description misleads *and* nothing holds.
 
+## What this is not
+
+**It is not a claim that the reasoning here is weak.** Four times while researching this document, the
+repository turned out to have already reasoned the point out correctly:
+
+| where | what it already got right |
+| --- | --- |
+| `scripts/fixtures.ts:143-147` | excluded by name **rather than absorbed into a tolerance**, because a slack band re-hides what the count exists to surface |
+| `scripts/fixtures.ts:160-164` | named this document's defect — "the record stated a count nothing had checked" — and fixed it in that one instrument |
+| `scripts/check.ts:15-21` | "EVERY GATE RUNS" — a gate that never executes lets a violation land, with the recorded instance that proved it |
+| [`capture-verification-tiers.md:42-43`](capture-verification-tiers.md) | the coverage verdict is **run-level, by design**, because "a single-backend scene legitimately compares nothing" |
+
+The last one is not incidental. It is the exact property option 1's safety rests on, **stated as
+intent with its rationale recorded**, anticipating our case: five canvas-skipped scenes become scenes
+that legitimately compare nothing. The mechanism was built to tolerate that and says why. Option 1 is
+therefore safe by a documented design decision, not by an accident of how the guard was written.
+
+**The defect has never once been that someone thought wrongly. It has been where they wrote it down** —
+each time in a comment or a doc that only a reader already inside that file would meet. So the remedy
+is not discipline imposed on a codebase that lacks it. **The discipline is already here, correct,
+four times over. What it lacks is a surface it can travel on.**
+
 ## The open question
 
 Does this generalize past parity? The same shape appeared twice more in one week: `CONTRACT.md`
