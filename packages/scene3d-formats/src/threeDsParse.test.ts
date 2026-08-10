@@ -20,6 +20,7 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Mesh,
+  MeshGeometry,
   Node3D,
   PointLight,
   Quaternion,
@@ -474,6 +475,102 @@ function tamperChunkLength(chunk: Uint8Array, newLength: number): Uint8Array {
   new DataView(copy.buffer).setUint32(2, newLength, true);
   return copy;
 }
+
+// A closed mesh's signed volume, Σ v0·(v1×v2)/6 over its triangles, computed from POSITIONS AND INDICES
+// ALONE. That independence is the point: 3DS carries no authored normals — its normals are derived from
+// the same edge cross product a winding check would use — so comparing winding against them would compare
+// a quantity with itself and pass by construction. Signed volume shares no term with the normal pass, so
+// it can disagree.
+//
+// Positive iff the winding is consistently outward. Translation-invariant on a closed mesh, and preserved
+// by a determinant-+1 rotation, so the Z-up→Y-up conversion cannot change its sign.
+//
+// `null` means INCONCLUSIVE, not "fine": the identity only holds for a closed surface, so an open mesh has
+// no signed volume to speak of. Returning 0 or a positive number there would be a check that reads as
+// coverage while measuring nothing.
+function signedVolumeOfClosedGeometry(geometry: Readonly<MeshGeometry>): number | null {
+  const indices = Array.from(geometry.indices!);
+  // Closedness first: every directed edge exactly once, and its reverse present. That is what makes the
+  // mesh a boundary of a solid rather than a sheet.
+  const directed = new Map<string, number>();
+  for (let i = 0; i + 2 < indices.length; i += 3) {
+    const t = [indices[i], indices[i + 1], indices[i + 2]];
+    for (let j = 0; j < 3; j++) {
+      const key = `${t[j]}>${t[(j + 1) % 3]}`;
+      directed.set(key, (directed.get(key) ?? 0) + 1);
+    }
+  }
+  for (const [key, count] of directed) {
+    if (count !== 1) return null;
+    const [a, b] = key.split('>');
+    if (!directed.has(`${b}>${a}`)) return null;
+  }
+
+  const p = { x: 0, y: 0, z: 0 };
+  const read = (index: number) => {
+    getMeshGeometryVertexPosition(p, geometry, index);
+    return [p.x, p.y, p.z] as const;
+  };
+  let volume = 0;
+  for (let i = 0; i + 2 < indices.length; i += 3) {
+    const a = read(indices[i]);
+    const b = read(indices[i + 1]);
+    const c = read(indices[i + 2]);
+    const cross = [b[1] * c[2] - b[2] * c[1], b[2] * c[0] - b[0] * c[2], b[0] * c[1] - b[1] * c[0]];
+    volume += (a[0] * cross[0] + a[1] * cross[1] + a[2] * cross[2]) / 6;
+  }
+  return volume;
+}
+
+// Unit cube, wound counter-clockwise as seen from OUTSIDE — the convention this test asserts the parser
+// preserves. Verified as authored: signed volume +1, and closed (36 directed edges, each once, each with
+// its reverse).
+const CUBE_POSITIONS = [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1];
+const CUBE_INDICES_CCW_OUT = [
+  0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 2, 3, 7, 2, 7, 6, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5,
+];
+
+describe('3ds triangle winding', () => {
+  it('preserves outward winding through the Z-up→Y-up rotation, by SIGNED VOLUME not by normals', () => {
+    // The testable half of the chain. "The conversion is a rotation, so it preserves winding" is checkable
+    // here and now; "3DS's native winding is CCW-front" is a claim about the FORMAT that no synthetic file
+    // can establish, and is labelled unverified rather than assumed — see threeDsParse.ts.
+    const scene = createScene3DFrom3ds(buildTriangle3ds('cube', CUBE_POSITIONS, CUBE_INDICES_CCW_OUT));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const volume = signedVolumeOfClosedGeometry(geometry);
+    expect(volume).not.toBeNull();
+    // The value, not just the sign: a unit cube encloses exactly 1. A wrong magnitude would mean the
+    // conversion is not the rotation it claims to be (a scale or a shear would survive a sign-only check).
+    expect(volume!).toBeCloseTo(1, 6);
+  });
+
+  it('FLIPS the sign when the same cube is wound inward, so the check can fail', () => {
+    // Negative control on the property itself. Swapping v1/v2 on every triangle inverts orientation and
+    // nothing else, so a check that could not tell them apart would be measuring nothing.
+    const reversed = CUBE_INDICES_CCW_OUT.slice();
+    for (let i = 0; i + 2 < reversed.length; i += 3) {
+      const tmp = reversed[i + 1];
+      reversed[i + 1] = reversed[i + 2];
+      reversed[i + 2] = tmp;
+    }
+    const scene = createScene3DFrom3ds(buildTriangle3ds('cube', CUBE_POSITIONS, reversed));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    expect(signedVolumeOfClosedGeometry(geometry)!).toBeCloseTo(-1, 6);
+  });
+
+  it('reports INCONCLUSIVE for an OPEN mesh rather than scoring it', () => {
+    // The trap this exists to close: the signed-volume identity holds only for a closed surface. Without
+    // the closedness gate an open mesh can total a positive number and read as a pass, which is the
+    // tautology failure one door over — a check that is green while measuring nothing.
+    const openFaces = CUBE_INDICES_CCW_OUT.slice(0, 30); // five faces of six: a box with a hole.
+    const scene = createScene3DFrom3ds(buildTriangle3ds('open', CUBE_POSITIONS, openFaces));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    expect(signedVolumeOfClosedGeometry(geometry)).toBeNull();
+  });
+});
 
 describe('createScene3DFrom3ds', () => {
   it('decodes a material to BlinnPhong and attaches it to the mesh that references it by name', () => {
