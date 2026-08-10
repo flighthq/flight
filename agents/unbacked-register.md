@@ -163,6 +163,8 @@ quiet.** ⇒ **The gate answers *has anything unlanded mutated a guarded line* w
 *has a guarded line been mutated*** — the misaddressed-answer law, in a CI gate, still live. **It will
 never report L2 again.**
 
+| L4 | `camera-orthographic/webgl` fails functional capture (1 changed) on the tree carrying the WGPU covector fix. Suspected first as fallout from that change; the evidence rules it out. | **Deterministic** — three runs, three identical results, always 1 changed, not intermittent. **Isolated** — in the same five-target camera batch, `effect-camera-motion-blur/webgl` captured clean; not webgl-wide. **Backend-specific** — `camera-orthographic/webgpu` is a clean tick in the same run, same scene, other backend, no drift. **Reachability** — the scene carries zero skin/skeleton references against a 207-line control, so a skinning change cannot touch it. Three runs, one batch, one backend comparison — all from `builder`, `functional/` zero dirty throughout. | **FIXABLE — genuine scene-and-backend-specific baseline staleness, not noise and not environmental** (a machine/rasterizer cause would not spare the sibling webgl target in the same batch or the same scene's webgpu column). Not the covector arc's to fix; whoever owns `camera-orthographic`'s baseline should re-capture it deliberately, as its own change, with the delta stated. |
+
 ## Permitted and unbuilt
 
 A third state beside *permitted-and-built* and *forbidden*: a capability the rules allow, that nobody
