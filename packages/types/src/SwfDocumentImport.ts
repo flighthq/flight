@@ -1,4 +1,5 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
+import type { EmbeddedImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
 import type { RenderEffect } from './RenderEffect';
 import type { Scene2DDocument } from './Scene2DDocument';
@@ -12,6 +13,22 @@ export interface SwfDocumentImport {
   /** Every placement appearance the caller has to realize itself. Empty for a file that uses none. */
   appearances: SwfNodeAppearance[];
   document: Scene2DDocument;
+  /** Encoded JPEG colour and alpha halves retained for a caller-owned composition step. */
+  jpegAlphaPayloads: SwfJpegAlphaPayload[];
+}
+
+/**
+ * One DefineBitsJPEG3/4 payload, preserved without interpreting or copying either encoded stream.
+ * The colour reference is the same object the document carries when the character is sampled.
+ */
+export interface SwfJpegAlphaPayload {
+  characterId: number;
+  compressedAlphaBytes: Uint8Array;
+  /** The exact JPEG4 fixed-point field bits, or null because JPEG3 has no such field. */
+  deblockingParameterRaw: number | null;
+  height: number;
+  reference: EmbeddedImageResourceReference;
+  width: number;
 }
 
 /**
