@@ -333,9 +333,76 @@ export function getRegistryTableKeys(out: Kind[], table: Readonly<RegistryTable<
 
 export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, key: Kind): boolean;
 
-// See Blockers: this mutating form cannot uphold the divergence contract and is expected to change.
-export function setRegistryTableEntry<T>(table: RegistryTable<T>, key: Kind, value: T): void;
+// NOT `setRegistryTableEntry`. Tables are persistent, so this returns a REPLACEMENT table and mutates
+// nothing — and AGENTS.md's Geometry Ownership rule reserves `set*` for in-place mutation. A `set*` that
+// does not set contradicts a stated rule at the call site, where the reader has only the name to go on.
+// This name is deliberate; do not "restore" the old one as an oversight. The owner assigns the result:
+//   registries.textureResolvers = withRegistryTableEntry(registries.textureResolvers, kind, resolver);
+export function withRegistryTableEntry<T>(
+  table: Readonly<RegistryTable<T>>,
+  key: Kind,
+  value: T,
+): RegistryTable<T>;
+
+// Binds `key` to the tombstone: "this table explicitly omits the base's entry," which a keyed overlay
+// previously could not say and a slot's `null` could not distinguish from "inherit base."
+export function withRegistryTableTombstone<T>(
+  table: Readonly<RegistryTable<T>>,
+  key: Kind,
+): RegistryTable<T>;
 ```
+
+### The tombstone must not compile where a value is expected
+
+A tombstone that some readers ignore is worse than no tombstone, because it looks handled. So the
+sentinel is a discriminated union, and the reason it is not an optional flag or a reserved value is that
+both of those *type-check* at every site that never heard of them:
+
+```ts
+// Not `T | null` and not `{ value: T; omitted?: boolean }`. Neither of those can fail a build: a reader
+// that has never heard of tombstones assigns them straight through. This union is NOT assignable to `T`,
+// so the only way to reach the value is to narrow, and the only way to narrow is to have handled both.
+export type RegistryTableEntry<T> =
+  | { readonly state: 'bound'; readonly value: T }
+  | { readonly state: 'tombstoned' };
+```
+
+**Where the union is mandatory, and where it would be noise.** These are different questions and
+conflating them is what makes exhaustiveness feel like a tax:
+
+- **Resolution** — `getRegistryTableEntry` keeps returning `T | null`. At resolution a tombstone *is* a
+  miss: the caller asked what is bound and the answer is nothing. Collapsing it there is correct, not
+  lossy, and no tombstone escapes into caller code.
+- **Composition and enumeration** — every operation that handles entries *as entries* deals in
+  `RegistryTableEntry<T>`. This is the one place a tombstone can be mistaken for data, and it is exactly
+  the case the constraint exists for: `concatRegistryTable` copying an overlay's entries into a result
+  must not copy a tombstone through as a binding, because that would resurrect the very entry the overlay
+  meant to omit.
+
+Composition therefore switches, and the `never` arm is what makes a **third** state a build failure
+rather than a silent fall-through — the way a third meaning would otherwise get in unnoticed:
+
+```ts
+switch (entry.state) {
+  case 'bound':
+    // …carry the binding into the result
+    break;
+  case 'tombstoned':
+    // …omit the base's entry from the result; NOT the same as leaving it unbound
+    break;
+  default: {
+    const unreachable: never = entry;
+    return unreachable;
+  }
+}
+```
+
+`concatRegistryTable` still **throws** on shape, registry-id, or miss-policy mismatch — that is a
+programmer error, not an expected failure, and the ruling leaves it standing. The tombstone answers a
+different question: not "can these two tables compose" but "what did the overlay mean by saying nothing."
+
+A note on the discriminant: it is `state`, not `kind`. `Kind` is already the key vocabulary these tables
+are addressed by, and a `kind` field on the entry would read as the key it is stored under.
 
 The twelve coverage functions become a list of tables plus the backend's facet mapping — the mapping is
 the consumer-side policy the producer must not carry:
@@ -366,15 +433,15 @@ export function getGlRenderEffectRunner(
 
 Three things must be settled before this can be ratified. Each was raised by the audit; none is resolved.
 
-**1. Mutation and removal cannot express the contract.** The design promises current snapshot semantics —
-a derived state starts equal, then either side may override *or omit* independently — while sharing tables
-by reference and exposing a mutating `setRegistryTableEntry`. A copy-on-write flag cannot fix this: the
-setter receives only the table, so it has no way to replace the owning aggregate's field with a clone. A
-`sealed` guard forbids independent mutation rather than implementing it. The fix is either persistent
-setters returning the replacement table plus owner-level assignment, or an aggregate-owned mutation seam
-that can replace a field. Composition is likewise incomplete: a keyed overlay has no tombstone, a slot's
-`null` cannot distinguish "inherit base" from "explicitly omit base," and `concatRegistryTable` does not
-specify behavior for shape, registry-id, or miss-policy mismatch.
+**1. Mutation and removal cannot express the contract. — RULED 2026-08-10, resolved in the header above.**
+The design promised current snapshot semantics — a derived state starts equal, then either side may
+override *or omit* independently — while sharing tables by reference and exposing a mutating setter that
+could not replace the owning aggregate's field. The user ruled **persistent tables**: the operation returns
+a replacement table and the owner assigns it, which is why it is named `withRegistryTableEntry` and not
+`set*`. Omission is now sayable through a **distinct tombstone sentinel**, typed so an unhandled one fails
+the build rather than being copied through composition as a binding. `concatRegistryTable` **throws** on
+shape, registry-id, or miss-policy mismatch, unchanged. Blockers 2 and 3 are untouched by this ruling and
+still gate ratification.
 
 **2. Nothing here implements the anti-shotgun path.** Reporting a miss names the failure; it does not make
 the selective fix cheaper than one bundled call. An agent still has to discover N registrars, add N
