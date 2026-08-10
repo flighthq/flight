@@ -3877,6 +3877,75 @@ describe('createScene2DFromSwf morph shapes', () => {
 });
 
 describe('createScene2DImportFromSwf', () => {
+  it('retains exact zero-copy JPEG3 and JPEG4 colour and alpha ranges on the full import report', () => {
+    const jpeg3 = createJpegHeader(23, 17);
+    const alpha3 = new Uint8Array([0x78, 0x01, 0x31, 0x32, 0x33]);
+    const jpeg4 = createJpegHeader(31, 19);
+    const alpha4 = new Uint8Array([0x78, 0x01, 0x41, 0x42, 0x43]);
+    const deblockingParameterRaw = 0x81fe;
+    const file = createSwf([
+      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, alpha3)),
+      createTag(
+        TAG_DEFINE_BITS_JPEG_4,
+        joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(deblockingParameterRaw), jpeg4, alpha4),
+      ),
+      // Only JPEG3 is placed. JPEG4 still belongs on the full report, but not in document resources.
+      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(16))),
+      createTag(TAG_SHOW_FRAME),
+      createTag(TAG_END),
+    ]);
+
+    const result = createScene2DImportFromSwf(file)!;
+
+    expect(result.jpegAlphaPayloads).toHaveLength(2);
+    const [jpeg3Payload, jpeg4Payload] = result.jpegAlphaPayloads;
+    expect(jpeg3Payload).toMatchObject({
+      characterId: 16,
+      deblockingParameterRaw: null,
+      height: 17,
+      width: 23,
+    });
+    expect(jpeg4Payload).toMatchObject({
+      characterId: 17,
+      deblockingParameterRaw,
+      height: 19,
+      width: 31,
+    });
+    expect(jpeg3Payload.reference).toBe(result.document.imageResources[0]);
+    expect(jpeg4Payload.reference.textures).toEqual([]);
+
+    for (const [actual, expected] of [
+      [jpeg3Payload.reference.bytes, jpeg3],
+      [jpeg3Payload.compressedAlphaBytes, alpha3],
+      [jpeg4Payload.reference.bytes, jpeg4],
+      [jpeg4Payload.compressedAlphaBytes, alpha4],
+    ] as const) {
+      expect(actual).toEqual(expected);
+      expect(actual.buffer).toBe(file.buffer);
+      expect(actual.byteOffset).toBe(file.byteOffset + findBytes(file, expected));
+    }
+  });
+
+  it('rejects JPEG alpha offsets outside the tag colour range', () => {
+    const jpeg3 = createJpegHeader(23, 17);
+    const jpeg4 = createJpegHeader(31, 19);
+    const result = createScene2DImportFromSwf(
+      createSwf([
+        // JPEG3 points beyond the tag; JPEG4 points into its own two-byte deblocking field.
+        createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length + 1), jpeg3)),
+        createTag(TAG_DEFINE_BITS_JPEG_4, joinBytes(uint16(17), uint32(1), uint16(0x1234), jpeg4)),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(16))),
+        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(17))),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_END),
+      ]),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.jpegAlphaPayloads).toEqual([]);
+    expect(result!.document.imageResources).toEqual([]);
+  });
+
   it('keeps an advanced blend mode off the node and reports it for a BlendEffect instead', () => {
     const result = createScene2DImportFromSwf(
       createSwf([
@@ -4382,6 +4451,20 @@ function joinBytes(...parts: ReadonlyArray<Uint8Array>): Uint8Array {
     offset += part.length;
   }
   return result;
+}
+
+function findBytes(source: Uint8Array, expected: Uint8Array): number {
+  for (let offset = 0; offset <= source.length - expected.length; offset++) {
+    let matches = true;
+    for (let index = 0; index < expected.length; index++) {
+      if (source[offset + index] !== expected[index]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) return offset;
+  }
+  throw new Error('Expected byte range was not found');
 }
 
 function signedBitCount(values: ReadonlyArray<number>): number {

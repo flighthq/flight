@@ -39,6 +39,7 @@ import type {
   AudioResourceReference,
   BoundsNodeAny,
   ClipRegion,
+  EmbeddedImageResourceReference,
   FrameScript,
   GlyphOutlineSource,
   ImageResourceReference,
@@ -58,6 +59,7 @@ import type {
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
   SwfDocumentImport,
+  SwfJpegAlphaPayload,
   SwfNodeAppearance,
   Scale9Shape,
   Shape,
@@ -140,6 +142,7 @@ export function createScene2DImportFromSwf(
     );
     return null;
   }
+  const imageResources = createSwfImageResources(parsed);
 
   return {
     appearances: instantiation.appearances,
@@ -148,9 +151,10 @@ export function createScene2DImportFromSwf(
       slots,
       'swf',
       parsed.backgroundColor,
-      createSwfImageResources(parsed),
+      imageResources.resources,
       createSwfAudioResources(parsed),
     ),
+    jpegAlphaPayloads: createSwfJpegAlphaPayloads(parsed, imageResources.references),
   };
 }
 
@@ -210,7 +214,7 @@ export function createScene2DSymbolFromSwf(
     slots,
     'swf',
     null,
-    createSwfImageResources(parsed),
+    createSwfImageResources(parsed).resources,
     createSwfAudioResources(parsed),
   );
 }
@@ -328,6 +332,16 @@ interface SwfImagePayload {
   mimeType: string;
 }
 
+// The container facts retained beside one JPEG colour stream. The public record is completed only after
+// image resources exist, so a placed character and this report share the exact same reference object.
+interface SwfJpegAlphaSource {
+  characterId: number;
+  compressedAlphaBytes: Uint8Array;
+  deblockingParameterRaw: number | null;
+  height: number;
+  width: number;
+}
+
 // The bounded header of one video character. Stage A retains enough identity to materialize the display
 // leaf honestly; the timeline-indexed VideoFrame packets remain unsupported and are not retained here.
 interface SwfVideoDefinition {
@@ -368,6 +382,7 @@ interface SwfTagResult {
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
   imageTextures: Map<number, Map<string, Texture2D>>;
+  jpegAlphaPayloads: Map<number, SwfJpegAlphaSource>;
   linkages: Map<number, string>;
   // One decoded Shape per shape character, drawn once and copied into each placement of it.
   morphBounds: Map<number, { end: SwfRectangle; start: SwfRectangle }>;
@@ -406,6 +421,7 @@ interface SwfParseState {
   fontOutlineSources: Map<number, GlyphOutlineSource>;
   images: Map<number, SwfImagePayload>;
   imageTextures: Map<number, Map<string, Texture2D>>;
+  jpegAlphaPayloads: Map<number, SwfJpegAlphaSource>;
   // The shared JPEG encoding tables a legacy DefineBits image is missing, held until one needs them.
   jpegTables: Uint8Array | null;
   linkages: Map<number, string>;
@@ -1137,7 +1153,13 @@ function createSwfAudioResources(parsed: Readonly<SwfTagResult>): AudioResourceR
   return resources;
 }
 
-function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceReference[] {
+interface SwfImageResourceSet {
+  references: Map<number, EmbeddedImageResourceReference>;
+  resources: ImageResourceReference[];
+}
+
+function createSwfImageResources(parsed: Readonly<SwfTagResult>): SwfImageResourceSet {
+  const references = new Map<number, EmbeddedImageResourceReference>();
   const resources: ImageResourceReference[] = [];
   for (const [characterId, variants] of parsed.imageTextures) {
     const image = parsed.images.get(characterId);
@@ -1150,9 +1172,30 @@ function createSwfImageResources(parsed: Readonly<SwfTagResult>): ImageResourceR
           : 'straight';
     const reference = createEmbeddedImageResourceReference(image.bytes, image.mimeType, alphaType);
     reference.textures = [...variants.values()];
+    references.set(characterId, reference);
     resources.push(reference);
   }
-  return resources;
+  return { references, resources };
+}
+
+// Completes the full-import sidecar after document references exist. An unplaced definition still earns
+// a report record and its own zero-texture reference; a placed one reuses the document's exact object.
+function createSwfJpegAlphaPayloads(
+  parsed: Readonly<SwfTagResult>,
+  references: Map<number, EmbeddedImageResourceReference>,
+): SwfJpegAlphaPayload[] {
+  const payloads: SwfJpegAlphaPayload[] = [];
+  for (const [characterId, source] of parsed.jpegAlphaPayloads) {
+    let reference = references.get(characterId);
+    if (reference === undefined) {
+      const image = parsed.images.get(characterId);
+      if (image === undefined) continue;
+      reference = createEmbeddedImageResourceReference(image.bytes, image.mimeType);
+      references.set(characterId, reference);
+    }
+    payloads.push({ ...source, reference });
+  }
+  return payloads;
 }
 
 function createSwfTexturedSprite(texture: Texture2D, bounds: SwfRectangle | null): Sprite {
@@ -1668,6 +1711,7 @@ function readSwfTags(reader: SwfReader, diagnostics: ImportDiagnostic[] | undefi
     fontOutlineSources: new Map<number, GlyphOutlineSource>(),
     images: new Map<number, SwfImagePayload>(),
     imageTextures: new Map<number, Map<string, Texture2D>>(),
+    jpegAlphaPayloads: new Map<number, SwfJpegAlphaSource>(),
     jpegTables: null,
     pendingTexts: [],
     linkages: new Map<number, string>(),
@@ -1704,6 +1748,7 @@ function readSwfTags(reader: SwfReader, diagnostics: ImportDiagnostic[] | undefi
     fontOutlineSources: state.fontOutlineSources,
     images: state.images,
     imageTextures: state.imageTextures,
+    jpegAlphaPayloads: state.jpegAlphaPayloads,
     linkages: state.linkages,
     morphBounds: state.morphBounds,
     morphShapes: state.morphShapes,
@@ -2451,31 +2496,17 @@ function readSwfLegacyImageDefinition(body: SwfReader, state: SwfParseState): vo
 // costs far more than the picture is worth.
 function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, code: number): void {
   const characterId = body.readUint16();
+  let deblockingParameterRaw: number | null = null;
   let imageStart = body.pos;
   let imageEnd = body.end;
+  let hasAlphaPayload = false;
   if (code === TAG_DEFINE_BITS_JPEG_3 || code === TAG_DEFINE_BITS_JPEG_4) {
+    hasAlphaPayload = true;
     const alphaDataOffset = body.readUint32();
     const alphaOffsetBase = body.pos;
-    if (code === TAG_DEFINE_BITS_JPEG_4) body.readUint16();
+    if (code === TAG_DEFINE_BITS_JPEG_4) deblockingParameterRaw = body.readUint16();
     imageStart = body.pos;
     imageEnd = alphaOffsetBase + alphaDataOffset;
-    // The colour stream ends at the alpha offset and the zlib-compressed alpha block after it is
-    // discarded, so a transparent JPEG imports fully opaque. Drop rather than Skip: this is authored
-    // data lost, not a feature declined — the bytes are present and go unread.
-    if (alphaDataOffset > 0 && imageEnd < body.end) {
-      reportImportDiagnostic(
-        state.diagnostics,
-        ImportDiagnosticSeverity.Drop,
-        'swf.jpeg-alpha-stream',
-        'readSwfEmbeddedImageDefinition',
-        {
-          capability:
-            code === TAG_DEFINE_BITS_JPEG_3 ? 'swf.bitmap.define-bits-jpeg-3' : 'swf.bitmap.define-bits-jpeg-4',
-          characterId,
-          discardedBytes: body.end - imageEnd,
-        },
-      );
-    }
   }
   if (
     !body.valid ||
@@ -2494,6 +2525,32 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
     bytes: stripSwfJpegStreamBoundary(body.source, imageStart, imageEnd, image.mimeType),
     mimeType: image.mimeType,
   });
+  if (hasAlphaPayload) {
+    const compressedAlphaBytes = body.source.subarray(imageEnd, body.end);
+    state.jpegAlphaPayloads.set(characterId, {
+      characterId,
+      compressedAlphaBytes,
+      deblockingParameterRaw,
+      height: image.bounds.height,
+      width: image.bounds.width,
+    });
+    // The full report retains this stream, but the document's colour reference still resolves without
+    // applying it. Keep the existing fidelity diagnostic until the separately-gated composition stage.
+    if (compressedAlphaBytes.length > 0) {
+      reportImportDiagnostic(
+        state.diagnostics,
+        ImportDiagnosticSeverity.Drop,
+        'swf.jpeg-alpha-stream',
+        'readSwfEmbeddedImageDefinition',
+        {
+          capability:
+            code === TAG_DEFINE_BITS_JPEG_3 ? 'swf.bitmap.define-bits-jpeg-3' : 'swf.bitmap.define-bits-jpeg-4',
+          characterId,
+          discardedBytes: compressedAlphaBytes.length,
+        },
+      );
+    }
+  }
   return;
 }
 
