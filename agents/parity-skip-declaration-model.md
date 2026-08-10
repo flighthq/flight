@@ -39,7 +39,25 @@ this document's subject:
   measured". A reader concludes that every byte of growth requires a deliberate, measured act and a
   baseline rewrite. In fact anything under 5% requires none of the three. The docs describe a
   ratchet; the gate implements a band. Following the pointer does not rescue the reader, because the
-  only artifact in the repo where the 5% is written down is the implementation.
+  only artifact in the repo where the 5% is written down is the implementation. `bundle-size.md:3`
+  compounds it by naming `npm run size` "the preferred size command for agents" and describing it as
+  reporting against the committed baseline, while never saying the gate is absent from `check` — so a
+  diligent reader concludes running it is a courtesy on top of automatic enforcement, when it is the
+  only enforcement there is.
+
+  **And the band is re-armed by the workflow the doc prescribes.** The 5% is computed against a pin
+  that moves. Follow `bundle-size.md:16` exactly — make an intentional, measured change, run
+  `npm run size:baseline` — and `size-runner.ts:275` sets the pin to the *new measurement*, granting
+  a fresh 5% above the higher floor. Per step it is bounded; across steps it is a staircase whose
+  every riser is invisible. **The diligent agent re-arms the band; the negligent one does not**,
+  because growth under 5% passes without rewriting anything.
+
+  **There is no magnitude at which the tool forces a decision.** Under 5% passes silently. Over 5%
+  fails — and the documented remedy erases the objection unconditionally: `size-runner.ts:274` makes
+  `adjustedPassed = updateBaseline || passed`, and `:275` re-pins regardless of how far the value
+  moved, with no bound, no confirmation, and no record of what was forgiven. A 50% regression re-pins
+  as quietly as a 0.1% one. The gate's only effect is to prompt someone to run the command that
+  erases it.
 - **A pin is stale, not false.** `scene2d-embedded-png:canvas` at 1,864 reproduces exactly at the
   commit that introduced it and has since drifted to ~1,723. A one-line baseline diff is *not*
   evidence a measurement never ran: `size-runner.ts:263` seeds `pendingBaseline` from the existing
