@@ -2,6 +2,27 @@
 
 This SDK should behave like a hardware store: a user can import one small tool without pulling in the whole building. `npm run size` builds matching examples and reports gzip output size against the committed baseline — it is the preferred size command for agents. Run it after changes to examples, package exports, barrels, renderer registration, dependencies, or anything that may affect tree-shaking.
 
+## `size` reports; it does not gate — deliberately
+
+**`npm run size` is not wired into `npm run check`, and that is the design, not an oversight.** A gate
+that goes red on intentional growth pushes an agent to run `npm run size:baseline` to clear it — and
+that rewrite re-pins to the new measurement unconditionally, at any magnitude, granting a fresh
+allowance above the higher floor. **Gating would manufacture the laundering it was meant to prevent.**
+The invariant above is enforced by a person reading the report, not by a failing exit code.
+
+Recorded 2026-08-10 after four agents independently read the absence as a defect and one proposed
+wiring it. Nothing in this file said otherwise, and **a design decision recorded nowhere is
+indistinguishable from an oversight.**
+
+Two consequences worth knowing when you read a delta:
+
+- **The number is against a pin of unknown age.** `tools/size/size.baseline.json` is refreshed only
+  when someone chooses to, so a printed delta can attribute to your change what is someone else's
+  drift. **For any figure you intend to report, measure parent-versus-commit on the same tree** rather
+  than quoting the delta against the pin.
+- **A missing baseline reports `passed`.** A key with no pin has no threshold, so a new fixture enters
+  unbounded and the truthful output would be "no baseline", not a pass.
+
 ## The screw and the lawnmower
 
 The store sells both the screw and the lawnmower — granular primitives and assembled conveniences — and the invariant is that **an assembly never inflates the cost of a primitive**: buying a screw must never make you pay for the lawnmower. This is a _within_-unit rule, not only a cross-package one. If adding a feature grows the baseline for everyone who imports a function — a new branch in a hot loop, a new `case` in a shared `switch` — the feature is in the wrong place. Sell it as a separately-importable primitive or pass, so feature-growth never taxes the per-item baseline. A config flag that skips a branch removes the _runtime_ cost, not the _bundle_ cost; only separate importability does that.
