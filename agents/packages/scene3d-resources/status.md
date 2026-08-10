@@ -24,19 +24,22 @@ is a claim about this tree, not about a session.
 - **Phase 2 progressive resolution is absent.** Nothing in `src/` mentions mip levels, a low-res
   placeholder, or a cross-fade between two resolutions. `revealScene3DResourcesOnResolve.ts:34` is the
   pop-vs-fade recipe over `node.alpha` only — one transition, from hidden to final.
-- **An unlisted material kind makes reveal-on-resolve skip that material.** The texture registry has
-  no default lister, so the recipe cannot associate its textures with their owning meshes; it leaves
-  those meshes' alpha unchanged and installs no fade (`revealScene3DResourcesOnResolve.ts:93-117`).
-  Image fetching is unaffected — `getScene3DResourceTextures` reads the resource back-edge without the
-  registry, so the textures resolve normally. Call `explainScene3DResourceCoverage` after parsing and
-  before loading, while the opt-in boundary is actionable.
+- **An unlisted material kind makes reveal-on-resolve ignore that family's textures, with a mesh-scoped
+  outcome.** If every material on a mesh is unlisted, the recipe discovers no pending owner, leaves the
+  mesh's starting alpha unchanged, and installs no fade. If a listed sibling has pending textures, the
+  recipe hides the mesh but waits only for those listed textures; it can reveal the mesh while an unlisted
+  material's texture is still pending, producing a later texture pop-in
+  (`revealScene3DResourcesOnResolve.ts:93-117`). Image fetching is unaffected —
+  `getScene3DResourceTextures` reads the resource back-edge without the registry, so all textures still
+  resolve normally. Call `explainScene3DResourceCoverage` after parsing and before loading, while the
+  opt-in boundary and its visible cost are actionable.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **2026-08-10** — Corrected the unlisted-material outcome against the reveal implementation: texture
-  acquisition remains registry-free, while reveal-on-resolve skips the material and leaves mesh alpha unchanged.
+- **2026-08-10** — Measured both reveal cases: all-unlisted meshes keep their starting alpha, while a mixed
+  mesh can reveal after its listed textures settle and show a later unlisted-texture pop-in.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract, and given the front matter it was missing
   entirely. Three claims checked **false** and dropped. The largest: the 2026-07-31 entry's tiering
   proposal, explicitly "not implemented", **is implemented** — the root `vitest.config.ts` now runs a
