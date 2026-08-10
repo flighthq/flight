@@ -179,6 +179,43 @@ export function loadBaselineCoverage(directory = BASELINES_DIR): Map<string, Set
   return coverage;
 }
 
+/** Every (scene, backend) a functional target exists for — declared controls included, since a control
+ * is still a scene that renders. Distinct from realization coverage, which excludes controls. */
+export function loadTargetCoverage(directory = SCENES_DIR): Map<string, Set<FunctionalBackend>> {
+  const coverage = new Map<string, Set<FunctionalBackend>>();
+  for (const scene of discoverFunctionalScene3Ds(directory)) {
+    coverage.set(scene.name, new Set(scene.renderers as FunctionalBackend[]));
+  }
+  return coverage;
+}
+
+/**
+ * Committed fingerprints with no functional target to validate.
+ *
+ * A GATE MUST FAIL WHEN ITS EVIDENCE HAS NO REFERENT. That is the twin of the auditor's non-empty
+ * rule, "a gate must fail when its required evidence is zero" — here the evidence exists but points at
+ * nothing. A fingerprint for a backend with no scene cannot be a control, because a control is a scene
+ * that renders; it is a leftover, and it manufactures a support mark out of nothing.
+ *
+ * This is why the matrix does not need a second glyph. Splitting ⊘ into declared-control and orphan
+ * would make the bad state legible; failing here makes it unrepresentable, after which ⊘ means
+ * declared-control unambiguously because the other meaning cannot survive a passing tree.
+ */
+export function findOrphanedBaselineFingerprints(
+  baselines: ReadonlyMap<string, ReadonlySet<FunctionalBackend>>,
+  targets: ReadonlyMap<string, ReadonlySet<FunctionalBackend>>,
+): { scene: string; backend: FunctionalBackend }[] {
+  const orphans: { scene: string; backend: FunctionalBackend }[] = [];
+  for (const scene of [...baselines.keys()].sort()) {
+    const declared = targets.get(scene);
+    for (const { key } of BACKENDS) {
+      if (!baselines.get(scene)!.has(key)) continue;
+      if (declared === undefined || !declared.has(key)) orphans.push({ scene, backend: key });
+    }
+  }
+  return orphans;
+}
+
 /** Reads scene discovery into the realized backend targets the support matrix may tick. */
 export function loadRealizationCoverage(directory = SCENES_DIR): Map<string, Set<FunctionalBackend>> {
   const coverage = new Map<string, Set<FunctionalBackend>>();
@@ -381,7 +418,19 @@ function main(): void {
   const md = renderMarkdown(groups);
   const json = renderJson(groups);
 
+  // Checked before drift: a stale matrix is a regeneration away, an orphaned fingerprint is a claim
+  // with nothing behind it, and regenerating would happily render it as a mark.
+  const orphans = findOrphanedBaselineFingerprints(coverage, loadTargetCoverage());
   if (check) {
+    if (orphans.length > 0) {
+      console.error(
+        `support:check — ${orphans.length} committed fingerprint(s) have NO functional target, so they are ` +
+          'evidence with no referent and cannot support any mark. Delete the key (or the baseline file), ' +
+          'or add the missing scene target:',
+      );
+      for (const { scene, backend } of orphans) console.error(`  ${scene} [${backend}]`);
+      process.exit(1);
+    }
     let drift = false;
     for (const [path, next] of [
       [MATRIX_MD, md],
@@ -403,6 +452,10 @@ function main(): void {
     return;
   }
 
+  if (orphans.length > 0) {
+    console.warn(`support — ${orphans.length} fingerprint(s) have no functional target; support:check will fail:`);
+    for (const { scene, backend } of orphans) console.warn(`  ${scene} [${backend}]`);
+  }
   writeFileSync(MATRIX_MD, md);
   writeFileSync(MATRIX_JSON, json);
   console.log(`support — wrote agents/support-matrix.{md,json} (${coverage.size} scenes)`);
