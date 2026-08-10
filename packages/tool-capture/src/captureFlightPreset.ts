@@ -51,5 +51,4 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // God-rays interprets centerY in each fullscreen backend's native UV orientation. The asymmetric
   // 0.4 light point therefore aligns with the scene core only on WebGPU and the ray fields diverge.
   'effect-god-rays': 'all',
-  'effect-screen-space-fog': 'all',
 };
