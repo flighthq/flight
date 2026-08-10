@@ -68,7 +68,7 @@ export function parseSpineDrawOrderTimeline(
         diagnostics,
         ImportDiagnosticSeverity.Skip,
         'spine.draworder-keyframe-unresolved',
-        'parseSpineSkeleton',
+        'parseSpineDrawOrderTimeline',
         { time: numberOr(entry.time, 0) },
       );
       continue;
@@ -168,7 +168,7 @@ function parseSpineAttachment(
     diagnostics,
     ImportDiagnosticSeverity.Skip,
     `spine.${type}-attachment-unsupported`,
-    'parseSpineSkeleton',
+    'parseSpineAttachment',
     { name: 1 },
   );
   return null;
@@ -357,7 +357,7 @@ function parseSpineWeightedVertices(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'spine.weighted-vertices-truncated',
-      'parseSpineSkeleton',
+      'parseSpineWeightedVertices',
       { vertices: 1 },
     );
   }
@@ -510,7 +510,7 @@ function buildSpineSegmentEasings(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'spine.curve-time-overshoot-clamped',
-      'parseSpineSkeleton',
+      'buildSpineSegmentEasings',
       { segments: clampedSegments },
     );
   }
@@ -519,7 +519,7 @@ function buildSpineSegmentEasings(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'spine.per-component-curve-easing-unsupported',
-      'parseSpineSkeleton',
+      'buildSpineSegmentEasings',
       { segments: divergentSegments },
     );
   }
@@ -657,7 +657,7 @@ function parseSpineSlotTimelines(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       `spine.slot-${kind}-timeline-unsupported`,
-      'parseSpineSkeleton',
+      'parseSpineSlotTimelines',
       { timelines: count },
     );
   }
@@ -758,7 +758,7 @@ function skipCrumbSpineTimelineGroup(diagnostics: ImportDiagnostic[] | undefined
   if (Array.isArray(raw)) count = raw.length;
   else if (raw !== null && typeof raw === 'object') count = Object.keys(raw as Record<string, unknown>).length;
   if (count > 0)
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseSpineSkeleton', { count });
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseSpineAnimations', { count });
 }
 
 // Clamps a normalized bezier x component into the unit interval the curve solver can invert over.

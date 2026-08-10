@@ -475,7 +475,7 @@ function dragonBonesFrames(raw: unknown, diagnostics?: ImportDiagnostic[]): Read
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'dragonbones.malformed-frame-recovered',
-      'parseDragonBonesSkeleton',
+      'dragonBonesFrames',
       { frames: recovered },
     );
   }
@@ -508,7 +508,7 @@ function dragonBonesInterpolation(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'dragonbones.tween-easing-unsupported',
-      'parseDragonBonesSkeleton',
+      'dragonBonesInterpolation',
       { frames: approximated },
     );
   }
@@ -608,7 +608,7 @@ function parseDragonBonesColor(raw: unknown, diagnostics?: ImportDiagnostic[]): 
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'dragonbones.color-offset-unsupported',
-      'parseDragonBonesSkeleton',
+      'parseDragonBonesColor',
       { slots: 1 },
     );
   }
@@ -674,7 +674,7 @@ function parseDragonBonesDisplay(
     diagnostics,
     ImportDiagnosticSeverity.Skip,
     `dragonbones.${type}-display-unsupported`,
-    'parseDragonBonesSkeleton',
+    'parseDragonBonesDisplay',
     { displays: 1 },
   );
   return null;
@@ -695,7 +695,7 @@ function parseDragonBonesMeshDisplay(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'dragonbones.shared-mesh-unsupported',
-      'parseDragonBonesSkeleton',
+      'parseDragonBonesMeshDisplay',
       { displays: 1 },
     );
     return null;
@@ -707,7 +707,7 @@ function parseDragonBonesMeshDisplay(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'dragonbones.legacy-weighted-mesh-unsupported',
-      'parseDragonBonesSkeleton',
+      'parseDragonBonesMeshDisplay',
       { displays: 1 },
     );
     return null;
@@ -817,7 +817,7 @@ function parseDragonBonesWeightedMesh(
       diagnostics,
       ImportDiagnosticSeverity.Recover,
       'dragonbones.weighted-mesh-recovered',
-      'parseDragonBonesSkeleton',
+      'parseDragonBonesWeightedMesh',
       { meshes: 1 },
     );
   }

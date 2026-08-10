@@ -157,7 +157,7 @@ function skipSpineBinaryEvents(reader: ByteReader, diagnostics?: ImportDiagnosti
     // An audio path is what gates the trailing volume/balance pair, so its presence changes the record width.
     if (readSpineBinaryString(reader) !== null) skipSpineBinaryBytes(reader, 8);
   }
-  reportSpineBinaryCrumb(diagnostics, count, 'spine.event-unsupported', 'events');
+  reportSpineBinaryCrumb(diagnostics, count, 'spine.event-unsupported', 'skipSpineBinaryEvents', 'events');
 }
 
 // Builds one AnimationClip per animation from its BONE timelines, mirroring what `parseSpineSkeleton` does
@@ -359,7 +359,7 @@ function buildSpineBinarySegmentEasings(
       diagnostics,
       ImportDiagnosticSeverity.Skip,
       'spine.per-component-curve-easing-unsupported',
-      'parseSpineSkeletonBinary',
+      'buildSpineBinarySegmentEasings',
       { segments: divergent },
     );
   }
@@ -590,7 +590,7 @@ function readSpineBinaryDrawOrderTimeline(
         diagnostics,
         ImportDiagnosticSeverity.Skip,
         'spine.draworder-keyframe-unresolved',
-        'parseSpineBinarySkeleton',
+        'readSpineBinaryDrawOrderTimeline',
         { time },
       );
       continue;
@@ -745,9 +745,27 @@ function skipSpineBinaryConstraints(reader: ByteReader, diagnostics?: ImportDiag
     readSpineBinaryVarint(reader); // rotate mode
     skipSpineBinaryBytes(reader, 24); // offsetRotation, position, spacing, mixRotate, mixX, mixY
   }
-  reportSpineBinaryCrumb(diagnostics, ik, 'spine.ik-constraint-unsupported', 'constraints');
-  reportSpineBinaryCrumb(diagnostics, transform, 'spine.transform-constraint-unsupported', 'constraints');
-  reportSpineBinaryCrumb(diagnostics, path, 'spine.path-constraint-unsupported', 'constraints');
+  reportSpineBinaryCrumb(
+    diagnostics,
+    ik,
+    'spine.ik-constraint-unsupported',
+    'skipSpineBinaryConstraints',
+    'constraints',
+  );
+  reportSpineBinaryCrumb(
+    diagnostics,
+    transform,
+    'spine.transform-constraint-unsupported',
+    'skipSpineBinaryConstraints',
+    'constraints',
+  );
+  reportSpineBinaryCrumb(
+    diagnostics,
+    path,
+    'spine.path-constraint-unsupported',
+    'skipSpineBinaryConstraints',
+    'constraints',
+  );
 }
 
 // The head every constraint record shares: name, ordering index, skin-required flag, then its bone list.
@@ -987,10 +1005,11 @@ function reportSpineBinaryCrumb(
   diagnostics: ImportDiagnostic[] | undefined,
   count: number,
   kind: string,
+  origin: string,
   unit: string,
 ): void {
   if (count > 0) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'parseSpineSkeletonBinary', {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, origin, {
       [unit]: count,
     });
   }
