@@ -203,6 +203,7 @@ function measureFrame(
       bindPose.joints,
       bindPose.weights,
       mesh.skin!.skeleton.jointMatrices,
+      mesh.skin!.skeleton.normalMatrices,
     );
     unionTransformedPositions(observed, bindPose.skinnedPositions, getNodeWorldMatrix4(mesh).m);
   }
