@@ -95,8 +95,24 @@ import {
 // Each mesh becomes a Mesh scene node with the canonical PBR vertex layout. The 3DS coordinate
 // system is right-handed Z-up (like MD2/MD5); positions are converted to Flight's right-handed
 // Y-up via convertPositionsZUpToYUp, a -90° rotation about X ((x, y, z) → (x, z, -y), det = +1).
-// Because the conversion is a rotation, not a reflection, triangle winding and computed normals
-// are preserved as-is from the file — no winding reversal is needed.
+// Because the conversion is a rotation, not a reflection, triangle winding and computed normals are
+// preserved as-is from the file — no winding reversal is needed.
+//
+// ★ THAT CONCLUSION RESTS ON TWO LINKS, AND EXACTLY ONE OF THEM IS UNVERIFIED.
+//   1. "The conversion preserves winding" — VERIFIED, and re-verifiable in seconds. threeDsParse.test.ts
+//      parses a synthetic closed cube of known outward winding and asserts POSITIVE signed volume on the
+//      emitted geometry. Signed volume is computed from positions and indices alone, so it shares no term
+//      with the normal pass and can genuinely disagree with it.
+//   2. "3DS files are authored counter-clockwise-front" — UNVERIFIED. It is a claim about the FORMAT, and
+//      no synthetic file can establish it: a fixture proves only what its author already believed. It
+//      needs an external corpus, and is labelled rather than argued.
+// The label is deliberate. Filling link 2 in from reasoning would convert "unchecked" into "stated and
+// unchecked", which reads as verified and is strictly worse than an admitted gap. If 3DS import becomes
+// load-bearing, measure link 2 against real files; until then this comment is the honest state.
+//
+// Why signed volume rather than the authored-normal check the MD2 importer uses: 3DS carries NO authored
+// normals — its per-face normals come from the same edge cross product a winding check would use — so
+// comparing winding against them would compare a quantity with itself and pass by construction.
 //
 // The 3DS format limits each mesh to 65535 vertices (uint16 indices). Multiple mesh objects are
 // common in practice and each becomes a separate Mesh child of the scene.

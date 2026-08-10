@@ -339,6 +339,32 @@ Three ways a baseline loses its referent, all observed:
 An orphan can also strand *evidence about evidence*: deleting a baseline left a now-dangling named allowance
 in `check-fingerprint-source-hashes.ts`. Check the allowance lists when removing a baseline.
 
+### A missing premise is labelled, never argued
+
+The documentation sibling of the two evidence rules above, and the same failure one layer up — in prose
+rather than in a gate:
+
+> **Never fill in a missing premise from reasoning. Fill it from measurement, or leave the gap visible and
+> labelled.** Writing the premise in converts *unchecked* into *stated and unchecked*, which reads as
+> verified and is strictly worse than an admitted gap. — builder2, 2026-08-10
+
+The instance that produced it, and the distinction that decides the remedy. Two importers reached opposite
+conclusions from the same axis conversion:
+
+- **MD2's premise was FALSE.** Its comment called the Z-up→Y-up conversion a *reflection*; the matrix has
+  determinant +1, so it is a rotation. A reflection would flip winding, so the false premise argued
+  correctly to the wrong answer, and no reversal was applied. Measured: front faces culled. **A false
+  premise is a bug — fix it.**
+- **3DS's premise is merely ABSENT.** Its comment reasons soundly that a rotation preserves winding, but
+  never states that 3DS files are authored counter-clockwise-front, which is what makes "no reversal
+  needed" follow. **An absent premise is not a bug — label it**, because supplying it from plausibility is
+  how it stops looking like a question.
+
+Splitting the chain is what makes the label useful rather than defeatist: *"the conversion preserves
+winding"* is verifiable synthetically and is now tested; *"the format is authored CCW-front"* needs an
+external corpus. The honest label is not "this is unchecked" but **"exactly one link is unchecked, and
+here it is."**
+
 ### Enumerating baselines: three traps that produce wildly wrong counts
 
 Counting orphans by hand is easy to get wrong by a factor of five. Read the loaders in `scripts/support.ts`
