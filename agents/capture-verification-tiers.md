@@ -289,6 +289,46 @@ The first metadata population did not run capture. It reconstructed each existin
 from the Git commit that last wrote that fingerprint, so today's source is not falsely stamped onto an older
 baseline.
 
+## A fingerprint with no scene is not weak evidence — it is not evidence
+
+The twin of the zero-comparisons rule above. **A gate must fail when its required evidence is zero; it must
+also fail when its evidence has no referent.** A committed fingerprint for a backend with no functional
+target cannot be an unsupported control, because a control is a scene that *renders* — it is a leftover, and
+the support matrix will happily render it as a mark. `support:check` fails on these
+(`findOrphanedBaselineFingerprints` in `scripts/support.ts`).
+
+This is why `⊘` is a single glyph rather than two. Splitting it into declared-control and orphan would make
+the bad state *legible*; failing on it makes the bad state *unrepresentable*, after which `⊘` means
+declared-control unambiguously — the other meaning cannot survive a passing tree.
+
+Three ways a baseline loses its referent, all observed:
+
+- **A dropped column.** The scene's canvas target goes away, its capture stays behind. Drop the key.
+- **A scene rename.** The whole baseline file is left under the old name. Delete it *only* after confirming a
+  live baseline exists under the new name; otherwise the file is the sole evidence and should be renamed.
+- **A package rename sweeping filenames.** `c0eeab24e` renamed `@flighthq/scene` → `@flighthq/scene3d` and
+  swept `functional/baselines/scene-morph.json → scene3d-morph.json` with it. Baseline filenames key off the
+  **scene** name, not the package, so four scenes silently lost their evidence and read `⊘` instead of `✓`.
+  Renaming them back restored seven real support marks. Deleting them would have destroyed the evidence.
+
+An orphan can also strand *evidence about evidence*: deleting a baseline left a now-dangling named allowance
+in `check-fingerprint-source-hashes.ts`. Check the allowance lists when removing a baseline.
+
+### Enumerating baselines: three traps that produce wildly wrong counts
+
+Counting orphans by hand is easy to get wrong by a factor of five. Read the loaders in `scripts/support.ts`
+rather than reimplementing them, and if you must count independently, know these:
+
+- **Matrix scene IDs are not filenames.** The matrix renders `scene3d-morph` where the file is
+  `scene-morph`, and `clip-contour-hdr` where the file is `scene2d-clip-contour-hdr`. Classifying off the
+  displayed ID invents orphans that do not exist.
+- **There is a third scene form.** Besides `<id>.<backend>.ts` and directory forms, a backend-agnostic
+  `functional/scenes/<id>.ts` serves *every* backend. Missing it reported 145 orphans where there were 31 — a
+  4.7× error that would have driven a mass deletion of live baselines.
+- **Not every baseline entry carries a `fingerprint`.** Some columns hold only `sha256`. `loadBaselineCoverage`
+  counts any non-null backend key; a hand count that requires `fingerprint` silently skips those and
+  undercounts.
+
 ## Scope
 
 Not covered here: the tilemap/webgpu blank render itself (a real bug, possibly sharing a root cause with the
