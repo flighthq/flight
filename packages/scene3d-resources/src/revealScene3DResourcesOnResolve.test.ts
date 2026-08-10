@@ -2,6 +2,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
+import { createShadedMaterial } from '@flighthq/shading/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
@@ -140,6 +141,52 @@ describe('revealScene3DResourcesOnResolve', () => {
 
     revealScene3DResourcesOnResolve(createBuiltInScene3DResourceResolver(), scene, createTweenManager());
     expect(mesh.alpha).toBe(1);
+  });
+
+  it('leaves an all-unlisted mesh unchanged and installs no fade', () => {
+    const diffuseMap = createTexture({ resource: pendingRef() });
+    const mesh = createMesh(createBoxMeshGeometry(), [createShadedMaterial({ diffuseMap })]);
+    mesh.alpha = 0.6;
+    const scene = createScene3D();
+    configureResources(scene);
+    addNodeChild(scene.root, mesh);
+    const resolver = createBuiltInScene3DResourceResolver();
+    const manager = createTweenManager();
+
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
+    expect(mesh.alpha).toBeCloseTo(0.6);
+
+    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, {
+      ref: resourceOf(diffuseMap),
+      texture: diffuseMap,
+    });
+    expect(hasTweensOf(manager, mesh)).toBe(false);
+  });
+
+  it('reveals a mixed mesh after its listed textures settle without waiting for an unlisted sibling', () => {
+    const shadedMap = createTexture({ resource: pendingRef() });
+    const pbrMap = createTexture({ resource: pendingRef() });
+    const mesh = createMesh(createBoxMeshGeometry(), [
+      createShadedMaterial({ diffuseMap: shadedMap }),
+      createStandardPbrMaterial({ baseColorMap: pbrMap }),
+    ]);
+    const scene = createScene3D();
+    configureResources(scene);
+    addNodeChild(scene.root, mesh);
+    const resolver = createBuiltInScene3DResourceResolver();
+    const manager = createTweenManager();
+
+    revealScene3DResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
+    expect(mesh.alpha).toBe(0);
+
+    emitSignal(enableScene3DResourceSignals(resolver).onResourceResolved, {
+      ref: resourceOf(pbrMap),
+      texture: pbrMap,
+    });
+    expect(hasTweensOf(manager, mesh)).toBe(true);
+    updateTweens(manager, 0.5);
+    expect(mesh.alpha).toBeCloseTo(1);
+    expect(resourceOf(shadedMap).state).toBe(ResourceResolutionState.Unresolved);
   });
 
   it('reveals every owner of one shared texture when that texture settles', () => {

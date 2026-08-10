@@ -6,9 +6,10 @@ import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry'
 // Lists the ShadedMaterial base maps. Registered separately from the surface-material listers'
 // PBR/unlit set so an app that never uses the shaded base pays nothing for it.
 //
-// Registration is a prerequisite for revealScene3DResourcesOnResolve, which needs texture→owning-node
-// and has no other way to get it; without the lister, reveal-on-resolve skips ShadedMaterial nodes and
-// leaves their alpha unchanged.
+// Registration is a prerequisite for revealScene3DResourcesOnResolve to wait for these maps. Without the
+// lister, an all-unlisted mesh keeps its starting alpha and gets no fade. A mixed mesh with a listed
+// material carrying pending textures is hidden, but it can reveal when only those listed textures settle
+// while a ShadedMaterial map is still pending, so the shaded map may pop in later.
 //
 // The requirement-set successor is documented in agents/registration-lifecycle.md; see its status header
 // for the program authorization this registration builds under.

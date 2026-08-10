@@ -14,8 +14,10 @@ import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry'
 // A gap here is always Missing, never Fallback: the registry has no default lister, so an unlisted kind
 // contributes nothing rather than something approximate. Image acquisition is unaffected because
 // getScene3DResourceTextures reads the resource back-edge without consulting this registry. Consumers
-// that need mesh→texture ownership cannot act on the unlisted family: reveal-on-resolve skips it, leaving
-// the mesh's alpha unchanged while its textures resolve normally.
+// that need mesh→texture ownership see only listed families. When every material on a mesh is unlisted,
+// reveal-on-resolve leaves its starting alpha unchanged and installs no fade. When a listed sibling has
+// pending textures, the recipe hides the mesh but waits only for those listed textures; it can reveal the
+// mesh while an unlisted material's texture is still pending, so that texture may pop in later.
 export function explainScene3DResourceCoverage(
   out: SceneCoverageEntry[],
   resolver: Readonly<Scene3DResourceResolver>,
