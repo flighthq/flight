@@ -36,6 +36,8 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // Canvas has no lens-distortion runner; its functional column intentionally renders the unwarped
   // control scene, so only the two realized GPU recipes are comparable.
   'effect-lens-distortion': ['canvas'],
+  // Canvas likewise has no lens-flare runner and intentionally records an unmodified control scene.
+  // The realized WebGL and WebGPU flare recipes remain the meaningful comparison.
   'effect-lens-flare': ['canvas'],
   'effect-posterize': ['canvas'],
   // Canvas ramps its multiply gradient to the frame corner; the GPU smoothstep reaches full darkening
