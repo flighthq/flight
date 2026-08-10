@@ -33,6 +33,8 @@ const FLIGHT_VISUAL_PARITY_GROUPS: Readonly<Record<string, Readonly<CaptureParit
 };
 
 const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> = {
+  // Canvas has no lens-distortion runner; its functional column intentionally renders the unwarped
+  // control scene, so only the two realized GPU recipes are comparable.
   'effect-lens-distortion': ['canvas'],
   'effect-lens-flare': ['canvas'],
   'effect-posterize': ['canvas'],
