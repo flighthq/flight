@@ -1,5 +1,10 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { decodeImage, decodeImagePremultiplied, getImageBitmapComposer } from '@flighthq/image-codec/contract';
+import {
+  decodeImage,
+  decodeImagePremultiplied,
+  explainImageDecodeFailure,
+  getImageBitmapComposer,
+} from '@flighthq/image-codec/contract';
 import type {
   AlphaType,
   Bitmap,
@@ -163,12 +168,22 @@ export async function resolveImageResourceReference(
   ref.failure = null;
   ref.state = ResourceResolutionState.Loading;
   try {
+    const usesOrdinaryEmbeddedDecode =
+      ref.kind === ImageResourceReferenceKind.Embedded &&
+      (ref.bitmapComposition === undefined || _resolveImageBitmapComposition === null);
     const source =
       ref.kind === ImageResourceReferenceKind.Embedded
         ? await decodeEmbeddedImageResourceReference(ref, signal)
         : await fetch(ref, signal);
     if (source === null) {
-      ref.failure = { kind: ImageResourceFailureKind.Unavailable, message: 'Image resource unavailable', name: null };
+      const decodeFailure = usesOrdinaryEmbeddedDecode
+        ? explainImageDecodeFailure(ref.bytes, ref.mimeType ?? undefined)
+        : null;
+      ref.failure = {
+        kind: ImageResourceFailureKind.Unavailable,
+        message: decodeFailure?.reason ?? 'Image resource unavailable',
+        name: null,
+      };
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

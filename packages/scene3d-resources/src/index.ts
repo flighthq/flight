@@ -6,6 +6,7 @@ export {
   disposeScene3DResourceResolver,
   enableScene3DResourceFailureGuards,
   enableScene3DResourceSignals,
+  explainScene3DResourceCoverage,
   fetchWebImageResource,
   getScene3DDocumentBasePathFromUrl,
   getScene3DResourceSignals,
