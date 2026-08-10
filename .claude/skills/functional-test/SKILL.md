@@ -26,6 +26,14 @@ functional/scenes/
 
 Do not add both a `<name>.ts` and a `<name>.<backend>.ts` for the same name.
 
+File existence declares that the capture target runs on a backend; it does not by itself make an unsupported control into renderer support. A backend-specific fixture that deliberately captures the unchanged scene because the feature has no realized runner must declare that fact beside the fixture:
+
+```typescript
+export const functionalBackendSupport = 'control' as const;
+```
+
+`npm run support` derives normal realizations from scene discovery and reserves the support-matrix tick for targets without this exception. The committed fingerprint remains visible as `⊘`, so control capture is not confused with either support or a missing baseline.
+
 `discoverEntries()` / the vite harness enumerate scenes by globbing `functional/scenes/*.ts`. The harness serves `/tests/{name}/{backend}/`; `@ft/render` and `@ft/verify` resolve to the real `tools/harness` modules (no per-backend build-time trampoline).
 
 Copy `templates/app.ts` from this skill as a starting point for a backend-agnostic scene.

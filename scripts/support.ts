@@ -1,28 +1,35 @@
-// Generates the Flight backend support matrix from GROUND TRUTH, so it cannot silently rot.
+// Generates the Flight backend support matrix from repository facts, so it cannot silently rot.
 //
-// Two sources feed it:
-//   1. DERIVED (authoritative) — every committed functional baseline under `functional/baselines/*.json`
-//      carries a per-backend fingerprint (`canvas` / `dom` / `webgl` / `webgpu`). A fingerprint's
-//      presence is proof the scene rendered deterministically on that backend and was captured; its
-//      absence is proof it was not. This is machine truth and no one edits it by hand.
-//   2. DECLARED (overlay) — the small `DECLARED_GAPS` table below records capabilities that have NO
-//      functional scene yet (so the baselines cannot speak to them) and cross-cutting caveats. This is
-//      the only hand-authored part; keep it short and honest.
+// Three sources feed it:
+//   1. DERIVED (authoritative) — committed functional baselines prove a scene rendered
+//      deterministically and was captured on a backend. They do NOT prove the backend realized the
+//      feature; unsupported control scenes produce fingerprints too.
+//   2. DERIVED + COLOCATED DECLARATION — current functional scene discovery proves which backend
+//      targets exist. A target is a realization unless the target itself exports
+//      `functionalBackendSupport = 'control'`, for the exceptional fixture that deliberately renders an
+//      unsupported control. A baseline without a realized target is preserved as `control`, never a tick.
+//   3. DECLARED (overlay) — the small `DECLARED_GAPS` table below records capabilities that have NO
+//      functional scene yet and cross-cutting caveats. Keep it short and honest.
 //
 // Run `npm run support` to regenerate `agents/support-matrix.md` + `agents/support-matrix.json`.
 // `npm run support:check` (wired into `npm run check`) regenerates in memory and fails if the committed
-// files differ — the same generate-and-diff guard as `order:check`, so the matrix can never drift from
-// the baselines without CI catching it.
+// files differ — the same generate-and-diff guard as `order:check`, so the matrix cannot drift from
+// either source fact without CI catching it.
 //
-// IMPORTANT semantic caveat, baked into the generated doc: a present fingerprint proves "renders
-// deterministically and was captured", NOT "renders correctly". A stub/passthrough effect still
-// produces a stable fingerprint. Correctness caveats live in DECLARED_GAPS.
+// IMPORTANT semantic caveat, baked into the generated doc: a tick proves a discoverable realization
+// plus a deterministic capture, NOT full correctness. A partial runner can still produce a stable
+// fingerprint. Correctness caveats live in DECLARED_GAPS.
 
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds';
+import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds';
 
 const REPO_ROOT = join(import.meta.dirname, '..');
 const BASELINES_DIR = join(REPO_ROOT, 'functional', 'baselines');
+const SCENES_DIR = join(REPO_ROOT, 'functional', 'scenes');
 const MATRIX_MD = join(REPO_ROOT, 'agents', 'support-matrix.md');
 const MATRIX_JSON = join(REPO_ROOT, 'agents', 'support-matrix.json');
 
@@ -138,29 +145,32 @@ const DECLARED_GAPS: readonly DeclaredGap[] = [
 ];
 
 interface BackendCell {
-  backend: string;
-  baselined: boolean;
+  backend: FunctionalBackend;
+  fingerprinted: boolean;
+  realization: boolean;
   sandboxVerifiable: boolean;
+  status: BackendSupportStatus;
 }
-interface SceneRow {
+export type BackendSupportStatus = 'control' | 'realized' | 'unbaselined';
+export interface SceneRow {
   scene: string;
   backends: BackendCell[];
 }
-interface AreaGroup {
+export interface AreaGroup {
   key: string;
   label: string;
   scenes: SceneRow[];
 }
 
-function loadBaselineCoverage(): Map<string, Set<string>> {
-  const coverage = new Map<string, Set<string>>();
-  const files = readdirSync(BASELINES_DIR)
+export function loadBaselineCoverage(directory = BASELINES_DIR): Map<string, Set<FunctionalBackend>> {
+  const coverage = new Map<string, Set<FunctionalBackend>>();
+  const files = readdirSync(directory)
     .filter((f) => f.endsWith('.json'))
     .sort();
   for (const file of files) {
     const scene = file.replace(/\.json$/, '');
-    const data = JSON.parse(readFileSync(join(BASELINES_DIR, file), 'utf8')) as Record<string, unknown>;
-    const present = new Set<string>();
+    const data = JSON.parse(readFileSync(join(directory, file), 'utf8')) as Record<string, unknown>;
+    const present = new Set<FunctionalBackend>();
     for (const { key } of BACKENDS) {
       if (data[key] != null) present.add(key);
     }
@@ -169,7 +179,41 @@ function loadBaselineCoverage(): Map<string, Set<string>> {
   return coverage;
 }
 
-function buildGroups(coverage: Map<string, Set<string>>): AreaGroup[] {
+/** Reads scene discovery into the realized backend targets the support matrix may tick. */
+export function loadRealizationCoverage(directory = SCENES_DIR): Map<string, Set<FunctionalBackend>> {
+  const coverage = new Map<string, Set<FunctionalBackend>>();
+  for (const scene of discoverFunctionalScene3Ds(directory)) {
+    const realized = new Set<FunctionalBackend>();
+    for (const backend of scene.renderers as FunctionalBackend[]) {
+      const source = readFileSync(functionalScene3DFile(directory, scene.name, backend), 'utf8');
+      if (findFunctionalBackendSupport(source) !== 'control') realized.add(backend);
+    }
+    coverage.set(scene.name, realized);
+  }
+  return coverage;
+}
+
+/** Reads the exceptional, colocated declaration on a functional unsupported-control target. */
+export function findFunctionalBackendSupport(source: string): 'control' | null {
+  const match = /\bexport\s+const\s+functionalBackendSupport\s*=\s*(['"])([^'"]+)\1(?:\s+as\s+const)?\s*;?/.exec(
+    source,
+  );
+  if (match === null) return null;
+  if (match[2] !== 'control') {
+    throw new Error(`Unknown functionalBackendSupport value '${match[2]}'; expected 'control'`);
+  }
+  return 'control';
+}
+
+export function classifyBackendSupport(fingerprinted: boolean, realization: boolean): BackendSupportStatus {
+  if (!fingerprinted) return 'unbaselined';
+  return realization ? 'realized' : 'control';
+}
+
+export function buildGroups(
+  coverage: Map<string, Set<FunctionalBackend>>,
+  realizations: Map<string, Set<FunctionalBackend>>,
+): AreaGroup[] {
   const byArea = new Map<string, SceneRow[]>();
   for (const [scene, present] of coverage) {
     const areaKey = scene.split('-')[0];
@@ -177,8 +221,10 @@ function buildGroups(coverage: Map<string, Set<string>>): AreaGroup[] {
       scene,
       backends: BACKENDS.map(({ key }) => ({
         backend: key,
-        baselined: present.has(key),
+        fingerprinted: present.has(key),
+        realization: realizations.get(scene)?.has(key) ?? false,
         sandboxVerifiable: SANDBOX_VERIFIABLE.has(key),
+        status: classifyBackendSupport(present.has(key), realizations.get(scene)?.has(key) ?? false),
       })),
     };
     const list = byArea.get(areaKey);
@@ -194,51 +240,68 @@ function buildGroups(coverage: Map<string, Set<string>>): AreaGroup[] {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function cellGlyph(cell: BackendCell): string {
-  if (!cell.baselined) return '·'; // no baseline for this backend
-  return cell.sandboxVerifiable ? '✓' : '✓ᴴ'; // ᴴ = host-captured, not re-verifiable in-sandbox
+export function cellGlyph(cell: BackendCell): string {
+  if (cell.status === 'unbaselined') return '·';
+  if (cell.status === 'control') return '⊘';
+  return cell.sandboxVerifiable ? '✓' : '✓ᴴ';
 }
 
-function renderMarkdown(groups: AreaGroup[]): string {
+export function renderMarkdown(groups: AreaGroup[]): string {
   const lines: string[] = [];
   lines.push(
-    '<!-- GENERATED by `npm run support` from functional/baselines + scripts/support.ts DECLARED_GAPS. Do not edit by hand. -->',
+    '<!-- GENERATED by `npm run support` from functional scenes + baselines + scripts/support.ts DECLARED_GAPS. Do not edit by hand. -->',
   );
   lines.push('');
   lines.push('# Flight SDK — Backend Support Matrix');
   lines.push('');
-  lines.push('Derived from committed functional baselines (ground truth), regenerated by `npm run support` and');
-  lines.push('drift-gated by `npm run support:check` (part of `npm run check`).');
+  lines.push('Derived from current functional-scene realization plus committed baseline fingerprints.');
+  lines.push('Regenerated by `npm run support` and drift-gated by `npm run support:check` (part of `npm run check`).');
   lines.push('');
   lines.push('## Legend');
   lines.push('');
   lines.push(
-    '- `✓` — a committed functional-baseline fingerprint exists for this scene×backend, and the backend is **re-verifiable in-sandbox**. Canvas/DOM/WebGL run natively; WebGPU runs via Playwright Chromium + the bundled SwiftShader software Vulkan adapter and the GPU-readback present path.',
+    '- `✓` — a current functional target **realizes the feature**, a committed fingerprint exists, and the backend is **re-verifiable in-sandbox**. Canvas/DOM/WebGL run natively; WebGPU runs via Playwright Chromium + the bundled SwiftShader software Vulkan adapter and the GPU-readback present path.',
   );
   lines.push(
-    '- `✓ᴴ` — a fingerprint exists but was **host-captured** and is not re-verifiable in this sandbox. (None currently — all four backends re-verify here.)',
+    '- `✓ᴴ` — the feature is realized and fingerprinted, but was **host-captured** and is not re-verifiable in this sandbox. (None currently — all four backends re-verify here.)',
   );
-  lines.push('- `·` — no committed baseline for this scene on this backend.');
+  lines.push(
+    '- `⊘` — a fingerprint exists, but current scene discovery finds **no realized feature target**. It records an unsupported control (declared beside the fixture) or an orphaned capture; it is not backend support.',
+  );
+  lines.push('- `·` — no committed fingerprint for this scene on this backend; no support claim is made.');
   lines.push('');
   lines.push(
-    '> **A fingerprint proves the scene renders deterministically and was captured — NOT that it renders _correctly_.** A stub/passthrough (e.g. a screen-space effect with no G-buffer) still yields a stable fingerprint. Correctness caveats are in *Declared gaps & caveats* below.',
+    '> **A tick proves a realized target plus a deterministic capture — NOT that the realization is fully _correct_.** A partial effect (e.g. a screen-space effect with no G-buffer) can still yield a stable fingerprint. Correctness caveats are in *Declared gaps & caveats* below.',
   );
   lines.push('');
 
   // Coverage summary.
   const totals = BACKENDS.map(({ key, label }) => {
-    let n = 0;
-    for (const g of groups) for (const s of g.scenes) if (s.backends.find((b) => b.backend === key)?.baselined) n++;
-    return { label, n };
+    let controls = 0;
+    let fingerprints = 0;
+    let realized = 0;
+    for (const group of groups) {
+      for (const scene of group.scenes) {
+        const cell = scene.backends.find((backend) => backend.backend === key);
+        if (cell?.fingerprinted) fingerprints++;
+        if (cell?.status === 'control') controls++;
+        if (cell?.status === 'realized') realized++;
+      }
+    }
+    return { controls, fingerprints, label, realized };
   });
   const sceneCount = groups.reduce((sum, g) => sum + g.scenes.length, 0);
   lines.push('## Coverage summary');
   lines.push('');
-  lines.push(`${sceneCount} functional scenes with committed baselines. Scenes carrying a fingerprint per backend:`);
+  lines.push(`${sceneCount} functional scene IDs with committed baselines. Per-backend evidence:`);
   lines.push('');
-  lines.push(`| ${totals.map((t) => t.label).join(' | ')} |`);
-  lines.push(`| ${totals.map(() => '---').join(' | ')} |`);
-  lines.push(`| ${totals.map((t) => `${t.n} / ${sceneCount}`).join(' | ')} |`);
+  lines.push(`| Evidence | ${totals.map((total) => total.label).join(' | ')} |`);
+  lines.push(`| --- | ${totals.map(() => '---').join(' | ')} |`);
+  lines.push(
+    `| Realized + fingerprinted | ${totals.map((total) => `${total.realized} / ${sceneCount}`).join(' | ')} |`,
+  );
+  lines.push(`| Captured controls | ${totals.map((total) => total.controls).join(' | ')} |`);
+  lines.push(`| Fingerprints total | ${totals.map((total) => total.fingerprints).join(' | ')} |`);
   lines.push('');
   lines.push(
     'All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).',
@@ -260,7 +323,7 @@ function renderMarkdown(groups: AreaGroup[]): string {
   }
   lines.push('');
 
-  lines.push('## Verified-by-baseline (per area)');
+  lines.push('## Realized support verified by baseline (per area)');
   lines.push('');
   for (const g of groups) {
     lines.push(`### ${g.label}`);
@@ -277,17 +340,32 @@ function renderMarkdown(groups: AreaGroup[]): string {
   return lines.join('\n');
 }
 
-function renderJson(groups: AreaGroup[]): string {
+export function renderJson(groups: AreaGroup[]): string {
   const payload = {
+    schemaVersion: 2,
     generatedBy: 'scripts/support.ts',
-    note: 'A backend fingerprint proves deterministic render + capture, not correctness. WebGPU re-verifies in-sandbox via SwiftShader software Vulkan; a small set of scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing.',
+    note: 'realized means current scene discovery finds a feature realization and a fingerprint. control means a fingerprint exists without a realized target. unbaselined means no fingerprint, so no support claim is made.',
+    states: {
+      realized: 'Current functional target realizes the feature and has a committed fingerprint.',
+      control: 'Fingerprint exists without a discoverable realized target; this is not backend support.',
+      unbaselined: 'No committed fingerprint; no support claim is made.',
+    },
     backends: BACKENDS.map((b) => ({ ...b, sandboxVerifiable: SANDBOX_VERIFIABLE.has(b.key) })),
     areas: groups.map((g) => ({
       key: g.key,
       label: g.label,
       scenes: g.scenes.map((s) => ({
         scene: s.scene,
-        backends: Object.fromEntries(s.backends.map((b) => [b.backend, b.baselined])),
+        backends: Object.fromEntries(
+          s.backends.map((backend) => [
+            backend.backend,
+            {
+              status: backend.status,
+              fingerprint: backend.fingerprinted,
+              realization: backend.realization,
+            },
+          ]),
+        ),
       })),
     })),
     declaredGaps: DECLARED_GAPS,
@@ -298,7 +376,8 @@ function renderJson(groups: AreaGroup[]): string {
 function main(): void {
   const check = process.argv.includes('--check');
   const coverage = loadBaselineCoverage();
-  const groups = buildGroups(coverage);
+  const realizations = loadRealizationCoverage();
+  const groups = buildGroups(coverage, realizations);
   const md = renderMarkdown(groups);
   const json = renderJson(groups);
 
@@ -329,4 +408,4 @@ function main(): void {
   console.log(`support — wrote agents/support-matrix.{md,json} (${coverage.size} scenes)`);
 }
 
-main();
+if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) main();

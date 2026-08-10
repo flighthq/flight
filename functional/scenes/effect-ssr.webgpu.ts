@@ -25,6 +25,8 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // WGPU has no realized SSR capability. The unregistered operation is intentionally skipped so this
 // column records the backend's unsupported result without a fake identity implementation.
+export const functionalBackendSupport = 'control' as const;
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
