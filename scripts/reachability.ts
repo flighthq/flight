@@ -15,6 +15,7 @@ import type {
   ReachabilityLaneEntry,
   ReachabilityViolation,
   RegistrarOwnershipEntry,
+  UncataloguedRegistrarBucket,
 } from './reachability-core';
 import { getSelectors, selectPackages } from './select';
 
@@ -29,6 +30,18 @@ interface LaneDrift {
   before: Pick<ReachabilityLaneEntry, 'dot' | 'contract'> | null;
   after: Pick<ReachabilityLaneEntry, 'dot' | 'contract'> | null;
 }
+
+const UNCATALOGUED_BUCKETS: readonly {
+  bucket: UncataloguedRegistrarBucket;
+  label: string;
+}[] = [
+  { bucket: 'kind-identifier', label: 'Kind is an Identifier' },
+  { bucket: 'kind-member-or-computed', label: 'Kind is a member/computed expression' },
+  { bucket: 'implementation-expression', label: 'Implementation is not a bare Identifier' },
+  { bucket: 'callee-expression', label: 'Callee is not a bare Identifier' },
+  { bucket: 'loop-or-array', label: 'Registers through a loop or array' },
+  { bucket: 'not-kind-registration', label: 'Not a kind-registration' },
+];
 
 const root = process.cwd();
 const baselinePath = join(root, 'scripts', 'reachability-baseline.json');
@@ -109,14 +122,31 @@ if (!jsonMode) {
   }
 
   const uncatalogued = registrarOwnership.filter((entry) => entry.status === 'UNCATALOGUED');
+  const excluded = uncatalogued.filter((entry) => entry.uncataloguedBucket === 'not-kind-registration');
   const registrarCount = new Set(registrarOwnership.map((entry) => `${entry.packageName}\0${entry.registrar}`)).size;
   const mappingCount = registrarOwnership.length - uncatalogued.length;
   console.log(
     `${pc.green('OK')} ${pc.bold(`${registrarCount} exported registrars inventoried`)} ${pc.dim(`(${mappingCount} readable mappings, ${uncatalogued.length} UNCATALOGUED)`)}`,
   );
+  console.log(
+    pc.dim(
+      `  ${uncatalogued.length - excluded.length} recorder misses after excluding ${excluded.length} not-kind-registration rows from the miss denominator`,
+    ),
+  );
+  for (let i = 0; i < UNCATALOGUED_BUCKETS.length; i++) {
+    const bucket = UNCATALOGUED_BUCKETS[i]!;
+    const entries = uncatalogued.filter((entry) => entry.uncataloguedBucket === bucket.bucket);
+    const examples = entries
+      .slice(0, 2)
+      .map((entry) => `${entry.packageName}:${entry.registrar}`)
+      .join(', ');
+    console.log(
+      `  ${pc.yellow(`${i + 1}.`)} ${pc.bold(bucket.label)}: ${entries.length}${examples.length > 0 ? pc.dim(` — ${examples}`) : ''}`,
+    );
+  }
   for (const entry of uncatalogued) {
     console.log(
-      `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim('[UNCATALOGUED]')}`,
+      `  ${pc.yellow('!')} ${pc.white(entry.packageName)} ${pc.bold(entry.registrar)} ${pc.dim(`[UNCATALOGUED: ${entry.uncataloguedBucket ?? 'missing-classification'}]`)}`,
     );
   }
 
