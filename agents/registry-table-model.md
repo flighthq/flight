@@ -16,14 +16,6 @@ probe (written, run, removed; repository left clean). What it changed:
   proposed member and was rejected, then re-admitted on a different one under a sharper criterion — see
   [`OrdinalTable`](#ordinaltable--integer-token-formats-only).
 
-**The tombstone is typed but has nowhere to live, and that is known rather than overlooked.**
-`withRegistryTableTombstone` produces a `RegistryTableEntry<T>`, while `KeyedTable<T>.entries` is
-`Map<Kind, T>` and `OrdinalTable<T>.entries` is `(T | null)[]` — neither value type admits the sentinel,
-so no table can store what the setter returns. Still open with it: whether `entries` becomes
-`ReadonlyMap`, what `keys`/`has*` report for a tombstoned key, and the `OrdinalTable` fork. The type
-landed ahead of its storage deliberately — visibly incomplete beats silently wrong — and the design work
-sits with builder2.
-
 The narrow question is why a missing texture resolver breaks silently at runtime. The wider one this
 document exists to settle: **a registry is a value with a lifetime — which value, whose lifetime, and how
 many shapes does it come in?**
