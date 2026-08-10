@@ -38,7 +38,6 @@ const UNAVAILABLE_REASON =
 
 export const FINGERPRINT_SOURCE_HASH_ALLOWANCES: readonly FingerprintSourceHashAllowance[] = [
   allowance('functional/baselines/bitmap-perbitmap-smoothing.json', 'webgpu'),
-  allowance('functional/baselines/clip-contour-hdr.json', 'webgl'),
   allowance('functional/baselines/render-pass-shared-context.json', 'webgl'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgl'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgpu'),
