@@ -12,6 +12,13 @@
 // ABSOLUTE vertical coordinate must compensate for that. An effect that reads only its own
 // neighbourhood cannot show this, which is why the symptom appears in a minority of effects.
 //
+// ⚠ IT FINDS MIRRORS, NOT THE CAUSE. The same opposite-Y-origin bug reaches the screen in several
+// shapes, and only one of them is a mirror: a gradient reading y INVERTS, discrete bands MIRROR, a
+// y-driven sine SHIFTS PHASE, and a term like abs(y - centre) is IDENTICAL at centre 0.5 and mirrored
+// nowhere else. Only the second shape moves closer when flipped. So a null here means no mirrored
+// scene, never a clean orientation bill of health — four of the five instances found in this repo
+// were invisible to it. Read a null as "look for the other shapes", not as "there are none".
+//
 // This runs on the COMMITTED baseline fingerprints, so it needs no browser, no capture and no GPU,
 // and gives the same answer anywhere the repository is checked out. It REPORTS and never enforces: a
 // mirror is a finding about a shader, and fixing one changes that scene's committed fingerprint.
@@ -131,7 +138,8 @@ export function formatFunctionalOrientationReport(report: Readonly<FunctionalOri
     ...lines,
     `${report.scenesWithoutPair} scene(s) carry fewer than two comparable fingerprints`,
     'Agreeing only when mirrored is an orientation disagreement, not a content one: the backends drew',
-    'the same thing the other way up.',
+    'the same thing the other way up. A null finds no MIRROR — the same cause also inverts gradients,',
+    'shifts the phase of y-driven patterns, and hides entirely where a parameter is symmetric.',
   ].join('\n');
 }
 
