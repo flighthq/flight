@@ -373,13 +373,40 @@ export function withRegistryTableEntry<T>(
   value: T,
 ): RegistryTable<T>;
 
-// Binds `key` to the tombstone: "this table explicitly omits the base's entry," which a keyed overlay
-// previously could not say and a slot's `null` could not distinguish from "inherit base."
+// OMIT. Binds `key` to the tombstone: "this table has an opinion about `key`, and the opinion is NOTHING."
+// Under composition the overlay's tombstone WINS and the base's entry does not survive.
+//
+// The opposite of `withoutRegistryTableEntry`, which it reads almost identically to in English and which
+// composes the other way. Both leave `getRegistryTableEntry` answering null on a table with no base, so
+// the difference is invisible until the table is composed — see the note under that function.
 export function withRegistryTableTombstone<T>(
   table: Readonly<RegistryTable<T>>,
   key: Kind,
 ): RegistryTable<T>;
+
+// NO OPINION. Removes `key` from the table entirely, so under composition the base's entry is INHERITED.
+// This is the splice `unregisterScene2DDocumentImporter` performs today, named for what it means rather
+// than for what it does to storage.
+//
+// The opposite of `withRegistryTableTombstone`: that one overrides the base with nothing, this one
+// declines to override at all. There is no third union variant for this, and there should not be — "no
+// opinion" is the key being ABSENT from the map, so there is nothing to store and therefore nothing to
+// type. Typing it would mean storing it, which is the tombstone.
+//
+// ★ These two are the trap. `withRegistryTableTombstone` and `withoutRegistryTableEntry` read the same way
+// to a reader skimming, produce the SAME observable result on an uncomposed table, and have OPPOSITE
+// consequences the moment anything derives from it. Choose by what you mean — override-with-nothing, or
+// decline-to-override — never by which looks right at the call site.
+export function withoutRegistryTableEntry<T>(
+  table: Readonly<RegistryTable<T>>,
+  key: Kind,
+): RegistryTable<T>;
 ```
+
+Second-order consequence, harmless today and silently load-bearing later: **a tombstone written into a
+table that nothing derives from is meaningless**, because there is no base for it to override. It becomes
+meaningful the first time someone composes that table — so a tombstone placed "for symmetry" while the
+distinction is inert is not inert, it is a decision deferred to whoever adds the first overlay.
 
 ### The tombstone must not compile where a value is expected
 
@@ -598,11 +625,13 @@ explicitly by the caller into every operation. `createScene2DDocumentFromBytes` 
    partial mitigation already in source: `registerScene2DDocumentImporter` replaces in place when the kind
    exists, so re-registering an importer keeps its position and cannot silently move a format in the queue.
    The unresolved half is ordering *between different kinds*, which is still insertion order.
-3. **It is the only registry with a real removal verb.** `unregisterScene2DDocumentImporter` **splices** the
-   entry out. That is a third meaning next to the two the tombstone design just settled: *bound*,
-   *explicitly omitted* (tombstone), and *removed entirely*. Whether splice-removal survives as a distinct
-   operation, or collapses into the tombstone, is a direct question for the entry union and should not be
-   decided by whoever ports this registry.
+3. **It is the only registry with a real removal verb — RULED 2026-08-10.** `unregisterScene2DDocumentImporter`
+   **splices** the entry out. That is a third *meaning* beside bound and tombstoned, but **not** a third
+   stored *state*: "no opinion" is the key being absent from the map, so there is nothing to store and
+   nothing to type. It is a distinct **verb** — `withoutRegistryTableEntry` — not a union variant. At the
+   port, use `without*`: a splice means inherit-the-base, which is the opposite of a tombstone. The
+   distinction is inert for this registry today (item 4), which is not a reason to pick casually — "inert
+   today" is exactly the quiet exception this document keeps finding.
 4. **Composition — the flip condition.** Nothing copies, merges, concatenates, derives, or overlays it
    today (checked for all five verbs). That fact is what grants the `OrdinalTable` exemption above. A
    ruling that gives it overlay semantics re-opens that decision and triggers the measurement requirement
