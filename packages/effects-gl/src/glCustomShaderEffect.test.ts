@@ -4,6 +4,7 @@ import {
   applyCustomShaderEffectToGl,
   defaultGlCustomShaderEffectRunner,
   getGlCustomShaderSource,
+  isGlCustomShaderEffectResolvable,
   registerGlCustomShaderSource,
   registerGlCustomShaderEffect,
   setGlCustomShaderSourceGuard,
@@ -50,6 +51,32 @@ describe('getGlCustomShaderSource', () => {
     const b = makeState();
     registerGlCustomShaderSource(a, 'ripple', FRAGMENT_SRC);
     expect(getGlCustomShaderSource(b, 'ripple')).toBeNull();
+  });
+});
+
+describe('isGlCustomShaderEffectResolvable', () => {
+  it('is false for a shaderKey with no registered source, which is the identity-passthrough case', () => {
+    const state = makeState();
+    expect(isGlCustomShaderEffectResolvable(state, { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never)).toBe(
+      false,
+    );
+  });
+
+  it('is true once the key names registered source', () => {
+    const state = makeState();
+    registerGlCustomShaderSource(state, 'ripple', FRAGMENT_SRC);
+    expect(isGlCustomShaderEffectResolvable(state, { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never)).toBe(
+      true,
+    );
+  });
+
+  it('answers per effect instance, so two effects of this kind can disagree', () => {
+    const state = makeState();
+    registerGlCustomShaderSource(state, 'ripple', FRAGMENT_SRC);
+    const registered = { kind: 'CustomShaderEffect', shaderKey: 'ripple' } as never;
+    const missing = { kind: 'CustomShaderEffect', shaderKey: 'absent' } as never;
+    expect(isGlCustomShaderEffectResolvable(state, registered)).toBe(true);
+    expect(isGlCustomShaderEffectResolvable(state, missing)).toBe(false);
   });
 });
 

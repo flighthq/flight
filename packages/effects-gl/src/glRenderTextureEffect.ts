@@ -13,7 +13,7 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
+import { getGlRenderEffectRunner, isGlRenderEffectResolvable } from './glRenderEffectRegistry';
 
 // Applies the registered members of a chain from one RenderTexture to another. Each effect composites
 // into its destination and this function never clears `dest` or `scratch`; callers reusing either
@@ -83,12 +83,18 @@ export function explainGlRenderEffectApplication(
   sourceAvailable: boolean,
   destinationAvailable = false,
 ): GlRenderEffectApplicationExplanation {
-  const unregisteredKinds = effects
-    .filter((effect) => getGlRenderEffectRunner(state, effect.kind) === null)
-    .map((effect) => effect.kind);
+  const unregisteredKinds: string[] = [];
+  // Indexes, not kinds: two effects of the SAME kind can differ on whether they resolve, so the only
+  // honest identifier for an unresolved effect is where it sits in the submitted chain.
+  const unresolvedIndexes: number[] = [];
+  for (let index = 0; index < effects.length; index++) {
+    const effect = effects[index];
+    if (getGlRenderEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
+    else if (!isGlRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
+  }
   const requestedCount = effects.length;
   const registeredCount = requestedCount - unregisteredKinds.length;
-  return { registeredCount, requestedCount, status: getStatus(), unregisteredKinds };
+  return { registeredCount, requestedCount, status: getStatus(), unregisteredKinds, unresolvedIndexes };
 
   function getStatus(): GlRenderEffectApplicationExplanation['status'] {
     // An empty chain is a no-op the caller asked for, NOT a miss — reporting it would train readers to
@@ -98,7 +104,12 @@ export function explainGlRenderEffectApplication(
     if (destinationAvailable && (!sourceAvailable || registeredCount === 0)) return 'stale-destination';
     if (!sourceAvailable) return 'source-unavailable';
     if (registeredCount === 0) return 'unregistered-effects';
-    return unregisteredKinds.length > 0 ? 'partial-registration' : 'complete';
+    // Registration outranks resolution: a dropped effect is the worse picture, and its fix (register
+    // the kind) has to happen before the resolution question is even meaningful. The explanation still
+    // carries both lists, so a reporter can name the passthroughs whichever status won.
+    if (unregisteredKinds.length > 0) return 'partial-registration';
+    if (unresolvedIndexes.length === 0) return 'complete';
+    return unresolvedIndexes.length === registeredCount ? 'unresolved-effects' : 'partial-resolution';
   }
 }
 
