@@ -380,7 +380,11 @@ Three rules govern how an instrument may support this remedy:
    can still be over-read: finding `mesh-legacy-fixtures` in an oracle and its test proved that the
    consumer names the pack, while the test's asserted `NOT-RUN` path against an empty directory showed
    that it did not prove the pack was present or fetched. Verifying that cited text says what was quoted
-   is likewise distinct from verifying the claim the citation was offered to support.
+   is likewise distinct from verifying the claim the citation was offered to support. Commit reachability
+   is another instrument, and its inverse failure is easy to miss: builder found `f9b7efac5` unreachable
+   after a rebase had re-minted the SHA, but a content check found both the end-to-end test and its
+   `requestfailed` handlers under a different hash. A green run does not prove named content survived,
+   and an unreachable hash does not prove the content is absent; both directions require a content check.
 2. **States are distinguished by whether their remedies differ, not by why they arose.** The named
    instances are `SceneCoverage.Missing`, the `⊘` orphan, and `ContributedNothing` versus
    `ObservedNothing`. Collapsing either pair erases the action a caller should take.

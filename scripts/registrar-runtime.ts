@@ -10,8 +10,12 @@ import {
   copyRenderStateRegistrations,
   createRenderState,
 } from '@flighthq/render/contract';
-import { createCanvasRenderState, copyCanvasRenderStateRegistrations } from '@flighthq/scene2d-canvas/contract';
-import { createDomRenderState } from '@flighthq/scene2d-dom/contract';
+import {
+  createCanvasRenderState,
+  createCanvasTextureResolvers,
+  copyCanvasRenderStateRegistrations,
+} from '@flighthq/scene2d-canvas/contract';
+import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
 import { createScene3DMaterialTextureRegistry } from '@flighthq/scene3d-resources/contract';
 import { createModifierRegistry } from '@flighthq/shading/contract';
@@ -44,6 +48,7 @@ import type { RegistrarProbeRoot } from './registrar-runtime-core';
 
 interface PreparedArgument {
   derive: (() => unknown | Promise<unknown>) | null;
+  deriveNegativeControl: (() => unknown | Promise<unknown>) | null;
   root: RegistrarProbeRoot | null;
   value: unknown;
 }
@@ -55,7 +60,9 @@ interface RuntimePairResult {
   door: string;
   implementation: string;
   kind: string;
+  negativeControl: ReturnType<typeof classifyPairDerivation> | null;
   overwrote: string | null;
+  tableShape: 'map' | 'ordered-array';
 }
 
 interface RuntimeProbeResult {
@@ -448,6 +455,12 @@ async function main(): Promise<void> {
     (pair) => pair.comparability === 'structurally-not-comparable',
   );
   const instrumentLimited = notComparablePairs.filter((pair) => pair.comparability === 'instrument-limited');
+  const mapNegativeControls = comparablePairs.filter(
+    (pair) => pair.tableShape === 'map' && pair.negativeControl !== null,
+  );
+  const orderedNegativeControls = comparablePairs.filter(
+    (pair) => pair.tableShape === 'ordered-array' && pair.negativeControl !== null,
+  );
   const summary = {
     registrars: classifications.length,
     assemblies: results.length,
@@ -474,7 +487,20 @@ async function main(): Promise<void> {
       ).length,
       noDerivedStateAdapter: notComparablePairs.filter((pair) => pair.derivationReason === 'no-derived-state-adapter')
         .length,
-      orderedTable: notComparablePairs.filter((pair) => pair.derivationReason === 'ordered-table').length,
+    },
+    negativeControls: {
+      stateAdapter: {
+        canFail: mapNegativeControls.length > 0 && mapNegativeControls.every((pair) => pair.negativeControl === 'lost'),
+        lost: mapNegativeControls.filter((pair) => pair.negativeControl === 'lost').length,
+        pairs: mapNegativeControls.length,
+      },
+      orderedComparator: {
+        canFail:
+          orderedNegativeControls.length > 0 &&
+          orderedNegativeControls.every((pair) => pair.negativeControl === 'lost'),
+        lost: orderedNegativeControls.filter((pair) => pair.negativeControl === 'lost').length,
+        pairs: orderedNegativeControls.length,
+      },
     },
     collisionClassifications: {
       builtInVsBuiltIn: collisions.filter((collision) => collision.classification === 'BUILT-IN vs BUILT-IN').length,
@@ -583,6 +609,8 @@ async function probeRegistrar(
     const outside = captured.filter((pair) => !tableNames.has(pair.table) && pair.weakMapOwned);
     const stateArgument = prepared.find((argument) => argument.root !== null) ?? null;
     const derivedState = stateArgument?.derive === null ? null : await stateArgument?.derive();
+    const negativeControlState =
+      stateArgument?.deriveNegativeControl == null ? null : await stateArgument.deriveNegativeControl();
     const pairResult = (pair: (typeof captured)[number]): RuntimePairResult => ({
       comparability: pairComparability(
         explainPairDerivationScope(pair, stateArgument?.root?.value ?? null, asObject(derivedState)),
@@ -591,8 +619,13 @@ async function probeRegistrar(
       door: pair.door,
       implementation: describeRuntimeValue(pair.value),
       kind: describeRuntimeValue(pair.key),
+      negativeControl:
+        negativeControlState === null
+          ? null
+          : classifyPairDerivation(pair, stateArgument?.root?.value ?? null, asObject(negativeControlState)),
       overwrote: pair.hadPrevious ? describeRuntimeValue(pair.previous) : null,
       derivationReason: explainPairDerivationScope(pair, stateArgument?.root?.value ?? null, asObject(derivedState)),
+      tableShape: pair.table instanceof Map ? 'map' : 'ordered-array',
     });
     const diffedTables = new Set(tableNames.values());
     for (const pair of visible) {
@@ -642,43 +675,94 @@ async function prepareArgument(
   if (parameter.defaulted) return plainArgument(undefined);
   if (types.has('GlRenderState')) {
     const state = createGlState().state;
-    return rootArgument(parameter, state, () => createGlOffscreenRenderState(state));
+    return rootArgument(
+      parameter,
+      state,
+      () => createGlOffscreenRenderState(state),
+      () => createGlState().state,
+    );
   }
   if (types.has('WgpuRenderState')) {
     const state = await createWgpuRenderStateForTest();
-    return rootArgument(parameter, state, () => createWgpuOffscreenRenderState(state));
+    return rootArgument(parameter, state, () => createWgpuOffscreenRenderState(state), createWgpuRenderStateForTest);
   }
   if (types.has('CanvasRenderState')) {
     const state = createCanvasProbeState();
-    return rootArgument(parameter, state, () => {
-      const derived = createCanvasProbeState();
-      copyCanvasRenderStateRegistrations(derived, state);
-      copyAllRenderersFromRenderState(derived, state);
-      return derived;
-    });
+    return rootArgument(
+      parameter,
+      state,
+      () => {
+        const derived = createCanvasProbeState();
+        copyCanvasRenderStateRegistrations(derived, state);
+        copyAllRenderersFromRenderState(derived, state);
+        return derived;
+      },
+      createCanvasProbeState,
+    );
   }
   if (types.has('RenderState')) {
     const state = createRenderState();
-    return rootArgument(parameter, state, () => {
-      const derived = createRenderState();
-      copyRenderStateRegistrations(derived, state);
-      copyAllRenderersFromRenderState(derived, state);
-      return derived;
-    });
+    return rootArgument(
+      parameter,
+      state,
+      () => {
+        const derived = createRenderState();
+        copyRenderStateRegistrations(derived, state);
+        copyAllRenderersFromRenderState(derived, state);
+        return derived;
+      },
+      createRenderState,
+    );
   }
   if (types.has('DomRenderState')) {
     const state = createDomRenderState(document.createElement('div'));
-    return rootArgument(parameter, state, null);
+    return rootArgument(
+      parameter,
+      state,
+      () => deriveDomProbeState(state),
+      () => createDomRenderState(document.createElement('div')),
+    );
   }
-  if (types.has('CanvasTextureResolvers')) return rootArgument(parameter, createCanvasTextureResolversForProbe(), null);
-  if (types.has('Scene3DMaterialTextureRegistry'))
-    return rootArgument(parameter, createScene3DMaterialTextureRegistry(), null);
-  if (types.has('Scene2DDocumentImporterRegistry'))
-    return rootArgument(parameter, createScene2DDocumentImporterRegistry(), null);
-  if (types.has('ModifierRegistry')) return rootArgument(parameter, createModifierRegistry(), null);
-  if (types.has('MarkupTagRegistry')) return rootArgument(parameter, createMarkupTagRegistry(), null);
-  if (types.has('Physics2DWorld')) return rootArgument(parameter, createPhysics2DWorld(), null);
-  if (types.has('AssetLibrary')) return rootArgument(parameter, createAssetLibrary(), null);
+  if (types.has('CanvasTextureResolvers')) {
+    const state = createCanvasTextureResolversForProbe();
+    return rootArgument(
+      parameter,
+      state,
+      () => deriveCanvasTextureResolvers(state),
+      createCanvasTextureResolversForProbe,
+    );
+  }
+  if (types.has('Scene3DMaterialTextureRegistry')) {
+    const state = createScene3DMaterialTextureRegistry();
+    return rootArgument(
+      parameter,
+      state,
+      () => deriveScene3DMaterialTextureRegistry(state),
+      createScene3DMaterialTextureRegistry,
+    );
+  }
+  if (types.has('Scene2DDocumentImporterRegistry')) {
+    const state = createScene2DDocumentImporterRegistry();
+    return rootArgument(
+      parameter,
+      state,
+      () => deriveScene2DDocumentImporterRegistry(state),
+      createScene2DDocumentImporterRegistry,
+    );
+  }
+  if (types.has('ModifierRegistry')) {
+    const state = createModifierRegistry();
+    return rootArgument(parameter, state, () => deriveModifierRegistry(state), createModifierRegistry);
+  }
+  if (types.has('MarkupTagRegistry')) {
+    const state = createMarkupTagRegistry();
+    return rootArgument(parameter, state, () => deriveMarkupTagRegistry(state), createMarkupTagRegistry);
+  }
+  if (types.has('Physics2DWorld')) {
+    const state = createPhysics2DWorld();
+    return rootArgument(parameter, state, () => derivePhysics2DWorld(state), createPhysics2DWorld);
+  }
+  if (types.has('AssetLibrary')) return rootArgument(parameter, createAssetLibrary(), null, null);
   if (types.has('string') || /kind|name|type|scheme|accelerator/i.test(parameter.name)) {
     return plainArgument(`__probe_${parameter.name}__`);
   }
@@ -796,16 +880,18 @@ function formatDiffedTables(result: RuntimeProbeResult): string {
 }
 
 function plainArgument(value: unknown): PreparedArgument {
-  return { derive: null, root: null, value };
+  return { derive: null, deriveNegativeControl: null, root: null, value };
 }
 
 function rootArgument(
   parameter: RegistrarRuntimeParameter,
   value: object,
   derive: (() => unknown | Promise<unknown>) | null,
+  deriveNegativeControl: (() => unknown | Promise<unknown>) | null,
 ): PreparedArgument {
   return {
     derive,
+    deriveNegativeControl,
     root: { label: `${parameter.name}:${parameter.typeNames.join('|') || '<untyped>'}`, value },
     value,
   };
@@ -881,7 +967,63 @@ function createCanvasProbeState() {
 }
 
 function createCanvasTextureResolversForProbe() {
-  return { registry: new Map(), registryMiss: null };
+  const resolvers = createCanvasTextureResolvers();
+  resolvers.registry = new Map();
+  return resolvers;
+}
+
+function deriveCanvasTextureResolvers(source: ReturnType<typeof createCanvasTextureResolversForProbe>) {
+  const derived = createCanvasTextureResolversForProbe();
+  derived.registry = copyNullableMap(source.registry);
+  derived.registryMiss = source.registryMiss;
+  return derived;
+}
+
+function deriveDomProbeState(source: ReturnType<typeof createDomRenderState>) {
+  const derived = createDomRenderState(document.createElement('div'));
+  copyRenderStateRegistrations(derived, source);
+  copyAllRenderersFromRenderState(derived, source);
+  const sourceRuntime = getDomRenderStateRuntime(source);
+  const derivedRuntime = getDomRenderStateRuntime(derived);
+  derivedRuntime.domTextureResolverRegistry = copyNullableMap(sourceRuntime.domTextureResolverRegistry);
+  return derived;
+}
+
+function deriveMarkupTagRegistry(source: ReturnType<typeof createMarkupTagRegistry>) {
+  const derived = createMarkupTagRegistry();
+  derived.classResolver = source.classResolver;
+  derived.colorResolver = source.colorResolver;
+  derived.handlers = new Map(source.handlers);
+  return derived;
+}
+
+function deriveModifierRegistry(source: ReturnType<typeof createModifierRegistry>) {
+  const derived = createModifierRegistry();
+  derived.definitions = new Map(source.definitions);
+  return derived;
+}
+
+function derivePhysics2DWorld(source: ReturnType<typeof createPhysics2DWorld>) {
+  const derived = createPhysics2DWorld(source.gravityX, source.gravityY);
+  derived.jointSolvers = new Map(source.jointSolvers);
+  return derived;
+}
+
+function deriveScene2DDocumentImporterRegistry(source: ReturnType<typeof createScene2DDocumentImporterRegistry>) {
+  const derived = createScene2DDocumentImporterRegistry();
+  derived.entries = [...source.entries];
+  return derived;
+}
+
+function deriveScene3DMaterialTextureRegistry(source: ReturnType<typeof createScene3DMaterialTextureRegistry>) {
+  const derived = createScene3DMaterialTextureRegistry();
+  derived.extensionListers = new Map(source.extensionListers);
+  derived.listers = new Map(source.listers);
+  return derived;
+}
+
+function copyNullableMap<K, V>(source: Map<K, V> | null | undefined): Map<K, V> | null | undefined {
+  return source == null ? source : new Map(source);
 }
 
 function installDomAndGpuMocks(): void {

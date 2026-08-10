@@ -26,11 +26,7 @@ export interface RegistrarPairCollision {
 }
 
 export type RegistrarPairDerivation = 'lost' | 'not-comparable' | 'survived';
-export type RegistrarPairDerivationReason =
-  | 'module-global-no-source-state'
-  | 'no-derived-state-adapter'
-  | 'ordered-table'
-  | null;
+export type RegistrarPairDerivationReason = 'module-global-no-source-state' | 'no-derived-state-adapter' | null;
 
 // Capture real Map and ordered-array writes made below a generic registration door. The stack filter
 // excludes scratch writes in an assembly body before or after its door call: a pair counts only while a
@@ -165,11 +161,20 @@ export function classifyPairDerivation(
   derivedState: object | null,
 ): RegistrarPairDerivation {
   if (sourceState === null || derivedState === null) return 'not-comparable';
-  if (!(pair.table instanceof Map)) return 'not-comparable';
-  const sourceMaps = collectReachableMaps(sourceState);
-  if (!sourceMaps.has(pair.table)) return 'lost';
-  for (const table of collectReachableMaps(derivedState)) {
-    if (table.has(pair.key) && Object.is(table.get(pair.key), pair.value)) return 'survived';
+  if (pair.table instanceof Map) {
+    const sourceMaps = collectReachableMaps(sourceState);
+    if (!sourceMaps.has(pair.table)) return 'lost';
+    for (const table of collectReachableMaps(derivedState)) {
+      if (table.has(pair.key) && Object.is(table.get(pair.key), pair.value)) return 'survived';
+    }
+    return 'lost';
+  }
+  const sourceArrays = collectReachableArrays(sourceState);
+  if (!sourceArrays.has(pair.table)) return 'lost';
+  const pairIndex = findOrderedPairIndex(pair.table, pair.key, pair.value);
+  if (pairIndex === -1) return 'lost';
+  for (const table of collectReachableArrays(derivedState)) {
+    if (hasOrderedPairAt(table, pairIndex, pair.key, pair.value)) return 'survived';
   }
   return 'lost';
 }
@@ -179,7 +184,6 @@ export function explainPairDerivationScope(
   sourceState: object | null,
   derivedState: object | null,
 ): RegistrarPairDerivationReason {
-  if (!(pair.table instanceof Map)) return 'ordered-table';
   if (sourceState === null) return 'module-global-no-source-state';
   if (derivedState === null) return 'no-derived-state-adapter';
   return null;
@@ -246,4 +250,34 @@ function collectReachableMaps(root: object): Set<Map<unknown, unknown>> {
     }
   }
   return maps;
+}
+
+function collectReachableArrays(root: object): Set<unknown[]> {
+  const arrays = new Set<unknown[]>();
+  const seen = new Set<object>();
+  const pending: object[] = [root];
+  while (pending.length > 0) {
+    const value = pending.pop();
+    if (value === undefined || seen.has(value)) continue;
+    seen.add(value);
+    if (Array.isArray(value)) arrays.add(value);
+    for (const key of Reflect.ownKeys(value)) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      const child = descriptor?.value;
+      if (typeof child === 'object' && child !== null) pending.push(child);
+    }
+  }
+  return arrays;
+}
+
+function findOrderedPairIndex(table: readonly unknown[], key: unknown, value: unknown): number {
+  return table.findIndex((entry, index) => hasOrderedPairAt(table, index, key, value));
+}
+
+function hasOrderedPairAt(table: readonly unknown[], index: number, key: unknown, value: unknown): boolean {
+  const entry = table[index];
+  const record = asRecord(entry);
+  const entryKey = record?.kind ?? index;
+  const entryValue = record?.matches ?? record?.importDocument ?? entry;
+  return Object.is(entryKey, key) && Object.is(entryValue, value);
 }
