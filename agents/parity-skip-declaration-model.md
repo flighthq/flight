@@ -228,6 +228,33 @@ for four of the five, because they are served by the shared colour-pass path and
 hue-saturation, by the adjustments tier. Under a three-tier effect model, a missing runner file is
 expected rather than diagnostic.
 
+## The repo has already answered this once, in a comment
+
+`scripts/fixtures.ts:143-147` argues against exactly the mechanism the size gate uses, in the same
+vocabulary, and got it right:
+
+> These are EXCLUDED BY NAME from the fixture count rather than absorbed into a tolerance — a
+> tolerance would re-hide exactly what the count exists to surface, since "11 fewer than expected" is
+> indistinguishable from a truncated extraction once it is inside a slack band. Named here, so a pack
+> that grows a new metadata file fails loudly and gets a deliberate decision rather than silently
+> widening the band.
+
+Twenty lines later, `:160-164` describes this document's defect and records having already fixed it
+in that one instrument:
+
+> The fetcher used to print a success tick after `tar` returned and copy the manifest's `files` count
+> straight into the stamp — so THE RECORD STATED A COUNT NOTHING HAD CHECKED. The number needed to
+> check it was already in hand and unused.
+
+So the reasoning exists, is correct, and was applied — **and it did not generalize.** The size gate
+has a 5% slack band and no document mentioning it; the parity skip list has nine unreasoned entries;
+the ledger gate was inert where work lands. Not because anyone disagreed with the argument above, but
+because **its home was a comment in the file it applied to**, and a comment reaches only the reader
+already inside that file.
+
+That is this document's own thesis turned on the remedy for it. The argument against slack bands was
+recorded exactly where the gates that needed it would never show it.
+
 ## The open question
 
 Does this generalize past parity? The same shape appeared twice more in one week: `CONTRACT.md`
