@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { getCaptureBenchmarkBaselinePath, runCaptureBenchmark } from './captureBenchmark';
 import { runCaptureValidation } from './captureValidation';
@@ -70,6 +70,34 @@ describe('benchmark and generalized parity browser workflow', () => {
     });
     expect(gated).toMatchObject({ failed: 0, passed: 2, shouldFail: false });
     expect(gated.targets[1]?.baselineMetric).toBe('referenceRatio');
+  }, 20_000);
+
+  it('fails a gating run with no committed benchmark baselines', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await runCaptureBenchmark({
+        subject: 'unconfigured',
+        entries: [{ name: 'work', renderers: ['dom'], routes: { dom: 'dom' } }],
+        server: { url: baseUrl, kill() {} },
+        root,
+        iterations: 1,
+        samples: 3,
+        sampleDurationMs: 1,
+        warmupIterations: 0,
+        reportPath: false,
+      });
+
+      expect(result).toMatchObject({
+        failed: 0,
+        passed: 0,
+        skipped: 1,
+        shouldFail: true,
+        targets: [{ status: 'skipped', error: 'no benchmark baseline' }],
+      });
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('benchmark gate unconfigured'));
+    } finally {
+      log.mockRestore();
+    }
   }, 20_000);
 
   it('compares DOM and arbitrary WASM-labelled targets through an explicit visual group', async () => {
