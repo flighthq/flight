@@ -36,11 +36,26 @@ The store sells both the screw and the lawnmower — granular primitives and ass
 - `npm run size render=canvas` — filter by renderer. Filters combine: `npm run size piratepig render=webgl`.
 - `npm run size piratepig report=json` — machine-readable JSON, for easier agent parsing.
 - `npm run size piratepig output=size-report.json` — write a JSON report file; prints `SIZE_REPORT_PATH:<path>`.
-- `npm run size:baseline` — rewrite the size baseline after an intentional, measured change.
+- `npm run size:baseline` — rewrite the size baseline. **Not an agent's call.** See below.
 - `npm run size flight-diagnostics log-console` — build the release-stub/diagnostics pair, report
   the diagnostics gzip delta, and measure the log emitter plus console sink.
   The release build owns the canonical `flight-diagnostics:canvas` baseline key; the un-stubbed
   build is its mechanically derived `flight-diagnostics:canvas:diagnostics` variant.
+
+## Do not rewrite the baseline
+
+**An agent does not run `npm run size:baseline` (or `test:size:baseline`) without the user's explicit
+permission.** The pins are the user's record of what this SDK costs, and a rewrite is how a real
+increase stops being visible: the number that would have shown up at merge is replaced by one that
+agrees with the change that caused it.
+
+This is why `size` reports rather than gates — there is no red to clear, so there is no pressure to
+clear it. **Report the delta and leave the pin alone.** If a change legitimately costs bytes, that is
+a fact for the user to see and accept, not one for the tool to absorb.
+
+Measure it honestly and say so: `npm run size <example>` for the affected fixture, and
+parent-versus-commit on the same tree for any figure you intend to report. Both are cheap — a single
+filtered example is seconds; the unfiltered sweep over all 46 is the slow one.
 
 ## The discipline these numbers protect
 
