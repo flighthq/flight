@@ -148,13 +148,29 @@ export function extractFixturePack(archivePath: string, treeDirectory: string): 
 export const FIXTURE_PACK_METADATA_ROOT_FILES: readonly string[] = ['NOTICE.md', 'README.md', 'manifest.json'];
 export const FIXTURE_PACK_METADATA_DIRECTORY = 'LICENSES/';
 
+// Metadata a pack carries BESIDE EACH ITEM rather than once at its root, matched by exact basename at
+// any depth. A corpus of third-party models commonly files one of these inside every model directory.
+//
+// ★ THIS IS A NAMED EXCLUSION, NOT A DEPTH TOLERANCE, AND THE DISTINCTION IS THE WHOLE POINT. Excluding
+// "any .md below the root" would re-hide what the count exists to surface: a pack that grew a stray
+// note, or lost real fixtures and gained files, would still balance. Only this exact filename is
+// exempt, so anything else new still fails loudly and gets a deliberate decision — the same rule the
+// root list above is written to.
+export const FIXTURE_PACK_METADATA_NESTED_FILES: readonly string[] = ['LICENSE.md'];
+
 // True for a pack's own metadata rather than a fixture. Paths come from `tar -t`, which may or may not
 // carry a `./` prefix depending on how the archive was created, so it is normalized off first.
+//
+// ★ A NESTED ENTRY COUNTED AS A FIXTURE FAILS THE VERIFICATION AND BLAMES THE WRONG PARTY. The count
+// mismatch is reported as "the manifest disagrees with its own archive", which reads as a publication
+// fault — but a publisher that correctly omits per-item metadata from its file count is right, and the
+// reader that counts it is wrong. The error message cannot tell those apart, so the classifier has to.
 export function isFixturePackMetadataEntry(path: string): boolean {
   const normalized = path.startsWith('./') ? path.slice(2) : path;
-  return (
-    normalized.startsWith(FIXTURE_PACK_METADATA_DIRECTORY) || FIXTURE_PACK_METADATA_ROOT_FILES.includes(normalized)
-  );
+  if (normalized.startsWith(FIXTURE_PACK_METADATA_DIRECTORY)) return true;
+  if (FIXTURE_PACK_METADATA_ROOT_FILES.includes(normalized)) return true;
+  const basename = normalized.slice(normalized.lastIndexOf('/') + 1);
+  return normalized.includes('/') && FIXTURE_PACK_METADATA_NESTED_FILES.includes(basename);
 }
 
 // WHAT ACTUALLY LANDED, COMPARED AGAINST WHAT THE MANIFEST SAID WOULD.
