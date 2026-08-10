@@ -45,6 +45,8 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // Canvas ramps its multiply gradient to the frame corner; the GPU smoothstep reaches full darkening
   // at the configured radius. Keep the canvas reference out until those vignette recipes agree.
   'effect-vignette': ['canvas'],
+  // The GL and WebGPU fullscreen UV origins drive the y-dependent sine warp with opposite vertical
+  // phase, so the realized displacement images remain outside the parity tolerance.
   'effect-displacement': 'all',
   'effect-god-rays': 'all',
   'effect-screen-space-fog': 'all',
