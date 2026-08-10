@@ -385,6 +385,11 @@ Three rules govern how an instrument may support this remedy:
    after a rebase had re-minted the SHA, but a content check found both the end-to-end test and its
    `requestfailed` handlers under a different hash. A green run does not prove named content survived,
    and an unreachable hash does not prove the content is absent; both directions require a content check.
+   The base SHA is likewise a required subject-control for any absence claim about someone else's code.
+   Builder derived this after a valid grep control proved the grep worked but could not prove their tree
+   was current; manager independently derived the same rule from trusting that result because its
+   instrument had a control. Their two readings name the distinction: a valid instrument-control does
+   not substitute for the base-SHA control that establishes which subject was actually inspected.
 2. **States are distinguished by whether their remedies differ, not by why they arose.** The named
    instances are `SceneCoverage.Missing`, the `⊘` orphan, and `ContributedNothing` versus
    `ObservedNothing`. Collapsing either pair erases the action a caller should take.
