@@ -295,15 +295,24 @@ baseline.
 referent.** Both halves are one rule, and this is its statement in general form — the repo enforces the
 first half in four places and named it in none of them as a general invariant:
 
-| Instance | Where | "Zero evidence" means |
-| --- | --- | --- |
-| parity tier | the table above, `captureValidation.ts` | zero comparisons ran |
-| regression tier | `captureValidation.ts` | zero entries had a committed baseline |
-| test selection | [testing.md](conventions/testing.md), `testRunCoverage.ts` | a selector matched no files or ran no tests |
-| check selection | `check.ts` | a selector matched no package and no path |
+| Instance | Where | "Zero evidence" means | Proven to fire |
+| --- | --- | --- | --- |
+| parity tier | the table above, `captureValidation.ts` | zero comparisons ran | `isCaptureParityCoverageFailure` |
+| regression tier | `captureValidation.ts` | zero entries had a committed baseline | `isCaptureRegressionCoverageFailure` |
+| test selection | [testing.md](conventions/testing.md), `testRunCoverage.ts` | a selector matched no files or ran no tests | `testRunCoverage.test.ts` |
+| check selection | `select.ts`, used by `check.ts` | a selector matched no package and no path | `select.test.ts` |
+| baseline referent | `support.ts` | a fingerprint has no functional target | `support.test.ts` |
 
 They are worth reading as one thing rather than four conventions that happen to rhyme: a green run that
-checked nothing is not a pass, whatever the surface. The second half below is the same defect with the
+checked nothing is not a pass, whatever the surface.
+
+**The last column is the point, and it is what keeps this table from rotting.** A hand-maintained list of
+instances does not enforce itself — a sixth gate will not add its own row. What each row must carry is a
+test asserting the gate FIRES on zero evidence, not merely that it passes when evidence exists; a gate
+believed to work because its implementation reads correctly is the same unproven claim the gate exists to
+reject. Audited 2026-08-10: three of the four had one. Check selection did not — its guard was inline in a
+script that executes on import, so nothing could test it. It was extracted into `select.ts` and given one.
+When adding a gate of this family, add the row and the firing test together. The second half below is the same defect with the
 evidence present and pointing nowhere. A committed fingerprint for a backend with no functional
 target cannot be an unsupported control, because a control is a scene that *renders* — it is a leftover, and
 the support matrix will happily render it as a mark. `support:check` fails on these
