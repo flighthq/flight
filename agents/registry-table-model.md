@@ -401,6 +401,51 @@ switch (entry.state) {
 programmer error, not an expected failure, and the ruling leaves it standing. The tombstone answers a
 different question: not "can these two tables compose" but "what did the overlay mean by saying nothing."
 
+### Domain audit: every path that returns or accepts an entry
+
+The split above is sound **only if no entry reaches the value domain without passing the resolver**. Every
+API, classified. Three do not close, and one of them is the storage itself.
+
+| Path | Domain | Closed? |
+| --- | --- | --- |
+| `getRegistryTableEntry` | resolution | yes — collapses a tombstone to `null` |
+| `getOrdinalTableEntry` | resolution (hot) | **open — see below** |
+| `hasRegistryTableEntry` | resolution | yes, *if specified* to answer `false` for a tombstone |
+| `getRegistryTableKeys` | enumeration | **open — "bound" is now ambiguous** |
+| `concatRegistryTable` | composition | yes — switches exhaustively |
+| `withRegistryTableEntry` / `…Tombstone` | construction | yes — produce entries, never hand them out |
+| `table.entries`, `table.value` | **raw field access** | **open — widest surface, bypasses all of the above** |
+
+**1. The storage types have nowhere to put a tombstone.** `KeyedTable<T>.entries` is `Map<Kind, T>`, so
+the sentinel this design introduces cannot be represented in the table that is supposed to carry it. This
+is the leak, and it is load-bearing: storage must hold `RegistryTableEntry<T>`, not `T`.
+
+That change also closes the raw-access row, and this is the reason to prefer it over any alternative. The
+tables are plain data with public `readonly` fields — an assembly can write `for (const [kind, value] of
+table.entries)` and never call a function of ours. If `entries` holds `T`, that loop is unprotected by
+construction. If it holds `RegistryTableEntry<T>`, the same loop **fails to compile** until it narrows.
+The union defends the field, not just the function.
+
+While changing it: `readonly entries: Map<…>` marks the *field* readonly and leaves the map mutable, which
+does not survive a persistence claim — `withRegistryTableEntry` returning a replacement means nothing if a
+caller can mutate the shared map underneath it. It should be `ReadonlyMap`.
+
+**2. `getRegistryTableKeys` says "every bound key", and a tombstone has made that ambiguous.** If a
+tombstoned key is listed, a caller that enumerates and then resolves gets `null` for a key the table just
+told it was there — the *present-in-keys, absent-on-lookup* trap. It must list only `bound` entries, and
+say so, so enumeration and resolution cannot disagree. `hasRegistryTableEntry` must answer `false` on a
+tombstone for the same reason: `has` returning true where `get` returns null is the same defect one call
+apart.
+
+**3. `OrdinalTable` and the hot path is a real decision, not an oversight.** `entries` is `(T | null)[]`
+indexed directly by a token the decoder already holds; the whole point is that nothing is consulted on the
+way. Making those entries a union puts a discriminant read in that path. The options are (a) ordinal
+tables carry no tombstone — defensible, since an overlay omitting a *wire-format token reader* is not a
+motivated case and out-of-range is already the format's skip path, or (b) uniformity at a hot-path cost.
+**Unresolved; needs a ruling before materialization.** Recorded here rather than picked, because "the
+ordinal shape is exempt from the sentinel" is exactly the kind of quiet exception that becomes a third
+meaning later.
+
 A note on the discriminant: it is `state`, not `kind`. `Kind` is already the key vocabulary these tables
 are addressed by, and a `kind` field on the entry would read as the key it is stored under.
 
