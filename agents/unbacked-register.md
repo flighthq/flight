@@ -49,6 +49,23 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
 | 7 | `untested-instrument` | **unresolved** | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree, **commit unresolved** |
+| 8 | `perf-size` | `ff08be351` | builder2: `npm run size` run read-only over the effects-gl dispatch, effects/webgl −0.4%; no pin rewritten | A | as-reported |
+
+**Row 8 is the whole of what this batch left unbacked, and that is a change in the register's shape
+rather than a quiet batch.** The same parcel carried a `mutation-test` claim — the class that has
+occupied four of the eight rows — and it is absent above **because it was converted instead of
+registered.** builder2 stated that disarming the re-registration seam fails exactly 2 tests and
+disarming the resolution wire exactly 4, with no silence test moving either time. Both were re-run at
+the integrated tree by short-circuiting each condition and restoring it: **2 failed / 279 passed, then
+4 failed / 277 passed, against a 281 baseline, with the named failures matching the wires and nothing
+else moving.** Cost: two package test runs.
+
+**That is the class-B mechanism working, and it is worth naming because the register is where the
+mechanism goes to die.** A `mutation-test` row is cheap to write and cheap to clear, so a register
+that keeps accumulating them is not recording an unaffordable check — it is recording that nobody
+spent the two minutes. **The correct steady state for class B is an empty column**, and any row of it
+should read as debt rather than as inventory. Row 8 stays because a size figure measured in the
+sender's clone is not reproducible at the boundary; that is a real (A), not an unspent (B).
 
 **Where nothing recomputes, no number — and this file is the one place that rule inverts.** A claim
 column records *what a sender asserted*, so its figures are the evidence and must be kept verbatim
