@@ -74,11 +74,38 @@ the record (`{ renderers, reason }`) or a convention with a `check:` gate is ope
 that the reason live where the skip lives — not in a commit message, not in a review doc. Both were
 available in `3e55135123` and neither was used.
 
-**A skip that removes the reference is either refused or announced.** Options, unranked:
+**A skip that removes the reference must not silently re-topologise the scene.** Four options, now
+ranked after review:
 
-- refuse it — a skip may not name the group's `reference`; express it as a narrower group instead;
-- announce it — the validation output states that the scene fell back to all-pairs and why;
-- re-reference it — the group declares a fallback reference for when the primary is skipped.
+1. **Stop conflating "no reference declared" with "reference skipped away"** — *preferred*. Line 719
+   asks `present.includes(group.reference)`, which is false in both situations, so the second
+   inherits the fallback written for the first. When a group declares a reference and the skip
+   removes it, the scene yields **no pairs**; the all-pairs branch keeps its actual purpose, a group
+   that genuinely declares no reference. This matches intent rather than merely being safer: in
+   reference mode every pair is reference-vs-X, so "do not compare canvas" already means "do not
+   compare this scene" — a canvas-only skip on a canvas-referenced group is **semantically identical
+   to `'all'`**. It also cannot turn the gate red, because it only ever removes comparisons, and it
+   needs no config migration. The four `'all'` entries are already correct under today's code
+   (`present` is empty, so all-pairs yields nothing); only the five named-reference entries change,
+   and only toward comparing less.
+2. **Refuse it** — a skip may not name its group's `reference`. Sound on the house rule (throw only
+   for programmer errors), but it invalidates five live entries that must each be re-expressed before
+   the tool runs again. Better landed *behind* option 1, and per the diagnostics inversion it belongs
+   in a guard or `check:` gate rather than a throw in the comparison path — once option 1 lands the
+   config is unambiguous and there is nothing left to refuse.
+3. **Announce it** — strictly weaker: converts a silent topology change into a noisy one that a
+   reader must still decode and a CI log buries.
+4. **Re-reference it** — the most dangerous. It keeps the run green while changing what the
+   comparison means, which is this same disease one level up.
+
+What option 1 gives up, stated rather than glossed: those five scenes currently get a
+webgl-vs-webgpu comparison, and it would go. That is a gain — nobody chose it, nobody documented it,
+it reports green as though the scene were covered, and it is the weakest pairing available since
+those two backends share far more implementation with each other than either shares with canvas. If
+it is genuinely wanted, declare it as an explicit group.
+
+Only one group is declared today (`visual`, which has a reference), so **the all-pairs branch's only
+live use in Flight is the accidental one.**
 
 ## What is already known, so it is not re-measured
 
