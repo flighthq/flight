@@ -749,9 +749,14 @@ async function processEntry(
           continue;
         }
         if (!present.includes(group.reference)) {
+          // The comparison is FINE here and the CLAIM was false: nobody asked for the reference to go,
+          // it simply is not a column for this scene, and all-pairs among the columns that DO exist is
+          // real coverage worth keeping. What was wrong is reporting it under a group that asserts a
+          // reference it never used, so the label says so rather than the pairs disappearing.
+          const label = `${groupName} (all-pairs, no ${group.reference} column)`;
           for (let i = 0; i < present.length; i++) {
             for (let j = i + 1; j < present.length; j++) {
-              addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
+              addPair(pairs, eligible, present[i]!, present[j]!, label, group.tolerance ?? options.parityTolerance);
             }
           }
           continue;
@@ -795,7 +800,7 @@ async function processEntry(
           renderers: [pair.a, pair.b],
           kind: 'parity',
           status: 'reported',
-          message: `parity distance ${pair.dist.toFixed(2)}`,
+          message: `parity ${pair.label} distance ${pair.dist.toFixed(2)}`,
           distance: pair.dist,
           threshold: pair.tolerance,
         });
@@ -813,7 +818,7 @@ async function processEntry(
               renderers: [p.a, p.b],
               kind: 'parity',
               status: 'failed',
-              message: `parity ${p.dist.toFixed(2)} > ${p.tolerance}`,
+              message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance}`,
               distance: p.dist,
               threshold: p.tolerance,
             });
@@ -825,7 +830,7 @@ async function processEntry(
             renderers: [p.a, p.b],
             kind: 'parity',
             status: 'passed',
-            message: `parity ${p.dist.toFixed(2)} ≤ ${p.tolerance}`,
+            message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance}`,
             distance: p.dist,
             threshold: p.tolerance,
           });
