@@ -24,6 +24,20 @@ const scoped = selectors.length > 0;
 const paths = resolvePaths(selectors);
 const projects = selectPackages(selectors).map((name) => `packages/${name}`);
 
+// A selector that resolves to nothing is a typo, not an empty repository. Without this the scoped
+// gates run over no projects and no paths, every one of them passes vacuously, and the command exits
+// zero having examined nothing — while reporting the same "all check gates passed" a real sweep does.
+// The test selector already refuses this; a green from a gate that could not see its subject is worse
+// than a red, because it is reported onward in good faith.
+if (scoped && projects.length === 0 && paths.length === 0) {
+  const named = selectors.map((selector) => `"${selector}"`).join(', ');
+  console.error(
+    pc.red(`Check selection ran NOTHING because ${named} matched no package and no path — `) +
+      pc.red('this run is unconfigured, not clean.'),
+  );
+  process.exit(1);
+}
+
 interface Gate {
   args: readonly string[];
   command: string;
