@@ -47,7 +47,12 @@ and its inline exported types are a stated exemption from the types-home rule �
 - **2026-08-10** — Capture resource failures now retain their URL across HTTP error responses and
   transport failures in the capture, observe, and validation paths (`captureResourceFailure.ts`). The
   Chromium browser contract deliberately exercises 404, 503, and dropped-connection resources and
-  asserts that every resulting resource message names its URL.
+  asserts that every resulting resource message names its URL. **That contract was executed against a
+  real browser at integration, not only reported**: `captureEyes.e2e.test.ts` passes 6/6 here. Worth
+  knowing where it does and does not run — whole-repo `npm run test` **never** executes it (the e2e glob
+  is excluded from the `tool-capture` project and included by no project, and the run prints the two
+  files it skipped), while `npm run test:unit` runs each package under its own config on a CI leg that
+  installs Chromium. A green from the root run says nothing about these two files.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract; both carried "watch for" items
   re-verified against source and kept (WebGPU frame-wait exemption, advisory-only freshness). Charter
   Open direction 0 checked out **landed** and is not listed: `baselineStore.ts` and
