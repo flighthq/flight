@@ -67,7 +67,7 @@ These lines are unchanged from base (verified: identical in `base/` and `head/`)
 
 - **`updateNotification` sentinel + comment** — honest `false`, durable semantic comment explaining _why_ (no in-place Electron update; close-and-re-notify), not a transient TODO. Matches the new seam's `Promise<boolean>`. Colocated test present.
 - **Naming** — `updateNotification` is the full, unabbreviated, self-identifying method name; consistent with the seam.
-- **No structural regression** — single root `.` export unchanged (`index.ts:7` re-exports `./electronNotification`), `"sideEffects": false` unaffected, no new dependency, no eager registration, no new hot-loop branch or shared switch. The bundle invariant and tree-shaking posture are untouched by the delta.
+- **No structural regression** — single root `.` export unchanged (`index.ts:1`, a lone `export * from './contract'`) ⚠ **corrected 2026-08-10: the root barrel re-exports `./contract`, not `./electronNotification` — the structural point stands, the mechanism named did not**, `"sideEffects": false` unaffected, no new dependency, no eager registration, no new hot-loop branch or shared switch. The bundle invariant and tree-shaking posture are untouched by the delta.
 - **Registry/triad/bedrock forks** — not implicated by this delta; no growing `kind` switch, no codec/backend split, no new package.
 
 ## Scope note
