@@ -57,7 +57,7 @@ describe('ensureWgpuSkinMeshDrawBindGroup', () => {
     const { fake, state } = makeWgpuScene3DState();
     ensureWgpuSkinMeshDrawBindGroup(state, new Float32Array(16 * 2), new Float32Array(12 * 2));
     const group = fake.calls.filter((call) => call.name === 'createBindGroup').at(-1);
-    const bindings = (group?.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
+    const bindings = (group!.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
     expect(bindings).toEqual([0, 1, 2]);
   });
 });
@@ -70,12 +70,12 @@ describe('ensureWgpuSkinMeshDrawLayout', () => {
     const { fake, state } = makeWgpuScene3DState();
     ensureWgpuSkinMeshDrawLayout(state);
     const meshLayout = fake.calls.filter((call) => call.name === 'createBindGroupLayout').at(-1);
-    const meshBindings = (meshLayout?.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
+    const meshBindings = (meshLayout!.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
     expect(meshBindings).toEqual([0, 1, 2]);
 
     ensureWgpuSkinDrawLayout(state);
     const shadowLayout = fake.calls.filter((call) => call.name === 'createBindGroupLayout').at(-1);
-    const shadowBindings = (shadowLayout?.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
+    const shadowBindings = (shadowLayout!.args[0] as { entries: { binding: number }[] }).entries.map((e) => e.binding);
     expect(shadowBindings).toEqual([0, 1]);
   });
 
