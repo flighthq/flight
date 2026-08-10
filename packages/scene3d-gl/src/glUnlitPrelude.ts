@@ -50,6 +50,7 @@ export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<
     locColor: gl.getUniformLocation(program, 'u_color'),
     locColorMap: gl.getUniformLocation(program, 'u_colorMap'),
     locIntensity: gl.getUniformLocation(program, 'u_intensity'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: null,

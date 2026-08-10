@@ -31,6 +31,7 @@ export function compileGlToonProgram(gl: WebGL2RenderingContext, key: Readonly<G
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locBaseColor: gl.getUniformLocation(program, 'u_baseColor'),
     locBaseColorMap: gl.getUniformLocation(program, 'u_baseColorMap'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
@@ -96,7 +97,7 @@ void main() {
 #ifdef HAS_SKIN
   mat4 skin = skinMatrix();
   vec4 localPosition = skin * vec4(a_position, 1.0);
-  vec3 localNormal = mat3(skin) * a_normal;
+  vec3 localNormal = skinNormalMatrix() * a_normal;
 #else
   vec4 localPosition = vec4(a_position, 1.0);
   vec3 localNormal = a_normal;

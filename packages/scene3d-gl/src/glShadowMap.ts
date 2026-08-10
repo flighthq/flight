@@ -166,6 +166,7 @@ function compileShadowDepthProgram(gl: WebGL2RenderingContext): GlMeshProgram {
 function compileShadowDepthSkinnedProgram(gl: WebGL2RenderingContext): GlMeshProgram {
   const program = compileGlProgram(gl, SHADOW_DEPTH_SKINNED_VERTEX, SHADOW_DEPTH_FRAGMENT);
   return {
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: null,

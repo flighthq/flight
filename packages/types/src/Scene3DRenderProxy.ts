@@ -35,6 +35,11 @@ export interface Scene3DRenderProxy {
   colorScaleBias?: Readonly<ColorScaleBias> | null;
   colorMatrix?: readonly number[] | null;
   jointMatrices?: Readonly<Float32Array> | null;
+  // The matching NORMAL palette for this draw — the skeleton's `normalMatrices`, one inverse-transpose
+  // 3x3 per joint as three padded vec4 columns (12 floats each). Carried beside `jointMatrices` because
+  // a normal is a covector and does not follow the pose matrix under non-uniform joint scale; a renderer
+  // reads it as `proxy.normalMatrices ?? null` and falls back to its rigid path when absent.
+  normalMatrices?: Readonly<Float32Array> | null;
   material: Readonly<Material>;
   normalMatrix: Readonly<Matrix3>;
   subset: Readonly<MeshSubset>;
