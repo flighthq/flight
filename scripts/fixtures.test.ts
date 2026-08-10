@@ -327,3 +327,35 @@ describe('writeFixtureTreeStamp', () => {
     expect(readFixtureTreeStamp(treeDirectory)?.packs.map((pack) => pack.pack)).toEqual(['a-fixtures', 'z-fixtures']);
   });
 });
+
+describe('isFixturePackMetadataEntry nested metadata', () => {
+  // Synthetic path strings throughout: no pack is fetched, no file is opened, and nothing here depends
+  // on a corpus being present. The strings are shaped like the real ones and are only shapes.
+  it('treats a per-item LICENSE.md at any depth as metadata', () => {
+    // The defect this fixes: a corpus filing one of these inside every model directory had them counted
+    // as fixtures, so the archive appeared to hold more files than its manifest declared and the whole
+    // pack was rejected — blaming a publisher that was right.
+    expect(isFixturePackMetadataEntry('ABeautifulGame/LICENSE.md')).toBe(true);
+    expect(isFixturePackMetadataEntry('./AnimatedCube/LICENSE.md')).toBe(true);
+    expect(isFixturePackMetadataEntry('a/b/c/LICENSE.md')).toBe(true);
+  });
+
+  it('does NOT exempt other nested markdown, because this is a name and not a tolerance', () => {
+    // Exempting "any .md below the root" would re-hide what the count exists to surface: a pack that
+    // lost real fixtures and gained notes would still balance.
+    expect(isFixturePackMetadataEntry('AnimatedCube/NOTES.md')).toBe(false);
+    expect(isFixturePackMetadataEntry('AnimatedCube/README.md')).toBe(false);
+    expect(isFixturePackMetadataEntry('AnimatedCube/model.gltf')).toBe(false);
+  });
+
+  it('does not exempt a fixture whose name merely ends with the metadata name', () => {
+    // A basename comparison rather than a suffix one; `MYLICENSE.md` is a file somebody authored.
+    expect(isFixturePackMetadataEntry('AnimatedCube/MYLICENSE.md')).toBe(false);
+  });
+
+  it('still classifies the root files and the LICENSES directory as before', () => {
+    expect(isFixturePackMetadataEntry('manifest.json')).toBe(true);
+    expect(isFixturePackMetadataEntry('LICENSES/gltf-duck.txt')).toBe(true);
+    expect(isFixturePackMetadataEntry('Duck/Duck.gltf')).toBe(false);
+  });
+});
