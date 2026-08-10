@@ -37,6 +37,7 @@ import {
   classifyPairDerivation,
   collectRegistrarTableNames,
   describeRuntimeValue,
+  explainPairDerivationScope,
   findRegistrarPairCollisions,
 } from './registrar-runtime-core';
 import type { RegistrarProbeRoot } from './registrar-runtime-core';
@@ -48,7 +49,9 @@ interface PreparedArgument {
 }
 
 interface RuntimePairResult {
+  comparability: 'comparable' | 'instrument-limited' | 'structurally-not-comparable';
   derivation: ReturnType<typeof classifyPairDerivation>;
+  derivationReason: ReturnType<typeof explainPairDerivationScope>;
   door: string;
   implementation: string;
   kind: string;
@@ -96,6 +99,17 @@ interface ModuleGlobalRegistryInventory {
 interface ModuleGlobalRegistrySeam {
   name: string;
   purpose: 'caller-serving' | 'instrument-serving' | 'weak-independent-justification';
+}
+
+type CollisionClassification =
+  | 'BUILT-IN vs BUILT-IN'
+  | 'BUILT-IN vs DELIBERATE OVERRIDE'
+  | 'INSTRUMENT ARTIFACT'
+  | 'UNCLASSIFIED';
+
+interface CollisionAudit {
+  assessment: string;
+  classification: CollisionClassification;
 }
 
 const root = process.cwd();
@@ -318,6 +332,32 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
   },
 ];
 const MODULE_GLOBAL_REGISTRY_BY_DOOR = new Map(MODULE_GLOBAL_REGISTRIES.map((entry) => [entry.door, entry]));
+const COLLISION_AUDITS = new Map<string, CollisionAudit>([
+  [
+    collisionKey('registerGlTextureResolver', 'bitmap'),
+    instrumentCollision('the standard GL bundle and the leaf are two paths to the same bitmap writer'),
+  ],
+  [
+    collisionKey('registerGlTextureResolver', 'image'),
+    instrumentCollision('the standard GL bundle and the leaf are two paths to the same image writer'),
+  ],
+  [
+    collisionKey('registerGlTextureResolver', 'renderTarget'),
+    instrumentCollision('the standard GL bundle and the leaf are two paths to the same render-target writer'),
+  ],
+  [
+    collisionKey('registerWgpuTextureResolver', 'bitmap'),
+    instrumentCollision('the WGPU bundle, leaf, and material assemblies all reach the same bitmap writer'),
+  ],
+  [
+    collisionKey('registerWgpuTextureResolver', 'image'),
+    instrumentCollision('the WGPU bundle, leaf, and material assemblies all reach the same image writer'),
+  ],
+  [
+    collisionKey('registerWgpuTextureResolver', 'renderTarget'),
+    instrumentCollision('the WGPU bundle, leaf, and Unlit assembly all reach the same render-target writer'),
+  ],
+]);
 
 async function main(): Promise<void> {
   const jsonMode = process.argv.includes('--json');
@@ -383,8 +423,31 @@ async function main(): Promise<void> {
   const probedEmpty = results.filter((result) => result.status === 'PROBED-EMPTY');
   const lost = results.flatMap((result) => result.pairs).filter((pair) => pair.derivation === 'lost');
   const allPairs = results.flatMap((result) => result.pairs);
-  const collisions = findRegistrarPairCollisions(results);
+  const collisions = findRegistrarPairCollisions(results).map((collision) => {
+    const audit = COLLISION_AUDITS.get(collisionKey(collision.door, collision.kind));
+    return {
+      ...collision,
+      assessment: audit?.assessment ?? 'no source audit exists for this collision key',
+      classification: audit?.classification ?? ('UNCLASSIFIED' as const),
+      implementationRelation:
+        new Set(collision.claims.map((claim) => claim.implementation)).size === 1
+          ? ('identical' as const)
+          : ('different' as const),
+    };
+  });
   const genericDoors = classifications.filter((classification) => classification.role === 'generic-door');
+  const staticGenericDoorMembership = ownership
+    .filter((entry) => entry.status === 'mechanism')
+    .map(registrarKey)
+    .filter((entry, index, entries) => entries.indexOf(entry) === index)
+    .sort();
+  const runtimeGenericDoorMembership = genericDoors.map(registrarKey).sort();
+  const comparablePairs = allPairs.filter((pair) => pair.derivation !== 'not-comparable');
+  const notComparablePairs = allPairs.filter((pair) => pair.derivation === 'not-comparable');
+  const structurallyNotComparable = notComparablePairs.filter(
+    (pair) => pair.comparability === 'structurally-not-comparable',
+  );
+  const instrumentLimited = notComparablePairs.filter((pair) => pair.comparability === 'instrument-limited');
   const summary = {
     registrars: classifications.length,
     assemblies: results.length,
@@ -398,13 +461,48 @@ async function main(): Promise<void> {
     unprobed: unprobed.length,
     pairs: allPairs.length,
     collisions: collisions.length,
-    survived: allPairs.filter((pair) => pair.derivation === 'survived').length,
+    comparablePairs: comparablePairs.length,
+    survived: comparablePairs.filter((pair) => pair.derivation === 'survived').length,
     lost: lost.length,
-    notApplicable: allPairs.filter((pair) => pair.derivation === 'not-applicable').length,
+    notComparable: notComparablePairs.length,
+    assessedPairs: comparablePairs.length + structurallyNotComparable.length,
+    structurallyNotComparable: structurallyNotComparable.length,
+    instrumentLimited: instrumentLimited.length,
+    notComparableReasons: {
+      moduleGlobalNoSourceState: notComparablePairs.filter(
+        (pair) => pair.derivationReason === 'module-global-no-source-state',
+      ).length,
+      noDerivedStateAdapter: notComparablePairs.filter((pair) => pair.derivationReason === 'no-derived-state-adapter')
+        .length,
+      orderedTable: notComparablePairs.filter((pair) => pair.derivationReason === 'ordered-table').length,
+    },
+    collisionClassifications: {
+      builtInVsBuiltIn: collisions.filter((collision) => collision.classification === 'BUILT-IN vs BUILT-IN').length,
+      builtInVsDeliberateOverride: collisions.filter(
+        (collision) => collision.classification === 'BUILT-IN vs DELIBERATE OVERRIDE',
+      ).length,
+      instrumentArtifact: collisions.filter((collision) => collision.classification === 'INSTRUMENT ARTIFACT').length,
+      unclassified: collisions.filter((collision) => collision.classification === 'UNCLASSIFIED').length,
+    },
+  };
+  const genericDoorClassification = {
+    count: genericDoors.length,
+    criterionCount: 1,
+    independentOfStaticOwnership: false,
+    relationship: 'one static criterion reused by the runtime probe',
+    runtimeNotStatic: difference(runtimeGenericDoorMembership, staticGenericDoorMembership),
+    sameMembership: arraysEqual(staticGenericDoorMembership, runtimeGenericDoorMembership),
+    source: 'collectRegistrarOwnership mechanism rows',
+    staticNotRuntime: difference(staticGenericDoorMembership, runtimeGenericDoorMembership),
   };
   const orderSensitivity = {
     reason: 'optional combined sequential pass was not run; collision evidence compares fresh per-registrar sets',
     status: 'NOT-RUN' as const,
+  };
+  const collisionCoverage = {
+    complete: instrumentLimited.length === 0,
+    floor: instrumentLimited.length > 0,
+    unassessedPairs: instrumentLimited.length,
   };
 
   if (jsonMode) {
@@ -414,8 +512,10 @@ async function main(): Promise<void> {
           summary,
           classifications,
           genericDoors,
+          genericDoorClassification,
           results,
           collisions,
+          collisionCoverage,
           orderSensitivity,
           moduleGlobalRegistries: MODULE_GLOBAL_REGISTRIES,
         },
@@ -425,10 +525,10 @@ async function main(): Promise<void> {
     );
   } else {
     console.log(
-      `${summary.registrars} registrars: ${summary.assemblies} assemblies, ${summary.genericDoors} generic doors; assemblies ${summary.probed} PROBED, ${summary.probedEmpty} PROBED-EMPTY, ${summary.unprobed} UNPROBED`,
+      `${summary.registrars} registrars: ${summary.assemblies} assemblies, ${summary.genericDoors} generic doors inherited from the static ownership walk; assemblies ${summary.probed} PROBED, ${summary.probedEmpty} PROBED-EMPTY, ${summary.unprobed} UNPROBED`,
     );
     console.log(
-      `${summary.pairs} isolated runtime pairs (${summary.survived} survived, ${summary.lost} lost, ${summary.notApplicable} not state-derived); ${summary.collisions} order-independent collisions`,
+      `${summary.lost} lost among ${summary.assessedPairs} assessed pairs (${summary.comparablePairs} compared + ${summary.structurallyNotComparable} correctly not-comparable); ${summary.instrumentLimited} not assessed — probe limitation, not a property of the subject; ${summary.collisions} order-independent collision keys (${collisionCoverage.floor ? 'floor, coverage incomplete' : 'complete coverage'})`,
     );
     for (const result of results) {
       if (result.status !== 'PROBED') {
@@ -445,7 +545,7 @@ async function main(): Promise<void> {
     }
     for (const collision of collisions) {
       console.log(
-        `  COLLISION ${collision.door}(${collision.kind}) claimed by ${collision.claims.map((claim) => `${claim.packageName}:${claim.registrar}`).join(', ')}`,
+        `  COLLISION [${collision.classification}; ${collision.implementationRelation} implementation] ${collision.door}(${collision.kind}) claimed by ${collision.claims.map((claim) => `${claim.packageName}:${claim.registrar}`).join(', ')} — ${collision.assessment}`,
       );
     }
   }
@@ -484,11 +584,15 @@ async function probeRegistrar(
     const stateArgument = prepared.find((argument) => argument.root !== null) ?? null;
     const derivedState = stateArgument?.derive === null ? null : await stateArgument?.derive();
     const pairResult = (pair: (typeof captured)[number]): RuntimePairResult => ({
+      comparability: pairComparability(
+        explainPairDerivationScope(pair, stateArgument?.root?.value ?? null, asObject(derivedState)),
+      ),
       derivation: classifyPairDerivation(pair, stateArgument?.root?.value ?? null, asObject(derivedState)),
       door: pair.door,
       implementation: describeRuntimeValue(pair.value),
       kind: describeRuntimeValue(pair.key),
       overwrote: pair.hadPrevious ? describeRuntimeValue(pair.previous) : null,
+      derivationReason: explainPairDerivationScope(pair, stateArgument?.root?.value ?? null, asObject(derivedState)),
     });
     const diffedTables = new Set(tableNames.values());
     for (const pair of visible) {
@@ -709,6 +813,28 @@ function rootArgument(
 
 function asObject(value: unknown): object | null {
   return typeof value === 'object' && value !== null ? value : null;
+}
+
+function collisionKey(door: string, kind: string): string {
+  return `${door}\0${kind}`;
+}
+
+function instrumentCollision(assessment: string): CollisionAudit {
+  return { assessment, classification: 'INSTRUMENT ARTIFACT' };
+}
+
+function pairComparability(reason: ReturnType<typeof explainPairDerivationScope>): RuntimePairResult['comparability'] {
+  if (reason === null) return 'comparable';
+  return reason === 'module-global-no-source-state' ? 'structurally-not-comparable' : 'instrument-limited';
+}
+
+function difference(left: readonly string[], right: readonly string[]): string[] {
+  const rightSet = new Set(right);
+  return left.filter((entry) => !rightSet.has(entry));
+}
+
+function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
 }
 
 function registrarKey(entry: Pick<RegistrarOwnershipEntry, 'packageName' | 'registrar'>): string {

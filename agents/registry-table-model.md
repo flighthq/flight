@@ -106,12 +106,15 @@ history, not as the current result.
 
 ### Runtime registrar probe
 
-`npm run reachability:runtime:json` is the runtime companion to the syntax inventory. It classifies all
-exported registrars first: caller-keyed direct and batch functions are generic doors, while genuine
-assemblies are invoked independently. State-held registries receive a new constructible state or
-registry per assembly. Rootless assemblies run serially in fresh processes, so module caches cannot
-contaminate another registrar's result. Each result names the roots and reachable tables it diffed and
-is one of:
+`npm run reachability:runtime:json` is the runtime companion to the syntax inventory. It inherits the
+static walk's mechanism rows: caller-keyed direct and batch functions are generic doors, while genuine
+assemblies are invoked independently. The two reported 55s are therefore one criterion measured twice,
+not independent instruments or reassuring convergence. Their membership is identical by construction:
+static-not-runtime is `[]` and runtime-not-static is `[]`. `genericDoorClassification` records the
+shared source and both set differences explicitly. State-held registries receive a new constructible
+state or registry per assembly.
+Rootless assemblies run serially in fresh processes, so module caches cannot contaminate another
+registrar's result. Each result names the roots and reachable tables it diffed and is one of:
 
 - `PROBED` — at least one exact door/kind/implementation delta was observable;
 - `PROBED-EMPTY` — the call completed but no delta was observable, with the empty diff scope and any
@@ -123,15 +126,46 @@ The collision pass compares the independently captured registrar pair sets, orde
 door+kind claimed by two assemblies is a collision even though no particular fresh-state run overwrote
 anything. The optional combined sequential order-sensitivity pass is explicitly `NOT-RUN`; it answers a
 different question and cannot replace the collision pass. State derivation is also checked after each
-observable write, retaining `survived`, `lost`, and `not-applicable` per pair.
+observable write, retaining `survived`, `lost`, and `not-comparable` plus a reason per pair.
 
 The measured run classifies all 300 registrars as 55 generic doors and 245 assemblies. Of those
 assemblies, 193 are `PROBED`, 14 are `PROBED-EMPTY`, and 38 are `UNPROBED`. The independent probes emit
-263 exact pairs: 201 survive state derivation, none are lost, and 62 are not state-derived. The six
-order-independent collisions are the `bitmap`, `image`, and `renderTarget` keys on each of
-`registerGlTextureResolver` and `registerWgpuTextureResolver`; the claims reuse the same implementation
-for a key but arrive through multiple genuine assemblies, so they remain collisions under the stated
-door+kind rule.
+263 exact pairs. The safe headline while the extension is incomplete is: **0 lost among 212 assessed
+pairs (201 compared + 11 correctly not-comparable); 51 not assessed — probe limitation, not a property
+of the subject.** All 201 compared pairs survive. The other 62 split by remedy: **11 are structurally not comparable** because a
+module-global registry has no source/derived state relationship, while **51 are limited by this
+instrument** — 47 fixed Map pairs belong to state types for which the probe has no derived-state
+adapter, and 4 fixed pairs live in ordered arrays the Map-only comparator does not assess. The 55
+caller-keyed generic doors are also structurally without fixed pairs, but they were excluded before the
+263-pair set and contribute zero to its 62. The current derivation discharge therefore covers
+`201 + 11 = 212` exact pairs and leaves 51 as a census gap. `summary.comparablePairs`,
+`summary.structurallyNotComparable`, `summary.instrumentLimited`, `summary.assessedPairs`,
+and each pair's `comparability` and `derivationReason` keep that scope attached to the zero.
+
+Until those 51 pairs are assessed, the six collision results are a **floor, not a total**; the collision
+pass must run again after the extension. They are six door+kind keys, not six two-registrar pairs: their claimant
+cardinalities are 2, 2, 2, 14, 14, and 3. Under the mechanical writer test, all six classify as
+**INSTRUMENT ARTIFACT**; none is BUILT-IN vs BUILT-IN or BUILT-IN vs DELIBERATE OVERRIDE. Every claimant
+for a key reaches the same leaf registrar and supplies the same built-in function reference, so these
+are multiple outer assembly names for one writer, not independent SDK writers. The repeated `Map.set`
+calls are real and idempotent, but attributing the leaf pair to every outer assembly manufactures the
+collision. The generic door itself remains excluded, and the probe invokes no outside-SDK override
+writer, so neither of the other two classifications occurs in this result.
+
+The twelve WGPU material claimants shared by the `bitmap` and `image` rows are
+`registerWgpuBlinnPhongMaterial`, `registerWgpuCustomShaderMaterial`, `registerWgpuEmissiveMaterial`,
+`registerWgpuLambertMaterial`, `registerWgpuMatcapMaterial`, `registerWgpuNormalMaterial`,
+`registerWgpuPhongMaterial`, `registerWgpuShadedMaterial`, `registerWgpuSpecularGlossinessPbrMaterial`,
+`registerWgpuStandardPbrMaterial`, `registerWgpuToonMaterial`, and `registerWgpuUnlitMaterial`.
+
+| Collision key | Complete claimant set | Classification and source reading |
+|---|---|---|
+| `registerGlTextureResolver(bitmap)` | `registerGlBitmapTextureResolver`, `registerStandardGlTextureResolvers` | INSTRUMENT ARTIFACT; both paths reach the same bitmap leaf writer with `resolveGlBitmapTexture` |
+| `registerGlTextureResolver(image)` | `registerGlImageTextureResolver`, `registerStandardGlTextureResolvers` | INSTRUMENT ARTIFACT; both paths reach the same image leaf writer with `resolveGlImageTexture` |
+| `registerGlTextureResolver(renderTarget)` | `registerGlRenderTextureResolver`, `registerStandardGlTextureResolvers` | INSTRUMENT ARTIFACT; both paths reach the same render-target leaf writer with `resolveGlRenderTexture` |
+| `registerWgpuTextureResolver(bitmap)` | `registerWgpuBitmapTextureResolver`, `registerStandardWgpuTextureResolvers`, and the twelve material claimants above | INSTRUMENT ARTIFACT; all paths reach the same bitmap leaf writer with `resolveWgpuBitmapTexture` |
+| `registerWgpuTextureResolver(image)` | `registerWgpuImageTextureResolver`, `registerStandardWgpuTextureResolvers`, and the twelve material claimants above | INSTRUMENT ARTIFACT; all paths reach the same image leaf writer with `resolveWgpuImageTexture` |
+| `registerWgpuTextureResolver(renderTarget)` | `registerWgpuRenderTextureResolver`, `registerStandardWgpuTextureResolvers`, `registerWgpuUnlitMaterial` | INSTRUMENT ARTIFACT; all paths reach the same render-target leaf writer with `resolveWgpuRenderTexture` |
 
 ### Process-global registry census
 

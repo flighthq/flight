@@ -5,6 +5,7 @@ import {
   classifyPairDerivation,
   collectRegistrarTableNames,
   describeRuntimeValue,
+  explainPairDerivationScope,
   findRegistrarPairCollisions,
 } from './registrar-runtime-core';
 
@@ -57,7 +58,20 @@ describe('runtime registrar provenance', () => {
 
     expect(classifyPairDerivation(pair!, source, { registry: new Map(sourceRegistry) })).toBe('survived');
     expect(classifyPairDerivation(pair!, source, { registry: new Map() })).toBe('lost');
-    expect(classifyPairDerivation(pair!, null, null)).toBe('not-applicable');
+    expect(classifyPairDerivation(pair!, null, null)).toBe('not-comparable');
+    expect(explainPairDerivationScope(pair!, null, null)).toBe('module-global-no-source-state');
+    expect(explainPairDerivationScope(pair!, source, null)).toBe('no-derived-state-adapter');
+    expect(explainPairDerivationScope(pair!, source, { registry: new Map() })).toBeNull();
+  });
+
+  it('identifies ordered tables as exact but not derivation-comparable', async () => {
+    const entries: unknown[] = [];
+    const [pair] = await captureRegistrarPairs(new Set(['registerOrderedDoor']), () => {
+      registerOrderedDoor(entries, 'Fixture.Document', () => true);
+    });
+
+    expect(classifyPairDerivation(pair!, { entries }, { entries: [...entries] })).toBe('not-comparable');
+    expect(explainPairDerivationScope(pair!, { entries }, { entries: [...entries] })).toBe('ordered-table');
   });
 
   it('describes runtime identities without serializing implementation bodies', () => {

@@ -25,7 +25,12 @@ export interface RegistrarPairCollision {
   kind: string;
 }
 
-export type RegistrarPairDerivation = 'lost' | 'not-applicable' | 'survived';
+export type RegistrarPairDerivation = 'lost' | 'not-comparable' | 'survived';
+export type RegistrarPairDerivationReason =
+  | 'module-global-no-source-state'
+  | 'no-derived-state-adapter'
+  | 'ordered-table'
+  | null;
 
 // Capture real Map and ordered-array writes made below a generic registration door. The stack filter
 // excludes scratch writes in an assembly body before or after its door call: a pair counts only while a
@@ -159,14 +164,25 @@ export function classifyPairDerivation(
   sourceState: object | null,
   derivedState: object | null,
 ): RegistrarPairDerivation {
-  if (sourceState === null || derivedState === null) return 'not-applicable';
-  if (!(pair.table instanceof Map)) return 'not-applicable';
+  if (sourceState === null || derivedState === null) return 'not-comparable';
+  if (!(pair.table instanceof Map)) return 'not-comparable';
   const sourceMaps = collectReachableMaps(sourceState);
   if (!sourceMaps.has(pair.table)) return 'lost';
   for (const table of collectReachableMaps(derivedState)) {
     if (table.has(pair.key) && Object.is(table.get(pair.key), pair.value)) return 'survived';
   }
   return 'lost';
+}
+
+export function explainPairDerivationScope(
+  pair: CapturedRegistrarPair,
+  sourceState: object | null,
+  derivedState: object | null,
+): RegistrarPairDerivationReason {
+  if (!(pair.table instanceof Map)) return 'ordered-table';
+  if (sourceState === null) return 'module-global-no-source-state';
+  if (derivedState === null) return 'no-derived-state-adapter';
+  return null;
 }
 
 export function describeRuntimeValue(value: unknown): string {
