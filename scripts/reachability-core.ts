@@ -47,6 +47,19 @@ export interface RegistrarKindConstants {
   members: ReadonlyMap<string, string>;
 }
 
+export interface RegistrarRuntimeDeclaration {
+  packageName: string;
+  parameters: readonly RegistrarRuntimeParameter[];
+  registrar: string;
+  sourceFile: string;
+}
+
+export interface RegistrarRuntimeParameter {
+  defaulted: boolean;
+  name: string;
+  typeNames: readonly string[];
+}
+
 interface EffectAuditOptions {
   backend: EffectBackend;
   sourceFiles: readonly string[];
@@ -70,6 +83,7 @@ interface NamedDeclaration {
   importAliases: ReadonlyMap<string, string>;
   name: string;
   node: Node;
+  sourceFile: string;
 }
 
 interface RegistrationMapping {
@@ -252,6 +266,18 @@ export function collectRegistrarKindConstants(sourceFiles: readonly string[]): R
   };
 }
 
+export function collectRegistrarRuntimeDeclarations(options: RegistrarOwnershipOptions): RegistrarRuntimeDeclaration[] {
+  return declarationsIn(options.sourceFiles)
+    .filter((declaration) => declaration.exported && /^register[A-Z]/.test(declaration.name))
+    .map((declaration) => ({
+      packageName: options.packageName,
+      parameters: runtimeParameters(declaration.node),
+      registrar: declaration.name,
+      sourceFile: declaration.sourceFile,
+    }))
+    .sort((a, b) => a.registrar.localeCompare(b.registrar) || a.sourceFile.localeCompare(b.sourceFile));
+}
+
 function declarationsIn(sourceFiles: readonly string[]): NamedDeclaration[] {
   const declarations: NamedDeclaration[] = [];
   for (const sourceFile of sourceFiles) {
@@ -263,10 +289,10 @@ function declarationsIn(sourceFiles: readonly string[]): NamedDeclaration[] {
       if (declaration === null) continue;
       if (declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction') {
         if (declaration.id !== null)
-          declarations.push({ exported, importAliases, name: declaration.id.name, node: declaration });
+          declarations.push({ exported, importAliases, name: declaration.id.name, node: declaration, sourceFile });
       } else if (declaration.type === 'VariableDeclaration') {
         for (const variable of declaration.declarations)
-          addVariableDeclaration(declarations, variable, exported, importAliases);
+          addVariableDeclaration(declarations, variable, exported, importAliases, sourceFile);
       }
     }
   }
@@ -278,9 +304,10 @@ function addVariableDeclaration(
   variable: VariableDeclarator,
   exported: boolean,
   importAliases: ReadonlyMap<string, string>,
+  sourceFile: string,
 ): void {
   if (variable.id.type === 'Identifier')
-    declarations.push({ exported, importAliases, name: variable.id.name, node: variable });
+    declarations.push({ exported, importAliases, name: variable.id.name, node: variable, sourceFile });
 }
 
 function registrationMappings(
@@ -409,6 +436,40 @@ function functionParameterNames(declaration: Node): Set<string> {
     return bindingNames(declaration.init.params);
   }
   return new Set();
+}
+
+function runtimeParameters(declaration: Node): RegistrarRuntimeParameter[] {
+  const parameters =
+    declaration.type === 'FunctionDeclaration' || declaration.type === 'TSDeclareFunction'
+      ? declaration.params
+      : declaration.type === 'VariableDeclarator' &&
+          (declaration.init?.type === 'ArrowFunctionExpression' || declaration.init?.type === 'FunctionExpression')
+        ? declaration.init.params
+        : [];
+  return parameters.map((parameter, index) => {
+    const node = parameter as Node;
+    const binding = node.type === 'AssignmentPattern' ? node.left : node;
+    const annotated = binding as Node & { typeAnnotation?: { typeAnnotation: Node } | null };
+    return {
+      defaulted: node.type === 'AssignmentPattern',
+      name: binding.type === 'Identifier' ? binding.name : `parameter${index + 1}`,
+      typeNames: collectTypeNames(annotated.typeAnnotation?.typeAnnotation ?? null),
+    };
+  });
+}
+
+function collectTypeNames(typeNode: Node | null): string[] {
+  if (typeNode === null) return [];
+  const names = new Set<string>();
+  visit(typeNode, (node) => {
+    if (node.type === 'TSTypeReference' && node.typeName.type === 'Identifier') names.add(node.typeName.name);
+    else if (node.type === 'TSStringKeyword') names.add('string');
+    else if (node.type === 'TSNumberKeyword') names.add('number');
+    else if (node.type === 'TSBooleanKeyword') names.add('boolean');
+    else if (node.type === 'TSFunctionType') names.add('Function');
+    else if (node.type === 'TSArrayType' || node.type === 'TSTupleType') names.add('Array');
+  });
+  return [...names];
 }
 
 function bindingNames(bindings: readonly Node[]): Set<string> {

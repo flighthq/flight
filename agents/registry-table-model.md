@@ -76,6 +76,101 @@ their external-texture resolver on demand and may run after state setup. Those t
 post-build-capable registry mutations in the current API; a build-once/frozen design must relocate or
 otherwise account for them rather than treating the non-registrar query as empty.
 
+The eight former hidden-loop/array rows count bodies, not runtime pairs. Hand-reading all eight gives
+the real units below. `N` is the input length, `U(x)` the number of distinct keys, `G` the number of
+distinct groups, `D` the number of final distinct descriptor ids, and `V` the number of schemes that
+pass validation and whose host registration succeeds.
+
+| Registrar | Runtime contribution on a fresh target |
+|---|---|
+| `registerAssetDescriptor` | `1 + G`: one descriptor entry plus one newly-created group entry per distinct group; membership is an array append, not another table pair |
+| `registerAssetManifest` | `D + G`: duplicate ids collapse to their final descriptor before the descriptor registrar runs |
+| `registerWebImageDecoders` | **6 fixed pairs**: PNG, JPEG, WebP, GIF, AVIF, BMP |
+| `registerWebImageEncoders` | **3 fixed pairs**: PNG, JPEG, WebP |
+| `registerProtocolSchemes` | `N` host registration attempts and `V` successful host bindings; it contributes no in-memory kind→implementation table pair |
+| `registerRenderers` | `N` door calls and `U(kind)` final pairs |
+| `registerDefaultGlBlendModes` | **6 fixed pairs**: Add, Darken, Lighten, Multiply, Normal, Screen |
+| `registerCanvasShapeCommands` | `N` door calls and `U(command.key)` final pairs |
+
+`registerWebImageDecoders()` is the named counterexample to treating one loop body as one
+registration: it is a zero-argument assembly, emits six pairs, and therefore turns the old one-row
+syntax result into a 6× undercount. Those six missing bindings share one remedy call, which is the
+anti-shotgun property in miniature.
+
+The identities are computed from the emitted artifact, not from the earlier prose census:
+`300 = 196 readable registrars + 55 generic mechanisms + 49 UNCATALOGUED`. The 196 registrars emit 228
+mapping rows. Excluding the 34 deliberate not-kind rows gives
+`266 = 196 readable + 55 mechanisms + 15 recorder misses`. The earlier
+`300 = 128 + 172` / 139-mapping identity described the pre-constant-folding artifact and is retained as
+history, not as the current result.
+
+### Runtime registrar probe
+
+`npm run reachability:runtime:json` is the runtime companion to the syntax inventory. It classifies all
+exported registrars first: caller-keyed direct and batch functions are generic doors, while genuine
+assemblies are invoked independently. State-held registries receive a new constructible state or
+registry per assembly. Rootless assemblies run serially in fresh processes, so module caches cannot
+contaminate another registrar's result. Each result names the roots and reachable tables it diffed and
+is one of:
+
+- `PROBED` — at least one exact door/kind/implementation delta was observable;
+- `PROBED-EMPTY` — the call completed but no delta was observable, with the empty diff scope and any
+  WeakMap-owned outside writes retained as findings;
+- `UNPROBED` — required state/arguments were unavailable, or a process-global table had no enumeration
+  seam, so an intercepted private write could not be promoted into evidence.
+
+The collision pass compares the independently captured registrar pair sets, order-independently. A
+door+kind claimed by two assemblies is a collision even though no particular fresh-state run overwrote
+anything. The optional combined sequential order-sensitivity pass is explicitly `NOT-RUN`; it answers a
+different question and cannot replace the collision pass. State derivation is also checked after each
+observable write, retaining `survived`, `lost`, and `not-applicable` per pair.
+
+The measured run classifies all 300 registrars as 55 generic doors and 245 assemblies. Of those
+assemblies, 193 are `PROBED`, 14 are `PROBED-EMPTY`, and 38 are `UNPROBED`. The independent probes emit
+263 exact pairs: 201 survive state derivation, none are lost, and 62 are not state-derived. The six
+order-independent collisions are the `bitmap`, `image`, and `renderTarget` keys on each of
+`registerGlTextureResolver` and `registerWgpuTextureResolver`; the claims reuse the same implementation
+for a key but arrive through multiple genuine assemblies, so they remain collisions under the stated
+door+kind rule.
+
+### Process-global registry census
+
+The runtime artifact also carries the complete 15-table census. `read` and `enumerate` are
+caller-serving seams; `clear` is instrument-serving; `unregister` has weak independent justification
+because last-write-wins already supplies override. Empty-at-import is recorded and asserted at runtime
+where enumeration exists, but it is inherited from the repository's no-top-level-side-effects rule,
+not proposed as a fifth-tier-specific contract.
+
+| Table (door) | enumerate | read | clear | unregister | import baseline | production reader packages |
+|---|---|---|---|---|---|---|
+| audio decoders (`registerAudioDecoder`) | `getAudioDecoderMimeTypes` | `getAudioDecoder` | — | `unregisterAudioDecoder` | empty | audio |
+| decompressors (`registerDecompressor`) | — | `getDecompressor` | — | `unregisterDecompressor` | empty | compression, font-formats, scene3d-formats, swf |
+| debug subsystems (`registerDebugSubsystem`) | — | `enableDebug` | — | `unregisterDebugSubsystem` | empty | debug |
+| image bitmap composers (`registerImageBitmapComposer`) | `getImageBitmapComposerKinds` | `getImageBitmapComposer` | `clearImageBitmapComposers` | `unregisterImageBitmapComposer` | empty | image, image-codec |
+| image decoders (`registerImageDecoder`) | `getImageDecoderMimeTypes` | `getImageDecoder` | `clearImageDecoders` | `unregisterImageDecoder` | empty | image-codec |
+| image encoders (`registerImageEncoder`) | `getImageEncoderMimeTypes` | `getImageEncoder` | `clearImageEncoders` | `unregisterImageEncoder` | empty | image-codec |
+| coarse hit tests (`registerHitTest`) | — | `hitTestGraphPoint` | — | — | empty | interaction |
+| precise hit tests (`registerHitTestPrecise`) | — | `hitTestGraphPointPrecise` | — | — | empty | interaction |
+| log serializers (`registerLogSerializer`) | — | `createJsonLogFormatter` | `clearLogSerializers` | — | empty | log |
+| particle formats (`registerParticleFormat`) | `getRegisteredParticleFormats` | `getParticleFormatCodec` | — | `unregisterParticleFormat` | empty | particles-formats |
+| skeleton animation target binders (`registerSkeleton2DAnimationTargetBinder`) | — | `getSkeleton2DAnimationTargetBinder` | — | `unregisterSkeleton2DAnimationTargetBinder` | two built-ins at import | skeleton2d |
+| skeleton constraint solvers (`registerSkeleton2DConstraintSolver`) | — | `solveSkeleton2DConstraints` | — | `unregisterSkeleton2DConstraintSolver` | empty | skeleton2d |
+| skeleton formats (`registerSkeleton2DFormat`) | — | `parseSkeleton2D` | — | `unregisterSkeleton2DFormat` | empty; two built-ins on first read | skeleton2d-formats |
+| spritesheet formats (`registerSpritesheetFormat`) | — | `parseSpritesheet` | — | — | empty; five built-ins on first read | spritesheet-formats |
+| texture-atlas formats (`registerTextureAtlasFormat`) | — | `parseTextureAtlas` | — | — | empty; four built-ins on first read | textureatlas-formats |
+
+All 15 have a read path, but only 5 enumerate and 11 have either clear or unregister isolation. Four
+tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (four packages) and
+image bitmap composers (two) have production reads spanning more than their owning package. That read
+graph is part of the evidence needed to decide fifth-tier-versus-drift; this census converts neither.
+
+The existing top-level-side-effect gate was separately widened in a throwaway measurement and left
+unchanged. Its current `ExpressionStatement` walk misses all other statement categories. Applying the
+same effect-expression predicate recursively to top-level non-expression statements found **444
+`VariableDeclaration` statements in 226 files across 81 packages**, and zero current `if`, loop, or
+other statement-category hits. That is a flood, not a mechanical gate patch: it includes initializer
+allocations/calls and needs a scope ruling before any widening lands.
+
 **Registries have no home, so they are copied.** `copyGlRenderStateRegistrations` assigns 14 fields then
 delegates to `copyRenderStateRegistrations` for 3 more; `copyAllRenderersFromRenderState` is a *separate*
 call the caller must also remember. `3f281bf4e` ("carry the shape-command registry onto a derived render

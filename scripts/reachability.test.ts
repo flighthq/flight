@@ -8,6 +8,7 @@ import {
   auditEffectBackend,
   collectRegistrarKindConstants,
   collectRegistrarOwnership,
+  collectRegistrarRuntimeDeclarations,
   collectReachabilityLanes,
   defaultCompositionSymbols,
   effectReachabilitySymbols,
@@ -20,6 +21,37 @@ afterEach(() => {
 });
 
 describe('source-derived capability reachability', () => {
+  it('records runtime registrar parameters including defaults and function-valued exports', () => {
+    const fixture = entries(
+      `
+      export function registerDefault(state: FixtureState = createState(), enabled: boolean = true): void {}
+      export const registerCallback = (kind: string, callback: FixtureCallback): void => {};
+    `,
+      [],
+    );
+
+    expect(collectRegistrarRuntimeDeclarations({ packageName: 'fixture', sourceFiles: fixture.sourceFiles })).toEqual([
+      {
+        packageName: 'fixture',
+        parameters: [
+          { defaulted: false, name: 'kind', typeNames: ['string'] },
+          { defaulted: false, name: 'callback', typeNames: ['FixtureCallback'] },
+        ],
+        registrar: 'registerCallback',
+        sourceFile: fixture.sourceFiles[0],
+      },
+      {
+        packageName: 'fixture',
+        parameters: [
+          { defaulted: true, name: 'state', typeNames: ['FixtureState'] },
+          { defaulted: true, name: 'enabled', typeNames: ['boolean'] },
+        ],
+        registrar: 'registerDefault',
+        sourceFile: fixture.sourceFiles[0],
+      },
+    ]);
+  });
+
   it('records every readable registrar mapping and reports every unreadable registrar', () => {
     const fixture = entries(
       `

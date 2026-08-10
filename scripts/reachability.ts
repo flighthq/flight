@@ -97,9 +97,16 @@ const laneDrift = diffLanes(
   lanes,
 );
 const hardPassed = violations.length === 0;
+const registrarOwnershipSummary = summarizeRegistrarOwnership(registrarOwnership);
 
 if (jsonMode) {
-  console.log(JSON.stringify({ passed: hardPassed, violations, laneDrift, registrarOwnership }, null, 2));
+  console.log(
+    JSON.stringify(
+      { passed: hardPassed, violations, laneDrift, registrarOwnershipSummary, registrarOwnership },
+      null,
+      2,
+    ),
+  );
   process.exitCode = !hardPassed && checkMode ? 1 : 0;
 }
 
@@ -120,10 +127,8 @@ if (!jsonMode) {
   const uncatalogued = registrarOwnership.filter((entry) => entry.status === 'UNCATALOGUED');
   const mechanisms = registrarOwnership.filter((entry) => entry.status === 'mechanism');
   const excluded = uncatalogued.filter((entry) => entry.uncataloguedBucket === 'not-kind-registration');
-  const registrarCount = new Set(registrarOwnership.map((entry) => `${entry.packageName}\0${entry.registrar}`)).size;
-  const mappingCount = registrarOwnership.filter((entry) => entry.status === 'catalogued').length;
   console.log(
-    `${pc.green('OK')} ${pc.bold(`${registrarCount} exported registrars inventoried`)} ${pc.dim(`(${mappingCount} readable mappings, ${mechanisms.length} mechanisms, ${uncatalogued.length} UNCATALOGUED)`)}`,
+    `${pc.green('OK')} ${pc.bold(`${registrarOwnershipSummary.registrars} exported registrars inventoried`)} ${pc.dim(`(${registrarOwnershipSummary.readableRegistrars} readable registrars / ${registrarOwnershipSummary.mappings} mappings, ${mechanisms.length} mechanisms, ${uncatalogued.length} UNCATALOGUED)`)}`,
   );
   console.log(pc.dim('  Caller-supplied kinds belong to the registrar mechanism, not the ownership denominator.'));
   for (const shape of ['caller-supplied-kind', 'caller-supplied-batch'] as const) {
@@ -179,6 +184,18 @@ if (!jsonMode) {
   }
 
   process.exitCode = !hardPassed && checkMode ? 1 : 0;
+}
+
+function summarizeRegistrarOwnership(entries: readonly RegistrarOwnershipEntry[]) {
+  const registrarKeys = (matching: (entry: RegistrarOwnershipEntry) => boolean): Set<string> =>
+    new Set(entries.filter(matching).map((entry) => `${entry.packageName}\0${entry.registrar}`));
+  return {
+    registrars: registrarKeys(() => true).size,
+    readableRegistrars: registrarKeys((entry) => entry.status === 'catalogued').size,
+    mappings: entries.filter((entry) => entry.status === 'catalogued').length,
+    mechanisms: registrarKeys((entry) => entry.status === 'mechanism').size,
+    uncatalogued: registrarKeys((entry) => entry.status === 'UNCATALOGUED').size,
+  };
 }
 
 function diffLanes(before: readonly ReachabilityLaneEntry[], after: readonly ReachabilityLaneEntry[]): LaneDrift[] {

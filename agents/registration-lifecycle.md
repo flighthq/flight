@@ -367,6 +367,28 @@ The two steps are ordered on purpose. Asking "do the remedies differ" first invi
 condition that should not exist at all, which is how a leftover acquires a vocabulary entry and then a
 reader who trusts it.
 
+### Evidence rules beside the remedy
+
+Three rules govern how an instrument may support this remedy:
+
+1. **A finding about an instrument is not a finding about its subject.** The named instances are
+   foreman's reading of the syntax recorder's 172, manager's bucket-5 body count, and principal's
+   181-function grep: each accurately described what its instrument selected and was overread as a fact
+   about registrars. A vantage point is also an instrument: an agent could see unnamed per-recipient
+   send slots and inferred that retention prevented parcel reconciliation, while the host-owned
+   `meta.yaml` records already carried the parcel identities needed to reconcile them. A correct grep
+   can still be over-read: finding `mesh-legacy-fixtures` in an oracle and its test proved that the
+   consumer names the pack, while the test's asserted `NOT-RUN` path against an empty directory showed
+   that it did not prove the pack was present or fetched. Verifying that cited text says what was quoted
+   is likewise distinct from verifying the claim the citation was offered to support.
+2. **States are distinguished by whether their remedies differ, not by why they arose.** The named
+   instances are `SceneCoverage.Missing`, the `⊘` orphan, and `ContributedNothing` versus
+   `ObservedNothing`. Collapsing either pair erases the action a caller should take.
+3. **When instruments overlap, state whether their blind spots are shared or different.** Reachability
+   and the registrar probe both omit the Source/Backdrop family for unrelated selector reasons; that is
+   a shared coverage gap and makes the omission durable. The static top-level-side-effect scan and the
+   runtime empty-at-import assertion fail differently; that is genuine defence in depth.
+
 ## One command, and where requirements come from
 
 The CLI surface is deliberately **one verb on the golden path**:
