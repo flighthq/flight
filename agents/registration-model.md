@@ -184,14 +184,16 @@ a table of names.
 
 Two tiers, sharing one implementation so they cannot disagree. `hasGlScene3DCoverage` stops at the first
 shortfall and allocates nothing. `explainGlScene3DCoverage` is the debug-class tier, and it reports **every**
-requirement — `Satisfied` alongside `Fallback` and `Missing` — so one call is a manifest a caller can render
+requirement — `Satisfied` alongside the four shortfall states — so one call is a manifest a caller can render
 as a checklist. Reporting only the gaps would leave "covered" indistinguishable from "never asked about".
 The predicate stays gap-only: a manifest of nothing but `Satisfied` entries still answers `true`.
 
-`Missing` means nothing resolves and the content does not draw. `Fallback` means something resolves but not
-this kind's own implementation, so it draws differently than authored. **Which verdict applies is the
-backend's call, not a shared convention** — a material with no renderer is `Missing` on GL (the node does not
-draw) and `Fallback` on Canvas (a Canvas material only adds draw state over a draw that already happened).
+The shortfall states are split by **remedy**, not by symptom. Nothing resolving and the content not drawing
+is `Unregistered` when a call would fix it and `Unavailable` when no such call exists. Something resolving
+that is not this kind's own implementation, so it draws differently than authored, is `FallbackRemediable`
+or `FallbackUnavailable` on the same distinction. **Which of the two families applies is the backend's call,
+not a shared convention** — a material with no renderer does not draw on GL, while on Canvas it falls back,
+because a Canvas material only adds draw state over a draw that already happened.
 
 Backends **compose** rather than copy. The node-renderer and shape-command registries live on the base
 `RenderStateRuntime`, so `explainScene2DCoverage` in `@flighthq/render` answers them once for all four 2D
