@@ -14,6 +14,7 @@ import {
   getSizeCaseKey,
   parseFilter,
   readBaseline,
+  readSizeBaselineOrigins,
 } from '../../scripts/size-runner';
 
 const baselineFile = resolve(__dirname, 'size.baseline.json');
@@ -23,8 +24,10 @@ const sizeOutputPath = process.env.SIZE_OUTPUT_PATH;
 
 const baseline: Record<string, number> = readBaseline(baselineFile);
 const pendingBaseline: Record<string, number> = { ...baseline };
+const root = resolve(__dirname, '../..');
+const baselineOrigins = readSizeBaselineOrigins(root, baselineFile);
 
-const examplesDir = resolve(__dirname, '../../examples/packages');
+const examplesDir = resolve(root, 'examples/packages');
 const sizeExampleFilter = parseFilter(process.env.SIZE_EXAMPLE_FILTER);
 const sizeRenderFilter = parseFilter(process.env.SIZE_RENDER_FILTER);
 
@@ -39,7 +42,7 @@ const maxRenderLen = Math.max(
   8,
   ...testCases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
 );
-const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 10 };
+const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 34 };
 
 function printGroup(name: string): void {
   const group = results.filter((r) => r.name === name);
@@ -51,7 +54,10 @@ function printGroup(name: string): void {
     const color = deltaNum == null ? pc.dim : deltaNum > 2 ? pc.red : deltaNum > 0 ? pc.yellow : pc.green;
     const deltaStr =
       r.delta == null ? pc.dim('—') : color(r.delta[0]) + color(r.delta.slice(1, -1)) + pc.dim(color('%'));
-    const baselineStr = pc.dim((r.baselineKBStr ? '~' + r.baselineKBStr + ' KB' : '—').padEnd(w.base));
+    const baselineOrigin = r.baselineCommit
+      ? ` @${r.baselineCommit.slice(0, 10)}${r.baselineCommitDate ? ` (${r.baselineCommitDate})` : ''}`
+      : ' @unknown';
+    const baselineStr = pc.dim((r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : '—').padEnd(w.base));
     const flag = r.passed ? '' : '  ' + pc.red('✗');
 
     const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
@@ -79,6 +85,8 @@ describe('bundle size checks', () => {
       variant: r.variant,
       gzipKB: parseFloat(r.gzipKB),
       baselineKB: r.baselineKB,
+      baselineCommit: r.baselineCommit,
+      baselineCommitDate: r.baselineCommitDate,
       deltaPercent: r.delta != null ? parseFloat(r.delta.replace('%', '')) : null,
       passed: r.passed,
     }));
@@ -109,6 +117,7 @@ describe('bundle size checks', () => {
       const gzipSize = getGzipSize(code);
       const key = getSizeCaseKey(testCases[index]);
       const baselineSize = baseline[key] ?? null;
+      const baselineOrigin = baselineOrigins[key];
       const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
       pendingBaseline[key] = gzipSize;
@@ -118,6 +127,8 @@ describe('bundle size checks', () => {
         variant,
         gzipSize,
         gzipKB,
+        baselineCommit: baselineOrigin?.commit ?? null,
+        baselineCommitDate: baselineOrigin?.commitDate ?? null,
         baselineKB,
         baselineKBStr,
         delta,
