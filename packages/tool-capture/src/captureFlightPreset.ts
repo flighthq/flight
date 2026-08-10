@@ -33,7 +33,6 @@ const FLIGHT_VISUAL_PARITY_GROUPS: Readonly<Record<string, Readonly<CaptureParit
 };
 
 const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> = {
-  playingvideo: 'all',
   'effect-lens-distortion': ['canvas'],
   'effect-lens-flare': ['canvas'],
   'effect-posterize': ['canvas'],
