@@ -5,9 +5,9 @@ vi.mock('node:child_process', async (importOriginal) => ({
   spawnSync: childProcessMocks.spawnSync,
 }));
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -19,7 +19,7 @@ import {
 } from './captureServer';
 
 describe('explainCaptureDistStaleness', () => {
-  it('warns when the build predates the source it was built from', () => {
+  it('reports when the build predates the source it was built from', () => {
     expect(explainCaptureDistStaleness(1_000, 2_000)).toContain('measures the PREVIOUS code');
   });
 
@@ -59,6 +59,83 @@ describe('resolveServer', () => {
 });
 
 describe('resolveStaticServer', () => {
+  it('refuses a stale functional dist that omits currently discovered routes', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'capture-static-stale-'));
+    const dist = join(root, 'tools', 'functional', 'dist');
+    const scenes = join(root, 'functional', 'scenes');
+    mkdirSync(dist, { recursive: true });
+    mkdirSync(scenes, { recursive: true });
+    writeFileSync(join(dist, 'index.html'), '<h1>old build</h1>');
+    writeFileSync(join(scenes, 'new-scene.webgl.ts'), 'export {};');
+    writeFileSync(join(scenes, 'new-scene.webgpu.ts'), 'export {};');
+
+    try {
+      await expect(resolveStaticServer({ tool: 'functional', root })).rejects.toThrow(
+        /Functional dist is missing 2 of 2 discovered routes.*npm run build:functional.*tests\/new-scene\/webgl\/, tests\/new-scene\/webgpu\//,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['an existing scene', 'functional/scenes/existing-scene.webgl.ts'],
+    ['its Vite config', 'tools/functional/vite.config.ts'],
+    ['the shared harness', 'tools/harness/render.ts'],
+  ])('refuses a functional dist older than %s', async (_description, newerSource) => {
+    const root = mkdtempSync(join(tmpdir(), 'capture-static-old-'));
+    const dist = join(root, 'tools', 'functional', 'dist');
+    const route = join(dist, 'tests', 'existing-scene', 'webgl');
+    const scene = join(root, 'functional', 'scenes', 'existing-scene.webgl.ts');
+    mkdirSync(route, { recursive: true });
+    mkdirSync(join(root, 'functional', 'scenes'), { recursive: true });
+    writeFileSync(join(dist, 'index.html'), '<h1>old build</h1>');
+    writeFileSync(join(route, 'index.html'), '<h1>old route</h1>');
+    writeFileSync(scene, 'export {};');
+    mkdirSync(dirname(join(root, newerSource)), { recursive: true });
+    if (join(root, newerSource) !== scene) writeFileSync(join(root, newerSource), 'export {};');
+    utimesSync(scene, 1, 1);
+    utimesSync(join(dist, 'index.html'), 2, 2);
+    utimesSync(join(route, 'index.html'), 2, 2);
+    utimesSync(join(root, newerSource), 3, 3);
+
+    try {
+      await expect(resolveStaticServer({ tool: 'functional', root })).rejects.toThrow(
+        /static build is older.*npm run build:functional/,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('serves a complete functional dist newer than its build inputs', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'capture-static-fresh-'));
+    const dist = join(root, 'tools', 'functional', 'dist');
+    const route = join(dist, 'tests', 'existing-scene', 'webgl');
+    const scene = join(root, 'functional', 'scenes', 'existing-scene.webgl.ts');
+    const config = join(root, 'tools', 'functional', 'vite.config.ts');
+    const harness = join(root, 'tools', 'harness', 'render.ts');
+    mkdirSync(route, { recursive: true });
+    mkdirSync(join(root, 'functional', 'scenes'), { recursive: true });
+    mkdirSync(join(root, 'tools', 'harness'), { recursive: true });
+    writeFileSync(join(dist, 'index.html'), '<h1>fresh build</h1>');
+    writeFileSync(join(route, 'index.html'), '<h1>fresh route</h1>');
+    writeFileSync(scene, 'export {};');
+    writeFileSync(config, 'export default {};');
+    writeFileSync(harness, 'export {};');
+    for (const source of [scene, config, harness]) utimesSync(source, 1, 1);
+    for (const output of [join(dist, 'index.html'), join(route, 'index.html')]) utimesSync(output, 2, 2);
+
+    let server;
+    try {
+      server = await resolveStaticServer({ tool: 'functional', root });
+      expect(await (await fetch(`${server.url}/tests/existing-scene/webgl/`)).text()).toContain('fresh route');
+    } finally {
+      server?.kill();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('uses npm rather than treating an inherited npx CLI as the npm CLI', async () => {
     const root = mkdtempSync(join(tmpdir(), 'capture-static-'));
     const dist = join(root, 'examples', 'runners', 'web', 'dist');

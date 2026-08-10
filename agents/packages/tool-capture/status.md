@@ -44,6 +44,14 @@ and its inline exported types are a stated exemption from the types-home rule �
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-10** — Static functional capture now compares current discovered scene/renderer routes
+  with the emitted dist before launching Chromium (`captureServer.ts`). A structurally stale dist fails
+  once with the missing/total count, every absent route, and the exact build command instead of producing
+  one misleading page 404 per target. The former inert timestamp warning is also a gate now and covers
+  functional scenes/config/shared harness plus examples sources/config, not only `packages/`. The measured
+  stale Aug 1 clone omitted 22 routes across nine scenes; all nine already carry committed baselines and
+  support marks from later commits, so that evidence came from another build/environment and no mark was
+  invalidated.
 - **2026-08-10** — Capture resource failures now retain their URL across HTTP error responses and
   transport failures in the capture, observe, and validation paths (`captureResourceFailure.ts`). The
   Chromium browser contract deliberately exercises 404, 503, and dropped-connection resources and
