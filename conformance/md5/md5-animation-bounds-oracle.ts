@@ -203,6 +203,10 @@ function measureFrame(
       bindPose.joints,
       bindPose.weights,
       mesh.skin!.skeleton.jointMatrices,
+      // The skeleton's own normal palette, filled by the computeSkeleton3DJointMatrices call above.
+      // Passed rather than an identity even though MD5 authors strictly rigid joints: under a rigid
+      // transform this palette EQUALS the pose matrix's 3x3, so it costs nothing here — and hardcoding
+      // an identity would silently become wrong the moment a non-rigid pose reached this oracle.
       mesh.skin!.skeleton.normalMatrices,
     );
     unionTransformedPositions(observed, bindPose.skinnedPositions, getNodeWorldMatrix4(mesh).m);
