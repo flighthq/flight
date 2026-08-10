@@ -11,6 +11,32 @@ gate. The narrow question is why nine skips carry no reason. The wider one this 
 settle: **what must a gate record at the point where it is narrowed, so that its output cannot claim
 more than it checked?**
 
+## The rule this is an instance of
+
+**A gate that counts is not enough. It has to compare what it did against what was declared.**
+
+The parity gate below is the worked case, but the rule generalises to every instrument in the repo,
+and the size gate is the proof it is not parity-specific: `scripts/size.ts` compares bytes against
+`tools/size/size.baseline.json` and never asks whether that number was produced by a measurement of
+*this* tree — nor whether the prose it enforces says what it enforces. Measured on a tree at
+`d03a0bb57`, all four `pathboolean` entries disagree with their pins (+0.6%, −0.4%, −0.1%, −0.1%),
+because `scripts/check.ts` contains no reference to size and so nothing re-derives them.
+
+Two further mismatches in that same instrument, recorded because they are the same defect and not
+this document's subject:
+
+- **The stated rule and the enforcing instrument disagree.** `AGENTS.md` states it absolutely — an
+  assembly never inflates the bundle cost of a primitive — while `size-runner.ts:246` permits
+  `baselineSize * 1.05`. On `pathboolean:dom` that is 626 bytes of silent headroom. The prose is the
+  artifact every agent reads in full at session start; the tolerance is the thing that actually
+  holds. Either the prose states the tolerance or the gate tightens to match it, but they must not
+  disagree.
+- **A pin is stale, not false.** `scene2d-embedded-png:canvas` at 1,864 reproduces exactly at the
+  commit that introduced it and has since drifted to ~1,723. A one-line baseline diff is *not*
+  evidence a measurement never ran: `size-runner.ts:263` seeds `pendingBaseline` from the existing
+  baseline and overwrites only measured keys, so a one-line diff is the signature of a correct run
+  when nothing else moved.
+
 ## The mechanism, as it actually behaves
 
 Verified in [`captureValidation.ts`](../packages/tool-capture/src/captureValidation.ts) (the skip is
