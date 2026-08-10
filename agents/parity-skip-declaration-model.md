@@ -52,6 +52,23 @@ this document's subject:
   every riser is invisible. **The diligent agent re-arms the band; the negligent one does not**,
   because growth under 5% passes without rewriting anything.
 
+  **The band is one-sided, so the gate cannot detect a stale pin at all.**
+  `size-runner.ts:247` is `passed = gzipSize < threshold` with `threshold = baseline * 1.05` — there
+  is no lower bound. Both live rows pass:
+
+  | key | pin | measured | threshold | verdict |
+  | --- | --- | --- | --- | --- |
+  | `pathboolean:dom` | 12523 | 12614 | 13150 | **pass** (+0.7%) |
+  | `scene2d-embedded-png:canvas` | 1864 | 1723 | 1958 | **pass** (−7.6%) |
+
+  A bundle 7.6% *below* its pin passes; a pin 141 bytes wrong passes. So the instrument is
+  structurally incapable of ever reporting that its own baseline is out of date — a shrink is never
+  checked, and a growth under 5% is never checked. **Wiring it as-is would install a gate reporting
+  "139 of 139 passed" while four-fifths of the file is drift**, which is why "all 139 passed" is not
+  evidence the wiring works — it is the symptom. Whichever instrument survives the decomposition
+  question, **it has to be able to detect staleness**: a two-sided comparison, or a freshness check on
+  the pin's measuring commit.
+
   **There is no magnitude at which the tool forces a decision.** Under 5% passes silently. Over 5%
   fails — and the documented remedy erases the objection unconditionally: `size-runner.ts:274` makes
   `adjustedPassed = updateBaseline || passed`, and `:275` re-pins regardless of how far the value
