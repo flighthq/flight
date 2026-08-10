@@ -162,6 +162,31 @@ describe('computeSkeleton3DJointMatrices', () => {
   });
 });
 
+describe('computeSkeleton3DJointMatrices normal palette', () => {
+  // ★ THIS COVERS THE FILL, WHICH NOTHING ELSE DID. The skinning tests build palettes directly, so they
+  // are structurally blind to whether this function writes the layout the shader and the CPU both read.
+  // A mutation that wrote the columns tightly instead of padded passed the entire suite until this
+  // existed — the same "a unit test of the callee says nothing about the caller" gap as elsewhere.
+  it('writes each joint as three vec4-padded columns, twelve floats apart', () => {
+    const joint = createNode3D();
+    // The bind pose is captured at construction, so the scale must be applied AFTER it — otherwise the
+    // joint matrix is world times inverse-world, the identity, and the palette says nothing.
+    const skeleton = createSkeleton3D([joint]);
+    setVector3(joint.scale, 2, 1, 1);
+    invalidateNodeLocalTransform(joint);
+    computeSkeleton3DJointMatrices(skeleton);
+
+    expect(skeleton.normalMatrices.length).toBe(12);
+    // A 2x stretch in x gives a normal matrix scaling x by 1/2 — the inverse-transpose, not the matrix.
+    expect(skeleton.normalMatrices[0]).toBeCloseTo(0.5);
+    // Column 1 starts at float 4, not float 3. If the stride were tight this would hold the y column's
+    // first element at index 3 and this assertion would read padding instead.
+    expect(skeleton.normalMatrices[3]).toBe(0);
+    expect(skeleton.normalMatrices[5]).toBeCloseTo(1);
+    expect(skeleton.normalMatrices[10]).toBeCloseTo(1);
+  });
+});
+
 describe('createSkeleton3D', () => {
   it('allocates a palette sized to the joint count when no inverse-bind is given', () => {
     const skeleton = createSkeleton3D([createNode3D(), createNode3D()]);
