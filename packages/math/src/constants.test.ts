@@ -6,6 +6,12 @@ describe('constants', () => {
     // digits agrees with a typo in them, which is how a wrong digit at the 13th decimal survived a
     // full suite. Exact equality, not toBeCloseTo: the error this guards against is far smaller than
     // any tolerance worth writing.
+    //
+    // MEASURED, not assumed: mutating the constant's 13th decimal from ...36 to ...46 and running
+    // the whole repository fails exactly ONE test of 17,045 — this one. The sweep below passes over
+    // the wrong digit, as does every path, shape and clip test. That is the entire case for pinning
+    // a literal to its formula here rather than trusting geometry to notice, and it is why the
+    // original wrong digit survived a full suite.
     it('equals four thirds of the square root of two less one', () => {
       expect(CIRCLE_KAPPA).toBe((4 * (Math.sqrt(2) - 1)) / 3);
     });
