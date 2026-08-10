@@ -302,6 +302,11 @@ describe('runCaptureValidation', () => {
 
     expect(result.parityPasses + result.parityFailures).toBe(1);
     expect(result.parityUncovered).toBe(0);
+    // The coverage is KEPT and the claim is made TRUE. Keeping the pairs while still labelling them
+    // 'visual:webgl·webgpu' is the false-claim state: the group asserts a canvas reference it never
+    // used. Asserting the label is what stops coverage and honesty from drifting apart.
+    const passed = result.checks.find((check) => check.kind === 'parity' && check.status === 'passed');
+    expect(passed?.message).toContain('all-pairs, no canvas column');
   });
 
   it('is a callable fingerprint-validation orchestrator', () => {
