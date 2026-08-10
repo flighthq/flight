@@ -5,10 +5,10 @@ import {
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontRecord } from '@flighthq/types/contract';
+import type { BitmapFontRecord, ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { buildBitmapFontFromRecord } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
 
 describe('buildBitmapFontFromRecord', () => {
   it('maps chars, kernings, and common metrics onto a BitmapFont', () => {
@@ -119,3 +119,32 @@ function sampleRecord(): BitmapFontRecord {
     pages: [{ file: 'test_0.png', id: 0 }],
   };
 }
+
+describe('reportDroppedBitmapFontRecords', () => {
+  it('reports one crumb per kind that lost records, carrying the count', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    reportDroppedBitmapFontRecords(diagnostics, 'parseSomething', 1, 7, 2);
+
+    expect(diagnostics).toMatchObject([
+      { detail: { records: 1 }, kind: 'bmfont.page-unreadable', origin: 'parseSomething' },
+      { detail: { records: 7 }, kind: 'bmfont.char-unreadable', origin: 'parseSomething' },
+      { detail: { records: 2 }, kind: 'bmfont.kerning-unreadable', origin: 'parseSomething' },
+    ]);
+  });
+
+  it('says nothing about a kind that lost nothing', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    reportDroppedBitmapFontRecords(diagnostics, 'parseSomething', 0, 3, 0);
+
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['bmfont.char-unreadable']);
+  });
+
+  it('takes the origin from its caller rather than naming itself', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    reportDroppedBitmapFontRecords(diagnostics, 'parseBitmapFontXmlRecord', 0, 1, 0);
+
+    // A shared reporter that named itself would put a wrapper in the field whose whole job is to say
+    // which function lost the data, and all three parse encodings would become indistinguishable.
+    expect(diagnostics[0]!.origin).toBe('parseBitmapFontXmlRecord');
+  });
+});

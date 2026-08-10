@@ -1,6 +1,7 @@
 import { getBitmapFontMetrics, unpackBitmapFontKerningKey } from '@flighthq/bitmapfont/contract';
 import type {
   BitmapFont,
+  ImportDiagnostic,
   BitmapFontCharRecord,
   BitmapFontKerningPair,
   BitmapFontKerningRecord,
@@ -10,7 +11,7 @@ import type {
   GlyphEntry,
 } from '@flighthq/types/contract';
 
-import { buildBitmapFontFromRecord } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
 
 // Re-emits a `BitmapFont` as the classic AngelCode/BMFont text `.fnt` (`info`/`common`/`page`/`char`/
 // `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table
@@ -67,8 +68,12 @@ export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
 // values are bare tokens, quoted strings, or comma lists. The atlas page named on the `page` line is
 // rehydrated through `options.resolvePage`. Returns the `null` sentinel — never throwing — when the
 // text carries no `common` line metrics, no `char` records, or its atlas page cannot be resolved.
-export function parseBitmapFontFnt(text: string, options?: Readonly<BitmapFontParseOptions>): BitmapFont | null {
-  const record = parseBitmapFontFntRecord(text);
+export function parseBitmapFontFnt(
+  text: string,
+  options?: Readonly<BitmapFontParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): BitmapFont | null {
+  const record = parseBitmapFontFntRecord(text, diagnostics);
   if (record === null) return null;
   return buildBitmapFontFromRecord(record, options);
 }
@@ -76,12 +81,17 @@ export function parseBitmapFontFnt(text: string, options?: Readonly<BitmapFontPa
 // Parses the text `.fnt` into the neutral record, or `null` when required blocks are absent or
 // malformed. Kept separate from `buildBitmapFontFromRecord` so the atlas-resolution step is shared
 // across the text/XML/JSON front-ends.
-function parseBitmapFontFntRecord(text: string): BitmapFontRecord | null {
+function parseBitmapFontFntRecord(text: string, diagnostics: ImportDiagnostic[] | undefined): BitmapFontRecord | null {
   let lineHeight: number | null = null;
   let base: number | null = null;
   const pages: BitmapFontPageRecord[] = [];
   const chars: BitmapFontCharRecord[] = [];
   const kernings: BitmapFontKerningRecord[] = [];
+  // Counted and reported ONCE after the scan: a font carries thousands of char lines, and the seam's
+  // perf contract forbids a per-element crumb in a loop that size.
+  let droppedPages = 0;
+  let droppedChars = 0;
+  let droppedKernings = 0;
 
   for (const rawLine of text.split(/\r\n?|\n/)) {
     const line = rawLine.trim();
@@ -95,16 +105,20 @@ function parseBitmapFontFntRecord(text: string): BitmapFontRecord | null {
       base = readFntNumber(fields.base);
     } else if (tag === 'page') {
       const id = readFntNumber(fields.id);
-      if (id !== null) pages.push({ file: fields.file ?? '', id });
+      if (id === null) droppedPages++;
+      else pages.push({ file: fields.file ?? '', id });
     } else if (tag === 'char') {
       const char = readFntChar(fields);
-      if (char !== null) chars.push(char);
+      if (char === null) droppedChars++;
+      else chars.push(char);
     } else if (tag === 'kerning') {
       const kerning = readFntKerning(fields);
-      if (kerning !== null) kernings.push(kerning);
+      if (kerning === null) droppedKernings++;
+      else kernings.push(kerning);
     }
   }
 
+  reportDroppedBitmapFontRecords(diagnostics, 'parseBitmapFontFntRecord', droppedPages, droppedChars, droppedKernings);
   if (lineHeight === null || base === null || chars.length === 0) return null;
   return { base, chars, encoding: 'raster', kernings, lineHeight, pages };
 }

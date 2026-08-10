@@ -1,5 +1,6 @@
 import type {
   BitmapFont,
+  ImportDiagnostic,
   BitmapFontCharRecord,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
@@ -15,22 +16,26 @@ import {
   parseXmlDocument,
 } from '@flighthq/xml/contract';
 
-import { buildBitmapFontFromRecord } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
 
 // Parses the XML AngelCode/BMFont `.fnt` variant into a `BitmapFont`. The document is
 // `<font><info/><common/><pages><page/></pages><chars><char/></chars><kernings><kerning/></kernings></font>`
 // with every field an element attribute. Semantics match `parseBitmapFontFnt` — the same line metrics,
 // glyph mapping, and `resolvePage` atlas rehydration. Returns the `null` sentinel — never throwing —
 // for malformed XML, a missing `common`/`chars`, or an atlas page that cannot be resolved.
-export function parseBitmapFontXml(text: string, options?: Readonly<BitmapFontParseOptions>): BitmapFont | null {
-  const record = parseBitmapFontXmlRecord(text);
+export function parseBitmapFontXml(
+  text: string,
+  options?: Readonly<BitmapFontParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): BitmapFont | null {
+  const record = parseBitmapFontXmlRecord(text, diagnostics);
   if (record === null) return null;
   return buildBitmapFontFromRecord(record, options);
 }
 
 // Parses the XML `.fnt` into the neutral record, or `null` when the root/`common`/`chars` blocks are
 // absent or a required attribute is malformed.
-function parseBitmapFontXmlRecord(text: string): BitmapFontRecord | null {
+function parseBitmapFontXmlRecord(text: string, diagnostics: ImportDiagnostic[] | undefined): BitmapFontRecord | null {
   const root = parseXmlDocument(text);
   if (root === null || root.name !== 'font') return null;
 
@@ -41,11 +46,17 @@ function parseBitmapFontXmlRecord(text: string): BitmapFontRecord | null {
   if (lineHeight === null || base === null) return null;
 
   const pages: BitmapFontPageRecord[] = [];
+  // Counted and reported ONCE after the scan: a font carries thousands of char records, and the seam's
+  // perf contract forbids a per-element crumb in a loop that size.
+  let droppedPages = 0;
+  let droppedChars = 0;
+  let droppedKernings = 0;
   const pagesElement = getXmlElementChildByName(root, 'pages');
   if (pagesElement !== null) {
     for (const pageElement of getXmlElementChildrenByName(pagesElement, 'page')) {
       const id = getXmlElementAttributeNumber(pageElement, 'id');
-      if (id !== null) pages.push({ file: getXmlElementAttribute(pageElement, 'file') ?? '', id });
+      if (id === null) droppedPages++;
+      else pages.push({ file: getXmlElementAttribute(pageElement, 'file') ?? '', id });
     }
   }
 
@@ -54,7 +65,8 @@ function parseBitmapFontXmlRecord(text: string): BitmapFontRecord | null {
   if (charsElement !== null) {
     for (const charElement of getXmlElementChildrenByName(charsElement, 'char')) {
       const char = readXmlChar(charElement);
-      if (char !== null) chars.push(char);
+      if (char === null) droppedChars++;
+      else chars.push(char);
     }
   }
   if (chars.length === 0) return null;
@@ -64,10 +76,12 @@ function parseBitmapFontXmlRecord(text: string): BitmapFontRecord | null {
   if (kerningsElement !== null) {
     for (const kerningElement of getXmlElementChildrenByName(kerningsElement, 'kerning')) {
       const kerning = readXmlKerning(kerningElement);
-      if (kerning !== null) kernings.push(kerning);
+      if (kerning === null) droppedKernings++;
+      else kernings.push(kerning);
     }
   }
 
+  reportDroppedBitmapFontRecords(diagnostics, 'parseBitmapFontXmlRecord', droppedPages, droppedChars, droppedKernings);
   return { base, chars, encoding: 'raster', kernings, lineHeight, pages };
 }
 

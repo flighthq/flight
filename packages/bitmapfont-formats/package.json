@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/bitmapfont": "*",
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"
   },

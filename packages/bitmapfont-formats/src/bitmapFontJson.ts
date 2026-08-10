@@ -1,5 +1,6 @@
 import type {
   BitmapFont,
+  ImportDiagnostic,
   BitmapFontCharRecord,
   BitmapFontEncoding,
   BitmapFontKerningRecord,
@@ -8,7 +9,7 @@ import type {
   BitmapFontRecord,
 } from '@flighthq/types/contract';
 
-import { buildBitmapFontFromRecord } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
 
 // Parses the JSON AngelCode/BMFont export into a `BitmapFont`. The shape mirrors the text/XML blocks as
 // an object: `{ common: { lineHeight, base }, pages: [file, …], chars: [{ id, x, … }], kernings: [{
@@ -17,15 +18,19 @@ import { buildBitmapFontFromRecord } from './bitmapFontRecord';
 // exports stay `raster`. Semantics otherwise match `parseBitmapFontFnt`, including `resolvePage` atlas
 // rehydration. Returns the `null` sentinel — never throwing — for malformed JSON, a missing
 // `common`/`chars`, or an atlas page that cannot be resolved.
-export function parseBitmapFontJson(text: string, options?: Readonly<BitmapFontParseOptions>): BitmapFont | null {
-  const record = parseBitmapFontJsonRecord(text);
+export function parseBitmapFontJson(
+  text: string,
+  options?: Readonly<BitmapFontParseOptions>,
+  diagnostics?: ImportDiagnostic[],
+): BitmapFont | null {
+  const record = parseBitmapFontJsonRecord(text, diagnostics);
   if (record === null) return null;
   return buildBitmapFontFromRecord(record, options);
 }
 
 // Parses the JSON export into the neutral record, or `null` when the JSON is malformed or the
 // `common`/`chars` blocks are absent or malformed.
-function parseBitmapFontJsonRecord(text: string): BitmapFontRecord | null {
+function parseBitmapFontJsonRecord(text: string, diagnostics: ImportDiagnostic[] | undefined): BitmapFontRecord | null {
   let root: unknown;
   try {
     root = JSON.parse(text);
@@ -40,12 +45,18 @@ function parseBitmapFontJsonRecord(text: string): BitmapFontRecord | null {
   const base = readJsonNumber(common.base);
   if (lineHeight === null || base === null) return null;
 
+  // Counted and reported ONCE after the scan: a font carries thousands of char records, and the seam's
+  // perf contract forbids a per-element crumb in a loop that size.
+  let droppedPages = 0;
+  let droppedChars = 0;
+  let droppedKernings = 0;
   const rawChars = root.chars;
   if (!Array.isArray(rawChars)) return null;
   const chars: BitmapFontCharRecord[] = [];
   for (const raw of rawChars) {
     const char = readJsonChar(raw);
-    if (char !== null) chars.push(char);
+    if (char === null) droppedChars++;
+    else chars.push(char);
   }
   if (chars.length === 0) return null;
 
@@ -61,10 +72,12 @@ function parseBitmapFontJsonRecord(text: string): BitmapFontRecord | null {
   if (Array.isArray(root.kernings)) {
     for (const raw of root.kernings) {
       const kerning = readJsonKerning(raw);
-      if (kerning !== null) kernings.push(kerning);
+      if (kerning === null) droppedKernings++;
+      else kernings.push(kerning);
     }
   }
 
+  reportDroppedBitmapFontRecords(diagnostics, 'parseBitmapFontJsonRecord', droppedPages, droppedChars, droppedKernings);
   return { base, chars, encoding: readJsonEncoding(root.distanceField), kernings, lineHeight, pages };
 }
 
