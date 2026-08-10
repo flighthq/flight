@@ -16,10 +16,12 @@ indistinguishable from an oversight.**
 
 Two consequences worth knowing when you read a delta:
 
-- **The number is against a pin of unknown age.** `tools/size/size.baseline.json` is refreshed only
-  when someone chooses to, so a printed delta can attribute to your change what is someone else's
-  drift. **For any figure you intend to report, measure parent-versus-commit on the same tree** rather
-  than quoting the delta against the pin.
+- **The report identifies the pin's age.** In a Git checkout, `npm run size` shows the last-change
+  commit and author date for each `tools/size/size.baseline.json` entry (`@unknown` means that
+  provenance is unavailable), so you can inspect the comparison point rather than assume it is
+  current. The pin can still include drift from earlier work. **For any figure you intend to report,
+  measure parent-versus-commit on the same tree**; pin provenance explains the baseline comparison,
+  while parent-versus-commit isolates your change.
 - **A missing baseline reports `passed`.** A key with no pin has no threshold, so a new fixture enters
   unbounded and the truthful output would be "no baseline", not a pass.
 
