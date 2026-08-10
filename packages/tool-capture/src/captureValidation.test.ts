@@ -41,6 +41,23 @@ describe('explainCaptureParityUncovered', () => {
   it('blames the skip list when several backends were eligible and still produced no pair', () => {
     expect(explainCaptureParityUncovered(3, false)).toContain('parity skip');
   });
+
+  it('names the missing reference instead of blaming the skip list, which is a different remedy', () => {
+    // Same eligible count as the skip case above, opposite fix: shortening the skip list does nothing
+    // while the reference itself is absent, and the reference can be absent without any skip involved.
+    const reason = explainCaptureParityUncovered(3, true, ['webgl-vs-canvas → canvas']);
+    expect(reason).toContain('webgl-vs-canvas → canvas');
+    expect(reason).toContain('NO pairs');
+    expect(reason).not.toContain('parity skip');
+  });
+
+  it('still blames ineligibility when NOTHING is eligible, since that is the root cause', () => {
+    // The reference is trivially absent when no renderer is eligible at all — reporting the reference
+    // there would name a symptom and hide the cause.
+    expect(explainCaptureParityUncovered(0, true, ['webgl-vs-canvas → canvas'])).toContain(
+      'no renderer in any parity group is eligible',
+    );
+  });
 });
 
 describe('explainCaptureVerificationStall', () => {
@@ -220,7 +237,73 @@ async function validateRegressionFixture(root: string, kill: () => void) {
   });
 }
 
+async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
+  return runCaptureValidation({
+    subject: 'functional',
+    entries: [{ name: 'sample', renderers: ['canvas', 'webgl'] }],
+    server: { url: 'http://unused.invalid', kill: vi.fn() },
+    root: join(tmpdir(), 'tool-capture-parity-reference-fixture'),
+    gateParity: true,
+    quiet: true,
+    // Supplied so neither renderer reloads a page; both are parity-eligible and IDENTICAL, so any pair
+    // that gets built passes. A failing pair would confound "no comparison" with "a failed comparison".
+    fingerprints: { sample: { canvas: '1:000000', webgl: '1:000000' } },
+    browserSession: {
+      browser: { close: vi.fn() } as never,
+      context: { newPage: vi.fn() } as never,
+    },
+    ...input,
+  } as never);
+}
+
 describe('runCaptureValidation', () => {
+  it('yields NO PAIRS when a declared parity reference is skipped, instead of falling back to all-pairs', async () => {
+    // The defect: `present.includes(reference)` is false both when a group declares no reference and
+    // when a skip removed the one it declared, so the second case inherited the first case's all-pairs
+    // fallback. The run then compared a DIFFERENT set of backends under the group's name and reported
+    // success. Two eligible renderers here, so a fallback would produce exactly one pair — the
+    // assertion is that it produces none.
+    const result = await validateParityFixture({
+      parityGroups: { 'ref-group': { targets: ['canvas', 'webgl'], reference: 'canvas' } },
+      paritySkip: { sample: ['canvas'] },
+    });
+
+    expect(result.parityPasses + result.parityFailures).toBe(0);
+    expect(result.parityUncovered).toBe(1);
+    const uncovered = result.checks.find((check) => check.kind === 'parity');
+    expect(uncovered?.status).toBe('skipped');
+    expect(uncovered?.message).toContain('ref-group → canvas');
+  });
+
+  it("still compares all pairs for a group that declares NO reference, which is that branch's real job", async () => {
+    // The negative control for the fix: the all-pairs branch must survive for the case it was written
+    // for. Same two renderers, same skip absent — one pair, and the scene is covered.
+    const result = await validateParityFixture({
+      parityGroups: { 'open-group': { targets: ['canvas', 'webgl'] } },
+      paritySkip: {},
+    });
+
+    expect(result.parityPasses + result.parityFailures).toBe(1);
+    expect(result.parityUncovered).toBe(0);
+  });
+
+  it('KEEPS all-pairs when the declared reference is simply not a column in the scene', async () => {
+    // NOT the same as a skip, and the difference is 85 real comparisons. The built-in group declares
+    // reference 'canvas' once for EVERY scene, and 83 functional scenes have no canvas column at all —
+    // 3D material, mesh, light and shadow scenes are webgl/webgpu only. Treating "never there" as
+    // "removed" drops the entire 3D suite's cross-backend coverage to a WARN: measured 253 → 168
+    // comparisons on the functional suite before this case was split back out.
+    const result = await validateParityFixture({
+      parityGroups: { visual: { targets: ['dom', 'canvas', 'webgl', 'webgpu'], reference: 'canvas' } },
+      paritySkip: {},
+      entries: [{ name: 'sample', renderers: ['webgl', 'webgpu'] }],
+      fingerprints: { sample: { webgl: '1:000000', webgpu: '1:000000' } },
+    });
+
+    expect(result.parityPasses + result.parityFailures).toBe(1);
+    expect(result.parityUncovered).toBe(0);
+  });
+
   it('is a callable fingerprint-validation orchestrator', () => {
     expect(typeof runCaptureValidation).toBe('function');
   });

@@ -207,11 +207,22 @@ function addPair(
 // Why an entry produced no parity pair. Each case has a different remedy, and a bare "0 comparisons"
 // sends a reader to the wrong one: an ineligible backend needs a parity group or a committed baseline,
 // while a single eligible backend has nothing to disagree with and needs a second one in scope.
-export function explainCaptureParityUncovered(eligibleCount: number, hasGroups: boolean): string {
+export function explainCaptureParityUncovered(
+  eligibleCount: number,
+  hasGroups: boolean,
+  unavailableReferences: readonly string[] = [],
+): string {
   if (eligibleCount === 0) {
     return hasGroups
       ? 'no renderer in any parity group is eligible'
       : 'no renderer is parity-eligible — declare a parity group, or commit a fingerprint baseline';
+  }
+  // Checked before the counts because it is a DIFFERENT remedy: with a reference missing, adding an
+  // eligible backend or shortening the skip list changes nothing until the reference itself is back.
+  // Collapsing it into the skip message would send the reader to the wrong list, and the reference can
+  // be absent for a reason that has nothing to do with skips (never parity-eligible).
+  if (unavailableReferences.length > 0) {
+    return `parity group reference not present (${unavailableReferences.join(', ')}) — a reference group compares against that backend only, so it yields NO pairs rather than falling back to all-pairs`;
   }
   if (eligibleCount === 1) return 'only one parity-eligible renderer — nothing to compare it against';
   return 'every eligible pair is excluded by a parity skip';
@@ -706,6 +717,9 @@ async function processEntry(
   const allowed = (renderer: string): boolean => skip !== 'all' && !skip?.includes(renderer);
   const pairs: { a: string; b: string; label: string; dist: number; tolerance: number }[] = [];
   const groups = Object.entries(options.parityGroups);
+  // Groups whose declared reference is not present, as "<group> → <reference>". Carried to the uncovered
+  // explanation so the reason names the missing reference instead of collapsing into the skip message.
+  const unavailableReferences: string[] = [];
   if (groups.length === 0) {
     const present = [...eligible.keys()].filter(allowed);
     for (let i = 0; i < present.length; i++) {
@@ -716,17 +730,43 @@ async function processEntry(
   } else {
     for (const [groupName, group] of groups) {
       const present = group.targets.filter((renderer) => eligible.has(renderer) && allowed(renderer));
-      if (group.reference !== undefined && present.includes(group.reference)) {
+      // A group that DECLARES a reference is claiming agreement WITH THAT BACKEND. If the reference is
+      // not present — removed by a skip, or never parity-eligible — that claim cannot be checked, and
+      // comparing the remaining targets to each other substitutes a DIFFERENT, weaker claim under the
+      // same group name. Yield no pairs instead, so the scene reports itself uncovered by name.
+      if (group.reference !== undefined) {
+        // Only a SKIP-removed reference kills the group. A skip is a deliberate statement that this
+        // backend is not to be trusted for this scene, so comparing the survivors to each other
+        // substitutes a different, weaker claim under the same group name — yield nothing and let the
+        // scene report itself uncovered.
+        //
+        // A reference that was never there is NOT the same thing and must keep the all-pairs branch:
+        // the built-in group declares `reference: 'canvas'` once for every scene, and 83 scenes have no
+        // canvas column at all. Treating those as reference-removed silently deletes 85 real
+        // cross-backend comparisons — measured, not estimated: 253 → 168 on the functional suite.
+        if (eligible.has(group.reference) && !allowed(group.reference)) {
+          unavailableReferences.push(`${groupName} → ${group.reference}`);
+          continue;
+        }
+        if (!present.includes(group.reference)) {
+          for (let i = 0; i < present.length; i++) {
+            for (let j = i + 1; j < present.length; j++) {
+              addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
+            }
+          }
+          continue;
+        }
         for (const renderer of present) {
           if (renderer !== group.reference) {
             addPair(pairs, eligible, group.reference, renderer, groupName, group.tolerance ?? options.parityTolerance);
           }
         }
-      } else {
-        for (let i = 0; i < present.length; i++) {
-          for (let j = i + 1; j < present.length; j++) {
-            addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
-          }
+        continue;
+      }
+      // No reference declared at all: all-pairs is what this group means, not a fallback for a lost one.
+      for (let i = 0; i < present.length; i++) {
+        for (let j = i + 1; j < present.length; j++) {
+          addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
         }
       }
     }
@@ -742,7 +782,7 @@ async function processEntry(
       renderers: [...eligible.keys()],
       kind: 'parity',
       status: 'skipped',
-      message: explainCaptureParityUncovered(eligible.size, groups.length > 0),
+      message: explainCaptureParityUncovered(eligible.size, groups.length > 0, unavailableReferences),
     });
   }
   if (pairs.length > 0) {
