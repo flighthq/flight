@@ -44,7 +44,10 @@ uniform vec2 u_resolution;
 out vec4 o_color;
 void main() {
   vec2 texel = 1.0 / u_resolution;
-  float dist = abs(v_texCoord.y - u_center);
+  // The focus band sits at u_center measured DOWN the image, so the row is taken from the far edge on
+  // a bottom-left-origin target. At a centred band the two are indistinguishable — abs is symmetric
+  // about 0.5 — which is why an off-centre band is the only way to see this go wrong.
+  float dist = abs((1.0 - v_texCoord.y) - u_center);
   float edge = u_width * 0.5;
   float amount = smoothstep(edge, edge + u_width, dist);
   float radius = amount * u_blur;
