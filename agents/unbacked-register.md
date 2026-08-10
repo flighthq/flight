@@ -48,7 +48,7 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 4 | `mutation-test` | `14f9e73de` | builder: mutation-tested variant fallback and merge-group behaviour | B | as-reported |
 | 5 | `sender-environment` | `14f9e73de` | builder: 1.6 GB fetch, git status clean throughout | A | as-reported |
 | 6 | `sender-environment` | `84051b0cb` | builder2: corpus 306 files / 1,166,258 bytes from a gitignored `.test-assets` — **flagged by them unprompted as clone-local** | A | as-reported |
-| 7 | `untested-instrument` | **unresolved** | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree, **commit unresolved** |
+| 7 | `untested-instrument` | `3dc27f69f` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree `aa279c96a` |
 | 8 | `perf-size` | `feat(effects-gl): report per-effect resolution so a passthrough stops reading as complete` (subject, not hash — see below) | builder2: `npm run size` run read-only over the effects-gl dispatch, effects/webgl −0.4%; no pin rewritten | A | as-reported |
 | 9 | `capture-baseline` | `d7d8fbc8e` | builder2: restores support-matrix tick marks for `scene-morph`, `scene-skin-morph-compose`, `scene-skinning` and `scene-transparent` from fingerprints captured before the rename that swept them (`c0eeab24e`), never re-verified against what those scenes render today. The matrix is internally consistent — realization plus committed fingerprint — which is weaker than agreement. Whoever next runs `test:functional:regression` in the environment its baselines were captured in should check those four first. | A | as-reported |
 
@@ -84,12 +84,19 @@ with their provenance mark; stripping them would leave a register that cannot sa
 guard count that nothing recomputed, and that figure is now a command. **Applying the rule to the
 quoted claims instead would be the over-compliance direction: an absence that looks like discipline.**
 
-**Two commit hashes in the table above did not survive re-reading, and both are marked unresolved
-rather than repaired.** Row 2's `56a794304` resolves to `fix(resources): decode embedded images as
+**Two commit hashes in the table once did not survive re-reading. Row 2 remains marked unresolved
+rather than repaired.** Its `56a794304` resolves to `fix(resources): decode embedded images as
 bitmaps`, which touches `packages/image` and `packages/scene3d-resources` and no DOM file; no commit
-in the merged tree matches the claim. Row 7's `d77b5c2fa` is not a valid object in this tree at all.
-**The claims may still be true — the references are not**, and inventing a plausible substitute is
-the one repair this file exists to prevent.
+in the merged tree matches the claim. **The claim may still be true — the reference is not**, and
+inventing a plausible substitute is the one repair this file exists to prevent.
+
+**Row 7's hash has since been resolved, and the failure mode is worth keeping.** `d77b5c2fa` was not
+a valid object because it was a pre-landing SHA — `git am` re-parents on apply, and the commit that
+actually landed is `3dc27f69f`; `git patch-id --stable` confirms the two are the same change
+(`472e28b78b29afa0ce320af81c0dcefba3f08bbe`). It resolved only inside the clone that authored it and
+nowhere else, which is exactly the trap this file's own naming rule exists to prevent — the rule did
+not fail, the hash was simply recorded true of a tree and never re-derived after landing. Verified at
+`aa279c96a`.
 
 **Row 7 previously carried a long argument about which of two magnitude readings was in-population.
 It rested on "exactly one commit in the merged tree has ever touched that file", which is false —
