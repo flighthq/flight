@@ -195,6 +195,64 @@ describe('createScene3DFromMd2', () => {
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
   });
 
+  it('winds MD2 triangles CCW-front, checked against the AUTHORED normals rather than a centroid', () => {
+    // MD2 is the only importer here carrying authored per-vertex normals (the Anorms LUT), which makes
+    // this an independent ground truth rather than a heuristic. A centroid test would assume convexity —
+    // organic models legitimately have inward-facing faces — so it cannot distinguish a winding defect
+    // from ordinary concavity. This can.
+    //
+    // The synthetic triangle encodes MD2's convention explicitly instead of assuming the answer. Anorms[5]
+    // is (0, 0, 1), so the authored outward direction is +Z in MD2 space; the vertices below are wound
+    // CLOCKWISE as seen from +Z, since (v1−v0)×(v2−v0) = (0,0,−100) points AWAY from the authored normal.
+    // That is the format's front-face winding, stated as a property of the data this test builds.
+    //
+    // Flight is counter-clockwise-front, and the Z-up→Y-up conversion (x, y, z) → (x, z, −y) is a
+    // determinant-+1 ROTATION, so it cannot flip winding — the parser has to. Without the reversal the
+    // face normal comes out anti-parallel to the authored normal and every front face is culled.
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 5, x: 0, y: 0, z: 0 },
+        { normalIndex: 5, x: 0, y: 10, z: 0 },
+        { normalIndex: 5, x: 10, y: 0, z: 0 },
+      ],
+      scale: [1, 1, 1],
+      texCoords: [{ s: 0, t: 0 }],
+      translate: [0, 0, 0],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+
+    const scene = createScene3DFromMd2(md2);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+    const indices = Array.from(geometry.indices!);
+
+    // The winding-derived face normal, from the indices as the renderer will read them.
+    const p0 = { x: 0, y: 0, z: 0 };
+    const p1 = { x: 0, y: 0, z: 0 };
+    const p2 = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p0, geometry, indices[0]);
+    getMeshGeometryVertexPosition(p1, geometry, indices[1]);
+    getMeshGeometryVertexPosition(p2, geometry, indices[2]);
+    const a = [p1.x - p0.x, p1.y - p0.y, p1.z - p0.z];
+    const b = [p2.x - p0.x, p2.y - p0.y, p2.z - p0.z];
+    const face = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+    // The authored normal, converted: Anorms[5] (0,0,1) → (0, 1, 0). Asserted as a value, not a sign, so
+    // a defect in the Anorms conversion fails HERE rather than being absorbed by the dot product below.
+    const authored = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexNormal(authored, geometry, indices[0]);
+    expect(authored.x).toBeCloseTo(0, 5);
+    expect(authored.y).toBeCloseTo(1, 5);
+    expect(authored.z).toBeCloseTo(0, 5);
+
+    // Correct winding agrees with the authored normal. A NEGATIVE dot is the defect this test exists for:
+    // front faces culled, interior drawn, the model reading dark under lighting.
+    const dot = face[0] * authored.x + face[1] * authored.y + face[2] * authored.z;
+    expect(dot).toBeGreaterThan(0);
+
+    // And the reversal is visible in the buffer itself, mirroring md5Parse.test.ts's assertion.
+    expect(indices).toEqual([0, 2, 1]);
+  });
+
   it('lookups normals from the Anorms table', () => {
     // Use normal index 5 which is [0, 0, 1].
     const md2 = buildMd2({

@@ -30,7 +30,12 @@ import {
   MD2_TRIANGLE_SIZE,
   MD2_VERSION,
 } from './md2Schema';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  createExternalTextureRef,
+  reverseTriangleWinding,
+} from './shared';
 
 // Parses an id Software MD2 (Quake 2) binary model into a Scene3D. Frame 0 is the base pose of a single
 // Mesh node; every subsequent frame becomes a morph target (position/normal deltas from frame 0), so
@@ -43,8 +48,9 @@ import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef
 // Because MD2 triangles reference vertex and texcoord indices independently (like OBJ), the parser
 // re-indexes using a dedup map keyed by "vertIdx/texIdx" to build the canonical interleaved vertex
 // buffer, remembering each deduped vertex's source MD2 vertex index so the per-frame morph deltas map
-// through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, and the Z-up→
-// Y-up reflection — stay quarantined here; the emitted morph targets are plain Y-up float deltas.
+// through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, the Z-up→Y-up
+// rotation, and the clockwise-front winding it preserves — stay quarantined here; the emitted morph
+// targets are plain Y-up float deltas.
 //
 // Malformed input records an ImportDiagnostic (into an engaged collector) and returns an empty Scene3D rather than throwing. Convenience over
 // `createScene3DFromDocument(parseMd2(bytes))`.
@@ -195,7 +201,7 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
 
   // Decompress every frame into per-vertex Y-up positions + Anorms-decoded normals. Frame 0 is the base
   // pose; the rest become morph targets. Each frame carries its own quantization scale/translate, so
-  // dequantization is per-frame; the Z-up→Y-up reflection is applied here so the morph deltas below are
+  // dequantization is per-frame; the Z-up→Y-up rotation is applied here so the morph deltas below are
   // computed entirely in Flight's Y-up space.
   const frames: readonly Md2Frame[] = readMd2Frames(
     bytes,
@@ -326,6 +332,13 @@ export function parseMd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
     });
   }
 
+  // Quake II winds MD2 triangles clockwise (front-facing under its own convention); the Z-up→Y-up
+  // position conversion is a determinant-+1 rotation, so it PRESERVES that winding and leaves the
+  // triangles clockwise in Flight's counter-clockwise-front space. Reverse them here so front faces stay
+  // front under backface culling, and so any normal derived by crossing (v1−v0)×(v2−v0) points outward
+  // rather than into the model. Mirrors the MD5 and AWD importers.
+  reverseTriangleWinding(indices);
+
   const vertices = new Float32Array(interleavedVertices);
   const indexArray = Uint32Array.from(indices);
   const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
@@ -358,9 +371,13 @@ interface Md2Frame {
 
 // Decompresses every MD2 frame into Y-up positions + Anorms-decoded normals, indexed by the raw MD2
 // vertex index. Each frame carries its own byte-quantization scale/translate (position = compressed *
-// scale + translate); normals are the 162-entry Anorms unit vectors. Both are reflected Z-up→Y-up
-// (x, y, z) → (x, z, -y) so all downstream morph math is in Flight's space. This is where MD2's three
-// quantization/LUT/handedness oddities are quarantined.
+// scale + translate); normals are the 162-entry Anorms unit vectors. Both are ROTATED Z-up→Y-up
+// (x, y, z) → (x, z, -y) — determinant +1, a 90° turn about X, NOT a reflection — so all downstream morph
+// math is in Flight's space. The distinction is load-bearing and was previously stated wrongly here: a
+// reflection would flip triangle winding and make a reversal unnecessary, and a reader who believed that
+// would conclude no reversal was needed. A rotation preserves winding, which is why createScene3DFromMd2
+// calls reverseTriangleWinding. This is where MD2's three quantization/LUT/handedness oddities are
+// quarantined.
 function readMd2Frames(
   bytes: Readonly<Uint8Array>,
   view: Readonly<DataView>,
