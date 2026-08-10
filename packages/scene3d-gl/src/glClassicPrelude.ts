@@ -45,6 +45,7 @@ export function compileGlClassicProgram(
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locAlphaMap: gl.getUniformLocation(program, 'u_alphaMap'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locDiffuse: gl.getUniformLocation(program, 'u_diffuse'),
     locDiffuseMap: gl.getUniformLocation(program, 'u_diffuseMap'),
@@ -156,7 +157,7 @@ void main() {
 #ifdef HAS_SKIN
   mat4 skin = skinMatrix();
   vec4 localPosition = skin * vec4(a_position, 1.0);
-  vec3 localNormal = mat3(skin) * a_normal;
+  vec3 localNormal = skinNormalMatrix() * a_normal;
   vec3 localTangent = mat3(skin) * a_tangent.xyz;
 #else
   vec4 localPosition = vec4(a_position, 1.0);

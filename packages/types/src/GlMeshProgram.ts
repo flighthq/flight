@@ -28,6 +28,9 @@ export interface GlMeshProgram {
   // skinned meshes draw rigid). The palette is an RGBA32F texture read via texelFetch, not a uniform
   // array, so the joint count is bounded by MAX_TEXTURE_SIZE rather than the vertex-uniform budget.
   locJointTexture?: WebGLUniformLocation | null;
+  // The normal palette sampler. Optional and null on a variant compiled without skinning, matching
+  // `locJointTexture` — a rigid program has neither, and the draw path skips both together.
+  locJointNormalTexture?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;
   // The u_uvTransform mat3 location, resolved lazily by bindGlUvTransform (undefined = unresolved,

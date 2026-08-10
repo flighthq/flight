@@ -14,7 +14,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import { ensureGlSkinNormalPalette, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
@@ -150,10 +150,23 @@ export function drawGlMeshSubset(
   const jointMatrices = proxy.jointMatrices;
   const gpuSkinned = program.locJointTexture != null && jointMatrices != null;
   if (gpuSkinned) {
+    const jointCount = (jointMatrices.length / 16) | 0;
     const palette = ensureGlSkinPalette(state);
     gl.activeTexture(gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT);
-    uploadGlSkinPaletteTexture(gl, palette, jointMatrices, (jointMatrices.length / 16) | 0);
+    uploadGlSkinPaletteTexture(gl, palette, jointMatrices, jointCount);
     gl.uniform1i(program.locJointTexture, SKIN_PALETTE_TEXTURE_UNIT);
+
+    // The normal palette rides its own unit and its own texture: three texels per joint, not four.
+    // ★ THE JOINT COUNT COMES FROM THE POSE PALETTE ON PURPOSE. The normal array is 12 floats per joint,
+    // not 16, so deriving a count from its own length with the pose divisor would silently under-count
+    // every skeleton and upload a truncated row — a quiet corruption rather than a failure.
+    const normalMatrices = proxy.normalMatrices;
+    if (program.locJointNormalTexture != null && normalMatrices != null) {
+      const normalPalette = ensureGlSkinNormalPalette(state);
+      gl.activeTexture(gl.TEXTURE0 + SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
+      uploadGlSkinPaletteTexture(gl, normalPalette, normalMatrices, jointCount, 3);
+      gl.uniform1i(program.locJointNormalTexture, SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
+    }
   }
 
   // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
@@ -284,6 +297,9 @@ vec2 applyUvTransform(vec2 uv) { return uv; }
 // directional shadow map (8), and the IBL set (9/10/11), so a skinned lit draw never collides with any of
 // them. drawGlMeshSubset binds the palette texture here and sets u_jointTexture to this unit.
 export const SKIN_PALETTE_TEXTURE_UNIT = 12;
+// The normal palette's own unit. Separate texture rather than interleaving with the pose palette, so a
+// padded 3x3 uploads directly; one extra unit is cheaper than a per-frame repack of every joint.
+export const SKIN_NORMAL_PALETTE_TEXTURE_UNIT = 13;
 
 // Vertex-scene2d GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
 // influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette DATA TEXTURE, and
@@ -297,6 +313,7 @@ export const GL_SKIN_VERTEX_DECLARATIONS_GLSL = `
 layout(location = 6) in vec4 a_joints0;
 layout(location = 7) in vec4 a_weights0;
 uniform highp sampler2D u_jointTexture;
+uniform highp sampler2D u_jointNormalTexture;
 
 mat4 fetchJointMatrix(int joint) {
   int x = joint * 4;
@@ -313,6 +330,27 @@ mat4 skinMatrix() {
        + a_weights0.y * fetchJointMatrix(int(a_joints0.y))
        + a_weights0.z * fetchJointMatrix(int(a_joints0.z))
        + a_weights0.w * fetchJointMatrix(int(a_joints0.w));
+}
+
+// Three texels per joint, one per padded vec4 column; the fourth component of each is unused.
+mat3 fetchJointNormalMatrix(int joint) {
+  int x = joint * 3;
+  return mat3(
+    texelFetch(u_jointNormalTexture, ivec2(x, 0), 0).xyz,
+    texelFetch(u_jointNormalTexture, ivec2(x + 1, 0), 0).xyz,
+    texelFetch(u_jointNormalTexture, ivec2(x + 2, 0), 0).xyz
+  );
+}
+
+// A normal is a covector: under non-uniform joint scale it follows the inverse-transpose, not the pose
+// matrix a position and a tangent follow. Blending the per-joint inverse-transposes is an APPROXIMATION
+// — the inverse-transpose of the blend is a different matrix — and it is the affordable one, since the
+// exact answer needs a 3x3 inverse per vertex. The CPU path blends the same way, so the two agree.
+mat3 skinNormalMatrix() {
+  return a_weights0.x * fetchJointNormalMatrix(int(a_joints0.x))
+       + a_weights0.y * fetchJointNormalMatrix(int(a_joints0.y))
+       + a_weights0.z * fetchJointNormalMatrix(int(a_joints0.z))
+       + a_weights0.w * fetchJointNormalMatrix(int(a_joints0.w));
 }
 `;
 

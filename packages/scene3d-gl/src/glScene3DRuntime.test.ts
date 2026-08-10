@@ -7,7 +7,12 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { destroyGlScene3DRuntime, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import {
+  destroyGlScene3DRuntime,
+  ensureGlSkinNormalPalette,
+  ensureGlSkinPalette,
+  getGlScene3DRuntime,
+} from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 describe('destroyGlScene3DRuntime', () => {
@@ -69,6 +74,22 @@ describe('destroyGlScene3DRuntime', () => {
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
     expect(scene.skinPalette).toBeNull();
+  });
+});
+
+describe('ensureGlSkinNormalPalette', () => {
+  it('creates a SEPARATE texture from the pose palette and reuses it after', () => {
+    // ★ THE TWO MUST NOT BE THE SAME OBJECT. They carry different data at different texel strides — four
+    // texels per joint for the pose matrix, three for the normal matrix — so aliasing them would upload
+    // one over the other every frame and corrupt whichever wrote second.
+    const { state } = makeGlScene3DState();
+    expect(getGlScene3DRuntime(state).skinNormalPalette).toBeNull();
+
+    const first = ensureGlSkinNormalPalette(state);
+    expect(first).toBe(getGlScene3DRuntime(state).skinNormalPalette);
+    expect(first).not.toBe(ensureGlSkinPalette(state));
+
+    expect(ensureGlSkinNormalPalette(state)).toBe(first);
   });
 });
 

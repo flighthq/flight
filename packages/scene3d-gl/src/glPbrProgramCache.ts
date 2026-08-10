@@ -33,6 +33,7 @@ export function compileGlPbrProgram(
     locEmissive: gl.getUniformLocation(program, 'u_emissive'),
     locEmissiveMap: gl.getUniformLocation(program, 'u_emissiveMap'),
     locEmissiveStrength: gl.getUniformLocation(program, 'u_emissiveStrength'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locMetallic: gl.getUniformLocation(program, 'u_metallic'),
     locMetallicRoughnessMap: gl.getUniformLocation(program, 'u_metallicRoughnessMap'),

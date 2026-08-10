@@ -53,6 +53,10 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
   }
   scene.shadow = null;
 
+  if (scene.skinNormalPalette !== null) {
+    destroyGlSkinPaletteTexture(gl, scene.skinNormalPalette);
+    scene.skinNormalPalette = null;
+  }
   if (scene.skinPalette !== null) {
     destroyGlSkinPaletteTexture(gl, scene.skinPalette);
     scene.skinPalette = null;
@@ -67,6 +71,18 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
 // Resolves the per-state GPU skin bone-palette data texture, creating it lazily on the first skinned
 // draw. Every skinned mesh shares this one RGBA32F texture — the palette is re-uploaded per draw
 // (uploadGlSkinPaletteTexture grows it to the largest skeleton seen), so no per-mesh texture is retained.
+// The NORMAL palette's data texture, created on first skinned draw and grown by the shared upload.
+// Separate from the pose palette so each uploads its own array directly; see GlScene3DRuntime.
+export function ensureGlSkinNormalPalette(state: GlRenderState): GlSkinPaletteTexture {
+  const scene = getGlScene3DRuntime(state);
+  let palette = scene.skinNormalPalette;
+  if (palette === null) {
+    palette = createGlSkinPaletteTexture(state.gl);
+    scene.skinNormalPalette = palette;
+  }
+  return palette;
+}
+
 export function ensureGlSkinPalette(state: GlRenderState): GlSkinPaletteTexture {
   const scene = getGlScene3DRuntime(state);
   let palette = scene.skinPalette;
@@ -106,6 +122,7 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       programCache: new Map(),
       shadow: null,
       shadowTarget: null,
+      skinNormalPalette: null,
       skinPalette: null,
       time: 0,
       uploadCache: new WeakMap(),
