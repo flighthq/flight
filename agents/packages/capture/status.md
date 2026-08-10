@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/capture'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-10
+by: builder2
 ---
 
 # capture — Status
@@ -10,6 +10,15 @@ by: principal
 > Session narration belongs in git, which already carries it with the diff attached.
 
 ## Open
+
+**Restored `scene-*` fingerprints are UNVERIFIED against current output.** `85280ab17` renamed four
+baselines back from `scene3d-*` (swept there by the package rename `c0eeab24e`), restoring seven `✓`
+marks: `scene-morph`, `scene-skin-morph-compose`, `scene-skinning`, `scene-transparent`. Those
+fingerprints were captured *before* the rename and have never been re-verified against what the scenes
+render today. The support matrix is internally consistent — realization plus committed fingerprint — but
+that is a weaker claim than agreement, and `test:functional:regression` is only valid where its baselines
+were captured, so it cannot settle this in an arbitrary sandbox. Whoever runs regression in the capture
+environment should check these four first if something moves.
 
 Re-checked against `packages/capture/src/` and its one consumer `packages/tool-capture/src/` on
 2026-08-08. A file:line here is a claim about this tree, not about a session.

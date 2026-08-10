@@ -233,6 +233,34 @@ An un-skip experiment should therefore start with `effect-hue-saturation`, which
 pass and so proves the procedure without turning the gate red, and only then take `effect-vignette`,
 where the divergence is largest and `canvasVignetteEffect.ts` exists so capability cannot be argued.
 
+## Measured 2026-08-10: which y-origin skips were actually stale
+
+A whole y-origin convention sweep landed (`1d71634fc` displacement/scanlines, `f8f77c15f` crt,
+`6098bea01` tilt-shift, `0f0e85b23` glitch, `a9f7adccb` fog) and the parity skips citing y-origin
+divergence were never revisited. Two were audited with the same three-leg method, each measured in
+isolation — remove only that entry, run the parity leg, revert:
+
+| Scene | webgl·webgpu | Scene can see a phase flip? | Commit that would explain agreement | Verdict |
+| --- | --- | --- | --- | --- |
+| `effect-displacement` | **0.00** | yes — hashed block tears, seed 2, frequency 14 | `1d71634fc` | stale, **retired** |
+| `effect-god-rays` | **35.86 > 15** | yes — asymmetric light point, `centerY: 0.4` | none touches `glGodRaysEffect.ts` | **still valid, keep** |
+
+All three legs matter and the third is what converts *"it passes now"* into *"it passes for a known
+reason."* Leg two exists because a 0.00 has two innocent explanations besides a real fix: two blank
+frames, and **a scene that cannot see the defect** — vertically symmetric content renders identically
+under a flipped phase, so the pair agrees perfectly while the bug is fully present. Displacement's
+fingerprints were checked for both: byte-identical *and* 117 distinct cell values, on asymmetric content.
+
+Manager's note on their own prediction, recorded verbatim because the method outlived it:
+
+> "I predicted god-rays was the same class, same sweep, same likely staleness. All three legs came back
+> the opposite way. builder2's line is the correct lesson and I want it in the record verbatim: the
+> generalization was right to CHECK, wrong to ASSUME. The three-leg method was the contribution; my
+> prediction about where it would point was not."
+
+The four `['canvas']` skips (lens-distortion, lens-flare, posterize, vignette) are out of this class and
+were not measured: they declare capability and algorithm facts, not orientation bugs.
+
 ## Refuted, recorded so it is not re-proposed
 
 **"The five canvas skips hide a canvas capability gap."** They do not.
