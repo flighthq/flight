@@ -294,9 +294,28 @@ session start, and it did not reach `size-runner.ts:246`. A ruling that lands as
 2. **Checked**, so it stays true — both a missing reason on a gate exception and a pinned number
    whose measuring commit is not an ancestor of HEAD are mechanically detectable, and `docs:check`
    already exists as an enforcement seam that reads documents and fails.
-3. **Wired into the gate everyone runs.** `scripts/size.ts` is a *working* check — it exits non-zero
-   on failure — that `scripts/check.ts` never invokes. A check nobody calls is a fourth artifact that
-   does not travel, and it is why the size baseline drifted while a correct gate sat beside it.
+3. **Wired into the gate everyone runs** — *where it is meant to be gated.*
+
+   **Corrected 2026-08-10 by user ruling: `size` is deliberately not gated, and the two size commands
+   are synonyms.** The stated reason is that a gate going red on intentional growth pushes an agent to
+   run `size:baseline`, which launders the regression into a new pin and re-arms the band around it —
+   so gating it would *manufacture* the laundering this document describes two sections above. Four
+   agents independently read the absence as the defect; it is the design.
+
+   The instrument's real cost is **delta misattribution**, not a missing gate: `npm run size` prints a
+   delta against a pin of unknown age, so a reader attributes to their own change what is everyone
+   else's drift. That already cost a ruling — the kappa narrowing rested on a `+0.02 KB` figure read
+   off a stale pin, on a tree that did not contain the change; the honest isolated figure was 19
+   bytes. **The instrument did not need to gate in order to mislead.** The remedies that fit the
+   stated intent add no enforcement: parent-versus-commit measurement for any reported figure, or
+   provenance recording the commit each pin was measured at.
+
+   **And the reason four of us got it wrong belongs in this document, because it is its inverse
+   case.** Every instance above is *a rule stated, an instrument not matching it*.
+   [`bundle-size.md`](bundle-size.md) is 29 lines in which the word "gate" appears **zero** times, and
+   so does "check" — an instrument behaving correctly with **no rule stated at all**. A design decision
+   recorded nowhere is indistinguishable from an oversight, and here the missing record made correct
+   behaviour look broken.
 
 **A gate must first be named as one — and that enumeration already exists and already works.**
 `scripts/check.ts:15-21` states the wiring property itself ("EVERY GATE RUNS… a violation of any of
