@@ -33,7 +33,7 @@ stages below are still open in this tree.
   VoxelGrid export and `createVoxelGrid` exists nowhere in `packages/`, so a `'3d'` texture's source
   can only be hand-assembled — the D5 gap, on the dimension that still has it.
 - **There is no `invalidateTexture` verb.** `version` is bumped inline by `setTextureSource`
-  (`texture.ts:306`), `setCubeTextureFace` (`cubeTexture.ts:60`), and `advanceVideoTexture`
+  (`texture.ts:306`), `setCubeTextureFace` (`cubeTexture.ts:53`), and `advanceVideoTexture`
   (`videoTexture.ts:14`), against an invalidation doctrine that names `invalidate<Type>` as the verb.
 - **`equalsTexture` compares `version`** (`texture.ts:182`) while its own doc comment (`:164`) lists the
   compared fields and omits it — two textures describing identical state but carrying different
