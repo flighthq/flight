@@ -2,11 +2,17 @@
  * Control-point distance, as a fraction of the radius, for approximating a quarter circle with one
  * cubic Bezier: `4 * (sqrt(2) - 1) / 3`.
  *
- * Named for the circle that defines it rather than the arcs that use it. It is computed rather than
- * written out because a transcribed decimal is a second copy of a number nothing recomputes — the
- * digits are long enough that a wrong one reads as correct and draws a circle that still looks round.
+ * Named for the circle that defines it rather than the arcs that use it. Written as a literal and
+ * pinned to that formula by the colocated test, which IS the recomputation a transcribed decimal
+ * would otherwise lack — the digits are long enough that a wrong one reads as correct and still
+ * draws a circle that looks round.
+ *
+ * The literal is the form a bundler can fold into its use sites. `Math.SQRT2` is a property of a
+ * mutable global, so no correct minifier may evaluate the expression form at build time: it would
+ * survive into every bundle as a runtime computation. Keeping the derivation in this comment and
+ * the enforcement in the test costs nothing on either axis.
  */
-export const CIRCLE_KAPPA = (4 * (Math.SQRT2 - 1)) / 3;
+export const CIRCLE_KAPPA = 0.5522847498307936;
 
 /** Smallest positive number distinguishable from zero in floating-point comparisons. */
 export const EPSILON = 1e-6;
