@@ -37,6 +37,8 @@ uniform float u_intensity;
 out vec4 o_color;
 void main() {
   vec4 c = texture(u_texture0, v_texCoord);
-  float line = sin(v_texCoord.y * u_count * 3.14159265) * 0.5 + 0.5;
+  // Counted down the image so a given line index falls on the same row whichever origin the target
+  // uses; a render target is bottom-left, so the row has to be measured from the far edge first.
+  float line = sin((1.0 - v_texCoord.y) * u_count * 3.14159265) * 0.5 + 0.5;
   o_color = vec4(c.rgb * (1.0 - u_intensity * (1.0 - line)), c.a);
 }`;
