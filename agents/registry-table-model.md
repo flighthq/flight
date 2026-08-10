@@ -187,6 +187,23 @@ Honest margin: most of the win over today comes from being a table at all rather
 and a `Map<number, …>` would capture much of it. What justifies a distinct shape is the key domain and the
 bounds-check-as-skip-path, not raw speed.
 
+**It carries no tombstone, and no composition operations at all — BECAUSE nothing composes it.** This is
+the ruled shape, and the reasoning is the precondition, not a preference: composition today is exactly one
+mechanism (`copyGlRenderStateRegistrations`), every field it copies is a render registry, and SWF parsing
+does not reach it — an importer is not a render state. No overlay omits a wire-format token reader, and
+out-of-range is already the format's own skip path. So an ordinal table is not "the composable table minus
+the sentinel"; it is a structurally different type that cannot be passed where a composable table is
+expected, so the exemption cannot be rediscovered later as a quiet third meaning.
+
+★ **The precondition, and the tripwire.** This rests on
+[`Scene2DDocumentImporterRegistry` being uncomposed](#deferred--the-scene2ddocumentimporterregistry-question),
+which is deferred, not settled. If that registry becomes composable *and* tag readers come to live in it,
+an ordinal table acquires an overlay path and this decision re-opens. **Adding a composition operation to
+this type is itself the trigger** — the structural separation means acquiring an overlay path requires
+editing right here, so whoever does it has their hand on this note. When that happens, the hot-path cost
+of a discriminant read on a direct-index path **must be measured before the type is weakened**; it has not
+been measured, and an unmeasured performance claim is not grounds for a weaker type.
+
 **The cost this does not pay.** A tag table only tree-shakes if the readers are separately registered.
 `swfDocument.ts` is a single 2,522-line module whose dispatch statically references all 28 readers, so the
 table is a precondition for a lean parser, not the thing that delivers one. Restructuring that module is
@@ -551,7 +568,51 @@ registry that cannot be shaken out.
   A decompressor or an importer registry may not have a Fallback state at all.
 - **Which tables are pure policy?** Prerequisite to the wiring tier, per the retraction above.
 
-## Deferred
+## Deferred — the `Scene2DDocumentImporterRegistry` question
 
-The `Scene2DDocumentImporterRegistry` pattern — the one registry already built as a caller-owned value,
-and the only place where a prescan producing requirements could originate — is held for a separate ruling.
+★ **Ruling this registry composable re-opens the [`OrdinalTable` tombstone exemption](#ordinaltable--integer-token-formats-only).**
+That exemption is granted on the precondition that nothing composes an ordinal table, and this registry is
+the only candidate path by which one could.
+
+**The question, in one sentence:** does `Scene2DDocumentImporterRegistry` become a `RegistryTable`, and if
+so with what ordering, ownership, and removal semantics — or is it a genuinely different thing that the
+table vocabulary should not absorb?
+
+It is deferred because it is the one registry that already answers several of this document's open
+questions *differently from every other*, so folding it in would either change it or weaken the model.
+Stated below from source (`packages/scene2d-resources/src/scene2DDocumentImporterRegistry.ts`), so a ruling
+does not have to reconstruct it.
+
+**What it actually is today.** A `createEntity({ entries: [] })` — an ordered **array**, not a map — passed
+explicitly by the caller into every operation. `createScene2DDocumentFromBytes` walks it in order, calls
+`entry.matches(source, context)`, and takes the first hit.
+
+**Five ways it differs, each bearing on a different open question:**
+
+1. **Ownership.** It is the only registry built as a **caller-owned value**; every other lives on a render
+   state's runtime. It is therefore the existing evidence for the ownership-tier question, and the shape a
+   caller-owned registry would be modelled on.
+2. **Ordering is contractual.** First-match probe: which importer wins is decided by position. The document
+   already ruled the general case for detect-registries — *precedence belongs on the entry as an explicit
+   value* — but explicitly deferred **what moving this one off ordered entries would cost**. Note the
+   partial mitigation already in source: `registerScene2DDocumentImporter` replaces in place when the kind
+   exists, so re-registering an importer keeps its position and cannot silently move a format in the queue.
+   The unresolved half is ordering *between different kinds*, which is still insertion order.
+3. **It is the only registry with a real removal verb.** `unregisterScene2DDocumentImporter` **splices** the
+   entry out. That is a third meaning next to the two the tombstone design just settled: *bound*,
+   *explicitly omitted* (tombstone), and *removed entirely*. Whether splice-removal survives as a distinct
+   operation, or collapses into the tombstone, is a direct question for the entry union and should not be
+   decided by whoever ports this registry.
+4. **Composition — the flip condition.** Nothing copies, merges, concatenates, derives, or overlays it
+   today (checked for all five verbs). That fact is what grants the `OrdinalTable` exemption above. A
+   ruling that gives it overlay semantics re-opens that decision and triggers the measurement requirement
+   stated there.
+5. **Requirements prescan.** It is the only place a prescan producing requirements could originate: matching
+   bytes to an importer is the step that could report what a document will need before anything is wired.
+   That is a lifecycle question rather than a table-shape one, and it is why the answer matters beyond this
+   document — see [registration lifecycle](registration-lifecycle.md).
+
+**Not ruled here.** The four options visible from source are: leave it as-is; keep the array and add an
+explicit precedence field per the general detect ruling; model it as a new table shape; or model it as a
+`KeyedTable` plus a separate ordered probe list. Each interacts with items 1–5 differently and this
+document does not choose between them.
