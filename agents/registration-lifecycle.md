@@ -350,12 +350,15 @@ Worked instances, which is why this reads as three unrelated rulings without the
   an orphaned fingerprint is a leftover, not a state a correct tree has. So `support:check` fails on it
   and the glyph stays single, unambiguously meaning declared-control. See
   [capture verification tiers](capture-verification-tiers.md).
-- **`Missing` in `SceneCoverage`** — collapses *no registrar exists anywhere* with *a registrar exists and
-  this backend has none bound*. Both are legitimate states. Step 2 splits them: the first is answered by
-  "this backend does not implement it, no call unlocks it," the second by the exact
-  [remedy](#4-the-remedy-on-a-miss) — different repairs, so different states.
-- **`Fallback`** — already correctly one state under the same test. Every way to arrive at it has the same
-  remedy: register this kind's own implementation.
+- **The retired `Missing` in `SceneCoverage`** — collapsed *no registrar exists anywhere* with *a registrar
+  exists and this backend has none bound*. Both are legitimate states. Step 2 split them into `Unavailable`,
+  answered by "this backend does not implement it, no call unlocks it," and `Unregistered`, answered by the
+  exact [remedy](#4-the-remedy-on-a-miss) — different repairs, so different states.
+- **The retired bare `Fallback`** — read as one state on the first pass, on the reasoning that every way to
+  arrive at it shares the remedy *register this kind's own implementation*. That reasoning was wrong, and
+  the same test caught it: the remedy exists only when a registrar does. Step 2 split it into
+  `FallbackRemediable` and `FallbackUnavailable`. The visual downgrade is identical in both, which is
+  exactly why the test asks about remedies rather than about symptoms.
 
 The two steps are ordered on purpose. Asking "do the remedies differ" first invites naming a state for a
 condition that should not exist at all, which is how a leftover acquires a vocabulary entry and then a

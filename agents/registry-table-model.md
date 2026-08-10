@@ -262,7 +262,11 @@ export const RenderRegistry = {
 export type RegistryId = string;
 
 // What an unserved key means for this registry — a property of the registry, not of the caller asking.
-// The three members are exactly the cases the twelve hand-written coverage walks distinguish today.
+// SUPERSEDED as written: these three members were the cases the hand-written coverage walks distinguished
+// when this was proposed. `SceneCoverage` has since split on remedy into five states — `Satisfied`,
+// `Unregistered`, `Unavailable`, `FallbackRemediable`, `FallbackUnavailable` — retiring both `Missing` and
+// bare `Fallback`. Re-derive this policy from those before building on it; it is left here as the shape of
+// the question, not as a current answer.
 export type RegistryMissPolicy =
   | { readonly coverage: 'Fallback' }
   | { readonly coverage: 'FallbackWhen'; readonly key: Kind }
@@ -591,8 +595,11 @@ registry that cannot be shaken out.
   emit IDs to keep policy and messages out of render core, and capture tooling plus tests consume the
   type. A string identity may be right for an external manifest; the migration must price the diagnostics
   contract rather than assume it.
-- **Do all ~65 registries share `Satisfied` / `Fallback` / `Missing`?** Those terms are render-specific.
-  A decompressor or an importer registry may not have a Fallback state at all.
+- **Do all ~65 registries share `Satisfied` / `Unregistered` / `Unavailable` / `FallbackRemediable` /
+  `FallbackUnavailable`?** Those five are the current `SceneCoverage` states, and they are
+  render-specific. A decompressor or an importer registry may not have a fallback state at all. Reuse
+  outside scene and render is still open, and any reuse must preserve the remedy split: a state naming a
+  call the caller can write is not the same state as one proving no such call exists.
 - **Which tables are pure policy?** Prerequisite to the wiring tier, per the retraction above.
 
 ## Deferred — the `Scene2DDocumentImporterRegistry` question
