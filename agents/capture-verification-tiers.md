@@ -322,6 +322,10 @@ This is why `⊘` is a single glyph rather than two. Splitting it into declared-
 the bad state *legible*; failing on it makes the bad state *unrepresentable*, after which `⊘` means
 declared-control unambiguously — the other meaning cannot survive a passing tree.
 
+> This is step 1 of the general split-or-delete test, stated once in
+> [registration lifecycle](registration-lifecycle.md#when-a-vocabulary-collapses-two-meanings--the-canonical-test):
+> an orphaned fingerprint is a leftover, not a legitimate state, so it is deleted rather than named.
+
 Three ways a baseline loses its referent, all observed:
 
 - **A dropped column.** The scene's canvas target goes away, its capture stays behind. Drop the key.

@@ -256,9 +256,17 @@ export interface RegistryTableBase {
   readonly registry: RegistryId;
 }
 
-// Open key -> value lookup, last write wins.
+// Open key -> ENTRY lookup, last write wins. `entries` holds `RegistryTableEntry<T>` rather than `T` for
+// two reasons, both load-bearing. It is the only place a tombstone can be represented at all — a sentinel
+// the storage cannot hold is not a sentinel. And because these tables are plain data with public fields,
+// an assembly can iterate `table.entries` without calling anything of ours; holding the union means that
+// loop fails to compile until it narrows, so the constraint defends the FIELD and not merely the function.
+//
+// `ReadonlyMap`, not `Map`: `readonly entries` freezes the field and leaves the map mutable, which a
+// persistent table cannot survive — a replacement table means nothing if a caller can mutate the map both
+// tables share.
 export interface KeyedTable<T> extends RegistryTableBase {
-  readonly entries: Map<Kind, T>;
+  readonly entries: ReadonlyMap<Kind, RegistryTableEntry<T>>;
   readonly shape: 'keyed';
 }
 
@@ -266,8 +274,8 @@ export interface KeyedTable<T> extends RegistryTableBase {
 // explain addresses it uniformly and a missing shape rasterizer reports once rather than once per node
 // kind that wanted it.
 export interface SlotTable<T> extends RegistryTableBase {
+  readonly entry: RegistryTableEntry<T> | null;
   readonly shape: 'slot';
-  value: T | null;
 }
 
 // Dense array indexed by a token the wire format already carries as an integer — a SWF tag id, never a
@@ -326,11 +334,15 @@ export function getRegistryTableEntry<T>(table: Readonly<RegistryTable<T>>, key:
 // `vocabulary.length`.
 export function getOrdinalTableEntry<T>(table: Readonly<OrdinalTable<T>>, ordinal: number): T | null;
 
-// Clears `out`, then appends every bound key in sorted order, so two tables diff and compare equal
-// regardless of registration order. Sorting here rather than in storage is what lets the keyed shape
-// stay a Map.
+// Clears `out`, then appends every BOUND key in sorted order — a tombstoned key is NOT listed. Stated
+// rather than inferred because the alternative is the present-in-keys, absent-on-lookup trap: a caller
+// that enumerates and then resolves would get `null` for a key this function just said was there.
+// Enumeration and resolution must not disagree. Sorting here rather than in storage is what lets the
+// keyed shape stay a map.
 export function getRegistryTableKeys(out: Kind[], table: Readonly<RegistryTable<unknown>>): void;
 
+// FALSE for a tombstoned key. Same reason as the keys rule above, one call apart: `has` answering true
+// where `get` answers null is that same disagreement wearing a different name.
 export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, key: Kind): boolean;
 
 // NOT `setRegistryTableEntry`. Tables are persistent, so this returns a REPLACEMENT table and mutates
@@ -362,9 +374,20 @@ both of those *type-check* at every site that never heard of them:
 // Not `T | null` and not `{ value: T; omitted?: boolean }`. Neither of those can fail a build: a reader
 // that has never heard of tombstones assigns them straight through. This union is NOT assignable to `T`,
 // so the only way to reach the value is to narrow, and the only way to narrow is to have handled both.
+// Discriminant values follow the repo's established const-object + typeof spelling (as `RenderRegistry`
+// does). The union of SHAPES cannot collapse into a const object — the variants carry different payloads,
+// which is the whole point — but the spelling of the values should match existing precedent rather than
+// introduce a second way to write the same thing.
+export const RegistryEntryState = {
+  Bound: 'bound',
+  Tombstoned: 'tombstoned',
+} as const;
+
+export type RegistryEntryState = (typeof RegistryEntryState)[keyof typeof RegistryEntryState];
+
 export type RegistryTableEntry<T> =
-  | { readonly state: 'bound'; readonly value: T }
-  | { readonly state: 'tombstoned' };
+  | { readonly state: typeof RegistryEntryState.Bound; readonly value: T }
+  | { readonly state: typeof RegistryEntryState.Tombstoned };
 ```
 
 **Where the union is mandatory, and where it would be noise.** These are different questions and
