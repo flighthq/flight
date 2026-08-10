@@ -1,7 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { ISOLATED_MOCK_TEST_FILES } from './scripts/mockTiers.js';
-import { TestRunCoverageReporter } from './scripts/testRunCoverage.js';
 import baseConfig from './vitest.config.base.js';
 
 // One master config for the fast run: unit tests share a single jsdom environment per
@@ -69,10 +68,11 @@ export default mergeConfig(
       // the cost is buying the shared-registry speedup, not waste.
       hookTimeout: 60_000,
       unstubGlobals: true,
-      // Zero matched files fail natively; the aggregate reporter also catches matched files whose
-      // name filter executes zero tests and gives both failures the same fail-loudly doctrine.
+      // Zero matched files fail natively; the zero-executed-tests half of the same fail-loudly doctrine
+      // is carried by `TestRunCoverageReporter`, which now lives in the base config so per-package runs
+      // get it too. Not repeated here: `mergeConfig` CONCATENATES `reporters`, so naming it in both
+      // files makes the aggregate run emit its summary twice.
       passWithNoTests: false,
-      reporters: ['default', new TestRunCoverageReporter()],
       projects: [
         {
           extends: true,
