@@ -189,17 +189,27 @@ describe('selectLedgerBaseline', () => {
     expect(selectLedgerBaseline([SELF, { ...DEVELOP, distance: 1 }], 'main').revision).toBe('49953c97b');
   });
 
-  it('checks NOTHING when a REMOTE candidate contains HEAD — the tree really is integrated', () => {
-    // Second wrong version: "this candidate is unusable, try the next one". An integrated tree has no
-    // work in flight, and the distant ref is not a fallback — reaching for it re-judged 366 commits
-    // that had already landed and reported them at whoever ran the check.
+  it('SKIPS a remote candidate that contains HEAD and keeps looking, which is the push build', () => {
+    // A test asserting the opposite stood here and pinned a design choice, not a rule: a containing
+    // candidate was treated as settling the question. On a push to develop, `origin/develop` IS the
+    // tip being checked, so that one candidate ended the search and the run compared nothing at any
+    // fetch depth — and push is how work reaches develop here. Useless AS A BASELINE is not the same
+    // as no baseline available.
     const chosen = selectLedgerBaseline([SELF, DEVELOP, MAIN], 'main');
+    expect(chosen.revision).toBe('1b4fb2bdf');
+    expect(chosen.how).toContain('366 commits');
+  });
+
+  it('checks NOTHING only once EVERY candidate contains HEAD', () => {
+    // The pair for the case above: same shape, minus the one candidate that was behind. With nothing
+    // left that HEAD is ahead of, the tree really is integrated and there is no work in flight.
+    const chosen = selectLedgerBaseline([SELF, DEVELOP], 'main');
     expect(chosen.revision).toBeNull();
     expect(chosen.how).toContain('no work in flight');
   });
 
-  it('uses that same candidate as the baseline once it no longer contains HEAD', () => {
-    // The pair for the case above: identical inputs but for the one distance that decides it.
+  it('uses a formerly-containing candidate as the baseline once it no longer contains HEAD', () => {
+    // Nearest still wins among the usable ones: `origin/develop` at 2 beats `origin/main` at 366.
     expect(selectLedgerBaseline([SELF, { ...DEVELOP, distance: 2 }, MAIN], 'main').revision).toBe('49953c97b');
   });
 
