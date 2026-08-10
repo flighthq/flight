@@ -12,14 +12,16 @@ by: principal
 ## Open
 
 Every item was re-checked against `packages/scene2d-formats/src/` (and `packages/types/src/`) on
-2026-08-08, Rive again on 2026-08-09. A file:line is a claim about this tree, not a session.
+2026-08-08, Rive again on 2026-08-09. Each claim is about this tree, not a session. Prefer a SYMBOL
+NAME over a line number: a line is invalidated by any edit above it, and the one here rotted twice in
+a day — both times by the same author's later commits, silently, with nothing to catch it.
 
 - **Rive skins are read but never wired.** `createRiveSkin2D` (`riveSkin.ts:39`) is exported through
   `contract.ts:7` and has **zero callers** anywhere in `packages/`. `createRiveScene2D` builds the rig
   (`riveScene2D.ts:132`) but no imported path is deformed by it.
-- **Rive animation reads only `KeyFrameDouble` and `KeyFrameColor`** (`riveAnimation.ts:599`, `:602`).
-  `Bool` / `Id` / `String` / `Uint` are registered unread; each drops its channel behind
-  `rive.keyframe-kind-unsupported`.
+- **Rive animation reads only `KeyFrameDouble` and `KeyFrameColor`** (`riveAnimation.ts`, the
+  `RIVE_KEYFRAME_*` constants). `Bool` / `Id` / `String` / `Uint` are registered unread; each drops its
+  channel behind `rive.keyframe-kind-unsupported`.
 - **Rive constraints/IK, data binding, and feather are type-registry entries only** —
   `riveCoreTypes.ts:116-122`, `:227`, `:294`; no importer touches them. They are runtime *systems*,
   so scope is a ruling before it is effort.
