@@ -141,6 +141,7 @@ describe('explainGlRenderEffectApplication', () => {
       requestedCount: 2,
       status: 'partial-registration',
       unregisteredKinds: ['test.explain-c'],
+      unresolvedIndexes: [],
     });
   });
 
@@ -156,6 +157,62 @@ describe('explainGlRenderEffectApplication', () => {
     const state = createState();
     registerGlRenderEffect(state, 'test.explain-e', () => {});
     expect(explainGlRenderEffectApplication(state, effects(['test.explain-e']), true).status).toBe('complete');
+  });
+
+  it('reports an effect whose runner cannot resolve it, which PASSES THROUGH rather than dropping', () => {
+    const state = createState();
+    // Registered, so nothing is missing at the kind level — the runner simply has nothing to run with.
+    registerGlRenderEffect(
+      state,
+      'test.explain-h',
+      () => {},
+      () => false,
+    );
+    const explanation = explainGlRenderEffectApplication(state, effects(['test.explain-h']), true);
+    expect(explanation.status).toBe('unresolved-effects');
+    // Registration is clean; the failure is entirely on the resolution axis.
+    expect(explanation.registeredCount).toBe(1);
+    expect(explanation.unregisteredKinds).toEqual([]);
+    expect(explanation.unresolvedIndexes).toEqual([0]);
+  });
+
+  it('distinguishes two effects of the SAME KIND, one resolvable and one not', () => {
+    const state = createState();
+    // The case a kind-keyed answer gets wrong: both effects share a kind, so any per-kind verdict must
+    // report both or neither. Resolution is per instance, and the report has to say WHICH instance.
+    registerGlRenderEffect(
+      state,
+      'test.explain-i',
+      () => {},
+      (_state, effect) => (effect as unknown as { shaderKey: string }).shaderKey === 'present',
+    );
+    const chain = [
+      { kind: 'test.explain-i', shaderKey: 'present' },
+      { kind: 'test.explain-i', shaderKey: 'absent' },
+    ];
+    const explanation = explainGlRenderEffectApplication(
+      state,
+      chain as unknown as ReadonlyArray<Readonly<RenderEffect>>,
+      true,
+    );
+    expect(explanation.status).toBe('partial-resolution');
+    expect(explanation.unresolvedIndexes).toEqual([1]);
+    // Not 'unresolved-effects': one stage really runs, so the chain is short one stage, not inert.
+    expect(explanation.registeredCount).toBe(2);
+  });
+
+  it('blames registration ahead of resolution while still naming the passthroughs', () => {
+    const state = createState();
+    registerGlRenderEffect(
+      state,
+      'test.explain-j',
+      () => {},
+      () => false,
+    );
+    const explanation = explainGlRenderEffectApplication(state, effects(['test.explain-j', 'test.explain-k']), true);
+    // Registering the missing kind has to happen first, but the passthrough is not lost from the report.
+    expect(explanation.status).toBe('partial-registration');
+    expect(explanation.unresolvedIndexes).toEqual([0]);
   });
 
   it('reports a ready destination as stale when a failed call cannot replace it', () => {

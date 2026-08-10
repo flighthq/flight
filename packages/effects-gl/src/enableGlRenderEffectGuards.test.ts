@@ -118,6 +118,23 @@ describe('enableGlRenderEffectGuards', () => {
     expect(afterDisable.length).toBe(0);
   });
 
+  it('WARNS that an unresolvable effect COPIED THROUGH rather than being dropped', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'test.unresolved-a', noopRunner, () => false);
+    enableGlRenderEffectGuards(state);
+
+    const entries = captureLog(() => {
+      // It returns TRUE and writes dest — the pass ran, it just did nothing. That is the whole hazard.
+      expect(applyChain(state, ['test.unresolved-a'])).toBe(true);
+    });
+
+    expect(entries.length).toBe(1);
+    // The wrong picture is passthrough, not drop; saying "dropped" here would send the reader to the
+    // registration call, which is already correct.
+    expect(messageOf(entries[0])).toContain('COPIED THE INPUT THROUGH UNCHANGED');
+    expect(messageOf(entries[0])).not.toContain('SKIPPED');
+  });
+
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', () => {
     const state = createState();
     enableGlRenderEffectGuards(state);

@@ -1,5 +1,10 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contract';
+import type {
+  GlRenderEffectResolver,
+  GlRenderEffectRunner,
+  GlRenderState,
+  RenderEffect,
+} from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
@@ -9,7 +14,7 @@ import type { GlRenderEffectRunner, GlRenderState } from '@flighthq/types/contra
 // installs no padding, shader-source, or backdrop companions.
 
 export function getGlRenderEffectRunner(state: GlRenderState, kind: string): GlRenderEffectRunner | null {
-  return getGlRenderStateRuntime(state).glRenderEffectRegistry?.get(kind) ?? null;
+  return getGlRenderStateRuntime(state).glRenderEffectRegistry?.get(kind)?.runner ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
@@ -19,7 +24,27 @@ export function hasGlRenderEffectRunner(state: GlRenderState, kind: string): boo
   return getGlRenderStateRuntime(state).glRenderEffectRegistry?.has(kind) ?? false;
 }
 
-export function registerGlRenderEffect(state: GlRenderState, kind: string, runner: GlRenderEffectRunner): void {
+// Whether this specific effect INSTANCE can resolve into a real pass — a separate axis from whether its
+// kind has a runner. A kind registered without a resolver is always resolvable; an unregistered kind is
+// not resolvable because there is nothing to resolve it with, which the pipeline reports as a
+// registration miss rather than a resolution one.
+export function isGlRenderEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
+  const entry = getGlRenderStateRuntime(state).glRenderEffectRegistry?.get(effect.kind);
+  if (entry === undefined) return false;
+  return entry.isResolvable === undefined || entry.isResolvable(state, effect);
+}
+
+// `isResolvable` is optional and belongs to THIS call rather than a registry of its own: a runner that
+// silently degrades when what it names is missing (a shaderKey with no source, a LUT not yet loaded)
+// declares how to detect that here, so the pipeline can report a passthrough instead of calling it
+// complete. Registering the two together makes the runner-without-resolver gap unrepresentable rather
+// than merely detectable.
+export function registerGlRenderEffect(
+  state: GlRenderState,
+  kind: string,
+  runner: GlRenderEffectRunner,
+  isResolvable?: GlRenderEffectResolver,
+): void {
   const runtime = getGlRenderStateRuntime(state);
-  (runtime.glRenderEffectRegistry ??= new Map()).set(kind, runner);
+  (runtime.glRenderEffectRegistry ??= new Map()).set(kind, { isResolvable, runner });
 }

@@ -37,22 +37,56 @@ export type GlRenderEffectRunner = (ctx: Readonly<GlRenderEffectContext>, effect
 //                         DEST IS NEVER WRITTEN, so a sprite sampling it reads a never-written texture
 //   partial-registration  some effects have runners and some do not; the call succeeds while SILENTLY
 //                         DROPPING the unregistered ones, so the output is wrong rather than absent
+//   unresolved-effects    every runner is registered but NONE can resolve what its effect names (a
+//                         CustomShaderEffect whose shaderKey has no source, say); the call succeeds and
+//                         DEST IS WRITTEN with the input COPIED THROUGH UNCHANGED — not dropped, and
+//                         not absent, so the output looks like an effect that did nothing
+//   partial-resolution    some effects resolve and some do not; the resolvable ones run and the rest
+//                         COPY THROUGH, so the chain is short one stage with no other trace
 //
-// The last two are the expensive pair: both are correct-by-contract and neither is distinguishable
-// from working code without a crumb.
+// Registration and resolution are two different axes, and the status names keep them apart: a kind is
+// registered or not (one answer for every effect of that kind), while resolution is per EFFECT — two
+// CustomShaderEffects in one chain can name different shaderKeys, so this question has no kind-level
+// answer. That is why the unresolved effects are reported as chain INDEXES and never as kinds.
+//
+// The four failure statuses are all correct-by-contract, and none is distinguishable from working code
+// without a crumb — but they produce different wrong pictures. Unregistered effects are DROPPED (dest
+// unwritten, or the chain short a stage); unresolved effects PASS THROUGH (dest written, stage present
+// and doing nothing). Naming the right one is what makes the warning actionable.
 export type GlRenderEffectApplicationStatus =
   | 'complete'
   | 'no-effects'
   | 'partial-registration'
+  | 'partial-resolution'
   | 'source-unavailable'
   | 'stale-destination'
-  | 'unregistered-effects';
+  | 'unregistered-effects'
+  | 'unresolved-effects';
 
 export interface GlRenderEffectApplicationExplanation {
   readonly registeredCount: number;
   readonly requestedCount: number;
   readonly status: GlRenderEffectApplicationStatus;
   readonly unregisteredKinds: readonly string[];
+  // Positions in the submitted chain, NOT kinds: resolution is per effect instance, so a kind here
+  // would be wrong the moment a chain carries two effects of the same kind naming different targets.
+  readonly unresolvedIndexes: readonly number[];
+}
+
+/**
+ * The optional second half of a registration: whether THIS effect instance can resolve into a real
+ * pass, given whatever else its runner needs (a registered shader source, a loaded LUT). Passed to
+ * registerGlRenderEffect beside the runner rather than to a registry of its own — one call registers
+ * both, so there is no second registration to forget and no way to express a runner whose resolver was
+ * never installed. A kind registered without one is always resolvable.
+ */
+export type GlRenderEffectResolver = (state: GlRenderState, effect: Readonly<RenderEffect>) => boolean;
+
+// What one registered kind holds. The resolver rides with the runner rather than in a parallel map, so
+// there is no state in which a runner exists and its resolver was never installed.
+export interface GlRenderEffectRegistration {
+  readonly isResolvable?: GlRenderEffectResolver;
+  readonly runner: GlRenderEffectRunner;
 }
 
 /**

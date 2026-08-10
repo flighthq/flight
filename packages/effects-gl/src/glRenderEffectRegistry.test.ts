@@ -1,7 +1,12 @@
 import { createGlRenderState } from '@flighthq/render-gl/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState, RenderEffect } from '@flighthq/types/contract';
 
-import { getGlRenderEffectRunner, hasGlRenderEffectRunner, registerGlRenderEffect } from './glRenderEffectRegistry';
+import {
+  getGlRenderEffectRunner,
+  hasGlRenderEffectRunner,
+  isGlRenderEffectResolvable,
+  registerGlRenderEffect,
+} from './glRenderEffectRegistry';
 
 describe('getGlRenderEffectRunner', () => {
   it('is a function', () => {
@@ -32,6 +37,26 @@ describe('hasGlRenderEffectRunner', () => {
   });
 });
 
+describe('isGlRenderEffectResolvable', () => {
+  it('treats a kind registered without a resolver as always resolvable', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'ResolvableTestEffect', vi.fn());
+    expect(isGlRenderEffectResolvable(state, effect('ResolvableTestEffect'))).toBe(true);
+  });
+
+  it('asks the registered resolver, per effect instance', () => {
+    const state = createState();
+    registerGlRenderEffect(state, 'ResolverTestEffect', vi.fn(), (_state, candidate) => 'key' in candidate);
+    expect(isGlRenderEffectResolvable(state, effect('ResolverTestEffect'))).toBe(false);
+    expect(isGlRenderEffectResolvable(state, effect('ResolverTestEffect', { key: 'k' }))).toBe(true);
+  });
+
+  it('reports an unregistered kind as unresolvable, since there is nothing to resolve it with', () => {
+    const state = createState();
+    expect(isGlRenderEffectResolvable(state, effect('NeverRegisteredEffect'))).toBe(false);
+  });
+});
+
 describe('registerGlRenderEffect', () => {
   it('is a function', () => {
     expect(typeof registerGlRenderEffect).toBe('function');
@@ -59,4 +84,8 @@ function createState(): GlRenderState {
   canvas.width = 16;
   canvas.height = 16;
   return createGlRenderState(canvas);
+}
+
+function effect(kind: string, extra: Readonly<Record<string, unknown>> = {}): Readonly<RenderEffect> {
+  return { kind, ...extra } as unknown as Readonly<RenderEffect>;
 }

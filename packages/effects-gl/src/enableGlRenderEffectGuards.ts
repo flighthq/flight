@@ -54,8 +54,12 @@ function getGlRenderEffectApplicationMessage(explanation: Readonly<GlRenderEffec
       return `applyGlRenderEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerGlRenderEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
     case 'source-unavailable':
       return 'applyGlRenderEffectsToRenderTexture: the source render Texture has no realized GL target, so the call returned false and the destination was NOT written — render into the source before applying effects';
+    case 'partial-resolution':
+      return `applyGlRenderEffectsToRenderTexture: ${explanation.unresolvedIndexes.length} of ${explanation.requestedCount} effects have a runner but nothing to run with, so those stages COPIED THE INPUT THROUGH UNCHANGED — they were not dropped and the destination WAS written; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
     case 'stale-destination':
       return 'applyGlRenderEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
+    case 'unresolved-effects':
+      return `applyGlRenderEffectsToRenderTexture: every effect has a runner but NONE can resolve what it names, so the whole chain COPIED THE INPUT THROUGH UNCHANGED — the call returned true and the destination WAS written, which looks like effects that did nothing rather than effects that failed; chain position(s) ${explanation.unresolvedIndexes.join(', ')} name something unregistered, such as a shaderKey with no registerGlCustomShaderSource call`;
     default:
       return `applyGlRenderEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerGlRenderEffect(state, kind, runner)`;
   }
@@ -68,7 +72,7 @@ function warnGlRenderEffectApplication(
   // Keyed by status plus the kinds involved: a chain missing a different effect is a different
   // observation worth reporting, while the same miss every frame is not.
   logOnce(
-    `effects-gl:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}`,
+    `effects-gl:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}:${explanation.unresolvedIndexes.join(',')}`,
     LogLevel.Warn,
     {
       message: getGlRenderEffectApplicationMessage(explanation),

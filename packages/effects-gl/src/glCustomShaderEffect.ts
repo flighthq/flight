@@ -5,6 +5,7 @@ import type {
   GlRenderEffectRunner,
   GlRenderState,
   GlRenderTarget,
+  RenderEffect,
 } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
@@ -76,17 +77,30 @@ export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string)
   return _customShaders.get(state)?.get(shaderKey) ?? null;
 }
 
+// Whether this CustomShaderEffect names a shaderKey that has source registered for the state. An
+// effect that does not still RUNS — it copies the input through unchanged — so this is the query that
+// separates "the shader ran" from "the pass did nothing".
+export function isGlCustomShaderEffectResolvable(state: GlRenderState, effect: Readonly<RenderEffect>): boolean {
+  return getGlCustomShaderSource(state, (effect as Readonly<CustomShaderEffect>).shaderKey) !== null;
+}
+
 export function registerGlCustomShaderEffect(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'CustomShaderEffect', defaultGlCustomShaderEffectRunner);
+  // The resolver is what makes the identity-passthrough fallback visible: without it a chain naming an
+  // unregistered shaderKey reports 'complete' while copying its input through untouched.
+  registerGlRenderEffect(
+    state,
+    'CustomShaderEffect',
+    defaultGlCustomShaderEffectRunner,
+    isGlCustomShaderEffectResolvable,
+  );
 }
 
 // Registers a fragment shader source under `shaderKey` for this state, so a CustomShaderEffect naming
 // that key runs it. The source is a complete WebGL2 fragment shader: it declares `uniform sampler2D
 // u_texture0;` for the input, reads texcoords from `in vec2 v_texCoord;`, writes `out vec4 o_color;`,
 // and may declare any float/vec uniforms it wants supplied through the effect's `uniforms` bag.
-// Last write wins for the source lookup, but the compiled program is cached by the shaderKey, so
-// re-registering a *different* source under the same key keeps running the already-compiled program.
-// Register edited source under a new key (and point the effect at it) to force a recompile.
+// Last write wins for the source lookup, while the compiled program is cached by the shaderKey — so
+// the two disagree after a re-registration. enableGlRenderEffectGuards reports that divergence.
 export function registerGlCustomShaderSource(state: GlRenderState, shaderKey: string, fragmentSource: string): void {
   let registry = _customShaders.get(state);
   if (registry === undefined) {
