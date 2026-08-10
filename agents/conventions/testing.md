@@ -12,7 +12,7 @@
 
 - Run `npm run test --workspace=packages/<name>` for a single package.
 - While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood. Broad runs are confidence gates; focused tests are the normal editing loop. Do not use broad test runs as a substitute for reading the nearby source and tests.
-- A test selector or name filter that runs nothing is unconfigured, not clean. Targeted `npm run test` invocations fail loudly when no test files match or when matched files execute zero tests; a green zero-work pass is the same inert-gate defect as zero-comparison parity or regression coverage.
+- A test selector or name filter that runs nothing is unconfigured, not clean. Targeted `npm run test` invocations fail loudly when no test files match or when matched files execute zero tests; a green zero-work pass is the same inert-gate defect as zero-comparison parity or regression coverage. This is one instance of a general invariant — *a gate must fail when its required evidence is zero, and when its evidence has no referent* — stated with its other instances in [capture verification tiers](../capture-verification-tiers.md).
 - **A whole-repo `npm run test` does not cover the `tool-*` family.** `vitest.config.ts` excludes it deliberately — `tool-*` sits outside the SDK barrel — so a green root run says nothing about those packages, however large its test count. Verify a `tool-*` change from inside its own package (`npm run test --workspace=packages/tool-capture`), and do not read a root pass as covering it. A `tool-capture` fixture defect once failed CI while the root run reported every test passing.
 
 ## Capability reachability

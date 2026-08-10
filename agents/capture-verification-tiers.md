@@ -291,8 +291,20 @@ baseline.
 
 ## A fingerprint with no scene is not weak evidence — it is not evidence
 
-The twin of the zero-comparisons rule above. **A gate must fail when its required evidence is zero; it must
-also fail when its evidence has no referent.** A committed fingerprint for a backend with no functional
+**A gate must fail when its required evidence is zero; it must also fail when its evidence has no
+referent.** Both halves are one rule, and this is its statement in general form — the repo enforces the
+first half in four places and named it in none of them as a general invariant:
+
+| Instance | Where | "Zero evidence" means |
+| --- | --- | --- |
+| parity tier | the table above, `captureValidation.ts` | zero comparisons ran |
+| regression tier | `captureValidation.ts` | zero entries had a committed baseline |
+| test selection | [testing.md](conventions/testing.md), `testRunCoverage.ts` | a selector matched no files or ran no tests |
+| check selection | `check.ts` | a selector matched no package and no path |
+
+They are worth reading as one thing rather than four conventions that happen to rhyme: a green run that
+checked nothing is not a pass, whatever the surface. The second half below is the same defect with the
+evidence present and pointing nowhere. A committed fingerprint for a backend with no functional
 target cannot be an unsupported control, because a control is a scene that *renders* — it is a leftover, and
 the support matrix will happily render it as a mark. `support:check` fails on these
 (`findOrphanedBaselineFingerprints` in `scripts/support.ts`).
