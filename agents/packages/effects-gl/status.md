@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-08-09
+updated: 2026-08-10
 by: principal
 ---
 
@@ -54,11 +54,24 @@ about this tree, not about a session.
   is undiagnosed. `scripts/functional-parity-orientation.ts` cannot find them: it flags a scene whose
   *mirrored* fingerprint scores closer than its direct one, and for both of these the mirrored number moves
   the wrong way — scanlines aliases against the coarse fingerprint grid, and displacement's two
-  incommensurate sines do not survive a flip as a mirror. This item is the only record; no gate is behind it.
+  incommensurate sines do not survive a flip as a mirror.
+- **The two are not the same case, and displacement has a second, dominant reason to be invisible.**
+  `effect-displacement` carries a `'all'` entry in `FLIGHT_PARITY_SKIP`
+  (`packages/tool-capture/src/captureFlightPreset.ts:42`), so the parity gate is told to ignore that scene
+  entirely — alongside `effect-god-rays` and `effect-screen-space-fog`, all nine entries landing in one
+  commit (`3e5513512`) with no per-entry reasoning. Un-skipping or justifying that entry may be enough for
+  displacement. **Scanlines carries no skip entry at all** and has full `canvas`/`webgl`/`webgpu` parity
+  scenes, so it stays invisible after every skip entry is resolved: the orientation instrument above is the
+  only thing that could see it, and structurally cannot. A skip-list cleanup that reports scanlines as
+  covered is wrong.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-10** — Split the absolute-Y item: displacement is skip-all in `FLIGHT_PARITY_SKIP`
+  (`captureFlightPreset.ts:42`), scanlines is not in the list at all. The 2026-08-09 entry below implied
+  one shared cause; the skip is displacement's dominant one and does not apply to scanlines.
 
 - **2026-08-09** — Recorded the two surviving absolute-Y effects (Scanlines, Displacement) in `Open`.
   Their fixed siblings landed in `a9f7adccb`/`0f0e85b23`; these two are a different fix shape and
