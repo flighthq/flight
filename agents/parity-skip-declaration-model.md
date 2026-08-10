@@ -255,6 +255,36 @@ already inside that file.
 That is this document's own thesis turned on the remedy for it. The argument against slack bands was
 recorded exactly where the gates that needed it would never show it.
 
+## What the remedy has to be, and why this repo has already ruled out the alternatives
+
+Three remedies are available and **they are not symmetric** — this repository has already run the
+first two as experiments and both failed, in ways recorded above.
+
+| remedy | run here as | result |
+| --- | --- | --- |
+| a field/argument in one file | `fixtures.ts:143-147` | correct, applied, **never travelled** — a comment reaches only the reader already inside that file |
+| a convention in prose | `AGENTS.md` "never inflates"; `CONTRACT.md:3` | travelled, then **drifted from the instrument** — and prose is what agents reason from |
+| a convention with a check | — | not yet tried |
+
+The prose failure is the important one, because prose is the obvious remedy and it is the one already
+disproven: `AGENTS.md` *is* a repo-wide convention, in the document every agent reads in full at
+session start, and it did not reach `size-runner.ts:246`. A ruling that lands as a paragraph saying
+"every gate exception must carry its reason" would be the third document that does not travel.
+
+**So the remedy needs three properties, and the third is usually forgotten:**
+
+1. **Stated**, so it travels between instruments — a convention, not a comment.
+2. **Checked**, so it stays true — both a missing reason on a gate exception and a pinned number
+   whose measuring commit is not an ancestor of HEAD are mechanically detectable, and `docs:check`
+   already exists as an enforcement seam that reads documents and fails.
+3. **Wired into the gate everyone runs.** `scripts/size.ts` is a *working* check — it exits non-zero
+   on failure — that `scripts/check.ts` never invokes. A check nobody calls is a fourth artifact that
+   does not travel, and it is why the size baseline drifted while a correct gate sat beside it.
+
+The check is also what makes the residual failure benign. Prose describing a check can still drift
+from it — that is exactly `CONTRACT.md:3` — but with the check wired, the tree stays correct and only
+the description misleads. Without it, the description misleads *and* nothing holds.
+
 ## The open question
 
 Does this generalize past parity? The same shape appeared twice more in one week: `CONTRACT.md`
