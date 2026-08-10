@@ -1,4 +1,22 @@
+import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+
 import { skinTangents, skinVertices } from './skinVertices';
+
+// The normal palette a real pose would carry: the inverse-transpose of each joint's upper 3x3. Derived
+// here rather than hand-written so a test cannot accidentally assert against a palette that no pose
+// could produce.
+function normalPaletteFor(jointMatrices: readonly number[]): Float32Array {
+  const count = (jointMatrices.length / 16) | 0;
+  const out = new Float32Array(count * 9);
+  for (let j = 0; j < count; j += 1) {
+    const source = createMatrix4();
+    source.m.set(jointMatrices.slice(j * 16, j * 16 + 16));
+    const normal = createMatrix3();
+    setMatrix3NormalFromMatrix4(normal, source);
+    out.set(normal.m, j * 9);
+  }
+  return out;
+}
 
 // A column-major 4x4 identity, then variants with translation/scale, laid out as the 16-float palette entry.
 function identity(): number[] {
@@ -80,6 +98,7 @@ describe('skinTangents', () => {
       singleJoint.joints,
       singleJoint.weights,
       palette,
+      normalPaletteFor([...palette]),
     );
     skinTangents(outTangents, new Float32Array([1, 0, 0, 1]), singleJoint.joints, singleJoint.weights, palette);
     const dot = outNormals[0] * outTangents[0] + outNormals[1] * outTangents[1] + outNormals[2] * outTangents[2];
@@ -103,6 +122,7 @@ describe('skinTangents', () => {
       singleJoint.joints,
       singleJoint.weights,
       palette,
+      normalPaletteFor([...palette]),
     );
     skinTangents(outTangents, new Float32Array([...vector, 1]), singleJoint.joints, singleJoint.weights, palette);
     expect(outTangents[0]).toBeCloseTo(outNormals[0]);
@@ -137,7 +157,16 @@ describe('skinVertices', () => {
     const outPositions = new Float32Array(3);
     const outNormals = new Float32Array(3);
 
-    skinVertices(outPositions, outNormals, positions, normals, joints, weights, palette);
+    skinVertices(
+      outPositions,
+      outNormals,
+      positions,
+      normals,
+      joints,
+      weights,
+      palette,
+      normalPaletteFor([...palette]),
+    );
 
     expect(Array.from(outPositions)).toEqual([2, 3, 4]);
     expect(Array.from(outNormals)).toEqual([0, 1, 0]);
@@ -152,7 +181,16 @@ describe('skinVertices', () => {
     const outPositions = new Float32Array(3);
     const outNormals = new Float32Array(3);
 
-    skinVertices(outPositions, outNormals, positions, normals, joints, weights, palette);
+    skinVertices(
+      outPositions,
+      outNormals,
+      positions,
+      normals,
+      joints,
+      weights,
+      palette,
+      normalPaletteFor([...palette]),
+    );
 
     expect(outPositions[0]).toBeCloseTo(11);
     expect(outPositions[1]).toBeCloseTo(20);
@@ -174,7 +212,16 @@ describe('skinVertices', () => {
     const outPositions = new Float32Array(3);
     const outNormals = new Float32Array(3);
 
-    skinVertices(outPositions, outNormals, positions, normals, joints, weights, palette);
+    skinVertices(
+      outPositions,
+      outNormals,
+      positions,
+      normals,
+      joints,
+      weights,
+      palette,
+      normalPaletteFor([...palette]),
+    );
 
     // 0.25 * (10,0,0) + 0.75 * (0,10,0) = (2.5, 7.5, 0)
     expect(outPositions[0]).toBeCloseTo(2.5);
@@ -191,7 +238,16 @@ describe('skinVertices', () => {
     const outPositions = new Float32Array(6);
     const outNormals = new Float32Array(6);
 
-    skinVertices(outPositions, outNormals, positions, normals, joints, weights, palette);
+    skinVertices(
+      outPositions,
+      outNormals,
+      positions,
+      normals,
+      joints,
+      weights,
+      palette,
+      normalPaletteFor([...palette]),
+    );
 
     expect(Array.from(outPositions)).toEqual([6, 0, 0, 5, 1, 0]);
   });
@@ -203,8 +259,83 @@ describe('skinVertices', () => {
     const weights = new Float32Array([1, 0, 0, 0]);
     const palette = new Float32Array(translation(1, 1, 1));
 
-    skinVertices(positions, normals, positions, normals, joints, weights, palette);
+    skinVertices(positions, normals, positions, normals, joints, weights, palette, normalPaletteFor([...palette]));
 
     expect(Array.from(positions)).toEqual([2, 3, 4]);
+  });
+});
+
+describe('skinVertices covector normals', () => {
+  const singleJoint = { joints: new Float32Array([0, 0, 0, 0]), weights: new Float32Array([1, 0, 0, 0]) };
+  // Non-uniform scale: 2x along x, 1x along y. A plane's normal must NOT follow this the way a position
+  // does — stretching a surface along x makes its normal lean the OTHER way.
+  // prettier-ignore
+  const scaleX2 = [
+    2, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+  ];
+
+  it('leans a normal AGAINST a non-uniform stretch, not with it', () => {
+    // ★ THE DEFECT THIS FIXES. A 45-degree normal on a surface stretched 2x in x must come out with its
+    // x component HALVED relative to y (the inverse-transpose), not DOUBLED (the position matrix). The
+    // two answers differ by a factor of four in the ratio, so this cannot pass by accident.
+    const palette = new Float32Array(scaleX2);
+    const out = new Float32Array(3);
+    skinVertices(
+      new Float32Array(3),
+      out,
+      new Float32Array([0, 0, 0]),
+      new Float32Array([1, 1, 0]),
+      singleJoint.joints,
+      singleJoint.weights,
+      palette,
+      normalPaletteFor(scaleX2),
+    );
+    expect(out[0] / out[1]).toBeCloseTo(0.5);
+  });
+
+  it('leaves a RIGID joint bit-for-bit unchanged, which is what protects existing content', () => {
+    // ★ THE HALF THAT MATTERS MOST. For rotation+translation the inverse-transpose EQUALS the matrix in
+    // exact arithmetic — but it is computed via an inverse and a transpose in floating point, so it need
+    // not agree BIT-FOR-BIT. MD5 and most authored content is rigid, so any drift here would perturb
+    // every skinned scene in the repo for no benefit. Compared with toBe, not toBeCloseTo, deliberately:
+    // "close enough" is exactly the answer that would let a few ULPs through unnoticed.
+    // prettier-ignore
+    const rigid = [
+      0, 1, 0, 0,
+      -1, 0, 0, 0,
+      0, 0, 1, 0,
+      3, 4, 5, 1,
+    ];
+    const palette = new Float32Array(rigid);
+    const viaNormalPalette = new Float32Array(3);
+    const viaJointMatrix = new Float32Array(3);
+    const normal = new Float32Array([0.3, -0.7, 0.5]);
+    skinVertices(
+      new Float32Array(3),
+      viaNormalPalette,
+      new Float32Array(3),
+      normal,
+      singleJoint.joints,
+      singleJoint.weights,
+      palette,
+      normalPaletteFor(rigid),
+    );
+    // The pre-fix behaviour: the joint matrix used as its own normal matrix.
+    skinVertices(
+      new Float32Array(3),
+      viaJointMatrix,
+      new Float32Array(3),
+      normal,
+      singleJoint.joints,
+      singleJoint.weights,
+      palette,
+      new Float32Array([0, 1, 0, -1, 0, 0, 0, 0, 1]),
+    );
+    expect(viaNormalPalette[0]).toBe(viaJointMatrix[0]);
+    expect(viaNormalPalette[1]).toBe(viaJointMatrix[1]);
+    expect(viaNormalPalette[2]).toBe(viaJointMatrix[2]);
   });
 });

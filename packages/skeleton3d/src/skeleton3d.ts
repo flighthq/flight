@@ -1,5 +1,12 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
+import {
+  copyMatrix4,
+  createMatrix3,
+  createMatrix4,
+  inverseMatrix4,
+  multiplyMatrix4,
+  setMatrix3NormalFromMatrix4,
+} from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
 
@@ -9,6 +16,7 @@ export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
     jointMatrices: new Float32Array(skeleton.jointMatrices),
     joints: skeleton.joints.slice(),
     names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
+    normalMatrices: new Float32Array(skeleton.normalMatrices),
   });
   return clone;
 }
@@ -42,16 +50,21 @@ export function cloneSkeleton3DJointHierarchy(
     jointMatrices: new Float32Array(skeleton.jointMatrices),
     joints,
     names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
+    normalMatrices: new Float32Array(skeleton.normalMatrices),
   });
 }
 
 export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): void {
-  const { inverseBindMatrices, jointMatrices, joints } = skeleton;
+  const { inverseBindMatrices, jointMatrices, joints, normalMatrices } = skeleton;
   for (let j = 0; j < joints.length; j++) {
     const base = j * 16;
     for (let i = 0; i < 16; i++) _invBind.m[i] = inverseBindMatrices[base + i];
     multiplyMatrix4(_result, getNodeWorldMatrix4(joints[j]), _invBind);
     jointMatrices.set(_result.m, base);
+    // The normal palette is filled here rather than in the skinning loop because it is per JOINT, not
+    // per vertex — a few dozen inversions a frame against tens of thousands of vertices.
+    setMatrix3NormalFromMatrix4(_normal, _result);
+    normalMatrices.set(_normal.m, j * 9);
   }
 }
 
@@ -66,6 +79,7 @@ export function createSkeleton3D(
     jointMatrices: new Float32Array(count * 16),
     joints,
     names: names ?? null,
+    normalMatrices: new Float32Array(count * 9),
   });
   if (inverseBindMatrices === undefined) setSkeleton3DBindPose(skeleton);
   return skeleton;
@@ -141,3 +155,4 @@ export function validateSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3DVa
 
 const _invBind = createMatrix4();
 const _result = createMatrix4();
+const _normal = createMatrix3();

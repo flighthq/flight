@@ -50,6 +50,7 @@ function skeletonFor(palette: number[]): Skeleton3D {
   return createEntity({
     inverseBindMatrices: new Float32Array(palette.length),
     jointMatrices: new Float32Array(palette),
+    normalMatrices: new Float32Array(0),
     joints: [],
   });
 }

@@ -124,6 +124,7 @@ export function getMeshSkinExactBounds(
     bindPose.joints,
     bindPose.weights,
     skeleton.jointMatrices,
+    skeleton.normalMatrices,
   );
 
   const skinned = bindPose.skinnedPositions;

@@ -95,6 +95,7 @@ export function skinMeshGeometry(
     bindPose.joints,
     bindPose.weights,
     skeleton.jointMatrices,
+    skeleton.normalMatrices,
   );
   skinTangents(bindPose.skinnedTangents, bindPose.tangents, bindPose.joints, bindPose.weights, skeleton.jointMatrices);
 
