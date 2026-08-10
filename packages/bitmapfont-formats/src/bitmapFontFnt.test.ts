@@ -6,7 +6,7 @@ import {
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
 import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
-import type { BitmapFontParseOptions, Image, TextureAtlas } from '@flighthq/types/contract';
+import type { BitmapFontParseOptions, Image, ImportDiagnostic, TextureAtlas } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt';
@@ -162,6 +162,59 @@ describe('parseBitmapFontFnt', () => {
 
   it('returns null when the resolver cannot resolve the page', () => {
     expect(parseBitmapFontFnt(FNT_TEXT, { resolvePage: () => null })).toBeNull();
+  });
+});
+
+describe('parseBitmapFontFntDroppedRecords', () => {
+  // A malformed char line is skipped so the rest of the font still loads, which is right. What is not
+  // right is that the font then reports FEWER GLYPHS THAN THE FILE AUTHORED with nothing saying so —
+  // a caller sees a complete-looking font that is quietly missing characters.
+  it('reports the records it could not read instead of dropping them silently', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const font = parseBitmapFontFnt(
+      [
+        'common lineHeight=32 base=26',
+        'page id=0 file="a.png"',
+        'page file="nopage.png"',
+        'char id=65 x=0 y=0 width=8 height=8 xoffset=0 yoffset=0 xadvance=8 page=0',
+        'char x=0 y=0 width=8 height=8',
+        'kerning first=65 second=66 amount=-1',
+        'kerning first=65 amount=-1',
+      ].join('\n'),
+      { resolvePage: () => createTextureAtlas() },
+      diagnostics,
+    );
+
+    // The font still parses — that is exactly why the loss is invisible without the crumbs.
+    expect(font).not.toBeNull();
+    expect(diagnostics.map((entry) => entry.kind).sort()).toEqual([
+      'bmfont.char-unreadable',
+      'bmfont.kerning-unreadable',
+      'bmfont.page-unreadable',
+    ]);
+  });
+
+  it('reports once per kind however many records are unreadable', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const lines = [
+      'common lineHeight=32 base=26',
+      'char id=65 x=0 y=0 width=8 height=8 xoffset=0 yoffset=0 xadvance=8 page=0',
+    ];
+    for (let index = 0; index < 5; index++) lines.push('char x=0 y=0 width=8 height=8');
+    parseBitmapFontFnt(lines.join('\n'), { resolvePage: () => createTextureAtlas() }, diagnostics);
+
+    // A font carries thousands of char lines; one crumb each would drown the report it is making.
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]!.detail).toMatchObject({ records: 5 });
+  });
+
+  it('stays silent for a font whose records all read', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const font = parseBitmapFontFnt(FNT_MULTIPAGE, { resolvePage: () => createTextureAtlas() }, diagnostics);
+
+    // Asserting a real glyph keeps the silence from being vacuous.
+    expect(getBitmapFontGlyph(font!, 65)).not.toBeNull();
+    expect(diagnostics).toEqual([]);
   });
 });
 

@@ -1,6 +1,8 @@
 import { createBitmapFont } from '@flighthq/bitmapfont/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   BitmapFont,
+  ImportDiagnostic,
   BitmapFontData,
   BitmapFontGlyphData,
   BitmapFontKerningData,
@@ -8,6 +10,7 @@ import type {
   BitmapFontRecord,
   TextureAtlas,
 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving every atlas
 // page the record declares through `options.resolvePage` (called once per page id). The resolved
@@ -80,4 +83,36 @@ export function buildBitmapFontFromRecord(
     pages,
   };
   return createBitmapFont(data);
+}
+
+/**
+ * Reports the records a parse dropped, once per kind rather than once per record.
+ *
+ * A malformed page, char or kerning line is skipped so the rest of the font still loads, which is the
+ * right call — but the font then reports a glyph count lower than the file authored, and nothing else
+ * says so. `origin` is the caller's own name because a shared reporter must not put itself in that
+ * field; every parse encoding shares these kinds and is told apart by the origin instead.
+ */
+export function reportDroppedBitmapFontRecords(
+  diagnostics: ImportDiagnostic[] | undefined,
+  origin: string,
+  pages: number,
+  chars: number,
+  kernings: number,
+): void {
+  if (pages > 0) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'bmfont.page-unreadable', origin, {
+      records: pages,
+    });
+  }
+  if (chars > 0) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'bmfont.char-unreadable', origin, {
+      records: chars,
+    });
+  }
+  if (kernings > 0) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'bmfont.kerning-unreadable', origin, {
+      records: kernings,
+    });
+  }
 }
