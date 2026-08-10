@@ -226,6 +226,18 @@ describe('resolveImageResourceReference', () => {
     expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
   });
 
+  it('retains the missing-decoder cause when embedded bytes cannot be decoded', async () => {
+    clearImageDecoders();
+    const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+
+    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
+    expect(ref.failure).toEqual({
+      kind: ImageResourceFailureKind.Unavailable,
+      message: 'decoder-not-registered',
+      name: null,
+    });
+  });
+
   it('routes an external reference through the fetch seam', async () => {
     const ref = createExternalImageResourceReference('atlas.png', '/assets');
     const fetched = { width: 2 } as Image;

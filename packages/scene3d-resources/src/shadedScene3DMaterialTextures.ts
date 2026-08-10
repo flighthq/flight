@@ -6,14 +6,11 @@ import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry'
 // Lists the ShadedMaterial base maps. Registered separately from the surface-material listers'
 // PBR/unlit set so an app that never uses the shaded base pays nothing for it.
 //
-// Registering it is an optimization, not a prerequisite: resolution falls back to every resource-backed
-// texture when a material kind has no lister (see getScene3DResourceTextures), so the cost of omitting
-// it is a texture fetched that no mesh-attached material needed — not an unresolved map. It IS a
-// prerequisite for revealScene3DResourcesOnResolve, which needs texture→owning-node and has no other
-// way to get it; without the lister a ShadedMaterial node is simply never faded in.
+// Registration is a prerequisite for revealScene3DResourcesOnResolve, which needs texture→owning-node
+// and has no other way to get it; without the lister a ShadedMaterial node is simply never faded in.
 //
-// `getScene3DRequirements` reports this registration for every material kind in a document that carries
-// image resources, which is how a caller finds it without knowing the registry exists.
+// The requirement-set successor is documented in agents/registration-lifecycle.md; see its status header
+// for the program authorization this registration builds under.
 //
 // The base maps only. A modifier in `material.modifiers` may carry its own textures (AnimatedNormal,
 // VertexDisplace, Dissolve, Emissive), and those need a per-modifier lister registry of their own — the
