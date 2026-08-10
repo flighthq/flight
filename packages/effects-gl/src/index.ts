@@ -54,6 +54,8 @@ export {
   defaultGlVignetteEffectRunner,
   defaultGlWhiteBalanceEffectRunner,
   endGlRenderEffectPipeline,
+  getGlCustomShaderSource,
+  registerGlCustomShaderSource,
   registerGlBlendEffectBackdrop,
   registerGlBevelEffect,
   registerGlBlurEffect,
