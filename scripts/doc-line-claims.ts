@@ -48,8 +48,41 @@ export function parseDocLineClaims(docPath: string, text: string): DocLineClaim[
 
 // Whether the surrounding prose pins the claim to a commit, which makes it a statement about history
 // rather than about the file as it stands.
-export function isCommitPinnedClaim(docLineText: string): boolean {
-  return /\b(?:commit|as of|at)\s+[0-9a-f]{7,40}\b/i.test(docLineText);
+// `rawPath` scopes the git-object test to the citation being judged.
+//
+// ★ THE PIN MUST BE TESTED PER CLAIM, NOT PER LINE, AND THE ERROR RUNS IN THE SILENCING DIRECTION. A
+// single doc line often carries several citations, only one of which is revision-qualified. Asking
+// merely "does this line contain a hash-prefixed path" then marks every OTHER citation on that line as
+// history too, and a skipped claim is never reported as rot — so the check would quietly under-count
+// exactly where docs are densest with references.
+export function isCommitPinnedClaim(docLineText: string, rawPath?: string): boolean {
+  // Prose form: "refresh note commit bd412dd6, verified at `screen.ts:604`".
+  if (/\b(?:commit|as of|at)\s+[0-9a-f]{7,40}\b/i.test(docLineText)) return true;
+  // Git-object form: `b2824e3d8:packages/bitmap/src/bitmapWarp.ts:670` — a revision-qualified path,
+  // which names the file AS IT WAS and cannot rot. The hash must precede THIS citation's path.
+  if (rawPath === undefined) return /\b[0-9a-f]{7,40}:[\w./-]+\.(?:ts|tsx|mjs):\d+/.test(docLineText);
+  const citationAt = docLineText.indexOf(`${rawPath}:`);
+  if (citationAt < 0) return false;
+  return /[0-9a-f]{7,40}:$/.test(docLineText.slice(Math.max(0, citationAt - 41), citationAt));
+}
+
+// Whether the prose names a package immediately before the citation, as in "`@flighthq/types`
+// `index.ts:271`".
+//
+// ★ WITHOUT THIS, A DOC THAT SAYS WHICH PACKAGE IT MEANS IS RESOLVED AGAINST THE WRONG ONE. Bare
+// filenames are normally resolved against the package the doc lives in, which is right until the
+// sentence itself overrides it — and `index.ts` exists in nearly every package, so the misresolution
+// lands on a real file of the wrong size and reports rot that is not there.
+export function packageNamedBeforeClaim(docLineText: string, rawPath: string): string | null {
+  const citationAt = docLineText.indexOf(`${rawPath}:`);
+  if (citationAt < 0) return null;
+  // Only the few characters immediately before the citation count. A package named earlier in a long
+  // sentence is discussing something else, and treating it as the target would be a worse guess than
+  // the doc's own directory.
+  const window = docLineText.slice(Math.max(0, citationAt - 40), citationAt);
+  const matches = [...window.matchAll(/@flighthq\/([\w-]+)/g)];
+  const last = matches[matches.length - 1];
+  return last === undefined ? null : last[1]!;
 }
 
 // Turns a cited path into a repo-relative one, or null when it cannot be resolved.
@@ -69,6 +102,7 @@ export function resolveDocLineClaimPath(
   rawPath: string,
   docPath: string,
   findByBasename: (basename: string) => readonly string[] = () => [],
+  namedPackage: string | null = null,
 ): string | null {
   // An abbreviated path names no file. Both markers appear in the library.
   if (rawPath.includes('…') || rawPath.includes('...')) return null;
@@ -81,6 +115,11 @@ export function resolveDocLineClaimPath(
   if (segments.length > 1) return null;
 
   const basename = segments[0]!;
+  // A package named in the sentence beats the package the doc lives in.
+  if (namedPackage !== null) {
+    const named = `packages/${namedPackage}/src/${basename}`;
+    if (findByBasename(basename).includes(named)) return named;
+  }
   const packageMatch = /^agents\/packages\/([^/]+)\//.exec(docPath);
   if (packageMatch !== null) {
     const withinPackage = `packages/${packageMatch[1]}/src/${basename}`;
@@ -102,7 +141,7 @@ export function judgeDocLineClaim(
   fileLineCount: number | null,
   docLineText: string,
 ): DocLineClaimVerdict {
-  if (isCommitPinnedClaim(docLineText)) return 'commit-pinned';
+  if (isCommitPinnedClaim(docLineText, claim.rawPath)) return 'commit-pinned';
   if (resolvedPath === null) return 'abbreviated';
   if (fileLineCount === null) return 'unresolved';
   return claim.claimedLine >= 1 && claim.claimedLine <= fileLineCount ? 'in-range' : 'out-of-range';
@@ -168,13 +207,14 @@ export function runDocLineClaimCheck(root: string): {
     const text = readFileSync(doc, 'utf8');
     const lines = text.split('\n');
     for (const claim of parseDocLineClaims(doc, text)) {
-      const resolved = resolveDocLineClaimPath(claim.rawPath, doc, findByBasename);
-      const verdict = judgeDocLineClaim(
-        claim,
-        resolved,
-        resolved === null ? null : countLines(resolved),
-        lines[claim.docLine - 1] ?? '',
+      const docLineText = lines[claim.docLine - 1] ?? '';
+      const resolved = resolveDocLineClaimPath(
+        claim.rawPath,
+        doc,
+        findByBasename,
+        packageNamedBeforeClaim(docLineText, claim.rawPath),
       );
+      const verdict = judgeDocLineClaim(claim, resolved, resolved === null ? null : countLines(resolved), docLineText);
       if (verdict === 'abbreviated') abbreviated += 1;
       else if (verdict === 'commit-pinned') commitPinned += 1;
       else if (verdict === 'in-range') inRange += 1;
