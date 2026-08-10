@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../tilemap" }, { "path": "../types" }, { "path": "../xml" }],
+  "references": [
+    { "path": "../importdiagnostics" },
+    { "path": "../tilemap" },
+    { "path": "../types" },
+    { "path": "../xml" }
+  ],
   "include": ["src"]
 }

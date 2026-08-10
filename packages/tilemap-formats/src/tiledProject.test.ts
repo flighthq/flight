@@ -1,4 +1,4 @@
-import type { TiledTilesetResolver } from '@flighthq/types/contract';
+import type { ImportDiagnostic, TiledTilesetResolver } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildTilemapLayersFromTiled } from './tiledProject';
@@ -55,6 +55,57 @@ describe('buildTilemapLayersFromTiled', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject(tilesetA);
     expect(Array.from(result[0].tiles)).toEqual([0, -1, 0, -1]);
+  });
+
+  it('reports the tiles an unresolved tileset left empty instead of dropping them silently', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = mapWithLayerData('1,5,1,5')!;
+    const onlyA: TiledTilesetResolver = (ref) => (ref.firstGid === 1 ? tilesetA : null);
+    const result = buildTilemapLayersFromTiled(map, 0, onlyA, diagnostics)!;
+
+    // The projection SUCCEEDS and the grid looks complete — the holes are -1 cells that no count
+    // distinguishes from genuinely empty ones, which is what earns the crumb.
+    expect(Array.from(result[0].tiles)).toEqual([0, -1, 0, -1]);
+    expect(diagnostics).toMatchObject([
+      { detail: { cells: 2, layerIndex: 0, tilesets: 1 }, kind: 'tiled.tileset-unresolved', severity: 'Drop' },
+    ]);
+  });
+
+  it('reports a tile whose gid falls outside every declared tileset', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = parseTiledTmx(
+      '<map version="1" width="2" height="1" tilewidth="16" tileheight="16">' +
+        '<tileset firstgid="5" source="b.tsx"/>' +
+        '<layer id="1" name="g" width="2" height="1"><data encoding="csv">1,5</data></layer>' +
+        '</map>',
+    )!;
+    buildTilemapLayersFromTiled(map, 0, () => tilesetA, diagnostics);
+
+    expect(diagnostics).toMatchObject([
+      { detail: { cells: 1, layerIndex: 0 }, kind: 'tiled.tile-outside-every-tileset', severity: 'Drop' },
+    ]);
+  });
+
+  it('reports once for a whole layer rather than once per cell', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = mapWithLayerData('5,5,5,5')!;
+    const onlyA: TiledTilesetResolver = (ref) => (ref.firstGid === 1 ? tilesetA : null);
+    buildTilemapLayersFromTiled(map, 0, onlyA, diagnostics);
+
+    // A layer is width x height cells, so a per-cell crumb would drown the report it is making. The
+    // count carries the scale instead.
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]!.detail).toMatchObject({ cells: 4 });
+  });
+
+  it('stays silent for a layer whose tilesets all resolve', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    const map = mapWithLayerData('1,5,1,5')!;
+    const result = buildTilemapLayersFromTiled(map, 0, resolve, diagnostics)!;
+
+    // Asserting the projected tiles keeps the silence from being vacuous.
+    expect(result).toHaveLength(2);
+    expect(diagnostics).toEqual([]);
   });
 
   it('returns null when no referenced tileset resolves', () => {
