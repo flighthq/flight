@@ -6,12 +6,14 @@ import { createTexture } from '@flighthq/texture/contract';
 import type {
   ImageResourceReference,
   Scene3DKindUsage,
+  SceneCoverageCatalog,
   SceneCoverageEntry,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import {
   ImageResourceReferenceKind,
   RenderRegistry,
+  RequirementFacet,
   ResourceResolutionState,
   SceneCoverage,
   StandardMaterialKind,
@@ -21,6 +23,24 @@ import { describe, expect, it } from 'vitest';
 import { explainWgpuScene3DCoverage, hasWgpuScene3DCoverage } from './explainWgpuScene3DCoverage';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+
+const coverageCatalog: SceneCoverageCatalog = [
+  {
+    kind: 'ShadedMaterial',
+    registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuShadedMaterial' }],
+    registry: RenderRegistry.MaterialRenderer,
+  },
+  {
+    kind: 'image',
+    registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuImageTextureResolver' }],
+    registry: RenderRegistry.TextureResolver,
+  },
+  {
+    kind: 'RimModifier',
+    registrations: [{ module: '@flighthq/scene3d-wgpu', registrar: 'registerWgpuRimModifier' }],
+    registry: RenderRegistry.ModifierSnippet,
+  },
+];
 
 function shadedUsage(withModifier = false): Scene3DKindUsage {
   const ref: ImageResourceReference = {
@@ -43,23 +63,29 @@ function shadedUsage(withModifier = false): Scene3DKindUsage {
 
 function entries(state: WgpuRenderState, withModifier = false): SceneCoverageEntry[] {
   const out: SceneCoverageEntry[] = [];
-  explainWgpuScene3DCoverage(out, state, shadedUsage(withModifier));
+  explainWgpuScene3DCoverage(out, state, shadedUsage(withModifier), coverageCatalog);
   return out;
 }
 
 const renderer = { bind() {}, draw() {} } as never;
 
 describe('explainWgpuScene3DCoverage', () => {
-  it('reports a bare state as missing both the material renderer and the texture resolver', () => {
+  it('reports a bare state with remedies for both unregistered requirements', () => {
     const found = entries(makeWgpuScene3DState().state);
     expect(found).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
+      module: '@flighthq/scene3d-wgpu',
+      registrar: 'registerWgpuShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
     expect(found).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneTextureSourceKind,
       kind: 'image',
+      module: '@flighthq/scene3d-wgpu',
+      registrar: 'registerWgpuImageTextureResolver',
       registry: RenderRegistry.TextureResolver,
     });
   });
@@ -68,8 +94,11 @@ describe('explainWgpuScene3DCoverage', () => {
     const { state } = makeWgpuScene3DState();
     registerWgpuMeshMaterialRenderer(state, StandardMaterialKind, renderer);
     expect(entries(state)).toContainEqual({
-      coverage: SceneCoverage.Fallback,
+      coverage: SceneCoverage.FallbackRemediable,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
+      module: '@flighthq/scene3d-wgpu',
+      registrar: 'registerWgpuShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
   });
@@ -79,17 +108,21 @@ describe('explainWgpuScene3DCoverage', () => {
     registerWgpuMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
     expect(entries(state)).toContainEqual({
       coverage: SceneCoverage.Satisfied,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
   });
 
-  it('reports an unregistered modifier snippet as Missing, never a fallback', () => {
+  it('reports an unregistered modifier snippet as actionable, never a fallback', () => {
     // The shaded compiler assembles base + modifiers into one program, so an absent snippet fails the
     // whole material rather than degrading it.
     expect(entries(makeWgpuScene3DState().state, true)).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneModifierKind,
       kind: 'RimModifier',
+      module: '@flighthq/scene3d-wgpu',
+      registrar: 'registerWgpuRimModifier',
       registry: RenderRegistry.ModifierSnippet,
     });
   });
@@ -102,9 +135,9 @@ describe('explainWgpuScene3DCoverage', () => {
     const { state } = makeWgpuScene3DState();
     const usage = shadedUsage();
     const out: SceneCoverageEntry[] = [];
-    explainWgpuScene3DCoverage(out, state, usage);
+    explainWgpuScene3DCoverage(out, state, usage, coverageCatalog);
     const first = out.length;
-    explainWgpuScene3DCoverage(out, state, usage);
+    explainWgpuScene3DCoverage(out, state, usage, coverageCatalog);
     expect(out).toHaveLength(first);
   });
 });
@@ -125,7 +158,7 @@ describe('hasWgpuScene3DCoverage', () => {
     registerWgpuMeshMaterialRenderer(state, 'ShadedMaterial', renderer);
     const usage = shadedUsage();
     const out: SceneCoverageEntry[] = [];
-    explainWgpuScene3DCoverage(out, state, usage);
+    explainWgpuScene3DCoverage(out, state, usage, coverageCatalog);
     const gaps = out.filter((e) => e.coverage !== SceneCoverage.Satisfied);
     expect(hasWgpuScene3DCoverage(state, usage)).toBe(gaps.length === 0);
   });

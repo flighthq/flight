@@ -115,19 +115,21 @@ of evidence rather than a measurement.
 The consumer half, and the symbol table of the analogy above.
 
 ```ts
-// One call the emitter must write. `argument` is null for the common `register*(state)` form.
+// One public call that can satisfy a catalog entry.
 interface CatalogRegistration {
-  readonly argument: string | null;
   readonly module: string;           // '@flighthq/effects-gl'
   readonly registrar: string;        // 'registerGlBlurEffect'
 }
 
-// A key needs EVERY registration listed, in order — see below: one kind is not one call.
+// Diagnostics define this consumer-shaped contract. An inventory walk, invariant probe, or caller can
+// all produce it without exposing the instrument's own row shape through every explain* signature.
 interface CatalogEntry {
-  readonly facet: RequirementFacet;  // 'render-effect'
-  readonly key: Kind;                // 'BlurEffect'
+  readonly kind: Kind;                // 'BlurEffect'
+  readonly registry: RenderRegistry; // 'EffectRunner'
   readonly registrations: readonly CatalogRegistration[];
 }
+
+type SceneCoverageCatalog = readonly CatalogEntry[];
 ```
 
 **A key does not map to one registrar, and assuming it did was a defect.** `tools/harness/canvas.ts`
@@ -303,11 +305,31 @@ any source — see [No bundler plugin](#no-bundler-plugin-deliberately) for why 
 
 ### 4. The remedy on a miss
 
-`SceneCoverageEntry` gains `registrar` and `module`, both nullable. `null` is the reliable-negative case
-[registration model §3](registration-model.md) already promises: *"If `registerCanvasSsaoEffect` and
-`defaultCanvasSsaoEffectRunner` do not exist, canvas does not implement SSAO, and no call you could write
-would unlock it."* A miss that can name its own repair is the mechanism the whole anti-shotgun argument
-rests on — see [Why an agent reaches for it](#why-an-agent-reaches-for-it-instead-of-a-bundle).
+`SceneCoverageEntry` is a remedy-discriminated union. `Unregistered` and `FallbackRemediable` require
+both `registrar` and `module`; `Unavailable`, `FallbackUnavailable`, and `Satisfied` expose neither.
+There is no nullable remedy pair. The strict definition of an unavailable result is: **no call you
+could write would unlock it.** This is the reliable-negative case [registration model §3](registration-model.md)
+already promises: if `registerCanvasSsaoEffect` and `defaultCanvasSsaoEffectRunner` do not exist, Canvas
+does not implement SSAO. A miss that can name its own repair is the mechanism the whole anti-shotgun
+argument rests on — see [Why an agent reaches for it](#why-an-agent-reaches-for-it-instead-of-a-bundle).
+
+**States are distinguished by whether remedies differ, not why they arose.** Three instances pin the
+rule down:
+
+1. A caller who forgot a registration and a caller who deliberately did not opt into the same feature
+   can write the same registration call. Both receive `Unregistered`, regardless of intent.
+2. A missing authored renderer that falls back to a standard renderer is `FallbackRemediable` when the
+   catalog names the authored renderer's registrar, and `FallbackUnavailable` when no such call exists.
+   The visual downgrade is the same; the remedy is not.
+3. A missing `ShadedMaterial` texture lister is `Unregistered` with
+   `registerShadedScene3DMaterialTextures`. A missing `BlinnPhongMaterial` lister is `Unavailable`
+   because no call in the SDK can install one. Calling both "deliberate boundaries" would erase the
+   actionable distinction.
+
+Each `explain*` function takes the complete backend-specific `SceneCoverageCatalog` explicitly. Its
+package-private lookup reads the first ordered registration as the primary remedy; separately imported
+guards may display the full ordered list. The `has*` functions stay catalog-free because they answer
+only whether the live registry serves the requirement.
 
 ## One command, and where requirements come from
 
@@ -544,7 +566,8 @@ Three consequences, and they are constraints on anything built here:
   at a blank screen holding a file that describes the fix. One explicit call is the design and not a gap
   — Flight prefers spelling registration out — but *nothing currently notices its absence*. A generated
   module that is never imported must be a check failure, not a silent no-op.
-- **A miss must name a call, not a condition.** `{coverage: 'Missing', kind: 'BlurEffect'}` is a fact
+- **A remediable miss must name a call, not a condition.** The retired
+  `{coverage: 'Missing', kind: 'BlurEffect'}` shape was only a fact
   about the world. `registerGlBlurEffect` from `@flighthq/effects-gl` is a thing to do. Only the second
   is worth the diagnostics machinery, which is why [the remedy](#4-the-remedy-on-a-miss) is a field and
   not a doc paragraph.
@@ -576,7 +599,7 @@ the SDK cell; the tool is a shell over it. A catalog is a format.
 | `scripts/catalog.ts` | script | generates the built-in entries into `registry-catalog`; `catalog:check` | `support.ts`, `swf-capabilities.ts` |
 | `scene2d` / `scene3d` `sceneKindUsage.ts` | edit | facet emitter replacing the struct walk | — |
 | the `*-formats` cells | edit | requirements sink at the sites that already carry the diagnostics sink | — |
-| `types` + the twelve `explain*` functions | edit | `registrar` / `module` on `SceneCoverageEntry` | — |
+| `types` + the twelve coverage cells | edit | remedy-discriminated `SceneCoverageEntry` and explicit catalog input | — |
 
 **Why `requirements` and `registry-catalog` are separate cells and not one.** The seam rule this whole
 design rests on is that a producer must never name a registry — *"a producer that named the registry would
@@ -650,7 +673,7 @@ recorded as fact and was load-bearing for a naming argument.
   `@flighthq/registry-catalog`, an SDK package, so it ships by construction and a consumer can extend it
   with their own kinds at runtime. The repo-internal alternative (`agents/registry-catalog.json`, beside
   `support-matrix.json`) was rejected as a closed vocabulary.
-- **Does the facet vocabulary cover non-render registries?** The ~65 tables include decompressors,
-  importers, and joint solvers. [registry table model](registry-table-model.md) already asks whether
-  `Satisfied` / `Fallback` / `Missing` generalize; the facet list inherits that question.
+- ~~**Does the facet vocabulary cover non-render registries?**~~ — **yes.** The declared generated
+  vocabulary is a superset of current scene walks and includes decompressors, importers, and joint
+  solvers. Deriving it from emitted scene usage would make an unreported facet invisible by definition.
 - **Re-confirm the importer-sink decision** against the written form above, per the provisional marking.

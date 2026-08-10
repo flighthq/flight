@@ -1,7 +1,19 @@
 import { registerGlBlendMode, registerGlMaterialRenderer } from '@flighthq/render-gl/contract';
 import { registerRenderer } from '@flighthq/render/contract';
-import type { GlMaterialRenderer, Renderer, Scene2DKindUsage, SceneCoverageEntry } from '@flighthq/types/contract';
-import { BlendMode, RenderRegistry, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import type {
+  GlMaterialRenderer,
+  Renderer,
+  Scene2DKindUsage,
+  SceneCoverageCatalog,
+  SceneCoverageEntry,
+} from '@flighthq/types/contract';
+import {
+  BlendMode,
+  RenderRegistry,
+  RequirementFacet,
+  SceneCoverage,
+  StandardMaterialKind,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainGlScene2DCoverage, hasGlScene2DCoverage } from './explainGlScene2DCoverage';
@@ -9,6 +21,18 @@ import { createGlState } from './glTestHelper';
 
 const materialRenderer = {} as unknown as GlMaterialRenderer;
 const nodeRenderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const coverageCatalog: SceneCoverageCatalog = [
+  {
+    kind: BlendMode.Multiply,
+    registrations: [{ module: '@flighthq/scene2d-gl', registrar: 'registerGlMultiplyBlendMode' }],
+    registry: RenderRegistry.BlendRealization,
+  },
+  {
+    kind: 'acme.Custom',
+    registrations: [{ module: '@acme/gl', registrar: 'registerAcmeGlMaterial' }],
+    registry: RenderRegistry.MaterialRenderer,
+  },
+];
 
 function usage(overrides: Partial<Scene2DKindUsage> = {}): Scene2DKindUsage {
   return { blendModes: [], materialKinds: [], nodeKinds: [], shapeCommandKeys: [], ...overrides };
@@ -16,7 +40,7 @@ function usage(overrides: Partial<Scene2DKindUsage> = {}): Scene2DKindUsage {
 
 function entries(state: ReturnType<typeof createGlState>['state'], u: Scene2DKindUsage): SceneCoverageEntry[] {
   const out: SceneCoverageEntry[] = [];
-  explainGlScene2DCoverage(out, state, u);
+  explainGlScene2DCoverage(out, state, u, coverageCatalog);
   return out;
 }
 
@@ -27,15 +51,23 @@ describe('explainGlScene2DCoverage', () => {
     registerRenderer(state, 'Shape', nodeRenderer);
     expect(entries(state, usage({ nodeKinds: ['Shape'] }))).toContainEqual({
       coverage: SceneCoverage.Satisfied,
+      facet: RequirementFacet.SceneNodeKind,
       kind: 'Shape',
       registry: RenderRegistry.NodeRenderer,
     });
   });
 
-  it('reports an unregistered blend mode as Fallback, since the node draws but composites as Normal', () => {
+  it('reports an unregistered blend mode as a remediable fallback', () => {
     const { state } = createGlState();
     expect(entries(state, usage({ blendModes: [BlendMode.Multiply] }))).toEqual([
-      { coverage: SceneCoverage.Fallback, kind: BlendMode.Multiply, registry: RenderRegistry.BlendRealization },
+      {
+        coverage: SceneCoverage.FallbackRemediable,
+        facet: RequirementFacet.SceneBlendMode,
+        kind: BlendMode.Multiply,
+        module: '@flighthq/scene2d-gl',
+        registrar: 'registerGlMultiplyBlendMode',
+        registry: RenderRegistry.BlendRealization,
+      },
     ]);
   });
 
@@ -43,15 +75,23 @@ describe('explainGlScene2DCoverage', () => {
     const { state } = createGlState();
     registerGlBlendMode(state, BlendMode.Multiply, {} as never);
     expect(entries(state, usage({ blendModes: [BlendMode.Multiply] }))).toEqual([
-      { coverage: SceneCoverage.Satisfied, kind: BlendMode.Multiply, registry: RenderRegistry.BlendRealization },
+      {
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneBlendMode,
+        kind: BlendMode.Multiply,
+        registry: RenderRegistry.BlendRealization,
+      },
     ]);
   });
 
-  it('reports an unregistered material as Missing when nothing can absorb it', () => {
+  it('reports an unregistered material as actionable when nothing can absorb it', () => {
     const { state } = createGlState();
     expect(entries(state, usage({ materialKinds: ['acme.Custom'] }))).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'acme.Custom',
+      module: '@acme/gl',
+      registrar: 'registerAcmeGlMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
   });
@@ -60,8 +100,11 @@ describe('explainGlScene2DCoverage', () => {
     const { state } = createGlState();
     registerGlMaterialRenderer(state, StandardMaterialKind, materialRenderer);
     expect(entries(state, usage({ materialKinds: ['acme.Custom'] }))).toContainEqual({
-      coverage: SceneCoverage.Fallback,
+      coverage: SceneCoverage.FallbackRemediable,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'acme.Custom',
+      module: '@acme/gl',
+      registrar: 'registerAcmeGlMaterial',
       registry: RenderRegistry.MaterialRenderer,
     });
   });
@@ -92,7 +135,7 @@ describe('hasGlScene2DCoverage', () => {
     registerRenderer(state, 'Shape', nodeRenderer);
     const u = usage({ materialKinds: ['acme.Custom'], nodeKinds: ['Shape'] });
     const out: SceneCoverageEntry[] = [];
-    explainGlScene2DCoverage(out, state, u);
+    explainGlScene2DCoverage(out, state, u, coverageCatalog);
     const gaps = out.filter((e) => e.coverage !== SceneCoverage.Satisfied);
     expect(hasGlScene2DCoverage(state, u)).toBe(gaps.length === 0);
   });

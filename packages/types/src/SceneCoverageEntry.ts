@@ -1,15 +1,16 @@
 import type { Kind } from './Entity';
 import type { RenderRegistry } from './RenderRegistrySignals';
+import type { RequirementFacet } from './RequirementFacet';
 
-// How well a kind the scene uses is served by the registry that would have to serve it.
-//   Satisfied — this kind's own implementation is registered; nothing to do.
-//   Fallback  — something resolves, but not this kind's own implementation, so the content draws
-//               differently than authored (a material with no renderer degrades to the standard one).
-//   Missing   — nothing resolves; the content does not draw or resolve at all.
+// How well a kind the scene uses is served by the registry that would have to serve it. States are
+// distinguished by remedy, not by why the state arose: Unregistered and FallbackRemediable name a call
+// that can improve the result; Unavailable and FallbackUnavailable prove that no such call exists.
 export const SceneCoverage = {
-  Fallback: 'Fallback',
-  Missing: 'Missing',
+  FallbackRemediable: 'FallbackRemediable',
+  FallbackUnavailable: 'FallbackUnavailable',
   Satisfied: 'Satisfied',
+  Unavailable: 'Unavailable',
+  Unregistered: 'Unregistered',
 } as const;
 
 export type SceneCoverage = (typeof SceneCoverage)[keyof typeof SceneCoverage];
@@ -27,8 +28,42 @@ export type SceneCoverage = (typeof SceneCoverage)[keyof typeof SceneCoverage];
 // `registry` reuses RenderRegistry so an entry is comparable with the misses
 // `explainRenderRegistryMisses` records after the fact — the same vocabulary, asked before the frame
 // instead of after it.
-export interface SceneCoverageEntry {
-  readonly coverage: SceneCoverage;
+interface SceneCoverageEntryBase {
+  readonly facet: RequirementFacet;
   readonly kind: Kind;
   readonly registry: RenderRegistry;
 }
+
+interface SceneCoverageRemedy {
+  readonly module: string;
+  readonly registrar: string;
+}
+
+export interface SatisfiedSceneCoverageEntry extends SceneCoverageEntryBase {
+  readonly coverage: typeof SceneCoverage.Satisfied;
+}
+
+export interface UnregisteredSceneCoverageEntry extends SceneCoverageEntryBase, SceneCoverageRemedy {
+  readonly coverage: typeof SceneCoverage.Unregistered;
+}
+
+export interface UnavailableSceneCoverageEntry extends SceneCoverageEntryBase {
+  readonly coverage: typeof SceneCoverage.Unavailable;
+}
+
+export interface FallbackRemediableSceneCoverageEntry extends SceneCoverageEntryBase, SceneCoverageRemedy {
+  readonly coverage: typeof SceneCoverage.FallbackRemediable;
+}
+
+export interface FallbackUnavailableSceneCoverageEntry extends SceneCoverageEntryBase {
+  readonly coverage: typeof SceneCoverage.FallbackUnavailable;
+}
+
+// The remedy-bearing variants require both fields while the no-action variants expose neither. A
+// switch on `coverage` therefore narrows whether a repair call can be rendered without nullable pairs.
+export type SceneCoverageEntry =
+  | FallbackRemediableSceneCoverageEntry
+  | FallbackUnavailableSceneCoverageEntry
+  | SatisfiedSceneCoverageEntry
+  | UnavailableSceneCoverageEntry
+  | UnregisteredSceneCoverageEntry;

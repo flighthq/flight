@@ -1,14 +1,23 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { resolveModifier } from '@flighthq/shading/contract';
-import type { Scene3DKindUsage, SceneCoverageEntry, WgpuRenderState } from '@flighthq/types/contract';
-import { RenderRegistry, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import type {
+  CatalogRegistration,
+  Kind,
+  Scene3DKindUsage,
+  SceneCoverageCatalog,
+  SceneCoverageEntry,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
+import { RenderRegistry, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Clears `out`, then reports every kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest. The WebGPU twin of explainGlScene3DCoverage, and
 // the answering half of the scene↔render seam: @flighthq/scene3d says what a document uses, and this —
-// the package that owns the WebGPU registries — says which of those it can serve.
+// the package that owns the WebGPU registries — says which of those it can serve. The verdict reads the
+// live registry; `catalog`, the caller's complete WebGPU inventory, supplies the primary remedy only
+// for a shortfall.
 //
 // Proactive, unlike explainRenderRegistryMisses, which reports what already missed during a frame. Ask
 // this after loading a document and before the first draw, while the answer is still actionable.
@@ -16,15 +25,16 @@ export function explainWgpuScene3DCoverage(
   out: SceneCoverageEntry[],
   state: WgpuRenderState,
   usage: Readonly<Scene3DKindUsage>,
+  catalog: SceneCoverageCatalog,
 ): void {
   out.length = 0;
-  collectWgpuScene3DCoverageGaps(out, state, usage, false);
+  collectWgpuScene3DCoverageGaps(out, state, usage, false, catalog);
 }
 
 // Whether this state can draw every kind `usage` names, counting a fallback as a shortfall — the
 // authored material is not what would appear. Stops at the first shortfall and never allocates.
 export function hasWgpuScene3DCoverage(state: WgpuRenderState, usage: Readonly<Scene3DKindUsage>): boolean {
-  return !collectWgpuScene3DCoverageGaps(null, state, usage, true);
+  return !collectWgpuScene3DCoverageGaps(null, state, usage, true, null);
 }
 
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
@@ -34,6 +44,7 @@ function collectWgpuScene3DCoverageGaps(
   state: WgpuRenderState,
   usage: Readonly<Scene3DKindUsage>,
   stopAtFirst: boolean,
+  catalog: SceneCoverageCatalog | null,
 ): boolean {
   let found = false;
 
@@ -45,16 +56,25 @@ function collectWgpuScene3DCoverageGaps(
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
     if (materials.has(kind)) {
-      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.MaterialRenderer });
+      out?.push({
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneMaterialKind,
+        kind,
+        registry: RenderRegistry.MaterialRenderer,
+      });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({
-      coverage: hasStandard ? SceneCoverage.Fallback : SceneCoverage.Missing,
-      kind,
-      registry: RenderRegistry.MaterialRenderer,
-    });
+    out?.push(
+      createShortfallEntry(
+        catalog,
+        hasStandard,
+        RequirementFacet.SceneMaterialKind,
+        kind,
+        RenderRegistry.MaterialRenderer,
+      ),
+    );
   }
 
   // A texture whose source kind has no resolver samples nothing, so the map is simply absent from the
@@ -63,27 +83,47 @@ function collectWgpuScene3DCoverageGaps(
   for (let i = 0; i < usage.textureSourceKinds.length; i++) {
     const kind = usage.textureSourceKinds[i];
     if (resolvers?.has(kind) === true) {
-      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.TextureResolver });
+      out?.push({
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneTextureSourceKind,
+        kind,
+        registry: RenderRegistry.TextureResolver,
+      });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.TextureResolver });
+    out?.push(
+      createShortfallEntry(
+        catalog,
+        false,
+        RequirementFacet.SceneTextureSourceKind,
+        kind,
+        RenderRegistry.TextureResolver,
+      ),
+    );
   }
 
   // The shaded compiler assembles base + ordered modifiers into ONE program, so an unregistered snippet
   // does not fail a single lookup — it fails the whole material. A modifier kind is therefore always
-  // Missing, never a fallback.
+  // a total absence, never a fallback.
   const snippets = getWgpuScene3DRuntime(state).modifierSnippetRegistry;
   for (let i = 0; i < usage.modifierKinds.length; i++) {
     const kind = usage.modifierKinds[i];
     if (snippets !== null && resolveModifier(snippets, kind) !== null) {
-      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.ModifierSnippet });
+      out?.push({
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneModifierKind,
+        kind,
+        registry: RenderRegistry.ModifierSnippet,
+      });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.ModifierSnippet });
+    out?.push(
+      createShortfallEntry(catalog, false, RequirementFacet.SceneModifierKind, kind, RenderRegistry.ModifierSnippet),
+    );
   }
 
   // usage.nodeKinds is deliberately NOT checked. The 3D pipeline collects meshes structurally
@@ -92,4 +132,39 @@ function collectWgpuScene3DCoverageGaps(
   // registrar that does not exist. That the scene reports node kinds anyway is correct — deciding they
   // need nothing is this layer's call, not the scene's.
   return found;
+}
+
+function createShortfallEntry(
+  catalog: SceneCoverageCatalog | null,
+  fallback: boolean,
+  facet: SceneCoverageEntry['facet'],
+  kind: Kind,
+  registry: SceneCoverageEntry['registry'],
+): SceneCoverageEntry {
+  const registration = findCatalogRegistration(catalog, kind, registry);
+  const base = { facet, kind, registry };
+  if (registration === null) {
+    return {
+      ...base,
+      coverage: fallback ? SceneCoverage.FallbackUnavailable : SceneCoverage.Unavailable,
+    };
+  }
+  return {
+    ...base,
+    coverage: fallback ? SceneCoverage.FallbackRemediable : SceneCoverage.Unregistered,
+    module: registration.module,
+    registrar: registration.registrar,
+  };
+}
+
+function findCatalogRegistration(
+  catalog: SceneCoverageCatalog | null,
+  kind: Kind,
+  registry: SceneCoverageEntry['registry'],
+): CatalogRegistration | null {
+  if (catalog === null) return null;
+  for (const entry of catalog) {
+    if (entry.kind === kind && entry.registry === registry) return entry.registrations[0] ?? null;
+  }
+  return null;
 }
