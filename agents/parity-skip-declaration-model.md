@@ -288,8 +288,26 @@ that omits `size`. So the failure is not distance — the argument did not have 
 
 But the diagnosis "`check.ts` forgot to call `size.ts`" is wrong, and the correct one is cheaper to
 fix. Enumerating `package.json` scripts against the repo's own `check` naming vocabulary
-([npm script naming](conventions/npm-scripts.md)) gives **28 declared checks, of which exactly one is
-not referenced by `check.ts` — `check` itself, the aggregator.** The wiring is 28/28 correct.
+([npm script naming](conventions/npm-scripts.md)) gives **28 declared checks, 22 wired and 6 absent.**
+Three of the six are benign — `check` itself (the aggregator) and two composites of gates already
+wired individually. **Three are genuinely unwired:**
+
+| absent | runs |
+| --- | --- |
+| `capture:examples:check` | `tool-capture … --tool=examples --fail-on-changed` |
+| `capture:functional:check` | `tool-capture … --tool=functional --fail-on-changed` |
+| `check:import-conformance` | `conformance/core/check-import-conformance-ratchet.ts` |
+
+Each carries a check name, each fails by construction, and `check.ts` calls none of them. **The
+enumeration does not currently pass — run once, it flags three.**
+
+Whether these exclusions are correct is a separate question, and they may well be:
+[`AGENTS.md`](../AGENTS.md) says the full render matrix is CI's job and that functional regression is
+only valid where its baselines were captured, so keeping capture out of a developer-run whole-repo
+gate may be entirely deliberate. **The defect is that the reason is recorded nowhere the enumeration
+would show it** — a reader running the mechanism sees three declared checks missing and cannot tell
+deliberate from forgotten. That is the nine-unreasoned-skip-entries problem, in a different file,
+about the instruments this document is about.
 
 `size` is absent because **it was never given a gate's name.** It is `size`, not `size:check`, so it
 never entered the vocabulary `check.ts` draws from. No wiring mechanism could have caught it, because
