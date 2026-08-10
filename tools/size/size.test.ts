@@ -8,6 +8,7 @@ import type { SizeResult } from '../../scripts/size-runner';
 import {
   buildSamples,
   collectSizeCases,
+  didSizeChecksPass,
   formatSizeResult,
   getFlightDiagnosticsSizeDelta,
   getGzipSize,
@@ -57,7 +58,9 @@ function printGroup(name: string): void {
     const baselineOrigin = r.baselineCommit
       ? ` @${r.baselineCommit.slice(0, 10)}${r.baselineCommitDate ? ` (${r.baselineCommitDate})` : ''}`
       : ' @unknown';
-    const baselineStr = pc.dim((r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : '—').padEnd(w.base));
+    const baselineStr = pc.dim(
+      (r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : 'no baseline').padEnd(w.base),
+    );
     const flag = r.passed ? '' : '  ' + pc.red('✗');
 
     const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
@@ -90,10 +93,7 @@ describe('bundle size checks', () => {
       deltaPercent: r.delta != null ? parseFloat(r.delta.replace('%', '')) : null,
       passed: r.passed,
     }));
-    const report = {
-      passed: results.every((r) => r.passed),
-      cases,
-    };
+    const report = { passed: didSizeChecksPass(results), cases };
 
     if (sizeOutputPath) {
       const outputPath = resolve(process.cwd(), sizeOutputPath);
@@ -110,6 +110,7 @@ describe('bundle size checks', () => {
   });
 
   test('build selected samples', async () => {
+    expect(testCases.length, 'No matching size tests were found.').toBeGreaterThan(0);
     const codeByCase = await buildSamples(testCases);
 
     for (const [index, { name, render, variant }] of testCases.entries()) {
@@ -137,11 +138,14 @@ describe('bundle size checks', () => {
         key,
       });
 
-      if (!updateBaseline && threshold != null) {
-        const thresholdKB = (threshold / 1024).toFixed(2);
-        expect
-          .soft(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`)
-          .toBeLessThan(threshold);
+      if (!updateBaseline) {
+        expect.soft(threshold, `${name} (${render}) has no size baseline`).not.toBeNull();
+        if (threshold !== null) {
+          const thresholdKB = (threshold / 1024).toFixed(2);
+          expect
+            .soft(gzipSize, `${name} (${render}) exceeded limit (${gzipKB} KB > ${thresholdKB} KB)`)
+            .toBeLessThan(threshold);
+        }
       }
     }
   });

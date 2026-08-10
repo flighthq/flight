@@ -306,9 +306,13 @@ export function formatSizeResult(
   const rawDelta = baselineSize != null ? (((gzipSize - baselineSize) / baselineSize) * 100).toFixed(1) : null;
   const delta = rawDelta != null ? (parseFloat(rawDelta) >= 0 ? `+${rawDelta}%` : `${rawDelta}%`) : null;
   const threshold = baselineSize != null ? Math.ceil(baselineSize * 1.05) : null;
-  const passed = threshold == null || gzipSize < threshold;
+  const passed = threshold !== null && gzipSize < threshold;
 
   return { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold };
+}
+
+export function didSizeChecksPass(results: readonly Readonly<Pick<SizeResult, 'passed'>>[]): boolean {
+  return results.length > 0 && results.every((result) => result.passed);
 }
 
 export async function runSizeChecks({
