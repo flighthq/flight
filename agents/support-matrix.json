@@ -530,8 +530,8 @@
           "scene": "effect-bokeh-dof",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -580,8 +580,8 @@
           "scene": "effect-camera-motion-blur",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -630,8 +630,8 @@
           "scene": "effect-channel-mixer",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -655,8 +655,8 @@
           "scene": "effect-chromatic-aberration",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -730,8 +730,8 @@
           "scene": "effect-crt",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -755,8 +755,8 @@
           "scene": "effect-directional-blur",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -805,8 +805,8 @@
           "scene": "effect-dither",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -855,8 +855,8 @@
           "scene": "effect-exposure",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -905,8 +905,8 @@
           "scene": "effect-fxaa",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -930,8 +930,8 @@
           "scene": "effect-glitch",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -955,8 +955,8 @@
           "scene": "effect-god-rays",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1005,8 +1005,8 @@
           "scene": "effect-halftone",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1080,8 +1080,8 @@
           "scene": "effect-kuwahara",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1155,8 +1155,8 @@
           "scene": "effect-lensdirt",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1180,8 +1180,8 @@
           "scene": "effect-lift-gamma-gain",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1205,8 +1205,8 @@
           "scene": "effect-lut-grade",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1255,8 +1255,8 @@
           "scene": "effect-msaa",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1305,8 +1305,8 @@
           "scene": "effect-outline",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1380,8 +1380,8 @@
           "scene": "effect-radial-blur",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1430,8 +1430,8 @@
           "scene": "effect-screen-space-fog",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1480,8 +1480,8 @@
           "scene": "effect-sharpen",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1505,8 +1505,8 @@
           "scene": "effect-sketch",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1530,8 +1530,8 @@
           "scene": "effect-smaa",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1555,8 +1555,8 @@
           "scene": "effect-ssao",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1580,8 +1580,8 @@
           "scene": "effect-ssr",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1605,8 +1605,8 @@
           "scene": "effect-taa",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1655,8 +1655,8 @@
           "scene": "effect-tone-map",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
@@ -1705,8 +1705,8 @@
           "scene": "effect-white-balance",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
