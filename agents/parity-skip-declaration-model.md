@@ -107,6 +107,38 @@ it is genuinely wanted, declare it as an explicit group.
 Only one group is declared today (`visual`, which has a reference), so **the all-pairs branch's only
 live use in Flight is the accidental one.**
 
+### Why option 1 cannot redden the gate, on the guard's own definition
+
+The repo already has a guard that fires on *removed* comparisons —
+`isCaptureParityCoverageFailure`, which the `FLIGHT_VISUAL_PARITY_GROUPS` comment cites. If it were
+per-scene, taking the last pair off five scenes would turn it red and option 1's deciding property
+would be false. **It is run-level:** `:438` is `parityComparisons === 0 && parityUncovered > 0`, fed
+at `:1026` by `parityPasses + parityFailures` summed across the whole run. Five scenes dropping to
+zero cannot zero a run-wide total while any other scene compares.
+
+**And the five do not go quiet.** `:738` — a gated entry with zero pairs increments
+`parityUncovered` *and* pushes a per-entry check with `status: 'skipped'` and an
+`explainCaptureParityUncovered` message. Each of the five reports itself **by name, with a reason**;
+the run-level count surfaces at `:1044` as a `warn`.
+
+So option 1 does not trade *compares the wrong thing, reports green* for *compares nothing, reports
+green*. It trades it for **compares nothing and says so, five times, by name** — the thesis of this
+document satisfied by machinery that already exists. Nothing new is added; an existing signal is let
+fire where control flow currently routes around it.
+
+**Why the existing guard misses the fallback today.** With a canvas skip, `present` still holds
+webgl and webgpu, so `pairs.length` is not zero and the uncovered accounting at `:738` never runs.
+The guard asks *did we compare anything?* — not *did we compare what was declared?* **A coverage
+guard that counts comparisons is blind to a substitution.** The comment above that accounting was
+written against "the entry reports success having checked nothing"; the fallback is its sibling,
+*reports success having checked something nobody asked for*, and it slips past the guard written for
+its twin purely because the count is non-zero.
+
+**Operational consequence, to be stated in advance so it is not misread as a regression:** the
+parity-uncovered count goes from 0 to 5 the moment option 1 lands, as a warn. **That is the defect
+becoming visible, not a new defect.** A builder who sees the number rise and "fixes" it by restoring
+the fallback puts us back where we started.
+
 ## What is already known, so it is not re-measured
 
 Mean absolute per-byte difference over the committed 16×16 fingerprints, canvas vs webgl. **This is
