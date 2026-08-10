@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import type { SizeResult } from './size-runner';
-import { collectSizeCases, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner';
+import { collectSizeCases, didSizeChecksPass, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +47,7 @@ const { results, pendingBaseline } = await runSizeChecks({
   onResult: (result) => printProgress?.(result),
   renderFilters: options.renderFilters,
 });
+const passed = didSizeChecksPass(results);
 const flightDiagnosticsDelta = getFlightDiagnosticsSizeDelta(results);
 
 if (updateBaseline) {
@@ -56,26 +57,22 @@ if (updateBaseline) {
 
 if (outputPath) {
   const path = resolve(process.cwd(), outputPath);
-  const json = JSON.stringify(
-    { passed: results.every((r) => r.passed), cases: results, flightDiagnosticsDelta },
-    null,
-    2,
-  );
+  const json = JSON.stringify({ passed, cases: results, flightDiagnosticsDelta }, null, 2);
   await import('fs').then(({ writeFileSync }) => writeFileSync(path, json + '\n'));
   console.log(`SIZE_REPORT_PATH:${path}`);
-  process.exit(results.every((r) => r.passed) ? 0 : 1);
+  process.exit(passed ? 0 : 1);
 }
 
 if (report === 'json') {
-  console.log(JSON.stringify({ passed: results.every((r) => r.passed), cases: results, flightDiagnosticsDelta }));
-  process.exit(results.every((r) => r.passed) ? 0 : 1);
+  console.log(JSON.stringify({ passed, cases: results, flightDiagnosticsDelta }));
+  process.exit(passed ? 0 : 1);
 }
 
 if (flightDiagnosticsDelta !== null) {
   console.log(`Flight diagnostics delta: +${(flightDiagnosticsDelta / 1024).toFixed(2)} KB gzip\n`);
 }
 
-process.exit(results.every((r) => r.passed) ? 0 : 1);
+process.exit(passed ? 0 : 1);
 
 function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
@@ -173,7 +170,9 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
       const baselineOrigin = r.baselineCommit
         ? ` @${r.baselineCommit.slice(0, 10)}${r.baselineCommitDate ? ` (${r.baselineCommitDate})` : ''}`
         : ' @unknown';
-      const baselineStr = pc.dim((r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : '—').padEnd(w.base));
+      const baselineStr = pc.dim(
+        (r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : 'no baseline').padEnd(w.base),
+      );
       const flag = r.passed ? '' : '  ' + pc.red('✗');
 
       const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;

@@ -1,6 +1,22 @@
 import { describe, expect, test } from 'vitest';
 
-import { parseSizeBaselineOrigins } from './size-runner';
+import { didSizeChecksPass, formatSizeResult, parseSizeBaselineOrigins } from './size-runner';
+
+describe('formatSizeResult', () => {
+  test('fails a bundle of any size when no baseline exists', () => {
+    expect(formatSizeResult(999_999, null)).toMatchObject({
+      baselineKB: null,
+      baselineKBStr: null,
+      delta: null,
+      passed: false,
+      threshold: null,
+    });
+  });
+
+  test('fails when no size cases were checked', () => {
+    expect(didSizeChecksPass([])).toBe(false);
+  });
+});
 
 describe('parseSizeBaselineOrigins', () => {
   test('attributes every baseline key to its last committed line change', () => {
