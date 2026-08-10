@@ -51,6 +51,31 @@ holes, so the totals are approximate and **not a safe migration census** — see
 
 Three quarters of the surface is naming.
 
+### Stage 1 syntax inventory result
+
+The scoped source recorder now inventories 300 exported registrars as 228 concrete mapping rows across
+196 registrars, 55 caller-supplied mechanisms, and 49 `UNCATALOGUED` registrars. Mechanisms are explicit
+rather than silently removed from the denominator: 51 receive a direct key and 4 loop over a
+caller-supplied collection. The unreadable remainder is 12 inline implementation expressions, 3
+caller-independent hidden arrays, and 34 functions that are not kind registrations. Named-factory call
+results, unresolved identifier/member kinds, and unexplained non-bare callees are all zero. The complete
+rows, rather than these summary numbers, are the authoritative artifact emitted by
+`npm run reachability:json` as `registrarOwnership`. They are authoritative only for this syntax
+inventory: one loop body is one row even when it emits many runtime pairs, so these counts do not prove
+runtime provenance or derivation survival.
+
+The full pass over the former 50 non-bare-callee rows found 50 generic doors whose key is derived from
+their own parameter and zero delegating registrars that write a table directly. That preserves the
+claim that aggregate ownership can be confined to doors; it is not an extrapolation from the two sampled
+render doors.
+
+The separate production call-site query found 257 calls to those 50 doors: 254 inside `register*`
+bodies and 3 outside. `copyRenderersFromRenderState` replays renderer entries while deriving a target
+state, so it is setup-time copying. `createExternalGlTexture` and `createExternalWgpuTexture` each install
+their external-texture resolver on demand and may run after state setup. Those two are real
+post-build-capable registry mutations in the current API; a build-once/frozen design must relocate or
+otherwise account for them rather than treating the non-registrar query as empty.
+
 **Registries have no home, so they are copied.** `copyGlRenderStateRegistrations` assigns 14 fields then
 delegates to `copyRenderStateRegistrations` for 3 more; `copyAllRenderersFromRenderState` is a *separate*
 call the caller must also remember. `3f281bf4e` ("carry the shape-command registry onto a derived render
