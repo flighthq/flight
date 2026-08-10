@@ -7,6 +7,7 @@ import {
   buildGroups,
   classifyBackendSupport,
   findFunctionalBackendSupport,
+  findOrphanedBaselineFingerprints,
   loadRealizationCoverage,
   renderJson,
   renderMarkdown,
@@ -70,6 +71,55 @@ describe('findFunctionalBackendSupport', () => {
 
   it('returns null when a scene needs no exception', () => {
     expect(findFunctionalBackendSupport('export const width = 800;\n')).toBeNull();
+  });
+});
+
+describe('findOrphanedBaselineFingerprints', () => {
+  const bk = (...keys: string[]) => new Set(keys as FunctionalBackend[]);
+
+  it('reports a fingerprint whose scene has no target for that backend', () => {
+    // The canvas column was dropped from the scene but its capture stayed behind. The matrix would
+    // otherwise render a mark for it, which is a support claim manufactured out of a leftover.
+    const orphans = findOrphanedBaselineFingerprints(
+      new Map([['effect-x', bk('canvas', 'webgl')]]),
+      new Map([['effect-x', bk('webgl')]]),
+    );
+
+    expect(orphans).toEqual([{ scene: 'effect-x', backend: 'canvas' }]);
+  });
+
+  it('reports every backend of a baseline whose scene does not exist at all', () => {
+    // The rename case: a whole baseline file left behind under a name no scene answers to.
+    const orphans = findOrphanedBaselineFingerprints(
+      new Map([['old-name', bk('webgl', 'webgpu')]]),
+      new Map([['new-name', bk('webgl', 'webgpu')]]),
+    );
+
+    expect(orphans).toEqual([
+      { scene: 'old-name', backend: 'webgl' },
+      { scene: 'old-name', backend: 'webgpu' },
+    ]);
+  });
+
+  it('does NOT report a declared control, which is a scene that renders', () => {
+    // A control has a target — it just does not realize the feature. It is evidence about a real
+    // render, so it keeps its mark; only evidence with no referent at all is an orphan.
+    const orphans = findOrphanedBaselineFingerprints(
+      new Map([['effect-y', bk('canvas', 'webgl')]]),
+      new Map([['effect-y', bk('canvas', 'webgl')]]),
+    );
+
+    expect(orphans).toEqual([]);
+  });
+
+  it('does not invent an orphan for a target that has no fingerprint yet', () => {
+    // The opposite direction is not this gate's business: an unbaselined target makes no claim.
+    const orphans = findOrphanedBaselineFingerprints(
+      new Map([['effect-z', bk('webgl')]]),
+      new Map([['effect-z', bk('webgl', 'webgpu')]]),
+    );
+
+    expect(orphans).toEqual([]);
   });
 });
 
