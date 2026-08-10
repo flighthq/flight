@@ -7,7 +7,8 @@ import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry'
 // PBR/unlit set so an app that never uses the shaded base pays nothing for it.
 //
 // Registration is a prerequisite for revealScene3DResourcesOnResolve, which needs texture→owning-node
-// and has no other way to get it; without the lister a ShadedMaterial node is simply never faded in.
+// and has no other way to get it; without the lister, reveal-on-resolve skips ShadedMaterial nodes and
+// leaves their alpha unchanged.
 //
 // The requirement-set successor is documented in agents/registration-lifecycle.md; see its status header
 // for the program authorization this registration builds under.

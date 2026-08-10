@@ -37,9 +37,10 @@ function getRenderRegistryMissMessage(state: RenderState, registry: RenderRegist
       return 'computeRenderEffectPadding: effect kind has no registered padding resolver — call registerRenderEffectPaddingResolver(state, kind, resolver)';
     // Reported by the resource layer, not the frame path: a material kind with no lister has its
     // texture slots invisible to anything that walks materials. Discovery no longer depends on this
-    // (it reads the resource back-edge), so the surviving cost is a mesh whose reveal never fires.
+    // (it reads the resource back-edge), so reveal-on-resolve skips that material and leaves its mesh's
+    // alpha unchanged while the textures resolve normally.
     case RenderRegistry.MaterialTextureLister:
-      return 'a material kind in this scene has no registered texture lister, so a mesh waiting on its maps never reveals — call registerScene3DMaterialTextures(registry, kind, lister), or the named door for that family';
+      return 'a material kind in this scene has no registered texture lister, so reveal-on-resolve skips that material while its textures still resolve — call registerScene3DMaterialTextures(registry, kind, lister), or the named door for that family';
     // Reported only by the GPU backends, where an unresolved material means the node does not draw at
     // all. The Canvas renderer treats a missing material renderer as "draw normally", so the same
     // absence there is the ordinary case rather than a defect.

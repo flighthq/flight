@@ -44,7 +44,7 @@ describe('explainScene3DResourceCoverage', () => {
   });
 
   it('reports ShadedMaterial against the built-in assembly, which does not wire its lister', () => {
-    // The gap this query exists to surface: shading ships registerShadedScene3DMaterialTextures, but
+    // The opt-in boundary this query makes explicit: shading ships registerShadedScene3DMaterialTextures, but
     // createBuiltInScene3DResourceResolver covers only the surface-PBR families, so an AWD2 document
     // loaded through the built-in assembly has no lister for its materials.
     expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createShadedMaterial()))).toContainEqual({

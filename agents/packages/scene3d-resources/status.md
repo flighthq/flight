@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene3d-resources'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-10
+by: builder3
 ---
 
 # scene3d-resources — Status
@@ -24,17 +24,19 @@ is a claim about this tree, not about a session.
 - **Phase 2 progressive resolution is absent.** Nothing in `src/` mentions mip levels, a low-res
   placeholder, or a cross-fade between two resolutions. `revealScene3DResourcesOnResolve.ts:34` is the
   pop-vs-fade recipe over `node.alpha` only — one transition, from hidden to final.
-- **An unlisted material kind makes the reveal recipe wait forever.** The texture registry has no
-  default lister, so a kind nobody registered contributes nothing rather than something approximate;
-  its meshes then wait on a resolution event that never names them
-  (`explainScene3DResourceCoverage.ts:14-18`). Image *fetching* is unaffected —
-  `getScene3DResourceTextures` reads the resource back-edge and is registry-free. Call
-  `explainScene3DResourceCoverage` after parsing and before loading, while the answer is actionable.
+- **An unlisted material kind makes reveal-on-resolve skip that material.** The texture registry has
+  no default lister, so the recipe cannot associate its textures with their owning meshes; it leaves
+  those meshes' alpha unchanged and installs no fade (`revealScene3DResourcesOnResolve.ts:93-117`).
+  Image fetching is unaffected — `getScene3DResourceTextures` reads the resource back-edge without the
+  registry, so the textures resolve normally. Call `explainScene3DResourceCoverage` after parsing and
+  before loading, while the opt-in boundary is actionable.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-10** — Corrected the unlisted-material outcome against the reveal implementation: texture
+  acquisition remains registry-free, while reveal-on-resolve skips the material and leaves mesh alpha unchanged.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract, and given the front matter it was missing
   entirely. Three claims checked **false** and dropped. The largest: the 2026-07-31 entry's tiering
   proposal, explicitly "not implemented", **is implemented** — the root `vitest.config.ts` now runs a

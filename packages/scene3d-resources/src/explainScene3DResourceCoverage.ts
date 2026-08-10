@@ -12,10 +12,10 @@ import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry'
 // Ask it after parsing and before loading, while the answer is still actionable.
 //
 // A gap here is always Missing, never Fallback: the registry has no default lister, so an unlisted kind
-// contributes nothing rather than something approximate. Note this no longer affects which images get
-// fetched — getScene3DResourceTextures reads the resource back-edge and is registry-free — so the cost
-// of a gap is confined to consumers that need mesh→texture ownership, chiefly the reveal-on-resolve
-// recipe, whose meshes would wait for an event that never names them.
+// contributes nothing rather than something approximate. Image acquisition is unaffected because
+// getScene3DResourceTextures reads the resource back-edge without consulting this registry. Consumers
+// that need mesh→texture ownership cannot act on the unlisted family: reveal-on-resolve skips it, leaving
+// the mesh's alpha unchanged while its textures resolve normally.
 export function explainScene3DResourceCoverage(
   out: SceneCoverageEntry[],
   resolver: Readonly<Scene3DResourceResolver>,
