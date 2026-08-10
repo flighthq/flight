@@ -305,37 +305,6 @@
       ]
     },
     {
-      "key": "clip",
-      "label": "Clipping",
-      "scenes": [
-        {
-          "scene": "clip-contour-hdr",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            },
-            "webgpu": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            }
-          }
-        }
-      ]
-    },
-    {
       "key": "color",
       "label": "Color / Adjustments",
       "scenes": [
