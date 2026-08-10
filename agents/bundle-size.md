@@ -5,7 +5,8 @@ This SDK should behave like a hardware store: a user can import one small tool w
 ## `size` reports; it does not gate — deliberately
 
 **`npm run size` is not wired into `npm run check`, and that is the design, not an oversight.** A gate
-that goes red on intentional growth pushes an agent to run `npm run size:baseline` to clear it — and
+that goes red on intentional growth pushes an agent toward `npm run size:baseline` to clear it — which
+an agent may not do in any case, see [below](#do-not-rewrite-the-baseline) — and
 that rewrite re-pins to the new measurement unconditionally, at any magnitude, granting a fresh
 allowance above the higher floor. **Gating would manufacture the laundering it was meant to prevent.**
 The invariant above is enforced by a person reading the report, not by a failing exit code.
