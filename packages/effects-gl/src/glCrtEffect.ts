@@ -61,7 +61,9 @@ void main() {
   float b = texture(u_texture0, uv - off).b;
   float a = texture(u_texture0, uv).a;
   vec3 col = vec3(r, g, b);
-  float line = sin(uv.y * u_resolution.y * 3.14159265) * 0.5 + 0.5;
+  // Scanlines are counted DOWN the image so a given line falls on the same row on either backend; a
+  // render target is bottom-left, so the row is measured from the far edge first.
+  float line = sin((1.0 - uv.y) * u_resolution.y * 3.14159265) * 0.5 + 0.5;
   col *= 1.0 - u_scanlineIntensity * (1.0 - line);
   vec2 vc = uv * 2.0 - 1.0;
   col *= 1.0 - u_vignette * dot(vc, vc);

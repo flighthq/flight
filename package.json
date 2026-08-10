@@ -123,6 +123,7 @@
     "release": "tsx ./scripts/publish-packages.ts",
     "review:snapshot": "tsx ./scripts/review-snapshot.ts",
     "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,static.crates.io,crates.io",
+    "shader-vertical-origin": "tsx ./scripts/shader-vertical-origin.ts",
     "size": "tsx ./scripts/size.ts",
     "size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/size.ts",
     "size:json": "tsx ./scripts/size.ts report=json",
