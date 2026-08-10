@@ -546,6 +546,10 @@ export async function runCaptureBenchmark(options: Readonly<CaptureBenchmarkOpti
   const passed = targets.filter((target) => target.status === 'passed').length;
   const skipped = targets.filter((target) => target.status === 'skipped').length;
   const updated = targets.filter((target) => target.status === 'updated').length;
+  const unconfigured =
+    targets.length > 0 &&
+    targets.every((target) => target.status === 'skipped' && target.error === 'no benchmark baseline');
+  if (unconfigured) console.log(pc.red('✗ benchmark gate unconfigured: no benchmark baseline evidence'));
   const reportPath =
     options.reportPath === false
       ? null
@@ -561,7 +565,7 @@ export async function runCaptureBenchmark(options: Readonly<CaptureBenchmarkOpti
     passed,
     skipped,
     updated,
-    shouldFail: failed > 0,
+    shouldFail: failed > 0 || unconfigured,
     targets,
     reportPath,
   };
