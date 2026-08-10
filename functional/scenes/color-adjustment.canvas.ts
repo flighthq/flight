@@ -21,6 +21,8 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
+export const functionalBackendSupport = 'control' as const;
+
 const WIDTH = 800;
 const HEIGHT = 600;
 const REGION = 160;

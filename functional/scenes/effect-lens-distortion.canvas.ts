@@ -24,6 +24,8 @@ import {
 
 // Canvas has no realized lens-distortion capability. The unregistered operation is intentionally
 // skipped so this column records the backend's unsupported result without a fake passthrough runner.
+export const functionalBackendSupport = 'control' as const;
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

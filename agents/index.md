@@ -99,8 +99,9 @@ which is why they are not in the map.
 
 ## Generated views — do not edit, and do not commit what is ignored
 
-- [support matrix](support-matrix.md) — what renders on which backend, generated from
-  `functional/baselines/` ground truth by `npm run support`. Gated by `support:check`.
+- [support matrix](support-matrix.md) — realized, captured-control, and unbaselined backend cells,
+  generated from functional scene discovery plus committed fingerprints by `npm run support`. Gated by
+  `support:check`.
 - `packages/TODO.md` — the work index, weakest first. **Gitignored**: run
   `node agents/packages/todo.mjs` to write it, then read only the named cell. It is a pure view over the
   cells, so generate it rather than merging it.
