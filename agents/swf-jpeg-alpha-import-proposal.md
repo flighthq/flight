@@ -275,6 +275,35 @@ symbols share the resolved source correctly.
 - **No claim from presence alone.** Bounds, a non-null source, or a changed pixel count cannot prove the
   alpha plane was aligned and composed correctly; acceptance needs exact RGBA and functional pixels.
 
+## Ruling, 2026-08-10 — the route is chosen
+
+Recorded here rather than only in a parcel, because a reader opening this file was until now getting
+the pre-ruling state. The analysis below is unchanged and still the reasoning; this section states
+what was decided against it.
+
+**Route: Option A.** Option C is out — no observable completion/cancellation door, two load passes,
+and it invites the bind-then-silently-replace failure this document already declines. Option B is out
+as the carrier: a ready-`Bitmap` member alone does not solve JPEG alpha, since the colour bytes still
+need an asynchronous decoder, so B is B *plus* a SWF load step — C's hazards plus an unsettled member
+on a shared type.
+
+**Amended on implementer evidence:** one *Bitmap-producing result contract*, **two distinct
+producers** — not one uniform acquisition seam. Lossless is synchronous over its own payload;
+JPEG-alpha is async-after-decode *and* needs the report-owned record for dimension validation, alpha
+and deblocking. Forcing both through one acquisition path would grow a branch, which is the
+decomposition smell. SWF lossless does **not** enter the MIME decoder registry — `DefineBitsLossless`
+has no container and no MIME type, and registering it would mean inventing one.
+
+**Stage A and Stage B are authorized. Stage C is denied**, pending the targeted revision-pinned
+counter this document specifies. Do not build toward C inside A or B — no half-wired loader, no
+dormant binding.
+
+**The 1,864-byte before-number below is stale, not false.** It reproduces exactly at the commit that
+introduced it and has since drifted; the fixture measures ~1,723 today, and 111 of the 139 rows in
+that baseline file differ from their pins by more than 0.1%. **Whoever scopes Stage C must take a
+fresh parent-versus-commit measurement rather than use the pin** — the size gate's band is one-sided
+and cannot detect a stale baseline in either direction that matters.
+
 ## Decision boundary
 
 The committed corpus evidence is sufficient to draft and review this contract, not to choose it. Stage A
