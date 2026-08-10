@@ -89,6 +89,37 @@ describe('createImageResourceFailure', () => {
   });
 });
 
+describe('disableImageBitmapComposition', () => {
+  it('restores the ordinary decoder path for a reference that carries composition data', async () => {
+    const composer = vi.fn().mockReturnValue(createTestBitmap('straight'));
+    registerImageBitmapComposer('acme/alpha-plane', composer);
+    enableImageBitmapComposition();
+    disableImageBitmapComposition();
+    const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
+    ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
+
+    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+
+    expect(composer).not.toHaveBeenCalled();
+    expect(decoder).toHaveBeenCalledWith(ref.bytes);
+    expect(source?.kind).toBe(BitmapTextureSourceKind);
+  });
+});
+
+describe('enableImageBitmapComposition', () => {
+  it('installs the registered decoded-pixel composition route', async () => {
+    const bitmap = createTestBitmap('straight');
+    const composer = vi.fn().mockReturnValue(bitmap);
+    registerImageBitmapComposer('acme/alpha-plane', composer);
+    enableImageBitmapComposition();
+    const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
+    ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
+
+    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBe(bitmap);
+    expect(composer).toHaveBeenCalledOnce();
+  });
+});
+
 describe('explainImageResourceReferenceResolution', () => {
   it('detaches the failure so a caller cannot mutate the reference', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array(1));
