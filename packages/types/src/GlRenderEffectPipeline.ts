@@ -55,6 +55,18 @@ export interface GlRenderEffectApplicationExplanation {
   readonly unregisteredKinds: readonly string[];
 }
 
+/**
+ * Called when a custom shader source is re-registered under a shaderKey that already carries a
+ * DIFFERENT source. The compiled program is cached by key, so the new source never reaches the GPU —
+ * the guard exists because that outcome is otherwise indistinguishable from the edit having worked.
+ */
+export type GlCustomShaderSourceGuard = (
+  state: GlRenderState,
+  shaderKey: string,
+  previousSource: string,
+  nextSource: string,
+) => void;
+
 export type GlRenderEffectApplicationGuard = (
   state: GlRenderState,
   explanation: Readonly<GlRenderEffectApplicationExplanation>,

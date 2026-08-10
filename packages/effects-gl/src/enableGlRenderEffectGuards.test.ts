@@ -12,6 +12,7 @@ import {
   disableGlRenderEffectGuards,
   enableGlRenderEffectGuards,
 } from './enableGlRenderEffectGuards';
+import { registerGlCustomShaderSource } from './glCustomShaderEffect';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { applyGlRenderEffectsToRenderTexture } from './glRenderTextureEffect';
 
@@ -91,6 +92,30 @@ describe('enableGlRenderEffectGuards', () => {
     expect(entries.length).toBe(1);
     expect(messageOf(entries[0])).toContain('STALE DESTINATION');
     expect(messageOf(entries[0])).toContain('handle the false return');
+  });
+
+  it('WARNS that re-registered shader source will NOT run, because the program is cached by key', () => {
+    const state = createState();
+    enableGlRenderEffectGuards(state);
+
+    const entries = captureLog(() => {
+      registerGlCustomShaderSource(state, 'test.reregistered-a', 'void main() { o_color = vec4(1.0); }');
+      // Nothing fails and nothing throws — the edit simply never reaches the GPU.
+      registerGlCustomShaderSource(state, 'test.reregistered-a', 'void main() { o_color = vec4(0.0); }');
+    });
+
+    expect(entries.length).toBe(1);
+    expect(messageOf(entries[0])).toContain('will NOT run');
+    expect(messageOf(entries[0])).toContain('test.reregistered-a');
+
+    // Negative control for the guard itself: with the guard OFF the same sequence says nothing, so the
+    // assertion above is measuring the guard rather than some other source of log traffic.
+    disableGlRenderEffectGuards(state);
+    const afterDisable = captureLog(() => {
+      registerGlCustomShaderSource(state, 'test.reregistered-b', 'void main() { o_color = vec4(1.0); }');
+      registerGlCustomShaderSource(state, 'test.reregistered-b', 'void main() { o_color = vec4(0.0); }');
+    });
+    expect(afterDisable.length).toBe(0);
   });
 
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', () => {

@@ -1,5 +1,11 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { CustomShaderEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  CustomShaderEffect,
+  GlCustomShaderSourceGuard,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -87,8 +93,25 @@ export function registerGlCustomShaderSource(state: GlRenderState, shaderKey: st
     registry = new Map();
     _customShaders.set(state, registry);
   }
+  // The seam, not a message: core carries no warning strings, and an unguarded state pays one map
+  // read. Fires only when the key already holds DIFFERENT source, since re-registering identical
+  // source is a no-op the caller cannot be harmed by and warning on it would train readers to ignore
+  // the crumb.
+  const previousSource = registry.get(shaderKey);
+  if (previousSource !== undefined && previousSource !== fragmentSource) {
+    _sourceGuards.get(state)?.(state, shaderKey, previousSource, fragmentSource);
+  }
   registry.set(shaderKey, fragmentSource);
 }
+
+// Installs (or clears) the re-registration guard for this state. Separate from registration itself so
+// an app that never imports the guard module carries no logging dependency and no warning strings.
+export function setGlCustomShaderSourceGuard(state: GlRenderState, guard: GlCustomShaderSourceGuard | null): void {
+  if (guard === null) _sourceGuards.delete(state);
+  else _sourceGuards.set(state, guard);
+}
+
+const _sourceGuards = new WeakMap<GlRenderState, GlCustomShaderSourceGuard>();
 
 const NO_UNIFORMS = () => {};
 
