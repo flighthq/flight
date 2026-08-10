@@ -31,8 +31,13 @@ export function uploadGlSkinPaletteTexture(
   palette: GlSkinPaletteTexture,
   jointMatrices: Readonly<Float32Array>,
   jointCount: number,
+  texelsPerJoint = 4,
 ): void {
-  const width = jointCount * 4;
+  // Four texels per joint for the 4x4 pose palette, three for the 3x3 normal palette. Parameterized
+  // rather than duplicated so both palettes share one upload path and cannot drift in how they grow,
+  // filter or clamp — a normal palette that wrapped or filtered would corrupt lighting exactly as a
+  // pose palette would, and the reasons not to are identical.
+  const width = jointCount * texelsPerJoint;
   gl.bindTexture(gl.TEXTURE_2D, palette.texture);
 
   // The palette must not be filtered or wrapped: texelFetch reads an exact texel, and NEAREST +
