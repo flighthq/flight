@@ -42,6 +42,7 @@ import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js
 import type { CaptureParityGroup } from './captureManifest.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
+import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
 import type { Server } from './captureServer.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import type { CaptureFingerprintMap } from './captureSuite.js';
@@ -242,6 +243,7 @@ async function loadFingerprint(
   // collect those too. Without this, a thrown verifier or a renamed/missing export reads as the
   // uninformative "verifier did not run" instead of the actual message.
   let pageError = '';
+  let resourceError = '';
   let page: Page | null = null;
   try {
     // newPage is inside the try: once an interrupt has closed the browser it throws, and that must read
@@ -249,8 +251,9 @@ async function loadFingerprint(
     page = await context.newPage();
     page.on('pageerror', (e) => (pageError ||= e.message));
     page.on('console', (m) => {
-      if (m.type() === 'error') pageError ||= m.text();
+      if (m.type() === 'error') pageError ||= formatCaptureConsoleMessage(m);
     });
+    listenForCaptureResourceFailures(page, (message) => (resourceError ||= message));
     const route = getCaptureEntryRoute(entry, renderer, subject);
     await page.goto(`${baseUrl}/${route}`, {
       waitUntil: 'domcontentloaded',
@@ -296,7 +299,7 @@ async function loadFingerprint(
     // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
     // read it as the most reliable real reason when neither a fingerprint nor a pageerror surfaced.
     const overlay = await page.$eval('#ft-error', (el) => el.textContent ?? '').catch(() => '');
-    const detail = verification?.error || pageError || overlay;
+    const detail = verification?.error || resourceError || pageError || overlay;
     if (BACKEND_UNAVAILABLE.test(detail))
       return { fingerprint: null, reason: `backend unavailable (${detail})`, unavailable: true, aborted: false };
     return {

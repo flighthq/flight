@@ -44,6 +44,10 @@ and its inline exported types are a stated exemption from the types-home rule �
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-10** — Capture resource failures now retain their URL across HTTP error responses and
+  transport failures in the capture, observe, and validation paths (`captureResourceFailure.ts`). The
+  Chromium browser contract deliberately exercises 404, 503, and dropped-connection resources and
+  asserts that every resulting resource message names its URL.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract; both carried "watch for" items
   re-verified against source and kept (WebGPU frame-wait exemption, advisory-only freshness). Charter
   Open direction 0 checked out **landed** and is not listed: `baselineStore.ts` and

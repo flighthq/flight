@@ -24,6 +24,7 @@ import { isBrowserClosedError } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
 import { writeCaptureReport } from './captureReport.js';
+import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
 
@@ -323,7 +324,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           t: -1,
           level: type === 'error' ? 'error' : 'warn',
           channel: 'console',
-          data: { msg: text },
+          data: { msg: formatCaptureConsoleMessage(msg) },
         });
       }
     });
@@ -332,15 +333,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       logs.push({ __flight: true, t: -1, level: 'pageerror', data: { msg: err.message } });
     });
 
-    // A failed asset/network request never throws in-page, so it would otherwise be invisible here.
-    page.on('requestfailed', (req) => {
-      if (isCaptureTransportNoise(req.url())) return;
+    // HTTP error responses complete successfully at the transport layer, while connection failures do
+    // not produce a response. Observe both so every failed resource retains the URL needed to remedy it.
+    listenForCaptureResourceFailures(page, (message) => {
       logs.push({
         __flight: true,
         t: -1,
         level: 'error',
         channel: 'network',
-        data: { msg: `request failed: ${req.url()} (${req.failure()?.errorText ?? 'unknown'})` },
+        data: { msg: message },
       });
     });
 
@@ -809,10 +810,6 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
     .catch(() => null);
 }
 
-function isCaptureTransportNoise(url: string): boolean {
-  return url.startsWith('ws://') || url.startsWith('wss://');
-}
-
 // Flattens entries × renderers into a shared job queue and processes them with workerCount
 // concurrent Playwright pages on the same browser context. Each worker pulls one (entry, renderer)
 // pair at a time, runs the full captureEntry pipeline on it, and returns it to the queue for the
@@ -983,18 +980,17 @@ async function captureUrlAttempt(
         t: -1,
         level: type === 'error' ? 'error' : 'warn',
         channel: 'console',
-        data: { msg: msg.text() },
+        data: { msg: formatCaptureConsoleMessage(msg) },
       });
     }
   });
-  page.on('requestfailed', (req) => {
-    if (isCaptureTransportNoise(req.url())) return;
+  listenForCaptureResourceFailures(page, (message) => {
     logs.push({
       __flight: true,
       t: -1,
       level: 'error',
       channel: 'network',
-      data: { msg: `request failed: ${req.url()} (${req.failure()?.errorText ?? 'unknown'})` },
+      data: { msg: message },
     });
   });
   try {

@@ -28,6 +28,9 @@ const pages: Record<string, string> = {
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
     const ctx=document.querySelector('canvas').getContext('2d'); ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(40,30,240,120);
   </script>`,
+  '/failed-resources': `<!doctype html><script src="/missing-resource.js"></script><script src="/server-error-resource.js"></script><script src="/transport-failure-resource.js"></script><canvas width="320" height="180"></canvas><script>
+    const ctx=document.querySelector('canvas').getContext('2d'); ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(40,30,240,120);
+  </script>`,
   '/loop': `<!doctype html><canvas width="320" height="180"></canvas><script>
     const canvas=document.querySelector('canvas'); const ctx=canvas.getContext('2d'); let frame=0;
     function draw() { frame++; ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(frame,30,240,120); requestAnimationFrame(draw); }
@@ -42,6 +45,20 @@ describe('capture eyes browser contract', () => {
   const artifactRoot = mkdtempSync(join(tmpdir(), 'tool-capture-eyes-'));
   let flakyRequests = 0;
   const server = createServer((request, response) => {
+    if (request.url === '/missing-resource.js') {
+      response.statusCode = 404;
+      response.end('missing');
+      return;
+    }
+    if (request.url === '/server-error-resource.js') {
+      response.statusCode = 503;
+      response.end('unavailable');
+      return;
+    }
+    if (request.url === '/transport-failure-resource.js') {
+      request.socket.destroy();
+      return;
+    }
     if (request.url === '/flaky' && flakyRequests++ === 0) {
       request.socket.destroy();
       return;
@@ -123,4 +140,30 @@ describe('capture eyes browser contract', () => {
       await session.browser.close();
     }
   }, 20_000);
+
+  it('names every failed resource URL across HTTP and transport failures', async () => {
+    const outDir = join(artifactRoot, 'failed-resources');
+    const diagnostics = await captureUrl(`${baseUrl}/failed-resources`, { outDir, maxRetries: 0 });
+    expect(diagnostics).toMatchObject({ blank: false, usable: true });
+
+    const logs = readFileSync(join(outDir, 'logs.jsonl'), 'utf8')
+      .split('\n')
+      .filter((line) => line !== '')
+      .map((line) => JSON.parse(line) as { channel?: string; data?: { msg?: string } });
+    const networkMessages = logs.filter((entry) => entry.channel === 'network').map((entry) => entry.data?.msg ?? '');
+    expect(networkMessages).toHaveLength(3);
+    expect(networkMessages).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(new RegExp(`${baseUrl}/missing-resource\\.js \\(HTTP 404`)),
+        expect.stringMatching(new RegExp(`${baseUrl}/server-error-resource\\.js \\(HTTP 503`)),
+        expect.stringMatching(new RegExp(`${baseUrl}/transport-failure-resource\\.js \\(net::ERR_`)),
+      ]),
+    );
+
+    const browserResourceMessages = logs
+      .map((entry) => entry.data?.msg ?? '')
+      .filter((message) => message.startsWith('Failed to load resource:'));
+    expect(browserResourceMessages.length).toBeGreaterThan(0);
+    expect(browserResourceMessages.every((message) => message.includes(`${baseUrl}/`))).toBe(true);
+  }, 15_000);
 });
