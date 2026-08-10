@@ -26,4 +26,15 @@ describe('getFlightCaptureValidationPreset', () => {
     expect(getFlightCaptureValidationPreset('examples').fingerprintSkip).toEqual(['playingsound']);
     expect(getFlightCaptureValidationPreset('custom').fingerprintSkip).toEqual([]);
   });
+
+  it('keeps only the parity exceptions backed by current renderer behavior', () => {
+    expect(getFlightCaptureValidationPreset('functional').paritySkip).toEqual({
+      'effect-lens-distortion': ['canvas'],
+      'effect-lens-flare': ['canvas'],
+      'effect-posterize': ['canvas'],
+      'effect-vignette': ['canvas'],
+      'effect-displacement': 'all',
+      'effect-god-rays': 'all',
+    });
+  });
 });
