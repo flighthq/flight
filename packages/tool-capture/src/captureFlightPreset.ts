@@ -39,6 +39,8 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // Canvas likewise has no lens-flare runner and intentionally records an unmodified control scene.
   // The realized WebGL and WebGPU flare recipes remain the meaningful comparison.
   'effect-lens-flare': ['canvas'],
+  // Canvas has no posterize runner; its scene is an explicit unsupported-control column rather than
+  // a realization of the GPU hard-step quantization recipe.
   'effect-posterize': ['canvas'],
   // Canvas ramps its multiply gradient to the frame corner; the GPU smoothstep reaches full darkening
   // at the configured radius. Keep the canvas reference out until those vignette recipes agree.
