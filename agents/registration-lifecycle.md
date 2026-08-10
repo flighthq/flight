@@ -5,6 +5,9 @@ before adding a requirements producer, a registries generator, or a CLI that emi
 Do not build on it as settled: the [names](#names--settled-and-one-root-word) are ruled, but the
 importer-sink decision is provisional at the user's own marking and one question below is open.
 
+**Scoped authorization (2026-08-10): Stage 1 of the registrar ownership-inventory program may build on
+this document; no later stage or other unratified proposal is authorized.**
+
 Third of three documents on registration, and the one that spans the other two:
 
 - [registration model](registration-model.md) — the **doors**. The two public entry points, the

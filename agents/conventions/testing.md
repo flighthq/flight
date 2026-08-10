@@ -19,6 +19,8 @@
 
 `npm run reachability:check` has two intentionally different strengths. Its hard, source-derived half fails when a real built-in effect runner has no matching per-kind registrar, when a registrar has no matching runner, or when a wrapper does not front its named runner. These are judgment-free capability invariants: an unmatched runner is stranded implementation, and an unmatched registrar is a false capability claim.
 
+The same source walk also emits the registrar ownership inventory. It records only a `register*` call whose second argument is a literal kind and whose third argument is an implementation identifier; every exported registrar with no such readable mapping is retained as `UNCATALOGUED`. The inventory is review evidence rather than a capability failure, and its complete rows are available from `npm run reachability:json` as `registrarOwnership`.
+
 Export-lane placement is curated rather than inferred. The same command compares relevant runtime values and backend leaf defaults against `scripts/reachability-baseline.json`, but lane drift is informational and never fails the build. Review each `.`/`./contract` move as a tuning decision; when it is deliberate, run `npm run reachability:baseline` to update the whole-repo baseline. Do not turn current lane placement back into a hard rule.
 
 ## WebGL specifics

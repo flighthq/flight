@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   auditEffectBackend,
+  collectRegistrarOwnership,
   collectReachabilityLanes,
   defaultCompositionSymbols,
   effectReachabilitySymbols,
@@ -18,6 +19,104 @@ afterEach(() => {
 });
 
 describe('source-derived capability reachability', () => {
+  it('records every readable registrar mapping and reports every unreadable registrar', () => {
+    const fixture = entries(
+      `
+      export const defaultGlBlurEffectRunner = () => {};
+      export const defaultGlBloomEffectRunner = () => {};
+      export function registerGlRenderEffect(state: object, kind: string, runner: Function): void {}
+      export function registerGlBlurEffect(state: object): void {
+        registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+      }
+      export function registerGlPair(state: object): void {
+        registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+        registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+      }
+      export function registerGlBundle(state: object): void {
+        registerGlBlurEffect(state);
+      }
+      function registerPrivateHelper(): void {}
+    `,
+      [],
+    );
+
+    expect(collectRegistrarOwnership({ packageName: 'fixture', sourceFiles: fixture.sourceFiles })).toEqual([
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlBlurEffect',
+        status: 'catalogued',
+        door: 'registerGlRenderEffect',
+        kind: 'BlurEffect',
+        implementation: 'defaultGlBlurEffectRunner',
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlBundle',
+        status: 'UNCATALOGUED',
+        door: null,
+        kind: null,
+        implementation: null,
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlPair',
+        status: 'catalogued',
+        door: 'registerGlRenderEffect',
+        kind: 'BloomEffect',
+        implementation: 'defaultGlBloomEffectRunner',
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlPair',
+        status: 'catalogued',
+        door: 'registerGlRenderEffect',
+        kind: 'BlurEffect',
+        implementation: 'defaultGlBlurEffectRunner',
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlRenderEffect',
+        status: 'UNCATALOGUED',
+        door: null,
+        kind: null,
+        implementation: null,
+      },
+    ]);
+  });
+
+  it('does not guess a mapping when the kind or implementation is not a readable literal-identifier pair', () => {
+    const fixture = entries(
+      `
+      export function registerGlComputedKind(state: object): void {
+        registerGlRenderEffect(state, BlurEffectKind, defaultGlBlurEffectRunner);
+      }
+      export function registerGlComputedImplementation(state: object): void {
+        registerGlRenderEffect(state, 'BlurEffect', runners.blur);
+      }
+    `,
+      [],
+    );
+
+    expect(collectRegistrarOwnership({ packageName: 'fixture', sourceFiles: fixture.sourceFiles })).toEqual([
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlComputedImplementation',
+        status: 'UNCATALOGUED',
+        door: null,
+        kind: null,
+        implementation: null,
+      },
+      {
+        packageName: 'fixture',
+        registrar: 'registerGlComputedKind',
+        status: 'UNCATALOGUED',
+        door: null,
+        kind: null,
+        implementation: null,
+      },
+    ]);
+  });
+
   it('accepts a mapped public registrar and public raw runner', () => {
     const fixture = entries(
       `

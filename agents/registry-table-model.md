@@ -5,6 +5,9 @@ here is implemented. Read it before adding a registry or changing how a render s
 not build on it as settled — three blockers below are unresolved, and the first revision of this document
 asserted things that source contradicts.
 
+**Scoped authorization (2026-08-10): Stage 1 of the registrar ownership-inventory program may build on
+this document; no later stage or other unratified proposal is authorized.**
+
 The review recommended **do not ratify as written** and backed it with a throwaway cross-backend Vitest
 probe (written, run, removed; repository left clean). What it changed:
 
