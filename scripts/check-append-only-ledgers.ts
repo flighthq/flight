@@ -41,13 +41,13 @@
 // commit touching a ledger sets `docs == 'true'`, so the run that matters always happens even when
 // `code` is false. Locally `npm run check` is the real one.
 //
-// 3. INTEGRATED HEAD, AND THIS ONE IS STILL OPEN. `selectLedgerBaseline` returns no baseline as soon
-//    as any remote candidate contains HEAD, without falling through to one that is behind. On a PUSH
-//    build the checked-out branch is that candidate, so the run compares nothing AT ANY FETCH DEPTH —
-//    proven with a pair of clones off a source whose develop tip carried a tampered Approved line:
-//    depth-1 and full-history both exited 0 saying so. Fixing the two conditions above makes this
-//    check real on a PR head; a push to develop is still unguarded, which is why CONTRACT.md keeps
-//    its claim soft.
+// 3. INTEGRATED HEAD. `selectLedgerBaseline` used to return no baseline as soon as any remote
+//    candidate contained HEAD, without falling through to one that is behind. On a PUSH build the
+//    checked-out branch IS that candidate, so the run compared nothing AT ANY FETCH DEPTH — proven
+//    with a pair of clones off a source whose develop tip carried a tampered Approved line: depth-1
+//    and full-history both exited 0 saying so. A containing candidate is now skipped rather than
+//    terminal, so the push build resolves the next-nearest baseline and runs for real. Work reaches
+//    develop by push here, not only by PR, so this was the event carrying most of our work.
 //
 // A PASS YOU DID NOT FIRST PROVE COULD FAIL IS NOT EVIDENCE. The colocated tests pin the rules; the
 // end-to-end proof is a ledger-only commit editing one existing Approved line, which must exit 1 with
@@ -241,11 +241,19 @@ export function formatAppendOnlyLedgerReport(report: Readonly<AppendOnlyLedgerRe
  * Treating it as evidence made the check report "already integrated" in every clone, everywhere, which
  * is inertness wearing a reason.
  *
- * ANY OTHER CANDIDATE THAT CONTAINS HEAD SETTLES THE QUESTION — it is not merely unusable as a
- * baseline. It means this tree has been integrated, so there is no work in flight and no baseline to
- * want. Skipping such a candidate and falling through to a more distant one is how the check came to
- * re-judge 366 commits of other people's landed history and report seven long-settled edits at whoever
- * happened to run it.
+ * A CANDIDATE THAT CONTAINS HEAD IS SKIPPED, NOT TERMINAL. Such a candidate is useless AS A BASELINE —
+ * there is nothing between it and HEAD to compare — but "this candidate is useless" and "no candidate
+ * is usable" are different conclusions, and returning the second on evidence for the first is what left
+ * a PUSH build unguarded at any fetch depth: on a push to develop, `origin/develop` IS the checked-out
+ * tip, so the one ref that contained HEAD ended the search while `origin/main` sat behind and would
+ * have given a perfectly good baseline. Only when EVERY candidate contains HEAD is this tree integrated
+ * with no work in flight.
+ *
+ * Falling through can open a WIDE window — 425 commits, on the push build this was fixed for. For an
+ * append-only check that is CONSERVATIVE rather than dangerous: a wider window can only surface more
+ * edited-or-deleted guarded lines, never fewer, and every line it flags is a real violation however far
+ * back the baseline sits. Legitimate appends are free at any width, which is why the widest baseline in
+ * this repo reports 1480 guarded lines across 278 sections and no violation.
  *
  * Otherwise THE NEAREST MERGE-BASE WINS, not the first candidate that resolved. The nearest common
  * ancestor is exactly the newest point HEAD is known to share with an integration branch, so the
@@ -262,19 +270,18 @@ export function selectLedgerBaseline(
 ): Readonly<{ how: string; revision: string | null }> {
   const candidates = allCandidates.filter((candidate) => candidate.name !== currentBranch);
 
-  const integrated = candidates.find((candidate) => candidate.distance === 0);
-  if (integrated !== undefined) {
-    return {
-      how: `${integrated.name} already contains HEAD, so this tree is integrated and there is no work in flight — nothing was checked`,
-      revision: null,
-    };
-  }
-
   let best: Readonly<LedgerBaseCandidate> | null = null;
   for (const candidate of candidates) {
+    if (candidate.distance === 0) continue;
     if (best === null || candidate.distance < best.distance) best = candidate;
   }
   if (best === null) {
+    if (candidates.length > 0) {
+      return {
+        how: `every candidate contains HEAD (${candidates.map((candidate) => candidate.name).join(', ')}), so this tree is integrated and there is no work in flight — nothing was checked`,
+        revision: null,
+      };
+    }
     return {
       how: 'no baseline revision could be resolved (detached head, missing remote, or shallow clone) — nothing was checked',
       revision: null,
