@@ -9,6 +9,7 @@ import type { AddressInfo } from 'node:net';
 import { basename, extname, join, relative } from 'node:path';
 
 import type { Tool } from './captureEntries.js';
+import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
 
 export interface Server {
   url: string;
@@ -16,17 +17,17 @@ export interface Server {
 }
 
 /**
- * Warns when a served build predates the newest source it was built from.
+ * Explains when a served build predates the newest source it was built from.
  *
  * Returns null when the build is at least as new as the source, so a fresh build stays silent.
- * Timestamps are millisecond epochs; a missing one (null) yields no warning, since a comparison that
- * could not be made must not read as a reassurance.
+ * Timestamps are millisecond epochs; a missing one (null) yields no verdict, since a comparison that
+ * could not be made must not read as reassurance.
  */
 export function explainCaptureDistStaleness(builtAt: number | null, sourceChangedAt: number | null): string | null {
   if (builtAt === null || sourceChangedAt === null || builtAt >= sourceChangedAt) return null;
   return (
-    '⚠ Serving a build older than the current source. This capture measures the PREVIOUS code, so a ' +
-    'change under test will look like it had no effect. Re-run with --build (or --dev).'
+    'The static build is older than the current source. This capture measures the PREVIOUS code, so a ' +
+    'change under test will look like it had no effect.'
   );
 }
 
@@ -194,20 +195,69 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
     return Promise.reject(new Error(`No build found at ${distDir} after build. Run "npm run build:${tool}" to debug.`));
   }
 
+  if (tool === 'functional') {
+    const { discovered, missing } = getMissingFunctionalCaptureRoutes(root, distDir);
+    if (missing.length > 0) {
+      return Promise.reject(
+        new Error(
+          `Functional dist is missing ${missing.length} of ${discovered.length} discovered routes, so it cannot serve the current suite. Run "npm run build:functional" and retry. Missing: ${missing.join(', ')}`,
+        ),
+      );
+    }
+  }
+
   // A capture served from a stale dist measures the code as it was BEFORE the edit under test, and
   // answers with the pre-change result — which reads as "the change had no effect" rather than as a
   // failure to observe it. That is the most persuasive wrong answer available, so say it out loud.
   const staleness = explainCaptureDistStaleness(
     newestModifiedTime(distDir),
-    newestModifiedTime(join(root, 'packages')),
+    newestCaptureSourceModifiedTime(tool, root),
   );
-  if (staleness !== null) console.log(staleness);
+  if (staleness !== null) {
+    return Promise.reject(new Error(`${staleness} Run "npm run build:${tool}" and retry.`));
+  }
 
   return serveDirectory(distDir);
 }
 
+function getMissingFunctionalCaptureRoutes(root: string, distDir: string): { discovered: string[]; missing: string[] } {
+  const scenes = discoverFunctionalScene3Ds(join(root, 'functional', 'scenes'));
+  const discovered = scenes.flatMap((scene) => scene.renderers.map((renderer) => `tests/${scene.name}/${renderer}/`));
+  return {
+    discovered,
+    missing: discovered.filter((route) => !existsSync(join(distDir, route, 'index.html'))),
+  };
+}
+
+function newestCaptureSourceModifiedTime(tool: Tool, root: string): number | null {
+  const sources =
+    tool === 'functional'
+      ? [
+          join(root, 'packages'),
+          join(root, 'functional', 'scenes'),
+          join(root, 'tools', 'functional'),
+          join(root, 'tools', 'harness'),
+        ]
+      : tool === 'examples'
+        ? [join(root, 'packages'), join(root, 'examples', 'packages'), join(root, 'examples', 'runners', 'web')]
+        : [];
+  let newest: number | null = null;
+  for (const source of sources) {
+    const time = newestModifiedTime(source);
+    if (time !== null && (newest === null || time > newest)) newest = time;
+  }
+  return newest;
+}
+
 /** Newest modification time under a directory tree, or null when it cannot be read. */
 function newestModifiedTime(directory: string): number | null {
+  try {
+    const stats = statSync(directory);
+    if (!stats.isDirectory()) return stats.mtimeMs;
+  } catch {
+    return null;
+  }
+
   let newest: number | null = null;
   const walk = (current: string, depth: number): void => {
     if (depth > 6) return;
@@ -218,7 +268,13 @@ function newestModifiedTime(directory: string): number | null {
       return;
     }
     for (const entry of entries) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      if (
+        entry.name === 'node_modules' ||
+        entry.name === 'dist' ||
+        entry.name === 'dev-dist' ||
+        entry.name.startsWith('.')
+      )
+        continue;
       const path = join(current, entry.name);
       if (entry.isDirectory()) {
         walk(path, depth + 1);
