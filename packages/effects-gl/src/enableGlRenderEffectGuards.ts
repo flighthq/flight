@@ -2,6 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlRenderEffectApplicationExplanation, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import { setGlCustomShaderSourceGuard } from './glCustomShaderEffect';
 import { setGlRenderEffectApplicationGuard } from './glRenderTextureEffect';
 
 export function areGlRenderEffectGuardsEnabled(state: GlRenderState): boolean {
@@ -10,6 +11,7 @@ export function areGlRenderEffectGuardsEnabled(state: GlRenderState): boolean {
 
 export function disableGlRenderEffectGuards(state: GlRenderState): void {
   setGlRenderEffectApplicationGuard(state, null);
+  setGlCustomShaderSourceGuard(state, null);
   _guardedStates.delete(state);
 }
 
@@ -19,7 +21,31 @@ export function disableGlRenderEffectGuards(state: GlRenderState): void {
 // the effects it could not run. Both are correct by contract and neither surfaces anywhere.
 export function enableGlRenderEffectGuards(state: GlRenderState): void {
   setGlRenderEffectApplicationGuard(state, warnGlRenderEffectApplication);
+  setGlCustomShaderSourceGuard(state, warnGlCustomShaderSourceReregistered);
   _guardedStates.add(state);
+}
+
+// Re-registering different source under a live shaderKey leaves the ALREADY-COMPILED program running,
+// because the program cache is keyed by shaderKey rather than by source. Nothing fails: the effect
+// still draws, using the old shader, so an author editing their shader sees their edit have no effect
+// and has no way to tell that from the edit being wrong.
+function warnGlCustomShaderSourceReregistered(
+  _state: GlRenderState,
+  shaderKey: string,
+  _previousSource: string,
+  _nextSource: string,
+): void {
+  // Keyed by shaderKey: the same key re-registered every frame is one observation, while a second key
+  // hitting the same trap is a new one worth reporting.
+  logOnce(
+    `effects-gl:custom-shader-source-reregistered:${shaderKey}`,
+    LogLevel.Warn,
+    {
+      message: `registerGlCustomShaderSource: shaderKey "${shaderKey}" already held DIFFERENT source, and the compiled program is cached by key — the new source will NOT run and the effect keeps drawing with the old one; register edited source under a new key and point the effect at it`,
+      shaderKey,
+    },
+    'effects-gl',
+  );
 }
 
 function getGlRenderEffectApplicationMessage(explanation: Readonly<GlRenderEffectApplicationExplanation>): string {
