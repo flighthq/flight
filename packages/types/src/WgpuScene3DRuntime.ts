@@ -170,6 +170,19 @@ export interface WgpuScene3DRuntime {
   shadedMaterialPlanCache: WeakMap<object, unknown>;
   skinDrawBindGroup: GPUBindGroup | null;
   skinDrawBindGroupLayout: GPUBindGroupLayout | null;
+  // The MESH path's own skin bind group and layout, carrying the normal palette at binding 2 alongside
+  // the pose palette. Kept separate from the pair above rather than growing them.
+  //
+  // ★ A LAYOUT DECLARES WHAT A PIPELINE NEEDS, AND THE SHADOW PASS DOES NOT NEED NORMALS. It skins
+  // positions only. Growing the shared layout would oblige the shadow path to SUPPLY a normal-palette
+  // resource — a bind group must satisfy every binding its layout declares — so it would have to carry
+  // something semantically meaningless forever, purely so the mesh path could have a binding. Two paths
+  // with different needs sharing one declaration, where one fabricates an input to satisfy it, is the
+  // decomposition smell; a second layout is the bounded, honest cost.
+  skinMeshDrawBindGroup: GPUBindGroup | null;
+  skinMeshDrawBindGroupLayout: GPUBindGroupLayout | null;
+  skinNormalPaletteTexture: GPUTexture | null;
+  skinNormalPaletteView: GPUTextureView | null;
   skinPaletteCapacity: number;
   skinPaletteTexture: GPUTexture | null;
   skinPaletteView: GPUTextureView | null;
