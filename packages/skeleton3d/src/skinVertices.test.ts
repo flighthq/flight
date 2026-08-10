@@ -105,11 +105,14 @@ describe('skinTangents', () => {
     expect(dot).toBeCloseTo(0);
   });
 
-  it('applies the SAME transform skinVertices applies to normals', () => {
-    // ★ THIS IS THE ANTI-DIVERGENCE GUARD, NOT A DUPLICATE OF THE ORTHOGONALITY TEST. Orthogonality is
-    // preserved only because both channels go through one transform; if a later change "improves" one
-    // path alone the two silently stop matching, and N·T fails for a reason unrelated to that change.
-    // Feeding the same vector through both and demanding equal xyz is what makes that divergence loud.
+  it('applies the same transform skinVertices applies to normals FOR A RIGID JOINT', () => {
+    // ★ NARROWED 2026-08-10, AND THE NARROWING IS THE POINT. This began as a blanket anti-divergence
+    // guard, written when normals and tangents shared one transform. They no longer do: a normal is a
+    // covector and now follows the per-joint inverse-transpose, while a tangent is a true vector and
+    // still follows the plain matrix. Under non-uniform scale they SHOULD disagree, so asserting
+    // equality there would now be asserting the bug back into existence. For a RIGID joint the two
+    // matrices coincide, so agreement remains the right expectation and the guard still catches an
+    // accidental divergence in the case that covers almost all authored content.
     const palette = new Float32Array(rotateZ90);
     const vector = [0.3, -0.7, 0.5];
     const outNormals = new Float32Array(3);

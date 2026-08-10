@@ -5,11 +5,14 @@
 // vector, or re-deriving it after skinning, flips the bitangent across whole regions of the surface.
 // That reaches the eye as inverted lighting rather than as a crash, so it is a defect that ships.
 //
-// ★ THE xyz TRANSFORM MUST STAY IDENTICAL TO THE ONE `skinVertices` APPLIES TO NORMALS — upper 3x3 of
-// each palette matrix, no translation, no renormalization. Orthogonality of N and T survives skinning
-// only because both go through the same transform; "improving" one side alone breaks N·T=0 for a
-// reason that has nothing to do with the improvement. `skinVertices` and this function are checked
-// against each other by a test that skins the same vector through both and requires equal results.
+// ★ A TANGENT AND A NORMAL DELIBERATELY DIVERGE UNDER NON-UNIFORM SCALE, AND THAT IS NOT AN OVERSIGHT.
+// A tangent is a TRUE VECTOR: it lies along the surface, so it follows the same matrix a position does —
+// the plain upper 3x3 of each palette matrix, no translation, no renormalization. A normal is a
+// COVECTOR: it is defined by being perpendicular to the surface, so it follows the inverse-transpose,
+// which is why `skinVertices` reads the separate per-joint normal palette and this function does not.
+// They coincide exactly for a rigid joint, which is why one shared transform looked correct for as long
+// as it did. The two are still checked against each other, but only on RIGID input, where agreement is
+// the right expectation.
 //
 // `outTangents` may alias `tangents`: each vertex's input is read into locals before any output is
 // written. Not renormalized, matching the normal path — a caller needing unit tangents does that after.
