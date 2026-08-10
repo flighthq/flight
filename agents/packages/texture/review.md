@@ -41,7 +41,7 @@ None of `CubeFacePositiveX`, `CubeFaceNegativeX`, `CubeFacePositiveY` (nor the o
 Consequences, all delta-introduced (the base `cubeTexture.test.ts` had no such import):
 
 - **Does not compile.** `tsc -b` typechecks colocated `*.test.ts`; three imported symbols are undefined. `npm run check` / `npm run exports:check` would fail on this package.
-- **Dishonest docs.** `b2824e3d8:packages/texture/src/cubeTexture.ts:82-85` instructs users to "Use the CubeFace\* constants from @flighthq/types (CubeFacePositiveX = 0, …)" — a documented API contract that resolves to nothing. The worker `status.md` claims "All 54 tests pass" and `review.md` claims the consts "are exported from the types barrel (`index.ts:66`, `:439`)" — both false against the integrated tree.
+- **Dishonest docs.** `b2824e3d8:packages/texture/src/cubeTexture.ts:82-85` instructs users to "Use the CubeFace\* constants from @flighthq/types (CubeFacePositiveX = 0, …)" — a documented API contract that resolves to nothing. The worker `status.md` claims "All 54 tests pass" and `review.md` claims the consts "are exported from the types barrel (`@flighthq/types` `index.ts:66`, `:439`)" — both false against the integrated tree.
 
 The same class of defect blocks the sibling `@flighthq/resources` delta in this integration (impl referencing `@flighthq/types` fields the bundle never added), so this is an integration-wide ingest slippage, not a one-off. The fix is small (define the six `CubeFace*` constants in `@flighthq/types` — ideally a `CubeFace.ts` per the worker's intent — and barrel-export them), but it lands in a **different package**, so it is a merge directive, not a within-`texture` sweep.
 
