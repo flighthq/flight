@@ -309,9 +309,37 @@ would show it** — a reader running the mechanism sees three declared checks mi
 deliberate from forgotten. That is the nine-unreasoned-skip-entries problem, in a different file,
 about the instruments this document is about.
 
-`size` is absent because **it was never given a gate's name.** It is `size`, not `size:check`, so it
-never entered the vocabulary `check.ts` draws from. No wiring mechanism could have caught it, because
-enumeration is over *declared* checks and `size` never declared.
+`size` is absent for a worse reason than a missing name: **there was never one thing to wire.**
+
+Two instruments exist for one subject, and neither is wired anywhere —
+`grep size scripts/check.ts scripts/test.ts` returns zero in both:
+
+| script | runs | mechanism |
+| --- | --- | --- |
+| `size` / `size:baseline` | `scripts/size.ts` | direct build-and-compare; owns the 5% band |
+| `test:size` / `test:size:baseline` | `scripts/test-size.ts` | spawns vitest against a separate size config |
+
+**And the two docs name different commands as the size check.**
+[`bundle-size.md:3`](bundle-size.md) calls `npm run size` "the preferred size command for agents";
+[`npm-scripts.md:94`](conventions/npm-scripts.md) uses `test:size` as the canonical
+baseline-comparing check, citing it by name as the worked example of the read-vs-write rule. Both are
+current, both are read, and they disagree about which gate exists.
+
+That is this document's defect at the level of the **vocabulary** rather than the gate — not a gate
+whose green means less than a reader thinks, but two documents that disagree about which gate there
+is. It is also how `size` stayed unwired with nobody being careless.
+
+Two corollaries, both learned the hard way:
+
+- **`size:check` is not the fix.** It would be a fourth name for one subject and would violate the
+  naming convention it was meant to satisfy. Which instrument survives is a decomposition question,
+  not a wiring commit.
+- **A name-keyed enumeration is unsound here.** `check.ts` labels three gates with subject and action
+  transposed against `package.json` — `license-provenance:check` vs `check:license-provenance`, and
+  likewise for `append-only-ledgers` and `package-dist-orphans`. Any check must compare **artifact
+  paths, not names**; the names already disagree between the two files it would compare.
+- **Naming wires nothing.** `check.ts` has no discovery mechanism — every gate is an explicit `add()`.
+  A convention that names a gate does not cause it to run.
 
 That also terminates the obvious regress — a check keeps the convention true, wiring keeps the check
 live, so what keeps the wiring live? The set is decidable from `package.json` and the naming
