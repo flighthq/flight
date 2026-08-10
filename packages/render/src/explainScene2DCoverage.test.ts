@@ -1,5 +1,5 @@
-import type { Renderer, Scene2DKindUsage, SceneCoverageEntry } from '@flighthq/types/contract';
-import { RenderRegistry, SceneCoverage } from '@flighthq/types/contract';
+import type { Renderer, Scene2DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
+import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage';
@@ -8,14 +8,38 @@ import { createRenderState } from './renderState';
 import { getRenderStateRuntime } from './renderState';
 
 const renderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const coverageCatalog: SceneCoverageCatalog = [
+  {
+    kind: 'Shape',
+    registrations: [
+      { module: '@flighthq/scene2d', registrar: 'registerShapeRenderer' },
+      { module: '@flighthq/scene2d-canvas', registrar: 'registerCanvasShapeCommands' },
+    ],
+    registry: RenderRegistry.NodeRenderer,
+  },
+  {
+    kind: 'Sprite',
+    registrations: [{ module: '@flighthq/scene2d', registrar: 'registerSpriteRenderer' }],
+    registry: RenderRegistry.NodeRenderer,
+  },
+  {
+    kind: 'beginFill',
+    registrations: [{ module: '@flighthq/scene2d-canvas', registrar: 'registerCanvasShapeCommands' }],
+    registry: RenderRegistry.ShapeCommandHandler,
+  },
+];
 
 function usage(overrides: Partial<Scene2DKindUsage> = {}): Scene2DKindUsage {
   return { blendModes: [], materialKinds: [], nodeKinds: [], shapeCommandKeys: [], ...overrides };
 }
 
-function entries(state: ReturnType<typeof createRenderState>, u: Scene2DKindUsage): SceneCoverageEntry[] {
+function entries(
+  state: ReturnType<typeof createRenderState>,
+  u: Scene2DKindUsage,
+  catalog: SceneCoverageCatalog = coverageCatalog,
+): SceneCoverageEntry[] {
   const out: SceneCoverageEntry[] = [];
-  explainScene2DCoverage(out, state, u);
+  explainScene2DCoverage(out, state, u, catalog);
   return out;
 }
 
@@ -27,9 +51,27 @@ function wireShapeCommand(state: ReturnType<typeof createRenderState>, key: stri
 }
 
 describe('explainScene2DCoverage', () => {
-  it('reports an unregistered node kind as Missing, since the node and its subtree never draw', () => {
+  it('reports an unregistered node kind with the primary catalog remedy', () => {
     expect(entries(createRenderState(), usage({ nodeKinds: ['Shape'] }))).toEqual([
-      { coverage: SceneCoverage.Missing, kind: 'Shape', registry: RenderRegistry.NodeRenderer },
+      {
+        coverage: SceneCoverage.Unregistered,
+        facet: RequirementFacet.SceneNodeKind,
+        kind: 'Shape',
+        module: '@flighthq/scene2d',
+        registrar: 'registerShapeRenderer',
+        registry: RenderRegistry.NodeRenderer,
+      },
+    ]);
+  });
+
+  it('reports an uncatalogued node kind as Unavailable, with no remedy fields', () => {
+    expect(entries(createRenderState(), usage({ nodeKinds: ['Shape'] }), [])).toEqual([
+      {
+        coverage: SceneCoverage.Unavailable,
+        facet: RequirementFacet.SceneNodeKind,
+        kind: 'Shape',
+        registry: RenderRegistry.NodeRenderer,
+      },
     ]);
   });
 
@@ -37,14 +79,22 @@ describe('explainScene2DCoverage', () => {
     const state = createRenderState();
     registerRenderer(state, 'Shape', renderer);
     expect(entries(state, usage({ nodeKinds: ['Shape'] }))).toEqual([
-      { coverage: SceneCoverage.Satisfied, kind: 'Shape', registry: RenderRegistry.NodeRenderer },
+      {
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneNodeKind,
+        kind: 'Shape',
+        registry: RenderRegistry.NodeRenderer,
+      },
     ]);
   });
 
   it('reports an unhandled shape command key against the state that would replay it', () => {
     expect(entries(createRenderState(), usage({ shapeCommandKeys: ['beginFill'] }))).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneShapeCommand,
       kind: 'beginFill',
+      module: '@flighthq/scene2d-canvas',
+      registrar: 'registerCanvasShapeCommands',
       registry: RenderRegistry.ShapeCommandHandler,
     });
   });
@@ -54,6 +104,7 @@ describe('explainScene2DCoverage', () => {
     wireShapeCommand(state, 'beginFill');
     expect(entries(state, usage({ shapeCommandKeys: ['beginFill'] }))).toContainEqual({
       coverage: SceneCoverage.Satisfied,
+      facet: RequirementFacet.SceneShapeCommand,
       kind: 'beginFill',
       registry: RenderRegistry.ShapeCommandHandler,
     });
@@ -64,7 +115,7 @@ describe('explainScene2DCoverage', () => {
     registerRenderer(state, 'Shape', renderer);
     const found = entries(state, usage({ nodeKinds: ['Shape', 'Sprite'], shapeCommandKeys: ['beginFill'] }));
     expect(found).toHaveLength(3);
-    expect(found.filter((e) => e.coverage === SceneCoverage.Missing).map((e) => e.kind)).toEqual([
+    expect(found.filter((e) => e.coverage !== SceneCoverage.Satisfied).map((e) => e.kind)).toEqual([
       'Sprite',
       'beginFill',
     ]);
@@ -74,9 +125,9 @@ describe('explainScene2DCoverage', () => {
     const state = createRenderState();
     const u = usage({ nodeKinds: ['Shape'] });
     const out: SceneCoverageEntry[] = [];
-    explainScene2DCoverage(out, state, u);
+    explainScene2DCoverage(out, state, u, coverageCatalog);
     const first = out.length;
-    explainScene2DCoverage(out, state, u);
+    explainScene2DCoverage(out, state, u, coverageCatalog);
     expect(out).toHaveLength(first);
   });
 });
@@ -92,7 +143,7 @@ describe('hasScene2DCoverage', () => {
     wireShapeCommand(state, 'beginFill');
     const u = usage({ nodeKinds: ['Shape'], shapeCommandKeys: ['beginFill'] });
     const out: SceneCoverageEntry[] = [];
-    explainScene2DCoverage(out, state, u);
+    explainScene2DCoverage(out, state, u, coverageCatalog);
     expect(out.every((e) => e.coverage === SceneCoverage.Satisfied)).toBe(true);
     expect(hasScene2DCoverage(state, u)).toBe(true);
   });
@@ -102,7 +153,7 @@ describe('hasScene2DCoverage', () => {
     registerRenderer(state, 'Shape', renderer);
     const u = usage({ nodeKinds: ['Shape', 'Sprite'] });
     const out: SceneCoverageEntry[] = [];
-    explainScene2DCoverage(out, state, u);
+    explainScene2DCoverage(out, state, u, coverageCatalog);
     const gaps = out.filter((e) => e.coverage !== SceneCoverage.Satisfied);
     expect(hasScene2DCoverage(state, u)).toBe(gaps.length === 0);
   });

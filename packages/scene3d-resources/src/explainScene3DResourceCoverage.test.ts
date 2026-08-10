@@ -3,13 +3,26 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { Material, SceneCoverageEntry, Scene3DKindUsage } from '@flighthq/types/contract';
-import { RenderRegistry, SceneCoverage } from '@flighthq/types/contract';
+import type { Material, Scene3DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
+import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage';
 import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver';
 import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures';
+
+const coverageCatalog: SceneCoverageCatalog = [
+  {
+    kind: 'UnlitMaterial',
+    registrations: [{ module: '@flighthq/scene3d-resources', registrar: 'registerUnlitScene3DMaterialTextures' }],
+    registry: RenderRegistry.MaterialTextureLister,
+  },
+  {
+    kind: 'ShadedMaterial',
+    registrations: [{ module: '@flighthq/scene3d-resources', registrar: 'registerShadedScene3DMaterialTextures' }],
+    registry: RenderRegistry.MaterialTextureLister,
+  },
+];
 
 function usageOf(...materials: Material[]): Scene3DKindUsage {
   const scene = createScene3D();
@@ -21,17 +34,28 @@ function usageOf(...materials: Material[]): Scene3DKindUsage {
   return usage;
 }
 
-function gaps(resolver: Parameters<typeof explainScene3DResourceCoverage>[1], usage: Scene3DKindUsage) {
+function gaps(
+  resolver: Parameters<typeof explainScene3DResourceCoverage>[1],
+  usage: Scene3DKindUsage,
+  catalog: SceneCoverageCatalog = coverageCatalog,
+) {
   const out: SceneCoverageEntry[] = [];
-  explainScene3DResourceCoverage(out, resolver, usage);
+  explainScene3DResourceCoverage(out, resolver, usage, catalog);
   return out;
 }
 
 describe('explainScene3DResourceCoverage', () => {
-  it('reports a bare resolver as missing every material kind, since its registry starts empty', () => {
+  it('reports a bare resolver with the call that registers the material lister', () => {
     const found = gaps(createScene3DResourceResolver(), usageOf(createUnlitMaterial()));
     expect(found).toEqual([
-      { coverage: SceneCoverage.Missing, kind: 'UnlitMaterial', registry: RenderRegistry.MaterialTextureLister },
+      {
+        coverage: SceneCoverage.Unregistered,
+        facet: RequirementFacet.SceneMaterialKind,
+        kind: 'UnlitMaterial',
+        module: '@flighthq/scene3d-resources',
+        registrar: 'registerUnlitScene3DMaterialTextures',
+        registry: RenderRegistry.MaterialTextureLister,
+      },
     ]);
   });
 
@@ -39,7 +63,12 @@ describe('explainScene3DResourceCoverage', () => {
     // The manifest lists every requirement, so a caller can render a checklist and tell "covered" from
     // "never asked about". Omitting covered kinds would make those two indistinguishable.
     expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createUnlitMaterial()))).toEqual([
-      { coverage: SceneCoverage.Satisfied, kind: 'UnlitMaterial', registry: RenderRegistry.MaterialTextureLister },
+      {
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneMaterialKind,
+        kind: 'UnlitMaterial',
+        registry: RenderRegistry.MaterialTextureLister,
+      },
     ]);
   });
 
@@ -48,8 +77,11 @@ describe('explainScene3DResourceCoverage', () => {
     // createBuiltInScene3DResourceResolver covers only the surface-PBR families, so an AWD2 document
     // loaded through the built-in assembly has no lister for its materials.
     expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createShadedMaterial()))).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unregistered,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'ShadedMaterial',
+      module: '@flighthq/scene3d-resources',
+      registrar: 'registerShadedScene3DMaterialTextures',
       registry: RenderRegistry.MaterialTextureLister,
     });
   });
@@ -58,14 +90,20 @@ describe('explainScene3DResourceCoverage', () => {
     const resolver = createBuiltInScene3DResourceResolver();
     registerShadedScene3DMaterialTextures(resolver.registry);
     expect(gaps(resolver, usageOf(createShadedMaterial()))).toEqual([
-      { coverage: SceneCoverage.Satisfied, kind: 'ShadedMaterial', registry: RenderRegistry.MaterialTextureLister },
+      {
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneMaterialKind,
+        kind: 'ShadedMaterial',
+        registry: RenderRegistry.MaterialTextureLister,
+      },
     ]);
   });
 
   it('reports a family that ships no lister at all, so the omission is visible rather than inferred', () => {
     // BlinnPhongMaterial carries four texture slots and has no lister anywhere in the SDK.
     expect(gaps(createBuiltInScene3DResourceResolver(), usageOf(createBlinnPhongMaterial()))).toContainEqual({
-      coverage: SceneCoverage.Missing,
+      coverage: SceneCoverage.Unavailable,
+      facet: RequirementFacet.SceneMaterialKind,
       kind: 'BlinnPhongMaterial',
       registry: RenderRegistry.MaterialTextureLister,
     });
@@ -75,9 +113,9 @@ describe('explainScene3DResourceCoverage', () => {
     const resolver = createScene3DResourceResolver();
     const usage = usageOf(createUnlitMaterial());
     const out: SceneCoverageEntry[] = [];
-    explainScene3DResourceCoverage(out, resolver, usage);
+    explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
     const first = out.length;
-    explainScene3DResourceCoverage(out, resolver, usage);
+    explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
     expect(out).toHaveLength(first);
   });
 });
@@ -91,7 +129,7 @@ describe('hasScene3DResourceCoverage', () => {
     const resolver = createBuiltInScene3DResourceResolver();
     const usage = usageOf(createUnlitMaterial(), createShadedMaterial());
     const out: SceneCoverageEntry[] = [];
-    explainScene3DResourceCoverage(out, resolver, usage);
+    explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
     expect(hasScene3DResourceCoverage(resolver, usage)).toBe(out.length === 0);
   });
 
@@ -101,7 +139,7 @@ describe('hasScene3DResourceCoverage', () => {
     const resolver = createBuiltInScene3DResourceResolver();
     const usage = usageOf(createUnlitMaterial());
     const out: SceneCoverageEntry[] = [];
-    explainScene3DResourceCoverage(out, resolver, usage);
+    explainScene3DResourceCoverage(out, resolver, usage, coverageCatalog);
     expect(out.length).toBeGreaterThan(0);
     expect(out.every((e) => e.coverage === SceneCoverage.Satisfied)).toBe(true);
     expect(hasScene3DResourceCoverage(resolver, usage)).toBe(true);

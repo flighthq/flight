@@ -1,5 +1,12 @@
-import type { RenderState, Scene2DKindUsage, SceneCoverageEntry } from '@flighthq/types/contract';
-import { RenderRegistry, SceneCoverage } from '@flighthq/types/contract';
+import type {
+  CatalogRegistration,
+  Kind,
+  RenderState,
+  Scene2DKindUsage,
+  SceneCoverageCatalog,
+  SceneCoverageEntry,
+} from '@flighthq/types/contract';
+import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -13,19 +20,22 @@ import { getRenderStateRuntime } from './renderState';
 //
 // Unlike the 3D seam, node kinds ARE a requirement here: the 2D pipeline resolves every node through
 // `registerRenderer(state, kind, renderer)`, where the 3D pipeline collects meshes structurally.
+// `catalog` is the caller's complete backend inventory; an unserved requirement uses its first ordered
+// registration as the primary remedy, while a satisfied requirement needs no catalog lookup.
 export function explainScene2DCoverage(
   out: SceneCoverageEntry[],
   state: RenderState,
   usage: Readonly<Scene2DKindUsage>,
+  catalog: SceneCoverageCatalog,
 ): void {
   out.length = 0;
-  collectScene2DCoverageGaps(out, state, usage, false);
+  collectScene2DCoverageGaps(out, state, usage, false, catalog);
 }
 
 // Whether this state can serve every node kind and shape command `usage` names. Stops at the first
 // shortfall and never allocates. Use the explain form to find out WHICH requirement and how badly.
 export function hasScene2DCoverage(state: RenderState, usage: Readonly<Scene2DKindUsage>): boolean {
-  return !collectScene2DCoverageGaps(null, state, usage, true);
+  return !collectScene2DCoverageGaps(null, state, usage, true, null);
 }
 
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
@@ -35,6 +45,7 @@ function collectScene2DCoverageGaps(
   state: RenderState,
   usage: Readonly<Scene2DKindUsage>,
   stopAtFirst: boolean,
+  catalog: SceneCoverageCatalog | null,
 ): boolean {
   let found = false;
   const runtime = getRenderStateRuntime(state);
@@ -44,12 +55,17 @@ function collectScene2DCoverageGaps(
   for (let i = 0; i < usage.nodeKinds.length; i++) {
     const kind = usage.nodeKinds[i];
     if (runtime.rendererMap.has(kind)) {
-      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.NodeRenderer });
+      out?.push({
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneNodeKind,
+        kind,
+        registry: RenderRegistry.NodeRenderer,
+      });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.NodeRenderer });
+    out?.push(createShortfallEntry(catalog, false, RequirementFacet.SceneNodeKind, kind, RenderRegistry.NodeRenderer));
   }
 
   // Only meaningful for a state that rasterizes shapes. A GL or WebGPU state drawing every shape
@@ -59,13 +75,62 @@ function collectScene2DCoverageGaps(
   for (let i = 0; i < usage.shapeCommandKeys.length; i++) {
     const kind = usage.shapeCommandKeys[i];
     if (commands?.has(kind) === true) {
-      out?.push({ coverage: SceneCoverage.Satisfied, kind, registry: RenderRegistry.ShapeCommandHandler });
+      out?.push({
+        coverage: SceneCoverage.Satisfied,
+        facet: RequirementFacet.SceneShapeCommand,
+        kind,
+        registry: RenderRegistry.ShapeCommandHandler,
+      });
       continue;
     }
     found = true;
     if (stopAtFirst) return true;
-    out?.push({ coverage: SceneCoverage.Missing, kind, registry: RenderRegistry.ShapeCommandHandler });
+    out?.push(
+      createShortfallEntry(
+        catalog,
+        false,
+        RequirementFacet.SceneShapeCommand,
+        kind,
+        RenderRegistry.ShapeCommandHandler,
+      ),
+    );
   }
 
   return found;
+}
+
+function createShortfallEntry(
+  catalog: SceneCoverageCatalog | null,
+  fallback: boolean,
+  facet: SceneCoverageEntry['facet'],
+  kind: Kind,
+  registry: SceneCoverageEntry['registry'],
+): SceneCoverageEntry {
+  const registration = findCatalogRegistration(catalog, kind, registry);
+  const base = { facet, kind, registry };
+  if (registration === null) {
+    return {
+      ...base,
+      coverage: fallback ? SceneCoverage.FallbackUnavailable : SceneCoverage.Unavailable,
+    };
+  }
+  return {
+    ...base,
+    coverage: fallback ? SceneCoverage.FallbackRemediable : SceneCoverage.Unregistered,
+    module: registration.module,
+    registrar: registration.registrar,
+  };
+}
+
+// Package-private and row-agnostic: generated, probed, and fixture catalogs all feed the same seam.
+function findCatalogRegistration(
+  catalog: SceneCoverageCatalog | null,
+  kind: Kind,
+  registry: SceneCoverageEntry['registry'],
+): CatalogRegistration | null {
+  if (catalog === null) return null;
+  for (const entry of catalog) {
+    if (entry.kind === kind && entry.registry === registry) return entry.registrations[0] ?? null;
+  }
+  return null;
 }

@@ -85,6 +85,7 @@ if (!scoped) {
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
   add('append-only-ledgers:check', 'tsx', ['scripts/check-append-only-ledgers.ts']);
+  add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);

@@ -68,6 +68,8 @@
     "dev:examples:electron": "tsx ./scripts/electron-tool.ts examples",
     "dev:examples:web": "npm run dev --workspace=@flighthq/examples",
     "dev:functional": "npm run dev --workspace=tools/functional",
+    "facets": "tsx ./scripts/requirement-facets.ts",
+    "facets:check": "tsx ./scripts/requirement-facets.ts --check",
     "dev:gallery": "npm run dev --workspace=tools/gallery",
     "dev:reference": "tsx ./scripts/reference-tool.ts dev",
     "docs:check": "tsx ./scripts/docs.ts --check",
