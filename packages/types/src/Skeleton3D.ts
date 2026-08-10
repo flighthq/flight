@@ -13,8 +13,15 @@ import type { Node3D } from './Node3D';
 export interface Skeleton3D extends Entity {
   inverseBindMatrices: Float32Array;
   jointMatrices: Float32Array;
-  // The per-joint NORMAL palette: flat 3x3 blocks, 9 floats per joint, in joint order, filled beside
-  // `jointMatrices` each frame. Each block is the inverse-transpose of that joint's upper 3x3, which is
+  // The per-joint NORMAL palette: one 3x3 per joint, stored as THREE PADDED vec4 columns — 12 floats
+  // per joint, not 9 — filled beside `jointMatrices` each frame.
+  //
+  // ★ THE PADDING IS FOR THE GPU AND IT EARNS ITS THREE WASTED FLOATS. The palette reaches the shader as
+  // an RGBA32F data texture, whose texels are four-wide; a tightly packed 3x3 does not divide into them,
+  // so a 9-float stride would have to be repacked into a padded scratch buffer EVERY FRAME. Padding at
+  // rest means this array uploads directly, exactly as the joint palette does, and means the CPU and GPU
+  // skinning paths read the SAME layout — which is what makes comparing them a real check rather than a
+  // comparison across two different packings. Each block is the inverse-transpose of that joint's upper 3x3, which is
   // what a normal must transform by — a normal is a covector, so under non-uniform scale it does NOT
   // follow the same matrix as a position or a tangent.
   //

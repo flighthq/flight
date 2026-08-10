@@ -64,7 +64,16 @@ export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): 
     // The normal palette is filled here rather than in the skinning loop because it is per JOINT, not
     // per vertex — a few dozen inversions a frame against tens of thousands of vertices.
     setMatrix3NormalFromMatrix4(_normal, _result);
-    normalMatrices.set(_normal.m, j * 9);
+    // Written as three padded vec4 columns rather than a tight 3x3, so the array can be handed to the
+    // GPU data texture unchanged; the fourth float of each column is unused.
+    const n = j * 12;
+    const m = _normal.m;
+    for (let c = 0; c < 3; c++) {
+      normalMatrices[n + c * 4] = m[c * 3];
+      normalMatrices[n + c * 4 + 1] = m[c * 3 + 1];
+      normalMatrices[n + c * 4 + 2] = m[c * 3 + 2];
+      normalMatrices[n + c * 4 + 3] = 0;
+    }
   }
 }
 
@@ -79,7 +88,7 @@ export function createSkeleton3D(
     jointMatrices: new Float32Array(count * 16),
     joints,
     names: names ?? null,
-    normalMatrices: new Float32Array(count * 9),
+    normalMatrices: new Float32Array(count * 12),
   });
   if (inverseBindMatrices === undefined) setSkeleton3DBindPose(skeleton);
   return skeleton;
