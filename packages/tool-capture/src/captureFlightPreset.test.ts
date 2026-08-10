@@ -33,7 +33,6 @@ describe('getFlightCaptureValidationPreset', () => {
       'effect-lens-flare': ['canvas'],
       'effect-posterize': ['canvas'],
       'effect-vignette': ['canvas'],
-      'effect-displacement': 'all',
       'effect-god-rays': 'all',
     });
   });
