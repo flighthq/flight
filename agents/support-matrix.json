@@ -3395,6 +3395,112 @@
       ]
     },
     {
+      "key": "scene",
+      "label": "Scene",
+      "scenes": [
+        {
+          "scene": "scene-morph",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "scene-skin-morph-compose",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "scene-skinning",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "scene-transparent",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        }
+      ]
+    },
+    {
       "key": "node",
       "label": "Scene Node",
       "scenes": [
@@ -3594,112 +3700,6 @@
             "webgpu": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "key": "scene3d",
-      "label": "Scene3d",
-      "scenes": [
-        {
-          "scene": "scene3d-morph",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            },
-            "webgpu": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            }
-          }
-        },
-        {
-          "scene": "scene3d-skin-morph-compose",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            },
-            "webgpu": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            }
-          }
-        },
-        {
-          "scene": "scene3d-skinning",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            },
-            "webgpu": {
-              "status": "control",
-              "fingerprint": true,
-              "realization": false
-            }
-          }
-        },
-        {
-          "scene": "scene3d-transparent",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgpu": {
-              "status": "control",
-              "fingerprint": true,
               "realization": false
             }
           }
