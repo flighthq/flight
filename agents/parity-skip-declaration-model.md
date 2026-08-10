@@ -281,6 +281,25 @@ session start, and it did not reach `size-runner.ts:246`. A ruling that lands as
    on failure — that `scripts/check.ts` never invokes. A check nobody calls is a fourth artifact that
    does not travel, and it is why the size baseline drifted while a correct gate sat beside it.
 
+**A gate must first be named as one — and that enumeration already exists and already works.**
+`scripts/check.ts:15-21` states the wiring property itself ("EVERY GATE RUNS… a violation of any of
+them could land while the gate that existed to catch it never executed"), four lines above the list
+that omits `size`. So the failure is not distance — the argument did not have to travel at all.
+
+But the diagnosis "`check.ts` forgot to call `size.ts`" is wrong, and the correct one is cheaper to
+fix. Enumerating `package.json` scripts against the repo's own `check` naming vocabulary
+([npm script naming](conventions/npm-scripts.md)) gives **28 declared checks, of which exactly one is
+not referenced by `check.ts` — `check` itself, the aggregator.** The wiring is 28/28 correct.
+
+`size` is absent because **it was never given a gate's name.** It is `size`, not `size:check`, so it
+never entered the vocabulary `check.ts` draws from. No wiring mechanism could have caught it, because
+enumeration is over *declared* checks and `size` never declared.
+
+That also terminates the obvious regress — a check keeps the convention true, wiring keeps the check
+live, so what keeps the wiring live? The set is decidable from `package.json` and the naming
+convention, its inputs are files rather than prose, and it currently passes. There is no fourth
+level.
+
 The check is also what makes the residual failure benign. Prose describing a check can still drift
 from it — that is exactly `CONTRACT.md:3` — but with the check wired, the tree stays correct and only
 the description misleads. Without it, the description misleads *and* nothing holds.
