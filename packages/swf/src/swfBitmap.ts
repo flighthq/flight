@@ -1,7 +1,30 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
-import type { Bitmap } from '@flighthq/types/contract';
+import type { Bitmap, DecodedImage, SwfJpegAlphaPayload } from '@flighthq/types/contract';
 import { Compression } from '@flighthq/types/contract';
+
+// Joins a decoded JPEG colour plane with the separately-compressed alpha plane retained from its SWF
+// definition. Decoding stays outside this pure format step: the caller chooses and awaits the image
+// decoder, then hands over straight RGBA so replacing alpha cannot inherit a premultiplication based on
+// the JPEG decoder's unrelated alpha bytes.
+export function createSwfJpegAlphaBitmap(
+  decoded: Readonly<DecodedImage>,
+  payload: Readonly<SwfJpegAlphaPayload>,
+): Bitmap | null {
+  if (decoded.width !== payload.width || decoded.height !== payload.height) return null;
+  const pixelCount = payload.width * payload.height;
+  if (pixelCount <= 0 || pixelCount > MAX_PIXELS || decoded.data.length !== pixelCount * 4) return null;
+
+  const decompress = getDecompressor(Compression.Deflate);
+  if (decompress === null) return null;
+  const alpha = decompress(payload.compressedAlphaBytes, pixelCount);
+  if (alpha === null || alpha.length !== pixelCount) return null;
+
+  const bitmap = createBitmap(payload.width, payload.height);
+  bitmap.data.set(decoded.data);
+  for (let pixel = 0; pixel < pixelCount; pixel++) bitmap.data[pixel * 4 + 3] = alpha[pixel];
+  return bitmap;
+}
 
 // Unpacks a lossless bitmap definition into pixels.
 //
