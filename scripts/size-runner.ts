@@ -1,6 +1,8 @@
+import { spawnSync } from 'node:child_process';
+
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { availableParallelism } from 'os';
-import { basename, resolve } from 'path';
+import { basename, relative, resolve } from 'path';
 import { build, mergeConfig } from 'vite';
 import { gzipSync } from 'zlib';
 
@@ -23,12 +25,19 @@ export interface SizeResult {
   variant: string | null;
   gzipSize: number;
   gzipKB: string;
+  baselineCommit: string | null;
+  baselineCommitDate: string | null;
   baselineKB: number | null;
   baselineKBStr: string | null;
   delta: string | null;
   passed: boolean;
   threshold: number | null;
   key: string;
+}
+
+export interface SizeBaselineOrigin {
+  commit: string | null;
+  commitDate: string | null;
 }
 
 export interface RunSizeOptions {
@@ -214,6 +223,59 @@ export function getGzipSize(code: string): number {
   return gzipSync(code).length;
 }
 
+export function parseSizeBaselineOrigins(blame: string): Record<string, SizeBaselineOrigin> {
+  const origins: Record<string, SizeBaselineOrigin> = {};
+  let commit: string | null = null;
+  let authorTime: number | null = null;
+  let authorTimezoneOffset: number | null = null;
+
+  for (const line of blame.split('\n')) {
+    const header = /^([0-9a-f]{40}) \d+ \d+(?: \d+)?$/.exec(line);
+    if (header) {
+      commit = /^0+$/.test(header[1]) ? null : header[1];
+      authorTime = null;
+      authorTimezoneOffset = null;
+      continue;
+    }
+
+    if (line.startsWith('author-time ')) {
+      const seconds = Number.parseInt(line.slice('author-time '.length), 10);
+      authorTime = Number.isFinite(seconds) ? seconds : null;
+      continue;
+    }
+
+    if (line.startsWith('author-tz ')) {
+      const match = /^([+-])(\d{2})(\d{2})$/.exec(line.slice('author-tz '.length));
+      if (match) {
+        const magnitude = Number.parseInt(match[2], 10) * 60 + Number.parseInt(match[3], 10);
+        authorTimezoneOffset = (match[1] === '-' ? -1 : 1) * magnitude * 60;
+      }
+      continue;
+    }
+
+    if (!line.startsWith('\t')) continue;
+    const key = /^\s*"([^"]+)":/.exec(line.slice(1))?.[1];
+    if (key !== undefined) {
+      const commitDate =
+        commit === null || authorTime === null
+          ? null
+          : new Date((authorTime + (authorTimezoneOffset ?? 0)) * 1000).toISOString().slice(0, 10);
+      origins[key] = { commit, commitDate };
+    }
+  }
+
+  return origins;
+}
+
+export function readSizeBaselineOrigins(root: string, baselineFile: string): Record<string, SizeBaselineOrigin> {
+  const result = spawnSync('git', ['blame', '--line-porcelain', '--', relative(root, baselineFile)], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  if (result.error || result.status !== 0) return {};
+  return parseSizeBaselineOrigins(result.stdout);
+}
+
 export function getFlightDiagnosticsSizeDelta(results: readonly Readonly<SizeResult>[]): number | null {
   const release = results.find((result) => result.key === FLIGHT_DIAGNOSTICS_BASE_KEY);
   const enabled = results.find(
@@ -260,6 +322,7 @@ export async function runSizeChecks({
 }: RunSizeOptions): Promise<{ results: SizeResult[]; pendingBaseline: Record<string, number>; baselineFile: string }> {
   const cases = collectSizeCases(examplesDir, exampleFilters, renderFilters);
   const baseline = readBaseline(baselineFile);
+  const baselineOrigins = readSizeBaselineOrigins(root, baselineFile);
   const pendingBaseline = { ...baseline };
 
   const results = new Array<SizeResult>(cases.length);
@@ -269,6 +332,7 @@ export async function runSizeChecks({
     const gzipSize = getGzipSize(code);
     const key = getSizeCaseKey(cases[index]);
     const baselineSize = baseline[key] ?? null;
+    const baselineOrigin = baselineOrigins[key];
     const { gzipKB, baselineKB, baselineKBStr, delta, passed, threshold } = formatSizeResult(gzipSize, baselineSize);
 
     const adjustedPassed = updateBaseline || passed;
@@ -279,6 +343,8 @@ export async function runSizeChecks({
       variant,
       gzipSize,
       gzipKB,
+      baselineCommit: baselineOrigin?.commit ?? null,
+      baselineCommitDate: baselineOrigin?.commitDate ?? null,
       baselineKB,
       baselineKBStr,
       delta,

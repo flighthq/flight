@@ -146,7 +146,7 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
     8,
     ...cases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
   );
-  const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 10 };
+  const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 34 };
   const expectedByExample = new Map<string, number>();
   const resultsByExample = new Map<string, Readonly<SizeResult>[]>();
 
@@ -170,7 +170,10 @@ function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (
       const color = deltaNum == null ? pc.dim : deltaNum > 2 ? pc.red : deltaNum > 0 ? pc.yellow : pc.green;
       const deltaStr =
         r.delta == null ? pc.dim('—') : color(r.delta[0]) + color(r.delta.slice(1, -1)) + pc.dim(color('%'));
-      const baselineStr = pc.dim((r.baselineKBStr ? '~' + r.baselineKBStr + ' KB' : '—').padEnd(w.base));
+      const baselineOrigin = r.baselineCommit
+        ? ` @${r.baselineCommit.slice(0, 10)}${r.baselineCommitDate ? ` (${r.baselineCommitDate})` : ''}`
+        : ' @unknown';
+      const baselineStr = pc.dim((r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : '—').padEnd(w.base));
       const flag = r.passed ? '' : '  ' + pc.red('✗');
 
       const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
