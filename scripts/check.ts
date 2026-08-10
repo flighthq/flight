@@ -3,7 +3,13 @@ import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
-import { getSelectors, resolvePaths, selectPackages } from './select';
+import {
+  explainEmptyCheckSelection,
+  getSelectors,
+  isCheckSelectionEmpty,
+  resolvePaths,
+  selectPackages,
+} from './select';
 
 // The non-fixing quality sweep. Run bare (`npm run check`) it is the full whole-repo gate. Given a
 // selector (`npm run check scene-formats`, or a path/@scoped form) it runs only the
@@ -29,12 +35,8 @@ const projects = selectPackages(selectors).map((name) => `packages/${name}`);
 // zero having examined nothing — while reporting the same "all check gates passed" a real sweep does.
 // The test selector already refuses this; a green from a gate that could not see its subject is worse
 // than a red, because it is reported onward in good faith.
-if (scoped && projects.length === 0 && paths.length === 0) {
-  const named = selectors.map((selector) => `"${selector}"`).join(', ');
-  console.error(
-    pc.red(`Check selection ran NOTHING because ${named} matched no package and no path — `) +
-      pc.red('this run is unconfigured, not clean.'),
-  );
+if (isCheckSelectionEmpty(selectors, projects, paths)) {
+  console.error(pc.red(explainEmptyCheckSelection(selectors)));
   process.exit(1);
 }
 
