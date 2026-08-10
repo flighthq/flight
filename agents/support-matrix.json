@@ -811,8 +811,8 @@
           "scene": "effect-displacement",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {
