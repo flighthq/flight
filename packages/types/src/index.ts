@@ -117,6 +117,8 @@ export * from './CanvasShapeRegistry';
 export * from './CapacitorApi';
 export * from './Capsule';
 export * from './CaptureBaseline';
+export * from './CaptureBaselineField';
+export * from './CaptureBaselineProvenance';
 export * from './CaptureCheckResult';
 export * from './CaptureCheckTier';
 export * from './CaptureColumnBaseline';

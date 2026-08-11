@@ -4,7 +4,13 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { baselinePath, getBaselineField, setBaselineField } from './baselineStore';
+import {
+  baselinePath,
+  getBaselineField,
+  getBaselineProvenance,
+  setBaselineField,
+  setBaselineProvenance,
+} from './baselineStore';
 
 let root: string;
 
@@ -38,6 +44,17 @@ describe('getBaselineField', () => {
   });
 });
 
+describe('getBaselineProvenance', () => {
+  it('reads back what was recorded, and reads a legacy column as UNKNOWN', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'abc123');
+    // Written before provenance existed: null, not a claim that it matches anything.
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas')).toBeNull();
+
+    setBaselineProvenance(root, 'functional', 'foo', 'canvas', PROVENANCE);
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas')).toEqual(PROVENANCE);
+  });
+});
+
 describe('setBaselineField', () => {
   it('preserves other fields and columns on a read-merge-write', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
@@ -57,3 +74,19 @@ describe('setBaselineField', () => {
     expect(text.indexOf('canvas')).toBeLessThan(text.indexOf('webgl'));
   });
 });
+
+describe('setBaselineProvenance', () => {
+  it('preserves the other fields and the other columns', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'abc123');
+    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'def456');
+
+    setBaselineProvenance(root, 'functional', 'foo', 'canvas', PROVENANCE);
+
+    // Read-merge-write: recording provenance on one column rewrites nothing else on disk.
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('abc123');
+    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('def456');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'webgl')).toBeNull();
+  });
+});
+
+const PROVENANCE = { frames: 0, targetKind: null, verifyPublished: true, warmupFrames: 0 };

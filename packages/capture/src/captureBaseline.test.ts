@@ -4,8 +4,10 @@ import {
   createCaptureBaseline,
   formatCaptureBaseline,
   getCaptureBaselineField,
+  getCaptureBaselineProvenance,
   parseCaptureBaseline,
   setCaptureBaselineField,
+  setCaptureBaselineProvenance,
 } from './captureBaseline';
 
 describe('createCaptureBaseline', () => {
@@ -72,6 +74,22 @@ describe('getCaptureBaselineField', () => {
   });
 });
 
+describe('getCaptureBaselineProvenance', () => {
+  it('reads back what was recorded', () => {
+    const baseline = createCaptureBaseline();
+    setCaptureBaselineProvenance(baseline, 'webgl', PROVENANCE);
+    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toEqual(PROVENANCE);
+  });
+
+  it('reads a column written before provenance existed as UNKNOWN, not as agreement', () => {
+    const baseline = createCaptureBaseline();
+    setCaptureBaselineField(baseline, 'webgl', 'sha256', 'abc');
+    // null is the whole staging decision: a legacy record must not read as "produced the same way".
+    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toBeNull();
+    expect(getCaptureBaselineProvenance(baseline, 'absent')).toBeNull();
+  });
+});
+
 describe('parseCaptureBaseline', () => {
   it('round-trips format output to a stable, equal record', () => {
     const baseline = createCaptureBaseline();
@@ -114,3 +132,23 @@ describe('setCaptureBaselineField', () => {
     expect(getCaptureBaselineField(baseline, 'canvas', 'fingerprint')).toBe('1:ffffff');
   });
 });
+
+describe('setCaptureBaselineProvenance', () => {
+  it('creates the column and leaves the other fields alone', () => {
+    const baseline = createCaptureBaseline();
+    setCaptureBaselineField(baseline, 'webgl', 'sha256', 'abc');
+    setCaptureBaselineProvenance(baseline, 'webgl', PROVENANCE);
+    expect(getCaptureBaselineField(baseline, 'webgl', 'sha256')).toBe('abc');
+    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toEqual(PROVENANCE);
+  });
+
+  it('copies rather than aliasing, so a later caller mutation cannot rewrite the record', () => {
+    const baseline = createCaptureBaseline();
+    const source = { ...PROVENANCE };
+    setCaptureBaselineProvenance(baseline, 'webgl', source);
+    source.frames = 99;
+    expect(getCaptureBaselineProvenance(baseline, 'webgl')?.frames).toBe(PROVENANCE.frames);
+  });
+});
+
+const PROVENANCE = { frames: 1, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };

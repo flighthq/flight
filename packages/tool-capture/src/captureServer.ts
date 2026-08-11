@@ -209,6 +209,11 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
   // A capture served from a stale dist measures the code as it was BEFORE the edit under test, and
   // answers with the pre-change result — which reads as "the change had no effect" rather than as a
   // failure to observe it. That is the most persuasive wrong answer available, so say it out loud.
+  // ★ DELIBERATELY WIDE: this fires on ANY capture-source edit, including a tool-capture change that
+  // cannot affect the bundle, and costs an unnecessary rebuild when it does. That is the accepted price.
+  // Narrowing it to "sources that actually reach the bundle" is how the defect it exists to prevent comes
+  // back — a stale dist silently served 22 missing routes and cost the fleet most of a day, and every
+  // narrowing is a new chance to mis-classify one source as irrelevant. Pay the rebuild.
   const staleness = explainCaptureDistStaleness(
     newestModifiedTime(distDir),
     newestCaptureSourceModifiedTime(tool, root),

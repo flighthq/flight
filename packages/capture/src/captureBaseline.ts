@@ -1,4 +1,9 @@
-import type { CaptureBaseline, CaptureColumnBaseline } from '@flighthq/types/contract';
+import type {
+  CaptureBaseline,
+  CaptureBaselineField,
+  CaptureBaselineProvenance,
+  CaptureColumnBaseline,
+} from '@flighthq/types/contract';
 
 /** Allocates an empty baseline record. Columns are added via setCaptureBaselineField. */
 export function createCaptureBaseline(): CaptureBaseline {
@@ -19,6 +24,9 @@ export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): stri
     if (entry.fingerprint !== undefined) out.fingerprint = entry.fingerprint;
     if (entry.sourceHash !== undefined) out.sourceHash = entry.sourceHash;
     if (entry.sha256 !== undefined) out.sha256 = entry.sha256;
+    // Provenance is emitted LAST so adding it to a column leaves every existing line in place and the
+    // diff is one appended block rather than a rewrite of the record.
+    if (entry.provenance !== undefined) out.provenance = entry.provenance;
     sorted[column] = out;
   }
   return JSON.stringify(sorted, null, 2) + '\n';
@@ -31,9 +39,18 @@ export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): stri
 export function getCaptureBaselineField(
   baseline: Readonly<CaptureBaseline>,
   column: string,
-  field: keyof CaptureColumnBaseline,
+  field: CaptureBaselineField,
 ): string | null {
   return baseline[column]?.[field] ?? null;
+}
+
+/** What produced one column's values, or `null` when the column is absent or predates provenance
+ * recording. A missing record reads as UNKNOWN provenance — never as agreement. */
+export function getCaptureBaselineProvenance(
+  baseline: Readonly<CaptureBaseline>,
+  column: string,
+): CaptureBaselineProvenance | null {
+  return baseline[column]?.provenance ?? null;
 }
 
 /**
@@ -56,8 +73,17 @@ export function parseCaptureBaseline(text: string): CaptureBaseline | null {
 export function setCaptureBaselineField(
   baseline: CaptureBaseline,
   column: string,
-  field: keyof CaptureColumnBaseline,
+  field: CaptureBaselineField,
   value: string,
 ): void {
   (baseline[column] ??= {})[field] = value;
+}
+
+/** Records what produced one column's values, creating the column entry if it does not yet exist. */
+export function setCaptureBaselineProvenance(
+  baseline: CaptureBaseline,
+  column: string,
+  provenance: Readonly<CaptureBaselineProvenance>,
+): void {
+  (baseline[column] ??= {}).provenance = { ...provenance };
 }
