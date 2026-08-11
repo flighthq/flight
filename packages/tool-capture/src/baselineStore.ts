@@ -1,11 +1,11 @@
 // Per-test committed baseline store: one JSON file per test at <subject-root>/baselines/<name>.json,
 // holding every column's values, e.g. { "canvas": { "fingerprint": "…", "sha256": "…" }, "flight:webgl": {…} }.
 // captureEntry produces each column's `sha256` (screenshot hash); captureValidation produces its
-// `fingerprint` (coarse render fingerprint). A record may retain either historical field alone, but once
-// both exist they can only be replaced together: preserving one while independently updating the other
-// would attribute different captures to one record. Other columns still use read-merge-write. Output is
-// prettier-compatible (sorted keys, 2-space, trailing newline) so it never churns the format gate. Replaces
-// the old tools/baselines/<subject>/<name>/<renderer>/{fingerprint.txt,baseline.sha256}.
+// `fingerprint` (coarse render fingerprint). The normal lifecycle writes those fields in separate passes,
+// so a one-sided record is a valid first stage and either pass must remain independently writable. Other
+// columns still use read-merge-write. Output is prettier-compatible (sorted keys, 2-space, trailing newline)
+// so it never churns the format gate. Replaces the old
+// tools/baselines/<subject>/<name>/<renderer>/{fingerprint.txt,baseline.sha256}.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -109,12 +109,6 @@ export function setBaselineField(
 ): void {
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
-  const otherEvidenceField = field === 'fingerprint' ? 'sha256' : field === 'sha256' ? 'fingerprint' : null;
-  if (otherEvidenceField !== null && getCaptureBaselineField(data, column, otherEvidenceField) !== null) {
-    throw new Error(
-      `refusing partial baseline write for ${subject}/${name}/${column}: cannot update ${field} while ${otherEvidenceField} exists; write fingerprint and sha256 together with setBaselineCaptureEvidence`,
-    );
-  }
   setCaptureBaselineField(data, column, field, value);
   writeBaseline(path, data);
 }

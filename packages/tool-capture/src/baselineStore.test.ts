@@ -135,24 +135,16 @@ describe('setBaselineField', () => {
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
   });
 
-  it('refuses to append sha256 to a separately written fingerprint', () => {
+  it('allows the normal transition from either one-sided field to a paired record', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
-
-    expect(() => setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash')).toThrow(
-      /refusing partial baseline write.*sha256.*fingerprint exists/,
-    );
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBeNull();
-  });
-
-  it('refuses to append a fingerprint to a separately written sha256', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash');
+    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'hash2');
+    setBaselineField(root, 'functional', 'foo', 'webgl', 'fingerprint', 'fp2');
 
-    expect(() => setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp')).toThrow(
-      /refusing partial baseline write.*fingerprint.*sha256 exists/,
-    );
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBeNull();
+    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'fingerprint')).toBe('fp2');
+    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
   });
 
   it('writes sorted, prettier-compatible JSON with a trailing newline', () => {
