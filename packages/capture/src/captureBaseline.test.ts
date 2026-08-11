@@ -151,4 +151,4 @@ describe('setCaptureBaselineProvenance', () => {
   });
 });
 
-const PROVENANCE = { frames: 1, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };
+const PROVENANCE = { frames: 1, sourceHash: 'a1b2c3', targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };

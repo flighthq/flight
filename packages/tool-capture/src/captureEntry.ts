@@ -25,6 +25,7 @@ import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
 import { writeCaptureReport } from './captureReport.js';
 import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
+import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
 
@@ -556,6 +557,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // differing provenance stays permitted until most records carry the field.
         setBaselineProvenance(root, tool, entry.name, renderer, {
           frames: captureFrames,
+          sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
           targetKind: verificationTargetKind,
           verifyPublished: dataUrl !== null,
           warmupFrames: await getCaptureWarmupFrames(page),
