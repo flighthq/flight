@@ -96,6 +96,7 @@ interface ModuleGlobalRegistryInventory {
   initialization: 'built-ins-at-import' | 'built-ins-on-first-read' | 'empty';
   module: string;
   packageName: string;
+  population: 'caller-filled' | 'self-filling';
   read: ModuleGlobalRegistrySeam;
   readerPackages: readonly string[];
   source: string;
@@ -145,6 +146,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/audio/contract',
     packageName: 'audio',
+    population: 'caller-filled',
     read: callerSeam('getAudioDecoder'),
     readerPackages: ['audio'],
     source: 'packages/audio/src/audioDecoderRegistry.ts',
@@ -159,8 +161,9 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/compression/contract',
     packageName: 'compression',
+    population: 'caller-filled',
     read: callerSeam('getDecompressor'),
-    readerPackages: ['compression', 'font-formats', 'scene3d-formats', 'swf'],
+    readerPackages: ['font-formats', 'scene3d-formats', 'swf'],
     source: 'packages/compression/src/decompressor.ts',
     table: 'decompressors',
     unregister: weakIndependentSeam('unregisterDecompressor'),
@@ -173,6 +176,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/debug/contract',
     packageName: 'debug',
+    population: 'caller-filled',
     read: callerSeam('enableDebug'),
     readerPackages: ['debug'],
     source: 'packages/debug/src/debug.ts',
@@ -187,6 +191,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/image-codec/contract',
     packageName: 'image-codec',
+    population: 'caller-filled',
     read: callerSeam('getImageBitmapComposer'),
     readerPackages: ['image', 'image-codec'],
     source: 'packages/image-codec/src/imageBitmapComposerRegistry.ts',
@@ -201,6 +206,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/image-codec/contract',
     packageName: 'image-codec',
+    population: 'caller-filled',
     read: callerSeam('getImageDecoder'),
     readerPackages: ['image-codec'],
     source: 'packages/image-codec/src/imageDecoderRegistry.ts',
@@ -215,6 +221,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/image-codec/contract',
     packageName: 'image-codec',
+    population: 'caller-filled',
     read: callerSeam('getImageEncoder'),
     readerPackages: ['image-codec'],
     source: 'packages/image-codec/src/imageEncoderRegistry.ts',
@@ -229,6 +236,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/interaction/contract',
     packageName: 'interaction',
+    population: 'caller-filled',
     read: callerSeam('hitTestGraphPoint'),
     readerPackages: ['interaction'],
     source: 'packages/interaction/src/hitTests.ts',
@@ -243,6 +251,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/interaction/contract',
     packageName: 'interaction',
+    population: 'caller-filled',
     read: callerSeam('hitTestGraphPointPrecise'),
     readerPackages: ['interaction'],
     source: 'packages/interaction/src/hitTests.ts',
@@ -257,6 +266,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/log/contract',
     packageName: 'log',
+    population: 'caller-filled',
     read: callerSeam('createJsonLogFormatter'),
     readerPackages: ['log'],
     source: 'packages/log/src/log.ts',
@@ -271,6 +281,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/particles-formats/contract',
     packageName: 'particles-formats',
+    population: 'caller-filled',
     read: callerSeam('getParticleFormatCodec'),
     readerPackages: ['particles-formats'],
     source: 'packages/particles-formats/src/formatRegistry.ts',
@@ -285,6 +296,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'built-ins-at-import',
     module: '@flighthq/skeleton2d/contract',
     packageName: 'skeleton2d',
+    population: 'self-filling',
     read: callerSeam('getSkeleton2DAnimationTargetBinder'),
     readerPackages: ['skeleton2d'],
     source: 'packages/skeleton2d/src/skeleton2dAnimationTarget.ts',
@@ -299,6 +311,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'empty',
     module: '@flighthq/skeleton2d/contract',
     packageName: 'skeleton2d',
+    population: 'caller-filled',
     read: callerSeam('solveSkeleton2DConstraints'),
     readerPackages: ['skeleton2d'],
     source: 'packages/skeleton2d/src/skeleton2dConstraint.ts',
@@ -313,6 +326,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/skeleton2d-formats/contract',
     packageName: 'skeleton2d-formats',
+    population: 'self-filling',
     read: callerSeam('parseSkeleton2D'),
     readerPackages: ['skeleton2d-formats'],
     source: 'packages/skeleton2d-formats/src/skeletonDetect.ts',
@@ -327,6 +341,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/spritesheet-formats/contract',
     packageName: 'spritesheet-formats',
+    population: 'self-filling',
     read: callerSeam('parseSpritesheet'),
     readerPackages: ['spritesheet-formats'],
     source: 'packages/spritesheet-formats/src/spritesheetDetect.ts',
@@ -341,6 +356,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/textureatlas-formats/contract',
     packageName: 'textureatlas-formats',
+    population: 'self-filling',
     read: callerSeam('parseTextureAtlas'),
     readerPackages: ['textureatlas-formats'],
     source: 'packages/textureatlas-formats/src/textureAtlasDetect.ts',
@@ -568,6 +584,18 @@ async function main(): Promise<void> {
       table: entry.table,
     })),
     processWideTier: {
+      callerFilledHold: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.population === 'caller-filled').map(
+        (entry) => entry.table,
+      ),
+      candidateEnumerationConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate !== null).map(
+        (entry) => entry.table,
+      ),
+      candidateEnumerationNonConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate === null).map(
+        (entry) => entry.table,
+      ),
+      candidateWeakestMembers: MODULE_GLOBAL_REGISTRIES.filter(
+        (entry) => entry.enumerate === null && entry.clear === null && entry.unregister === null,
+      ).map((entry) => entry.table),
       contract: {
         emptyAtImport: {
           inheritedFrom: 'AGENTS.md:42',
@@ -575,24 +603,19 @@ async function main(): Promise<void> {
         },
         requiredSeams: ['enumerate', 'read', 'clear-or-unregister'],
       },
-      enumerationConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate !== null).map(
-        (entry) => entry.table,
-      ),
-      enumerationNonConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate === null).map(
-        (entry) => entry.table,
-      ),
-      importBaselineViolations: MODULE_GLOBAL_REGISTRIES.filter((entry) => !entry.emptyAtImport).map((entry) => ({
+      discriminator: 'whether the registry module supplies its own defaults',
+      importPopulationExceptions: MODULE_GLOBAL_REGISTRIES.filter((entry) => !entry.emptyAtImport).map((entry) => ({
         initialization: entry.initialization,
-        scannerBlindSpot: 'top-level VariableDeclaration is outside scripts/packages.ts ExpressionStatement scan',
+        ruleViolation: false,
         source: entry.source,
         table: entry.table,
       })),
       readerCountLimitation:
         'readerPackages measures where lookup occurs, not every upstream call site that would have to thread caller-held state',
-      status: 'DECLARED',
-      weakestMembers: MODULE_GLOBAL_REGISTRIES.filter(
-        (entry) => entry.enumerate === null && entry.clear === null && entry.unregister === null,
-      ).map((entry) => entry.table),
+      selfFilling: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.population === 'self-filling').map(
+        (entry) => entry.table,
+      ),
+      status: 'SELF-FILLING-DECLARED; CALLER-FILLED-AWAITING-USER',
     },
     read: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.read !== null).length,
     singlePackageReaders: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.readerPackages.length === 1).length,

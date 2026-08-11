@@ -15,8 +15,9 @@ probe (written, run, removed; repository left clean). What it changed:
   including one copy that looks correct and is dead.
 - The **prescription got weaker.** The wiring tier is narrower than claimed, because the argument for its
   device-independence was invalid. There are five ownership tiers, not three: four renderer-local tiers
-  plus the process-wide capability tier declared by the Stage 1 census. The requirements model leaked
-  consumer policy into producers and has been rebuilt around facets. `OrdinalTable` lost its
+  plus the self-filling process-wide tier declared by the Stage 1 census. Caller-filled globals remain
+  held for a user ruling. The requirements model leaked consumer policy into producers and has been
+  rebuilt around facets. `OrdinalTable` lost its
   proposed member and was rejected, then re-admitted on a different one under a sharper criterion — see
   [`OrdinalTable`](#ordinaltable--integer-token-formats-only).
 
@@ -195,54 +196,66 @@ where enumeration exists, but it is inherited from the repository's
 [no-top-level-side-effects rule](../AGENTS.md#ground-rules) (line 42 when this census was recorded), not
 restated as a fifth-tier-specific contract.
 
-**Stage 1 decision: these are the fifth, process-wide capability-table ownership tier.** The fifteen
-tables form one coherent category — decoders, decompressors, encoders, format registries, serializers,
-solvers, and hit tests whose lifetime is the process. The tier contract requires an enumeration seam, a
-read seam, and one isolation seam (`clear` or `unregister`). This declares the ownership shape; it does
-not authorize converting any table to caller-held storage.
+**Stage 1 decision: self-filling registries are the fifth, process-wide ownership tier; caller-filled
+registries are held for the user.** A self-filling module supplies built-in defaults itself, lazily or in
+a module-private constant, so its population is process-wide by nature. A caller-filled registry starts
+empty and is populated only by an explicit application registration; calling that process-wide does no
+architectural work, because it is one caller handing one function to one callee through a global. The
+tier contract requires an enumeration seam, a read seam, and one isolation seam (`clear` or
+`unregister`). This partition authorizes no conversions.
 
-| Table (door) | enumerate | read | clear | unregister | import baseline | production reader packages |
-|---|---|---|---|---|---|---|
-| audio decoders (`registerAudioDecoder`) | `getAudioDecoderMimeTypes` | `getAudioDecoder` | — | `unregisterAudioDecoder` | empty | audio |
-| decompressors (`registerDecompressor`) | — | `getDecompressor` | — | `unregisterDecompressor` | empty | compression, font-formats, scene3d-formats, swf |
-| debug subsystems (`registerDebugSubsystem`) | — | `enableDebug` | — | `unregisterDebugSubsystem` | empty | debug |
-| image bitmap composers (`registerImageBitmapComposer`) | `getImageBitmapComposerKinds` | `getImageBitmapComposer` | `clearImageBitmapComposers` | `unregisterImageBitmapComposer` | empty | image, image-codec |
-| image decoders (`registerImageDecoder`) | `getImageDecoderMimeTypes` | `getImageDecoder` | `clearImageDecoders` | `unregisterImageDecoder` | empty | image-codec |
-| image encoders (`registerImageEncoder`) | `getImageEncoderMimeTypes` | `getImageEncoder` | `clearImageEncoders` | `unregisterImageEncoder` | empty | image-codec |
-| coarse hit tests (`registerHitTest`) | — | `hitTestGraphPoint` | — | — | empty | interaction |
-| precise hit tests (`registerHitTestPrecise`) | — | `hitTestGraphPointPrecise` | — | — | empty | interaction |
-| log serializers (`registerLogSerializer`) | — | `createJsonLogFormatter` | `clearLogSerializers` | — | empty | log |
-| particle formats (`registerParticleFormat`) | `getRegisteredParticleFormats` | `getParticleFormatCodec` | — | `unregisterParticleFormat` | empty | particles-formats |
-| skeleton animation target binders (`registerSkeleton2DAnimationTargetBinder`) | — | `getSkeleton2DAnimationTargetBinder` | — | `unregisterSkeleton2DAnimationTargetBinder` | two built-ins at import | skeleton2d |
-| skeleton constraint solvers (`registerSkeleton2DConstraintSolver`) | — | `solveSkeleton2DConstraints` | — | `unregisterSkeleton2DConstraintSolver` | empty | skeleton2d |
-| skeleton formats (`registerSkeleton2DFormat`) | — | `parseSkeleton2D` | — | `unregisterSkeleton2DFormat` | empty; two built-ins on first read | skeleton2d-formats |
-| spritesheet formats (`registerSpritesheetFormat`) | — | `parseSpritesheet` | — | — | empty; five built-ins on first read | spritesheet-formats |
-| texture-atlas formats (`registerTextureAtlasFormat`) | — | `parseTextureAtlas` | — | — | empty; four built-ins on first read | textureatlas-formats |
+| Table (door) | population | enumerate | read | clear | unregister | import baseline | production reader packages |
+|---|---|---|---|---|---|---|---|
+| audio decoders (`registerAudioDecoder`) | caller-filled | `getAudioDecoderMimeTypes` | `getAudioDecoder` | — | `unregisterAudioDecoder` | empty | audio |
+| decompressors (`registerDecompressor`) | caller-filled | — | `getDecompressor` | — | `unregisterDecompressor` | empty | font-formats, scene3d-formats, swf |
+| debug subsystems (`registerDebugSubsystem`) | caller-filled | — | `enableDebug` | — | `unregisterDebugSubsystem` | empty | debug |
+| image bitmap composers (`registerImageBitmapComposer`) | caller-filled | `getImageBitmapComposerKinds` | `getImageBitmapComposer` | `clearImageBitmapComposers` | `unregisterImageBitmapComposer` | empty | image, image-codec |
+| image decoders (`registerImageDecoder`) | caller-filled | `getImageDecoderMimeTypes` | `getImageDecoder` | `clearImageDecoders` | `unregisterImageDecoder` | empty | image-codec |
+| image encoders (`registerImageEncoder`) | caller-filled | `getImageEncoderMimeTypes` | `getImageEncoder` | `clearImageEncoders` | `unregisterImageEncoder` | empty | image-codec |
+| coarse hit tests (`registerHitTest`) | caller-filled | — | `hitTestGraphPoint` | — | — | empty | interaction |
+| precise hit tests (`registerHitTestPrecise`) | caller-filled | — | `hitTestGraphPointPrecise` | — | — | empty | interaction |
+| log serializers (`registerLogSerializer`) | caller-filled | — | `createJsonLogFormatter` | `clearLogSerializers` | — | empty | log |
+| particle formats (`registerParticleFormat`) | caller-filled | `getRegisteredParticleFormats` | `getParticleFormatCodec` | — | `unregisterParticleFormat` | empty | particles-formats |
+| skeleton animation target binders (`registerSkeleton2DAnimationTargetBinder`) | self-filling | — | `getSkeleton2DAnimationTargetBinder` | — | `unregisterSkeleton2DAnimationTargetBinder` | two built-ins in a module-private const | skeleton2d |
+| skeleton constraint solvers (`registerSkeleton2DConstraintSolver`) | caller-filled | — | `solveSkeleton2DConstraints` | — | `unregisterSkeleton2DConstraintSolver` | empty | skeleton2d |
+| skeleton formats (`registerSkeleton2DFormat`) | self-filling | — | `parseSkeleton2D` | — | `unregisterSkeleton2DFormat` | empty; two built-ins on first read | skeleton2d-formats |
+| spritesheet formats (`registerSpritesheetFormat`) | self-filling | — | `parseSpritesheet` | — | — | empty; five built-ins on first read | spritesheet-formats |
+| texture-atlas formats (`registerTextureAtlasFormat`) | self-filling | — | `parseTextureAtlas` | — | — | empty; four built-ins on first read | textureatlas-formats |
 
 All 15 have a read path, but only 5 enumerate and 11 have either clear or unregister isolation. Four
-tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (four packages) and
+tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (three packages) and
 image bitmap composers (two) have production reads spanning more than their owning package. That read
-graph helped decide the tier, but its count has a permanent limitation: it measures **where lookup
-happens**, not the upstream call sites that would have to thread caller-held state. Image decoders have
-one reader package (`image-codec`), while their decode entry point is called from loader, assets,
-scene3d-resources, and the texture path; `13 of 15 are single-package readers` is therefore not a measure
-of conversion cost.
+graph is evidence but no longer the discriminator. Its count also has a permanent limitation: it measures
+**where lookup happens**, not the upstream call sites that would have to thread caller-held state. Image
+decoders have one reader package (`image-codec`), while their decode entry point is called from loader,
+assets, scene3d-resources, and the texture path; `13 of 15 are single-package readers` is therefore not a
+measure of conversion cost. Compression has three readers: its own package defines and re-exports the
+lookup but does not consume it, and a barrel re-export is not a reader.
 
-The enumeration conformance list is explicit debt rather than an invisible contract violation. The five
-conforming tables are audio decoders, image bitmap composers, image decoders, image encoders, and particle
-formats. The ten missing enumeration are decompressors, debug subsystems, coarse hit tests, precise hit
-tests, log serializers, skeleton animation target binders, skeleton constraint solvers, skeleton formats,
-spritesheet formats, and texture-atlas formats. The weakest members, flagged for future drift review but
-not changed here, are the four read-only tables with neither enumeration nor isolation: coarse hit tests,
-precise hit tests, spritesheet formats, and texture-atlas formats.
+The sound population test asks whether the registry module supplies its own defaults, never whether a
+packages-scoped search found a caller. The four self-filling members are skeleton formats, spritesheet
+formats, texture-atlas formats, and skeleton animation target binders. The other eleven are caller-filled:
+audio decoders, decompressors, debug subsystems, image bitmap composers, image decoders, image encoders,
+coarse hit tests, precise hit tests, log serializers, particle formats, and skeleton constraint solvers.
+Compile-time closure could make the missing image-decoder registration that triggered this program
+unrepresentable; those eleven therefore remain held for the user rather than being absorbed into the
+fifth tier by their storage location.
 
-Fourteen tables are empty at import. The animation-target binder is the literal exception, not loose
-wording: `skeleton2dAnimationTarget.ts` constructs `_binders` with the Bone and Slot bindings inside a
-top-level `new Map([...])` initializer. That is a live violation of the inherited import-side-effect rule.
-It also supplies the concrete case missing from the scanner-widening measurement:
-`checkNoTopLevelSideEffects` in `scripts/packages.ts` inspects only `ExpressionStatement`, so this
-`VariableDeclaration` is invisible to the current gate. Record the violation; do not repair it as part of
-the census.
+The candidate enumeration list remains explicit debt rather than an invisible contract violation. The
+five enumerating tables are audio decoders, image bitmap composers, image decoders, image encoders, and
+particle formats. The ten missing enumeration are decompressors, debug subsystems, coarse hit tests,
+precise hit tests, log serializers, skeleton animation target binders, skeleton constraint solvers,
+skeleton formats, spritesheet formats, and texture-atlas formats. All four declared self-filling members
+are in that second list. The weakest candidates, flagged for future drift review but not changed here, are
+the four read-only tables with neither enumeration nor isolation: coarse hit tests, precise hit tests,
+spritesheet formats, and texture-atlas formats.
+
+Fourteen tables are empty at import. The animation-target binder is the literal population exception:
+`skeleton2dAnimationTarget.ts` constructs `_binders` with the Bone and Slot bindings inside a top-level
+`new Map([...])` initializer. It is **not** a violation of the inherited import-side-effect rule: the map
+is module-private, contains the module's own functions, and makes no registration observable on import.
+The current `checkNoTopLevelSideEffects` scan would not inspect this `VariableDeclaration`, but selector
+absence does not turn a permitted private initializer into a defect.
 
 The existing top-level-side-effect gate was separately widened in a throwaway measurement and left
 unchanged. Its current `ExpressionStatement` walk misses all other statement categories. Applying the
@@ -273,9 +286,12 @@ capability, derived a state, and asserted the lookup came back empty. All assert
   after derivation despite registration before it. A copy that reads as correct and does nothing is worse
   than an omission, and no review of the copy function alone would catch it.
 
-**At least 15 registries are module-global**, which `registration-model.md` already forbids: *"it cannot
-be introspected, cannot be isolated between states, and makes 'wired' indistinguishable from 'wired by
-someone else's test'."* `interaction`'s `hitTestRegistry` takes no state parameter at all.
+**The census found 15 module-global registries.** The earlier blanket conclusion that
+`registration-model.md` forbids all fifteen is superseded by the population partition above: four
+self-filling registries establish the fifth tier, while the eleven caller-filled registries remain held
+for the user. The existing objection still describes the caller-filled risk: *"it cannot be introspected,
+cannot be isolated between states, and makes 'wired' indistinguishable from 'wired by someone else's
+test'."* `interaction`'s caller-filled `hitTestRegistry` takes no state parameter at all.
 
 **23 registries have no key, so they cannot be reported.** `explain*Coverage` walks lists of kinds; a slot
 has no kind to walk. Where a slot does reach the miss seam it borrows the consumer's kind —
@@ -316,7 +332,7 @@ action merges two tiers. The process-global census adds the fifth tier outside t
 | Application wiring | pure registration policy (see retraction above) | application setup |
 | Root / pipeline instance | proxy maps, proxy sources, `rendererMapId`, frame counter | many frames — a cache state is built once by `createGlCacheState` and reused by `refreshGlRenderCache` |
 | Render pass / invocation | framebuffer, viewport, scissor, stencil | one pass, bracketed by `beginGlRenderPass` / `endGlRenderPass` |
-| Process-wide capability | decoders, format registries, serializers, solvers, hit tests | process lifetime, behind enumerate + read + isolation seams |
+| Process-wide self-filling capability | self-populated format registries and animation-target binders | process lifetime, behind enumerate + read + isolation seams |
 
 "Fresh when a derived pipeline is constructed" is not "one pass." The retained tier is the one that
 matters for derivation, and it is the third, not the fourth.
