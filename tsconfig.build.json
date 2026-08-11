@@ -78,6 +78,7 @@
     { "path": "./packages/platform" },
     { "path": "./packages/power" },
     { "path": "./packages/protocol" },
+    { "path": "./packages/registry" },
     { "path": "./packages/render" },
     { "path": "./packages/render-gl" },
     { "path": "./packages/render-wgpu" },

@@ -220,6 +220,8 @@
       "@flighthq/scene2d-gl/*": ["./packages/scene2d-gl/src/*"],
       "@flighthq/scene2d-wgpu": ["./packages/scene2d-wgpu/src/index.ts"],
       "@flighthq/scene2d-wgpu/*": ["./packages/scene2d-wgpu/src/*"],
+      "@flighthq/registry": ["./packages/registry/src/index.ts"],
+      "@flighthq/registry/*": ["./packages/registry/src/*"],
       "@flighthq/render": ["./packages/render/src/index.ts"],
       "@flighthq/render/*": ["./packages/render/src/*"],
       "@flighthq/render-gl": ["./packages/render-gl/src/index.ts"],

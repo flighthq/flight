@@ -2,6 +2,7 @@ export * from './Aabb';
 export * from './CanvasTextShaperBackend';
 export * from './CffTable';
 export * from './OpenTypeFontExplanation';
+export * from './RegistryTable';
 export * from './Scene3DPickOptions';
 export * from './SfntTableDirectory';
 export * from './TextShaperCache';
