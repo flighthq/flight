@@ -16,6 +16,6 @@ describe('registerGlStandardPbrMaterial', () => {
   it('does not imply texture source registration', () => {
     const { state } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
-    expect(getGlRenderStateRuntime(state).glTextureResolverRegistry).toBeUndefined();
+    expect(getGlRenderStateRuntime(state).registries.textureResolvers.entries.size).toBe(0);
   });
 });

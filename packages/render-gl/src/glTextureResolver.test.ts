@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { getRegistryTableKeys } from '@flighthq/registry/contract';
 import type { Image, RenderTexture, TextureLike, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -80,11 +81,17 @@ function textureWithTarget(): TextureLike {
   return texture;
 }
 
+function registeredTextureSourceKinds(state: Parameters<typeof getGlRenderStateRuntime>[0]): string[] {
+  const kinds: string[] = [];
+  getRegistryTableKeys(kinds, getGlRenderStateRuntime(state).registries.textureResolvers);
+  return kinds;
+}
+
 describe('registerGlBitmapTextureResolver', () => {
   it('registers only the Bitmap source key', () => {
     const { state } = createGlState();
     registerGlBitmapTextureResolver(state);
-    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([BitmapTextureSourceKind]);
+    expect(registeredTextureSourceKinds(state)).toEqual([BitmapTextureSourceKind]);
   });
 });
 
@@ -92,9 +99,7 @@ describe('registerGlCompressedImageTextureResolver', () => {
   it('registers only the CompressedImage source key', () => {
     const { state } = createGlState();
     registerGlCompressedImageTextureResolver(state);
-    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([
-      CompressedImageTextureSourceKind,
-    ]);
+    expect(registeredTextureSourceKinds(state)).toEqual([CompressedImageTextureSourceKind]);
   });
 });
 
@@ -225,7 +230,7 @@ describe('registerGlTextureResolver', () => {
 
     registerGlTextureResolver(a, sourceKind, second);
     expect(resolveGlTexture(a, texture)).toEqual({ second: true });
-    expect(getGlRenderStateRuntime(a).glTextureResolverRegistry?.size).toBe(1);
+    expect(getGlRenderStateRuntime(a).registries.textureResolvers.entries.size).toBe(1);
 
     registerGlTextureResolver(a, sourceKind, null);
     expect(resolveGlTexture(a, texture)).toBeNull();
@@ -244,7 +249,7 @@ describe('registerStandardGlTextureResolvers', () => {
   it('registers bitmap, image, and render texture sources without compressed images', () => {
     const { state } = createGlState();
     registerStandardGlTextureResolvers(state);
-    expect([...getGlRenderStateRuntime(state).glTextureResolverRegistry!.keys()]).toEqual([
+    expect(registeredTextureSourceKinds(state)).toEqual([
       BitmapTextureSourceKind,
       ImageTextureSourceKind,
       RenderTargetTextureSourceKind,

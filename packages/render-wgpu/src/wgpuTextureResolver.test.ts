@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { getRegistryTableKeys } from '@flighthq/registry/contract';
 import type { Image, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -83,11 +84,17 @@ function renderTexture(): RenderTexture {
   return texture as RenderTexture;
 }
 
+function registeredTextureSourceKinds(state: Parameters<typeof getWgpuRenderStateRuntime>[0]): string[] {
+  const kinds: string[] = [];
+  getRegistryTableKeys(kinds, getWgpuRenderStateRuntime(state).registries.textureResolvers);
+  return kinds;
+}
+
 describe('registerStandardWgpuTextureResolvers', () => {
   it('registers bitmap, image, and render texture sources without compressed images', async () => {
     const state = await createWgpuRenderStateForTest();
     registerStandardWgpuTextureResolvers(state);
-    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
+    expect(registeredTextureSourceKinds(state)).toEqual([
       BitmapTextureSourceKind,
       ImageTextureSourceKind,
       RenderTargetTextureSourceKind,
@@ -99,9 +106,7 @@ describe('registerWgpuBitmapTextureResolver', () => {
   it('registers only the Bitmap source key', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuBitmapTextureResolver(state);
-    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
-      BitmapTextureSourceKind,
-    ]);
+    expect(registeredTextureSourceKinds(state)).toEqual([BitmapTextureSourceKind]);
   });
 });
 
@@ -109,9 +114,7 @@ describe('registerWgpuCompressedImageTextureResolver', () => {
   it('registers only the CompressedImage source key', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedImageTextureResolver(state);
-    expect([...getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry!.keys()]).toEqual([
-      CompressedImageTextureSourceKind,
-    ]);
+    expect(registeredTextureSourceKinds(state)).toEqual([CompressedImageTextureSourceKind]);
   });
 });
 

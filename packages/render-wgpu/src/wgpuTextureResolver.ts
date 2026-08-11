@@ -1,3 +1,4 @@
+import { withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -17,6 +18,7 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderRegistry,
+  RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -46,17 +48,19 @@ export function registerWgpuRenderTextureResolver(state: WgpuRenderState): void 
   registerWgpuTextureResolver(state, RenderTargetTextureSourceKind, resolveWgpuRenderTexture);
 }
 
-// Registers or replaces one declared source-kind resolver on this render state. Map.set is
-// last-write-wins; passing null removes the key.
+// Registers or replaces one declared source-kind resolver on this render state. The persistent table
+// replacement is last-write-wins; passing null removes the key.
 export function registerWgpuTextureResolver(
   state: WgpuRenderState,
   sourceKind: TextureSourceKind,
   resolver: WgpuTextureResolver | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const registry = (runtime.wgpuTextureResolverRegistry ??= new Map());
-  if (resolver === null) registry.delete(sourceKind);
-  else registry.set(sourceKind, resolver);
+  const table = runtime.registries.textureResolvers;
+  runtime.registries.textureResolvers =
+    resolver === null
+      ? withoutRegistryTableEntry(table, sourceKind)
+      : withRegistryTableEntry(table, sourceKind, resolver);
 }
 
 // Resolves through one keyed lookup using the source's declared kind. Resolution may realize, upload,
@@ -71,12 +75,12 @@ export function resolveWgpuTexture(
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
   const runtime = getWgpuRenderStateRuntime(state);
-  const resolver = runtime.wgpuTextureResolverRegistry?.get(sourceKind);
-  if (resolver === undefined) {
+  const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
+  if (entry?.state !== RegistryEntryState.Bound) {
     runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
-  return resolver(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
+  return entry.value(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
 }
 
 function resolveWgpuBitmapTexture(

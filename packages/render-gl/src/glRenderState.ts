@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   copyRenderStateRegistrations,
@@ -12,8 +13,9 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { compileDefaultGlProgram, createDefaultGlBitmapShader } from './glShader';
 
-// Explicit snapshot re-copy. This never aliases registration maps: last-write-wins divergence is the
-// point of a second render state, and a cache/effect state may intentionally omit screen policy.
+// Explicit snapshot re-copy. Mutable legacy maps are cloned; persistent tables may share immutable
+// snapshots through distinct aggregates. Either way, later replacements diverge between render states,
+// and a cache/effect state may intentionally omit screen policy.
 export function copyGlRenderStateRegistrations(target: GlRenderState, source: GlRenderState): void {
   const targetRuntime = getGlRenderStateRuntime(target);
   const sourceRuntime = getGlRenderStateRuntime(source);
@@ -28,7 +30,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
     sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
   targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
-  targetRuntime.glTextureResolverRegistry = copyRegistryMap(sourceRuntime.glTextureResolverRegistry);
+  targetRuntime.registries = { textureResolvers: sourceRuntime.registries.textureResolvers };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
@@ -178,6 +180,9 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
     });
   }
   runtime.currentRenderTarget = null;
+  runtime.registries = {
+    textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
+  };
   // Per-state, not shared on the context tier: guards are installed per render state.
   runtime.bindingCacheGuard = null;
   return runtime;
@@ -290,17 +295,6 @@ function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> 
   if (source === undefined) return undefined;
   if (source === null) return null;
   return new Map(source);
-}
-
-// Guard-enabled registries are Map subclasses. Constructing through the source registry preserves
-// that diagnostic behavior while still producing an independent registration snapshot.
-function copyRegistryMap<K, V>(source: Map<K, V> | null | undefined): Map<K, V> | null | undefined {
-  if (source === undefined) return undefined;
-  if (source === null) return null;
-  const Registry = source.constructor as new () => Map<K, V>;
-  const result = new Registry();
-  source.forEach((value, key) => result.set(key, value));
-  return result;
 }
 
 type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];

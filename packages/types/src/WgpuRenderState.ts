@@ -5,13 +5,13 @@ import type { ExternalTexture } from './ExternalTexture';
 import type { Image } from './Image';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
+import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
 import type { TextureSource } from './TextureSource';
-import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
@@ -29,6 +29,12 @@ export interface WgpuRenderState extends RenderState {
   readonly context: GPUCanvasContext;
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
+}
+
+// Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
+// pipeline may initially share them, while either aggregate can later replace a member independently.
+export interface WgpuRenderRegistries {
+  textureResolvers: KeyedTable<WgpuTextureResolver>;
 }
 
 // The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Installed on the runtime
@@ -74,6 +80,7 @@ export interface WgpuColorAdjustmentFlush {
 // frame via getWgpuRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
+  registries: WgpuRenderRegistries;
   // Active blend mode tracked to avoid redundant pipeline rebinds. Internal — formerly public on the
   // WgpuRenderState entity.
   currentBlendMode: BlendMode | null;
@@ -129,9 +136,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // frames; uploadedVersion gates the copy, while width/height detect resolution changes.
   videoTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
   videoSrgbTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;
-  // Open, state-scoped Texture source registry keyed by the source's declared string kind.
-  // Map.set is last-write-wins; undefined until first registration.
-  wgpuTextureResolverRegistry?: Map<TextureSourceKind, WgpuTextureResolver> | null;
   // Borrowed native handles and derived non-owning views/bind groups. Disposal only forgets the entry.
   wgpuExternalTextureCache?: WeakMap<ExternalTexture, WgpuTextureEntry>;
   // Render Texture realizations are keyed by Texture because their GPU allocation is state-bound.
