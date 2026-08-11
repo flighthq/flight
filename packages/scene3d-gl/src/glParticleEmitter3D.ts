@@ -85,16 +85,17 @@ uniform int u_hasTexture;
 
 out vec4 fragColor;
 
-// Both branches output premultiplied alpha (rgb already scaled by alpha), matching the codebase-wide
-// premultiplied convention the blend funcs in applyGlParticleBlendMode assume. The texture is uploaded
-// premultiplied by bindGlTexture, so tex.rgb is pre-scaled by tex.a; the trailing * v_color.a then
-// premultiplies the tint alpha. The untextured branch premultiplies v_color explicitly.
+// Both branches output premultiplied alpha, matching the blend funcs in applyGlParticleBlendMode.
+// Textured particles keep the atlas straight through upload so an sRGB sample decodes before this
+// multiply; multiplying encoded bytes first would produce decode(rgb * alpha), not decode(rgb) * alpha.
 void main() {
   if (u_hasTexture != 0) {
     vec4 tex = texture(u_texture, v_uv);
-    fragColor = vec4(tex.rgb * v_color.rgb, tex.a) * v_color.a;
+    float alpha = tex.a * v_color.a;
+    fragColor = vec4(tex.rgb * v_color.rgb * alpha, alpha);
   } else {
-    fragColor = vec4(v_color.rgb * v_color.a, v_color.a);
+    float alpha = v_color.a;
+    fragColor = vec4(v_color.rgb * alpha, alpha);
   }
   if (fragColor.a <= 0.0) discard;
 }`;
@@ -230,7 +231,7 @@ function drawParticleEmitter3DNode(
 
   const atlasTexture = atlas?.texture ?? null;
   const resolvedAtlas =
-    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveGlTexture(state, atlasTexture, true) : null;
+    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveGlTexture(state, atlasTexture, false) : null;
   const hasAtlas = resolvedAtlas !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;

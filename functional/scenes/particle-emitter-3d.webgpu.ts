@@ -3,11 +3,15 @@ import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createScene3DLights,
   addNodeChild,
+  addTextureAtlasRegion,
   beginWgpuRenderEffectPipeline,
   createCamera3D,
+  createImageResourceFromCanvas,
   createParticleEmitter3D,
   createPerspectiveProjection,
   createScene3D,
+  createTexture,
+  createTextureAtlas,
   createVector3,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -15,6 +19,7 @@ import {
   endWgpuRenderEffectPipeline,
   getBitmapPixel,
   prepareScene3DRender,
+  registerWgpuImageTextureResolver,
   renderWgpuBackground,
   reserveParticleEmitter3D,
   setCamera3DViewMatrix4FromLookAt,
@@ -22,12 +27,14 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. Three
-// untextured camera-facing instances carry independent positions and color tints.
+// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. The
+// colored, partially-transparent sRGB atlas distinguishes post-decode shader premultiplication from an
+// encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101018ff });
+registerWgpuImageTextureResolver(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
@@ -48,25 +55,30 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 
 registerWgpuFunctionalTarget(state, scale);
 
+const ATLAS_SIZE = 64;
+const PARTICLE_ALPHA = 0.5;
+
 const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();
+const atlas = createTextureAtlas({
+  // The default sRGB declaration is intentional: the resolver decodes these colored atlas pixels into
+  // the linear scene target before the particle shader applies alpha.
+  texture: createTexture({ dimension: '2d', source: createImageResourceFromCanvas(makeAtlasCanvas()) }),
+});
+addTextureAtlasRegion(atlas, 0, 0, ATLAS_SIZE, ATLAS_SIZE);
+emitter.data.atlas = atlas;
 reserveParticleEmitter3D(emitter, 3);
 emitter.data.particleCount = 3;
 const positions = [-1.2, 0, 1.2];
-const colors: readonly (readonly [number, number, number])[] = [
-  [1, 0, 0],
-  [0, 1, 0],
-  [0, 0, 1],
-];
 for (let particle = 0; particle < 3; particle++) {
   emitter.data.ids[particle] = 0;
-  emitter.data.alphas[particle] = 1;
+  emitter.data.alphas[particle] = PARTICLE_ALPHA;
   emitter.data.positionsZ[particle] = 0;
   emitter.data.transforms[particle * 4] = positions[particle];
   emitter.data.transforms[particle * 4 + 1] = 0;
   emitter.data.transforms[particle * 4 + 2] = particle * 0.35;
   emitter.data.transforms[particle * 4 + 3] = 0.9;
-  emitter.data.colors.set(colors[particle], particle * 3);
+  emitter.data.colors.set([1, 1, 1], particle * 3);
 }
 addNodeChild(scene, emitter);
 
@@ -79,18 +91,30 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0
 render(scene, camera, createScene3DLights({ ambient: null, directional: null }));
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
-  const probes: readonly (readonly [number, readonly [number, number, number]])[] = [
-    [0.344, [255, 0, 0]],
-    [0.5, [0, 255, 0]],
-    [0.656, [0, 0, 255]],
-  ];
-  for (const [x, expected] of probes) {
+  for (const x of [0.344, 0.5, 0.656]) {
     const pixel = getBitmapPixel(bitmap, Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5));
     const actual = [(pixel >>> 24) & 0xff, (pixel >>> 16) & 0xff, (pixel >>> 8) & 0xff];
-    for (let channel = 0; channel < 3; channel++) {
-      if (expected[channel] > 128 ? actual[channel] < 150 : actual[channel] > 100) {
-        throw new Error(`[particle-emitter-3d] color probe ${x} is #${(pixel >>> 8).toString(16).padStart(6, '0')}`);
-      }
+    if (!isCorrectAtlasComposite(actual)) {
+      throw new Error(
+        `[particle-emitter-3d] colored translucent atlas probe ${x} is #${(pixel >>> 8).toString(16).padStart(6, '0')}`,
+      );
     }
   }
+}
+
+function isCorrectAtlasComposite(rgb: readonly number[]): boolean {
+  // Correct post-decode premultiplication lands near #793320 over the dark background. The encoded-byte
+  // upload bug is much darker (about #52251b); omitting either alpha factor is much brighter (about
+  // #a5672a), so this bounded oracle rejects both wrong equations on both GPU backends.
+  return rgb[0] >= 105 && rgb[0] <= 145 && rgb[1] >= 40 && rgb[1] <= 70 && rgb[2] >= 25 && rgb[2] <= 50;
+}
+
+function makeAtlasCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = ATLAS_SIZE;
+  canvas.height = ATLAS_SIZE;
+  const context = canvas.getContext('2d')!;
+  context.fillStyle = 'rgba(224,96,48,0.5)';
+  context.fillRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
+  return canvas;
 }

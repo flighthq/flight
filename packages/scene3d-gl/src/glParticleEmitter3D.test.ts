@@ -219,6 +219,29 @@ describe('drawGlScene3DParticleEmitter3Ds', () => {
     ).toBe(true);
   });
 
+  it('uploads atlas pixels with straight alpha for post-decode shader premultiplication', () => {
+    const { state, gl } = makeAtlasGlScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(64, 32));
+    drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const premultiplyCalls = gl.calls.filter((c) => c.name === 'pixelStorei');
+    expect(premultiplyCalls.some((c) => c.args[1] === false)).toBe(true);
+    expect(premultiplyCalls.some((c) => c.args[1] === true)).toBe(false);
+  });
+
+  it('premultiplies sampled atlas color after decode in the fragment shader', () => {
+    const { state, gl } = makeAtlasGlScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(64, 32));
+    drawGlScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const fragmentSource = gl.calls
+      .filter((c) => c.name === 'shaderSource')
+      .map((c) => String(c.args[1]))
+      .find((source) => source.includes('out vec4 fragColor'));
+    expect(fragmentSource).toContain('float alpha = tex.a * v_color.a;');
+    expect(fragmentSource).toContain('vec4(tex.rgb * v_color.rgb * alpha, alpha)');
+  });
+
   it('normalizes the particle quad to an aspect-ratio unit square, not the region pixel size', () => {
     const { state, gl } = makeAtlasGlScene3DState();
     const scene = createNode3D(Node3DKind);
