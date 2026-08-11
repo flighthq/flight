@@ -38,6 +38,19 @@ against supplied content rather than a tree they hold.
 without the marker the table flattens checked and unchecked into one confident-looking grid, which is
 the same flat-aggregate defect the scoreboard was designed to avoid.
 
+**The trigger for adding a row is the final tree, not the parcel.** A claim is registered when it is
+newly present in the final tree integration attests, whatever put it there — parcel, base move, or
+integration's own edit. Mechanically: sweep `git log <last-attested>..HEAD` for baseline, corpus, perf
+and mutation claims before attesting, not just the parcels applied along the way. **This wording is
+deliberately identical in shape to the whole-repo gate rule** ("the gate runs on the final tree,
+whatever put the commits there") **so the two cannot drift apart again.** The earlier, implicit
+per-parcel shape of this trigger had the same blind spot the gate rule was corrected for this morning:
+commits arriving by base move fire no parcel and no attestation event, so a claim that entered that way
+was invisible to the register for as long as the per-parcel shape stood, with nothing to announce that
+it had gone uncounted. A trigger with this blind spot does not produce a wrong count — it produces a
+count that reads as complete while quietly missing a whole arrival path, which is worse, because the
+number is the thing people trust.
+
 ## Entries
 
 | # | Class | Commit (integration's post-apply hash) | Claim | Cause | Provenance |
@@ -51,6 +64,7 @@ the same flat-aggregate defect the scoreboard was designed to avoid.
 | 7 | `untested-instrument` | `3dc27f69f` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree `aa279c96a` |
 | 8 | `perf-size` | `feat(effects-gl): report per-effect resolution so a passthrough stops reading as complete` (subject, not hash — see below) | builder2: `npm run size` run read-only over the effects-gl dispatch, effects/webgl −0.4%; no pin rewritten | A | as-reported |
 | 9 | `capture-baseline` | `d7d8fbc8e` | builder2: restores support-matrix tick marks for `scene-morph`, `scene-skin-morph-compose`, `scene-skinning` and `scene-transparent` from fingerprints captured before the rename that swept them (`c0eeab24e`), never re-verified against what those scenes render today. The matrix is internally consistent — realization plus committed fingerprint — which is weaker than agreement. Whoever next runs `test:functional:regression` in the environment its baselines were captured in should check those four first. | A | as-reported |
+| 10 | `capture-baseline` | `9c5b5ed4f` + `924be5c97` (both shared, on `origin/develop`) | `builder`: the two non-uniform-scale skinning scenes (`scene-skin-nonuniform-normals`, `shadow-skin-nonuniform`, webgl + webgpu) landed with their fingerprint baselines and 50 new `support-matrix.json` entries, captured in the author's environment. `support:check` and `check-fingerprint-source-hashes:check` both pass, proving the matrix is internally consistent with the committed fingerprints — weaker than agreement, same shape as row 9. Integration is barred from the regression and parity legs, so nobody in the integration path has compared these baselines to what the scenes actually render. | A | verified-at-tree `c5ed5e5ce` — integration read the commits and the baseline files, not the pixels |
 
 **Row 8 names its commit by SUBJECT, and the column heading is the reason it has to.** "Integration's
 post-apply hash" is not a stable identifier: a rebase onto a moved `origin/develop` re-mints every
