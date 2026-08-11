@@ -492,6 +492,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .screenshot()
           .catch(() => page.screenshot());
       }
+      // WIRING THIS TO hashCaptureScreenshotPixels IS ATOMIC WITH THE RECAPTURE, NOT BEFORE IT.
+      // Decoding first changes what sha256 MEANS, so the 574 committed values become wrong rather than
+      // stale the instant it goes live, and every capture check reds until the recapture completes.
+      // The mechanism is built and tested in captureScreenshotHash.ts; only the switch is held.
       const hash = createHash('sha256').update(screenshotBuffer).digest('hex');
 
       // Atomic write: tmp files renamed into place, status.json written last.
