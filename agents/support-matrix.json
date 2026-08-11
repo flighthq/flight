@@ -3449,6 +3449,31 @@
           }
         },
         {
+          "scene": "scene-skin-nonuniform-normals",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "scene-skinning",
           "backends": {
             "canvas": {
@@ -3843,6 +3868,31 @@
         },
         {
           "scene": "shadow-scene-scale",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "shadow-skin-nonuniform",
           "backends": {
             "canvas": {
               "status": "unbaselined",
