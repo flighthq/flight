@@ -84,6 +84,7 @@
     { "path": "./packages/requirements" },
     { "path": "./packages/registry-catalog" },
     { "path": "./packages/registry-codegen" },
+    { "path": "./packages/tool-registry" },
     { "path": "./packages/textureatlas-formats" },
     { "path": "./packages/assets" },
     { "path": "./packages/audio" },
