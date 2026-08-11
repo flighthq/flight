@@ -156,6 +156,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/host-tauri',
     '@flighthq/sdk',
     '@flighthq/tool-capture',
+    '@flighthq/tool-registry',
   ],
 };
 

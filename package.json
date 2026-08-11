@@ -41,6 +41,8 @@
     "capabilities:sites:check": "tsx ./scripts/swf-diagnostic-sites.ts --check",
     "capabilities:tag-census": "tsx ./scripts/swf-tag-census.ts",
     "capabilities:tag-dispatch": "tsx ./scripts/swf-tag-dispatch.ts",
+    "catalog": "tsx ./scripts/catalog.ts",
+    "catalog:check": "tsx ./scripts/catalog.ts --check",
     "capture:baseline": "npm run capture:examples:baseline && npm run capture:functional:baseline",
     "capture:check": "npm run capture:examples:check && npm run capture:functional:check",
     "capture:examples": "tsx ./packages/tool-capture/src/bin.ts capture --tool=examples",
