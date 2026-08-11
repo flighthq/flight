@@ -11,7 +11,9 @@ import { isOwnedCommit, readLastCommitDates, readPackageChurn, sumChurnSince } f
 const temporaryDirectories: string[] = [];
 
 afterEach(() => {
-  for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { force: true, recursive: true });
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { force: true, maxRetries: 3, recursive: true });
+  }
 });
 
 describe('readLastCommitDates', () => {
