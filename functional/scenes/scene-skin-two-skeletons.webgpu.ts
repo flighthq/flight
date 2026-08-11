@@ -116,9 +116,16 @@ function addBar(centerY: number, scaleX: number, jointCount: number, boundJoint:
 
 const scaledBoundJoint = 1;
 // 80 joints, with the bar weighted to joint 70, puts this skeleton's matrices at texels 280-283 — ROW 1
-// of a 256-texel arena row. The row math in the shader is therefore exercised by an ordinary render
-// rather than only by a mock-device unit test: if `index / width` and `index % width` disagreed with the
-// allocator, this bar would sample another skeleton's texels and its width would be wrong.
+// of a 256-texel arena row, so an ordinary render drives the two-row allocation path rather than leaving
+// it to a mock-device unit test. Measured on hardware, the two skeletons take bases 0 and 256.
+//
+// ★ IT DRIVES THAT PATH BUT DOES NOT POLICE IT, AND THE DIFFERENCE IS EASY TO MISREAD. Every joint in
+// this skeleton is the identity matrix, so a draw that reads the WRONG base still reads an identical
+// matrix and this bar's width does not move: forcing the consumed base to 0 leaves the frame
+// byte-identical. Collapsing the arena cursor is invisible for a different reason — a retired texture
+// stays readable for the rest of the frame, so the earlier draw's bind group still samples correct data.
+// Detecting either needs a distinguishing joint in this palette; until then the scene is evidence that
+// the allocator spans rows, not that the lookup reads the right one.
 const rigidJointCount = 80;
 const rigidBoundJoint = 70;
 const scaledSkeleton = addBar(1.2, 3, 2, scaledBoundJoint);

@@ -111,10 +111,14 @@ function addBar(centerY: number, scaleX: number, jointCount: number, boundJoint:
 }
 
 const scaledBoundJoint = 1;
-// 80 joints, with the bar weighted to joint 70, puts this skeleton's matrices at texels 280-283 — ROW 1
-// of a 256-texel arena row. The row math in the shader is therefore exercised by an ordinary render
-// rather than only by a mock-device unit test: if `index / width` and `index % width` disagreed with the
-// allocator, this bar would sample another skeleton's texels and its width would be wrong.
+// 80 joints, with the bar weighted to joint 70, places this skeleton's matrices well past the first few
+// texels, so an ordinary render drives the wide-palette path rather than leaving it to a unit test.
+//
+// ★ IT DRIVES THAT PATH BUT DOES NOT POLICE IT. Every joint in this skeleton is the identity matrix, so
+// a draw that reads the WRONG joint still reads an identical matrix and this bar's width does not move.
+// That is a property of how the skeleton is built here, not of any one backend, so it holds for this
+// twin as much as for the WebGPU one — where forcing the consumed palette base to 0 was measured to
+// leave the frame byte-identical. Detecting a wrong lookup needs a distinguishing joint in this palette.
 const rigidJointCount = 80;
 const rigidBoundJoint = 70;
 const scaledSkeleton = addBar(1.2, 3, 2, scaledBoundJoint);
