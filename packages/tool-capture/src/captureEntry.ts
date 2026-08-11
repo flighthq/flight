@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
@@ -135,7 +136,12 @@ export interface CaptureEntryOptions {
    */
   verify?: boolean;
   /** Receives fingerprints that completed every page-side assertion. Used to fuse capture + validation. */
-  onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
+  onVerifiedFingerprint?: (
+    entry: string,
+    renderer: string,
+    fingerprint: string,
+    provenance: CaptureBaselineProvenance,
+  ) => void;
   /** Fresh-page retries for transient navigation/protocol failures. Default: 1. */
   maxRetries?: number;
 }
@@ -155,7 +161,12 @@ export interface ParallelCaptureOptions {
   observe?: boolean;
   isAborted?: () => boolean;
   verify?: boolean;
-  onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
+  onVerifiedFingerprint?: (
+    entry: string,
+    renderer: string,
+    fingerprint: string,
+    provenance: CaptureBaselineProvenance,
+  ) => void;
   maxRetries?: number;
   /** Number of Playwright pages to run concurrently. Default: 6. */
   workerCount?: number;
@@ -408,14 +419,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // polls, so a run can look hung right after "Ready at". A muted heartbeat marks that the entry
       // is verifying, so the pause reads as progress rather than a stall.
       let verification: RenderVerification | null = null;
+      let verifiedFingerprint: string | null = null;
       if (waitsForVerification) {
         console.log(statusLine('muted', renderer, 'verifying render…'));
         verification = await waitForRenderVerification(page);
         if (verification?.state === 'failed') throw new Error(verification.error ?? 'render verification failed');
         if (verification?.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
-        if (verification.fingerprint !== null) {
-          opts.onVerifiedFingerprint?.(entry.name, renderer, verification.fingerprint);
-        }
+        // Held rather than published here: the fingerprint's provenance is not knowable yet, and a
+        // fingerprint published without it is a value its consumer can only store unstamped.
+        verifiedFingerprint = verification.fingerprint;
       }
       const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
 
@@ -508,6 +520,27 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       renameSync(tmpScreenshot, finalScreenshot);
       renameSync(tmpLogs, finalLogs);
 
+      // ★ ONE PROVENANCE OBJECT FOR BOTH FIELDS, BUILT ONCE FROM THIS CAPTURE. The fingerprint and the
+      // sha256 are written by different passes into the same column, and the whole point of recording
+      // provenance is to make a disagreement between them representable. Deriving both from this single
+      // object means the two can only disagree when they genuinely came from different captures — never
+      // because one pass sampled the conditions a moment later than the other.
+      const captureProvenance: CaptureBaselineProvenance = {
+        frames: captureFrames,
+        sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
+        targetKind: verificationTargetKind,
+        verifyPublished: dataUrl !== null,
+        warmupFrames: await getCaptureWarmupFrames(page),
+      };
+      // ★ PUBLISHED TOGETHER OR NOT AT ALL. The consumer stamps this provenance ONLY onto a fingerprint
+      // it writes in the same act. Never backfill it onto a fingerprint already on disk: that value was
+      // produced by some earlier capture under conditions nobody recorded, and attaching today's
+      // conditions to it manufactures an agreement that was never observed. An absent provenance is
+      // honest about an unknown; a wrong one is worse than the gap it fills.
+      if (verifiedFingerprint !== null) {
+        opts.onVerifiedFingerprint?.(entry.name, renderer, verifiedFingerprint, captureProvenance);
+      }
+
       // A passing verifier has already applied the SCENE'S OWN minCoverage, so the global threshold must
       // not re-judge the same frame — see the note in captureScreenshotHash. Only an unverified capture
       // needs the generic blank guard.
@@ -571,13 +604,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // Record what produced THIS hash, stamped against sha256 specifically — the fingerprint is
         // written by a different pass and carries its own. Value and provenance share one store write,
         // so a crash cannot leave a fresh hash attributed to an older capture's conditions.
-        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash, {
-          frames: captureFrames,
-          sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
-          targetKind: verificationTargetKind,
-          verifyPublished: dataUrl !== null,
-          warmupFrames: await getCaptureWarmupFrames(page),
-        });
+        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash, captureProvenance);
         baselineHash = hash;
         changed = false;
       } else {

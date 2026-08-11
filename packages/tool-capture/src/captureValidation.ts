@@ -46,7 +46,7 @@ import { writeCaptureReport } from './captureReport.js';
 import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
 import type { Server } from './captureServer.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
-import type { CaptureFingerprintMap } from './captureSuite.js';
+import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 
 export interface CaptureValidationOptions {
@@ -84,6 +84,7 @@ export interface CaptureValidationOptions {
   parityGroups?: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   /** Assertion-passed fingerprints from a preceding capture pass. Avoids reloading those pages. */
   fingerprints?: Readonly<CaptureFingerprintMap>;
+  fingerprintProvenance?: Readonly<CaptureFingerprintProvenanceMap>;
   /** Reuse an already initialized browser/context. The caller owns its lifetime. */
   browserSession?: CaptureBrowserSession;
   /** Aggregate machine report path. Defaults to `.artifacts/<subject>/validation-report.json`. */
@@ -158,6 +159,7 @@ interface ResolvedCaptureValidationOptions {
   paritySkip: Readonly<Record<string, 'all' | Readonly<string[]>>>;
   parityGroups: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   fingerprints: Readonly<CaptureFingerprintMap>;
+  fingerprintProvenance: Readonly<CaptureFingerprintProvenanceMap>;
 }
 
 interface Verification {
@@ -619,7 +621,13 @@ async function processEntry(
         });
         continue;
       }
-      setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint);
+      // ★ STAMP ONLY WHAT THIS PASS PRODUCED. The provenance is looked up by the SAME (entry, renderer)
+      // key the fingerprint came from, and is passed only when this pass actually captured that
+      // fingerprint. A fingerprint supplied from elsewhere, or already on disk, gets NO provenance:
+      // attaching today's conditions to a value produced by an earlier capture would manufacture an
+      // agreement nobody observed, and a wrong provenance is worse than the absent one it replaces.
+      const provenance = options.fingerprintProvenance[entry.name]?.[renderer];
+      setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint, provenance);
       const sourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
       if (sourceHash !== null) {
         setBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash', sourceHash);
@@ -907,6 +915,7 @@ export async function runCaptureValidation(
     paritySkip: input.paritySkip ?? {},
     parityGroups: input.parityGroups ?? {},
     fingerprints: input.fingerprints ?? {},
+    fingerprintProvenance: input.fingerprintProvenance ?? {},
   };
   const ownsBrowser = input.browserSession === undefined;
   const launched =
