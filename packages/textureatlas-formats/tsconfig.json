@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../textureatlas" }, { "path": "../types" }, { "path": "../xml" }],
+  "references": [
+    { "path": "../registry" },
+    { "path": "../textureatlas" },
+    { "path": "../types" },
+    { "path": "../xml" }
+  ],
   "include": ["src"]
 }

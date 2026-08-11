@@ -11,8 +11,10 @@ import { describe, expect, it } from 'vitest';
 import {
   detectTextureAtlasFormat,
   getTextureAtlasFormat,
+  getTextureAtlasFormatKinds,
   parseTextureAtlas,
   registerTextureAtlasFormat,
+  unregisterTextureAtlasFormat,
 } from './textureAtlasDetect';
 
 const STARLING_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -132,6 +134,24 @@ describe('getTextureAtlasFormat', () => {
       {},
     );
     expect(atlas.regions.map((r) => r.name)).toEqual(['a']);
+  });
+});
+
+describe('getTextureAtlasFormatKinds', () => {
+  it('enumerates sorted bound kinds and stops naming one after it is unregistered', () => {
+    const kind = 'zz.TestEnumeration' as TextureAtlasFormatKind;
+    registerTextureAtlasFormat(kind, { detect: () => false, parse: (_content, atlas) => atlas });
+    expect(getTextureAtlasFormatKinds()).toEqual([
+      TextureAtlasFormatKindAseprite,
+      TextureAtlasFormatKindLibgdxAtlas,
+      TextureAtlasFormatKindStarling,
+      TextureAtlasFormatKindTexturePacker,
+      kind,
+    ]);
+
+    unregisterTextureAtlasFormat(kind);
+
+    expect(getTextureAtlasFormatKinds()).not.toContain(kind);
   });
 });
 
@@ -264,10 +284,6 @@ describe('parseTextureAtlas', () => {
 describe('registerTextureAtlasFormat', () => {
   const CUSTOM = 'acme.Custom' as TextureAtlasFormatKind;
 
-  // The registry is module state and there is no unregister, so the custom entry outlives each test.
-  // That is safe here only because the kind is vendor-prefixed (it cannot collide with a built-in)
-  // and its detector matches nothing but its own sentinel content — stated rather than assumed.
-
   it('makes a custom format detectable and parseable', () => {
     registerTextureAtlasFormat(CUSTOM, {
       detect: (content) => content.startsWith('ACME'),
@@ -279,6 +295,7 @@ describe('registerTextureAtlasFormat', () => {
     expect(detectTextureAtlasFormat('ACME v1')).toBe(CUSTOM);
     const atlas = createTextureAtlas();
     expect(parseTextureAtlas('ACME v1', atlas)).toBe(atlas);
+    unregisterTextureAtlasFormat(CUSTOM);
     expect(atlas.regions[0].name).toBe('custom');
   });
 
@@ -287,6 +304,7 @@ describe('registerTextureAtlasFormat', () => {
     const starling =
       '<TextureAtlas imagePath="a.png"><SubTexture name="a" x="0" y="0" width="1" height="1"/></TextureAtlas>';
     expect(detectTextureAtlasFormat(starling)).toBe(TextureAtlasFormatKindStarling);
+    unregisterTextureAtlasFormat(CUSTOM);
   });
 });
 
@@ -322,5 +340,20 @@ describe('registry', () => {
     for (const [expected, content] of CORPUS) {
       expect(detectTextureAtlasFormat(content)).toBe(expected);
     }
+  });
+});
+
+describe('unregisterTextureAtlasFormat', () => {
+  it('removes a format from detection and direct resolution', () => {
+    const kind = 'acme.Removed' as TextureAtlasFormatKind;
+    registerTextureAtlasFormat(kind, {
+      detect: (content) => content.startsWith('REMOVED:'),
+      parse: (_content, atlas) => atlas,
+    });
+
+    unregisterTextureAtlasFormat(kind);
+
+    expect(detectTextureAtlasFormat('REMOVED: data')).toBeNull();
+    expect(getTextureAtlasFormat(kind)).toBeNull();
   });
 });

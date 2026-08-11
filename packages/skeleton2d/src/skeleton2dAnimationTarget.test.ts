@@ -15,6 +15,7 @@ import {
   findSkeleton2DStepKeyframe,
   createSkeleton2DSlotAnimationTarget,
   getSkeleton2DAnimationTargetBinder,
+  getSkeleton2DAnimationTargetBinderKinds,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
 } from './skeleton2dAnimationTarget';
@@ -72,6 +73,24 @@ describe('getSkeleton2DAnimationTargetBinder', () => {
 
   it('returns null for a kind nothing has claimed', () => {
     expect(getSkeleton2DAnimationTargetBinder('acme.RopeTarget')).toBeNull();
+  });
+});
+
+describe('getSkeleton2DAnimationTargetBinderKinds', () => {
+  it('enumerates sorted bound kinds and stops naming one after it is unregistered', () => {
+    registerSkeleton2DAnimationTargetBinder('acme.RopeTarget', () => {});
+    expect(getSkeleton2DAnimationTargetBinderKinds()).toEqual([
+      Skeleton2DAnimationTargetKind.Bone,
+      Skeleton2DAnimationTargetKind.Slot,
+      'acme.RopeTarget',
+    ]);
+
+    unregisterSkeleton2DAnimationTargetBinder('acme.RopeTarget');
+
+    expect(getSkeleton2DAnimationTargetBinderKinds()).toEqual([
+      Skeleton2DAnimationTargetKind.Bone,
+      Skeleton2DAnimationTargetKind.Slot,
+    ]);
   });
 });
 

@@ -1,4 +1,11 @@
-import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
+import {
+  createKeyedTable,
+  getRegistryTableEntry,
+  getRegistryTableKeys,
+  withRegistryTableEntry,
+  withoutRegistryTableEntry,
+} from '@flighthq/registry/contract';
+import type { ImportDiagnostic, KeyedTable, Skeleton2DImport } from '@flighthq/types/contract';
 
 import { parseDragonBonesSkeleton } from './dragonBonesParse';
 import { parseSpineSkeleton } from './spineParse';
@@ -11,16 +18,18 @@ interface SkeletonFormatEntry {
   parse: (text: string, diagnostics?: ImportDiagnostic[]) => Skeleton2DImport | null;
 }
 
-let _registry: Map<string, SkeletonFormatEntry> | null = null;
+interface RegisteredSkeletonFormat {
+  entry: SkeletonFormatEntry;
+  order: number;
+}
 
-function getRegistry(): Map<string, SkeletonFormatEntry> {
+function getRegistry(): KeyedTable<RegisteredSkeletonFormat> {
   if (_registry !== null) return _registry;
-  _registry = new Map();
-  _registry.set('Spine', { detect: detectSpine, parse: (text, diagnostics) => parseSpineSkeleton(text, diagnostics) });
-  _registry.set('DragonBones', {
-    detect: detectDragonBones,
-    parse: (text, diagnostics) => parseDragonBonesSkeleton(text, diagnostics),
-  });
+  _registry = createKeyedTable('Skeleton2DFormat', 'Unclaimed');
+  bindSkeleton2DFormat('Spine', detectSpine, (text, diagnostics) => parseSpineSkeleton(text, diagnostics));
+  bindSkeleton2DFormat('DragonBones', detectDragonBones, (text, diagnostics) =>
+    parseDragonBonesSkeleton(text, diagnostics),
+  );
   return _registry;
 }
 
@@ -40,12 +49,20 @@ function detectSpine(text: string): boolean {
   return /"bones"\s*:/.test(text) || /"skeleton"\s*:/.test(text) || /"slots"\s*:/.test(text);
 }
 
+// A sorted snapshot of every bound skeleton-format kind. Detection retains registration precedence
+// separately; this enumeration is stable for callers and agrees with resolution after removal.
+export function getSkeleton2DFormatKinds(): readonly string[] {
+  const kinds: string[] = [];
+  getRegistryTableKeys(kinds, getRegistry());
+  return kinds;
+}
+
 // Auto-detects the skeleton format of `text` and parses it, threading the optional diagnostics sink.
 // Returns the sentinel `null` when no registered format recognizes the input (the expected
 // "unrecognized format" failure) or the recognized parser itself rejects it.
 export function parseSkeleton2D(text: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
-  for (const entry of getRegistry().values()) {
-    if (entry.detect(text)) return entry.parse(text, diagnostics);
+  for (const registered of getSkeleton2DFormatsInDetectionOrder()) {
+    if (registered.entry.detect(text)) return registered.entry.parse(text, diagnostics);
   }
   return null;
 }
@@ -58,12 +75,38 @@ export function registerSkeleton2DFormat(
   detect: (text: string) => boolean,
   parse: (text: string, diagnostics?: ImportDiagnostic[]) => Skeleton2DImport | null,
 ): void {
-  getRegistry().set(kind, { detect, parse });
+  bindSkeleton2DFormat(kind, detect, parse);
 }
 
 // Removes a registered format, so the registry is not write-only. Every other registry in the SDK pairs
 // its `register*` with this — a caller that can add a vendor format must be able to take it back out, and
 // a test that registers one has no way to leave the module global as it found it otherwise.
 export function unregisterSkeleton2DFormat(kind: string): void {
-  getRegistry().delete(kind);
+  _registry = withoutRegistryTableEntry(getRegistry(), kind);
 }
+
+function bindSkeleton2DFormat(
+  kind: string,
+  detect: (text: string) => boolean,
+  parse: (text: string, diagnostics?: ImportDiagnostic[]) => Skeleton2DImport | null,
+): void {
+  const registry = getRegistry();
+  const current = getRegistryTableEntry(registry, kind);
+  _registry = withRegistryTableEntry(registry, kind, {
+    entry: { detect, parse },
+    order: current?.order ?? _nextFormatOrder++,
+  });
+}
+
+function getSkeleton2DFormatsInDetectionOrder(): RegisteredSkeletonFormat[] {
+  const formats: RegisteredSkeletonFormat[] = [];
+  for (const kind of getSkeleton2DFormatKinds()) {
+    const registered = getRegistryTableEntry(getRegistry(), kind);
+    if (registered !== null) formats.push(registered);
+  }
+  formats.sort((a, b) => a.order - b.order);
+  return formats;
+}
+
+let _registry: KeyedTable<RegisteredSkeletonFormat> | null = null;
+let _nextFormatOrder = 0;

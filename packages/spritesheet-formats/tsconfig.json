@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../registry" },
     { "path": "../spritesheet" },
     { "path": "../textureatlas" },
     { "path": "../textureatlas-formats" },

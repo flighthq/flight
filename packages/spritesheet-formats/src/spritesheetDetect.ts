@@ -1,5 +1,12 @@
+import {
+  createKeyedTable,
+  getRegistryTableEntry,
+  getRegistryTableKeys,
+  withRegistryTableEntry,
+  withoutRegistryTableEntry,
+} from '@flighthq/registry/contract';
 import type { SpritesheetData } from '@flighthq/spritesheet/contract';
-import type { SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
+import type { KeyedTable, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,
@@ -14,16 +21,15 @@ import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse';
 import { parseStarlingSpritesheet } from './starlingParse';
 import { parseTexturePackerSpritesheet } from './texturePackerParse';
 
-// ─── Format registry ─────────────────────────────────────────────────────────
-
 interface FormatEntry {
   detect: (text: string) => boolean;
   parse: (text: string, options: SpritesheetParseOptions) => SpritesheetData;
 }
 
-type FormatRegistry = Map<SpritesheetFormatKind, FormatEntry>;
-
-let _registry: FormatRegistry | null = null;
+interface RegisteredFormatEntry {
+  entry: FormatEntry;
+  order: number;
+}
 
 function detectTexturePacker(text: string): boolean {
   if (text.trimStart()[0] !== '{') return false;
@@ -65,41 +71,39 @@ function detectLibgdxAtlas(text: string): boolean {
 // `registerSpritesheetFormat` call in each parser module would be exactly the import-time side effect
 // the SDK bans — and would defeat the tree-shaking that currently lets a caller importing one parser
 // pay for one parser.
-function getRegistry(): FormatRegistry {
+function getRegistry(): KeyedTable<RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
-  _registry = new Map();
-  _registry.set(ASEPRITE, {
+  _registry = createKeyedTable('SpritesheetFormat', 'Unclaimed');
+  bindSpritesheetFormat(ASEPRITE, {
     detect: detectAseprite,
     parse: (text) => parseAsepriteSpritesheet(text),
   });
-  _registry.set(COCOS_PLIST, {
+  bindSpritesheetFormat(COCOS_PLIST, {
     detect: detectCocosPlist,
     parse: (text) => parseCocosPlistSpritesheet(text),
   });
-  _registry.set(TEXTURE_PACKER, {
+  bindSpritesheetFormat(TEXTURE_PACKER, {
     detect: detectTexturePacker,
     parse: (text) => parseTexturePackerSpritesheet(text),
   });
-  _registry.set(STARLING, {
+  bindSpritesheetFormat(STARLING, {
     detect: detectStarling,
     parse: (text, opts) => parseStarlingSpritesheet(text, { frameDuration: opts.frameDuration }),
   });
-  _registry.set(LIBGDX_ATLAS, {
+  bindSpritesheetFormat(LIBGDX_ATLAS, {
     detect: detectLibgdxAtlas,
     parse: (text, opts) => parseLibgdxAtlasSpritesheet(text, { frameDuration: opts.frameDuration }),
   });
   return _registry;
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 /** Detect the format kind of a spritesheet text document.
  *
  *  Returns the `SpritesheetFormatKind` of the first registered format whose
  *  `detect` function returns `true`, or `null` when no format is recognized. */
 export function detectSpritesheetFormat(text: string): SpritesheetFormatKind | null {
-  for (const [kind, entry] of getRegistry()) {
-    if (entry.detect(text)) return kind;
+  for (const [kind, registered] of getSpritesheetFormatsInDetectionOrder()) {
+    if (registered.entry.detect(text)) return kind;
   }
   return null;
 }
@@ -113,7 +117,14 @@ export function getSpritesheetFormat(kind: SpritesheetFormatKind): Readonly<{
   detect: (text: string) => boolean;
   parse: (text: string, options: SpritesheetParseOptions) => SpritesheetData;
 }> | null {
-  return getRegistry().get(kind) ?? null;
+  return getRegistryTableEntry(getRegistry(), kind)?.entry ?? null;
+}
+
+/** Return a sorted snapshot of every bound spritesheet-format kind. */
+export function getSpritesheetFormatKinds(): readonly SpritesheetFormatKind[] {
+  const kinds: SpritesheetFormatKind[] = [];
+  getRegistryTableKeys(kinds, getRegistry());
+  return kinds;
 }
 
 /** Parse a spritesheet text document to a SpritesheetData, auto-detecting the format.
@@ -130,9 +141,9 @@ export function parseSpritesheet(
   const opts: SpritesheetParseOptions = options ?? {};
   const kind = formatKind ?? detectSpritesheetFormat(text);
   if (!kind) return null;
-  const entry = getRegistry().get(kind);
-  if (!entry) return null;
-  return entry.parse(text, opts);
+  const registered = getRegistryTableEntry(getRegistry(), kind);
+  if (registered === null) return null;
+  return registered.entry.parse(text, opts);
 }
 
 /** Register a custom spritesheet format for use with `detectSpritesheetFormat` and `parseSpritesheet`.
@@ -147,5 +158,32 @@ export function registerSpritesheetFormat(
     parse: (text: string, options: SpritesheetParseOptions) => SpritesheetData;
   },
 ): void {
-  getRegistry().set(kind, entry);
+  bindSpritesheetFormat(kind, entry);
 }
+
+/** Remove a format binding, including a caller override of a built-in kind. */
+export function unregisterSpritesheetFormat(kind: SpritesheetFormatKind): void {
+  _registry = withoutRegistryTableEntry(getRegistry(), kind);
+}
+
+function bindSpritesheetFormat(kind: SpritesheetFormatKind, entry: FormatEntry): void {
+  const registry = getRegistry();
+  const current = getRegistryTableEntry(registry, kind);
+  _registry = withRegistryTableEntry(registry, kind, {
+    entry,
+    order: current?.order ?? _nextFormatOrder++,
+  });
+}
+
+function getSpritesheetFormatsInDetectionOrder(): Array<readonly [SpritesheetFormatKind, RegisteredFormatEntry]> {
+  const formats: Array<readonly [SpritesheetFormatKind, RegisteredFormatEntry]> = [];
+  for (const kind of getSpritesheetFormatKinds()) {
+    const registered = getRegistryTableEntry(getRegistry(), kind);
+    if (registered !== null) formats.push([kind, registered]);
+  }
+  formats.sort((a, b) => a[1].order - b[1].order);
+  return formats;
+}
+
+let _registry: KeyedTable<RegisteredFormatEntry> | null = null;
+let _nextFormatOrder = 0;

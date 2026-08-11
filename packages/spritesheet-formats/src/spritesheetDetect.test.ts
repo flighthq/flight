@@ -10,8 +10,10 @@ import type { SpritesheetParseOptions } from '@flighthq/types/contract';
 import {
   detectSpritesheetFormat,
   getSpritesheetFormat,
+  getSpritesheetFormatKinds,
   parseSpritesheet,
   registerSpritesheetFormat,
+  unregisterSpritesheetFormat,
 } from './spritesheetDetect';
 
 const TEXTURE_PACKER_JSON = JSON.stringify({
@@ -125,8 +127,31 @@ describe('getSpritesheetFormat', () => {
       parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
     });
     const entry = getSpritesheetFormat(kind);
+    unregisterSpritesheetFormat(kind);
     expect(entry).not.toBeNull();
     expect(entry?.detect).toBe(detect);
+  });
+});
+
+describe('getSpritesheetFormatKinds', () => {
+  it('enumerates sorted bound kinds and stops naming one after it is unregistered', () => {
+    const kind = 'test.Enumeration';
+    registerSpritesheetFormat(kind, {
+      detect: () => false,
+      parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
+    });
+    expect(getSpritesheetFormatKinds()).toEqual([
+      SpritesheetFormatKindAseprite,
+      SpritesheetFormatKindCocosPlist,
+      SpritesheetFormatKindLibgdxAtlas,
+      SpritesheetFormatKindStarling,
+      SpritesheetFormatKindTexturePacker,
+      kind,
+    ]);
+
+    unregisterSpritesheetFormat(kind);
+
+    expect(getSpritesheetFormatKinds()).not.toContain(kind);
   });
 });
 
@@ -212,6 +237,7 @@ describe('registerSpritesheetFormat', () => {
 
     expect(detectSpritesheetFormat('CUSTOM: data here')).toBe(customKind);
     const data = parseSpritesheet('CUSTOM: data here');
+    unregisterSpritesheetFormat(customKind);
     expect(data?.imageFile).toBe('custom.png');
   });
 });
@@ -240,5 +266,20 @@ describe('registry ordering', () => {
   it('parses an overlapping document with the narrower parser', () => {
     const data = parseSpritesheet(ASEPRITE_DOC);
     expect(data).not.toBeNull();
+  });
+});
+
+describe('unregisterSpritesheetFormat', () => {
+  it('removes a format from detection and direct resolution', () => {
+    const kind = 'test.RemovedFormat';
+    registerSpritesheetFormat(kind, {
+      detect: (text) => text.startsWith('REMOVED:'),
+      parse: () => ({ animations: [], frames: [], imageFile: '', imageHeight: 0, imageWidth: 0, scale: 1 }),
+    });
+
+    unregisterSpritesheetFormat(kind);
+
+    expect(detectSpritesheetFormat('REMOVED: data')).toBeNull();
+    expect(getSpritesheetFormat(kind)).toBeNull();
   });
 });

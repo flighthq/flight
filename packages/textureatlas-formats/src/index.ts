@@ -1,6 +1,7 @@
 export {
   detectTextureAtlasFormat,
   getTextureAtlasFormat,
+  getTextureAtlasFormatKinds,
   parseTextureAtlas,
   parseTextureAtlasAsepriteDocument,
   parseTextureAtlasAsepriteJson,
@@ -9,4 +10,5 @@ export {
   parseTextureAtlasPackerJson,
   parseTextureAtlasStarlingXml,
   registerTextureAtlasFormat,
+  unregisterTextureAtlasFormat,
 } from './contract';

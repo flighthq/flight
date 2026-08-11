@@ -1,4 +1,16 @@
-import type { TextureAtlas, TextureAtlasFormatKind, TextureAtlasParseOptions } from '@flighthq/types/contract';
+import {
+  createKeyedTable,
+  getRegistryTableEntry,
+  getRegistryTableKeys,
+  withRegistryTableEntry,
+  withoutRegistryTableEntry,
+} from '@flighthq/registry/contract';
+import type {
+  KeyedTable,
+  TextureAtlas,
+  TextureAtlasFormatKind,
+  TextureAtlasParseOptions,
+} from '@flighthq/types/contract';
 import {
   TextureAtlasFormatKindAseprite,
   TextureAtlasFormatKindLibgdxAtlas,
@@ -17,9 +29,10 @@ interface FormatEntry {
   parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
 }
 
-type FormatRegistry = Map<TextureAtlasFormatKind, FormatEntry>;
-
-let _registry: FormatRegistry | null = null;
+interface RegisteredFormatEntry {
+  entry: FormatEntry;
+  order: number;
+}
 
 // Seeds the built-in formats.
 //
@@ -35,22 +48,22 @@ let _registry: FormatRegistry | null = null;
 // package declares `"sideEffects": false`, so a top-level `registerTextureAtlasFormat` call in each
 // parser would be the import-time side effect the SDK bans, and it would drag every parser into any
 // consumer that imported one.
-function getRegistry(): FormatRegistry {
+function getRegistry(): KeyedTable<RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
-  _registry = new Map();
-  _registry.set(TextureAtlasFormatKindAseprite, {
+  _registry = createKeyedTable('TextureAtlasFormat', 'Unclaimed');
+  bindTextureAtlasFormat(TextureAtlasFormatKindAseprite, {
     detect: detectAseprite,
     parse: (content, atlas) => parseTextureAtlasAsepriteJson(content, atlas),
   });
-  _registry.set(TextureAtlasFormatKindLibgdxAtlas, {
+  bindTextureAtlasFormat(TextureAtlasFormatKindLibgdxAtlas, {
     detect: detectLibgdxAtlas,
     parse: (content, atlas) => parseTextureAtlasLibgdxAtlas(content, atlas),
   });
-  _registry.set(TextureAtlasFormatKindStarling, {
+  bindTextureAtlasFormat(TextureAtlasFormatKindStarling, {
     detect: detectStarling,
     parse: (content, atlas, options) => parseTextureAtlasStarlingXml(content, atlas, options),
   });
-  _registry.set(TextureAtlasFormatKindTexturePacker, {
+  bindTextureAtlasFormat(TextureAtlasFormatKindTexturePacker, {
     detect: detectTexturePacker,
     parse: (content, atlas, options) => parseTextureAtlasPackerJson(content, atlas, options),
   });
@@ -116,8 +129,8 @@ function readJsonAtlasKind(content: string): TextureAtlasFormatKind | null {
 export function detectTextureAtlasFormat(content: string): TextureAtlasFormatKind | null {
   if (typeof content !== 'string') return null;
   if (content.trimStart() === '') return null;
-  for (const [kind, entry] of getRegistry()) {
-    if (entry.detect(content)) return kind;
+  for (const [kind, registered] of getTextureAtlasFormatsInDetectionOrder()) {
+    if (registered.entry.detect(content)) return kind;
   }
   return null;
 }
@@ -130,7 +143,14 @@ export function getTextureAtlasFormat(kind: TextureAtlasFormatKind): Readonly<{
   detect: (content: string) => boolean;
   parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
 }> | null {
-  return getRegistry().get(kind) ?? null;
+  return getRegistryTableEntry(getRegistry(), kind)?.entry ?? null;
+}
+
+/** Return a sorted snapshot of every bound texture-atlas format kind. */
+export function getTextureAtlasFormatKinds(): readonly TextureAtlasFormatKind[] {
+  const kinds: TextureAtlasFormatKind[] = [];
+  getRegistryTableKeys(kinds, getRegistry());
+  return kinds;
 }
 
 /** Parse a texture-atlas descriptor into `atlas`, auto-detecting the format.
@@ -147,9 +167,9 @@ export function parseTextureAtlas(
 ): TextureAtlas | null {
   const kind = formatKind ?? detectTextureAtlasFormat(content);
   if (kind === null || kind === undefined) return null;
-  const entry = getRegistry().get(kind);
-  if (entry === undefined) return null;
-  return entry.parse(content, atlas, options ?? {});
+  const registered = getRegistryTableEntry(getRegistry(), kind);
+  if (registered === null) return null;
+  return registered.entry.parse(content, atlas, options ?? {});
 }
 
 /** Register a custom texture-atlas format for `detectTextureAtlasFormat` and `parseTextureAtlas`.
@@ -167,7 +187,31 @@ export function registerTextureAtlasFormat(
     parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
   },
 ): void {
-  getRegistry().set(kind, entry);
+  bindTextureAtlasFormat(kind, entry);
+}
+
+/** Remove a format binding, including a caller override of a built-in kind. */
+export function unregisterTextureAtlasFormat(kind: TextureAtlasFormatKind): void {
+  _registry = withoutRegistryTableEntry(getRegistry(), kind);
+}
+
+function bindTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: FormatEntry): void {
+  const registry = getRegistry();
+  const current = getRegistryTableEntry(registry, kind);
+  _registry = withRegistryTableEntry(registry, kind, {
+    entry,
+    order: current?.order ?? _nextFormatOrder++,
+  });
+}
+
+function getTextureAtlasFormatsInDetectionOrder(): Array<readonly [TextureAtlasFormatKind, RegisteredFormatEntry]> {
+  const formats: Array<readonly [TextureAtlasFormatKind, RegisteredFormatEntry]> = [];
+  for (const kind of getTextureAtlasFormatKinds()) {
+    const registered = getRegistryTableEntry(getRegistry(), kind);
+    if (registered !== null) formats.push([kind, registered]);
+  }
+  formats.sort((a, b) => a[1].order - b[1].order);
+  return formats;
 }
 
 function firstFrame(frames: unknown): unknown {
@@ -188,3 +232,6 @@ function readMetaApp(meta: unknown): string {
   const app = (meta as { app?: unknown }).app;
   return typeof app === 'string' ? app : '';
 }
+
+let _registry: KeyedTable<RegisteredFormatEntry> | null = null;
+let _nextFormatOrder = 0;

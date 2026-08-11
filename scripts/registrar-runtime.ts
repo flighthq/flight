@@ -291,9 +291,9 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
   {
     clear: null,
     door: 'registerSkeleton2DAnimationTargetBinder',
-    emptyAtImport: false,
-    enumerate: null,
-    initialization: 'built-ins-at-import',
+    emptyAtImport: true,
+    enumerate: callerSeam('getSkeleton2DAnimationTargetBinderKinds'),
+    initialization: 'built-ins-on-first-read',
     module: '@flighthq/skeleton2d/contract',
     packageName: 'skeleton2d',
     population: 'self-filling',
@@ -322,7 +322,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     clear: null,
     door: 'registerSkeleton2DFormat',
     emptyAtImport: true,
-    enumerate: null,
+    enumerate: callerSeam('getSkeleton2DFormatKinds'),
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/skeleton2d-formats/contract',
     packageName: 'skeleton2d-formats',
@@ -337,7 +337,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     clear: null,
     door: 'registerSpritesheetFormat',
     emptyAtImport: true,
-    enumerate: null,
+    enumerate: callerSeam('getSpritesheetFormatKinds'),
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/spritesheet-formats/contract',
     packageName: 'spritesheet-formats',
@@ -346,13 +346,13 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     readerPackages: ['spritesheet-formats'],
     source: 'packages/spritesheet-formats/src/spritesheetDetect.ts',
     table: 'spritesheet formats',
-    unregister: null,
+    unregister: weakIndependentSeam('unregisterSpritesheetFormat'),
   },
   {
     clear: null,
     door: 'registerTextureAtlasFormat',
     emptyAtImport: true,
-    enumerate: null,
+    enumerate: callerSeam('getTextureAtlasFormatKinds'),
     initialization: 'built-ins-on-first-read',
     module: '@flighthq/textureatlas-formats/contract',
     packageName: 'textureatlas-formats',
@@ -361,7 +361,7 @@ const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
     readerPackages: ['textureatlas-formats'],
     source: 'packages/textureatlas-formats/src/textureAtlasDetect.ts',
     table: 'texture-atlas formats',
-    unregister: null,
+    unregister: weakIndependentSeam('unregisterTextureAtlasFormat'),
   },
 ];
 const MODULE_GLOBAL_REGISTRY_BY_DOOR = new Map(MODULE_GLOBAL_REGISTRIES.map((entry) => [entry.door, entry]));
@@ -903,7 +903,10 @@ function requiresFreshModuleInstance(declaration: RegistrarRuntimeDeclaration): 
 async function assertModuleGlobalBaselines(): Promise<readonly { keysBefore: readonly string[]; table: string }[]> {
   const assertions: { keysBefore: readonly string[]; table: string }[] = [];
   for (const entry of MODULE_GLOBAL_REGISTRIES) {
-    if (entry.enumerate === null || !entry.emptyAtImport) continue;
+    // Enumerating a self-filling lazy table is itself its first read and therefore seeds its defaults.
+    // The runtime baseline assertion can observe only registries whose declared initial state stays empty;
+    // the independent top-level-side-effect scan covers lazy self-filling modules at import time.
+    if (entry.enumerate === null || !entry.emptyAtImport || entry.initialization !== 'empty') continue;
     const module = (await import(entry.module)) as Record<string, unknown>;
     const enumerate = module[entry.enumerate.name];
     if (typeof enumerate !== 'function') throw new Error(`${entry.table}: enumeration seam is not exported`);
