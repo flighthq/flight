@@ -1,4 +1,9 @@
-import { getWgpuRenderStateRuntime, getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  getWgpuSampler,
+  resolveWgpuTexture,
+  retireWgpuBuffer,
+} from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
@@ -173,7 +178,7 @@ function ensureParticleInstanceBuffer(state: WgpuRenderState, count: number): vo
   // Defer the old buffer's destruction: another emitter earlier this frame may have recorded a draw
   // referencing it, and the frame's submit is deferred to submitWgpuRenderPass.
   if (runtime.particleInstanceBuffer !== null) {
-    (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(runtime.particleInstanceBuffer);
+    retireWgpuBuffer(state, runtime.particleInstanceBuffer);
   }
   const newCapacity = Math.max(needed, (runtime.particleInstanceCapacity || 0) * 2);
   runtime.particleInstanceBuffer = state.device.createBuffer({

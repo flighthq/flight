@@ -1,4 +1,10 @@
-import { beginWgpuFrame, renderWgpuBackground, retireWgpuTexture, submitWgpuRenderPass } from './wgpuBackground';
+import {
+  beginWgpuFrame,
+  renderWgpuBackground,
+  retireWgpuBuffer,
+  retireWgpuTexture,
+  submitWgpuRenderPass,
+} from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -60,6 +66,19 @@ describe('renderWgpuBackground', () => {
     expect(runtime.commandEncoder).toBe(encoder);
     expect(runtime.uniformOffset).toBe(512);
     expect(runtime.renderPass).not.toBeNull();
+  });
+});
+
+describe('retireWgpuBuffer', () => {
+  it('queues the buffer for post-submit destruction instead of destroying it now', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const destroy = vi.fn();
+    const buffer = { destroy } as unknown as GPUBuffer;
+
+    retireWgpuBuffer(state, buffer);
+
+    expect(destroy).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(state).retiredBuffers).toContain(buffer);
   });
 });
 
