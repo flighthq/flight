@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 
 import { getBaselineField, setBaselineField, setBaselineProvenance } from './baselineStore.js';
+import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
@@ -1179,9 +1180,7 @@ export interface CaptureUrlOptions {
 // Screenshot hashes that must never become a baseline, whatever produced them. This is a denylist of
 // frames observed to be content-free, kept as an explicit constant so the refusal survives a rewrite of
 // the surrounding logic and cannot be argued with at the call site.
-export function isRejectedCaptureBaselineHash(hash: string): boolean {
-  return REJECTED_CAPTURE_BASELINE_HASHES.has(hash);
-}
+export { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 
 export function isTransientCaptureError(message: string): boolean {
   return /timeout|net::ERR_|page crashed|execution context was destroyed|target page|navigation failed|protocol error|render verifier did not reach/i.test(
@@ -1194,9 +1193,3 @@ export function isVerifiedCaptureTool(tool: string): boolean {
 }
 
 const VERIFIED_CAPTURE_TOOLS: ReadonlySet<string> = new Set(['examples', 'functional']);
-
-// The uniform white frame a software WebGPU adapter yields when it cannot present to the swapchain.
-// Observed identically across nine unrelated example scenes, which is what identified it.
-const REJECTED_CAPTURE_BASELINE_HASHES: ReadonlySet<string> = new Set([
-  'a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0',
-]);
