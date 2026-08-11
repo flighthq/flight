@@ -1,0 +1,8 @@
+{
+  "webgl": {
+    "sha256": "8319a0d83d3d74aa08284a9c0ca7f185ac3fb28687c7838c994de618241a06af"
+  },
+  "webgpu": {
+    "sha256": "b7d5e2db71d9e72b04e11e922c61a089d9479094f294c52ff46e70873ee29942"
+  }
+}
