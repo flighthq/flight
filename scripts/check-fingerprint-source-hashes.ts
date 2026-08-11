@@ -36,9 +36,14 @@ export interface FingerprintSourceHashViolation {
 const UNAVAILABLE_REASON =
   'no pixel sha256 was captured for this fingerprint column, so history cannot identify the capture that wrote it; leaving sourceHash absent is more honest than manufacturing evidence';
 
+// An entry LEAVES this list when the column stops being a fingerprint column or gains real source
+// evidence — it is a record of honest gaps, not a permanent exemption. render-pass-shared-context/webgl
+// left it that way: the column now carries a captured sha256 with its own provenance, and its committed
+// fingerprint was uniform (one distinct cell of 256), which the repo refuses to write today because it
+// matches any uniform frame and so cannot fail. Dropping that fingerprint left real evidence behind and
+// removed the gap this list existed to name.
 export const FINGERPRINT_SOURCE_HASH_ALLOWANCES: readonly FingerprintSourceHashAllowance[] = [
   allowance('functional/baselines/bitmap-perbitmap-smoothing.json', 'webgpu'),
-  allowance('functional/baselines/render-pass-shared-context.json', 'webgl'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgl'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgpu'),
   allowance('functional/baselines/text-strikethrough.json', 'webgl'),
