@@ -4,7 +4,7 @@ import {
   drawWgpuQuadWithTransform,
   updateWgpuTextureEntry,
 } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
   RenderProxy2D,
@@ -128,7 +128,9 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     ) {
       const nextEntry = createWgpuTextureEntry(state, pw, ph, shapeData.canvas);
       if (nextEntry === null) return;
-      shapeData.entry?.texture.destroy();
+      // Retired rather than destroyed: this runs inside a draw, so a bind group recorded earlier in the
+      // frame may still reference the outgoing texture, and the frame's submit has not happened yet.
+      if (shapeData.entry !== null) retireWgpuTexture(state, shapeData.entry.texture);
       shapeData.entry = nextEntry;
     } else {
       updateWgpuTextureEntry(state, shapeData.entry, shapeData.canvas);

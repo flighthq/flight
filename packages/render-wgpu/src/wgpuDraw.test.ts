@@ -111,6 +111,22 @@ describe('bindWgpuBitmapTexture', () => {
     bindWgpuBitmapTexture(state, image);
     expect(createTexture).toHaveBeenCalled();
   });
+
+  it('RETIRES the outgoing texture on a version bump rather than destroying it', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const image = bitmap(2, 1);
+    const outgoing = bindWgpuBitmapTexture(state, image).texture;
+
+    image.version = 2;
+    bindWgpuBitmapTexture(state, image);
+
+    // A version bump rewrites the cached entry IN PLACE, so a bind group recorded earlier in the frame
+    // still points at `outgoing`. The frame's submit is deferred; destroying a texture a recorded command
+    // buffer references fails that submit and blanks the whole frame, so it has to wait for post-submit.
+    // This guards a hazard with no reproduction of its own — without the test there is nothing to stop
+    // the deferral being read as pointless indirection and reverted.
+    expect(getWgpuRenderStateRuntime(state).retiredTextures).toContain(outgoing);
+  });
 });
 
 describe('bindWgpuCompressedImageTexture', () => {

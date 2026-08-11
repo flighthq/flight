@@ -18,6 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import { retireWgpuTexture } from './wgpuBackground';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
 import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
@@ -88,7 +89,11 @@ function bindWgpuTextureSourceTexture(
   const built = upload(state, image, generateMips, premultiply, colorSpace);
   if (built === null) return cached ?? null;
   if (cached !== undefined) {
-    cached.texture.destroy();
+    // RETIRED, NOT DESTROYED. This fires on a payload version bump — the standard invalidation path, not
+    // a resize edge case — and it rewrites the cached entry IN PLACE, so a bind group recorded earlier in
+    // this frame still points at the outgoing texture. The frame's submit is deferred, and destroying a
+    // texture a recorded command buffer references fails that submit and blanks the WHOLE frame.
+    retireWgpuTexture(state, cached.texture);
     cached.texture = built.texture;
     cached.view = built.view;
     cached.bindGroup = built.bindGroup;
