@@ -83,6 +83,7 @@
     { "path": "./packages/render-wgpu" },
     { "path": "./packages/requirements" },
     { "path": "./packages/registry-catalog" },
+    { "path": "./packages/registry-codegen" },
     { "path": "./packages/textureatlas-formats" },
     { "path": "./packages/assets" },
     { "path": "./packages/audio" },

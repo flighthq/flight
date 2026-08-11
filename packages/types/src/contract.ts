@@ -520,6 +520,7 @@ export * from './ScanlinesEffect';
 export * from './Scene3D';
 export * from './SceneCoverageCatalog';
 export * from './RegistryCatalog';
+export * from './RegistryCodegen';
 export * from './SceneCoverageEntry';
 export * from './Scene3DKindUsage';
 export * from './Scene3DAnimationPath';

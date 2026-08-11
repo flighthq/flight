@@ -8,5 +8,6 @@ export * from '@flighthq/math';
 export * from '@flighthq/node';
 export * from '@flighthq/requirements';
 export * from '@flighthq/registry-catalog';
+export * from '@flighthq/registry-codegen';
 export * from '@flighthq/signals';
 export * from '@flighthq/types';
