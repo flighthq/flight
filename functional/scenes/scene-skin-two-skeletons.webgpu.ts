@@ -73,7 +73,7 @@ const halfWidth = 3.5;
 const halfHeight = 2.625;
 const scene = createScene3D().root;
 
-function addBar(centerY: number, scaleX: number): Skeleton3D {
+function addBar(centerY: number, scaleX: number, jointCount: number, boundJoint: number): Skeleton3D {
   const halfX = barHalfX;
   const halfY = 0.35;
   const cornerX = [-halfX, halfX, halfX, -halfX];
@@ -85,15 +85,20 @@ function addBar(centerY: number, scaleX: number): Skeleton3D {
     vertices[offset + 1] = centerY + cornerY[corner];
     vertices[offset + 5] = 1;
     vertices[offset + 6] = 1;
-    vertices[offset + 12] = 1;
+    vertices[offset + 12] = boundJoint;
     vertices[offset + 16] = 1;
   }
+  // Joints past the bound one are inert padding that exists only to widen the palette — see the call site.
   const root: Node3D = createNode3D();
-  const scaled = createNode3D();
-  addNodeChild(root, scaled);
-  const skeleton = createSkeleton3D([root, scaled]);
-  setVector3(scaled.scale, scaleX, 1, 1);
-  invalidateNodeLocalTransform(scaled);
+  const joints: Node3D[] = [root];
+  for (let joint = 1; joint < jointCount; joint++) {
+    const node = createNode3D();
+    addNodeChild(root, node);
+    joints.push(node);
+  }
+  const skeleton = createSkeleton3D(joints);
+  setVector3(joints[boundJoint].scale, scaleX, 1, 1);
+  invalidateNodeLocalTransform(joints[boundJoint]);
   addNodeChild(scene, root);
 
   const mesh = createMesh(
@@ -109,8 +114,15 @@ function addBar(centerY: number, scaleX: number): Skeleton3D {
   return skeleton;
 }
 
-const scaledSkeleton = addBar(1.2, 3);
-const rigidSkeleton = addBar(-1.2, 1);
+const scaledBoundJoint = 1;
+// 80 joints, with the bar weighted to joint 70, puts this skeleton's matrices at texels 280-283 — ROW 1
+// of a 256-texel arena row. The row math in the shader is therefore exercised by an ordinary render
+// rather than only by a mock-device unit test: if `index / width` and `index % width` disagreed with the
+// allocator, this bar would sample another skeleton's texels and its width would be wrong.
+const rigidJointCount = 80;
+const rigidBoundJoint = 70;
+const scaledSkeleton = addBar(1.2, 3, 2, scaledBoundJoint);
+const rigidSkeleton = addBar(-1.2, 1, rigidJointCount, rigidBoundJoint);
 
 const camera = createCamera3D({
   far: 100,
@@ -138,8 +150,8 @@ endWgpuRenderEffectPipeline(state, pipeline, []);
 submitWgpuRenderPass(state);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
-  const scaled = predictBarWidthPixels(scaledSkeleton, bitmap.width);
-  const rigid = predictBarWidthPixels(rigidSkeleton, bitmap.width);
+  const scaled = predictBarWidthPixels(scaledSkeleton, scaledBoundJoint, bitmap.width);
+  const rigid = predictBarWidthPixels(rigidSkeleton, rigidBoundJoint, bitmap.width);
   // A scene where the CPU expects the two bars to match could not tell a shared palette from a correct
   // one, so the discriminating condition is checked rather than assumed.
   if (Math.abs(scaled - rigid) < 64) {
@@ -165,10 +177,10 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
 
 // The bar's skinned width in pixels, from the real CPU skinning path over that skeleton's own palette.
 // Orthographic with the eye on the view axis, so a world width maps to a pixel width by one ratio.
-function predictBarWidthPixels(skeleton: Readonly<Skeleton3D>, pixels: number): number {
+function predictBarWidthPixels(skeleton: Readonly<Skeleton3D>, boundJoint: number, pixels: number): number {
   const positions = new Float32Array([-barHalfX, 0, 0, barHalfX, 0, 0]);
   const normals = new Float32Array([0, 0, 1, 0, 0, 1]);
-  const joints = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0]);
+  const joints = new Float32Array([boundJoint, 0, 0, 0, boundJoint, 0, 0, 0]);
   const weights = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0]);
   const out = new Float32Array(positions.length);
   skinVertices(
