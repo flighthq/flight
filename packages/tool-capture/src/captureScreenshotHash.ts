@@ -12,6 +12,14 @@
 // not closed until the `finally` well after), so this reuses a mechanism the capture path already
 // depends on rather than adding a dependency.
 //
+// WHAT IS HASHED IS NOT LITERALLY THE FILE'S SAMPLES: drawImage into a 2d canvas may apply alpha
+// premultiplication and colour-space conversion. The digest stays deterministic and still tracks the
+// render, which is what it is for — but do not read it as byte-identity with the PNG's decoded pixels.
+//
+// The threshold is a PARAMETER rather than an import so this module stays free of captureEntry, which
+// will import it once the switch is thrown; the caller passes the same OBSERVE_BLANK_COVERAGE the rest
+// of the capture path uses, so there is one definition of "blank" rather than two.
+//
 // The DIGEST is computed in the page too, so only a 64-character hex string crosses the bridge. Shipping
 // the pixels back would be ~1.9M bytes per capture for an 800x600 frame, per column, per run.
 
@@ -35,30 +43,62 @@ export interface CaptureScreenshotHashPage {
 export async function hashCaptureScreenshotPixels(
   page: CaptureScreenshotHashPage,
   screenshot: Uint8Array,
+  blankCoverage: number,
 ): Promise<string> {
   const base64 = Buffer.from(screenshot).toString('base64');
-  const hash = await page.evaluate(async (encoded: string) => {
-    const response = await fetch(`data:image/png;base64,${encoded}`);
-    const bitmap = await createImageBitmap(await response.blob());
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const context = canvas.getContext('2d');
-    if (context === null) throw new Error('hashCaptureScreenshotPixels: no 2d context to decode into');
-    context.drawImage(bitmap, 0, 0);
-    const pixels = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+  const hash = await page.evaluate(
+    async (input: { base64: string; blankCoverage: number }) => {
+      const response = await fetch(`data:image/png;base64,${input.base64}`);
+      const bitmap = await createImageBitmap(await response.blob());
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext('2d');
+      if (context === null) throw new Error('hashCaptureScreenshotPixels: no 2d context to decode into');
+      context.drawImage(bitmap, 0, 0);
+      const pixels = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
 
-    // `<width>x<height>:` then the raw RGBA, hashed as one buffer.
-    const header = new TextEncoder().encode(`${bitmap.width}x${bitmap.height}:`);
-    const payload = new Uint8Array(header.length + pixels.length);
-    payload.set(header, 0);
-    payload.set(pixels, header.length);
-    const digest = await crypto.subtle.digest('SHA-256', payload);
-    return Array.from(new Uint8Array(digest))
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
-  }, base64);
+      // BLANK CHECK, using the capture path's own coverage definition and threshold rather than a second
+      // one: the fraction of pixels differing from the top-left (background) sample by more than 8 in any
+      // channel. A decode can succeed with correct dimensions and byte count and still yield nothing —
+      // a re-read of a WebGPU swapchain does exactly that — and a digest of a blank frame is a perfectly
+      // well-formed hash of no information. Shape validation cannot catch it; only content can.
+      const backgroundR = pixels[0]!;
+      const backgroundG = pixels[1]!;
+      const backgroundB = pixels[2]!;
+      let differing = 0;
+      const total = bitmap.width * bitmap.height;
+      for (let index = 0; index < total; index++) {
+        const offset = index * 4;
+        if (
+          Math.abs(pixels[offset]! - backgroundR) > 8 ||
+          Math.abs(pixels[offset + 1]! - backgroundG) > 8 ||
+          Math.abs(pixels[offset + 2]! - backgroundB) > 8
+        ) {
+          differing += 1;
+        }
+      }
+      if (differing / total <= input.blankCoverage) return 'blank';
 
+      // `<width>x<height>:` then the raw RGBA, hashed as one buffer.
+      const header = new TextEncoder().encode(`${bitmap.width}x${bitmap.height}:`);
+      const payload = new Uint8Array(header.length + pixels.length);
+      payload.set(header, 0);
+      payload.set(pixels, header.length);
+      const digest = await crypto.subtle.digest('SHA-256', payload);
+      return Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+    },
+    { base64, blankCoverage },
+  );
+
+  if (hash === 'blank') {
+    throw new Error(
+      'hashCaptureScreenshotPixels: the decoded screenshot is blank (coverage at or below the empty-frame ' +
+        'threshold), so its digest would be a well-formed hash of no render',
+    );
+  }
   if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) {
     throw new Error(`hashCaptureScreenshotPixels: page returned '${String(hash)}' rather than a sha256 hex digest`);
   }
@@ -79,6 +119,7 @@ export async function hashCaptureScreenshotPixels(
 export async function hashCaptureScreenshotPixelsOrNull(
   page: CaptureScreenshotHashPage,
   screenshot: Uint8Array,
+  blankCoverage: number,
 ): Promise<string | null> {
-  return hashCaptureScreenshotPixels(page, screenshot).catch(() => null);
+  return hashCaptureScreenshotPixels(page, screenshot, blankCoverage).catch(() => null);
 }
