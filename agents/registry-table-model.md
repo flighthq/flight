@@ -146,21 +146,35 @@ different function. `summary.negativeControls` records both populations and `can
 `summary.assessedPairs`, and each pair's `comparability`, `derivationReason`, `negativeControl`, and
 `tableShape` keep the denominator and controls attached to the zero.
 
+Blocker 3 was certified on reconciled arithmetic across three independent reports plus the proven
+negative controls, **not** on independent runtime re-measurement. Manager and principal both inspected
+base `2fa913e4e`; their concurrence is therefore one viewpoint twice, not two independent looks. Neither
+tree contained the closing probe commit when they certified it. A later run from the integrated Stage 1
+tree reproduced the figures, but that subsequent author-side measurement does not retroactively change
+the stated basis of the certification.
+
 The collision pass was rerun after closing the 51-pair instrument gap, so the six collision results are
 the complete result rather than a floor. They are six door+kind keys, not six two-registrar pairs: their
 claimant cardinalities are 2, 2, 2, 14, 14, and 3. Under the mechanical writer test, all six classify as
-**INSTRUMENT ARTIFACT**; none is BUILT-IN vs BUILT-IN or BUILT-IN vs DELIBERATE OVERRIDE. Every claimant
-for a key reaches the same leaf registrar and supplies the same built-in function reference, so these
-are multiple outer assembly names for one writer, not independent SDK writers. The repeated `Map.set`
-calls are real and idempotent, but attributing the leaf pair to every outer assembly manufactures the
-collision. The generic door itself remains excluded, and the probe invokes no outside-SDK override
-writer, so neither of the other two classifications occurs in this result.
+**INSTRUMENT ARTIFACT**; the sharper headline is **zero contested bindings**. The structural writer test
+counts the leaf that performs the table write as the writer **provided every path reaching that leaf
+writes the identical value**. If callers pass different values through one leaf, those callers are
+distinct writers again. Source audit confirms all six rows satisfy the qualifier: every outer path for a
+given key reaches one fixed-kind wrapper, which passes one fixed implementation to the leaf `Map.set`.
+The probe attributes that write to every enclosing registrar, so a shared helper appears once per caller;
+the raw multiplicity is call-stack depth times entry points, not a count of writers that can disagree.
+The generic door itself remains excluded, and the probe invokes no outside-SDK override writer, so
+neither competing-writer classification occurs in this result.
 
 The twelve WGPU material claimants shared by the `bitmap` and `image` rows are
 `registerWgpuBlinnPhongMaterial`, `registerWgpuCustomShaderMaterial`, `registerWgpuEmissiveMaterial`,
 `registerWgpuLambertMaterial`, `registerWgpuMatcapMaterial`, `registerWgpuNormalMaterial`,
 `registerWgpuPhongMaterial`, `registerWgpuShadedMaterial`, `registerWgpuSpecularGlossinessPbrMaterial`,
 `registerWgpuStandardPbrMaterial`, `registerWgpuToonMaterial`, and `registerWgpuUnlitMaterial`.
+The two 14-member sets are not identical: they share the standard bundle and all twelve material
+assemblies (13 claimants), while the bitmap row alone has `registerWgpuBitmapTextureResolver` and the
+image row alone has `registerWgpuImageTextureResolver`. They are distinct door+kind facts produced by
+the same enclosing-registrar attribution mechanism.
 
 | Collision key | Complete claimant set | Classification and source reading |
 |---|---|---|
@@ -176,8 +190,9 @@ The twelve WGPU material claimants shared by the `bitmap` and `image` rows are
 The runtime artifact also carries the complete 15-table census. `read` and `enumerate` are
 caller-serving seams; `clear` is instrument-serving; `unregister` has weak independent justification
 because last-write-wins already supplies override. Empty-at-import is recorded and asserted at runtime
-where enumeration exists, but it is inherited from the repository's no-top-level-side-effects rule,
-not proposed as a fifth-tier-specific contract.
+where enumeration exists, but it is inherited from the repository's
+[no-top-level-side-effects rule](../AGENTS.md#ground-rules) (line 42 when this census was recorded), not
+restated as a fifth-tier-specific contract.
 
 | Table (door) | enumerate | read | clear | unregister | import baseline | production reader packages |
 |---|---|---|---|---|---|---|
@@ -201,6 +216,12 @@ All 15 have a read path, but only 5 enumerate and 11 have either clear or unregi
 tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (four packages) and
 image bitmap composers (two) have production reads spanning more than their owning package. That read
 graph is part of the evidence needed to decide fifth-tier-versus-drift; this census converts neither.
+Against the decision criteria directly: the population is several (15) and mechanically coherent as
+last-write-wins module-global tables; 11 carry an isolation seam, but only 2 are read across multiple
+packages while 13 have a single-package read graph. Fourteen are empty at import; the animation-target
+binder is the one exception, with two built-ins at import, and three of the fourteen empty tables install
+built-ins on first read. Those mixed facts are the recommendation payload; they are not themselves an
+authorization to convert a table.
 
 The existing top-level-side-effect gate was separately widened in a throwaway measurement and left
 unchanged. Its current `ExpressionStatement` walk misses all other statement categories. Applying the

@@ -117,6 +117,16 @@ type CollisionClassification =
 interface CollisionAudit {
   assessment: string;
   classification: CollisionClassification;
+  leafValueQualifier: 'satisfied';
+}
+
+interface CollisionClaimantMembershipComparison {
+  left: string | null;
+  leftOnly: string[];
+  right: string | null;
+  rightOnly: string[];
+  sameMembership: boolean;
+  shared: string[];
 }
 
 const root = process.cwd();
@@ -342,27 +352,29 @@ const MODULE_GLOBAL_REGISTRY_BY_DOOR = new Map(MODULE_GLOBAL_REGISTRIES.map((ent
 const COLLISION_AUDITS = new Map<string, CollisionAudit>([
   [
     collisionKey('registerGlTextureResolver', 'bitmap'),
-    instrumentCollision('the standard GL bundle and the leaf are two paths to the same bitmap writer'),
+    instrumentCollision('the standard GL bundle and wrapper reach one leaf with the fixed bitmap pair'),
   ],
   [
     collisionKey('registerGlTextureResolver', 'image'),
-    instrumentCollision('the standard GL bundle and the leaf are two paths to the same image writer'),
+    instrumentCollision('the standard GL bundle and wrapper reach one leaf with the fixed image pair'),
   ],
   [
     collisionKey('registerGlTextureResolver', 'renderTarget'),
-    instrumentCollision('the standard GL bundle and the leaf are two paths to the same render-target writer'),
+    instrumentCollision('the standard GL bundle and wrapper reach one leaf with the fixed render-target pair'),
   ],
   [
     collisionKey('registerWgpuTextureResolver', 'bitmap'),
-    instrumentCollision('the WGPU bundle, leaf, and material assemblies all reach the same bitmap writer'),
+    instrumentCollision('the WGPU bundle, wrapper, and material assemblies reach one leaf with the fixed bitmap pair'),
   ],
   [
     collisionKey('registerWgpuTextureResolver', 'image'),
-    instrumentCollision('the WGPU bundle, leaf, and material assemblies all reach the same image writer'),
+    instrumentCollision('the WGPU bundle, wrapper, and material assemblies reach one leaf with the fixed image pair'),
   ],
   [
     collisionKey('registerWgpuTextureResolver', 'renderTarget'),
-    instrumentCollision('the WGPU bundle, leaf, and Unlit assembly all reach the same render-target writer'),
+    instrumentCollision(
+      'the WGPU bundle, wrapper, and Unlit assembly reach one leaf with the fixed render-target pair',
+    ),
   ],
 ]);
 
@@ -440,8 +452,13 @@ async function main(): Promise<void> {
         new Set(collision.claims.map((claim) => claim.implementation)).size === 1
           ? ('identical' as const)
           : ('different' as const),
+      leafValueQualifier: audit?.leafValueQualifier ?? ('not-audited' as const),
     };
   });
+  const wgpuBitmapImageClaimantMembership = compareCollisionClaimants(
+    collisions.find((collision) => collision.door === 'registerWgpuTextureResolver' && collision.kind === 'bitmap'),
+    collisions.find((collision) => collision.door === 'registerWgpuTextureResolver' && collision.kind === 'image'),
+  );
   const genericDoors = classifications.filter((classification) => classification.role === 'generic-door');
   const staticGenericDoorMembership = ownership
     .filter((entry) => entry.status === 'mechanism')
@@ -510,6 +527,7 @@ async function main(): Promise<void> {
       instrumentArtifact: collisions.filter((collision) => collision.classification === 'INSTRUMENT ARTIFACT').length,
       unclassified: collisions.filter((collision) => collision.classification === 'UNCLASSIFIED').length,
     },
+    contestedBindings: collisions.filter((collision) => collision.classification !== 'INSTRUMENT ARTIFACT').length,
   };
   const genericDoorClassification = {
     count: genericDoors.length,
@@ -530,6 +548,30 @@ async function main(): Promise<void> {
     floor: instrumentLimited.length > 0,
     unassessedPairs: instrumentLimited.length,
   };
+  const collisionWriterRule = {
+    allSixSatisfyQualifier:
+      collisions.length === 6 && collisions.every((collision) => collision.leafValueQualifier === 'satisfied'),
+    mechanism:
+      'the probe attributes a write to every enclosing registrar, so shared helpers appear once per caller; multiplicity is call-stack depth times entry points',
+    qualifier: 'every path reaching the leaf must write the identical value',
+    unit: 'leaf write site',
+    wgpuBitmapImageClaimantMembership,
+  };
+  const moduleGlobalRegistryCensus = {
+    clear: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.clear !== null).length,
+    clearOrUnregister: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.clear !== null || entry.unregister !== null)
+      .length,
+    emptyAtImport: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.emptyAtImport).length,
+    enumerate: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate !== null).length,
+    multiPackageReaders: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.readerPackages.length > 1).map((entry) => ({
+      readerPackages: entry.readerPackages,
+      table: entry.table,
+    })),
+    read: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.read !== null).length,
+    singlePackageReaders: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.readerPackages.length === 1).length,
+    tables: MODULE_GLOBAL_REGISTRIES.length,
+    unregister: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.unregister !== null).length,
+  };
 
   if (jsonMode) {
     console.log(
@@ -542,8 +584,10 @@ async function main(): Promise<void> {
           results,
           collisions,
           collisionCoverage,
+          collisionWriterRule,
           orderSensitivity,
           moduleGlobalRegistries: MODULE_GLOBAL_REGISTRIES,
+          moduleGlobalRegistryCensus,
         },
         null,
         2,
@@ -905,8 +949,40 @@ function collisionKey(door: string, kind: string): string {
   return `${door}\0${kind}`;
 }
 
+function compareCollisionClaimants(
+  left:
+    | {
+        claims: readonly { packageName: string; registrar: string }[];
+        door: string;
+        kind: string;
+      }
+    | undefined,
+  right:
+    | {
+        claims: readonly { packageName: string; registrar: string }[];
+        door: string;
+        kind: string;
+      }
+    | undefined,
+): CollisionClaimantMembershipComparison {
+  const leftClaimants = left?.claims.map(collisionClaimantKey).sort() ?? [];
+  const rightClaimants = right?.claims.map(collisionClaimantKey).sort() ?? [];
+  return {
+    left: left === undefined ? null : `${left.door}(${left.kind})`,
+    leftOnly: difference(leftClaimants, rightClaimants),
+    right: right === undefined ? null : `${right.door}(${right.kind})`,
+    rightOnly: difference(rightClaimants, leftClaimants),
+    sameMembership: arraysEqual(leftClaimants, rightClaimants),
+    shared: leftClaimants.filter((claimant) => rightClaimants.includes(claimant)),
+  };
+}
+
+function collisionClaimantKey(claim: { packageName: string; registrar: string }): string {
+  return `${claim.packageName}:${claim.registrar}`;
+}
+
 function instrumentCollision(assessment: string): CollisionAudit {
-  return { assessment, classification: 'INSTRUMENT ARTIFACT' };
+  return { assessment, classification: 'INSTRUMENT ARTIFACT', leafValueQualifier: 'satisfied' };
 }
 
 function pairComparability(reason: ReturnType<typeof explainPairDerivationScope>): RuntimePairResult['comparability'] {
