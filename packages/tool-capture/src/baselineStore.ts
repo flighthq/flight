@@ -11,10 +11,12 @@ import {
   createCaptureBaseline,
   formatCaptureBaseline,
   getCaptureBaselineField,
+  getCaptureBaselineProvenance,
   parseCaptureBaseline,
   setCaptureBaselineField,
+  setCaptureBaselineProvenance,
 } from '@flighthq/capture/contract';
-import type { CaptureBaseline } from '@flighthq/types/contract';
+import type { CaptureBaseline, CaptureBaselineProvenance } from '@flighthq/types/contract';
 
 export type BaselineField = 'fingerprint' | 'sourceHash' | 'sha256';
 
@@ -40,6 +42,17 @@ export function getBaselineField(
   return getCaptureBaselineField(readBaseline(baselinePath(root, subject, name)), column, field);
 }
 
+// What produced a column's committed values, or null when the column predates provenance recording.
+// Reads as UNKNOWN, never as agreement — the whole point of recording before enforcing.
+export function getBaselineProvenance(
+  root: string,
+  subject: string,
+  name: string,
+  column: string,
+): CaptureBaselineProvenance | null {
+  return getCaptureBaselineProvenance(readBaseline(baselinePath(root, subject, name)), column);
+}
+
 export function setBaselineField(
   root: string,
   subject: string,
@@ -51,6 +64,21 @@ export function setBaselineField(
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
   setCaptureBaselineField(data, column, field, value);
+  writeBaseline(path, data);
+}
+
+// Records what produced a column's values. Read-merge-write like the field setter, so writing it leaves
+// every other column and every other field of this one untouched — no existing record is rewritten.
+export function setBaselineProvenance(
+  root: string,
+  subject: string,
+  name: string,
+  column: string,
+  provenance: Readonly<CaptureBaselineProvenance>,
+): void {
+  const path = baselinePath(root, subject, name);
+  const data = readBaseline(path);
+  setCaptureBaselineProvenance(data, column, provenance);
   writeBaseline(path, data);
 }
 

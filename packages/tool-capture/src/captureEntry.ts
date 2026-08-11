@@ -14,7 +14,7 @@ import { join, resolve } from 'node:path';
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { getBaselineField, setBaselineField } from './baselineStore.js';
+import { getBaselineField, setBaselineField, setBaselineProvenance } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
@@ -513,7 +513,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           logs,
           verifyPublished: dataUrl !== null,
           verifyTargetKind: verificationTargetKind,
-          warmupFrames: await getObserveWarmupFrames(page),
+          warmupFrames: await getCaptureWarmupFrames(page),
           pageEvidence: await hasVisiblePageEvidence(page),
           timedOut: observeTimedOut,
         });
@@ -550,6 +550,16 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           );
         }
         setBaselineField(root, tool, entry.name, renderer, 'sha256', hash);
+        // Record what produced this hash, not just the hash. Two records that disagree are otherwise
+        // indistinguishable from two records taken under different conditions, and nothing on disk can
+        // tell them apart afterwards. Recorded here and NOT yet enforced anywhere: comparison across
+        // differing provenance stays permitted until most records carry the field.
+        setBaselineProvenance(root, tool, entry.name, renderer, {
+          frames: captureFrames,
+          targetKind: verificationTargetKind,
+          verifyPublished: dataUrl !== null,
+          warmupFrames: await getCaptureWarmupFrames(page),
+        });
         baselineHash = hash;
         changed = false;
       } else {
@@ -651,9 +661,10 @@ function formatObserveDetail(d: Readonly<CaptureObserveDiagnostics>): string {
   return parts.join(', ');
 }
 
-// Extra animation frames the in-page observe warmup rendered past the requested count (see
-// launchBrowser). 0 when the page drew immediately or set nothing.
-async function getObserveWarmupFrames(page: Page): Promise<number> {
+// Extra animation frames the in-page warmup rendered past the requested count (see launchBrowser). 0
+// when the page drew immediately or set nothing. NOT observe-specific despite where its callers happen
+// to sit today: the page computes it in every mode, and the value describes the capture, not the mode.
+async function getCaptureWarmupFrames(page: Page): Promise<number> {
   return page.evaluate(() => (window as unknown as { __ftWarmupFrames?: number }).__ftWarmupFrames ?? 0).catch(() => 0);
 }
 
@@ -1042,7 +1053,7 @@ async function captureUrlAttempt(
       logs,
       verifyPublished: false,
       verifyTargetKind: null,
-      warmupFrames: await getObserveWarmupFrames(page),
+      warmupFrames: await getCaptureWarmupFrames(page),
       attempts: attempt,
       timedOut: !reachedFrame,
       pageEvidence: await hasVisiblePageEvidence(page),
@@ -1072,7 +1083,7 @@ async function captureUrlAttempt(
       logs,
       verifyPublished: false,
       verifyTargetKind: null,
-      warmupFrames: await getObserveWarmupFrames(page),
+      warmupFrames: await getCaptureWarmupFrames(page),
       attempts: attempt,
       timedOut: /timeout/i.test(message),
       pageEvidence: await hasVisiblePageEvidence(page),
