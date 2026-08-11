@@ -147,9 +147,11 @@ export function drawWgpuScene3DShadowMap(
     multiplyMatrix4(_shadowProxy.worldMatrix, lightMatrix, world);
     const jointMatrices = skinned ? mesh.skin!.skeleton.jointMatrices : null;
     _shadowProxy.jointMatrices = jointMatrices;
+    // The palette is claimed BEFORE the Draw uniform is written: the arena base it returns rides in that
+    // uniform, so writing first would publish a base for a region not yet allocated.
+    const skinDrawBindGroup = jointMatrices === null ? null : skinning!.getDrawBindGroup(state, jointMatrices);
     const rigidDrawBindGroup = writeWgpuDrawUniform(state, _shadowProxy);
-    const drawBindGroup =
-      jointMatrices === null ? rigidDrawBindGroup : skinning!.getDrawBindGroup(state, jointMatrices);
+    const drawBindGroup = skinDrawBindGroup ?? rigidDrawBindGroup;
     _dynamicOffsets[0] = sceneRuntime.pendingDrawOffset;
 
     pass.setBindGroup(0, drawBindGroup, _dynamicOffsets);
@@ -213,7 +215,15 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean)
 // (clip.z = (clip.z + clip.w) * 0.5), the identical remap the lit sampler's depthRef applies — so what is
 // written here and what is compared there agree.
 const SHADOW_DEPTH_WGSL = /* wgsl */ `
-struct Draw { world : mat4x4f };
+// The Draw record is the SAME 256-byte slot the mesh path writes, so the depth shader must declare the
+// fields ahead of the one it wants or params would land at the wrong offset. It reads only params.z, the
+// skin arena base — writeWgpuDrawUniform already writes every field below.
+struct Draw {
+  world : mat4x4f,
+  normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,
+  params : vec4f,
+};
 @group(0) @binding(0) var<uniform> draw : Draw;
 
 @vertex fn vs_main(@location(0) position : vec3f) -> @builtin(position) vec4f {

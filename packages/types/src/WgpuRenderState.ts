@@ -266,6 +266,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // submitWgpuRenderPass submits, since the frame's submit is deferred and destroying them earlier
   // invalidates the command buffer.
   retiredBuffers?: GPUBuffer[];
+  // The same deferral for TEXTURES replaced mid-frame (a grown skin-palette arena). A texture the open
+  // encoder's bind groups still reference cannot be destroyed before submit either — doing so fails the
+  // submit outright and the whole frame renders nothing, which is how this was found.
+  retiredTextures?: GPUTexture[];
 
   // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
   // Null until the first solid-fill shape draws; shared across every shape on this device.

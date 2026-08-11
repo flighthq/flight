@@ -24,7 +24,9 @@ describe('destroyWgpuSkinPalette', () => {
 
     expect(runtime.skinPaletteTexture).toBeNull();
     expect(runtime.skinPaletteView).toBeNull();
-    expect(runtime.skinPaletteCapacity).toBe(0);
+    expect(runtime.skinPaletteArenaRows).toBe(0);
+    expect(runtime.skinPaletteArenaCursor).toBe(0);
+    expect(runtime.skinPaletteArenaBases).toBeNull();
     expect(runtime.skinDrawBindGroup).toBeNull();
   });
 });
@@ -32,12 +34,15 @@ describe('destroyWgpuSkinPalette', () => {
 describe('ensureWgpuSkinDrawBindGroup', () => {
   it('caches the group and rebuilds it only when palette growth replaces its view', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const first = ensureWgpuSkinDrawBindGroup(state, new Float32Array(16));
+    const palette = new Float32Array(16);
+    const first = ensureWgpuSkinDrawBindGroup(state, palette);
     const groupCount = fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    expect(ensureWgpuSkinDrawBindGroup(state, new Float32Array(16))).toBe(first);
+    // The same skeleton keeps its region, so nothing is reallocated and nothing is rebuilt.
+    expect(ensureWgpuSkinDrawBindGroup(state, palette)).toBe(first);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groupCount);
 
-    ensureWgpuSkinDrawBindGroup(state, new Float32Array(32));
+    // A second skeleton claims the next row, which outgrows the arena and replaces its view.
+    ensureWgpuSkinDrawBindGroup(state, new Float32Array(16));
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groupCount + 1);
     expect(fake.calls.filter((call) => call.name === 'createTexture')).toHaveLength(2);
   });
@@ -106,12 +111,12 @@ describe('uploadWgpuSkinNormalPalette', () => {
     // the pose divisor would under-count every skeleton by a quarter and upload a truncated row —
     // wrong lighting rather than a failure. Two joints => 6 texels.
     const { fake, state } = makeWgpuScene3DState();
-    const view = uploadWgpuSkinNormalPalette(state, new Float32Array(12 * 2));
+    const base = uploadWgpuSkinNormalPalette(state, new Float32Array(12 * 2));
     const texture = fake.calls.find((call) => call.name === 'createTexture');
     const write = fake.calls.find((call) => call.name === 'writeTexture');
 
-    expect(view).toBe(getWgpuScene3DRuntime(state).skinNormalPaletteView);
-    expect(texture?.args[0]).toMatchObject({ format: 'rgba32float', size: [6, 1, 1] });
+    expect(base).toBe(0);
+    expect(texture?.args[0]).toMatchObject({ format: 'rgba32float', size: [256, 1, 1] });
     expect(write?.args[3]).toEqual([6, 1, 1]);
   });
 
@@ -126,30 +131,73 @@ describe('uploadWgpuSkinNormalPalette', () => {
 });
 
 describe('uploadWgpuSkinPalette', () => {
-  it('packs four rgba32float texels per joint into one row', () => {
+  it('packs four rgba32float texels per joint into a fixed-width arena row', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const joints = new Float32Array(32);
-    const view = uploadWgpuSkinPalette(state, joints);
+    const base = uploadWgpuSkinPalette(state, new Float32Array(32));
     const texture = fake.calls.find((call) => call.name === 'createTexture');
     const write = fake.calls.find((call) => call.name === 'writeTexture');
 
-    expect(view).toBe(getWgpuScene3DRuntime(state).skinPaletteView);
-    expect(texture?.args[0]).toMatchObject({
-      format: 'rgba32float',
-      size: [8, 1, 1],
-    });
-    expect(write?.args[2]).toEqual({ bytesPerRow: 128 });
+    expect(base).toBe(0);
+    expect(texture?.args[0]).toMatchObject({ format: 'rgba32float', size: [256, 1, 1] });
+    expect(write?.args[2]).toEqual({ bytesPerRow: 128, offset: 0 });
     expect(write?.args[3]).toEqual([8, 1, 1]);
   });
 
-  it('reuses capacity and grows without a joint-count fallback gate', () => {
-    const { fake, state } = makeWgpuScene3DState();
-    uploadWgpuSkinPalette(state, new Float32Array(16 * 80));
-    uploadWgpuSkinPalette(state, new Float32Array(16 * 40));
-    expect(fake.calls.filter((call) => call.name === 'createTexture')).toHaveLength(1);
+  it('gives two skeletons in one frame DISTINCT regions', () => {
+    const { state } = makeWgpuScene3DState();
+    const first = uploadWgpuSkinPalette(state, new Float32Array(16 * 2));
+    const second = uploadWgpuSkinPalette(state, new Float32Array(16 * 2));
 
-    uploadWgpuSkinPalette(state, new Float32Array(16 * 160));
+    // The whole point of the arena: a second skeleton must not land on the first one's texels, or every
+    // skinned draw in the frame samples whichever palette was written last.
+    expect(second).not.toBe(first);
+    expect(second).toBe(256);
+  });
+
+  it('gives one skeleton ONE region however many passes ask for it', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const palette = new Float32Array(16 * 2);
+    const shadowPass = uploadWgpuSkinPalette(state, palette);
+    const writes = fake.calls.filter((call) => call.name === 'writeTexture').length;
+    const meshPass = uploadWgpuSkinPalette(state, palette);
+
+    expect(meshPass).toBe(shadowPass);
+    expect(fake.calls.filter((call) => call.name === 'writeTexture')).toHaveLength(writes);
+  });
+
+  it('spans rows for a skeleton wider than one row, as whole rows plus the remainder', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    // 100 joints is 400 texels against a 256-texel row: one full row and 144 left over. Two rectangles,
+    // because a region straddling a row boundary is not expressible as a single copy.
+    uploadWgpuSkinPalette(state, new Float32Array(16 * 100));
+    const writes = fake.calls.filter((call) => call.name === 'writeTexture');
+
+    expect(writes).toHaveLength(2);
+    expect(writes[0].args[2]).toEqual({ bytesPerRow: 4096, rowsPerImage: 1 });
+    expect(writes[0].args[3]).toEqual([256, 1, 1]);
+    expect(writes[1].args[0]).toMatchObject({ origin: [0, 1, 0] });
+    expect(writes[1].args[2]).toEqual({ bytesPerRow: 2304, offset: 4096 });
+    expect(writes[1].args[3]).toEqual([144, 1, 1]);
+  });
+
+  it('starts the next region on a row boundary, so every write stays a rectangle', () => {
+    const { state } = makeWgpuScene3DState();
+    uploadWgpuSkinPalette(state, new Float32Array(16 * 100));
+    // 400 texels rounds up to two whole rows, so the next skeleton starts at 512 rather than 400.
+    expect(uploadWgpuSkinPalette(state, new Float32Array(16 * 2))).toBe(512);
+  });
+
+  it('replays regions already handed out when growth replaces the arena texture', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    uploadWgpuSkinPalette(state, new Float32Array(16 * 2));
+    const before = fake.calls.filter((call) => call.name === 'writeTexture').length;
+
+    // Growth is a NEW texture; without the replay the first skeleton's texels would be blank in it.
+    uploadWgpuSkinPalette(state, new Float32Array(16 * 2));
     expect(fake.calls.filter((call) => call.name === 'createTexture')).toHaveLength(2);
-    expect(getWgpuScene3DRuntime(state).skinPaletteCapacity).toBe(160);
+    const writes = fake.calls.filter((call) => call.name === 'writeTexture');
+    expect(writes.length).toBe(before + 2);
+    expect(writes.at(-2)?.args[0]).toMatchObject({ origin: [0, 0, 0] });
+    expect(writes.at(-1)?.args[0]).toMatchObject({ origin: [0, 1, 0] });
   });
 });
