@@ -9,7 +9,7 @@ import type { WgpuRenderState } from './WgpuRenderState';
 // registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuMaterialRenderer (the 2D
 // quad-batch material seam): a separate registry — scene-wgpu owns its own
 // WeakMap<WgpuRenderState, …> (sceneMeshMaterialRegistry) keyed by MaterialKind, distinct from the
-// 2D materialRendererMap, because a material kind is either 2D or 3D, never both.
+// 2D material-renderer table, because a material kind is either 2D or 3D, never both.
 //
 // The renderer owns its pipeline (the StandardPbr uber-shader variant for its define key) and is
 // driven per draw in two steps. drawScene3D binds shared per-frame state once per material run, then

@@ -2,7 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type { WgpuMaterialRenderer, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
@@ -28,6 +28,8 @@ let refreshWgpuRenderCache: typeof WgpuCacheModule.refreshWgpuRenderCache;
 let releaseWgpuRenderCache: typeof WgpuCacheModule.releaseWgpuRenderCache;
 let createWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.createWgpuRenderStateRuntime;
 let getWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.getWgpuRenderStateRuntime;
+let getWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.getWgpuMaterialRenderer;
+let registerWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.registerWgpuMaterialRenderer;
 let beginWgpuFrame: typeof WgpuRenderWgpuModule.beginWgpuFrame;
 let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
 let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
@@ -92,7 +94,9 @@ beforeAll(async () => {
     createWgpuRenderStateRuntime,
     destroyWgpuRenderTarget,
     drawWgpuRenderTargetResult,
+    getWgpuMaterialRenderer,
     getWgpuRenderStateRuntime,
+    registerWgpuMaterialRenderer,
     submitWgpuRenderPass,
   } = await import('@flighthq/render-wgpu/contract'));
   ({ flushWgpuQuadBatchWriter } = await import('./wgpuQuadBatchWriter'));
@@ -136,6 +140,26 @@ describe('createWgpuCacheState', () => {
       getWgpuRenderStateRuntime(screen).renderProxyMap,
     );
     expect(getWgpuRenderStateRuntime(cacheState).colorAdjustmentResolver).toBe(resolver);
+  });
+
+  it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {
+    const screen = fakeScreen();
+    const first: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
+    const replacement: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
+    registerWgpuMaterialRenderer(screen, 'acme.Material', first);
+
+    const cacheState = createWgpuCacheState(screen);
+    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
+    expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(cacheRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
+    expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
+    expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
+
+    registerWgpuMaterialRenderer(screen, 'acme.Material', replacement);
+
+    expect(getWgpuMaterialRenderer(screen, 'acme.Material')).toBe(replacement);
+    expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
   });
 });
 

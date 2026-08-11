@@ -5,7 +5,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
 // analog of getWgpuMaterialRenderer; reads scene-wgpu's own per-state registry
-// (sceneMeshMaterialRegistry), distinct from the 2D materialRendererMap.
+// (sceneMeshMaterialRegistry), distinct from the 2D material-renderer table.
 export function getWgpuMeshMaterialRenderer(state: WgpuRenderState, kind: Kind): WgpuMeshMaterialRenderer | null {
   return getWgpuScene3DRuntime(state).materialRegistry.get(kind) ?? null;
 }

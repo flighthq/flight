@@ -75,7 +75,7 @@ export interface WgpuScene3DDrawEntry {
 // the draw path reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw
 // bind group, the 1x1 placeholder map texture, and a per-material bind-group cache). `activeMeshPipeline`
 // is the bind()→draw() handoff. All scene-wgpu-owned and distinct from the 2D renderer's
-// materialRendererMap/textureCache — a material kind is either 2D or 3D, never both. The registry and
+// material-renderer table/texture cache — a material kind is either 2D or 3D, never both. The registry and
 // upload cache are surfaced through the header's WgpuRenderStateRuntime.sceneMeshMaterialRegistry /
 // sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuScene3DRuntime
 // is created lazily per state by getWgpuScene3DRuntime.

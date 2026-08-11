@@ -37,17 +37,33 @@ describe('copyGlRenderStateRegistrations', () => {
     const { canvas } = makeCanvas();
     const screen = createGlRenderState(canvas);
     const offscreen = createGlOffscreenRenderState(screen);
+    const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
+    const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const resolver = vi.fn(() => null);
+    registerGlMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
+    expect(
+      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(false);
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
     copyGlRenderStateRegistrations(offscreen, screen);
     expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(materialRenderer);
+    expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
+    registerGlMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerGlTextureResolver(offscreen, 'acme.LateTexture', null);
+    expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(offscreenMaterialRenderer);
+    expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(materialRenderer);
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
@@ -84,14 +100,16 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.glRenderTextureCache).toBe(screenRuntime.glRenderTextureCache);
     expect(offscreenRuntime.quadIndexBuffer).toBe(screenRuntime.quadIndexBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
-    expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
     );
     expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
-    expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
+      materialRenderer,
+    );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
 
@@ -246,9 +264,15 @@ describe('createGlRenderState', () => {
 });
 
 describe('createGlRenderStateRuntime', () => {
-  it('returns a runtime carrying the base entity-runtime binding slot', () => {
+  it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const runtime = createGlRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.materialRenderers).toMatchObject({
+      onMiss: 'StandardMaterial',
+      registry: 'GlMaterialRenderer',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.materialRenderers.entries.size).toBe(0);
   });
 });
 

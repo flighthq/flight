@@ -5,7 +5,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
 // analog of getGlMaterialRenderer; reads scene-gl's own per-state registry (sceneMeshMaterialRegistry),
-// distinct from the 2D materialRendererMap.
+// distinct from the 2D material-renderer table.
 export function getGlMeshMaterialRenderer(state: GlRenderState, kind: Kind): GlMeshMaterialRenderer | null {
   return getGlScene3DRuntime(state).materialRegistry.get(kind) ?? null;
 }

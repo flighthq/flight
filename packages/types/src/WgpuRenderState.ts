@@ -34,6 +34,7 @@ export interface WgpuRenderState extends RenderState {
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries {
+  materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
 }
 
@@ -209,7 +210,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // because a frame's writeBuffer is queued after the previous frame's submit completes.
   quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
   quadBatchWriterBufferCursor: number;
-  materialRendererMap?: Map<Kind, WgpuMaterialRenderer>;
   // The shape-rasterization seam, absent until registerWgpuShapeRasterizer installs one. A shape whose
   // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
   // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
@@ -217,7 +217,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
 
   // 3D scene mesh-material seam, owned by scene-wgpu (filled lazily by
   // registerWgpuMeshMaterialRenderer). The per-material-kind 3D draw behavior registry, kept separate
-  // from the 2D materialRendererMap because a material kind is either 2D or 3D, never both.
+  // from registries.materialRenderers because a material kind is either 2D or 3D, never both.
   // sceneMeshUploadCache is the per-state cache of lazily uploaded MeshGeometry GPU data, keyed by the
   // geometry entity (parallel to MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the
   // concrete value shape). Both stay null until the first 3D registration / mesh draw on this state.

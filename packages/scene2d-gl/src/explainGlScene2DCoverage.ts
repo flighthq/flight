@@ -8,7 +8,13 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import {
+  RegistryEntryState,
+  RenderRegistry,
+  RequirementFacet,
+  SceneCoverage,
+  StandardMaterialKind,
+} from '@flighthq/types/contract';
 
 // Clears `out`, then reports every requirement in `usage` with how well this GL state is wired for it —
 // satisfied entries included, so one call is a complete manifest.
@@ -71,11 +77,11 @@ function collectGlScene2DCoverageGaps(
   // resolveGlMaterialRenderer falls back to whatever is registered for StandardMaterialKind, so an
   // unregistered kind may still draw — as the standard material, which is a downgrade worth naming
   // rather than a silence, and is NOT the same as nothing being registered at all.
-  const materials = runtime.materialRendererMap;
-  const hasStandard = materials?.has(StandardMaterialKind) === true;
+  const materials = runtime.registries.materialRenderers.entries;
+  const hasStandard = materials.get(StandardMaterialKind)?.state === RegistryEntryState.Bound;
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (materials?.has(kind) === true) {
+    if (materials.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,

@@ -3,6 +3,7 @@ import type { GlMaterialRenderer, Material } from '@flighthq/types/contract';
 import { RenderRegistry, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMaterialRenderer, registerGlMaterialRenderer, resolveGlMaterialRenderer } from './glMaterialRegistry';
+import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
 
 const TestKind = 'TestMaterial';
@@ -22,8 +23,23 @@ describe('getGlMaterialRenderer', () => {
 describe('registerGlMaterialRenderer', () => {
   it('registers a renderer retrievable by kind', () => {
     const { state } = createGlState();
+    const before = getGlRenderStateRuntime(state).registries.materialRenderers;
     registerGlMaterialRenderer(state, TestKind, testRenderer);
     expect(getGlMaterialRenderer(state, TestKind)).toBe(testRenderer);
+    expect(getGlRenderStateRuntime(state).registries.materialRenderers).not.toBe(before);
+    expect(before.entries.size).toBe(0);
+  });
+
+  it('is last-write-wins without mutating the earlier snapshot', () => {
+    const { state } = createGlState();
+    const replacement: GlMaterialRenderer = { instanceFloatCount: 0, bind() {} };
+    registerGlMaterialRenderer(state, TestKind, testRenderer);
+    const before = getGlRenderStateRuntime(state).registries.materialRenderers;
+
+    registerGlMaterialRenderer(state, TestKind, replacement);
+
+    expect(getGlMaterialRenderer(state, TestKind)).toBe(replacement);
+    expect(before.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
   });
 });
 

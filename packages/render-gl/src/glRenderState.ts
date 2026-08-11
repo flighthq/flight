@@ -24,13 +24,14 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.glBlendModeRegistry = copyMap(sourceRuntime.glBlendModeRegistry);
   targetRuntime.glColorAdjustmentMaterialFeature = sourceRuntime.glColorAdjustmentMaterialFeature;
   targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
-  targetRuntime.materialRendererMap =
-    sourceRuntime.materialRendererMap === undefined ? undefined : new Map(sourceRuntime.materialRendererMap);
   targetRuntime.materialBitmapShaderMap =
     sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
   targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
-  targetRuntime.registries = { textureResolvers: sourceRuntime.registries.textureResolvers };
+  targetRuntime.registries = {
+    materialRenderers: sourceRuntime.registries.materialRenderers,
+    textureResolvers: sourceRuntime.registries.textureResolvers,
+  };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
@@ -181,6 +182,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   }
   runtime.currentRenderTarget = null;
   runtime.registries = {
+    materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
   };
   // Per-state, not shared on the context tier: guards are installed per render state.
