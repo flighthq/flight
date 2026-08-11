@@ -3474,6 +3474,31 @@
           }
         },
         {
+          "scene": "scene-skin-two-skeletons",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "scene-skinning",
           "backends": {
             "canvas": {
