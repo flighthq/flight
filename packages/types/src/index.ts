@@ -507,6 +507,7 @@ export * from './Scale9Shape';
 export * from './ScanlinesEffect';
 export * from './Scene3D';
 export * from './SceneCoverageCatalog';
+export * from './RegistryCatalog';
 export * from './SceneCoverageEntry';
 export * from './Scene3DKindUsage';
 export * from './Scene3DAnimationPath';

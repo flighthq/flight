@@ -268,6 +268,9 @@
       "path": "../requirements"
     },
     {
+      "path": "../registry-catalog"
+    },
+    {
       "path": "../scene3d"
     },
     {
