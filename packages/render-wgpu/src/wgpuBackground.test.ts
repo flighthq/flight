@@ -1,4 +1,4 @@
-import { beginWgpuFrame, renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
+import { beginWgpuFrame, renderWgpuBackground, retireWgpuTexture, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -60,6 +60,20 @@ describe('renderWgpuBackground', () => {
     expect(runtime.commandEncoder).toBe(encoder);
     expect(runtime.uniformOffset).toBe(512);
     expect(runtime.renderPass).not.toBeNull();
+  });
+});
+
+describe('retireWgpuTexture', () => {
+  it('queues the texture for post-submit destruction instead of destroying it now', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const destroy = vi.fn();
+    const texture = { destroy } as unknown as GPUTexture;
+
+    retireWgpuTexture(state, texture);
+
+    // Nothing is freed while the frame is still recording — that is the whole reason this seam exists.
+    expect(destroy).not.toHaveBeenCalled();
+    expect(getWgpuRenderStateRuntime(state).retiredTextures).toContain(texture);
   });
 });
 

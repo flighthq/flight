@@ -1,6 +1,6 @@
 import { computeRgbHexString } from '@flighthq/color/contract';
 import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -119,7 +119,9 @@ export function drawWgpuRichTextWithOverlay(
   if (entry === null || richData.w !== pw || richData.h !== ph) {
     const nextEntry = createWgpuTextureEntry(state, pw, ph, _offscreenCanvas!);
     if (nextEntry === null) return;
-    entry?.texture.destroy();
+    // Retired rather than destroyed: this runs inside a draw, so a bind group recorded earlier in the
+    // frame may still reference the outgoing texture, and the frame's submit has not happened yet.
+    if (entry !== null) retireWgpuTexture(state, entry.texture);
     entry = nextEntry;
     richData.entry = nextEntry;
     richData.w = pw;

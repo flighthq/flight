@@ -27,13 +27,6 @@ function ensureWgpuDepthStencil(state: WgpuRenderState, width: number, height: n
   runtime.depthStencilHeight = height;
 }
 
-/**
- * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
- *
- * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
- * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
- * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
- */
 export function beginWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder !== null) return;
@@ -108,6 +101,28 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
 
   renderPass.setViewport(0, 0, width, height, 0, 1);
   runtime.renderPass = renderPass;
+}
+
+/**
+ * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
+ *
+ * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
+ * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
+ * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
+ */
+// Hands a texture to the post-submit retirement list instead of destroying it now.
+//
+// ★ THE DEFERRAL IS THE POINT — DO NOT "SIMPLIFY" THIS BACK TO texture.destroy(). A WebGPU frame records
+// every draw into one command encoder and submits ONCE at the end, so a texture replaced mid-frame may
+// still be referenced by a bind group already recorded. Destroying it before that submit fails the whole
+// submit, and the symptom is an ENTIRELY BLANK FRAME with a console warning naming a texture rather than
+// a call site — a cost-to-diagnose far out of proportion to the one line that causes it. Callers that
+// replace a texture during recording (a grown palette arena, a resized rasterization cache, a cache entry
+// rewritten on a payload version bump) retire it here; submitWgpuRenderPass frees it once the frame is
+// safely on the queue.
+export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+  (runtime.retiredTextures ?? (runtime.retiredTextures = [])).push(texture);
 }
 
 export function submitWgpuRenderPass(state: WgpuRenderState): void {

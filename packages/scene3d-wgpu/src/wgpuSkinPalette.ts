@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
   Mesh,
   MeshGeometry,
@@ -152,7 +152,7 @@ export function uploadWgpuSkinNormalPalette(state: WgpuRenderState, normalMatric
   const base = runtime.skinNormalPaletteArenaCursor;
   const rows = getWgpuSkinArenaRowCount(base + texels);
   if (rows > runtime.skinNormalPaletteArenaRows) {
-    retireWgpuSkinArenaTexture(state, runtime.skinNormalPaletteTexture);
+    if (runtime.skinNormalPaletteTexture !== null) retireWgpuTexture(state, runtime.skinNormalPaletteTexture);
     runtime.skinNormalPaletteTexture = createWgpuSkinArenaTexture(state, rows);
     runtime.skinNormalPaletteView = runtime.skinNormalPaletteTexture.createView();
     runtime.skinNormalPaletteArenaRows = rows;
@@ -188,7 +188,7 @@ export function uploadWgpuSkinPalette(state: WgpuRenderState, jointMatrices: Rea
   const base = runtime.skinPaletteArenaCursor;
   const rows = getWgpuSkinArenaRowCount(base + texels);
   if (rows > runtime.skinPaletteArenaRows) {
-    retireWgpuSkinArenaTexture(state, runtime.skinPaletteTexture);
+    if (runtime.skinPaletteTexture !== null) retireWgpuTexture(state, runtime.skinPaletteTexture);
     runtime.skinPaletteTexture = createWgpuSkinArenaTexture(state, rows);
     runtime.skinPaletteView = runtime.skinPaletteTexture.createView();
     runtime.skinPaletteArenaRows = rows;
@@ -225,15 +225,6 @@ function createWgpuSkinArenaTexture(state: WgpuRenderState, rows: number): GPUTe
     format: 'rgba32float',
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
   });
-}
-
-// Hands the outgoing arena to the render state's post-submit retirement list rather than destroying it.
-// Growth happens MID-FRAME, and bind groups already recorded into the open encoder still reference the
-// old texture; destroying it here fails the submit and the frame draws nothing at all.
-function retireWgpuSkinArenaTexture(state: WgpuRenderState, texture: GPUTexture | null): void {
-  if (texture === null) return;
-  const stateRuntime = getWgpuRenderStateRuntime(state);
-  (stateRuntime.retiredTextures ??= []).push(texture);
 }
 
 function getWgpuSkinArenaRowCount(texels: number): number {
