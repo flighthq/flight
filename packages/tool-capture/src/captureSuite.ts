@@ -4,6 +4,7 @@
 
 import { resolve } from 'node:path';
 
+import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import pc from 'picocolors';
 
 import { launchBrowser } from './captureBrowser.js';
@@ -45,6 +46,14 @@ export interface CaptureSuiteOptions {
 
 export type CaptureFingerprintMap = Record<string, Record<string, string>>;
 
+/**
+ * Provenance for fingerprints published by the same captures, keyed identically to CaptureFingerprintMap.
+ * Kept as a PARALLEL map rather than folded into the value so a consumer that stamps provenance and one
+ * that only needs the fingerprint string stay independent — and so a fingerprint can never arrive with a
+ * provenance that describes a different capture.
+ */
+export type CaptureFingerprintProvenanceMap = Record<string, Record<string, CaptureBaselineProvenance>>;
+
 export interface CaptureSuiteResult {
   aborted: boolean;
   captured: number;
@@ -53,6 +62,7 @@ export interface CaptureSuiteResult {
   shouldFail: boolean;
   /** Assertion-passed fingerprints collected as a by-product of capture. */
   fingerprints: CaptureFingerprintMap;
+  fingerprintProvenance: CaptureFingerprintProvenanceMap;
   durationMs: number;
   targets: CaptureTargetReport[];
   reportPath: string | null;
@@ -88,8 +98,15 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   let failed = 0;
   let targets: CaptureTargetReport[] = [];
   const fingerprints: CaptureFingerprintMap = {};
-  const onVerifiedFingerprint = (entry: string, renderer: string, fingerprint: string): void => {
+  const fingerprintProvenance: CaptureFingerprintProvenanceMap = {};
+  const onVerifiedFingerprint = (
+    entry: string,
+    renderer: string,
+    fingerprint: string,
+    provenance: CaptureBaselineProvenance,
+  ): void => {
     (fingerprints[entry] ??= {})[renderer] = fingerprint;
+    (fingerprintProvenance[entry] ??= {})[renderer] = provenance;
   };
 
   try {
@@ -147,6 +164,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
     failed,
     shouldFail,
     fingerprints,
+    fingerprintProvenance,
     durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
     targets,
     reportPath,

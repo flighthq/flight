@@ -207,6 +207,9 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
           browserSession,
           captureFrames,
           fingerprints: capture?.fingerprints,
+          // Carried beside the fingerprints from the SAME capture run. Without this the validation pass
+          // writes fingerprints it cannot attribute, and the provenance pair can never be completed.
+          fingerprintProvenance: capture?.fingerprintProvenance,
         });
       }
       // Timing must not share a browser/GPU process with the parallel screenshot pass. Keep the server
