@@ -34,6 +34,27 @@ describe('hashCaptureScreenshotPixels', () => {
     });
   });
 
+  it('forwards a null blank threshold, so a verified scene keeps its own definition of blank', () => {
+    // The scene's verifier has already applied that scene's declared minCoverage. Null is how the caller
+    // says "already ruled on"; if it were coerced to a number here, a deliberately-uniform frame would be
+    // refused by a threshold the scene explicitly opted out of. Asserted at this seam because the blank
+    // comparison itself runs in the page, which these doubles do not execute.
+    const thresholds: Array<number | null> = [];
+    const page: CaptureScreenshotHashPage = {
+      evaluate: async (_fn, argument) => {
+        thresholds.push((argument as { blankCoverage: number | null }).blankCoverage);
+        return 'c'.repeat(64) as never;
+      },
+    };
+    const screenshot = new Uint8Array([137, 80, 78, 71]);
+
+    return hashCaptureScreenshotPixels(page, screenshot, null)
+      .then(() => hashCaptureScreenshotPixels(page, screenshot, 0.001))
+      .then(() => {
+        expect(thresholds).toEqual([null, 0.001]);
+      });
+  });
+
   it('does NOT hash the encoded bytes — the defect this replaces', () => {
     // The regression lock. If someone reverts this to sha256 over the PNG buffer, the returned hash
     // becomes the encoded-bytes digest and this fails. Stated as a value rather than a shape so the

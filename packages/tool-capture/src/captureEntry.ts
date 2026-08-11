@@ -499,13 +499,23 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // mean something different from every other value in the same column with nothing downstream able
       // to tell them apart. This and the recapture that re-recorded all 574 committed values were one
       // operation — the meaning of the field and the values stored under it cannot diverge.
-      const hash = await hashCaptureScreenshotPixels(page, screenshotBuffer, OBSERVE_BLANK_COVERAGE);
-
+      // ★ THE DIAGNOSTICS ARE WRITTEN BEFORE THE STEP THAT CAN FAIL. Hashing throws on a frame it will
+      // not record, and that is exactly the frame someone needs to look at; computing first left a failed
+      // capture with no screenshot and no logs, so the evidence existed only when it was not needed.
       // Atomic write: tmp files renamed into place, status.json written last.
       writeFileSync(tmpScreenshot, screenshotBuffer);
       writeFileSync(tmpLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
       renameSync(tmpScreenshot, finalScreenshot);
       renameSync(tmpLogs, finalLogs);
+
+      // A passing verifier has already applied the SCENE'S OWN minCoverage, so the global threshold must
+      // not re-judge the same frame — see the note in captureScreenshotHash. Only an unverified capture
+      // needs the generic blank guard.
+      const hash = await hashCaptureScreenshotPixels(
+        page,
+        screenshotBuffer,
+        verification?.state === 'passed' ? null : OBSERVE_BLANK_COVERAGE,
+      );
 
       if (observe) {
         // Eyes mode: never gate, never touch baselines. Always emit the screenshot (done above) plus a
