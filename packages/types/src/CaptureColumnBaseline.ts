@@ -5,8 +5,8 @@ import type { CaptureBaselineProvenance } from './CaptureBaselineProvenance';
  * is optional and written independently: `fingerprint` is the coarse render fingerprint (see
  * BitmapFingerprint / compareCaptureFingerprints), `sourceHash` identifies the scene source captured by
  * that fingerprint, and `sha256` is the hash of the encoded screenshot artifact. A column may carry any
- * subset of these fields, and `provenance` records what produced them. Mirrors the on-disk baseline
- * store's column shape.
+ * subset of these fields, and each value carries its own `*Provenance` recording what produced THAT
+ * value. Mirrors the on-disk baseline store's column shape.
  */
 export interface CaptureColumnBaseline {
   /** Coarse render fingerprint in the `<gridSize>:<hex>` form (formatBitmapFingerprint). */
@@ -20,8 +20,20 @@ export interface CaptureColumnBaseline {
   // holding, so the distinction is stated here rather than left to the field name.
   sha256?: string;
   /**
-   * What produced the values above. Absent on every column written before this field existed, which
-   * reads as unknown provenance rather than as agreement — see CaptureBaselineProvenance.
+   * What produced `fingerprint`. Absent when that value predates provenance recording, or was written
+   * by a pass that did not stamp one — which reads as UNKNOWN, never as agreement.
    */
-  provenance?: CaptureBaselineProvenance;
+  fingerprintProvenance?: CaptureBaselineProvenance;
+  /**
+   * What produced `sha256`. Absent under the same conditions and with the same meaning.
+   *
+   * ★ ONE PER INDEPENDENTLY-WRITTEN VALUE, NOT ONE PER COLUMN. `fingerprint` and `sha256` are written by
+   * SEPARATE PASSES, so a single column-level provenance could only ever describe whichever pass wrote it
+   * and would silently read as describing both. That is the same defect the column's top-level
+   * `sourceHash` already had — it names the source of the FINGERPRINT while sitting beside `sha256` as
+   * though it covered it — and collapsing the two here would have reproduced it one layer down. A value
+   * describing N independently-produced things needs N values: one cannot establish agreement between
+   * two, it can only report itself.
+   */
+  sha256Provenance?: CaptureBaselineProvenance;
 }

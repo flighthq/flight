@@ -77,16 +77,25 @@ describe('getCaptureBaselineField', () => {
 describe('getCaptureBaselineProvenance', () => {
   it('reads back what was recorded', () => {
     const baseline = createCaptureBaseline();
-    setCaptureBaselineProvenance(baseline, 'webgl', PROVENANCE);
-    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toEqual(PROVENANCE);
+    setCaptureBaselineProvenance(baseline, 'webgl', 'sha256', PROVENANCE);
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'sha256')).toEqual(PROVENANCE);
+  });
+
+  it('does NOT answer for the other value — one provenance per independently-written field', () => {
+    const baseline = createCaptureBaseline();
+    setCaptureBaselineProvenance(baseline, 'webgl', 'sha256', PROVENANCE);
+    // fingerprint is written by a DIFFERENT pass. A sha256 stamp must not read as covering it, or the
+    // record reports agreement it never established.
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'fingerprint')).toBeNull();
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'sha256')).toEqual(PROVENANCE);
   });
 
   it('reads a column written before provenance existed as UNKNOWN, not as agreement', () => {
     const baseline = createCaptureBaseline();
     setCaptureBaselineField(baseline, 'webgl', 'sha256', 'abc');
     // null is the whole staging decision: a legacy record must not read as "produced the same way".
-    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toBeNull();
-    expect(getCaptureBaselineProvenance(baseline, 'absent')).toBeNull();
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'sha256')).toBeNull();
+    expect(getCaptureBaselineProvenance(baseline, 'absent', 'sha256')).toBeNull();
   });
 });
 
@@ -137,17 +146,17 @@ describe('setCaptureBaselineProvenance', () => {
   it('creates the column and leaves the other fields alone', () => {
     const baseline = createCaptureBaseline();
     setCaptureBaselineField(baseline, 'webgl', 'sha256', 'abc');
-    setCaptureBaselineProvenance(baseline, 'webgl', PROVENANCE);
+    setCaptureBaselineProvenance(baseline, 'webgl', 'sha256', PROVENANCE);
     expect(getCaptureBaselineField(baseline, 'webgl', 'sha256')).toBe('abc');
-    expect(getCaptureBaselineProvenance(baseline, 'webgl')).toEqual(PROVENANCE);
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'sha256')).toEqual(PROVENANCE);
   });
 
   it('copies rather than aliasing, so a later caller mutation cannot rewrite the record', () => {
     const baseline = createCaptureBaseline();
     const source = { ...PROVENANCE };
-    setCaptureBaselineProvenance(baseline, 'webgl', source);
+    setCaptureBaselineProvenance(baseline, 'webgl', 'sha256', source);
     source.frames = 99;
-    expect(getCaptureBaselineProvenance(baseline, 'webgl')?.frames).toBe(PROVENANCE.frames);
+    expect(getCaptureBaselineProvenance(baseline, 'webgl', 'sha256')?.frames).toBe(PROVENANCE.frames);
   });
 });
 

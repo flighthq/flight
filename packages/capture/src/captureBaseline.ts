@@ -2,6 +2,7 @@ import type {
   CaptureBaseline,
   CaptureBaselineField,
   CaptureBaselineProvenance,
+  CaptureBaselineProvenanceField,
   CaptureColumnBaseline,
 } from '@flighthq/types/contract';
 
@@ -26,7 +27,8 @@ export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): stri
     if (entry.sha256 !== undefined) out.sha256 = entry.sha256;
     // Provenance is emitted LAST so adding it to a column leaves every existing line in place and the
     // diff is one appended block rather than a rewrite of the record.
-    if (entry.provenance !== undefined) out.provenance = entry.provenance;
+    if (entry.fingerprintProvenance !== undefined) out.fingerprintProvenance = entry.fingerprintProvenance;
+    if (entry.sha256Provenance !== undefined) out.sha256Provenance = entry.sha256Provenance;
     sorted[column] = out;
   }
   return JSON.stringify(sorted, null, 2) + '\n';
@@ -44,13 +46,14 @@ export function getCaptureBaselineField(
   return baseline[column]?.[field] ?? null;
 }
 
-/** What produced one column's values, or `null` when the column is absent or predates provenance
- * recording. A missing record reads as UNKNOWN provenance — never as agreement. */
+/** What produced ONE of a column's values — `field` names which. `null` when that value is absent or
+ * predates provenance recording, which reads as UNKNOWN provenance and never as agreement. */
 export function getCaptureBaselineProvenance(
   baseline: Readonly<CaptureBaseline>,
   column: string,
+  field: CaptureBaselineProvenanceField,
 ): CaptureBaselineProvenance | null {
-  return baseline[column]?.provenance ?? null;
+  return baseline[column]?.[provenanceMember(field)] ?? null;
 }
 
 /**
@@ -79,11 +82,16 @@ export function setCaptureBaselineField(
   (baseline[column] ??= {})[field] = value;
 }
 
-/** Records what produced one column's values, creating the column entry if it does not yet exist. */
+/** Records what produced ONE of a column's values, creating the column entry if it does not yet exist. */
 export function setCaptureBaselineProvenance(
   baseline: CaptureBaseline,
   column: string,
+  field: CaptureBaselineProvenanceField,
   provenance: Readonly<CaptureBaselineProvenance>,
 ): void {
-  (baseline[column] ??= {}).provenance = { ...provenance };
+  (baseline[column] ??= {})[provenanceMember(field)] = { ...provenance };
+}
+
+function provenanceMember(field: CaptureBaselineProvenanceField): 'fingerprintProvenance' | 'sha256Provenance' {
+  return field === 'fingerprint' ? 'fingerprintProvenance' : 'sha256Provenance';
 }

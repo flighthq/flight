@@ -49,10 +49,10 @@ describe('getBaselineProvenance', () => {
   it('reads back what was recorded, and reads a legacy column as UNKNOWN', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'abc123');
     // Written before provenance existed: null, not a claim that it matches anything.
-    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas')).toBeNull();
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256')).toBeNull();
 
-    setBaselineProvenance(root, 'functional', 'foo', 'canvas', PROVENANCE);
-    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas')).toEqual(PROVENANCE);
+    setBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256', PROVENANCE);
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256')).toEqual(PROVENANCE);
   });
 });
 
@@ -169,12 +169,12 @@ describe('setBaselineProvenance', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'abc123');
     setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'def456');
 
-    setBaselineProvenance(root, 'functional', 'foo', 'canvas', PROVENANCE);
+    setBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256', PROVENANCE);
 
     // Read-merge-write: recording provenance on one column rewrites nothing else on disk.
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('abc123');
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('def456');
-    expect(getBaselineProvenance(root, 'functional', 'foo', 'webgl')).toBeNull();
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'webgl', 'sha256')).toBeNull();
   });
 });
 
