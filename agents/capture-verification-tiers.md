@@ -367,8 +367,16 @@ here it is."**
 
 ### Enumerating baselines: three traps that produce wildly wrong counts
 
-Counting orphans by hand is easy to get wrong by a factor of five. Read the loaders in `scripts/support.ts`
-rather than reimplementing them, and if you must count independently, know these:
+**Do not re-derive the predicate — call `loadBaselineCoverage` (and `loadTargetCoverage`) from
+`scripts/support.ts`.** They are exported for exactly this. Every trap below is a way a hand-rolled
+equivalent disagrees with the real one while looking right, and the wrongest count of the three was off by
+4.7×. This entry originally read "if you must count independently, know these", which framed re-derivation
+as the normal path and the traps as things to remember; that is a detectable failure rather than an
+impossible one, and the third trap has since caught a second person counting coverage. Calling the loader
+removes the opportunity instead of documenting it.
+
+The traps are kept because they explain *why* a hand count drifts, and because reading a disagreement
+between two counts is easier when you know where they diverge:
 
 - **Matrix scene IDs are not filenames.** The matrix renders `scene3d-morph` where the file is
   `scene-morph`, and `clip-contour-hdr` where the file is `scene2d-clip-contour-hdr`. Classifying off the
