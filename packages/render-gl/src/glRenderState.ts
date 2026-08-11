@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable } from '@flighthq/registry/contract';
+import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   copyRenderStateRegistrations,
@@ -30,6 +30,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
   };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
@@ -183,6 +184,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   runtime.currentRenderTarget = null;
   runtime.registries = {
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
+    shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
   };
   // Per-state, not shared on the context tier: guards are installed per render state.

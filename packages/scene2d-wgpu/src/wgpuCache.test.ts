@@ -153,6 +153,7 @@ describe('createWgpuCacheState', () => {
     const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
     expect(cacheRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
+    expect(cacheRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
 

@@ -5,7 +5,7 @@ import type { ExternalTexture } from './ExternalTexture';
 import type { Image } from './Image';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
-import type { KeyedTable } from './RegistryTable';
+import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
@@ -35,6 +35,7 @@ export interface WgpuRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries {
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
+  shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
 }
 
@@ -210,11 +211,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // because a frame's writeBuffer is queued after the previous frame's submit completes.
   quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
   quadBatchWriterBufferCursor: number;
-  // The shape-rasterization seam, absent until registerWgpuShapeRasterizer installs one. A shape whose
-  // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
-  // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
-  shapeRasterizer?: ShapeRasterizer | null;
-
   // 3D scene mesh-material seam, owned by scene-wgpu (filled lazily by
   // registerWgpuMeshMaterialRenderer). The per-material-kind 3D draw behavior registry, kept separate
   // from registries.materialRenderers because a material kind is either 2D or 3D, never both.

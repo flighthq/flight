@@ -14,7 +14,7 @@ import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
 import type { Image } from './Image';
 import type { Material } from './Material';
-import type { KeyedTable } from './RegistryTable';
+import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
@@ -33,6 +33,7 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
   materialRenderers: KeyedTable<GlMaterialRenderer>;
+  shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
 }
 
@@ -127,10 +128,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glColorAdjustmentMaterialFeatureGuard?:
     | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
     | null;
-  // The shape-rasterization seam, absent until registerGlShapeRasterizer installs one. A shape whose
-  // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
-  // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
-  shapeRasterizer?: ShapeRasterizer | null;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
   // The per-material-kind 3D draw behavior registry, kept separate from registries.materialRenderers
   // because a material kind is either 2D or 3D, never both. sceneMeshUploadCache is the per-state
