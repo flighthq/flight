@@ -3206,56 +3206,6 @@
           }
         },
         {
-          "scene": "render-target-axes",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "realized",
-              "fingerprint": true,
-              "realization": true
-            },
-            "webgpu": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            }
-          }
-        },
-        {
-          "scene": "render-target-format-policy",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "realized",
-              "fingerprint": true,
-              "realization": true
-            },
-            "webgpu": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            }
-          }
-        },
-        {
           "scene": "render-target-node-2d",
           "backends": {
             "canvas": {
