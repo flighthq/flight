@@ -19,6 +19,18 @@ export interface CaptureBaselineProvenance {
   /** `captureFrames` the artifact was produced at — the deterministic freeze point, 0 when unset. */
   frames: number;
   /**
+   * SHA-256 of the scene source bytes when THESE values were captured, or `null` when the subject has
+   * no resolvable scene source.
+   *
+   * ★ THIS IS THE HALF THE RECORD WAS MISSING. The column's top-level `sourceHash` is written by the
+   * validation pass beside `fingerprint`; nothing stamped the pass that writes `sha256`. So a
+   * fingerprint captured at one commit and a hash captured at another produced a record that named ONE
+   * source and silently attributed both values to it. Recording the hash's own source makes that
+   * disagreement REPRESENTABLE — a reader can see two sources rather than infer one — which is the
+   * staged half. Refusing to compare across the disagreement comes later.
+   */
+  sourceHash: string | null;
+  /**
    * The in-page verification target kind (`'webgl'`, `'webgpu'`, `'canvas'`, `'dom'`), or `null` when
    * the page registered none. Selects the in-browser freeze timing: a target that is not literally
    * `'webgl'` or `'webgpu'` takes the early-return arm.

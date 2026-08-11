@@ -89,4 +89,4 @@ describe('setBaselineProvenance', () => {
   });
 });
 
-const PROVENANCE = { frames: 0, targetKind: null, verifyPublished: true, warmupFrames: 0 };
+const PROVENANCE = { frames: 0, sourceHash: null, targetKind: null, verifyPublished: true, warmupFrames: 0 };
