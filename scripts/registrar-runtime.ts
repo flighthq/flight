@@ -567,6 +567,33 @@ async function main(): Promise<void> {
       readerPackages: entry.readerPackages,
       table: entry.table,
     })),
+    processWideTier: {
+      contract: {
+        emptyAtImport: {
+          inheritedFrom: 'AGENTS.md:42',
+          tierSpecific: false,
+        },
+        requiredSeams: ['enumerate', 'read', 'clear-or-unregister'],
+      },
+      enumerationConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate !== null).map(
+        (entry) => entry.table,
+      ),
+      enumerationNonConforming: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.enumerate === null).map(
+        (entry) => entry.table,
+      ),
+      importBaselineViolations: MODULE_GLOBAL_REGISTRIES.filter((entry) => !entry.emptyAtImport).map((entry) => ({
+        initialization: entry.initialization,
+        scannerBlindSpot: 'top-level VariableDeclaration is outside scripts/packages.ts ExpressionStatement scan',
+        source: entry.source,
+        table: entry.table,
+      })),
+      readerCountLimitation:
+        'readerPackages measures where lookup occurs, not every upstream call site that would have to thread caller-held state',
+      status: 'DECLARED',
+      weakestMembers: MODULE_GLOBAL_REGISTRIES.filter(
+        (entry) => entry.enumerate === null && entry.clear === null && entry.unregister === null,
+      ).map((entry) => entry.table),
+    },
     read: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.read !== null).length,
     singlePackageReaders: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.readerPackages.length === 1).length,
     tables: MODULE_GLOBAL_REGISTRIES.length,
