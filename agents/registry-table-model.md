@@ -483,15 +483,9 @@ export const RenderRegistry = {
 export type RegistryId = string;
 
 // What an unserved key means for this registry — a property of the registry, not of the caller asking.
-// SUPERSEDED as written: these three members were the cases the hand-written coverage walks distinguished
-// when this was proposed. `SceneCoverage` has since split on remedy into five states — `Satisfied`,
-// `Unregistered`, `Unavailable`, `FallbackRemediable`, `FallbackUnavailable` — retiring both `Missing` and
-// bare `Fallback`. Re-derive this policy from those before building on it; it is left here as the shape of
-// the question, not as a current answer.
-export type RegistryMissPolicy =
-  | { readonly coverage: 'Fallback' }
-  | { readonly coverage: 'FallbackWhen'; readonly key: Kind }
-  | { readonly coverage: 'Missing' };
+// This is an open identity rather than the retired render-coverage state union: non-render registries do
+// not necessarily share that vocabulary. Composition still requires exact identity equality.
+export type RegistryMissPolicy = string;
 
 export interface RegistryTableBase {
   readonly onMiss: RegistryMissPolicy;
