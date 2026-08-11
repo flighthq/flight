@@ -14,8 +14,9 @@ probe (written, run, removed; repository left clean). What it changed:
 - The **diagnosis got stronger.** The probe confirmed every derivation loss claimed here and found more,
   including one copy that looks correct and is dead.
 - The **prescription got weaker.** The wiring tier is narrower than claimed, because the argument for its
-  device-independence was invalid. There are four ownership tiers, not three. The requirements model
-  leaked consumer policy into producers and has been rebuilt around facets. `OrdinalTable` lost its
+  device-independence was invalid. There are five ownership tiers, not three: four renderer-local tiers
+  plus the process-wide capability tier declared by the Stage 1 census. The requirements model leaked
+  consumer policy into producers and has been rebuilt around facets. `OrdinalTable` lost its
   proposed member and was rejected, then re-admitted on a different one under a sharper criterion — see
   [`OrdinalTable`](#ordinaltable--integer-token-formats-only).
 
@@ -194,6 +195,12 @@ where enumeration exists, but it is inherited from the repository's
 [no-top-level-side-effects rule](../AGENTS.md#ground-rules) (line 42 when this census was recorded), not
 restated as a fifth-tier-specific contract.
 
+**Stage 1 decision: these are the fifth, process-wide capability-table ownership tier.** The fifteen
+tables form one coherent category — decoders, decompressors, encoders, format registries, serializers,
+solvers, and hit tests whose lifetime is the process. The tier contract requires an enumeration seam, a
+read seam, and one isolation seam (`clear` or `unregister`). This declares the ownership shape; it does
+not authorize converting any table to caller-held storage.
+
 | Table (door) | enumerate | read | clear | unregister | import baseline | production reader packages |
 |---|---|---|---|---|---|---|
 | audio decoders (`registerAudioDecoder`) | `getAudioDecoderMimeTypes` | `getAudioDecoder` | — | `unregisterAudioDecoder` | empty | audio |
@@ -215,13 +222,27 @@ restated as a fifth-tier-specific contract.
 All 15 have a read path, but only 5 enumerate and 11 have either clear or unregister isolation. Four
 tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (four packages) and
 image bitmap composers (two) have production reads spanning more than their owning package. That read
-graph is part of the evidence needed to decide fifth-tier-versus-drift; this census converts neither.
-Against the decision criteria directly: the population is several (15) and mechanically coherent as
-last-write-wins module-global tables; 11 carry an isolation seam, but only 2 are read across multiple
-packages while 13 have a single-package read graph. Fourteen are empty at import; the animation-target
-binder is the one exception, with two built-ins at import, and three of the fourteen empty tables install
-built-ins on first read. Those mixed facts are the recommendation payload; they are not themselves an
-authorization to convert a table.
+graph helped decide the tier, but its count has a permanent limitation: it measures **where lookup
+happens**, not the upstream call sites that would have to thread caller-held state. Image decoders have
+one reader package (`image-codec`), while their decode entry point is called from loader, assets,
+scene3d-resources, and the texture path; `13 of 15 are single-package readers` is therefore not a measure
+of conversion cost.
+
+The enumeration conformance list is explicit debt rather than an invisible contract violation. The five
+conforming tables are audio decoders, image bitmap composers, image decoders, image encoders, and particle
+formats. The ten missing enumeration are decompressors, debug subsystems, coarse hit tests, precise hit
+tests, log serializers, skeleton animation target binders, skeleton constraint solvers, skeleton formats,
+spritesheet formats, and texture-atlas formats. The weakest members, flagged for future drift review but
+not changed here, are the four read-only tables with neither enumeration nor isolation: coarse hit tests,
+precise hit tests, spritesheet formats, and texture-atlas formats.
+
+Fourteen tables are empty at import. The animation-target binder is the literal exception, not loose
+wording: `skeleton2dAnimationTarget.ts` constructs `_binders` with the Bone and Slot bindings inside a
+top-level `new Map([...])` initializer. That is a live violation of the inherited import-side-effect rule.
+It also supplies the concrete case missing from the scanner-widening measurement:
+`checkNoTopLevelSideEffects` in `scripts/packages.ts` inspects only `ExpressionStatement`, so this
+`VariableDeclaration` is invisible to the current gate. Record the violation; do not repair it as part of
+the census.
 
 The existing top-level-side-effect gate was separately widened in a throwaway measurement and left
 unchanged. Its current `ExpressionStatement` walk misses all other statement categories. Applying the
@@ -282,11 +303,12 @@ The extraction is therefore narrower than claimed: **pure registration policy ma
 Device-bound implementations and live resource bindings must not be swept into it because of their
 setter's name.** Sorting the ~65 tables on that axis is prerequisite work, not a detail.
 
-### Four tiers, not three
+### Five tiers, not three
 
-`createGlOffscreenRenderState` does three things to three groups — alias the context and its bound
-resources, copy the registrations, freshen the scene bookkeeping. The first revision read those three
-actions as three lifetimes. They are derivation *behavior*, and the third action merges two tiers:
+`createGlOffscreenRenderState` exposes four renderer-local tiers. It does three things to three groups —
+alias the context and its bound resources, copy the registrations, freshen the scene bookkeeping. The
+first revision read those three actions as three lifetimes. They are derivation *behavior*, and the third
+action merges two tiers. The process-global census adds the fifth tier outside the render-state object:
 
 | Tier | Example | Lifetime |
 |---|---|---|
@@ -294,6 +316,7 @@ actions as three lifetimes. They are derivation *behavior*, and the third action
 | Application wiring | pure registration policy (see retraction above) | application setup |
 | Root / pipeline instance | proxy maps, proxy sources, `rendererMapId`, frame counter | many frames — a cache state is built once by `createGlCacheState` and reused by `refreshGlRenderCache` |
 | Render pass / invocation | framebuffer, viewport, scissor, stencil | one pass, bracketed by `beginGlRenderPass` / `endGlRenderPass` |
+| Process-wide capability | decoders, format registries, serializers, solvers, hit tests | process lifetime, behind enumerate + read + isolation seams |
 
 "Fresh when a derived pipeline is constructed" is not "one pass." The retained tier is the one that
 matters for derivation, and it is the third, not the fourth.
