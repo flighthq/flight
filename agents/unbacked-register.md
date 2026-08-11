@@ -64,7 +64,21 @@ number is the thing people trust.
 | 7 | `untested-instrument` | `3dc27f69f` | builder: `packages/font-formats/src/openTypeTestHelper.ts` is itself untested while several test files depend on it — so a fault in it is agreed with, not caught | B | verified-at-tree `aa279c96a` |
 | 8 | `perf-size` | `feat(effects-gl): report per-effect resolution so a passthrough stops reading as complete` (subject, not hash — see below) | builder2: `npm run size` run read-only over the effects-gl dispatch, effects/webgl −0.4%; no pin rewritten | A | as-reported |
 | 9 | `capture-baseline` | `d7d8fbc8e` | builder2: restores support-matrix tick marks for `scene-morph`, `scene-skin-morph-compose`, `scene-skinning` and `scene-transparent` from fingerprints captured before the rename that swept them (`c0eeab24e`), never re-verified against what those scenes render today. The matrix is internally consistent — realization plus committed fingerprint — which is weaker than agreement. Whoever next runs `test:functional:regression` in the environment its baselines were captured in should check those four first. | A | as-reported |
-| 10 | `capture-baseline` | `9c5b5ed4f` + `924be5c97` (both shared, on `origin/develop`) | `builder`: the two non-uniform-scale skinning scenes (`scene-skin-nonuniform-normals`, `shadow-skin-nonuniform`, webgl + webgpu) landed with their fingerprint baselines and 50 new `support-matrix.json` entries, captured in the author's environment. `support:check` and `check-fingerprint-source-hashes:check` both pass, proving the matrix is internally consistent with the committed fingerprints — weaker than agreement, same shape as row 9. Integration is barred from the regression and parity legs, so nobody in the integration path has compared these baselines to what the scenes actually render. | A | verified-at-tree `c5ed5e5ce` — integration read the commits and the baseline files, not the pixels |
+| 10 | `capture-baseline` | `9c5b5ed4f` + `924be5c97` (both shared, on `origin/develop`) | **Author not identified — these arrived by base move, through no parcel.** The two non-uniform-scale skinning scenes (`scene-skin-nonuniform-normals`, `shadow-skin-nonuniform`, webgl + webgpu) landed with their fingerprint baselines and 50 new `support-matrix.json` entries, captured in whichever environment ran the capture. The `support:check` and `fingerprint-source-hashes:check` gates both pass, proving the matrix is internally consistent with the committed fingerprints — weaker than agreement, same shape as row 9. Integration is barred from the regression and parity legs, so nobody in the integration path has compared these baselines to what the scenes actually render. | A | verified-at-tree `c5ed5e5ce` — integration read the commits and the baseline files, not the pixels |
+
+**Row 10 was corrected twice on the way in, and both corrections are the file's own rules pointed at
+itself.** As first landed it opened `builder:` — an attribution nobody can derive. Agent identity is
+not in git: every commit in this repo carries the user's name and email, and parcels arrive re-parented,
+so **the tree cannot answer who authored a line.** A row that names an agent from a base move is
+guessing, and a register whose subject is provenance cannot afford a guessed one. It now says the author
+is not identified, which is the true and useful statement — the row is about an unverified capture, not
+about a person. Second, it cited `check-fingerprint-source-hashes:check`, which runs nothing. **One gate
+has two names and the row had a third.** `npm run check` prints the label `fingerprint-source-hashes:check`
+(registered in `scripts/check.ts`); the standalone npm script is `check:fingerprint-source-hashes`; the
+implementation is `scripts/check-fingerprint-source-hashes.ts`. A name assembled from the file plus a
+`:check` suffix looks right and matches nothing. **Any command quoted in this file should be pasted from
+a run, never reconstructed** — a wrong command name is exactly the class of error that survives review,
+because reading it does not execute it.
 
 **Row 8 names its commit by SUBJECT, and the column heading is the reason it has to.** "Integration's
 post-apply hash" is not a stable identifier: a rebase onto a moved `origin/develop` re-mints every
