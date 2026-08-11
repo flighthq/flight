@@ -205,7 +205,6 @@ export function drawWgpuMeshSubset(
   const upload = ensureWgpuMeshUpload(state, geometry, scene.activeMeshPipeline.skinned);
   if (upload === null || upload.indexBuffer === null) return;
 
-  const drawBindGroup = writeWgpuDrawUniform(state, proxy);
   const activePipeline = scene.activeMeshPipeline;
   const jointMatrices = proxy.jointMatrices ?? null;
   const normalMatrices = proxy.normalMatrices ?? null;
@@ -214,10 +213,16 @@ export function drawWgpuMeshSubset(
   // palette here as well keeps a half-supplied bind group from ever being built — a bind group must
   // satisfy every binding its layout declares, so one missing palette is a validation failure, not a
   // degraded draw.
-  const boundDrawGroup =
+  //
+  // Both palettes are claimed BEFORE the Draw uniform is written: each returns the arena base its region
+  // starts at, and those bases ride in that uniform. Writing first would publish a base for a region this
+  // draw has not been given yet.
+  const skinDrawBindGroup =
     activePipeline.skinned && jointMatrices !== null && normalMatrices !== null && skinning !== null
       ? skinning.getMeshDrawBindGroup(state, jointMatrices, normalMatrices)
-      : drawBindGroup;
+      : null;
+  const drawBindGroup = writeWgpuDrawUniform(state, proxy);
+  const boundDrawGroup = skinDrawBindGroup ?? drawBindGroup;
   _dynamicOffsets[0] = scene.pendingDrawOffset;
 
   pass.setBindGroup(1, boundDrawGroup, _dynamicOffsets);
@@ -913,8 +918,13 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   // the material's alpha and 'mask' resolves fully opaque at its cutoff. The tail reads it so the
   // premultiply cannot darken a surface nothing is compositing. Mirrors scene-gl's u_alphaIsCoverage.
   u[floatOffset + 41] = isWgpuMeshAlphaCoverage(proxy.material) ? 1 : 0;
-  u[floatOffset + 42] = 0;
-  u[floatOffset + 43] = 0;
+  // z and w publish this draw's skin arena base texel indices — pose and normal. The palette upload sets
+  // them; consuming them here and clearing them back to zero is what stops a rigid draw that follows a
+  // skinned one from inheriting a base and sampling another skeleton's region.
+  u[floatOffset + 42] = scene.pendingSkinPaletteBase;
+  u[floatOffset + 43] = scene.pendingSkinNormalPaletteBase;
+  scene.pendingSkinPaletteBase = 0;
+  scene.pendingSkinNormalPaletteBase = 0;
 
   // The registered adjustment feature reuses the otherwise 256-byte-aligned Draw ring slot: a
   // promoted shader widens its Draw struct by these two vec4s, while an untinted draw performs no

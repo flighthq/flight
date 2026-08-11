@@ -181,11 +181,35 @@ export interface WgpuScene3DRuntime {
   // decomposition smell; a second layout is the bounded, honest cost.
   skinMeshDrawBindGroup: GPUBindGroup | null;
   skinMeshDrawBindGroupLayout: GPUBindGroupLayout | null;
+  // Each palette texture is a per-frame ARENA: every skinned draw owns a distinct region of it and reads
+  // its own region through a base texel index carried in the Draw uniform.
+  //
+  // ★ THIS IS WHAT MAKES A SKINNED DRAW OWN ITS DATA AT SUBMIT TIME. A WebGPU frame records every draw
+  // into one encoder and submits once, so all queue writes land BEFORE any of them execute. A palette
+  // rewritten in place therefore does not give each draw the matrix it was built with — it gives every
+  // draw the LAST one written, and two skeletons in a frame both render in the second one's pose. The
+  // arena removes the overwrite instead of trying to order around it.
+  //
+  // The cursor is reset when a new frame's command encoder appears (`skinArenaFrame` is the stamp, not a
+  // counter: render-wgpu creates the encoder per frame and nulls it at submit). The bases map is keyed by
+  // the palette array itself, so a skeleton drawn by several meshes — or by both the shadow and mesh
+  // passes — allocates ONE region and every draw of it samples the same texels.
+  skinArenaFrame: GPUCommandEncoder | null;
+  skinNormalPaletteArenaBases: Map<Readonly<Float32Array>, number> | null;
+  skinNormalPaletteArenaCursor: number;
+  skinNormalPaletteArenaRows: number;
   skinNormalPaletteTexture: GPUTexture | null;
   skinNormalPaletteView: GPUTextureView | null;
-  skinPaletteCapacity: number;
+  skinPaletteArenaBases: Map<Readonly<Float32Array>, number> | null;
+  skinPaletteArenaCursor: number;
+  skinPaletteArenaRows: number;
   skinPaletteTexture: GPUTexture | null;
   skinPaletteView: GPUTextureView | null;
+  // The arena base indices the NEXT Draw uniform write will publish. Written by the palette upload and
+  // consumed — and cleared back to zero — by that write, so a rigid draw following a skinned one cannot
+  // inherit a stale base.
+  pendingSkinNormalPaletteBase: number;
+  pendingSkinPaletteBase: number;
   skinningAdapter: unknown | null;
   uploadCache: WeakMap<object, WgpuMeshUpload>;
 }

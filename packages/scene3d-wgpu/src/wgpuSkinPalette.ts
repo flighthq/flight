@@ -16,13 +16,19 @@ export function destroyWgpuSkinPalette(state: WgpuRenderState): void {
   runtime.skinPaletteTexture?.destroy();
   runtime.skinPaletteTexture = null;
   runtime.skinPaletteView = null;
-  runtime.skinPaletteCapacity = 0;
+  runtime.skinPaletteArenaCursor = 0;
+  runtime.skinPaletteArenaRows = 0;
+  runtime.skinPaletteArenaBases = null;
+  runtime.skinArenaFrame = null;
   runtime.skinDrawBindGroup = null;
   // The mesh path's own texture and bind group, freed here too — a second layout means a second
   // resource, and leaking it would outlive the render state that owns it.
   runtime.skinNormalPaletteTexture?.destroy();
   runtime.skinNormalPaletteTexture = null;
   runtime.skinNormalPaletteView = null;
+  runtime.skinNormalPaletteArenaCursor = 0;
+  runtime.skinNormalPaletteArenaRows = 0;
+  runtime.skinNormalPaletteArenaBases = null;
   runtime.skinMeshDrawBindGroup = null;
 }
 
@@ -32,9 +38,9 @@ export function ensureWgpuSkinDrawBindGroup(
 ): GPUBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
-  const previousView = scene.skinPaletteView;
-  const view = uploadWgpuSkinPalette(state, jointMatrices);
-  if (scene.skinDrawBindGroup === null || previousView !== view) {
+  uploadWgpuSkinPalette(state, jointMatrices);
+  const view = scene.skinPaletteView!;
+  if (scene.skinDrawBindGroup === null) {
     scene.skinDrawBindGroup = state.device.createBindGroup({
       layout: ensureWgpuSkinDrawLayout(state),
       entries: [
@@ -82,11 +88,13 @@ export function ensureWgpuSkinMeshDrawBindGroup(
 ): GPUBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
-  const previousPose = scene.skinPaletteView;
-  const previousNormal = scene.skinNormalPaletteView;
-  const poseView = uploadWgpuSkinPalette(state, jointMatrices);
-  const normalView = uploadWgpuSkinNormalPalette(state, normalMatrices);
-  if (scene.skinMeshDrawBindGroup === null || previousPose !== poseView || previousNormal !== normalView) {
+  uploadWgpuSkinPalette(state, jointMatrices);
+  uploadWgpuSkinNormalPalette(state, normalMatrices);
+  const poseView = scene.skinPaletteView!;
+  const normalView = scene.skinNormalPaletteView!;
+  // Growing an arena nulls the bind group, so a null check is the whole invalidation rule — the views
+  // only change when a texture is recreated, which is exactly when the upload above cleared this.
+  if (scene.skinMeshDrawBindGroup === null) {
     scene.skinMeshDrawBindGroup = state.device.createBindGroup({
       layout: ensureWgpuSkinMeshDrawLayout(state),
       entries: [
@@ -126,63 +134,148 @@ export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
   getWgpuScene3DRuntime(state).skinningAdapter = WGPU_SKINNING_ADAPTER;
 }
 
-// Uploads the per-joint NORMAL palette into its own single-row RGBA32F texture. THREE texels per joint,
-// not four: each joint's 3x3 is stored as three vec4-padded columns, twelve floats.
+// Uploads the per-joint NORMAL palette into its own arena and returns the base TEXEL index its region
+// starts at. THREE texels per joint, not four: each joint's 3x3 is stored as three vec4-padded columns,
+// twelve floats.
 //
 // ★ THE JOINT COUNT IS DERIVED WITH /12, NOT /16. Reusing the pose palette's divisor here would
-// under-count every skeleton by a quarter and upload a truncated row — a quiet corruption that renders
-// as wrong lighting rather than as a failure.
-export function uploadWgpuSkinNormalPalette(
-  state: WgpuRenderState,
-  normalMatrices: Readonly<Float32Array>,
-): GPUTextureView {
+// under-count every skeleton by a quarter and upload a truncated region — a quiet corruption that
+// renders as wrong lighting rather than as a failure.
+export function uploadWgpuSkinNormalPalette(state: WgpuRenderState, normalMatrices: Readonly<Float32Array>): number {
   const runtime = getWgpuScene3DRuntime(state);
-  const jointCount = (normalMatrices.length / 12) | 0;
-  const width = jointCount * 3;
-  if (runtime.skinNormalPaletteTexture === null || width > (runtime.skinNormalPaletteTexture.width | 0)) {
-    runtime.skinNormalPaletteTexture?.destroy();
-    runtime.skinNormalPaletteTexture = state.device.createTexture({
-      size: [width, 1, 1],
-      format: 'rgba32float',
-      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
+  beginWgpuSkinArenaFrame(state);
+  const bases = runtime.skinNormalPaletteArenaBases!;
+  const existing = bases.get(normalMatrices);
+  if (existing !== undefined) return existing;
+
+  const texels = ((normalMatrices.length / 12) | 0) * 3;
+  const base = runtime.skinNormalPaletteArenaCursor;
+  const rows = getWgpuSkinArenaRowCount(base + texels);
+  if (rows > runtime.skinNormalPaletteArenaRows) {
+    retireWgpuSkinArenaTexture(state, runtime.skinNormalPaletteTexture);
+    runtime.skinNormalPaletteTexture = createWgpuSkinArenaTexture(state, rows);
     runtime.skinNormalPaletteView = runtime.skinNormalPaletteTexture.createView();
+    runtime.skinNormalPaletteArenaRows = rows;
     runtime.skinMeshDrawBindGroup = null;
+    // A grown arena is a NEW texture, so every region already handed out this frame lives in the old one.
+    // Replaying them from the bases map is what keeps growth from silently blanking earlier draws.
+    for (const [palette, replayBase] of bases) {
+      writeWgpuSkinArenaRegion(state, runtime.skinNormalPaletteTexture, palette, replayBase);
+    }
   }
-  state.device.queue.writeTexture(
-    { texture: runtime.skinNormalPaletteTexture! },
-    normalMatrices as Float32Array<ArrayBuffer>,
-    { bytesPerRow: width * 16 },
-    [width, 1, 1],
-  );
-  return runtime.skinNormalPaletteView!;
+  writeWgpuSkinArenaRegion(state, runtime.skinNormalPaletteTexture!, normalMatrices, base);
+  runtime.skinNormalPaletteArenaCursor = base + rowAlignedWgpuSkinArenaTexels(texels);
+  bases.set(normalMatrices, base);
+  runtime.pendingSkinNormalPaletteBase = base;
+  return base;
 }
 
-// Uploads one flat column-major joint palette into the state-scoped single-row RGBA32F data texture.
-// Four consecutive texels encode one mat4. Storage grows to the largest skeleton observed and is
-// otherwise rewritten in place; there is deliberately no uniform-budget capacity gate or CPU fallback.
-export function uploadWgpuSkinPalette(state: WgpuRenderState, jointMatrices: Readonly<Float32Array>): GPUTextureView {
+// Uploads one flat column-major joint palette into the per-frame arena and returns the base TEXEL index
+// its region starts at. Four consecutive texels encode one mat4. There is deliberately no uniform-budget
+// capacity gate and no CPU fallback.
+export function uploadWgpuSkinPalette(state: WgpuRenderState, jointMatrices: Readonly<Float32Array>): number {
   const runtime = getWgpuScene3DRuntime(state);
-  const jointCount = (jointMatrices.length / 16) | 0;
-  const width = jointCount * 4;
-  if (runtime.skinPaletteTexture === null || jointCount > runtime.skinPaletteCapacity) {
-    runtime.skinPaletteTexture?.destroy();
-    runtime.skinPaletteTexture = state.device.createTexture({
-      size: [width, 1, 1],
-      format: 'rgba32float',
-      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
-    runtime.skinPaletteView = runtime.skinPaletteTexture.createView();
-    runtime.skinPaletteCapacity = jointCount;
-    runtime.skinDrawBindGroup = null;
+  beginWgpuSkinArenaFrame(state);
+  const bases = runtime.skinPaletteArenaBases!;
+  const existing = bases.get(jointMatrices);
+  if (existing !== undefined) {
+    // Already resident this frame — the shadow pass and the mesh pass share one region for one skeleton.
+    runtime.pendingSkinPaletteBase = existing;
+    return existing;
   }
-  state.device.queue.writeTexture(
-    { texture: runtime.skinPaletteTexture! },
-    jointMatrices as Float32Array<ArrayBuffer>,
-    { bytesPerRow: width * 16 },
-    [width, 1, 1],
-  );
-  return runtime.skinPaletteView!;
+
+  const texels = ((jointMatrices.length / 16) | 0) * 4;
+  const base = runtime.skinPaletteArenaCursor;
+  const rows = getWgpuSkinArenaRowCount(base + texels);
+  if (rows > runtime.skinPaletteArenaRows) {
+    retireWgpuSkinArenaTexture(state, runtime.skinPaletteTexture);
+    runtime.skinPaletteTexture = createWgpuSkinArenaTexture(state, rows);
+    runtime.skinPaletteView = runtime.skinPaletteTexture.createView();
+    runtime.skinPaletteArenaRows = rows;
+    runtime.skinDrawBindGroup = null;
+    runtime.skinMeshDrawBindGroup = null;
+    for (const [palette, replayBase] of bases) {
+      writeWgpuSkinArenaRegion(state, runtime.skinPaletteTexture, palette, replayBase);
+    }
+  }
+  writeWgpuSkinArenaRegion(state, runtime.skinPaletteTexture!, jointMatrices, base);
+  runtime.skinPaletteArenaCursor = base + rowAlignedWgpuSkinArenaTexels(texels);
+  bases.set(jointMatrices, base);
+  runtime.pendingSkinPaletteBase = base;
+  return base;
+}
+
+// Starts a new arena frame when render-wgpu has opened a new command encoder. The encoder is the frame
+// identity rather than a counter: it is created once per frame and nulled at submit, so comparing it
+// needs no new field in the shared render state and cannot drift out of step with the submit boundary.
+function beginWgpuSkinArenaFrame(state: WgpuRenderState): void {
+  const runtime = getWgpuScene3DRuntime(state);
+  const encoder = getWgpuRenderStateRuntime(state).commandEncoder;
+  if (runtime.skinArenaFrame === encoder && runtime.skinPaletteArenaBases !== null) return;
+  runtime.skinArenaFrame = encoder;
+  runtime.skinPaletteArenaCursor = 0;
+  runtime.skinNormalPaletteArenaCursor = 0;
+  runtime.skinPaletteArenaBases = new Map();
+  runtime.skinNormalPaletteArenaBases = new Map();
+}
+
+function createWgpuSkinArenaTexture(state: WgpuRenderState, rows: number): GPUTexture {
+  return state.device.createTexture({
+    size: [WGPU_SKIN_ARENA_WIDTH, rows, 1],
+    format: 'rgba32float',
+    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+  });
+}
+
+// Hands the outgoing arena to the render state's post-submit retirement list rather than destroying it.
+// Growth happens MID-FRAME, and bind groups already recorded into the open encoder still reference the
+// old texture; destroying it here fails the submit and the frame draws nothing at all.
+function retireWgpuSkinArenaTexture(state: WgpuRenderState, texture: GPUTexture | null): void {
+  if (texture === null) return;
+  const stateRuntime = getWgpuRenderStateRuntime(state);
+  (stateRuntime.retiredTextures ??= []).push(texture);
+}
+
+function getWgpuSkinArenaRowCount(texels: number): number {
+  return Math.max(1, Math.ceil(texels / WGPU_SKIN_ARENA_WIDTH));
+}
+
+// Regions start on a row boundary so every write is a rectangle: a palette that straddles a row could not
+// be expressed as one copy, and padding it to a full row would mean staging a copy of every palette.
+function rowAlignedWgpuSkinArenaTexels(texels: number): number {
+  return getWgpuSkinArenaRowCount(texels) * WGPU_SKIN_ARENA_WIDTH;
+}
+
+// Writes one palette into its arena region as at most two rectangles: the whole rows it fills, then the
+// partial row left over. `base` is row-aligned, so both are rectangular and neither needs a staging copy.
+function writeWgpuSkinArenaRegion(
+  state: WgpuRenderState,
+  texture: GPUTexture,
+  palette: Readonly<Float32Array>,
+  base: number,
+): void {
+  const texels = (palette.length / 4) | 0;
+  const startRow = base / WGPU_SKIN_ARENA_WIDTH;
+  const fullRows = (texels / WGPU_SKIN_ARENA_WIDTH) | 0;
+  const remainder = texels - fullRows * WGPU_SKIN_ARENA_WIDTH;
+  const queue = state.device.queue;
+  const data = palette as Float32Array<ArrayBuffer>;
+  if (fullRows > 0) {
+    queue.writeTexture(
+      { texture, origin: [0, startRow, 0] },
+      data,
+      { bytesPerRow: WGPU_SKIN_ARENA_WIDTH * 16, rowsPerImage: fullRows },
+      [WGPU_SKIN_ARENA_WIDTH, fullRows, 1],
+    );
+  }
+  if (remainder > 0) {
+    queue.writeTexture(
+      { texture, origin: [0, startRow + fullRows, 0] },
+      data,
+      { offset: fullRows * WGPU_SKIN_ARENA_WIDTH * 16, bytesPerRow: remainder * 16 },
+      [remainder, 1, 1],
+    );
+  }
 }
 
 function isGpuSkinned(mesh: Readonly<Mesh>): boolean {
@@ -255,12 +348,16 @@ ${getWgpuSkinBindingWgsl(0)}`,
 function getWgpuSkinNormalBindingWgsl(group: number): string {
   return `@group(${group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
 
+fn loadJointNormalTexel(i : u32) -> vec3f {
+  return textureLoad(jointNormalTexture, vec2i(i32(i % ${WGPU_SKIN_ARENA_WIDTH}u), i32(i / ${WGPU_SKIN_ARENA_WIDTH}u)), 0).xyz;
+}
+
 fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {
-  let x = i32(joint * 3u);
+  let x = u32(draw.params.w) + joint * 3u;
   return mat3x3f(
-    textureLoad(jointNormalTexture, vec2i(x, 0), 0).xyz,
-    textureLoad(jointNormalTexture, vec2i(x + 1, 0), 0).xyz,
-    textureLoad(jointNormalTexture, vec2i(x + 2, 0), 0).xyz
+    loadJointNormalTexel(x),
+    loadJointNormalTexel(x + 1u),
+    loadJointNormalTexel(x + 2u)
   );
 }
 
@@ -273,15 +370,21 @@ fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {
 }
 
 function getWgpuSkinBindingWgsl(group: number): string {
+  // The arena width is interpolated from the one TypeScript constant that also sizes the texture, so the
+  // shader's row arithmetic cannot drift from the allocator's.
   return `@group(${group}) @binding(1) var jointTexture : texture_2d<f32>;
 
+fn loadJointTexel(i : u32) -> vec4f {
+  return textureLoad(jointTexture, vec2i(i32(i % ${WGPU_SKIN_ARENA_WIDTH}u), i32(i / ${WGPU_SKIN_ARENA_WIDTH}u)), 0);
+}
+
 fn fetchJointMatrix(joint : u32) -> mat4x4f {
-  let x = i32(joint * 4u);
+  let x = u32(draw.params.z) + joint * 4u;
   return mat4x4f(
-    textureLoad(jointTexture, vec2i(x, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 1, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 2, 0), 0),
-    textureLoad(jointTexture, vec2i(x + 3, 0), 0)
+    loadJointTexel(x),
+    loadJointTexel(x + 1u),
+    loadJointTexel(x + 2u),
+    loadJointTexel(x + 3u)
   );
 }
 
@@ -360,3 +463,8 @@ const WGPU_SKINNING_ADAPTER: WgpuSkinningAdapter = {
     },
   ],
 };
+
+// Texels per arena row. 256 holds a 64-joint skeleton in exactly one row for the pose palette (four
+// texels per joint), and the row wrap is reachable by any skeleton past that — which is what keeps the
+// multi-row path exercised by ordinary content rather than only by content nobody has.
+const WGPU_SKIN_ARENA_WIDTH = 256;

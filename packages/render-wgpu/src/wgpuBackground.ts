@@ -141,6 +141,11 @@ export function submitWgpuRenderPass(state: WgpuRenderState): void {
       for (let i = 0; i < retired.length; i++) retired[i].destroy();
       retired.length = 0;
     }
+    const retiredTextures = runtime.retiredTextures;
+    if (retiredTextures !== undefined && retiredTextures.length > 0) {
+      for (let i = 0; i < retiredTextures.length; i++) retiredTextures[i].destroy();
+      retiredTextures.length = 0;
+    }
   }
 
   runtime.canvasTextureView = null;
