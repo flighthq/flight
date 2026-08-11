@@ -389,7 +389,11 @@ Three rules govern how an instrument may support this remedy:
    Builder derived this after a valid grep control proved the grep worked but could not prove their tree
    was current; manager independently derived the same rule from trusting that result because its
    instrument had a control. Their two readings name the distinction: a valid instrument-control does
-   not substitute for the base-SHA control that establishes which subject was actually inspected.
+   not substitute for the base-SHA control that establishes which subject was actually inspected. The
+   same mismatch can occur inside a text check: foreman verified that four Markdown row markers appeared
+   in order, while principal caught that the needed property was adjacency. Ordered markers can still
+   have an intervening blank line that breaks the table; only consecutive line numbers prove the stronger
+   claim.
 2. **States are distinguished by whether their remedies differ, not by why they arose.** The named
    instances are `SceneCoverage.Missing`, the `⊘` orphan, and `ContributedNothing` versus
    `ObservedNothing`. Collapsing either pair erases the action a caller should take.
