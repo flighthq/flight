@@ -3,6 +3,7 @@ import type {
   KeyedTable,
   OrdinalTable,
   RegistryId,
+  RegistryMissPolicy,
   RegistryTable,
   RegistryTableEntry,
   SlotTable,
@@ -22,11 +23,9 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // Refuses rather than guesses: composing two tables of different SHAPE, or belonging to different
 // registries, is a programmer error and throws. It is not an expected failure a caller could handle.
 //
-// ONE REFUSAL IS NOT IMPLEMENTED AND IS NOT CLAIMED: two tables whose MISS POLICY differs must also be
-// refused, and the policy vocabulary is pending a ruling. The field is absent from `RegistryTableBase`
-// rather than placeheld, so there is nothing here to compare; inventing a stand-in to make this branch
-// look finished is exactly the retired-vocabulary revival that ruling exists to prevent. When the policy
-// lands, add the comparison and its test together.
+// Three refusals, all the same kind of programmer error: a different SHAPE, a different REGISTRY, or a
+// different MISS POLICY. The policy comparison is equality only — composition never interprets a policy,
+// which is why the table layer needs no vocabulary of its own and the type is an open alias.
 //
 // `OrdinalTable` is not accepted, and that is structural rather than an oversight — nothing composes an
 // ordinal table, so it carries no composition operations at all. The signature refuses it.
@@ -42,11 +41,16 @@ export function concatRegistryTable<T>(
       `concatRegistryTable: cannot compose registry '${base.registry}' with registry '${overlay.registry}'`,
     );
   }
+  if (base.onMiss !== overlay.onMiss) {
+    throw new Error(
+      `concatRegistryTable: cannot compose miss policy '${base.onMiss}' with miss policy '${overlay.onMiss}'`,
+    );
+  }
 
   if (base.shape === 'slot') {
     const overlaySlot = overlay as Readonly<SlotTable<T>>;
     // `null` on the overlay is "no opinion" — inherit. A tombstone is "explicitly omitted" and wins.
-    return { entry: overlaySlot.entry ?? base.entry, registry: base.registry, shape: 'slot' };
+    return { entry: overlaySlot.entry ?? base.entry, onMiss: base.onMiss, registry: base.registry, shape: 'slot' };
   }
 
   const baseKeyed = base as Readonly<KeyedTable<T>>;
@@ -69,22 +73,26 @@ export function concatRegistryTable<T>(
       }
     }
   }
-  return { entries, registry: baseKeyed.registry, shape: 'keyed' };
+  return { entries, onMiss: baseKeyed.onMiss, registry: baseKeyed.registry, shape: 'keyed' };
 }
 
-/** An empty keyed table for `registry`. */
-export function createKeyedTable<T>(registry: RegistryId): KeyedTable<T> {
-  return { entries: new Map(), registry, shape: 'keyed' };
+/** An empty keyed table for `registry`, carrying the miss policy every replacement of it preserves. */
+export function createKeyedTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): KeyedTable<T> {
+  return { entries: new Map(), onMiss, registry, shape: 'keyed' };
 }
 
 /** An ordinal table over `vocabulary`, every ordinal unbound. */
-export function createOrdinalTable<T>(registry: RegistryId, vocabulary: readonly Kind[]): OrdinalTable<T> {
-  return { entries: vocabulary.map(() => null), registry, shape: 'ordinal', vocabulary };
+export function createOrdinalTable<T>(
+  registry: RegistryId,
+  onMiss: RegistryMissPolicy,
+  vocabulary: readonly Kind[],
+): OrdinalTable<T> {
+  return { entries: vocabulary.map(() => null), onMiss, registry, shape: 'ordinal', vocabulary };
 }
 
 /** An empty slot table for `registry`. Its key is its own `RegistryId`. */
-export function createSlotTable<T>(registry: RegistryId): SlotTable<T> {
-  return { entry: null, registry, shape: 'slot' };
+export function createSlotTable<T>(registry: RegistryId, onMiss: RegistryMissPolicy): SlotTable<T> {
+  return { entry: null, onMiss, registry, shape: 'slot' };
 }
 
 // The hot-path ordinal form: a direct index, no hash and no string. Out-of-range returns `null`, which
@@ -141,7 +149,7 @@ export function hasRegistryTableEntry(table: Readonly<RegistryTable<unknown>>, k
 export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> {
   const entries = new Map(table.entries);
   entries.delete(key);
-  return { entries, registry: table.registry, shape: 'keyed' };
+  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
 }
 
 // Binds `key` to `value`, returning a REPLACEMENT table. Not `setRegistryTableEntry`: this mutates
@@ -150,7 +158,7 @@ export function withoutRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key
 export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: Kind, value: T): KeyedTable<T> {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Bound, value });
-  return { entries, registry: table.registry, shape: 'keyed' };
+  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
 }
 
 // OMIT. Binds `key` to the tombstone: this table has an opinion about `key`, and the opinion is NOTHING.
@@ -163,7 +171,7 @@ export function withRegistryTableEntry<T>(table: Readonly<KeyedTable<T>>, key: K
 export function withRegistryTableTombstone<T>(table: Readonly<KeyedTable<T>>, key: Kind): KeyedTable<T> {
   const entries = new Map(table.entries);
   entries.set(key, { state: RegistryEntryState.Tombstoned });
-  return { entries, registry: table.registry, shape: 'keyed' };
+  return { entries, onMiss: table.onMiss, registry: table.registry, shape: 'keyed' };
 }
 
 // The stored entry for `key`, tombstones included — the shape-dispatch every resolution query shares.
