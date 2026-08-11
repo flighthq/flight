@@ -60,6 +60,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
 - [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
 - [registry table model](registry-table-model.md) — **unratified.** the storage under the registration doors: three table shapes, and which tier owns a registry.
+- [ribbon trails](ribbon-trail-proposal.md) — **proposal.** a trail recorder and a strip builder, and why the 3D draw needs nothing new.
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
 - [skeleton2d animation model](skeleton2d-animation-model.md) — non-bone timelines, target-kind dispatch, and where constraints live.
