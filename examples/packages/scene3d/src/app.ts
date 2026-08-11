@@ -175,13 +175,15 @@ canvas.addEventListener(
 updateOrbitCameraController(cameraController, camera, 1);
 render(scene, camera, lights, shadowCamera);
 
+const captureMode = (window as typeof window & { __flightCapture?: boolean }).__flightCapture === true;
+
 let previousTime = performance.now();
 function enterFrame(now: number): void {
-  const deltaTime = Math.min((now - previousTime) / 1000, 0.05);
+  const deltaTime = captureMode ? 1 / 60 : Math.min((now - previousTime) / 1000, 0.05);
   previousTime = now;
   updateOrbitCameraController(cameraController, camera, deltaTime);
   render(scene, camera, lights, shadowCamera);
-  requestAnimationFrame(enterFrame);
+  if (!captureMode) requestAnimationFrame(enterFrame);
 }
 
 requestAnimationFrame(enterFrame);
