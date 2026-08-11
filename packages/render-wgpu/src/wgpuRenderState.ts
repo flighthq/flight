@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   copyRenderStateRegistrations,
@@ -16,8 +17,9 @@ import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
 const RING_SLOT_COUNT = 4096;
 
-// Explicit snapshot re-copy. Device resources remain shared; registration maps are cloned so an
-// offscreen pipeline can intentionally diverge from the screen state after derivation.
+// Explicit snapshot re-copy. Device resources remain shared. Mutable legacy maps are cloned;
+// persistent tables share immutable snapshots through distinct aggregates, so either pipeline can
+// still replace registration policy independently after derivation.
 export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source: WgpuRenderState): void {
   const targetRuntime = getWgpuRenderStateRuntime(target);
   const sourceRuntime = getWgpuRenderStateRuntime(source);
@@ -29,7 +31,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
     sourceRuntime.materialRendererMap === undefined ? undefined : new Map(sourceRuntime.materialRendererMap);
   targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
-  targetRuntime.wgpuTextureResolverRegistry = copyRegistryMap(sourceRuntime.wgpuTextureResolverRegistry);
+  targetRuntime.registries = { textureResolvers: sourceRuntime.registries.textureResolvers };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
@@ -245,6 +247,9 @@ export async function createWgpuRenderState(
 // mutable (not Readonly).
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
+  runtime.registries = {
+    textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
+  };
   const deviceRuntime =
     sharedRuntime === undefined ? { fields: {}, references: 0 } : getWgpuDeviceRuntime(sharedRuntime);
   deviceRuntime.references++;
@@ -417,15 +422,6 @@ function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> 
   if (source === undefined) return undefined;
   if (source === null) return null;
   return new Map(source);
-}
-
-function copyRegistryMap<K, V>(source: Map<K, V> | null | undefined): Map<K, V> | null | undefined {
-  if (source === undefined) return undefined;
-  if (source === null) return null;
-  const Registry = source.constructor as new () => Map<K, V>;
-  const result = new Registry();
-  source.forEach((value, key) => result.set(key, value));
-  return result;
 }
 
 type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];

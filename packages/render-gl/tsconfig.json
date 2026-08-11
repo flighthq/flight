@@ -15,6 +15,7 @@
     { "path": "../geometry" },
     { "path": "../log" },
     { "path": "../render" },
+    { "path": "../registry" },
     { "path": "../signals" },
     { "path": "../texture" },
     { "path": "../types" }

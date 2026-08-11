@@ -1,4 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { getRegistryTableEntry, hasRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   getRenderStateRuntime,
@@ -39,14 +40,25 @@ describe('copyGlRenderStateRegistrations', () => {
     const resolver = vi.fn(() => null);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
-    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    expect(
+      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(false);
     copyGlRenderStateRegistrations(offscreen, screen);
-    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+    expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(resolver);
+    registerGlTextureResolver(offscreen, 'acme.LateTexture', null);
+    expect(
+      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(false);
+    expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture')).toBe(
+      resolver,
+    );
   });
 });
 
 describe('createGlOffscreenRenderState', () => {
-  it('shares context resources while snapshotting registration policy into independent maps', () => {
+  it('shares context resources and persistent registration snapshots through independent aggregates', () => {
     const { canvas } = makeCanvas();
     const screen = createGlRenderState(canvas);
     const renderer = { createData: () => null, submit: vi.fn() };
@@ -73,13 +85,14 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.quadIndexBuffer).toBe(screenRuntime.quadIndexBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
-    expect(offscreenRuntime.glTextureResolverRegistry).not.toBe(screenRuntime.glTextureResolverRegistry);
+    expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
     );
     expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
     expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
-    expect(offscreenRuntime.glTextureResolverRegistry?.get('acme.Texture')).toBe(textureResolver);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
 
     screenRuntime.currentProgram = {} as WebGLProgram;
@@ -98,13 +111,17 @@ describe('createGlOffscreenRenderState', () => {
     getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.LateEffect', paddingResolver]]);
 
     expect(getRenderStateRuntime(offscreen).rendererMap.has('acme.LateNode')).toBe(false);
-    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    expect(
+      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(false);
     expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.has('acme.LateEffect')).not.toBe(true);
 
     copyAllRenderersFromRenderState(offscreen, screen);
     copyGlRenderStateRegistrations(offscreen, screen);
     expect(getRenderStateRuntime(offscreen).rendererMap.get('acme.LateNode')).toBe(renderer);
-    expect(getGlRenderStateRuntime(offscreen).glTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+    expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(resolver);
     expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.get('acme.LateEffect')).toBe(
       paddingResolver,
     );

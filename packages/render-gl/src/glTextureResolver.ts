@@ -1,3 +1,4 @@
+import { withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -16,6 +17,7 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderRegistry,
+  RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -40,17 +42,20 @@ export function registerGlRenderTextureResolver(state: GlRenderState): void {
   registerGlTextureResolver(state, RenderTargetTextureSourceKind, resolveGlRenderTexture);
 }
 
-// Registers or replaces one declared source-kind resolver on this render state. Map.set is
-// last-write-wins; passing null removes the key. No registration ordering or matcher scan exists.
+// Registers or replaces one declared source-kind resolver on this render state. The persistent table
+// replacement is last-write-wins; passing null removes the key. No registration ordering or matcher
+// scan exists.
 export function registerGlTextureResolver(
   state: GlRenderState,
   sourceKind: TextureSourceKind,
   resolver: GlTextureResolver | null,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const registry = (runtime.glTextureResolverRegistry ??= new Map());
-  if (resolver === null) registry.delete(sourceKind);
-  else registry.set(sourceKind, resolver);
+  const table = runtime.registries.textureResolvers;
+  runtime.registries.textureResolvers =
+    resolver === null
+      ? withoutRegistryTableEntry(table, sourceKind)
+      : withRegistryTableEntry(table, sourceKind, resolver);
 }
 
 export function registerStandardGlTextureResolvers(state: GlRenderState): void {
@@ -77,12 +82,12 @@ export function resolveGlTexture(
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
   const runtime = getGlRenderStateRuntime(state);
-  const resolver = runtime.glTextureResolverRegistry?.get(sourceKind);
-  if (resolver === undefined) {
+  const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
+  if (entry?.state !== RegistryEntryState.Bound) {
     runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
-  return resolver(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
+  return entry.value(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
 }
 
 function resolveGlBitmapTexture(

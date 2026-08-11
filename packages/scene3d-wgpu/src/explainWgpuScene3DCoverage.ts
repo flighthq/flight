@@ -8,7 +8,13 @@ import type {
   SceneCoverageEntry,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import {
+  RegistryEntryState,
+  RenderRegistry,
+  RequirementFacet,
+  SceneCoverage,
+  StandardMaterialKind,
+} from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
@@ -79,10 +85,10 @@ function collectWgpuScene3DCoverageGaps(
 
   // A texture whose source kind has no resolver samples nothing, so the map is simply absent from the
   // draw — the untextured-model failure this seam exists to surface before it reaches a frame.
-  const resolvers = getWgpuRenderStateRuntime(state).wgpuTextureResolverRegistry;
+  const resolvers = getWgpuRenderStateRuntime(state).registries.textureResolvers;
   for (let i = 0; i < usage.textureSourceKinds.length; i++) {
     const kind = usage.textureSourceKinds[i];
-    if (resolvers?.has(kind) === true) {
+    if (resolvers.entries.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneTextureSourceKind,

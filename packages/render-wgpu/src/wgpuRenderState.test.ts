@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { getRegistryTableEntry, hasRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   getRenderStateRuntime,
@@ -32,9 +33,20 @@ describe('copyWgpuRenderStateRegistrations', () => {
     const resolver = vi.fn(() => null);
     registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
 
-    expect(getWgpuRenderStateRuntime(offscreen).wgpuTextureResolverRegistry?.has('acme.LateTexture')).not.toBe(true);
+    expect(
+      hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(false);
     copyWgpuRenderStateRegistrations(offscreen, screen);
-    expect(getWgpuRenderStateRuntime(offscreen).wgpuTextureResolverRegistry?.get('acme.LateTexture')).toBe(resolver);
+    expect(
+      getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(resolver);
+    registerWgpuTextureResolver(offscreen, 'acme.LateTexture', null);
+    expect(
+      hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(false);
+    expect(
+      getRegistryTableEntry(getWgpuRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture'),
+    ).toBe(resolver);
   });
 });
 
@@ -66,14 +78,15 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
-    expect(offscreenRuntime.wgpuTextureResolverRegistry).not.toBe(screenRuntime.wgpuTextureResolverRegistry);
+    expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.wgpuRenderEffectRegistry).not.toBe(screenRuntime.wgpuRenderEffectRegistry);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
     );
     expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
     expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
-    expect(offscreenRuntime.wgpuTextureResolverRegistry?.get('acme.Texture')).toBe(textureResolver);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
     expect(offscreenRuntime.wgpuRenderEffectRegistry?.get('acme.Effect')).toBe(effectRunner);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
   });

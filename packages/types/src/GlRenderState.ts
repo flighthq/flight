@@ -14,19 +14,25 @@ import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
 import type { Image } from './Image';
 import type { Material } from './Material';
+import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
 import type { TextureSource } from './TextureSource';
-import type { TextureSourceKind } from './TextureSourceKind';
 import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
   readonly canvas: HTMLCanvasElement;
   readonly gl: WebGL2RenderingContext;
+}
+
+// Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
+// pipeline may initially share them, while either aggregate can later replace a member independently.
+export interface GlRenderRegistries {
+  textureResolvers: KeyedTable<GlTextureResolver>;
 }
 
 // A WebGL fixed-function realization of a blend-mode intent, registered per render state against a
@@ -75,6 +81,7 @@ export interface GlColorAdjustmentMaterialFeature {
 // frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
 export interface GlRenderStateRuntime extends RenderStateRuntime {
+  registries: GlRenderRegistries;
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.
   bindingCacheGuard: ((state: GlRenderState, expectedProgram: WebGLProgram) => void) | null;
@@ -209,9 +216,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
   textureSourceStraightTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
   textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, { texture: WebGLTexture; version: number }>;
-  // Open, state-scoped Texture source registry keyed by the source's declared string kind.
-  // Map.set is last-write-wins; undefined until first registration. Texture carries no backend state.
-  glTextureResolverRegistry?: Map<TextureSourceKind, GlTextureResolver> | null;
   // Borrowed native handles registered by createExternalGlTexture. Disposing forgets these entries;
   // the caller retains allocation ownership.
   glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
