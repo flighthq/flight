@@ -188,8 +188,9 @@ own doc says so. `Texture` carries no `alphaType`; alpha encoding lives on the S
   clearest possible statement of why the two axes must not share a name.
 - 3D MESH materials assume straight and cannot represent otherwise: they upload with `premultiply=false`,
   there is no un-premultiply anywhere on the upload path, and the tail premultiplies again. A
-  premultiplied `Bitmap` on a 3D material double-darkens, undetectably. 3D PARTICLES are consistent
-  (they request premultiplied and their shader emits premultiplied), as is all of 2D.
+  premultiplied `Bitmap` on a 3D material double-darkens, undetectably. 3D PARTICLES are consistent:
+  they request straight atlas pixels and premultiply in the shader after sample-time decode. All of 2D
+  is consistent in its encoded working space as well.
 
 (`packages/surface` is untracked stale build output from a package renamed to `bitmap`; `Surface` does
 not exist. It pollutes repo-wide greps — delete it locally.)

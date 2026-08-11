@@ -37,9 +37,10 @@ const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 
 // The WGSL mirror of scene-gl's PARTICLE_3D_VS/FS. A camera-facing billboard: the unit corner is scaled
 // by the normalized quad size, rotated by cos/sin*scale, then placed at the world position along the
-// camera right/up axes. The fragment premultiplies rgb by alpha to match the codebase premultiplied
-// convention the blend states assume. HAS_TEXTURE is a pipeline override constant (textured variant vs
-// solid-color variant), so the branch compiles out per pipeline.
+// camera right/up axes. Textured particles keep the atlas straight through upload so an sRGB sample
+// decodes before the fragment premultiplies it; multiplying encoded bytes first would produce
+// decode(rgb * alpha), not decode(rgb) * alpha. HAS_TEXTURE is a pipeline override constant (textured
+// variant vs solid-color variant), so the branch compiles out per pipeline.
 const PARTICLE_3D_WGSL = /* wgsl */ `
 override HAS_TEXTURE : f32 = 0.0;
 
@@ -84,9 +85,11 @@ struct VertexOutput {
   var rgba : vec4f;
   if (HAS_TEXTURE > 0.5) {
     let tex = textureSample(particleTexture, particleSampler, in.uv);
-    rgba = vec4f(tex.rgb * in.color.rgb, tex.a) * in.color.a;
+    let alpha = tex.a * in.color.a;
+    rgba = vec4f(tex.rgb * in.color.rgb * alpha, alpha);
   } else {
-    rgba = vec4f(in.color.rgb * in.color.a, in.color.a);
+    let alpha = in.color.a;
+    rgba = vec4f(in.color.rgb * alpha, alpha);
   }
   if (rgba.a <= 0.0) { discard; }
   return rgba;
@@ -265,7 +268,7 @@ function drawParticleEmitter3DNode(
 
   const atlasTexture = atlas?.texture ?? null;
   const textureEntry =
-    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveWgpuTexture(state, atlasTexture, true) : null;
+    atlasTexture !== null && hasTextureSource(atlasTexture) ? resolveWgpuTexture(state, atlasTexture, false) : null;
   const hasAtlas = textureEntry !== null;
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;

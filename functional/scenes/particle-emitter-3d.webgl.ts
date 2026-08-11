@@ -1,11 +1,14 @@
-import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
+import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createScene3DLights,
   addNodeChild,
   addTextureAtlasRegion,
-  beginWgpuRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
   createCamera3D,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
   createImageResourceFromCanvas,
   createParticleEmitter3D,
   createPerspectiveProjection,
@@ -13,29 +16,28 @@ import {
   createTexture,
   createTextureAtlas,
   createVector3,
-  createWgpuCanvasElement,
-  createWgpuRenderEffectPipeline,
-  createWgpuRenderState,
-  endWgpuRenderEffectPipeline,
+  endGlRenderEffectPipeline,
   getBitmapPixel,
   prepareScene3DRender,
-  registerWgpuImageTextureResolver,
-  renderWgpuBackground,
+  registerStandardGlTextureResolvers,
+  renderGlBackground,
   reserveParticleEmitter3D,
   setCamera3DViewMatrix4FromLookAt,
-  submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. The
+// Real-WebGL proof for the ParticleEmitter3D path that drawGlScene3D invokes automatically. The
 // colored, partially-transparent sRGB atlas distinguishes post-decode shader premultiplication from an
 // encoded-byte upload multiply; white or opaque pixels cannot expose that ordering error.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101018ff });
-registerWgpuImageTextureResolver(state);
-const pipeline = createWgpuRenderEffectPipeline(state, {
+export const state = createGlRenderState(canvas, {
+  pixelRatio,
+  backgroundColor: 0x101018ff,
+  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+});
+registerStandardGlTextureResolvers(state);
+const pipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
   depth: 'depth-stencil',
@@ -45,15 +47,16 @@ export const width = 800;
 export const height = 600;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  renderWgpuBackground(state);
-  beginWgpuRenderEffectPipeline(state, pipeline, 'linear');
+  beginGlRenderEffectPipeline(state, pipeline, 'linear');
+  renderGlBackground(state);
+  const gl = state.gl;
+  gl.depthMask(true);
+  gl.clearDepth(1);
+  gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
-  drawWgpuScene3D(state, scene, camera, lights);
-  endWgpuRenderEffectPipeline(state, pipeline, []);
-  submitWgpuRenderPass(state);
+  drawGlScene3D(state, scene, camera, lights);
+  endGlRenderEffectPipeline(state, pipeline, []);
 }
-
-registerWgpuFunctionalTarget(state, scale);
 
 const ATLAS_SIZE = 64;
 const PARTICLE_ALPHA = 0.5;

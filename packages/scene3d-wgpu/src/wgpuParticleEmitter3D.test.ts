@@ -157,6 +157,29 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
     expect(pipelineDescriptors(fake.calls).some((d) => hasTextureConstant(d) === 1)).toBe(true);
   });
 
+  it('copies atlas pixels with straight alpha for post-decode shader premultiplication', () => {
+    const { state, fake } = makeAtlasWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(64, 64));
+    drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const copy = fake.calls.find((c) => c.name === 'copyExternalImageToTexture');
+    expect(copy).toBeDefined();
+    expect((copy!.args[1] as { premultipliedAlpha?: boolean }).premultipliedAlpha).toBe(false);
+  });
+
+  it('premultiplies sampled atlas color after decode in the fragment shader', () => {
+    const { state, fake } = makeAtlasWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(scene, makeAtlasEmitter(64, 64));
+    drawWgpuScene3DParticleEmitter3Ds(state, scene, makeCamera(), makeLights());
+    const shaderSource = fake.calls
+      .filter((c) => c.name === 'createShaderModule')
+      .map((c) => String((c.args[0] as { code: string }).code))
+      .find((source) => source.includes('@fragment fn fs_main'));
+    expect(shaderSource).toContain('let alpha = tex.a * in.color.a;');
+    expect(shaderSource).toContain('vec4f(tex.rgb * in.color.rgb * alpha, alpha)');
+  });
+
   it('compiles the untextured pipeline variant for an atlas-less emitter', () => {
     const { state, fake } = makeWgpuScene3DState();
     const scene = createNode3D(Node3DKind);

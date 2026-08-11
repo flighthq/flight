@@ -129,11 +129,11 @@ export function bindGlCompressedImageTexture(
 //
 // `premultiply` states whether the caller wants a premultiplied GPU texture — bind never premultiplies on
 // its own. BOTH towers blend premultiplied; what differs is WHERE the multiply happens, and that is the
-// distinction this flag encodes. The 2D display and particle pipelines pass true and take it at UPLOAD,
-// through UNPACK_PREMULTIPLY_ALPHA_WEBGL. The 3D forward path leaves the default false and premultiplies
-// in the SHADER instead, as the last step of its fragment tail (GL_MESH_FRAGMENT_TAIL). The two request
-// modes cache separate GL textures so one source can be sampled by both paths without rewriting its
-// other realization.
+// distinction this flag encodes. The encoded-working-space 2D display and particle pipelines pass true
+// and take it at UPLOAD, through UNPACK_PREMULTIPLY_ALPHA_WEBGL. The linear-working-space 3D mesh and
+// particle paths leave the default false and premultiply in the SHADER after sample-time decode. The two
+// request modes cache separate GL textures so one source can be sampled by both paths without rewriting
+// its other realization.
 //
 // That difference is not cosmetic, and it is the constraint on re-enabling sRGB decode for 2D: an upload
 // multiply runs on raw encoded bytes, so decoding on sample would yield decode(c·a) where the blend needs
