@@ -102,6 +102,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
+    expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
@@ -273,6 +274,12 @@ describe('createGlRenderStateRuntime', () => {
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
+    expect(runtime.registries.shapeRasterizer).toEqual({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'GlShapeRasterizer',
+      shape: 'slot',
+    });
   });
 });
 

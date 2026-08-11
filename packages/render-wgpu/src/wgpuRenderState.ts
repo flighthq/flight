@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable } from '@flighthq/registry/contract';
+import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   copyRenderStateRegistrations,
@@ -31,6 +31,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
   };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
@@ -250,6 +251,7 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
+    shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
   };
   const deviceRuntime =
