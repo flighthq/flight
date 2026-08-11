@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,6 +8,7 @@ import {
   baselinePath,
   getBaselineField,
   getBaselineProvenance,
+  setBaselineCaptureEvidence,
   setBaselineField,
   setBaselineProvenance,
 } from './baselineStore';
@@ -55,15 +56,83 @@ describe('getBaselineProvenance', () => {
   });
 });
 
+describe('setBaselineCaptureEvidence', () => {
+  it('writes fingerprint and sha256 atomically while preserving other columns', () => {
+    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'webgl-hash');
+
+    setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+      fingerprint: 'fp',
+      sourceHash: 'source',
+      sha256: 'hash',
+    });
+
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
+    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('webgl-hash');
+  });
+
+  it('replaces the full evidence column instead of retaining stale optional fields', () => {
+    setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+      fingerprint: 'old-fp',
+      sourceHash: 'old-source',
+      sha256: 'old-hash',
+    });
+
+    setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+      fingerprint: 'new-fp',
+      sha256: 'new-hash',
+    });
+
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('new-fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBeNull();
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('new-hash');
+  });
+
+  it('refuses runtime callers that omit either half of the evidence pair', () => {
+    expect(() =>
+      setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+        fingerprint: 'fp',
+      } as never),
+    ).toThrow(/fingerprint and sha256 must be written together/);
+    expect(() =>
+      setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+        sha256: 'hash',
+      } as never),
+    ).toThrow(/fingerprint and sha256 must be written together/);
+    expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
+  });
+});
+
 describe('setBaselineField', () => {
-  it('preserves other fields and columns on a read-merge-write', () => {
+  it('preserves unrelated fields and columns on a read-merge-write', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash');
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash', 'source');
     setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'hash2');
 
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
+  });
+
+  it('refuses to append sha256 to a separately written fingerprint', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
+
+    expect(() => setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash')).toThrow(
+      /refusing partial baseline write.*sha256.*fingerprint exists/,
+    );
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBeNull();
+  });
+
+  it('refuses to append a fingerprint to a separately written sha256', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash');
+
+    expect(() => setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp')).toThrow(
+      /refusing partial baseline write.*fingerprint.*sha256 exists/,
+    );
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBeNull();
   });
 
   it('writes sorted, prettier-compatible JSON with a trailing newline', () => {
