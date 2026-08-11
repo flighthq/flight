@@ -138,10 +138,7 @@ function ensureShapeMeshIndexBuffer(
   const size = Math.max(4, (byteLength + 3) & ~3);
   let buffer = buffers.indexBuffers[meshIndex];
   if (buffer === undefined || (buffers.indexCapacities[meshIndex] ?? 0) < size) {
-    if (buffer !== undefined) {
-      const runtime = getWgpuRenderStateRuntime(state);
-      retireWgpuBuffer(state, buffer);
-    }
+    if (buffer !== undefined) retireWgpuBuffer(state, buffer);
     buffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
@@ -236,10 +233,7 @@ function ensureShapeMeshVertexBuffer(
   const size = Math.max(8, byteLength);
   let buffer = buffers.vertexBuffers[meshIndex];
   if (buffer === undefined || (buffers.vertexCapacities[meshIndex] ?? 0) < size) {
-    if (buffer !== undefined) {
-      const runtime = getWgpuRenderStateRuntime(state);
-      retireWgpuBuffer(state, buffer);
-    }
+    if (buffer !== undefined) retireWgpuBuffer(state, buffer);
     buffer = state.device.createBuffer({
       size,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
