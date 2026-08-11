@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/tool-capture'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-11
+by: foreman
 ---
 
 # tool-capture — Status
@@ -33,63 +33,38 @@ and its inline exported types are a stated exemption from the types-home rule �
 - **The capture clock is not pinned.** `launchBrowser`'s init script fixes the viewport and seeds
   `Math.random` (`captureBrowser.ts:57`, `:83`) but stubs neither `performance.now` nor `Date`, so a
   time-parameterized scene is deterministic only at frame 1 and stays out of the gated set.
-- **Screenshot baselines hash PNG bytes, not decoded pixels.** `captureEntry.ts:492`, `:1061`, and
-  `:1092` sha256 the encoded buffer, leaving PNG-encoder drift as a failure mode the fingerprint tier
-  does not have. Also `capture`'s outstanding Approved item.
 - **No sibling `tool-*` cells.** `tool-capture` is still the whole tooling tier; `tool-baseline`,
   `tool-fixtures`, and `tool-diff` (charter Open direction 2) have no package. `baselineStore.ts`
   remains the store, in-package.
+- **`captureEntry.ts:414`'s verifier-failure throw is a collapsed-verdict oracle.** One message,
+  `"render verifier did not reach a terminal state"`, covers both *registered-and-stalled* and
+  *never-registered* — opposite remedies. `captureValidation.ts:421` already distinguishes them
+  ("verifier registered but stalled…"); `captureEntry` doesn't use that message. Cost real time on
+  `examples/scene3d/webgl`'s verifier stall (register `agents/unbacked-register.md` L31): the throw
+  sent the investigation hunting a stall that wasn't happening — the true cause was the verifier never
+  registering at all (a missing `captureMode` guard in that one example, fixed at `271c1a211`).
+- **Observe mode cannot diagnose a never-registered verifier.** Its diagnostics block sits downstream
+  (`captureEntry.ts:536`) of the throw it exists to explain (`:414`) — the same shape as the
+  logging-order defect fixed 2026-08-10 below (hash computed before screenshot/logs were written),
+  found independently in the same package. A diagnostic downstream of the failure it explains only
+  exists when it isn't needed. Also surfaced by L31: 3 observe-mode runs against the stalled verifier
+  yielded nothing, for exactly this reason.
 
 ## Log
 
-<!-- newest entry on top; one dated line each, naming what changed and where to look -->
+<!-- newest entry on top; one dated line each, naming what changed and where to look. Detail lives in
+     git and agents/unbacked-register.md, not here — see the note at the top of this file. -->
 
-- **2026-08-10** — Baseline evidence now guards the **join transition**, not record completeness
-  (`baselineStore.ts`). `capture --update-baseline` → sha256-only → `validate` → paired is the normal
-  lifecycle: stage one is complete in its own right. Each independently-written value therefore owns its
-  provenance, and a write is refused only when both field provenance records exist and disagree; missing
-  legacy provenance remains unknown and allowed. This strengthens on its own as new stage-one sha256
-  records acquire provenance and future validation starts stamping fingerprint provenance, checking each
-  pair when it forms rather than reconstructing it later. The accepted cost is two provenance blocks per
-  fully paired column across the 448-column population; collapsing them to one shared object would recreate
-  the split-write defect. Validation's top-level `sourceHash` still needs a separate migration to the
-  fingerprint-provenance model, so the production refusal is intentionally dormant today. No baseline was
-  rewritten. Every evidence-write route shares the uniform-fingerprint and known-blank screenshot refusals
-  (`captureBaselineSanity.ts`).
-- **2026-08-10** — Reverted the blanket counterpart-field refusal in `baselineStore.ts`: sha256-only is
-  the normal first stage of every new baseline, followed by validation adding a fingerprint, so the rule
-  blocked all 448 existing columns from their ordinary next write. The recapture freeze prevents a split
-  write during this short unguarded interval; per-field provenance is the prerequisite for the narrower
-  replacement. The atomic paired writer and its uniform-fingerprint/known-blank refusals remain available,
-  and no baseline was rewritten.
-- **2026-08-10** — Static functional capture now compares current discovered scene/renderer routes
-  with the emitted dist before launching Chromium (`captureServer.ts`). A structurally stale dist fails
-  once with the missing/total count, every absent route, and the exact build command instead of producing
-  one misleading page 404 per target. The former inert timestamp warning is also a gate now and covers
-  functional scenes/config/shared harness plus examples sources/config, not only `packages/`. The measured
-  stale Aug 1 clone omitted 22 routes across nine scenes; all nine already carry committed baselines and
-  support marks from later commits, so that evidence came from another build/environment and no mark was
-  invalidated.
-- **2026-08-10** — Capture resource failures now retain their URL across HTTP error responses and
-  transport failures in the capture, observe, and validation paths (`captureResourceFailure.ts`). The
-  Chromium browser contract deliberately exercises 404, 503, and dropped-connection resources and
-  asserts that every resulting resource message names its URL. **That contract was executed against a
-  real browser at integration, not only reported**: `captureEyes.e2e.test.ts` passes 6/6 here. Worth
-  knowing where it does and does not run — whole-repo `npm run test` **never** executes it (the e2e glob
-  is excluded from the `tool-capture` project and included by no project, and the run prints the two
-  files it skipped), while `npm run test:unit` runs each package under its own config on a CI leg that
-  installs Chromium. A green from the root run says nothing about these two files.
-- **2026-08-08** — Rewritten to the `Open` + `Log` contract; both carried "watch for" items
-  re-verified against source and kept (WebGPU frame-wait exemption, advisory-only freshness). Charter
-  Open direction 0 checked out **landed** and is not listed: `baselineStore.ts` and
-  `captureValidation.ts` import `@flighthq/capture` directly for the tolerances, comparison, and
-  baseline record shape, so the self-contained duplicate is gone. `referenceCapture.ts` covers
-  direction 1's driver side (flight-reference dev server + route enumeration), though PNG baselines
-  still are not read or written from that repo.
-- **2026-08-05** — The blank-frame class of bug closed at every layer: blank frames hard-rejected at
-  the baseline write path, uniform fingerprints refused as baselines, gated runs that compared
-  nothing failing rather than passing silently, registry misses failing the capture, and a WebGL
-  capture with no render image failing rather than passing as black — with measured pixel coverage,
-  not verifier-publish, as the source of truth for "blank". The `observe <url>` bin landed alongside
-  it for zero-integration capture of any canvas page, and a stalled verifier now names the await it
-  is sitting in with a budget resolved from a flag or the environment.
+- **2026-08-11** — Decode-before-hash and `examples/scene3d/webgl`'s verifier stall both closed;
+  pruned from `Open`, superseded there by the two new items. Detail: register L13, L27, L31.
+- **2026-08-10** — Baseline evidence guards the join transition (sha256-only → fingerprint), not
+  record completeness, in `baselineStore.ts`. Detail: register L20.
+- **2026-08-10** — `captureServer.ts` fails a structurally stale dist before launching Chromium
+  instead of producing per-route 404s; the prior timestamp warning is now a real gate.
+- **2026-08-10** — Capture resource failures retain their URL across HTTP/transport failures
+  (`captureResourceFailure.ts`); the Chromium contract for this runs only under `test:unit`, not the
+  root `npm run test` — a root green says nothing about `captureEyes.e2e.test.ts`.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract. Charter direction 0 (self-contained
+  duplicate of `@flighthq/capture`'s tolerances/comparison) landed and removed from `Open`.
+- **2026-08-05** — Blank-frame class of bug closed at every layer (write path, fingerprint refusal,
+  gated-run pass-on-nothing, registry misses, WebGL no-image); `observe <url>` bin landed alongside it.
