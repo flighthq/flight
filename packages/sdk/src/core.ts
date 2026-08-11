@@ -7,6 +7,7 @@ export * from '@flighthq/layout';
 export * from '@flighthq/math';
 export * from '@flighthq/node';
 export * from '@flighthq/requirements';
+export * from '@flighthq/registry';
 export * from '@flighthq/registry-catalog';
 export * from '@flighthq/registry-codegen';
 export * from '@flighthq/signals';

@@ -172,6 +172,7 @@
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/requirements": "*",
+    "@flighthq/registry": "*",
     "@flighthq/registry-catalog": "*",
     "@flighthq/registry-codegen": "*",
     "@flighthq/scene2d": "*",

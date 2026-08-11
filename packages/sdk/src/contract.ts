@@ -82,6 +82,7 @@ export * from '@flighthq/render';
 export * from '@flighthq/render-gl';
 export * from '@flighthq/render-wgpu';
 export * from '@flighthq/requirements';
+export * from '@flighthq/registry';
 export * from '@flighthq/registry-catalog';
 export * from '@flighthq/registry-codegen';
 export * from '@flighthq/scene3d';
