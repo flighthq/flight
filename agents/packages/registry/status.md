@@ -31,6 +31,31 @@ composition sees entries, and composition lives in this package.
 equality and refuses on mismatch. It does not read them. If something later needs to *interpret* a
 policy, that is a new capability and a new ruling — not an extension of this comparison.
 
+**TOMBSTONED and ABSENT are indistinguishable from outside this package, and that is currently a
+boundary rather than a decision.** The charter names three meanings over two stored states; here is
+exactly what each public door can tell apart:
+
+| | bound | tombstoned (omit) | absent (no opinion) |
+|---|---|---|---|
+| `getRegistryTableEntry` | the value | `null` | `null` |
+| `hasRegistryTableEntry` | `true` | `false` | `false` |
+| `getRegistryTableKeys` | listed | not listed | not listed |
+| `concatRegistryTable` (in-package) | overlay wins | **overlay wins, base dropped** | **base inherited** |
+
+The bottom row is the point: the two states a caller cannot distinguish are the two that produce
+**opposite final bindings**. Resolution collapsing them is correct and stays — the caller asked what is
+bound, the answer is nothing, and no tombstone should escape into code that has never heard of one.
+The open question is only whether anything *outside* this package ever needs the distinction.
+
+If composition stays in-package, nobody outside can be confused and the right answer is to build
+nothing and keep this table as the record. If a 4(B) registrar, `registry-catalog`, or the codegen side
+ever needs to ask "what does this overlay explicitly omit?", the collapse is a blind spot and
+[diagnostics](../../conventions/diagnostics.md) names the remedy: a shakeable `explain*` returning plain
+data, with the sentinel staying the zero-cost baseline. That doc is equally explicit that `explain*` is
+**targeted, not automatic** — each one duplicates the silent path's conditions and must be kept in step —
+so it is upkeep to spend only against a real consumer. Asked builder4 (thread lead, and the only one who
+can see 4(B) shape) rather than guessing; **holding until answered.**
+
 ## Log
 
 - **2026-08-10** — `RegistryMissPolicy` ruled an open alias to `string`; `onMiss` restored to
