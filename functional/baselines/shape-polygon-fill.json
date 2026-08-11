@@ -1,5 +1,12 @@
 {
   "canvas": {
-    "sha256": "81270dbfa97a7fe95292f2f3ba57ecfd5df0af7f66367fb015a7b4dae30336cb"
+    "sha256": "0a60fd2fae797a320791515f975c48318ed5fa2fcf234dba4884798f4d89ee7f",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "34fda3933e2bbdc92cecef08885a4643cf592d4bfcd6508f020c6f8439b749a1",
+      "targetKind": "canvas",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
   }
 }

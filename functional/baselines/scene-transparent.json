@@ -1,5 +1,12 @@
 {
   "webgpu": {
-    "sha256": "4b950386b0426335f3ed6572fe9a9f7ca804ea5df79a8b3e532b5d495f9c13bc"
+    "sha256": "9cb211de0354ff111aaed6c05061335ab5049b8758b852484a26a3eead244c5c",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "b5b6a4edcd0bb576df48e09e49e90df49f73770f9c678a452ca5a813218fadd3",
+      "targetKind": "webgpu",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
   }
 }

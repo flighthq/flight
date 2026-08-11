@@ -1,8 +1,32 @@
 {
   "canvas": {
-    "sha256": "7fc2859766deb9b72a988eb20d4913b4dec8ad0437ad9291981fa8903648c06e"
+    "sha256": "4b87e08c8f446b9bea5e4e5a990b3ba9f84fb0198769e0af6dbbf0e11a7103ad",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "0193fbdabe811687af4de403b75454add83e345b53ece6b24de9ec59ef2b41e0",
+      "targetKind": "canvas",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
   },
   "webgl": {
-    "sha256": "dbc5d022908e58d6b946831387cd55868172c657f809d81e31d79b74aac2d06c"
+    "sha256": "74e930c3c36ddb7e601e43a7de5168980ec7d7349aa469a6a007fe9dfebbda3a",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "83c767dac754d8bad91570c3b104f8cae28cab1d42e81073180fdfb371fcf36a",
+      "targetKind": "webgl",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
+  },
+  "webgpu": {
+    "sha256": "74e930c3c36ddb7e601e43a7de5168980ec7d7349aa469a6a007fe9dfebbda3a",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "5e5d70cd257009a933a7e99239a93faba66024c5cd8e0849d50c756524a97b52",
+      "targetKind": "webgpu",
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
   }
 }

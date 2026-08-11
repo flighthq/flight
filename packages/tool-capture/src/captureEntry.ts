@@ -26,6 +26,7 @@ import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
 import { writeCaptureReport } from './captureReport.js';
 import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
+import { hashCaptureScreenshotPixels } from './captureScreenshotHash.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
@@ -492,11 +493,13 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .screenshot()
           .catch(() => page.screenshot());
       }
-      // WIRING THIS TO hashCaptureScreenshotPixels IS ATOMIC WITH THE RECAPTURE, NOT BEFORE IT.
-      // Decoding first changes what sha256 MEANS, so the 574 committed values become wrong rather than
-      // stale the instant it goes live, and every capture check reds until the recapture completes.
-      // The mechanism is built and tested in captureScreenshotHash.ts; only the switch is held.
-      const hash = createHash('sha256').update(screenshotBuffer).digest('hex');
+      // sha256 IS OVER DECODED PIXELS, NOT THE ENCODED PNG BYTES. It answers "did the RENDER change",
+      // which is the question every caller actually asks; hashing the encoded artifact also moved when
+      // only the encoder did. Decoding throws rather than falling back, because a fallback value would
+      // mean something different from every other value in the same column with nothing downstream able
+      // to tell them apart. This and the recapture that re-recorded all 574 committed values were one
+      // operation — the meaning of the field and the values stored under it cannot diverge.
+      const hash = await hashCaptureScreenshotPixels(page, screenshotBuffer, OBSERVE_BLANK_COVERAGE);
 
       // Atomic write: tmp files renamed into place, status.json written last.
       writeFileSync(tmpScreenshot, screenshotBuffer);
