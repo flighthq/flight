@@ -271,6 +271,9 @@
       "path": "../registry-catalog"
     },
     {
+      "path": "../registry-codegen"
+    },
+    {
       "path": "../scene3d"
     },
     {

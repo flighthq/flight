@@ -173,6 +173,7 @@
     "@flighthq/render-wgpu": "*",
     "@flighthq/requirements": "*",
     "@flighthq/registry-catalog": "*",
+    "@flighthq/registry-codegen": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/scene2d-dom": "*",
