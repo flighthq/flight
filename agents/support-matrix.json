@@ -3087,8 +3087,8 @@
               "realization": true
             },
             "webgpu": {
-              "status": "unbaselined",
-              "fingerprint": false,
+              "status": "realized",
+              "fingerprint": true,
               "realization": true
             }
           }
@@ -3626,6 +3626,31 @@
               "status": "unbaselined",
               "fingerprint": false,
               "realization": false
+            }
+          }
+        },
+        {
+          "scene": "node-blend-modes-fixed",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
             }
           }
         },

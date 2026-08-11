@@ -1,5 +1,12 @@
 {
   "dom": {
-    "sha256": "008c2b15b79f62f5844921d59f573e34463fe460e34715537d8f78b85df5847b"
+    "sha256": "271874d435784bc7ad5a129492c68e5a759c5b524d93ee98974e83b72caf76d7",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "adae3a50c1e3aef6b20ee6f4674675bf1a44afcdc7e31e50ab51d70283b92f1c",
+      "targetKind": "dom",
+      "verifyPublished": false,
+      "warmupFrames": 0
+    }
   }
 }
