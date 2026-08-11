@@ -81,6 +81,7 @@ export * from '@flighthq/quadbatch';
 export * from '@flighthq/render';
 export * from '@flighthq/render-gl';
 export * from '@flighthq/render-wgpu';
+export * from '@flighthq/requirements';
 export * from '@flighthq/scene3d';
 export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/scene3d-gl';

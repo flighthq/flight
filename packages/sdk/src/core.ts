@@ -6,5 +6,6 @@ export * from '@flighthq/geometry';
 export * from '@flighthq/layout';
 export * from '@flighthq/math';
 export * from '@flighthq/node';
+export * from '@flighthq/requirements';
 export * from '@flighthq/signals';
 export * from '@flighthq/types';

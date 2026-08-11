@@ -265,6 +265,9 @@
       "path": "../render-wgpu"
     },
     {
+      "path": "../requirements"
+    },
+    {
       "path": "../scene3d"
     },
     {
