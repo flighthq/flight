@@ -16,9 +16,14 @@
 // premultiplication and colour-space conversion. The digest stays deterministic and still tracks the
 // render, which is what it is for — but do not read it as byte-identity with the PNG's decoded pixels.
 //
-// The threshold is a PARAMETER rather than an import so this module stays free of captureEntry, which
-// will import it once the switch is thrown; the caller passes the same OBSERVE_BLANK_COVERAGE the rest
-// of the capture path uses, so there is one definition of "blank" rather than two.
+// The threshold is a PARAMETER rather than an import so this module stays free of captureEntry.
+//
+// ★ PASS null WHEN THE SCENE'S OWN VERIFIER HAS ALREADY APPROVED THE FRAME, AND MEAN IT. A scene declares
+// its own `minCoverage`, and functionalVerify honours that declaration; a scene that renders a full-canvas
+// solid colour on purpose sets it to 0 and validates itself with a pixel oracle instead. Applying a global
+// coverage threshold here after such a frame has PASSED overrules the only party that knows what the scene
+// is for, and refuses a correct render. Two blank checks in one capture must not answer to different
+// thresholds — so when the verifier has ruled, this one does not run at all.
 //
 // The DIGEST is computed in the page too, so only a 64-character hex string crosses the bridge. Shipping
 // the pixels back would be ~1.9M bytes per capture for an 800x600 frame, per column, per run.
@@ -43,11 +48,11 @@ export interface CaptureScreenshotHashPage {
 export async function hashCaptureScreenshotPixels(
   page: CaptureScreenshotHashPage,
   screenshot: Uint8Array,
-  blankCoverage: number,
+  blankCoverage: number | null,
 ): Promise<string> {
   const base64 = Buffer.from(screenshot).toString('base64');
   const hash = await page.evaluate(
-    async (input: { base64: string; blankCoverage: number }) => {
+    async (input: { base64: string; blankCoverage: number | null }) => {
       const response = await fetch(`data:image/png;base64,${input.base64}`);
       const bitmap = await createImageBitmap(await response.blob());
       const canvas = document.createElement('canvas');
@@ -78,7 +83,7 @@ export async function hashCaptureScreenshotPixels(
           differing += 1;
         }
       }
-      if (differing / total <= input.blankCoverage) return 'blank';
+      if (input.blankCoverage !== null && differing / total <= input.blankCoverage) return 'blank';
 
       // `<width>x<height>:` then the raw RGBA, hashed as one buffer.
       const header = new TextEncoder().encode(`${bitmap.width}x${bitmap.height}:`);
@@ -119,7 +124,7 @@ export async function hashCaptureScreenshotPixels(
 export async function hashCaptureScreenshotPixelsOrNull(
   page: CaptureScreenshotHashPage,
   screenshot: Uint8Array,
-  blankCoverage: number,
+  blankCoverage: number | null,
 ): Promise<string | null> {
   return hashCaptureScreenshotPixels(page, screenshot, blankCoverage).catch(() => null);
 }
