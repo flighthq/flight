@@ -14,7 +14,7 @@ import { join, resolve } from 'node:path';
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { getBaselineField, setBaselineField, setBaselineProvenance } from './baselineStore.js';
+import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
@@ -555,13 +555,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
             `refusing to baseline ${entry.name}/${renderer}: capture produced the known blank frame (${hash.slice(0, 12)}…). Re-run where the backend can actually present, or fix the render.`,
           );
         }
-        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash);
         // Record what produced THIS hash, stamped against sha256 specifically — the fingerprint is
-        // written by a different pass and carries its own. Record what produced the value, not just the value. Two records that disagree are otherwise
-        // indistinguishable from two records taken under different conditions, and nothing on disk can
-        // tell them apart afterwards. Recorded here and NOT yet enforced anywhere: comparison across
-        // differing provenance stays permitted until most records carry the field.
-        setBaselineProvenance(root, tool, entry.name, renderer, 'sha256', {
+        // written by a different pass and carries its own. Value and provenance share one store write,
+        // so a crash cannot leave a fresh hash attributed to an older capture's conditions.
+        setBaselineField(root, tool, entry.name, renderer, 'sha256', hash, {
           frames: captureFrames,
           sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
           targetKind: verificationTargetKind,

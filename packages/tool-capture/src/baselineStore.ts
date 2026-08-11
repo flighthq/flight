@@ -1,10 +1,11 @@
 // Per-test committed baseline store: one JSON file per test at <subject-root>/baselines/<name>.json,
 // holding every column's values, e.g. { "canvas": { "fingerprint": "…", "sha256": "…" }, "flight:webgl": {…} }.
 // captureEntry produces each column's `sha256` (screenshot hash); captureValidation produces its
-// `fingerprint` (coarse render fingerprint). The normal lifecycle writes those fields in separate passes,
-// so a one-sided record is a valid first stage and either pass must remain independently writable. Other
-// columns still use read-merge-write. Output is prettier-compatible (sorted keys, 2-space, trailing newline)
-// so it never churns the format gate. Replaces the old
+// `fingerprint` (coarse render fingerprint). The normal lifecycle therefore has two stages: sha256-only,
+// then paired after validation. Each independently-written value owns its provenance. A join is refused
+// only when BOTH provenance records exist and disagree; missing provenance is unknown and remains allowed
+// for legacy records. Other columns still use read-merge-write. Output is prettier-compatible (sorted
+// keys, 2-space, trailing newline) so it never churns the format gate. Replaces the old
 // tools/baselines/<subject>/<name>/<renderer>/{fingerprint.txt,baseline.sha256}.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -83,16 +84,9 @@ export function setBaselineCaptureEvidence(
       `refusing incomplete baseline evidence for ${subject}/${name}/${column}: fingerprint and sha256 must be written together`,
     );
   }
-  if (isUniformCaptureFingerprint(evidence.fingerprint)) {
-    throw new Error(
-      `refusing baseline evidence for ${subject}/${name}/${column}: fingerprint is uniform and cannot distinguish a rendered frame from a blank one`,
-    );
-  }
-  if (isRejectedCaptureBaselineHash(evidence.sha256)) {
-    throw new Error(
-      `refusing baseline evidence for ${subject}/${name}/${column}: sha256 is a known blank frame (${evidence.sha256.slice(0, 12)}…)`,
-    );
-  }
+  assertEvidenceFieldSanity(subject, name, column, 'fingerprint', evidence.fingerprint);
+  assertEvidenceFieldSanity(subject, name, column, 'sha256', evidence.sha256);
+  assertMatchingProvenance(subject, name, column, evidence.fingerprintProvenance, evidence.sha256Provenance);
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
   data[column] = { ...evidence };
@@ -106,10 +100,28 @@ export function setBaselineField(
   column: string,
   field: BaselineField,
   value: string,
+  provenance?: Readonly<CaptureBaselineProvenance>,
 ): void {
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
+  if (field === 'fingerprint' || field === 'sha256') {
+    assertEvidenceFieldSanity(subject, name, column, field, value);
+    assertMatchingProvenance(
+      subject,
+      name,
+      column,
+      field === 'fingerprint' ? provenance : getCaptureBaselineProvenance(data, column, 'fingerprint'),
+      field === 'sha256' ? provenance : getCaptureBaselineProvenance(data, column, 'sha256'),
+    );
+  }
   setCaptureBaselineField(data, column, field, value);
+  if (field === 'fingerprint' || field === 'sha256') {
+    if (provenance === undefined) {
+      clearCaptureBaselineProvenance(data, column, field);
+    } else {
+      setCaptureBaselineProvenance(data, column, field, provenance);
+    }
+  }
   writeBaseline(path, data);
 }
 
@@ -125,8 +137,67 @@ export function setBaselineProvenance(
 ): void {
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
+  assertMatchingProvenance(
+    subject,
+    name,
+    column,
+    field === 'fingerprint' ? provenance : getCaptureBaselineProvenance(data, column, 'fingerprint'),
+    field === 'sha256' ? provenance : getCaptureBaselineProvenance(data, column, 'sha256'),
+  );
   setCaptureBaselineProvenance(data, column, field, provenance);
   writeBaseline(path, data);
+}
+
+function assertEvidenceFieldSanity(
+  subject: string,
+  name: string,
+  column: string,
+  field: CaptureBaselineProvenanceField,
+  value: string,
+): void {
+  if (field === 'fingerprint' && isUniformCaptureFingerprint(value)) {
+    throw new Error(
+      `refusing baseline evidence for ${subject}/${name}/${column}: fingerprint is uniform and cannot distinguish a rendered frame from a blank one`,
+    );
+  }
+  if (field === 'sha256' && isRejectedCaptureBaselineHash(value)) {
+    throw new Error(
+      `refusing baseline evidence for ${subject}/${name}/${column}: sha256 is a known blank frame (${value.slice(0, 12)}…)`,
+    );
+  }
+}
+
+function assertMatchingProvenance(
+  subject: string,
+  name: string,
+  column: string,
+  fingerprint: Readonly<CaptureBaselineProvenance> | null | undefined,
+  sha256: Readonly<CaptureBaselineProvenance> | null | undefined,
+): void {
+  if (fingerprint === null || fingerprint === undefined || sha256 === null || sha256 === undefined) return;
+  if (
+    fingerprint.frames === sha256.frames &&
+    fingerprint.sourceHash === sha256.sourceHash &&
+    fingerprint.targetKind === sha256.targetKind &&
+    fingerprint.verifyPublished === sha256.verifyPublished &&
+    fingerprint.warmupFrames === sha256.warmupFrames
+  ) {
+    return;
+  }
+  throw new Error(
+    `refusing split baseline provenance for ${subject}/${name}/${column}: fingerprint and sha256 were captured under different conditions`,
+  );
+}
+
+function clearCaptureBaselineProvenance(
+  baseline: CaptureBaseline,
+  column: string,
+  field: CaptureBaselineProvenanceField,
+): void {
+  const entry = baseline[column];
+  if (entry === undefined) return;
+  if (field === 'fingerprint') delete entry.fingerprintProvenance;
+  else delete entry.sha256Provenance;
 }
 
 function readBaseline(path: string): CaptureBaseline {
