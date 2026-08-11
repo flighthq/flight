@@ -41,6 +41,7 @@
     "@flighthq/animation": "*",
     "@flighthq/easing": "*",
     "@flighthq/importdiagnostics": "*",
+    "@flighthq/registry": "*",
     "@flighthq/skeleton2d": "*",
     "@flighthq/types": "*"
   },

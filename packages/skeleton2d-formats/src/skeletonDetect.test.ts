@@ -1,7 +1,27 @@
 import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSkeleton2D, registerSkeleton2DFormat, unregisterSkeleton2DFormat } from './skeletonDetect';
+import {
+  getSkeleton2DFormatKinds,
+  parseSkeleton2D,
+  registerSkeleton2DFormat,
+  unregisterSkeleton2DFormat,
+} from './skeletonDetect';
+
+describe('getSkeleton2DFormatKinds', () => {
+  it('enumerates sorted bound kinds and stops naming one after it is unregistered', () => {
+    registerSkeleton2DFormat(
+      'acme.Rig',
+      (text) => text.startsWith('ACME'),
+      () => null,
+    );
+    expect(getSkeleton2DFormatKinds()).toEqual(['DragonBones', 'Spine', 'acme.Rig']);
+
+    unregisterSkeleton2DFormat('acme.Rig');
+
+    expect(getSkeleton2DFormatKinds()).toEqual(['DragonBones', 'Spine']);
+  });
+});
 
 describe('parseSkeleton2D', () => {
   it('auto-detects a Spine JSON document and parses it', () => {

@@ -1,6 +1,7 @@
 export {
   detectSpritesheetFormat,
   getSpritesheetFormat,
+  getSpritesheetFormatKinds,
   parseAsepriteSpritesheet,
   parseAsepriteSpritesheetDocument,
   parseCocosPlistSpritesheet,
@@ -16,4 +17,5 @@ export {
   serializeCocosPlistSpritesheet,
   serializeStarlingSpritesheet,
   serializeTexturePackerSpritesheet,
+  unregisterSpritesheetFormat,
 } from './contract';

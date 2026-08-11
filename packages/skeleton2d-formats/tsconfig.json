@@ -19,6 +19,9 @@
       "path": "../importdiagnostics"
     },
     {
+      "path": "../registry"
+    },
+    {
       "path": "../skeleton2d"
     },
     {

@@ -17,6 +17,8 @@ export {
   disposeSkeleton2D,
   explainSkeleton2DDeformLength,
   equalsSkeleton2D,
+  getSkeleton2DAnimationTargetBinder,
+  getSkeleton2DAnimationTargetBinderKinds,
   getSkeleton2DBoneIndexByName,
   getSkeleton2DBoneWorldMatrix,
   getSkeleton2DClippingAttachmentSlotRange,
@@ -30,5 +32,6 @@ export {
   setSkeleton2DBindPose,
   setSkeleton2DSlotDeform,
   solveSkeleton2DConstraints,
+  unregisterSkeleton2DAnimationTargetBinder,
   validateSkeleton2D,
 } from './contract';
