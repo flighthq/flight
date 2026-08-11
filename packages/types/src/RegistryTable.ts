@@ -31,14 +31,19 @@ export const RegistryEntryState = {
 
 export type RegistryEntryState = (typeof RegistryEntryState)[keyof typeof RegistryEntryState];
 
-// Common to every table shape.
+// What a table does when a lookup finds nothing bound.
 //
-// NOTE: the miss-policy field is deliberately ABSENT rather than placeheld. Its vocabulary is pending a
-// ruling, and the previously published union is retired — declaring a stand-in here (a string alias, or
-// the retired union under a new name) would re-derive the thing that was retired, one indirection away,
-// and would read as settled to everyone downstream. The gap is labelled instead of filled. See
-// `concatRegistryTable`, which implements every mismatch refusal EXCEPT the policy one for this reason.
+// An OPEN alias rather than a closed union, ruled 2026-08-10 after the previously published
+// Fallback/FallbackWhen/Missing vocabulary was retired. Open is the honest shape for it: the registries
+// this must serve do not share one vocabulary — a decompressor or an importer registry may have no
+// fallback state at all, so a closed union here would be a consumer's policy imposed on every producer.
+// Composition only ever COMPARES two policies for equality, never interprets one, so the table layer
+// needs no vocabulary of its own to do its job.
+export type RegistryMissPolicy = string;
+
+// Common to every table shape.
 export interface RegistryTableBase {
+  readonly onMiss: RegistryMissPolicy;
   readonly registry: RegistryId;
 }
 
