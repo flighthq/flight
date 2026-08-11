@@ -27,6 +27,13 @@ function ensureWgpuDepthStencil(state: WgpuRenderState, width: number, height: n
   runtime.depthStencilHeight = height;
 }
 
+/**
+ * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
+ *
+ * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
+ * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
+ * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
+ */
 export function beginWgpuFrame(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder !== null) return;
@@ -103,13 +110,15 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
   runtime.renderPass = renderPass;
 }
 
-/**
- * Opens the command encoder for a WebGPU frame without opening the canvas render pass.
- *
- * Recipes with prerequisite GPU work (for example a directional-shadow depth pass) call this first,
- * record that work, then call renderWgpuBackground to open the forward canvas pass on the same encoder.
- * Ordinary render loops can keep calling renderWgpuBackground directly; it begins a frame lazily.
- */
+// Hands a buffer to the post-submit retirement list instead of destroying it now — the buffer sibling of
+// retireWgpuTexture below, and subject to the same rule for the same reason: a frame records into one
+// encoder and submits once, so a buffer replaced mid-recording may still be referenced by a recorded draw.
+// Callers that retire more than one buffer call this once per buffer.
+export function retireWgpuBuffer(state: WgpuRenderState, buffer: GPUBuffer): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+  (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
+}
+
 // Hands a texture to the post-submit retirement list instead of destroying it now.
 //
 // ★ THE DEFERRAL IS THE POINT — DO NOT "SIMPLIFY" THIS BACK TO texture.destroy(). A WebGPU frame records

@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
 import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
@@ -57,7 +57,8 @@ export function popWgpuClipContours(state: WgpuRenderState): void {
   if (entry !== undefined) {
     // The erase draw just recorded references these buffers; the frame's submit is deferred to
     // submitWgpuRenderPass, so defer their destruction until after that submit.
-    (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(entry.vertexBuffer, entry.uniformBuffer);
+    retireWgpuBuffer(state, entry.vertexBuffer);
+    retireWgpuBuffer(state, entry.uniformBuffer);
   }
 }
 

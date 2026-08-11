@@ -1,4 +1,4 @@
-import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuBlendState, getWgpuRenderStateRuntime, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
 import type {
   RenderProxy2D,
   WgpuRenderState,
@@ -140,7 +140,7 @@ function ensureShapeMeshIndexBuffer(
   if (buffer === undefined || (buffers.indexCapacities[meshIndex] ?? 0) < size) {
     if (buffer !== undefined) {
       const runtime = getWgpuRenderStateRuntime(state);
-      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
+      retireWgpuBuffer(state, buffer);
     }
     buffer = state.device.createBuffer({
       size,
@@ -238,7 +238,7 @@ function ensureShapeMeshVertexBuffer(
   if (buffer === undefined || (buffers.vertexCapacities[meshIndex] ?? 0) < size) {
     if (buffer !== undefined) {
       const runtime = getWgpuRenderStateRuntime(state);
-      (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
+      retireWgpuBuffer(state, buffer);
     }
     buffer = state.device.createBuffer({
       size,
