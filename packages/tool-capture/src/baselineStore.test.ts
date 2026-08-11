@@ -61,12 +61,12 @@ describe('setBaselineCaptureEvidence', () => {
     setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'webgl-hash');
 
     setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
-      fingerprint: 'fp',
+      fingerprint: '2:000000ffffff',
       sourceHash: 'source',
       sha256: 'hash',
     });
 
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('webgl-hash');
@@ -74,17 +74,17 @@ describe('setBaselineCaptureEvidence', () => {
 
   it('replaces the full evidence column instead of retaining stale optional fields', () => {
     setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
-      fingerprint: 'old-fp',
+      fingerprint: '2:000000ffffff',
       sourceHash: 'old-source',
       sha256: 'old-hash',
     });
 
     setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
-      fingerprint: 'new-fp',
+      fingerprint: '2:111111eeeeee',
       sha256: 'new-hash',
     });
 
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('new-fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:111111eeeeee');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBeNull();
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('new-hash');
   });
@@ -100,6 +100,26 @@ describe('setBaselineCaptureEvidence', () => {
         sha256: 'hash',
       } as never),
     ).toThrow(/fingerprint and sha256 must be written together/);
+    expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
+  });
+
+  it('inherits the uniform-fingerprint refusal instead of blessing a stable blank shape', () => {
+    expect(() =>
+      setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+        fingerprint: '2:eeeeeeeeeeee',
+        sha256: 'hash',
+      }),
+    ).toThrow(/fingerprint is uniform/);
+    expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
+  });
+
+  it('inherits the known-blank screenshot refusal instead of blessing a deterministic bad hash', () => {
+    expect(() =>
+      setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+        fingerprint: '2:000000ffffff',
+        sha256: 'a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0',
+      }),
+    ).toThrow(/sha256 is a known blank frame/);
     expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
   });
 });

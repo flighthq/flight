@@ -20,6 +20,8 @@ import {
 } from '@flighthq/capture/contract';
 import type { CaptureBaseline, CaptureBaselineProvenance, CaptureColumnBaseline } from '@flighthq/types/contract';
 
+import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.js';
+
 export type BaselineField = 'fingerprint' | 'sourceHash' | 'sha256';
 export type CaptureBaselineEvidence = Readonly<CaptureColumnBaseline> &
   Required<Pick<CaptureColumnBaseline, 'fingerprint' | 'sha256'>>;
@@ -73,6 +75,16 @@ export function setBaselineCaptureEvidence(
   if (typeof evidence.fingerprint !== 'string' || typeof evidence.sha256 !== 'string') {
     throw new Error(
       `refusing incomplete baseline evidence for ${subject}/${name}/${column}: fingerprint and sha256 must be written together`,
+    );
+  }
+  if (isUniformCaptureFingerprint(evidence.fingerprint)) {
+    throw new Error(
+      `refusing baseline evidence for ${subject}/${name}/${column}: fingerprint is uniform and cannot distinguish a rendered frame from a blank one`,
+    );
+  }
+  if (isRejectedCaptureBaselineHash(evidence.sha256)) {
+    throw new Error(
+      `refusing baseline evidence for ${subject}/${name}/${column}: sha256 is a known blank frame (${evidence.sha256.slice(0, 12)}…)`,
     );
   }
   const path = baselinePath(root, subject, name);

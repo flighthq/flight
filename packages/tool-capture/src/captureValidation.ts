@@ -32,6 +32,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
+import { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
@@ -851,23 +852,7 @@ async function processEntry(
 
 // Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
 // flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
-// True when every cell of a coarse fingerprint carries the same value — a blank or flat-filled frame.
-//
-// This is a WRITE-SIDE gate, not a render check: a uniform frame may be a legitimate render (a solid
-// background scene), but it is never worth BLESSING as a regression baseline, because it cannot
-// distinguish a working scene from a broken one. Refusing it costs a real flat scene its regression
-// coverage and costs a broken one nothing — the asymmetry is the point.
-//
-// Format: "<cellSize>:<hex cells>", so the payload after the colon is split into fixed-width cells.
-export function isUniformCaptureFingerprint(fingerprint: string): boolean {
-  const payload = fingerprint.slice(fingerprint.indexOf(':') + 1);
-  if (payload.length <= CAPTURE_FINGERPRINT_CELL_CHARS) return true;
-  const first = payload.slice(0, CAPTURE_FINGERPRINT_CELL_CHARS);
-  for (let i = CAPTURE_FINGERPRINT_CELL_CHARS; i < payload.length; i += CAPTURE_FINGERPRINT_CELL_CHARS) {
-    if (payload.slice(i, i + CAPTURE_FINGERPRINT_CELL_CHARS) !== first) return false;
-  }
-  return true;
-}
+export { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 
 function classifyCaptureBaselineFreshness(
   recordedSourceHash: string | null,
@@ -896,9 +881,6 @@ function classifyCaptureBaselineFreshness(
     status: 'unchanged',
   };
 }
-
-// Hex characters per fingerprint cell (one RGB triplet).
-const CAPTURE_FINGERPRINT_CELL_CHARS = 6;
 
 export async function runCaptureValidation(
   input: Readonly<CaptureValidationOptions>,

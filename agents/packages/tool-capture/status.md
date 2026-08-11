@@ -47,7 +47,8 @@ and its inline exported types are a stated exemption from the types-home rule �
 - **2026-08-10** — Baseline evidence can no longer be assembled from two capture passes: the store
   replaces fingerprint and screenshot hash as one complete column, while either independent write is
   refused once its counterpart exists (`baselineStore.ts`). Historical one-sided records remain readable;
-  no baseline was rewritten.
+  no baseline was rewritten. The atomic path shares the established uniform-fingerprint and known-blank
+  screenshot refusals (`captureBaselineSanity.ts`), so pairing the evidence cannot bypass either guard.
 - **2026-08-10** — Static functional capture now compares current discovered scene/renderer routes
   with the emitted dist before launching Chromium (`captureServer.ts`). A structurally stale dist fails
   once with the missing/total count, every absent route, and the exact build command instead of producing
