@@ -122,29 +122,105 @@ describe('setBaselineCaptureEvidence', () => {
     ).toThrow(/sha256 is a known blank frame/);
     expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
   });
+
+  it('refuses a pair whose two provenance records disagree', () => {
+    expect(() =>
+      setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
+        fingerprint: '2:000000ffffff',
+        fingerprintProvenance: PROVENANCE,
+        sha256: 'hash',
+        sha256Provenance: OTHER_PROVENANCE,
+      }),
+    ).toThrow(/refusing split baseline provenance/);
+    expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
+  });
 });
 
 describe('setBaselineField', () => {
   it('preserves unrelated fields and columns on a read-merge-write', () => {
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff');
     setBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash', 'source');
     setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'hash2');
 
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
   });
 
-  it('allows the normal transition from either one-sided field to a paired record', () => {
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', 'fp');
+  it('allows the normal sha256-only stage and a legacy join with unknown provenance', () => {
     setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash');
-    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'hash2');
-    setBaselineField(root, 'functional', 'foo', 'webgl', 'fingerprint', 'fp2');
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff');
 
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('fp');
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
-    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'fingerprint')).toBe('fp2');
-    expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256')).toBeNull();
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBeNull();
+  });
+
+  it('allows a join when both provenance records agree', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash', PROVENANCE);
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
+
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256')).toEqual(PROVENANCE);
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
+  });
+
+  it('allows a join when either field has unknown provenance', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash', PROVENANCE);
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff');
+
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBeNull();
+  });
+
+  it('refuses a fingerprint join whose provenance differs and leaves the record byte-identical', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash', PROVENANCE);
+    const path = baselinePath(root, 'functional', 'foo');
+    const before = readFileSync(path, 'utf8');
+
+    expect(() =>
+      setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', OTHER_PROVENANCE),
+    ).toThrow(/refusing split baseline provenance/);
+    expect(readFileSync(path, 'utf8')).toBe(before);
+  });
+
+  it('refuses a sha256 join whose provenance differs and leaves the record byte-identical', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
+    const path = baselinePath(root, 'functional', 'foo');
+    const before = readFileSync(path, 'utf8');
+
+    expect(() => setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash', OTHER_PROVENANCE)).toThrow(
+      /refusing split baseline provenance/,
+    );
+    expect(readFileSync(path, 'utf8')).toBe(before);
+  });
+
+  it('clears stale same-field provenance when a caller writes without provenance', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'old-hash', PROVENANCE);
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'new-hash');
+
+    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('new-hash');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256')).toBeNull();
+  });
+
+  it('inherits the baseline sanity refusals on provenance-aware field writes', () => {
+    expect(() =>
+      setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:eeeeeeeeeeee', PROVENANCE),
+    ).toThrow(/fingerprint is uniform/);
+    expect(() =>
+      setBaselineField(
+        root,
+        'functional',
+        'foo',
+        'canvas',
+        'sha256',
+        'a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0',
+        PROVENANCE,
+      ),
+    ).toThrow(/sha256 is a known blank frame/);
+    expect(existsSync(baselinePath(root, 'functional', 'foo'))).toBe(false);
   });
 
   it('writes sorted, prettier-compatible JSON with a trailing newline', () => {
@@ -168,6 +244,19 @@ describe('setBaselineProvenance', () => {
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('def456');
     expect(getBaselineProvenance(root, 'functional', 'foo', 'webgl', 'sha256')).toBeNull();
   });
+
+  it('refuses to attach provenance that disagrees with the counterpart', () => {
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'sha256', 'hash');
+    const path = baselinePath(root, 'functional', 'foo');
+    const before = readFileSync(path, 'utf8');
+
+    expect(() => setBaselineProvenance(root, 'functional', 'foo', 'canvas', 'sha256', OTHER_PROVENANCE)).toThrow(
+      /refusing split baseline provenance/,
+    );
+    expect(readFileSync(path, 'utf8')).toBe(before);
+  });
 });
 
 const PROVENANCE = { frames: 0, sourceHash: null, targetKind: null, verifyPublished: true, warmupFrames: 0 };
+const OTHER_PROVENANCE = { ...PROVENANCE, sourceHash: 'different-source' };

@@ -209,7 +209,7 @@ function createRegressionFixture(
   const scenes = join(root, 'functional', 'scenes');
   mkdirSync(scenes, { recursive: true });
   writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
-  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '1:000000');
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '2:000000000000000000ffffff');
   setBaselineField(root, 'functional', 'sample', 'canvas', 'sourceHash', recordedSourceHash);
   return { root, kill: vi.fn() };
 }
@@ -229,7 +229,7 @@ async function validateRegressionFixture(root: string, kill: () => void) {
     // Printing it would put a real-looking "✗ FAILED" block in the CI log of a file whose tests all
     // pass, which is the kind of noise that teaches a reader to scroll past a genuine one.
     quiet: true,
-    fingerprints: { sample: { canvas: '1:ffffff' } },
+    fingerprints: { sample: { canvas: '2:ffffffffffffffffff000000' } },
     browserSession: {
       browser: { close: vi.fn() } as never,
       context: { newPage: vi.fn() } as never,

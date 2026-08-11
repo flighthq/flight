@@ -44,6 +44,18 @@ and its inline exported types are a stated exemption from the types-home rule �
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-10** — Baseline evidence now guards the **join transition**, not record completeness
+  (`baselineStore.ts`). `capture --update-baseline` → sha256-only → `validate` → paired is the normal
+  lifecycle: stage one is complete in its own right. Each independently-written value therefore owns its
+  provenance, and a write is refused only when both field provenance records exist and disagree; missing
+  legacy provenance remains unknown and allowed. This strengthens on its own as new stage-one sha256
+  records acquire provenance and future validation starts stamping fingerprint provenance, checking each
+  pair when it forms rather than reconstructing it later. The accepted cost is two provenance blocks per
+  fully paired column across the 448-column population; collapsing them to one shared object would recreate
+  the split-write defect. Validation's top-level `sourceHash` still needs a separate migration to the
+  fingerprint-provenance model, so the production refusal is intentionally dormant today. No baseline was
+  rewritten. Every evidence-write route shares the uniform-fingerprint and known-blank screenshot refusals
+  (`captureBaselineSanity.ts`).
 - **2026-08-10** — Reverted the blanket counterpart-field refusal in `baselineStore.ts`: sha256-only is
   the normal first stage of every new baseline, followed by validation adding a fingerprint, so the rule
   blocked all 448 existing columns from their ordinary next write. The recapture freeze prevents a split
