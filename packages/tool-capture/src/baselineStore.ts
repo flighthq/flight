@@ -18,7 +18,12 @@ import {
   setCaptureBaselineField,
   setCaptureBaselineProvenance,
 } from '@flighthq/capture/contract';
-import type { CaptureBaseline, CaptureBaselineProvenance, CaptureColumnBaseline } from '@flighthq/types/contract';
+import type {
+  CaptureBaseline,
+  CaptureBaselineProvenance,
+  CaptureBaselineProvenanceField,
+  CaptureColumnBaseline,
+} from '@flighthq/types/contract';
 
 import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 
@@ -48,15 +53,16 @@ export function getBaselineField(
   return getCaptureBaselineField(readBaseline(baselinePath(root, subject, name)), column, field);
 }
 
-// What produced a column's committed values, or null when the column predates provenance recording.
-// Reads as UNKNOWN, never as agreement — the whole point of recording before enforcing.
+// What produced ONE of a column's committed values — `field` names which — or null when that value
+// predates provenance recording. Reads as UNKNOWN, never as agreement.
 export function getBaselineProvenance(
   root: string,
   subject: string,
   name: string,
   column: string,
+  field: CaptureBaselineProvenanceField,
 ): CaptureBaselineProvenance | null {
-  return getCaptureBaselineProvenance(readBaseline(baselinePath(root, subject, name)), column);
+  return getCaptureBaselineProvenance(readBaseline(baselinePath(root, subject, name)), column, field);
 }
 
 /**
@@ -113,18 +119,19 @@ export function setBaselineField(
   writeBaseline(path, data);
 }
 
-// Records what produced a column's values. Read-merge-write like the field setter, so writing it leaves
+// Records what produced ONE of a column's values. Read-merge-write like the field setter, so it leaves
 // every other column and every other field of this one untouched — no existing record is rewritten.
 export function setBaselineProvenance(
   root: string,
   subject: string,
   name: string,
   column: string,
+  field: CaptureBaselineProvenanceField,
   provenance: Readonly<CaptureBaselineProvenance>,
 ): void {
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
-  setCaptureBaselineProvenance(data, column, provenance);
+  setCaptureBaselineProvenance(data, column, field, provenance);
   writeBaseline(path, data);
 }
 

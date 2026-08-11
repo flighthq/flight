@@ -552,11 +552,12 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           );
         }
         setBaselineField(root, tool, entry.name, renderer, 'sha256', hash);
-        // Record what produced this hash, not just the hash. Two records that disagree are otherwise
+        // Record what produced THIS hash, stamped against sha256 specifically — the fingerprint is
+        // written by a different pass and carries its own. Record what produced the value, not just the value. Two records that disagree are otherwise
         // indistinguishable from two records taken under different conditions, and nothing on disk can
         // tell them apart afterwards. Recorded here and NOT yet enforced anywhere: comparison across
         // differing provenance stays permitted until most records carry the field.
-        setBaselineProvenance(root, tool, entry.name, renderer, {
+        setBaselineProvenance(root, tool, entry.name, renderer, 'sha256', {
           frames: captureFrames,
           sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
           targetKind: verificationTargetKind,
