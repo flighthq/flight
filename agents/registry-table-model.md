@@ -192,7 +192,8 @@ the same enclosing-registrar attribution mechanism.
 The runtime artifact also carries the complete 15-table census. `read` and `enumerate` are
 caller-serving seams; `clear` is instrument-serving; `unregister` has weak independent justification
 because last-write-wins already supplies override. Empty-at-import is recorded and asserted at runtime
-where enumeration exists, but it is inherited from the repository's
+where enumeration does not itself seed lazy built-ins; the independent top-level-side-effect scan covers
+that self-filling case. The rule is inherited from the repository's
 [no-top-level-side-effects rule](../AGENTS.md#ground-rules) (line 42 when this census was recorded), not
 restated as a fifth-tier-specific contract.
 
@@ -216,14 +217,14 @@ tier contract requires an enumeration seam, a read seam, and one isolation seam 
 | precise hit tests (`registerHitTestPrecise`) | caller-filled | — | `hitTestGraphPointPrecise` | — | — | empty | interaction |
 | log serializers (`registerLogSerializer`) | caller-filled | — | `createJsonLogFormatter` | `clearLogSerializers` | — | empty | log |
 | particle formats (`registerParticleFormat`) | caller-filled | `getRegisteredParticleFormats` | `getParticleFormatCodec` | — | `unregisterParticleFormat` | empty | particles-formats |
-| skeleton animation target binders (`registerSkeleton2DAnimationTargetBinder`) | self-filling | — | `getSkeleton2DAnimationTargetBinder` | — | `unregisterSkeleton2DAnimationTargetBinder` | two built-ins in a module-private const | skeleton2d |
+| skeleton animation target binders (`registerSkeleton2DAnimationTargetBinder`) | self-filling | `getSkeleton2DAnimationTargetBinderKinds` | `getSkeleton2DAnimationTargetBinder` | — | `unregisterSkeleton2DAnimationTargetBinder` | empty; two built-ins on first read | skeleton2d |
 | skeleton constraint solvers (`registerSkeleton2DConstraintSolver`) | caller-filled | — | `solveSkeleton2DConstraints` | — | `unregisterSkeleton2DConstraintSolver` | empty | skeleton2d |
-| skeleton formats (`registerSkeleton2DFormat`) | self-filling | — | `parseSkeleton2D` | — | `unregisterSkeleton2DFormat` | empty; two built-ins on first read | skeleton2d-formats |
-| spritesheet formats (`registerSpritesheetFormat`) | self-filling | — | `parseSpritesheet` | — | — | empty; five built-ins on first read | spritesheet-formats |
-| texture-atlas formats (`registerTextureAtlasFormat`) | self-filling | — | `parseTextureAtlas` | — | — | empty; four built-ins on first read | textureatlas-formats |
+| skeleton formats (`registerSkeleton2DFormat`) | self-filling | `getSkeleton2DFormatKinds` | `parseSkeleton2D` | — | `unregisterSkeleton2DFormat` | empty; two built-ins on first read | skeleton2d-formats |
+| spritesheet formats (`registerSpritesheetFormat`) | self-filling | `getSpritesheetFormatKinds` | `parseSpritesheet` | — | `unregisterSpritesheetFormat` | empty; five built-ins on first read | spritesheet-formats |
+| texture-atlas formats (`registerTextureAtlasFormat`) | self-filling | `getTextureAtlasFormatKinds` | `parseTextureAtlas` | — | `unregisterTextureAtlasFormat` | empty; four built-ins on first read | textureatlas-formats |
 
-All 15 have a read path, but only 5 enumerate and 11 have either clear or unregister isolation. Four
-tables have neither isolation seam, and 10 cannot enumerate. Only decompressors (three packages) and
+All 15 have a read path, 9 enumerate, and 13 have either clear or unregister isolation. Two tables have
+neither isolation seam, and 6 cannot enumerate. Only decompressors (three packages) and
 image bitmap composers (two) have production reads spanning more than their owning package. That read
 graph is evidence but no longer the discriminator. Its count also has a permanent limitation: it measures
 **where lookup happens**, not the upstream call sites that would have to thread caller-held state. Image
@@ -242,20 +243,17 @@ unrepresentable; those eleven therefore remain held for the user rather than bei
 fifth tier by their storage location.
 
 The candidate enumeration list remains explicit debt rather than an invisible contract violation. The
-five enumerating tables are audio decoders, image bitmap composers, image decoders, image encoders, and
-particle formats. The ten missing enumeration are decompressors, debug subsystems, coarse hit tests,
-precise hit tests, log serializers, skeleton animation target binders, skeleton constraint solvers,
-skeleton formats, spritesheet formats, and texture-atlas formats. All four declared self-filling members
-are in that second list. The weakest candidates, flagged for future drift review but not changed here, are
-the four read-only tables with neither enumeration nor isolation: coarse hit tests, precise hit tests,
-spritesheet formats, and texture-atlas formats.
+nine enumerating tables are audio decoders, image bitmap composers, image decoders, image encoders,
+particle formats, skeleton animation target binders, skeleton formats, spritesheet formats, and
+texture-atlas formats. The six missing enumeration are decompressors, debug subsystems, coarse hit tests,
+precise hit tests, log serializers, and skeleton constraint solvers. All four declared self-filling
+members now satisfy the enumerate + read + isolation seam contract. The weakest candidates, flagged for
+future drift review but not changed here, are the two read-only tables with neither enumeration nor
+isolation: coarse hit tests and precise hit tests.
 
-Fourteen tables are empty at import. The animation-target binder is the literal population exception:
-`skeleton2dAnimationTarget.ts` constructs `_binders` with the Bone and Slot bindings inside a top-level
-`new Map([...])` initializer. It is **not** a violation of the inherited import-side-effect rule: the map
-is module-private, contains the module's own functions, and makes no registration observable on import.
-The current `checkNoTopLevelSideEffects` scan would not inspect this `VariableDeclaration`, but selector
-absence does not turn a permitted private initializer into a defect.
+All fifteen tables are empty at import. Each self-filling registry now creates its persistent keyed table
+and seeds built-ins on first read; importing the package alone does not initialize observable registry
+state.
 
 The existing top-level-side-effect gate was separately widened in a throwaway measurement and left
 unchanged. Its current `ExpressionStatement` walk misses all other statement categories. Applying the
