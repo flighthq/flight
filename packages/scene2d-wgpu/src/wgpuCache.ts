@@ -97,7 +97,12 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.depthStencilView = screenRuntime.depthStencilView;
   cacheRuntime.depthStencilWidth = screenRuntime.depthStencilWidth;
   cacheRuntime.depthStencilHeight = screenRuntime.depthStencilHeight;
-  cacheRuntime.materialRendererMap = screenRuntime.materialRendererMap;
+  // Cache rendering is a derived pipeline: it starts from the screen's persistent registration
+  // snapshots through a distinct aggregate, so later replacements on either state diverge cleanly.
+  cacheRuntime.registries = {
+    materialRenderers: screenRuntime.registries.materialRenderers,
+    textureResolvers: screenRuntime.registries.textureResolvers,
+  };
 
   cacheRuntime.uniformOffset = 0;
   cacheRuntime.currentBlendMode = null;

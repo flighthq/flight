@@ -30,17 +30,33 @@ describe('copyWgpuRenderStateRegistrations', () => {
   it('copies late Wgpu registrations only when explicitly requested', async () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
+    const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
+    const offscreenMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
     const resolver = vi.fn(() => null);
+    registerWgpuMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
 
+    expect(
+      hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(false);
     expect(
       hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
     copyWgpuRenderStateRegistrations(offscreen, screen);
     expect(
+      getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(materialRenderer);
+    expect(
       getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
+    registerWgpuMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerWgpuTextureResolver(offscreen, 'acme.LateTexture', null);
+    expect(
+      getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(offscreenMaterialRenderer);
+    expect(
+      getRegistryTableEntry(getWgpuRenderStateRuntime(screen).registries.materialRenderers, 'acme.LateMaterial'),
+    ).toBe(materialRenderer);
     expect(
       hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
@@ -77,15 +93,17 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBindGroupLayout).toBe(screenRuntime.uniformBindGroupLayout);
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
-    expect(offscreenRuntime.materialRendererMap).not.toBe(screenRuntime.materialRendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.wgpuRenderEffectRegistry).not.toBe(screenRuntime.wgpuRenderEffectRegistry);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
     );
     expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
-    expect(offscreenRuntime.materialRendererMap?.get('acme.Material')).toBe(materialRenderer);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
+      materialRenderer,
+    );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
     expect(offscreenRuntime.wgpuRenderEffectRegistry?.get('acme.Effect')).toBe(effectRunner);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
@@ -181,9 +199,15 @@ describe('createWgpuRenderState', () => {
 });
 
 describe('createWgpuRenderStateRuntime', () => {
-  it('returns a runtime carrying the base entity-runtime binding slot', () => {
+  it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const runtime = createWgpuRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.materialRenderers).toMatchObject({
+      onMiss: 'StandardMaterial',
+      registry: 'WgpuMaterialRenderer',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.materialRenderers.entries.size).toBe(0);
   });
 });
 

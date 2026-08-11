@@ -32,6 +32,7 @@ export interface GlRenderState extends RenderState {
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
+  materialRenderers: KeyedTable<GlMaterialRenderer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
 }
 
@@ -126,13 +127,12 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glColorAdjustmentMaterialFeatureGuard?:
     | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
     | null;
-  materialRendererMap?: Map<Kind, GlMaterialRenderer>;
   // The shape-rasterization seam, absent until registerGlShapeRasterizer installs one. A shape whose
   // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
   // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
   shapeRasterizer?: ShapeRasterizer | null;
   // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
-  // The per-material-kind 3D draw behavior registry, kept separate from the 2D materialRendererMap
+  // The per-material-kind 3D draw behavior registry, kept separate from registries.materialRenderers
   // because a material kind is either 2D or 3D, never both. sceneMeshUploadCache is the per-state
   // cache of lazily uploaded MeshGeometry GPU data, keyed by the geometry entity (parallel to
   // MeshGeometryRuntime.webglData; scene-gl owns and casts the concrete value shape). Both stay null

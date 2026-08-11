@@ -27,11 +27,12 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
   targetRuntime.wgpuColorAdjustmentMaterialFeature = sourceRuntime.wgpuColorAdjustmentMaterialFeature;
   targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
-  targetRuntime.materialRendererMap =
-    sourceRuntime.materialRendererMap === undefined ? undefined : new Map(sourceRuntime.materialRendererMap);
   targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
-  targetRuntime.registries = { textureResolvers: sourceRuntime.registries.textureResolvers };
+  targetRuntime.registries = {
+    materialRenderers: sourceRuntime.registries.materialRenderers,
+    textureResolvers: sourceRuntime.registries.textureResolvers,
+  };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
@@ -248,6 +249,7 @@ export async function createWgpuRenderState(
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
+    materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
   };
   const deviceRuntime =
