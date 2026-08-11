@@ -2872,7 +2872,7 @@
             "webgl": {
               "status": "unbaselined",
               "fingerprint": false,
-              "realization": false
+              "realization": true
             },
             "webgpu": {
               "status": "realized",
