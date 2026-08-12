@@ -166,7 +166,10 @@ describe('ensureWgpuMeshUpload', () => {
     expect(meshRuntime.webgpuData as unknown).toBe(upload);
   });
 
-  it('returns null for non-indexed geometry', () => {
+  // glTF primitives may legitimately omit indices and the importer preserves that, so refusing to
+  // upload them made valid meshes vanish on this backend with nothing rendered and nothing thrown.
+  // The GL sibling has always uploaded them; this mirrors it.
+  it('uploads non-indexed geometry with the vertex count in indexCount', () => {
     const { state } = makeWgpuScene3DState();
     const geometry = createMeshGeometry({
       indices: null,
@@ -176,7 +179,40 @@ describe('ensureWgpuMeshUpload', () => {
       },
       vertices: new Float32Array(9),
     });
-    expect(ensureWgpuMeshUpload(state, geometry)).toBeNull();
-    expect(getWgpuScene3DRuntime(state).uploadCache.get(geometry)).toBeUndefined();
+
+    const upload = ensureWgpuMeshUpload(state, geometry);
+
+    expect(upload.vertexBuffer).toBeDefined();
+    expect(upload.indexBuffer).toBeNull();
+    // 9 floats / 3 per vertex = 3 vertices, the count a non-indexed draw needs.
+    expect(upload.indexCount).toBe(3);
+    expect(getWgpuScene3DRuntime(state).uploadCache.get(geometry)).toBe(upload);
+  });
+
+  // No index buffer exists, so no element format describes one. Null says that; a stand-in 'uint16'
+  // would read as a fact about a buffer that is not there.
+  it('reports a null index format for non-indexed geometry', () => {
+    const { state } = makeWgpuScene3DState();
+    const geometry = createMeshGeometry({
+      indices: null,
+      layout: {
+        attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+        stride: 12,
+      },
+      vertices: new Float32Array(9),
+    });
+
+    expect(ensureWgpuMeshUpload(state, geometry).indexFormat).toBeNull();
+  });
+
+  it('reports zero vertices when the layout has no stride to divide by', () => {
+    const { state } = makeWgpuScene3DState();
+    const geometry = createMeshGeometry({
+      indices: null,
+      layout: { attributes: [], stride: 0 },
+      vertices: new Float32Array(9),
+    });
+
+    expect(ensureWgpuMeshUpload(state, geometry).indexCount).toBe(0);
   });
 });
