@@ -1350,18 +1350,32 @@ function completeGltfShadingAttributes(
 
   // The tangent basis is only meaningful with a UV parameterization to derive it from, and only needed
   // when something samples tangent space. Both conditions are the spec's own.
-  if (!hasTangents && hasUvs && hasGltfNormalTexture(doc, primitive)) {
+  if (!hasTangents && hasUvs && readsGltfTangentSpace(doc, primitive)) {
     computeMeshGeometryTangents(out, out);
   }
   return out;
 }
 
-// True when the primitive's material binds a tangent-space normal map, which is what makes a missing
-// TANGENT attribute a defect rather than an absent optional.
-function hasGltfNormalTexture(doc: Readonly<GltfDocument>, primitive: Readonly<GltfPrimitive>): boolean {
+// True when something will read this primitive's tangent space, which is what makes a missing TANGENT
+// attribute a defect rather than an absent optional.
+//
+// The predicate matches the CONSUMER, not the spec sentence about normal textures. glPbrPrelude builds
+// its basis under `HAS_NORMAL_MAP || HAS_PBR_EXTENSIONS`, and the extension path reaches it too — an
+// anisotropy material with no normal map still evaluates normalize(tangent), which on a zero tangent is
+// undefined. Gating on the normal texture alone left exactly that case collapsed.
+//
+// Extension handlers are supplied by the caller and are not knowable here, so a material that DECLARES
+// any extension is treated as a possible reader. That over-generates for an extension which ignores
+// tangent space; the cost is import-time work producing a valid basis, against undefined shading for
+// guessing the other way.
+function readsGltfTangentSpace(doc: Readonly<GltfDocument>, primitive: Readonly<GltfPrimitive>): boolean {
   const materialIndex = primitive.material;
   if (materialIndex === undefined) return false;
-  return doc.materials?.[materialIndex]?.normalTexture !== undefined;
+  const material = doc.materials?.[materialIndex];
+  if (material === undefined) return false;
+  if (material.normalTexture !== undefined) return true;
+  const extensions = material.extensions;
+  return extensions !== undefined && Object.keys(extensions).length > 0;
 }
 
 // Maps a glTF primitive mode to its index buffer + topology, or null when the mode is unsupported — an
