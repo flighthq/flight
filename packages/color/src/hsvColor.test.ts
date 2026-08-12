@@ -28,6 +28,21 @@ describe('hsvToRgb', () => {
     expect(out[1]).toBeCloseTo(1, 5);
     expect(out[2]).toBeCloseTo(0, 5);
   });
+  it.each([
+    [60, [1, 1, 0]],
+    [180, [0, 1, 1]],
+    [240, [0, 0, 1]],
+    [300, [1, 0, 1]],
+  ] as const)('converts hue %d through its color-wheel sector', (hue, expected) => {
+    const out: [number, number, number, number] = [0, 0, 0, 0.75];
+
+    hsvToRgb(out, hue, 1, 1);
+
+    expect(out[0]).toBeCloseTo(expected[0], 5);
+    expect(out[1]).toBeCloseTo(expected[1], 5);
+    expect(out[2]).toBeCloseTo(expected[2], 5);
+    expect(out[3]).toBe(0.75);
+  });
 });
 
 describe('rgbToHsv', () => {
@@ -48,6 +63,19 @@ describe('rgbToHsv', () => {
     const out: [number, number, number] = [0, 0, 0];
     rgbToHsv(out, 0xffffffff);
     expect(out[1]).toBe(0);
+    expect(out[2]).toBeCloseTo(1, 5);
+  });
+  it.each([
+    [0x00ff00ff, 120],
+    [0x0000ffff, 240],
+    [0xff00ffff, 300],
+  ])('converts packed color 0x%s to hue %d', (color, expectedHue) => {
+    const out: [number, number, number] = [0, 0, 0];
+
+    rgbToHsv(out, color);
+
+    expect(out[0]).toBeCloseTo(expectedHue, 3);
+    expect(out[1]).toBeCloseTo(1, 5);
     expect(out[2]).toBeCloseTo(1, 5);
   });
   it('returns the out instance', () => {
