@@ -310,25 +310,26 @@ describe('equalsRectangle', () => {
 });
 
 describe('expandRectangleToPoint', () => {
-  it('inflates rectangle by Vector2', () => {
+  it('expands a rectangle to contain an outside point', () => {
+    const source = createRectangle(10, 10, 5, 5);
     const result = createRectangle();
-    expandRectangleToPoint(result, r, createVector2(1, 2));
-    expect(result).not.toBe(r);
-    expect(result.x).toBe(-1);
-    expect(result.y).toBe(-2);
-    expect(result.width).toBe(12);
-    expect(result.height).toBe(24);
+    expandRectangleToPoint(result, source, createVector2(20, 12));
+    expect(result).not.toBe(source);
+    expect(result).toMatchObject({ x: 10, y: 10, width: 10, height: 5 });
   });
 
-  it('allows rectangle- and point-like objects', () => {
-    const r = { x: 0, y: 0, width: 10, height: 20 };
-    const p = { x: 1, y: 2 };
+  it('normalizes flipped bounds while expanding', () => {
+    const r = { x: 10, y: 10, width: -5, height: -5 };
+    const p = { x: 12, y: 4 };
     const result = { x: 0, y: 0, width: 0, height: 0 };
     expandRectangleToPoint(result, r, p);
-    expect(result.x).toBe(-1);
-    expect(result.y).toBe(-2);
-    expect(result.width).toBe(12);
-    expect(result.height).toBe(24);
+    expect(result).toEqual({ x: 5, y: 4, width: 7, height: 6 });
+  });
+
+  it('supports out === sourceRect', () => {
+    const source = createRectangle(10, 10, 5, 5);
+    expandRectangleToPoint(source, source, createVector2(20, 12));
+    expect(source).toMatchObject({ x: 10, y: 10, width: 10, height: 5 });
   });
 });
 
@@ -834,6 +835,12 @@ describe('offsetRectangleByPoint', () => {
     offsetRectangleByPoint(out, r, p);
     expect(out.x).toBe(3);
     expect(out.y).toBe(4);
+  });
+
+  it('supports out === source', () => {
+    const source = createRectangle(1, 2, 10, 20);
+    offsetRectangleByPoint(source, source, createVector2(3, 4));
+    expect(source).toMatchObject({ x: 4, y: 6, width: 10, height: 20 });
   });
 });
 

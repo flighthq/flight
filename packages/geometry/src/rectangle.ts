@@ -39,12 +39,14 @@ export function containsRectanglePointXY(source: Readonly<RectangleLike>, x: num
 }
 
 export function copyRectangle(out: RectangleLike, source: Readonly<RectangleLike>): void {
-  if (out !== source) {
-    out.x = source.x;
-    out.y = source.y;
-    out.width = source.width;
-    out.height = source.height;
-  }
+  const x = source.x,
+    y = source.y,
+    width = source.width,
+    height = source.height;
+  out.x = x;
+  out.y = y;
+  out.width = width;
+  out.height = height;
 }
 
 export function createRectangle(x?: number, y?: number, width?: number, height?: number): Rectangle {
@@ -85,7 +87,14 @@ export function expandRectangleToPoint(
   sourceRect: Readonly<RectangleLike>,
   sourceVec2: Readonly<Vector2Like>,
 ): void {
-  inflateRectangle(out, sourceRect, sourceVec2.x, sourceVec2.y);
+  const minX = Math.min(sourceRect.x, sourceRect.x + sourceRect.width, sourceVec2.x);
+  const maxX = Math.max(sourceRect.x, sourceRect.x + sourceRect.width, sourceVec2.x);
+  const minY = Math.min(sourceRect.y, sourceRect.y + sourceRect.height, sourceVec2.y);
+  const maxY = Math.max(sourceRect.y, sourceRect.y + sourceRect.height, sourceVec2.y);
+  out.x = minX;
+  out.y = minY;
+  out.width = maxX - minX;
+  out.height = maxY - minY;
 }
 
 export function getRectangleBottom(source: Readonly<RectangleLike>): number {
@@ -96,8 +105,10 @@ export function getRectangleBottom(source: Readonly<RectangleLike>): number {
  * Sets a Vector2Like object with bottom-right coordinates
  */
 export function getRectangleBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = source.x + source.width;
-  out.y = source.y + source.height;
+  const x = source.x + source.width,
+    y = source.y + source.height;
+  out.x = x;
+  out.y = y;
 }
 
 export function getRectangleLeft(source: Readonly<RectangleLike>): number {
@@ -121,13 +132,17 @@ export function getRectangleMinY(source: Readonly<RectangleLike>): number {
 }
 
 export function getRectangleNormalizedBottomRight(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = getRectangleMaxX(source);
-  out.y = getRectangleMaxY(source);
+  const x = getRectangleMaxX(source),
+    y = getRectangleMaxY(source);
+  out.x = x;
+  out.y = y;
 }
 
 export function getRectangleNormalizedTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = getRectangleMinX(source);
-  out.y = getRectangleMinY(source);
+  const x = getRectangleMinX(source),
+    y = getRectangleMinY(source);
+  out.x = x;
+  out.y = y;
 }
 
 export function getRectangleRight(source: Readonly<RectangleLike>): number {
@@ -138,8 +153,10 @@ export function getRectangleRight(source: Readonly<RectangleLike>): number {
  * Sets a Vector2Like object to width and height
  */
 export function getRectangleSize(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = source.width;
-  out.y = source.height;
+  const width = source.width,
+    height = source.height;
+  out.x = width;
+  out.y = height;
 }
 
 export function getRectangleTop(source: Readonly<RectangleLike>): number {
@@ -150,15 +167,21 @@ export function getRectangleTop(source: Readonly<RectangleLike>): number {
  * Sets a Vector2Like object with top-left coordinates
  */
 export function getRectangleTopLeft(out: Vector2Like, source: Readonly<RectangleLike>): void {
-  out.x = source.x;
-  out.y = source.y;
+  const x = source.x,
+    y = source.y;
+  out.x = x;
+  out.y = y;
 }
 
 export function inflateRectangle(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
-  out.x = source.x - dx;
-  out.width = source.width + dx * 2;
-  out.y = source.y - dy;
-  out.height = source.height + dy * 2;
+  const x = source.x,
+    y = source.y,
+    width = source.width,
+    height = source.height;
+  out.x = x - dx;
+  out.width = width + dx * 2;
+  out.y = y - dy;
+  out.height = height + dy * 2;
 }
 
 export function intersectsRectangle(a: Readonly<RectangleLike>, b: Readonly<RectangleLike>): boolean {
@@ -213,7 +236,7 @@ export function mergeRectangle(
     const otherTop = Math.min(oy, oy + oh);
     const otherBottom = Math.max(oy, oy + oh);
 
-    let x0 = Math.min(sourceLeft, otherLeft);
+    const x0 = Math.min(sourceLeft, otherLeft);
     const x1 = Math.max(sourceRight, otherRight);
     const y0 = Math.min(sourceTop, otherTop);
     const y1 = Math.max(sourceBottom, otherBottom);
@@ -237,10 +260,14 @@ export function normalizeRectangle(out: RectangleLike, source: Readonly<Rectangl
 }
 
 export function offsetRectangle(out: RectangleLike, source: Readonly<RectangleLike>, dx: number, dy: number): void {
-  out.x = source.x + dx;
-  out.y = source.y + dy;
-  out.width = source.width;
-  out.height = source.height;
+  const x = source.x,
+    y = source.y,
+    width = source.width,
+    height = source.height;
+  out.x = x + dx;
+  out.y = y + dy;
+  out.width = width;
+  out.height = height;
 }
 
 export function offsetRectangleByPoint(
@@ -248,10 +275,16 @@ export function offsetRectangleByPoint(
   source: Readonly<RectangleLike>,
   point: Readonly<Vector2Like>,
 ): void {
-  out.x = source.x + point.x;
-  out.y = source.y + point.y;
-  out.width = source.width;
-  out.height = source.height;
+  const x = source.x,
+    y = source.y,
+    width = source.width,
+    height = source.height;
+  const pointX = point.x,
+    pointY = point.y;
+  out.x = x + pointX;
+  out.y = y + pointY;
+  out.width = width;
+  out.height = height;
 }
 
 export function setEmptyRectangle(out: RectangleLike): void {
@@ -266,34 +299,48 @@ export function setRectangle(out: RectangleLike, x: number, y: number, width: nu
 }
 
 export function setRectangleBottom(target: RectangleLike, value: number): void {
-  target.height = value - target.y;
+  const y = target.y;
+  target.height = value - y;
 }
 
 export function setRectangleBottomRight(target: RectangleLike, point: Readonly<Vector2Like>): void {
-  target.width = point.x - target.x;
-  target.height = point.y - target.y;
+  const x = target.x,
+    y = target.y;
+  const pointX = point.x,
+    pointY = point.y;
+  target.width = pointX - x;
+  target.height = pointY - y;
 }
 
 export function setRectangleLeft(target: RectangleLike, value: number): void {
-  target.width -= value - target.x;
+  const x = target.x,
+    width = target.width;
+  target.width = width - (value - x);
   target.x = value;
 }
 
 export function setRectangleRight(target: RectangleLike, value: number): void {
-  target.width = value - target.x;
+  const x = target.x;
+  target.width = value - x;
 }
 
 export function setRectangleSize(out: RectangleLike, size: Readonly<Vector2Like>): void {
-  out.width = size.x;
-  out.height = size.y;
+  const width = size.x,
+    height = size.y;
+  out.width = width;
+  out.height = height;
 }
 
 export function setRectangleTop(target: RectangleLike, value: number): void {
-  target.height -= value - target.y;
+  const y = target.y,
+    height = target.height;
+  target.height = height - (value - y);
   target.y = value;
 }
 
 export function setRectangleTopLeft(out: RectangleLike, point: Readonly<Vector2Like>): void {
-  out.x = point.x;
-  out.y = point.y;
+  const x = point.x,
+    y = point.y;
+  out.x = x;
+  out.y = y;
 }
