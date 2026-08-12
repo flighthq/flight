@@ -50,6 +50,27 @@ describe('rgbToHsl', () => {
     expect(out[1]).toBe(0);
     expect(out[2]).toBeCloseTo(0, 5);
   });
+  it('converts a green-dominant color', () => {
+    const out: [number, number, number] = [0, 0, 0];
+    rgbToHsl(out, 0x00ff00ff);
+    expect(out[0]).toBeCloseTo(120, 3);
+    expect(out[1]).toBeCloseTo(1, 5);
+    expect(out[2]).toBeCloseTo(0.5, 5);
+  });
+  it('wraps a red-dominant hue when blue exceeds green', () => {
+    const out: [number, number, number] = [0, 0, 0];
+    rgbToHsl(out, 0xff00ffff);
+    expect(out[0]).toBeCloseTo(300, 3);
+    expect(out[1]).toBeCloseTo(1, 5);
+    expect(out[2]).toBeCloseTo(0.5, 5);
+  });
+  it('uses the high-lightness saturation formula', () => {
+    const out: [number, number, number] = [0, 0, 0];
+    rgbToHsl(out, 0xff8080ff);
+    expect(out[0]).toBeCloseTo(0, 3);
+    expect(out[1]).toBeCloseTo(1, 5);
+    expect(out[2]).toBeCloseTo(0.75098, 5);
+  });
   it('returns the out instance', () => {
     const out: [number, number, number] = [0, 0, 0];
     expect(rgbToHsl(out, 0xff0000ff)).toBe(out);
