@@ -80,6 +80,12 @@ describe('runImportFixtureConformance', () => {
       state: 'measured',
       value: 0,
     });
+    expect(report.score.executionCoverage).toEqual({
+      denominator: 0,
+      numerator: 0,
+      state: 'not-measured',
+      value: null,
+    });
   });
 
   it('records a verified tree with no matching family as a not-measured score', async () => {

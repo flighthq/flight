@@ -112,7 +112,7 @@ export async function runImportFixtureConformance(
   return {
     fixtureRelease: FIXTURE_RELEASE_TAG,
     results,
-    schemaVersion: 2,
+    schemaVersion: 3,
     score,
     selection: {
       adapters: adapters.map((adapter) => adapter.id),
@@ -142,7 +142,7 @@ export async function runImportFixtureConformance(
 export interface FixtureImportConformanceReport {
   fixtureRelease: string;
   results: readonly Readonly<ConformanceFixtureResult>[];
-  schemaVersion: 2;
+  schemaVersion: 3;
   score: Readonly<ConformanceFixtureScore>;
   selection: {
     adapters: readonly string[];
@@ -209,12 +209,13 @@ function formatReport(report: Readonly<FixtureImportConformanceReport>, output: 
     `Fixture import conformance score — release ${report.fixtureRelease}`,
     `Selection coverage: ${formatFractionScore(score.selectionCoverage)}`,
     `Implementation coverage: ${formatFractionScore(score.implementationCoverage)}`,
+    `Execution coverage: ${formatFractionScore(score.executionCoverage)}`,
     `Accepted-import evidence: ${formatFractionScore(score.acceptedImport)} (semantic correctness not measured)`,
     `Outcome populations: imported ${score.outcomes.imported}, degraded ${score.outcomes.degraded}, unsupported ${score.outcomes.unsupported}, rejected ${score.outcomes.rejected}, threw ${score.outcomes.threw}, not-run ${score.outcomes['not-run']}`,
   ];
   for (const family of score.families.filter((candidate) => candidate.eligibleCandidateRuns > 0)) {
     lines.push(
-      `  ${family.adapter} [${family.implementation}]: selected ${formatFractionScore(family.selectionCoverage)}, implementation ${formatFractionScore(family.implementationCoverage)}, accepted-import ${formatFractionScore(family.acceptedImport)}`,
+      `  ${family.adapter} [${family.implementation}]: selected ${formatFractionScore(family.selectionCoverage)}, implementation ${formatFractionScore(family.implementationCoverage)}, execution ${formatFractionScore(family.executionCoverage)}, accepted-import ${formatFractionScore(family.acceptedImport)}`,
     );
   }
   const findings = report.results.filter((result) => result.state !== 'imported');
@@ -258,7 +259,7 @@ const USAGE = `usage: npm run conformance:fixtures -- [options]
 Scores real Flight importer execution over matching files in locally verified flight-oracles trees.
 Fixture outcomes and adapter families without Flight implementations are evidence, not a gate: rejected,
 unsupported, thrown, not-run, and zero-candidate families are recorded and the command still succeeds.
-Missing or changed corpora and invalid configuration exit nonzero and leave no stale report.
+Missing or stale corpora, fixture-file population changes, and invalid configuration exit nonzero and leave no stale report.
 
   --adapter <id>       run one adapter (repeatable)
   --concurrency <n>    importer runs in flight (default: up to 8)

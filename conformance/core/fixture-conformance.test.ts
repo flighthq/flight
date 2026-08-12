@@ -146,30 +146,44 @@ describe('runConformanceFixtureAdapters', () => {
 });
 
 describe('scoreConformanceFixturePlan', () => {
-  it('scores selection, implementation availability, and accepted imports as separate populations', async () => {
+  it('distinguishes adapter availability from reaching the target Flight method', async () => {
     const directory = makeTree('full', 'tree', 'fixture-release');
     write(directory, 'one.asset', 'one');
     write(directory, 'two.txt', 'two');
-    const available: ConformanceFixtureAdapter = {
+    const adapter: ConformanceFixtureAdapter = {
+      id: 'available',
+      implementation: {
+        run: async () => ({ diagnostics: [], imported: false, notRunReason: 'companion-unavailable' }),
+        state: 'available',
+      },
+      selects: (_tree, reference) => reference.endsWith('.asset'),
+    };
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [adapter]);
+    const results = await runConformanceFixturePlan(plan);
+
+    expect(scoreConformanceFixturePlan(plan, results)).toMatchObject({
+      acceptedImport: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
+      executionCoverage: { denominator: 1, numerator: 0, state: 'measured', value: 0 },
+      implementationCoverage: { denominator: 1, numerator: 1, state: 'measured', value: 1 },
+      outcomes: { 'not-run': 1 },
+    });
+  });
+
+  it('rejects results that do not correspond to the selected candidate identities', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    write(directory, 'one.asset', 'one');
+    write(directory, 'two.txt', 'two');
+    const adapter: ConformanceFixtureAdapter = {
       id: 'available',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
       selects: (_tree, reference) => reference.endsWith('.asset'),
     };
-    const unavailable: ConformanceFixtureAdapter = {
-      id: 'unavailable',
-      implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
-      selects: (_tree, reference) => reference.endsWith('.asset'),
-    };
-    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [available, unavailable]);
-    const results = await runConformanceFixturePlan(plan, 2);
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [adapter]);
+    const results = await runConformanceFixturePlan(plan);
 
-    expect(scoreConformanceFixturePlan(plan, results)).toMatchObject({
-      acceptedImport: { denominator: 1, numerator: 1, state: 'measured', value: 1 },
-      assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
-      implementationCoverage: { denominator: 2, numerator: 1, state: 'measured', value: 0.5 },
-      outcomes: { imported: 1, 'not-run': 1 },
-      selectionCoverage: { denominator: 2, numerator: 2, state: 'measured', value: 1 },
-    });
+    expect(() => scoreConformanceFixturePlan(plan, [{ ...results[0]!, reference: 'different.asset' }])).toThrow(
+      'does not match its selected candidate identity',
+    );
   });
 
   it('retains zero-candidate families as not-measured score rows', async () => {
@@ -190,6 +204,7 @@ describe('scoreConformanceFixturePlan', () => {
         acceptedImport: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
         adapter: 'future',
         eligibleCandidateRuns: 0,
+        executionCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
         implementation: 'unavailable',
         implementationCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
         outcomes: { degraded: 0, imported: 0, 'not-run': 0, rejected: 0, threw: 0, unsupported: 0 },
@@ -197,6 +212,33 @@ describe('scoreConformanceFixturePlan', () => {
         selectionCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
       },
     ]);
+  });
+
+  it('scores selection, implementation, execution, and accepted imports as separate populations', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    write(directory, 'one.asset', 'one');
+    write(directory, 'two.txt', 'two');
+    const available: ConformanceFixtureAdapter = {
+      id: 'available',
+      implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
+      selects: (_tree, reference) => reference.endsWith('.asset'),
+    };
+    const unavailable: ConformanceFixtureAdapter = {
+      id: 'unavailable',
+      implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
+      selects: (_tree, reference) => reference.endsWith('.asset'),
+    };
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [available, unavailable]);
+    const results = await runConformanceFixturePlan(plan, 2);
+
+    expect(scoreConformanceFixturePlan(plan, results)).toMatchObject({
+      acceptedImport: { denominator: 1, numerator: 1, state: 'measured', value: 1 },
+      assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
+      executionCoverage: { denominator: 1, numerator: 1, state: 'measured', value: 1 },
+      implementationCoverage: { denominator: 2, numerator: 1, state: 'measured', value: 0.5 },
+      outcomes: { imported: 1, 'not-run': 1 },
+      selectionCoverage: { denominator: 2, numerator: 2, state: 'measured', value: 1 },
+    });
   });
 });
 
