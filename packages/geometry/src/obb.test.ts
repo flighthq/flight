@@ -161,6 +161,29 @@ describe('isObbIntersectingObb', () => {
     expect(isObbIntersectingObb(a, b)).toBe(false);
   });
 
+  it('remains correct when reading an input reenters another OBB query', () => {
+    const quarterTurn = orientationFromAxisAngle(0, 0, 1, Math.PI * 0.25);
+    const turned = createObb(0, 0, 0, 1, 1, 1, ...quarterTurn);
+    const other = createObb(2.1, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const nestedA = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const nestedB = createObb(10, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    let reentered = false;
+    Object.defineProperty(other, 'orientationY', {
+      get() {
+        if (!reentered) {
+          reentered = true;
+          expect(isObbIntersectingObb(nestedA, nestedB)).toBe(false);
+        }
+        return 0;
+      },
+    });
+
+    // The turned box overlaps at center x=2.1 because its projected radius is sqrt(2). Shared
+    // module scratch lets the nested separated query overwrite its axes and falsely returns false.
+    expect(isObbIntersectingObb(turned, other)).toBe(true);
+    expect(reentered).toBe(true);
+  });
+
   it('separates on each of the six face axes on its own', () => {
     // Six of the fifteen candidate axes are the two boxes' own faces. Each case below is tuned so
     // that ONE named axis is the only one of the fifteen that separates the pair — pushed just
