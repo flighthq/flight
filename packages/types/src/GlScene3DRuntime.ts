@@ -41,9 +41,9 @@ export interface GlScene3DIbl {
 // passes; the pool is never exposed outside drawGlScene3D.
 export interface GlScene3DDrawEntry {
   alpha: number;
-  clipW: number;
   colorMatrix: object | null;
   colorScaleBias: object | null;
+  depth: number;
   lightBlock: Scene3DLightBlock;
   material: object;
   mesh: object;

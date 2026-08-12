@@ -277,7 +277,7 @@ describe('drawGlScene3D', () => {
   });
 
   it('sorts blended subsets back-to-front by camera depth', () => {
-    const { state, gl } = makeGlScene3DState();
+    const { state } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
 
     const scene = createNode3D(Node3DKind);
@@ -285,8 +285,8 @@ describe('drawGlScene3D', () => {
     blendedMaterial.alphaMode = 'blend';
 
     // Place two meshes at different Z depths: far (z=-3) and near (z=-1). The far mesh should be
-    // drawn first (larger clip-W, farthest from camera) in the blended pass. Author the depth via the
-    // node's translation z — the translation column of the composed local matrix.
+    // drawn first in the blended pass. Author the depth via the node's translation z — the translation
+    // column of the composed local matrix.
     const farMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
     const nearMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
     farMesh.position.z = -3;
@@ -298,8 +298,34 @@ describe('drawGlScene3D', () => {
 
     drawGlScene3D(state, scene, makeCamera(), LIGHTS);
 
-    // Both blended meshes are drawn.
-    expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
+    expect(getGlScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([farMesh, nearMesh]);
+  });
+
+  it('sorts blended subsets back-to-front with an orthographic camera', () => {
+    const { state } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+
+    const scene = createNode3D(Node3DKind);
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+    const farMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    const nearMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    farMesh.position.z = -3;
+    nearMesh.position.z = -1;
+    invalidateNodeLocalTransform(farMesh);
+    invalidateNodeLocalTransform(nearMesh);
+    addNodeChild(scene, nearMesh);
+    addNodeChild(scene, farMesh);
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: { halfHeight: 1, halfWidth: 1, kind: 'orthographic' },
+    });
+    setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+
+    drawGlScene3D(state, scene, camera, LIGHTS);
+
+    expect(getGlScene3DRuntime(state).blendedDrawList.map((entry) => entry.mesh)).toEqual([farMesh, nearMesh]);
   });
 
   it('draws a ParticleEmitter3D node in the scene via the single drawGlScene3D call', () => {
