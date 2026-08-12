@@ -404,6 +404,11 @@ describe('intersectRay3DTriangle', () => {
     expect(intersectRay3DTriangle(createRay3D(0, 0.3, -3, 0, 0, 0), a, b, c)).toBe(-1);
   });
 
+  it('returns -1 for a nonzero direction nearly parallel to the triangle', () => {
+    const nearlyParallel = createRay3D(-1, 0.3, -1e-12, 1, 0, 1e-12);
+    expect(intersectRay3DTriangle(nearlyParallel, a, b, c)).toBe(-1);
+  });
+
   it('returns -1 for points inside the triangle’s span but past its far edge', () => {
     // The triangle covers x in [-1, 1] along the base and rises to (0, 1). A ray through
     // (0.9, 0.9) lands in the corner the hypotenuse cuts off: within the reach of both edges
