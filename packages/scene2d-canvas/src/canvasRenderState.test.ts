@@ -7,6 +7,7 @@ import type { CanvasRenderOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
 import {
   copyCanvasRenderStateRegistrations,
   createCanvasRenderState,
@@ -22,18 +23,22 @@ describe('copyCanvasRenderStateRegistrations', () => {
     const target = createCanvasRenderState(document.createElement('canvas'));
     const runner = vi.fn();
     const replacement = vi.fn();
+    const materialRenderer = { getState: vi.fn(() => ({})) };
     const sourceRuntime = getCanvasRenderStateRuntime(source);
     sourceRuntime.registries.renderEffects = withRegistryTableEntry(
       sourceRuntime.registries.renderEffects,
       'acme.Effect',
       runner as never,
     );
+    registerCanvasMaterialRenderer(source, 'acme.Material', materialRenderer);
 
     copyCanvasRenderStateRegistrations(target, source);
 
     const targetRuntime = getCanvasRenderStateRuntime(target);
     expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
     expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
+    expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);
     expect(getRegistryTableEntry(targetRuntime.registries.renderEffects, 'acme.Effect')).toBe(runner);
 
     sourceRuntime.registries.renderEffects = withRegistryTableEntry(
@@ -71,6 +76,7 @@ describe('createCanvasRenderStateRuntime', () => {
       registry: 'CanvasRenderEffect',
       shape: 'keyed',
     });
+    expect(runtime.registries.materialRenderers).toBeUndefined();
   });
 });
 

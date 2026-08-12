@@ -26,8 +26,8 @@ export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, so
   target.applyBlendMode = source.applyBlendMode;
   target.canvasCssFilterResolver = source.canvasCssFilterResolver;
   targetRuntime.canvasTextureResolvers.registry = copyMap(sourceRuntime.canvasTextureResolvers.registry);
-  targetRuntime.materialRendererMap = copyMap(sourceRuntime.materialRendererMap);
   targetRuntime.registries = {
+    materialRenderers: sourceRuntime.registries.materialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
   };
   copyRenderStateRegistrations(target, source);

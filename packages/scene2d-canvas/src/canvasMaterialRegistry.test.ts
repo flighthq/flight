@@ -7,7 +7,11 @@ import {
   registerCanvasMaterialRenderer,
   resolveCanvasMaterialRenderer,
 } from './canvasMaterialRegistry';
-import { createCanvasRenderState } from './canvasRenderState';
+import {
+  copyCanvasRenderStateRegistrations,
+  createCanvasRenderState,
+  getCanvasRenderStateRuntime,
+} from './canvasRenderState';
 
 const TestKind = 'TestMaterial';
 const testRenderer: CanvasMaterialRenderer = { getState: () => ({ composite: 'lighter' }) };
@@ -53,6 +57,36 @@ describe('registerCanvasMaterialRenderer', () => {
     const state = makeState();
     registerCanvasMaterialRenderer(state, TestKind, testRenderer);
     expect(resolveCanvasMaterialRenderer(state, makeMaterial())).toBe(testRenderer);
+  });
+
+  it('is last-write-wins without mutating the earlier snapshot', () => {
+    const state = makeState();
+    const replacement: CanvasMaterialRenderer = { getState: () => ({ filter: 'blur(1px)' }) };
+    registerCanvasMaterialRenderer(state, TestKind, testRenderer);
+    const before = getCanvasRenderStateRuntime(state).registries.materialRenderers;
+
+    registerCanvasMaterialRenderer(state, TestKind, replacement);
+
+    expect(getCanvasMaterialRenderer(state, TestKind)).toBe(replacement);
+    expect(before!.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
+  });
+
+  it('survives derivation and later registrations diverge from the copied snapshot', () => {
+    const source = makeState();
+    const derived = makeState();
+    const replacement: CanvasMaterialRenderer = { getState: () => ({ filter: 'blur(1px)' }) };
+    registerCanvasMaterialRenderer(source, TestKind, testRenderer);
+
+    copyCanvasRenderStateRegistrations(derived, source);
+
+    const copied = getCanvasRenderStateRuntime(derived).registries.materialRenderers;
+    expect(copied).toBe(getCanvasRenderStateRuntime(source).registries.materialRenderers);
+    expect(getCanvasMaterialRenderer(derived, TestKind)).toBe(testRenderer);
+
+    registerCanvasMaterialRenderer(source, TestKind, replacement);
+    expect(getCanvasMaterialRenderer(source, TestKind)).toBe(replacement);
+    expect(getCanvasMaterialRenderer(derived, TestKind)).toBe(testRenderer);
+    expect(getCanvasRenderStateRuntime(derived).registries.materialRenderers).toBe(copied);
   });
 });
 
