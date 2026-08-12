@@ -18,6 +18,8 @@ import {
   computeMeshGeometryPositionGroups,
   computeMeshGeometryTangents,
   createMeshGeometry,
+  getMeshGeometryTriangleCount,
+  getMeshGeometryTriangleVertexIndices,
   getVertexAttributeFloatOffset,
 } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
@@ -28,6 +30,7 @@ import type {
   MaterialLike,
   Matrix4,
   MeshGeometry,
+  MeshTriangleVertexIndices,
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentSkin,
@@ -351,10 +354,11 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
       // normals and authored UVs before any skin bind pose is captured; mirrored UV orientations may
       // split a vertex, and computeMeshGeometryTangents copies its complete joints/weights record.
       computeMeshGeometryTangents(geometry, geometry, positionGroups);
-      // MD5 UVs are V-down; the tangent generator derives its bitangent assuming V-up, so the derived
-      // handedness is inverted for this format and is negated here. Preserve the authored UVs used for
-      // texture sampling.
-      invertMd5TangentHandedness(geometry);
+      // MD5 authors its tangent frames from TEXTURE POLARITY, and Flight's source-winding reversal
+      // already produces the equivalent handedness — so the final order is the thing to read the sign
+      // from, per triangle, rather than applying one flip to the whole format. Runs after the split
+      // above so it reads the vertices that will actually be emitted.
+      canonicalizeMd5TangentHandedness(geometry, md5Drops);
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
       // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model) whose
       // diffuseMap references the shader path; resolution of that path is the caller's step.
@@ -409,12 +413,61 @@ export function parseMd5Mesh(source: string, diagnostics?: ImportDiagnostic[]): 
   return document;
 }
 
-function invertMd5TangentHandedness(geometry: MeshGeometry): void {
+// Resolves tangent.w from the authored UV texture polarity of the triangles each vertex actually
+// belongs to, in FINAL emitted order. MD5 derives its tangent frames from texture polarity, and the
+// source-winding reversal this importer already performs produces the equivalent handedness, so the
+// sign is a per-triangle property to be read — not a format-wide flip to be applied.
+//
+// TWO PASSES, DELIBERATELY. The census reads every triangle before a single w is written, because a
+// vertex is shared by several triangles and writing as we go would let an earlier write change what a
+// later triangle sees. Collapsing these into one loop reintroduces exactly that hazard.
+//
+// A vertex whose triangles disagree on a NONZERO sign is an invariant failure, not a last-write-wins:
+// the geometry claims two handednesses for one frame, which the mirrored-UV split upstream exists to
+// prevent. It is reported rather than silently resolved. Where polarity is zero — a degenerate UV
+// triangle with no orientation to read — the generated handedness is left untouched.
+//
+// Importer-local ON PURPOSE: `writeAccumulatedTangent` serves formats that supply their own normals,
+// which may legitimately disagree with face winding. MD5 derives its normals from the just-reversed
+// indices, so the convention is only well-founded at this one seam.
+function canonicalizeMd5TangentHandedness(geometry: MeshGeometry, md5Drops: Map<string, Md5DropTally> | null): void {
   const floatsPerVertex = geometry.layout.stride / 4;
   const tangentOffset = getVertexAttributeFloatOffset(geometry.layout, 'tangent');
-  if (floatsPerVertex <= 0 || tangentOffset < 0) return;
-  for (let base = 0; base + tangentOffset + 3 < geometry.vertices.length; base += floatsPerVertex) {
-    geometry.vertices[base + tangentOffset + 3] = -geometry.vertices[base + tangentOffset + 3];
+  const uvOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
+  if (floatsPerVertex <= 0 || tangentOffset < 0 || uvOffset < 0) return;
+
+  const vertices = geometry.vertices;
+  const vertexCount = Math.floor(vertices.length / floatsPerVertex);
+  const triangleCount = getMeshGeometryTriangleCount(geometry);
+  const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+  const resolved = new Int8Array(vertexCount);
+  let contradictions = 0;
+
+  for (let triangle = 0; triangle < triangleCount; triangle++) {
+    if (!getMeshGeometryTriangleVertexIndices(corner, geometry, triangle)) continue;
+    const u0 = corner.i0 * floatsPerVertex + uvOffset;
+    const u1 = corner.i1 * floatsPerVertex + uvOffset;
+    const u2 = corner.i2 * floatsPerVertex + uvOffset;
+    const determinant =
+      (vertices[u1] - vertices[u0]) * (vertices[u2 + 1] - vertices[u0 + 1]) -
+      (vertices[u2] - vertices[u0]) * (vertices[u1 + 1] - vertices[u0 + 1]);
+    if (determinant === 0) continue;
+    const sign = determinant < 0 ? -1 : 1;
+    for (const vertex of [corner.i0, corner.i1, corner.i2]) {
+      if (resolved[vertex] === 0) resolved[vertex] = sign;
+      else if (resolved[vertex] !== sign) contradictions++;
+    }
+  }
+
+  if (contradictions > 0) {
+    tallyMd5Drop(md5Drops, ImportDiagnosticSeverity.Recover, 'md5mesh.tangent-handedness-contradiction', '', {
+      firstVertices: contradictions,
+    });
+  }
+
+  for (let vertex = 0; vertex < vertexCount; vertex++) {
+    if (resolved[vertex] === 0) continue;
+    vertices[vertex * floatsPerVertex + tangentOffset + 3] = resolved[vertex];
   }
 }
 

@@ -97,6 +97,37 @@ const SINGLE_TRIANGLE = [
   '}',
 ].join('\n');
 
+// A triangle whose three vertices share one UV coordinate, so its texture polarity is exactly zero
+// and there is no orientation to read a handedness from.
+const DEGENERATE_UV_TRIANGLE = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 1',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/default"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.25 0.25 ) 0 1',
+  '  vert 1 ( 0.25 0.25 ) 1 1',
+  '  vert 2 ( 0.25 0.25 ) 2 1',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 3',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 1 0 )',
+  '}',
+].join('\n');
+
 // Two triangles sharing an edge with opposite UV determinants. The imported skinned geometry must
 // duplicate both shared records so each triangle owns one coherent tangent handedness.
 const MIRRORED_UV_TRIANGLES = [
@@ -439,15 +470,39 @@ describe('createScene3DFromMd5Mesh', () => {
     expect(geometry.vertices[indices[2] * floatsPerVertex + 9]).toBe(sign);
   });
 
-  it('converts generated handedness to the MD5 V-axis convention', () => {
+  it('resolves handedness from each triangle authored UV polarity, in final emitted order', () => {
+    // MD5 derives its tangent frames from texture polarity, and the source-winding reversal this
+    // importer already performs produces the equivalent handedness — so the sign is read per triangle
+    // from the UVs as emitted, not applied as one flip across the whole format. This triangle's
+    // imported UV determinant is negative, so all three of its corners resolve to -1.
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
     const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
     const floatsPerVertex = geometry.layout.stride / 4;
     const indices = geometry.indices!;
 
-    // Winding conversion makes this triangle's imported UV determinant negative. The generic tangent
-    // basis therefore emits -1; the MD5 format-boundary conversion must invert all three corners to +1.
-    for (const index of indices) expect(geometry.vertices[index * floatsPerVertex + 9]).toBe(1);
+    const uvOffset = 10;
+    const corner = (n: number) => indices[n] * floatsPerVertex;
+    const determinant =
+      (geometry.vertices[corner(1) + uvOffset] - geometry.vertices[corner(0) + uvOffset]) *
+        (geometry.vertices[corner(2) + uvOffset + 1] - geometry.vertices[corner(0) + uvOffset + 1]) -
+      (geometry.vertices[corner(2) + uvOffset] - geometry.vertices[corner(0) + uvOffset]) *
+        (geometry.vertices[corner(1) + uvOffset + 1] - geometry.vertices[corner(0) + uvOffset + 1]);
+    // Read the polarity from the emitted UVs rather than asserting a literal, so the test states the
+    // RULE. A test that hardcoded +1 or -1 would pin whichever answer the importer happened to give.
+    const expected = determinant < 0 ? -1 : 1;
+    for (const index of indices) expect(geometry.vertices[index * floatsPerVertex + 9]).toBe(expected);
+  });
+
+  it('leaves the generated handedness alone where UV polarity is zero', () => {
+    // With no texture orientation there is nothing to resolve, so the census must not write a sign —
+    // it must leave whatever the tangent generator produced. Writing an unresolved 0 into tangent.w
+    // would collapse the bitangent (B = w * cross(N, T)) rather than merely pick the wrong side.
+    const scene = createScene3DFromMd5Mesh(DEGENERATE_UV_TRIANGLE);
+    const geometry = (getNodeChildren(scene.root)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (const index of geometry.indices!) {
+      expect(Math.abs(geometry.vertices[index * floatsPerVertex + 9])).toBe(1);
+    }
   });
 
   it('splits complete skinned records across a mirrored MD5 UV boundary', () => {
