@@ -52,6 +52,13 @@ export function scaleMeshGeometryUvs(geometry: MeshGeometry, su: number, sv: num
 // Wraps every uv0 coordinate into [0, 1) using the fractional-part operation: u' = u - floor(u).
 // Useful after scale or offset operations that push coordinates outside the 0..1 atlas tile.
 // Coordinates that are exactly on integer boundaries (e.g. u = 1.0) wrap to 0.0.
+//
+// NOT for a wrapped parameterisation. A sphere-mapped mesh carries u > 1 on the faces that cross the
+// longitude seam, deliberately: that is the only way such a face interpolates forward through the seam
+// instead of backwards across the whole texture. Folding those values into [0, 1) puts one corner at
+// 0.05 beside a face-mate at 0.95 and restores exactly the artefact the seam correction removes. The
+// operation is doing what it says — the values it flattens are the ones that had to leave the range —
+// so the two are simply incompatible, and an atlas tile is the case this exists for.
 export function wrapMeshGeometryUvs(geometry: MeshGeometry): void {
   const floatOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
   if (floatOffset < 0) return;
