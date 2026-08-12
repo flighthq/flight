@@ -36,6 +36,10 @@ export interface WgpuRenderState extends RenderState {
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries extends RenderRegistries {
+  // Optional compressed-container policy. Both slots are empty until explicitly registered so
+  // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
+  compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder>;
+  compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader>;
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
@@ -139,11 +143,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Straight (upload-as-is) sibling used by the straight-blend 3D path and native compressed images.
   textureSourceStraightTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
   textureSourceStraightSrgbTextureCache: WeakMap<TextureSource, WgpuTextureSourceTextureEntry>;
-  // Optional block-compressed upload and CPU-decode seams. The uploader is installed explicitly so
-  // ordinary bitmap bundles do not retain the format table; the decoder is consulted only when the
-  // device lacks the container's native family.
-  compressedTextureDecoder?: WgpuCompressedTextureDecoder | null;
-  compressedTextureUpload?: WgpuCompressedTextureUploader | null;
   // Dynamic host-video caches split by GPU color interpretation. The GPU texture persists across
   // frames; uploadedVersion gates the copy, while width/height detect resolution changes.
   videoTextureCache?: WeakMap<Image, WgpuVideoTextureEntry>;

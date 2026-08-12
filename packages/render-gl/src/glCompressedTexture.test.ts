@@ -1,5 +1,5 @@
 import type { CompressedImage, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   detectGlCompressedTextureSupport,
@@ -119,23 +119,35 @@ describe('hasGlCompressedTextureFormat', () => {
 });
 
 describe('registerGlCompressedTextureDecoder', () => {
-  it('installs the decoder on the render-state runtime and clears it with null', () => {
+  it('replaces the decoder policy slot and clears it with null', () => {
     const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const before = runtime.registries.compressedTextureDecoder;
     const decode = vi.fn(() => new Uint8ClampedArray(4));
     registerGlCompressedTextureDecoder(state, decode);
-    expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBe(decode);
+    expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
+    expect(runtime.registries.compressedTextureDecoder.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: decode,
+    });
     registerGlCompressedTextureDecoder(state, null);
-    expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBeNull();
+    expect(runtime.registries.compressedTextureDecoder.entry).toBeNull();
   });
 });
 
 describe('registerGlCompressedTextureUpload', () => {
-  it('installs the compressed upload seam on the render-state runtime and clears it with null', () => {
+  it('replaces the compressed upload policy slot and clears it with null', () => {
     const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    const before = runtime.registries.compressedTextureUpload;
     registerGlCompressedTextureUpload(state);
-    expect(getGlRenderStateRuntime(state).compressedTextureUpload).toBeTypeOf('function');
+    expect(runtime.registries.compressedTextureUpload).not.toBe(before);
+    expect(runtime.registries.compressedTextureUpload.entry).toMatchObject({
+      state: RegistryEntryState.Bound,
+      value: expect.any(Function),
+    });
     registerGlCompressedTextureUpload(state, null);
-    expect(getGlRenderStateRuntime(state).compressedTextureUpload).toBeNull();
+    expect(runtime.registries.compressedTextureUpload.entry).toBeNull();
   });
 
   it('uploads a CompressedImage once installed, threading the registered decoder', () => {
@@ -144,8 +156,11 @@ describe('registerGlCompressedTextureUpload', () => {
     const decode = vi.fn(() => rgba);
     registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(state, decode);
-    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
-    const ok = uploader(gl, uploadableCompressedImage(), decode);
+    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload.entry;
+    expect(entry?.state).toBe(RegistryEntryState.Bound);
+    const uploader = entry?.state === RegistryEntryState.Bound ? entry.value : null;
+    expect(uploader).not.toBeNull();
+    const ok = uploader!(gl, uploadableCompressedImage(), decode);
     expect(ok).toBe(true);
     expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
   });
@@ -153,10 +168,12 @@ describe('registerGlCompressedTextureUpload', () => {
   it('rejects non-2D containers because the installed image bridge is bound to TEXTURE_2D', () => {
     const { state } = createGlState();
     registerGlCompressedTextureUpload(state);
-    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
+    const entry = getGlRenderStateRuntime(state).registries.compressedTextureUpload.entry;
+    const uploader = entry?.state === RegistryEntryState.Bound ? entry.value : null;
+    expect(uploader).not.toBeNull();
     const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
-    expect(uploader(gl, uploadableCompressedImage({ faces: 6 }), null)).toBe(false);
-    expect(uploader(gl, uploadableCompressedImage({ layers: 2 }), null)).toBe(false);
+    expect(uploader!(gl, uploadableCompressedImage({ faces: 6 }), null)).toBe(false);
+    expect(uploader!(gl, uploadableCompressedImage({ layers: 2 }), null)).toBe(false);
     expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
     expect(gl.texStorage3D).not.toHaveBeenCalled();
   });

@@ -13,8 +13,10 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RenderEffectPaddingResolver, RenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { beginWgpuFrame } from './wgpuBackground';
+import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import {
   copyWgpuRenderStateRegistrations,
@@ -53,7 +55,10 @@ describe('copyWgpuRenderStateRegistrations', () => {
     const offscreen = createWgpuOffscreenRenderState(screen);
     const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
+    const decoder = vi.fn(() => new Uint8ClampedArray(4));
     const resolver = vi.fn(() => null);
+    registerWgpuCompressedTextureDecoder(screen, decoder);
+    registerWgpuCompressedTextureUpload(screen);
     registerWgpuMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
 
@@ -63,6 +68,8 @@ describe('copyWgpuRenderStateRegistrations', () => {
     expect(
       hasRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
     copyWgpuRenderStateRegistrations(offscreen, screen);
     expect(
       getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
@@ -70,7 +77,19 @@ describe('copyWgpuRenderStateRegistrations', () => {
     expect(
       getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBe(
+      getWgpuRenderStateRuntime(screen).registries.compressedTextureDecoder,
+    );
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: decoder,
+    });
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBe(
+      getWgpuRenderStateRuntime(screen).registries.compressedTextureUpload,
+    );
     registerWgpuMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
+    registerWgpuCompressedTextureDecoder(offscreen, null);
+    registerWgpuCompressedTextureUpload(offscreen, null);
     registerWgpuTextureResolver(offscreen, 'acme.LateTexture', null);
     expect(
       getRegistryTableEntry(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
@@ -84,6 +103,14 @@ describe('copyWgpuRenderStateRegistrations', () => {
     expect(
       getRegistryTableEntry(getWgpuRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
+    expect(getWgpuRenderStateRuntime(screen).registries.compressedTextureDecoder.entry?.state).toBe(
+      RegistryEntryState.Bound,
+    );
+    expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
+    expect(getWgpuRenderStateRuntime(screen).registries.compressedTextureUpload.entry?.state).toBe(
+      RegistryEntryState.Bound,
+    );
   });
 });
 
@@ -119,6 +146,10 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
+      screenRuntime.registries.compressedTextureDecoder,
+    );
+    expect(offscreenRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
     expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
@@ -260,6 +291,18 @@ describe('createWgpuRenderStateRuntime', () => {
       onMiss: 'Unregistered',
       registry: 'WgpuRenderEffect',
       shape: 'keyed',
+    });
+    expect(runtime.registries.compressedTextureDecoder).toEqual({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'WgpuCompressedTextureDecoder',
+      shape: 'slot',
+    });
+    expect(runtime.registries.compressedTextureUpload).toEqual({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'WgpuCompressedTextureUpload',
+      shape: 'slot',
     });
     expect(runtime.registries.shapeRasterizer).toEqual({
       entry: null,

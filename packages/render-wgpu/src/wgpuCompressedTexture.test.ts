@@ -1,5 +1,5 @@
 import type { CompressedImage, TextureContainer, WgpuCompressedTextureSupport } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   detectWgpuCompressedTextureSupport,
@@ -69,23 +69,35 @@ describe('hasWgpuCompressedTextureFormat', () => {
 });
 
 describe('registerWgpuCompressedTextureDecoder', () => {
-  it('installs and clears the fallback decoder', async () => {
+  it('replaces the decoder policy slot and clears it with null', async () => {
     const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    const before = runtime.registries.compressedTextureDecoder;
     const decoder = vi.fn(() => new Uint8ClampedArray(64));
     registerWgpuCompressedTextureDecoder(state, decoder);
-    expect(getWgpuRenderStateRuntime(state).compressedTextureDecoder).toBe(decoder);
+    expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
+    expect(runtime.registries.compressedTextureDecoder.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: decoder,
+    });
     registerWgpuCompressedTextureDecoder(state, null);
-    expect(getWgpuRenderStateRuntime(state).compressedTextureDecoder).toBeNull();
+    expect(runtime.registries.compressedTextureDecoder.entry).toBeNull();
   });
 });
 
 describe('registerWgpuCompressedTextureUpload', () => {
-  it('installs and clears the CompressedImage upload seam', async () => {
+  it('replaces the compressed upload policy slot and clears it with null', async () => {
     const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    const before = runtime.registries.compressedTextureUpload;
     registerWgpuCompressedTextureUpload(state);
-    expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeTypeOf('function');
+    expect(runtime.registries.compressedTextureUpload).not.toBe(before);
+    expect(runtime.registries.compressedTextureUpload.entry).toMatchObject({
+      state: RegistryEntryState.Bound,
+      value: expect.any(Function),
+    });
     registerWgpuCompressedTextureUpload(state, null);
-    expect(getWgpuRenderStateRuntime(state).compressedTextureUpload).toBeNull();
+    expect(runtime.registries.compressedTextureUpload.entry).toBeNull();
   });
 
   it('lets the compressed-image binder consume its source', async () => {

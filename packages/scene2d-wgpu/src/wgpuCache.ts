@@ -100,6 +100,8 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // Cache rendering is a derived pipeline: it starts from the screen's persistent registration
   // snapshots through a distinct aggregate, so later replacements on either state diverge cleanly.
   cacheRuntime.registries = {
+    compressedTextureDecoder: screenRuntime.registries.compressedTextureDecoder,
+    compressedTextureUpload: screenRuntime.registries.compressedTextureUpload,
     customMaterialShaders: screenRuntime.registries.customMaterialShaders,
     materialRenderers: screenRuntime.registries.materialRenderers,
     meshMaterialRenderers: screenRuntime.registries.meshMaterialRenderers,

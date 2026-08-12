@@ -7,6 +7,7 @@ import type {
   TextureContainerFormat,
   TextureColorSpace,
 } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -203,7 +204,12 @@ export function registerGlCompressedTextureDecoder(
   state: GlRenderState,
   decode: GlCompressedTextureDecoder | null,
 ): void {
-  getGlRenderStateRuntime(state).compressedTextureDecoder = decode;
+  const runtime = getGlRenderStateRuntime(state);
+  const table = runtime.registries.compressedTextureDecoder;
+  runtime.registries.compressedTextureDecoder = {
+    ...table,
+    entry: decode === null ? null : { state: RegistryEntryState.Bound, value: decode },
+  };
 }
 
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
@@ -212,7 +218,12 @@ export function registerGlCompressedTextureDecoder(
 // source when none is registered, so Image/Bitmap bundles do not carry the compression enum
 // table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
-  getGlRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadGlCompressedImage;
+  const runtime = getGlRenderStateRuntime(state);
+  const table = runtime.registries.compressedTextureUpload;
+  runtime.registries.compressedTextureUpload = {
+    ...table,
+    entry: uploader === null ? null : { state: RegistryEntryState.Bound, value: uploadGlCompressedImage },
+  };
 }
 
 // Uploads every stored sub-image of a compressed container to the texture the caller has bound. Takes
