@@ -32,7 +32,9 @@ describe('registerDirectionalBlurEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerDirectionalBlurEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('DirectionalBlurEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('DirectionalBlurEffect')).toBe(
+      true,
+    );
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

@@ -1,5 +1,10 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import { getRegistryTableEntry, hasRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import {
+  createKeyedTable,
+  getRegistryTableEntry,
+  hasRegistryTableEntry,
+  withRegistryTableEntry,
+} from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   getRenderStateRuntime,
@@ -7,6 +12,7 @@ import {
   registerRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { RenderEffectPaddingResolver, RenderState } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
@@ -31,6 +37,21 @@ function makeCanvas() {
   const gl = makeGL();
   canvas.getContext = vi.fn().mockReturnValue(gl) as typeof canvas.getContext;
   return { canvas, gl };
+}
+
+function getPaddingResolver(state: RenderState, kind: string): RenderEffectPaddingResolver | null {
+  const table = getRenderStateRuntime(state).registries.effectPaddingResolvers;
+  return table === undefined ? null : getRegistryTableEntry(table, kind);
+}
+
+function registerPaddingResolver(state: RenderState, kind: string, resolver: RenderEffectPaddingResolver): void {
+  const runtime = getRenderStateRuntime(state);
+  runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
+    runtime.registries.effectPaddingResolvers ??
+      createKeyedTable<RenderEffectPaddingResolver>('RenderEffectPaddingResolver', 'Zero'),
+    kind,
+    resolver,
+  );
 }
 
 describe('copyGlRenderStateRegistrations', () => {
@@ -98,7 +119,7 @@ describe('createGlOffscreenRenderState', () => {
       'acme.Effect',
       { runner: effectRunner as never },
     );
-    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', paddingResolver]]);
+    registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
     getGlRenderStateRuntime(screen).glRenderTextureCache = new WeakMap();
 
     const offscreen = createGlOffscreenRenderState(screen);
@@ -128,16 +149,14 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
-    expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
-      screenRuntime.renderEffectPaddingResolverRegistry,
-    );
+    expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
     expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
     expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
     expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')?.runner).toBe(effectRunner);
-    expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
+    expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
 
     screenRuntime.currentProgram = {} as WebGLProgram;
     expect(offscreenRuntime.currentProgram).toBe(screenRuntime.currentProgram);
@@ -152,13 +171,13 @@ describe('createGlOffscreenRenderState', () => {
     const resolver = vi.fn(() => null);
     registerRenderer(screen, 'acme.LateNode', renderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
-    getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.LateEffect', paddingResolver]]);
+    registerPaddingResolver(screen, 'acme.LateEffect', paddingResolver);
 
     expect(getRenderStateRuntime(offscreen).rendererMap.has('acme.LateNode')).toBe(false);
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
-    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.has('acme.LateEffect')).not.toBe(true);
+    expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     copyAllRenderersFromRenderState(offscreen, screen);
     copyGlRenderStateRegistrations(offscreen, screen);
@@ -166,9 +185,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
-    expect(getRenderStateRuntime(offscreen).renderEffectPaddingResolverRegistry?.get('acme.LateEffect')).toBe(
-      paddingResolver,
-    );
+    expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBe(paddingResolver);
   });
 
   it('keeps proxy trees independent and destroys derived renderer data without freeing shared context resources', () => {

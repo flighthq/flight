@@ -5,7 +5,7 @@ import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
@@ -19,7 +19,7 @@ export interface CanvasRenderState extends RenderState {
 
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface CanvasRenderRegistries {
+export interface CanvasRenderRegistries extends RenderRegistries {
   // Absent until the first material registration so a Canvas-only application that uses no material
   // policy retains neither the table metadata nor the declarative renderer module.
   materialRenderers?: KeyedTable<CanvasMaterialRenderer>;

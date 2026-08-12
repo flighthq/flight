@@ -106,9 +106,27 @@ describe('registerRenderEffectPaddingResolver', () => {
     const resolver = vi.fn(() => ({ bottom: 1, left: 2, right: 3, top: 4 }));
 
     registerRenderEffectPaddingResolver(state, 'acme.Effect', resolver);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(resolver);
+    const before = getRenderStateRuntime(state).registries.effectPaddingResolvers;
+    expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: resolver });
 
     registerRenderEffectPaddingResolver(state, 'acme.Effect', null);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('acme.Effect')).toBe(false);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers).not.toBe(before);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('acme.Effect')).toBe(false);
+  });
+
+  it('replaces a registration without mutating the earlier snapshot', () => {
+    const state = createRenderState();
+    const first = vi.fn(() => ({ bottom: 1, left: 2, right: 3, top: 4 }));
+    const replacement = vi.fn(() => ({ bottom: 4, left: 3, right: 2, top: 1 }));
+    registerRenderEffectPaddingResolver(state, 'acme.Effect', first);
+    const before = getRenderStateRuntime(state).registries.effectPaddingResolvers;
+
+    registerRenderEffectPaddingResolver(state, 'acme.Effect', replacement);
+
+    expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: first });
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({
+      state: 'bound',
+      value: replacement,
+    });
   });
 });

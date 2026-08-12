@@ -30,6 +30,7 @@ describe('createRenderState', () => {
     expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
+    expect(runtime.registries).toStrictEqual({});
     expect(runtime.rendererMap).toStrictEqual(new Map());
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
@@ -91,12 +92,17 @@ describe('destroyRenderState', () => {
     const state = createRenderState();
     const runtime = getRenderStateRuntime(state);
     runtime.tempStack.push({} as never);
-    runtime.renderEffectPaddingResolverRegistry = new Map();
+    runtime.registries.effectPaddingResolvers = {
+      entries: new Map(),
+      onMiss: 'Zero',
+      registry: 'RenderEffectPaddingResolver',
+      shape: 'keyed',
+    };
 
     destroyRenderState(state);
 
     expect(runtime.tempStack).toHaveLength(0);
-    expect(runtime.renderEffectPaddingResolverRegistry).toBeNull();
+    expect(runtime.registries.effectPaddingResolvers).toBeUndefined();
   });
 });
 

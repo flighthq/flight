@@ -1,4 +1,5 @@
-import type { CanvasShapeCommand, Scene2DClipHooks, Renderer, RenderState } from '@flighthq/types/contract';
+import type { CanvasShapeCommand, Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   copyAllRenderersFromRenderState,
@@ -70,21 +71,30 @@ describe('copyRenderersFromRenderState', () => {
 });
 
 describe('copyRenderStateRegistrations', () => {
-  it('snapshot-copies effect-padding registrations without aliasing the maps', () => {
+  it('shares the effect-padding snapshot through distinct aggregates', () => {
     const source = createRenderState();
     const target = createRenderState();
     const resolver = vi.fn();
     const colorAdjustmentResolver = vi.fn();
     getRenderStateRuntime(source).colorAdjustmentResolver = colorAdjustmentResolver;
-    getRenderStateRuntime(source).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', resolver]]);
+    getRenderStateRuntime(source).registries.effectPaddingResolvers = {
+      entries: new Map([['acme.Effect', { state: RegistryEntryState.Bound, value: resolver }]]),
+      onMiss: 'Zero',
+      registry: 'RenderEffectPaddingResolver',
+      shape: 'keyed',
+    };
 
     copyRenderStateRegistrations(target, source);
 
-    expect(getRenderStateRuntime(target).colorAdjustmentResolver).toBe(colorAdjustmentResolver);
-    expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry).not.toBe(
-      getRenderStateRuntime(source).renderEffectPaddingResolverRegistry,
-    );
-    expect(getRenderStateRuntime(target).renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(resolver);
+    const sourceRuntime = getRenderStateRuntime(source);
+    const targetRuntime = getRenderStateRuntime(target);
+    expect(targetRuntime.colorAdjustmentResolver).toBe(colorAdjustmentResolver);
+    expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.effectPaddingResolvers).toBe(sourceRuntime.registries.effectPaddingResolvers);
+    expect(targetRuntime.registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({
+      state: RegistryEntryState.Bound,
+      value: resolver,
+    });
   });
 
   it('snapshot-copies the shape-command registry without aliasing the map', () => {

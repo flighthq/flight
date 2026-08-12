@@ -21,9 +21,7 @@ export function copyRenderStateRegistrations(target: RenderState, source: Render
   const targetRuntime = getRenderStateRuntime(target);
   const sourceRuntime = getRenderStateRuntime(source);
   targetRuntime.colorAdjustmentResolver = sourceRuntime.colorAdjustmentResolver;
-  const sourcePaddingRegistry = sourceRuntime.renderEffectPaddingResolverRegistry;
-  targetRuntime.renderEffectPaddingResolverRegistry =
-    sourcePaddingRegistry === null || sourcePaddingRegistry === undefined ? null : new Map(sourcePaddingRegistry);
+  targetRuntime.registries.effectPaddingResolvers = sourceRuntime.registries.effectPaddingResolvers;
   // The shape-command set is a base-runtime registry every backend replays through, so a pipeline
   // that inherits the renderers must inherit the commands too. Without it an offscreen state resolves
   // no handler for any command in a shape's stream and bakes an empty target.

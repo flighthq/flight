@@ -36,7 +36,7 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderProxyMap = new WeakMap();
   runtime.renderProxySources = new Set();
   runtime.registryMiss = null;
-  runtime.renderEffectPaddingResolverRegistry = null;
+  runtime.registries = {};
   runtime.renderRootGuard = null;
   runtime.strokeTessellator = null;
   runtime.rendererMap = new Map();
@@ -52,7 +52,7 @@ export function destroyRenderState(state: RenderState): void {
   for (const source of [...runtime.renderProxySources]) disposeRenderProxyForShutdown(state, source);
   runtime.registryMiss?.clear();
   runtime.registryMiss = null;
-  runtime.renderEffectPaddingResolverRegistry = null;
+  runtime.registries.effectPaddingResolvers = undefined;
   runtime.tempStack.length = 0;
 }
 
