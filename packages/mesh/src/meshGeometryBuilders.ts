@@ -125,7 +125,9 @@ export function createCapsuleMeshGeometry(
       const b = a + 1;
       const c = a + ringVertexCount;
       const d = c + 1;
-      indices.push(a, c, b, b, c, d);
+      // Reversed against the sphere's identical-looking line on purpose: this builder walks its
+      // rings the opposite way round, so the same index order faces the other way.
+      indices.push(a, b, c, b, d, c);
     }
   }
 
