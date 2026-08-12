@@ -98,19 +98,22 @@ export function createCapsuleMeshGeometry(
   };
 
   const ringVertexCount = rSeg + 1;
-  const vDivisor = 2 * cSeg + 1; // total number of rings minus 1
+  const ringCount = 2 * cSeg + 2;
+  const vDivisor = ringCount - 1;
 
   // Top hemisphere (phi from 0 to PI/2).
   for (let j = 0; j <= cSeg; j++) {
     addRing((j / cSeg) * (Math.PI * 0.5), halfH);
   }
+  // Duplicate the equator at the bottom of the cylindrical span. The two equators share radial
+  // normals but need distinct positions (and UV rows) to form the side wall between the caps.
+  addRing(Math.PI * 0.5, -halfH);
   // Bottom hemisphere (phi from PI/2 to PI).
   for (let j = 1; j <= cSeg; j++) {
     addRing(Math.PI * 0.5 + (j / cSeg) * (Math.PI * 0.5), -halfH);
   }
 
   // Fix up the v UV coordinate.
-  const ringCount = 2 * cSeg + 1;
   for (let j = 0; j < ringCount; j++) {
     const v = j / vDivisor;
     for (let i = 0; i <= rSeg; i++) {
@@ -119,8 +122,7 @@ export function createCapsuleMeshGeometry(
   }
 
   // Connect rings into quads.
-  const totalRings = 2 * cSeg + 1;
-  for (let j = 0; j < totalRings - 1; j++) {
+  for (let j = 0; j < ringCount - 1; j++) {
     for (let i = 0; i < rSeg; i++) {
       const a = j * ringVertexCount + i;
       const b = a + 1;
