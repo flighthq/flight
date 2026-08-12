@@ -32,15 +32,13 @@ claim about this tree, not about a session.
 - **`transformVector3ByMatrix3` takes an inline matrix shape** — `Readonly<{ m: Readonly<Float32Array> }>`
   at `vector3.ts:445` instead of `Matrix3Like`. Same types-homing drift already repaired on
   `expandAabbBySphere`.
-- **`enableGeometryPoolGuards()` is chartered (2026-07-03) but unbuilt** — no guard module exists
-  anywhere in the tree.
 - **`__getAxisRotation` never normalizes its axis**, so a non-unit axis silently yields a scaling
   matrix, not a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the Rodrigues
   terms with no length division, and axis `(0,0,2)` at 90° gives `m[1]=2`, `m[4]=-2`, `m[10]=4`. It
   reaches callers through all three rotation entry points (`:33`, `:775`, `:852`), whose docs now
   state the precondition — matching `setQuaternionFromAxisAngle` (`quaternion.ts:309`), which carries
-  the identical one. A package-wide convention with a doc gap, not a matrix4 defect; a runtime warning
-  belongs to the unbuilt `enableGeometryPoolGuards()` route above.
+  the identical one. A package-wide convention with a doc gap, not a matrix4 defect; the pool-bracket
+  guard does not cover this separate axis-input contract.
 - **Doc/style hygiene:** the Float32Array bridges say "byte offset" where the offset is in elements
   (`matrix3.ts:331`, `:437`; `vector3.ts:390`, `:456`; `vector4.ts:369`, `:405`); `var` relics survive
   in `rotateMatrix` (`matrix.ts:433`, `:437`, `:441`).
@@ -59,6 +57,10 @@ claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-12** — All eight pools preserve raw numeric payload by contract, normalize it through
+  empty/identity acquires, detach stale `EntityRuntimeKey` ownership on release, and support opt-in
+  per-release double-release warnings through `enableGeometryPoolGuards()`.
 
 - **2026-08-12** — matrix4's append/prepend family is a port of OpenFL's `Matrix3D` whose
   `appendMatrix4`/`prependMatrix4` had their **operands transposed** against it (OpenFL's `append` is
