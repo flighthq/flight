@@ -1,5 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
+import type { InteractionSignals, Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy';
@@ -163,6 +163,16 @@ describe('disposeNode', () => {
     enableNodeSignals(node);
     disposeNode(node);
     expect(getNodeSignals(node)).toBeNull();
+  });
+
+  it('releases the interaction signal registry after disposal', () => {
+    const node = createNode(NodeKind);
+    const runtime = getNodeRuntime(node) as NodeRuntime;
+    runtime.interactionSignals = {} as InteractionSignals;
+
+    disposeNode(node);
+
+    expect(runtime.interactionSignals).toBeNull();
   });
 
   it('is safe to call on a root node with no parent', () => {
