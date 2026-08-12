@@ -2,11 +2,15 @@ import {
   composeMatrix4FromTransform3D,
   createMatrix4,
   createVector3,
+  inverseMatrix4,
   matrix4TransformPoint,
+  matrix4TransformVector,
   rotateVector3ByQuaternion,
+  transposeMatrix4,
 } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
+  getMeshGeometryTriangleVertexIndices,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexPosition,
@@ -1736,6 +1740,65 @@ describe('parse3ds local coordinate system', () => {
       expect(world.z).toBeCloseTo(expected[v * 3 + 2], 3);
     }
   }
+
+  it('canonicalizes winding for a mirrored TRI_LOCAL so the surface still faces outward', () => {
+    // MODE E, COMPOSED: the other TRI_LOCAL tests here are positions-only at positive scale, where
+    // local position identity passes while the orientation is silently wrong. This composes the three
+    // facts that only mean something together — the placement really mirrors, the emitted winding is
+    // reversed against the file's own face order, and the emitted normal still points the way the
+    // file's world-space winding said it did once the node transform is applied.
+    //
+    // The placement negates X (determinant -1). Localizing by its inverse turns the geometry inside
+    // out, so a parser that carries the file's face order straight through derives every normal from
+    // an inverted triangle. That is invisible to a positions-only check and invisible to a static
+    // render, because the node re-applies the mirror at draw time — it shows up as inside-out lighting.
+    const worldZUp = [0, 0, 0, 2, 0, 0, 0, 3, 0];
+    const document = parse3ds(
+      buildTriangleWithMatrix3ds(
+        'Mirrored',
+        worldZUp,
+        [0, 1, 2],
+        writeLocalMatrix([-1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]),
+      ),
+    );
+    const geometry = document.meshes[0].geometry;
+
+    // 1) The fixture really is a mirror. Without this the rest proves nothing about mirrored input.
+    const placement = createMatrix4();
+    composeMatrix4FromTransform3D(placement, document.nodes[0].transform);
+    const m = placement.m;
+    const determinant =
+      m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5]);
+    expect(determinant).toBeLessThan(0);
+
+    // 2) The emitted winding is reversed against the file's face order. Corner 1 of the emitted
+    //    triangle must be the file's corner 2.
+    const corner = { i0: 0, i1: 0, i2: 0 };
+    expect(getMeshGeometryTriangleVertexIndices(corner, geometry, 0)).toBe(true);
+    const cornerPosition = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(cornerPosition, geometry, corner.i1);
+    // File corner 2 is Z-up (0, 3, 0); mirrored to local it stays (0, 3, 0), which is Y-up (0, 0, -3).
+    expect(cornerPosition.z).toBeCloseTo(-3, 3);
+
+    // 3) THE PROPERTY THAT MATTERS, and it is asserted through the whole frame rather than one
+    //    component: the emitted normal, carried through the node placement by the inverse-transpose a
+    //    renderer uses, must agree with the face normal the FILE's world-space winding describes.
+    const worldYUp = Array.from(worldZUp);
+    convertPositionsZUpToYUp(worldYUp);
+    const e1 = [worldYUp[3] - worldYUp[0], worldYUp[4] - worldYUp[1], worldYUp[5] - worldYUp[2]];
+    const e2 = [worldYUp[6] - worldYUp[0], worldYUp[7] - worldYUp[1], worldYUp[8] - worldYUp[2]];
+    const fileNormal = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+
+    const normal = createVector3(0, 0, 0);
+    expect(getMeshGeometryVertexNormal(normal, geometry, corner.i0)).toBe(true);
+    const normalMatrix = createMatrix4();
+    expect(inverseMatrix4(normalMatrix, placement)).toBe(true);
+    transposeMatrix4(normalMatrix, normalMatrix);
+    const transformed = { w: 0, x: 0, y: 0, z: 0 };
+    matrix4TransformVector(transformed, normalMatrix, { w: 0, x: normal.x, y: normal.y, z: normal.z });
+    const dot = transformed.x * fileNormal[0] + transformed.y * fileNormal[1] + transformed.z * fileNormal[2];
+    expect(dot).toBeGreaterThan(0);
+  });
 
   it('moves a translated placement off the geometry and onto the node transform', () => {
     // The object sits at Z-up (10, 20, 30) and its vertices are stored already displaced to there.

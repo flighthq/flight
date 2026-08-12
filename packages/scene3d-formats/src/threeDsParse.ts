@@ -740,9 +740,22 @@ function appendMeshDocument(
   const positions = Array.from(mesh.vertices);
   const transform = createTransform3D();
   const pivot = pivots.get(mesh.name) ?? null;
+  let localized = false;
   if (mesh.localMatrix !== null) {
-    localizeThreeDsPositions(positions, mesh.localMatrix, pivot, transform, mesh.name, threeDsDrops);
+    localized = localizeThreeDsPositions(positions, mesh.localMatrix, pivot, transform, mesh.name, threeDsDrops);
   }
+
+  // A TRI_LOCAL that mirrors (negative determinant) means localizing by its inverse turned the geometry
+  // inside out: the file's world-space winding, applied to model-space positions, now faces inward. The
+  // node re-applies the mirror at draw time so a static render still looks right, but everything derived
+  // from winding BELOW — the face normals, and the tangent handedness built on them — would be derived
+  // from the inverted order and come out pointing into the surface. So the winding is canonicalized here,
+  // before any of that, rather than left for a renderer to compensate for. Only when the localization
+  // actually ran: a singular matrix leaves the geometry in world space with nothing to correct.
+  const faces =
+    localized && mesh.localMatrix !== null && threeDsLocalMatrixDeterminant(mesh.localMatrix) < 0
+      ? reverseThreeDsFaceWinding(mesh.faces)
+      : mesh.faces;
 
   // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry operates in
   // Flight's coordinate space. The rotation preserves winding, so computed normals face outward.
@@ -755,9 +768,9 @@ function appendMeshDocument(
   const faceValid = new Uint8Array(faceCount);
   let droppedFaces = 0;
   for (let f = 0; f < faceCount; f++) {
-    const i0 = mesh.faces[f * 3];
-    const i1 = mesh.faces[f * 3 + 1];
-    const i2 = mesh.faces[f * 3 + 2];
+    const i0 = faces[f * 3];
+    const i1 = faces[f * 3 + 1];
+    const i2 = faces[f * 3 + 2];
     if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount) {
       droppedFaces++;
       continue;
@@ -853,11 +866,7 @@ function appendMeshDocument(
     const indexOffset = indices.length;
     for (let f = 0; f < faceCount; f++) {
       if (!faceValid[f] || !predicate(f)) continue;
-      indices.push(
-        emitCorner(f, mesh.faces[f * 3]),
-        emitCorner(f, mesh.faces[f * 3 + 1]),
-        emitCorner(f, mesh.faces[f * 3 + 2]),
-      );
+      indices.push(emitCorner(f, faces[f * 3]), emitCorner(f, faces[f * 3 + 1]), emitCorner(f, faces[f * 3 + 2]));
     }
     const indexCount = indices.length - indexOffset;
     if (indexCount > 0) {
@@ -1102,7 +1111,9 @@ function collectThreeDsNodePivots(
 // something drives the transform.
 //
 // A singular matrix has no inverse — the geometry is left in world space and the node keeps its identity
-// transform, which is the pre-TRI_LOCAL behavior and still renders correctly.
+// transform, which is the pre-TRI_LOCAL behavior and still renders correctly. Returns whether the
+// localization actually ran, because a caller correcting for a mirrored placement must not correct for
+// one that was never applied.
 function localizeThreeDsPositions(
   positions: number[],
   localMatrix: Readonly<Float32Array>,
@@ -1110,7 +1121,7 @@ function localizeThreeDsPositions(
   out: Transform3D,
   name: string,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): void {
+): boolean {
   // The file's four contiguous 3-vectors are exactly Matrix4's four columns (m[column * 4 + row]), so the
   // twelve floats copy straight into the basis and translation slots with no transpose.
   const placement = createMatrix4(
@@ -1137,7 +1148,7 @@ function localizeThreeDsPositions(
     tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.local-matrix-singular', '', {
       firstName: name,
     });
-    return;
+    return false;
   }
 
   const point = createVector3(0, 0, 0);
@@ -1169,6 +1180,33 @@ function localizeThreeDsPositions(
   multiplyMatrix4(conjugated, THREE_DS_Z_UP_TO_Y_UP, placement);
   multiplyMatrix4(conjugated, conjugated, THREE_DS_Y_UP_TO_Z_UP);
   decomposeMatrix4ToTransform3D(out, conjugated);
+  return true;
+}
+
+// Returns a copy of the face index array with every triangle's winding reversed (second and third
+// corners swapped). A copy rather than an in-place edit because the parsed mesh is shared with the
+// caller's own view of the file, and canonicalization is this emitter's decision, not a rewrite of what
+// was parsed.
+function reverseThreeDsFaceWinding(faces: Readonly<Uint16Array>): Uint16Array {
+  const reversed = new Uint16Array(faces.length);
+  reversed.set(faces);
+  for (let f = 0; f + 2 < reversed.length; f += 3) {
+    const swap = reversed[f + 1];
+    reversed[f + 1] = reversed[f + 2];
+    reversed[f + 2] = swap;
+  }
+  return reversed;
+}
+
+// Determinant of TRI_LOCAL's upper 3x3. The file stores the placement as four contiguous 3-vectors, so
+// the first three ARE the basis columns. A negative value means the placement mirrors: localizing by its
+// inverse turns the geometry inside out relative to the winding the file authored in world space.
+function threeDsLocalMatrixDeterminant(localMatrix: Readonly<Float32Array>): number {
+  return (
+    localMatrix[0] * (localMatrix[4] * localMatrix[8] - localMatrix[5] * localMatrix[7]) -
+    localMatrix[3] * (localMatrix[1] * localMatrix[8] - localMatrix[2] * localMatrix[7]) +
+    localMatrix[6] * (localMatrix[1] * localMatrix[5] - localMatrix[2] * localMatrix[4])
+  );
 }
 
 // Applies the RH Z-up → RH Y-up conversion to a single point, so a light or camera placement enters the
