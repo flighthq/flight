@@ -18,9 +18,6 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (neutral tint → box blur → bevel encode → gradient lookup + clip → composite), then releases them.
-//
-// Note: The Y bevel offset is negated versus the Gl implementation to
-// account for Wgpu's top-left UV origin.
 export function applyGradientBevelEffectToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,
@@ -54,7 +51,8 @@ export function applyGradientBevelEffectToWgpu(
 
   // Encode bevel value from blurred alpha offset samples → s0
   const dx = (Math.cos(angle) * distance) / s1.width;
-  // Negate Y: Wgpu UV y=0 is top (Y-down matches screen), Gl UV y=0 is bottom.
+  // Negate Y to map the screen-space-Y-down light direction into the bottom-left-origin
+  // render-target contents, matching the Gl gradient bevel.
   const dy = -((Math.sin(angle) * distance) / s1.height);
 
   const encodePipeline = getEncodePipeline(state);
@@ -137,9 +135,6 @@ export function registerWgpuGradientBevelEffect(state: WgpuRenderState): void {
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded value
 // in the red channel; alpha=1 (will be clipped later).
-//
-// Note: The Y offset component is negated versus the Gl implementation so
-// that the bevel direction matches across backends (Wgpu UV y=0 is top-left).
 //
 // Uniforms layout (16 bytes):
 //   offset 0: offset (vec2f)
