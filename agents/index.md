@@ -90,6 +90,9 @@ which is why they are not in the map.
 - [unbacked register](unbacked-register.md) — claims that reached the merged tree with nothing looking
   at them. Entries owned by integration; the file carries its own limit, because it can only hold what
   someone noticed.
+- [wgpu backlog](wgpu-backlog.md) — confirmed WebGPU defects and coverage surface, accumulated while
+  WGPU work is deferred behind other work. Deferral is scheduling, not severity: read the per-entry
+  severity, not the file's position in this list.
 - [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
 - [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
