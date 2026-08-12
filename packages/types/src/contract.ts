@@ -375,6 +375,8 @@ export * from './MenuSignals';
 export * from './Mesh';
 export * from './MeshDeformer';
 export * from './MeshGeometry';
+export * from './MeshGeometryUvWrap';
+export * from './MeshGeometryGuards';
 export * from './MeshGeometryFromAttributesOptions';
 export * from './MeshGeometryOptions';
 export * from './MeshTriangleVertexIndices';
