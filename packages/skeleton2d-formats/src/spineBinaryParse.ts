@@ -36,6 +36,7 @@ import {
 
 import {
   createSpineBinaryReader,
+  hasSpineBinaryBytes,
   isSpineBinaryReaderOverrun,
   readSpineBinaryBoolean,
   readSpineBinaryByte,
@@ -794,7 +795,7 @@ function parseSpineBinarySkins(
   const defaultSlots = readSpineBinaryVarint(reader);
   if (defaultSlots > 0) {
     skins.push({
-      attachments: readSpineBinarySkinBody(reader, strings, defaultSlots, nonessential, unmodeled),
+      attachments: readSpineBinarySkinBody(reader, strings, defaultSlots, nonessential, unmodeled, diagnostics),
       name: SPINE_BINARY_DEFAULT_SKIN_NAME,
     });
   }
@@ -809,7 +810,7 @@ function parseSpineBinarySkins(
     }
     const slotCount = readSpineBinaryVarint(reader);
     skins.push({
-      attachments: readSpineBinarySkinBody(reader, strings, slotCount, nonessential, unmodeled),
+      attachments: readSpineBinarySkinBody(reader, strings, slotCount, nonessential, unmodeled, diagnostics),
       name: name ?? '',
     });
   }
@@ -833,6 +834,7 @@ function readSpineBinarySkinBody(
   slotCount: number,
   nonessential: boolean,
   unmodeled: Map<string, number>,
+  diagnostics?: ImportDiagnostic[],
 ): SkinAttachment2D[] {
   const attachments: SkinAttachment2D[] = [];
   for (let i = 0; i < slotCount && !isSpineBinaryReaderOverrun(reader); i++) {
@@ -840,7 +842,7 @@ function readSpineBinarySkinBody(
     const entries = readSpineBinaryVarint(reader);
     for (let j = 0; j < entries && !isSpineBinaryReaderOverrun(reader); j++) {
       const key = readSpineBinaryStringReference(reader, strings);
-      const attachment = readSpineBinaryAttachment(reader, strings, key, nonessential, unmodeled);
+      const attachment = readSpineBinaryAttachment(reader, strings, key, nonessential, unmodeled, diagnostics);
       if (attachment !== null && key !== null) attachments.push({ attachment, name: key, slotIndex });
     }
   }
@@ -856,12 +858,13 @@ function readSpineBinaryAttachment(
   key: string | null,
   nonessential: boolean,
   unmodeled: Map<string, number>,
+  diagnostics?: ImportDiagnostic[],
 ): Attachment2D | null {
   const name = readSpineBinaryStringReference(reader, strings) ?? key;
   const ordinal = readSpineBinaryByte(reader);
   const type = ordinal < SPINE_BINARY_ATTACHMENT_TYPES.length ? SPINE_BINARY_ATTACHMENT_TYPES[ordinal] : null;
   if (type === 'region') return readSpineBinaryRegionAttachment(reader, strings, name);
-  if (type === 'mesh') return readSpineBinaryMeshAttachment(reader, strings, name, nonessential);
+  if (type === 'mesh') return readSpineBinaryMeshAttachment(reader, strings, name, nonessential, diagnostics);
   const label = type ?? 'unknown';
   unmodeled.set(label, (unmodeled.get(label) ?? 0) + 1);
   if (type === 'boundingbox') {
@@ -895,6 +898,37 @@ function readSpineBinaryAttachment(
   return null;
 }
 
+// A mesh whose declared count the remaining bytes cannot satisfy. The reader is parked past the end so
+// every enclosing loop unwinds through the overrun path it already has, and the caller gets an empty
+// attachment rather than a throw — a malformed asset is an expected failure and takes the sentinel, which
+// is the same division `spineBinaryReader` states for truncation. The crumb is an ASSET fact, so it goes
+// to importdiagnostics where the file name is in hand, not to a runtime guard firing once a frame.
+function rejectSpineBinaryMesh(
+  reader: ByteReader,
+  name: string | null,
+  field: string,
+  declared: number,
+  diagnostics?: ImportDiagnostic[],
+): MeshAttachment2D {
+  reportImportDiagnostic(
+    diagnostics,
+    ImportDiagnosticSeverity.Drop,
+    'spine.binary-count-unsatisfiable',
+    'readSpineBinaryMeshAttachment',
+    { attachment: name ?? '', declared, field, remaining: reader.view.byteLength - reader.offset },
+  );
+  skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
+  return {
+    kind: MeshAttachment2DKind,
+    name,
+    skin: null,
+    triangles: new Uint16Array(),
+    uvs: new Float32Array(),
+    vertexCount: 0,
+    vertices: null,
+  };
+}
+
 // A mesh attachment. `uvs` and `triangles` map straight across; the vertex stream is either rigid positions
 // (local to the slot's bone) or a weighted `Skin2D` whose influences are already in Flight's
 // `[boneIndex, x, y, weight]` layout, so no re-packing is needed.
@@ -903,13 +937,26 @@ function readSpineBinaryMeshAttachment(
   strings: readonly (string | null)[],
   name: string | null,
   nonessential: boolean,
+  diagnostics?: ImportDiagnostic[],
 ): MeshAttachment2D {
   readSpineBinaryVarint(reader); // atlas region path — resolved at atlas-binding time
   skipSpineBinaryBytes(reader, SPINE_BINARY_COLOR_BYTES);
+  // A DECLARED COUNT IS A CLAIM ABOUT BYTES THAT MUST STILL EXIST, and it is the file making it, so it is
+  // checked before it is believed. The per-loop overrun guards elsewhere in this file are the wrong
+  // precedent here: they stop ITERATION once a read has already failed, and the damage on these two lines
+  // happens in the allocation, before any read. Measured before this check existed, on a 304-byte valid
+  // file with one varint rewritten: an inflated triangle count returned after 59 SECONDS, and an inflated
+  // vertex count never returned at all.
   const vertexCount = readSpineBinaryVarint(reader);
+  if (!hasSpineBinaryBytes(reader, vertexCount * SPINE_BINARY_MESH_UV_BYTES)) {
+    return rejectSpineBinaryMesh(reader, name, 'vertexCount', vertexCount, diagnostics);
+  }
   const uvs = new Float32Array(vertexCount * 2);
   for (let i = 0; i < uvs.length; i++) uvs[i] = readSpineBinaryFloat(reader);
   const triangleCount = readSpineBinaryVarint(reader);
+  if (!hasSpineBinaryBytes(reader, triangleCount * SPINE_BINARY_TRIANGLE_INDEX_BYTES)) {
+    return rejectSpineBinaryMesh(reader, name, 'triangleCount', triangleCount, diagnostics);
+  }
   const triangles = new Uint16Array(triangleCount);
   for (let i = 0; i < triangleCount; i++) triangles[i] = readSpineBinaryUnsignedShort(reader);
   const geometry = readSpineBinaryVertices(reader, vertexCount);
@@ -1043,6 +1090,9 @@ const SPINE_BINARY_BOUNDS_BYTES = 16;
 const SPINE_BINARY_COLOR_BYTES = 4;
 const SPINE_BINARY_FPS_BYTES = 4;
 const SPINE_BINARY_HASH_BYTES = 8;
+// One mesh vertex costs two float32 uvs; one triangle index costs a uint16.
+const SPINE_BINARY_MESH_UV_BYTES = 8;
+const SPINE_BINARY_TRIANGLE_INDEX_BYTES = 2;
 
 // Spine's attachment types in its own enum ORDER — the file writes an ordinal into this list, so the order
 // is load-bearing and must not be alphabetized.

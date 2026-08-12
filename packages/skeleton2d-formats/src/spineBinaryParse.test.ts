@@ -40,6 +40,43 @@ describe('parseSpineSkeletonBinary', () => {
   // input threw `RangeError: Invalid array length` out of `Array.push` after ~4.2 SECONDS and several
   // gigabytes, from 327 bytes. The parser is documented to treat third-party bytes as untrusted and to
   // return sentinels rather than raise, so a throw here is a contract violation, not merely slow.
+  // The two ALLOCATION-shaped counts, which the per-loop overrun guards cannot help with because the array
+  // is sized from the file's number before the first read. Measured before the bounds check existed, on a
+  // 304-byte valid file with one varint rewritten: the triangle count RETURNED AFTER 59 SECONDS and the
+  // vertex count never returned at all. The 59-second one is the more dangerous of the pair — it produces
+  // a correct answer with no exception and no crumb, so nothing about it tells a caller it happened.
+  //
+  // Asserted on the crumb rather than on elapsed time: a clock is flaky and a diagnostic is not, and the
+  // crumb is also the thing a caller acts on. A regression that reinstates the hang fails this file by
+  // timing out rather than by this assertion, since an unbounded parse never reaches a return.
+  it.each([
+    [
+      'vertex',
+      [
+        0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f,
+        0x80, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00,
+      ],
+      'vertexCount',
+    ],
+    ['triangle', [0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02], 'triangleCount'],
+  ] as const)('refuses a mesh %s count the remaining bytes cannot satisfy', (_label, marker, field) => {
+    const base = buildSpineBinary();
+    let at = -1;
+    for (let i = 0; at < 0 && i + marker.length <= base.length; i++) {
+      if (marker.every((byte, k) => base[i + k] === byte)) at = i;
+    }
+    expect(at, `${field} marker not found — the builder's mesh layout moved`).toBeGreaterThanOrEqual(0);
+    const hostile = Uint8Array.from([...base.subarray(0, at), 0xff, 0xff, 0xff, 0xff, 0x07, ...base.subarray(at + 1)]);
+
+    const crumbs = collectImportDiagnostics((sink) => {
+      expect(() => parseSpineSkeletonBinary(hostile, sink)).not.toThrow();
+    });
+
+    const crumb = crumbs.find((c) => c.kind === 'spine.binary-count-unsatisfiable');
+    expect(crumb, 'no crumb named the unsatisfiable count').toBeDefined();
+    expect(crumb!.detail).toMatchObject({ field });
+  });
+
   it('contains an influence count the file inflates, rather than pushing until push throws', () => {
     const base = buildSpineBinary({ weightedMesh: true });
     // Vertex 0 of the weighted block: varint(1) influence count, varint(1) bone index, then x, y, weight.
