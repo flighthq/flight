@@ -173,6 +173,29 @@ describe('popGlRenderState', () => {
     }
   });
 
+  it('restores colour-write, clear-colour, and upload-premultiply state Flight leaves behind', () => {
+    const fixture = createStatefulGl();
+    const gl = fixture.gl;
+    applyTestGlState(fixture, OUTER_STATE);
+    // A host whose own settings all differ from both the GL defaults and from what Flight will set,
+    // so neither 'never restored' nor 'reset to the default' can pass as restoration.
+    gl.colorMask(true, false, true, false);
+    gl.clearColor(0.25, 0.5, 0.75, 1);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    pushGlRenderState(fixture.state);
+
+    // What Flight's own passes do: mask colour off while rasterizing clip coverage, clear a target,
+    // and premultiply a texture upload. None of these puts the previous value back.
+    gl.colorMask(false, false, false, false);
+    gl.clearColor(0, 0, 0, 0);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    popGlRenderState(fixture.state);
+
+    expect(fixture.parameters.get(gl.COLOR_WRITEMASK)).toEqual([true, false, true, false]);
+    expect(fixture.parameters.get(gl.COLOR_CLEAR_VALUE)).toEqual([0.25, 0.5, 0.75, 1]);
+    expect(fixture.parameters.get(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL)).toBe(false);
+  });
+
   it('restores a non-active texture unit binding', () => {
     const fixture = createStatefulGl();
     applyTestGlState(fixture, OUTER_STATE);
@@ -286,6 +309,9 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     FRAMEBUFFER_BINDING: 0x8ca6,
     FRONT_FACE: 0x0b46,
     BACK: 0x0405,
+    COLOR_CLEAR_VALUE: 0x0c22,
+    COLOR_WRITEMASK: 0x0c23,
+    UNPACK_PREMULTIPLY_ALPHA_WEBGL: 0x9241,
     FRONT: 0x0404,
     STENCIL_BACK_FAIL: 0x8801,
     STENCIL_BACK_FUNC: 0x8800,
@@ -331,6 +357,15 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   );
   (gl.frontFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.FRONT_FACE, value),
+  );
+  (gl.colorMask as ReturnType<typeof vi.fn>).mockImplementation((r: boolean, g: boolean, b: boolean, a: boolean) =>
+    parameters.set(gl.COLOR_WRITEMASK, [r, g, b, a]),
+  );
+  (gl.clearColor as ReturnType<typeof vi.fn>).mockImplementation((r: number, g: number, b: number, a: number) =>
+    parameters.set(gl.COLOR_CLEAR_VALUE, [r, g, b, a]),
+  );
+  (gl.pixelStorei as ReturnType<typeof vi.fn>).mockImplementation((parameter: number, value: unknown) =>
+    parameters.set(parameter, value),
   );
   // Stencil is two-faced state: the unsuffixed setters write FRONT_AND_BACK while the Separate ones
   // write only the named face. That rule was measured against a real WebGL2 context rather than assumed
