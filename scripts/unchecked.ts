@@ -71,6 +71,34 @@ const repoRoot = resolve(scriptsDirectory, '..');
 const mutantConfigPath = resolve(scriptsDirectory, 'mutantVitestConfig.ts');
 const vitestBinary = resolve(repoRoot, 'node_modules/vitest/vitest.mjs');
 
+/**
+ * The refusal for a selector that resolved to more than one package.
+ *
+ * The shared selector is a SUBSTRING match, so a word that reads like one package's name quietly fans out
+ * over its whole family: `text` resolves to thirteen packages, `scene` to twelve, a bare `e` to ninety-eight.
+ * For the other quality scripts that fan-out is the feature — they are seconds per package. Here a package is
+ * minutes, so the same keystroke that means "check this package" becomes an unannounced hour, and the cost
+ * lands after the run is already going. Every other refusal in this tool exists because a wrong number would
+ * otherwise be believed; this one exists because a right number would otherwise arrive too late to want.
+ *
+ * Naming the matches rather than the count is the point: the reason `text` is thirteen packages is only
+ * obvious once `textinput` and `textshaper-canvas` are on screen next to it.
+ */
+export function explainOverbroadSelection(selectors: readonly string[], packages: readonly string[]): string {
+  const named = selectors.map((selector) => `'${selector}'`).join(', ');
+  const shown = packages.slice(0, 8).join(', ');
+  const rest = packages.length > 8 ? `, and ${packages.length - 8} more` : '';
+  // The example path uses the package the selector names EXACTLY when there is one, because that is the one
+  // the user meant — `text` fans out to thirteen, but they typed the name of a real package and suggesting
+  // `bitmaptext` (merely alphabetically first) would read as the tool having misunderstood them.
+  const suggested = packages.find((name) => selectors.some((selector) => name === selector)) ?? packages[0];
+  return [
+    pc.red(`unchecked: ${named} matches ${packages.length} packages — mutation testing runs one at a time.`),
+    pc.dim(`  ${shown}${rest}`),
+    pc.dim(`  Name one, or narrow to a file: \`npm run unchecked packages/${suggested}/src/<file>.ts\`.`),
+  ].join('\n');
+}
+
 /** The sibling `*.test.ts` for a source file — the colocated test the repo's testing convention guarantees. */
 export function getSiblingTestPath(sourcePath: string): string {
   return sourcePath.replace(/\.tsx?$/, (extension) => `.test${extension}`);
@@ -435,7 +463,7 @@ async function main(): Promise<void> {
   // Per-package, like `untested`, and for the same reason: a whole-repo sweep would pay one vitest startup
   // per mutant across 149 packages. Name where you are working.
   if (selectors.length === 0) {
-    console.error(pc.red('unchecked: name a package or file — `npm run unchecked geometry/src/matrix.ts`.'));
+    console.error(pc.red('unchecked: name a file or package — `npm run unchecked geometry/src/plane.ts`.'));
     process.exit(1);
   }
 
@@ -444,12 +472,14 @@ async function main(): Promise<void> {
     console.error(pc.red(`unchecked: no package matches ${selectors.map((selector) => `'${selector}'`).join(', ')}.`));
     process.exit(1);
   }
+  if (packages.length > 1) {
+    console.error(explainOverbroadSelection(selectors, packages));
+    process.exit(1);
+  }
 
-  let ok = true;
-  for (const packageName of packages) ok = (await report(packageName, selectors, asJson)) && ok;
   // Findings never fail the run — the list is the product. A nonzero exit here means the measurement itself
   // could not be made.
-  if (!ok) process.exit(1);
+  if (!(await report(packages[0] as string, selectors, asJson))) process.exit(1);
 }
 
 if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) await main();

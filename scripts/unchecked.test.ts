@@ -1,4 +1,42 @@
-import { getSiblingTestPath, readMutantVerdict } from './unchecked';
+import { selectPackages } from './select';
+import { explainOverbroadSelection, getSiblingTestPath, readMutantVerdict } from './unchecked';
+
+describe('explainOverbroadSelection', () => {
+  it('names the matched packages, not just how many there were', () => {
+    const message = explainOverbroadSelection(['text'], ['text', 'textinput', 'textshaper']);
+    expect(message).toContain('matches 3 packages');
+    expect(message).toContain('textinput');
+    expect(message).toContain('textshaper');
+  });
+
+  it('suggests the exactly-named package rather than the alphabetically first match', () => {
+    const message = explainOverbroadSelection(['text'], ['bitmaptext', 'text', 'textinput']);
+    expect(message).toContain('packages/text/src/');
+    expect(message).not.toContain('packages/bitmaptext/src/');
+  });
+
+  it('falls back to the first match when no package is named exactly', () => {
+    const message = explainOverbroadSelection(['scene'], ['scene2d', 'scene3d']);
+    expect(message).toContain('packages/scene2d/src/');
+  });
+
+  it('summarizes the tail rather than printing every match of a very broad selector', () => {
+    const packages = Array.from({ length: 20 }, (_, index) => `package${index}`);
+    const message = explainOverbroadSelection(['e'], packages);
+    expect(message).toContain('and 12 more');
+    expect(message).not.toContain('package19');
+  });
+
+  it('fires on the real repository for a selector that reads like a single package', () => {
+    // The guard's whole reason to exist, asserted against the live package list rather than a fixture: the
+    // shared selector is a substring, so `text` — which IS a package name — also selects every package whose
+    // name contains it. If this ever collapses to one, the fan-out is gone and so is the need for the guard.
+    const matched = selectPackages(['text']);
+    expect(matched).toContain('text');
+    expect(matched.length).toBeGreaterThan(5);
+    expect(selectPackages(['geometry'])).toEqual(['geometry']);
+  });
+});
 
 describe('getSiblingTestPath', () => {
   it('names the colocated test file the repository convention guarantees', () => {

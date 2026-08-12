@@ -194,7 +194,7 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation verbs:
 - Run `npm run test --workspace=packages/<name>` for a single package. Prefer the narrowest meaningful Vitest run while iterating.
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
 - No standing API/integration test categories — cross-package wiring is covered by the functional/example suites and `npm run packages:check` / `npm run api:check`.
-- Coverage is not depth: an arm a test _took_ may still be one no assertion would catch breaking. `npm run untested <package>` lists the arms nothing took; `npm run unchecked <package>` mutates one token at a time to find the ones nothing checks. Neither gates — see [the test-depth pair](agents/commands.md#npm-run-untested--npm-run-unchecked--the-test-depth-pair).
+- Coverage is not depth: an arm a test _took_ may still be one no assertion would catch breaking. `npm run untested <package>` lists the arms nothing took; `npm run unchecked <file>` mutates one token at a time to find the ones nothing checks, one package at a time. Neither gates — see [the test-depth pair](agents/commands.md#npm-run-untested--npm-run-unchecked--the-test-depth-pair).
 
 See [testing conventions](agents/conventions/testing.md) for the full rules, WebGL specifics, and when to use root-level integration tests.
 

@@ -23,7 +23,7 @@ Two reading tools, per-package, answering the two halves of one question. Neithe
 of `npm run check`, and neither commits anything: they are lists you go and read, not scores.
 
 - **`npm run untested <package>`** lists the branch arms **no test ever took**.
-- **`npm run unchecked <package>`** takes the arms that _were_ taken and asks whether any test would
+- **`npm run unchecked <file>`** takes the arms that _were_ taken and asks whether any test would
   **notice them breaking** — by editing one token of the source and re-running the tests.
 
 The second exists because the first cannot answer it. `untested`'s own header records the measurement:
@@ -39,9 +39,15 @@ package's coverage is already good and you want to know whether that means anyth
 mutant. A mutant the tests still pass is a **survivor**: no test in that package distinguishes the real
 behavior from the broken one.
 
-    npm run unchecked geometry                    # the whole package
     npm run unchecked geometry/src/matrix.ts      # one file — start here
-    npm run unchecked:json geometry               # the same findings as JSON
+    npm run unchecked geometry                    # the whole package — minutes to an hour
+    npm run unchecked:json geometry/src/matrix.ts # the same findings as JSON
+
+**It runs one package at a time, and refuses more.** The shared selector is a substring, so a word that
+reads like one package's name fans out over its family — `text` matches thirteen packages, `scene` twelve.
+Everywhere else in the repo that fan-out is the feature, because those tools are seconds per package. Here
+it is an unannounced hour, so a selector resolving to more than one package is refused with the matches
+named. Narrow to a file whenever you can: a file is the unit this tool was built for.
 
 Two tiers, cheapest first: each mutant runs against its file's **sibling** `*.test.ts`, and only the ones
 that survive that are re-run against the **whole package suite**. So a reported survivor has been missed
@@ -52,6 +58,15 @@ That is the price of the safety property: the mutated text is served by a `load`
 to disk**, so an interrupt at any moment — including `kill -9` — leaves the tree exactly as it was. The
 faster design (rewrite the file, run, restore) can leave corrupted source behind at exactly the wrong
 moment, which in a repo where an agent may be committing concurrently is not a risk worth the minutes.
+
+**Where the time actually goes**, measured on `geometry/src/plane.ts` rather than assumed, because it is
+not where it looks. A single mutant run of the sibling test is about 4–7s, of which the **assertions are
+16ms**; the rest is TypeScript transform and module import. The mutation planning — the oxc parse, the
+whole reason this tool has an AST at all — happens once per file and does not appear in the profile.
+The cost is that each run re-transforms the same module graph from scratch, and under this repo's testing
+convention that graph is the whole package: a colocated test imports `@flighthq/<name>/contract`, so
+`plane.test.ts` pulls all 26 geometry modules, 88 times over. Anyone optimizing this should be reusing
+transform output across runs, not making the parser faster.
 
 **Three things a survivor does not mean**, each of which has produced a wrong reading somewhere:
 
