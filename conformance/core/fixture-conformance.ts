@@ -110,6 +110,7 @@ export interface ConformanceFixtureFamilyScore {
   acceptedImport: ConformanceFixtureFractionScore;
   adapter: string;
   eligibleCandidateRuns: number;
+  executionCoverage: ConformanceFixtureFractionScore;
   implementation: 'available' | 'unavailable';
   implementationCoverage: ConformanceFixtureFractionScore;
   outcomes: Readonly<Record<ConformanceFixtureState, number>>;
@@ -125,10 +126,12 @@ export interface ConformanceFixtureScore {
   };
   definitions: {
     acceptedImport: string;
+    executionCoverage: string;
     implementationCoverage: string;
     outcomeStates: Readonly<Record<ConformanceFixtureState, string>>;
     selectionCoverage: string;
   };
+  executionCoverage: ConformanceFixtureFractionScore;
   families: readonly Readonly<ConformanceFixtureFamilyScore>[];
   implementationCoverage: ConformanceFixtureFractionScore;
   outcomes: Readonly<Record<ConformanceFixtureState, number>>;
@@ -296,6 +299,9 @@ export function scoreConformanceFixturePlan(
       `Fixture conformance result count ${results.length} does not match selected candidate count ${plan.candidates.length}`,
     );
   }
+  for (let index = 0; index < plan.candidates.length; index++) {
+    assertConformanceFixtureResultIdentity(plan.candidates[index]!, results[index]!, index);
+  }
   const families = [...plan.adapters]
     .sort((left, right) => left.id.localeCompare(right.id))
     .map((adapter): ConformanceFixtureFamilyScore => {
@@ -308,28 +314,56 @@ export function scoreConformanceFixturePlan(
           `Fixture conformance result count ${familyResults.length} for ${adapter.id} does not match its selected candidate count ${selectedCandidateRuns}`,
         );
       }
+      const implemented = adapter.implementation.state === 'available' ? selectedCandidateRuns : 0;
       const executed = familyResults.filter((result) => result.state !== 'not-run').length;
       return {
         acceptedImport: fractionScore(familyResults.filter((result) => result.state === 'imported').length, executed),
         adapter: adapter.id,
         eligibleCandidateRuns,
+        executionCoverage: fractionScore(executed, implemented),
         implementation: adapter.implementation.state,
-        implementationCoverage: fractionScore(executed, selectedCandidateRuns),
+        implementationCoverage: fractionScore(implemented, selectedCandidateRuns),
         outcomes: summarizeOutcomes(familyResults),
         selectedCandidateRuns,
         selectionCoverage: fractionScore(selectedCandidateRuns, eligibleCandidateRuns),
       };
     });
+  const implemented = families.reduce((total, family) => total + family.implementationCoverage.numerator, 0);
   const executed = results.filter((result) => result.state !== 'not-run').length;
   return {
     acceptedImport: fractionScore(results.filter((result) => result.state === 'imported').length, executed),
     assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
     definitions: CONFORMANCE_FIXTURE_SCORE_DEFINITIONS,
+    executionCoverage: fractionScore(executed, implemented),
     families,
-    implementationCoverage: fractionScore(executed, plan.candidates.length),
+    implementationCoverage: fractionScore(implemented, plan.candidates.length),
     outcomes: summarizeOutcomes(results),
     selectionCoverage: fractionScore(plan.candidates.length, plan.eligibleCandidateRuns),
   };
+}
+
+function assertConformanceFixtureResultIdentity(
+  candidate: Readonly<ConformanceFixtureCandidate>,
+  result: Readonly<ConformanceFixtureResult>,
+  index: number,
+): void {
+  const expectedPacks = candidate.input.tree.packs.map((pack) => pack.id);
+  if (
+    result.adapter !== candidate.adapter.id ||
+    result.reference !== candidate.input.reference ||
+    result.tree !== candidate.input.tree.tree ||
+    result.variant !== candidate.input.tree.variant ||
+    result.packs.length !== expectedPacks.length ||
+    result.packs.some((pack, packIndex) => pack !== expectedPacks[packIndex])
+  ) {
+    throw new Error(`Fixture conformance result ${index} does not match its selected candidate identity`);
+  }
+  if (
+    candidate.adapter.implementation.state === 'unavailable' &&
+    (result.state !== 'not-run' || result.notRunReason !== candidate.adapter.implementation.reason)
+  ) {
+    throw new Error(`Fixture conformance result ${index} does not match its unavailable adapter outcome`);
+  }
 }
 
 async function runConformanceFixtureAdapter(
@@ -431,14 +465,17 @@ function compareFixtureTree(left: Readonly<ConformanceFixtureTree>, right: Reado
 
 const CONFORMANCE_FIXTURE_SCORE_DEFINITIONS = {
   acceptedImport:
-    'Selected candidate runs classified imported divided by selected candidate runs that invoked an available Flight implementation. This is execution evidence, not semantic-correctness evidence.',
+    'Selected candidate runs classified imported divided by implemented candidate runs that reached their target Flight method. This is execution evidence, not semantic-correctness evidence.',
+  executionCoverage:
+    'Implemented candidate runs that reached their target Flight method divided by selected candidate runs assigned to an available fixture adapter.',
   implementationCoverage:
-    'Selected candidate runs that invoked an available Flight implementation divided by all selected candidate runs, including declared fixture families whose Flight implementation is unavailable.',
+    'Selected candidate runs assigned to an available fixture adapter divided by all selected candidate runs, including declared fixture families whose Flight implementation is unavailable.',
   outcomeStates: {
     degraded:
       'The Flight method returned an import but reported at least one Drop or Recover diagnostic without an unsupported diagnostic taking precedence.',
     imported: 'The Flight method returned an import with no Drop, Recover, Reject, or Skip diagnostic.',
-    'not-run': 'No Flight method ran for this candidate, including a declared family with no implementation.',
+    'not-run':
+      'The candidate did not reach its target Flight method, including a declared family with no implementation or an unavailable prerequisite.',
     rejected: 'The Flight method returned no import or reported a Reject diagnostic not classified as unsupported.',
     threw: 'The Flight adapter threw; only its error name is retained.',
     unsupported: 'A diagnostic named unsupported input, or a Skip diagnostic remained after earlier branches.',
