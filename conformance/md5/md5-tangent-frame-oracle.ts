@@ -793,6 +793,17 @@ export function measureMd5TangentHandedness(scene: Readonly<Scene3D>, meshSource
     xCorrelationRule: 'majority-direction-with-tie-indeterminate' as const,
     xSideComparison: 'triangle-centroid-sign-vs-observed-float32-rounding-cell' as const,
   };
+  // ★ READ THE COUNTS, NOT THE STATE WORD. `not-run` here does NOT mean the check did not run — every
+  // triangle below was measured. It means the oracle DECLINES TO CLAIM A PASS while any triangle is
+  // indeterminate or invalid, because a pass over a partially-unreadable population would assert more
+  // than was measured. A corpus with degenerate UV triangles therefore lands on `not-run` no matter how
+  // correct the importer is: those triangles have no texture orientation to compare against.
+  //
+  // So a successful fix moves this field from `failed` to `not-run`, which reads like a regression and
+  // is not one. The evidence is matchingTriangles up, mismatchingTriangles at zero, with
+  // indeterminateTriangles unchanged — the indeterminate count is a property of the corpus, not of the
+  // code under test. On the reference corpus that is 2694 matching / 0 mismatching / 48 indeterminate,
+  // and `not-run` is the expected terminal state for a fully correct importer.
   if (mismatchingTriangles > 0) return { ...measurements, state: 'failed' };
   if (indeterminateTriangles > 0 || invalidTriangles > 0) {
     return { ...measurements, notRunReason: 'uv-winding-indeterminate', state: 'not-run' };
