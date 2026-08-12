@@ -42,6 +42,27 @@ A file:line here is a claim about this tree, not about a session.
   (`glClipRectangle.ts:71`). Promoting the stack operations into this package is the cleaner layering and
   crosses a package boundary, so it is a ruling before it is effort.
 
+- **Nobody has swept the GL fixed-function state seam, and three defects came out of it by accident in
+  one afternoon.** `frontFace` did not exist anywhere in the draw path, so a mirrored mesh was culled
+  entirely rather than shaded wrong; once added, CW leaked past a mirrored draw into the CCW
+  render-effect present pass and blanked the whole frame; and `pushGlRenderState` did not preserve
+  `FRONT_FACE`, so a host context set to CW got CCW handed back. One failure mode, three sightings,
+  all found while looking for something else.
+  THE SWEEP IS CHECKABLE BY CONSTRUCTION, which is why it is worth doing deliberately rather than
+  waiting for the next accident: the bracket's own saved-field list IS the inventory. For every piece
+  of fixed-function state the draw path touches — depth test/mask/func, cull enable and mode, front
+  face, blend enable/func/equation, scissor, viewport, stencil, colour mask, program, VAO, framebuffer,
+  texture units — ask three questions. (a) Is it SET when it needs to be, or inherited by luck from
+  whatever ran before? (b) Is it RESTORED intra-frame, so a per-draw value cannot leak into a later
+  pass in the same frame? (c) Is it PRESERVED across the host bracket, so Flight hands the context back
+  as it found it? Anything the draw path calls that the bracket does not save is a candidate for (c) by
+  construction; (a) and (b) need reading the pass order.
+  Two traps worth knowing before starting. A test fixture that begins at the API default makes a
+  restore-a-constant bug indistinguishable from a restore-the-saved-value fix — the `FRONT_FACE`
+  bracket fixtures deliberately start at CW for this reason. And a Flight-only render cannot see a host
+  leak at all: intra-frame and cross-bracket leaks are different failures and only the first is visible
+  from inside.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
