@@ -1,7 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types/contract';
 
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
-import { reportMeshGeometryUvWrap } from './meshGeometryGuards';
 
 // UV transform helpers for the uv0 channel. All functions write directly into geometry.vertices
 // and bump geometry.version. They operate on whatever attribute is registered under the 'uv0'
@@ -46,28 +45,6 @@ export function scaleMeshGeometryUvs(geometry: MeshGeometry, su: number, sv: num
     const base = i * floatsPerVertex + floatOffset;
     verts[base] *= su;
     verts[base + 1] *= sv;
-  }
-  if (vertexCount > 0) geometry.version++;
-}
-
-// Wraps every uv0 coordinate into [0, 1) using the fractional-part operation: u' = u - floor(u).
-// Useful after scale or offset operations that push coordinates outside the 0..1 atlas tile.
-// Coordinates that are exactly on integer boundaries (e.g. u = 1.0) wrap to 0.0.
-//
-// The fold is per vertex, so it is faithful only while a primitive's corners share a unit tile. Whether
-// they do is reported through the guard seam below rather than assumed; enableMeshGeometryGuards installs
-// it and explainMeshGeometryUvWrap answers the same question as data.
-export function wrapMeshGeometryUvs(geometry: MeshGeometry): void {
-  const floatOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
-  if (floatOffset < 0) return;
-  reportMeshGeometryUvWrap(geometry);
-  const floatsPerVertex = geometry.layout.stride / 4;
-  const vertexCount = floatsPerVertex > 0 ? Math.floor(geometry.vertices.length / floatsPerVertex) : 0;
-  const verts = geometry.vertices;
-  for (let i = 0; i < vertexCount; i++) {
-    const base = i * floatsPerVertex + floatOffset;
-    verts[base] = verts[base] - Math.floor(verts[base]);
-    verts[base + 1] = verts[base + 1] - Math.floor(verts[base + 1]);
   }
   if (vertexCount > 0) geometry.version++;
 }

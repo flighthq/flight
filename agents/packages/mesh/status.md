@@ -23,25 +23,24 @@ A file:line here is a claim about this tree, not about a session.
   last-write-wins; nothing named `*SmoothNormals` exists anywhere in `packages/`. The real version
   splits vertices along the crease and remaps indices — a behavioral contract, not a sweep.
 - **No projection UV generation.** `meshGeometryUvs.ts` carries only `offsetMeshGeometryUvs` (`:12`),
-  `scaleMeshGeometryUvs` (`:28`), and `wrapMeshGeometryUvs` (`:45`); there is no planar/spherical/box
+  and `scaleMeshGeometryUvs` (`:28`); there is no planar/spherical/box
   projection and no `computeMeshGeometryUvBounds`. The planar axis parameter and box-UV seam handling
   are the undecided part.
-- **`wrapMeshGeometryUvs` destroys the mapping of essentially every geometry in the SDK, including
-  the round trip its own doc comment describes.** The fold is per vertex, so it is faithful only
-  while a primitive's corners share a unit tile — and `Math.floor` puts a coordinate of exactly 1.0
-  in tile 1, so any face reaching 1.0 straddles. MEASURED, not reasoned: `createPlaneMeshGeometry(1,
-  1, 1, 1)` has uv0 `[0,0] [1,0] [0,1] [1,1]` and wraps to `[0,0] [0,0] [0,0] [0,0]` — four corners
-  on one point, mapping gone. The documented atlas round trip is the same:
-  `offsetMeshGeometryUvs(tile, 1, 1)` gives u `[1,2,1,2]`, and wrapping gives `[0,0,0,0]`. Every
-  builder tops out at exactly 1.0 (plane/quad 2 vertices, box 12, torus 25 at u === 1; only the
-  spherically-mapped polyhedra exceed it, dodecahedron u 0.058..1.375). It survives because NOTHING
-  CALLS IT: every hit outside `dist/` is its own test file, the two barrels, the guard added
-  2026-08-12, and two `agents/` docs. `explainMeshGeometryUvWrap` is the query that reports it and
-  `enableMeshGeometryGuards` warns at the callsite; neither changes the arithmetic, because what to
-  do instead is a contract decision. Three candidates, none taken: shift each PRIMITIVE by a uniform
-  integer (preserves every primitive, but is no longer a per-value modulo and so no longer "wrap");
-  shift the whole MESH by `floor(min)` (what the atlas case actually wants, and a different
-  function); or delete the export, which pre-release with zero consumers is live.
+- **No UV atlas fold, and the next one must be FACE-AWARE.** Folding a mesh's UVs into one atlas tile
+  is a legitimate operation and there is deliberately none here: `wrapMeshGeometryUvs` was removed on
+  2026-08-12 rather than repaired, because `u - floor(u)` is defined at the wrong granularity for the
+  property it manipulates. Which tile a face belongs to is a PER-FACE fact; folding per vertex splits
+  faces whose corners land in different tiles, so the destructive case is the ordinary one and no
+  parameterisation of that shape fixes it. MEASURED before removal, so the next author does not
+  rediscover it: `createPlaneMeshGeometry(1, 1, 1, 1)` carries uv0 `[0,0] [1,0] [0,1] [1,1]` and
+  folded to `[0,0] [0,0] [0,0] [0,0]` — four corners on one point. The atlas round trip its own doc
+  described did the same: `offsetMeshGeometryUvs(tile, 1, 1)` gives u `[1,2,1,2]`, folding gave
+  `[0,0,0,0]`. Every builder tops out at exactly 1.0 (plane/quad 2 vertices at u === 1, box 12, torus
+  25; only the spherically mapped polyhedra pass it, dodecahedron u 0.058..1.375), so it was
+  destructive for nearly every geometry in the SDK and survived only because nothing called it. The
+  correct form resolves each FACE's tile once and offsets all of that face's corners by the same
+  integer, which preserves continuity. Not to be built speculatively — it returns when a caller needs
+  it.
 - **No edge/topology analysis.** `computeMeshGeometryWireframeIndices` (`meshGeometryIndex.ts:65`) is
   the only edge-adjacent export; `computeMeshGeometryEdges` and `findMeshGeometryNonManifoldEdges` are
   absent, and their return shape (what represents an edge; how a non-manifold report reads) is
@@ -100,9 +99,10 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **2026-08-12** — `enableMeshGeometryGuards` / `explainMeshGeometryUvWrap` added; the caller-facing
-  warning comment on `wrapMeshGeometryUvs` became a runtime guard, and building it measured the fold
-  destroying an ordinary 0..1 plane (see the `Open` item).
+- **2026-08-12** — `wrapMeshGeometryUvs` removed, with the guard tier built for it the same day. The
+  guard measured the fold destroying an ordinary 0..1 plane, which made the operation unfixable at its
+  own granularity rather than mis-documented; see the `Open` item for the face-aware form that replaces
+  it when a caller needs one.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline claim of the 2026-06-25 entry
   was checked and is **false**: it recorded that "the actual package is 3 files" and that
   `meshGeometryAttributes.ts`, the layout constant, the UV helpers, and the Uv1/Color0 accessors "do
