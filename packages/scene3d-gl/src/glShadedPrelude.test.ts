@@ -95,6 +95,25 @@ describe('compileGlShadedProgram', () => {
     expect(fragment).toContain('normal = normalize(tbn * baseTangentNormal);');
   });
 
+  it('carries the tangent through the model matrix and the mirror through its handedness', () => {
+    // A tangent is a true surface vector and follows the model matrix; only the normal is a covector
+    // needing the inverse-transpose. They agree under rotation and uniform scale — which is why one
+    // shared u_normalMatrix looked right — and diverge under non-uniform scale, tilting the tangent
+    // off the surface. And the bitangent is rebuilt as w * cross(N, T), so a mirroring model
+    // transform must reach tangent.w or every mirrored instance lights with a flipped frame.
+    const gl = makeFakeGl2();
+    compileGlShadedProgram(gl, { ...BASE_KEY, hasNormalMap: true }, [], createModifierRegistry());
+    const vertex = vertexSourceFrom(gl.calls);
+    expect(vertex).toContain('mat3 modelRotation = mat3(u_model);');
+    expect(vertex).toContain('v_tangent = vec4(modelRotation * localTangent, tangentHandedness);');
+    expect(vertex).toContain('determinant(modelRotation) < 0.0 ? -1.0 : 1.0');
+    // The normal keeps the inverse-transpose: the point is that the two DIVERGE, not that the
+    // tangent's matrix replaced both.
+    expect(vertex).toContain('v_normal = u_normalMatrix * localNormal;');
+    // And the tangent must no longer ride the normal's matrix at all.
+    expect(vertex).not.toContain('u_normalMatrix * localTangent');
+  });
+
   it('reuses GL_MESH_LIGHT_BLOCK_GLSL rather than declaring a second light block', () => {
     const gl = makeFakeGl2();
     compileGlShadedProgram(gl, BASE_KEY, [], createModifierRegistry());
