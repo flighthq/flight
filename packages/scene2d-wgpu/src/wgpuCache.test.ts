@@ -155,6 +155,8 @@ describe('createWgpuCacheState', () => {
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(cacheRuntime.registries.compressedTextureDecoder).toBe(screenRuntime.registries.compressedTextureDecoder);
+    expect(cacheRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
     expect(cacheRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(cacheRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(cacheRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);

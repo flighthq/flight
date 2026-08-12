@@ -37,6 +37,10 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries extends RenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
+  // Optional compressed-container policy. Both slots are empty until explicitly registered so
+  // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
+  compressedTextureDecoder: SlotTable<GlCompressedTextureDecoder>;
+  compressedTextureUpload: SlotTable<GlCompressedTextureUploader>;
   customEffectShaders: KeyedTable<string>;
   customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
@@ -227,15 +231,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
   glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
-  // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
-  // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
-  // compressed texture — or only draws formats the device supports — carries no decoder. Undefined
-  // until registered; the compressed uploader reads it as the decode seam for a CompressedImage.
-  compressedTextureDecoder?: GlCompressedTextureDecoder | null;
-  // Optional block-compressed upload seam. Installed per-state by registerGlCompressedTextureUpload
-  // (opt-in), so a state that only ever draws Image/Bitmap sources never pulls the ~40-format
-  // compressed-container upload path into the bundle. Undefined until registered.
-  compressedTextureUpload?: GlCompressedTextureUploader | null;
   // Dynamic host-video caches keyed by source identity and split by GPU color interpretation.
   // `uploadedVersion` tracks the last decoded frame copied to GL.
   videoTextureCache?: WeakMap<Image, { texture: WebGLTexture; uploadedVersion: number }>;

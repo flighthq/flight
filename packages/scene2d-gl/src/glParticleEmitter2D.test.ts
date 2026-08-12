@@ -6,7 +6,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
@@ -116,7 +116,11 @@ describe('drawGlParticleEmitter2D', () => {
   it('uploads the straight-alpha flag for a compressed particle atlas', () => {
     const { state, gl } = createAtlasGlState();
     registerGlCompressedImageTextureResolver(state);
-    getGlRenderStateRuntime(state).compressedTextureUpload = () => true;
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.registries.compressedTextureUpload = {
+      ...runtime.registries.compressedTextureUpload,
+      entry: { state: RegistryEntryState.Bound, value: () => true },
+    };
     const image = {
       compressed: { container: {}, payload: new Uint8Array() },
       height: 4,

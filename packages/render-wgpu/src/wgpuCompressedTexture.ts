@@ -8,6 +8,7 @@ import type {
   WgpuRenderState,
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -52,11 +53,21 @@ export function registerWgpuCompressedTextureDecoder(
   state: WgpuRenderState,
   decode: WgpuCompressedTextureDecoder | null,
 ): void {
-  getWgpuRenderStateRuntime(state).compressedTextureDecoder = decode;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const table = runtime.registries.compressedTextureDecoder;
+  runtime.registries.compressedTextureDecoder = {
+    ...table,
+    entry: decode === null ? null : { state: RegistryEntryState.Bound, value: decode },
+  };
 }
 
 export function registerWgpuCompressedTextureUpload(state: WgpuRenderState, uploader?: null): void {
-  getWgpuRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadWgpuCompressedImage;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const table = runtime.registries.compressedTextureUpload;
+  runtime.registries.compressedTextureUpload = {
+    ...table,
+    entry: uploader === null ? null : { state: RegistryEntryState.Bound, value: uploadWgpuCompressedImage },
+  };
 }
 
 // Creates and fills a WebGPU texture from a parsed block-compressed container. Native uploads cover

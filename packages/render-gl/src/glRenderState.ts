@@ -28,6 +28,8 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     blendRealizations: sourceRuntime.registries.blendRealizations,
+    compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
+    compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customEffectShaders: sourceRuntime.registries.customEffectShaders,
     customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
     materialRenderers: sourceRuntime.registries.materialRenderers,
@@ -43,8 +45,6 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
     velocityWriters: sourceRuntime.registries.velocityWriters,
   };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
-  targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
-  targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
   copyRenderStateRegistrations(target, source);
 }
 
@@ -192,6 +192,8 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   runtime.currentRenderTarget = null;
   runtime.registries = {
     blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
+    compressedTextureDecoder: createSlotTable('GlCompressedTextureDecoder', 'Unregistered'),
+    compressedTextureUpload: createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
     customEffectShaders: createKeyedTable('GlCustomEffectShader', 'Unregistered'),
     customMaterialShaders: createKeyedTable('GlCustomMaterialShader', 'Unregistered'),
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),

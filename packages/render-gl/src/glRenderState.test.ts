@@ -13,9 +13,10 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RenderEffectPaddingResolver, RenderState } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
+import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import {
@@ -61,8 +62,11 @@ describe('copyGlRenderStateRegistrations', () => {
     const offscreen = createGlOffscreenRenderState(screen);
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
+    const decoder = vi.fn(() => new Uint8ClampedArray(4));
     const resolver = vi.fn(() => null);
     registerGlBlendMode(screen, 'acme.LateBlend', { src: 'ONE', dst: 'ZERO' });
+    registerGlCompressedTextureDecoder(screen, decoder);
+    registerGlCompressedTextureUpload(screen);
     registerGlMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
@@ -73,6 +77,8 @@ describe('copyGlRenderStateRegistrations', () => {
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
     copyGlRenderStateRegistrations(offscreen, screen);
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
     expect(
@@ -81,8 +87,20 @@ describe('copyGlRenderStateRegistrations', () => {
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBe(
+      getGlRenderStateRuntime(screen).registries.compressedTextureDecoder,
+    );
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: decoder,
+    });
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBe(
+      getGlRenderStateRuntime(screen).registries.compressedTextureUpload,
+    );
     registerGlMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerGlBlendMode(offscreen, 'acme.LateBlend', { src: 'ZERO', dst: 'ONE' });
+    registerGlCompressedTextureDecoder(offscreen, null);
+    registerGlCompressedTextureUpload(offscreen, null);
     registerGlTextureResolver(offscreen, 'acme.LateTexture', null);
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
@@ -98,6 +116,14 @@ describe('copyGlRenderStateRegistrations', () => {
     ).toBe(false);
     expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture')).toBe(
       resolver,
+    );
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder.entry).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureDecoder.entry?.state).toBe(
+      RegistryEntryState.Bound,
+    );
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload.entry).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureUpload.entry?.state).toBe(
+      RegistryEntryState.Bound,
     );
   });
 });
@@ -137,6 +163,10 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
+    expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
+      screenRuntime.registries.compressedTextureDecoder,
+    );
+    expect(offscreenRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
     expect(offscreenRuntime.registries.customEffectShaders).toBe(screenRuntime.registries.customEffectShaders);
     expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
@@ -360,6 +390,18 @@ describe('createGlRenderStateRuntime', () => {
       onMiss: 'Unregistered',
       registry: 'GlRenderEffect',
       shape: 'keyed',
+    });
+    expect(runtime.registries.compressedTextureDecoder).toEqual({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'GlCompressedTextureDecoder',
+      shape: 'slot',
+    });
+    expect(runtime.registries.compressedTextureUpload).toEqual({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'GlCompressedTextureUpload',
+      shape: 'slot',
     });
     expect(runtime.registries.shapeRasterizer).toEqual({
       entry: null,

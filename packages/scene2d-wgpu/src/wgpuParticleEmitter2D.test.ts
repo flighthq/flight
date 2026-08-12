@@ -9,7 +9,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImage, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
@@ -53,19 +53,25 @@ describe('drawWgpuParticleEmitter2D', () => {
       version: 1,
       width: 4,
     } as unknown as CompressedImage;
-    runtime.compressedTextureUpload = () => {
-      const texture = state.device.createTexture({
-        size: [4, 4],
-        format: 'bc3-rgba-unorm',
-        usage: GPUTextureUsage.TEXTURE_BINDING,
-      });
-      const view = texture.createView();
-      return {
-        bindGroup: state.device.createBindGroup({ layout: runtime.textureBindGroupLayout, entries: [] }),
-        straightAlpha: true,
-        texture,
-        view,
-      };
+    runtime.registries.compressedTextureUpload = {
+      ...runtime.registries.compressedTextureUpload,
+      entry: {
+        state: RegistryEntryState.Bound,
+        value: () => {
+          const texture = state.device.createTexture({
+            size: [4, 4],
+            format: 'bc3-rgba-unorm',
+            usage: GPUTextureUsage.TEXTURE_BINDING,
+          });
+          const view = texture.createView();
+          return {
+            bindGroup: state.device.createBindGroup({ layout: runtime.textureBindGroupLayout, entries: [] }),
+            straightAlpha: true,
+            texture,
+            view,
+          };
+        },
+      },
     };
     const renderProxy = {
       alpha: 1,

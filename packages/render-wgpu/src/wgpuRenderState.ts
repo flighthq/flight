@@ -29,6 +29,8 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
+    compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
+    compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
     materialRenderers: sourceRuntime.registries.materialRenderers,
     meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
@@ -41,8 +43,6 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
     velocityWriters: sourceRuntime.registries.velocityWriters,
   };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
-  targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
-  targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
   copyRenderStateRegistrations(target, source);
 }
 
@@ -255,6 +255,8 @@ export async function createWgpuRenderState(
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
+    compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
+    compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
     customMaterialShaders: createKeyedTable('WgpuCustomMaterialShader', 'Unregistered'),
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
     meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
