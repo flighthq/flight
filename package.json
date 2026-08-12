@@ -166,6 +166,7 @@
     "type-home": "tsx ./scripts/type-home-progress.ts",
     "type-home:check": "tsx ./scripts/type-home-progress.ts --gate",
     "typecheck": "tsx ./scripts/typecheck.ts",
+    "untested": "tsx ./scripts/untested.ts",
     "version:packages": "tsx ./scripts/version-packages.ts"
   },
   "devDependencies": {
