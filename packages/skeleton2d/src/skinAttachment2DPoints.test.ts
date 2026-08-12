@@ -29,6 +29,35 @@ const twoBoneSkin: Skin2D = {
 };
 
 describe('skinSkeleton2DAttachmentPoints', () => {
+  // A slot whose bone name did not resolve carries boneIndex -1 — the value spineParse emits by design for
+  // a file naming a bone that is not there, on a skeleton validateSkeleton2D calls valid. Before this was
+  // guarded the rigid path indexed the world buffer at -6, and every coordinate it wrote was NaN: a mesh
+  // that draws nothing and a bounding box no hit test can match, with nothing pointing back at the rig.
+  //
+  // `out` is pre-filled with a marker rather than zeroes so the assertion tells "left alone" apart from
+  // "written with zeroes", which are different outcomes and only one of them is the sentinel.
+  it.each([-1, 4, 99])('leaves out untouched for a slot bound to no bone (boneIndex %i)', (boneIndex) => {
+    const skeleton = createSkeleton2D([makeBone({ rotation: 30 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+    const out = new Float32Array([-7, -7, -7, -7]);
+
+    skinSkeleton2DAttachmentPoints(out, null, new Float32Array([1, 0, 0, 1]), skeleton, boneIndex, null, 'test');
+
+    expect(Array.from(out)).toEqual([-7, -7, -7, -7]);
+  });
+
+  // The weighted path reads its bone indices from the influence stream and ignores `boneIndex` entirely,
+  // so the guard must not turn a perfectly good weighted skin into a no-op on its way past.
+  it('still skins a weighted attachment when boneIndex is -1, which it does not use', () => {
+    const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+    const out = new Float32Array(2);
+
+    skinSkeleton2DAttachmentPoints(out, twoBoneSkin, null, skeleton, -1, null, 'test');
+
+    expect(out[0]).toBeCloseTo(5, 5);
+  });
+
   it('blends a weighted point by weight across its influences', () => {
     const skeleton = createSkeleton2D([makeBone({ x: 0 }), makeBone({ x: 10 })]);
     computeSkeleton2DWorldTransforms(skeleton);

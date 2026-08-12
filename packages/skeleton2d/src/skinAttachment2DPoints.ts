@@ -76,6 +76,13 @@ export function skinSkeleton2DAttachmentPoints(
   }
 
   if (vertices === null || vertices === undefined) return;
+  // A slot bound to no bone is an ASSET fact, not a programmer error: an importer resolving a slot's bone
+  // name against the bone array emits -1 when the file names one that is not there, and a skeleton holding
+  // that slot is valid — validateSkeleton2D checks bone parentage and buffer lengths, never slot bones. So
+  // it takes the sentinel, leaving `out` as the caller last saw it. Reading on would index the world buffer
+  // at a negative offset, and every coordinate written from there is NaN: a mesh that draws nothing, and a
+  // bounding box no hit test can ever match, with no symptom pointing back at the rig.
+  if (boneIndex < 0 || boneIndex * MATRIX_STRIDE >= world.length) return;
   const offsets = deform !== null && deform.length === vertices.length ? deform : null;
   if (deform !== null && offsets === null) {
     reportSkeleton2DDeformLengthMismatch(subject, deform.length, vertices.length);

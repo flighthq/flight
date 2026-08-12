@@ -16,6 +16,10 @@ export function computeSkeleton2DRegionAttachmentVertices(
   skeleton: Readonly<Skeleton2D>,
   boneIndex: number,
 ): void {
+  const world = skeleton.worldMatrices;
+  // A slot bound to no bone takes the sentinel rather than writing NaN corners — see
+  // skinSkeleton2DAttachmentPoints, which carries the same guard for the attachments that skin.
+  if (boneIndex < 0 || boneIndex * MATRIX_STRIDE >= world.length) return;
   // Region local matrix (offset + rotation° + scale; regions carry no shear).
   setTransformMatrix(
     _local,
@@ -26,7 +30,6 @@ export function computeSkeleton2DRegionAttachmentVertices(
     attachment.y,
   );
   const b = boneIndex * MATRIX_STRIDE;
-  const world = skeleton.worldMatrices;
   _bone.a = world[b];
   _bone.b = world[b + 1];
   _bone.c = world[b + 2];
