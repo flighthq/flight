@@ -116,6 +116,23 @@ exist there by construction. This is WGPU-only and structural, not a parity gap.
 
 ### Wrong pixels reach the screen
 
+- ★ **A nested offscreen pop draws to the canvas while the runtime believes it is drawing to the outer
+  offscreen target.** The pop restores `currentRenderTarget` to the outer target but **reopens
+  `saved.canvasTextureView` and the main `depthStencilView`** rather than the outer target's view and
+  depth-stencil. So the claimed target and the view GPU commands actually hit diverge.
+  **Escape: the existing nested-target test checks the TAG — which target is claimed — not which view the
+  commands reach.** Same shape as the `glRenderPass` stencil defect: an internal restore that reads as
+  correct because what the test checks is not what matters.
+- **Enclosing depth/stencil cannot survive a detour.** Pass encoders store both as `discard` and resume
+  clears both, so depth and stencil state is lost across a nested detour rather than preserved.
+
+★ Both found by applying the **set-difference method** to the WGPU begin/end pass bracket — enumerate what
+the draw paths touch, diff against the bracket's saved-field list, take the residue as the candidate set.
+Saved today: `canvasTextureView`, `canvasViewCleared`, main `depthStencilView` handle, `renderTargetViewport`,
+`renderTransform2D`, `currentColorFormat`, `currentRenderTarget`. **Unlike the GL bracket, which converged
+to a single item, the WGPU residue is not empty** — the method's second application found real gaps, which
+is the argument for running it on every remaining bracket.
+
 - **Retained 2D render cache is cleared and submitted transparent on the clean path.**
   `refreshWgpuRenderCache` calls `beginWgpuRenderPass` **before** `prepareScene2DRender`, and the pass
   defaults colour `loadOp` to clear. When `requiresInvalidation` reports clean and the target size is
