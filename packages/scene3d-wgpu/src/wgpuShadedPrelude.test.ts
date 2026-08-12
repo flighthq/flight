@@ -1,4 +1,4 @@
-import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import {
   createAnimatedNormalModifier,
   createDissolveModifier,
@@ -173,7 +173,7 @@ describe('getWgpuShadedModuleSource', () => {
         createToonModifier({ steps: 3 }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuRenderStateRuntime(state).registries.modifierSnippets);
     expect(source).toContain('animatedNormal');
     expect(source).toContain('emissiveTerm');
     expect(source).toContain('rimFactor');
@@ -195,7 +195,7 @@ describe('getWgpuShadedModuleSource', () => {
         }),
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuRenderStateRuntime(state).registries.modifierSnippets);
     expect(source.indexOf('localPosition = vec4f(localPosition.xyz')).toBeLessThan(
       source.indexOf('let world = draw.world * localPosition'),
     );
@@ -212,7 +212,7 @@ describe('getWgpuShadedModuleSource', () => {
     const registered = { kind: 'acme.Glow', slot: ModifierSlot.Effect } as Modifier;
     const missing = { kind: 'acme.Missing', slot: ModifierSlot.Effect } as Modifier;
     const material = createShadedMaterial({ modifiers: [registered, missing] });
-    const registry = getWgpuScene3DRuntime(state).modifierSnippetRegistry!;
+    const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(material, registry);
     expect(source).toContain('radiance = radiance + vec3f(0.125)');
     expect(buildWgpuShadedCacheKey(material, registry)).toContain('acme.Missing');
@@ -249,7 +249,7 @@ describe('getWgpuShadedModuleSource', () => {
       });
       modifiers.push({ kind, slot: slots[i] });
     }
-    const registry = getWgpuScene3DRuntime(state).modifierSnippetRegistry!;
+    const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
     const source = getWgpuShadedModuleSource(createShadedMaterial({ modifiers }), registry);
     for (let i = 0; i < slots.length; i++) expect(source).toContain(`slot_marker_${i}`);
     expect(source).toMatch(/\/\/ slot_marker_1\s+diffuse = diffuse;\s+if \(ALPHA_MASK/);
@@ -277,7 +277,7 @@ describe('getWgpuShadedModuleSource', () => {
         { kind: 'acme.DeclarationB', slot: ModifierSlot.Effect },
       ],
     });
-    const source = getWgpuShadedModuleSource(material, getWgpuScene3DRuntime(state).modifierSnippetRegistry!);
+    const source = getWgpuShadedModuleSource(material, getWgpuRenderStateRuntime(state).registries.modifierSnippets);
     expect(source.match(/fn shadedValueNoise/g)).toHaveLength(1);
     expect(source).toContain('fn vendorA() {}\nfn vendorB() {}');
   });

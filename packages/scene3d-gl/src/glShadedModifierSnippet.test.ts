@@ -1,3 +1,5 @@
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 
@@ -15,11 +17,13 @@ function makeSnippet(overrides?: Partial<GlModifierSnippet>): GlModifierSnippet 
 }
 
 describe('registerGlModifierSnippet', () => {
-  it('leaves the modifier registry unallocated until the first registration', () => {
+  it('starts with empty persistent policy and advances its revision on registration', () => {
     const { state } = makeGlScene3DState();
-    expect(getGlScene3DRuntime(state).modifierSnippetRegistry).toBeNull();
+    expect(getGlRenderStateRuntime(state).registries.modifierSnippets.entries.size).toBe(0);
+    expect(getGlRenderStateRuntime(state).registries.modifierSnippetRevision).toBe(0);
     registerGlModifierSnippet(state, makeSnippet());
-    expect(getGlScene3DRuntime(state).modifierSnippetRegistry).not.toBeNull();
+    expect(getGlRenderStateRuntime(state).registries.modifierSnippets.entries.size).toBe(1);
+    expect(getGlRenderStateRuntime(state).registries.modifierSnippetRevision).toBe(1);
   });
 
   it('stores a snippet resolvable by its kind', () => {
@@ -29,12 +33,25 @@ describe('registerGlModifierSnippet', () => {
     expect(resolveGlModifierSnippet(state, 'acme.Test')).toBe(snippet);
   });
 
-  it('is last-write-wins for the same kind', () => {
-    const { state } = makeGlScene3DState();
-    registerGlModifierSnippet(state, makeSnippet());
+  it('replaces the table while an explicitly copied state retains its snapshot through lazy scene init', () => {
+    const { state: screen } = makeGlScene3DState();
+    const { state: derived } = makeGlScene3DState();
+    const initial = makeSnippet();
     const override = makeSnippet({ contribution: () => '// override' });
-    registerGlModifierSnippet(state, override);
-    expect(resolveGlModifierSnippet(state, 'acme.Test')).toBe(override);
+    registerGlModifierSnippet(screen, initial);
+    const snapshot = getGlRenderStateRuntime(screen).registries.modifierSnippets;
+
+    copyGlRenderStateRegistrations(derived, screen);
+    getGlScene3DRuntime(derived);
+    registerGlModifierSnippet(screen, override);
+
+    expect(getGlRenderStateRuntime(derived).registries.modifierSnippets).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.modifierSnippetRevision).toBe(1);
+    expect(getGlRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
+    expect(getGlRenderStateRuntime(screen).registries.modifierSnippetRevision).toBe(2);
+    expect(getRegistryTableEntry(snapshot, 'acme.Test')).toBe(initial);
+    expect(resolveGlModifierSnippet(derived, 'acme.Test')).toBe(initial);
+    expect(resolveGlModifierSnippet(screen, 'acme.Test')).toBe(override);
   });
 });
 

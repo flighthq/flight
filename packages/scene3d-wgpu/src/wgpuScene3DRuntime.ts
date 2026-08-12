@@ -43,8 +43,6 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       pbrSampleIblCubeView: null,
       pbrSampleLayout: null,
       pbrSampleShadowView: null,
-      modifierSnippetRegistry: null,
-      modifierSnippetRevision: 0,
       opaqueDrawList: [],
       opaquePool: [],
       pendingDrawOffset: 0,

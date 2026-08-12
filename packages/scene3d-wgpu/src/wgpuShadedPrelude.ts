@@ -7,8 +7,10 @@ import type {
   EmissiveModifier,
   EnvReflectModifier,
   FogModifier,
+  KeyedTable,
   LinearColor,
   Modifier,
+  ModifierKind,
   ModifierRegistry,
   RimModifier,
   ShadedMaterial,
@@ -31,6 +33,7 @@ import {
   FogModifierKind,
   FogModifierMode,
   ModifierSlot,
+  RegistryEntryState,
   RimModifierKind,
   ToonModifierKind,
   VertexDisplaceModifierKind,
@@ -71,8 +74,10 @@ interface CachedShadedPlan {
   defineKey: string;
   modifiers: readonly Modifier[];
   plan: ShadedModifierPlan;
-  registry: Readonly<ModifierRegistry>;
+  registry: WgpuModifierSnippetSource;
 }
+
+type WgpuModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<KeyedTable<WgpuModifierSnippet>>;
 
 interface ShadedBinding {
   bindGroup: GPUBindGroup;
@@ -95,7 +100,7 @@ export function bindWgpuShadedSurface(
   diffuse: Readonly<LinearColor>,
   specular: Readonly<LinearColor>,
 ): GPUBindGroup {
-  const registry = getModifierRegistry(state);
+  const registry = getModifierSnippetTable(state);
   const plan = getCachedModifierPlan(state, material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
   const stateBindings = getWgpuScene3DRuntime(state).shadedMaterialBindingCache as WeakMap<
@@ -205,13 +210,13 @@ function textureEntryIndex(textureIndex: number): number {
 // canonical ordered modifier signature; format and blend are added by the shared pipeline cache.
 export function buildWgpuShadedCacheKey(
   material: Readonly<ShadedMaterial>,
-  registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
+  registry: WgpuModifierSnippetSource = EMPTY_MODIFIER_REGISTRY,
 ): string {
   const flags = getWgpuShadedBaseFlags(material);
   const base = `${flags.alphaMaskEnabled ? 'm' : '-'}${flags.doubleSided ? 'd' : '-'}${
     flags.hasDiffuseMap ? 'd' : '-'
   }${flags.hasSpecularMap ? 's' : '-'}${flags.hasNormalMap ? 'n' : '-'}`;
-  return `shaded:${base}|${getModifierDefineKey(material.modifiers, registry)}`;
+  return `shaded:${base}|${getWgpuModifierDefineKey(material.modifiers, registry)}`;
 }
 
 // Resolves the immutable shader/layout/pipeline permutation. The shared cache appends opaque/blend,
@@ -221,14 +226,15 @@ export function ensureWgpuShadedPipeline(
   material: Readonly<ShadedMaterial>,
   format: GPUTextureFormat,
 ): WgpuMeshPipeline {
-  const registry = getModifierRegistry(state);
+  const registries = getWgpuRenderStateRuntime(state).registries;
+  const registry = registries.modifierSnippets;
   const defineKey = buildWgpuShadedCacheKey(material, registry);
   const plan = getCachedModifierPlan(state, material, registry, defineKey);
   const colorAdjusted = getWgpuScene3DRuntime(state).activeColorAdjustmentRun;
   const colorMatrix = getWgpuScene3DRuntime(state).activeColorMatrixRun;
-  const key = `${defineKey}|registry:${
-    getWgpuScene3DRuntime(state).modifierSnippetRevision
-  }|${format}|${colorMatrix ? 'color-matrix' : colorAdjusted ? 'color-adjusted' : 'base'}`;
+  const key = `${defineKey}|registry:${registries.modifierSnippetRevision}|${format}|${
+    colorMatrix ? 'color-matrix' : colorAdjusted ? 'color-adjusted' : 'base'
+  }`;
   return ensureWgpuScene3DPipeline(state, key, (blended, skinned) => {
     const entries: GPUBindGroupLayoutEntry[] = [
       {
@@ -291,7 +297,7 @@ export function ensureWgpuShadedPipeline(
 // This keeps shared Frame/Draw/light/shadow behavior byte-for-byte aligned with classic WebGPU.
 export function getWgpuShadedModuleSource(
   material: Readonly<ShadedMaterial>,
-  registry: Readonly<ModifierRegistry> = EMPTY_MODIFIER_REGISTRY,
+  registry: WgpuModifierSnippetSource = EMPTY_MODIFIER_REGISTRY,
   skinned = false,
   skinning: Readonly<WgpuSkinningAdapter> | null = null,
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
@@ -421,7 +427,7 @@ struct Ibl {
   return source;
 }
 
-function buildModifierPlan(modifiers: readonly Modifier[], registry: Readonly<ModifierRegistry>): ShadedModifierPlan {
+function buildModifierPlan(modifiers: readonly Modifier[], registry: WgpuModifierSnippetSource): ShadedModifierPlan {
   const ordered = orderModifierStack(modifiers);
   const snippets: (Readonly<WgpuModifierSnippet> | null)[] = new Array(ordered.length);
   const declarations = new Set<string>();
@@ -434,7 +440,7 @@ function buildModifierPlan(modifiers: readonly Modifier[], registry: Readonly<Mo
   let textureCount = 0;
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
-    const snippet = resolveModifier(registry, modifier.kind) as WgpuModifierSnippet | null;
+    const snippet = resolveWgpuModifierSnippetSource(registry, modifier.kind);
     snippets[index] = snippet;
     if (snippet === null) continue;
     const base = index * MODIFIER_FLOATS;
@@ -481,7 +487,7 @@ function writeModifierUniforms(out: Float32Array, offset: number, plan: Readonly
 function getCachedModifierPlan(
   state: WgpuRenderState,
   material: Readonly<ShadedMaterial>,
-  registry: Readonly<ModifierRegistry>,
+  registry: WgpuModifierSnippetSource,
   defineKey?: string,
 ): ShadedModifierPlan {
   const plans = getWgpuScene3DRuntime(state).shadedMaterialPlanCache as WeakMap<ShadedMaterial, CachedShadedPlan>;
@@ -505,9 +511,9 @@ function getCachedModifierPlan(
   return plan;
 }
 
-function hasCurrentSnippets(plan: Readonly<ShadedModifierPlan>, registry: Readonly<ModifierRegistry>): boolean {
+function hasCurrentSnippets(plan: Readonly<ShadedModifierPlan>, registry: WgpuModifierSnippetSource): boolean {
   for (let i = 0; i < plan.orderedModifiers.length; i++) {
-    if (resolveModifier(registry, plan.orderedModifiers[i].kind) !== plan.snippets[i]) return false;
+    if (resolveWgpuModifierSnippetSource(registry, plan.orderedModifiers[i].kind) !== plan.snippets[i]) return false;
   }
   return true;
 }
@@ -792,8 +798,8 @@ export function registerBuiltInWgpuModifierSnippets(state: WgpuRenderState): voi
   registerWgpuModifierSnippet(state, vertexDisplaceWgpuModifierSnippet);
 }
 
-function getModifierRegistry(state: WgpuRenderState): Readonly<ModifierRegistry> {
-  return getWgpuScene3DRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
+function getModifierSnippetTable(state: WgpuRenderState): Readonly<KeyedTable<WgpuModifierSnippet>> {
+  return getWgpuRenderStateRuntime(state).registries.modifierSnippets;
 }
 
 function indent(source: string, spaces: number): string {
@@ -821,3 +827,31 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 const MODIFIER_FLOATS = 12;
 const _color: LinearColor = [0, 0, 0, 0];
 const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = { definitions: new Map() };
+
+function getWgpuModifierDefineKey(stack: readonly Modifier[], registry: WgpuModifierSnippetSource): string {
+  if (!isWgpuModifierSnippetTable(registry)) return getModifierDefineKey(stack, registry);
+  const ordered = orderModifierStack(stack);
+  let key = '';
+  for (const modifier of ordered) {
+    const snippet = resolveWgpuModifierSnippetSource(registry, modifier.kind);
+    const signature = snippet?.getDefineSignature?.(modifier) ?? '';
+    const token = signature.length > 0 ? `${modifier.kind}:${signature}` : modifier.kind;
+    key = key.length > 0 ? `${key}+${token}` : token;
+  }
+  return key;
+}
+
+function resolveWgpuModifierSnippetSource(
+  registry: WgpuModifierSnippetSource,
+  kind: ModifierKind,
+): WgpuModifierSnippet | null {
+  if (!isWgpuModifierSnippetTable(registry)) return resolveModifier(registry, kind) as WgpuModifierSnippet | null;
+  const entry = registry.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
+function isWgpuModifierSnippetTable(
+  registry: WgpuModifierSnippetSource,
+): registry is Readonly<KeyedTable<WgpuModifierSnippet>> {
+  return 'shape' in registry;
+}

@@ -6,6 +6,7 @@ import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
+import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
 import type { GlRenderEffectRegistration } from './GlRenderEffectPipeline';
 import type { GlRenderTarget } from './GlRenderTarget';
@@ -37,6 +38,10 @@ export interface GlRenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;
+  modifierSnippets: KeyedTable<GlModifierSnippet>;
+  // Shader cache identity advances with every snippet-table replacement, including same-kind
+  // replacements whose define signature is unchanged but whose emitted source differs.
+  modifierSnippetRevision: number;
   pbrExtensions: KeyedTable<GlPbrExtensionRegistration>;
   // Incremented whenever pbrExtensions is replaced. The compiled-program cache key includes this
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.

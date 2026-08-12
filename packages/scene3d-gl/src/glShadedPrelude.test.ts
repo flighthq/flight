@@ -6,12 +6,13 @@ import {
   registerModifier,
 } from '@flighthq/shading/contract';
 import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types/contract';
-import { VertexDisplaceModifierSource } from '@flighthq/types/contract';
+import { ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
 import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers';
+import { registerGlModifierSnippet } from './glShadedModifierSnippet';
 import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude';
 
 const BASE_KEY: GlShadedDefineKey = {
@@ -197,7 +198,7 @@ describe('ensureGlShadedProgram', () => {
     const skinned = ensureGlShadedProgram(state, BASE_KEY, []);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shaded:-----k|');
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toContain('shaded:-----k||registry:0');
     expect(skinned.locJointTexture).not.toBeNull();
   });
 
@@ -208,5 +209,29 @@ describe('ensureGlShadedProgram', () => {
     ensureGlShadedProgram(state, BASE_KEY, [createEmissiveModifier({ color: 0xffffffff })]);
     const keys = [...getGlScene3DRuntime(state).programCache.keys()].filter((k) => k.startsWith('shaded:'));
     expect(new Set(keys).size).toBe(2);
+  });
+
+  it('recompiles after a last-write-wins snippet replacement with the same define signature', () => {
+    const { gl, state } = makeGlScene3DState();
+    const modifier = { kind: 'acme.Replace', slot: ModifierSlot.Effect };
+    registerGlModifierSnippet(state, {
+      contribution: () => '// compiler-marker-A',
+      kind: modifier.kind,
+      slot: modifier.slot,
+    });
+    ensureGlShadedProgram(state, BASE_KEY, [modifier]);
+    const before = gl.calls.filter((call) => call.name === 'linkProgram').length;
+
+    registerGlModifierSnippet(state, {
+      contribution: () => '// compiler-marker-B',
+      kind: modifier.kind,
+      slot: modifier.slot,
+    });
+    ensureGlShadedProgram(state, BASE_KEY, [modifier]);
+
+    expect(gl.calls.filter((call) => call.name === 'linkProgram')).toHaveLength(before + 1);
+    expect(
+      gl.calls.some((call) => call.name === 'shaderSource' && String(call.args[1]).includes('compiler-marker-B')),
+    ).toBe(true);
   });
 });

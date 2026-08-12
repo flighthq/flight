@@ -111,7 +111,6 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       environmentSourceCubeColorSpace: 'linear',
       ibl: null,
       iblBakeFramebuffer: null,
-      modifierSnippetRegistry: null,
       opaqueDrawList: [],
       opaquePool: [],
       pbrExtensionGuard: null,

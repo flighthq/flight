@@ -6,7 +6,6 @@ import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
 import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
 import type { MeshGeometry } from './MeshGeometry';
-import type { ModifierRegistry } from './ModifierRegistry';
 import type { PbrExtension } from './PbrExtension';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
@@ -62,10 +61,9 @@ export interface GlScene3DDrawEntry {
 // `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
 // here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame
 // draw lists (`blendedDrawList`/`opaqueDrawList`) live here so two independent render states never
-// share allocation. `modifierSnippetRegistry` is the ShadedMaterial GL modifier-snippet registry
-// (backend-side GLSL emitters keyed by ModifierKind, opt-in via registerGlModifierSnippet); it stays
-// `null` — allocating nothing and keeping @flighthq/shading's registry off a PBR/classic-only
-// bundle's path — until the first snippet is registered.
+// share allocation. ShadedMaterial modifier-snippet policy lives in
+// GlRenderStateRuntime.registries.modifierSnippets; this runtime retains only compiled programs and
+// per-frame/resource state.
 // `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlScene3DTime).
 // One GlScene3DRuntime is created lazily per state by getGlScene3DRuntime.
 export interface GlScene3DRuntime {
@@ -101,7 +99,6 @@ export interface GlScene3DRuntime {
   environmentSourceCubeColorSpace: TextureColorSpace;
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
-  modifierSnippetRegistry: ModifierRegistry | null;
   // Opt-in forward-light selection guard, null until enableGlScene3DForwardLightSelectionGuards installs
   // it. drawGlScene3D reaches it only when excess punctual lights would be silently input-truncated and
   // no prepared per-object selection list was supplied.

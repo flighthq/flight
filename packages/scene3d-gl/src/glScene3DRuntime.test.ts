@@ -135,10 +135,14 @@ describe('getGlScene3DRuntime', () => {
     const { state } = makeGlScene3DState();
     const stateRuntime = state[EntityRuntimeKey] as GlRenderStateRuntime;
     const materials = stateRuntime.registries.meshMaterialRenderers;
+    const modifierSnippets = stateRuntime.registries.modifierSnippets;
+    const modifierSnippetRevision = stateRuntime.registries.modifierSnippetRevision;
     const pbrExtensions = stateRuntime.registries.pbrExtensions;
     const pbrExtensionRevision = stateRuntime.registries.pbrExtensionRevision;
     const scene = getGlScene3DRuntime(state);
     expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
+    expect(stateRuntime.registries.modifierSnippets).toBe(modifierSnippets);
+    expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
     expect(stateRuntime.registries.pbrExtensions).toBe(pbrExtensions);
     expect(stateRuntime.registries.pbrExtensionRevision).toBe(pbrExtensionRevision);
     expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);

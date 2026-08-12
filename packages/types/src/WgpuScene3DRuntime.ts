@@ -1,7 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { CustomShaderMaterial } from './CustomShaderMaterial';
 import type { Matrix4 } from './Matrix4';
-import type { ModifierRegistry } from './ModifierRegistry';
 import type { Scene3DLightsLike } from './Scene3DLights';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
@@ -135,8 +134,6 @@ export interface WgpuScene3DRuntime {
   pbrSampleIblCubeView: GPUTextureView | null;
   pbrSampleLayout: GPUBindGroupLayout | null;
   pbrSampleShadowView: GPUTextureView | null;
-  modifierSnippetRegistry: ModifierRegistry | null;
-  modifierSnippetRevision: number;
   opaqueDrawList: WgpuScene3DDrawEntry[];
   opaquePool: WgpuScene3DDrawEntry[];
   pendingDrawOffset: number;

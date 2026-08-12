@@ -31,6 +31,8 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
     meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
+    modifierSnippets: sourceRuntime.registries.modifierSnippets,
+    modifierSnippetRevision: sourceRuntime.registries.modifierSnippetRevision,
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
@@ -253,6 +255,8 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
   runtime.registries = {
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
     meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
+    modifierSnippets: createKeyedTable('WgpuModifierSnippet', 'Unregistered'),
+    modifierSnippetRevision: 0,
     renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
