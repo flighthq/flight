@@ -292,13 +292,8 @@ export function rotateVector3ByQuaternion(
 }
 
 /**
- * Builds a quaternion from a rotation `axis` (assumed unit length) and an `angle` in
- * radians. The rotation is right-handed (CCW when looking down the axis toward the origin).
- *
- * Safe when `out` aliases `axis`.
+ * Sets the quaternion components directly without normalization.
  */
-// Sets the quaternion components directly. The reference-completeness counterpart to `setVector3` — no
-// normalization; the caller supplies a unit quaternion (or normalizes after).
 export function setQuaternion(out: QuaternionLike, x: number, y: number, z: number, w: number): void {
   out.x = x;
   out.y = y;
@@ -306,6 +301,12 @@ export function setQuaternion(out: QuaternionLike, x: number, y: number, z: numb
   out.w = w;
 }
 
+/**
+ * Builds a quaternion from a rotation `axis` (assumed unit length) and an `angle` in
+ * radians. The rotation is right-handed (CCW when looking down the axis toward the origin).
+ *
+ * Safe when `out` aliases `axis`.
+ */
 export function setQuaternionFromAxisAngle(out: QuaternionLike, axis: Readonly<Vector3Like>, angle: number): void {
   const half = angle * 0.5;
   const s = Math.sin(half);
