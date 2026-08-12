@@ -424,7 +424,7 @@ export function setVector4(out: Vector4Like, x: number, y: number, z: number, w:
 }
 
 /**
- * Reads a Vector4Like from a Float32Array at a byte offset.
+ * Reads a Vector4Like from a Float32Array at an element offset.
  */
 export function setVector4FromFloat32Array(out: Vector4Like, offset: number, source: Readonly<Float32Array>): void {
   out.x = source[offset];
@@ -469,7 +469,7 @@ export function subtractVector4(out: Vector4Like, source: Readonly<Vector4Like>,
 }
 
 /**
- * Writes a Vector4Like into a Float32Array at a byte offset.
+ * Writes a Vector4Like into a Float32Array at an element offset.
  */
 export function writeVector4ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector4Like>): void {
   out[offset] = source.x;
