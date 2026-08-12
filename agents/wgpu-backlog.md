@@ -85,7 +85,29 @@ re-introduced by the next person.
   shader family uses `@builtin(front_facing)` to negate the back-side geometric normal, so a wrong
   `frontFace` *mislights* mirrored double-sided meshes with nothing culled.
 
+### Fix complete, awaiting the maintainer's merge decision
+
+- **Non-indexed draw** — the fix above landed and was validated before the deferral reached the builder.
+  It is held with integration rather than discarded, labelled as WGPU-deferred and complete. **The
+  maintainer cannot verify it** (see the header): the in-sandbox green is trust-only from their side.
+  Holding finished work costs more than landing it — it rots against every rebase and conflicts with the
+  next person in that file — so the merge call, not the work, is what remains.
+
 ### Unexplained, recorded not chased
+
+- **`particle-emitter-3d/webgpu` baseline moves with no attributable cause** (2026-08-12). Surfaced when
+  the six-builder winding remedy's stop condition fired correctly: it was the only baseline that moved,
+  and `rg` finds **no `MeshGeometry` reference of any kind** in either `particle-emitter-3d` scene.
+  **Ruled out, two ways, by measurement rather than argument:** reverting the winding builders to
+  pre-fix and re-running still moves it; rebasing onto the newer base (17 peer commits) and re-running
+  still moves it — so neither the change nor a stale base explains it.
+  **Deliberately not concluded:** a WebGPU capture difference in this environment is the *likely* read,
+  and it is recorded as a hypothesis only. *"Probably the environment" is exactly the explanation that
+  hides a real defect* — settling it needs comparison against whatever machine originally captured that
+  baseline, which is not reachable from here.
+  **Possible lead, not a claim:** this scene already has history in the recapture arc, where a
+  `particle-emitter-3d` **WebGL** twin column was newly created. Whether the WebGPU column's instability
+  is related is unexamined; the two facts are recorded adjacent, not joined.
 
 - **Seven webgpu-changed capture columns with no established cause**, carried over from the drift and
   recapture arc: `env-ibl`, `env-skybox`, `render-target-node-2d`, `material-custom-shader` (each closed
