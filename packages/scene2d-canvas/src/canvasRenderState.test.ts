@@ -1,10 +1,10 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { enableColorAdjustments, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
@@ -31,11 +31,14 @@ describe('copyCanvasRenderStateRegistrations', () => {
       runner as never,
     );
     registerCanvasMaterialRenderer(source, 'acme.Material', materialRenderer);
+    enableColorAdjustments(source);
 
     copyCanvasRenderStateRegistrations(target, source);
 
     const targetRuntime = getCanvasRenderStateRuntime(target);
     expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.colorAdjustments).toBe(sourceRuntime.registries.colorAdjustments);
+    expect(targetRuntime.registries.colorAdjustments?.entry?.state).toBe(RegistryEntryState.Bound);
     expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
     expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
     expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);
@@ -71,6 +74,7 @@ describe('createCanvasRenderStateRuntime', () => {
     const runtime = createCanvasRenderStateRuntime();
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.renderEffects).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'CanvasRenderEffect',

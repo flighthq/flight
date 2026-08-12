@@ -3,7 +3,7 @@ import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { WgpuMaterialRenderer, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
 import type * as WgpuCacheModule from './wgpuCache';
@@ -131,7 +131,13 @@ describe('createWgpuCacheState', () => {
   it('copies renderers and shares the GPU device but keeps its own node map', () => {
     const screen = fakeScreen();
     const resolver = vi.fn();
-    getWgpuRenderStateRuntime(screen).colorAdjustmentResolver = resolver;
+    const screenRuntime = getWgpuRenderStateRuntime(screen);
+    screenRuntime.registries.colorAdjustments = {
+      entry: { state: RegistryEntryState.Bound, value: resolver },
+      onMiss: 'Disabled',
+      registry: 'ColorAdjustments',
+      shape: 'slot',
+    };
     enableWgpuRenderCache(screen);
     const cacheState = createWgpuCacheState(screen);
     expect(getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
@@ -142,7 +148,9 @@ describe('createWgpuCacheState', () => {
     expect(getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
       getWgpuRenderStateRuntime(screen).renderProxyMap,
     );
-    expect(getWgpuRenderStateRuntime(cacheState).colorAdjustmentResolver).toBe(resolver);
+    expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustments).toBe(
+      screenRuntime.registries.colorAdjustments,
+    );
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {
@@ -155,6 +163,7 @@ describe('createWgpuCacheState', () => {
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(cacheRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(cacheRuntime.registries.compressedTextureDecoder).toBe(screenRuntime.registries.compressedTextureDecoder);
     expect(cacheRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
     expect(cacheRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);

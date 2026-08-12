@@ -1,6 +1,7 @@
 import { multiplyColorMatrix } from '@flighthq/adjustments/contract';
 import { concatColorScaleBias, createColorScaleBias } from '@flighthq/materials/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
+import { createSlotTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentRuntime,
   ColorScaleBias,
@@ -9,20 +10,27 @@ import type {
   RenderProxy,
   RenderState,
 } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
 // Returns whether color-adjustment accumulation is installed on `state`.
 export function areColorAdjustmentsEnabled(state: RenderState): boolean {
-  return getRenderStateRuntime(state).colorAdjustmentResolver != null;
+  return getRenderStateRuntime(state).registries.colorAdjustments?.entry?.state === RegistryEntryState.Bound;
 }
 
 // Installs color-adjustment accumulation on `state`. The base render walk reaches this module only
-// through a nullable runtime callback, so states that do not opt in retain one null check and do not
-// pull @flighthq/adjustments or @flighthq/materials into their bundle. Backend feature registrars that
-// can realize these values call this as part of their own opt-in. Idempotent.
+// through the persistent resolver slot, so states that do not opt in retain one empty-slot check and do
+// not pull @flighthq/adjustments or @flighthq/materials into their bundle. Backend feature registrars
+// that can realize these values call this as part of their own opt-in. Idempotent.
 export function enableColorAdjustments(state: RenderState): void {
-  getRenderStateRuntime(state).colorAdjustmentResolver = updateRenderProxyColorScaleBias;
+  const runtime = getRenderStateRuntime(state);
+  const table = runtime.registries.colorAdjustments ?? createSlotTable('ColorAdjustments', 'Disabled');
+  if (table.entry?.state === RegistryEntryState.Bound && table.entry.value === updateRenderProxyColorScaleBias) return;
+  runtime.registries.colorAdjustments = {
+    ...table,
+    entry: { state: RegistryEntryState.Bound, value: updateRenderProxyColorScaleBias },
+  };
 }
 
 // Hands the node's resolved color adjustment to the render node. A node's color-adjustment stack

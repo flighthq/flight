@@ -1,4 +1,4 @@
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { createSlotTable, getRegistryTableEntry } from '@flighthq/registry/contract';
 import type { Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -113,7 +113,10 @@ describe('copyRenderStateRegistrations', () => {
     const resolver = vi.fn();
     const colorAdjustmentResolver = vi.fn();
     const strokeTessellator = vi.fn(() => null);
-    getRenderStateRuntime(source).colorAdjustmentResolver = colorAdjustmentResolver;
+    getRenderStateRuntime(source).registries.colorAdjustments = {
+      ...createSlotTable('ColorAdjustments', 'Disabled'),
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentResolver },
+    };
     getRenderStateRuntime(source).registries.strokeTessellator = {
       ...getRenderStateRuntime(source).registries.strokeTessellator,
       entry: { state: RegistryEntryState.Bound, value: strokeTessellator },
@@ -129,8 +132,17 @@ describe('copyRenderStateRegistrations', () => {
 
     const sourceRuntime = getRenderStateRuntime(source);
     const targetRuntime = getRenderStateRuntime(target);
-    expect(targetRuntime.colorAdjustmentResolver).toBe(colorAdjustmentResolver);
     expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.colorAdjustments).toBe(sourceRuntime.registries.colorAdjustments);
+    expect(targetRuntime.registries.colorAdjustments?.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: colorAdjustmentResolver,
+    });
+    const sharedColorSnapshot = targetRuntime.registries.colorAdjustments;
+    sourceRuntime.registries.colorAdjustments = undefined;
+    expect(sourceRuntime.registries.colorAdjustments).not.toBe(sharedColorSnapshot);
+    expect(targetRuntime.registries.colorAdjustments).toBe(sharedColorSnapshot);
+    expect(targetRuntime.registries.colorAdjustments?.entry?.state).toBe(RegistryEntryState.Bound);
     expect(targetRuntime.registries.strokeTessellator).toBe(sourceRuntime.registries.strokeTessellator);
     expect(targetRuntime.registries.strokeTessellator.entry).toEqual({
       state: RegistryEntryState.Bound,
