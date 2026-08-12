@@ -1,5 +1,7 @@
+import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { CanvasShapeCommand, RenderState, ShapeCommandKey } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 // The command set is per render state, like every other kind-keyed handler registry: the state a
 // caller already holds is what carries the wiring, so `renderCanvasShapeCommands` can reach it from
@@ -9,7 +11,8 @@ import type { CanvasShapeCommand, RenderState, ShapeCommandKey } from '@flighthq
 // Returns null rather than undefined for an unregistered key — the ordinary "not wired" answer, not an
 // error. Callers report the miss through the state's registryMiss seam.
 export function getCanvasShapeCommand(state: RenderState, key: string): CanvasShapeCommand | null {
-  return getRenderStateRuntime(state).canvasShapeCommandRegistry?.get(key) ?? null;
+  const entry = getRenderStateRuntime(state).registries.canvasShapeCommands?.entries.get(key);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
@@ -17,8 +20,8 @@ export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
   command: CanvasShapeCommand<K>,
 ): void {
   const runtime = getRenderStateRuntime(state);
-  const registry = (runtime.canvasShapeCommandRegistry ??= new Map<string, CanvasShapeCommand>());
-  registry.set(command.key, command);
+  const table = runtime.registries.canvasShapeCommands ?? createKeyedTable('CanvasShapeCommand', 'Unregistered');
+  runtime.registries.canvasShapeCommands = withRegistryTableEntry(table, command.key, command);
 }
 
 export function registerCanvasShapeCommands(state: RenderState, commands: readonly CanvasShapeCommand[]): void {

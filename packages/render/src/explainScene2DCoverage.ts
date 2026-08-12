@@ -71,10 +71,10 @@ function collectScene2DCoverageGaps(
   // Only meaningful for a state that rasterizes shapes. A GL or WebGPU state drawing every shape
   // through the mesh path never replays a command, so these entries are reported and simply not acted
   // on — the same shape as reporting 3D node kinds a backend collects structurally.
-  const commands = runtime.canvasShapeCommandRegistry;
+  const commands = runtime.registries.canvasShapeCommands?.entries;
   for (let i = 0; i < usage.shapeCommandKeys.length; i++) {
     const kind = usage.shapeCommandKeys[i];
-    if (commands?.has(kind) === true) {
+    if (commands?.get(kind)?.state === 'bound') {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneShapeCommand,

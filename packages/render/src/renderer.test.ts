@@ -1,4 +1,4 @@
-import type { CanvasShapeCommand, Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
+import type { Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import {
@@ -100,15 +100,23 @@ describe('copyRenderStateRegistrations', () => {
   it('snapshot-copies the shape-command registry without aliasing the map', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const command = { key: 'beginFill', draw: vi.fn() } as unknown as CanvasShapeCommand;
-    getRenderStateRuntime(source).canvasShapeCommandRegistry = new Map([['beginFill', command]]);
+    const command = { key: 'beginFill', draw: vi.fn() } as never;
+    getRenderStateRuntime(source).registries.canvasShapeCommands = {
+      entries: new Map([['beginFill', { state: RegistryEntryState.Bound, value: command }]]),
+      onMiss: 'Unregistered',
+      registry: 'CanvasShapeCommand',
+      shape: 'keyed',
+    };
 
     copyRenderStateRegistrations(target, source);
 
-    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry).not.toBe(
-      getRenderStateRuntime(source).canvasShapeCommandRegistry,
+    expect(getRenderStateRuntime(target).registries.canvasShapeCommands).toBe(
+      getRenderStateRuntime(source).registries.canvasShapeCommands,
     );
-    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry?.get('beginFill')).toBe(command);
+    expect(getRenderStateRuntime(target).registries.canvasShapeCommands?.entries.get('beginFill')).toEqual({
+      state: RegistryEntryState.Bound,
+      value: command,
+    });
   });
 
   it('leaves the shape-command registry null when the source never registered one', () => {
@@ -117,7 +125,7 @@ describe('copyRenderStateRegistrations', () => {
 
     copyRenderStateRegistrations(target, source);
 
-    expect(getRenderStateRuntime(target).canvasShapeCommandRegistry).toBeNull();
+    expect(getRenderStateRuntime(target).registries.canvasShapeCommands).toBeUndefined();
   });
 });
 
