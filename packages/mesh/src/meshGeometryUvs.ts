@@ -1,6 +1,7 @@
 import type { MeshGeometry } from '@flighthq/types/contract';
 
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
+import { reportMeshGeometryUvWrap } from './meshGeometryGuards';
 
 // UV transform helpers for the uv0 channel. All functions write directly into geometry.vertices
 // and bump geometry.version. They operate on whatever attribute is registered under the 'uv0'
@@ -53,15 +54,13 @@ export function scaleMeshGeometryUvs(geometry: MeshGeometry, su: number, sv: num
 // Useful after scale or offset operations that push coordinates outside the 0..1 atlas tile.
 // Coordinates that are exactly on integer boundaries (e.g. u = 1.0) wrap to 0.0.
 //
-// NOT for a wrapped parameterisation. A sphere-mapped mesh carries u > 1 on the faces that cross the
-// longitude seam, deliberately: that is the only way such a face interpolates forward through the seam
-// instead of backwards across the whole texture. Folding those values into [0, 1) puts one corner at
-// 0.05 beside a face-mate at 0.95 and restores exactly the artefact the seam correction removes. The
-// operation is doing what it says — the values it flattens are the ones that had to leave the range —
-// so the two are simply incompatible, and an atlas tile is the case this exists for.
+// The fold is per vertex, so it is faithful only while a primitive's corners share a unit tile. Whether
+// they do is reported through the guard seam below rather than assumed; enableMeshGeometryGuards installs
+// it and explainMeshGeometryUvWrap answers the same question as data.
 export function wrapMeshGeometryUvs(geometry: MeshGeometry): void {
   const floatOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
   if (floatOffset < 0) return;
+  reportMeshGeometryUvWrap(geometry);
   const floatsPerVertex = geometry.layout.stride / 4;
   const vertexCount = floatsPerVertex > 0 ? Math.floor(geometry.vertices.length / floatsPerVertex) : 0;
   const verts = geometry.vertices;
