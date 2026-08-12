@@ -41,6 +41,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
     renderEffects: sourceRuntime.registries.renderEffects,
     renderers: targetRuntime.registries.renderers,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
+    strokeTessellator: targetRuntime.registries.strokeTessellator,
     textureResolvers: sourceRuntime.registries.textureResolvers,
     velocityWriters: sourceRuntime.registries.velocityWriters,
   };
@@ -205,6 +206,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
     renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
     renderers: runtime.registries.renderers,
     shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
+    strokeTessellator: runtime.registries.strokeTessellator,
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
   };

@@ -112,7 +112,12 @@ describe('copyRenderStateRegistrations', () => {
     const target = createRenderState();
     const resolver = vi.fn();
     const colorAdjustmentResolver = vi.fn();
+    const strokeTessellator = vi.fn(() => null);
     getRenderStateRuntime(source).colorAdjustmentResolver = colorAdjustmentResolver;
+    getRenderStateRuntime(source).registries.strokeTessellator = {
+      ...getRenderStateRuntime(source).registries.strokeTessellator,
+      entry: { state: RegistryEntryState.Bound, value: strokeTessellator },
+    };
     getRenderStateRuntime(source).registries.effectPaddingResolvers = {
       entries: new Map([['acme.Effect', { state: RegistryEntryState.Bound, value: resolver }]]),
       onMiss: 'Zero',
@@ -126,6 +131,16 @@ describe('copyRenderStateRegistrations', () => {
     const targetRuntime = getRenderStateRuntime(target);
     expect(targetRuntime.colorAdjustmentResolver).toBe(colorAdjustmentResolver);
     expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.strokeTessellator).toBe(sourceRuntime.registries.strokeTessellator);
+    expect(targetRuntime.registries.strokeTessellator.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: strokeTessellator,
+    });
+    const sharedStrokeSnapshot = targetRuntime.registries.strokeTessellator;
+    sourceRuntime.registries.strokeTessellator = { ...sourceRuntime.registries.strokeTessellator, entry: null };
+    expect(sourceRuntime.registries.strokeTessellator).not.toBe(sharedStrokeSnapshot);
+    expect(targetRuntime.registries.strokeTessellator).toBe(sharedStrokeSnapshot);
+    expect(targetRuntime.registries.strokeTessellator.entry?.state).toBe(RegistryEntryState.Bound);
     expect(targetRuntime.registries.effectPaddingResolvers).toBe(sourceRuntime.registries.effectPaddingResolvers);
     expect(targetRuntime.registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({
       state: RegistryEntryState.Bound,

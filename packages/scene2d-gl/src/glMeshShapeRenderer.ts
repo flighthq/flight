@@ -12,7 +12,7 @@ import type {
   ShapeFillRegion,
   ShapeStrokeRegion,
 } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RegistryEntryState, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData';
 import { drawGlShapeMeshes } from './glShapeMesh';
@@ -30,7 +30,8 @@ export function drawGlMeshShape(state: GlRenderState, renderProxy: RenderProxy2D
 
   // Compact open outlines are the default. Explicitly enabling stroke-path tessellation adds hollow
   // closed rings and pathological-geometry rejection to this state only.
-  const strokePathTessellator = getGlRenderStateRuntime(state).strokeTessellator;
+  const tessellatorEntry = getGlRenderStateRuntime(state).registries.strokeTessellator.entry;
+  const strokePathTessellator = tessellatorEntry?.state === RegistryEntryState.Bound ? tessellatorEntry.value : null;
   const regions = resolveGlShapeMeshRegions(commands, strokePathTessellator !== null);
   if (regions === null || regions.length === 0) return false;
 

@@ -39,6 +39,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
     renderEffects: sourceRuntime.registries.renderEffects,
     renderers: targetRuntime.registries.renderers,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
+    strokeTessellator: targetRuntime.registries.strokeTessellator,
     textureResolvers: sourceRuntime.registries.textureResolvers,
     velocityWriters: sourceRuntime.registries.velocityWriters,
   };
@@ -265,6 +266,7 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
     renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
     renderers: runtime.registries.renderers,
     shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
+    strokeTessellator: runtime.registries.strokeTessellator,
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
     velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
   };

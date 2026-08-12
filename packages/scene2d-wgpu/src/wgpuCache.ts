@@ -110,6 +110,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     renderEffects: screenRuntime.registries.renderEffects,
     renderers: cacheRuntime.registries.renderers,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
+    strokeTessellator: screenRuntime.registries.strokeTessellator,
     textureResolvers: screenRuntime.registries.textureResolvers,
     velocityWriters: screenRuntime.registries.velocityWriters,
   };

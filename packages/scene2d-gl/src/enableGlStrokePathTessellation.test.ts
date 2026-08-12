@@ -1,16 +1,23 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { createGlState } from './glTestHelper';
 
 describe('enableGlStrokePathTessellation', () => {
-  it('installs the full stroke tessellator on the render state', () => {
+  it('replaces the full stroke-tessellator policy slot', () => {
     const { state } = createGlState();
-    expect(getGlRenderStateRuntime(state).strokeTessellator).toBeNull();
+    const runtime = getGlRenderStateRuntime(state);
+    const before = runtime.registries.strokeTessellator;
+    expect(before.entry).toBeNull();
 
     enableGlStrokePathTessellation(state);
 
-    expect(getGlRenderStateRuntime(state).strokeTessellator).toBe(tessellateStrokePath);
+    expect(runtime.registries.strokeTessellator).not.toBe(before);
+    expect(runtime.registries.strokeTessellator.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: tessellateStrokePath,
+    });
   });
 });

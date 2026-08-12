@@ -4,6 +4,7 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
 
@@ -12,12 +13,18 @@ beforeAll(() => {
 });
 
 describe('enableWgpuStrokePathTessellation', () => {
-  it('installs the full stroke tessellator on the render state', async () => {
+  it('replaces the full stroke-tessellator policy slot', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(getWgpuRenderStateRuntime(state).strokeTessellator).toBeNull();
+    const runtime = getWgpuRenderStateRuntime(state);
+    const before = runtime.registries.strokeTessellator;
+    expect(before.entry).toBeNull();
 
     enableWgpuStrokePathTessellation(state);
 
-    expect(getWgpuRenderStateRuntime(state).strokeTessellator).toBe(tessellateStrokePath);
+    expect(runtime.registries.strokeTessellator).not.toBe(before);
+    expect(runtime.registries.strokeTessellator.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: tessellateStrokePath,
+    });
   });
 });

@@ -30,6 +30,7 @@ export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, so
     materialRenderers: sourceRuntime.registries.materialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
     renderers: targetRuntime.registries.renderers,
+    strokeTessellator: targetRuntime.registries.strokeTessellator,
   };
   copyRenderStateRegistrations(target, source);
 }
@@ -82,6 +83,7 @@ export function createCanvasRenderStateRuntime(): CanvasRenderStateRuntime {
   runtime.registries = {
     renderEffects: createKeyedTable('CanvasRenderEffect', 'Unregistered'),
     renderers: runtime.registries.renderers,
+    strokeTessellator: runtime.registries.strokeTessellator,
   };
   return runtime;
 }

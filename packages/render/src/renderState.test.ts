@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createKeyedTable } from '@flighthq/registry/contract';
+import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -31,7 +31,10 @@ describe('createRenderState', () => {
     expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
-    expect(runtime.registries).toStrictEqual({ renderers: createKeyedTable('NodeRenderer', 'Unregistered') });
+    expect(runtime.registries).toStrictEqual({
+      renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
+      strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
+    });
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });
@@ -75,6 +78,7 @@ describe('createRenderStateRuntime', () => {
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries.renderers).toStrictEqual(createKeyedTable('NodeRenderer', 'Unregistered'));
+    expect(runtime.registries.strokeTessellator).toStrictEqual(createSlotTable('StrokeTessellator', 'Rasterize'));
     expect(runtime.rendererMapId).toStrictEqual(0);
     expect(runtime.tempStack).toStrictEqual([]);
   });
@@ -84,6 +88,7 @@ describe('createRenderStateRuntime', () => {
     const b = createRenderStateRuntime();
     expect(a).not.toBe(b);
     expect(a.registries.renderers).not.toBe(b.registries.renderers);
+    expect(a.registries.strokeTessellator).not.toBe(b.registries.strokeTessellator);
   });
 });
 

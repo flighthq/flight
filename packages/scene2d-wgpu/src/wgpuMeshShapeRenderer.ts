@@ -12,7 +12,7 @@ import type {
   WgpuRenderState,
   WgpuShapeMesh,
 } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
+import { BatchFormat, RegistryEntryState, RenderRegistry, ShapeKind } from '@flighthq/types/contract';
 
 import { createWgpuShapeData, destroyWgpuShapeData, getWgpuShapeData } from './wgpuShapeData';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
@@ -31,7 +31,8 @@ export function drawWgpuMeshShape(state: WgpuRenderState, renderProxy: RenderPro
 
   // Compact open outlines are the default. Explicitly enabling stroke-path tessellation adds hollow
   // closed rings and pathological-geometry rejection to this state only.
-  const strokePathTessellator = runtime.strokeTessellator;
+  const tessellatorEntry = runtime.registries.strokeTessellator.entry;
+  const strokePathTessellator = tessellatorEntry?.state === RegistryEntryState.Bound ? tessellatorEntry.value : null;
   const regions = resolveWgpuShapeMeshRegions(commands, strokePathTessellator !== null);
   if (regions === null || regions.length === 0) return false;
 

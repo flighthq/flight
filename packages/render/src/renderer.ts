@@ -47,6 +47,7 @@ export function copyRenderStateRegistrations(target: RenderState, source: Render
   // the renderers must inherit the commands too. Without it an offscreen state resolves no handler for
   // any command in a shape's stream and bakes an empty target.
   targetRuntime.registries.canvasShapeCommands = sourceRuntime.registries.canvasShapeCommands;
+  targetRuntime.registries.strokeTessellator = sourceRuntime.registries.strokeTessellator;
 }
 
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
