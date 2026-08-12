@@ -222,4 +222,24 @@ describe('setPlaneFromPoints', () => {
     expect(getPlaneSignedDistanceToPoint(p, b)).toBeCloseTo(0, 5);
     expect(getPlaneSignedDistanceToPoint(p, c)).toBeCloseTo(0, 5);
   });
+
+  it('writes a zero plane for three points that do not span one', () => {
+    // Points in a line — or on top of each other — describe no single plane, and there is no
+    // normal to scale to unit length. The coefficients come out zero rather than dividing by the
+    // zero length, which would put NaN in a plane the caller then culls against.
+    const p = createPlane(1, 1, 1, 1);
+    setPlaneFromPoints(p, createVector3(0, 0, 0), createVector3(1, 1, 1), createVector3(2, 2, 2));
+    expect(p.a).toBe(0);
+    expect(p.b).toBe(0);
+    expect(p.c).toBe(0);
+    expect(p.d).toBe(0);
+
+    const q = createPlane(1, 1, 1, 1);
+    const same = createVector3(4, 5, 6);
+    setPlaneFromPoints(q, same, same, same);
+    expect(q.a).toBe(0);
+    expect(q.b).toBe(0);
+    expect(q.c).toBe(0);
+    expect(q.d).toBe(0);
+  });
 });
