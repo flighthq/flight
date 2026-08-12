@@ -1,4 +1,4 @@
-import type { MeshGeometry } from '@flighthq/types/contract';
+import type { MeshGeometry, MeshTriangleVertexIndices } from '@flighthq/types/contract';
 
 import { getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry';
 import {
@@ -20,6 +20,7 @@ import {
   createTorusKnotMeshGeometry,
   createTorusMeshGeometry,
 } from './meshGeometryBuilders';
+import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations';
 import { validateMeshGeometry } from './meshGeometryOperations';
 
 function expectUnitNormals(geometry: Readonly<MeshGeometry>): void {
@@ -411,5 +412,47 @@ describe('mesh builder count inputs', () => {
   ])('rejects non-finite %s', (_name, build) => {
     expect(() => build(Number.NaN)).toThrow(RangeError);
     expect(() => build(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+  });
+});
+
+// Longitude wraps at u = 0/1, so a face straddling the seam gets corners like 0.99 and 0.01 and
+// interpolates BACKWARDS across the whole texture — the entire map crushed into one triangle. The
+// unmistakable signature is a single face holding a corner near 0 AND a corner near 1; after the
+// correction lifts the low corners past 1, no face carries both.
+//
+// Emitting per-face vertices is what makes the correction POSSIBLE (a shared vertex could only hold one
+// u) but it does not perform it, and for a long time only the first half was here.
+describe('spherical UV seam', () => {
+  it.each([
+    ['icosahedron', () => createIcosahedronMeshGeometry()],
+    ['dodecahedron', () => createDodecahedronMeshGeometry()],
+    ['octahedron', () => createOctahedronMeshGeometry()],
+    ['tetrahedron', () => createTetrahedronMeshGeometry()],
+    ['icosphere', () => createIcosphereMeshGeometry()],
+  ])('gives no %s face corners at both ends of the longitude range', (_name, build) => {
+    const geometry = build();
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+
+    for (let t = 0; t < getMeshGeometryTriangleCount(geometry); t++) {
+      if (!getMeshGeometryTriangleVertexIndices(corner, geometry, t)) continue;
+      const us = [corner.i0, corner.i1, corner.i2].map((i) => geometry.vertices[i * floatsPerVertex + 10]);
+      const wrapped = Math.min(...us) < 0.1 && Math.max(...us) > 0.9;
+      expect(wrapped).toBe(false);
+    }
+  });
+
+  // A corrected face legitimately carries u above 1: no parameterisation confined to 0..1 can express
+  // a face crossing the seam continuously. Sampling wraps it, so this is the intended state, not drift.
+  it('lifts a seam face past 1 rather than clamping it into range', () => {
+    const geometry = createIcosahedronMeshGeometry();
+    const floatsPerVertex = geometry.layout.stride / 4;
+
+    let maxU = -Infinity;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      maxU = Math.max(maxU, geometry.vertices[v * floatsPerVertex + 10]);
+    }
+
+    expect(maxU).toBeGreaterThan(1);
   });
 });
