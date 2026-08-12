@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,10 +75,21 @@ export async function runImportFixtureConformance(
   const variantTrees = args.variant === undefined ? allTrees : allTrees.filter((tree) => tree.variant === args.variant);
   const availablePacks = new Set(variantTrees.flatMap((tree) => tree.packs.map((pack) => pack.id)));
   const unavailablePacks = args.packs.filter((pack) => !availablePacks.has(pack));
+  if (unavailablePacks.length > 0) {
+    throw new Error(
+      `Verified fixture pack${unavailablePacks.length === 1 ? '' : 's'} unavailable: ${unavailablePacks.join(', ')}. Acquire with npm run fixtures -- ${unavailablePacks.join(' ')}`,
+    );
+  }
   const trees =
     args.packs.length === 0
       ? variantTrees
       : variantTrees.filter((tree) => tree.packs.some((pack) => args.packs.includes(pack.id)));
+  if (trees.length === 0) {
+    const variant = args.variant === undefined ? '' : ` for variant ${args.variant}`;
+    throw new Error(
+      `No verified fixture trees are available${variant}. Acquire the full corpus explicitly with npm run fixtures -- --all`,
+    );
+  }
 
   const allAdapters = createImportFixtureAdapters();
   const knownAdapterIds = new Set(allAdapters.map((adapter) => adapter.id));
@@ -91,6 +102,11 @@ export async function runImportFixtureConformance(
     concurrency: args.concurrency,
     ...(args.limit === undefined ? {} : { limit: args.limit }),
   });
+  if (results.length === 0) {
+    throw new Error(
+      `No fixture inputs matched adapters ${adapters.map((adapter) => adapter.id).join(', ')} in the selected verified trees`,
+    );
+  }
   return {
     fixtureRelease: FIXTURE_RELEASE_TAG,
     results,
@@ -108,7 +124,6 @@ export async function runImportFixtureConformance(
       tree: tree.tree,
       variant: tree.variant,
     })),
-    unavailablePacks,
   };
 }
 
@@ -129,7 +144,6 @@ interface FixtureImportConformanceReport {
     tree: string;
     variant: string;
   }[];
-  unavailablePacks: readonly string[];
 }
 
 async function main(): Promise<void> {
@@ -143,8 +157,11 @@ async function main(): Promise<void> {
       listInfrastructure();
       return;
     }
-    const report = await runImportFixtureConformance(args);
     const output = resolve(args.output);
+    // A failed or corpus-less run must not leave a prior green artifact available for a caller to mistake
+    // for current evidence. The report is generated and gitignored, so clearing it is the preparation step.
+    rmSync(output, { force: true });
+    const report = await runImportFixtureConformance(args);
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
     process.stdout.write(formatReport(report, output));
@@ -175,9 +192,6 @@ function formatReport(report: Readonly<FixtureImportConformanceReport>, output: 
     `Verified trees: ${report.trees.length}; importer runs: ${report.summary.total}`,
     `Outcomes: imported ${report.summary.imported}, unsupported ${report.summary.unsupported}, rejected ${report.summary.rejected}, threw ${report.summary.threw}, not-run ${report.summary['not-run']}`,
   ];
-  for (const pack of report.unavailablePacks) {
-    lines.push(`Unavailable: ${pack}; acquire it with npm run fixtures -- ${pack}`);
-  }
   const findings = report.results.filter((result) => result.state !== 'imported');
   for (const result of findings.slice(0, 20)) {
     lines.push(`  ${result.state} ${result.adapter} ${result.variant}/${result.tree}/${result.reference}`);
@@ -220,7 +234,8 @@ const USAGE = `usage: npm run conformance:fixtures -- [options]
 
 Runs real Flight importers over every matching file in locally verified flight-oracles trees.
 Fixture outcomes are evidence, not a gate: rejected, unsupported, and thrown inputs are recorded and the
-command still succeeds. Harness/configuration errors exit nonzero.
+command still succeeds. Missing corpora, zero matching inputs, and other harness/configuration errors exit
+nonzero and leave no stale report.
 
   --adapter <id>       run one adapter (repeatable)
   --concurrency <n>    importer runs in flight (default: up to 8)
