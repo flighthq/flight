@@ -7,6 +7,7 @@ import {
 } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
+  enableColorAdjustments,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -140,6 +141,7 @@ describe('createGlOffscreenRenderState', () => {
     registerRenderer(screen, 'acme.Node', renderer);
     registerGlMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
+    enableColorAdjustments(screen);
     getGlRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
       getGlRenderStateRuntime(screen).registries.renderEffects,
       'acme.Effect',
@@ -163,6 +165,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
+    expect(offscreenRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );
@@ -398,6 +401,7 @@ describe('createGlRenderStateRuntime', () => {
       registry: 'GlCompressedTextureDecoder',
       shape: 'slot',
     });
+    expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.compressedTextureUpload).toEqual({
       entry: null,
       onMiss: 'Unregistered',

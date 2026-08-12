@@ -41,7 +41,7 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
 export function copyRenderStateRegistrations(target: RenderState, source: RenderState): void {
   const targetRuntime = getRenderStateRuntime(target);
   const sourceRuntime = getRenderStateRuntime(source);
-  targetRuntime.colorAdjustmentResolver = sourceRuntime.colorAdjustmentResolver;
+  targetRuntime.registries.colorAdjustments = sourceRuntime.registries.colorAdjustments;
   targetRuntime.registries.effectPaddingResolvers = sourceRuntime.registries.effectPaddingResolvers;
   // The shape-command set is base policy every backend replays through, so a pipeline that inherits
   // the renderers must inherit the commands too. Without it an offscreen state resolves no handler for

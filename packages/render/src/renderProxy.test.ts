@@ -14,6 +14,7 @@ import {
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Node, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerRenderer } from './renderer';
 import {
@@ -589,7 +590,13 @@ describe('updateRenderProxy2D', () => {
       expect((resolvedData as RenderProxy2D).clipDepth).toBe(0);
       expect(resolvedData.lastChildrenId).toBe(-1);
     });
-    getRenderStateRuntime(state).colorAdjustmentResolver = resolver;
+    const runtime = getRenderStateRuntime(state);
+    runtime.registries.colorAdjustments = {
+      entry: { state: RegistryEntryState.Bound, value: resolver },
+      onMiss: 'Disabled',
+      registry: 'ColorAdjustments',
+      shape: 'slot',
+    };
 
     updateRenderProxy2D(state, root, data, undefined);
 

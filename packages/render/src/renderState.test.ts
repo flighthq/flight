@@ -73,10 +73,10 @@ describe('createRenderState', () => {
 describe('createRenderStateRuntime', () => {
   it('initializes the machinery fields', () => {
     const runtime = createRenderStateRuntime();
-    expect(runtime.colorAdjustmentResolver).toBeNull();
     expect(runtime.currentFrameId).toStrictEqual(0);
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
+    expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.renderers).toStrictEqual(createKeyedTable('NodeRenderer', 'Unregistered'));
     expect(runtime.registries.strokeTessellator).toStrictEqual(createSlotTable('StrokeTessellator', 'Rasterize'));
     expect(runtime.rendererMapId).toStrictEqual(0);

@@ -45,6 +45,9 @@ export interface RenderState extends Entity {
 // corresponding registrar is optional, so an unwired base state carries no table metadata.
 export interface RenderRegistries {
   canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
+  // Opt-in color-adjustment accumulation. The empty slot keeps adjustment/material math out of the
+  // base walk; a bound pure function is safe to snapshot across derived pipelines.
+  colorAdjustments?: SlotTable<(state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
   renderers: KeyedTable<Renderer>;
   // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
@@ -60,11 +63,6 @@ export interface RenderRegistries {
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
-  // Opt-in color-adjustment accumulation seam. `enableColorAdjustments` installs the resolver that
-  // copies a node's cached local value to its render proxy and composes it with its parent's value.
-  // This is independent of colorAdjustmentUnsupportedGuard: enabling diagnostics never enables
-  // rendering behavior, and leaving this null keeps adjustment/material math out of the base walk.
-  colorAdjustmentResolver: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
   // Shakeable diagnostics seam (default `null` → no cost): a non-matrix operation that neither the
   // compact scale/bias path nor the full 4×5 matrix path can represent reaches this slot.
   // `enableColorAdjustmentGuards` installs a handler that warns through @flighthq/log.

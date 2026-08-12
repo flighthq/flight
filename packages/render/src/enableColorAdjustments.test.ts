@@ -7,6 +7,7 @@ import {
 import { addNodeChild, setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { Renderable, RenderProxy, RenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areColorAdjustmentsEnabled, enableColorAdjustments } from './enableColorAdjustments';
 import { createRenderProxy, getRenderProxy2D, prepareScene2DRender } from './renderProxy';
@@ -22,6 +23,20 @@ describe('areColorAdjustmentsEnabled', () => {
 });
 
 describe('enableColorAdjustments', () => {
+  it('replaces the persistent resolver slot once and remains idempotent', () => {
+    const state = createRenderState();
+    const runtime = getRenderStateRuntime(state);
+    const empty = runtime.registries.colorAdjustments;
+
+    enableColorAdjustments(state);
+
+    const bound = runtime.registries.colorAdjustments!;
+    expect(bound).not.toBe(empty);
+    expect(bound.entry?.state).toBe(RegistryEntryState.Bound);
+    enableColorAdjustments(state);
+    expect(runtime.registries.colorAdjustments).toBe(bound);
+  });
+
   it('leaves color adjustments unresolved until the state opts in', () => {
     const state = createRenderState();
     const node = createDisplayObject();
@@ -229,5 +244,7 @@ function createEnabledRenderState(): RenderState {
 }
 
 function resolveColorAdjustments(state: RenderState, data: RenderProxy, parentData?: RenderProxy): void {
-  getRenderStateRuntime(state).colorAdjustmentResolver!(state, data, parentData);
+  const entry = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
+  if (entry?.state !== RegistryEntryState.Bound) throw new Error('Color-adjustment resolver is not enabled');
+  entry.value(state, data, parentData);
 }

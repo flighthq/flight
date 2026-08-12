@@ -7,6 +7,7 @@ import {
 } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
+  enableColorAdjustments,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -125,6 +126,7 @@ describe('createWgpuOffscreenRenderState', () => {
     registerRenderer(screen, 'acme.Node', renderer);
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
+    enableColorAdjustments(screen);
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
     getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
       getWgpuRenderStateRuntime(screen).registries.renderEffects,
@@ -146,6 +148,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );
@@ -299,6 +302,7 @@ describe('createWgpuRenderStateRuntime', () => {
       registry: 'WgpuCompressedTextureDecoder',
       shape: 'slot',
     });
+    expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.compressedTextureUpload).toEqual({
       entry: null,
       onMiss: 'Unregistered',

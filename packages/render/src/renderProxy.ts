@@ -188,7 +188,10 @@ export function updateRenderProxy2D(
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
-  getRenderStateRuntime(state).colorAdjustmentResolver?.(state, data, parentData);
+  const colorAdjustmentResolver = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
+  if (colorAdjustmentResolver?.state === RegistryEntryState.Bound) {
+    colorAdjustmentResolver.value(state, data, parentData);
+  }
   updateNodeClip(state, source, data, parentData);
   // Record the local and structural revisions this adaptation consumed.
   data.lastChildrenId = getNodeChildrenRevision(source as Node);

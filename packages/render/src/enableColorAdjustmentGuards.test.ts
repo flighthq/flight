@@ -2,7 +2,8 @@ import { createTintAdjustment } from '@flighthq/adjustments/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Adjustment, Renderable } from '@flighthq/types/contract';
+import type { Adjustment, Renderable, RenderProxy, RenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
 import { enableColorAdjustments } from './enableColorAdjustments';
@@ -30,7 +31,7 @@ describe('enableColorAdjustmentGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      getRenderStateRuntime(state).colorAdjustmentResolver!(state, data);
+      resolveColorAdjustments(state, data);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('not inline-able');
@@ -49,10 +50,16 @@ describe('enableColorAdjustmentGuards', () => {
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
-      getRenderStateRuntime(state).colorAdjustmentResolver!(state, data);
+      resolveColorAdjustments(state, data);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {
       removeLogSink(sink.sink);
     }
   });
 });
+
+function resolveColorAdjustments(state: RenderState, data: RenderProxy): void {
+  const entry = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
+  if (entry?.state !== RegistryEntryState.Bound) throw new Error('Color-adjustment resolver is not enabled');
+  entry.value(state, data);
+}

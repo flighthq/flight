@@ -75,6 +75,7 @@ describe('createDomRenderStateRuntime', () => {
   it('allocates an entity runtime with a null binding', () => {
     const runtime = createDomRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.shapeRasterizer).toMatchObject({
       entry: null,
       onMiss: 'Unregistered',
