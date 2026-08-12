@@ -1,6 +1,6 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { DomRenderState, DomTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RenderRegistry, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 
@@ -10,9 +10,11 @@ export function registerDomTextureResolver(
   resolver: DomTextureResolver | null,
 ): void {
   const runtime = getDomRenderStateRuntime(state);
-  const registry = (runtime.domTextureResolverRegistry ??= new Map());
-  if (resolver === null) registry.delete(sourceKind);
-  else registry.set(sourceKind, resolver);
+  const table = runtime.registries.textureResolvers;
+  const entries = new Map(table.entries);
+  if (resolver === null) entries.delete(sourceKind);
+  else entries.set(sourceKind, { state: RegistryEntryState.Bound, value: resolver });
+  runtime.registries.textureResolvers = { ...table, entries };
 }
 
 export function resolveDomTexture(state: DomRenderState, texture: Readonly<Texture>): CanvasImageSource | null {
@@ -20,10 +22,10 @@ export function resolveDomTexture(state: DomRenderState, texture: Readonly<Textu
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
   const runtime = getDomRenderStateRuntime(state);
-  const resolver = runtime.domTextureResolverRegistry?.get(sourceKind);
-  if (resolver === undefined) {
+  const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
+  if (entry?.state !== RegistryEntryState.Bound) {
     runtime.registryMiss?.(RenderRegistry.TextureResolver, sourceKind);
     return null;
   }
-  return resolver(state, texture);
+  return entry.value(state, texture);
 }

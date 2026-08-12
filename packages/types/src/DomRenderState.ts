@@ -2,11 +2,11 @@ import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { DomScene2DRectangle } from './DomScene2DRectangle';
 import type { DomTextureResolver } from './DomTextureResolver';
+import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
 import type { ShapeRasterizer } from './ShapeRasterizer';
-import type { TextureSourceKind } from './TextureSourceKind';
 
 export interface DomRenderState extends RenderState {
   applyBlendMode: ((element: HTMLElement, blendMode: BlendMode | null) => void) | null;
@@ -16,11 +16,19 @@ export interface DomRenderState extends RenderState {
   readonly element: HTMLElement;
 }
 
+// Pure registration policy owned by one DOM render pipeline. Tables are persistent so a future
+// derived pipeline can share one snapshot while either aggregate later replaces a member independently.
+export interface DomRenderRegistries {
+  shapeRasterizer: SlotTable<ShapeRasterizer>;
+  textureResolvers: KeyedTable<DomTextureResolver>;
+}
+
 // Package-private DOM state for a DomRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public DomRenderState surface stays minimal; the render path resolves it each frame
 // via getDomRenderStateRuntime. Defined in @flighthq/types — the header layer — so out-of-package
 // custom renderers can reach the same state.
 export interface DomRenderStateRuntime extends RenderStateRuntime {
+  registries: DomRenderRegistries;
   // Active blend mode tracked to avoid redundant DOM writes. Internal — formerly public on the
   // DomRenderState entity.
   currentBlendMode: BlendMode | null;
@@ -35,13 +43,6 @@ export interface DomRenderStateRuntime extends RenderStateRuntime {
   // Per-render-state cache of the drawable HTMLCanvasElement materialized from a Bitmap. The field
   // stays absent until registerDomBitmapTextureResolver is imported and resolves a Bitmap.
   bitmapElementCache?: WeakMap<Bitmap, { element: HTMLCanvasElement; version: number }>;
-  // Open, state-scoped Texture source registry. Undefined until the first explicit registration so
-  // a DOM bundle only retains the backing realizations it installs.
-  domTextureResolverRegistry?: Map<TextureSourceKind, DomTextureResolver> | null;
-  // The shape-rasterization seam, absent until registerDomShapeRasterizer installs one. A shape whose
-  // fills are not all solid has no tessellated form here, so without a rasterizer it draws only what
-  // the mesh path can express and reports a RenderRegistry.ShapeRasterizer miss for the rest.
-  shapeRasterizer?: ShapeRasterizer | null;
   // Ping-pong order lists: domOrderList holds the previous frame's order so the next frame can detect
   // structure changes; domNextOrderList is the scratch buffer built during the current frame. They
   // swap at the end of each render call.

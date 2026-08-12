@@ -1114,7 +1114,10 @@ function deriveDomProbeState(source: ReturnType<typeof createDomRenderState>) {
   copyAllRenderersFromRenderState(derived, source);
   const sourceRuntime = getDomRenderStateRuntime(source);
   const derivedRuntime = getDomRenderStateRuntime(derived);
-  derivedRuntime.domTextureResolverRegistry = copyNullableMap(sourceRuntime.domTextureResolverRegistry);
+  derivedRuntime.registries = {
+    shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
+    textureResolvers: sourceRuntime.registries.textureResolvers,
+  };
   return derived;
 }
 
