@@ -116,6 +116,14 @@ export function connectSignalThrottled<T extends (...args: any[]) => void>(
       trailingTimer = null;
     }
   };
+  const scheduleTrailing = (delay: number) => {
+    trailingTimer = setTimeout(() => {
+      lastFiredAt = Date.now();
+      trailingTimer = null;
+      slot(...lastArgs!);
+      lastArgs = null;
+    }, delay);
+  };
   const handler = ((...args: any[]) => {
     const now = Date.now();
     const remaining = intervalMs - (now - lastFiredAt);
@@ -124,20 +132,14 @@ export function connectSignalThrottled<T extends (...args: any[]) => void>(
       lastFiredAt = now;
       if (leading) {
         slot(...args);
-      } else {
+      } else if (trailing) {
         lastArgs = args;
+        scheduleTrailing(intervalMs);
       }
     } else if (trailing) {
       clearTrailing();
       lastArgs = args;
-      trailingTimer = setTimeout(() => {
-        lastFiredAt = Date.now();
-        trailingTimer = null;
-        if (lastArgs !== null) {
-          slot(...lastArgs);
-          lastArgs = null;
-        }
-      }, remaining);
+      scheduleTrailing(remaining);
     }
   }) as T;
   connectSignal(source, handler);
