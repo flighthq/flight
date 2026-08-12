@@ -24,7 +24,12 @@ export function drawGlEnvironmentSkybox(
 
   if (!updateCamera3DInverseViewProjection(camera, aspect)) return;
 
-  const prevDepthTest = gl.getParameter(gl.DEPTH_TEST) as boolean;
+  // Every one of these is saved, not just the depth test: the pass runs between a caller's own draws,
+  // and depthMask was previously restored to a hardcoded `true` rather than to what the caller had,
+  // which is the same leak as not restoring it at all for a caller that had depth writes masked off.
+  const prevDepthTest = gl.isEnabled(gl.DEPTH_TEST);
+  const prevDepthMask = gl.getParameter(gl.DEPTH_WRITEMASK) as boolean;
+  const prevBlend = gl.isEnabled(gl.BLEND);
   gl.depthMask(false);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
@@ -40,8 +45,9 @@ export function drawGlEnvironmentSkybox(
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   gl.bindVertexArray(null);
 
-  gl.depthMask(true);
+  gl.depthMask(prevDepthMask);
   if (prevDepthTest) gl.enable(gl.DEPTH_TEST);
+  if (prevBlend) gl.enable(gl.BLEND);
 }
 
 interface GlSkybox {
