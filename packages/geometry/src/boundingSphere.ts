@@ -163,10 +163,11 @@ export function mergeBoundingSphere(
     return;
   }
 
-  // General case: new radius = (dist + ar + br) / 2
+  // General case: new radius = (dist + ar + br) / 2. Neither containment test fired, so
+  // `dist + br > ar` and `dist + ar > br`; adding those gives `dist > 0` and the division is safe.
   const newRadius = (dist + ar + br) * 0.5;
   // New center is along the line from a to b, offset by (newRadius - ar)
-  const t = dist !== 0 ? (newRadius - ar) / dist : 0;
+  const t = (newRadius - ar) / dist;
   out.center.x = acx + dx * t;
   out.center.y = acy + dy * t;
   out.center.z = acz + dz * t;
