@@ -1064,8 +1064,9 @@ describe('createScene3DFromGltf', () => {
     };
     // First face lies in the XY plane (+Z normal); the second lies in the YZ plane (+X normal). A
     // welded vertex 0 belongs to both and could only carry one of them.
-    expect(normalAt(0)[2]).toBeCloseTo(1, 5);
-    expect(normalAt(3)[0]).toBeCloseTo(1, 5);
+    // All three components: one alone is satisfied by any wrong vector that happens to share it.
+    expect(normalAt(0)).toEqual([expect.closeTo(0, 5), expect.closeTo(0, 5), expect.closeTo(1, 5)]);
+    expect(normalAt(3)).toEqual([expect.closeTo(1, 5), expect.closeTo(0, 5), expect.closeTo(0, 5)]);
   });
 
   // Un-welding is what makes the normals exact, but shipping the result non-indexed would change how
@@ -1132,10 +1133,11 @@ describe('createScene3DFromGltf', () => {
     const floatsPerVertex = geometry.layout.stride / 4;
     for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
       const base = v * floatsPerVertex + 6;
-      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBeCloseTo(
-        1,
-        5,
-      );
+      // U runs along +X across this triangle, so the tangent must be +X. Asserting only that |T| = 1
+      // would be satisfied by a unit tangent pointing anywhere at all.
+      expect(geometry.vertices[base]).toBeCloseTo(1, 5);
+      expect(geometry.vertices[base + 1]).toBeCloseTo(0, 5);
+      expect(geometry.vertices[base + 2]).toBeCloseTo(0, 5);
       // The handedness w must be a real sign; zero is the collapsed basis this repairs.
       expect(Math.abs(geometry.vertices[base + 3])).toBeCloseTo(1, 5);
     }
