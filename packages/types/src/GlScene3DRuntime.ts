@@ -1,6 +1,4 @@
-import type { Kind } from './Entity';
 import type { GlMeshProgram } from './GlMeshProgram';
-import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
@@ -111,8 +109,6 @@ export interface GlScene3DRuntime {
   opaqueDrawList: GlScene3DDrawEntry[];
   opaquePool: GlScene3DDrawEntry[];
   pbrExtensionGuard?: ((extensions: readonly PbrExtension[]) => void) | null;
-  pbrExtensionRegistry: Map<Kind, GlPbrExtensionRegistration>;
-  pbrExtensionRegistryVersion: number;
   pbrTransmissionSceneColor: GlPbrTransmissionSceneColor | null;
   programCache: Map<string, GlMeshProgram>;
   shadow: GlScene3DShadow | null;

@@ -1,5 +1,10 @@
-import type { GlPbrDefineKey, GlPbrExtensionShaderContribution } from '@flighthq/types/contract';
+import type {
+  GlPbrDefineKey,
+  GlPbrExtensionRegistration,
+  GlPbrExtensionShaderContribution,
+} from '@flighthq/types/contract';
 
+import { registerGlPbrExtension } from './glPbrExtensionRegistry';
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
@@ -88,7 +93,28 @@ describe('ensureGlPbrProgram', () => {
     expect(cache.size).toBe(2);
     for (const key of cache.keys()) expect(key.startsWith('pbr:')).toBe(true);
   });
+
+  it('compiles a distinct same-key program after a PBR registration is replaced', () => {
+    const { state } = makeGlScene3DState();
+    const contribution = makeContribution('vendor');
+    registerGlPbrExtension(state, 'VendorExtension', makeRegistration());
+    const first = ensureGlPbrProgram(state, KEY, [contribution]);
+
+    registerGlPbrExtension(state, 'VendorExtension', makeRegistration());
+    const second = ensureGlPbrProgram(state, KEY, [contribution]);
+
+    expect(second).not.toBe(first);
+    expect(getGlScene3DRuntime(state).programCache.size).toBe(2);
+  });
 });
+
+function makeRegistration(): GlPbrExtensionRegistration {
+  return {
+    bind(): void {},
+    createShaderContribution: () => makeContribution('vendor'),
+    isSupported: () => true,
+  };
+}
 
 function makeContribution(key: string): GlPbrExtensionShaderContribution {
   return {

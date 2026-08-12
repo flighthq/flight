@@ -1,5 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3 } from '@flighthq/geometry/contract';
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix } from '@flighthq/texture/contract';
 import type {
@@ -14,6 +15,7 @@ import type {
   Matrix3,
   PbrExtension,
 } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { isGlTextureReady } from './glPbrStandardBlock';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -23,12 +25,12 @@ export function bindGlPbrExtensions(
   program: WebGLProgram,
   extensions: readonly PbrExtension[],
 ): boolean {
-  const registry = getGlScene3DRuntime(state).pbrExtensionRegistry;
+  const entries = getGlRenderStateRuntime(state).registries.pbrExtensions.entries;
   const context = createGlPbrExtensionBindContext(state, program);
   for (let i = 0; i < extensions.length; i++) {
-    const registration = registry.get(extensions[i].kind);
-    if (registration === undefined) return false;
-    registration.bind(context, extensions[i]);
+    const entry = entries.get(extensions[i].kind);
+    if (entry?.state !== RegistryEntryState.Bound) return false;
+    entry.value.bind(context, extensions[i]);
   }
   return true;
 }
@@ -39,7 +41,7 @@ export function explainGlPbrExtensions(
 ): readonly GlPbrExtensionIssue[] {
   const issues: GlPbrExtensionIssue[] = [];
   const kinds = new Set<Kind>();
-  const registry = getGlScene3DRuntime(state).pbrExtensionRegistry;
+  const entries = getGlRenderStateRuntime(state).registries.pbrExtensions.entries;
   let transmissionSceneColorKind: Kind | null = null;
   let textureCount = 0;
   const shaderContext = createGlPbrExtensionShaderContext(state);
@@ -50,11 +52,12 @@ export function explainGlPbrExtensions(
       continue;
     }
     kinds.add(extension.kind);
-    const registration = registry.get(extension.kind);
-    if (registration === undefined) {
+    const entry = entries.get(extension.kind);
+    if (entry?.state !== RegistryEntryState.Bound) {
       issues.push({ code: 'missing-registration', kind: extension.kind });
       continue;
     }
+    const registration = entry.value;
     if (!registration.isSupported(extension)) {
       issues.push({ code: 'unsupported-extension', kind: extension.kind });
       continue;
@@ -79,7 +82,8 @@ export function explainGlPbrExtensions(
 }
 
 export function getGlPbrExtensionRegistration(state: GlRenderState, kind: Kind): GlPbrExtensionRegistration | null {
-  return getGlScene3DRuntime(state).pbrExtensionRegistry.get(kind) ?? null;
+  const entry = getGlRenderStateRuntime(state).registries.pbrExtensions.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 export function registerGlPbrExtension(
@@ -87,9 +91,9 @@ export function registerGlPbrExtension(
   kind: Kind,
   registration: GlPbrExtensionRegistration,
 ): void {
-  const runtime = getGlScene3DRuntime(state);
-  runtime.pbrExtensionRegistry.set(kind, registration);
-  runtime.pbrExtensionRegistryVersion++;
+  const registries = getGlRenderStateRuntime(state).registries;
+  registries.pbrExtensions = withRegistryTableEntry(registries.pbrExtensions, kind, registration);
+  registries.pbrExtensionRevision++;
 }
 
 export function resolveGlPbrExtensionContributions(
@@ -97,11 +101,13 @@ export function resolveGlPbrExtensionContributions(
   extensions: readonly PbrExtension[],
 ): readonly GlPbrExtensionShaderContribution[] | null {
   if (explainGlPbrExtensions(state, extensions).length > 0) return null;
-  const registry = getGlScene3DRuntime(state).pbrExtensionRegistry;
+  const entries = getGlRenderStateRuntime(state).registries.pbrExtensions.entries;
   const context = createGlPbrExtensionShaderContext(state);
   const contributions: GlPbrExtensionShaderContribution[] = [];
   for (let i = 0; i < extensions.length; i++) {
-    contributions.push(registry.get(extensions[i].kind)!.createShaderContribution(context, extensions[i]));
+    const entry = entries.get(extensions[i].kind);
+    if (entry?.state !== RegistryEntryState.Bound) return null;
+    contributions.push(entry.value.createShaderContribution(context, extensions[i]));
   }
   return contributions;
 }

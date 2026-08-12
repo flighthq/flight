@@ -118,6 +118,8 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
+    expect(offscreenRuntime.registries.pbrExtensions).toBe(screenRuntime.registries.pbrExtensions);
+    expect(offscreenRuntime.registries.pbrExtensionRevision).toBe(screenRuntime.registries.pbrExtensionRevision);
     expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
@@ -305,6 +307,13 @@ describe('createGlRenderStateRuntime', () => {
       shape: 'keyed',
     });
     expect(runtime.registries.meshMaterialRenderers.entries.size).toBe(0);
+    expect(runtime.registries.pbrExtensions).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'GlPbrExtension',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.pbrExtensions.entries.size).toBe(0);
+    expect(runtime.registries.pbrExtensionRevision).toBe(0);
     expect(runtime.registries.renderEffects).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'GlRenderEffect',

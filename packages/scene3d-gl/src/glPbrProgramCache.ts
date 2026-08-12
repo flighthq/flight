@@ -65,13 +65,16 @@ export function ensureGlPbrProgram(
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const extensionKey = contributions.map((contribution) => contribution.key).join(',');
-  const registryVersion = getGlScene3DRuntime(state).pbrExtensionRegistryVersion;
-  return ensureGlScene3DProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}:${registryVersion}:${extensionKey}`, (gl) =>
-    compileGlPbrProgram(
-      gl,
-      fullKey,
-      contributions,
-      getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
-    ),
+  const registryRevision = getGlRenderStateRuntime(state).registries.pbrExtensionRevision;
+  return ensureGlScene3DProgram(
+    state,
+    `pbr:${buildGlPbrDefineKey(fullKey)}:${registryRevision}:${extensionKey}`,
+    (gl) =>
+      compileGlPbrProgram(
+        gl,
+        fullKey,
+        contributions,
+        getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
+      ),
   );
 }
