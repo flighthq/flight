@@ -81,6 +81,27 @@ A file:line here is a claim about this tree, not about a session.
   fix. Where a mock models an API rule, measure the rule first and say in the test where the number came
   from.
 
+- **The (b) intra-frame residue, with BOTH sides extracted.** Set side: `rg -o` for every capability and
+  value setter, per file. Restore side: read back from each file, not recalled — a capability changed in
+  one direction only, or a value setter with no `getParameter`/`isEnabled` read-back in the same file.
+  The residue is a difference between two facts, which is the only form in which it is evidence.
+  IT RESOLVES TO ONE STRUCTURAL WEAKNESS RATHER THAN N BUGS. `createGlRenderState` establishes exactly
+  two context-wide invariants, once, at creation: `BLEND` ON and `DEPTH_TEST` OFF. Nothing re-establishes
+  either. Every pass that flips one and does not flip it back therefore leaks PERMANENTLY for the life of
+  the context, not for the frame — and the 3D path masks this from itself by re-establishing depth and
+  cull per draw, so only the 2D path pays.
+  Flipping `BLEND` off: `renderGlVelocity` and `bakeGlEnvironmentIbl` (both fixed), and
+  `glEnvironmentSkybox.ts` (open). Flipping `DEPTH_TEST` on: `glMeshProgram.ts`, `glParticleEmitter3D.ts`,
+  `glShadowMap.ts` — three enables, no disable anywhere outside the one at state creation, so any frame
+  that draws 3D leaves depth testing on for every later 2D draw. Open, and the reason to rule on it
+  rather than patch three call sites is that "restore what you changed" is being hand-rolled per pass
+  and each hand-rolling covers a different subset: the bracket restored the front stencil face only,
+  velocity restored the framebuffer only, the IBL bake restored framebuffer and viewport only. The
+  candidate fix is a pass-scoped bracket these passes share, which is a design call, not a patch.
+  Lower-priority residue, same extraction: `glClipContours.ts` disables `CULL_FACE` and never re-enables
+  (3D re-establishes cull per draw, so this one self-heals), and `glBackground`/`glFullscreenPass`/
+  `glCache` set clear colour and viewport with no read-back.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
