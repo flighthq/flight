@@ -1,8 +1,8 @@
-import type { Node, NodeTraits } from '@flighthq/types/contract';
+import type { Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild } from './hierarchy';
-import { createNode } from './node';
+import { createNode, getNodeRuntime } from './node';
 import {
   findNode,
   findNodeByName,
@@ -190,6 +190,12 @@ describe('getNodeNextSibling', () => {
   it('returns the next sibling', () => {
     expect(getNodeNextSibling(childA)).toBe(childB);
   });
+
+  it('returns null for a stale parent whose child list is absent', () => {
+    (getNodeRuntime(root) as NodeRuntime).children = null;
+
+    expect(getNodeNextSibling(childA)).toBeNull();
+  });
 });
 
 describe('getNodePreviousSibling', () => {
@@ -203,6 +209,12 @@ describe('getNodePreviousSibling', () => {
 
   it('returns the previous sibling', () => {
     expect(getNodePreviousSibling(childB)).toBe(childA);
+  });
+
+  it('returns null for a stale parent whose child list is absent', () => {
+    (getNodeRuntime(root) as NodeRuntime).children = null;
+
+    expect(getNodePreviousSibling(childB)).toBeNull();
   });
 });
 
@@ -241,5 +253,17 @@ describe('walkNodeDescendants', () => {
     });
     expect(visited).not.toContain(grandchild);
     expect(visited).not.toContain(childB);
+  });
+
+  it('propagates an early stop from a nested descendant', () => {
+    const visited: Node<NodeTraits>[] = [];
+
+    const result = walkNodeDescendants(root, (node) => {
+      visited.push(node);
+      return node !== grandchild;
+    });
+
+    expect(result).toBe(false);
+    expect(visited).toEqual([childA, grandchild]);
   });
 });
