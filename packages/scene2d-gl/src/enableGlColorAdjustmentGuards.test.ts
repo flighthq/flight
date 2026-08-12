@@ -1,8 +1,8 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import { recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
 import { createGlState } from './glTestHelper';
 
@@ -60,19 +60,11 @@ describe('enableGlColorAdjustmentGuards', () => {
 
   it('does not warn when the guard slot is present but color adjustment is also enabled', () => {
     const { state } = createGlState();
-    const runtime = getGlRenderStateRuntime(state);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
       enableGlColorAdjustmentGuards(state);
-      // Simulate the fold being installed so the dispatcher never reaches the guard branch.
-      runtime.glColorAdjustmentMaterialFeature = {
-        fragmentShaderChunk: '',
-        matrixFragmentShaderChunk: '',
-        drawShapeMeshes: () => {},
-        flush: () => false,
-        record: () => {},
-      };
+      registerGlColorAdjustmentMaterialFeature(state);
       recordGlQuadBatchColorScaleBias(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

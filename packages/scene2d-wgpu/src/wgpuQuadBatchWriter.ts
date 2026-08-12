@@ -1,4 +1,5 @@
 import { getWgpuBlendState, getWgpuSampler, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
@@ -135,7 +136,7 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
   // un-enabled state) falls back to the resolved material's own per-instance data, and no fold WGSL is
   // linked into this module. CT and material per-instance data never mix in a built-in batch (built-in
   // materials have no per-instance floats).
-  const ctFlush = runtime.wgpuColorAdjustmentMaterialFeature?.resolveFlush(state, count) ?? null;
+  const ctFlush = getWgpuColorAdjustmentMaterialFeature(state)?.resolveFlush(state, count) ?? null;
   const group3Floats = ctFlush !== null ? ctFlush.floats : runtime.quadBatchWriterMaterialFloats;
   const group3Data = ctFlush !== null ? ctFlush.data : runtime.quadBatchWriterMaterialData;
   resetWgpuQuadBatchWriter(state);
@@ -347,7 +348,7 @@ export function recordWgpuQuadBatchColorScaleBias(
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const fold = runtime.wgpuColorAdjustmentMaterialFeature;
+  const fold = getWgpuColorAdjustmentMaterialFeature(state);
   if (fold != null) {
     fold.record(runtime, colorScaleBias, instanceIndex);
     return;

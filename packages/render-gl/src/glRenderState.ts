@@ -8,8 +8,13 @@ import {
   destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
-import type { GlRenderOptions, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  GlColorAdjustmentMaterialFeature,
+  GlRenderOptions,
+  GlRenderState,
+  GlRenderStateRuntime,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { compileDefaultGlProgram, createDefaultGlBitmapShader } from './glShader';
 
@@ -21,13 +26,13 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   const sourceRuntime = getGlRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.glColorAdjustmentMaterialFeature = sourceRuntime.glColorAdjustmentMaterialFeature;
   targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
   targetRuntime.materialBitmapShaderMap =
     sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     blendRealizations: sourceRuntime.registries.blendRealizations,
+    colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
     compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customEffectShaders: sourceRuntime.registries.customEffectShaders,
@@ -260,6 +265,13 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.quadBatchWriterInstanceBuffer) gl.deleteBuffer(runtime.quadBatchWriterInstanceBuffer);
   if (runtime.quadBatchWriterMaterialBuffer) gl.deleteBuffer(runtime.quadBatchWriterMaterialBuffer);
   if (runtime.quadBatchWriterColorScaleBiasBuffer) gl.deleteBuffer(runtime.quadBatchWriterColorScaleBiasBuffer);
+}
+
+export function getGlColorAdjustmentMaterialFeature(
+  state: GlRenderState,
+): Readonly<GlColorAdjustmentMaterialFeature> | null {
+  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Resolves the package-private GPU runtime attached to a GlRenderState. Mutable by design: the

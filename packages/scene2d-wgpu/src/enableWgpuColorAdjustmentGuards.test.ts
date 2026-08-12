@@ -1,5 +1,4 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
@@ -7,6 +6,7 @@ import {
   areWgpuColorAdjustmentGuardsEnabled,
   enableWgpuColorAdjustmentGuards,
 } from './enableWgpuColorAdjustmentGuards';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import { recordWgpuQuadBatchColorScaleBias } from './wgpuQuadBatchWriter';
 
 beforeAll(() => {
@@ -67,17 +67,11 @@ describe('enableWgpuColorAdjustmentGuards', () => {
 
   it('does not warn when the guard slot is present but color adjustment is also enabled', async () => {
     const state = await createWgpuRenderStateForTest();
-    const runtime = getWgpuRenderStateRuntime(state);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
       enableWgpuColorAdjustmentGuards(state);
-      runtime.wgpuColorAdjustmentMaterialFeature = {
-        fragmentShaderChunk: '',
-        matrixFragmentShaderChunk: '',
-        record: () => {},
-        resolveFlush: () => null,
-      };
+      registerWgpuColorAdjustmentMaterialFeature(state);
       recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

@@ -46,6 +46,7 @@
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/shape": "*",

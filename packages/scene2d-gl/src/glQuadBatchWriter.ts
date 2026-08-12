@@ -1,5 +1,6 @@
 import { applyGlSamplerState } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   BlendMode,
@@ -183,7 +184,7 @@ export function flushGlQuadBatchWriter(state: GlRenderState): void {
   // The color-adjustment fold is opt-in (registerGlColorAdjustmentMaterialFeature): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean
   // material path runs and no fold code is linked into this module.
-  const ctHandled = runtime.glColorAdjustmentMaterialFeature?.flush(state, count) ?? false;
+  const ctHandled = getGlColorAdjustmentMaterialFeature(state)?.flush(state, count) ?? false;
   if (!ctHandled) {
     if (floats > 0) {
       if (runtime.quadBatchWriterMaterialBuffer === null) {
@@ -305,7 +306,7 @@ export function recordGlQuadBatchColorScaleBias(
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const fold = runtime.glColorAdjustmentMaterialFeature;
+  const fold = getGlColorAdjustmentMaterialFeature(state);
   if (fold != null) {
     fold.record(runtime, colorScaleBias, instanceIndex);
     return;

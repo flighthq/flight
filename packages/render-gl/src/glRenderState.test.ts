@@ -13,7 +13,11 @@ import {
   registerRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { RenderEffectPaddingResolver, RenderState } from '@flighthq/types/contract';
+import type {
+  GlColorAdjustmentMaterialFeature,
+  RenderEffectPaddingResolver,
+  RenderState,
+} from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
@@ -26,6 +30,7 @@ import {
   createGlRenderState,
   createGlRenderStateRuntime,
   destroyGlRenderState,
+  getGlColorAdjustmentMaterialFeature,
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from './glRenderState';
@@ -138,6 +143,13 @@ describe('createGlOffscreenRenderState', () => {
     const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
     const textureResolver = vi.fn(() => null);
     const effectRunner = vi.fn();
+    const colorAdjustmentFeature: GlColorAdjustmentMaterialFeature = {
+      drawShapeMeshes: vi.fn(),
+      flush: vi.fn(() => false),
+      fragmentShaderChunk: '',
+      matrixFragmentShaderChunk: '',
+      record: vi.fn(),
+    };
     registerRenderer(screen, 'acme.Node', renderer);
     registerGlMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
@@ -148,6 +160,12 @@ describe('createGlOffscreenRenderState', () => {
       { runner: effectRunner as never },
     );
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
+    getGlRenderStateRuntime(screen).registries.colorAdjustmentFeature = {
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
+      onMiss: 'Disabled',
+      registry: 'GlColorAdjustmentFeature',
+      shape: 'slot',
+    };
     getGlRenderStateRuntime(screen).glRenderTextureCache = new WeakMap();
 
     const offscreen = createGlOffscreenRenderState(screen);
@@ -165,6 +183,13 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
+    expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
+    expect(getGlColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
+    const sharedColorFeature = offscreenRuntime.registries.colorAdjustmentFeature;
+    screenRuntime.registries.colorAdjustmentFeature = undefined;
+    expect(getGlColorAdjustmentMaterialFeature(screen)).toBeNull();
+    expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(sharedColorFeature);
+    expect(getGlColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
     expect(offscreenRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
@@ -466,6 +491,35 @@ describe('enableGlRenderStateGuards', () => {
     } finally {
       removeLogSink(sink.sink);
     }
+  });
+});
+
+describe('getGlColorAdjustmentMaterialFeature', () => {
+  it('resolves only a bound feature entry', () => {
+    const { canvas } = makeCanvas();
+    const state = createGlRenderState(canvas);
+    const feature: GlColorAdjustmentMaterialFeature = {
+      drawShapeMeshes: vi.fn(),
+      flush: vi.fn(() => false),
+      fragmentShaderChunk: '',
+      matrixFragmentShaderChunk: '',
+      record: vi.fn(),
+    };
+    const runtime = getGlRenderStateRuntime(state);
+
+    expect(getGlColorAdjustmentMaterialFeature(state)).toBeNull();
+    runtime.registries.colorAdjustmentFeature = {
+      entry: { state: RegistryEntryState.Bound, value: feature },
+      onMiss: 'Disabled',
+      registry: 'GlColorAdjustmentFeature',
+      shape: 'slot',
+    };
+    expect(getGlColorAdjustmentMaterialFeature(state)).toBe(feature);
+    runtime.registries.colorAdjustmentFeature = {
+      ...runtime.registries.colorAdjustmentFeature,
+      entry: { state: RegistryEntryState.Tombstoned },
+    };
+    expect(getGlColorAdjustmentMaterialFeature(state)).toBeNull();
   });
 });
 

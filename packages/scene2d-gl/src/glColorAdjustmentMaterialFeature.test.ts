@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
@@ -46,17 +46,19 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
     expect(areColorAdjustmentsEnabled(state)).toBe(true);
-    expect(runtime.glColorAdjustmentMaterialFeature).not.toBeNull();
-    expect(runtime.glColorAdjustmentMaterialFeature).toBeDefined();
+    expect(runtime.registries.colorAdjustmentFeature).toBeDefined();
+    expect(getGlColorAdjustmentMaterialFeature(state)).not.toBeNull();
   });
 
   it('is idempotent', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    const fold = runtime.glColorAdjustmentMaterialFeature;
+    const table = runtime.registries.colorAdjustmentFeature;
+    const fold = getGlColorAdjustmentMaterialFeature(state);
     registerGlColorAdjustmentMaterialFeature(state);
-    expect(runtime.glColorAdjustmentMaterialFeature).toBe(fold);
+    expect(runtime.registries.colorAdjustmentFeature).toBe(table);
+    expect(getGlColorAdjustmentMaterialFeature(state)).toBe(fold);
   });
 
   it('stays untinted (mode NONE) when no instance carries a color adjustment', () => {

@@ -1,5 +1,5 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   AnimatedNormalModifier,
@@ -274,9 +274,7 @@ export function ensureWgpuShadedPipeline(
         plan,
         skinned,
         getWgpuSkinningAdapter(state),
-        colorAdjusted || colorMatrix
-          ? (getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null)
-          : null,
+        colorAdjusted || colorMatrix ? getWgpuColorAdjustmentMaterialFeature(state) : null,
         colorMatrix,
       ),
     });

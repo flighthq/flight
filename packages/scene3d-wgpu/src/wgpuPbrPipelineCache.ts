@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuPbrPipeline,
@@ -74,13 +74,6 @@ export function ensureWgpuPbrPipeline(
     hasColorMatrix: getWgpuScene3DRuntime(state).activeColorMatrixRun,
   };
   return ensureWgpuScene3DPipeline(state, `pbr:${format}|${buildWgpuPbrDefineKey(fullKey)}`, (blended, skinned) =>
-    compileWgpuPbrPipeline(
-      state,
-      fullKey,
-      format,
-      blended,
-      skinned,
-      getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null,
-    ),
+    compileWgpuPbrPipeline(state, fullKey, format, blended, skinned, getWgpuColorAdjustmentMaterialFeature(state)),
   );
 }

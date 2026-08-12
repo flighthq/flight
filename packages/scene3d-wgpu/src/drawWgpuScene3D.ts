@@ -1,6 +1,9 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { declareWgpuRenderTargetColorSpace, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import {
+  declareWgpuRenderTargetColorSpace,
+  getWgpuColorAdjustmentMaterialFeature,
+} from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
@@ -141,7 +144,7 @@ function drawEntries(
   let boundSkinned: boolean | undefined;
   let boundColorAdjustment: boolean | undefined;
   let boundColorMatrix: boolean | undefined;
-  const colorAdjustmentFeatureEnabled = getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature != null;
+  const colorAdjustmentFeatureEnabled = getWgpuColorAdjustmentMaterialFeature(state) !== null;
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i] as DrawEntry;

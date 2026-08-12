@@ -8,8 +8,14 @@ import {
   destroyRenderState,
   setRenderStateBackgroundColor,
 } from '@flighthq/render/contract';
-import type { TextureWrap, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  TextureWrap,
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuRenderOptions,
+  WgpuRenderState,
+  WgpuRenderStateRuntime,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { warmWgpuPipelines } from './wgpuDraw';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
@@ -25,10 +31,10 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.wgpuColorAdjustmentMaterialFeature = sourceRuntime.wgpuColorAdjustmentMaterialFeature;
   targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
+    colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
     compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
@@ -309,6 +315,13 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
     slot.materialBuffer?.destroy();
   }
   getWgpuDeviceRuntime(runtime).references--;
+}
+
+export function getWgpuColorAdjustmentMaterialFeature(
+  state: WgpuRenderState,
+): Readonly<WgpuColorAdjustmentMaterialFeature> | null {
+  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Resolves the package-private GPU runtime attached to a WgpuRenderState. Mutable by design: the

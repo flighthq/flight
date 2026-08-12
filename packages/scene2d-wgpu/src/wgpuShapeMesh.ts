@@ -1,4 +1,9 @@
-import { getWgpuBlendState, getWgpuRenderStateRuntime, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuBlendState,
+  getWgpuColorAdjustmentMaterialFeature,
+  getWgpuRenderStateRuntime,
+  retireWgpuBuffer,
+} from '@flighthq/render-wgpu/contract';
 import type {
   RenderProxy2D,
   WgpuRenderState,
@@ -97,7 +102,7 @@ export function drawWgpuShapeMeshes(
   buffers: WgpuShapeMeshBuffers,
 ): void {
   if (meshes.length === 0) return;
-  const fold = getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature;
+  const fold = getWgpuColorAdjustmentMaterialFeature(state);
   if (fold?.drawShapeMeshes !== undefined && renderProxy.colorMatrix == null && renderProxy.colorScaleBias != null) {
     fold.drawShapeMeshes(state, renderProxy, meshes, buffers);
     return;

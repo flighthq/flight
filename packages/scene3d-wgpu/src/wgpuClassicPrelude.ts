@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import type {
   LinearColor,
   Texture,
@@ -157,7 +157,7 @@ export function ensureWgpuClassicPipeline(
         format,
         blended,
         skinned,
-        getWgpuRenderStateRuntime(state).wgpuColorAdjustmentMaterialFeature ?? null,
+        getWgpuColorAdjustmentMaterialFeature(state),
       ),
   );
 }
