@@ -22,6 +22,7 @@ import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
 import type { WgpuTextureResolver } from './WgpuTextureResolver';
+import type { WgpuVelocityWriter } from './WgpuVelocityWriter';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
@@ -38,6 +39,7 @@ export interface WgpuRenderRegistries {
   renderEffects: KeyedTable<WgpuRenderEffectRunner>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
+  velocityWriters: KeyedTable<WgpuVelocityWriter>;
 }
 
 // The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Installed on the runtime

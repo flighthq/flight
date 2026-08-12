@@ -34,6 +34,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
+    velocityWriters: sourceRuntime.registries.velocityWriters,
   };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
@@ -254,6 +255,7 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
     renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
+    velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
   };
   const deviceRuntime =
     sharedRuntime === undefined ? { fields: {}, references: 0 } : getWgpuDeviceRuntime(sharedRuntime);

@@ -23,7 +23,7 @@ import type {
   Velocity2D,
   VelocityField,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity
@@ -256,16 +256,16 @@ export function drawGlVelocityQuad(
 }
 
 export function getGlVelocityWriter(state: GlRenderState, kind: Kind): GlVelocityWriter | null {
-  return _velocityWriters.get(state)?.get(kind) ?? null;
+  const entry = getGlRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 export function registerGlVelocityWriter(state: GlRenderState, kind: Kind, writer: GlVelocityWriter): void {
-  let writers = _velocityWriters.get(state);
-  if (writers === undefined) {
-    writers = new Map();
-    _velocityWriters.set(state, writers);
-  }
-  writers.set(kind, writer);
+  const runtime = getGlRenderStateRuntime(state);
+  const table = runtime.registries.velocityWriters;
+  const entries = new Map(table.entries);
+  entries.set(kind, { state: RegistryEntryState.Bound, value: writer });
+  runtime.registries.velocityWriters = { ...table, entries };
 }
 
 /**
@@ -371,7 +371,6 @@ void main() {
 
 const _scratchVelocity: Velocity2D = { x: 0, y: 0 };
 
-// Lazily compiled velocity program per render state, and the per-kind writer registry. WeakMaps so both
-// release when the state is GC'd.
+// Lazily compiled velocity program per context. Per-kind writer policy lives in the render state's
+// persistent registry aggregate, so derived pipelines retain a creation-time snapshot.
 const _velocityPrograms = new WeakMap<WebGL2RenderingContext, GlVelocityProgram>();
-const _velocityWriters = new WeakMap<GlRenderState, Map<Kind, GlVelocityWriter>>();

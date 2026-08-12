@@ -33,6 +33,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
+    velocityWriters: sourceRuntime.registries.velocityWriters,
   };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
@@ -187,6 +188,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
     renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
+    velocityWriters: createKeyedTable('GlVelocityWriter', 'Unregistered'),
   };
   // Per-state, not shared on the context tier: guards are installed per render state.
   runtime.bindingCacheGuard = null;

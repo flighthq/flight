@@ -1,6 +1,10 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
-import { renderWgpuBackground } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuOffscreenRenderState,
+  getWgpuRenderStateRuntime,
+  renderWgpuBackground,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
@@ -118,6 +122,24 @@ describe('registerWgpuVelocityWriter', () => {
     const root = createDisplayObject();
     registerWgpuVelocityWriter(state, root.kind, defaultWgpuNode2DVelocityWriter);
     expect(getWgpuVelocityWriter(state, root.kind)).toBe(defaultWgpuNode2DVelocityWriter);
+  });
+
+  it('replaces persistent snapshots and preserves a derived pipeline snapshot', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const kind = 'acme.Velocity';
+    const replacement = vi.fn();
+    const before = getWgpuRenderStateRuntime(state).registries.velocityWriters;
+
+    registerWgpuVelocityWriter(state, kind, defaultWgpuNode2DVelocityWriter);
+    const registered = getWgpuRenderStateRuntime(state).registries.velocityWriters;
+    const offscreen = createWgpuOffscreenRenderState(state);
+    registerWgpuVelocityWriter(state, kind, replacement);
+
+    expect(registered).not.toBe(before);
+    expect(before.entries.has(kind)).toBe(false);
+    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: defaultWgpuNode2DVelocityWriter });
+    expect(getWgpuVelocityWriter(state, kind)).toBe(replacement);
+    expect(getWgpuVelocityWriter(offscreen, kind)).toBe(defaultWgpuNode2DVelocityWriter);
   });
 });
 
