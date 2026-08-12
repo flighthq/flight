@@ -6,10 +6,18 @@ import type { Vector3Like, Vector4, Vector4Like } from '@flighthq/types/contract
  * and writes to out.
  */
 export function addVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
-  out.x = a.x + b.x;
-  out.y = a.y + b.y;
-  out.z = a.z + b.z;
-  out.w = a.w + b.w;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z,
+    aw = a.w;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z,
+    bw = b.w;
+  out.x = ax + bx;
+  out.y = ay + by;
+  out.z = az + bz;
+  out.w = aw + bw;
 }
 
 /**
@@ -49,10 +57,14 @@ export function cloneVector4(source: Readonly<Vector4Like>): Vector4 {
  * Copies the x, y, z and w components of another vector.
  */
 export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): void {
-  out.x = source.x;
-  out.y = source.y;
-  out.z = source.z;
-  out.w = source.w;
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  out.x = x;
+  out.y = y;
+  out.z = z;
+  out.w = w;
 }
 
 /**
@@ -195,10 +207,14 @@ export function interpolateVector4(
     ay = a.y,
     az = a.z,
     aw = a.w;
-  out.x = ax + t * (b.x - ax);
-  out.y = ay + t * (b.y - ay);
-  out.z = az + t * (b.z - az);
-  out.w = aw + t * (b.w - aw);
+  const bx = b.x,
+    by = b.y,
+    bz = b.z,
+    bw = b.w;
+  out.x = ax + t * (bx - ax);
+  out.y = ay + t * (by - ay);
+  out.z = az + t * (bz - az);
+  out.w = aw + t * (bw - aw);
 }
 
 /**
@@ -207,10 +223,18 @@ export function interpolateVector4(
  * Safe when `out` aliases `a` or `b`.
  */
 export function maxVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
-  out.x = a.x > b.x ? a.x : b.x;
-  out.y = a.y > b.y ? a.y : b.y;
-  out.z = a.z > b.z ? a.z : b.z;
-  out.w = a.w > b.w ? a.w : b.w;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z,
+    aw = a.w;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z,
+    bw = b.w;
+  out.x = ax > bx ? ax : bx;
+  out.y = ay > by ? ay : by;
+  out.z = az > bz ? az : bz;
+  out.w = aw > bw ? aw : bw;
 }
 
 /**
@@ -219,10 +243,18 @@ export function maxVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function minVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
-  out.x = a.x < b.x ? a.x : b.x;
-  out.y = a.y < b.y ? a.y : b.y;
-  out.z = a.z < b.z ? a.z : b.z;
-  out.w = a.w < b.w ? a.w : b.w;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z,
+    aw = a.w;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z,
+    bw = b.w;
+  out.x = ax < bx ? ax : bx;
+  out.y = ay < by ? ay : by;
+  out.z = az < bz ? az : bz;
+  out.w = aw < bw ? aw : bw;
 }
 
 /**
@@ -231,10 +263,18 @@ export function minVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function multiplyVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
-  out.x = a.x * b.x;
-  out.y = a.y * b.y;
-  out.z = a.z * b.z;
-  out.w = a.w * b.w;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z,
+    aw = a.w;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z,
+    bw = b.w;
+  out.x = ax * bx;
+  out.y = ay * by;
+  out.z = az * bz;
+  out.w = aw * bw;
 }
 
 /**
@@ -263,10 +303,14 @@ export function nearEqualsVector4(
  * properties of the current Vector4Like object is changed to -x, -y, and -z.
  **/
 export function negateVector4(out: Vector4Like, source: Readonly<Vector4Like>): void {
-  out.x = source.x * -1;
-  out.y = source.y * -1;
-  out.z = source.z * -1;
-  out.w = source.w * -1;
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  out.x = x * -1;
+  out.y = y * -1;
+  out.z = z * -1;
+  out.w = w * -1;
 }
 
 /**
@@ -276,13 +320,17 @@ export function negateVector4(out: Vector4Like, source: Readonly<Vector4Like>): 
  * Returns the original length.
  **/
 export function normalizeVector4(out: Vector4Like, source: Readonly<Vector4Like>): number {
-  const l = getVector4Length(source);
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  const l = Math.sqrt(x ** 2 + y ** 2 + z ** 2 + w ** 2);
 
   if (l !== 0) {
-    out.x = source.x / l;
-    out.y = source.y / l;
-    out.z = source.z / l;
-    out.w = source.w / l;
+    out.x = x / l;
+    out.y = y / l;
+    out.z = z / l;
+    out.w = w / l;
   } else {
     out.x = 0;
     out.y = 0;
@@ -304,10 +352,14 @@ export function offsetVector4(
   dz: number,
   dw: number,
 ): void {
-  out.x = source.x + dx;
-  out.y = source.y + dy;
-  out.z = source.z + dz;
-  out.w = source.w + dw;
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  out.x = x + dx;
+  out.y = y + dy;
+  out.z = z + dz;
+  out.w = w + dw;
 }
 
 /**
@@ -349,10 +401,14 @@ export function reflectVector4(out: Vector4Like, incident: Readonly<Vector4Like>
  * x, y, z and w elements are multiplied by the provided scalar number.
  **/
 export function scaleVector4(out: Vector4Like, source: Readonly<Vector4Like>, scalar: number): void {
-  out.x = source.x * scalar;
-  out.y = source.y * scalar;
-  out.z = source.z * scalar;
-  out.w = source.w * scalar;
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  out.x = x * scalar;
+  out.y = y * scalar;
+  out.z = z * scalar;
+  out.w = w * scalar;
 }
 
 /**
@@ -396,10 +452,18 @@ export function setVector4FromVector3(out: Vector4Like, source: Readonly<Vector3
  * from the values of the x, y, z and w elements of another Vector4Like object.
  **/
 export function subtractVector4(out: Vector4Like, source: Readonly<Vector4Like>, other: Readonly<Vector4Like>): void {
-  out.x = source.x - other.x;
-  out.y = source.y - other.y;
-  out.z = source.z - other.z;
-  out.w = source.w - other.w;
+  const sx = source.x,
+    sy = source.y,
+    sz = source.z,
+    sw = source.w;
+  const ox = other.x,
+    oy = other.y,
+    oz = other.z,
+    ow = other.w;
+  out.x = sx - ox;
+  out.y = sy - oy;
+  out.z = sz - oz;
+  out.w = sw - ow;
 }
 
 /**
