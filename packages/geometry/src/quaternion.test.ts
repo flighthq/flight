@@ -242,6 +242,25 @@ describe('inverseQuaternion', () => {
     inverseQuaternion(q, q);
     expectQuaternionClose(q, expected.x, expected.y, expected.z, expected.w);
   });
+
+  // Inverting divides by the squared length, so an all-zero quaternion is the one input that can
+  // reach the caller as NaN. The guard trades it for the identity rotation.
+  it('writes the identity rotation for a zero-length quaternion', () => {
+    const out = createQuaternion(9, 9, 9, 9);
+
+    inverseQuaternion(out, createQuaternion(0, 0, 0, 0));
+
+    expectQuaternionClose(out, 0, 0, 0, 1);
+  });
+
+  it('divides a non-unit quaternion by its squared length', () => {
+    const out = createQuaternion();
+
+    // |q|² = 4, so the inverse is the conjugate scaled by 1/4.
+    inverseQuaternion(out, createQuaternion(0, 2, 0, 0));
+
+    expectQuaternionClose(out, 0, -0.5, 0, 0);
+  });
 });
 
 describe('multiplyQuaternion', () => {
@@ -416,6 +435,29 @@ describe('setQuaternionFromMatrix4', () => {
     setQuaternionFromMatrix4(back, createMatrix4());
     expectQuaternionClose(back, 0, 0, 0, 1);
   });
+
+  // Extraction picks one of four formulas by which diagonal term dominates; only the trace case is
+  // reached by small rotations. A half turn about each axis selects one of the other three, and the
+  // round trip is what proves they agree with setMatrix4FromQuaternion rather than merely running.
+  it.each([
+    ['x', createVector3(1, 0, 0)],
+    ['y', createVector3(0, 1, 0)],
+    ['z', createVector3(0, 0, 1)],
+  ])('round-trips a half turn about %s', (_axis, axis) => {
+    const q = createQuaternion();
+    setQuaternionFromAxisAngle(q, axis, Math.PI);
+    const m = createMatrix4();
+    setMatrix4FromQuaternion(m, q);
+
+    const back = createQuaternion();
+    setQuaternionFromMatrix4(back, m);
+
+    const roundTripped = createMatrix4();
+    setMatrix4FromQuaternion(roundTripped, back);
+    for (let i = 0; i < 16; i++) {
+      expect(roundTripped.m[i]).toBeCloseTo(m.m[i], 6);
+    }
+  });
 });
 
 describe('setQuaternionFromUnitVectors', () => {
@@ -495,6 +537,27 @@ describe('setQuaternionLookRotation', () => {
     setQuaternionLookRotation(q, createVector3(0, 0, 1), createVector3(0, 1, 0));
     expectQuaternionClose(q, 0, 0, 0, 1);
   });
+
+  // Looking backwards drives the basis trace negative, which selects one of the three
+  // largest-diagonal formulas instead of the trace one. The contract is the same in every case:
+  // the quaternion must rotate +Z onto `forward`. A wrong branch produces a valid-looking unit
+  // quaternion that aims somewhere else entirely, which no NaN check would catch.
+  it.each([
+    ['-Z with +Y up', createVector3(0, 0, -1), createVector3(0, 1, 0)],
+    ['-Z with -Y up', createVector3(0, 0, -1), createVector3(0, -1, 0)],
+    ['+Z with -Y up', createVector3(0, 0, 1), createVector3(0, -1, 0)],
+    ['-X with -Y up', createVector3(-1, 0, 0), createVector3(0, -1, 0)],
+  ])('rotates +Z onto forward for %s', (_case, forward, up) => {
+    const q = createQuaternion();
+    setQuaternionLookRotation(q, forward, up);
+
+    const rotated = createVector3();
+    rotateVector3ByQuaternion(rotated, createVector3(0, 0, 1), q);
+
+    expect(rotated.x).toBeCloseTo(forward.x, 6);
+    expect(rotated.y).toBeCloseTo(forward.y, 6);
+    expect(rotated.z).toBeCloseTo(forward.z, 6);
+  });
 });
 
 describe('slerpQuaternion', () => {
@@ -536,5 +599,38 @@ describe('slerpQuaternion', () => {
     const b = createQuaternion();
     slerpQuaternion(b, a, b, 0);
     expectQuaternionClose(b, a.x, a.y, a.z, a.w);
+  });
+
+  // q and -q name the same rotation, so an interpolator that does not flip the sign travels the
+  // long way round: it would pass through a 135-degree pose here instead of a 45-degree one.
+  it('takes the shorter arc when the inputs have a negative dot product', () => {
+    const a = createQuaternion();
+    const quarterTurn = createQuaternion();
+    setQuaternionFromAxisAngle(quarterTurn, createVector3(0, 1, 0), Math.PI / 2);
+    const negated = createQuaternion(-quarterTurn.x, -quarterTurn.y, -quarterTurn.z, -quarterTurn.w);
+
+    const out = createQuaternion();
+    slerpQuaternion(out, a, negated, 0.5);
+
+    const eighthTurn = createQuaternion();
+    setQuaternionFromAxisAngle(eighthTurn, createVector3(0, 1, 0), Math.PI / 4);
+    expect(Math.abs(getQuaternionDot(out, eighthTurn))).toBeCloseTo(1, 6);
+  });
+
+  // Nearly-collinear inputs make sin(halfTheta) approach zero; without the linear fallback both
+  // scale factors divide by it and the caller receives NaN.
+  it('interpolates nearly identical rotations without dividing by zero', () => {
+    const a = createQuaternion();
+    const b = createQuaternion();
+    setQuaternionFromAxisAngle(b, createVector3(0, 1, 0), 1e-7);
+
+    const out = createQuaternion();
+    slerpQuaternion(out, a, b, 0.5);
+
+    expect(Number.isFinite(out.x)).toBe(true);
+    expect(Number.isFinite(out.y)).toBe(true);
+    expect(Number.isFinite(out.z)).toBe(true);
+    expect(Number.isFinite(out.w)).toBe(true);
+    expect(getQuaternionDot(out, out)).toBeCloseTo(1, 6);
   });
 });

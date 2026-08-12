@@ -482,16 +482,14 @@ export function setQuaternionFromUnitVectors(
   out.x = cx;
   out.y = cy;
   out.z = cz;
+  // The antiparallel guard above bounds dot below at -0.999999, so w is at least 1e-6 and the
+  // length can never be zero here.
   out.w = 1 + dot;
-  // normalize
-  const len = Math.sqrt(out.x * out.x + out.y * out.y + out.z * out.z + out.w * out.w);
-  if (len !== 0) {
-    const inv = 1 / len;
-    out.x *= inv;
-    out.y *= inv;
-    out.z *= inv;
-    out.w *= inv;
-  }
+  const inv = 1 / Math.sqrt(out.x * out.x + out.y * out.y + out.z * out.z + out.w * out.w);
+  out.x *= inv;
+  out.y *= inv;
+  out.z *= inv;
+  out.w *= inv;
 }
 
 /**
