@@ -16,6 +16,13 @@ type SavedGlRenderState = {
   cullFace: boolean;
   cullFaceMode: number;
   frontFace: number;
+  stencilBackFail: number;
+  stencilBackFunc: number;
+  stencilBackPassDepthFail: number;
+  stencilBackPassDepthPass: number;
+  stencilBackRef: number;
+  stencilBackValueMask: number;
+  stencilBackWriteMask: number;
   stencilFail: number;
   stencilFunc: number;
   stencilPassDepthFail: number;
@@ -69,10 +76,17 @@ export function popGlRenderState(state: GlRenderState): void {
   // null path disables the test outright. That is correct for Flight's own nesting and says nothing
   // about the host: a caller that had STENCIL_TEST enabled would otherwise get it switched off by any
   // Flight render. This is the host-facing half.
+  //
+  // Restored per face, because the unsuffixed setters write FRONT_AND_BACK: restoring both faces from
+  // the front's saved values would silently overwrite the back face of a host using two-sided stencil,
+  // which is the case stencilOpSeparate exists for and the one Flight's own clip pass writes.
   restoreGlCapability(gl, gl.STENCIL_TEST, saved.stencilTest);
-  gl.stencilMask(saved.stencilWriteMask);
-  gl.stencilFunc(saved.stencilFunc, saved.stencilRef, saved.stencilValueMask);
-  gl.stencilOp(saved.stencilFail, saved.stencilPassDepthFail, saved.stencilPassDepthPass);
+  gl.stencilMaskSeparate(gl.FRONT, saved.stencilWriteMask);
+  gl.stencilMaskSeparate(gl.BACK, saved.stencilBackWriteMask);
+  gl.stencilFuncSeparate(gl.FRONT, saved.stencilFunc, saved.stencilRef, saved.stencilValueMask);
+  gl.stencilFuncSeparate(gl.BACK, saved.stencilBackFunc, saved.stencilBackRef, saved.stencilBackValueMask);
+  gl.stencilOpSeparate(gl.FRONT, saved.stencilFail, saved.stencilPassDepthFail, saved.stencilPassDepthPass);
+  gl.stencilOpSeparate(gl.BACK, saved.stencilBackFail, saved.stencilBackPassDepthFail, saved.stencilBackPassDepthPass);
 
   restoreGlCapability(gl, gl.BLEND, saved.blend);
   gl.blendFuncSeparate(saved.blendSrcRgb, saved.blendDstRgb, saved.blendSrcAlpha, saved.blendDstAlpha);
@@ -135,6 +149,13 @@ export function pushGlRenderState(state: GlRenderState): void {
     cullFace: gl.isEnabled(gl.CULL_FACE),
     cullFaceMode: gl.getParameter(gl.CULL_FACE_MODE) as number,
     frontFace: gl.getParameter(gl.FRONT_FACE) as number,
+    stencilBackFail: gl.getParameter(gl.STENCIL_BACK_FAIL) as number,
+    stencilBackFunc: gl.getParameter(gl.STENCIL_BACK_FUNC) as number,
+    stencilBackPassDepthFail: gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL) as number,
+    stencilBackPassDepthPass: gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS) as number,
+    stencilBackRef: gl.getParameter(gl.STENCIL_BACK_REF) as number,
+    stencilBackValueMask: gl.getParameter(gl.STENCIL_BACK_VALUE_MASK) as number,
+    stencilBackWriteMask: gl.getParameter(gl.STENCIL_BACK_WRITEMASK) as number,
     stencilFail: gl.getParameter(gl.STENCIL_FAIL) as number,
     stencilFunc: gl.getParameter(gl.STENCIL_FUNC) as number,
     stencilPassDepthFail: gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL) as number,
