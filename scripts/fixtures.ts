@@ -1,6 +1,7 @@
 // `npm run fixtures <pack> [<pack>...]` — fetch conformance fixture packs into a local, gitignored
-// cache, verified against the manifest's sha256 on every run, and unpack the ones asked for. The
-// decision logic lives in `fixtures-core.ts`; this file is the filesystem, the network, and the CLI.
+// cache, verified against the manifest's sha256 on every run, and unpack the ones asked for. `--all`
+// explicitly asks for every pack in one release variant; no test/build hook ever does so implicitly.
+// The decision logic lives in `fixtures-core.ts`; this file is the filesystem, the network, and the CLI.
 //
 // This is the fetcher and only the fetcher. It builds no conformance test, no scoreboard, and no
 // oracle.
@@ -128,6 +129,13 @@ export interface FixtureExtractionVerification {
   metadataEntries: readonly string[];
   missingSample: readonly string[];
   presentFixtureFiles: number;
+}
+
+export interface FixtureArguments {
+  all: boolean;
+  list: boolean;
+  packs: readonly string[];
+  variant: string;
 }
 
 export const FIXTURE_STAMP_FILE = '.flight-fixtures.json';
@@ -323,7 +331,7 @@ async function downloadFixtureArchive(entry: Readonly<FixturePackEntry>, destina
 }
 
 async function main(): Promise<void> {
-  const { list, packs, variant } = parseArguments(process.argv.slice(2));
+  const { all, list, packs, variant } = parseFixtureArguments(process.argv.slice(2));
 
   const manifestUrl = `${FIXTURE_RELEASE_BASE_URL}/${FIXTURE_RELEASE_TAG}/index.json`;
   const manifest = parseFixtureManifest(await fetchText(manifestUrl));
@@ -357,27 +365,33 @@ async function main(): Promise<void> {
     return;
   }
 
-  const plan = planFixtureFetch(manifest, packs, variant);
+  const requested = all ? [...new Set(manifest.packs.map((entry) => entry.pack))].sort() : packs;
+  const plan = planFixtureFetch(manifest, requested, variant);
   console.log(formatFixturePlan(plan));
   if (plan.errors.length > 0) process.exit(1);
 
   await realizeFixturePlan(plan);
 }
 
-function parseArguments(argv: readonly string[]): { list: boolean; packs: readonly string[]; variant: string } {
+export function parseFixtureArguments(argv: readonly string[]): FixtureArguments {
   const packs: string[] = [];
+  let all = false;
   let list = false;
   // `full` is the default by ruling, and `--variant` is an escape hatch rather than a policy surface.
   let variant = 'full';
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]!;
-    if (argument === '--list') list = true;
+    if (argument === '--all') all = true;
+    else if (argument === '--list') list = true;
     else if (argument === '--variant') variant = argv[++index] ?? '';
     else if (argument.startsWith('--variant=')) variant = argument.slice('--variant='.length);
     else if (argument.startsWith('-')) throw new Error(`unknown option ${argument}`);
     else packs.push(argument);
   }
-  return { list, packs, variant };
+  if (variant.length === 0) throw new Error('--variant requires a non-empty value');
+  if (all && packs.length > 0) throw new Error('--all cannot be combined with named packs');
+  if (list && (all || packs.length > 0)) throw new Error('--list cannot be combined with --all or named packs');
+  return { all, list, packs, variant };
 }
 
 // Fetch, verify, and unpack the plan. Extraction is per pack and on demand — the full corpus is 26,461

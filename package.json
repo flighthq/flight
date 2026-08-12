@@ -65,6 +65,7 @@
     "clean:examples": "npm run clean --workspace=examples/packages/** --if-present",
     "clean:reference": "tsx ./scripts/reference-tool.ts clean",
     "conformance": "tsx ./conformance/core/import-conformance.ts",
+    "conformance:fixtures": "tsx ./conformance/fixtures/import-fixture-conformance.ts",
     "dev:electron-harness": "npm run dev --workspace=@flighthq/examples-electron",
     "dev:examples": "npm run dev:examples:web",
     "dev:examples:electron": "tsx ./scripts/electron-tool.ts examples",
