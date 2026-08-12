@@ -1,6 +1,8 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   areWgpuColorAdjustmentGuardsEnabled,
@@ -32,6 +34,15 @@ describe('areWgpuColorAdjustmentGuardsEnabled', () => {
     expect(areWgpuColorAdjustmentGuardsEnabled(state)).toBe(false);
     enableWgpuColorAdjustmentGuards(state);
     expect(areWgpuColorAdjustmentGuardsEnabled(state)).toBe(true);
+    const table = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
+    expect(table).toMatchObject({
+      entry: { state: RegistryEntryState.Bound },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeatureGuard',
+      shape: 'slot',
+    });
+    enableWgpuColorAdjustmentGuards(state);
+    expect(getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard).toBe(table);
   });
 });
 

@@ -11,6 +11,7 @@ import {
 import type {
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
@@ -31,10 +32,10 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
     colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
+    colorAdjustmentFeatureGuard: sourceRuntime.registries.colorAdjustmentFeatureGuard,
     compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
@@ -321,6 +322,13 @@ export function getWgpuColorAdjustmentMaterialFeature(
   state: WgpuRenderState,
 ): Readonly<WgpuColorAdjustmentMaterialFeature> | null {
   const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
+export function getWgpuColorAdjustmentMaterialFeatureGuard(
+  state: WgpuRenderState,
+): WgpuColorAdjustmentMaterialFeatureGuard | null {
+  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard?.entry;
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 

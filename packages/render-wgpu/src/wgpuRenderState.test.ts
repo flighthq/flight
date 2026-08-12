@@ -17,6 +17,7 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
   WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -29,6 +30,7 @@ import {
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
+  getWgpuColorAdjustmentMaterialFeatureGuard,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
@@ -134,6 +136,7 @@ describe('createWgpuOffscreenRenderState', () => {
       record: vi.fn(),
       resolveFlush: vi.fn(() => null),
     };
+    const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
     registerRenderer(screen, 'acme.Node', renderer);
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
@@ -143,6 +146,12 @@ describe('createWgpuOffscreenRenderState', () => {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
       onMiss: 'Disabled',
       registry: 'WgpuColorAdjustmentFeature',
+      shape: 'slot',
+    };
+    getWgpuRenderStateRuntime(screen).registries.colorAdjustmentFeatureGuard = {
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeatureGuard',
       shape: 'slot',
     };
     getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
@@ -167,6 +176,15 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
     expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
+    expect(offscreenRuntime.registries.colorAdjustmentFeatureGuard).toBe(
+      screenRuntime.registries.colorAdjustmentFeatureGuard,
+    );
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(offscreen)).toBe(colorAdjustmentFeatureGuard);
+    const sharedColorFeatureGuard = offscreenRuntime.registries.colorAdjustmentFeatureGuard;
+    screenRuntime.registries.colorAdjustmentFeatureGuard = undefined;
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(screen)).toBeNull();
+    expect(offscreenRuntime.registries.colorAdjustmentFeatureGuard).toBe(sharedColorFeatureGuard);
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(offscreen)).toBe(colorAdjustmentFeatureGuard);
     const sharedColorFeature = offscreenRuntime.registries.colorAdjustmentFeature;
     screenRuntime.registries.colorAdjustmentFeature = undefined;
     expect(getWgpuColorAdjustmentMaterialFeature(screen)).toBeNull();
@@ -395,6 +413,28 @@ describe('getWgpuColorAdjustmentMaterialFeature', () => {
       entry: { state: RegistryEntryState.Tombstoned },
     };
     expect(getWgpuColorAdjustmentMaterialFeature(state)).toBeNull();
+  });
+});
+
+describe('getWgpuColorAdjustmentMaterialFeatureGuard', () => {
+  it('resolves only a bound guard entry', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const guard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
+    const runtime = getWgpuRenderStateRuntime(state);
+
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(state)).toBeNull();
+    runtime.registries.colorAdjustmentFeatureGuard = {
+      entry: { state: RegistryEntryState.Bound, value: guard },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeatureGuard',
+      shape: 'slot',
+    };
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(state)).toBe(guard);
+    runtime.registries.colorAdjustmentFeatureGuard = {
+      ...runtime.registries.colorAdjustmentFeatureGuard,
+      entry: { state: RegistryEntryState.Tombstoned },
+    };
+    expect(getWgpuColorAdjustmentMaterialFeatureGuard(state)).toBeNull();
   });
 });
 

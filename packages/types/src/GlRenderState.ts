@@ -38,6 +38,9 @@ export interface GlRenderState extends RenderState {
 export interface GlRenderRegistries extends RenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
   colorAdjustmentFeature?: SlotTable<GlColorAdjustmentMaterialFeature>;
+  // Optional diagnostic policy stays separate from the rendering feature: binding this callback
+  // reports an unwired feature but never enables color-adjustment rendering behavior.
+  colorAdjustmentFeatureGuard?: SlotTable<GlColorAdjustmentMaterialFeatureGuard>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
   compressedTextureDecoder: SlotTable<GlCompressedTextureDecoder>;
@@ -74,16 +77,16 @@ export type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_M
 
 export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
 
-// The opt-in inline color-adjustment fold for the WebGL sprite/quad batch. Installed on the runtime
-// by registerGlColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
-// only ever reaches this through the nullable runtime slot — carries none of the fold's shader code
+// The opt-in inline color-adjustment fold for the WebGL sprite/quad batch. Registered as persistent
+// per-state policy by registerGlColorAdjustmentMaterialFeature; absent on a state that never opted in,
+// so the base batch — which only ever reaches this through the optional registry slot — carries none of the fold's shader code
 // and tree-shakes it out. `record` folds one instance's color adjustment into the active batch's
 // promote-not-split state machine; `flush` uploads that state, selects the color-adjustment program,
 // and binds it, returning true when it drew a folded batch (false when the batch had no adjustment, so
 // the caller runs the lean material path). This is the generic capability seam — color adjustment is
 // its first consumer; later pointwise adjustments (brightness/hue/…) realize through the same fold.
 // `drawShapeMeshes` is the shape substrate's hook: the GPU-tessellated solid-fill path reaches it only
-// through this nullable slot when a node carries a color adjustment, so the base flat-color mesh shader
+// through this optional registration when a node carries a color adjustment, so the base flat-color mesh shader
 // stays free of any tint branch and the tinted mesh program tree-shakes out with the rest of the fold.
 export interface GlColorAdjustmentMaterialFeature {
   // The one backend-authored pointwise color-remap implementation. Material-family compilers splice
@@ -100,6 +103,11 @@ export interface GlColorAdjustmentMaterialFeature {
     instanceIndex: number,
   ): void;
 }
+
+export type GlColorAdjustmentMaterialFeatureGuard = (
+  state: GlRenderState,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
+) => void;
 
 // Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public GlRenderState surface stays minimal; the render path resolves it each
@@ -138,11 +146,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   uniformColorScaleBiasShader?: GlUniformColorScaleBiasShader;
   shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
   shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
-  // The opt-in color-adjustment guard remains separate from registries.colorAdjustmentFeature:
-  // enabling diagnostics never enables rendering behavior.
-  glColorAdjustmentMaterialFeatureGuard?:
-    | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
-    | null;
   // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
   // material table because a material kind is either 2D or 3D, never both. This cache is the context-tier
   // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to

@@ -37,6 +37,9 @@ export interface WgpuRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries extends RenderRegistries {
   colorAdjustmentFeature?: SlotTable<WgpuColorAdjustmentMaterialFeature>;
+  // Optional diagnostic policy stays separate from the rendering feature: binding this callback
+  // reports an unwired feature but never enables color-adjustment rendering behavior.
+  colorAdjustmentFeatureGuard?: SlotTable<WgpuColorAdjustmentMaterialFeatureGuard>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
   compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder>;
@@ -54,9 +57,9 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   velocityWriters: KeyedTable<WgpuVelocityWriter>;
 }
 
-// The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Installed on the runtime
-// by registerWgpuColorAdjustmentMaterialFeature; absent (null) on a state that never opted in, so the base batch — which
-// only ever reaches this through the nullable runtime slot — carries none of the fold's WGSL and
+// The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Registered as persistent
+// per-state policy by registerWgpuColorAdjustmentMaterialFeature; absent on a state that never opted in,
+// so the base batch — which only ever reaches this through the optional registry slot — carries none of the fold's WGSL and
 // tree-shakes it out. `record` folds one instance's color adjustment into the active batch's
 // promote-not-split state machine; `resolveFlush` returns the group-3 storage data + folded shader
 // module for a tinted batch (or null when the batch has no adjustment, so the caller runs the lean
@@ -82,6 +85,11 @@ export interface WgpuColorAdjustmentMaterialFeature {
   ): void;
   resolveFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null;
 }
+
+export type WgpuColorAdjustmentMaterialFeatureGuard = (
+  state: WgpuRenderState,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
+) => void;
 
 // The per-flush realization of a tinted batch: the per-instance storage data (`data`, `floats` floats
 // each) and the folded shader `module` the batch binds at @group(3), returned by
@@ -199,14 +207,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   quadBatchWriterColorScaleBiasData?: Float32Array;
   quadBatchWriterColorMatrixData?: Float32Array;
   quadBatchWriterColorTintData?: Uint32Array;
-  // The opt-in color-adjustment guard remains separate from registries.colorAdjustmentFeature:
-  // enabling diagnostics never enables rendering behavior.
-  wgpuColorAdjustmentMaterialFeatureGuard?:
-    | ((
-        state: WgpuRenderState,
-        colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
-      ) => void)
-    | null;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
   // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its
   // buffers at submit time. Reusing a single buffer across flushes would leave them all reading the

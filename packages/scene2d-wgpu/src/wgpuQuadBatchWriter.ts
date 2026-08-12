@@ -1,5 +1,6 @@
 import { getWgpuBlendState, getWgpuSampler, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   ColorScaleBias,
@@ -353,7 +354,7 @@ export function recordWgpuQuadBatchColorScaleBias(
     fold.record(runtime, colorScaleBias, instanceIndex);
     return;
   }
-  if (colorScaleBias != null) runtime.wgpuColorAdjustmentMaterialFeatureGuard?.(state, colorScaleBias);
+  if (colorScaleBias != null) getWgpuColorAdjustmentMaterialFeatureGuard(state)?.(state, colorScaleBias);
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be

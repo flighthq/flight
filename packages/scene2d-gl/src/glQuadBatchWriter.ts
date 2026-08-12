@@ -1,6 +1,7 @@
 import { applyGlSamplerState } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   BlendMode,
@@ -311,7 +312,7 @@ export function recordGlQuadBatchColorScaleBias(
     fold.record(runtime, colorScaleBias, instanceIndex);
     return;
   }
-  if (colorScaleBias != null) runtime.glColorAdjustmentMaterialFeatureGuard?.(state, colorScaleBias);
+  if (colorScaleBias != null) getGlColorAdjustmentMaterialFeatureGuard(state)?.(state, colorScaleBias);
 }
 
 export function setGlQuadBatchWorldAndTexture(

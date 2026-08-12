@@ -4,6 +4,7 @@ import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache }
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuMaterialRenderer,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -142,6 +143,7 @@ describe('createWgpuCacheState', () => {
       record: vi.fn(),
       resolveFlush: vi.fn(() => null),
     };
+    const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     screenRuntime.registries.colorAdjustments = {
       entry: { state: RegistryEntryState.Bound, value: resolver },
@@ -153,6 +155,12 @@ describe('createWgpuCacheState', () => {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
       onMiss: 'Disabled',
       registry: 'WgpuColorAdjustmentFeature',
+      shape: 'slot',
+    };
+    screenRuntime.registries.colorAdjustmentFeatureGuard = {
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeatureGuard',
       shape: 'slot',
     };
     enableWgpuRenderCache(screen);
@@ -171,6 +179,13 @@ describe('createWgpuCacheState', () => {
     expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustmentFeature).toBe(
       screenRuntime.registries.colorAdjustmentFeature,
     );
+    const cacheRuntime = getWgpuRenderStateRuntime(cacheState);
+    expect(cacheRuntime.registries.colorAdjustmentFeatureGuard).toBe(
+      screenRuntime.registries.colorAdjustmentFeatureGuard,
+    );
+    const sharedColorFeatureGuard = cacheRuntime.registries.colorAdjustmentFeatureGuard;
+    screenRuntime.registries.colorAdjustmentFeatureGuard = undefined;
+    expect(cacheRuntime.registries.colorAdjustmentFeatureGuard).toBe(sharedColorFeatureGuard);
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {
