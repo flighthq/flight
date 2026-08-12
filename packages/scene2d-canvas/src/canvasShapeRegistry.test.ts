@@ -1,4 +1,4 @@
-import { createRenderState } from '@flighthq/render/contract';
+import { copyRenderStateRegistrations, createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 
 import { getCanvasShapeCommand, registerCanvasShapeCommand, registerCanvasShapeCommands } from './canvasShapeRegistry';
 
@@ -38,6 +38,41 @@ describe('registerCanvasShapeCommand', () => {
     registerCanvasShapeCommand(state, { key: '__test_replace__' as never, draw: first });
     registerCanvasShapeCommand(state, { key: '__test_replace__' as never, draw: second });
     expect(getCanvasShapeCommand(state, '__test_replace__')?.draw).toBe(second);
+  });
+
+  it('replaces the table without mutating the earlier snapshot', () => {
+    const state = createRenderState();
+    const first = vi.fn();
+    const second = vi.fn();
+    registerCanvasShapeCommand(state, { key: '__test_snapshot__' as never, draw: first });
+    const before = getRenderStateRuntime(state).registries.canvasShapeCommands;
+
+    registerCanvasShapeCommand(state, { key: '__test_snapshot__' as never, draw: second });
+
+    expect(before?.entries.get('__test_snapshot__')).toEqual({
+      state: 'bound',
+      value: { key: '__test_snapshot__', draw: first },
+    });
+    expect(getCanvasShapeCommand(state, '__test_snapshot__')?.draw).toBe(second);
+  });
+
+  it('survives derivation and later registrations diverge from the copied snapshot', () => {
+    const source = createRenderState();
+    const derived = createRenderState();
+    const first = vi.fn();
+    const second = vi.fn();
+    registerCanvasShapeCommand(source, { key: '__test_derived__' as never, draw: first });
+
+    copyRenderStateRegistrations(derived, source);
+
+    const copied = getRenderStateRuntime(derived).registries.canvasShapeCommands;
+    expect(copied).toBe(getRenderStateRuntime(source).registries.canvasShapeCommands);
+    expect(getCanvasShapeCommand(derived, '__test_derived__')?.draw).toBe(first);
+
+    registerCanvasShapeCommand(source, { key: '__test_derived__' as never, draw: second });
+    expect(getCanvasShapeCommand(source, '__test_derived__')?.draw).toBe(second);
+    expect(getCanvasShapeCommand(derived, '__test_derived__')?.draw).toBe(first);
+    expect(getRenderStateRuntime(derived).registries.canvasShapeCommands).toBe(copied);
   });
 });
 

@@ -1,5 +1,5 @@
 import type { Renderer, Scene2DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage';
@@ -43,11 +43,16 @@ function entries(
   return out;
 }
 
-// The registry is a plain Map on the base runtime; registering a real command means reaching through
+// The registry lives on the base runtime; registering a real command means reaching through
 // scene2d-canvas, which render cannot depend on, so the test installs the binding directly.
 function wireShapeCommand(state: ReturnType<typeof createRenderState>, key: string): void {
   const runtime = getRenderStateRuntime(state);
-  (runtime.canvasShapeCommandRegistry ??= new Map()).set(key, { key, draw: () => {} } as never);
+  runtime.registries.canvasShapeCommands = {
+    entries: new Map([[key, { state: RegistryEntryState.Bound, value: { key, draw: () => {} } as never }]]),
+    onMiss: 'Unregistered',
+    registry: 'CanvasShapeCommand',
+    shape: 'keyed',
+  };
 }
 
 describe('explainScene2DCoverage', () => {

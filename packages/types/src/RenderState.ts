@@ -44,6 +44,7 @@ export interface RenderState extends Entity {
 // Pure registration policy shared by every render backend. Members remain optional when importing the
 // corresponding registrar is optional, so an unwired base state carries no table metadata.
 export interface RenderRegistries {
+  canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
 }
 
@@ -53,17 +54,6 @@ export interface RenderRegistries {
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
-  // Shape-command handlers keyed by command key, absent until the first registerCanvasShapeCommand.
-  // ShapeCommandKey is a closed union — the authored vocabulary is fixed by ShapeCommandRegistry, whose
-  // per-command argument tuples are what make the flat token buffer statically describable and portable.
-  // The map is keyed by plain string only because a stream is read back token by token, so the lookup
-  // takes whatever the buffer holds; it is not an opening of the vocabulary.
-  //
-  // On the BASE runtime, not the Canvas one: every backend replays the same command stream — the GPU
-  // and DOM backends through a ShapeRasterizer, for the fills they have no tessellated form for — and
-  // each does it against its own state. Putting the registry here is what lets a caller wire commands
-  // onto the state it already holds and lets a lookup miss report through that state's registryMiss.
-  canvasShapeCommandRegistry?: Map<string, CanvasShapeCommand> | null;
   // Opt-in color-adjustment accumulation seam. `enableColorAdjustments` installs the resolver that
   // copies a node's cached local value to its render proxy and composes it with its parent's value.
   // This is independent of colorAdjustmentUnsupportedGuard: enabling diagnostics never enables

@@ -15,19 +15,18 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
   });
 }
 
-// Copies the backend-agnostic policy registries that participate in pipeline derivation. Maps are
-// cloned, never aliased: derived states start with a snapshot and diverge until an explicit re-copy.
+// Copies the backend-agnostic policy registries that participate in pipeline derivation. Persistent
+// tables share an immutable snapshot through distinct aggregates, so later replacements diverge until
+// an explicit re-copy.
 export function copyRenderStateRegistrations(target: RenderState, source: RenderState): void {
   const targetRuntime = getRenderStateRuntime(target);
   const sourceRuntime = getRenderStateRuntime(source);
   targetRuntime.colorAdjustmentResolver = sourceRuntime.colorAdjustmentResolver;
   targetRuntime.registries.effectPaddingResolvers = sourceRuntime.registries.effectPaddingResolvers;
-  // The shape-command set is a base-runtime registry every backend replays through, so a pipeline
-  // that inherits the renderers must inherit the commands too. Without it an offscreen state resolves
-  // no handler for any command in a shape's stream and bakes an empty target.
-  const sourceShapeCommands = sourceRuntime.canvasShapeCommandRegistry;
-  targetRuntime.canvasShapeCommandRegistry =
-    sourceShapeCommands === null || sourceShapeCommands === undefined ? null : new Map(sourceShapeCommands);
+  // The shape-command set is base policy every backend replays through, so a pipeline that inherits
+  // the renderers must inherit the commands too. Without it an offscreen state resolves no handler for
+  // any command in a shape's stream and bakes an empty target.
+  targetRuntime.registries.canvasShapeCommands = sourceRuntime.registries.canvasShapeCommands;
 }
 
 export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
