@@ -67,6 +67,10 @@ const MUTANT_POOLS = ['threads', 'forks'];
 
 const MUTANT_TIMEOUT_MS = 120_000;
 
+// How many escalated mutants one worker must carry before a second worker is worth its own full-suite
+// first run. Four is where the measured curve flattened on `geometry`; see `getEscalationWidth`.
+const MUTANTS_PER_ESCALATION_WORKER = 4;
+
 const scriptsDirectory = resolve(fileURLToPath(import.meta.url), '..');
 const repoRoot = resolve(scriptsDirectory, '..');
 const mutantConfigPath = resolve(scriptsDirectory, 'mutantVitestConfig.ts');
@@ -100,6 +104,37 @@ export function explainOverbroadSelection(selectors: readonly string[], packages
     pc.dim(`  ${shown}${rest}`),
     pc.dim(`  Name one, or narrow to a file: \`npm run unchecked packages/${suggested}/src/<file>.ts\`.`),
   ].join('\n');
+}
+
+/**
+ * How many workers the escalation tier may use, given how many mutants reached it.
+ *
+ * The sibling tier wants every worker: its runs are one small test file each, and the pool is what makes 88
+ * of them cost 23.5s. The escalation tier is the opposite shape — each run is the package's ENTIRE suite,
+ * and every worker that joins pays its own first full-suite run before it helps with anything. Measured on
+ * `geometry/src/plane.ts`, eight workers took about 75s to settle 19 escalated mutants while the 88 sibling
+ * runs took 23.5s, because eight concurrent whole-suite servers contend for the same cores.
+ *
+ * So a worker has to earn its place by carrying enough mutants to amortize that first run. Below the divisor
+ * the tier deliberately runs narrower than the machine allows, which is the rare case where using less of the
+ * CPU is faster.
+ */
+export function getEscalationWidth(count: number, ceiling: number): number {
+  return Math.max(1, Math.min(ceiling, Math.ceil(count / MUTANTS_PER_ESCALATION_WORKER)));
+}
+
+/**
+ * A wall-clock duration for the progress line.
+ *
+ * This tool's cost is its main practical constraint, so every stage reports what it spent. Printing the
+ * number is what makes the next optimization arguable from evidence instead of from a guess about which
+ * stage feels slow — the baseline coverage run and the escalation tier look alike from outside and are not.
+ */
+export function describeElapsed(milliseconds: number): string {
+  if (milliseconds < 1000) return `${milliseconds}ms`;
+  const seconds = milliseconds / 1000;
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  return `${Math.floor(seconds / 60)}m${String(Math.round(seconds % 60)).padStart(2, '0')}s`;
 }
 
 /** The sibling `*.test.ts` for a source file — the colocated test the repo's testing convention guarantees. */
@@ -215,7 +250,12 @@ function measureBaseline(packageName: string, pool: string): { executed: Map<str
   }
 }
 
-async function report(packageName: string, selectors: readonly string[], asJson: boolean): Promise<boolean> {
+async function report(
+  packageName: string,
+  selectors: readonly string[],
+  asJson: boolean,
+  quick: boolean,
+): Promise<boolean> {
   const sources = filterPaths(collectSourceFiles(packageName), selectors);
   if (sources.length === 0) {
     console.error(pc.red(`unchecked: no source file under packages/${packageName}/src matches the selection.`));
@@ -223,7 +263,9 @@ async function report(packageName: string, selectors: readonly string[], asJson:
   }
 
   if (!asJson) console.log(pc.dim(`unchecked: measuring the unmutated baseline for @flighthq/${packageName}…`));
+  const baselineStarted = Date.now();
   const baseline = chooseBaseline(packageName);
+  const baselineElapsed = Date.now() - baselineStarted;
   if (!baseline.green) {
     console.error(
       pc.red(`unchecked: @flighthq/${packageName}'s own suite fails before any mutation — nothing here is measurable.`),
@@ -258,7 +300,9 @@ async function report(packageName: string, selectors: readonly string[], asJson:
   if (!asJson) {
     console.log(
       pc.bold(`unchecked — @flighthq/${packageName}`) +
-        pc.dim(` · ${total} reachable mutants across ${runnable.length} files`),
+        pc.dim(
+          ` · ${total} reachable mutants across ${runnable.length} files · baseline ${describeElapsed(baselineElapsed)}`,
+        ),
     );
     if (unexecutedTotal > 0) {
       console.log(pc.dim(`  ${unexecutedTotal} more sit on lines no test executed — those are \`npm run untested\`.`));
@@ -277,7 +321,7 @@ async function report(packageName: string, selectors: readonly string[], asJson:
   const files: UncheckedFile[] = [];
   try {
     for (const file of runnable) {
-      const outcomes = await runFileMutants(harness, pool, file.path, file.reachable, asJson);
+      const outcomes = await runFileMutants(harness, pool, file.path, file.reachable, asJson, quick);
       const survivors = outcomes.filter((outcome) => outcome.verdict === 'survived');
       const unreached = outcomes.filter((outcome) => outcome.verdict === 'unreached').length;
       files.push({ path: file.path, survivors, total: file.mutants.length, unreached });
@@ -287,26 +331,34 @@ async function report(packageName: string, selectors: readonly string[], asJson:
   }
 
   if (asJson) {
-    console.log(JSON.stringify({ files: rankUncheckedFiles(files), package: packageName }, null, 2));
+    console.log(
+      JSON.stringify(
+        { files: rankUncheckedFiles(files), package: packageName, tier: quick ? 'sibling' : 'package' },
+        null,
+        2,
+      ),
+    );
     return true;
   }
-  printReport(packageName, files, total);
+  printReport(packageName, files, total, quick);
   return true;
 }
 
-function printReport(packageName: string, files: readonly UncheckedFile[], total: number): void {
+function printReport(packageName: string, files: readonly UncheckedFile[], total: number, quick: boolean): void {
   const survivorCount = files.reduce((sum, file) => sum + file.survivors.length, 0);
   const unreachedCount = files.reduce((sum, file) => sum + file.unreached, 0);
 
   console.log();
   console.log(pc.bold(`unchecked — @flighthq/${packageName}`));
   if (survivorCount === 0) {
-    console.log(`Every one of the ${total} reachable mutants was killed by a test.`);
+    console.log(
+      `Every one of the ${total} reachable mutants was killed by ${quick ? 'its file’s own test' : 'a test'}.`,
+    );
     console.log(pc.dim(KILLED_IS_NOT_VERIFIED));
     return;
   }
   console.log(
-    `${survivorCount} of ${total} reachable mutants survived, in ${files.filter((f) => f.survivors.length > 0).length} files.\n`,
+    `${survivorCount} of ${total} reachable mutants survived ${quick ? 'their file’s own test' : ''}, in ${files.filter((f) => f.survivors.length > 0).length} files.\n`,
   );
 
   // Two lines per survivor, matching `npm run untested`'s shape: the source as written, then the edit that
@@ -330,6 +382,7 @@ function printReport(packageName: string, files: readonly UncheckedFile[], total
     console.log(pc.yellow(`${unreachedCount} mutants recorded no verdict — their module was never loaded by the run.`));
     console.log(pc.dim('  That is a harness result, not a test result, and is excluded from the list above.'));
   }
+  if (quick) console.log(pc.yellow(SIBLING_TIER_ONLY));
   console.log(pc.dim(SURVIVOR_IS_NOT_A_DEFECT));
   console.log(pc.dim(KILLED_IS_NOT_VERIFIED));
 }
@@ -344,21 +397,27 @@ async function runFileMutants(
   sourcePath: string,
   mutants: readonly Mutant[],
   quiet: boolean,
+  quick: boolean,
 ): Promise<MutantOutcome[]> {
   const siblingTest = join(repoRoot, getSiblingTestPath(sourcePath));
   if (!quiet) process.stdout.write(pc.dim(`  ${sourcePath} · ${mutants.length} mutants `));
 
+  const siblingStarted = Date.now();
   const siblingOutcomes = await runTier(harness, pool, sourcePath, mutants, [siblingTest], quiet, 'sibling');
+  const siblingElapsed = Date.now() - siblingStarted;
 
-  const escalated = siblingOutcomes.filter((outcome) => outcome.verdict === 'survived').map((o) => o.mutant);
+  const escalated = quick
+    ? []
+    : siblingOutcomes.filter((outcome) => outcome.verdict === 'survived').map((o) => o.mutant);
   if (escalated.length === 0) {
-    if (!quiet) console.log();
+    if (!quiet) console.log(pc.dim(` ${describeElapsed(siblingElapsed)}`));
     return siblingOutcomes;
   }
-  if (!quiet) process.stdout.write(pc.dim(` escalating ${escalated.length} `));
+  if (!quiet) process.stdout.write(pc.dim(` ${describeElapsed(siblingElapsed)} · escalating ${escalated.length} `));
 
-  const packageOutcomes = await runTier(harness, pool, sourcePath, escalated, [], quiet, 'package');
-  if (!quiet) console.log();
+  const escalationStarted = Date.now();
+  const packageOutcomes = await runTier(harness, pool, sourcePath, escalated, [], quiet, 'package', getEscalationWidth);
+  if (!quiet) console.log(pc.dim(` ${describeElapsed(Date.now() - escalationStarted)}`));
 
   const confirmed = new Map(packageOutcomes.map((outcome) => [outcome.mutant, outcome]));
   return siblingOutcomes.map((outcome) => confirmed.get(outcome.mutant) ?? outcome);
@@ -378,12 +437,13 @@ async function runTier(
   targets: readonly string[],
   quiet: boolean,
   scope: MutantOutcome['scope'],
+  width: (count: number, ceiling: number) => number = (_, ceiling) => ceiling,
 ): Promise<MutantOutcome[]> {
   const packageRoot = join(repoRoot, 'packages', harness.packageName);
   const subject = join(repoRoot, sourcePath);
   const fallbacks: Mutant[] = [];
 
-  const outcomes = await mapConcurrent(mutants, pool.size, async (mutant) => {
+  const outcomes = await mapConcurrent(mutants, width(mutants.length, pool.size), async (mutant) => {
     const run = await pool.run(subject, mutant, targets);
     if (run === null) {
       fallbacks.push(mutant);
@@ -596,7 +656,7 @@ async function mapConcurrent<T, R>(items: readonly T[], limit: number, run: (ite
 function nullMutantSpecification(packageName: string): Record<string, unknown> {
   return {
     end: 0,
-    filePath: join(repoRoot, 'packages', packageName, 'src', ' no-mutant'),
+    filePath: join(repoRoot, 'packages', packageName, 'src', '.unchecked-control-no-mutant'),
     packageName,
     replacement: '',
     start: 0,
@@ -618,16 +678,24 @@ function workerCount(): number {
 }
 
 const KILLED_IS_NOT_VERIFIED = 'A kill means some test NOTICED the edit, not that the test is a good one.';
+// Printed on every --quick report, and deliberately not dimmed. The flag weakens the CLAIM, not just the
+// runtime: without escalation a survivor means "this file's own test misses it", which is a different and
+// smaller statement than the default "no test in the package catches it". A reader who takes the quick list
+// for the full one will chase mutants another test already kills.
+const SIBLING_TIER_ONLY =
+  '--quick: checked against each file’s own test only. Some of these are killed by other tests in the package.';
 const SURVIVOR_IS_NOT_A_DEFECT =
   'A survivor is an address to go and read. Some are equivalent mutants no test could ever kill.';
 
 async function main(): Promise<void> {
   const selectors = getSelectors();
   const asJson = process.argv.includes('--json');
+  const quick = process.argv.includes('--quick');
   // Per-package, like `untested`, and for the same reason: a whole-repo sweep would pay one vitest startup
   // per mutant across 149 packages. Name where you are working.
   if (selectors.length === 0) {
     console.error(pc.red('unchecked: name a file or package — `npm run unchecked geometry/src/plane.ts`.'));
+    console.error(pc.dim('  Add --quick to check against each file’s own test only, skipping the whole-suite tier.'));
     process.exit(1);
   }
 
@@ -643,7 +711,7 @@ async function main(): Promise<void> {
 
   // Findings never fail the run — the list is the product. A nonzero exit here means the measurement itself
   // could not be made.
-  if (!(await report(packages[0] as string, selectors, asJson))) process.exit(1);
+  if (!(await report(packages[0] as string, selectors, asJson, quick))) process.exit(1);
 }
 
 if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) await main();

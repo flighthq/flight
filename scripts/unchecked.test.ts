@@ -1,5 +1,45 @@
 import { selectPackages } from './select';
-import { explainOverbroadSelection, getSiblingTestPath, readMutantVerdict } from './unchecked';
+import {
+  describeElapsed,
+  explainOverbroadSelection,
+  getEscalationWidth,
+  getSiblingTestPath,
+  readMutantVerdict,
+} from './unchecked';
+
+describe('getEscalationWidth', () => {
+  it('gives a small escalation set fewer workers than the machine offers', () => {
+    // The measured inversion: each escalation worker runs the package's whole suite before it contributes,
+    // so eight of them settling nineteen mutants cost 1m36s while eighty-eight sibling runs cost 23.5s.
+    expect(getEscalationWidth(19, 8)).toBe(5);
+    expect(getEscalationWidth(4, 8)).toBe(1);
+    expect(getEscalationWidth(1, 8)).toBe(1);
+  });
+
+  it('never exceeds the pool it was given, however many mutants escalated', () => {
+    expect(getEscalationWidth(400, 8)).toBe(8);
+  });
+
+  it('still yields a usable worker when nothing escalated', () => {
+    // Guards the degenerate arm: `Math.ceil(0 / n)` is 0, and a concurrency of zero would hang the tier
+    // rather than finish it instantly.
+    expect(getEscalationWidth(0, 8)).toBe(1);
+  });
+});
+
+describe('describeElapsed', () => {
+  it('keeps sub-second work in milliseconds and longer work in seconds', () => {
+    expect(describeElapsed(0)).toBe('0ms');
+    expect(describeElapsed(999)).toBe('999ms');
+    expect(describeElapsed(1000)).toBe('1.0s');
+    expect(describeElapsed(59_400)).toBe('59.4s');
+  });
+
+  it('switches to minutes once seconds stop being readable at a glance', () => {
+    expect(describeElapsed(60_000)).toBe('1m00s');
+    expect(describeElapsed(125_000)).toBe('2m05s');
+  });
+});
 
 describe('explainOverbroadSelection', () => {
   it('names the matched packages, not just how many there were', () => {

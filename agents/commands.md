@@ -39,9 +39,10 @@ package's coverage is already good and you want to know whether that means anyth
 mutant. A mutant the tests still pass is a **survivor**: no test in that package distinguishes the real
 behavior from the broken one.
 
-    npm run unchecked geometry/src/matrix.ts      # one file — start here
-    npm run unchecked geometry                    # the whole package — minutes to an hour
-    npm run unchecked:json geometry/src/matrix.ts # the same findings as JSON
+    npm run unchecked geometry/src/matrix.ts            # one file — start here
+    npm run unchecked -- geometry/src/matrix.ts --quick # sibling test only, several times faster
+    npm run unchecked geometry                          # the whole package
+    npm run unchecked:json geometry/src/matrix.ts       # the same findings as JSON
 
 **It runs one package at a time, and refuses more.** The shared selector is a substring, so a word that
 reads like one package's name fans out over its family — `text` matches thirteen packages, `scene` twelve.
@@ -53,20 +54,42 @@ Two tiers, cheapest first: each mutant runs against its file's **sibling** `*.te
 that survive that are re-run against the **whole package suite**. So a reported survivor has been missed
 by every test in the package, not just by its colocated one.
 
-**Cost.** One vitest process per mutant, eight at a time — minutes for a file, longer for a package.
-That is the price of the safety property: the mutated text is served by a `load` hook and **never written
-to disk**, so an interrupt at any moment — including `kill -9` — leaves the tree exactly as it was. The
-faster design (rewrite the file, run, restore) can leave corrupted source behind at exactly the wrong
-moment, which in a repo where an agent may be committing concurrently is not a risk worth the minutes.
+**`--quick` stops after the first tier.** It is several times faster and makes a **smaller claim**: a
+survivor is one *that file's own test* misses, which some other test in the package may well kill. That is
+the right trade while you are editing the sibling test — the file you would fix anyway — and the wrong one
+for judging a package. The report says so on every `--quick` run rather than leaving the two lists looking
+alike.
 
-**Where the time actually goes**, measured on `geometry/src/plane.ts` rather than assumed, because it is
-not where it looks. A single mutant run of the sibling test is about 4–7s, of which the **assertions are
-16ms**; the rest is TypeScript transform and module import. The mutation planning — the oxc parse, the
-whole reason this tool has an AST at all — happens once per file and does not appear in the profile.
-The cost is that each run re-transforms the same module graph from scratch, and under this repo's testing
-convention that graph is the whole package: a colocated test imports `@flighthq/<name>/contract`, so
-`plane.test.ts` pulls all 26 geometry modules, 88 times over. Anyone optimizing this should be reusing
-transform output across runs, not making the parser faster.
+**Where the time goes**, measured on `geometry/src/plane.ts` rather than assumed, because it is not where
+it looks. The assertions are **16ms**; essentially all of the rest is TypeScript transform and module
+import. The mutation planning — the oxc parse, the whole reason this tool has an AST — happens once per
+file and does not appear in the profile. Under this repo's testing convention a colocated test imports
+`@flighthq/<name>/contract`, so `plane.test.ts` pulls all 26 geometry modules, and every mutant re-pays
+that for a graph that differs by one spliced module.
+
+So mutants run through a **pool of warm vitest servers** (`scripts/mutantWorker.ts`) rather than one
+process each: the transform cache is paid once and a rerun costs about 900ms instead of 4–7s. One pool
+serves every file and both tiers of a run, because cold start is the dominant remaining cost. Isolation is
+not the thing traded away — `isolate` stays at vitest's default, and was measured *faster* that way (926ms
+against 1883ms), so each rerun still executes in a fresh environment.
+
+The safety property is also unchanged: the mutated text is served by a `load` hook and **never written to
+disk**, so an interrupt at any moment — including `kill -9` — leaves the tree exactly as it was. The faster
+design (rewrite the file, run, restore) can leave corrupted source behind at exactly the wrong moment,
+which in a repo where an agent may be committing concurrently is not a risk worth the minutes. A mutant
+that hangs or crashes a shared server is re-run in a process of its own, so batching's failure mode is
+latency, never a wrong verdict.
+
+**The escalation tier dominates.** On `plane.ts`: baseline 7s, 88 sibling runs 21–23s, and **19 escalated
+mutants 74–96s** — because each of those runs the package's entire 1186-test suite. Two consequences worth
+knowing before optimizing: adding workers to that tier can make it *slower* (each new worker pays its own
+full-suite first run, and concurrent whole-suite servers contend), and run-to-run variance is around 20%,
+so a change worth less than that cannot be told apart from noise by a single run.
+
+On `plane.ts` that tier changed **nothing** — the same 19 survivors before and after, for 74–96s of the
+102s run. That is one file and does not generalize (a mutant in a module the rest of the package leans on
+is exactly what escalation catches), but it is the concrete case for reaching for `--quick` first and
+paying for the full claim once, at the end.
 
 **Three things a survivor does not mean**, each of which has produced a wrong reading somewhere:
 
