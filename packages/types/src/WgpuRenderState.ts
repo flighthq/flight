@@ -36,6 +36,7 @@ export interface WgpuRenderState extends RenderState {
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries extends RenderRegistries {
+  colorAdjustmentFeature?: SlotTable<WgpuColorAdjustmentMaterialFeature>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
   compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder>;
@@ -198,10 +199,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   quadBatchWriterColorScaleBiasData?: Float32Array;
   quadBatchWriterColorMatrixData?: Float32Array;
   quadBatchWriterColorTintData?: Uint32Array;
-  // The opt-in color-adjustment fold and its guard, both null until registerWgpuColorAdjustmentMaterialFeature /
-  // enableWgpuColorAdjustmentGuards installs them. recordWgpuQuadBatchColorScaleBias reaches the fold
-  // only through this slot, so the base batch statically references neither its WGSL nor a message.
-  wgpuColorAdjustmentMaterialFeature?: WgpuColorAdjustmentMaterialFeature | null;
+  // The opt-in color-adjustment guard remains separate from registries.colorAdjustmentFeature:
+  // enabling diagnostics never enables rendering behavior.
   wgpuColorAdjustmentMaterialFeatureGuard?:
     | ((
         state: WgpuRenderState,

@@ -13,7 +13,11 @@ import {
   registerRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { RenderEffectPaddingResolver, RenderState } from '@flighthq/types/contract';
+import type {
+  RenderEffectPaddingResolver,
+  RenderState,
+  WgpuColorAdjustmentMaterialFeature,
+} from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { beginWgpuFrame } from './wgpuBackground';
@@ -24,6 +28,7 @@ import {
   createWgpuOffscreenRenderState,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
+  getWgpuColorAdjustmentMaterialFeature,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
@@ -123,11 +128,23 @@ describe('createWgpuOffscreenRenderState', () => {
     const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
     const textureResolver = vi.fn(() => null);
     const effectRunner = vi.fn();
+    const colorAdjustmentFeature: WgpuColorAdjustmentMaterialFeature = {
+      fragmentShaderChunk: '',
+      matrixFragmentShaderChunk: '',
+      record: vi.fn(),
+      resolveFlush: vi.fn(() => null),
+    };
     registerRenderer(screen, 'acme.Node', renderer);
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
+    getWgpuRenderStateRuntime(screen).registries.colorAdjustmentFeature = {
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeature',
+      shape: 'slot',
+    };
     getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
       getWgpuRenderStateRuntime(screen).registries.renderEffects,
       'acme.Effect',
@@ -148,6 +165,13 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
+    expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
+    const sharedColorFeature = offscreenRuntime.registries.colorAdjustmentFeature;
+    screenRuntime.registries.colorAdjustmentFeature = undefined;
+    expect(getWgpuColorAdjustmentMaterialFeature(screen)).toBeNull();
+    expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(sharedColorFeature);
+    expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
     expect(offscreenRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
@@ -344,6 +368,33 @@ describe('destroyWgpuRenderState', () => {
   it('does not throw on a fresh state with no lazily-created buffers', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(() => destroyWgpuRenderState(state)).not.toThrow();
+  });
+});
+
+describe('getWgpuColorAdjustmentMaterialFeature', () => {
+  it('resolves only a bound feature entry', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const feature: WgpuColorAdjustmentMaterialFeature = {
+      fragmentShaderChunk: '',
+      matrixFragmentShaderChunk: '',
+      record: vi.fn(),
+      resolveFlush: vi.fn(() => null),
+    };
+    const runtime = getWgpuRenderStateRuntime(state);
+
+    expect(getWgpuColorAdjustmentMaterialFeature(state)).toBeNull();
+    runtime.registries.colorAdjustmentFeature = {
+      entry: { state: RegistryEntryState.Bound, value: feature },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeature',
+      shape: 'slot',
+    };
+    expect(getWgpuColorAdjustmentMaterialFeature(state)).toBe(feature);
+    runtime.registries.colorAdjustmentFeature = {
+      ...runtime.registries.colorAdjustmentFeature,
+      entry: { state: RegistryEntryState.Tombstoned },
+    };
+    expect(getWgpuColorAdjustmentMaterialFeature(state)).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
   GlPbrExtensionShaderContribution,
@@ -69,12 +69,6 @@ export function ensureGlPbrProgram(
   return ensureGlScene3DProgram(
     state,
     `pbr:${buildGlPbrDefineKey(fullKey)}:${registryRevision}:${extensionKey}`,
-    (gl) =>
-      compileGlPbrProgram(
-        gl,
-        fullKey,
-        contributions,
-        getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
-      ),
+    (gl) => compileGlPbrProgram(gl, fullKey, contributions, getGlColorAdjustmentMaterialFeature(state)),
   );
 }

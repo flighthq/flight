@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import type {
   GlClassicDefineKey,
   GlClassicProgram,
@@ -73,7 +73,7 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
-    compileGlClassicProgram(gl, fullKey, getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null),
+    compileGlClassicProgram(gl, fullKey, getGlColorAdjustmentMaterialFeature(state)),
   );
 }
 

@@ -1,4 +1,5 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlShapeMesh, GlShapeMeshBinding, RenderProxy2D } from '@flighthq/types/contract';
 
@@ -70,7 +71,7 @@ export function drawGlShapeMeshes(
   meshes: readonly GlShapeMesh[],
 ): void {
   if (meshes.length === 0) return;
-  const fold = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature;
+  const fold = getGlColorAdjustmentMaterialFeature(state);
   if (fold != null && (renderProxy.colorMatrix != null || renderProxy.colorScaleBias != null)) {
     fold.drawShapeMeshes(state, renderProxy, meshes);
     return;

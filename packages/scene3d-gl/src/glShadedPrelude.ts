@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
@@ -116,13 +116,7 @@ export function ensureGlShadedProgram(
     registries.modifierSnippetRevision
   }`;
   return ensureGlScene3DProgram(state, cacheKey, (gl) =>
-    compileGlShadedProgram(
-      gl,
-      fullKey,
-      ordered,
-      registry,
-      getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature ?? null,
-    ),
+    compileGlShadedProgram(gl, fullKey, ordered, registry, getGlColorAdjustmentMaterialFeature(state)),
   );
 }
 

@@ -4,7 +4,7 @@ import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareGlRenderTargetColorSpace,
   enableGlBlendModeSupport,
-  getGlRenderStateRuntime,
+  getGlColorAdjustmentMaterialFeature,
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
@@ -158,7 +158,7 @@ export function drawGlScene3D(
   let boundSkinned: boolean | undefined = undefined;
   let boundColorAdjustment: boolean | undefined = undefined;
   let boundColorMatrix: boolean | undefined = undefined;
-  const colorAdjustmentFeatureEnabled = getGlRenderStateRuntime(state).glColorAdjustmentMaterialFeature != null;
+  const colorAdjustmentFeatureEnabled = getGlColorAdjustmentMaterialFeature(state) !== null;
 
   for (let i = 0; i < opaqueDrawList.length; i++) {
     const entry = opaqueDrawList[i] as DrawEntry;

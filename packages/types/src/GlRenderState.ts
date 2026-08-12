@@ -37,6 +37,7 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries extends RenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
+  colorAdjustmentFeature?: SlotTable<GlColorAdjustmentMaterialFeature>;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
   compressedTextureDecoder: SlotTable<GlCompressedTextureDecoder>;
@@ -137,10 +138,8 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   uniformColorScaleBiasShader?: GlUniformColorScaleBiasShader;
   shapeMeshColorScaleBiasShader?: GlShapeMeshColorScaleBiasShader;
   shapeMeshColorMatrixShader?: GlShapeMeshColorScaleBiasShader;
-  // The opt-in color-adjustment fold and its guard, both null until registerGlColorAdjustmentMaterialFeature /
-  // enableNode2DGlGuards installs them. recordGlQuadBatchColorScaleBias reaches the fold only
-  // through this slot, so the base batch statically references neither the fold's code nor a message.
-  glColorAdjustmentMaterialFeature?: GlColorAdjustmentMaterialFeature | null;
+  // The opt-in color-adjustment guard remains separate from registries.colorAdjustmentFeature:
+  // enabling diagnostics never enables rendering behavior.
   glColorAdjustmentMaterialFeatureGuard?:
     | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
     | null;

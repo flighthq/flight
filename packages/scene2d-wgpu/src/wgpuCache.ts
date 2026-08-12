@@ -100,6 +100,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // Cache rendering is a derived pipeline: it starts from the screen's persistent registration
   // snapshots through a distinct aggregate, so later replacements on either state diverge cleanly.
   cacheRuntime.registries = {
+    colorAdjustmentFeature: screenRuntime.registries.colorAdjustmentFeature,
     colorAdjustments: screenRuntime.registries.colorAdjustments,
     compressedTextureDecoder: screenRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: screenRuntime.registries.compressedTextureUpload,
@@ -139,7 +140,6 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
   // same way when baked offscreen. Accumulation uses its independent persistent base registry slot;
   // per-batch CT data lives on cacheRuntime and grows lazily.
-  cacheRuntime.wgpuColorAdjustmentMaterialFeature = screenRuntime.wgpuColorAdjustmentMaterialFeature;
   cacheRuntime.wgpuColorAdjustmentMaterialFeatureGuard = screenRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).

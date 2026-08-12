@@ -2,7 +2,12 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { WgpuMaterialRenderer, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
+import type {
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuMaterialRenderer,
+  WgpuRenderState,
+  WgpuRenderTarget,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { scopeModuleMocks } from './moduleMockTestHelper';
@@ -131,11 +136,23 @@ describe('createWgpuCacheState', () => {
   it('copies renderers and shares the GPU device but keeps its own node map', () => {
     const screen = fakeScreen();
     const resolver = vi.fn();
+    const colorAdjustmentFeature: WgpuColorAdjustmentMaterialFeature = {
+      fragmentShaderChunk: '',
+      matrixFragmentShaderChunk: '',
+      record: vi.fn(),
+      resolveFlush: vi.fn(() => null),
+    };
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     screenRuntime.registries.colorAdjustments = {
       entry: { state: RegistryEntryState.Bound, value: resolver },
       onMiss: 'Disabled',
       registry: 'ColorAdjustments',
+      shape: 'slot',
+    };
+    screenRuntime.registries.colorAdjustmentFeature = {
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
+      onMiss: 'Disabled',
+      registry: 'WgpuColorAdjustmentFeature',
       shape: 'slot',
     };
     enableWgpuRenderCache(screen);
@@ -150,6 +167,9 @@ describe('createWgpuCacheState', () => {
     );
     expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustments).toBe(
       screenRuntime.registries.colorAdjustments,
+    );
+    expect(getWgpuRenderStateRuntime(cacheState).registries.colorAdjustmentFeature).toBe(
+      screenRuntime.registries.colorAdjustmentFeature,
     );
   });
 

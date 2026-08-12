@@ -1,5 +1,5 @@
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
@@ -51,18 +51,19 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
     expect(areColorAdjustmentsEnabled(state)).toBe(true);
-    expect(runtime.wgpuColorAdjustmentMaterialFeature).toBeDefined();
-    expect(runtime.wgpuColorAdjustmentMaterialFeature).not.toBeNull();
-    expect(runtime.wgpuColorAdjustmentMaterialFeature?.drawShapeMeshes).toBeTypeOf('function');
+    expect(runtime.registries.colorAdjustmentFeature).toBeDefined();
+    expect(getWgpuColorAdjustmentMaterialFeature(state)?.drawShapeMeshes).toBeTypeOf('function');
   });
 
   it('is idempotent', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    const fold = runtime.wgpuColorAdjustmentMaterialFeature;
+    const table = runtime.registries.colorAdjustmentFeature;
+    const fold = getWgpuColorAdjustmentMaterialFeature(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
-    expect(runtime.wgpuColorAdjustmentMaterialFeature).toBe(fold);
+    expect(runtime.registries.colorAdjustmentFeature).toBe(table);
+    expect(getWgpuColorAdjustmentMaterialFeature(state)).toBe(fold);
   });
 
   it('stays untinted (mode NONE) when no instance carries a color adjustment', async () => {
