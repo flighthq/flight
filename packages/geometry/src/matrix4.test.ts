@@ -193,6 +193,20 @@ describe('appendTranslationMatrix4', () => {
     expect(m.m[5]).toBe(3);
     expect(m.m[10]).toBe(4);
   });
+
+  // Every existing case aliased out onto source, leaving the copy path unproven.
+  it('copies the whole source matrix when out is a distinct object', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const out = createMatrix4(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
+    const aliased = cloneMatrix4(source);
+
+    appendTranslationMatrix4(out, source, 1, 2, 3);
+    appendTranslationMatrix4(aliased, aliased, 1, 2, 3);
+
+    expect(Array.from(out.m)).toEqual(Array.from(aliased.m));
+    expect(Array.from(source.m)).toEqual([0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1]);
+  });
 });
 
 describe('cloneMatrix4', () => {
@@ -358,6 +372,7 @@ describe('copyMatrix4ColumnToVector4', () => {
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
     expect(() => copyMatrix4ColumnToVector4(out, 99, m)).toThrow(RangeError);
+    expect(() => copyMatrix4ColumnToVector4(out, -1, m)).toThrow(RangeError);
   });
 
   it('reads column c from elements 4c..4c+3 for every column', () => {
@@ -450,6 +465,7 @@ describe('copyMatrix4RowToVector4', () => {
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
     expect(() => copyMatrix4RowToVector4(out, 42, m)).toThrow(RangeError);
+    expect(() => copyMatrix4RowToVector4(out, -1, m)).toThrow(RangeError);
   });
 
   it('reads row r with a stride of four for every row', () => {
@@ -1175,6 +1191,21 @@ describe('prependRotationMatrix4', () => {
     expect(m.m[12]).toBeCloseTo(0);
     expect(m.m[13]).toBeCloseTo(10);
   });
+
+  // A pivot names the point the rotation leaves fixed. Without one, rotating about Z sweeps the
+  // origin; with a pivot at the origin's own position the point must not move at all.
+  it('leaves the pivot point fixed', () => {
+    const pivot = { x: 4, y: 0, z: 0, w: 1 };
+    const m = createMatrix4();
+
+    prependRotationMatrix4(m, m, Math.PI / 2, Z_AXIS, pivot);
+
+    const out = createVector3();
+    matrix4TransformPoint(out, m, createVector3(pivot.x, pivot.y, pivot.z));
+    expect(out.x).toBeCloseTo(4, 6);
+    expect(out.y).toBeCloseTo(0, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
 });
 
 describe('prependScaleMatrix4', () => {
@@ -1619,12 +1650,13 @@ describe('setMatrix4LookAt', () => {
   // basis must stay orthonormal — a singular view matrix cannot be inverted for picking or for
   // deriving a camera world transform, and it collapses every rendered position onto a plane.
   it.each([
-    ['up parallel to the view direction', createVector3(0, 5, 0), createVector3(0, 0, 0)],
-    ['eye at the target', createVector3(2, 2, 2), createVector3(2, 2, 2)],
-  ])('keeps the basis orthonormal when %s', (_case, eye, target) => {
+    ['up parallel to the view direction', createVector3(0, 5, 0), createVector3(0, 0, 0), createVector3(0, 1, 0)],
+    ['eye at the target', createVector3(2, 2, 2), createVector3(2, 2, 2), createVector3(0, 1, 0)],
+    ['up parallel to a z-aligned view', createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 0, 1)],
+  ])('keeps the basis orthonormal when %s', (_case, eye, target, up) => {
     const m = createMatrix4();
 
-    setMatrix4LookAt(m, eye, target, createVector3(0, 1, 0));
+    setMatrix4LookAt(m, eye, target, up);
 
     for (let i = 0; i < 16; i++) {
       expect(Number.isFinite(m.m[i])).toBe(true);
@@ -1752,6 +1784,22 @@ describe('translateMatrix4', () => {
     expect(m.m[12]).toBe(5);
     expect(m.m[13]).toBe(7);
     expect(m.m[14]).toBe(9);
+  });
+
+  // The distinct-out path copies the basis across before writing the translation. Only the aliased
+  // path was exercised before, so a broken copy would have left the basis at whatever `out` held.
+  it('copies the whole source matrix when out is a distinct object', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const out = createMatrix4(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
+    const aliased = cloneMatrix4(source);
+
+    translateMatrix4(out, source, 1, 2, 3);
+    translateMatrix4(aliased, aliased, 1, 2, 3);
+
+    expect(Array.from(out.m)).toEqual(Array.from(aliased.m));
+    // The source is left untouched by the distinct-out call.
+    expect(Array.from(source.m)).toEqual([0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1]);
   });
 });
 
