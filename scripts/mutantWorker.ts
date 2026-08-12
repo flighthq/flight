@@ -7,13 +7,17 @@ import { createVitest } from 'vitest/node';
 import { applyMutantText, WORKER_PROTOCOL_PREFIX } from './unchecked-core';
 import type { MutantRequest, MutantResponse } from './unchecked-core';
 
-// A long-lived vitest server that runs many mutants of ONE source file, replacing the spawn-per-mutant loop.
+// A long-lived vitest server that runs mutants for a whole package, replacing the spawn-per-mutant loop.
 //
 // The measurement that motivates it: a spawned run of a colocated test is 4–7s of which the assertions are
 // 16ms — the rest is transforming and importing the module graph, which under this repo's testing convention
 // is the whole package (a colocated test imports `@flighthq/<name>/contract`). That work is IDENTICAL for
-// every mutant of a file except the one spliced module, and spawning threw it away 107 times over. Holding
-// the vite server open keeps the transform cache and pays it once; a rerun then costs about 900ms.
+// every mutant except the one spliced module, and spawning threw it away once per mutant. Holding the vite
+// server open keeps the transform cache and pays it once; a rerun then costs about 900ms.
+//
+// Both the subject file and the test scope travel per request, so ONE server serves every file and both
+// tiers of a run. Fixing either at startup was measurably worse: it forced a fresh pool per file per tier,
+// and cold start is the dominant remaining cost, so a package would have paid it dozens of times.
 //
 // It changes no safety property. The mutated text is still served by a `load` hook and still never written to
 // disk, so an interrupt at any moment leaves the tree untouched. What it gives up is one process per mutant,
@@ -22,16 +26,14 @@ import type { MutantRequest, MutantResponse } from './unchecked-core';
 // the faster one, and there is no tradeoff to weigh.
 //
 // The parent supervises: a mutant that hangs or crashes the server takes down only this worker, which the
-// parent restarts and whose outstanding mutant it re-runs in a process of its own. So the failure mode of
+// parent replaces and whose outstanding mutant it re-runs in a process of its own. So the failure mode of
 // batching is slower, never wrong.
 async function main(): Promise<void> {
   const packageRoot = process.argv[2] as string;
-  const subject = resolve(process.argv[3] as string);
-  const original = readFileSync(subject, 'utf8');
 
   // The active mutant, swapped between reruns. `null` is the control: the `load` hook declines and vitest
-  // sees the file exactly as it is on disk.
-  let current: MutantRequest | null = null;
+  // sees every file exactly as it is on disk.
+  let current: (MutantRequest & { subject: string }) | null = null;
   let applied = false;
 
   // The same instrument check the spawned path used, moved in-process. A `load` that never fires means the
@@ -41,10 +43,10 @@ async function main(): Promise<void> {
   const plugin: Plugin = {
     enforce: 'pre',
     load(id: string) {
-      if (resolve(stripQuery(id)) !== subject) return null;
       if (current === null) return null;
+      if (resolve(stripQuery(id)) !== current.subject) return null;
       applied = true;
-      return applyMutantText(original, current);
+      return applyMutantText(readSource(current.subject), current);
     },
     name: 'flight-unchecked-mutant-worker',
   };
@@ -59,23 +61,35 @@ async function main(): Promise<void> {
     { plugins: [plugin] },
   );
 
-  let specifications: Awaited<ReturnType<typeof vitest.globTestSpecifications>> | null = null;
+  type Specifications = Awaited<ReturnType<typeof vitest.globTestSpecifications>>;
+  const specificationsByScope = new Map<string, Specifications>();
+  let previousSubject: string | null = null;
+
   for await (const line of readLines()) {
     const request = JSON.parse(line) as MutantRequest;
-    current = request;
+    const subject = resolve(request.filePath);
+    current = { ...request, subject };
     applied = false;
-    await vitest.invalidateFile(subject);
 
-    if (specifications === null) {
-      // Empty targets mean the package's own include glob — the escalation tier. A worker is built for one
-      // tier and keeps it for life, because this glob is what fixes the file set for every later rerun.
-      const targets = request.targets.length > 0 ? [...request.targets] : undefined;
-      specifications = await vitest.globTestSpecifications(targets);
+    // The file leaving the mutated state has to be invalidated too. Its module is still cached holding the
+    // PREVIOUS mutant's text, and the plugin now declines it — so without this the next mutant would run
+    // against a stale splice of a different file and the verdict would be about neither.
+    if (previousSubject !== null && previousSubject !== subject) await vitest.invalidateFile(previousSubject);
+    await vitest.invalidateFile(subject);
+    previousSubject = subject;
+
+    // Empty targets mean the package's own include glob — the escalation tier.
+    const targets = request.targets.length > 0 ? [...request.targets] : undefined;
+    const scope = targets?.join('|') ?? '<package>';
+    const known = specificationsByScope.get(scope);
+    if (known === undefined) {
+      const globbed = await vitest.globTestSpecifications(targets);
       // Zero specifications is the repo's evidence invariant: a run with no test files would pass, and every
       // mutant would then "survive" a suite that never existed. Refuse instead of reporting that.
-      if (specifications.length === 0) throw new Error(`No test file matched ${targets?.join(', ') ?? '<package>'}.`);
-      await vitest.runTestSpecifications(specifications, true);
-    } else await vitest.rerunTestSpecifications(specifications, true);
+      if (globbed.length === 0) throw new Error(`No test file matched ${scope}.`);
+      specificationsByScope.set(scope, globbed);
+      await vitest.runTestSpecifications(globbed, true);
+    } else await vitest.rerunTestSpecifications(known, true);
 
     const files = vitest.state.getFiles();
     // No file having run at all is not a pass. A rerun that matched nothing would otherwise report every
@@ -107,9 +121,21 @@ async function* readLines(): AsyncGenerator<string> {
   }
 }
 
+// Read once per file and held: the mutant offsets were computed against this exact text, so re-reading from
+// disk mid-run would silently re-base them if anything edited the file while the run was in flight.
+function readSource(path: string): string {
+  const known = sources.get(path);
+  if (known !== undefined) return known;
+  const text = readFileSync(path, 'utf8');
+  sources.set(path, text);
+  return text;
+}
+
 function stripQuery(id: string): string {
   const marker = id.indexOf('?');
   return marker < 0 ? id : id.slice(0, marker);
 }
+
+const sources = new Map<string, string>();
 
 await main();
