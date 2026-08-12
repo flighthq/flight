@@ -1079,13 +1079,38 @@ describe('createScene3DFromGltf', () => {
   });
 
   // A point or line primitive has no facing. Fabricating one would be inventing data, and nothing
-  // samples it.
-  it('leaves normals alone for a non-triangle primitive', () => {
-    const doc = makeTriangleGltf();
-    doc.meshes![0].primitives[0].mode = 0; // point-list
+  // samples it — so the whole shading-completion pass has to leave it untouched, un-welding included.
+  //
+  // The index list repeats vertex 1 on purpose. Asserting only that the normals stay zero would pass
+  // even with the topology guard removed, because the triangle walker yields no triangles for a point
+  // list and so writes no normals anyway — a real assertion that cannot fail for the reason the test is
+  // named after. The duplicate is what makes un-welding observable: it would expand four elements into
+  // four distinct vertices where the source has three.
+  it('leaves a non-triangle primitive entirely untouched', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const indices = new Uint16Array([0, 1, 2, 1]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(indices));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+        { bufferView: 1, componentType: 5123, count: 4, type: 'SCALAR' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength },
+      ],
+      buffers: [{ byteLength: positions.byteLength + indices.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, mode: 0 }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+
     const scene = createScene3DFromGltf(doc);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(geometry.vertices[3]).toBe(0);
     expect(geometry.vertices[4]).toBe(0);
     expect(geometry.vertices[5]).toBe(0);
