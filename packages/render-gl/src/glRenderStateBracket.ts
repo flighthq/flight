@@ -15,6 +15,7 @@ type SavedGlRenderState = {
   blendSrcRgb: number;
   cullFace: boolean;
   cullFaceMode: number;
+  frontFace: number;
   currentFramebuffer: WebGLFramebuffer | null;
   currentBlendMode: GlRenderStateRuntime['currentBlendMode'];
   currentRenderTarget: GlRenderStateRuntime['currentRenderTarget'];
@@ -50,6 +51,10 @@ export function popGlRenderState(state: GlRenderState): void {
 
   restoreGlCapability(gl, gl.CULL_FACE, saved.cullFace);
   gl.cullFace(saved.cullFaceMode);
+  // The 3D mesh path selects a front face per draw from the model determinant, so this is state
+  // Flight mutates and must hand back exactly as the host left it — a host context set to CW would
+  // otherwise get CCW returned.
+  gl.frontFace(saved.frontFace);
 
   restoreGlCapability(gl, gl.BLEND, saved.blend);
   gl.blendFuncSeparate(saved.blendSrcRgb, saved.blendDstRgb, saved.blendSrcAlpha, saved.blendDstAlpha);
@@ -111,6 +116,7 @@ export function pushGlRenderState(state: GlRenderState): void {
     blendSrcRgb: gl.getParameter(gl.BLEND_SRC_RGB) as number,
     cullFace: gl.isEnabled(gl.CULL_FACE),
     cullFaceMode: gl.getParameter(gl.CULL_FACE_MODE) as number,
+    frontFace: gl.getParameter(gl.FRONT_FACE) as number,
     currentFramebuffer: runtime.currentFramebuffer,
     currentBlendMode: runtime.currentBlendMode,
     currentRenderTarget: runtime.currentRenderTarget,
