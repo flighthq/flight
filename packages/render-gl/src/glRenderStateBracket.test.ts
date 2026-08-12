@@ -24,6 +24,8 @@ type TestGlState = {
   cullFace: boolean;
   cullFaceMode: number;
   frontFace: number;
+  stencilTest: boolean;
+  stencilWriteMask: number;
   currentRenderTarget: GlRenderTarget | null;
   depthFunc: number;
   depthMask: boolean;
@@ -60,6 +62,8 @@ const OUTER_STATE: TestGlState = {
   cullFace: false,
   cullFaceMode: 0x0405,
   frontFace: 0x0900, // GL_CW — a host that does not use Flight's default
+  stencilTest: true, // enabled on purpose: a fixture that starts disabled cannot tell 'restored' from 'left off'
+  stencilWriteMask: 0x0f,
   currentRenderTarget: { name: 'outer-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0203,
   depthMask: false,
@@ -89,6 +93,8 @@ const MIDDLE_STATE: TestGlState = {
   cullFace: true,
   cullFaceMode: 0x0404,
   frontFace: 0x0901, // GL_CCW
+  stencilTest: false,
+  stencilWriteMask: 0xff,
   currentRenderTarget: { name: 'middle-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0201,
   depthMask: true,
@@ -211,6 +217,8 @@ function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): v
   setCapability(gl, gl.CULL_FACE, values.cullFace);
   gl.cullFace(values.cullFaceMode);
   gl.frontFace(values.frontFace);
+  setCapability(gl, gl.STENCIL_TEST, values.stencilTest);
+  gl.stencilMask(values.stencilWriteMask);
   setCapability(gl, gl.BLEND, values.blend);
   gl.blendFuncSeparate(values.blendSrcRgb, values.blendDstRgb, values.blendSrcAlpha, values.blendDstAlpha);
   gl.blendEquationSeparate(values.blendEquationRgb, values.blendEquationAlpha);
@@ -249,6 +257,8 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     DEPTH_WRITEMASK: 0x0b72,
     FRAMEBUFFER_BINDING: 0x8ca6,
     FRONT_FACE: 0x0b46,
+    STENCIL_TEST: 0x0b90,
+    STENCIL_WRITEMASK: 0x0b98,
     SCISSOR_BOX: 0x0c10,
     TEXTURE_BINDING_2D: 0x8069,
     VERTEX_ARRAY_BINDING: 0x85b5,
@@ -278,6 +288,9 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   );
   (gl.frontFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.FRONT_FACE, value),
+  );
+  (gl.stencilMask as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
+    parameters.set(gl.STENCIL_WRITEMASK, value),
   );
   (gl.blendFuncSeparate as ReturnType<typeof vi.fn>).mockImplementation(
     (srcRgb: number, dstRgb: number, srcAlpha: number, dstAlpha: number) => {
@@ -326,6 +339,11 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   // The 3D mesh path picks a front face per draw from the model determinant, so this is state Flight
   // mutates and must hand back untouched — a host set to CW must not get CCW returned.
   expect(parameters.get(gl.FRONT_FACE)).toBe(expected.frontFace);
+  // Flight's 2D clip system rasterizes stencil masks; its internal restore is scoped to Flight's own
+  // nesting and disables the test outright when Flight had no clip, so the host-facing preservation
+  // has to happen here. The outer fixture starts ENABLED so 'restored' is distinguishable from 'left off'.
+  expect(gl.isEnabled(gl.STENCIL_TEST)).toBe(expected.stencilTest);
+  expect(parameters.get(gl.STENCIL_WRITEMASK)).toBe(expected.stencilWriteMask);
   expect(gl.isEnabled(gl.BLEND)).toBe(expected.blend);
   expect(parameters.get(gl.BLEND_SRC_RGB)).toBe(expected.blendSrcRgb);
   expect(parameters.get(gl.BLEND_DST_RGB)).toBe(expected.blendDstRgb);
