@@ -474,6 +474,39 @@ describe('spherical UV seam', () => {
     expect(polesSeen).toBeGreaterThan(0);
   });
 
+  // WHAT IS ALLOWED TO REMAIN, stated as a criterion rather than a count. A handful of faces still span
+  // more than half the longitude range, and that is not a missed correction: on a 20-face solid a single
+  // face genuinely subtends that much longitude, and no UV assignment can make it narrow. What WOULD be
+  // a missed correction is such a face containing a POLE corner, because a pole has no longitude of its
+  // own and must take its face-mates'.
+  //
+  // Asserting the criterion rather than "there are exactly 4" is deliberate: a count has to be edited
+  // whenever anyone changes a segment count or subdivision level, and a check that always prints the
+  // same non-zero number teaches everyone to scroll past it — and then it cannot warn about the fifth.
+  // This phrasing stays exactly as strict when the geometry changes.
+  it.each([
+    ['dodecahedron', () => createDodecahedronMeshGeometry()],
+    ['icosahedron', () => createIcosahedronMeshGeometry()],
+    ['icosphere', () => createIcosphereMeshGeometry()],
+    ['octahedron', () => createOctahedronMeshGeometry()],
+    ['tetrahedron', () => createTetrahedronMeshGeometry()],
+  ])('leaves no %s wide face carrying a pole corner', (_name, build) => {
+    const geometry = build();
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+
+    for (let t = 0; t < getMeshGeometryTriangleCount(geometry); t++) {
+      if (!getMeshGeometryTriangleVertexIndices(corner, geometry, t)) continue;
+      const indices = [corner.i0, corner.i1, corner.i2];
+      const us = indices.map((i) => geometry.vertices[i * floatsPerVertex + 10]);
+      if (Math.max(...us) - Math.min(...us) <= 0.5) continue;
+      const hasPoleCorner = indices.some(
+        (i) => Math.hypot(geometry.vertices[i * floatsPerVertex], geometry.vertices[i * floatsPerVertex + 2]) <= 1e-6,
+      );
+      expect(hasPoleCorner).toBe(false);
+    }
+  });
+
   // A corrected face legitimately carries u above 1: no parameterisation confined to 0..1 can express
   // a face crossing the seam continuously. Sampling wraps it, so this is the intended state, not drift.
   it('lifts a seam face past 1 rather than clamping it into range', () => {
