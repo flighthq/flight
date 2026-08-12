@@ -102,6 +102,19 @@ npm run capture:functional:baseline [-- --filter=name]
 
 The `capture:*` baselines (screenshot hashes) are distinct from the `test:*:regression` fingerprint baselines — see `docs/conventions/npm-scripts.md`.
 
+## A baseline moved — deciding whether it is a real change
+
+A changed hash tells you _that_ pixels differ, never _which_ or _why_. Two rules make that answerable, both learned the expensive way:
+
+**Establish the instrument's noise floor first.** Capture the SAME code twice and diff the two screenshots. Here that comes back bit-identical (0 differing pixels), so any later difference is attributable by construction. Skip this and a count like "86 pixels changed" is uninterpretable — you cannot tell a real change from run-to-run variation, and every conclusion drawn from it is worthless. Do this before any pixel-level comparison, not as a precaution but as the thing that makes the comparison mean anything.
+
+**Localizing pixels needs a detector matched to the surface AND the channel.** Outline detection by image gradient is the usual way to ask "are the changed pixels on the silhouette?", and it fails in two ways that both look like a real interior change:
+
+- **No boundary contrast at all.** A mirror (`metallic: 1`, low roughness) reflecting a smooth gradient has almost no contrast at its own edge, so the detector is blind on exactly the surface it is pointed at. This is an instrument limitation, and _"the instrument cannot see it"_ must never be recorded as _"the hypothesis is consistent"_. The fix is a **diagnostic build** — the same scene with a matte, high-contrast material swapped in so the outline becomes detectable. Diagnose with it, then throw it away; it is never landed.
+- **Contrast in the wrong channel.** A luminance-gradient detector is blind to a boundary that differs in hue but not brightness — olive against purple reads as flat. Measure the maximum PER-CHANNEL gradient instead. On one real case this moved the count from 3822 detected outline pixels to 5990, and the apparent "31.6% of changes are interior" went to zero.
+
+So: a high-contrast fixture is only high-contrast in the channel the detector actually reads, and a diagnostic build is what you reach for when the surface has no boundary to detect.
+
 ## Output files
 
 Each captured entry writes three files into `tools/output/{tool}/{name}/{renderer}/`:
