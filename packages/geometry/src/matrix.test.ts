@@ -68,6 +68,12 @@ describe('copyMatrix', () => {
     expect(m2.tx).toBe(6);
     expect(m2.ty).toBe(7);
   });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix(2, 3, 4, 5, 6, 7);
+    copyMatrix(matrix, matrix);
+    expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 6, ty: 7 });
+  });
 });
 
 describe('copyMatrixColumnFromVector3', () => {
@@ -95,10 +101,11 @@ describe('copyMatrixColumnFromVector3', () => {
     expect(m.ty).toBe(6);
   });
 
-  it('should throw when column is greater than 2', () => {
+  it('throws when column is outside 0 through 2', () => {
     const m = createMatrix();
     const v = createVector3();
-    expect(() => copyMatrixColumnFromVector3(m, 3, v)).toThrow();
+    expect(() => copyMatrixColumnFromVector3(m, -1, v)).toThrow(RangeError);
+    expect(() => copyMatrixColumnFromVector3(m, 3, v)).toThrow(RangeError);
   });
 });
 
@@ -130,10 +137,11 @@ describe('copyMatrixColumnToVector3', () => {
     expect(v.z).toBe(1);
   });
 
-  it('should throw when column is greater than 2', () => {
+  it('throws when column is outside 0 through 2', () => {
     const m = createMatrix();
     const v = createVector3();
-    expect(() => copyMatrixColumnToVector3(v, 3, m)).toThrow();
+    expect(() => copyMatrixColumnToVector3(v, -1, m)).toThrow(RangeError);
+    expect(() => copyMatrixColumnToVector3(v, 3, m)).toThrow(RangeError);
   });
 });
 
@@ -156,10 +164,17 @@ describe('copyMatrixRowFromVector3', () => {
     expect(m.ty).toBe(6);
   });
 
-  it('should throw when row is greater than 2', () => {
+  it('leaves the fixed identity row unchanged for row 2', () => {
+    const m = createMatrix(1, 2, 3, 4, 5, 6);
+    copyMatrixRowFromVector3(m, 2, createVector3(7, 8, 9));
+    expect(m).toMatchObject({ a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6 });
+  });
+
+  it('throws when row is outside 0 through 2', () => {
     const m = createMatrix();
     const v = createVector3();
-    expect(() => copyMatrixRowFromVector3(m, 3, v)).toThrow();
+    expect(() => copyMatrixRowFromVector3(m, -1, v)).toThrow(RangeError);
+    expect(() => copyMatrixRowFromVector3(m, 3, v)).toThrow(RangeError);
   });
 });
 
@@ -189,6 +204,13 @@ describe('copyMatrixRowToVector3', () => {
     expect(v.x).toBe(0);
     expect(v.y).toBe(0);
     expect(v.z).toBe(1);
+  });
+
+  it('throws when row is outside 0 through 2', () => {
+    const m = createMatrix();
+    const v = createVector3();
+    expect(() => copyMatrixRowToVector3(v, -1, m)).toThrow(RangeError);
+    expect(() => copyMatrixRowToVector3(v, 3, m)).toThrow(RangeError);
   });
 });
 
@@ -472,6 +494,12 @@ describe('inverseMatrixTransformVectorXY', () => {
 });
 
 describe('matrixTransformBounds', () => {
+  it('maps coincident corners to a zero-size rectangle at the matrix translation', () => {
+    const out = createRectangle(1, 2, 3, 4);
+    matrixTransformBounds(out, createMatrix(2, 0, 0, 3, 7, 11), 5, 5, 5, 5);
+    expect(out).toMatchObject({ x: 7, y: 11, width: 0, height: 0 });
+  });
+
   it('should work when ax > bx or ay > by (flipped input)', () => {
     const m = createMatrix();
     const out = createRectangle();

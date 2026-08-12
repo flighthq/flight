@@ -16,24 +16,31 @@ export function cloneMatrix(source: Readonly<MatrixLike>): Matrix {
 }
 
 export function copyMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
-  setMatrix(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
+  const { a, b, c, d, tx, ty } = source;
+  setMatrix(out, a, b, c, d, tx, ty);
 }
 
 /**
  * Copies a column from a vector. The z component will be ignored (3x2 matrix).
  */
 export function copyMatrixColumnFromVector3(out: MatrixLike, column: number, source: Readonly<Vector3Like>): void {
-  if (column > 2) {
-    throw new RangeError('Column ' + column + ' out of bounds (2)');
-  } else if (column === 0) {
-    out.a = source.x;
-    out.b = source.y;
-  } else if (column === 1) {
-    out.c = source.x;
-    out.d = source.y;
-  } else {
-    out.tx = source.x;
-    out.ty = source.y;
+  const x = source.x,
+    y = source.y;
+  switch (column) {
+    case 0:
+      out.a = x;
+      out.b = y;
+      return;
+    case 1:
+      out.c = x;
+      out.d = y;
+      return;
+    case 2:
+      out.tx = x;
+      out.ty = y;
+      return;
+    default:
+      throw new RangeError('Column ' + column + ' out of bounds (2)');
   }
 }
 
@@ -41,20 +48,25 @@ export function copyMatrixColumnFromVector3(out: MatrixLike, column: number, sou
  * Copies a column to a vector. The z component will use identity values.
  */
 export function copyMatrixColumnToVector3(out: Vector3Like, column: number, source: Readonly<MatrixLike>): void {
-  if (column > 2) {
-    throw new RangeError('Column ' + column + ' out of bounds (2)');
-  } else if (column === 0) {
-    out.x = source.a;
-    out.y = source.b;
-    out.z = 0;
-  } else if (column === 1) {
-    out.x = source.c;
-    out.y = source.d;
-    out.z = 0;
-  } else {
-    out.x = source.tx;
-    out.y = source.ty;
-    out.z = 1;
+  const { a, b, c, d, tx, ty } = source;
+  switch (column) {
+    case 0:
+      out.x = a;
+      out.y = b;
+      out.z = 0;
+      return;
+    case 1:
+      out.x = c;
+      out.y = d;
+      out.z = 0;
+      return;
+    case 2:
+      out.x = tx;
+      out.y = ty;
+      out.z = 1;
+      return;
+    default:
+      throw new RangeError('Column ' + column + ' out of bounds (2)');
   }
 }
 
@@ -62,16 +74,24 @@ export function copyMatrixColumnToVector3(out: Vector3Like, column: number, sour
  * Copies a row from a vector. The third row (row 2) will be ignored (3x2 matrix).
  */
 export function copyMatrixRowFromVector3(out: MatrixLike, row: number, source: Readonly<Vector3Like>): void {
-  if (row > 2) {
-    throw new RangeError('Row ' + row + ' out of bounds (2)');
-  } else if (row === 0) {
-    out.a = source.x;
-    out.c = source.y;
-    out.tx = source.z;
-  } else if (row === 1) {
-    out.b = source.x;
-    out.d = source.y;
-    out.ty = source.z;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  switch (row) {
+    case 0:
+      out.a = x;
+      out.c = y;
+      out.tx = z;
+      return;
+    case 1:
+      out.b = x;
+      out.d = y;
+      out.ty = z;
+      return;
+    case 2:
+      return;
+    default:
+      throw new RangeError('Row ' + row + ' out of bounds (2)');
   }
 }
 
@@ -79,20 +99,25 @@ export function copyMatrixRowFromVector3(out: MatrixLike, row: number, source: R
  * Copies a row to a vector. The third row will use identity values (3x2 matrix).
  */
 export function copyMatrixRowToVector3(out: Vector3Like, row: number, source: Readonly<MatrixLike>): void {
-  if (row > 2) {
-    throw new RangeError('Row ' + row + ' out of bounds (2)');
-  } else if (row === 0) {
-    out.x = source.a;
-    out.y = source.c;
-    out.z = source.tx;
-  } else if (row === 1) {
-    out.x = source.b;
-    out.y = source.d;
-    out.z = source.ty;
-  } else {
-    out.x = 0;
-    out.y = 0;
-    out.z = 1;
+  const { a, b, c, d, tx, ty } = source;
+  switch (row) {
+    case 0:
+      out.x = a;
+      out.y = c;
+      out.z = tx;
+      return;
+    case 1:
+      out.x = b;
+      out.y = d;
+      out.z = ty;
+      return;
+    case 2:
+      out.x = 0;
+      out.y = 0;
+      out.z = 1;
+      return;
+    default:
+      throw new RangeError('Row ' + row + ' out of bounds (2)');
   }
 }
 
@@ -265,12 +290,12 @@ export function matrixTransformBounds(
   bx: number,
   by: number,
 ): void {
-  const { a, b, c, d } = source;
+  const { a, b, c, d, tx: sourceTx, ty: sourceTy } = source;
 
   // Fast path for empty rectangles (0x0 size)
   if (ax === bx && ay === by) {
-    out.x = source.tx;
-    out.y = source.ty;
+    out.x = sourceTx;
+    out.y = sourceTy;
     out.width = 0;
     out.height = 0;
     return;
@@ -305,8 +330,8 @@ export function matrixTransformBounds(
   if (tx > tx1) tx1 = tx;
   if (ty > ty1) ty1 = ty;
 
-  out.x = tx0 + source.tx;
-  out.y = ty0 + source.ty;
+  out.x = tx0 + sourceTx;
+  out.y = ty0 + sourceTy;
   out.width = tx1 - tx0;
   out.height = ty1 - ty0;
 }
@@ -429,17 +454,18 @@ export function rotateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, thet
   **/
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
+  const { a, b, c, d, tx, ty } = source;
 
-  var a1 = source.a * cos - source.b * sin;
-  out.b = source.a * sin + source.b * cos;
+  const a1 = a * cos - b * sin;
+  out.b = a * sin + b * cos;
   out.a = a1;
 
-  var c1 = source.c * cos - source.d * sin;
-  out.d = source.c * sin + source.d * cos;
+  const c1 = c * cos - d * sin;
+  out.d = c * sin + d * cos;
   out.c = c1;
 
-  var tx1 = source.tx * cos - source.ty * sin;
-  out.ty = source.tx * sin + source.ty * cos;
+  const tx1 = tx * cos - ty * sin;
+  out.ty = tx * sin + ty * cos;
   out.tx = tx1;
 }
 
@@ -455,12 +481,13 @@ export function scaleMatrix(out: MatrixLike, source: Readonly<MatrixLike>, sx: n
     [  c  d   0 ][  0   sy  0 ]
     [  tx ty  1 ][  0   0   1 ]
   **/
-  out.a = source.a * sx;
-  out.b = source.b * sy;
-  out.c = source.c * sx;
-  out.d = source.d * sy;
-  out.tx = source.tx * sx;
-  out.ty = source.ty * sy;
+  const { a, b, c, d, tx, ty } = source;
+  out.a = a * sx;
+  out.b = b * sy;
+  out.c = c * sx;
+  out.d = d * sy;
+  out.tx = tx * sx;
+  out.ty = ty * sy;
 }
 
 /**
