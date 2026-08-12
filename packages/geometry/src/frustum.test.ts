@@ -79,6 +79,19 @@ describe('getFrustumCorners', () => {
     expect(isFinite(corners[0].x)).toBe(true);
     expect(isFinite(corners[1].x)).toBe(true);
   });
+
+  it('writes finite corners for a matrix that divides a corner by zero', () => {
+    // The perspective divide has no answer when the matrix sends a corner to a w of zero — a
+    // point at infinity. Passing the coordinates through undivided keeps the corner finite, so a
+    // caller fitting bounds around these corners gets a wrong box rather than an infinite one.
+    const corners = Array.from({ length: 8 }, () => createVector3());
+    getFrustumCorners(corners, createMatrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0));
+    for (const corner of corners) {
+      expect(Number.isFinite(corner.x)).toBe(true);
+      expect(Number.isFinite(corner.y)).toBe(true);
+      expect(Number.isFinite(corner.z)).toBe(true);
+    }
+  });
 });
 
 describe('isFrustumContainingPoint', () => {
@@ -156,5 +169,20 @@ describe('setFrustumFromMatrix4', () => {
     const near = f.near;
     const len = Math.sqrt(near.a * near.a + near.b * near.b + near.c * near.c);
     expect(len).toBeCloseTo(1, 5);
+  });
+
+  it('writes finite coefficients for a matrix with no frustum in it', () => {
+    // Every plane comes out of a matrix row, and a row of zeros has no direction to scale to unit
+    // length. The coefficients stay as they are rather than dividing by zero, so a caller that
+    // culls against this frustum gets consistent rejections instead of NaN comparisons, which are
+    // false in both directions and would let a box pass and fail the same test.
+    const f = createFrustum();
+    setFrustumFromMatrix4(f, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    for (const plane of [f.near, f.far, f.left, f.right, f.top, f.bottom]) {
+      expect(Number.isFinite(plane.a)).toBe(true);
+      expect(Number.isFinite(plane.b)).toBe(true);
+      expect(Number.isFinite(plane.c)).toBe(true);
+      expect(Number.isFinite(plane.d)).toBe(true);
+    }
   });
 });

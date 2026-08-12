@@ -152,28 +152,33 @@ describe('isObbIntersectingObb', () => {
     expect(isObbIntersectingObb(a, b)).toBe(false);
   });
 
-  it('separates along each face axis of either box', () => {
-    // Six of the fifteen candidate axes are the two boxes' own faces. Pushing a cube out along one
-    // face direction at a time reaches each in turn: the world axes for the first box, and — since
-    // the second box is turned off the world axes — its own three local directions for the second.
-    const cube = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    for (let axis = 0; axis < 3; axis++) {
-      const away = createUnitVector3(axis);
-      const separated = createObb(away.x * 10, away.y * 10, away.z * 10, 1, 1, 1, 0, 0, 0, 1);
-      expect(isObbIntersectingObb(cube, separated)).toBe(false);
-    }
-
+  it('separates on each of the six face axes on its own', () => {
+    // Six of the fifteen candidate axes are the two boxes' own faces. Each case below is tuned so
+    // that ONE named axis is the only one of the fifteen that separates the pair — pushed just
+    // past where that face clears and no further. That is what makes the case pin its axis: drop
+    // that single check and the pair reads as a hit, where a pair separated on several axes at
+    // once would still be rejected by one of the others and hide the loss.
     const tilt = orientationFromAxisAngle(1, 2, 3, 0.9);
     const tiltAsMatrix = rotationMatrix4(1, 2, 3, 0.9);
-    const localAxis = createVector3();
-    for (let axis = 0; axis < 3; axis++) {
-      matrix4TransformPoint(localAxis, tiltAsMatrix, createUnitVector3(axis));
-      // Far enough that the turned cube clears the other one along this face direction, but not so
-      // far that a world axis clears first — the second box's own face has to be what decides it.
-      const clear = 2.8;
-      const separated = createObb(localAxis.x * clear, localAxis.y * clear, localAxis.z * clear, 1, 1, 1, ...tilt);
-      expect(isObbIntersectingObb(cube, separated)).toBe(false);
-      expect(isObbIntersectingObb(cube, createObb(0, 0, 0, 1, 1, 1, ...tilt))).toBe(true);
+    const first = createObb(0, 0, 0, 1, 2, 3, 0, 0, 0, 1);
+
+    for (const { axis, ofTurnedBox, extents, clear } of FACE_AXIS_SEPARATIONS) {
+      const direction = createUnitVector3(axis);
+      if (ofTurnedBox) matrix4TransformPoint(direction, tiltAsMatrix, direction);
+
+      const away = createObb(
+        direction.x * clear,
+        direction.y * clear,
+        direction.z * clear,
+        extents[0],
+        extents[1],
+        extents[2],
+        ...tilt,
+      );
+      expect(isObbIntersectingObb(first, away)).toBe(false);
+
+      const concentric = createObb(0, 0, 0, extents[0], extents[1], extents[2], ...tilt);
+      expect(isObbIntersectingObb(first, concentric)).toBe(true);
     }
   });
 
@@ -402,3 +407,22 @@ function rotationMatrix4(axisX: number, axisY: number, axisZ: number, radians: n
   rotateMatrix4(m, m, createVector3(axisX / length, axisY / length, axisZ / length), radians);
   return m;
 }
+
+// One case per face axis of the two boxes in `separates on each of the six face axes on its own`.
+// The first box is fixed at half-extents (1, 2, 3); the second carries the listed half-extents and
+// a turn about (1, 2, 3), pushed `clear` along the named axis — `axis` indexes x, y, z, and
+// `ofTurnedBox` says whether that is the second box's own axis rather than a world one. The
+// shapes and distances are the ones for which that axis, and only it, separates the pair.
+const FACE_AXIS_SEPARATIONS: ReadonlyArray<{
+  readonly axis: number;
+  readonly ofTurnedBox: boolean;
+  readonly extents: readonly [number, number, number];
+  readonly clear: number;
+}> = [
+  { axis: 0, clear: 3.8, extents: [2.5, 1.5, 0.5], ofTurnedBox: false },
+  { axis: 1, clear: 4.9, extents: [2.5, 1.5, 0.5], ofTurnedBox: false },
+  { axis: 2, clear: 5.9, extents: [0.5, 1.5, 2.5], ofTurnedBox: false },
+  { axis: 0, clear: 3.6, extents: [0.5, 1.5, 2.5], ofTurnedBox: true },
+  { axis: 1, clear: 4.7, extents: [0.5, 1.5, 2.5], ofTurnedBox: true },
+  { axis: 2, clear: 3.7, extents: [2.5, 1.5, 0.5], ofTurnedBox: true },
+];

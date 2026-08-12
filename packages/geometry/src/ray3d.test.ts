@@ -73,6 +73,55 @@ describe('getClosestPointBetweenRay3Ds', () => {
     // Gap between the parallel rays is 2 along Y.
     expect(Math.hypot(pa.x - pb.x, pa.y - pb.y, pa.z - pb.z)).toBeCloseTo(2, 6);
   });
+
+  it('clamps to the origin of the first ray when its nearest approach is behind it', () => {
+    // Ray a runs +X from the origin; ray b is a vertical line well behind a's start. The nearest
+    // point on a's infinite line is at x = -5, which is not on the ray, so a's origin is the answer.
+    const a = createRay3D(0, 0, 0, 1, 0, 0);
+    const b = createRay3D(-5, 1, 0, 0, 0, 1);
+    const pa = createVector3();
+    const pb = createVector3();
+    getClosestPointBetweenRay3Ds(pa, pb, a, b);
+    expect(pa.x).toBeCloseTo(0, 6);
+    expect(pa.y).toBeCloseTo(0, 6);
+    expect(pa.z).toBeCloseTo(0, 6);
+    expect(pb.x).toBeCloseTo(-5, 6);
+    expect(pb.y).toBeCloseTo(1, 6);
+    expect(pb.z).toBeCloseTo(0, 6);
+  });
+
+  it('clamps both rays to their origins when each nearest approach is behind the other', () => {
+    // Both rays head away, so both clamps fire: the second to its origin, and then the first,
+    // re-derived from that, to its own.
+    const a = createRay3D(5, 0, 0, 1, 0, 0);
+    const b = createRay3D(0, 3, 0, 0, 1, 0);
+    const pa = createVector3();
+    const pb = createVector3();
+    getClosestPointBetweenRay3Ds(pa, pb, a, b);
+    expect(pa.x).toBeCloseTo(5, 6);
+    expect(pa.y).toBeCloseTo(0, 6);
+    expect(pb.x).toBeCloseTo(0, 6);
+    expect(pb.y).toBeCloseTo(3, 6);
+  });
+
+  it('writes finite points when either direction has no length', () => {
+    // A direction of zero length gives the solver a zero denominator on both the second and the
+    // first ray in turn. Without its guards this writes NaN into the caller's vectors, which is
+    // worse than a poor answer because it spreads silently through whatever consumes it.
+    const pa = createVector3();
+    const pb = createVector3();
+
+    getClosestPointBetweenRay3Ds(pa, pb, createRay3D(0, 0, 0, 1, 0, 0), createRay3D(5, 1, 0, 0, 0, 0));
+    expect(Number.isFinite(pa.x) && Number.isFinite(pa.y) && Number.isFinite(pa.z)).toBe(true);
+    expect(pb.x).toBe(5);
+    expect(pb.y).toBe(1);
+
+    getClosestPointBetweenRay3Ds(pa, pb, createRay3D(0, 0, 0, 0, 0, 0), createRay3D(0, 0, 5, 0, 0, 1));
+    expect(pa.x).toBe(0);
+    expect(pa.y).toBe(0);
+    expect(pa.z).toBe(0);
+    expect(Number.isFinite(pb.x) && Number.isFinite(pb.y) && Number.isFinite(pb.z)).toBe(true);
+  });
 });
 
 describe('getClosestPointOnRay3D', () => {
@@ -109,6 +158,17 @@ describe('getClosestPointOnRay3D', () => {
     expect(p.x).toBeCloseTo(0, 6);
     expect(p.y).toBeCloseTo(4, 6);
     expect(p.z).toBeCloseTo(0, 6);
+  });
+
+  it('writes the origin for a ray with no direction', () => {
+    // A ray with no direction reaches nowhere, so its origin is the only point it has. Dividing
+    // by the zero length instead would put NaN in the caller's vector.
+    const ray = createRay3D(1, 2, 3, 0, 0, 0);
+    const out = createVector3();
+    getClosestPointOnRay3D(out, ray, createVector3(9, 9, 9));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
   });
 });
 
@@ -180,6 +240,36 @@ describe('intersectRay3DAabb', () => {
     expect(intersectRay3DAabb(createRay3D(0, 0, 0, 0, 0, 0), aabb)).toBe(-1);
     expect(intersectRay3DAabb(createRay3D(5, 0, 0, 0, 0, 0), aabb)).toBe(-1);
   });
+
+  it('enters each of the six sides at that side’s own distance', () => {
+    // One slab per axis, written out three times in the source rather than looped, and each one
+    // orders its own pair of crossings. A bound picked up from the block above only shows up on
+    // the axis it was mistyped on, and only in one direction along it — so the box has six
+    // different distances to its sides and each ray is checked against the one it should hit.
+    // A cube would hide exactly the mistake this is here to catch.
+    const lopsided = createAabb(-1, -4, -6, 2, 3, 5);
+    for (const [ox, oy, oz, dx, dy, dz, entry] of RAYS_INTO_LOPSIDED_BOX) {
+      expect(intersectRay3DAabb(createRay3D(ox, oy, oz, dx, dy, dz), lopsided)).toBeCloseTo(entry, 6);
+    }
+  });
+
+  it('returns -1 for a ray aimed away from the box along any axis', () => {
+    // Same six positions, turned around. The box is behind the origin, so both crossings are
+    // behind it and the slab that owns that axis is the one that has to reject.
+    const lopsided = createAabb(-1, -4, -6, 2, 3, 5);
+    for (const [ox, oy, oz, dx, dy, dz] of RAYS_INTO_LOPSIDED_BOX) {
+      expect(intersectRay3DAabb(createRay3D(ox, oy, oz, -dx, -dy, -dz), lopsided)).toBe(-1);
+    }
+  });
+
+  it('returns -1 for a ray running alongside the box on any axis', () => {
+    // No motion on one axis and outside the box on it: the ray stays level with the box forever
+    // and never enters, which each slab has to catch without a crossing to compute.
+    const lopsided = createAabb(-1, -4, -6, 2, 3, 5);
+    expect(intersectRay3DAabb(createRay3D(10, 0, 0, 0, 1, 0), lopsided)).toBe(-1);
+    expect(intersectRay3DAabb(createRay3D(0, 10, 0, 0, 0, 1), lopsided)).toBe(-1);
+    expect(intersectRay3DAabb(createRay3D(0, 0, 10, 1, 0, 0), lopsided)).toBe(-1);
+  });
 });
 
 describe('intersectRay3DPlane', () => {
@@ -228,6 +318,18 @@ describe('intersectRay3DSphere', () => {
     const ray = createRay3D(0, 0, -5, 0, 0, 1);
     expect(intersectRay3DSphere(ray, sphere)).toBe(-1);
   });
+
+  it('returns -1 when the sphere is squarely behind the ray', () => {
+    // Aimed away rather than off to one side: the line through the ray does cross the sphere, so
+    // this is not the miss the other test covers — both crossings are simply behind the origin.
+    const sphere = createBoundingSphere(0, 0, 0, 1);
+    expect(intersectRay3DSphere(createRay3D(5, 0, 0, 1, 0, 0), sphere)).toBe(-1);
+  });
+
+  it('returns -1 for a ray with no direction', () => {
+    const sphere = createBoundingSphere(0, 0, 0, 1);
+    expect(intersectRay3DSphere(createRay3D(0, 0, 0, 0, 0, 0), sphere)).toBe(-1);
+  });
 });
 
 describe('intersectRay3DTriangle', () => {
@@ -262,6 +364,28 @@ describe('intersectRay3DTriangle', () => {
     const p = { x: 0, y: 0, z: 0 };
     const ray = createRay3D(0, 0, -1, 0, 0, 1);
     expect(intersectRay3DTriangle(ray, p, p, p)).toBe(-1);
+  });
+
+  it('returns -1 for points inside the triangle’s span but past its far edge', () => {
+    // The triangle covers x in [-1, 1] along the base and rises to (0, 1). A ray through
+    // (0.9, 0.9) lands in the corner the hypotenuse cuts off: within the reach of both edges
+    // measured from the first corner, but outside the triangle itself.
+    const ray = createRay3D(0.9, 0.9, -3, 0, 0, 1);
+    expect(intersectRay3DTriangle(ray, a, b, c)).toBe(-1);
+  });
+
+  it('returns -1 for points on the far side of the base', () => {
+    const ray = createRay3D(0, -0.5, -3, 0, 0, 1);
+    expect(intersectRay3DTriangle(ray, a, b, c)).toBe(-1);
+  });
+
+  it('returns -1 for points beyond either end of the first edge', () => {
+    // Off the end of the base in each direction. These are rejected on the first barycentric
+    // coordinate, before the second is worked out at all — a different rejection from the two
+    // above, and the one that stops a point way off the triangle being measured against its far
+    // edge as though it were nearby.
+    expect(intersectRay3DTriangle(createRay3D(3, 0, -3, 0, 0, 1), a, b, c)).toBe(-1);
+    expect(intersectRay3DTriangle(createRay3D(0, 3, -3, 0, 0, 1), a, b, c)).toBe(-1);
   });
 });
 
@@ -303,3 +427,16 @@ describe('setRay3D', () => {
     expect(ray.direction.z).toBe(0);
   });
 });
+
+// Six rays, one per side of the box spanning (-1, -4, -6) to (2, 3, 5), each starting 10 units out
+// along an axis and aimed at it. The last number is where that ray meets the box: all six differ,
+// so a slab reading another axis' bound gives a different answer rather than the same one.
+// Reversing the direction of each turns the set into six rays aimed away from the box.
+const RAYS_INTO_LOPSIDED_BOX: ReadonlyArray<readonly [number, number, number, number, number, number, number]> = [
+  [-10, 0, 0, 1, 0, 0, 9],
+  [10, 0, 0, -1, 0, 0, 8],
+  [0, -10, 0, 0, 1, 0, 6],
+  [0, 10, 0, 0, -1, 0, 7],
+  [0, 0, -10, 0, 0, 1, 4],
+  [0, 0, 10, 0, 0, -1, 5],
+];
